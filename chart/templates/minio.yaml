@@ -66,6 +66,14 @@ spec:
               mountPath: /data
               subPath: minio
 
+          resources:
+            limits:
+              memory: {{ .Values.minio_memory }}
+
+            requests:
+              cpu: {{ .Values.minio_cpu }}
+              memory: {{ .Values.minio_memory }}
+
       containers:
         - name: minio
           image: {{ .Values.minio_image }}
@@ -79,6 +87,14 @@ spec:
             - name: data-minio
               mountPath: /data
               subPath: minio
+
+          resources:
+            limits:
+              memory: {{ .Values.minio_memory }}
+
+            requests:
+              cpu: {{ .Values.minio_cpu }}
+              memory: {{ .Values.minio_memory }}
 
 ---
 apiVersion: v1

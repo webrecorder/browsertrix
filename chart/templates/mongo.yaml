@@ -94,12 +94,11 @@ spec:
 
           resources:
             limits:
-              cpu: {{ .Values.mongo_limits_cpu }}
-              memory: {{ .Values.mongo_limits_memory }}
+              memory: {{ .Values.mongo_memory }}
 
             requests:
-              cpu: {{ .Values.mongo_requests_cpu }}
-              memory: {{ .Values.mongo_requests_memory }}
+              cpu: {{ .Values.mongo_cpu }}
+              memory: {{ .Values.mongo_memory }}
 
           # should work with 6.0.x with longer timeout
           readinessProbe:

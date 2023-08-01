@@ -30,6 +30,7 @@ import type {
   UserRoleChangeEvent,
   OrgRemoveMemberEvent,
 } from "./settings";
+import type { Tab as CollectionTab } from "./collection-detail";
 
 export type OrgTab =
   | "crawls"
@@ -45,6 +46,7 @@ type Params = {
   browserId?: string;
   artifactId?: string;
   resourceId?: string;
+  resourceTab?: string;
   artifactType?: Crawl["type"];
 };
 
@@ -238,7 +240,9 @@ export class Org extends LiteElement {
     const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
     const crawlsBaseUrl = `/orgs/${this.orgId}/artifacts/crawls`;
 
-    const artifactType = this.orgPath.includes("/artifacts/upload") ? "upload" : "crawl";
+    const artifactType = this.orgPath.includes("/artifacts/upload")
+      ? "upload"
+      : "crawl";
 
     if (this.params.crawlOrWorkflowId) {
       return html` <btrix-crawl-detail
@@ -345,34 +349,43 @@ export class Org extends LiteElement {
   private renderCollections() {
     if (this.params.resourceId) {
       if (this.orgPath.includes(`/edit/${this.params.resourceId}`)) {
-        return html`<div class="lg:px-5">
-          <btrix-collection-edit
-            .authState=${this.authState!}
-            orgId=${this.orgId!}
-            collectionId=${this.params.resourceId}
-            ?isCrawler=${this.isCrawler}
-          ></btrix-collection-edit>
-        </div>`;
-      }
-
-      return html`<div class="lg:px-5">
-        <btrix-collection-detail
+        return html`<btrix-collection-edit
           .authState=${this.authState!}
           orgId=${this.orgId!}
           collectionId=${this.params.resourceId}
           ?isCrawler=${this.isCrawler}
-        ></btrix-collection-detail>
-      </div>`;
+        ></btrix-collection-edit>`;
+      }
+
+      if (this.params.artifactId) {
+        const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
+        // TODO abstract into breadcrumbs
+        const crawlsBaseUrl = `/orgs/${this.orgId}/collections/view/${this.params.resourceId}/web-captures`;
+
+        return html` <btrix-crawl-detail
+          .authState=${this.authState!}
+          crawlId=${this.params.artifactId}
+          crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
+          crawlsBaseUrl=${crawlsBaseUrl}
+          ?isCrawler=${this.isCrawler}
+        ></btrix-crawl-detail>`;
+      }
+
+      return html`<btrix-collection-detail
+        .authState=${this.authState!}
+        orgId=${this.orgId!}
+        collectionId=${this.params.resourceId}
+        resourceTab=${(this.params.resourceTab as CollectionTab) || "replay"}
+        ?isCrawler=${this.isCrawler}
+      ></btrix-collection-detail>`;
     }
 
     if (this.orgPath.endsWith("/new")) {
-      return html`<div class="lg:px-5">
-        <btrix-collections-new
-          .authState=${this.authState!}
-          orgId=${this.orgId!}
-          ?isCrawler=${this.isCrawler}
-        ></btrix-collections-new>
-      </div>`;
+      return html`<btrix-collections-new
+        .authState=${this.authState!}
+        orgId=${this.orgId!}
+        ?isCrawler=${this.isCrawler}
+      ></btrix-collections-new>`;
     }
 
     return html`<btrix-collections-list

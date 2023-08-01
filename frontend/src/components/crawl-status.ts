@@ -124,6 +124,42 @@ export class CrawlStatus extends LitElement {
         break;
       }
 
+      case "pending-wait": {
+        icon = html`<sl-icon
+          name="dot"
+          library="app"
+          class="animatePulse"
+          slot="prefix"
+          style="color: var(--sl-color-purple-600)"
+        ></sl-icon>`;
+        label = msg("Finishing Crawl");
+        break;
+      }
+
+      case "generate-wacz": {
+        icon = html`<sl-icon
+          name="dot"
+          library="app"
+          class="animatePulse"
+          slot="prefix"
+          style="color: var(--sl-color-purple-600)"
+        ></sl-icon>`;
+        label = msg("Generating WACZ");
+        break;
+      }
+
+      case "uploading-wacz": {
+        icon = html`<sl-icon
+          name="dot"
+          library="app"
+          class="animatePulse"
+          slot="prefix"
+          style="color: var(--sl-color-purple-600)"
+        ></sl-icon>`;
+        label = msg("Uploading WACZ");
+        break;
+      }
+
       case "complete": {
         icon = html`<sl-icon
           name=${isUpload ? "upload" : "check-circle"}

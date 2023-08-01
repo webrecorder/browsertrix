@@ -114,12 +114,11 @@ spec:
 
           resources:
             limits:
-              cpu: {{ .Values.signer_limits_cpu }}
-              memory: {{ .Values.signer_limits_memory }}
+              memory: {{ .Values.signer_memory }}
 
             requests:
-              cpu: {{ .Values.signer_requests_cpu }}
-              memory: {{ .Values.signer_requests_memory }}
+              cpu: {{ .Values.signer_cpu }}
+              memory: {{ .Values.signer_memory }}
 
 ---
 apiVersion: v1

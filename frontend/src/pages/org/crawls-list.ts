@@ -249,8 +249,10 @@ export class CrawlsList extends LiteElement {
     return html`
       <main>
         <header class="contents">
-          <div class="flex justify-between w-full pb-4 mb-3 border-b">
-            <h1 class="text-xl font-semibold h-8">
+          <div class="md:flex items-center gap-2 pb-3 mb-3 border-b">
+            <h1
+              class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
+            >
               ${msg("All Archived Data")}
             </h1>
             ${when(

@@ -25,7 +25,12 @@ from .k8sapi import K8sAPI
 
 from .db import init_db
 from .orgs import inc_org_stats, get_max_concurrent_crawls
-from .basecrawls import NON_RUNNING_STATES, SUCCESSFUL_STATES
+from .basecrawls import (
+    NON_RUNNING_STATES,
+    RUNNING_STATES,
+    RUNNING_AND_STARTING_ONLY,
+    SUCCESSFUL_STATES,
+)
 from .colls import add_successful_crawl_to_collections
 from .crawlconfigs import stats_recompute_last
 from .crawls import (
@@ -222,6 +227,9 @@ class BtrixOperator(K8sAPI):
         if has_crawl_children:
             pods = data.related[POD]
             status = await self.sync_crawl_state(redis_url, crawl, status, pods)
+            if crawl.stopping:
+                await self.check_if_finished(crawl, status)
+
             if status.finished:
                 return await self.handle_finished_delete_if_needed(
                     crawl_id, status, spec
@@ -465,21 +473,34 @@ class BtrixOperator(K8sAPI):
         except:
             return None
 
+    async def check_if_finished(self, crawl, status):
+        """set fast resync, unless crawl already finished"""
+        actual_state, finished = await get_crawl_state(self.crawls, crawl.id)
+
+        # stopping or finished, keep existing state
+        if actual_state in NON_RUNNING_STATES or finished:
+            # don't resync
+            status.state = actual_state
+            status.finished = to_k8s_date(finished)
+            return True
+
+        return False
+
     async def sync_crawl_state(self, redis_url, crawl, status, pods):
         """sync crawl state for running crawl"""
         # check if at least one pod started running
-        if not await self.check_if_pods_running(pods):
+        if not self.check_if_pods_running(pods):
             if self.should_mark_waiting(status.state, crawl.started):
                 await self.set_state(
                     "waiting_capacity",
                     status,
                     crawl.id,
-                    allowed_from=["starting", "running"],
+                    allowed_from=RUNNING_AND_STARTING_ONLY,
                 )
 
             status.initRedis = False
 
-            # resync after N seconds
+            # if still running, resync after N seconds
             status.resync_after = self.fast_retry_secs
             return status
 
@@ -487,14 +508,18 @@ class BtrixOperator(K8sAPI):
 
         redis = await self._get_redis(redis_url)
         if not redis:
-            # resync after N seconds, until redis is inited
+            # if still running, resync after N seconds
             status.resync_after = self.fast_retry_secs
             return status
 
         # set state to running (if not already)
-        await self.set_state(
-            "running", status, crawl.id, allowed_from=["starting", "waiting_capacity"]
-        )
+        if status.state not in RUNNING_STATES:
+            await self.set_state(
+                "running",
+                status,
+                crawl.id,
+                allowed_from=["starting", "waiting_capacity"],
+            )
 
         try:
             file_done = await redis.lpop(self.done_key)
@@ -522,7 +547,7 @@ class BtrixOperator(K8sAPI):
             print(f"Crawl get failed: {exc}, will try again")
             return status
 
-    async def check_if_pods_running(self, pods):
+    def check_if_pods_running(self, pods):
         """check if at least one crawler pod has started"""
         try:
             for pod in pods.values():
@@ -550,7 +575,7 @@ class BtrixOperator(K8sAPI):
 
     def should_mark_waiting(self, state, started):
         """Should the crawl be marked as waiting for capacity?"""
-        if state == "running":
+        if state in RUNNING_STATES:
             return True
 
         if state == "starting":
@@ -612,16 +637,12 @@ class BtrixOperator(K8sAPI):
             status.size = humanize.naturalsize(stats["size"])
 
         # check if done / failed
-        done = 0
-        failed = 0
+        status_count = {}
         for res in results:
-            if res == "done":
-                done += 1
-            elif res == "failed":
-                failed += 1
+            status_count[res] = status_count.get(res, 0) + 1
 
         # check if all crawlers are done
-        if done >= crawl.scale:
+        if status_count.get("done", 0) >= crawl.scale:
             # check if one-page crawls actually succeeded
             # if only one page found, and no files, assume failed
             if status.pagesFound == 1 and not status.filesAdded:
@@ -638,7 +659,7 @@ class BtrixOperator(K8sAPI):
             )
 
         # check if all crawlers failed
-        if failed >= crawl.scale:
+        elif status_count.get("failed", 0) >= crawl.scale:
             # if stopping, and no pages finished, mark as canceled
             if crawl.stopping and not status.pagesDone:
                 state = "canceled"
@@ -648,6 +669,20 @@ class BtrixOperator(K8sAPI):
             status = await self.mark_finished(
                 redis, crawl.id, crawl.cid, status, state=state
             )
+
+        # check for other statuses
+        else:
+            new_status = None
+            if status_count.get("uploading-wacz"):
+                new_status = "uploading-wacz"
+            elif status_count.get("generate-wacz"):
+                new_status = "generate-wacz"
+            elif status_count.get("pending-wait"):
+                new_status = "pending-wait"
+            if new_status:
+                await self.set_state(
+                    new_status, status, crawl.id, allowed_from=RUNNING_STATES
+                )
 
         return status
 
@@ -664,7 +699,7 @@ class BtrixOperator(K8sAPI):
             kwargs["stats"] = stats
 
         if state in SUCCESSFUL_STATES:
-            allowed_from = ["running"]
+            allowed_from = RUNNING_STATES
         else:
             allowed_from = []
 

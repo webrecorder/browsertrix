@@ -230,31 +230,36 @@ export class CrawlDetail extends LiteElement {
 
     // TODO abstract into breadcrumbs
     const isWorkflowArtifact = this.crawlsBaseUrl.includes("/workflows/");
+    const isCollectionArtifact = this.crawlsBaseUrl.includes("/collections/");
+
+    let label = msg("Back to All Crawls");
+    if (isWorkflowArtifact) {
+      label = msg("Back to Crawl Workflow");
+    } else if (isCollectionArtifact) {
+      label = msg("Back to Collection");
+    } else if (this.crawl?.type === "upload") {
+      label = msg("Back to All Uploads");
+    }
 
     return html`
       <div class="mb-7">
         <a
           class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-          href="${this.crawlsBaseUrl}?artifactType=${this.crawl?.type}"
+          href="${this.crawlsBaseUrl}${isWorkflowArtifact ||
+          isCollectionArtifact
+            ? ""
+            : `?artifactType=${this.crawl?.type}`}"
           @click=${this.navLink}
         >
           <sl-icon
             name="arrow-left"
             class="inline-block align-middle"
           ></sl-icon>
-          <span class="inline-block align-middle"
-            >${isWorkflowArtifact
-              ? msg("Back to Crawl Workflow")
-              : this.crawl?.type === "upload"
-              ? msg("Back to All Uploads")
-              : msg("Back to All Crawls")}</span
-          >
+          <span class="inline-block align-middle">${label}</span>
         </a>
       </div>
 
       <div class="mb-4">${this.renderHeader()}</div>
-
-      <hr class="mb-4" />
 
       <main>
         <section class="grid grid-cols-6 gap-4">
@@ -384,8 +389,10 @@ export class CrawlDetail extends LiteElement {
 
   private renderHeader() {
     return html`
-      <header class="md:flex justify-between items-end">
-        <h1 class="text-xl font-semibold mb-4 md:mb-0 md:mr-2">
+      <header class="md:flex items-center gap-2 pb-3 mb-3 border-b">
+        <h1
+          class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
+        >
           ${this.renderName()}
         </h1>
         <div

@@ -563,7 +563,7 @@ async def update_crawl_state_if_allowed(
     kwargs["state"] = state
     query = {"_id": crawl_id, "type": "crawl"}
     if allowed_from:
-        query["state"] = {"$in": allowed_from}
+        query["state"] = {"$in": list(allowed_from)}
 
     return await crawls.find_one_and_update(query, {"$set": kwargs})
 
