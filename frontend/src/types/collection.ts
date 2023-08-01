@@ -6,6 +6,7 @@ export type Collection = {
   modified: string; // date
   crawlCount: number;
   pageCount: number;
+  totalSize: number;
   tags: string[];
   resources: string[];
 };
