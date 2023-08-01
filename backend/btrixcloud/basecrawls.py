@@ -5,6 +5,7 @@ import uuid
 import os
 from datetime import timedelta
 from typing import Optional, List, Union
+import urllib.parse
 
 from pydantic import UUID4
 from fastapi import HTTPException, Depends
@@ -196,16 +197,11 @@ class BaseCrawlOps:
         config = await self.crawl_configs.get_crawl_config(
             crawl.cid, org, active_only=False
         )
-
-        if config:
-            if not crawl.name:
-                crawl.name = config.name
-
-            if config.config.seeds:
-                if add_first_seed:
-                    first_seed = config.config.seeds[0]
-                    crawl.firstSeed = first_seed.url
-                crawl.seedCount = len(config.config.seeds)
+        if config and config.config.seeds:
+            if add_first_seed:
+                first_seed = config.config.seeds[0]
+                crawl.firstSeed = first_seed.url
+            crawl.seedCount = len(config.config.seeds)
 
         if hasattr(crawl, "profileid") and crawl.profileid:
             crawl.profileName = await self.crawl_configs.profiles.get_profile_name(
@@ -460,11 +456,12 @@ class BaseCrawlOps:
 
         return {"deleted": True}
 
-    async def get_search_values(self, org: Organization):
+    async def get_all_crawl_search_values(self, org: Organization):
         """List unique names, first seeds, and descriptions from all captures in org"""
         names = await self.crawls.distinct("name", {"oid": org.id})
         descriptions = await self.crawls.distinct("description", {"oid": org.id})
         crawl_ids = await self.crawls.distinct("_id", {"oid": org.id})
+        cids = await self.crawls.distinct("cid", {"oid": org.id})
 
         # Remove empty strings
         names = [name for name in names if name]
@@ -472,20 +469,18 @@ class BaseCrawlOps:
 
         # Get first seeds
         first_seeds = set()
-        cids = [
-            crawl.cid
-            async for crawl in self.crawls.find({"oid": org.id, "type": "crawl"})
-        ]
         for cid in cids:
-            config = self.crawl_configs.get_crawl_config(cid, org)
-            first_seed = config["config"]["seeds"][0]["url"]
-            first_seeds.add(first_seed)
+            if not cid:
+                continue
+            config = await self.crawl_configs.get_crawl_config(cid, org)
+            first_seed = config.config.seeds[0]
+            first_seeds.add(first_seed.url)
 
         return {
             "names": names,
             "descriptions": descriptions,
             "firstSeeds": list(first_seeds),
-            "crawlIds": crawl_ids,
+            "crawlIds": list(crawl_ids),
         }
 
 
@@ -523,6 +518,15 @@ def init_base_crawls_api(
     ):
         states = state.split(",") if state else None
 
+        if firstSeed:
+            firstSeed = urllib.parse.unquote(firstSeed)
+
+        if name:
+            name = urllib.parse.unquote(name)
+
+        if description:
+            description = urllib.parse.unquote(description)
+
         if crawlType and crawlType not in ("crawl", "upload"):
             raise HTTPException(status_code=400, detail="invalid_crawl_type")
 
@@ -542,6 +546,12 @@ def init_base_crawls_api(
             sort_direction=sortDirection,
         )
         return paginated_format(crawls, total, page, pageSize)
+
+    @app.get("/orgs/{oid}/all-crawls/search-values", tags=["all-crawls"])
+    async def get_all_crawls_search_values(
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        return await ops.get_all_crawl_search_values(org)
 
     @app.get(
         "/orgs/{oid}/all-crawls/{crawl_id}",
@@ -576,9 +586,3 @@ def init_base_crawls_api(
         org: Organization = Depends(org_crawl_dep),
     ):
         return await ops.delete_crawls_all_types(delete_list, org)
-
-    @app.get("/orgs/{oid}/all-crawls/search-values", tags=["all-crawls"])
-    async def get_all_crawls_search_values(
-        org: Organization = Depends(org_viewer_dep),
-    ):
-        return await ops.get_search_values(org)

@@ -296,6 +296,8 @@ class BaseCrawl(BaseMongoModel):
     started: datetime
     finished: Optional[datetime]
 
+    name: Optional[str]
+
     state: str
 
     stats: Optional[Dict[str, int]]
@@ -370,7 +372,7 @@ class UpdateCrawl(BaseModel):
 
     name: Optional[str]
     description: Optional[str]
-    tags: Optional[List[str]] = []
+    tags: Optional[List[str]]
     description: Optional[str]
 
 
@@ -435,7 +437,6 @@ class UploadedCrawl(BaseCrawl):
 
     type: str = Field("upload", const=True)
 
-    name: str
     tags: Optional[List[str]] = []
 
 

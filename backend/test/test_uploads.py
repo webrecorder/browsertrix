@@ -373,7 +373,7 @@ def test_list_all_crawls(admin_auth_headers, default_org_id):
         assert item["state"]
 
 
-def test_get_all_crawls_by_name(admin_auth_headers, default_org_id, admin_crawl_id):
+def test_get_all_crawls_by_name(admin_auth_headers, default_org_id):
     """Test filtering /all-crawls by name"""
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?name=test2.wacz",
@@ -386,43 +386,32 @@ def test_get_all_crawls_by_name(admin_auth_headers, default_org_id, admin_crawl_
     assert items[0]["id"] == upload_id_2
     assert items[0]["name"] == "test2.wacz"
 
-    # Add name to admin_crawl_id
-    crawl_name = "crawl name for testing"
-    r = requests.patch(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
-        headers=admin_auth_headers,
-        json={"name": crawl_name},
-    )
-    assert r.status_code == 200
-
-    # Test filtering crawls by name
+    crawl_name = "Crawler User Test Crawl"
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?name={crawl_name}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 1
-    items = data["items"]
-    assert items[0]["id"] == admin_crawl_id
-    assert items[0]["name"] == "Admin Test Crawl"
+    assert data["total"] == 3
+    for item in data["items"]:
+        assert item["name"] == crawl_name
 
 
 def test_get_all_crawls_by_first_seed(
-    admin_auth_headers, default_org_id, admin_crawl_id
+    admin_auth_headers, default_org_id, crawler_crawl_id
 ):
     """Test filtering /all-crawls by first seed"""
-    first_seed = "https://webrecorder.net"
+    first_seed = "https://webrecorder.net/"
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?firstSeed={first_seed}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 1
-    items = data["items"]
-    assert items[0]["id"] == admin_crawl_id
-    assert items[0]["name"] == "Admin Test Crawl"
+    assert data["total"] == 3
+    for item in data["items"]:
+        assert item["firstSeed"] == first_seed
 
 
 def test_get_all_crawls_by_type(admin_auth_headers, default_org_id, admin_crawl_id):
@@ -455,30 +444,31 @@ def test_get_all_crawls_by_type(admin_auth_headers, default_org_id, admin_crawl_
     assert r.json()["detail"] == "invalid_crawl_type"
 
 
-def test_get_all_crawls_by_user(admin_auth_headers, default_org_id, admin_user_id):
+def test_get_all_crawls_by_user(admin_auth_headers, default_org_id, crawler_userid):
     """Test filtering /all-crawls by userid"""
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?userid={admin_user_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?userid={crawler_userid}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 2
-    items = data["items"]
-    for item in items:
-        assert item["userid"] == admin_user_id
+    assert data["total"] == 4
+    for item in data["items"]:
+        assert item["userid"] == crawler_userid
 
 
-def test_get_all_crawls_by_cid(admin_auth_headers, default_org_id, admin_config_id):
+def test_get_all_crawls_by_cid(
+    admin_auth_headers, default_org_id, all_crawls_config_id
+):
     """Test filtering /all-crawls by cid"""
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?cid={admin_config_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?cid={all_crawls_config_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
     assert data["total"] == 1
-    assert data["items"][0]["cid"] == admin_config_id
+    assert data["items"][0]["cid"] == all_crawls_config_id
 
 
 def test_get_all_crawls_by_state(admin_auth_headers, default_org_id, admin_crawl_id):
@@ -489,14 +479,14 @@ def test_get_all_crawls_by_state(admin_auth_headers, default_org_id, admin_crawl
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 4
+    assert data["total"] == 5
     items = data["items"]
     for item in items:
         assert item["state"] in ("complete", "partial_complete")
 
 
 def test_get_all_crawls_by_collection_id(
-    admin_auth_headers, default_org_id, admin_config_id
+    admin_auth_headers, default_org_id, admin_config_id, all_crawls_crawl_id
 ):
     """Test filtering /all-crawls by collection id"""
     # Create collection and add upload to it
@@ -504,7 +494,7 @@ def test_get_all_crawls_by_collection_id(
         f"{API_PREFIX}/orgs/{default_org_id}/collections",
         headers=admin_auth_headers,
         json={
-            "crawlIds": [upload_id_2],
+            "crawlIds": [all_crawls_crawl_id],
             "name": "all-crawls collection",
         },
     )
@@ -518,7 +508,7 @@ def test_get_all_crawls_by_collection_id(
     )
     assert r.status_code == 200
     assert r.json()["total"] == 1
-    assert r.json()["items"][0]["id"] == upload_id_2
+    assert r.json()["items"][0]["id"] == all_crawls_crawl_id
 
 
 def test_sort_all_crawls(admin_auth_headers, default_org_id, admin_crawl_id):
@@ -528,9 +518,9 @@ def test_sort_all_crawls(admin_auth_headers, default_org_id, admin_crawl_id):
         headers=admin_auth_headers,
     )
     data = r.json()
-    assert data["total"] == 6
+    assert data["total"] == 7
     items = data["items"]
-    assert len(items) == 6
+    assert len(items) == 7
 
     last_created = None
     for crawl in items:
@@ -657,20 +647,29 @@ def test_sort_all_crawls(admin_auth_headers, default_org_id, admin_crawl_id):
     assert r.json()["detail"] == "invalid_sort_direction"
 
 
-def test_all_crawls_search_values(admin_auth_headers, default_org_id, admin_crawl_id):
+def test_all_crawls_search_values(admin_auth_headers, default_org_id, crawler_crawl_id):
     """Test that all-crawls search values return expected results"""
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/search-values",
         headers=admin_auth_headers,
     )
     data = r.json()
-    assert data == {}
-    # TODO: Fix expected values
-    assert sorted(data["names"]) == sorted(["Admin Test Crawl", "test2.wacz"])
-    assert sorted(data["descriptions"]) == sorted(["Admin Test Crawl description"])
-    assert sorted(data["firstSeeds"]) == sorted(["https://webrecorder.net/"])
-    assert len(data["crawlIds"]) == 2
-    for id_ in (admin_crawl_id, upload_id_2):
+
+    assert len(data["names"]) == 5
+    expected_names = [
+        "Crawler User Test Crawl",
+        "My Upload Updated",
+        "test2.wacz",
+        "All Crawls Test Crawl",
+    ]
+    for expected_name in expected_names:
+        assert expected_name in data["names"]
+
+    assert sorted(data["descriptions"]) == ["Lorem ipsum"]
+    assert sorted(data["firstSeeds"]) == ["https://webrecorder.net/"]
+
+    assert len(data["crawlIds"]) == 7
+    for id_ in (crawler_crawl_id, upload_id_2):
         assert id_ in data["crawlIds"]
 
 

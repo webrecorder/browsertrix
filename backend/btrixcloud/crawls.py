@@ -143,7 +143,6 @@ class CrawlOps(BaseCrawlOps):
                     "as": "crawlConfig",
                 },
             },
-            {"$set": {"name": {"$arrayElemAt": ["$crawlConfig.name", 0]}}},
         ]
 
         if not resources:
@@ -559,6 +558,7 @@ async def add_new_crawl(
         manual=manual,
         started=started,
         tags=crawlconfig.tags,
+        name=crawlconfig.name,
     )
 
     try:
