@@ -99,9 +99,9 @@ backend_num_replicas: 1
 # number of workers per pod
 backend_workers: 2
 
-backend_cpu: "10m"
+backend_cpu: "25m"
 
-backend_memory: "256Mi"
+backend_memory: "384Mi"
 
 # port for operator service
 opPort: 8756
