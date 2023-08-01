@@ -28,6 +28,7 @@ type FormEvent =
   | { type: "SHOW_SIGN_IN_WITH_PASSWORD" }
   | { type: "SHOW_FORGOT_PASSWORD" }
   | { type: "SUBMIT" }
+  | { type: "BACKEND_INITIALIZED" }
   | FormSuccessEvent
   | FormErrorEvent;
 
@@ -51,6 +52,10 @@ type FormTypestate =
   | {
       value: "submittingForgotPassword";
       context: FormContext;
+    }
+  | {
+      value: "backendInitializing";
+      context: FormContext;
     };
 
 const initialContext = {};
@@ -58,7 +63,7 @@ const initialContext = {};
 const machine = createMachine<FormContext, FormEvent, FormTypestate>(
   {
     id: "loginForm",
-    initial: "signIn",
+    initial: "backendInitializing",
     context: initialContext,
     states: {
       ["signIn"]: {
@@ -106,6 +111,14 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
           },
         },
       },
+      ["backendInitializing"]: {
+        on: {
+          BACKEND_INITIALIZED: {
+            target: "signIn",
+            actions: "reset",
+          },
+        },
+      },
     },
   },
   {
@@ -120,7 +133,7 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
         ...(event as FormErrorEvent).detail,
       })),
     },
-  }
+  },
 );
 
 @localized()
@@ -142,6 +155,7 @@ export class LogInPage extends LiteElement {
     });
 
     this.formStateService.start();
+    this.checkBackendInitialized();
   }
 
   disconnectedCallback() {
@@ -165,6 +179,16 @@ export class LogInPage extends LiteElement {
       this.formState.value === "submittingForgotPassword"
     ) {
       form = this.renderForgotPasswordForm();
+      link = html`
+        <a
+          class="text-sm text-gray-400 hover:text-gray-500"
+          href="/log-in"
+          @click=${this.navLink}
+          >${msg("Sign in with password")}</a
+        >
+      `;
+    } else if (this.formState.value === "backendInitializing") {
+      form = this.renderBackendInitializing();
       link = html`
         <a
           class="text-sm text-gray-400 hover:text-gray-500"
@@ -269,6 +293,46 @@ export class LogInPage extends LiteElement {
     `;
   }
 
+  private renderBackendInitializing() {
+    return html`
+      <form @submit=${this.onSubmitLogIn} aria-describedby="formError">
+        <div class="mb-5">
+          <btrix-input
+            id="email"
+            name="username"
+            label=${msg("Please wait while the backend is initializing")}
+            type="email"
+            autocomplete="username"
+            disabled="disabled"
+            required
+          >
+          </btrix-input>
+        </div>
+        <div class="mb-5">
+          <btrix-input
+            id="password"
+            name="password"
+            label=${msg("")}
+            type="password"
+            autocomplete="current-password"
+            passwordToggle
+            disabled="disabled"
+            required
+          >
+          </btrix-input>
+        </div>
+        <sl-button
+          class="w-full"
+          variant="primary"
+          ?loading=${this.formState.value === "signingIn"}
+          type="submit"
+          disabled="disabled"
+          >${msg("Log in")}</sl-button
+        >
+      </form>
+    `;
+  }
+
   private renderForgotPasswordForm() {
     let formError;
 
@@ -307,6 +371,15 @@ export class LogInPage extends LiteElement {
         >
       </form>
     `;
+  }
+
+  async checkBackendInitialized() {
+    const resp = await fetch("/api/healthz");
+    if (resp.status === 200) {
+      this.formStateService.send("BACKEND_INITIALIZED");
+    } else {
+      setTimeout(this.checkBackendInitialized, 5000);
+    }
   }
 
   async onSubmitLogIn(event: SubmitEvent) {
@@ -366,7 +439,7 @@ export class LogInPage extends LiteElement {
         type: "SUCCESS",
         detail: {
           successMessage: msg(
-            "Successfully received your request. You will receive an email to reset your password if your email is found in our system."
+            "Successfully received your request. You will receive an email to reset your password if your email is found in our system.",
           ),
         },
       });
