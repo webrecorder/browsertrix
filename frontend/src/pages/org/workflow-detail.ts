@@ -306,7 +306,7 @@ export class WorkflowDetail extends LiteElement {
           </div>
         </header>
 
-        <section class="col-span-1 border rounded-lg py-2 h-14">
+        <section class="col-span-1 border rounded-lg py-2">
           ${this.renderDetails()}
         </section>
 
@@ -683,7 +683,7 @@ export class WorkflowDetail extends LiteElement {
 
   private renderDetails() {
     return html`
-      <dl class="h-14 px-3 md:px-0 md:flex justify-evenly">
+      <btrix-desc-list horizontal>
         ${this.renderDetailItem(
           msg("Status"),
           () => html`
@@ -711,26 +711,20 @@ export class WorkflowDetail extends LiteElement {
               `
             : html`<span class="text-neutral-400">${msg("No Schedule")}</span>`
         )}
-        ${this.renderDetailItem(
-          msg("Created By"),
-          () =>
-            msg(
-              str`${
-                this.workflow!.createdByName
-              } on ${this.dateFormatter.format(
-                new Date(`${this.workflow!.created}Z`)
-              )}`
-            ),
-          true
+        ${this.renderDetailItem(msg("Created By"), () =>
+          msg(
+            str`${this.workflow!.createdByName} on ${this.dateFormatter.format(
+              new Date(`${this.workflow!.created}Z`)
+            )}`
+          )
         )}
-      </dl>
+      </btrix-desc-list>
     `;
   }
 
   private renderDetailItem(
     label: string | TemplateResult,
-    renderContent: () => any,
-    isLast = false
+    renderContent: () => any
   ) {
     return html`
       <btrix-desc-list-item label=${label}>
@@ -740,7 +734,6 @@ export class WorkflowDetail extends LiteElement {
           () => html`<sl-skeleton class="w-full"></sl-skeleton>`
         )}
       </btrix-desc-list-item>
-      ${when(!isLast, () => html`<hr class="flex-0 border-l w-0 h-10" />`)}
     `;
   }
 
@@ -878,7 +871,7 @@ export class WorkflowDetail extends LiteElement {
     const skeleton = html`<sl-skeleton class="w-full"></sl-skeleton>`;
 
     return html`
-      <dl class="px-3 md:px-0 md:flex justify-evenly">
+      <btrix-desc-list horizontal>
         ${this.renderDetailItem(msg("Pages Crawled"), () =>
           this.lastCrawlStats
             ? msg(
@@ -906,12 +899,10 @@ export class WorkflowDetail extends LiteElement {
               ></sl-format-bytes>`
             : skeleton
         )}
-        ${this.renderDetailItem(
-          msg("Crawler Instances"),
-          () => (this.workflow ? this.workflow.scale : skeleton),
-          true
+        ${this.renderDetailItem(msg("Crawler Instances"), () =>
+          this.workflow ? this.workflow.scale : skeleton
         )}
-      </dl>
+      </btrix-desc-list>
     `;
   };
 

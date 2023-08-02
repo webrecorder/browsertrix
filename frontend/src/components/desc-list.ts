@@ -15,10 +15,15 @@
  * ```
  */
 import { LitElement, html, css } from "lit";
-import { property } from "lit/decorators.js";
+import { property, queryAssignedElements } from "lit/decorators.js";
+import { classMap } from "lit/directives/class-map.js";
 
 export class DescListItem extends LitElement {
   static styles = css`
+    :host {
+      display: contents;
+    }
+
     dt {
       color: var(--sl-color-neutral-500);
       font-size: var(--sl-font-size-x-small);
@@ -35,15 +40,23 @@ export class DescListItem extends LitElement {
       font-variation-settings: var(--font-monostyle-variation);
       line-height: 1rem;
     }
+
+    .item {
+      display: flex;
+      justify-content: var(--justify-item, initial);
+      border-right: var(--border-right, 0px);
+    }
   `;
 
   @property({ type: String })
   label: string = "";
 
   render() {
-    return html`<div>
-      <dt>${this.label}</dt>
-      <dd><slot></slot></dd>
+    return html`<div class="item">
+      <div class="content">
+        <dt>${this.label}</dt>
+        <dd><slot></slot></dd>
+      </div>
     </div>`;
   }
 }
@@ -52,13 +65,46 @@ export class DescList extends LitElement {
   static styles = css`
     dl {
       display: grid;
-      grid-template-columns: 100%;
-      grid-gap: 1rem;
       margin: 0;
+    }
+
+    .vertical {
+      grid-template-columns: 100%;
+      gap: 1rem;
+    }
+
+    .horizontal {
+      grid-auto-flow: column;
     }
   `;
 
+  @property({ type: Boolean })
+  horizontal = false;
+
   render() {
-    return html`<dl><slot></slot></dl>`;
+    return html`<dl
+      class=${classMap({
+        vertical: !this.horizontal,
+        horizontal: this.horizontal,
+      })}
+    >
+      <slot @slotchange=${this.handleSlotchange}></slot>
+    </dl>`;
+  }
+
+  @queryAssignedElements({ selector: "btrix-desc-list-item" })
+  private listItems!: Array<HTMLElement>;
+
+  private handleSlotchange() {
+    if (this.horizontal) {
+      // Style children
+      this.listItems.map((el, i, arr) => {
+        let style = "--justify-item: center;";
+        if (i < arr.length - 1) {
+          style = `${style} --border-right: 1px solid var(--sl-panel-border-color);`;
+        }
+        el.setAttribute("style", style);
+      });
+    }
   }
 }
