@@ -15,7 +15,7 @@
  * ```
  */
 import { LitElement, html, css } from "lit";
-import { property, queryAssignedElements } from "lit/decorators.js";
+import { property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 
 export class DescListItem extends LitElement {
@@ -74,7 +74,15 @@ export class DescList extends LitElement {
     }
 
     .horizontal {
+      --justify-item: center;
+      --border-right: 1px solid var(--sl-panel-border-color);
       grid-auto-flow: column;
+    }
+
+    /* Although this only applies to .horizontal, apply to any last child
+    since we can't do complex selectors with ::slotted */
+    ::slotted(*:last-of-type) {
+      --border-right: 0px;
     }
   `;
 
@@ -88,23 +96,7 @@ export class DescList extends LitElement {
         horizontal: this.horizontal,
       })}
     >
-      <slot @slotchange=${this.handleSlotchange}></slot>
+      <slot></slot>
     </dl>`;
-  }
-
-  @queryAssignedElements({ selector: "btrix-desc-list-item" })
-  private listItems!: Array<HTMLElement>;
-
-  private handleSlotchange() {
-    if (this.horizontal) {
-      // Style children
-      this.listItems.map((el, i, arr) => {
-        let style = "--justify-item: center;";
-        if (i < arr.length - 1) {
-          style = `${style} --border-right: 1px solid var(--sl-panel-border-color);`;
-        }
-        el.setAttribute("style", style);
-      });
-    }
   }
 }
