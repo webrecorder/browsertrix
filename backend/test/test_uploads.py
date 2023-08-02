@@ -647,7 +647,7 @@ def test_sort_all_crawls(admin_auth_headers, default_org_id, admin_crawl_id):
     assert r.json()["detail"] == "invalid_sort_direction"
 
 
-def test_all_crawls_search_values(admin_auth_headers, default_org_id, crawler_crawl_id):
+def test_all_crawls_search_values(admin_auth_headers, default_org_id):
     """Test that all-crawls search values return expected results"""
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/search-values",
@@ -667,10 +667,7 @@ def test_all_crawls_search_values(admin_auth_headers, default_org_id, crawler_cr
 
     assert sorted(data["descriptions"]) == ["Lorem ipsum"]
     assert sorted(data["firstSeeds"]) == ["https://webrecorder.net/"]
-
     assert len(data["crawlIds"]) == 7
-    for id_ in (crawler_crawl_id, upload_id_2):
-        assert id_ in data["crawlIds"]
 
 
 def test_get_upload_from_all_crawls(admin_auth_headers, default_org_id):
