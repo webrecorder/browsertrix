@@ -515,7 +515,7 @@ export class CollectionEditor extends LiteElement {
           </fieldset>
           <label>
             <sl-switch name="isPublic" ?checked=${this.metadataValues?.isPublic}
-              >Publishable to IPFS</sl-switch
+              >Publicly Accessible</sl-switch
             >
           </label>
         </div>
