@@ -29,6 +29,7 @@ type FormEvent =
   | { type: "SHOW_FORGOT_PASSWORD" }
   | { type: "SUBMIT" }
   | { type: "BACKEND_INITIALIZED" }
+  | { type: "BACKEND_NOT_INITIALIZED" }
   | FormSuccessEvent
   | FormErrorEvent;
 
@@ -63,7 +64,7 @@ const initialContext = {};
 const machine = createMachine<FormContext, FormEvent, FormTypestate>(
   {
     id: "loginForm",
-    initial: "backendInitializing",
+    initial: "signIn",
     context: initialContext,
     states: {
       ["signIn"]: {
@@ -75,6 +76,9 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
           SUBMIT: {
             target: "signingIn",
             actions: "reset",
+          },
+          BACKEND_NOT_INITIALIZED: {
+            target: "backendInitializing",
           },
         },
       },
@@ -133,7 +137,7 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
         ...(event as FormErrorEvent).detail,
       })),
     },
-  },
+  }
 );
 
 @localized()
@@ -295,11 +299,34 @@ export class LogInPage extends LiteElement {
 
   private renderBackendInitializing() {
     return html`
+      <form @submit=${this.onSubmitLogIn} aria-describedby="formError">
         <div class="mb-5">
-					<dialog id="backend-initializing" open> 
-						<p> Please wait while the backend initializes </p>
-					</dialog>
+          <btrix-input
+            id="email"
+            name="username"
+            label=${msg("Email")}
+            type="email"
+            autocomplete="username"
+            required
+          >
+          </btrix-input>
         </div>
+        <div class="mb-5">
+          <btrix-input
+            id="password"
+            name="password"
+            label=${msg("Password")}
+            type="password"
+            autocomplete="current-password"
+            passwordToggle
+            required
+          >
+          </btrix-input>
+          <dialog id="backend-initializing" open>
+            <p>Please wait while the backend initializes</p>
+          </dialog>
+        </div>
+      </form>
     `;
   }
 
@@ -346,11 +373,10 @@ export class LogInPage extends LiteElement {
   async checkBackendInitialized() {
     const resp = await fetch("/api/settings");
     if (resp.status === 200) {
-			const Dialog = <HTMLDialogElement>document.getElementById("backend-initializing");
-			Dialog.close()
       this.formStateService.send("BACKEND_INITIALIZED");
     } else {
-      setTimeout(this.checkBackendInitialized, 5000);
+      this.formStateService.send("BACKEND_NOT_INITIALIZED");
+      setTimeout(() => this.checkBackendInitialized(), 5000);
     }
   }
 
@@ -411,7 +437,7 @@ export class LogInPage extends LiteElement {
         type: "SUCCESS",
         detail: {
           successMessage: msg(
-            "Successfully received your request. You will receive an email to reset your password if your email is found in our system.",
+            "Successfully received your request. You will receive an email to reset your password if your email is found in our system."
           ),
         },
       });
