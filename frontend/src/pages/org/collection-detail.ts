@@ -43,7 +43,7 @@ export class CollectionDetail extends LiteElement {
   private collection?: Collection;
 
   @state()
-  private webCaptures?: APIPaginatedList;
+  private archivedItems?: APIPaginatedList;
 
   @state()
   private openDialogName?: "delete";
@@ -52,7 +52,7 @@ export class CollectionDetail extends LiteElement {
   private isDescriptionExpanded = false;
 
   // Use to cancel requests
-  private getWebCapturesController: AbortController | null = null;
+  private getArchivedItemsController: AbortController | null = null;
 
   // TODO localize
   private numberFormatter = new Intl.NumberFormat(undefined, {
@@ -76,7 +76,7 @@ export class CollectionDetail extends LiteElement {
       this.fetchCollection();
     }
     if (changedProperties.has("collectionId")) {
-      this.fetchWebCaptures();
+      this.fetchArchivedItems();
     }
   }
 
@@ -104,7 +104,7 @@ export class CollectionDetail extends LiteElement {
         this.resourceTab,
         [
           ["replay", this.renderOverview],
-          ["items", this.renderWebCaptures],
+          ["items", this.renderArchivedItems],
         ],
 
         () => html`<btrix-not-found></btrix-not-found>`
@@ -346,15 +346,17 @@ export class CollectionDetail extends LiteElement {
     <div class="my-7">${this.renderDescription()}</div>
   `;
 
-  private renderWebCaptures = () => html`<section>
+  private renderArchivedItems = () => html`<section>
     ${when(
-      this.webCaptures,
+      this.archivedItems,
       () => {
-        const { items, page, total, pageSize } = this.webCaptures!;
+        const { items, page, total, pageSize } = this.archivedItems!;
         const hasItems = items.length;
         return html`
           <section>
-            ${hasItems ? this.renderWebCaptureList() : this.renderEmptyState()}
+            ${hasItems
+              ? this.renderArchivedItemsList()
+              : this.renderEmptyState()}
           </section>
           ${when(
             hasItems || page > 1,
@@ -365,7 +367,7 @@ export class CollectionDetail extends LiteElement {
                   totalCount=${total}
                   size=${pageSize}
                   @page-change=${async (e: PageChangeEvent) => {
-                    await this.fetchWebCaptures({
+                    await this.fetchArchivedItems({
                       page: e.detail.page,
                     });
 
@@ -387,20 +389,20 @@ export class CollectionDetail extends LiteElement {
     )}
   </section>`;
 
-  private renderWebCaptureList() {
-    if (!this.webCaptures) return;
+  private renderArchivedItemsList() {
+    if (!this.archivedItems) return;
 
     return html`
       <btrix-crawl-list
         baseUrl=${`/orgs/${this.orgId}/collections/view/${this.collectionId}/artifact`}
       >
-        ${this.webCaptures.items.map(this.renderWebCaptureItem)}
+        ${this.archivedItems.items.map(this.renderArchivedItem)}
       </btrix-crawl-list>
     `;
   }
 
   private renderEmptyState() {
-    if (this.webCaptures?.page && this.webCaptures?.page > 1) {
+    if (this.archivedItems?.page && this.archivedItems?.page > 1) {
       return html`
         <div class="border-t border-b py-5">
           <p class="text-center text-neutral-500">
@@ -419,7 +421,7 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
-  private renderWebCaptureItem = (wc: Crawl | Upload) =>
+  private renderArchivedItem = (wc: Crawl | Upload) =>
     html`
       <btrix-crawl-list-item .crawl=${wc}>
         <div slot="menuTrigger" role="none"></div>
@@ -535,10 +537,10 @@ export class CollectionDetail extends LiteElement {
   /**
    * Fetch web captures and update internal state
    */
-  private async fetchWebCaptures(params?: APIPaginationQuery): Promise<void> {
-    this.cancelInProgressGetWebCaptures();
+  private async fetchArchivedItems(params?: APIPaginationQuery): Promise<void> {
+    this.cancelInProgressGetArchivedItems();
     try {
-      this.webCaptures = await this.getWebCaptures();
+      this.archivedItems = await this.getArchivedItems();
     } catch (e: any) {
       if (e === ABORT_REASON_THROTTLE) {
         console.debug("Fetch web captures aborted to throttle");
@@ -552,14 +554,14 @@ export class CollectionDetail extends LiteElement {
     }
   }
 
-  private cancelInProgressGetWebCaptures() {
-    if (this.getWebCapturesController) {
-      this.getWebCapturesController.abort(ABORT_REASON_THROTTLE);
-      this.getWebCapturesController = null;
+  private cancelInProgressGetArchivedItems() {
+    if (this.getArchivedItemsController) {
+      this.getArchivedItemsController.abort(ABORT_REASON_THROTTLE);
+      this.getArchivedItemsController = null;
     }
   }
 
-  private async getWebCaptures(
+  private async getArchivedItems(
     params?: Partial<{
       state: CrawlState[];
     }> &
