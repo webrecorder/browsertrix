@@ -33,7 +33,7 @@ export class DescListItem extends LitElement {
 
     dd {
       margin: 0;
-      padding: 0;
+      padding: 0 0 var(--sl-spacing-2x-small);
       color: var(--sl-color-neutral-700);
       font-size: var(--sl-font-size-medium);
       font-family: var(--font-monostyle-family);

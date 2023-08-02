@@ -4,6 +4,7 @@ import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
 import queryString from "query-string";
+import type { TemplateResult } from "lit";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -53,6 +54,11 @@ export class CollectionDetail extends LiteElement {
   // Use to cancel requests
   private getWebCapturesController: AbortController | null = null;
 
+  // TODO localize
+  private numberFormatter = new Intl.NumberFormat(undefined, {
+    notation: "compact",
+  });
+
   private readonly tabLabels: Record<Tab, { icon: any; text: string }> = {
     replay: {
       icon: { name: "link-replay", library: "app" },
@@ -82,7 +88,7 @@ export class CollectionDetail extends LiteElement {
 
   render() {
     return html`${this.renderHeader()}
-      <header class="md:flex items-center gap-2 pb-3 mb-3 border-b">
+      <header class="md:flex items-center gap-2 pb-3">
         <h1
           class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
         >
@@ -91,6 +97,7 @@ export class CollectionDetail extends LiteElement {
         </h1>
         ${when(this.isCrawler, this.renderActions)}
       </header>
+      <div class="border rounded-lg py-2 mb-3">${this.renderInfoBar()}</div>
       <div class="mb-3">${this.renderTabs()}</div>
 
       ${choose(
@@ -214,6 +221,56 @@ export class CollectionDetail extends LiteElement {
       </sl-dropdown>
     `;
   };
+
+  private renderInfoBar() {
+    return html`
+      <btrix-desc-list horizontal>
+        ${this.renderDetailItem(msg("Archived Items"), (col) =>
+          col.crawlCount === 1
+            ? msg("1 item")
+            : msg(str`${this.numberFormatter.format(col.crawlCount)} items`)
+        )}
+        ${this.renderDetailItem(
+          msg("Total Size"),
+          (col) => html`<sl-format-bytes
+            value=${col.totalSize || 0}
+            display="narrow"
+          ></sl-format-bytes>`
+        )}
+        ${this.renderDetailItem(msg("Total Pages"), (col) =>
+          col.pageCount === 1
+            ? msg("1 page")
+            : msg(str`${this.numberFormatter.format(col.pageCount)} pages`)
+        )}
+        ${this.renderDetailItem(
+          msg("Last Updated"),
+          (col) => html`<sl-format-date
+            date=${`${col.modified}Z`}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+            hour="2-digit"
+            minute="2-digit"
+          ></sl-format-date>`
+        )}
+      </btrix-desc-list>
+    `;
+  }
+
+  private renderDetailItem(
+    label: string | TemplateResult,
+    renderContent: (collection: Collection) => any
+  ) {
+    return html`
+      <btrix-desc-list-item label=${label}>
+        ${when(
+          this.collection,
+          () => renderContent(this.collection!),
+          () => html`<sl-skeleton class="w-full"></sl-skeleton>`
+        )}
+      </btrix-desc-list-item>
+    `;
+  }
 
   private renderDescription() {
     return html`
