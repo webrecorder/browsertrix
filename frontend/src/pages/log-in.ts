@@ -295,41 +295,11 @@ export class LogInPage extends LiteElement {
 
   private renderBackendInitializing() {
     return html`
-      <form @submit=${this.onSubmitLogIn} aria-describedby="formError">
         <div class="mb-5">
-          <btrix-input
-            id="email"
-            name="username"
-            label=${msg("Please wait while the backend is initializing")}
-            type="email"
-            autocomplete="username"
-            disabled="disabled"
-            required
-          >
-          </btrix-input>
+					<dialog id="backend-initializing" open> 
+						<p> Please wait while the backend initializes </p>
+					</dialog>
         </div>
-        <div class="mb-5">
-          <btrix-input
-            id="password"
-            name="password"
-            label=${msg("")}
-            type="password"
-            autocomplete="current-password"
-            passwordToggle
-            disabled="disabled"
-            required
-          >
-          </btrix-input>
-        </div>
-        <sl-button
-          class="w-full"
-          variant="primary"
-          ?loading=${this.formState.value === "signingIn"}
-          type="submit"
-          disabled="disabled"
-          >${msg("Log in")}</sl-button
-        >
-      </form>
     `;
   }
 
@@ -374,8 +344,10 @@ export class LogInPage extends LiteElement {
   }
 
   async checkBackendInitialized() {
-    const resp = await fetch("/api/healthz");
+    const resp = await fetch("/api/settings");
     if (resp.status === 200) {
+			const Dialog = <HTMLDialogElement>document.getElementById("backend-initializing");
+			Dialog.close()
       this.formStateService.send("BACKEND_INITIALIZED");
     } else {
       setTimeout(this.checkBackendInitialized, 5000);
