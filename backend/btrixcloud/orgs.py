@@ -45,6 +45,7 @@ class OrgOps:
         self.org_viewer_dep = None
         self.org_crawl_dep = None
         self.org_owner_dep = None
+        self.org_public = None
 
         self.invites = invites
 
@@ -300,6 +301,13 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
 
         return org
 
+    async def org_public(oid: str):
+        org = await ops.get_org_by_id(uuid.UUID(oid))
+        if not org:
+            raise HTTPException(status_code=404, detail="org_not_found")
+
+        return org
+
     router = APIRouter(
         prefix="/orgs/{oid}",
         dependencies=[Depends(org_dep)],
@@ -310,6 +318,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
     ops.org_viewer_dep = org_dep
     ops.org_crawl_dep = org_crawl_dep
     ops.org_owner_dep = org_owner_dep
+    ops.org_public = org_public
 
     @app.get("/orgs", tags=["organizations"], response_model=PaginatedResponse)
     async def get_orgs(

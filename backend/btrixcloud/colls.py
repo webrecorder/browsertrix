@@ -7,7 +7,7 @@ import uuid
 from typing import Optional, List
 
 import pymongo
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
 
 from .basecrawls import SUCCESSFUL_STATES
@@ -148,10 +148,14 @@ class CollectionOps:
         return await self.get_collection(coll_id, org)
 
     async def get_collection(
-        self, coll_id: uuid.UUID, org: Organization, resources=False
+        self, coll_id: uuid.UUID, org: Organization, resources=False, public_only=False
     ):
         """Get collection by id"""
-        result = await self.collections.find_one({"_id": coll_id})
+        query = {"_id": coll_id}
+        if public_only:
+            query["isPublic"] = True
+
+        result = await self.collections.find_one(query)
         if resources:
             result["resources"] = await self.get_collection_crawl_resources(
                 coll_id, org
@@ -348,6 +352,7 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
 
     org_crawl_dep = orgs.org_crawl_dep
     org_viewer_dep = orgs.org_viewer_dep
+    org_public = orgs.org_public
 
     @app.post("/orgs/{oid}/collections", tags=["collections"])
     async def add_collection(
@@ -428,7 +433,35 @@ def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
         coll = await colls.get_collection(coll_id, org, resources=True)
         if not coll:
             raise HTTPException(status_code=404, detail="collection_not_found")
+
         return coll
+
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/public/replay.json", tags=["collections"]
+    )
+    async def get_collection_public_replay(
+        response: Response,
+        coll_id: uuid.UUID,
+        org: Organization = Depends(org_public),
+    ):
+        coll = await colls.get_collection(
+            coll_id, org, resources=True, public_only=True
+        )
+        if not coll:
+            raise HTTPException(status_code=404, detail="collection_not_found")
+
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return coll
+
+    @app.options(
+        "/orgs/{oid}/collections/{coll_id}/public/replay.json", tags=["collections"]
+    )
+    async def get_replay_preflight(response: Response):
+        response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return {}
 
     @app.patch("/orgs/{oid}/collections/{coll_id}", tags=["collections"])
     async def update_collection(

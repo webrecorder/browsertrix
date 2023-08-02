@@ -402,7 +402,6 @@ def init_users_api(app, user_manager):
                 }
                 for org in user_orgs
             ]
-        print(f"user info with orgs: {user_info}", flush=True)
         return user_info
 
     @users_router.get("/invite/{token}", tags=["invites"])

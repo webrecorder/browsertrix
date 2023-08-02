@@ -465,6 +465,8 @@ class Collection(BaseMongoModel):
     # Sorted by count, descending
     tags: Optional[List[str]] = []
 
+    isPublic: Optional[bool] = False
+
 
 # ============================================================================
 class CollIn(BaseModel):
@@ -473,6 +475,8 @@ class CollIn(BaseModel):
     name: str = Field(..., min_length=1)
     description: Optional[str]
     crawlIds: Optional[List[str]] = []
+
+    isPublic: Optional[bool] = False
 
 
 # ============================================================================
@@ -488,6 +492,7 @@ class UpdateColl(BaseModel):
 
     name: Optional[str]
     description: Optional[str]
+    isPublic: Optional[bool]
 
 
 # ============================================================================
