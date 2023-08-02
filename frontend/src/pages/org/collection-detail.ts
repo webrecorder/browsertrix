@@ -19,7 +19,7 @@ import type { PageChangeEvent } from "../../components/pagination";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
-const TABS = ["replay", "web-captures"] as const;
+const TABS = ["replay", "items"] as const;
 export type Tab = (typeof TABS)[number];
 
 @localized()
@@ -64,9 +64,9 @@ export class CollectionDetail extends LiteElement {
       icon: { name: "link-replay", library: "app" },
       text: msg("Replay"),
     },
-    "web-captures": {
+    items: {
       icon: { name: "list-ul", library: "default" },
-      text: msg("Web Captures"),
+      text: msg("Archived Items"),
     },
   };
 
@@ -104,7 +104,7 @@ export class CollectionDetail extends LiteElement {
         this.resourceTab,
         [
           ["replay", this.renderOverview],
-          ["web-captures", this.renderWebCaptures],
+          ["items", this.renderWebCaptures],
         ],
 
         () => html`<btrix-not-found></btrix-not-found>`
