@@ -310,10 +310,10 @@ def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_d
         states = state.split(",") if state else None
 
         if name:
-            name = urllib.parse.unquote(name)
+            name = unquote(name)
 
         if description:
-            description = urllib.parse.unquote(description)
+            description = unquote(description)
 
         uploads, total = await ops.list_all_base_crawls(
             org,
