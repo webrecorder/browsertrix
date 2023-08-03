@@ -333,9 +333,12 @@ export class CrawlConfigEditor extends LiteElement {
     });
   }
 
-  willUpdate(changedProperties: Map<string, any>) {
+  async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("authState") && this.authState) {
-      this.fetchAPIDefaults();
+      await this.fetchAPIDefaults();
+      if (this.orgId) {
+        await this.fetchOrgQuotaDefaults();
+      }
     }
     if (changedProperties.get("initialWorkflow") && this.initialWorkflow) {
       this.initializeEditor();
@@ -359,7 +362,7 @@ export class CrawlConfigEditor extends LiteElement {
       }
     }
     if (changedProperties.get("orgId") && this.orgId) {
-      this.fetchTags();
+      await this.fetchTags();
     }
   }
 
@@ -2226,7 +2229,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       if (!resp.ok) {
         throw new Error(resp.statusText);
       }
-      const orgDefaults = {
+      let orgDefaults = {
         ...this.orgDefaults,
       };
       const data = await resp.json();
@@ -2238,6 +2241,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }
       if (data.maxPagesPerCrawl > 0) {
         orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
+      }
+      this.orgDefaults = orgDefaults;
+    } catch (e: any) {
+      console.debug(e);
+    }
+  }
+
+  private async fetchOrgQuotaDefaults() {
+    try {
+      const data = await this.apiFetch(`/orgs/${this.orgId}`, this.authState!);
+      let orgDefaults = {
+        ...this.orgDefaults,
+      };
+      if (data.quotas.maxPagesPerCrawl && data.quotas.maxPagesPerCrawl > 0) {
+        orgDefaults.maxPagesPerCrawl = data.quotas.maxPagesPerCrawl;
       }
       this.orgDefaults = orgDefaults;
     } catch (e: any) {
