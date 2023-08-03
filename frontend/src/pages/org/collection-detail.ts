@@ -4,6 +4,7 @@ import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
 import queryString from "query-string";
+import type { TemplateResult } from "lit";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -18,7 +19,7 @@ import type { PageChangeEvent } from "../../components/pagination";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
-const TABS = ["replay", "web-captures"] as const;
+const TABS = ["replay", "items"] as const;
 export type Tab = (typeof TABS)[number];
 
 @localized()
@@ -42,7 +43,7 @@ export class CollectionDetail extends LiteElement {
   private collection?: Collection;
 
   @state()
-  private webCaptures?: APIPaginatedList;
+  private archivedItems?: APIPaginatedList;
 
   @state()
   private openDialogName?: "delete";
@@ -51,16 +52,21 @@ export class CollectionDetail extends LiteElement {
   private isDescriptionExpanded = false;
 
   // Use to cancel requests
-  private getWebCapturesController: AbortController | null = null;
+  private getArchivedItemsController: AbortController | null = null;
+
+  // TODO localize
+  private numberFormatter = new Intl.NumberFormat(undefined, {
+    notation: "compact",
+  });
 
   private readonly tabLabels: Record<Tab, { icon: any; text: string }> = {
     replay: {
       icon: { name: "link-replay", library: "app" },
       text: msg("Replay"),
     },
-    "web-captures": {
+    items: {
       icon: { name: "list-ul", library: "default" },
-      text: msg("Web Captures"),
+      text: msg("Archived Items"),
     },
   };
 
@@ -70,7 +76,7 @@ export class CollectionDetail extends LiteElement {
       this.fetchCollection();
     }
     if (changedProperties.has("collectionId")) {
-      this.fetchWebCaptures();
+      this.fetchArchivedItems();
     }
   }
 
@@ -82,7 +88,7 @@ export class CollectionDetail extends LiteElement {
 
   render() {
     return html`${this.renderHeader()}
-      <header class="md:flex items-center gap-2 pb-3 mb-3 border-b">
+      <header class="md:flex items-center gap-2 pb-3">
         <h1
           class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
         >
@@ -91,13 +97,14 @@ export class CollectionDetail extends LiteElement {
         </h1>
         ${when(this.isCrawler, this.renderActions)}
       </header>
+      <div class="border rounded-lg py-2 mb-3">${this.renderInfoBar()}</div>
       <div class="mb-3">${this.renderTabs()}</div>
 
       ${choose(
         this.resourceTab,
         [
           ["replay", this.renderOverview],
-          ["web-captures", this.renderWebCaptures],
+          ["items", this.renderArchivedItems],
         ],
 
         () => html`<btrix-not-found></btrix-not-found>`
@@ -215,6 +222,56 @@ export class CollectionDetail extends LiteElement {
     `;
   };
 
+  private renderInfoBar() {
+    return html`
+      <btrix-desc-list horizontal>
+        ${this.renderDetailItem(msg("Archived Items"), (col) =>
+          col.crawlCount === 1
+            ? msg("1 item")
+            : msg(str`${this.numberFormatter.format(col.crawlCount)} items`)
+        )}
+        ${this.renderDetailItem(
+          msg("Total Size"),
+          (col) => html`<sl-format-bytes
+            value=${col.totalSize || 0}
+            display="narrow"
+          ></sl-format-bytes>`
+        )}
+        ${this.renderDetailItem(msg("Total Pages"), (col) =>
+          col.pageCount === 1
+            ? msg("1 page")
+            : msg(str`${this.numberFormatter.format(col.pageCount)} pages`)
+        )}
+        ${this.renderDetailItem(
+          msg("Last Updated"),
+          (col) => html`<sl-format-date
+            date=${`${col.modified}Z`}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+            hour="2-digit"
+            minute="2-digit"
+          ></sl-format-date>`
+        )}
+      </btrix-desc-list>
+    `;
+  }
+
+  private renderDetailItem(
+    label: string | TemplateResult,
+    renderContent: (collection: Collection) => any
+  ) {
+    return html`
+      <btrix-desc-list-item label=${label}>
+        ${when(
+          this.collection,
+          () => renderContent(this.collection!),
+          () => html`<sl-skeleton class="w-full"></sl-skeleton>`
+        )}
+      </btrix-desc-list-item>
+    `;
+  }
+
   private renderDescription() {
     return html`
       <section>
@@ -289,15 +346,17 @@ export class CollectionDetail extends LiteElement {
     <div class="my-7">${this.renderDescription()}</div>
   `;
 
-  private renderWebCaptures = () => html`<section>
+  private renderArchivedItems = () => html`<section>
     ${when(
-      this.webCaptures,
+      this.archivedItems,
       () => {
-        const { items, page, total, pageSize } = this.webCaptures!;
+        const { items, page, total, pageSize } = this.archivedItems!;
         const hasItems = items.length;
         return html`
           <section>
-            ${hasItems ? this.renderWebCaptureList() : this.renderEmptyState()}
+            ${hasItems
+              ? this.renderArchivedItemsList()
+              : this.renderEmptyState()}
           </section>
           ${when(
             hasItems || page > 1,
@@ -308,7 +367,7 @@ export class CollectionDetail extends LiteElement {
                   totalCount=${total}
                   size=${pageSize}
                   @page-change=${async (e: PageChangeEvent) => {
-                    await this.fetchWebCaptures({
+                    await this.fetchArchivedItems({
                       page: e.detail.page,
                     });
 
@@ -330,20 +389,20 @@ export class CollectionDetail extends LiteElement {
     )}
   </section>`;
 
-  private renderWebCaptureList() {
-    if (!this.webCaptures) return;
+  private renderArchivedItemsList() {
+    if (!this.archivedItems) return;
 
     return html`
       <btrix-crawl-list
         baseUrl=${`/orgs/${this.orgId}/collections/view/${this.collectionId}/artifact`}
       >
-        ${this.webCaptures.items.map(this.renderWebCaptureItem)}
+        ${this.archivedItems.items.map(this.renderArchivedItem)}
       </btrix-crawl-list>
     `;
   }
 
   private renderEmptyState() {
-    if (this.webCaptures?.page && this.webCaptures?.page > 1) {
+    if (this.archivedItems?.page && this.archivedItems?.page > 1) {
       return html`
         <div class="border-t border-b py-5">
           <p class="text-center text-neutral-500">
@@ -362,7 +421,7 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
-  private renderWebCaptureItem = (wc: Crawl | Upload) =>
+  private renderArchivedItem = (wc: Crawl | Upload) =>
     html`
       <btrix-crawl-list-item .crawl=${wc}>
         <div slot="menuTrigger" role="none"></div>
@@ -478,10 +537,10 @@ export class CollectionDetail extends LiteElement {
   /**
    * Fetch web captures and update internal state
    */
-  private async fetchWebCaptures(params?: APIPaginationQuery): Promise<void> {
-    this.cancelInProgressGetWebCaptures();
+  private async fetchArchivedItems(params?: APIPaginationQuery): Promise<void> {
+    this.cancelInProgressGetArchivedItems();
     try {
-      this.webCaptures = await this.getWebCaptures();
+      this.archivedItems = await this.getArchivedItems();
     } catch (e: any) {
       if (e === ABORT_REASON_THROTTLE) {
         console.debug("Fetch web captures aborted to throttle");
@@ -495,14 +554,14 @@ export class CollectionDetail extends LiteElement {
     }
   }
 
-  private cancelInProgressGetWebCaptures() {
-    if (this.getWebCapturesController) {
-      this.getWebCapturesController.abort(ABORT_REASON_THROTTLE);
-      this.getWebCapturesController = null;
+  private cancelInProgressGetArchivedItems() {
+    if (this.getArchivedItemsController) {
+      this.getArchivedItemsController.abort(ABORT_REASON_THROTTLE);
+      this.getArchivedItemsController = null;
     }
   }
 
-  private async getWebCaptures(
+  private async getArchivedItems(
     params?: Partial<{
       state: CrawlState[];
     }> &

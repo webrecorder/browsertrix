@@ -369,14 +369,14 @@ export class CollectionsList extends LiteElement {
       return html`
         <header class="py-2 text-neutral-600 leading-none">
           <div
-            class="hidden md:grid md:grid-cols-[repeat(2,1fr)_16ch_repeat(3,10ch)_2.5rem] gap-3"
+            class="hidden md:grid md:grid-cols-[repeat(2,1fr)_repeat(3,12ch)_16ch_2.5rem] gap-3"
           >
             <div class="col-span-1 text-xs pl-3">${msg("Collection Name")}</div>
             <div class="col-span-1 text-xs">${msg("Top 3 Tags")}</div>
-            <div class="col-span-1 text-xs">${msg("Last Updated")}</div>
-            <div class="col-span-1 text-xs">${msg("Size")}</div>
-            <div class="col-span-1 text-xs">${msg("Web Captures")}</div>
-            <div class="col-span-2 text-xs">${msg("Total Pages")}</div>
+            <div class="col-span-1 text-xs">${msg("Archived Items")}</div>
+            <div class="col-span-1 text-xs">${msg("Total Size")}</div>
+            <div class="col-span-1 text-xs">${msg("Total Pages")}</div>
+            <div class="col-span-2 text-xs">${msg("Last Updated")}</div>
           </div>
         </header>
         <ul class="contents">
@@ -446,7 +446,7 @@ export class CollectionsList extends LiteElement {
     html`<li class="mb-2 last:mb-0">
       <div class="block border rounded leading-none">
         <div
-          class="relative p-3 md:p-0 grid grid-cols-1 md:grid-cols-[repeat(2,1fr)_16ch_repeat(3,10ch)_2.5rem] gap-3 lg:h-10 items-center"
+          class="relative p-3 md:p-0 grid grid-cols-1 md:grid-cols-[repeat(2,1fr)_repeat(3,12ch)_16ch_2.5rem] gap-3 lg:h-10 items-center"
         >
           <div class="col-span-1 md:pl-3 truncate font-semibold">
             <a
@@ -465,15 +465,12 @@ export class CollectionsList extends LiteElement {
                   html`<btrix-tag class="mr-1" size="small">${tag}</btrix-tag>`
               )}
           </div>
-          <div class="col-span-1 text-xs text-neutral-500 font-monostyle">
-            <sl-format-date
-              date=${`${col.modified}Z`}
-              month="2-digit"
-              day="2-digit"
-              year="2-digit"
-              hour="2-digit"
-              minute="2-digit"
-            ></sl-format-date>
+          <div
+            class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
+          >
+            ${col.crawlCount === 1
+              ? msg("1 item")
+              : msg(str`${this.numberFormatter.format(col.crawlCount)} items`)}
           </div>
           <div
             class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
@@ -486,18 +483,19 @@ export class CollectionsList extends LiteElement {
           <div
             class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
           >
-            ${col.crawlCount === 1
-              ? msg("1 capture")
-              : msg(
-                  str`${this.numberFormatter.format(col.crawlCount)} captures`
-                )}
-          </div>
-          <div
-            class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
-          >
             ${col.pageCount === 1
               ? msg("1 page")
               : msg(str`${this.numberFormatter.format(col.pageCount)} pages`)}
+          </div>
+          <div class="col-span-1 text-xs text-neutral-500 font-monostyle">
+            <sl-format-date
+              date=${`${col.modified}Z`}
+              month="2-digit"
+              day="2-digit"
+              year="2-digit"
+              hour="2-digit"
+              minute="2-digit"
+            ></sl-format-date>
           </div>
           <div
             class="actionsCol absolute top-0 right-0 md:relative col-span-1 flex items-center justify-center"
