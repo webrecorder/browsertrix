@@ -195,7 +195,7 @@ export class ConfigDetails extends LiteElement {
             renderTimeLimit(crawlConfig?.crawlTimeout, Infinity)
           )}
           ${this.renderSetting(
-            msg("Size Limit"),
+            msg("Crawl Size Limit"),
             renderSize(crawlConfig?.sizeLimit, Infinity)
           )}
           ${this.renderSetting(msg("Crawler Instances"), crawlConfig?.scale)}
