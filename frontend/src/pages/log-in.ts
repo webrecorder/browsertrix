@@ -191,16 +191,6 @@ export class LogInPage extends LiteElement {
           >${msg("Sign in with password")}</a
         >
       `;
-    } else if (this.formState.value === "backendInitializing") {
-      form = this.renderBackendInitializing();
-      link = html`
-        <a
-          class="text-sm text-gray-400 hover:text-gray-500"
-          href="/log-in"
-          @click=${this.navLink}
-          >${msg("Sign in with password")}</a
-        >
-      `;
     } else {
       form = this.renderLoginForm();
       link = html`
@@ -290,42 +280,15 @@ export class LogInPage extends LiteElement {
           class="w-full"
           variant="primary"
           ?loading=${this.formState.value === "signingIn"}
+          ?disabled=${this.formState.value === "backendInitializing"}
           type="submit"
           >${msg("Log in")}</sl-button
         >
-      </form>
-    `;
-  }
-
-  private renderBackendInitializing() {
-    return html`
-      <form @submit=${this.onSubmitLogIn} aria-describedby="formError">
-        <div class="mb-5">
-          <btrix-input
-            id="email"
-            name="username"
-            label=${msg("Email")}
-            type="email"
-            autocomplete="username"
-            required
-          >
-          </btrix-input>
-        </div>
-        <div class="mb-5">
-          <btrix-input
-            id="password"
-            name="password"
-            label=${msg("Password")}
-            type="password"
-            autocomplete="current-password"
-            passwordToggle
-            required
-          >
-          </btrix-input>
-          <dialog id="backend-initializing" open>
-            <p>Please wait while the backend initializes</p>
-          </dialog>
-        </div>
+        ${this.formState.value === "backendInitializing"
+          ? html`<p style="text-align:center;">
+              ${msg("Please wait while the backend initializes")}
+            </p>`
+          : ""}
       </form>
     `;
   }
