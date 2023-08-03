@@ -152,6 +152,7 @@ export class LogInPage extends LiteElement {
 
   @state()
   private formState = machine.initialState;
+  private timerId?: number;
 
   firstUpdated() {
     this.formStateService.subscribe((state) => {
@@ -164,6 +165,7 @@ export class LogInPage extends LiteElement {
 
   disconnectedCallback() {
     this.formStateService.stop();
+    window.clearTimeout(this.timeoutId);
     super.disconnectedCallback();
   }
 
@@ -289,7 +291,7 @@ export class LogInPage extends LiteElement {
                
               <btrix-alert variant="warning" class="text-center"
                 >${msg(
-                  "Please wait while the backend initializes"
+                  "Please wait while Browsertrix Cloud is initializing"
                 )}</btrix-alert
               >
             </div>`
@@ -344,7 +346,7 @@ export class LogInPage extends LiteElement {
       this.formStateService.send("BACKEND_INITIALIZED");
     } else {
       this.formStateService.send("BACKEND_NOT_INITIALIZED");
-      setTimeout(() => this.checkBackendInitialized(), 5000);
+      this.timerId = setTimeout(() => this.checkBackendInitialized(), 5000);
     }
   }
 
