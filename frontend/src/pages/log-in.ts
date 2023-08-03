@@ -165,7 +165,7 @@ export class LogInPage extends LiteElement {
 
   disconnectedCallback() {
     this.formStateService.stop();
-    window.clearTimeout(this.timeoutId);
+    window.clearTimeout(this.timerId);
     super.disconnectedCallback();
   }
 
