@@ -288,7 +288,6 @@ export class LogInPage extends LiteElement {
         >
         ${this.formState.value === "backendInitializing"
           ? html` <div class="mt-3">
-               
               <btrix-alert variant="warning" class="text-center"
                 >${msg(
                   "Please wait while Browsertrix Cloud is initializing"
