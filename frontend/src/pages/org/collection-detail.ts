@@ -86,31 +86,28 @@ export class CollectionDetail extends LiteElement {
   render() {
     return html`${this.renderHeader()}
       <header class="md:flex items-center gap-2 pb-3 mb-3 border-b">
-        <h1
-          class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
-        >
+        <div class="flex items-center gap-2 w-full mb-2 md:mb-0">
           ${when(
             this.collection?.isPublic,
             () => html`
-              <sl-icon
-                style="font-size: 16px; color: var(--sl-color-success-600)"
-                name="globe2"
-                slot="prefix"
-                title="${msg("Publicly Accessible")}"
-              ></sl-icon>
+              <sl-tooltip content=${msg("Publicly Accessible")}>
+                <sl-icon
+                  style="font-size: 16px; color: var(--sl-color-success-600)"
+                  name="globe2"
+                  label="${msg("Publicly Accessible")}"
+                ></sl-icon>
+              </sl-tooltip>
             `
           )}
-          ${this.collection?.name ||
-          html`<sl-skeleton class="w-96"></sl-skeleton>`}
-        </h1>
+          <h1 class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate">
+            ${this.collection?.name ||
+            html`<sl-skeleton class="w-96"></sl-skeleton>`}
+          </h1>
+        </div>
         ${when(
           this.collection?.isPublic,
           () => html`
-            <sl-button
-              size="small"
-              class="p-2"
-              @click=${() => (this.showEmbedInfo = true)}
-            >
+            <sl-button size="small" @click=${() => (this.showEmbedInfo = true)}>
               <sl-icon name="code-slash"></sl-icon>
               View Embed Code
             </sl-button>
