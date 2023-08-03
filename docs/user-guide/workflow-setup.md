@@ -116,6 +116,10 @@ Adds a hard limit on the number of pages that will be crawled. The crawl will be
 
 The crawl will be gracefully stopped after this set period of time.
 
+### Crawl Size Limit
+
+The crawl will be gracefully stopped after reaching this set size in GB.
+
 ### Crawler Instances
 
 Increasing the amount of crawler instances will speed up crawls by using additional browser windows to capture more pages in parallel. This will also increase the amount of traffic sent to the website and may result in a higher chance of getting rate limited.
