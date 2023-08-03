@@ -119,6 +119,11 @@ class CrawlConfigOps:
         data["created"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
         data["modified"] = data["created"]
 
+        # Ensure page limit is below org maxPagesPerCall if set
+        max_pages = await self.org_ops.get_max_pages_per_crawl(org)
+        if max_pages > 0:
+            data["config"]["limit"] = max_pages
+
         data["profileid"], profile_filename = await self._lookup_profile(
             config.profileid, org
         )
