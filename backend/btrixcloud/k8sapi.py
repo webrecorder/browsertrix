@@ -71,7 +71,7 @@ class K8sAPI:
 
     # pylint: disable=too-many-arguments
     async def new_crawl_job(
-        self, cid, userid, oid, scale=1, crawl_timeout=0, manual=True
+        self, cid, userid, oid, scale=1, crawl_timeout=0, size_limit=0, manual=True
     ):
         """load job template from yaml"""
         if crawl_timeout:
@@ -90,6 +90,7 @@ class K8sAPI:
             "userid": userid,
             "scale": scale,
             "expire_time": crawl_expire_time,
+            "size_limit": size_limit,
             "manual": "1" if manual else "0",
         }
 

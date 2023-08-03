@@ -551,6 +551,7 @@ async def add_new_crawl(
         profileid=crawlconfig.profileid,
         schedule=crawlconfig.schedule,
         crawlTimeout=crawlconfig.crawlTimeout,
+        sizeLimit=crawlconfig.sizeLimit,
         manual=manual,
         started=started,
         tags=crawlconfig.tags,

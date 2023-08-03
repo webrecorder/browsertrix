@@ -18,6 +18,7 @@ spec:
   cid: "{{ cid }}"
   oid: "{{ oid }}"
   scale: {{ scale }}
+  sizeLimit: {{ sizeLimit }}
   ttlSecondsAfterFinished: 30
 
   {% if expire_time %}
