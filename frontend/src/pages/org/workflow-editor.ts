@@ -82,6 +82,7 @@ type FormState = {
   behaviorTimeoutSeconds: number | null;
   pageLoadTimeoutSeconds: number | null;
   pageExtraDelaySeconds: number | null;
+  sizeLimitGB: number | null;
   maxScopeDepth: number | null;
   scopeType: WorkflowParams["config"]["scopeType"];
   exclusions: WorkflowParams["config"]["exclude"];
@@ -153,6 +154,7 @@ const getDefaultFormState = (): FormState => ({
   useSitemap: true,
   customIncludeUrlList: "",
   crawlTimeoutMinutes: null,
+  sizeLimitGB: 0,
   behaviorTimeoutSeconds: null,
   pageLoadTimeoutSeconds: null,
   pageExtraDelaySeconds: null,
@@ -490,6 +492,13 @@ export class CrawlConfigEditor extends LiteElement {
       return fallback;
     };
 
+    const bytesToGB = (value: any, fallback: number | null) => {
+      const bytesPerGB = 1073741824;
+      if (typeof value === "number" && value > 0)
+        return Math.floor(value / bytesPerGB);
+      return fallback;
+    };
+
     return {
       primarySeedUrl: defaultFormState.primarySeedUrl,
       urlList: defaultFormState.urlList,
@@ -497,6 +506,10 @@ export class CrawlConfigEditor extends LiteElement {
       crawlTimeoutMinutes: secondsToMinutes(
         this.initialWorkflow.crawlTimeout,
         defaultFormState.crawlTimeoutMinutes
+      ),
+      sizeLimitGB: bytesToGB(
+        this.initialWorkflow.sizeLimit,
+        defaultFormState.sizeLimitGB
       ),
       behaviorTimeoutSeconds:
         seedsConfig.behaviorTimeout ?? defaultFormState.behaviorTimeoutSeconds,
@@ -1311,6 +1324,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
       `)}
+      ${this.renderFormCol(html`
+        <sl-input
+          name="sizeLimitGB"
+          label=${msg("Crawl Size Limit")}
+          value=${this.formState.sizeLimitGB || ""}
+          placeholder=${msg("Default: Unlimited")}
+          min="0"
+          type="number"
+          inputmode="numeric"
+        >
+          <span slot="suffix">${msg("GB")}</span>
+        </sl-input>
+      `)}
       ${this.renderHelpTextCol(
         msg(`Gracefully stop the crawler after a specified time limit.`)
       )}
@@ -2108,6 +2134,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
       crawlTimeout: this.formState.crawlTimeoutMinutes
         ? this.formState.crawlTimeoutMinutes * 60
+        : null,
+      sizeLimit: this.formState.sizeLimitGB
+        ? this.formState.sizeLimitGB * 1073741824
         : null,
       tags: this.formState.tags,
       autoAddCollections: this.formState.autoAddCollections,

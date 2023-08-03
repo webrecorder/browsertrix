@@ -96,6 +96,32 @@ export class ConfigDetails extends LiteElement {
       }
     };
 
+    const renderSize = (valueBytes?: number | null, fallbackValue?: number) => {
+      const bytesPerGB = 1073741824;
+      const bytesPerMB = 1048576;
+      if (valueBytes) {
+        const sizeGB = Math.floor(valueBytes / bytesPerGB);
+        if (sizeGB > 0) {
+          return msg(str`${sizeGB} GB`);
+        }
+        const sizeMB = Math.floor(valueBytes / bytesPerMB);
+        return msg(str`${sizeMB} MB`);
+      }
+      if (typeof fallbackValue === "number") {
+        let value = "";
+        if (fallbackValue === Infinity) {
+          value = msg("Unlimited");
+        } else if (fallbackValue === 0) {
+          value = msg("0 GB");
+        } else {
+          value = `${Math.round(fallbackValue / bytesPerGB)} GB`;
+        }
+        return html`<span class="text-neutral-400"
+          >${value} ${msg("(default)")}</span
+        >`;
+      }
+    };
+
     return html`
       <section id="crawler-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
@@ -167,6 +193,10 @@ export class ConfigDetails extends LiteElement {
           ${this.renderSetting(
             msg("Crawl Time Limit"),
             renderTimeLimit(crawlConfig?.crawlTimeout, Infinity)
+          )}
+          ${this.renderSetting(
+            msg("Size Limit"),
+            renderSize(crawlConfig?.sizeLimit, Infinity)
           )}
           ${this.renderSetting(msg("Crawler Instances"), crawlConfig?.scale)}
         </btrix-desc-list>
