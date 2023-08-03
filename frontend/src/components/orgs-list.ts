@@ -54,9 +54,10 @@ export class OrgsList extends LiteElement {
             key === "maxConcurrentCrawls"
               ? "Max Concurrent Crawls"
               : "Max Pages Per Crawl";
+          const localizedLabel = msg(str`${label}`);
           return html` <sl-input
             name=${key}
-            label=${msg(label)}
+            label=${localizedLabel}
             value=${value}
             type="number"
             @sl-input="${this.onUpdateQuota}"
