@@ -61,7 +61,6 @@ export class CrawlLogs extends LitElement {
         overflow: hidden;
         white-space: nowrap;
       }
-
     `,
   ];
 
@@ -100,7 +99,11 @@ export class CrawlLogs extends LitElement {
                   <span class="tag">${log.logLevel}</span>
                 </div>
                 <div class="message">${log.message}</div>
-                <div class="url" title="${log.details?.page}"><a target="_blank" href="${log.details?.page}">${log.details?.page}</a></div>
+                <div class="url" title="${log.details?.page}">
+                  <a target="_blank" href="${log.details?.page}"
+                    >${log.details?.page}</a
+                  >
+                </div>
               </div>
             </btrix-numbered-list-item>
           `

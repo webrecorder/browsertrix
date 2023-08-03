@@ -29,7 +29,7 @@ const defaultValue = {
   crawlTimeout: null,
   jobType: undefined,
   scale: 1,
-  autoAddCollections: []
+  autoAddCollections: [],
 } as WorkflowParams;
 
 /**

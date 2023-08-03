@@ -200,7 +200,9 @@ export class ProfileBrowser extends LiteElement {
     return html`
       <sl-icon-button
         name="layout-sidebar-reverse"
-        label=${!this.showOriginSidebar ? msg("Show sidebar") : msg("Hide sidebar")}
+        label=${!this.showOriginSidebar
+          ? msg("Show sidebar")
+          : msg("Hide sidebar")}
         class="${this.showOriginSidebar ? "text-blue-600" : ""}"
         @click=${() => (this.showOriginSidebar = !this.showOriginSidebar)}
       ></sl-icon-button>

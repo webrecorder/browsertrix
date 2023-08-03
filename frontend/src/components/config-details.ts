@@ -98,14 +98,10 @@ export class ConfigDetails extends LiteElement {
 
     return html`
       <section id="crawler-settings" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
-          >
-          <h4>
-            ${msg("Crawler Settings")}
-          </h4>
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+          <h4>${msg("Crawler Settings")}</h4>
           ${this.renderAnchorLink("crawler-settings")}
-          </btrix-section-heading
-        >
+        </btrix-section-heading>
         <btrix-desc-list>
           ${when(
             crawlConfig?.jobType === "seed-crawl",
@@ -176,14 +172,10 @@ export class ConfigDetails extends LiteElement {
         </btrix-desc-list>
       </section>
       <section id="browser-settings" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
-          >
-          <h4>
-            ${msg("Browser Settings")}
-          </h4>
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+          <h4>${msg("Browser Settings")}</h4>
           ${this.renderAnchorLink("browser-settings")}
-          </btrix-section-heading
-        >
+        </btrix-section-heading>
         <btrix-desc-list>
           ${this.renderSetting(
             msg("Browser Profile"),
@@ -212,14 +204,10 @@ export class ConfigDetails extends LiteElement {
         </btrix-desc-list>
       </section>
       <section id="crawl-scheduling" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
-          >
-          <h4>
-            ${msg("Crawl Scheduling")}
-          </h4>
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+          <h4>${msg("Crawl Scheduling")}</h4>
           ${this.renderAnchorLink("crawl-scheduling")}
-          </btrix-section-heading
-        >
+        </btrix-section-heading>
         <btrix-desc-list>
           ${this.renderSetting(
             msg("Crawl Schedule Type"),
@@ -238,14 +226,10 @@ export class ConfigDetails extends LiteElement {
         </btrix-desc-list>
       </section>
       <section id="crawl-metadata" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)"
-          >
-          <h4>
-            ${msg("Crawl Metadata")}
-          </h4>
+        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+          <h4>${msg("Crawl Metadata")}</h4>
           ${this.renderAnchorLink("crawl-metadata")}
-          </btrix-section-heading
-        >
+        </btrix-section-heading>
         <btrix-desc-list>
           ${this.renderSetting(msg("Name"), crawlConfig?.name)}
           ${this.renderSetting(
@@ -378,7 +362,7 @@ export class ConfigDetails extends LiteElement {
     if (!this.anchorLinks) return;
     const currentUrl = window.location.href;
     return html`
-      <btrix-copy-button 
+      <btrix-copy-button
         style="font-size: 1rem;"
         value=${`${currentUrl.replace(window.location.hash, "")}#${id}`}
         name="link-45deg"
@@ -415,7 +399,9 @@ export class ConfigDetails extends LiteElement {
           message:
             e.statusCode === 404
               ? msg("Collections not found.")
-              : msg("Sorry, couldn't retrieve Collection details at this time."),
+              : msg(
+                  "Sorry, couldn't retrieve Collection details at this time."
+                ),
           variant: "danger",
           icon: "exclamation-octagon",
         });

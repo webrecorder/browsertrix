@@ -46,13 +46,19 @@ export class CopyButton extends LitElement {
 
   render() {
     return html`
-      <sl-tooltip content=${this.isCopied ? msg("Copied to clipboard!") : (this.content ? this.content : msg("Copy"))}>
+      <sl-tooltip
+        content=${this.isCopied
+          ? msg("Copied to clipboard!")
+          : this.content
+          ? this.content
+          : msg("Copy")}
+      >
         <sl-icon-button
-          name=${this.isCopied ? "check-lg" : (this.name ? this.name : "files")}
+          name=${this.isCopied ? "check-lg" : this.name ? this.name : "files"}
           label=${msg("Copy to clipboard")}
           @click=${this.onClick}
           ?disabled=${!this.value && !this.getValue}
-          ></sl-icon-button>
+        ></sl-icon-button>
       </sl-tooltip>
     `;
   }
@@ -67,7 +73,7 @@ export class CopyButton extends LitElement {
 
     this.timeoutId = window.setTimeout(() => {
       this.isCopied = false;
-      const button = this.shadowRoot?.querySelector('sl-icon-button');
+      const button = this.shadowRoot?.querySelector("sl-icon-button");
       button?.blur(); // Remove focus from the button to set it back to its default state
     }, 3000);
   }

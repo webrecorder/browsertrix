@@ -53,7 +53,7 @@ export class MarkdownEditor extends LitElement {
         ?data-invalid=${isInvalid}
         ?data-user-invalid=${isInvalid}
       >
-        <input name=${this.name} type="hidden" value="${this.value}"/>
+        <input name=${this.name} type="hidden" value="${this.value}" />
         ${guard(
           [this.initialValue],
           () => html`

@@ -1118,15 +1118,14 @@ https://example.net`}
         false
       )}
       ${this.renderFormCol(html`
-        <sl-checkbox
-          name="useSitemap"
-          ?checked=${this.formState.useSitemap}
-        >
+        <sl-checkbox name="useSitemap" ?checked=${this.formState.useSitemap}>
           ${msg("Check For Sitemap")}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(
-        msg(`If checked, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if present.`),
+        msg(
+          `If checked, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if present.`
+        ),
         false
       )}
       <div class="col-span-5">
