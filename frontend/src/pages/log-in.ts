@@ -285,9 +285,14 @@ export class LogInPage extends LiteElement {
           >${msg("Log in")}</sl-button
         >
         ${this.formState.value === "backendInitializing"
-          ? html`<p style="text-align:center;">
-              ${msg("Please wait while the backend initializes")}
-            </p>`
+          ? html` <div class="mt-3">
+               
+              <btrix-alert variant="warning"
+                >${msg(
+                  "Please wait while the backend initializes"
+                )}</btrix-alert
+              >
+            </div>`
           : ""}
       </form>
     `;
