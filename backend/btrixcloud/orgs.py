@@ -17,6 +17,7 @@ from .models import (
     DefaultStorage,
     S3Storage,
     OrgQuotas,
+    OrgWebhookUrls,
     RenameOrg,
     UpdateRole,
     RemovePendingInvite,
@@ -200,6 +201,17 @@ class OrgOps:
             },
         )
 
+    async def update_event_webhook_urls(self, org: Organization, urls: OrgWebhookUrls):
+        """Update organization event webhook URLs"""
+        return await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            {
+                "$set": {
+                    "webhookUrls": urls.dict(exclude_unset=True, exclude_defaults=True)
+                }
+            },
+        )
+
     async def handle_new_user_invite(self, invite_token: str, user: User):
         """Handle invite from a new user"""
         new_user_invite = await self.invites.get_valid_invite(invite_token, user.email)
@@ -242,6 +254,21 @@ class OrgOps:
     async def get_max_pages_per_crawl(self, org: Organization):
         """Return org-specific max pages per crawl setting or 0."""
         return await get_max_pages_per_crawl(self.orgs, org.id)
+
+    async def set_origin(self, org: Organization, request: Request):
+        """Get origin from request and store in db for use in event webhooks"""
+        headers = request.headers
+        scheme = headers.get("X-Forwarded-Proto")
+        host = headers.get("Host")
+
+        if not scheme or not host:
+            origin = os.environ.get("APP_ORIGIN")
+        else:
+            origin = f"{scheme}://{host}"
+
+        await self.orgs.find_one_and_update(
+            {"_id": org.id}, {"$set": {"origin": origin}}
+        )
 
 
 # ============================================================================
@@ -399,6 +426,17 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         await ops.update_quotas(org, quotas)
+
+        return {"updated": True}
+
+    @router.post("/event-webhook-urls", tags=["organizations"])
+    async def update_event_webhook_urls(
+        urls: OrgWebhookUrls,
+        request: Request,
+        org: Organization = Depends(org_owner_dep),
+    ):
+        await ops.set_origin(org, request)
+        await ops.update_event_webhook_urls(org, urls)
 
         return {"updated": True}
 

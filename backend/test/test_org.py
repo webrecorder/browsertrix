@@ -291,3 +291,77 @@ def test_delete_invite_by_email(admin_auth_headers, non_default_org_id):
     assert r.status_code == 404
     data = r.json()
     assert data["detail"] == "invite_not_found"
+
+
+def test_update_event_webhook_urls_org_admin(admin_auth_headers, non_default_org_id):
+    # Verify no URLs are configured
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data.get("webhookUrls") is None
+
+    # Set URLs and verify
+    CREATED_URL = "https://example.com/created"
+    ADDED_URL = "https://example.com/added"
+    REMOVED_URL = "http://example.com/removed"
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/event-webhook-urls",
+        headers=admin_auth_headers,
+        json={
+            "itemCreatedUrl": CREATED_URL,
+            "addedToCollectionUrl": ADDED_URL,
+            "removedFromCollectionUrl": REMOVED_URL,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    urls = data["webhookUrls"]
+    assert urls["itemCreatedUrl"] == CREATED_URL
+    assert urls["addedToCollectionUrl"] == ADDED_URL
+    assert urls["removedFromCollectionUrl"] == REMOVED_URL
+
+    # Unset one URL and verify
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/event-webhook-urls",
+        headers=admin_auth_headers,
+        json={
+            "addedToCollectionUrl": None,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    urls = data["webhookUrls"]
+    assert urls["itemCreatedUrl"] == CREATED_URL
+    assert urls.get("addedToCollectionUrl") is None
+    assert urls["removedFromCollectionUrl"] == REMOVED_URL
+
+
+def test_update_event_webhook_urls_org_crawler(
+    crawler_auth_headers, non_default_org_id
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/event-webhook-urls",
+        headers=crawler_auth_headers,
+        json={
+            "addedToCollectionUrl": "https://example.com/added",
+        },
+    )
+    assert r.status_code == 403

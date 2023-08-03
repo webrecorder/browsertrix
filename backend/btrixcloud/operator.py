@@ -22,7 +22,6 @@ from .utils import (
 )
 from .k8sapi import K8sAPI
 
-from .db import init_db
 from .orgs import inc_org_stats, get_max_concurrent_crawls
 from .basecrawls import (
     NON_RUNNING_STATES,
@@ -118,11 +117,13 @@ class CrawlStatus(BaseModel):
 class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
 
-    def __init__(self):
+    def __init__(self, mdb, event_webhook_ops):
         super().__init__()
+
+        self.event_webhook_ops = event_webhook_ops
+
         self.config_file = "/config/config.yaml"
 
-        _, mdb = init_db()
         self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
@@ -765,6 +766,8 @@ class BtrixOperator(K8sAPI):
                 self.crawls, self.crawl_configs, self.collections, crawl_id, cid
             )
 
+        await self.event_webhook_ops.create_item_created_notification(crawl_id)
+
     async def inc_crawl_complete_stats(self, crawl, finished):
         """Increment Crawl Stats"""
 
@@ -805,10 +808,10 @@ class BtrixOperator(K8sAPI):
 
 
 # ============================================================================
-def init_operator_webhook(app):
+def init_operator_webhook(app, mdb, event_webhook_ops):
     """regsiters webhook handlers for metacontroller"""
 
-    oper = BtrixOperator()
+    oper = BtrixOperator(mdb, event_webhook_ops)
 
     @app.post("/op/crawls/sync")
     async def mc_sync_crawls(data: MCSyncData):

@@ -626,6 +626,15 @@ class OrgQuotas(BaseModel):
 
 
 # ============================================================================
+class OrgWebhookUrls(BaseModel):
+    """Organization webhook URLs"""
+
+    itemCreatedUrl: Optional[HttpUrl]
+    addedToCollectionUrl: Optional[HttpUrl]
+    removedFromCollectionUrl: Optional[HttpUrl]
+
+
+# ============================================================================
 class Organization(BaseMongoModel):
     """Organization Base Model"""
 
@@ -640,6 +649,10 @@ class Organization(BaseMongoModel):
     default: bool = False
 
     quotas: Optional[OrgQuotas] = OrgQuotas()
+
+    webhookUrls: Optional[OrgWebhookUrls]
+
+    origin: Optional[HttpUrl]
 
     def is_owner(self, user):
         """Check if user is owner"""
@@ -850,3 +863,53 @@ class UserDB(User, fastapi_users_models.BaseUserDB):
     """
 
     invites: Dict[str, InvitePending] = {}
+
+
+# ============================================================================
+
+### WEBHOOKS ###
+
+
+# ============================================================================
+class WebhookNotificationBody(BaseModel):
+    """Base POST body model for webhook notifications"""
+
+    downloadUrls: Optional[List] = None
+
+
+# ============================================================================
+class ArchivedItemCreatedBody(WebhookNotificationBody):
+    """Webhook notification POST body for when archived item is created"""
+
+    crawlId: UUID4
+
+
+# ============================================================================
+class CollectionItemAddedRemovedBody(WebhookNotificationBody):
+    """Webhook notification POST body for when item is added to or removed from collection"""
+
+    collectionId: UUID4
+    crawlIds: List[str]
+    type: str = "added"
+
+
+# ============================================================================
+class WebhookEventType(str, Enum):
+    """Webhook Event Types"""
+
+    ARCHIVED_ITEM_CREATED = "archived-item-created"
+    ADDED_TO_COLLECTION = "added-to-collection"
+    REMOVED_FROM_COLLECTION = "removed-from-collection"
+
+
+# ============================================================================
+class WebhookNotification(BaseMongoModel):
+    """Base POST body model for webhook notifications"""
+
+    event: WebhookEventType
+    oid: UUID4
+    body: Union[ArchivedItemCreatedBody, CollectionItemAddedRemovedBody]
+    success: bool = False
+    attempts: int = 0
+    created: datetime
+    lastAttempted: Optional[datetime]
