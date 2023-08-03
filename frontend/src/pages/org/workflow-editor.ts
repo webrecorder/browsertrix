@@ -1324,6 +1324,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
           <span slot="suffix">${msg("minutes")}</span>
         </sl-input>
       `)}
+      ${this.renderHelpTextCol(
+        msg(`Gracefully stop the crawler after a specified time limit.`)
+      )}
       ${this.renderFormCol(html`
         <sl-input
           name="sizeLimitGB"
@@ -1338,7 +1341,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Gracefully stop the crawler after a specified time limit.`)
+        msg(`Gracefully stop the crawler after a specified size limit.`)
       )}
       ${this.renderFormCol(html`
         <sl-radio-group
