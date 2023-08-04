@@ -101,7 +101,7 @@ export class CollectionDetail extends LiteElement {
               `
             : html`
                 <sl-tooltip content=${msg("Private")}>
-                  <sl-icon class="text-lg" name="eye-slash"></sl-icon>
+                  <sl-icon class="text-lg" name="eye-slash-fill"></sl-icon>
                 </sl-tooltip>
               `}
           <h1
@@ -320,7 +320,7 @@ export class CollectionDetail extends LiteElement {
                   </a>
                 </sl-menu-item>
                 <sl-menu-item @click=${() => this.onTogglePublic(false)}>
-                  <sl-icon name="eye-slash" slot="prefix"></sl-icon>
+                  <sl-icon name="eye-slash-fill" slot="prefix"></sl-icon>
                   ${msg("Make Private")}
                 </sl-menu-item>
               `}
