@@ -44,7 +44,7 @@ export type WorkflowParams = {
   config: SeedConfig;
   tags: string[];
   crawlTimeout: number | null;
-  sizeLimit: number | null;
+  maxCrawlSize: number | null;
   description: string | null;
   autoAddCollections: string[];
 };

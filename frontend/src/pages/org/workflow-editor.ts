@@ -82,7 +82,7 @@ type FormState = {
   behaviorTimeoutSeconds: number | null;
   pageLoadTimeoutSeconds: number | null;
   pageExtraDelaySeconds: number | null;
-  sizeLimitGB: number | null;
+  maxCrawlSizeGB: number | null;
   maxScopeDepth: number | null;
   scopeType: WorkflowParams["config"]["scopeType"];
   exclusions: WorkflowParams["config"]["exclude"];
@@ -154,7 +154,7 @@ const getDefaultFormState = (): FormState => ({
   useSitemap: true,
   customIncludeUrlList: "",
   crawlTimeoutMinutes: null,
-  sizeLimitGB: 0,
+  maxCrawlSizeGB: 0,
   behaviorTimeoutSeconds: null,
   pageLoadTimeoutSeconds: null,
   pageExtraDelaySeconds: null,
@@ -507,9 +507,9 @@ export class CrawlConfigEditor extends LiteElement {
         this.initialWorkflow.crawlTimeout,
         defaultFormState.crawlTimeoutMinutes
       ),
-      sizeLimitGB: bytesToGB(
-        this.initialWorkflow.sizeLimit,
-        defaultFormState.sizeLimitGB
+      maxCrawlSizeGB: bytesToGB(
+        this.initialWorkflow.maxCrawlSize,
+        defaultFormState.maxCrawlSizeGB
       ),
       behaviorTimeoutSeconds:
         seedsConfig.behaviorTimeout ?? defaultFormState.behaviorTimeoutSeconds,
@@ -1329,9 +1329,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <sl-input
-          name="sizeLimitGB"
+          name="maxCrawlSizeGB"
           label=${msg("Crawl Size Limit")}
-          value=${this.formState.sizeLimitGB || ""}
+          value=${this.formState.maxCrawlSizeGB || ""}
           placeholder=${msg("Default: Unlimited")}
           min="0"
           type="number"
@@ -2138,8 +2138,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
       crawlTimeout: this.formState.crawlTimeoutMinutes
         ? this.formState.crawlTimeoutMinutes * 60
         : null,
-      sizeLimit: this.formState.sizeLimitGB
-        ? this.formState.sizeLimitGB * 1073741824
+      maxCrawlSize: this.formState.maxCrawlSizeGB
+        ? this.formState.maxCrawlSizeGB * 1073741824
         : null,
       tags: this.formState.tags,
       autoAddCollections: this.formState.autoAddCollections,

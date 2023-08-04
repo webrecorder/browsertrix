@@ -196,7 +196,7 @@ export class ConfigDetails extends LiteElement {
           )}
           ${this.renderSetting(
             msg("Crawl Size Limit"),
-            renderSize(crawlConfig?.sizeLimit, Infinity)
+            renderSize(crawlConfig?.maxCrawlSize, Infinity)
           )}
           ${this.renderSetting(msg("Crawler Instances"), crawlConfig?.scale)}
         </btrix-desc-list>
