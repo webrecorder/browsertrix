@@ -156,6 +156,9 @@ class CollectionOps:
             query["isPublic"] = True
 
         result = await self.collections.find_one(query)
+        if not result:
+            return None
+
         if resources:
             result["resources"] = await self.get_collection_crawl_resources(
                 coll_id, org
