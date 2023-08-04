@@ -299,6 +299,7 @@ def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_d
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        state: Optional[str] = None,
         userid: Optional[UUID4] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -306,9 +307,18 @@ def init_uploads_api(app, mdb, users, crawl_manager, crawl_configs, orgs, user_d
         sortBy: Optional[str] = "finished",
         sortDirection: Optional[int] = -1,
     ):
+        states = state.split(",") if state else None
+
+        if name:
+            name = unquote(name)
+
+        if description:
+            description = unquote(description)
+
         uploads, total = await ops.list_all_base_crawls(
             org,
             userid=userid,
+            states=states,
             name=name,
             description=description,
             page_size=pageSize,

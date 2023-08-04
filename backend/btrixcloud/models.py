@@ -296,6 +296,8 @@ class BaseCrawl(BaseMongoModel):
     started: datetime
     finished: Optional[datetime]
 
+    name: Optional[str]
+
     state: str
 
     stats: Optional[Dict[str, int]]
@@ -368,7 +370,9 @@ class CrawlOutWithResources(CrawlOut):
 class UpdateCrawl(BaseModel):
     """Update crawl"""
 
-    tags: Optional[List[str]] = []
+    name: Optional[str]
+    description: Optional[str]
+    tags: Optional[List[str]]
     description: Optional[str]
 
 
@@ -433,15 +437,12 @@ class UploadedCrawl(BaseCrawl):
 
     type: str = Field("upload", const=True)
 
-    name: str
     tags: Optional[List[str]] = []
 
 
 # ============================================================================
 class UpdateUpload(UpdateCrawl):
     """Update modal that also includes name"""
-
-    name: Optional[str]
 
 
 # ============================================================================

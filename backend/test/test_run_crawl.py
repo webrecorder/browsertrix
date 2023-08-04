@@ -191,10 +191,11 @@ def test_update_crawl(admin_auth_headers, default_org_id, admin_crawl_id):
     # Submit patch request to update tags and description
     UPDATED_TAGS = ["wr-test-1-updated", "wr-test-2-updated"]
     UPDATED_DESC = "Lorem ipsum test note."
+    UPDATED_NAME = "Updated crawl name"
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
         headers=admin_auth_headers,
-        json={"tags": UPDATED_TAGS, "description": UPDATED_DESC},
+        json={"tags": UPDATED_TAGS, "description": UPDATED_DESC, "name": UPDATED_NAME},
     )
     assert r.status_code == 200
     data = r.json()
@@ -209,6 +210,7 @@ def test_update_crawl(admin_auth_headers, default_org_id, admin_crawl_id):
     data = r.json()
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
     assert data["description"] == UPDATED_DESC
+    assert data["name"] == UPDATED_NAME
 
     # Verify deleting works as well
     r = requests.patch(

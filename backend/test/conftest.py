@@ -18,6 +18,7 @@ CRAWLER_PW = "crawlerPASSWORD!"
 _admin_config_id = None
 _crawler_config_id = None
 _auto_add_config_id = None
+_all_crawls_config_id = None
 
 NON_DEFAULT_ORG_NAME = "Non-default org"
 
@@ -116,6 +117,12 @@ def admin_crawl_id(admin_auth_headers, default_org_id):
 @pytest.fixture(scope="session")
 def admin_config_id(admin_crawl_id):
     return _admin_config_id
+
+
+@pytest.fixture(scope="session")
+def admin_userid(admin_auth_headers):
+    r = requests.get(f"{API_PREFIX}/users/me", headers=admin_auth_headers)
+    return r.json()["id"]
 
 
 @pytest.fixture(scope="session")
@@ -329,6 +336,54 @@ def auto_add_crawl_id(crawler_auth_headers, default_org_id, auto_add_collection_
 @pytest.fixture(scope="session")
 def auto_add_config_id(auto_add_crawl_id):
     return _auto_add_config_id
+
+
+@pytest.fixture(scope="session")
+def all_crawls_crawl_id(crawler_auth_headers, default_org_id):
+    # Start crawl.
+    crawl_data = {
+        "runNow": True,
+        "name": "All Crawls Test Crawl",
+        "description": "Lorem ipsum",
+        "config": {
+            "seeds": [{"url": "https://webrecorder.net/"}],
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    global _all_crawls_config_id
+    _all_crawls_config_id = data["id"]
+
+    crawl_id = data["run_now_job"]
+    # Wait for it to complete and then return crawl ID
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=crawler_auth_headers,
+        )
+        data = r.json()
+        if data["state"] == "complete":
+            break
+        time.sleep(5)
+
+    # Add description to crawl
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}",
+        headers=crawler_auth_headers,
+        json={"description": "Lorem ipsum"},
+    )
+    assert r.status_code == 200
+    return crawl_id
+
+
+@pytest.fixture(scope="session")
+def all_crawls_config_id(all_crawls_crawl_id):
+    return _all_crawls_config_id
 
 
 @pytest.fixture(scope="session")

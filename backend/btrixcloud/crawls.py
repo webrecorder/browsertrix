@@ -68,11 +68,15 @@ class CrawlOps(BaseCrawlOps):
         await self.crawls.create_index(
             [("type", pymongo.HASHED), ("state", pymongo.DESCENDING)]
         )
+        await self.crawls.create_index(
+            [("type", pymongo.HASHED), ("fileSize", pymongo.DESCENDING)]
+        )
 
         await self.crawls.create_index([("finished", pymongo.DESCENDING)])
         await self.crawls.create_index([("oid", pymongo.HASHED)])
         await self.crawls.create_index([("cid", pymongo.HASHED)])
         await self.crawls.create_index([("state", pymongo.HASHED)])
+        await self.crawls.create_index([("fileSize", pymongo.DESCENDING)])
 
     async def list_crawls(
         self,
@@ -127,15 +131,6 @@ class CrawlOps(BaseCrawlOps):
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject", "errors"]},
-            {
-                "$lookup": {
-                    "from": "crawl_configs",
-                    "localField": "cid",
-                    "foreignField": "_id",
-                    "as": "crawlConfig",
-                },
-            },
-            {"$set": {"name": {"$arrayElemAt": ["$crawlConfig.name", 0]}}},
         ]
 
         if not resources:
@@ -154,7 +149,12 @@ class CrawlOps(BaseCrawlOps):
             aggregate.extend([{"$match": {"collections": {"$in": [collection_id]}}}])
 
         if sort_by:
-            if sort_by not in ("started", "finished", "fileSize", "firstSeed"):
+            if sort_by not in (
+                "started",
+                "finished",
+                "fileSize",
+                "firstSeed",
+            ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
@@ -545,6 +545,7 @@ async def add_new_crawl(
         manual=manual,
         started=started,
         tags=crawlconfig.tags,
+        name=crawlconfig.name,
     )
 
     try:
