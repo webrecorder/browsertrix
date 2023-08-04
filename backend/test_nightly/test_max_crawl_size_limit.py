@@ -4,7 +4,7 @@ import time
 from .conftest import API_PREFIX
 
 
-def test_crawl_timeout(admin_auth_headers, default_org_id, max_crawl_size_crawl_id):
+def test_max_crawl_size(admin_auth_headers, default_org_id, max_crawl_size_crawl_id):
     # Verify that crawl has started
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{max_crawl_size_crawl_id}/replay.json",
