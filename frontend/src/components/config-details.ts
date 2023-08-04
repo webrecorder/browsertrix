@@ -101,11 +101,7 @@ export class ConfigDetails extends LiteElement {
       const bytesPerMB = 1048576;
       if (valueBytes) {
         const sizeGB = Math.floor(valueBytes / bytesPerGB);
-        if (sizeGB > 0) {
-          return msg(str`${sizeGB} GB`);
-        }
-        const sizeMB = Math.floor(valueBytes / bytesPerMB);
-        return msg(str`${sizeMB} MB`);
+        return msg(str`${sizeGB} GB`);
       }
       if (typeof fallbackValue === "number") {
         let value = "";
