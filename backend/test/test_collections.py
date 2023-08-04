@@ -249,9 +249,7 @@ def test_get_collection(crawler_auth_headers, default_org_id):
     assert data["tags"] == ["wr-test-2", "wr-test-1"]
 
 
-def test_get_collection_replay(
-    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
-):
+def test_get_collection_replay(crawler_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/replay.json",
         headers=crawler_auth_headers,
@@ -274,6 +272,48 @@ def test_get_collection_replay(
         assert resource["name"]
         assert resource["path"]
         assert resource["size"]
+
+
+def test_collection_public(crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 404
+
+    # make public
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+        headers=crawler_auth_headers,
+        json={
+            "isPublic": True,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.headers["Access-Control-Allow-Origin"] == "*"
+    assert r.headers["Access-Control-Allow-Headers"] == "*"
+
+    # make private again
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}",
+        headers=crawler_auth_headers,
+        json={
+            "isPublic": False,
+        },
+    )
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/public/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 404
 
 
 def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
