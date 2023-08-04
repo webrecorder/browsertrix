@@ -93,18 +93,17 @@ export class CollectionDetail extends LiteElement {
     return html`${this.renderHeader()}
       <header class="md:flex items-center gap-2 pb-3">
         <div class="flex items-center gap-2 w-full mb-2 md:mb-0">
-          ${when(
-            this.collection?.isPublic,
-            () => html`
-              <sl-tooltip content=${msg("Publicly Accessible")}>
-                <sl-icon
-                  style="font-size: 16px; color: var(--sl-color-success-600)"
-                  name="globe2"
-                  label="${msg("Publicly Accessible")}"
-                ></sl-icon>
-              </sl-tooltip>
-            `
-          )}
+          ${this.collection?.isPublic
+            ? html`
+                <sl-tooltip content=${msg("Shareable")}>
+                  <sl-icon class="text-lg" name="people-fill"></sl-icon>
+                </sl-tooltip>
+              `
+            : html`
+                <sl-tooltip content=${msg("Private")}>
+                  <sl-icon class="text-lg" name="eye-slash"></sl-icon>
+                </sl-tooltip>
+              `}
           <h1
             class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
           >
@@ -305,13 +304,13 @@ export class CollectionDetail extends LiteElement {
                   style="--sl-color-neutral-700: var(--success)"
                   @click=${() => this.onTogglePublic(true)}
                 >
-                  <sl-icon name="globe2" slot="prefix"></sl-icon>
-                  ${msg("Make Public")}
+                  <sl-icon name="people-fill" slot="prefix"></sl-icon>
+                  ${msg("Make Shareable")}
                 </sl-menu-item>
               `
             : html`
                 <sl-menu-item style="--sl-color-neutral-700: var(--success)">
-                  <sl-icon name="box-arrow-up-left" slot="prefix"></sl-icon>
+                  <sl-icon name="box-arrow-up-right" slot="prefix"></sl-icon>
                   <a
                     target="_blank"
                     slot="prefix"
@@ -320,10 +319,7 @@ export class CollectionDetail extends LiteElement {
                     Go to Public View
                   </a>
                 </sl-menu-item>
-                <sl-menu-item
-                  style="--sl-color-neutral-700: var(--warning)"
-                  @click=${() => this.onTogglePublic(false)}
-                >
+                <sl-menu-item @click=${() => this.onTogglePublic(false)}>
                   <sl-icon name="eye-slash" slot="prefix"></sl-icon>
                   ${msg("Make Private")}
                 </sl-menu-item>
