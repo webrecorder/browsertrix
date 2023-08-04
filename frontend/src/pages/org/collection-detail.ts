@@ -104,9 +104,7 @@ export class CollectionDetail extends LiteElement {
                   <sl-icon class="text-lg" name="eye-slash-fill"></sl-icon>
                 </sl-tooltip>
               `}
-          <h1
-            class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
-          >
+          <h1 class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate">
             ${this.collection?.name ||
             html`<sl-skeleton class="w-96"></sl-skeleton>`}
           </h1>
@@ -323,7 +321,7 @@ export class CollectionDetail extends LiteElement {
                   style="--sl-color-neutral-700: var(--warning)"
                   @click=${() => this.onTogglePublic(false)}
                 >
-                  <sl-icon name="eye-slash-fill" slot="prefix"></sl-icon>
+                  <sl-icon name="eye-slash" slot="prefix"></sl-icon>
                   ${msg("Make Private")}
                 </sl-menu-item>
               `}
