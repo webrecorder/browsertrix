@@ -233,6 +233,8 @@ def max_crawl_size_crawl_id(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
         "name": "Crawl with 5 MB max crawl size limit",
+        # Note crawl will exceed this size, as crawl begins to gracefully
+        # shut down when operator notices this value has been exceeded.
         "maxCrawlSize": 5242880,
         "config": {
             "seeds": [{"url": "https://webrecorder.net/"}],
