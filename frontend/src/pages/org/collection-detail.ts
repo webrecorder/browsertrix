@@ -319,7 +319,10 @@ export class CollectionDetail extends LiteElement {
                     Go to Public View
                   </a>
                 </sl-menu-item>
-                <sl-menu-item @click=${() => this.onTogglePublic(false)}>
+                <sl-menu-item
+                  style="--sl-color-neutral-700: var(--warning)"
+                  @click=${() => this.onTogglePublic(false)}
+                >
                   <sl-icon name="eye-slash-fill" slot="prefix"></sl-icon>
                   ${msg("Make Private")}
                 </sl-menu-item>

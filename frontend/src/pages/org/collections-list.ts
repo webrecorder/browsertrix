@@ -456,20 +456,20 @@ export class CollectionsList extends LiteElement {
             >
               ${col?.isPublic
                 ? html`
-                    <sl-icon
-                      style="margin-right: 4px; vertical-align: bottom; font-size: 14px;"
-                      name="people-fill"
-                      slot="prefix"
-                      title="${msg("Shareable")}"
-                    ></sl-icon>
+                    <sl-tooltip content=${msg("Shareable")}>
+                      <sl-icon
+                        style="margin-right: 4px; vertical-align: bottom; font-size: 14px;"
+                        name="people-fill"
+                      ></sl-icon>
+                    </sl-tooltip>
                   `
                 : html`
-                    <sl-icon
-                      style="margin-right: 4px; vertical-align: bottom; font-size: 14px;"
-                      name="eye-slash-fill"
-                      slot="prefix"
-                      title="${msg("Private")}"
-                    ></sl-icon>
+                    <sl-tooltip content=${msg("Private")}>
+                      <sl-icon
+                        style="margin-right: 4px; vertical-align: bottom; font-size: 14px;"
+                        name="eye-slash-fill"
+                      ></sl-icon>
+                    </sl-tooltip>
                   `}
               ${col.name}
             </a>
@@ -563,7 +563,10 @@ export class CollectionsList extends LiteElement {
                     Go to Shared View
                   </a>
                 </sl-menu-item>
-                <sl-menu-item @click=${() => this.onTogglePublic(col, false)}>
+                <sl-menu-item
+                  style="--sl-color-neutral-700: var(--warning)"
+                  @click=${() => this.onTogglePublic(col, false)}
+                >
                   <sl-icon name="eye-slash-fill" slot="prefix"></sl-icon>
                   ${msg("Make Private")}
                 </sl-menu-item>
