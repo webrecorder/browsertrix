@@ -18,7 +18,7 @@ spec:
   cid: "{{ cid }}"
   oid: "{{ oid }}"
   scale: {{ scale }}
-  sizeLimit: {{ sizeLimit }}
+  maxCrawlSize: {{ max_crawl_size }}
   ttlSecondsAfterFinished: 30
 
   {% if expire_time %}

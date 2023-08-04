@@ -196,12 +196,12 @@ def test_update_crawl_timeout(crawler_auth_headers, default_org_id, sample_crawl
     assert data["crawlTimeout"] == 60
 
 
-def test_update_size_limit(crawler_auth_headers, default_org_id, sample_crawl_data):
+def test_update_max_crawl_size(crawler_auth_headers, default_org_id, sample_crawl_data):
     # Verify that updating crawl timeout works
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
         headers=crawler_auth_headers,
-        json={"sizeLimit": 4096},
+        json={"maxCrawlSize": 4096},
     )
     assert r.status_code == 200
     data = r.json()
@@ -217,7 +217,7 @@ def test_update_size_limit(crawler_auth_headers, default_org_id, sample_crawl_da
 
     data = r.json()
 
-    assert data["sizeLimit"] == 4096
+    assert data["maxCrawlSize"] == 4096
 
 
 def test_verify_delete_tags(crawler_auth_headers, default_org_id):

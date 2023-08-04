@@ -88,7 +88,7 @@ class CrawlSpec(BaseModel):
     started: str
     stopping: bool = False
     expire_time: Optional[datetime] = None
-    size_limit: Optional[int] = None
+    max_crawl_size: Optional[int] = None
 
 
 # ============================================================================
@@ -210,7 +210,7 @@ class BtrixOperator(K8sAPI):
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
             expire_time=from_k8s_date(spec.get("expireTime")),
-            size_limit=configmap["SIZE_LIMIT"],
+            max_crawl_size=configmap["MAX_CRAWL_SIZE"],
         )
 
         if status.state in ("starting", "waiting_org_limit"):
@@ -634,10 +634,10 @@ class BtrixOperator(K8sAPI):
                 + "gracefully stopping crawl"
             )
 
-        if crawl.size_limit and stats["size"] > crawl.size_limit:
+        if crawl.max_crawl_size and stats["size"] > crawl.max_crawl_size:
             crawl.stopping = True
             print(
-                "Job size limit {crawl.size_limit} hit, " + "gracefully stopping crawl"
+                "Maximum crawl size {crawl.max_crawl_size} hit, gracefully stopping crawl"
             )
 
         if crawl.stopping:

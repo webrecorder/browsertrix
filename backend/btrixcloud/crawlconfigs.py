@@ -201,7 +201,7 @@ class CrawlConfigOps:
             self.check_attr_changed(orig_crawl_config, update, "crawlTimeout")
         )
         changed = changed or (
-            self.check_attr_changed(orig_crawl_config, update, "sizeLimit")
+            self.check_attr_changed(orig_crawl_config, update, "maxCrawlSize")
         )
         changed = changed or (
             self.check_attr_changed(orig_crawl_config, update, "crawlFilenameTemplate")
@@ -270,7 +270,7 @@ class CrawlConfigOps:
                 status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
 
-        # update in crawl manager if config, schedule, scale, sizeLimit or crawlTimeout changed
+        # update in crawl manager if config, schedule, scale, maxCrawlSize or crawlTimeout changed
         if changed:
             crawlconfig = CrawlConfig.from_dict(result)
             try:

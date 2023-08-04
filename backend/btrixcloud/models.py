@@ -128,7 +128,7 @@ class CrawlConfigIn(BaseModel):
     tags: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
-    sizeLimit: Optional[int] = 0
+    maxCrawlSize: Optional[int] = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
 
     crawlFilenameTemplate: Optional[str]
@@ -147,7 +147,7 @@ class ConfigRevision(BaseMongoModel):
     profileid: Optional[UUID4]
 
     crawlTimeout: Optional[int] = 0
-    sizeLimit: Optional[int] = 0
+    maxCrawlSize: Optional[int] = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
 
     modified: datetime
@@ -168,7 +168,7 @@ class CrawlConfigCore(BaseMongoModel):
     tags: Optional[List[str]] = []
 
     crawlTimeout: Optional[int] = 0
-    sizeLimit: Optional[int] = 0
+    maxCrawlSize: Optional[int] = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
 
     oid: UUID4
@@ -253,7 +253,7 @@ class UpdateCrawlConfig(BaseModel):
     schedule: Optional[str]
     profileid: Optional[str]
     crawlTimeout: Optional[int]
-    sizeLimit: Optional[int]
+    maxCrawlSize: Optional[int]
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
     crawlFilenameTemplate: Optional[str]
     config: Optional[RawCrawlConfig]
