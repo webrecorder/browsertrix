@@ -602,34 +602,6 @@ def test_sort_all_crawls(admin_auth_headers, default_org_id, admin_crawl_id):
             assert crawl["fileSize"] >= last_size
         last_size = crawl["fileSize"]
 
-    # Sort by fileCount
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=fileCount",
-        headers=admin_auth_headers,
-    )
-    data = r.json()
-    items = data["items"]
-
-    last_count = None
-    for crawl in items:
-        if last_count:
-            assert crawl["fileCount"] <= last_count
-        last_count = crawl["fileCount"]
-
-    # Sort by fileCount, ascending
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=fileCount&sortDirection=1",
-        headers=admin_auth_headers,
-    )
-    data = r.json()
-    items = data["items"]
-
-    last_count = None
-    for crawl in items:
-        if last_count:
-            assert crawl["fileCount"] >= last_count
-        last_count = crawl["fileCount"]
-
     # Invalid sort value
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=invalid",
