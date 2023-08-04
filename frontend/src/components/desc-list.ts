@@ -16,9 +16,14 @@
  */
 import { LitElement, html, css } from "lit";
 import { property } from "lit/decorators.js";
+import { classMap } from "lit/directives/class-map.js";
 
 export class DescListItem extends LitElement {
   static styles = css`
+    :host {
+      display: contents;
+    }
+
     dt {
       color: var(--sl-color-neutral-500);
       font-size: var(--sl-font-size-x-small);
@@ -28,12 +33,18 @@ export class DescListItem extends LitElement {
 
     dd {
       margin: 0;
-      padding: 0;
+      padding: 0 0 var(--sl-spacing-2x-small);
       color: var(--sl-color-neutral-700);
       font-size: var(--sl-font-size-medium);
       font-family: var(--font-monostyle-family);
       font-variation-settings: var(--font-monostyle-variation);
       line-height: 1rem;
+    }
+
+    .item {
+      display: flex;
+      justify-content: var(--justify-item, initial);
+      border-right: var(--border-right, 0px);
     }
   `;
 
@@ -41,9 +52,11 @@ export class DescListItem extends LitElement {
   label: string = "";
 
   render() {
-    return html`<div>
-      <dt>${this.label}</dt>
-      <dd><slot></slot></dd>
+    return html`<div class="item">
+      <div class="content">
+        <dt>${this.label}</dt>
+        <dd><slot></slot></dd>
+      </div>
     </div>`;
   }
 }
@@ -52,13 +65,38 @@ export class DescList extends LitElement {
   static styles = css`
     dl {
       display: grid;
-      grid-template-columns: 100%;
-      grid-gap: 1rem;
       margin: 0;
+    }
+
+    .vertical {
+      grid-template-columns: 100%;
+      gap: 1rem;
+    }
+
+    .horizontal {
+      --justify-item: center;
+      --border-right: 1px solid var(--sl-panel-border-color);
+      grid-auto-flow: column;
+    }
+
+    /* Although this only applies to .horizontal, apply to any last child
+    since we can't do complex selectors with ::slotted */
+    ::slotted(*:last-of-type) {
+      --border-right: 0px;
     }
   `;
 
+  @property({ type: Boolean })
+  horizontal = false;
+
   render() {
-    return html`<dl><slot></slot></dl>`;
+    return html`<dl
+      class=${classMap({
+        vertical: !this.horizontal,
+        horizontal: this.horizontal,
+      })}
+    >
+      <slot></slot>
+    </dl>`;
   }
 }

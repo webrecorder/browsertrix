@@ -28,6 +28,8 @@ type FormEvent =
   | { type: "SHOW_SIGN_IN_WITH_PASSWORD" }
   | { type: "SHOW_FORGOT_PASSWORD" }
   | { type: "SUBMIT" }
+  | { type: "BACKEND_INITIALIZED" }
+  | { type: "BACKEND_NOT_INITIALIZED" }
   | FormSuccessEvent
   | FormErrorEvent;
 
@@ -51,6 +53,10 @@ type FormTypestate =
   | {
       value: "submittingForgotPassword";
       context: FormContext;
+    }
+  | {
+      value: "backendInitializing";
+      context: FormContext;
     };
 
 const initialContext = {};
@@ -70,6 +76,9 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
           SUBMIT: {
             target: "signingIn",
             actions: "reset",
+          },
+          BACKEND_NOT_INITIALIZED: {
+            target: "backendInitializing",
           },
         },
       },
@@ -106,6 +115,14 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
           },
         },
       },
+      ["backendInitializing"]: {
+        on: {
+          BACKEND_INITIALIZED: {
+            target: "signIn",
+            actions: "reset",
+          },
+        },
+      },
     },
   },
   {
@@ -135,6 +152,7 @@ export class LogInPage extends LiteElement {
 
   @state()
   private formState = machine.initialState;
+  private timerId?: number;
 
   firstUpdated() {
     this.formStateService.subscribe((state) => {
@@ -142,10 +160,12 @@ export class LogInPage extends LiteElement {
     });
 
     this.formStateService.start();
+    this.checkBackendInitialized();
   }
 
   disconnectedCallback() {
     this.formStateService.stop();
+    window.clearTimeout(this.timerId);
     super.disconnectedCallback();
   }
 
@@ -262,9 +282,19 @@ export class LogInPage extends LiteElement {
           class="w-full"
           variant="primary"
           ?loading=${this.formState.value === "signingIn"}
+          ?disabled=${this.formState.value === "backendInitializing"}
           type="submit"
           >${msg("Log in")}</sl-button
         >
+        ${this.formState.value === "backendInitializing"
+          ? html` <div class="mt-3">
+              <btrix-alert variant="warning" class="text-center"
+                >${msg(
+                  "Please wait while Browsertrix Cloud is initializing"
+                )}</btrix-alert
+              >
+            </div>`
+          : ""}
       </form>
     `;
   }
@@ -307,6 +337,19 @@ export class LogInPage extends LiteElement {
         >
       </form>
     `;
+  }
+
+  async checkBackendInitialized() {
+    const resp = await fetch("/api/settings");
+    if (resp.status === 200) {
+      this.formStateService.send("BACKEND_INITIALIZED");
+    } else {
+      this.formStateService.send("BACKEND_NOT_INITIALIZED");
+      this.timerId = window.setTimeout(
+        () => this.checkBackendInitialized(),
+        5000
+      );
+    }
   }
 
   async onSubmitLogIn(event: SubmitEvent) {
