@@ -72,7 +72,9 @@ export class Input extends LiteElement {
           ? html`
               <sl-icon-button
                 class="sl-input-icon-button"
-                label=${this.isPasswordVisible ? msg("Hide password") : msg("Show password")}
+                label=${this.isPasswordVisible
+                  ? msg("Hide password")
+                  : msg("Show password")}
                 name=${this.isPasswordVisible ? "eye-slash" : "eye"}
                 @click=${this.onTogglePassword}
               ></sl-icon-button>

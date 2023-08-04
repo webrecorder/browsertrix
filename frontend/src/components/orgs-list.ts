@@ -33,8 +33,7 @@ export class OrgsList extends LiteElement {
 
     return html`
       <ul class="border rounded-lg overflow-hidden">
-        ${this.orgList?.map(this.renderOrg)}
-        ${this.renderOrgQuotas()}
+        ${this.orgList?.map(this.renderOrg)} ${this.renderOrgQuotas()}
       </ul>
     `;
   }
@@ -45,29 +44,29 @@ export class OrgsList extends LiteElement {
     }
 
     return html`
-    <btrix-dialog
-      label=${msg(str`Quotas for: ${this.currOrg.name}`)}
-      ?open=${!!this.currOrg}
-    @sl-request-close=${() => (this.currOrg = null)}
-  >
-  ${Object.entries(this.currOrg.quotas).map(([key, value]) => {
-    return html`
-    <sl-input
-    name=${key}
-    label=${msg("Max Concurrent Crawls")}
-    value=${value}
-    type="number"
-    @sl-input="${this.onUpdateQuota}"
-    ></sl-input>`;
-  })}
-  <div slot="footer" class="flex justify-end">
-    <sl-button 
-    size="small"
-    @click="${this.onSubmitQuotas}" 
-    variant="primary">${msg("Update Quotas")}
-    </sl-button>
-  </div>
-  </btrix-dialog>
+      <btrix-dialog
+        label=${msg(str`Quotas for: ${this.currOrg.name}`)}
+        ?open=${!!this.currOrg}
+        @sl-request-close=${() => (this.currOrg = null)}
+      >
+        ${Object.entries(this.currOrg.quotas).map(([key, value]) => {
+          return html` <sl-input
+            name=${key}
+            label=${msg("Max Concurrent Crawls")}
+            value=${value}
+            type="number"
+            @sl-input="${this.onUpdateQuota}"
+          ></sl-input>`;
+        })}
+        <div slot="footer" class="flex justify-end">
+          <sl-button
+            size="small"
+            @click="${this.onSubmitQuotas}"
+            variant="primary"
+            >${msg("Update Quotas")}
+          </sl-button>
+        </div>
+      </btrix-dialog>
     `;
   }
 
@@ -81,7 +80,9 @@ export class OrgsList extends LiteElement {
 
   private onSubmitQuotas() {
     if (this.currOrg) {
-      this.dispatchEvent(new CustomEvent("update-quotas", {detail: this.currOrg}));
+      this.dispatchEvent(
+        new CustomEvent("update-quotas", { detail: this.currOrg })
+      );
     }
     this.currOrg = null;
   }
@@ -121,7 +122,11 @@ export class OrgsList extends LiteElement {
               ? msg(`1 member`)
               : msg(str`${memberCount} members`)}
           </div>
-          <sl-icon-button name="gear" slot="prefix" @click="${this.showQuotas(org)}"></sl-icon-button>
+          <sl-icon-button
+            name="gear"
+            slot="prefix"
+            @click="${this.showQuotas(org)}"
+          ></sl-icon-button>
         </div>
       </li>
     `;
