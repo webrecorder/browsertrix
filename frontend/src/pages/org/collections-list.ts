@@ -454,6 +454,23 @@ export class CollectionsList extends LiteElement {
               class="block text-primary hover:text-indigo-500"
               @click=${this.navLink}
             >
+              ${col?.isPublic
+                ? html`
+                    <sl-tooltip content=${msg("Shareable")}>
+                      <sl-icon
+                        style="margin-right: 4px; vertical-align: bottom; font-size: 14px;"
+                        name="people-fill"
+                      ></sl-icon>
+                    </sl-tooltip>
+                  `
+                : html`
+                    <sl-tooltip content=${msg("Private")}>
+                      <sl-icon
+                        style="margin-right: 4px; vertical-align: bottom; font-size: 14px;"
+                        name="eye-slash-fill"
+                      ></sl-icon>
+                    </sl-tooltip>
+                  `}
               ${col.name}
             </a>
           </div>
@@ -523,6 +540,37 @@ export class CollectionsList extends LiteElement {
             ${msg("Edit Collection")}
           </sl-menu-item>
           <sl-divider></sl-divider>
+          ${!col?.isPublic
+            ? html`
+                <sl-menu-item
+                  style="--sl-color-neutral-700: var(--success)"
+                  @click=${() => this.onTogglePublic(col, true)}
+                >
+                  <sl-icon name="people-fill" slot="prefix"></sl-icon>
+                  ${msg("Make Shareable")}
+                </sl-menu-item>
+              `
+            : html`
+                <sl-menu-item style="--sl-color-neutral-700: var(--success)">
+                  <sl-icon name="box-arrow-up-right" slot="prefix"></sl-icon>
+                  <a
+                    target="_blank"
+                    slot="prefix"
+                    href="https://replayweb.page?source=${this.getPublicReplayURL(
+                      col
+                    )}"
+                  >
+                    Go to Shared View
+                  </a>
+                </sl-menu-item>
+                <sl-menu-item
+                  style="--sl-color-neutral-700: var(--warning)"
+                  @click=${() => this.onTogglePublic(col, false)}
+                >
+                  <sl-icon name="eye-slash" slot="prefix"></sl-icon>
+                  ${msg("Make Private")}
+                </sl-menu-item>
+              `}
           <!-- Shoelace doesn't allow "href" on menu items,
               see https://github.com/shoelace-style/shoelace/issues/1351 -->
           <a
@@ -571,6 +619,26 @@ export class CollectionsList extends LiteElement {
       };
     }
   }) as any;
+
+  private async onTogglePublic(coll: Collection, isPublic: boolean) {
+    const res = await this.apiFetch(
+      `/orgs/${this.orgId}/collections/${coll.id}`,
+      this.authState!,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ isPublic }),
+      }
+    );
+
+    this.fetchCollections();
+  }
+
+  private getPublicReplayURL(col: Collection) {
+    return new URL(
+      `/api/orgs/${this.orgId}/collections/${col.id}/public/replay.json`,
+      window.location.href
+    ).href;
+  }
 
   private confirmDelete = (collection: Collection) => {
     this.collectionToDelete = collection;

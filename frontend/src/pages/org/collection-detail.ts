@@ -51,6 +51,9 @@ export class CollectionDetail extends LiteElement {
   @state()
   private isDescriptionExpanded = false;
 
+  @state()
+  private showEmbedInfo = false;
+
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
 
@@ -89,12 +92,32 @@ export class CollectionDetail extends LiteElement {
   render() {
     return html`${this.renderHeader()}
       <header class="md:flex items-center gap-2 pb-3">
-        <h1
-          class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
-        >
-          ${this.collection?.name ||
-          html`<sl-skeleton class="w-96"></sl-skeleton>`}
-        </h1>
+        <div class="flex items-center gap-2 w-full mb-2 md:mb-0">
+          ${this.collection?.isPublic
+            ? html`
+                <sl-tooltip content=${msg("Shareable")}>
+                  <sl-icon class="text-lg" name="people-fill"></sl-icon>
+                </sl-tooltip>
+              `
+            : html`
+                <sl-tooltip content=${msg("Private")}>
+                  <sl-icon class="text-lg" name="eye-slash-fill"></sl-icon>
+                </sl-tooltip>
+              `}
+          <h1 class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate">
+            ${this.collection?.name ||
+            html`<sl-skeleton class="w-96"></sl-skeleton>`}
+          </h1>
+        </div>
+        ${when(
+          this.collection?.isPublic,
+          () => html`
+            <sl-button size="small" @click=${() => (this.showEmbedInfo = true)}>
+              <sl-icon name="code-slash"></sl-icon>
+              View Embed Code
+            </sl-button>
+          `
+        )}
         ${when(this.isCrawler, this.renderActions)}
       </header>
       <div class="border rounded-lg py-2 mb-3">${this.renderInfoBar()}</div>
@@ -135,8 +158,84 @@ export class CollectionDetail extends LiteElement {
             >Delete Collection</sl-button
           >
         </div>
-      </btrix-dialog>`;
+      </btrix-dialog>
+      ${this.renderShareInfo()}`;
   }
+
+  private getPublicReplayURL() {
+    return new URL(
+      `/api/orgs/${this.orgId}/collections/${this.collectionId}/public/replay.json`,
+      window.location.href
+    ).href;
+  }
+
+  private renderShareInfo = () => {
+    if (!this.collection?.isPublic) {
+      return;
+    }
+
+    const embedCode = `<replay-web-page source="${this.getPublicReplayURL()}"></replay-web-page>`;
+    const importCode = `importScripts("https://replayweb.page/sw.js");`;
+
+    return html` <btrix-dialog
+      label=${msg(str`Embed Code for “${this.collection?.name}”`)}
+      ?open=${this.showEmbedInfo}
+      @sl-request-close=${() => (this.showEmbedInfo = false)}
+    >
+      <div class="text-left">
+        <p class="mb-5">
+          ${msg(
+            html`Embed this collection in another site using these
+              <strong class="font-medium">ReplayWeb.page</strong> code snippets.`
+          )}
+        </p>
+        <p class="mb-3">
+          ${msg(html`Add the following embed code to your HTML page:`)}
+        </p>
+        <div class="relative">
+          <pre
+            class="whitespace-pre-wrap mb-5 rounded p-4 bg-slate-50 text-slate-600 text-[0.9em]"
+          ><code>${embedCode}</code></pre>
+          <div class="absolute top-0 right-0">
+            <btrix-copy-button
+              .getValue=${() => embedCode}
+              content=${msg("Copy Embed Code")}
+            ></btrix-copy-button>
+          </div>
+        </div>
+        <p class="mb-3">
+          ${msg(
+            html`Add the following JavaScript to
+              <code class="text-[0.9em]">./replay/sw.js</code>:`
+          )}
+        </p>
+        <div class="relative">
+          <pre
+            class="whitespace-pre-wrap mb-5 rounded p-4 bg-slate-50 text-slate-600 text-[0.9em]"
+          ><code>${importCode}</code></pre>
+          <div class="absolute top-0 right-0">
+            <btrix-copy-button
+              .getValue=${() => importCode}
+              content=${msg("Copy JS")}
+            ></btrix-copy-button>
+          </div>
+        </div>
+        <p>
+          ${msg(
+            html`See
+              <a
+                class="text-primary"
+                href="https://replayweb.page/docs/embedding"
+                target="_blank"
+              >
+                our embedding guide</a
+              >
+              for more details.`
+          )}
+        </p>
+      </div>
+    </btrix-dialog>`;
+  };
 
   private renderHeader = () => html`
     <nav class="mb-7">
@@ -197,6 +296,35 @@ export class CollectionDetail extends LiteElement {
             ${msg("Edit Collection")}
           </sl-menu-item>
           <sl-divider></sl-divider>
+          ${!this.collection?.isPublic
+            ? html`
+                <sl-menu-item
+                  style="--sl-color-neutral-700: var(--success)"
+                  @click=${() => this.onTogglePublic(true)}
+                >
+                  <sl-icon name="people-fill" slot="prefix"></sl-icon>
+                  ${msg("Make Shareable")}
+                </sl-menu-item>
+              `
+            : html`
+                <sl-menu-item style="--sl-color-neutral-700: var(--success)">
+                  <sl-icon name="box-arrow-up-right" slot="prefix"></sl-icon>
+                  <a
+                    target="_blank"
+                    slot="prefix"
+                    href="https://replayweb.page?source=${this.getPublicReplayURL()}"
+                  >
+                    Go to Public View
+                  </a>
+                </sl-menu-item>
+                <sl-menu-item
+                  style="--sl-color-neutral-700: var(--warning)"
+                  @click=${() => this.onTogglePublic(false)}
+                >
+                  <sl-icon name="eye-slash" slot="prefix"></sl-icon>
+                  ${msg("Make Private")}
+                </sl-menu-item>
+              `}
           <!-- Shoelace doesn't allow "href" on menu items,
               see https://github.com/shoelace-style/shoelace/issues/1351 -->
           <a
@@ -479,6 +607,21 @@ export class CollectionDetail extends LiteElement {
       });
     }
   };
+
+  private async onTogglePublic(isPublic: boolean) {
+    const res = await this.apiFetch(
+      `/orgs/${this.orgId}/collections/${this.collectionId}`,
+      this.authState!,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ isPublic }),
+      }
+    );
+
+    if (res.updated && this.collection) {
+      this.collection = { ...this.collection, isPublic };
+    }
+  }
 
   private confirmDelete = () => {
     this.openDialogName = "delete";
