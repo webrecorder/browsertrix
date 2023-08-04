@@ -131,14 +131,6 @@ class CrawlOps(BaseCrawlOps):
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject", "errors"]},
-            {
-                "$lookup": {
-                    "from": "crawl_configs",
-                    "localField": "cid",
-                    "foreignField": "_id",
-                    "as": "crawlConfig",
-                },
-            },
         ]
 
         if not resources:
