@@ -509,7 +509,7 @@ export class CrawlsList extends LiteElement {
     if (!searchResults.length) {
       return html`
         <sl-menu-item slot="menu-item" disabled
-          >${msg("No matching crawls found.")}</sl-menu-item
+          >${msg("No matching items found.")}</sl-menu-item
         >
       `;
     }
@@ -654,7 +654,7 @@ export class CrawlsList extends LiteElement {
         <div class="border rounded-lg bg-neutral-50 p-4">
           <p class="text-center">
             <span class="text-neutral-400"
-              >${msg("No matching crawls found.")}</span
+              >${msg("No matching items found.")}</span
             >
             <button
               class="text-neutral-500 font-medium underline hover:no-underline"
