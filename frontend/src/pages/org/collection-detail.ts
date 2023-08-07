@@ -177,17 +177,19 @@ export class CollectionDetail extends LiteElement {
         @sl-request-close=${() => (this.showShareInfo = false)}
         style="--width: 32rem;"
       >
-        <p class="mb-3">
-          ${msg(
-            "Making this collection sharable will enable a public viewing link."
-          )}
-        </p>
+        ${this.collection?.isPublic
+          ? ""
+          : html`<p class="mb-3">
+              ${msg(
+                "Make this collection shareable to enable a public viewing link."
+              )}
+            </p>`}
         <div class="mb-5">
           <sl-switch
             ?checked=${this.collection?.isPublic}
             @sl-change=${(e: CustomEvent) =>
               this.onTogglePublic((e.target as SlCheckbox).checked)}
-            >${msg("Make Collection Sharable")}</sl-switch
+            >${msg("Collection is Shareable")}</sl-switch
           >
         </div>
         ${when(this.collection?.isPublic, this.renderShareInfo)}
@@ -207,7 +209,7 @@ export class CollectionDetail extends LiteElement {
     const importCode = `importScripts("https://replayweb.page/sw.js");`;
 
     return html` <btrix-section-heading
-        >${msg("Link to Public View")}</btrix-section-heading
+        >${msg("Link to Share")}</btrix-section-heading
       >
       <section class="mt-3 mb-5">
         <p class="mb-3">
@@ -358,7 +360,7 @@ export class CollectionDetail extends LiteElement {
                     slot="prefix"
                     href="https://replayweb.page?source=${this.getPublicReplayURL()}"
                   >
-                    Go to Public View
+                    Go to Shared View
                   </a>
                 </sl-menu-item>
                 <sl-menu-item
