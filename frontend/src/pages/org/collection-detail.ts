@@ -109,15 +109,14 @@ export class CollectionDetail extends LiteElement {
             html`<sl-skeleton class="w-96"></sl-skeleton>`}
           </h1>
         </div>
-        ${when(
-          this.collection?.isPublic,
-          () => html`
-            <sl-button size="small" @click=${() => (this.showEmbedInfo = true)}>
-              <sl-icon name="code-slash"></sl-icon>
-              View Embed Code
-            </sl-button>
-          `
-        )}
+        <sl-button
+          variant="primary"
+          size="small"
+          @click=${() => (this.showEmbedInfo = true)}
+        >
+          <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+          Share
+        </sl-button>
         ${when(this.isCrawler, this.renderActions)}
       </header>
       <div class="border rounded-lg py-2 mb-3">${this.renderInfoBar()}</div>
@@ -178,17 +177,12 @@ export class CollectionDetail extends LiteElement {
     const importCode = `importScripts("https://replayweb.page/sw.js");`;
 
     return html` <btrix-dialog
-      label=${msg(str`Embed Code for “${this.collection?.name}”`)}
+      label=${msg("Share Collection")}
       ?open=${this.showEmbedInfo}
       @sl-request-close=${() => (this.showEmbedInfo = false)}
     >
-      <div class="text-left">
-        <p class="mb-5">
-          ${msg(
-            html`Embed this collection in another site using these
-              <strong class="font-medium">ReplayWeb.page</strong> code snippets.`
-          )}
-        </p>
+      <btrix-section-heading>${msg("Embed Collection")}</btrix-section-heading>
+      <div class="mt-3">
         <p class="mb-3">
           ${msg(html`Add the following embed code to your HTML page:`)}
         </p>
