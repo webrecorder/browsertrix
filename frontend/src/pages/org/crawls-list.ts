@@ -500,7 +500,7 @@ export class CrawlsList extends LiteElement {
     if (!this.hasSearchStr) {
       return html`
         <sl-menu-item slot="menu-item" disabled
-          >${msg("Start typing to view crawl filters.")}</sl-menu-item
+          >${msg("Start typing to view filters.")}</sl-menu-item
         >
       `;
     }
