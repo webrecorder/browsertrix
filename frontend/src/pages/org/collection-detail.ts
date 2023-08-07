@@ -5,6 +5,7 @@ import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
 import queryString from "query-string";
 import type { TemplateResult } from "lit";
+import type { SlCheckbox } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -52,7 +53,7 @@ export class CollectionDetail extends LiteElement {
   private isDescriptionExpanded = false;
 
   @state()
-  private showEmbedInfo = true;
+  private showShareInfo = true;
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
@@ -112,7 +113,7 @@ export class CollectionDetail extends LiteElement {
         <sl-button
           variant="primary"
           size="small"
-          @click=${() => (this.showEmbedInfo = true)}
+          @click=${() => (this.showShareInfo = true)}
         >
           <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
           Share
@@ -158,7 +159,7 @@ export class CollectionDetail extends LiteElement {
           >
         </div>
       </btrix-dialog>
-      ${this.renderShareInfo()}`;
+      ${this.renderShareDialog()}`;
   }
 
   private getPublicReplayURL() {
@@ -168,20 +169,45 @@ export class CollectionDetail extends LiteElement {
     ).href;
   }
 
-  private renderShareInfo = () => {
-    if (!this.collection?.isPublic) {
-      return;
-    }
+  private renderShareDialog() {
+    return html`
+      <btrix-dialog
+        label=${msg("Share Collection")}
+        ?open=${this.showShareInfo}
+        @sl-request-close=${() => (this.showShareInfo = false)}
+      >
+        <p class="mb-3">
+          ${this.collection?.isPublic
+            ? msg("This collection can be viewed by anyone with the link.")
+            : msg(
+                "Making this collection sharable will enable a public viewing link."
+              )}
+        </p>
+        <div>
+          <sl-switch
+            ?checked=${this.collection?.isPublic}
+            @sl-change=${(e: CustomEvent) =>
+              this.onTogglePublic((e.target as SlCheckbox).checked)}
+            >${msg("Make Collection Sharable")}</sl-switch
+          >
+        </div>
+        ${when(this.collection?.isPublic, this.renderShareInfo)}
+        <div slot="footer" class="flex justify-end">
+          <sl-button size="small" @click=${() => (this.showShareInfo = false)}
+            >${msg("Done")}</sl-button
+          >
+        </div>
+      </btrix-dialog>
+    `;
+  }
 
+  private renderShareInfo = () => {
     const embedCode = `<replay-web-page source="${this.getPublicReplayURL()}"></replay-web-page>`;
     const importCode = `importScripts("https://replayweb.page/sw.js");`;
 
-    return html` <btrix-dialog
-      label=${msg("Share Collection")}
-      ?open=${this.showEmbedInfo}
-      @sl-request-close=${() => (this.showEmbedInfo = false)}
-    >
-      <btrix-section-heading>${msg("Embed Collection")}</btrix-section-heading>
+    return html` <btrix-section-heading
+        >${msg("Embed Collection")}</btrix-section-heading
+      >
       <div class="mt-3">
         <p class="mb-3">
           ${msg(html`Add the following embed code to your HTML page:`)}
@@ -223,8 +249,7 @@ export class CollectionDetail extends LiteElement {
               for more details.`
           )}
         </p>
-      </div>
-    </btrix-dialog>`;
+      </div>`;
   };
 
   private renderHeader = () => html`
