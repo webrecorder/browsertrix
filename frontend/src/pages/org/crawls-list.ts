@@ -634,9 +634,7 @@ export class CrawlsList extends LiteElement {
             @click=${() => this.deleteItem(item)}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>
-            ${item.type === "upload"
-              ? msg("Delete Upload")
-              : msg("Delete Crawl")}
+            ${msg("Delete Item")}
           </sl-menu-item>
         `
       )}
@@ -816,13 +814,8 @@ export class CrawlsList extends LiteElement {
   }
 
   private async deleteItem(item: Crawl) {
-    // TODO check if this makes translating entire string difficult:
-    const typeName = item.type === "upload" ? msg("upload") : msg("crawl");
-
     if (
-      !window.confirm(
-        msg(str`Are you sure you want to delete ${typeName} of ${item.name}?`)
-      )
+      !window.confirm(msg(str`Are you sure you want to delete ${item.name}?`))
     ) {
       return;
     }
@@ -859,7 +852,7 @@ export class CrawlsList extends LiteElement {
         items: items.filter((c) => c.id !== item.id),
       };
       this.notify({
-        message: msg(str`Successfully deleted ${typeName}`),
+        message: msg(str`Successfully deleted archived item.`),
         variant: "success",
         icon: "check2-circle",
       });
@@ -868,7 +861,7 @@ export class CrawlsList extends LiteElement {
       this.notify({
         message:
           (e.isApiError && e.message) ||
-          msg(str`Sorry, couldn't run ${typeName} at this time.`),
+          msg(str`Sorry, couldn't delete archived item at this time.`),
         variant: "danger",
         icon: "exclamation-octagon",
       });
