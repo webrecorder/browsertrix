@@ -474,14 +474,12 @@ class BaseCrawlOps:
         descriptions = [description for description in descriptions if description]
 
         first_seeds = set()
-
-        if type_ == "crawl":
-            for cid in cids:
-                if not cid:
-                    continue
-                config = await self.crawl_configs.get_crawl_config(cid, org)
-                first_seed = config.config.seeds[0]
-                first_seeds.add(first_seed.url)
+        for cid in cids:
+            if not cid:
+                continue
+            config = await self.crawl_configs.get_crawl_config(cid, org)
+            first_seed = config.config.seeds[0]
+            first_seeds.add(first_seed.url)
 
         return {
             "names": names,
