@@ -179,7 +179,7 @@ export class Org extends LiteElement {
           })}
           ${this.renderNavTab({
             tabName: "artifacts",
-            label: msg("All Archived Data"),
+            label: msg("All Archived Items"),
             path: "artifacts/crawls",
           })}
           ${this.renderNavTab({

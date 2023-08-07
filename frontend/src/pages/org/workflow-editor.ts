@@ -1662,7 +1662,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderHelpTextCol(
         msg(`Create or assign this crawl (and its outputs) to one or more tags
-        to help organize your archived data.`)
+        to help organize your archived items.`)
       )}
       ${this.renderFormCol(
         html`

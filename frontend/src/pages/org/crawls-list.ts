@@ -245,7 +245,7 @@ export class CrawlsList extends LiteElement {
             <h1
               class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
             >
-              ${msg("All Archived Data")}
+              ${msg("All Archived Items")}
             </h1>
             ${when(
               this.isCrawler,
