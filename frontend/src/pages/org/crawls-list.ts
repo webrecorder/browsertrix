@@ -463,7 +463,9 @@ export class CrawlsList extends LiteElement {
       >
         <sl-input
           size="small"
-          placeholder=${msg("Search by name")}
+          placeholder=${this.artifactType === "upload"
+            ? msg("Search by name")
+            : msg("Search by name or Crawl Start URL")}
           clearable
           value=${this.searchByValue}
           @sl-clear=${() => {
