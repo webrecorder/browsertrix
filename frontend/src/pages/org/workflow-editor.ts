@@ -215,6 +215,7 @@ const DEFAULT_BEHAVIORS = [
   "autofetch",
   "siteSpecific",
 ];
+const BYTES_PER_GB = 1073741824;
 
 @localized()
 export class CrawlConfigEditor extends LiteElement {
@@ -493,9 +494,8 @@ export class CrawlConfigEditor extends LiteElement {
     };
 
     const bytesToGB = (value: any, fallback: number | null) => {
-      const bytesPerGB = 1073741824;
       if (typeof value === "number" && value > 0)
-        return Math.floor(value / bytesPerGB);
+        return Math.floor(value / BYTES_PER_GB);
       return fallback;
     };
 
@@ -2139,7 +2139,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ? this.formState.crawlTimeoutMinutes * 60
         : null,
       maxCrawlSize: this.formState.maxCrawlSizeGB
-        ? this.formState.maxCrawlSizeGB * 1073741824
+        ? this.formState.maxCrawlSizeGB * BYTES_PER_GB
         : null,
       tags: this.formState.tags,
       autoAddCollections: this.formState.autoAddCollections,
