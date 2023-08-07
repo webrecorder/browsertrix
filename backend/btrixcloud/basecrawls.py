@@ -456,25 +456,32 @@ class BaseCrawlOps:
 
         return {"deleted": True}
 
-    async def get_all_crawl_search_values(self, org: Organization):
+    async def get_all_crawl_search_values(
+        self, org: Organization, type_: Optional[str] = None
+    ):
         """List unique names, first seeds, and descriptions from all captures in org"""
-        names = await self.crawls.distinct("name", {"oid": org.id})
-        descriptions = await self.crawls.distinct("description", {"oid": org.id})
-        crawl_ids = await self.crawls.distinct("_id", {"oid": org.id})
-        cids = await self.crawls.distinct("cid", {"oid": org.id})
+        match_query = {"oid": org.id}
+        if type_:
+            match_query["type"] = type_
+
+        names = await self.crawls.distinct("name", match_query)
+        descriptions = await self.crawls.distinct("description", match_query)
+        crawl_ids = await self.crawls.distinct("_id", match_query)
+        cids = await self.crawls.distinct("cid", match_query)
 
         # Remove empty strings
         names = [name for name in names if name]
         descriptions = [description for description in descriptions if description]
 
-        # Get first seeds
         first_seeds = set()
-        for cid in cids:
-            if not cid:
-                continue
-            config = await self.crawl_configs.get_crawl_config(cid, org)
-            first_seed = config.config.seeds[0]
-            first_seeds.add(first_seed.url)
+
+        if type_ == "crawl":
+            for cid in cids:
+                if not cid:
+                    continue
+                config = await self.crawl_configs.get_crawl_config(cid, org)
+                first_seed = config.config.seeds[0]
+                first_seeds.add(first_seed.url)
 
         return {
             "names": names,
@@ -550,8 +557,12 @@ def init_base_crawls_api(
     @app.get("/orgs/{oid}/all-crawls/search-values", tags=["all-crawls"])
     async def get_all_crawls_search_values(
         org: Organization = Depends(org_viewer_dep),
+        crawlType: Optional[str] = None,
     ):
-        return await ops.get_all_crawl_search_values(org)
+        if crawlType and crawlType not in ("crawl", "upload"):
+            raise HTTPException(status_code=400, detail="invalid_crawl_type")
+
+        return await ops.get_all_crawl_search_values(org, type_=crawlType)
 
     @app.get(
         "/orgs/{oid}/all-crawls/{crawl_id}",
