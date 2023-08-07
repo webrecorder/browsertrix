@@ -53,7 +53,7 @@ export class CollectionDetail extends LiteElement {
   private isDescriptionExpanded = false;
 
   @state()
-  private showShareInfo = true;
+  private showShareInfo = false;
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
