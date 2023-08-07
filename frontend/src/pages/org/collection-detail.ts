@@ -52,7 +52,7 @@ export class CollectionDetail extends LiteElement {
   private isDescriptionExpanded = false;
 
   @state()
-  private showEmbedInfo = false;
+  private showEmbedInfo = true;
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
@@ -186,10 +186,8 @@ export class CollectionDetail extends LiteElement {
         <p class="mb-3">
           ${msg(html`Add the following embed code to your HTML page:`)}
         </p>
-        <div class="relative">
-          <pre
-            class="whitespace-pre-wrap mb-5 rounded p-4 bg-slate-50 text-slate-600 text-[0.9em]"
-          ><code>${embedCode}</code></pre>
+        <div class="relative mb-5 rounded p-4 bg-slate-50">
+          <btrix-code value=${embedCode}></btrix-code>
           <div class="absolute top-0 right-0">
             <btrix-copy-button
               .getValue=${() => embedCode}
@@ -199,14 +197,12 @@ export class CollectionDetail extends LiteElement {
         </div>
         <p class="mb-3">
           ${msg(
-            html`Add the following JavaScript to
-              <code class="text-[0.9em]">./replay/sw.js</code>:`
+            html`Add the following JavaScript to your
+              <code class="text-[0.9em]">/replay/sw.js</code>:`
           )}
         </p>
-        <div class="relative">
-          <pre
-            class="whitespace-pre-wrap mb-5 rounded p-4 bg-slate-50 text-slate-600 text-[0.9em]"
-          ><code>${importCode}</code></pre>
+        <div class="relative mb-5 rounded p-4 bg-slate-50">
+          <btrix-code language="javascript" value=${importCode}></btrix-code>
           <div class="absolute top-0 right-0">
             <btrix-copy-button
               .getValue=${() => importCode}
