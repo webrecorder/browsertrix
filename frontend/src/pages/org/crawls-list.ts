@@ -23,7 +23,7 @@ import { isActive, activeCrawlStates } from "../../utils/crawler";
 type Crawls = APIPaginatedList & {
   items: Crawl[];
 };
-type SearchFields = "name" | "firstSeed" | "cid";
+type SearchFields = "name" | "firstSeed";
 type SearchResult = {
   item: {
     key: SearchFields;
@@ -76,7 +76,6 @@ export class CrawlsList extends LiteElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
-    cid: msg("Workflow ID"),
   };
 
   @property({ type: Object })
@@ -486,13 +485,13 @@ export class CrawlsList extends LiteElement {
       >
         <sl-input
           size="small"
-          placeholder=${msg("Filter by Name, Crawl Start URL, or Workflow ID")}
+          placeholder=${msg("Filter by Name or Crawl Start URL")}
           clearable
           value=${this.searchByValue}
           @sl-clear=${() => {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
-            const { name, firstSeed, cid, ...otherFilters } = this.filterBy;
+            const { name, firstSeed, ...otherFilters } = this.filterBy;
             this.filterBy = otherFilters;
           }}
           @sl-input=${this.onSearchInput}
@@ -884,8 +883,13 @@ export class CrawlsList extends LiteElement {
       .split("/orgs/")[1]
       .split("/")[0];
     try {
-      const { names, firstSeeds, workflowIds } = await this.apiFetch(
-        `/orgs/${oid}/crawlconfigs/search-values`,
+      const data: {
+        crawlIds: string[];
+        names: string[];
+        descriptions: string[];
+        firstSeeds: string[];
+      } = await this.apiFetch(
+        `/orgs/${oid}/all-crawls/search-values`,
         this.authState!
       );
 
@@ -897,9 +901,8 @@ export class CrawlsList extends LiteElement {
           value,
         });
       this.fuse.setCollection([
-        ...names.map(toSearchItem("name")),
-        ...firstSeeds.map(toSearchItem("firstSeed")),
-        ...workflowIds.map(toSearchItem("cid")),
+        ...data.names.map(toSearchItem("name")),
+        ...data.firstSeeds.map(toSearchItem("firstSeed")),
       ] as any);
     } catch (e) {
       console.debug(e);
