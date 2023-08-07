@@ -207,7 +207,7 @@ export class CollectionDetail extends LiteElement {
     const importCode = `importScripts("https://replayweb.page/sw.js");`;
 
     return html` <btrix-section-heading
-        >${msg("Link to Share")}</btrix-section-heading
+        >${msg("Link to Public View")}</btrix-section-heading
       >
       <section class="mt-3 mb-5">
         <p class="mb-3">
