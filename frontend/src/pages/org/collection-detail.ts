@@ -360,7 +360,7 @@ export class CollectionDetail extends LiteElement {
                     slot="prefix"
                     href="https://replayweb.page?source=${this.getPublicReplayURL()}"
                   >
-                    Go to Shared View
+                    Visit Shareable URL
                   </a>
                 </sl-menu-item>
                 <sl-menu-item

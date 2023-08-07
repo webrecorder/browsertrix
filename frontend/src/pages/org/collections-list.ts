@@ -562,7 +562,7 @@ export class CollectionsList extends LiteElement {
                       col
                     )}"
                   >
-                    Go to Shared View
+                    Visit Shareable URL
                   </a>
                 </sl-menu-item>
                 <sl-menu-item
