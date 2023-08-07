@@ -175,15 +175,14 @@ export class CollectionDetail extends LiteElement {
         label=${msg("Share Collection")}
         ?open=${this.showShareInfo}
         @sl-request-close=${() => (this.showShareInfo = false)}
+        style="--width: 32rem;"
       >
         <p class="mb-3">
-          ${this.collection?.isPublic
-            ? msg("This collection can be viewed by anyone with the link.")
-            : msg(
-                "Making this collection sharable will enable a public viewing link."
-              )}
+          ${msg(
+            "Making this collection sharable will enable a public viewing link."
+          )}
         </p>
-        <div>
+        <div class="mb-5">
           <sl-switch
             ?checked=${this.collection?.isPublic}
             @sl-change=${(e: CustomEvent) =>
@@ -207,8 +206,13 @@ export class CollectionDetail extends LiteElement {
     const embedCode = `<replay-web-page source="${replaySrc}"></replay-web-page>`;
     const importCode = `importScripts("https://replayweb.page/sw.js");`;
 
-    return html` <section class="my-5">
-        <h3 class="text-neutral-500 mb-1">${msg("Link to Share")}</h3>
+    return html` <btrix-section-heading
+        >${msg("Link to Share")}</btrix-section-heading
+      >
+      <section class="mt-3 mb-5">
+        <p class="mb-3">
+          ${msg("This collection can be viewed by anyone with the link.")}
+        </p>
         <div class="flex items-center rounded border">
           <div class="text-base">
             <btrix-copy-button
@@ -231,8 +235,7 @@ export class CollectionDetail extends LiteElement {
       <section class="mt-3">
         <p class="mb-3">
           ${msg(
-            html`You can also share this collection by embedding it into an
-            existing webpage.`
+            html`Share this collection by embedding it into an existing webpage.`
           )}
         </p>
         <p class="mb-3">
