@@ -684,7 +684,7 @@ def test_all_crawls_search_values(admin_auth_headers, default_org_id):
 
     # Test invalid filter
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/search-values?crawlType=upload",
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/search-values?crawlType=invalid",
         headers=admin_auth_headers,
     )
     assert r.status_code == 400
