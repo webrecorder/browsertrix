@@ -876,29 +876,6 @@ export class CrawlsList extends LiteElement {
 
     return data;
   }
-
-  /**
-   * Create a new template using existing template data
-   */
-  private async duplicateConfig(crawl: Crawl, workflow: Workflow) {
-    const workflowParams: WorkflowParams = {
-      ...workflow,
-      name: msg(str`${workflow.name} Copy`),
-    };
-
-    this.navTo(
-      `/orgs/${crawl.oid}/workflows?new&jobType=${workflowParams.jobType}`,
-      {
-        workflow: workflowParams,
-      }
-    );
-
-    this.notify({
-      message: msg(str`Copied Workflow to new template.`),
-      variant: "success",
-      icon: "check2-circle",
-    });
-  }
 }
 
 customElements.define("btrix-crawls-list", CrawlsList);
