@@ -202,19 +202,45 @@ export class CollectionDetail extends LiteElement {
   }
 
   private renderShareInfo = () => {
-    const embedCode = `<replay-web-page source="${this.getPublicReplayURL()}"></replay-web-page>`;
+    const replaySrc = this.getPublicReplayURL();
+    const publicReplayUrl = `https://replayweb.page?source=${replaySrc}`;
+    const embedCode = `<replay-web-page source="${replaySrc}"></replay-web-page>`;
     const importCode = `importScripts("https://replayweb.page/sw.js");`;
 
-    return html` <btrix-section-heading
-        >${msg("Embed Collection")}</btrix-section-heading
-      >
-      <div class="mt-3">
+    return html` <section class="my-5">
+        <h3 class="text-neutral-500 mb-1">${msg("Link to Share")}</h3>
+        <div class="flex items-center rounded border">
+          <div class="text-base">
+            <btrix-copy-button
+              .getValue=${() => publicReplayUrl}
+              content=${msg("Copy Public URL")}
+            ></btrix-copy-button>
+          </div>
+          <div class="flex-1 min-w-0 truncate">${publicReplayUrl}</div>
+          <div class="text-base">
+            <sl-icon-button
+              href=${publicReplayUrl}
+              name="box-arrow-up-right"
+              target="_blank"
+            >
+            </sl-icon-button>
+          </div>
+        </div>
+      </section>
+      <btrix-section-heading>${msg("Embed Collection")}</btrix-section-heading>
+      <section class="mt-3">
+        <p class="mb-3">
+          ${msg(
+            html`You can also share this collection by embedding it into an
+            existing webpage.`
+          )}
+        </p>
         <p class="mb-3">
           ${msg(html`Add the following embed code to your HTML page:`)}
         </p>
-        <div class="relative mb-5 rounded p-4 bg-slate-50">
+        <div class="relative mb-5 border rounded p-3 pr-9 bg-slate-50">
           <btrix-code value=${embedCode}></btrix-code>
-          <div class="absolute top-0 right-0">
+          <div class="absolute top-1.5 right-1.5 border rounded shadow-sm">
             <btrix-copy-button
               .getValue=${() => embedCode}
               content=${msg("Copy Embed Code")}
@@ -227,9 +253,9 @@ export class CollectionDetail extends LiteElement {
               <code class="text-[0.9em]">/replay/sw.js</code>:`
           )}
         </p>
-        <div class="relative mb-5 rounded p-4 bg-slate-50">
+        <div class="relative mb-5 border rounded p-3 pr-9 bg-slate-50">
           <btrix-code language="javascript" value=${importCode}></btrix-code>
-          <div class="absolute top-0 right-0">
+          <div class="absolute top-1.5 right-1.5 border rounded shadow-sm">
             <btrix-copy-button
               .getValue=${() => importCode}
               content=${msg("Copy JS")}
@@ -249,7 +275,7 @@ export class CollectionDetail extends LiteElement {
               for more details.`
           )}
         </p>
-      </div>`;
+      </section>`;
   };
 
   private renderHeader = () => html`
