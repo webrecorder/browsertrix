@@ -371,8 +371,12 @@ export class CollectionsList extends LiteElement {
           <div
             class="hidden md:grid md:grid-cols-[2rem_1fr_repeat(3,12ch)_18ch_2.5rem] gap-3"
           >
-            <div class="col-span-1 text-xs pl-3">
-              <span class="sr-only">${msg("Is Public?")}</span>
+            <div class="col-span-1 pl-3 text-center">
+              <sl-icon
+                class="block text-[15px]"
+                name="eye"
+                label=${msg("Collection share access")}
+              ></sl-icon>
             </div>
             <div class="col-span-1 text-xs">${msg("Name")}</div>
             <div class="col-span-1 text-xs">${msg("Archived Items")}</div>
@@ -457,7 +461,7 @@ export class CollectionsList extends LiteElement {
                     <sl-icon
                       class="inline-block align-middle"
                       name="people-fill"
-                      label=${msg("Collection is shareable")}
+                      label=${msg("Shareable Collection")}
                     ></sl-icon>
                   </sl-tooltip>
                 `
@@ -466,7 +470,7 @@ export class CollectionsList extends LiteElement {
                     <sl-icon
                       class="inline-block align-middle"
                       name="eye-slash-fill"
-                      label=${msg("Collection is private")}
+                      label=${msg("Private Collection")}
                     ></sl-icon>
                   </sl-tooltip>
                 `}
