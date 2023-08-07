@@ -722,7 +722,7 @@ export class CrawlsList extends LiteElement {
 
     this.cancelInProgressGetCrawls();
     try {
-      this.crawls = await this.getArchivedItems(this.artifactType, params);
+      this.crawls = await this.getArchivedItems(params);
     } catch (e: any) {
       if (e === ABORT_REASON_THROTTLE) {
         console.debug("Fetch archived items aborted to throttle");
@@ -744,7 +744,6 @@ export class CrawlsList extends LiteElement {
   }
 
   private async getArchivedItems(
-    artifactType: Crawl["type"],
     queryParams?: APIPaginationQuery & { state?: CrawlState[] }
   ): Promise<Crawls> {
     const query = queryString.stringify(
@@ -759,7 +758,7 @@ export class CrawlsList extends LiteElement {
         userid: this.filterByCurrentUser ? this.userId : undefined,
         sortBy: this.orderBy.field,
         sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
-        crawlType: artifactType,
+        crawlType: this.artifactType,
       },
       {
         arrayFormat: "comma",
@@ -818,13 +817,16 @@ export class CrawlsList extends LiteElement {
       .split("/orgs/")[1]
       .split("/")[0];
     try {
+      const query = queryString.stringify({
+        crawlType: this.artifactType,
+      });
       const data: {
         crawlIds: string[];
         names: string[];
         descriptions: string[];
         firstSeeds: string[];
       } = await this.apiFetch(
-        `/orgs/${oid}/all-crawls/search-values`,
+        `/orgs/${oid}/all-crawls/search-values?${query}`,
         this.authState!
       );
 
