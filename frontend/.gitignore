@@ -16,6 +16,7 @@
 /tmp/
 
 # build
+/.dist/
 /dist/
 
 # dotenv

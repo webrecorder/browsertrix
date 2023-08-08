@@ -3,9 +3,6 @@ ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage/
 
 FROM docker.io/library/nginx:1.23.2
 
-WORKDIR /app
-# COPY dist ./dist/
-
 ARG GIT_COMMIT_HASH
 ARG GIT_BRANCH_NAME
 ARG VERSION
@@ -19,7 +16,7 @@ RUN echo $GIT_COMMIT_HASH
 RUN echo $GIT_BRANCH_NAME
 RUN echo $VERSION
 
-COPY dist /usr/share/nginx/html
+COPY .dist /usr/share/nginx/html
 # RUN ls /usr/share/nginx/html
 
 #COPY ./nginx.conf /etc/nginx/nginx.conf
