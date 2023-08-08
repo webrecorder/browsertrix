@@ -8,7 +8,7 @@ WORKDIR /app
 COPY yarn.lock package.json ./
 # Uses `yarn cache clean` to let Docker cache layer instead
 # of including yarn cache in the build image
-RUN yarn --production --frozen-lockfile --network-timeout 1000000 && \
+RUN yarn --production --frozen-lockfile --ignore-optional --network-timeout 1000000 && \
     yarn cache clean
 
 COPY --link lit-localize.json \
