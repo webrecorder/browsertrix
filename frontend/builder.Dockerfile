@@ -39,6 +39,10 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
   VERSION=${VERSION} \
   RWP_BASE_URL=${RWP_BASE_URL}
 
+RUN echo $GIT_COMMIT_HASH
+RUN echo $GIT_BRANCH_NAME
+RUN echo $VERSION
+
 # Prevent Docker caching node_modules
 RUN yarn build && \
   rm -rf ./node_modules

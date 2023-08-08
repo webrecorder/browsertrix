@@ -23,8 +23,8 @@ COPY dist /usr/share/nginx/html
 # RUN ls /usr/share/nginx/html
 
 #COPY ./nginx.conf /etc/nginx/nginx.conf
-COPY --link ./frontend.conf.template /etc/nginx/templates/
-COPY --link ./minio.conf /etc/nginx/includes/
+COPY ./frontend.conf.template /etc/nginx/templates/
+COPY ./minio.conf /etc/nginx/includes/
 
-ADD --link ./00-browsertrix-nginx-init.sh ./docker-entrypoint.d/
+ADD ./00-browsertrix-nginx-init.sh ./docker-entrypoint.d/
 
