@@ -38,12 +38,32 @@ jobs:
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
 
-      - name: Build Frontend
+      - name: Build Frontend dist
         uses: docker/build-push-action@v3
         env:
           HUSKY: 0
         with:
           context: frontend
+          file: frontend/builder.Dockerfile
+          load: true
+          platforms: linux/amd64
+          build-args: |
+            VERSION=${{ env.VERSION }}
+            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
+            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
+          tags: user/browsertrix-frontend-builder:test
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
+      - name: Copy Frontend dist
+        run: |
+          docker cp $(docker create --name bc-frontend-builder-temp user/browsertrix-frontend-builder:test):/app/dist ./frontend/dist && docker rm bc-frontend-builder-temp
+
+      - name: Build Frontend nginx
+        uses: docker/build-push-action@v3
+        with:
+          context: frontend
+          platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
             VERSION=${{ env.VERSION }}
@@ -51,8 +71,8 @@ jobs:
             GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
 
           tags: ${{ secrets.DO_REGISTRY_PATH }}/webrecorder/browsertrix-frontend:latest
-          cache-from: type=gha,scope=frontend
-          cache-to: type=gha,scope=frontend,mode=max
+          # cache-from: type=gha,scope=frontend
+          # cache-to: type=gha,scope=frontend,mode=max
 
       - name: Get Kubeconfig
         env:
