@@ -40,6 +40,8 @@ jobs:
 
       - name: Build Frontend
         uses: docker/build-push-action@v3
+        env:
+          HUSKY: 0
         with:
           context: frontend
           push: true
