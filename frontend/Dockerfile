@@ -17,11 +17,10 @@ RUN echo $GIT_BRANCH_NAME
 RUN echo $VERSION
 
 COPY .dist /usr/share/nginx/html
-# RUN ls /usr/share/nginx/html
 
 #COPY ./nginx.conf /etc/nginx/nginx.conf
-COPY ./frontend.conf.template /etc/nginx/templates/
-COPY ./minio.conf /etc/nginx/includes/
+COPY --link ./frontend.conf.template /etc/nginx/templates/
+COPY --link ./minio.conf /etc/nginx/includes/
 
-ADD ./00-browsertrix-nginx-init.sh ./docker-entrypoint.d/
+ADD --link ./00-browsertrix-nginx-init.sh ./docker-entrypoint.d/
 
