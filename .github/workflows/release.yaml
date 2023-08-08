@@ -62,15 +62,21 @@ jobs:
           context: frontend
           platforms: linux/amd64
           load: true
-          target: build_deps
+          file: frontend/builder.Dockerfile
           build-args: |
             VERSION=${{ env.VERSION }}
             GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
             GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
 
-          tags: webrecorder/browsertrix-frontend-yarn-build:latest
-          cache-from: type=gha,scope=frontend-yarn
-          cache-to: type=gha,scope=frontend-yarn,mode=max
+          tags: user/browsertrix-frontend-builder:test
+          cache-from: type=gha,scope=frontend-builder
+          cache-to: type=gha,scope=frontend-builder,mode=max
+
+      -
+        name: Copy Frontend dist
+        run: |
+          docker cp $(docker create --name bc-frontend-builder-temp user/browsertrix-frontend-builder:test):/app/dist ./frontend/.dist && docker rm bc-frontend-builder-temp
+
       -
         name: Build Frontend
         uses: docker/build-push-action@v3
@@ -82,7 +88,6 @@ jobs:
             VERSION=${{ env.VERSION }}
             GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
             GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
-            YARN_BUILD_DEPS=webrecorder/browsertrix-frontend-yarn-build:latest
 
           tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-frontend:${{ env.VERSION }}, webrecorder/browsertrix-frontend:latest
           cache-from: type=gha,scope=frontend
