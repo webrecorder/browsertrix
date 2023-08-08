@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.4
 ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage/
+ARG YARN_BUILD_DEPS=build_deps
 
 FROM docker.io/library/node:16 as build_deps
 
@@ -9,8 +10,6 @@ COPY yarn.lock package.json ./
 # of including yarn cache in the build image
 RUN yarn --production --frozen-lockfile --network-timeout 1000000 && \
     yarn cache clean
-
-FROM build_deps as build
 
 COPY --link lit-localize.json \
     postcss.config.js \
@@ -22,6 +21,11 @@ COPY --link lit-localize.json \
     ./
 
 COPY --link src ./src/
+
+RUN yarn build
+
+ARG YARN_BUILD_DEPS
+FROM ${YARN_BUILD_DEPS} as build
 
 # Build variables used to show current app version
 # in the UI. Note that this will invalidate all
@@ -35,10 +39,6 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
     GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
     VERSION=${VERSION} \
     RWP_BASE_URL=${RWP_BASE_URL}
-
-# Prevent Docker caching node_modules
-RUN yarn build && \
-    rm -rf ./node_modules
 
 FROM docker.io/library/nginx:1.23.2
 
