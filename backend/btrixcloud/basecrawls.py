@@ -467,7 +467,7 @@ class BaseCrawlOps:
         names = await self.crawls.distinct("name", match_query)
         descriptions = await self.crawls.distinct("description", match_query)
         crawl_ids = await self.crawls.distinct("_id", match_query)
-        cids = await self.crawls.distinct("cid", match_query)
+        cids = await self.crawls.distinct("cid", match_query) if not type_ or type_ == "crawl" else []
 
         # Remove empty strings
         names = [name for name in names if name]
