@@ -66,9 +66,6 @@ jobs:
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
 
-      - name: List Arch
-        run: docker inspect docker.io/webrecorder/frontend-yarn-build:latest | grep 'Architecture'
-
       -
         name: Build Frontend
         uses: docker/build-push-action@v4

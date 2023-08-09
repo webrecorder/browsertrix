@@ -25,7 +25,7 @@ COPY --link src ./src/
 RUN yarn build
 
 ARG YARN_BUILD_DEPS
-FROM --platform=linux/amd64 ${YARN_BUILD_DEPS} as build
+FROM --platform=linux/amd64 "${YARN_BUILD_DEPS}" as build
 
 # Build variables used to show current app version
 # in the UI. Note that this will invalidate all
