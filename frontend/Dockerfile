@@ -21,8 +21,6 @@ COPY --link lit-localize.json \
 
 COPY --link src ./src/
 
-RUN yarn build
-
 # Build variables used to show current app version
 # in the UI. Note that this will invalidate all
 # subsequent RUN steps.
@@ -35,6 +33,10 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
     GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
     VERSION=${VERSION} \
     RWP_BASE_URL=${RWP_BASE_URL}
+
+# Prevent Docker image including node_modules to save space
+RUN yarn build && \
+  rm -rf ./node_modules
 
 FROM docker.io/library/nginx:1.23.2
 

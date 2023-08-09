@@ -42,7 +42,7 @@ jobs:
         with:
           context: backend
           platforms: linux/amd64,linux/arm64
-          #push: true
+          push: true
           tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-backend:${{ env.VERSION }}, webrecorder/browsertrix-backend:latest
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
@@ -55,7 +55,7 @@ jobs:
         with:
           context: frontend
           platforms: linux/amd64
-          load: true
+          push: true
           build-args: |
             VERSION=${{ env.VERSION }}
             GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
