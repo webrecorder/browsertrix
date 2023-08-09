@@ -260,7 +260,7 @@ export class CollectionDetail extends LiteElement {
         </p>
         <div class="relative mb-5 border rounded p-3 pr-9 bg-slate-50">
           <btrix-code language="javascript" value=${importCode}></btrix-code>
-          <div class="absolute top-1.5 right-1.5 border rounded shadow-sm">
+          <div class="absolute top-1.5 right-1.5 border rounded bg-white shadow-sm">
             <btrix-copy-button
               .getValue=${() => importCode}
               content=${msg("Copy JS")}
