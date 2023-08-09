@@ -63,15 +63,12 @@ jobs:
             GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
 
           tags: docker.io/webrecorder/frontend-yarn-build:latest
-          cache-from: type=gha,scope=frontend-yarn
-          cache-to: type=gha,scope=frontend-yarn,mode=max
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
 
-      - name: List Images
-        run: docker images
+      - name: List Arch
+        run: docker inspect docker.io/webrecorder/frontend-yarn-build:latest | grep 'Architecture'
 
-      - name: List Disk Space
-        run: df -h
- 
       -
         name: Build Frontend
         uses: docker/build-push-action@v4
