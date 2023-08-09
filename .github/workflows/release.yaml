@@ -61,6 +61,6 @@ jobs:
             GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
             GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
 
-          tags: docker.io/webrecorder/frontend-yarn-build:latest
+          tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-frontend:${{ env.VERSION }}, webrecorder/browsertrix-frontend:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
