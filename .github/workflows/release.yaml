@@ -3,7 +3,7 @@ name: Browsertrix Cloud Release Build
 on:
   release:
     types: [published]
- 
+
 jobs:
   btrix-release:
     runs-on: ubuntu-22.04
