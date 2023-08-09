@@ -255,7 +255,7 @@ export class CrawlsList extends LiteElement {
                   @click=${() => (this.isUploadingArchive = true)}
                 >
                   <sl-icon slot="prefix" name="upload"></sl-icon>
-                  ${msg("Upload Archive")}
+                  ${msg("Upload WACZ")}
                 </sl-button>
               `
             )}
