@@ -344,36 +344,33 @@ export class CrawlListItem extends LitElement {
         </div>
       </div>
       <div class="col action">
-        <slot name="menuTrigger">
-          <btrix-button
-            class="dropdownTrigger"
-            label=${msg("Actions")}
-            icon
-            @click=${(e: MouseEvent) => {
-              // Prevent anchor link default behavior
-              e.preventDefault();
-              // Stop prop to anchor link
-              e.stopPropagation();
-              this.dropdownIsOpen = !this.dropdownIsOpen;
-            }}
-            @focusout=${(e: FocusEvent) => {
-              const relatedTarget = e.relatedTarget as HTMLElement;
-              if (relatedTarget) {
-                if (this.menuArr[0]?.contains(relatedTarget)) {
-                  // Keep dropdown open if moving to menu selection
-                  return;
-                }
-                if (this.row?.isEqualNode(relatedTarget)) {
-                  // Handle with click event
-                  return;
-                }
+        <sl-icon-button
+          class="dropdownTrigger"
+          label=${msg("Actions")}
+          name="three-dots-vertical"
+          @click=${(e: MouseEvent) => {
+            // Prevent anchor link default behavior
+            e.preventDefault();
+            // Stop prop to anchor link
+            e.stopPropagation();
+            this.dropdownIsOpen = !this.dropdownIsOpen;
+          }}
+          @focusout=${(e: FocusEvent) => {
+            const relatedTarget = e.relatedTarget as HTMLElement;
+            if (relatedTarget) {
+              if (this.menuArr[0]?.contains(relatedTarget)) {
+                // Keep dropdown open if moving to menu selection
+                return;
               }
-              this.dropdownIsOpen = false;
-            }}
-          >
-            <sl-icon name="three-dots-vertical"></sl-icon>
-          </btrix-button>
-        </slot>
+              if (this.row?.isEqualNode(relatedTarget)) {
+                // Handle with click event
+                return;
+              }
+            }
+            this.dropdownIsOpen = false;
+          }}
+        >
+        </sl-icon-button>
       </div>
     </a>`;
   }
