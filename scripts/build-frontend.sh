@@ -3,8 +3,6 @@ CURR=$(dirname "${BASH_SOURCE[0]}")
 
 export GIT_COMMIT_HASH="$(git rev-parse --short HEAD)"
 export GIT_BRANCH_NAME="$(git rev-parse --abbrev-ref HEAD)"
-export RWP_BASE_URL="https://cdn.jsdelivr.net/npm/replaywebpage/"
-export VERSION=`cat version.txt`
 
 DOCKER_BUILDKIT=1 docker build \
     --build-arg GIT_COMMIT_HASH \
