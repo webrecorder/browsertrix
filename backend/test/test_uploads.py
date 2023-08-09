@@ -625,6 +625,7 @@ def test_all_crawls_search_values(admin_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/search-values",
         headers=admin_auth_headers,
     )
+    assert r.status_code == 200
     data = r.json()
 
     assert len(data["names"]) == 5
@@ -639,7 +640,52 @@ def test_all_crawls_search_values(admin_auth_headers, default_org_id):
 
     assert sorted(data["descriptions"]) == ["Lorem ipsum"]
     assert sorted(data["firstSeeds"]) == ["https://webrecorder.net/"]
-    assert len(data["crawlIds"]) == 7
+
+    # Test filtering by crawls
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/search-values?crawlType=crawl",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert len(data["names"]) == 2
+    expected_names = [
+        "Crawler User Test Crawl",
+        "All Crawls Test Crawl",
+    ]
+    for expected_name in expected_names:
+        assert expected_name in data["names"]
+
+    assert sorted(data["descriptions"]) == ["Lorem ipsum"]
+    assert sorted(data["firstSeeds"]) == ["https://webrecorder.net/"]
+
+    # Test filtering by uploads
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/search-values?crawlType=upload",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert len(data["names"]) == 3
+    expected_names = [
+        "My Upload Updated",
+        "test2.wacz",
+    ]
+    for expected_name in expected_names:
+        assert expected_name in data["names"]
+
+    assert sorted(data["descriptions"]) == []
+    assert sorted(data["firstSeeds"]) == []
+
+    # Test invalid filter
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/search-values?crawlType=invalid",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_crawl_type"
 
 
 def test_get_upload_from_all_crawls(admin_auth_headers, default_org_id):

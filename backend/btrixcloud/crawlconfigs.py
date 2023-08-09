@@ -624,7 +624,6 @@ class CrawlConfigOps:
         names = await self.crawl_configs.distinct("name", {"oid": org.id})
         descriptions = await self.crawl_configs.distinct("description", {"oid": org.id})
         workflow_ids = await self.crawl_configs.distinct("_id", {"oid": org.id})
-        crawl_ids = await self.crawl_ops.crawls.distinct("_id", {"oid": org.id})
 
         # Remove empty strings
         names = [name for name in names if name]
@@ -641,7 +640,6 @@ class CrawlConfigOps:
             "descriptions": descriptions,
             "firstSeeds": list(first_seeds),
             "workflowIds": workflow_ids,
-            "crawlIds": crawl_ids,
         }
 
     async def run_now(self, cid: str, org: Organization, user: User):
