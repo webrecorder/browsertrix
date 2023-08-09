@@ -1,8 +1,7 @@
 # syntax=docker/dockerfile:1.4
 ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage/
-ARG YARN_BUILD_DEPS=build_deps
 
-FROM docker.io/library/node:16 as build_deps
+FROM --platform=$BUILDPLATFORM docker.io/library/node:16 as build_deps
 
 WORKDIR /app
 COPY yarn.lock package.json ./
@@ -24,9 +23,6 @@ COPY --link src ./src/
 
 RUN yarn build
 
-ARG YARN_BUILD_DEPS
-FROM --platform=linux/amd64 "${YARN_BUILD_DEPS}" as build
-
 # Build variables used to show current app version
 # in the UI. Note that this will invalidate all
 # subsequent RUN steps.
@@ -45,7 +41,7 @@ FROM docker.io/library/nginx:1.23.2
 ARG RWP_BASE_URL
 ENV RWP_BASE_URL=${RWP_BASE_URL}
 
-COPY --link --from=build /app/dist /usr/share/nginx/html
+COPY --link --from=build_deps /app/dist /usr/share/nginx/html
 
 #COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY --link ./frontend.conf.template /etc/nginx/templates/

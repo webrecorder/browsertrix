@@ -48,7 +48,7 @@ jobs:
           cache-to: type=gha,scope=backend,mode=max
 
       -
-        name: Build Frontend Yarn Build
+        name: Build Frontend
         uses: docker/build-push-action@v4
         env:
           HUSKY: 0
@@ -56,7 +56,6 @@ jobs:
           context: frontend
           platforms: linux/amd64
           load: true
-          target: build_deps
           build-args: |
             VERSION=${{ env.VERSION }}
             GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
@@ -65,24 +64,3 @@ jobs:
           tags: docker.io/webrecorder/frontend-yarn-build:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
-
-      - name: Manual Build
-        run: docker build --platform linux/amd64,linux/arm64 --build-arg YARN_BUILD_DEPS=docker.io/webrecorder/frontend-yarn-build:latest -t webrecorder/browsertrix-frontend frontend
-
-      -
-        name: Build Frontend
-        uses: docker/build-push-action@v4
-        with:
-          context: frontend
-          platforms: linux/amd64,linux/arm64
-          push: true
-          build-args: |
-            VERSION=${{ env.VERSION }}
-            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
-            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
-            YARN_BUILD_DEPS=docker.io/webrecorder/frontend-yarn-build:latest
-
-          tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-frontend:${{ env.VERSION }}, webrecorder/browsertrix-frontend:latest
-          cache-from: type=gha,scope=frontend
-          cache-to: type=gha,scope=frontend,mode=max
-
