@@ -27,6 +27,8 @@ jobs:
             ${{ runner.os }}-btrix-frontend-build-
       - name: Install dependencies
         working-directory: frontend
+        env:
+          HUSKY: 0
         run: yarn install --frozen-lockfile
       - name: Unit tests
         working-directory: frontend

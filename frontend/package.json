@@ -73,20 +73,22 @@
     "localize:build": "lit-localize build"
   },
   "devDependencies": {
-    "@esm-bundle/chai": "^4.3.4-fix.0",
     "@lit/localize-tools": "^0.6.9",
-    "@open-wc/testing": "^3.2.0",
-    "@playwright/test": "1.32.1",
     "@web/dev-server-esbuild": "^0.3.3",
     "@web/dev-server-import-maps": "^0.0.6",
     "@web/dev-server-rollup": "^0.3.21",
-    "@web/test-runner": "^0.13.22",
-    "@web/test-runner-playwright": "^0.8.8",
-    "chromium": "^3.0.3",
     "husky": "^8.0.3",
     "lint-staged": "^13.1.0",
     "sinon": "^12.0.1",
     "webpack-dev-server": "^4.3.0"
+  },
+  "optionalDependencies": {
+    "@esm-bundle/chai": "^4.3.4-fix.0",
+    "@open-wc/testing": "^3.2.0",
+    "@playwright/test": "1.32.1",
+    "@web/test-runner": "^0.13.22",
+    "@web/test-runner-playwright": "^0.8.8",
+    "chromium": "^3.0.3"
   },
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",

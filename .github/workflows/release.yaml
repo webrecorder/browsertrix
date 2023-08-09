@@ -37,7 +37,7 @@ jobs:
 
       -
         name: Build Backend
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: backend
           platforms: linux/amd64,linux/arm64
@@ -48,7 +48,9 @@ jobs:
 
       -
         name: Build Frontend
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
+        env:
+          HUSKY: 0
         with:
           context: frontend
           platforms: linux/amd64,linux/arm64
@@ -61,4 +63,3 @@ jobs:
           tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-frontend:${{ env.VERSION }}, webrecorder/browsertrix-frontend:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
-
