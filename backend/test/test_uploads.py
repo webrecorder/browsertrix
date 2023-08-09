@@ -640,7 +640,6 @@ def test_all_crawls_search_values(admin_auth_headers, default_org_id):
 
     assert sorted(data["descriptions"]) == ["Lorem ipsum"]
     assert sorted(data["firstSeeds"]) == ["https://webrecorder.net/"]
-    assert len(data["crawlIds"]) == 7
 
     # Test filtering by crawls
     r = requests.get(
@@ -660,7 +659,6 @@ def test_all_crawls_search_values(admin_auth_headers, default_org_id):
 
     assert sorted(data["descriptions"]) == ["Lorem ipsum"]
     assert sorted(data["firstSeeds"]) == ["https://webrecorder.net/"]
-    assert len(data["crawlIds"]) == 4
 
     # Test filtering by uploads
     r = requests.get(
@@ -680,7 +678,6 @@ def test_all_crawls_search_values(admin_auth_headers, default_org_id):
 
     assert sorted(data["descriptions"]) == []
     assert sorted(data["firstSeeds"]) == []
-    assert len(data["crawlIds"]) == 3
 
     # Test invalid filter
     r = requests.get(

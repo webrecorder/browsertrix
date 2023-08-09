@@ -466,7 +466,6 @@ class BaseCrawlOps:
 
         names = await self.crawls.distinct("name", match_query)
         descriptions = await self.crawls.distinct("description", match_query)
-        crawl_ids = await self.crawls.distinct("_id", match_query)
         cids = (
             await self.crawls.distinct("cid", match_query)
             if not type_ or type_ == "crawl"
@@ -489,7 +488,6 @@ class BaseCrawlOps:
             "names": names,
             "descriptions": descriptions,
             "firstSeeds": list(first_seeds),
-            "crawlIds": list(crawl_ids),
         }
 
 
