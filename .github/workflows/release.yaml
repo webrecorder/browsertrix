@@ -3,7 +3,6 @@ name: Browsertrix Cloud Release Build
 on:
   release:
     types: [published]
-  push:
  
 jobs:
   btrix-release:
