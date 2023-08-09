@@ -43,6 +43,6 @@ RUN echo $GIT_COMMIT_HASH
 RUN echo $GIT_BRANCH_NAME
 RUN echo $VERSION
 
-# Prevent Docker caching node_modules
+# Prevent Docker image including node_modules to save space
 RUN yarn build && \
   rm -rf ./node_modules
