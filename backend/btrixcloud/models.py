@@ -724,6 +724,7 @@ class OrgOut(BaseMongoModel):
     usage: Optional[Dict[str, int]]
     default: bool = False
 
+    webhooks: Optional[OrgWebhookUrls] = OrgWebhookUrls()
     quotas: Optional[OrgQuotas] = OrgQuotas()
 
 
