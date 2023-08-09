@@ -66,6 +66,9 @@ jobs:
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
 
+      - name: Manual Build
+        run: docker build --platform linux/amd64,linux/arm64 --build-arg YARN_BUILD_DEPS=docker.io/webrecorder/frontend-yarn-build:latest -t webrecorder/browsertrix-frontend frontend
+
       -
         name: Build Frontend
         uses: docker/build-push-action@v4
