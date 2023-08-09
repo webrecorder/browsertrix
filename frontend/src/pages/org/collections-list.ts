@@ -308,7 +308,7 @@ export class CollectionsList extends LiteElement {
       >
         <sl-input
           size="small"
-          placeholder=${msg("Search by name")}
+          placeholder=${msg("Search by Name")}
           clearable
           value=${this.searchByValue}
           @sl-clear=${() => {

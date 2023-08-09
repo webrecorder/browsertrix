@@ -536,7 +536,7 @@ export class CrawlConfigEditor extends LiteElement {
       browserSettings: msg("Browser Settings"),
       crawlScheduling: msg("Scheduling"),
       crawlMetadata: msg("Metadata"),
-      confirmSettings: msg("Review Config"),
+      confirmSettings: msg("Review Settings"),
     };
 
     return html`
@@ -1705,8 +1705,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ? msg(
             "There are issues with this Workflow. Please go through previous steps and fix all issues to continue."
           )
-        : msg(html`There is an issue with this Workflow:<br /><br />Crawl URL(s)
-            required in
+        : msg(html`There is an issue with this Crawl Workflow:<br /><br />Crawl
+            URL(s) required in
             <a href="${crawlSetupUrl}" class="bold underline hover:no-underline"
               >Crawl Setup</a
             >. <br /><br />

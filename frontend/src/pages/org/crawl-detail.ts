@@ -153,15 +153,11 @@ export class CrawlDetail extends LiteElement {
 
     switch (this.sectionName) {
       case "replay":
-        sectionContent = this.renderPanel(
-          msg("Replay Crawl"),
-          this.renderReplay(),
-          {
-            "overflow-hidden": true,
-            "rounded-lg": true,
-            border: true,
-          }
-        );
+        sectionContent = this.renderPanel(msg("Replay"), this.renderReplay(), {
+          "overflow-hidden": true,
+          "rounded-lg": true,
+          border: true,
+        });
         break;
       case "files":
         sectionContent = this.renderPanel(
@@ -173,11 +169,15 @@ export class CrawlDetail extends LiteElement {
         sectionContent = this.renderPanel(msg("Error Logs"), this.renderLogs());
         break;
       case "config":
-        sectionContent = this.renderPanel(msg("Config"), this.renderConfig(), {
-          "p-4": true,
-          "rounded-lg": true,
-          border: true,
-        });
+        sectionContent = this.renderPanel(
+          msg("Crawl Settings"),
+          this.renderConfig(),
+          {
+            "p-4": true,
+            "rounded-lg": true,
+            border: true,
+          }
+        );
         break;
       default:
         sectionContent = html`
@@ -357,7 +357,7 @@ export class CrawlDetail extends LiteElement {
             section: "replay",
             iconLibrary: "app",
             icon: "link-replay",
-            label: msg("Replay Crawl"),
+            label: msg("Replay"),
           })}
           ${renderNavItem({
             section: "files",
@@ -378,7 +378,7 @@ export class CrawlDetail extends LiteElement {
                 section: "config",
                 iconLibrary: "default",
                 icon: "file-code-fill",
-                label: msg("Config"),
+                label: msg("Crawl Settings"),
               })}
             `
           )}
