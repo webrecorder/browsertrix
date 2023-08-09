@@ -872,7 +872,7 @@ export class CollectionEditor extends LiteElement {
       >
         <sl-input
           size="small"
-          placeholder=${msg("Search by name or Crawl Start URL")}
+          placeholder=${msg("Search by Name or Crawl Start URL")}
           clearable
           value=${this.searchByValue}
           @sl-clear=${() => {

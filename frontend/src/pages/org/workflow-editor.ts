@@ -536,7 +536,7 @@ export class CrawlConfigEditor extends LiteElement {
       browserSettings: msg("Browser Settings"),
       crawlScheduling: msg("Scheduling"),
       crawlMetadata: msg("Metadata"),
-      confirmSettings: msg("Review Config"),
+      confirmSettings: msg("Review Settings"),
     };
 
     return html`
