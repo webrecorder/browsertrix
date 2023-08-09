@@ -54,7 +54,7 @@ jobs:
           cache-to: type=gha,scope=backend,mode=max
 
       -
-        name: Build Frontend Yarn Build
+        name: Build Frontend Yarn Builder
         uses: docker/build-push-action@v3
         env:
           HUSKY: 0

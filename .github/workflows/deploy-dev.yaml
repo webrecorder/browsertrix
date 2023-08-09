@@ -38,14 +38,12 @@ jobs:
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
 
-      -
-        name: Build Frontend Yarn Build
+      - name: Build Frontend Yarn Builder
         uses: docker/build-push-action@v3
         env:
           HUSKY: 0
         with:
           context: frontend
-          platforms: linux/amd64
           load: true
           file: frontend/builder.Dockerfile
           build-args: |
@@ -67,7 +65,6 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: frontend
-          platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
             VERSION=${{ env.VERSION }}
