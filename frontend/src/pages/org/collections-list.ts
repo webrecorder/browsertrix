@@ -369,10 +369,16 @@ export class CollectionsList extends LiteElement {
       return html`
         <header class="py-2 text-neutral-600 leading-none">
           <div
-            class="hidden md:grid md:grid-cols-[repeat(2,1fr)_repeat(3,12ch)_16ch_2.5rem] gap-3"
+            class="hidden md:grid md:grid-cols-[2rem_1fr_repeat(3,12ch)_18ch_2.5rem] gap-3"
           >
-            <div class="col-span-1 text-xs pl-3">${msg("Collection Name")}</div>
-            <div class="col-span-1 text-xs">${msg("Top 3 Tags")}</div>
+            <div class="col-span-1 pl-3 text-center">
+              <sl-icon
+                class="block text-[15px]"
+                name="eye"
+                label=${msg("Collection share access")}
+              ></sl-icon>
+            </div>
+            <div class="col-span-1 text-xs">${msg("Name")}</div>
             <div class="col-span-1 text-xs">${msg("Archived Items")}</div>
             <div class="col-span-1 text-xs">${msg("Total Size")}</div>
             <div class="col-span-1 text-xs">${msg("Total Pages")}</div>
@@ -446,41 +452,37 @@ export class CollectionsList extends LiteElement {
     html`<li class="mb-2 last:mb-0">
       <div class="block border rounded leading-none">
         <div
-          class="relative p-3 md:p-0 grid grid-cols-1 md:grid-cols-[repeat(2,1fr)_repeat(3,12ch)_16ch_2.5rem] gap-3 lg:h-10 items-center"
+          class="relative p-3 md:p-0 grid grid-cols-1 md:grid-cols-[2rem_1fr_repeat(3,12ch)_18ch_2.5rem] gap-3 lg:h-10 items-center"
         >
-          <div class="col-span-1 md:pl-3 truncate font-semibold">
+          <div class="col-span-1 md:pl-3 text-base text-neutral-500">
+            ${col?.isPublic
+              ? html`
+                  <sl-tooltip content=${msg("Shareable")}>
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="people-fill"
+                      label=${msg("Shareable Collection")}
+                    ></sl-icon>
+                  </sl-tooltip>
+                `
+              : html`
+                  <sl-tooltip content=${msg("Private")}>
+                    <sl-icon
+                      class="inline-block align-middle"
+                      name="eye-slash-fill"
+                      label=${msg("Private Collection")}
+                    ></sl-icon>
+                  </sl-tooltip>
+                `}
+          </div>
+          <div class="col-span-1 truncate font-semibold">
             <a
               href=${`/orgs/${this.orgId}/collections/view/${col.id}`}
               class="block text-primary hover:text-indigo-500"
               @click=${this.navLink}
             >
-              ${col?.isPublic
-                ? html`
-                    <sl-tooltip content=${msg("Shareable")}>
-                      <sl-icon
-                        style="margin-right: 4px; vertical-align: bottom; font-size: 14px;"
-                        name="people-fill"
-                      ></sl-icon>
-                    </sl-tooltip>
-                  `
-                : html`
-                    <sl-tooltip content=${msg("Private")}>
-                      <sl-icon
-                        style="margin-right: 4px; vertical-align: bottom; font-size: 14px;"
-                        name="eye-slash-fill"
-                      ></sl-icon>
-                    </sl-tooltip>
-                  `}
               ${col.name}
             </a>
-          </div>
-          <div class="col-span-1 order-last md:order-none truncate">
-            ${col.tags
-              .slice(0, 3)
-              .map(
-                (tag) =>
-                  html`<btrix-tag class="mr-1" size="small">${tag}</btrix-tag>`
-              )}
           </div>
           <div
             class="col-span-1 truncate text-xs text-neutral-500 font-monostyle"
@@ -560,7 +562,7 @@ export class CollectionsList extends LiteElement {
                       col
                     )}"
                   >
-                    Go to Shared View
+                    Visit Shareable URL
                   </a>
                 </sl-menu-item>
                 <sl-menu-item

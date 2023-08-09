@@ -150,6 +150,9 @@ import("./file-list").then(({ FileList, FileListItem }) => {
 import("./collections-add").then(({ CollectionsAdd }) => {
   customElements.define("btrix-collections-add", CollectionsAdd);
 });
+import("./code").then(({ Code }) => {
+  customElements.define("btrix-code", Code);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);

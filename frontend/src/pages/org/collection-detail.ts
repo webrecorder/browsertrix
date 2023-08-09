@@ -5,6 +5,7 @@ import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
 import queryString from "query-string";
 import type { TemplateResult } from "lit";
+import type { SlCheckbox } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -52,7 +53,7 @@ export class CollectionDetail extends LiteElement {
   private isDescriptionExpanded = false;
 
   @state()
-  private showEmbedInfo = false;
+  private showShareInfo = false;
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
@@ -109,15 +110,14 @@ export class CollectionDetail extends LiteElement {
             html`<sl-skeleton class="w-96"></sl-skeleton>`}
           </h1>
         </div>
-        ${when(
-          this.collection?.isPublic,
-          () => html`
-            <sl-button size="small" @click=${() => (this.showEmbedInfo = true)}>
-              <sl-icon name="code-slash"></sl-icon>
-              View Embed Code
-            </sl-button>
-          `
-        )}
+        <sl-button
+          variant="primary"
+          size="small"
+          @click=${() => (this.showShareInfo = true)}
+        >
+          <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+          Share
+        </sl-button>
         ${when(this.isCrawler, this.renderActions)}
       </header>
       <div class="border rounded-lg py-2 mb-3">${this.renderInfoBar()}</div>
@@ -159,7 +159,7 @@ export class CollectionDetail extends LiteElement {
           >
         </div>
       </btrix-dialog>
-      ${this.renderShareInfo()}`;
+      ${this.renderShareDialog()}`;
   }
 
   private getPublicReplayURL() {
@@ -169,34 +169,83 @@ export class CollectionDetail extends LiteElement {
     ).href;
   }
 
-  private renderShareInfo = () => {
-    if (!this.collection?.isPublic) {
-      return;
-    }
+  private renderShareDialog() {
+    return html`
+      <btrix-dialog
+        label=${msg("Share Collection")}
+        ?open=${this.showShareInfo}
+        @sl-request-close=${() => (this.showShareInfo = false)}
+        style="--width: 32rem;"
+      >
+        ${this.collection?.isPublic
+          ? ""
+          : html`<p class="mb-3">
+              ${msg(
+                "Make this collection shareable to enable a public viewing link."
+              )}
+            </p>`}
+        <div class="mb-5">
+          <sl-switch
+            ?checked=${this.collection?.isPublic}
+            @sl-change=${(e: CustomEvent) =>
+              this.onTogglePublic((e.target as SlCheckbox).checked)}
+            >${msg("Collection is Shareable")}</sl-switch
+          >
+        </div>
+        ${when(this.collection?.isPublic, this.renderShareInfo)}
+        <div slot="footer" class="flex justify-end">
+          <sl-button size="small" @click=${() => (this.showShareInfo = false)}
+            >${msg("Done")}</sl-button
+          >
+        </div>
+      </btrix-dialog>
+    `;
+  }
 
-    const embedCode = `<replay-web-page source="${this.getPublicReplayURL()}"></replay-web-page>`;
+  private renderShareInfo = () => {
+    const replaySrc = this.getPublicReplayURL();
+    const publicReplayUrl = `https://replayweb.page?source=${replaySrc}`;
+    const embedCode = `<replay-web-page source="${replaySrc}"></replay-web-page>`;
     const importCode = `importScripts("https://replayweb.page/sw.js");`;
 
-    return html` <btrix-dialog
-      label=${msg(str`Embed Code for “${this.collection?.name}”`)}
-      ?open=${this.showEmbedInfo}
-      @sl-request-close=${() => (this.showEmbedInfo = false)}
-    >
-      <div class="text-left">
-        <p class="mb-5">
+    return html` <btrix-section-heading
+        >${msg("Link to Share")}</btrix-section-heading
+      >
+      <section class="mt-3 mb-5">
+        <p class="mb-3">
+          ${msg("This collection can be viewed by anyone with the link.")}
+        </p>
+        <div class="flex items-center rounded border">
+          <div class="text-base">
+            <btrix-copy-button
+              .getValue=${() => publicReplayUrl}
+              content=${msg("Copy Public URL")}
+            ></btrix-copy-button>
+          </div>
+          <div class="flex-1 min-w-0 truncate">${publicReplayUrl}</div>
+          <div class="text-base">
+            <sl-icon-button
+              href=${publicReplayUrl}
+              name="box-arrow-up-right"
+              target="_blank"
+            >
+            </sl-icon-button>
+          </div>
+        </div>
+      </section>
+      <btrix-section-heading>${msg("Embed Collection")}</btrix-section-heading>
+      <section class="mt-3">
+        <p class="mb-3">
           ${msg(
-            html`Embed this collection in another site using these
-              <strong class="font-medium">ReplayWeb.page</strong> code snippets.`
+            html`Share this collection by embedding it into an existing webpage.`
           )}
         </p>
         <p class="mb-3">
           ${msg(html`Add the following embed code to your HTML page:`)}
         </p>
-        <div class="relative">
-          <pre
-            class="whitespace-pre-wrap mb-5 rounded p-4 bg-slate-50 text-slate-600 text-[0.9em]"
-          ><code>${embedCode}</code></pre>
-          <div class="absolute top-0 right-0">
+        <div class="relative mb-5 border rounded p-3 pr-9 bg-slate-50">
+          <btrix-code value=${embedCode}></btrix-code>
+          <div class="absolute top-1.5 right-1.5 border rounded bg-white shadow-sm">
             <btrix-copy-button
               .getValue=${() => embedCode}
               content=${msg("Copy Embed Code")}
@@ -205,15 +254,13 @@ export class CollectionDetail extends LiteElement {
         </div>
         <p class="mb-3">
           ${msg(
-            html`Add the following JavaScript to
-              <code class="text-[0.9em]">./replay/sw.js</code>:`
+            html`Add the following JavaScript to your
+              <code class="text-[0.9em]">/replay/sw.js</code>:`
           )}
         </p>
-        <div class="relative">
-          <pre
-            class="whitespace-pre-wrap mb-5 rounded p-4 bg-slate-50 text-slate-600 text-[0.9em]"
-          ><code>${importCode}</code></pre>
-          <div class="absolute top-0 right-0">
+        <div class="relative mb-5 border rounded p-3 pr-9 bg-slate-50">
+          <btrix-code language="javascript" value=${importCode}></btrix-code>
+          <div class="absolute top-1.5 right-1.5 border rounded bg-white shadow-sm">
             <btrix-copy-button
               .getValue=${() => importCode}
               content=${msg("Copy JS")}
@@ -233,8 +280,7 @@ export class CollectionDetail extends LiteElement {
               for more details.`
           )}
         </p>
-      </div>
-    </btrix-dialog>`;
+      </section>`;
   };
 
   private renderHeader = () => html`
@@ -314,7 +360,7 @@ export class CollectionDetail extends LiteElement {
                     slot="prefix"
                     href="https://replayweb.page?source=${this.getPublicReplayURL()}"
                   >
-                    Go to Public View
+                    Visit Shareable URL
                   </a>
                 </sl-menu-item>
                 <sl-menu-item
