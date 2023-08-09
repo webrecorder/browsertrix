@@ -349,6 +349,7 @@ class CrawlOut(BaseMongoModel):
     collections: Optional[List[UUID4]] = []
 
     # automated crawl fields
+    config: Optional[RawCrawlConfig]
     cid: Optional[UUID4]
     name: Optional[str]
     firstSeed: Optional[str]
