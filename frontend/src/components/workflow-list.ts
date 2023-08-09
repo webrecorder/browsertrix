@@ -553,8 +553,8 @@ export class WorkflowList extends LitElement {
 
   render() {
     return html` <div class="listHeader row">
-        <div class="col">${msg("Workflow Name & Last Updated")}</div>
-        <div class="col">${msg("Workflow Status")}</div>
+        <div class="col">${msg("Name & Last Updated")}</div>
+        <div class="col">${msg("Last Crawl Status")}</div>
         <div class="col">${msg("Total Size")}</div>
         <div class="col">${msg("Started By & Schedule")}</div>
         <div class="col action">

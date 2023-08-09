@@ -136,8 +136,10 @@ export class BrowserProfilesDetail extends LiteElement {
           </div>
           <div class="col-span-3 md:col-span-1">
             <dt class="text-sm text-0-600">
-              <span class="inline-block align-middle">${msg("Workflows")}</span>
-              <sl-tooltip content=${msg("Workflows using this profile")}>
+              <span class="inline-block align-middle"
+                >${msg("Crawl Workflows")}</span
+              >
+              <sl-tooltip content=${msg("Crawl workflows using this profile")}>
                 <sl-icon
                   class="inline-block align-middle"
                   name="info-circle"
