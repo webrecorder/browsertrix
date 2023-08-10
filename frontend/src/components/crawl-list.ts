@@ -220,14 +220,12 @@ export class CrawlListItem extends LitElement {
   }
 
   renderRow() {
-    const hash = this.crawl && isActive(this.crawl.state) ? "#watch" : "";
-    const artifactType = this.crawl?.type || "crawl";
     const typePath = this.crawl?.type === "upload" ? "upload" : "crawl";
     return html`<a
       class="item row"
       role="button"
       href="${this.baseUrl ||
-      `/orgs/${this.crawl?.oid}/artifacts/${typePath}`}/${this.crawl?.id}"
+      `/orgs/${this.crawl?.oid}/archive/items/${typePath}`}/${this.crawl?.id}"
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;
@@ -507,7 +505,7 @@ export class CrawlList extends LitElement {
   baseUrl?: string;
 
   @property({ type: String })
-  artifactType: Crawl["type"] = null;
+  itemType: Crawl["type"] = null;
 
   @queryAssignedElements({ selector: "btrix-crawl-list-item" })
   listItems!: Array<HTMLElement>;

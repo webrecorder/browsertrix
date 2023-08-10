@@ -253,7 +253,7 @@ export class Crawls extends LiteElement {
     if (!this.crawls) return;
 
     return html`
-      <btrix-crawl-list baseUrl=${"/crawls/crawl"} artifactType="crawl">
+      <btrix-crawl-list baseUrl=${"/crawls/crawl"} itemType="crawl">
         ${this.crawls.items.map(this.renderCrawlItem)}
       </btrix-crawl-list>
     `;

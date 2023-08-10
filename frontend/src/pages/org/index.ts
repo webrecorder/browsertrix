@@ -35,7 +35,7 @@ import type { Tab as CollectionTab } from "./collection-detail";
 export type OrgTab =
   | "crawls"
   | "workflows"
-  | "artifacts"
+  | "archive"
   | "browser-profiles"
   | "collections"
   | "settings";
@@ -44,13 +44,13 @@ type Params = {
   crawlOrWorkflowId?: string;
   browserProfileId?: string;
   browserId?: string;
-  artifactId?: string;
-  resourceId?: string;
-  resourceTab?: string;
-  artifactType?: Crawl["type"];
+  itemId?: string;
+  collectionId?: string;
+  collectionTab?: string;
+  itemType?: Crawl["type"];
 };
 
-const defaultTab = "crawls";
+const defaultTab = "workflows";
 
 @needLogin
 @localized()
@@ -130,8 +130,8 @@ export class Org extends LiteElement {
     let tabPanelContent = "" as any;
 
     switch (this.orgTab) {
-      case "artifacts":
-        tabPanelContent = this.renderCrawls();
+      case "archive":
+        tabPanelContent = this.renderArchive();
         break;
       case "workflows":
         tabPanelContent = this.renderWorkflows();
@@ -178,9 +178,9 @@ export class Org extends LiteElement {
             path: "workflows/crawls",
           })}
           ${this.renderNavTab({
-            tabName: "artifacts",
+            tabName: "archive",
             label: msg("All Archived Items"),
-            path: "artifacts/crawls",
+            path: "archive/items",
           })}
           ${this.renderNavTab({
             tabName: "collections",
@@ -236,22 +236,18 @@ export class Org extends LiteElement {
     `;
   }
 
-  private renderCrawls() {
+  private renderArchive() {
     const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
-    const crawlsBaseUrl = `/orgs/${this.orgId}/artifacts/crawls`;
+    const crawlsBaseUrl = `/orgs/${this.orgId}/archive/items`;
 
-    const artifactType = this.orgPath.includes("/artifacts/upload")
-      ? "upload"
-      : "crawl";
-
-    if (this.params.crawlOrWorkflowId) {
+    if (this.params.itemId) {
       return html` <btrix-crawl-detail
         .authState=${this.authState!}
         orgId=${this.orgId}
-        crawlId=${this.params.crawlOrWorkflowId}
+        crawlId=${this.params.itemId}
         crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
         crawlsBaseUrl=${crawlsBaseUrl}
-        artifactType=${artifactType || "crawl"}
+        itemType=${this.params.itemType || "crawl"}
         ?isCrawler=${this.isCrawler}
       ></btrix-crawl-detail>`;
     }
@@ -263,8 +259,8 @@ export class Org extends LiteElement {
       ?isCrawler=${this.isCrawler}
       crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
       crawlsBaseUrl=${crawlsBaseUrl}
-      artifactType=${ifDefined(this.params.artifactType || undefined)}
-      ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "artifacts"}
+      itemType=${ifDefined(this.params.itemType || undefined)}
+      ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "archive"}
     ></btrix-crawls-list>`;
   }
 
@@ -274,14 +270,14 @@ export class Org extends LiteElement {
     const workflowId = this.params.crawlOrWorkflowId;
 
     if (workflowId) {
-      if (this.params.artifactId) {
+      if (this.params.itemId) {
         const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
         // TODO abstract into breadcrumbs
         const crawlsBaseUrl = `/orgs/${this.orgId}/workflows/crawl/${workflowId}`;
 
         return html` <btrix-crawl-detail
           .authState=${this.authState!}
-          crawlId=${this.params.artifactId}
+          crawlId=${this.params.itemId}
           crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
           crawlsBaseUrl=${crawlsBaseUrl}
           ?isCrawler=${this.isCrawler}
@@ -347,24 +343,24 @@ export class Org extends LiteElement {
   }
 
   private renderCollections() {
-    if (this.params.resourceId) {
-      if (this.orgPath.includes(`/edit/${this.params.resourceId}`)) {
+    if (this.params.collectionId) {
+      if (this.orgPath.includes(`/edit/${this.params.collectionId}`)) {
         return html`<btrix-collection-edit
           .authState=${this.authState!}
           orgId=${this.orgId!}
-          collectionId=${this.params.resourceId}
+          collectionId=${this.params.collectionId}
           ?isCrawler=${this.isCrawler}
         ></btrix-collection-edit>`;
       }
 
-      if (this.params.artifactId) {
+      if (this.params.itemId) {
         const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
         // TODO abstract into breadcrumbs
-        const crawlsBaseUrl = `/orgs/${this.orgId}/collections/view/${this.params.resourceId}/web-captures`;
+        const crawlsBaseUrl = `/orgs/${this.orgId}/collections/view/${this.params.collectionId}/web-captures`;
 
         return html` <btrix-crawl-detail
           .authState=${this.authState!}
-          crawlId=${this.params.artifactId}
+          crawlId=${this.params.itemId}
           crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
           crawlsBaseUrl=${crawlsBaseUrl}
           ?isCrawler=${this.isCrawler}
@@ -374,8 +370,9 @@ export class Org extends LiteElement {
       return html`<btrix-collection-detail
         .authState=${this.authState!}
         orgId=${this.orgId!}
-        collectionId=${this.params.resourceId}
-        resourceTab=${(this.params.resourceTab as CollectionTab) || "replay"}
+        collectionId=${this.params.collectionId}
+        collectionTab=${(this.params.collectionTab as CollectionTab) ||
+        "replay"}
         ?isCrawler=${this.isCrawler}
       ></btrix-collection-detail>`;
     }

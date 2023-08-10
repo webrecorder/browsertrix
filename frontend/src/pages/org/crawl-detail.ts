@@ -50,7 +50,7 @@ export class CrawlDetail extends LiteElement {
   crawlsAPIBaseUrl?: string;
 
   @property({ type: String })
-  artifactType: Crawl["type"] = null;
+  itemType: Crawl["type"] = null;
 
   @property({ type: Boolean })
   showOrgLink = false;
@@ -248,7 +248,7 @@ export class CrawlDetail extends LiteElement {
           href="${this.crawlsBaseUrl}${isWorkflowArtifact ||
           isCollectionArtifact
             ? ""
-            : `?artifactType=${this.crawl?.type}`}"
+            : `/${this.crawl?.type}`}"
           @click=${this.navLink}
         >
           <sl-icon
@@ -366,7 +366,7 @@ export class CrawlDetail extends LiteElement {
             label: msg("Files"),
           })}
           ${when(
-            this.artifactType === "crawl",
+            this.itemType === "crawl",
             () => html`
               ${renderNavItem({
                 section: "logs",
@@ -456,7 +456,7 @@ export class CrawlDetail extends LiteElement {
             `
           )}
           ${when(
-            this.artifactType === "crawl",
+            this.itemType === "crawl",
             () => html`
               <sl-menu-item
                 @click=${() =>
@@ -848,7 +848,7 @@ ${this.crawl?.description}
 
   private async getCrawl(): Promise<Crawl> {
     const apiPath =
-      this.artifactType === "upload"
+      this.itemType === "upload"
         ? `/orgs/${this.orgId}/uploads/${this.crawlId}/replay.json`
         : `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${
             this.crawlId
@@ -861,7 +861,7 @@ ${this.crawl?.description}
   private async fetchCrawlLogs(
     params: Partial<APIPaginatedList> = {}
   ): Promise<void> {
-    if (this.artifactType !== "crawl") {
+    if (this.itemType !== "crawl") {
       return;
     }
     try {
