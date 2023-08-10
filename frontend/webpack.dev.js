@@ -24,7 +24,7 @@ module.exports = [
       ],
       historyApiFallback: true,
       proxy: devServerConfig.proxy,
-      setupMiddlewares: devServerConfig.setupMiddlewares,
+      onBeforeSetupMiddleware: devServerConfig.onBeforeSetupMiddleware,
       port: 9870,
     },
     cache: {
