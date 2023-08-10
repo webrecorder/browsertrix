@@ -33,6 +33,13 @@ module.exports = [
       onBeforeSetupMiddleware: devServerConfig.onBeforeSetupMiddleware,
       port: 9870,
     },
+    cache: {
+      type: "filesystem",
+
+      buildDependencies: {
+        config: [__filename],
+      },
+    },
   }),
   {
     ...vnc,
