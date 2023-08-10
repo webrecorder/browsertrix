@@ -13,19 +13,13 @@ const shoelaceAssetsPublicPath = "shoelace/assets";
 module.exports = [
   merge(main, {
     devServer: {
-      watchFiles: ["src/*.js"],
+      watchFiles: ["src/**/*", __filename],
       open: true,
       compress: true,
-      hot: true,
       static: [
         {
           directory: shoelaceAssetsSrcPath,
           publicPath: "/" + shoelaceAssetsPublicPath,
-        },
-        {
-          directory: path.join(__dirname),
-          //publicPath: "/",
-          watch: true,
         },
       ],
       historyApiFallback: true,
@@ -35,7 +29,6 @@ module.exports = [
     },
     cache: {
       type: "filesystem",
-
       buildDependencies: {
         config: [__filename],
       },
