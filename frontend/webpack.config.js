@@ -70,12 +70,9 @@ const main = {
     path: path.resolve(__dirname, "dist"),
     filename: `js/[name]${isDevServer ? "" : ".[contenthash]"}.js`,
     publicPath: "/",
-    // Fix node >v16 compatibility issues
-    // https://stackoverflow.com/a/73465262
     hashFunction: "xxhash64",
   },
 
-  devtool: "inline-source-map",
   module: {
     rules: [
       {
@@ -89,6 +86,7 @@ const main = {
       },
       {
         test: /\.css$/,
+        include: path.resolve(__dirname, "src"),
         use: [
           "style-loader",
           { loader: "css-loader", options: { importLoaders: 1 } },
@@ -97,10 +95,12 @@ const main = {
       },
       {
         test: /\.html$/,
+        include: path.resolve(__dirname, "src"),
         loader: "html-loader",
       },
       {
         test: /\.(woff(2)?|ttf|svg|webp)(\?v=\d+\.\d+\.\d+)?$/,
+        include: path.resolve(__dirname, "src"),
         type: "asset/resource",
       },
     ],
@@ -172,8 +172,6 @@ const vnc = {
     library: {
       type: "module",
     },
-    // Fix node >v16 compatibility issues
-    // https://stackoverflow.com/a/73465262
     hashFunction: "xxhash64",
   },
 };

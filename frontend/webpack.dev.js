@@ -12,6 +12,7 @@ const shoelaceAssetsPublicPath = "shoelace/assets";
 
 module.exports = [
   merge(main, {
+    devtool: "eval-cheap-source-map",
     devServer: {
       watchFiles: ["src/**/*", __filename],
       open: true,
@@ -29,6 +30,7 @@ module.exports = [
     },
     cache: {
       type: "filesystem",
+      hashAlgorithm: "xxhash64",
       buildDependencies: {
         config: [__filename],
       },

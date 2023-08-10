@@ -60,6 +60,7 @@
   },
   "scripts": {
     "prepare": "cd .. && husky install frontend/.husky",
+    "postinstall": "del-cli ./node_modules/.cache/webpack",
     "test": "web-test-runner \"src/**/*.test.{ts,js}\" --playwright --browsers chromium",
     "prebuild": "del-cli ./dist",
     "build": "webpack --config webpack.prod.js",
