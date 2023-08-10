@@ -30,10 +30,13 @@ module.exports = {
     },
   },
   // Serve replay service worker file
-  onBeforeSetupMiddleware: (server) => {
-    server.app.get("/replay/sw.js", (req, res) => {
-      res.set("Content-Type", "application/javascript");
-      res.send(`importScripts("${RWP_BASE_URL}sw.js")`);
+  setupMiddlewares: (middlewares, server) => {
+    middlewares.unshift({
+      name: "replay-sw",
+      middleware: (req, res) => {
+        res.set("Content-Type", "application/javascript");
+        res.send(`importScripts("${RWP_BASE_URL}sw.js")`);
+      },
     });
   },
 };
