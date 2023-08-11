@@ -33,7 +33,7 @@ const POLL_INTERVAL_SECONDS = 10;
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-detail crawlsBaseUrl="/crawls"></btrix-crawl-detail>
+ * <btrix-crawl-detail></btrix-crawl-detail>
  * ```
  */
 @localized()
@@ -41,16 +41,14 @@ export class CrawlDetail extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
 
-  // e.g. `/org/${this.orgId}/crawls`
-  @property({ type: String })
-  crawlsBaseUrl!: string;
-
-  // e.g. `/org/${this.orgId}/crawls`
-  @property({ type: String })
-  crawlsAPIBaseUrl?: string;
-
   @property({ type: String })
   itemType: Crawl["type"] = null;
+
+  @property({ type: String })
+  collectionId?: string;
+
+  @property({ type: String })
+  workflowId?: string;
 
   @property({ type: Boolean })
   showOrgLink = false;
@@ -82,6 +80,20 @@ export class CrawlDetail extends LiteElement {
   @state()
   private isDialogVisible: boolean = false;
 
+  private get listUrl(): string {
+    let path = "archive/items";
+    if (this.workflowId) {
+      path = `workflows/crawl/${this.workflowId}#artifacts`;
+    } else if (this.collectionId) {
+      path = `collections/view/${this.collectionId}/items`;
+    } else if (this.crawl?.type === "upload") {
+      path = "archive/items/upload";
+    } else if (this.crawl?.type === "crawl") {
+      path = "archive/items/crawl";
+    }
+    return `/orgs/${this.orgId}/${path}`;
+  }
+
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
   private dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -110,10 +122,6 @@ export class CrawlDetail extends LiteElement {
   }
 
   firstUpdated() {
-    if (!this.crawlsBaseUrl) {
-      throw new Error("Crawls base URL not defined");
-    }
-
     this.fetchCrawl();
     this.fetchCrawlLogs();
   }
@@ -228,27 +236,26 @@ export class CrawlDetail extends LiteElement {
         break;
     }
 
-    // TODO abstract into breadcrumbs
-    const isWorkflowArtifact = this.crawlsBaseUrl.includes("/workflows/");
-    const isCollectionArtifact = this.crawlsBaseUrl.includes("/collections/");
-
-    let label = msg("Back to All Crawls");
-    if (isWorkflowArtifact) {
+    let label = "";
+    if (this.workflowId) {
       label = msg("Back to Crawl Workflow");
-    } else if (isCollectionArtifact) {
+    } else if (this.collectionId) {
       label = msg("Back to Collection");
-    } else if (this.crawl?.type === "upload") {
-      label = msg("Back to All Uploads");
+    } else if (this.crawl) {
+      if (this.crawl.type === "upload") {
+        label = msg("Back to All Uploads");
+      } else if (this.crawl.type === "crawl") {
+        label = msg("Back to All Crawls");
+      } else {
+        label = msg("Back to All Archived Items");
+      }
     }
 
     return html`
       <div class="mb-7">
         <a
           class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-          href="${this.crawlsBaseUrl}${isWorkflowArtifact ||
-          isCollectionArtifact
-            ? ""
-            : `/${this.crawl?.type}`}"
+          href=${this.listUrl}
           @click=${this.navLink}
         >
           <sl-icon
@@ -847,12 +854,9 @@ ${this.crawl?.description}
   }
 
   private async getCrawl(): Promise<Crawl> {
-    const apiPath =
-      this.itemType === "upload"
-        ? `/orgs/${this.orgId}/uploads/${this.crawlId}/replay.json`
-        : `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${
-            this.crawlId
-          }/replay.json`;
+    const apiPath = `/orgs/${this.orgId}/${
+      this.itemType === "upload" ? "uploads" : "crawls"
+    }/${this.crawlId}/replay.json`;
     const data: Crawl = await this.apiFetch(apiPath, this.authState!);
 
     return data;
@@ -882,9 +886,7 @@ ${this.crawl?.description}
     const pageSize = params.pageSize || this.logs?.pageSize || 50;
 
     const data: APIPaginatedList = await this.apiFetch(
-      `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${
-        this.crawlId
-      }/errors?page=${page}&pageSize=${pageSize}`,
+      `/orgs/${this.orgId}/crawls/${this.crawlId}/errors?page=${page}&pageSize=${pageSize}`,
       this.authState!
     );
 
@@ -1011,7 +1013,7 @@ ${this.crawl?.description}
         }
       );
 
-      this.navTo(this.crawlsBaseUrl);
+      this.navTo(this.listUrl);
       this.notify({
         message: msg(`Successfully deleted crawl`),
         variant: "success",

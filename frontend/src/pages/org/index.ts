@@ -49,7 +49,6 @@ type Params = {
   collectionTab?: string;
   itemType?: Crawl["type"];
 };
-
 const defaultTab = "workflows";
 
 @needLogin
@@ -237,16 +236,13 @@ export class Org extends LiteElement {
   }
 
   private renderArchive() {
-    const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
-    const crawlsBaseUrl = `/orgs/${this.orgId}/archive/items`;
-
     if (this.params.itemId) {
       return html` <btrix-crawl-detail
         .authState=${this.authState!}
         orgId=${this.orgId}
         crawlId=${this.params.itemId}
-        crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
-        crawlsBaseUrl=${crawlsBaseUrl}
+        collectionId=${this.params.collectionId || ""}
+        workflowId=${this.params.workflowId || ""}
         itemType=${this.params.itemType || "crawl"}
         ?isCrawler=${this.isCrawler}
       ></btrix-crawl-detail>`;
@@ -257,8 +253,6 @@ export class Org extends LiteElement {
       userId=${this.userInfo!.id}
       orgId=${this.orgId}
       ?isCrawler=${this.isCrawler}
-      crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
-      crawlsBaseUrl=${crawlsBaseUrl}
       itemType=${ifDefined(this.params.itemType || undefined)}
       ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "archive"}
     ></btrix-crawls-list>`;
@@ -270,19 +264,6 @@ export class Org extends LiteElement {
     const workflowId = this.params.workflowId;
 
     if (workflowId) {
-      if (this.params.itemId) {
-        const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
-        // TODO abstract into breadcrumbs
-        const crawlsBaseUrl = `/orgs/${this.orgId}/workflows/crawl/${workflowId}`;
-
-        return html` <btrix-crawl-detail
-          .authState=${this.authState!}
-          crawlId=${this.params.itemId}
-          crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
-          crawlsBaseUrl=${crawlsBaseUrl}
-          ?isCrawler=${this.isCrawler}
-        ></btrix-crawl-detail>`;
-      }
       return html`
         <btrix-workflow-detail
           class="col-span-5 mt-6"
@@ -351,20 +332,6 @@ export class Org extends LiteElement {
           collectionId=${this.params.collectionId}
           ?isCrawler=${this.isCrawler}
         ></btrix-collection-edit>`;
-      }
-
-      if (this.params.itemId) {
-        const crawlsAPIBaseUrl = `/orgs/${this.orgId}/crawls`;
-        // TODO abstract into breadcrumbs
-        const crawlsBaseUrl = `/orgs/${this.orgId}/collections/view/${this.params.collectionId}/web-captures`;
-
-        return html` <btrix-crawl-detail
-          .authState=${this.authState!}
-          crawlId=${this.params.itemId}
-          crawlsAPIBaseUrl=${crawlsAPIBaseUrl}
-          crawlsBaseUrl=${crawlsBaseUrl}
-          ?isCrawler=${this.isCrawler}
-        ></btrix-crawl-detail>`;
       }
 
       return html`<btrix-collection-detail

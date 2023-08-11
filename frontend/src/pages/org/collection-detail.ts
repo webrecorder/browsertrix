@@ -35,7 +35,7 @@ export class CollectionDetail extends LiteElement {
   collectionId!: string;
 
   @property({ type: String })
-  resourceTab?: Tab = TABS[0];
+  collectionTab?: Tab = TABS[0];
 
   @property({ type: Boolean })
   isCrawler?: boolean;
@@ -124,7 +124,7 @@ export class CollectionDetail extends LiteElement {
       <div class="mb-3">${this.renderTabs()}</div>
 
       ${choose(
-        this.resourceTab,
+        this.collectionTab,
         [
           ["replay", this.renderOverview],
           ["items", this.renderArchivedItems],
@@ -245,7 +245,9 @@ export class CollectionDetail extends LiteElement {
         </p>
         <div class="relative mb-5 border rounded p-3 pr-9 bg-slate-50">
           <btrix-code value=${embedCode}></btrix-code>
-          <div class="absolute top-1.5 right-1.5 border rounded bg-white shadow-sm">
+          <div
+            class="absolute top-1.5 right-1.5 border rounded bg-white shadow-sm"
+          >
             <btrix-copy-button
               .getValue=${() => embedCode}
               content=${msg("Copy Embed Code")}
@@ -260,7 +262,9 @@ export class CollectionDetail extends LiteElement {
         </p>
         <div class="relative mb-5 border rounded p-3 pr-9 bg-slate-50">
           <btrix-code language="javascript" value=${importCode}></btrix-code>
-          <div class="absolute top-1.5 right-1.5 border rounded bg-white shadow-sm">
+          <div
+            class="absolute top-1.5 right-1.5 border rounded bg-white shadow-sm"
+          >
             <btrix-copy-button
               .getValue=${() => importCode}
               content=${msg("Copy JS")}
@@ -302,7 +306,7 @@ export class CollectionDetail extends LiteElement {
     return html`
       <nav class="flex gap-2">
         ${TABS.map((tabName) => {
-          const isSelected = tabName === this.resourceTab;
+          const isSelected = tabName === this.collectionTab;
           return html`
             <btrix-button
               variant=${isSelected ? "primary" : "neutral"}
@@ -567,9 +571,7 @@ export class CollectionDetail extends LiteElement {
     if (!this.archivedItems) return;
 
     return html`
-      <btrix-crawl-list
-        baseUrl=${`/orgs/${this.orgId}/collections/view/${this.collectionId}/artifact`}
-      >
+      <btrix-crawl-list collectionId=${this.collectionId}>
         ${this.archivedItems.items.map(this.renderArchivedItem)}
       </btrix-crawl-list>
     `;

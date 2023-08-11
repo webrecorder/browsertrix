@@ -806,9 +806,7 @@ export class WorkflowDetail extends LiteElement {
           </div>`
         )}
 
-        <btrix-crawl-list
-          baseUrl=${`/orgs/${this.orgId}/workflows/crawl/${this.workflowId}/artifact`}
-        >
+        <btrix-crawl-list workflowId=${this.workflowId}>
           <span slot="idCol">${msg("Start Time")}</span>
           ${when(
             this.crawls,
@@ -995,9 +993,9 @@ export class WorkflowDetail extends LiteElement {
             () => html`
               <sl-button
                 class="mr-2"
-                href=${`/orgs/${this.orgId}/workflows/crawl/${
-                  this.workflowId
-                }/artifact/${this.workflow!.lastCrawlId}#replay`}
+                href=${`/orgs/${this.orgId}/archive/items/crawl/${
+                  this.workflow!.lastCrawlId
+                }?workflowId=${this.workflowId}#replay`}
                 variant="primary"
                 size="small"
                 @click=${this.navLink}

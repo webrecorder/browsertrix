@@ -60,7 +60,7 @@ const finishedCrawlStates: CrawlState[] = [
 /**
  * Usage:
  * ```ts
- * <btrix-crawls-list crawlsBaseUrl="/crawls"></btrix-crawls-list>
+ * <btrix-crawls-list></btrix-crawls-list>
  * ```
  */
 @localized()
@@ -81,14 +81,6 @@ export class CrawlsList extends LiteElement {
 
   @property({ type: Boolean })
   isCrawler!: boolean;
-
-  // e.g. `/org/${this.orgId}/crawls`
-  @property({ type: String })
-  crawlsBaseUrl!: string;
-
-  // e.g. `/org/${this.orgId}/crawls`
-  @property({ type: String })
-  crawlsAPIBaseUrl?: string;
 
   @property({ type: String })
   itemType: Crawl["type"] = null;
@@ -166,17 +158,12 @@ export class CrawlsList extends LiteElement {
   protected willUpdate(changedProperties: Map<string, any>) {
     if (
       changedProperties.has("shouldFetch") ||
-      changedProperties.get("crawlsBaseUrl") ||
-      changedProperties.get("crawlsAPIBaseUrl") ||
       changedProperties.has("filterByCurrentUser") ||
       changedProperties.has("filterBy") ||
       changedProperties.has("orderBy") ||
       changedProperties.has("itemType")
     ) {
       if (this.shouldFetch) {
-        if (!this.crawlsBaseUrl) {
-          throw new Error("Crawls base URL not defined");
-        }
         if (changedProperties.has("itemType")) {
           this.filterBy = {};
           this.orderBy = {
@@ -202,11 +189,7 @@ export class CrawlsList extends LiteElement {
       }
     }
 
-    if (
-      changedProperties.has("crawlsBaseUrl") ||
-      changedProperties.has("crawlsAPIBaseUrl") ||
-      changedProperties.has("artifactType")
-    ) {
+    if (changedProperties.has("artifactType")) {
       this.fetchConfigSearchValues();
     }
   }
@@ -267,7 +250,9 @@ export class CrawlsList extends LiteElement {
                 variant=${isSelected ? "primary" : "neutral"}
                 ?raised=${isSelected}
                 aria-selected="${isSelected}"
-                href=${`${this.crawlsBaseUrl}${itemType ? `/${itemType}` : ""}`}
+                href=${`/orgs/${this.orgId}/archive/items${
+                  itemType ? `/${itemType}` : ""
+                }`}
                 @click=${this.navLink}
               >
                 ${icon ? html`<sl-icon name=${icon}></sl-icon>` : ""}
@@ -778,9 +763,6 @@ export class CrawlsList extends LiteElement {
   }
 
   private async fetchConfigSearchValues() {
-    const oid = (this.crawlsAPIBaseUrl || this.crawlsBaseUrl)
-      .split("/orgs/")[1]
-      .split("/")[0];
     try {
       const query = queryString.stringify({
         crawlType: this.itemType,
@@ -791,7 +773,7 @@ export class CrawlsList extends LiteElement {
         descriptions: string[];
         firstSeeds: string[];
       } = await this.apiFetch(
-        `/orgs/${oid}/all-crawls/search-values?${query}`,
+        `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
         this.authState!
       );
 
