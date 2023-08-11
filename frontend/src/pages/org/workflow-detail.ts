@@ -56,6 +56,9 @@ export class WorkflowDetail extends LiteElement {
   @property({ type: String })
   openDialogName?: "scale" | "exclusions" | "cancel" | "stop";
 
+  @property({ type: String })
+  initialActivePanel?: Tab;
+
   @state()
   private workflow?: Workflow;
 
@@ -119,7 +122,12 @@ export class WorkflowDetail extends LiteElement {
 
   connectedCallback(): void {
     // Set initial active section and dialog based on URL #hash value
-    this.getActivePanelFromHash();
+    if (this.initialActivePanel) {
+      this.activePanel = this.initialActivePanel;
+    } else {
+      this.getActivePanelFromHash();
+    }
+
     super.connectedCallback();
     window.addEventListener("hashchange", this.getActivePanelFromHash);
   }
