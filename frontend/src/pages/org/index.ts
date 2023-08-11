@@ -41,7 +41,7 @@ export type OrgTab =
   | "settings";
 
 type Params = {
-  crawlOrWorkflowId?: string;
+  workflowId?: string;
   browserProfileId?: string;
   browserId?: string;
   itemId?: string;
@@ -267,7 +267,7 @@ export class Org extends LiteElement {
   private renderWorkflows() {
     const isEditing = this.params.hasOwnProperty("edit");
     const isNewResourceTab = this.params.hasOwnProperty("new");
-    const workflowId = this.params.crawlOrWorkflowId;
+    const workflowId = this.params.workflowId;
 
     if (workflowId) {
       if (this.params.itemId) {

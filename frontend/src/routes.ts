@@ -13,19 +13,11 @@ export const ROUTES = {
   org: [
     "/orgs/:orgId",
     // Org sections:
-    "(/workflows)",
+    "(/workflows(/crawls)(/crawl/:workflowId))",
     "(/archive/items(/:itemType(/:itemId)))",
     "(/collections(/new)(/view/:collectionId(/:collectionTab))(/edit/:collectionId))",
     "(/browser-profiles(/profile(/browser/:browserId)(/:browserProfileId)))",
     "(/settings(/members))",
-    // // Optional segments:
-    // "(/items(/:itemType)(/:itemId))",
-    // "(/new)",
-    // "(/view/:collectionId(/:collectionTab))",
-    // "(/edit/:collectionId)",
-    // "(/crawls)",
-    // "(/profile(/:browserProfileId)(/browser/:browserId))",
-    // "(/members)",
   ].join(""),
   users: "/users",
   usersInvite: "/users/invite",
