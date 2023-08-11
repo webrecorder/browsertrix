@@ -86,7 +86,11 @@ const main = {
       },
       {
         test: /\.css$/,
-        include: path.resolve(__dirname, "src"),
+        include: [
+          path.resolve(__dirname, "src"),
+          path.resolve(__dirname, "node_modules/@shoelace-style/shoelace"),
+          path.resolve(__dirname, "node_modules/tailwindcss"),
+        ],
         use: [
           "style-loader",
           { loader: "css-loader", options: { importLoaders: 1 } },
