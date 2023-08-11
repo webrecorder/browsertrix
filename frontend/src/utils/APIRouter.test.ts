@@ -8,7 +8,7 @@ describe("APIRouter", () => {
   describe("match", () => {
     it("matches org", () => {
       const apiRouter = new APIRouter(ROUTES);
-      const viewState = apiRouter.match("/orgs/_fake_org_id_/_fake_tab_");
+      const viewState = apiRouter.match("/orgs/_fake_org_id_");
 
       expect(viewState.route).to.equal("org");
       expect(viewState.params).to.deep.equal({
