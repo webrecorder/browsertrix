@@ -83,7 +83,7 @@ export class CrawlDetail extends LiteElement {
   private get listUrl(): string {
     let path = "archive/items";
     if (this.workflowId) {
-      path = `workflows/crawl/${this.workflowId}#artifacts`;
+      path = `workflows/crawl/${this.workflowId}#crawls`;
     } else if (this.collectionId) {
       path = `collections/view/${this.collectionId}/items`;
     } else if (this.crawl?.type === "upload") {
@@ -684,29 +684,6 @@ export class CrawlDetail extends LiteElement {
                 <code title=${this.crawl.id}>${this.crawl.id}</code> `
             : html`<sl-skeleton class="h-6"></sl-skeleton>`}
         </btrix-desc-list-item>
-        ${this.showOrgLink
-          ? html`
-              <btrix-desc-list-item label=${msg("Organization")}>
-                ${this.crawl
-                  ? html`
-                      <a
-                        class="font-medium text-neutral-700 hover:text-neutral-900"
-                        href=${`/orgs/${this.crawl.oid}/artifacts/crawls`}
-                        @click=${this.navLink}
-                      >
-                        <sl-icon
-                          class="inline-block align-middle"
-                          name="link-45deg"
-                        ></sl-icon>
-                        <span class="inline-block align-middle">
-                          ${msg("View Organization")}
-                        </span>
-                      </a>
-                    `
-                  : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-              </btrix-desc-list-item>
-            `
-          : ""}
       </btrix-desc-list>
     `;
   }
@@ -944,50 +921,6 @@ ${this.crawl?.description}
   async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;
     return !formEl.querySelector("[data-invalid]");
-  }
-
-  private async runNow() {
-    if (!this.crawl) return;
-
-    try {
-      const data = await this.apiFetch(
-        `/orgs/${this.crawl.oid}/crawlconfigs/${this.crawl.cid}/run`,
-        this.authState!,
-        {
-          method: "POST",
-        }
-      );
-
-      if (data.started) {
-        this.navTo(`/orgs/${this.crawl.oid}/artifacts/crawl/${data.started}`);
-      }
-
-      this.notify({
-        message: msg(
-          html`Started crawl from <strong>${this.renderName()}</strong>.`
-        ),
-        variant: "success",
-        icon: "check2-circle",
-        duration: 8000,
-      });
-    } catch (e: any) {
-      if (e.isApiError && e.message === "crawl_already_running") {
-        this.notify({
-          message: msg(
-            html`Crawl of <strong>${this.renderName()}</strong> is already
-              running.`
-          ),
-          variant: "warning",
-          icon: "exclamation-triangle",
-        });
-      } else {
-        this.notify({
-          message: msg("Sorry, couldn't run crawl at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
-      }
-    }
   }
 
   private async deleteCrawl() {

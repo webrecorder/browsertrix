@@ -24,9 +24,9 @@ import { inactiveCrawlStates, isActive } from "../../utils/crawler";
 import { SlSelect } from "@shoelace-style/shoelace";
 import { DASHBOARD_ROUTE } from "../../routes";
 
-const SECTIONS = ["artifacts", "watch", "settings"] as const;
+const SECTIONS = ["crawls", "watch", "settings"] as const;
 type Tab = (typeof SECTIONS)[number];
-const DEFAULT_SECTION: Tab = "artifacts";
+const DEFAULT_SECTION: Tab = "crawls";
 const POLL_INTERVAL_SECONDS = 10;
 const ABORT_REASON_CANCLED = "canceled";
 
@@ -115,7 +115,7 @@ export class WorkflowDetail extends LiteElement {
   };
 
   private readonly tabLabels: Record<Tab, string> = {
-    artifacts: msg("Crawls"),
+    crawls: msg("Crawls"),
     watch: msg("Watch Crawl"),
     settings: msg("Workflow Settings"),
   };
@@ -176,7 +176,7 @@ export class WorkflowDetail extends LiteElement {
         });
       }
 
-      if (this.activePanel === "artifacts") {
+      if (this.activePanel === "crawls") {
         this.fetchCrawls();
       }
     }
@@ -205,7 +205,7 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private async handleCrawlRunEnd() {
-    this.goToTab("artifacts", { replace: true });
+    this.goToTab("crawls", { replace: true });
     await this.fetchWorkflow();
 
     let notifyOpts = {
@@ -424,13 +424,11 @@ export class WorkflowDetail extends LiteElement {
         </header>
       </btrix-observable>
 
-      ${this.renderTab("artifacts")}
+      ${this.renderTab("crawls")}
       ${this.renderTab("watch", { disabled: !this.lastCrawlId })}
       ${this.renderTab("settings")}
 
-      <btrix-tab-panel name="artifacts"
-        >${this.renderArtifacts()}</btrix-tab-panel
-      >
+      <btrix-tab-panel name="crawls">${this.renderCrawls()}</btrix-tab-panel>
       <btrix-tab-panel name="watch">
         ${until(
           this.getWorkflowPromise?.then(
@@ -455,7 +453,7 @@ export class WorkflowDetail extends LiteElement {
 
   private renderPanelHeader() {
     if (!this.activePanel) return;
-    if (this.activePanel === "artifacts") {
+    if (this.activePanel === "crawls") {
       return html`<h3>
         ${this.tabLabels[this.activePanel]}
         ${when(
@@ -767,7 +765,7 @@ export class WorkflowDetail extends LiteElement {
     );
   }
 
-  private renderArtifacts() {
+  private renderCrawls() {
     return html`
       <section>
         <div

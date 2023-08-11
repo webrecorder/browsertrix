@@ -189,7 +189,7 @@ export class CrawlsList extends LiteElement {
       }
     }
 
-    if (changedProperties.has("artifactType")) {
+    if (changedProperties.has("itemType")) {
       this.fetchConfigSearchValues();
     }
   }
@@ -549,7 +549,7 @@ export class CrawlsList extends LiteElement {
               <sl-menu-item
                 @click=${() =>
                   this.navTo(
-                    `/orgs/${item.oid}/artifacts/${
+                    `/orgs/${item.oid}/crawls/${
                       item.type === "upload" ? "upload" : "crawl"
                     }/${item.id}`
                   )}
