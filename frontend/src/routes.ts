@@ -23,6 +23,8 @@ export const ROUTES = {
   usersInvite: "/users/invite",
   crawls: "/crawls",
   crawl: "/crawls/crawl/:crawlId",
+  // Redirect for https://github.com/webrecorder/browsertrix-cloud/issues/935
+  awpUploadRedirect: "/orgs/:orgId/artifacts/upload/:uploadId",
 } as const;
 
 export const DASHBOARD_ROUTE = "/";

@@ -696,6 +696,12 @@ export class App extends LiteElement {
         }
       }
 
+      case "awpUploadRedirect": {
+        const { orgId, uploadId } = this.viewState.params;
+        this.navigate(`/orgs/${orgId}/archive/items/upload/${uploadId}`);
+        return;
+      }
+
       default:
         return this.renderNotFoundPage();
     }
