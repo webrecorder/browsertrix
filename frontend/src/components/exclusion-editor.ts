@@ -153,8 +153,9 @@ export class ExclusionEditor extends LiteElement {
     const { regex } = e.detail;
 
     try {
+      const params = new URLSearchParams({ regex });
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawls/${this.crawlId}/exclusions?regex=${regex}`,
+        `/orgs/${this.orgId}/crawls/${this.crawlId}/exclusions?${params}`,
         this.authState!,
         {
           method: "DELETE",
@@ -195,20 +196,28 @@ export class ExclusionEditor extends LiteElement {
     try {
       const { matched } = await this.getQueueMatches();
       this.matchedURLs = matched;
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't fetch pending exclusions at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
+    } catch (e: any) {
+      if (e.message === "invalid_regex") {
+        this.exclusionFieldErrorMessage = msg("Invalid Regex");
+      } else {
+        this.notify({
+          message: msg(
+            "Sorry, couldn't fetch pending exclusions at this time."
+          ),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
     }
 
     this.isLoading = false;
   }
 
   private async getQueueMatches(): Promise<ResponseData> {
+    const regex = this.regex;
+    const params = new URLSearchParams({ regex });
     const data: ResponseData = await this.apiFetch(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/queueMatchAll?regex=${this.regex}`,
+      `/orgs/${this.orgId}/crawls/${this.crawlId}/queueMatchAll?${params}`,
       this.authState!
     );
 
@@ -221,8 +230,9 @@ export class ExclusionEditor extends LiteElement {
     const { regex, onSuccess } = e.detail;
 
     try {
+      const params = new URLSearchParams({ regex });
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/crawls/${this.crawlId}/exclusions?regex=${regex}`,
+        `/orgs/${this.orgId}/crawls/${this.crawlId}/exclusions?${params}`,
         this.authState!,
         {
           method: "POST",
@@ -248,6 +258,8 @@ export class ExclusionEditor extends LiteElement {
     } catch (e: any) {
       if (e.message === "exclusion_already_exists") {
         this.exclusionFieldErrorMessage = msg("Exclusion already exists");
+      } else if (e.message === "invalid_regex") {
+        this.exclusionFieldErrorMessage = msg("Invalid Regex");
       } else {
         this.notify({
           message: msg("Sorry, couldn't add exclusion at this time."),

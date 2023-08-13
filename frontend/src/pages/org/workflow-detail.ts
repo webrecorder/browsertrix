@@ -486,11 +486,11 @@ export class WorkflowDetail extends LiteElement {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-button
           size="small"
-          ?disabled=${this.workflow?.isCrawlRunning}
+          ?disabled=${!this.workflow?.isCrawlRunning}
           @click=${() => (this.openDialogName = "scale")}
         >
           <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
-          <span> ${msg("Edit Instances")} </span>
+          <span> ${msg("Edit Crawler Instances")} </span>
         </sl-button>`;
     }
 
