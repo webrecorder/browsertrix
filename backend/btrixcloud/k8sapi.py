@@ -68,11 +68,9 @@ class K8sAPI:
     async def get_redis_client(self, redis_url):
         """return redis client with correct params for one-time use"""
         # manual settings until redis 5.0.0 is released
-        pool = ConnectionPool.from_url(redis_url)
+        pool = ConnectionPool.from_url(redis_url, decode_responses=True)
         redis = Redis(
             connection_pool=pool,
-            single_connection_client=True,
-            encoding="utf-8",
             decode_responses=True,
         )
         redis.auto_close_connection_pool = True
