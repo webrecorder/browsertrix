@@ -60,7 +60,9 @@ export class WorkflowsList extends LiteElement {
   isCrawler!: boolean;
 
   @state()
-  private workflows?: Workflow[];
+  private workflows?: APIPaginatedList & {
+    items: Workflow[];
+  };
 
   @state()
   private fetchErrorStatusCode?: number;
@@ -190,7 +192,7 @@ export class WorkflowsList extends LiteElement {
         `,
         () =>
           this.workflows
-            ? this.workflows.length
+            ? this.workflows.total
               ? this.renderWorkflowList()
               : html`
                   <div class="border-t border-b py-5">
@@ -218,7 +220,7 @@ export class WorkflowsList extends LiteElement {
             size="small"
             placeholder=${msg("Search by Workflow name or Crawl URL")}
             clearable
-            ?disabled=${!this.workflows?.length}
+            ?disabled=${!this.workflows?.total}
             @sl-input=${this.onSearchInput}
           >
             <sl-icon name="search" slot="prefix"></sl-icon>
@@ -337,7 +339,7 @@ export class WorkflowsList extends LiteElement {
 
     return html`
       <btrix-workflow-list>
-        ${flow(...flowFns)(this.workflows)}
+        ${flow(...flowFns)(this.workflows.items)}
       </btrix-workflow-list>
     `;
   }
@@ -508,7 +510,7 @@ export class WorkflowsList extends LiteElement {
   /**
    * Fetch Workflows and update state
    **/
-  private async getWorkflows(): Promise<Workflow[]> {
+  private async getWorkflows(): Promise<APIPaginatedList> {
     const params = this.filterByCurrentUser ? `?userid=${this.userId}` : "";
 
     const data: APIPaginatedList = await this.apiFetch(
@@ -516,7 +518,7 @@ export class WorkflowsList extends LiteElement {
       this.authState!
     );
 
-    return data.items;
+    return data;
   }
 
   /**
@@ -552,6 +554,7 @@ export class WorkflowsList extends LiteElement {
         }
       );
 
+      this.fetchWorkflows();
       this.notify({
         message: msg(
           html`Deactivated <strong>${this.renderName(workflow)}</strong>.`
@@ -559,8 +562,6 @@ export class WorkflowsList extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-
-      this.workflows = this.workflows!.filter((t) => t.id !== workflow.id);
     } catch {
       this.notify({
         message: msg("Sorry, couldn't deactivate Workflow at this time."),
@@ -580,6 +581,7 @@ export class WorkflowsList extends LiteElement {
         }
       );
 
+      this.fetchWorkflows();
       this.notify({
         message: msg(
           html`Deleted <strong>${this.renderName(workflow)}</strong>.`
@@ -587,8 +589,6 @@ export class WorkflowsList extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-
-      this.workflows = this.workflows!.filter((t) => t.id !== workflow.id);
     } catch {
       this.notify({
         message: msg("Sorry, couldn't delete Workflow at this time."),
