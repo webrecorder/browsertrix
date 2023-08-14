@@ -30,7 +30,7 @@ You should see a version number like `1.22.19`. If you do not, [install or upgra
 
 ## Quickstart
 
-Change your current working directory to `/frontend`:
+From the command line, change your current working directory to `/frontend`:
 
 ```sh
 cd frontend
@@ -40,7 +40,7 @@ cd frontend
 
     From this point on, all commands in this guide should be run from the `frontend` directory.
 
-Install dependencies:
+Install UI dependencies:
 
 ```sh
 yarn install
@@ -52,7 +52,7 @@ Copy environment variables from the sample file:
 cp sample.env.local .env.local
 ```
 
-Update `API_BASE_URL` in `.env.local` to point to your dev backend base URL. For example:
+Update `API_BASE_URL` in `.env.local` to point to your backend API host. For example:
 
 ```
 API_BASE_URL=http://dev.example.com
@@ -62,7 +62,7 @@ API_BASE_URL=http://dev.example.com
 
     This setup assumes that your API endpoints are available under `/api`, which is the default configuration for the Browsertrix Cloud backend.
 
-If connecting to a local deployment cluster, set API_BASE_URL to:
+If connecting to a local deployment cluster, set `API_BASE_URL` to:
 
 ```
 API_BASE_URL=http://localhost:30870
@@ -75,7 +75,7 @@ API_BASE_URL=http://localhost:30870
 
     Set API_BASE_URL to provided URL instead, eg. `API_BASE_URL=http://127.0.0.1:<TUNNEL_PORT>`
 
-Start the development server:
+Start the frontend development server:
 
 ```sh
 yarn start
@@ -83,7 +83,9 @@ yarn start
 
 This will open `localhost:9870` in a new tab in your default browser.
 
-Saving changes to files in `src` will automatically reload your browser window with the latest updates.
+Saving changes to files in `src` will automatically reload your browser window with the latest UI updates.
+
+To stop the development server type <kbd>Ctrl</kbd> + <kbd>C</kbd> into your command line terminal.
 
 ## Scripts
 
