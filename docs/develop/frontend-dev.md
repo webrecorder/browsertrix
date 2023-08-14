@@ -1,19 +1,22 @@
-# Running the Frontend for Development
+# Running the Frontend for UI Development
 
-This guide explains how to deploy an instance of the Browsertrix Cloud frontend for development.
+This guide explains how to run the Browsertrix Cloud frontend locally with [Yarn](https://classic.yarnpkg.com) against an existing backend instance.
 
-This setup may be ideal for rapid development on the frontend, as it will allow running the frontend
-via `yarn` instead of the frontend image deployed in Kubernetes.
+This setup is ideal for rapid UI development that does not rely on any backend changes.
 
 ## Requirements
 
-This setup does require a Browsertrix Cloud API backend already in a Kubernetes cluster.
-
-Refer to [setup for local deployment](./local-dev-setup.md) for additional details on this setup.
+1. rowsertrix Cloud API backend already in a Kubernetes cluster (See: [Setup for Local Development](./local-dev-setup.md))
+2. Node v16 or greater with Yarn 1
 
 ## Quickstart
 
 Ensure the current working directory is set to the `/frontend` folder.
+
+```sh
+# From the repo root:
+cd frontend
+```
 
 Install dependencies:
 
@@ -45,8 +48,6 @@ API_BASE_URL=http://localhost:30870/api
     obtained by running `minikube service browsertrix-cloud-frontend --url` in a separate terminal.
 
     Set API_BASE_URL to provided URL instead, eg. `API_BASE_URL=http://127.0.0.1:<TUNNEL_PORT>`
-
-
 
 Start the dev server:
 
