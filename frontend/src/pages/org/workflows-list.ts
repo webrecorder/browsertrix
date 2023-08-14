@@ -34,7 +34,7 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
   _name: {
-    label: msg("Name"),
+    label: msg("Workflow Name"),
     defaultDirection: "asc",
   },
 };
@@ -216,7 +216,7 @@ export class WorkflowsList extends LiteElement {
             class="w-full"
             slot="trigger"
             size="small"
-            placeholder=${msg("Search by Crawl Workflow name or Crawl URL")}
+            placeholder=${msg("Search by Workflow name or Crawl URL")}
             clearable
             ?disabled=${!this.workflows?.length}
             @sl-input=${this.onSearchInput}
@@ -346,7 +346,7 @@ export class WorkflowsList extends LiteElement {
     html`
       <btrix-workflow-list-item
         .workflow=${workflow}
-        lastUpdated=${this.workflowLastUpdated(workflow)}
+        .lastUpdated=${this.workflowLastUpdated(workflow)}
       >
         <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
       </btrix-workflow-list-item>

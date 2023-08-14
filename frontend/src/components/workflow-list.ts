@@ -339,7 +339,7 @@ export class WorkflowListItem extends LitElement {
               workflow.lastCrawlSize
             ) {
               return html`<sl-format-bytes
-                  value=${workflow.totalSize}
+                  value=${+workflow.totalSize}
                   display="narrow"
                 ></sl-format-bytes>
                 <span class="currCrawlSize">
@@ -352,7 +352,7 @@ export class WorkflowListItem extends LitElement {
             }
             if (workflow.totalSize && workflow.lastCrawlSize) {
               return html`<sl-format-bytes
-                value=${workflow.totalSize}
+                value=${+workflow.totalSize}
                 display="narrow"
               ></sl-format-bytes>`;
             }
@@ -366,7 +366,7 @@ export class WorkflowListItem extends LitElement {
             }
             if (workflow.totalSize) {
               return html`<sl-format-bytes
-                value=${workflow.totalSize}
+                value=${+workflow.totalSize}
                 display="narrow"
               ></sl-format-bytes>`;
             }
@@ -522,7 +522,7 @@ export class WorkflowList extends LitElement {
       }
 
       .row {
-        display none;
+        display: none;
         font-size: var(--sl-font-size-x-small);
         color: var(--sl-color-neutral-600);
       }
@@ -553,7 +553,7 @@ export class WorkflowList extends LitElement {
 
   render() {
     return html` <div class="listHeader row">
-        <div class="col">${msg("Name & Last Updated")}</div>
+        <div class="col">${msg("Workflow Name & Last Updated")}</div>
         <div class="col">${msg("Last Crawl Status")}</div>
         <div class="col">${msg("Total Size")}</div>
         <div class="col">${msg("Started By & Schedule")}</div>
