@@ -17,7 +17,14 @@ import { CopyButton } from "../../components/copy-button";
 import { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList } from "../../types/api";
 
-type SortField = "_lastUpdated" | "_name";
+type SearchFields = "name" | "firstSeed";
+type SearchResult = {
+  item: {
+    key: SearchFields;
+    value: string;
+  };
+};
+type SortField = "lastRun" | "name";
 type SortDirection = "asc" | "desc";
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
@@ -29,11 +36,11 @@ const sortableFields: Record<
   SortField,
   { label: string; defaultDirection?: SortDirection }
 > = {
-  _lastUpdated: {
+  lastRun: {
     label: msg("Last Updated"),
     defaultDirection: "desc",
   },
-  _name: {
+  name: {
     label: msg("Workflow Name"),
     defaultDirection: "asc",
   },
@@ -72,8 +79,8 @@ export class WorkflowsList extends LiteElement {
     field: SortField;
     direction: SortDirection;
   } = {
-    field: "_lastUpdated",
-    direction: sortableFields["_lastUpdated"].defaultDirection!,
+    field: "lastRun",
+    direction: sortableFields["lastRun"].defaultDirection!,
   };
 
   @state()
@@ -106,6 +113,7 @@ export class WorkflowsList extends LiteElement {
       changedProperties.has("orgId") ||
       changedProperties.has("filterByCurrentUser")
     ) {
+      this.fetchConfigSearchValues();
       this.fetchWorkflows();
     }
     if (changedProperties.has("filterByCurrentUser")) {
@@ -218,7 +226,7 @@ export class WorkflowsList extends LiteElement {
             class="w-full"
             slot="trigger"
             size="small"
-            placeholder=${msg("Search by Workflow name or Crawl URL")}
+            placeholder=${msg("Search by Workflow name or Crawl Start URL")}
             clearable
             ?disabled=${!this.workflows?.total}
             @sl-input=${this.onSearchInput}
@@ -346,10 +354,7 @@ export class WorkflowsList extends LiteElement {
 
   private renderWorkflowItem = (workflow: Workflow) =>
     html`
-      <btrix-workflow-list-item
-        .workflow=${workflow}
-        .lastUpdated=${this.workflowLastUpdated(workflow)}
-      >
+      <btrix-workflow-list-item .workflow=${workflow}>
         <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
       </btrix-workflow-list-item>
     `;
@@ -681,6 +686,34 @@ export class WorkflowsList extends LiteElement {
         variant: "danger",
         icon: "exclamation-octagon",
       });
+    }
+  }
+
+  private async fetchConfigSearchValues() {
+    try {
+      const data: {
+        crawlIds: string[];
+        names: string[];
+        descriptions: string[];
+        firstSeeds: string[];
+      } = await this.apiFetch(
+        `/orgs/${this.orgId}/crawlconfigs/search-values`,
+        this.authState!
+      );
+
+      // Update search/filter collection
+      const toSearchItem =
+        (key: SearchFields) =>
+        (value: string): SearchResult["item"] => ({
+          key,
+          value,
+        });
+      this.fuse.setCollection([
+        ...data.names.map(toSearchItem("name")),
+        ...data.firstSeeds.map(toSearchItem("firstSeed")),
+      ] as any);
+    } catch (e) {
+      console.debug(e);
     }
   }
 }

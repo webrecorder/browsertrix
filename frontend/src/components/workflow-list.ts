@@ -209,9 +209,6 @@ export class WorkflowListItem extends LitElement {
   @property({ type: Object })
   workflow?: Workflow;
 
-  @property({ type: Date })
-  lastUpdated?: Date;
-
   @query(".row")
   row!: HTMLElement;
 
@@ -275,10 +272,10 @@ export class WorkflowListItem extends LitElement {
         </div>
         <div class="desc">
           ${this.safeRender(() =>
-            this.lastUpdated
+            this.workflow?.lastRun
               ? html`
                   <sl-format-date
-                    date=${this.lastUpdated.toString()}
+                    date=${this.workflow?.lastRun.toString()}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
