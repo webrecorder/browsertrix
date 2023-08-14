@@ -228,7 +228,7 @@ export class CrawlsList extends LiteElement {
             <h1
               class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
             >
-              ${msg("All Archived Items")}
+              ${msg("Archived Items")}
             </h1>
             ${when(
               this.isCrawler,
@@ -250,7 +250,7 @@ export class CrawlsList extends LiteElement {
                 variant=${isSelected ? "primary" : "neutral"}
                 ?raised=${isSelected}
                 aria-selected="${isSelected}"
-                href=${`/orgs/${this.orgId}/archive/items${
+                href=${`/orgs/${this.orgId}/items${
                   itemType ? `/${itemType}` : ""
                 }`}
                 @click=${this.navLink}

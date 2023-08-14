@@ -35,7 +35,7 @@ import type { Tab as CollectionTab } from "./collection-detail";
 export type OrgTab =
   | "crawls"
   | "workflows"
-  | "archive"
+  | "items"
   | "browser-profiles"
   | "collections"
   | "settings";
@@ -129,7 +129,7 @@ export class Org extends LiteElement {
     let tabPanelContent = "" as any;
 
     switch (this.orgTab) {
-      case "archive":
+      case "items":
         tabPanelContent = this.renderArchive();
         break;
       case "workflows":
@@ -177,9 +177,9 @@ export class Org extends LiteElement {
             path: "workflows/crawls",
           })}
           ${this.renderNavTab({
-            tabName: "archive",
-            label: msg("All Archived Items"),
-            path: "archive/items",
+            tabName: "items",
+            label: msg("Archived Items"),
+            path: "items",
           })}
           ${this.renderNavTab({
             tabName: "collections",
@@ -254,7 +254,7 @@ export class Org extends LiteElement {
       orgId=${this.orgId}
       ?isCrawler=${this.isCrawler}
       itemType=${ifDefined(this.params.itemType || undefined)}
-      ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "archive"}
+      ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "items"}
     ></btrix-crawls-list>`;
   }
 

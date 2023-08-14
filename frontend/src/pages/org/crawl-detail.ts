@@ -81,15 +81,15 @@ export class CrawlDetail extends LiteElement {
   private isDialogVisible: boolean = false;
 
   private get listUrl(): string {
-    let path = "archive/items";
+    let path = "items";
     if (this.workflowId) {
       path = `workflows/crawl/${this.workflowId}#crawls`;
     } else if (this.collectionId) {
       path = `collections/view/${this.collectionId}/items`;
     } else if (this.crawl?.type === "upload") {
-      path = "archive/items/upload";
+      path = "items/upload";
     } else if (this.crawl?.type === "crawl") {
-      path = "archive/items/crawl";
+      path = "items/crawl";
     }
     return `/orgs/${this.orgId}/${path}`;
   }
@@ -247,7 +247,7 @@ export class CrawlDetail extends LiteElement {
       } else if (this.crawl.type === "crawl") {
         label = msg("Back to All Crawls");
       } else {
-        label = msg("Back to All Archived Items");
+        label = msg("Back to Archived Items");
       }
     }
 

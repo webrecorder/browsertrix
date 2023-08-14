@@ -999,7 +999,7 @@ export class WorkflowDetail extends LiteElement {
             () => html`
               <sl-button
                 class="mr-2"
-                href=${`/orgs/${this.orgId}/archive/items/crawl/${
+                href=${`/orgs/${this.orgId}/items/crawl/${
                   this.workflow!.lastCrawlId
                 }?workflowId=${this.workflowId}#replay`}
                 variant="primary"
