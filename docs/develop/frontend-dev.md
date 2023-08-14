@@ -6,7 +6,7 @@ This setup is ideal for rapid UI development that does not rely on any backend c
 
 ## Requirements
 
-1. rowsertrix Cloud API backend already in a Kubernetes cluster (See: [Setup for Local Development](./local-dev-setup.md))
+1. Browsertrix Cloud API backend already in a Kubernetes cluster (See: [Setup for Local Development](./local-dev-setup.md))
 2. Node v16 or greater with Yarn 1
 
 ## Quickstart
@@ -14,14 +14,13 @@ This setup is ideal for rapid UI development that does not rely on any backend c
 Ensure the current working directory is set to the `/frontend` folder.
 
 ```sh
-# From the repo root:
 cd frontend
 ```
 
 Install dependencies:
 
 ```sh
-yarn
+yarn install
 ```
 
 Copy environment variables from the sample file:
@@ -30,16 +29,18 @@ Copy environment variables from the sample file:
 cp sample.env.local .env.local
 ```
 
-Update `API_BASE_URL` in `.env.local` to point to your dev backend API. For example:
+Update `API_BASE_URL` in `.env.local` to point to your dev backend base URL.
 
 ```
-API_BASE_URL=http://dev.example.com/api
+API_BASE_URL=http://dev.example.com
 ```
+
+_Note:_ This setup assumes that your API endpoints are available under `/api`, which is the default configuration for the Browsertrix Cloud backend.
 
 If connecting to a local deployment cluster, set API_BASE_URL to:
 
 ```
-API_BASE_URL=http://localhost:30870/api
+API_BASE_URL=http://localhost:30870
 ```
 
 ??? info "Minikube (on Mac)"
