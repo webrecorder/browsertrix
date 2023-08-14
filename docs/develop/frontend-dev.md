@@ -1,21 +1,44 @@
-# Running the Frontend for UI Development
+# Developing the Frontend UI
 
-This guide explains how to run the Browsertrix Cloud frontend locally with [Yarn](https://classic.yarnpkg.com) against an existing backend instance.
+This guide explains how to run the Browsertrix Cloud frontend development server with [Yarn](https://classic.yarnpkg.com).
 
-This setup is ideal for rapid UI development that does not rely on any backend changes.
+Instead of rebuilding the entire frontend image to view your UI changes, you can use the included local development server to access the frontend from your browser. This setup is ideal for rapid UI development that does not rely on any backend changes.
 
 ## Requirements
 
-1. Browsertrix Cloud API backend already in a Kubernetes cluster (See: [Setup for Local Development](./local-dev-setup.md))
-2. Node v16 or greater with Yarn 1
+### 1. Browsertrix Cloud API backend already in a Kubernetes cluster
+
+The frontend development server requires an existing backend that has been deployed locally or is in production. See [Deploying Browsertrix Cloud](https://docs.browsertrix.cloud/deploy/).
+
+### 2. Node.js >=16 and Yarn 1
+
+To check if you already have Node.js installed, run the following command in your command line terminal:
+
+```sh
+node --version
+```
+
+You should see a version number like `v18.12.1`. If you see a command line error instead of a version number, or your version is less than 16, [install or upgrade Node.js](https://nodejs.org) before continuing.
+
+To check your Yarn installation:
+
+```sh
+yarn --version
+```
+
+You should see a version number like `1.22.19`. If you do not, [install or upgrade Yarn](https://classic.yarnpkg.com/en/docs/install).
 
 ## Quickstart
 
-Ensure the current working directory is set to the `/frontend` folder.
+Change your current working directory to `/frontend`:
 
 ```sh
 cd frontend
 ```
+
+!!! note
+
+    From this point on, all commands in this guide should be run from the `frontend` directory.
 
 Install dependencies:
 
@@ -29,13 +52,15 @@ Copy environment variables from the sample file:
 cp sample.env.local .env.local
 ```
 
-Update `API_BASE_URL` in `.env.local` to point to your dev backend base URL.
+Update `API_BASE_URL` in `.env.local` to point to your dev backend base URL. For example:
 
 ```
 API_BASE_URL=http://dev.example.com
 ```
 
-_Note:_ This setup assumes that your API endpoints are available under `/api`, which is the default configuration for the Browsertrix Cloud backend.
+!!! note
+
+    This setup assumes that your API endpoints are available under `/api`, which is the default configuration for the Browsertrix Cloud backend.
 
 If connecting to a local deployment cluster, set API_BASE_URL to:
 
@@ -50,7 +75,7 @@ API_BASE_URL=http://localhost:30870
 
     Set API_BASE_URL to provided URL instead, eg. `API_BASE_URL=http://127.0.0.1:<TUNNEL_PORT>`
 
-Start the dev server:
+Start the development server:
 
 ```sh
 yarn start
@@ -58,8 +83,7 @@ yarn start
 
 This will open `localhost:9870` in a new tab in your default browser.
 
-To develop against a local instance of the backend API,
-follow instructions for deploying to a local Docker instance. Update `API_BASE_URL` and then restart the dev server.
+Saving changes to files in `src` will automatically reload your browser window with the latest updates.
 
 ## Scripts
 
