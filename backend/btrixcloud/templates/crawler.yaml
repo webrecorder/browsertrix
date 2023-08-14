@@ -19,7 +19,7 @@ spec:
 
   serviceName: crawl-{{ id }}
   replicas: {{ scale }}
-  podManagementPolicy: Parallel
+  podManagementPolicy: OrderedReady
 
   # not yet supported
   #persistentVolumeClaimRetentionPolicy:
