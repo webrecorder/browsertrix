@@ -10,7 +10,7 @@ Instead of rebuilding the entire frontend image to view your UI changes, you can
 
 The frontend development server requires an existing backend that has been deployed locally or is in production. See [Deploying Browsertrix Cloud](https://docs.browsertrix.cloud/deploy/).
 
-### 2. Node.js >=16 and Yarn 1
+### 2. Node.js ≥16 and Yarn 1
 
 To check if you already have Node.js installed, run the following command in your command line terminal:
 
