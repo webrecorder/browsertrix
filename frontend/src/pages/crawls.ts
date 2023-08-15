@@ -253,7 +253,7 @@ export class Crawls extends LiteElement {
     if (!this.crawls) return;
 
     return html`
-      <btrix-crawl-list baseUrl=${"/crawls/crawl"} artifactType="crawl">
+      <btrix-crawl-list baseUrl=${"/crawls/crawl"} itemType="crawl">
         ${this.crawls.items.map(this.renderCrawlItem)}
       </btrix-crawl-list>
     `;
@@ -284,14 +284,9 @@ export class Crawls extends LiteElement {
       <btrix-crawl-list-item .crawl=${crawl}>
         <sl-menu slot="menu">
           <sl-menu-item
-            @click=${() =>
-              this.navTo(
-                `/orgs/${crawl.oid}/artifacts/${
-                  crawl.type === "upload" ? "upload" : "crawl"
-                }/${crawl.id}`
-              )}
+            @click=${() => this.navTo(`/crawls/crawl/${crawl.id}#settings`)}
           >
-            ${msg("View Crawl Details")}
+            ${msg("View Crawl Settings")}
           </sl-menu-item>
         </sl-menu>
       </btrix-crawl-list-item>

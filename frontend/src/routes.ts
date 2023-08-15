@@ -11,22 +11,20 @@ export const ROUTES = {
   accountSettings: "/account/settings",
   orgs: "/orgs",
   org: [
-    "/orgs/:orgId/:orgTab",
-    // Optional segments:
-    "(/new)",
-    "(/view/:resourceId(/:resourceTab))",
-    "(/edit/:resourceId)",
-    "(/crawls)",
-    "(/crawl/:crawlOrWorkflowId)",
-    "(/upload/:crawlOrWorkflowId)",
-    "(/artifact/:artifactId)",
-    "(/profile(/:browserProfileId)(/browser/:browserId))",
-    "(/members)",
+    "/orgs/:orgId",
+    // Org sections:
+    "(/workflows(/crawls)(/crawl/:workflowId))",
+    "(/items(/:itemType(/:itemId)))",
+    "(/collections(/new)(/view/:collectionId(/:collectionTab))(/edit/:collectionId))",
+    "(/browser-profiles(/profile(/browser/:browserId)(/:browserProfileId)))",
+    "(/settings(/members))",
   ].join(""),
   users: "/users",
   usersInvite: "/users/invite",
   crawls: "/crawls",
   crawl: "/crawls/crawl/:crawlId",
+  // Redirect for https://github.com/webrecorder/browsertrix-cloud/issues/935
+  awpUploadRedirect: "/orgs/:orgId/artifacts/upload/:uploadId",
 } as const;
 
 export const DASHBOARD_ROUTE = "/";

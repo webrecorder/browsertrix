@@ -60,7 +60,7 @@ const finishedCrawlStates: CrawlState[] = [
 /**
  * Usage:
  * ```ts
- * <btrix-crawls-list crawlsBaseUrl="/crawls"></btrix-crawls-list>
+ * <btrix-crawls-list></btrix-crawls-list>
  * ```
  */
 @localized()
@@ -82,16 +82,8 @@ export class CrawlsList extends LiteElement {
   @property({ type: Boolean })
   isCrawler!: boolean;
 
-  // e.g. `/org/${this.orgId}/crawls`
   @property({ type: String })
-  crawlsBaseUrl!: string;
-
-  // e.g. `/org/${this.orgId}/crawls`
-  @property({ type: String })
-  crawlsAPIBaseUrl?: string;
-
-  @property({ type: String })
-  artifactType: Crawl["type"] = null;
+  itemType: Crawl["type"] = null;
 
   /**
    * Fetch & refetch data when needed,
@@ -166,18 +158,13 @@ export class CrawlsList extends LiteElement {
   protected willUpdate(changedProperties: Map<string, any>) {
     if (
       changedProperties.has("shouldFetch") ||
-      changedProperties.get("crawlsBaseUrl") ||
-      changedProperties.get("crawlsAPIBaseUrl") ||
       changedProperties.has("filterByCurrentUser") ||
       changedProperties.has("filterBy") ||
       changedProperties.has("orderBy") ||
-      changedProperties.has("artifactType")
+      changedProperties.has("itemType")
     ) {
       if (this.shouldFetch) {
-        if (!this.crawlsBaseUrl) {
-          throw new Error("Crawls base URL not defined");
-        }
-        if (changedProperties.has("artifactType")) {
+        if (changedProperties.has("itemType")) {
           this.filterBy = {};
           this.orderBy = {
             field: "finished",
@@ -202,11 +189,7 @@ export class CrawlsList extends LiteElement {
       }
     }
 
-    if (
-      changedProperties.has("crawlsBaseUrl") ||
-      changedProperties.has("crawlsAPIBaseUrl") ||
-      changedProperties.has("artifactType")
-    ) {
+    if (changedProperties.has("itemType")) {
       this.fetchConfigSearchValues();
     }
   }
@@ -218,21 +201,21 @@ export class CrawlsList extends LiteElement {
 
   render() {
     const listTypes: {
-      artifactType: Crawl["type"];
+      itemType: Crawl["type"];
       label: string;
       icon?: string;
     }[] = [
       {
-        artifactType: null,
+        itemType: null,
         label: msg("All"),
       },
       {
-        artifactType: "crawl",
+        itemType: "crawl",
         icon: "gear-wide-connected",
         label: msg("Crawls"),
       },
       {
-        artifactType: "upload",
+        itemType: "upload",
         icon: "upload",
         label: msg("Uploads"),
       },
@@ -245,7 +228,7 @@ export class CrawlsList extends LiteElement {
             <h1
               class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
             >
-              ${msg("All Archived Items")}
+              ${msg("Archived Items")}
             </h1>
             ${when(
               this.isCrawler,
@@ -261,14 +244,14 @@ export class CrawlsList extends LiteElement {
             )}
           </div>
           <div class="flex gap-2 mb-3">
-            ${listTypes.map(({ label, artifactType, icon }) => {
-              const isSelected = artifactType === this.artifactType;
+            ${listTypes.map(({ label, itemType, icon }) => {
+              const isSelected = itemType === this.itemType;
               return html` <btrix-button
                 variant=${isSelected ? "primary" : "neutral"}
                 ?raised=${isSelected}
                 aria-selected="${isSelected}"
-                href=${`${this.crawlsBaseUrl}?artifactType=${
-                  artifactType || ""
+                href=${`/orgs/${this.orgId}/items${
+                  itemType ? `/${itemType}` : ""
                 }`}
                 @click=${this.navLink}
               >
@@ -334,7 +317,7 @@ export class CrawlsList extends LiteElement {
             ?open=${this.isUploadingArchive}
             @request-close=${() => (this.isUploadingArchive = false)}
             @uploaded=${() => {
-              if (this.artifactType !== "crawl") {
+              if (this.itemType !== "crawl") {
                 this.fetchArchivedItems({
                   page: 1,
                 });
@@ -463,7 +446,7 @@ export class CrawlsList extends LiteElement {
       >
         <sl-input
           size="small"
-          placeholder=${this.artifactType === "upload"
+          placeholder=${this.itemType === "upload"
             ? msg("Search by name")
             : msg("Search by name or Crawl Start URL")}
           clearable
@@ -538,7 +521,7 @@ export class CrawlsList extends LiteElement {
     return html`
       <btrix-crawl-list
         baseUrl=""
-        artifactType=${ifDefined(this.artifactType || undefined)}
+        itemType=${ifDefined(this.itemType || undefined)}
       >
         ${this.archivedItems.items.map(this.renderArchivedItem)}
       </btrix-crawl-list>
@@ -566,7 +549,7 @@ export class CrawlsList extends LiteElement {
               <sl-menu-item
                 @click=${() =>
                   this.navTo(
-                    `/orgs/${item.oid}/artifacts/${
+                    `/orgs/${item.oid}/crawls/${
                       item.type === "upload" ? "upload" : "crawl"
                     }/${item.id}`
                   )}
@@ -758,7 +741,7 @@ export class CrawlsList extends LiteElement {
         userid: this.filterByCurrentUser ? this.userId : undefined,
         sortBy: this.orderBy.field,
         sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
-        crawlType: this.artifactType,
+        crawlType: this.itemType,
       },
       {
         arrayFormat: "comma",
@@ -780,12 +763,9 @@ export class CrawlsList extends LiteElement {
   }
 
   private async fetchConfigSearchValues() {
-    const oid = (this.crawlsAPIBaseUrl || this.crawlsBaseUrl)
-      .split("/orgs/")[1]
-      .split("/")[0];
     try {
       const query = queryString.stringify({
-        crawlType: this.artifactType,
+        crawlType: this.itemType,
       });
       const data: {
         crawlIds: string[];
@@ -793,7 +773,7 @@ export class CrawlsList extends LiteElement {
         descriptions: string[];
         firstSeeds: string[];
       } = await this.apiFetch(
-        `/orgs/${oid}/all-crawls/search-values?${query}`,
+        `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
         this.authState!
       );
 
@@ -822,7 +802,7 @@ export class CrawlsList extends LiteElement {
 
     let apiPath;
 
-    switch (this.artifactType) {
+    switch (this.itemType) {
       case "crawl":
         apiPath = "crawls";
         break;

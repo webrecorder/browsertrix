@@ -255,7 +255,7 @@ export class WorkflowListItem extends LitElement {
       role="button"
       href=${`/orgs/${this.workflow?.oid}/workflows/crawl/${
         this.workflow?.id
-      }#${this.workflow?.isCrawlRunning ? "watch" : "artifacts"}`}
+      }#${this.workflow?.isCrawlRunning ? "watch" : "crawls"}`}
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;

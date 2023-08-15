@@ -621,7 +621,13 @@ export class App extends LiteElement {
           .userInfo="${this.userInfo}"
         ></btrix-orgs>`;
 
-      case "org":
+      case "org": {
+        const orgId = this.viewState.params.orgId;
+        const orgPath = this.viewState.pathname;
+        const orgTab = window.location.pathname
+          .slice(window.location.pathname.indexOf(orgId) + orgId.length)
+          .replace(/^\//, "")
+          .split("/")[0];
         return html`<btrix-org
           class="w-full"
           @navigate=${this.onNavigateTo}
@@ -635,12 +641,11 @@ export class App extends LiteElement {
           .userInfo=${this.userInfo}
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
-          orgId=${this.viewState.params.orgId}
-          orgPath=${this.viewState.pathname.split(
-            this.viewState.params.orgId
-          )[1]}
-          orgTab=${this.viewState.params.orgTab as OrgTab}
+          orgId=${orgId}
+          orgPath=${orgPath.split(orgId)[1]}
+          orgTab=${orgTab as OrgTab}
         ></btrix-org>`;
+      }
 
       case "accountSettings":
         return html`<btrix-account-settings
@@ -689,6 +694,12 @@ export class App extends LiteElement {
         } else {
           return this.renderSpinner();
         }
+      }
+
+      case "awpUploadRedirect": {
+        const { orgId, uploadId } = this.viewState.params;
+        this.navigate(`/orgs/${orgId}/items/upload/${uploadId}`);
+        return;
       }
 
       default:

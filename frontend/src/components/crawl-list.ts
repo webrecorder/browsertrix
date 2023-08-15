@@ -21,6 +21,7 @@ import {
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlMenu } from "@shoelace-style/shoelace";
+import queryString from "query-string";
 
 import type { Button } from "./button";
 import { RelativeDuration } from "./relative-duration";
@@ -184,6 +185,12 @@ export class CrawlListItem extends LitElement {
   @property({ type: String })
   baseUrl?: string;
 
+  @property({ type: String })
+  collectionId?: string;
+
+  @property({ type: String })
+  workflowId?: string;
+
   @query(".row")
   row!: HTMLElement;
 
@@ -220,14 +227,22 @@ export class CrawlListItem extends LitElement {
   }
 
   renderRow() {
-    const hash = this.crawl && isActive(this.crawl.state) ? "#watch" : "";
-    const artifactType = this.crawl?.type || "crawl";
     const typePath = this.crawl?.type === "upload" ? "upload" : "crawl";
+    const search =
+      this.collectionId || this.workflowId
+        ? `?${queryString.stringify(
+            {
+              collectionId: this.collectionId,
+              workflowId: this.workflowId,
+            },
+            { skipEmptyString: true }
+          )}`
+        : "";
     return html`<a
       class="item row"
       role="button"
       href="${this.baseUrl ||
-      `/orgs/${this.crawl?.oid}/artifacts/${typePath}`}/${this.crawl?.id}"
+      `/orgs/${this.crawl?.oid}/items/${typePath}`}/${this.crawl?.id}${search}"
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;
@@ -507,7 +522,13 @@ export class CrawlList extends LitElement {
   baseUrl?: string;
 
   @property({ type: String })
-  artifactType: Crawl["type"] = null;
+  collectionId?: string;
+
+  @property({ type: String })
+  workflowId?: string;
+
+  @property({ type: String })
+  itemType: Crawl["type"] = null;
 
   @queryAssignedElements({ selector: "btrix-crawl-list-item" })
   listItems!: Array<HTMLElement>;
@@ -530,19 +551,20 @@ export class CrawlList extends LitElement {
   }
 
   private handleSlotchange() {
-    const assignRole = (el: HTMLElement) => {
-      if (!el.attributes.getNamedItem("role")) {
-        el.setAttribute("role", "listitem");
+    const assignProp = (
+      el: HTMLElement,
+      attr: { name: string; value: string }
+    ) => {
+      if (!el.attributes.getNamedItem(attr.name)) {
+        el.setAttribute(attr.name, attr.value);
       }
     };
-    let mapFn = assignRole;
-    if (this.baseUrl) {
-      mapFn = (el) => {
-        assignRole(el);
-        el.setAttribute("baseUrl", this.baseUrl!);
-      };
-    }
 
-    this.listItems.forEach(mapFn);
+    this.listItems.forEach((el) => {
+      assignProp(el, { name: "role", value: "listitem" });
+      assignProp(el, { name: "baseUrl", value: this.baseUrl || "" });
+      assignProp(el, { name: "collectionId", value: this.collectionId || "" });
+      assignProp(el, { name: "workflowId", value: this.workflowId || "" });
+    });
   }
 }
