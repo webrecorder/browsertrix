@@ -560,7 +560,7 @@ export class CrawlsList extends LiteElement {
                 }
               }}
             >
-              ${msg("Clear all filters")}
+              ${msg("Clear search and filters")}
             </button>
           </p>
         </div>

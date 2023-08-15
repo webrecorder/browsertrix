@@ -75,6 +75,7 @@ export class SearchCombobox extends LitElement {
       this.searchByValue = "";
     }
     if (changedProperties.has("searchKeys") && this.searchKeys) {
+      this.onSearchInput.cancel();
       this.fuse = new Fuse([], {
         ...(this.fuse as any).options,
         keys: this.searchKeys,
@@ -84,6 +85,7 @@ export class SearchCombobox extends LitElement {
       changedProperties.has("searchOptions") &&
       Array.isArray(this.searchOptions)
     ) {
+      this.onSearchInput.cancel();
       this.fuse.setCollection(this.searchOptions as never[]);
     }
   }
@@ -146,7 +148,7 @@ export class SearchCombobox extends LitElement {
     if (!this.hasSearchStr) {
       return html`
         <sl-menu-item slot="menu-item" disabled
-          >${msg("Start typing to view filters.")}</sl-menu-item
+          >${msg("Keep typing to search.")}</sl-menu-item
         >
       `;
     }
@@ -157,7 +159,7 @@ export class SearchCombobox extends LitElement {
     if (!searchResults.length) {
       return html`
         <sl-menu-item slot="menu-item" disabled
-          >${msg("No matching items found.")}</sl-menu-item
+          >${msg("No matches found.")}</sl-menu-item
         >
       `;
     }
