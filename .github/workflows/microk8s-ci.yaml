@@ -2,8 +2,6 @@ name: Cluster Run (MicroK8s)
 
 on:
   push:
-    branches:
-      - main
     paths:
       - 'backend/**'
       - 'chart/**'
@@ -58,6 +56,12 @@ jobs:
 
       - name: Wait for all pods to be ready
         run: sudo microk8s kubectl wait --for=condition=ready pod --all --timeout=240s
+
+      - name: Check Endpoint
+        run: curl --retry 20 --retry-delay 5 --retry-connrefused http://127.0.0.1:30870/api/settings
+
+      - name: Get pods
+        run: sudo microk8s kubectl get pods
 
       - name: Run Tests
         run: pytest -vv ./backend/test/*.py
