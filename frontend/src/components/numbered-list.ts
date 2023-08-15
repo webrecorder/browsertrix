@@ -78,11 +78,7 @@ export class NumberedListItem extends LitElement {
       cursor: pointer;
     }
 
-    .item.selected .content {
-      background-color: var(--sl-color-blue-400);
-      color: var(--sl-color-neutral-0);
-    }
-
+    .item.selected .content,
     .item.hoverable:hover .content {
       background-color: var(--sl-color-blue-500);
       color: var(--sl-color-neutral-0);

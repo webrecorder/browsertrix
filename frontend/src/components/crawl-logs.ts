@@ -85,10 +85,11 @@ export class CrawlLogs extends LitElement {
   logs?: APIPaginatedList;
 
   @state()
-  private selectedLog: CrawlLog | null = null;
-
-  @state()
-  private selectedLogIndex: number | null = null;
+  private selectedLog:
+    | (CrawlLog & {
+        index: number;
+      })
+    | null = null;
 
   render() {
     if (!this.logs) return;
@@ -102,15 +103,17 @@ export class CrawlLogs extends LitElement {
           </div>
         </btrix-numbered-list-header>
         ${this.logs.items.map((log: CrawlLog, idx) => {
-          const selected = this.selectedLogIndex === idx;
+          const selected = this.selectedLog?.index === idx;
           return html`
             <btrix-numbered-list-item
               hoverable
               ?selected=${selected}
               aria-selected="${selected}"
               @click=${() => {
-                this.selectedLog = log;
-                this.selectedLogIndex = idx;
+                this.selectedLog = {
+                  index: idx,
+                  ...log,
+                };
               }}
             >
               <div slot="marker">${idx + 1}.</div>
@@ -162,7 +165,6 @@ export class CrawlLogs extends LitElement {
   private renderLogDetails() {
     if (!this.selectedLog) return;
     const { details } = this.selectedLog;
-
     return html`
       <btrix-desc-list>
         <btrix-desc-list-item label=${msg("Timestamp").toUpperCase()}>
