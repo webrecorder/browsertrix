@@ -6,10 +6,11 @@ import os
 from datetime import timedelta
 from typing import Optional, List, Union
 import urllib.parse
+import contextlib
 
 from pydantic import UUID4
 from fastapi import HTTPException, Depends
-from redis import asyncio as aioredis, exceptions
+from redis import exceptions
 
 from .models import (
     CrawlFile,
@@ -216,8 +217,8 @@ class BaseCrawlOps:
         # more responsive, saves db update in operator
         if crawl.state in RUNNING_STATES:
             try:
-                redis = await self.get_redis(crawl.id)
-                crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
+                async with self.get_redis(crawl.id) as redis:
+                    crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
             # redis not available, ignore
             except exceptions.ConnectionError:
                 pass
@@ -281,13 +282,17 @@ class BaseCrawlOps:
         for update in updates:
             await self.crawls.find_one_and_update(*update)
 
+    @contextlib.asynccontextmanager
     async def get_redis(self, crawl_id):
         """get redis url for crawl id"""
         redis_url = self.crawl_manager.get_redis_url(crawl_id)
 
-        return await aioredis.from_url(
-            redis_url, encoding="utf-8", decode_responses=True
-        )
+        redis = await self.crawl_manager.get_redis_client(redis_url)
+
+        try:
+            yield redis
+        finally:
+            await redis.close()
 
     async def add_to_collection(
         self, crawl_ids: List[uuid.UUID], collection_id: uuid.UUID, org: Organization

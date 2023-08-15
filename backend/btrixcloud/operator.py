@@ -13,7 +13,6 @@ import yaml
 import humanize
 
 from pydantic import BaseModel
-from redis import asyncio as aioredis
 
 from .utils import (
     from_k8s_date,
@@ -430,6 +429,7 @@ class BtrixOperator(K8sAPI):
     async def cancel_crawl(self, redis_url, crawl_id, cid, status, state):
         """immediately cancel crawl with specified state
         return true if db mark_finished update succeeds"""
+        redis = None
         try:
             redis = await self._get_redis(redis_url)
             await self.mark_finished(redis, crawl_id, uuid.UUID(cid), status, state)
@@ -437,6 +437,10 @@ class BtrixOperator(K8sAPI):
         # pylint: disable=bare-except
         except:
             return False
+
+        finally:
+            if redis:
+                await redis.close()
 
     def _done_response(self, status, finalized=False):
         """done response for removing crawl"""
@@ -462,15 +466,16 @@ class BtrixOperator(K8sAPI):
         """init redis, ensure connectivity"""
         redis = None
         try:
-            redis = await aioredis.from_url(
-                redis_url, encoding="utf-8", decode_responses=True
-            )
+            redis = await self.get_redis_client(redis_url)
             # test connection
             await redis.ping()
             return redis
 
         # pylint: disable=bare-except
         except:
+            if redis:
+                await redis.close()
+
             return None
 
     async def check_if_finished(self, crawl, status):
@@ -512,16 +517,16 @@ class BtrixOperator(K8sAPI):
             status.resync_after = self.fast_retry_secs
             return status
 
-        # set state to running (if not already)
-        if status.state not in RUNNING_STATES:
-            await self.set_state(
-                "running",
-                status,
-                crawl.id,
-                allowed_from=["starting", "waiting_capacity"],
-            )
-
         try:
+            # set state to running (if not already)
+            if status.state not in RUNNING_STATES:
+                await self.set_state(
+                    "running",
+                    status,
+                    crawl.id,
+                    allowed_from=["starting", "waiting_capacity"],
+                )
+
             file_done = await redis.lpop(self.done_key)
 
             while file_done:
@@ -546,6 +551,9 @@ class BtrixOperator(K8sAPI):
             traceback.print_exc()
             print(f"Crawl get failed: {exc}, will try again")
             return status
+
+        finally:
+            await redis.close()
 
     def check_if_pods_running(self, pods):
         """check if at least one crawler pod has started"""

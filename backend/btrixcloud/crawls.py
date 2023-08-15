@@ -363,23 +363,26 @@ class CrawlOps(BaseCrawlOps):
 
         total = 0
         results = []
-        redis = None
 
         try:
-            redis = await self.get_redis(crawl_id)
+            async with self.get_redis(crawl_id) as redis:
+                total = await self._crawl_queue_len(redis, f"{crawl_id}:q")
+                results = await self._crawl_queue_range(
+                    redis, f"{crawl_id}:q", offset, count
+                )
+                results = [json.loads(result)["url"] for result in results]
 
-            total = await self._crawl_queue_len(redis, f"{crawl_id}:q")
-            results = await self._crawl_queue_range(
-                redis, f"{crawl_id}:q", offset, count
-            )
-            results = [json.loads(result)["url"] for result in results]
         except exceptions.ConnectionError:
             # can't connect to redis, likely not initialized yet
             pass
 
         matched = []
         if regex:
-            regex = re.compile(regex)
+            try:
+                regex = re.compile(regex)
+            except re.error as exc:
+                raise HTTPException(status_code=400, detail="invalid_regex") from exc
+
             matched = [result for result in results if regex.search(result)]
 
         return {"total": total, "results": results, "matched": matched}
@@ -387,25 +390,29 @@ class CrawlOps(BaseCrawlOps):
     async def match_crawl_queue(self, crawl_id, regex):
         """get list of urls that match regex"""
         total = 0
-        redis = None
-
-        try:
-            redis = await self.get_redis(crawl_id)
-            total = await self._crawl_queue_len(redis, f"{crawl_id}:q")
-        except exceptions.ConnectionError:
-            # can't connect to redis, likely not initialized yet
-            pass
-
-        regex = re.compile(regex)
         matched = []
         step = 50
 
-        for count in range(0, total, step):
-            results = await self._crawl_queue_range(redis, f"{crawl_id}:q", count, step)
-            for result in results:
-                url = json.loads(result)["url"]
-                if regex.search(url):
-                    matched.append(url)
+        async with self.get_redis(crawl_id) as redis:
+            try:
+                total = await self._crawl_queue_len(redis, f"{crawl_id}:q")
+            except exceptions.ConnectionError:
+                # can't connect to redis, likely not initialized yet
+                pass
+
+            try:
+                regex = re.compile(regex)
+            except re.error as exc:
+                raise HTTPException(status_code=400, detail="invalid_regex") from exc
+
+            for count in range(0, total, step):
+                results = await self._crawl_queue_range(
+                    redis, f"{crawl_id}:q", count, step
+                )
+                for result in results:
+                    url = json.loads(result)["url"]
+                    if regex.search(url):
+                        matched.append(url)
 
         return {"total": total, "matched": matched}
 
@@ -413,56 +420,58 @@ class CrawlOps(BaseCrawlOps):
         """filter out urls that match regex"""
         # pylint: disable=too-many-locals
         total = 0
-        redis = None
-
         q_key = f"{crawl_id}:q"
         s_key = f"{crawl_id}:s"
-
-        try:
-            redis = await self.get_redis(crawl_id)
-            total = await self._crawl_queue_len(redis, f"{crawl_id}:q")
-        except exceptions.ConnectionError:
-            # can't connect to redis, likely not initialized yet
-            pass
-
-        dircount = -1
-        regex = re.compile(regex)
         step = 50
-
-        count = 0
         num_removed = 0
 
-        # pylint: disable=fixme
-        # todo: do this in a more efficient way?
-        # currently quite inefficient as redis does not have a way
-        # to atomically check and remove value from list
-        # so removing each jsob block by value
-        while count < total:
-            if dircount == -1 and count > total / 2:
-                dircount = 1
-            results = await self._crawl_queue_range(redis, q_key, count, step)
-            count += step
+        async with self.get_redis(crawl_id) as redis:
+            try:
+                total = await self._crawl_queue_len(redis, f"{crawl_id}:q")
+            except exceptions.ConnectionError:
+                # can't connect to redis, likely not initialized yet
+                pass
 
-            qrems = []
-            srems = []
+            dircount = -1
 
-            for result in results:
-                url = json.loads(result)["url"]
-                if regex.search(url):
-                    srems.append(url)
-                    # await redis.srem(s_key, url)
-                    # res = await self._crawl_queue_rem(redis, q_key, result, dircount)
-                    qrems.append(result)
+            try:
+                regex = re.compile(regex)
+            except re.error as exc:
+                raise HTTPException(status_code=400, detail="invalid_regex") from exc
 
-            if not srems:
-                continue
+            count = 0
 
-            await redis.srem(s_key, *srems)
-            res = await self._crawl_queue_rem(redis, q_key, qrems, dircount)
-            if res:
-                count -= res
-                num_removed += res
-                print(f"Removed {res} from queue", flush=True)
+            # pylint: disable=fixme
+            # todo: do this in a more efficient way?
+            # currently quite inefficient as redis does not have a way
+            # to atomically check and remove value from list
+            # so removing each jsob block by value
+            while count < total:
+                if dircount == -1 and count > total / 2:
+                    dircount = 1
+                results = await self._crawl_queue_range(redis, q_key, count, step)
+                count += step
+
+                qrems = []
+                srems = []
+
+                for result in results:
+                    url = json.loads(result)["url"]
+                    if regex.search(url):
+                        srems.append(url)
+                        # await redis.srem(s_key, url)
+                        # res = await self._crawl_queue_rem(redis, q_key, result, dircount)
+                        qrems.append(result)
+
+                if not srems:
+                    continue
+
+                await redis.srem(s_key, *srems)
+                res = await self._crawl_queue_rem(redis, q_key, qrems, dircount)
+                if res:
+                    count -= res
+                    num_removed += res
+                    print(f"Removed {res} from queue", flush=True)
 
         return num_removed
 
@@ -475,13 +484,13 @@ class CrawlOps(BaseCrawlOps):
         skip = page * page_size
         upper_bound = skip + page_size - 1
 
-        try:
-            redis = await self.get_redis(crawl_id)
-            errors = await redis.lrange(f"{crawl_id}:e", skip, upper_bound)
-            total = await redis.llen(f"{crawl_id}:e")
-        except exceptions.ConnectionError:
-            # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=503, detail="redis_connection_error")
+        async with self.get_redis(crawl_id) as redis:
+            try:
+                errors = await redis.lrange(f"{crawl_id}:e", skip, upper_bound)
+                total = await redis.llen(f"{crawl_id}:e")
+            except exceptions.ConnectionError:
+                # pylint: disable=raise-missing-from
+                raise HTTPException(status_code=503, detail="redis_connection_error")
 
         parsed_errors = parse_jsonl_error_messages(errors)
         return parsed_errors, total
