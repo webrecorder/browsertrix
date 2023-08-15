@@ -11,6 +11,7 @@ import type { Crawl, Workflow, WorkflowParams } from "./types";
 import { CopyButton } from "../../components/copy-button";
 import { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
+import type { PageChangeEvent } from "../../components/pagination";
 
 type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name";
@@ -18,7 +19,7 @@ type SortDirection = "asc" | "desc";
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.crawlConfigs";
-const INITIAL_PAGE_SIZE = 30;
+const INITIAL_PAGE_SIZE = 10;
 const POLL_INTERVAL_SECONDS = 10;
 const ABORT_REASON_THROTTLE = "throttled";
 
@@ -68,6 +69,9 @@ export class WorkflowsList extends LiteElement {
 
   @state()
   private searchOptions: any[] = [];
+
+  @state()
+  private isFetching = false;
 
   @state()
   private fetchErrorStatusCode?: number;
@@ -136,7 +140,7 @@ export class WorkflowsList extends LiteElement {
     this.fetchErrorStatusCode = undefined;
 
     this.cancelInProgressGetWorkflows();
-
+    this.isFetching = true;
     try {
       const workflows = await this.getWorkflows(params);
       this.workflows = workflows;
@@ -155,6 +159,7 @@ export class WorkflowsList extends LiteElement {
         }
       }
     }
+    this.isFetching = false;
 
     // Restart timer for next poll
     this.timerId = window.setTimeout(() => {
@@ -211,11 +216,7 @@ export class WorkflowsList extends LiteElement {
             ? this.workflows.total
               ? this.renderWorkflowList()
               : this.renderEmptyState()
-            : html`<div
-                class="w-full flex items-center justify-center my-24 text-3xl"
-              >
-                <sl-spinner></sl-spinner>
-              </div>`
+            : this.renderLoading()
       )}
     `;
   }
@@ -349,11 +350,33 @@ export class WorkflowsList extends LiteElement {
 
   private renderWorkflowList() {
     if (!this.workflows) return;
+    const { page, total, pageSize } = this.workflows;
 
     return html`
       <btrix-workflow-list>
         ${this.workflows.items.map(this.renderWorkflowItem)}
       </btrix-workflow-list>
+      ${when(
+        total > pageSize,
+        () => html`
+          <footer class="mt-6 flex justify-center">
+            <btrix-pagination
+              page=${page}
+              totalCount=${total}
+              size=${pageSize}
+              @page-change=${async (e: PageChangeEvent) => {
+                await this.fetchWorkflows({
+                  page: e.detail.page,
+                });
+
+                // Scroll to top of list
+                // TODO once deep-linking is implemented, scroll to top of pushstate
+                this.scrollIntoView({ behavior: "smooth" });
+              }}
+            ></btrix-pagination>
+          </footer>
+        `
+      )}
     `;
   }
 
@@ -523,11 +546,23 @@ export class WorkflowsList extends LiteElement {
       `;
     }
 
+    if (this.isFetching) {
+      return this.renderLoading();
+    }
+
     return html`
       <div class="border-t border-b py-5">
         <p class="text-center text-neutral-500">${msg("No Workflows yet.")}</p>
       </div>
     `;
+  }
+
+  private renderLoading() {
+    return html`<div
+      class="w-full flex items-center justify-center my-24 text-3xl"
+    >
+      <sl-spinner></sl-spinner>
+    </div>`;
   }
 
   /**

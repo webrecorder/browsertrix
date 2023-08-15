@@ -247,15 +247,14 @@ export class CrawlsList extends LiteElement {
           this.archivedItems,
           () => {
             const { items, page, total, pageSize } = this.archivedItems!;
-            const hasCrawlItems = items.length;
             return html`
               <section>
-                ${hasCrawlItems
+                ${items.length
                   ? this.renderArchivedItemList()
                   : this.renderEmptyState()}
               </section>
               ${when(
-                hasCrawlItems || page > 1,
+                total > pageSize,
                 () => html`
                   <footer class="mt-6 flex justify-center">
                     <btrix-pagination
@@ -408,8 +407,10 @@ export class CrawlsList extends LiteElement {
         .keyLabels=${CrawlsList.FieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         placeholder=${this.itemType === "upload"
-          ? msg("Search by name")
-          : msg("Search by name or Crawl Start URL")}
+          ? msg("Search all uploads by name")
+          : this.itemType === "crawl"
+          ? msg("Search all crawls by name or Crawl Start URL")
+          : msg("Search all items by name or Crawl Start URL")}
         @on-select=${(e: CustomEvent) => {
           const { key, value } = e.detail;
           this.filterBy = {
