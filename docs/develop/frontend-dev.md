@@ -72,7 +72,7 @@ If connecting to a local deployment cluster, set `API_BASE_URL` to:
 API_BASE_URL=http://localhost:30870
 ```
 
-??? info "Minikube (on Mac)"
+??? info "Port when using Minikube (on Mac)"
 
     When using Minikube on a Mac, the port will not be 30870. Instead, Minikube opens a tunnel to a random port,
     obtained by running `minikube service browsertrix-cloud-frontend --url` in a separate terminal.
@@ -100,7 +100,7 @@ To stop the development server type ++ctrl+c++ into your command line terminal.
 | `build-dev`        | bundles app and outputs it in `dist` directory                  |
 | `build`            | bundles app, optimized for production, and outputs it to `dist` |
 | `lint`             | find and fix auto-fixable javascript errors                     |
-| `format`           | formats js, html, and css files                                  |
+| `format`           | formats js, html, and css files                                 |
 | `localize:extract` | generate XLIFF file to be translated                            |
 | `localize:build`   | output a localized version of strings/templates                 |
 
