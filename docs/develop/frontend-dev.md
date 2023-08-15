@@ -85,7 +85,7 @@ This will open `localhost:9870` in a new tab in your default browser.
 
 Saving changes to files in `src` will automatically reload your browser window with the latest UI updates.
 
-To stop the development server type <kbd>Ctrl</kbd> + <kbd>C</kbd> into your command line terminal.
+To stop the development server type ++ctrl+c++ into your command line terminal.
 
 ## Scripts
 
