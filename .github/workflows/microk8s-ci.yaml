@@ -2,9 +2,6 @@ name: Cluster Run (MicroK8s)
 
 on:
   push:
-    paths:
-      - 'backend/**'
-      - 'chart/**'
 jobs:
   btrix-microk8s-test:
     runs-on: ubuntu-latest
