@@ -2,6 +2,7 @@
 from collections.abc import Generator
 import yaml
 from yaml.scanner import ScannerError
+from yaml.constructor import ConstructorError
 import sys
 
 
@@ -46,6 +47,9 @@ for file in changed_files:
                     WE_DUN_GOOFED = True
         except ScannerError:
             print(f"Couldn't parse yaml file for: {file}")
+            pass
+        except ConstructorError:
+            print(f"Couldn't construct yaml file: {file}")
             pass
 
 if WE_DUN_GOOFED:
