@@ -8,7 +8,7 @@ Instead of rebuilding the entire frontend image to view your UI changes, you can
 
 ### 1. Browsertrix Cloud API backend already in a Kubernetes cluster
 
-The frontend development server requires an existing backend that has been deployed locally or is in production. See [Deploying Browsertrix Cloud](https://docs.browsertrix.cloud/deploy/).
+The frontend development server requires an existing backend that has been deployed locally or is in production. See [Deploying Browsertrix Cloud](../../deploy/).
 
 ### 2. Node.js ≥16 and Yarn 1
 
