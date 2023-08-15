@@ -13,7 +13,7 @@ theme:
     - navigation.tabs.sticky
     - navigation.instant
     - navigation.tracking
-    - navigation-indexes
+    - navigation.indexes
     - navigation.footer
     - content.code.copy
     - content.action.edit
