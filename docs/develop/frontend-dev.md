@@ -1,24 +1,53 @@
-# Running the Frontend for Development
+# Developing the Frontend UI
 
-This guide explains how to deploy an instance of the Browsertrix Cloud frontend for development.
+This guide explains how to run the Browsertrix Cloud frontend development server with [Yarn](https://classic.yarnpkg.com).
 
-This setup may be ideal for rapid development on the frontend, as it will allow running the frontend
-via `yarn` instead of the frontend image deployed in Kubernetes.
+Instead of rebuilding the entire frontend image to view your UI changes, you can use the included local development server to access the frontend from your browser. This setup is ideal for rapid UI development that does not rely on any backend changes.
 
 ## Requirements
 
-This setup does require a Browsertrix Cloud API backend already in a Kubernetes cluster.
+### 1. Browsertrix Cloud API backend already in a Kubernetes cluster
 
-Refer to [setup for local deployment](./local-dev-setup.md) for additional details on this setup.
+The frontend development server requires an existing backend that has been deployed locally or is in production. See [Deploying Browsertrix Cloud](../../deploy/).
+
+### 2. Node.js ≥16 and Yarn 1
+
+To check if you already have Node.js installed, run the following command in your command line terminal:
+
+```sh
+node --version
+```
+
+You should see a version number like `v18.12.1`. If you see a command line error instead of a version number, [install Node.js](https://nodejs.org) before continuing.
+
+??? question "What if my other project requires a different version of Node.js?"
+
+    You can use [Node Version Manager](https://nodejs.org/en/download/package-manager#nvm) to install multiple Node.js versions and switch versions between projects.
+
+To check your Yarn installation:
+
+```sh
+yarn --version
+```
+
+You should see a version number like `1.22.19`. If you do not, [install or upgrade Yarn](https://classic.yarnpkg.com/en/docs/install).
 
 ## Quickstart
 
-Ensure the current working directory is set to the `/frontend` folder.
-
-Install dependencies:
+From the command line, change your current working directory to `/frontend`:
 
 ```sh
-yarn
+cd frontend
+```
+
+!!! note
+
+    From this point on, all commands in this guide should be run from the `frontend` directory.
+
+Install UI dependencies:
+
+```sh
+yarn install
 ```
 
 Copy environment variables from the sample file:
@@ -27,28 +56,30 @@ Copy environment variables from the sample file:
 cp sample.env.local .env.local
 ```
 
-Update `API_BASE_URL` in `.env.local` to point to your dev backend API. For example:
+Update `API_BASE_URL` in `.env.local` to point to your backend API host. For example:
 
 ```
-API_BASE_URL=http://dev.example.com/api
+API_BASE_URL=http://dev.example.com
 ```
 
-If connecting to a local deployment cluster, set API_BASE_URL to:
+!!! note
+
+    This setup assumes that your API endpoints are available under `/api`, which is the default configuration for the Browsertrix Cloud backend.
+
+If connecting to a local deployment cluster, set `API_BASE_URL` to:
 
 ```
-API_BASE_URL=http://localhost:30870/api
+API_BASE_URL=http://localhost:30870
 ```
 
-??? info "Minikube (on Mac)"
+??? info "Port when using Minikube (on Mac)"
 
     When using Minikube on a Mac, the port will not be 30870. Instead, Minikube opens a tunnel to a random port,
     obtained by running `minikube service browsertrix-cloud-frontend --url` in a separate terminal.
 
     Set API_BASE_URL to provided URL instead, eg. `API_BASE_URL=http://127.0.0.1:<TUNNEL_PORT>`
 
-
-
-Start the dev server:
+Start the frontend development server:
 
 ```sh
 yarn start
@@ -56,8 +87,9 @@ yarn start
 
 This will open `localhost:9870` in a new tab in your default browser.
 
-To develop against a local instance of the backend API,
-follow instructions for deploying to a local Docker instance. Update `API_BASE_URL` and then restart the dev server.
+Saving changes to files in `src` will automatically reload your browser window with the latest UI updates.
+
+To stop the development server type ++ctrl+c++ into your command line terminal.
 
 ## Scripts
 
@@ -68,7 +100,7 @@ follow instructions for deploying to a local Docker instance. Update `API_BASE_U
 | `build-dev`        | bundles app and outputs it in `dist` directory                  |
 | `build`            | bundles app, optimized for production, and outputs it to `dist` |
 | `lint`             | find and fix auto-fixable javascript errors                     |
-| `format`           | formats js, html and css files                                  |
+| `format`           | formats js, html, and css files                                 |
 | `localize:extract` | generate XLIFF file to be translated                            |
 | `localize:build`   | output a localized version of strings/templates                 |
 
