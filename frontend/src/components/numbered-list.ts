@@ -24,6 +24,9 @@ export class NumberedListItem extends LitElement {
   @property({ type: Boolean })
   isEven: boolean = false;
 
+  @property({ type: Boolean })
+  hoverable: boolean = false;
+
   static styles = css`
     :host,
     .item {
@@ -65,7 +68,16 @@ export class NumberedListItem extends LitElement {
     }
 
     .item.even .content {
-      background-color: var(--sl-color-neutral-50); */
+      background-color: var(--sl-color-neutral-50);
+    }
+
+    .item.hoverable {
+      cursor: pointer;
+    }
+
+    .item.hoverable:hover .content {
+      background-color: var(--sl-color-blue-500);
+      color: var(--sl-color-neutral-0);
     }
   `;
 
@@ -77,6 +89,7 @@ export class NumberedListItem extends LitElement {
           first: this.isFirst,
           last: this.isLast,
           even: this.isEven,
+          hoverable: this.hoverable,
         })}
       >
         <div class="marker"><slot name="marker"></slot></div>

@@ -25,9 +25,8 @@ export class CrawlLogs extends LitElement {
 
       .row {
         display: grid;
-        grid-template-columns: 9rem 4rem 14rem 1fr;
+        grid-template-columns: 9rem 4rem 15rem 1fr;
         line-height: 1.3;
-        max-width: 800px;
       }
 
       .cell {
@@ -61,11 +60,22 @@ export class CrawlLogs extends LitElement {
         overflow: hidden;
         white-space: nowrap;
       }
+
+      a {
+        color: inherit;
+      }
+
+      a:hover {
+        text-decoration: none;
+      }
     `,
   ];
 
   @property({ type: Object })
   logs?: APIPaginatedList;
+
+  @state()
+  private selectedLog: CrawlLog | null = null;
 
   render() {
     if (!this.logs) return;
@@ -80,7 +90,11 @@ export class CrawlLogs extends LitElement {
         </btrix-numbered-list-header>
         ${this.logs.items.map(
           (log: CrawlLog, idx) => html`
-            <btrix-numbered-list-item>
+            <btrix-numbered-list-item
+              hoverable
+              @click=${() => (this.selectedLog = log)}
+            >
+              <div slot="marker">${idx + 1}.</div>
               <div class="row">
                 <div>
                   <sl-format-date
