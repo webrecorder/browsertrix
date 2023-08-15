@@ -25,6 +25,9 @@ export class NumberedListItem extends LitElement {
   isEven: boolean = false;
 
   @property({ type: Boolean })
+  selected: boolean = false;
+
+  @property({ type: Boolean })
   hoverable: boolean = false;
 
   static styles = css`
@@ -75,6 +78,11 @@ export class NumberedListItem extends LitElement {
       cursor: pointer;
     }
 
+    .item.selected .content {
+      background-color: var(--sl-color-blue-400);
+      color: var(--sl-color-neutral-0);
+    }
+
     .item.hoverable:hover .content {
       background-color: var(--sl-color-blue-500);
       color: var(--sl-color-neutral-0);
@@ -89,6 +97,7 @@ export class NumberedListItem extends LitElement {
           first: this.isFirst,
           last: this.isLast,
           even: this.isEven,
+          selected: this.selected,
           hoverable: this.hoverable,
         })}
       >

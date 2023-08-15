@@ -87,9 +87,11 @@ export class CrawlLogs extends LitElement {
   @state()
   private selectedLog: CrawlLog | null = null;
 
+  @state()
+  private selectedLogIndex: number | null = null;
+
   render() {
     if (!this.logs) return;
-    console.log(this.selectedLog);
     return html`<btrix-numbered-list>
         <btrix-numbered-list-header slot="header">
           <div class="row">
@@ -99,11 +101,17 @@ export class CrawlLogs extends LitElement {
             <div class="cell">${msg("Page URL")}</div>
           </div>
         </btrix-numbered-list-header>
-        ${this.logs.items.map(
-          (log: CrawlLog, idx) => html`
+        ${this.logs.items.map((log: CrawlLog, idx) => {
+          const selected = this.selectedLogIndex === idx;
+          return html`
             <btrix-numbered-list-item
               hoverable
-              @click=${() => (this.selectedLog = log)}
+              ?selected=${selected}
+              aria-selected="${selected}"
+              @click=${() => {
+                this.selectedLog = log;
+                this.selectedLogIndex = idx;
+              }}
             >
               <div slot="marker">${idx + 1}.</div>
               <div class="row">
@@ -131,8 +139,8 @@ export class CrawlLogs extends LitElement {
                 </div>
               </div>
             </btrix-numbered-list-item>
-          `
-        )}
+          `;
+        })}
       </btrix-numbered-list>
       <footer>
         <btrix-pagination
@@ -157,9 +165,12 @@ export class CrawlLogs extends LitElement {
 
     return html`
       <btrix-desc-list>
+        <btrix-desc-list-item label=${msg("Timestamp").toUpperCase()}>
+          ${this.selectedLog.timestamp}
+        </btrix-desc-list-item>
         ${Object.entries(details).map(
           ([key, value]) => html`
-            <btrix-desc-list-item label=${key}>
+            <btrix-desc-list-item label=${key.toUpperCase()}>
               ${key === "stack" ||
               (typeof value !== "string" && typeof value !== "number")
                 ? this.renderPre(value)
