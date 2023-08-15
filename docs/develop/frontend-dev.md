@@ -96,7 +96,7 @@ To stop the development server type <kbd>Ctrl</kbd> + <kbd>C</kbd> into your com
 | `build-dev`        | bundles app and outputs it in `dist` directory                  |
 | `build`            | bundles app, optimized for production, and outputs it to `dist` |
 | `lint`             | find and fix auto-fixable javascript errors                     |
-| `format`           | formats js, html and css files                                  |
+| `format`           | formats js, html, and css files                                  |
 | `localize:extract` | generate XLIFF file to be translated                            |
 | `localize:build`   | output a localized version of strings/templates                 |
 
