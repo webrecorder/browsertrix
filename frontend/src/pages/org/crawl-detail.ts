@@ -186,7 +186,9 @@ export class CrawlDetail extends LiteElement {
                   download=${`btrix-${this.crawlId}-logs.txt`}
                   size="small"
                   variant="primary"
-                  >${msg("Download Logs")}</sl-button
+                >
+                  <sl-icon slot="prefix" name="download"></sl-icon>
+                  ${msg("Download Logs")}</sl-button
                 >`
             )}
           `,
