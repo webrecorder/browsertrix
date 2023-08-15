@@ -193,18 +193,24 @@ export class CrawlQueue extends LiteElement {
       this.timerId = window.setTimeout(() => {
         this.fetchQueue();
       }, POLL_INTERVAL_SECONDS * 1000);
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't fetch crawl queue at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
+    } catch (e: any) {
+      if (e.message !== "invalid_regex") {
+        this.notify({
+          message: msg("Sorry, couldn't fetch crawl queue at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
     }
   }
 
   private async getQueue(): Promise<ResponseData> {
+    const offset = "0";
+    const count = this.pageSize.toString();
+    const regex = this.regex;
+    const params = new URLSearchParams({ offset, count, regex });
     const data: ResponseData = await this.apiFetch(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/queue?offset=0&count=${this.pageSize}&regex=${this.regex}`,
+      `/orgs/${this.orgId}/crawls/${this.crawlId}/queue?${params}`,
       this.authState!
     );
 
