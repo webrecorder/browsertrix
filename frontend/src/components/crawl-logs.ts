@@ -68,6 +68,16 @@ export class CrawlLogs extends LitElement {
       a:hover {
         text-decoration: none;
       }
+
+      pre {
+        white-space: pre-wrap;
+        font-family: var(--sl-font-mono);
+        font-size: var(--sl-font-size-x-small);
+        margin: 0;
+        padding: var(--sl-spacing-small);
+        border: 1px solid var(--sl-panel-border-color);
+        border-radius: var(--sl-border-radius-medium);
+      }
     `,
   ];
 
@@ -79,6 +89,7 @@ export class CrawlLogs extends LitElement {
 
   render() {
     if (!this.logs) return;
+    console.log(this.selectedLog);
     return html`<btrix-numbered-list>
         <btrix-numbered-list-header slot="header">
           <div class="row">
@@ -130,6 +141,41 @@ export class CrawlLogs extends LitElement {
           size=${this.logs.pageSize}
         >
         </btrix-pagination>
-      </footer> `;
+      </footer>
+      <btrix-dialog
+        label=${msg("Log Details")}
+        ?open=${this.selectedLog}
+        style="--width: 40rem"
+        @sl-after-hide=${() => (this.selectedLog = null)}
+        >${this.renderLogDetails()}</btrix-dialog
+      > `;
+  }
+
+  private renderLogDetails() {
+    if (!this.selectedLog) return;
+    const { details } = this.selectedLog;
+
+    return html`
+      <btrix-desc-list>
+        ${Object.entries(details).map(
+          ([key, value]) => html`
+            <btrix-desc-list-item label=${key}>
+              ${key === "stack" ||
+              (typeof value !== "string" && typeof value !== "number")
+                ? this.renderPre(value)
+                : value ?? "--"}
+            </btrix-desc-list-item>
+          `
+        )}
+      </btrix-desc-list>
+    `;
+  }
+
+  private renderPre(value: any) {
+    let str = value;
+    if (typeof value !== "string") {
+      str = JSON.stringify(value, null, 2);
+    }
+    return html`<pre><code>${str}</code></pre>`;
   }
 }
