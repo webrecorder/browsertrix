@@ -153,6 +153,9 @@ import("./collections-add").then(({ CollectionsAdd }) => {
 import("./code").then(({ Code }) => {
   customElements.define("btrix-code", Code);
 });
+import("./search-combobox").then(({ SearchCombobox }) => {
+  customElements.define("btrix-search-combobox", SearchCombobox);
+});
 
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);

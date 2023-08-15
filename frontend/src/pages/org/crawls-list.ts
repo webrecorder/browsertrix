@@ -2,13 +2,7 @@ import { state, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
-import type {
-  SlCheckbox,
-  SlMenuItem,
-  SlSelect,
-} from "@shoelace-style/shoelace";
-import debounce from "lodash/fp/debounce";
-import Fuse from "fuse.js";
+import type { SlCheckbox, SlSelect } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
 import { CopyButton } from "../../components/copy-button";
@@ -24,12 +18,6 @@ type Crawls = APIPaginatedList & {
   items: Crawl[];
 };
 type SearchFields = "name" | "firstSeed";
-type SearchResult = {
-  item: {
-    key: SearchFields;
-    value: string;
-  };
-};
 type SortField = "finished" | "fileSize";
 type SortDirection = "asc" | "desc";
 
@@ -37,7 +25,6 @@ const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const POLL_INTERVAL_SECONDS = 10;
-const MIN_SEARCH_LENGTH = 2;
 const sortableFields: Record<
   SortField,
   { label: string; defaultDirection?: SortDirection }
@@ -96,6 +83,9 @@ export class CrawlsList extends LiteElement {
   private archivedItems?: Crawls;
 
   @state()
+  private searchOptions: any[] = [];
+
+  @state()
   private orderBy: {
     field: SortField;
     direction: SortDirection;
@@ -111,12 +101,6 @@ export class CrawlsList extends LiteElement {
   private filterBy: Partial<Record<keyof Crawl, any>> = {};
 
   @state()
-  private searchByValue: string = "";
-
-  @state()
-  private searchResultsOpen = false;
-
-  @state()
   private itemToEdit: Crawl | null = null;
 
   @state()
@@ -129,18 +113,10 @@ export class CrawlsList extends LiteElement {
   stateSelect?: SlSelect;
 
   // For fuzzy search:
-  private fuse = new Fuse([], {
-    keys: ["value"],
-    shouldSort: false,
-    threshold: 0.2, // stricter; default is 0.6
-  });
+  private searchKeys = ["name", "firstSeed"];
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
-
-  private get hasSearchStr() {
-    return this.searchByValue.length >= MIN_SEARCH_LENGTH;
-  }
 
   private get selectedSearchFilterKey() {
     return Object.keys(CrawlsList.FieldLabels).find((key) =>
@@ -426,92 +402,27 @@ export class CrawlsList extends LiteElement {
 
   private renderSearch() {
     return html`
-      <btrix-combobox
-        ?open=${this.searchResultsOpen}
-        @request-close=${() => {
-          this.searchResultsOpen = false;
-          this.searchByValue = "";
-        }}
-        @sl-select=${async (e: CustomEvent) => {
-          this.searchResultsOpen = false;
-          const item = e.detail.item as SlMenuItem;
-          const key = item.dataset["key"] as SearchFields;
-          this.searchByValue = item.value;
-          await this.updateComplete;
+      <btrix-search-combobox
+        .searchKeys=${this.searchKeys}
+        .searchOptions=${this.searchOptions}
+        .keyLabels=${CrawlsList.FieldLabels}
+        selectedKey=${ifDefined(this.selectedSearchFilterKey)}
+        placeholder=${this.itemType === "upload"
+          ? msg("Search by name")
+          : msg("Search by name or Crawl Start URL")}
+        @on-select=${(e: CustomEvent) => {
+          const { key, value } = e.detail;
           this.filterBy = {
             ...this.filterBy,
-            [key]: item.value,
+            [key]: value,
           };
         }}
+        @on-clear=${() => {
+          const { name, firstSeed, ...otherFilters } = this.filterBy;
+          this.filterBy = otherFilters;
+        }}
       >
-        <sl-input
-          size="small"
-          placeholder=${this.itemType === "upload"
-            ? msg("Search by name")
-            : msg("Search by name or Crawl Start URL")}
-          clearable
-          value=${this.searchByValue}
-          @sl-clear=${() => {
-            this.searchResultsOpen = false;
-            this.onSearchInput.cancel();
-            const { name, firstSeed, ...otherFilters } = this.filterBy;
-            this.filterBy = otherFilters;
-          }}
-          @sl-input=${this.onSearchInput}
-        >
-          ${when(
-            this.selectedSearchFilterKey,
-            () =>
-              html`<sl-tag
-                slot="prefix"
-                size="small"
-                pill
-                style="margin-left: var(--sl-spacing-3x-small)"
-                >${CrawlsList.FieldLabels[
-                  this.selectedSearchFilterKey as SearchFields
-                ]}</sl-tag
-              >`,
-            () => html`<sl-icon name="search" slot="prefix"></sl-icon>`
-          )}
-        </sl-input>
-        ${this.renderSearchResults()}
-      </btrix-combobox>
-    `;
-  }
-
-  private renderSearchResults() {
-    if (!this.hasSearchStr) {
-      return html`
-        <sl-menu-item slot="menu-item" disabled
-          >${msg("Start typing to view filters.")}</sl-menu-item
-        >
-      `;
-    }
-
-    const searchResults = this.fuse.search(this.searchByValue).slice(0, 10);
-    if (!searchResults.length) {
-      return html`
-        <sl-menu-item slot="menu-item" disabled
-          >${msg("No matching items found.")}</sl-menu-item
-        >
-      `;
-    }
-
-    return html`
-      ${searchResults.map(
-        ({ item }: SearchResult) => html`
-          <sl-menu-item
-            slot="menu-item"
-            data-key=${item.key}
-            value=${item.value}
-          >
-            <sl-tag slot="prefix" size="small" pill
-              >${CrawlsList.FieldLabels[item.key]}</sl-tag
-            >
-            ${item.value}
-          </sl-menu-item>
-        `
-      )}
+      </btrix-search-combobox>
     `;
   }
 
@@ -641,8 +552,6 @@ export class CrawlsList extends LiteElement {
               class="text-neutral-500 font-medium underline hover:no-underline"
               @click=${() => {
                 this.filterBy = {};
-                this.onSearchInput.cancel();
-                this.searchByValue = "";
                 if (this.stateSelect) {
                   // TODO pass in value to sl-select after upgrading
                   // shoelace to >=2.0.0-beta.88. Passing an array value
@@ -676,24 +585,6 @@ export class CrawlsList extends LiteElement {
       </div>
     `;
   }
-
-  private onSearchInput = debounce(150)((e: any) => {
-    this.searchByValue = e.target.value.trim();
-
-    if (this.searchResultsOpen === false && this.hasSearchStr) {
-      this.searchResultsOpen = true;
-    }
-
-    if (!this.searchByValue && this.selectedSearchFilterKey) {
-      const {
-        [this.selectedSearchFilterKey as SearchFields]: _,
-        ...otherFilters
-      } = this.filterBy;
-      this.filterBy = {
-        ...otherFilters,
-      };
-    }
-  }) as any;
 
   /**
    * Fetch archived items and update internal state
@@ -778,16 +669,13 @@ export class CrawlsList extends LiteElement {
       );
 
       // Update search/filter collection
-      const toSearchItem =
-        (key: SearchFields) =>
-        (value: string): SearchResult["item"] => ({
-          key,
-          value,
-        });
-      this.fuse.setCollection([
+      const toSearchItem = (key: SearchFields) => (value: string) => ({
+        [key]: value,
+      });
+      this.searchOptions = [
         ...data.names.map(toSearchItem("name")),
         ...data.firstSeeds.map(toSearchItem("firstSeed")),
-      ] as any);
+      ];
     } catch (e) {
       console.debug(e);
     }
