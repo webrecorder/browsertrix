@@ -60,7 +60,7 @@ export class CollectionsAdd extends LiteElement {
   emptyText?: string;
 
   @state()
-  private collections: CollectionList = [];
+  private collections: { [id: string]: Collection } = {};
 
   @state()
   private collectionIds: string[] = [];
@@ -100,12 +100,12 @@ export class CollectionsAdd extends LiteElement {
         ${this.renderSearch()}
       </div>
 
-      ${when(this.collections, () =>
-        this.collections.length
+      ${when(this.collectionIds, () =>
+        this.collectionIds.length
           ? html`
               <div class="mb-2">
                 <ul class="contents">
-                  ${this.collections.map(this.renderCollectionItem, this)}
+                  ${this.collectionIds.map(this.renderCollectionItem, this)}
                 </ul>
               </div>
             `
@@ -137,7 +137,6 @@ export class CollectionsAdd extends LiteElement {
               (collection) => collection.id === collId
             );
             if (coll) {
-              this.collections.push(coll);
               this.collectionIds.push(coll.id);
               await this.dispatchChange();
             }
@@ -203,16 +202,24 @@ export class CollectionsAdd extends LiteElement {
     `;
   }
 
-  private renderCollectionItem(collection: Collection) {
+  private renderCollectionItem(id: string) {
+    const collection = this.collections[id];
     return html`<li class="mt-1 p-1 pl-3 border rounded-sm">
-      <div class="flex flex-row gap-2 justify-between items-center">
-        <div class="justify-self-stretch grow truncate">${collection.name}</div>
+      <div
+        class="flex flex-row gap-2 justify-between items-center transition-opacity delay-75 ${collection
+          ? "opacity-100"
+          : "opacity-0"}"
+      >
+        <div class="justify-self-stretch grow truncate">
+          ${collection?.name}
+        </div>
         <div class="text-neutral-500 text-xs text-right font-monostyle">
-          ${msg(str`${collection.crawlCount} Crawls`)}
+          ${msg(str`${collection?.crawlCount || 0} Crawls`)}
         </div>
         <sl-icon-button
           name="x-lg"
-          data-key=${collection.id}
+          data-key=${id}
+          ?disabled=${!collection}
           @click=${this.removeCollection}
         >
         </sl-icon-button>
@@ -229,15 +236,6 @@ export class CollectionsAdd extends LiteElement {
         this.collectionIds = [
           ...this.collectionIds.slice(0, collIdIndex),
           ...this.collectionIds.slice(collIdIndex + 1),
-        ];
-      }
-      const collIndex = this.collections.findIndex(
-        (collection) => collection.id === collectionId
-      );
-      if (collIndex > -1) {
-        this.collections = [
-          ...this.collections.slice(0, collIndex),
-          ...this.collections.slice(collIndex + 1),
         ];
       }
     }
@@ -261,7 +259,7 @@ export class CollectionsAdd extends LiteElement {
 
   private filterOutSelectedCollections(results: CollectionList) {
     return results.filter((result) => {
-      return !this.collections.some((coll) => coll.id === result.id);
+      return !Object.keys(this.collections).some((id) => id === result.id);
     });
   }
 
@@ -312,10 +310,11 @@ export class CollectionsAdd extends LiteElement {
         )
       )
     );
-    const collections: CollectionList = [];
+    const collections: CollectionsAdd["collections"] = {};
     results.forEach((res, i) => {
       if (res.status === "fulfilled" && res.value) {
-        collections.push(res.value);
+        const coll = res.value;
+        collections[coll.id] = coll;
       } else {
         console.debug("failed to get collection ID:", this.collectionIds[i]);
       }
