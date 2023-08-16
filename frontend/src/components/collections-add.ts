@@ -195,20 +195,19 @@ export class CollectionsAdd extends LiteElement {
 
   private renderCollectionItem(collection: Collection) {
     return html`<li class="mt-1 p-1 pl-3 border rounded-sm">
-        <div class="flex flex-row gap-2 justify-between items-center">
-          <div class="justify-self-stretch grow truncate">${
-            collection.name
-          }</div>
-          <div class="text-neutral-500 text-xs text-right font-monostyle">
-            ${msg(str`${collection.crawlCount} Crawls`)}
-          </div>
-          <sl-icon-button
-            name="x-lg"
-            data-key=${collection.id}
-            @click=${this.removeCollection}>
-          </sl-icon-button>
-        </dib>
-      </li>`;
+      <div class="flex flex-row gap-2 justify-between items-center">
+        <div class="justify-self-stretch grow truncate">${collection.name}</div>
+        <div class="text-neutral-500 text-xs text-right font-monostyle">
+          ${msg(str`${collection.crawlCount} Crawls`)}
+        </div>
+        <sl-icon-button
+          name="x-lg"
+          data-key=${collection.id}
+          @click=${this.removeCollection}
+        >
+        </sl-icon-button>
+      </div>
+    </li>`;
   }
 
   private async removeCollection(event: Event) {
