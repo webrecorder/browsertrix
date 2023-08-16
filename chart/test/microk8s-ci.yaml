@@ -7,3 +7,5 @@ frontend_image: "localhost:32000/webrecorder/browsertrix-frontend:latest"
 
 backend_pull_policy: "IfNotPresent"
 frontend_pull_policy: "IfNotPresent"
+
+backend_memory: "384Mi"
