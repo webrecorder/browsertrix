@@ -291,16 +291,25 @@ export class CollectionsAdd extends LiteElement {
   }
 
   private async initializeCollectionsFromIds() {
-    for (let i = 0; i < this.collectionIds?.length; i++) {
-      const collId = this.collectionIds[i];
-      const data: Collection = await this.apiFetch(
-        `/orgs/${this.orgId}/collections/${collId}`,
-        this.authState!
-      );
-      if (data) {
-        this.collections.push(data);
+    if (!this.collectionIds) return;
+    const results = await Promise.allSettled(
+      this.collectionIds.map((collId) =>
+        this.apiFetch(
+          `/orgs/${this.orgId}/collections/${collId}`,
+          this.authState!
+        )
+      )
+    );
+    const collections: CollectionList = [];
+    results.forEach((res, i) => {
+      if (res.status === "fulfilled" && res.value) {
+        collections.push(res.value);
+      } else {
+        console.debug("failed to get collection ID:", this.collectionIds[i]);
       }
-    }
+    });
+
+    this.collections = collections;
   }
 
   private async dispatchChange() {
