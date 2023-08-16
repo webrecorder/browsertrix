@@ -220,22 +220,27 @@ export class CollectionsAdd extends LiteElement {
     </li>`;
   }
 
-  private async removeCollection(event: Event) {
+  private removeCollection(event: Event) {
     const target = event.currentTarget as HTMLElement;
     const collectionId = target.getAttribute("data-key");
     if (collectionId) {
       const collIdIndex = this.collectionIds.indexOf(collectionId);
       if (collIdIndex > -1) {
-        this.collectionIds.splice(collIdIndex, 1);
+        this.collectionIds = [
+          ...this.collectionIds.slice(0, collIdIndex),
+          ...this.collectionIds.slice(collIdIndex + 1),
+        ];
       }
       const collIndex = this.collections.findIndex(
         (collection) => collection.id === collectionId
       );
       if (collIndex > -1) {
-        this.collections.splice(collIndex, 1);
+        this.collections = [
+          ...this.collections.slice(0, collIndex),
+          ...this.collections.slice(collIndex + 1),
+        ];
       }
     }
-    await this.requestUpdate();
   }
 
   private onSearchInput = debounce(200)(async (e: any) => {
