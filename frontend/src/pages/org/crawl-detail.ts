@@ -750,7 +750,7 @@ ${this.crawl?.description}
             () => html`<sl-skeleton></sl-skeleton>`
           )}
         </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Collections")}>
+        <btrix-desc-list-item label=${msg("In Collections")}>
           ${when(
             this.crawl,
             () =>

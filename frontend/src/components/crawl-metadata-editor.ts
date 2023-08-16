@@ -53,6 +53,9 @@ export class CrawlMetadataEditor extends LiteElement {
   @state()
   private tagsToSave: Tags = [];
 
+  @state()
+  private collectionsToSave: string[] = [];
+
   // For fuzzy search:
   private fuse = new Fuse([], {
     shouldSort: false,
@@ -121,6 +124,18 @@ export class CrawlMetadataEditor extends LiteElement {
           @tags-change=${(e: TagsChangeEvent) =>
             (this.tagsToSave = e.detail.tags)}
         ></btrix-tag-input>
+        <div class="mt-4">
+          <btrix-collections-add
+            .authState=${this.authState}
+            .initialCollections=${this.crawl.collections}
+            .orgId=${this.crawl.oid}
+            .configId=${"temp"}
+            label=${msg("Add to Collection")}
+            @collections-change=${(e: CustomEvent) =>
+              (this.collectionsToSave = e.detail.collections)}
+          >
+          </btrix-collections-add>
+        </div>
       </form>
       <div slot="footer" class="flex justify-between">
         <sl-button form="crawlDetailsForm" type="reset" size="small"
@@ -175,8 +190,10 @@ export class CrawlMetadataEditor extends LiteElement {
 
     if (
       (!this.includeName || name === this.crawl.name) &&
-      crawlDescription === (this.crawl!.description ?? "") &&
-      JSON.stringify(this.tagsToSave) === JSON.stringify(this.crawl!.tags)
+      crawlDescription === (this.crawl.description ?? "") &&
+      JSON.stringify(this.tagsToSave) === JSON.stringify(this.crawl.tags) &&
+      JSON.stringify(this.collectionsToSave) ===
+        JSON.stringify(this.crawl.collections)
     ) {
       // No changes have been made
       this.requestClose();
