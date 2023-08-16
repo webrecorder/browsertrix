@@ -78,12 +78,17 @@ export class CollectionsAdd extends LiteElement {
   @state()
   private searchResultsOpen = false;
 
-  async connectedCallback() {
+  connectedCallback() {
     if (this.initialCollections) {
       this.collectionIds = this.initialCollections;
     }
     super.connectedCallback();
     this.initializeCollectionsFromIds();
+  }
+
+  disconnectedCallback() {
+    this.onSearchInput.cancel();
+    super.disconnectedCallback();
   }
 
   render() {
@@ -167,7 +172,12 @@ export class CollectionsAdd extends LiteElement {
       `;
     }
 
-    if (!this.searchResults.length) {
+    // Filter out stale search results from last debounce invocation
+    const searchResults = this.searchResults.filter((res) =>
+      new RegExp(`^${this.searchByValue}`, "i").test(res.name)
+    );
+
+    if (!searchResults.length) {
       return html`
         <sl-menu-item slot="menu-item" disabled
           >${msg("No matching Collections found.")}</sl-menu-item
@@ -176,7 +186,7 @@ export class CollectionsAdd extends LiteElement {
     }
 
     return html`
-      ${this.searchResults.map((item: Collection) => {
+      ${searchResults.map((item: Collection) => {
         return html`
           <sl-menu-item class="w-full" slot="menu-item" data-key=${item.id}>
             <div class="flex w-full gap-2 items-center">
@@ -246,9 +256,7 @@ export class CollectionsAdd extends LiteElement {
 
   private filterOutSelectedCollections(results: CollectionList) {
     return results.filter((result) => {
-      return this.collections.every((coll) => {
-        return coll.id !== result.id;
-      });
+      return !this.collections.some((coll) => coll.id === result.id);
     });
   }
 
