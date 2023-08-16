@@ -194,7 +194,7 @@ export class CollectionsAdd extends LiteElement {
   }
 
   private renderCollectionItem(collection: Collection) {
-    return html`<li class="mt-1 p-2 pl-5 pr-5 border rounded-sm">
+    return html`<li class="mt-1 p-1 pl-3 border rounded-sm">
         <div class="flex flex-row gap-2 justify-between items-center">
           <div class="justify-self-stretch grow truncate">${
             collection.name
