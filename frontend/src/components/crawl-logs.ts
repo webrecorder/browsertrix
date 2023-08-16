@@ -25,9 +25,8 @@ export class CrawlLogs extends LitElement {
 
       .row {
         display: grid;
-        grid-template-columns: 9rem 4rem 14rem 1fr;
+        grid-template-columns: 9rem 4rem 15rem 1fr;
         line-height: 1.3;
-        max-width: 800px;
       }
 
       .cell {
@@ -61,11 +60,36 @@ export class CrawlLogs extends LitElement {
         overflow: hidden;
         white-space: nowrap;
       }
+
+      a {
+        color: inherit;
+      }
+
+      a:hover {
+        text-decoration: none;
+      }
+
+      pre {
+        white-space: pre-wrap;
+        font-family: var(--sl-font-mono);
+        font-size: var(--sl-font-size-x-small);
+        margin: 0;
+        padding: var(--sl-spacing-small);
+        border: 1px solid var(--sl-panel-border-color);
+        border-radius: var(--sl-border-radius-medium);
+      }
     `,
   ];
 
   @property({ type: Object })
   logs?: APIPaginatedList;
+
+  @state()
+  private selectedLog:
+    | (CrawlLog & {
+        index: number;
+      })
+    | null = null;
 
   render() {
     if (!this.logs) return;
@@ -78,9 +102,21 @@ export class CrawlLogs extends LitElement {
             <div class="cell">${msg("Page URL")}</div>
           </div>
         </btrix-numbered-list-header>
-        ${this.logs.items.map(
-          (log: CrawlLog, idx) => html`
-            <btrix-numbered-list-item>
+        ${this.logs.items.map((log: CrawlLog, idx) => {
+          const selected = this.selectedLog?.index === idx;
+          return html`
+            <btrix-numbered-list-item
+              hoverable
+              ?selected=${selected}
+              aria-selected="${selected}"
+              @click=${() => {
+                this.selectedLog = {
+                  index: idx,
+                  ...log,
+                };
+              }}
+            >
+              <div slot="marker">${idx + 1}.</div>
               <div class="row">
                 <div>
                   <sl-format-date
@@ -106,8 +142,8 @@ export class CrawlLogs extends LitElement {
                 </div>
               </div>
             </btrix-numbered-list-item>
-          `
-        )}
+          `;
+        })}
       </btrix-numbered-list>
       <footer>
         <btrix-pagination
@@ -116,6 +152,43 @@ export class CrawlLogs extends LitElement {
           size=${this.logs.pageSize}
         >
         </btrix-pagination>
-      </footer> `;
+      </footer>
+      <btrix-dialog
+        label=${msg("Log Details")}
+        ?open=${this.selectedLog}
+        style="--width: 40rem"
+        @sl-after-hide=${() => (this.selectedLog = null)}
+        >${this.renderLogDetails()}</btrix-dialog
+      > `;
+  }
+
+  private renderLogDetails() {
+    if (!this.selectedLog) return;
+    const { details } = this.selectedLog;
+    return html`
+      <btrix-desc-list>
+        <btrix-desc-list-item label=${msg("Timestamp").toUpperCase()}>
+          ${this.selectedLog.timestamp}
+        </btrix-desc-list-item>
+        ${Object.entries(details).map(
+          ([key, value]) => html`
+            <btrix-desc-list-item label=${key.toUpperCase()}>
+              ${key === "stack" ||
+              (typeof value !== "string" && typeof value !== "number")
+                ? this.renderPre(value)
+                : value ?? "--"}
+            </btrix-desc-list-item>
+          `
+        )}
+      </btrix-desc-list>
+    `;
+  }
+
+  private renderPre(value: any) {
+    let str = value;
+    if (typeof value !== "string") {
+      str = JSON.stringify(value, null, 2);
+    }
+    return html`<pre><code>${str}</code></pre>`;
   }
 }
