@@ -5,7 +5,7 @@ loguru
 aiofiles
 kubernetes-asyncio==22.6.5
 aiobotocore
-redis>=5.0.0rc2
+redis>=5.0.0
 pyyaml
 jinja2
 humanize
