@@ -101,7 +101,7 @@ backend_workers: 2
 
 backend_cpu: "25m"
 
-backend_memory: "200Mi"
+backend_memory: "350Mi"
 
 # port for operator service
 opPort: 8756
