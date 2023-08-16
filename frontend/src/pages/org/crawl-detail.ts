@@ -157,6 +157,7 @@ export class CrawlDetail extends LiteElement {
   }
 
   render() {
+    const authToken = this.authState!.headers.Authorization.split(" ")[1];
     let sectionContent: string | TemplateResult = "";
 
     switch (this.sectionName) {
@@ -174,7 +175,25 @@ export class CrawlDetail extends LiteElement {
         );
         break;
       case "logs":
-        sectionContent = this.renderPanel(msg("Error Logs"), this.renderLogs());
+        sectionContent = this.renderPanel(
+          html`
+            ${this.renderTitle(msg("Error Logs"))}
+            ${when(
+              this.logs?.total,
+              () =>
+                html`<sl-button
+                  href=${`/api/orgs/${this.orgId}/crawls/${this.crawlId}/logs?auth_bearer=${authToken}`}
+                  download=${`btrix-${this.crawlId}-logs.txt`}
+                  size="small"
+                  variant="primary"
+                >
+                  <sl-icon slot="prefix" name="download"></sl-icon>
+                  ${msg("Download Logs")}</sl-button
+                >`
+            )}
+          `,
+          this.renderLogs()
+        );
         break;
       case "config":
         sectionContent = this.renderPanel(
@@ -200,7 +219,7 @@ export class CrawlDetail extends LiteElement {
             <div class="col-span-1 flex flex-col">
               ${this.renderPanel(
                 html`
-                  ${msg("Metadata")}
+                  ${this.renderTitle(msg("Metadata"))}
                   ${when(
                     this.isCrawler,
                     () => html`
@@ -510,14 +529,22 @@ export class CrawlDetail extends LiteElement {
     `;
   }
 
-  private renderPanel(title: any, content: any, classes: any = {}) {
+  private renderTitle(title: string) {
+    return html`<h2 class="text-lg font-semibold">${title}</h2>`;
+  }
+
+  private renderPanel(
+    heading: string | TemplateResult,
+    content: any,
+    classes: any = {}
+  ) {
+    const headingIsTitle = typeof heading === "string";
     return html`
-      <h2
-        id="exclusions"
-        class="flex-0 flex items-center justify-between text-lg font-semibold leading-none h-8 min-h-fit mb-2"
+      <header
+        class="flex-0 flex items-center justify-between leading-none h-8 min-h-fit mb-2"
       >
-        ${title}
-      </h2>
+        ${headingIsTitle ? this.renderTitle(heading) : heading}
+      </header>
       <div
         class=${classMap({
           "flex-1": true,
