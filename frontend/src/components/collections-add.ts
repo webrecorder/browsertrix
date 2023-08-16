@@ -82,8 +82,8 @@ export class CollectionsAdd extends LiteElement {
     if (this.initialCollections) {
       this.collectionIds = this.initialCollections;
     }
-    await this.initializeCollectionsFromIds();
     super.connectedCallback();
+    this.initializeCollectionsFromIds();
   }
 
   render() {
