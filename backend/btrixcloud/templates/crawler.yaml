@@ -166,6 +166,10 @@ spec:
             failureThreshold: 3
           {% endif %}
 
+# -------
+# SERVICE
+# -------
+
 ---
 apiVersion: v1
 kind: Service
@@ -173,15 +177,17 @@ metadata:
   name: crawl-{{ id }}
   labels:
     crawl: {{ id }}
-    role: crawler
 
 spec:
   clusterIP: None
   selector:
     crawl: {{ id }}
-    role: crawler
 
   ports:
     - protocol: TCP
       port: 9037
       name: screencast
+
+    - protocol: TCP
+      port: 6379
+      name: redis
