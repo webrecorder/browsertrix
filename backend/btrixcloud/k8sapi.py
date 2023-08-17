@@ -58,7 +58,6 @@ class K8sAPI:
 
     def get_redis_url(self, crawl_id):
         """get redis url for crawl id"""
-        # pylint: disable=line-too-long
         redis_url = (
             f"redis://redis-{crawl_id}-0.redis.{self.namespace}.svc.cluster.local/0"
         )
