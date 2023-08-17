@@ -17,7 +17,7 @@ spec:
       crawl: {{ id }}
       role: redis
 
-  serviceName: crawl-{{ id }}
+  serviceName: redis
   replicas: {{ redis_scale }}
   podManagementPolicy: Parallel
 

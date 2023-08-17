@@ -14,7 +14,7 @@ spec:
       browser: {{ id }}
       role: browser
 
-  serviceName: browser-{{ id }}
+  serviceName: browser
   replicas: 1
 
   template:
@@ -82,27 +82,3 @@ spec:
             - name: CHROME_FLAGS
               value: "--proxy-server=socks5://{{ crawler_socks_proxy_host }}:{{ crawler_socks_proxy_port | default('9050') }}"
           {% endif %}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: browser-{{ id }}
-  labels:
-    browser: {{ id }}
-    role: browser
- 
-spec:
-  clusterIP: None
-  selector:
-    browser: {{ id }}
-    role: browser
-
-  ports:
-    - protocol: TCP
-      port: 9223
-      name: browser-api
-
-    - protocol: TCP
-      port: 9222
-      name: browser-ws
-

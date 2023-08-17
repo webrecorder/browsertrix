@@ -315,12 +315,11 @@ class ProfileOps:
 
     async def _send_browser_req(self, browserid, path, method="GET", json=None):
         """make request to browser api to get state"""
-        browser_host = f"browser-{browserid}-0.browser-{browserid}"
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.request(
                     method,
-                    f"http://{browser_host}{self.browser_fqdn_suffix}:9223{path}",
+                    f"http://browser-{browserid}-0.browser{self.browser_fqdn_suffix}:9223{path}",
                     json=json,
                 ) as resp:
                     json = await resp.json()
