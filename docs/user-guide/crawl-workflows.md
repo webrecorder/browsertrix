@@ -30,6 +30,6 @@ If a crawl workflow is not crawling websites as intended it may be preferable to
 
 Stopping a crawl will throw away the crawl queue but otherwise gracefully end the process and save anything that has been collected. Stopped crawls show up in the list of Archived Items and can be used like any other item in the app.
 
-### Cancelling
+### Canceling
 
-Cancelling a crawl will throw away all data collected and immediately end the process. Cancelled crawls do not show up in the list of Archived Items, though a record of the runtime and workflow settings can be found in the crawl workflow's list of crawls.
+Canceling a crawl will throw away all data collected and immediately end the process. Canceled crawls do not show up in the list of Archived Items, though a record of the runtime and workflow settings can be found in the crawl workflow's list of crawls.

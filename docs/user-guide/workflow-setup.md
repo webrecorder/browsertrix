@@ -199,4 +199,4 @@ Apply tags to the workflow. Tags applied to the workflow will propigate to every
 
 ### Collection Auto-Add
 
-Search for and specify [collections](../collections) that this crawl workflow should automatically add content to as soon as crawling finishes. Cancelled and Failed crawls will not be automatically added to collections.
+Search for and specify [collections](../collections) that this crawl workflow should automatically add content to as soon as crawling finishes. Canceled and Failed crawls will not be automatically added to collections.
