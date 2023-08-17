@@ -67,7 +67,9 @@ All headings should be set in [title case](https://en.wikipedia.org/wiki/Title_c
 
 Controls with multiple options should have their options referenced as `in-line code blocks`.
 
-Setting names referenced outside of a heading should be Capitalized and set in _italics_.
+Setting names referenced outside of a heading should be Title Cased and set in _italics_.
+
+Actions with text (buttons in the app) should also be Title Cased and set in _italics_.
 
 ##### Example
 
