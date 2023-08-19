@@ -1,7 +1,6 @@
 # Production: Self-Hosted and Cloud
 
-For production and hosted deployments (both on a single machine or in the cloud), the only requirement is to have a designed domain
-and (strongly recommended, but not required) second domain for signing web archives. 
+For production and hosted deployments (both on a single machine or in the cloud), the only requirement is to have a designed domain and (strongly recommended, but not required) second domain for signing web archives. 
 
 We are also experimenting with [Ansible playbooks](../deploy/ansible) for cloud deployment setups.
 

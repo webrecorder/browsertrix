@@ -140,8 +140,7 @@ To uninstall, run `helm uninstall btrix`.
 
 By default, the database + storage volumes are not automatically deleted, so you can run `helm upgrade ...` again to restart the cluster in its current state.
 
-If you are upgrading from a previous version, and run into issues with `helm upgrade ...`, we recommend
-uninstalling and then re-running upgrade.
+If you are upgrading from a previous version, and run into issues with `helm upgrade ...`, we recommend uninstalling and then re-running upgrade.
 
 ## Deleting all Data
 
@@ -149,6 +148,4 @@ To fully delete all persistent data (db + archives) created in the cluster, also
 
 ## Deploying for Local Development
 
-These instructions are intended for deploying the cluster from the latest release.
-See [setting up cluster for local development](../develop/local-dev-setup.md) for additional customizations related to
-developing Browsertrix Cloud and deploying from local images.
+These instructions are intended for deploying the cluster from the latest release. See [setting up cluster for local development](../develop/local-dev-setup.md) for additional customizations related to developing Browsertrix Cloud and deploying from local images.

@@ -13,8 +13,7 @@ The deployment can then be [further customized for local development](./local-de
 
 ### Backend
 
-The backend is an API-only system, using the FastAPI framework. The latest API reference is available
-under ./api of a running cluster.
+The backend is an API-only system, using the FastAPI framework. The latest API reference is available under ./api of a running cluster.
 
 At this time, the backend must be deployed in the Kubernetes cluster.
 
