@@ -2,8 +2,6 @@
 
 ## Signup
 
-!!! warning "For all signup options the Name field cannot currently be changed later."
-
 ### Invite Link
 
 If you have been sent an [invite](org-settings#members), enter a password and name to create a new account. Your account will be added to the organization you were invited to by an organization admin.
@@ -11,6 +9,8 @@ If you have been sent an [invite](org-settings#members), enter a password and na
 ### Open Registration
 
 If the server has enabled signups and you have been given a registration link, enter your email address, password, and name to create a new account. Your account will be added to the server's default organization.
+
+!!! info "At this time, the name field is not yet editable."
 
 ---
 
