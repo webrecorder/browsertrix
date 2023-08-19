@@ -73,15 +73,11 @@ Setting names referenced outside of a heading should be Capitalized and set in _
 
 > Sets the day of the week for which crawls scheduled with a `Weekly` _Frequency_ will run.
 
-### Markdown Formatting
-
-All of Webrecorder's markdown-based docs are written in [GitHub Flavored Markdown](https://github.github.com/gfm/).
-
-#### Manual Word Wrapping
+### Manual Word Wrapping
 
 Do not manually wrap words by adding newlines when writing documentation.
 
-#### Code Block Syntax Highlighting
+### Code Block Syntax Highlighting
 
 Tag the language to be used for syntax highlighting.
 
@@ -102,3 +98,30 @@ For in-line code blocks, syntax highlighting should be added for all code-relate
 ```
 
 Renders to: `#!python range()`
+
+### Admonitions
+
+We use [Admonitions](https://squidfunk.github.io/mkdocs-material/reference/admonitions/) in their collapsed state to offer additional context or tips that aren't relevant to all users reading the section. We use standard un-collapsable ones when we need to call attention to a specific point.
+
+There are a lot of different options provided by Material for MkDocs — So many in fact that we try to pair down their usage into the following categories.
+
+???+ Note
+    The default call-out, used to highlight something if there isn't a more relevant one — should generally be expanded by default but can be collapsable by the user if the note is long.
+
+!!! Tip
+    Used to highlight a point that is useful for everyone to understand about the documented subject — should be expanded and kept brief.
+
+???+ Info "Info — Must have a title describing the context under which this information is useful"
+    Used to deliver context-based content such as things that are dependant on operating system or environment — should be collapsed by default.
+
+???+ Example "Example — Must have a title describing the content"
+    Used to deliver additional information about a feature that could be useful in a _specific circumstance_ or that might not otherwise be considered — should be collapsed by default.
+
+???+ Question "Question — Must have a title phrased in the form of a question"
+    Used to answer frequently asked questions about the documented subject — should be collapsed by default.
+
+!!! Warning "Warning — Must have a title stating the warning"
+    Used to deliver important information — should always be expanded.
+
+!!! Danger "Danger — Must have a title stating the warning"
+    Used to deliver information about serious unrecoverable actions such as deleting large amounts of data or resetting things — should always be expanded.
