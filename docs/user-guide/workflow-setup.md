@@ -1,6 +1,8 @@
 # Crawl Workflow Setup
 
-The first step in creating a new crawl workflow is to choose what type of crawl you want to run. Crawl types are fixed and cannot be converted or changed later.
+## Crawl Type
+
+The first step in creating a new [crawl workflow](../crawl-workflows) is to choose what type of crawl you want to run. Crawl types are fixed and cannot be converted or changed later.
 
 `URL List`{ .badge-blue }
 :   The crawler visits every URL specified in a list, and optionally every URL linked on those pages.
@@ -138,7 +140,7 @@ Waits on the page for a set period of time after any behaviors have finished run
 
 ### Browser Profile
 
-Sets the _Browser Profile_ to be used for this crawl.
+Sets the [_Browser Profile_](../browser-profiles) to be used for this crawl.
 
 ### Block Ads by Domain
 
@@ -197,4 +199,4 @@ Apply tags to the workflow. Tags applied to the workflow will propigate to every
 
 ### Collection Auto-Add
 
-Search for and specify collections that this crawl workflow should automatically add content to as soon as crawls finish running. Cancelled and Failed crawls will not be automatically added to collections.
+Search for and specify [collections](../collections) that this crawl workflow should automatically add content to as soon as crawling finishes. Canceled and Failed crawls will not be automatically added to collections.

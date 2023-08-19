@@ -56,7 +56,11 @@ nav:
       - develop/docs.md
   - User Guide:
       - user-guide/index.md
-      - user-guide/workflow-setup.md
+      - Crawling:
+        - user-guide/crawl-workflows.md
+        - user-guide/workflow-setup.md
+        - user-guide/browser-profiles.md
+      - user-guide/collections.md
       - user-guide/org-settings.md
 
 markdown_extensions:
