@@ -26,7 +26,7 @@ It is also available under the _Additional URLs_ section for Seeded Crawls where
 
 When enabled, the crawler will visit all the links it finds within each page defined in the _List of URLs_ field.
 
-??? tip "Crawling tags & search queries with URL List crawls"
+??? example "Crawling tags & search queries with URL List crawls"
     This setting can be useful for crawling the content of specific tags or searh queries. Specify the tag or search query URL(s) in the _List of URLs_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
 
 ### Crawl Start URL
