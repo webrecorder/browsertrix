@@ -36,7 +36,7 @@ Here are some environment specific instructions for setting up a local cluster f
 
     Note: microk8s comes with its own version helm, so you don't need to install it separately. Replace `helm` with `microk8s helm3` in the subsequent instructions below.
 
-??? info "Minikube (Windows, Mac or Linux)"
+??? info "Minikube (Windows, Mac, or Linux)"
 
     1. Install Minikube [following installation instructions](https://minikube.sigs.k8s.io/docs/start/), eg. `brew install minikube`.
        Note that Minikube also requires Docker or another container management system to be installed as well.
