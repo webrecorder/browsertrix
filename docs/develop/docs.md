@@ -110,7 +110,7 @@ There are a lot of different options provided by Material for MkDocs — So many
 ???+ Note
     The default call-out, used to highlight something if there isn't a more relevant one — should generally be expanded by default but can be collapsable by the user if the note is long.
 
-!!! Tip
+!!! Tip "Tip — May have a title stating the tip or best practice"
     Used to highlight a point that is useful for everyone to understand about the documented subject — should be expanded and kept brief.
 
 ???+ Info "Info — Must have a title describing the context under which this information is useful"
