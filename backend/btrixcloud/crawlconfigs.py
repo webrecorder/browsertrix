@@ -79,7 +79,7 @@ class CrawlConfigOps:
         )
 
         await self.crawl_configs.create_index(
-            [("oid", pymongo.HASHED), ("tags", pymongo.ASCENDING)]
+            [("oid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
         )
 
         await self.crawl_configs.create_index(
