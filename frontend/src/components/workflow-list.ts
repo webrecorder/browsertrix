@@ -285,7 +285,7 @@ export class WorkflowListItem extends LitElement {
                 `
               : html`
                   <sl-format-date
-                    date=${(workflow.modified || workflow.created).toString()}
+                    date=${workflow.modified.toString()}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
