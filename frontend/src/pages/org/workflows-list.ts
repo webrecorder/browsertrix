@@ -117,6 +117,7 @@ export class WorkflowsList extends LiteElement {
     }
     if (
       changedProperties.has("orgId") ||
+      changedProperties.has("orderBy") ||
       changedProperties.has("filterByCurrentUser") ||
       changedProperties.has("filterByScheduled") ||
       changedProperties.has("filterBy")
