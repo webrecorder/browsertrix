@@ -14,7 +14,7 @@ import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
 import type { PageChangeEvent } from "../../components/pagination";
 
 type SearchFields = "name" | "firstSeed";
-type SortField = "lastRun" | "name";
+type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
 type SortDirection = "asc" | "desc";
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
@@ -31,9 +31,21 @@ const sortableFields: Record<
     label: msg("Last Updated"),
     defaultDirection: "desc",
   },
+  firstSeed: {
+    label: msg("Crawl Start URL"),
+    defaultDirection: "asc",
+  },
   name: {
     label: msg("Workflow Name"),
     defaultDirection: "asc",
+  },
+  created: {
+    label: msg("Workflow Created"),
+    defaultDirection: "desc",
+  },
+  modified: {
+    label: msg("Workflow Edited"),
+    defaultDirection: "desc",
   },
 };
 

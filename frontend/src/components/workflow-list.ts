@@ -271,11 +271,11 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender(this.renderName)}
         </div>
         <div class="desc">
-          ${this.safeRender(() =>
-            this.workflow?.lastRun
+          ${this.safeRender((workflow) =>
+            workflow.lastRun
               ? html`
                   <sl-format-date
-                    date=${this.workflow?.lastRun.toString()}
+                    date=${workflow.lastRun.toString()}
                     month="2-digit"
                     day="2-digit"
                     year="2-digit"
@@ -283,7 +283,16 @@ export class WorkflowListItem extends LitElement {
                     minute="2-digit"
                   ></sl-format-date>
                 `
-              : ""
+              : html`
+                  <sl-format-date
+                    date=${(workflow.modified || workflow.created).toString()}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="2-digit"
+                    minute="2-digit"
+                  ></sl-format-date>
+                `
           )}
         </div>
       </div>
