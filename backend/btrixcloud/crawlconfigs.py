@@ -29,6 +29,17 @@ from .models import (
 )
 
 
+ALLOWED_SORT_KEYS = (
+    "created",
+    "modified",
+    "firstSeed",
+    "lastCrawlTime",
+    "lastCrawlStartTime",
+    "lastRun",
+    "name",
+)
+
+
 # ============================================================================
 class CrawlConfigOps:
     """Crawl Config Operations"""
@@ -324,14 +335,7 @@ class CrawlConfigOps:
             aggregate.extend([{"$match": {"firstSeed": first_seed}}])
 
         if sort_by:
-            if sort_by not in (
-                "created",
-                "modified",
-                "firstSeed",
-                "lastCrawlTime",
-                "lastCrawlStartTime",
-                "lastRun",
-            ):
+            if sort_by not in ALLOWED_SORT_KEYS:
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
@@ -340,12 +344,7 @@ class CrawlConfigOps:
 
             # Add modified as final sort key to give some order to workflows that
             # haven't been run yet.
-            if sort_by in (
-                "firstSeed",
-                "lastCrawlTime",
-                "lastCrawlStartTime",
-                "lastRun",
-            ):
+            if sort_by not in ("created", "modified"):
                 sort_query = {sort_by: sort_direction, "modified": sort_direction}
 
             aggregate.extend([{"$sort": sort_query}])
