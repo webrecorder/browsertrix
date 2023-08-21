@@ -79,11 +79,15 @@ class CrawlConfigOps:
         )
 
         await self.crawl_configs.create_index(
-            [("oid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
+            [("oid", pymongo.HASHED), ("tags", pymongo.ASCENDING)]
         )
 
         await self.crawl_configs.create_index(
             [("lastRun", pymongo.DESCENDING), ("modified", pymongo.DESCENDING)]
+        )
+
+        await self.crawl_configs.create_index(
+            [("name", pymongo.ASCENDING), ("firstSeed", pymongo.ASCENDING)]
         )
 
         await self.config_revs.create_index([("cid", pymongo.HASHED)])
@@ -342,10 +346,14 @@ class CrawlConfigOps:
 
             sort_query = {sort_by: sort_direction}
 
-            # Add modified as final sort key to give some order to workflows that
-            # haven't been run yet.
-            if sort_by not in ("created", "modified"):
-                sort_query = {sort_by: sort_direction, "modified": sort_direction}
+            # add secondary sort keys:
+            # firstSeed for name
+            if sort_by == "name":
+                sort_query["firstSeed"] = sort_direction
+
+            # modified for last* fields in case crawl hasn't been run yet
+            elif sort_by in ("lastRun", "lastCrawlTime", "lastCrawlStartTime"):
+                sort_query["modified"] = sort_direction
 
             aggregate.extend([{"$sort": sort_query}])
 
