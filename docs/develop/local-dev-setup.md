@@ -125,12 +125,10 @@ Refer back to the [Local Development guide](../deploy/local.md#waiting-for-clust
 
 ## Update the Images
 
-After making any changes to backend code (in `./backend`) or frontend code (in `./frontend`),
-you'll need to rebuild the images as specified above, before running `helm upgrade ...` to re-deploy.
+After making any changes to backend code (in `./backend`) or frontend code (in `./frontend`), you'll need to rebuild the images as specified above, before running `helm upgrade ...` to re-deploy.
 
 Changes to settings in `./chart/local.yaml` can be deployed with `helm upgrade ...` directly.
 
 ## Deploying Frontend Only
 
-If you are just making changes to the frontend, you can also [deploy the frontend separately](frontend-dev.md)
-using a dev server for quicker iteration.
+If you are just making changes to the frontend, you can also [deploy the frontend separately](frontend-dev.md) using a dev server for quicker iteration.

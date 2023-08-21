@@ -8,13 +8,13 @@ Before running Browsertrix Cloud, you'll need to set up a running [Kubernetes](h
 
 Today, there are numerous ways to deploy Kubernetes fairly easily, and we recommend trying one of the single-node options, which include Docker Desktop, microk8s, minikube and k3s.
 
-The instructions below assume you have cloned the [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud) repository locally, and have local package managers for your platform (eg. `brew` for Mac, `choco` for Windows, etc...) already installed.
+The instructions below assume you have cloned the [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud) repository locally, and have local package managers for your platform (eg. `brew` for macOS, `choco` for Windows, etc...) already installed.
 
 Here are some environment specific instructions for setting up a local cluster from different Kubernetes vendors:
 
-??? info "Docker Desktop (recommended for Mac and Windows)"
+??? info "Docker Desktop (recommended for macOS and Windows)"
 
-    For Mac and Windows, we recommend testing out Browsertrix Cloud using Kubernetes support in Docker Desktop as that will be one of the simplest options.
+    For macOS and Windows, we recommend testing out Browsertrix Cloud using Kubernetes support in Docker Desktop as that will be one of the simplest options.
 
     1. [Install Docker Desktop](https://www.docker.com/products/docker-desktop/) if not already installed.
 
@@ -22,7 +22,7 @@ Here are some environment specific instructions for setting up a local cluster f
 
     3. Restart Docker Desktop if asked, and wait for it to fully restart.
 
-    4. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (Mac) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
+    4. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (macOS) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
 
 ??? info "MicroK8S (recommended for Ubuntu)"
 
@@ -36,19 +36,19 @@ Here are some environment specific instructions for setting up a local cluster f
 
     Note: microk8s comes with its own version helm, so you don't need to install it separately. Replace `helm` with `microk8s helm3` in the subsequent instructions below.
 
-??? info "Minikube (Windows, Mac or Linux)"
+??? info "Minikube (Windows, macOS, or Linux)"
 
     1. Install Minikube [following installation instructions](https://minikube.sigs.k8s.io/docs/start/), eg. `brew install minikube`.
        Note that Minikube also requires Docker or another container management system to be installed as well.
 
-    2. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (Mac) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
+    2. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (macOS) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
 
 
 ??? info "K3S (recommended for non-Ubuntu Linux)"
 
     1. Install K3s [as per the instructions](https://docs.k3s.io/quick-start)
 
-    2. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (Mac) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
+    2. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (macOS) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
 
     3. Set `KUBECONFIG` to point to the config for K3S: `export KUBECONFIG=/etc/rancher/k3s/k3s.yaml` to ensure Helm will use the correct version.
 
@@ -105,9 +105,9 @@ The command will exit when all pods have been loaded, or if there is an error an
 
 If the command succeeds, you should be able to access Browsertrix Cloud by loading: **[http://localhost:30870/](http://localhost:30870/)** in your browser.
 
-??? info "Minikube (on Mac)"
+??? info "Minikube (on macOS)"
 
-    When using Minikube on a Mac, the port will not be 30870. Instead, Minikube opens a tunnel to a random port,
+    When using Minikube on a macOS, the port will not be 30870. Instead, Minikube opens a tunnel to a random port,
     obtained by running `minikube service browsertrix-cloud-frontend --url` in a separate terminal.
     Use the provided URL (in the format `http://127.0.0.1:<TUNNEL_PORT>`) instead.
 
@@ -140,8 +140,7 @@ To uninstall, run `helm uninstall btrix`.
 
 By default, the database + storage volumes are not automatically deleted, so you can run `helm upgrade ...` again to restart the cluster in its current state.
 
-If you are upgrading from a previous version, and run into issues with `helm upgrade ...`, we recommend
-uninstalling and then re-running upgrade.
+If you are upgrading from a previous version, and run into issues with `helm upgrade ...`, we recommend uninstalling and then re-running upgrade.
 
 ## Deleting all Data
 
@@ -149,6 +148,4 @@ To fully delete all persistent data (db + archives) created in the cluster, also
 
 ## Deploying for Local Development
 
-These instructions are intended for deploying the cluster from the latest release.
-See [setting up cluster for local development](../develop/local-dev-setup.md) for additional customizations related to
-developing Browsertrix Cloud and deploying from local images.
+These instructions are intended for deploying the cluster from the latest release. See [setting up cluster for local development](../develop/local-dev-setup.md) for additional customizations related to developing Browsertrix Cloud and deploying from local images.
