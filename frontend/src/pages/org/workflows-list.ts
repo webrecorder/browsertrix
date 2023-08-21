@@ -134,7 +134,9 @@ export class WorkflowsList extends LiteElement {
       changedProperties.has("filterByScheduled") ||
       changedProperties.has("filterBy")
     ) {
-      this.fetchWorkflows();
+      this.fetchWorkflows({
+        page: changedProperties.has("orgId") ? 1 : undefined,
+      });
     }
     if (changedProperties.has("filterByCurrentUser")) {
       window.sessionStorage.setItem(
