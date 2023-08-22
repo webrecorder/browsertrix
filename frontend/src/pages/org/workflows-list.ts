@@ -28,7 +28,7 @@ const sortableFields: Record<
   { label: string; defaultDirection?: SortDirection }
 > = {
   lastRun: {
-    label: msg("Last Updated"),
+    label: msg("Last Run"),
     defaultDirection: "desc",
   },
   firstSeed: {
@@ -36,11 +36,11 @@ const sortableFields: Record<
     defaultDirection: "asc",
   },
   name: {
-    label: msg("Workflow Name"),
+    label: msg("Name"),
     defaultDirection: "asc",
   },
   created: {
-    label: msg("Workflow Created"),
+    label: msg("Created"),
     defaultDirection: "desc",
   },
   modified: {
