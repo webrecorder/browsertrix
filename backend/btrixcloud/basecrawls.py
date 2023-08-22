@@ -328,7 +328,7 @@ class BaseCrawlOps:
             {"$pull": {"collections": collection_id}},
         )
 
-    # pylint: disable=too-many-branches, invalid-name
+    # pylint: disable=too-many-branches, invalid-name, too-many-statements
     async def list_all_base_crawls(
         self,
         org: Optional[Organization] = None,
