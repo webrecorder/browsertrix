@@ -35,12 +35,12 @@ const sortableFields: Record<
     label: msg("Last Modified"),
     defaultDirection: "desc",
   },
-  firstSeed: {
-    label: msg("Crawl Start URL"),
-    defaultDirection: "asc",
-  },
   name: {
     label: msg("Name"),
+    defaultDirection: "asc",
+  },
+  firstSeed: {
+    label: msg("Crawl Start URL"),
     defaultDirection: "asc",
   },
   created: {

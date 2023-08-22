@@ -43,7 +43,7 @@ const rowCss = css`
   }
   @media only screen and (min-width: ${largeBreakpointCss}) {
     .row {
-      grid-template-columns: 1fr 15rem 11rem 11rem 3rem;
+      grid-template-columns: 1fr 17rem 10rem 11rem 3rem;
     }
   }
 
@@ -301,13 +301,21 @@ export class WorkflowListItem extends LitElement {
         <div class="desc duration">
           ${this.safeRender((workflow) => {
             if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
-              return msg(
-                str`Finished in ${RelativeDuration.humanize(
-                  new Date(`${workflow.lastCrawlTime}Z`).valueOf() -
-                    new Date(`${workflow.lastCrawlStartTime}Z`).valueOf(),
-                  { compact: true }
-                )}`
-              );
+              return html`<sl-format-date
+                  date=${workflow.lastRun.toString()}
+                  month="2-digit"
+                  day="2-digit"
+                  year="2-digit"
+                  hour="2-digit"
+                  minute="2-digit"
+                ></sl-format-date>
+                ${msg(
+                  str`in ${RelativeDuration.humanize(
+                    new Date(`${workflow.lastCrawlTime}Z`).valueOf() -
+                      new Date(`${workflow.lastCrawlStartTime}Z`).valueOf(),
+                    { compact: true }
+                  )}`
+                )}`;
             }
             if (workflow.lastCrawlStartTime) {
               const diff =
@@ -550,7 +558,7 @@ export class WorkflowList extends LitElement {
   render() {
     return html` <div class="listHeader row">
         <div class="col">${msg("Name & Last Modified")}</div>
-        <div class="col">${msg("Last Crawl Status")}</div>
+        <div class="col">${msg("Last Crawl Run")}</div>
         <div class="col">${msg("Total Size")}</div>
         <div class="col">${msg("Started By & Schedule")}</div>
         <div class="col action">

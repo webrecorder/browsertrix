@@ -77,6 +77,8 @@ export const truncate = css`
     overflow: clip visible;
     text-overflow: ellipsis;
     white-space: nowrap;
+    /* Fix for if flex item: */
+    min-width: 0;
   }
 `;
 
