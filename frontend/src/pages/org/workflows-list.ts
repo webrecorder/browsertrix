@@ -31,6 +31,10 @@ const sortableFields: Record<
     label: msg("Last Run"),
     defaultDirection: "desc",
   },
+  modified: {
+    label: msg("Last Modified"),
+    defaultDirection: "desc",
+  },
   firstSeed: {
     label: msg("Crawl Start URL"),
     defaultDirection: "asc",
@@ -41,10 +45,6 @@ const sortableFields: Record<
   },
   created: {
     label: msg("Created"),
-    defaultDirection: "desc",
-  },
-  modified: {
-    label: msg("Workflow Edited"),
     defaultDirection: "desc",
   },
 };
