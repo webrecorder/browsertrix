@@ -406,8 +406,8 @@ class BaseCrawlOps:
                     },
                     {
                         "$set": {
-                            "collectionNames": {
-                                "$map": {"input": "$result", "in": "$this.name"}
+                            "collections": {
+                                "$map": {"input": "$result", "in": {"name": "$$this.name", "id": "$$this.id"}}
                             }
                         }
                     },
