@@ -98,24 +98,37 @@ export class ConfigDetails extends LiteElement {
 
     const renderSize = (valueBytes?: number | null, fallbackValue?: number) => {
       const bytesPerGB = 1073741824;
-      const bytesPerMB = 1048576;
+
+      // Eventually we will want to set this to the selected locale
+      const formatter = new Intl.NumberFormat(undefined, {
+        style: "unit",
+        unit: "gigabyte",
+        unitDisplay: "narrow",
+      });
+
       if (valueBytes) {
         const sizeGB = Math.floor(valueBytes / bytesPerGB);
-        return msg(str`${sizeGB} GB`);
+        return formatter.format(sizeGB);
       }
+
       if (typeof fallbackValue === "number") {
         let value = "";
         if (fallbackValue === Infinity) {
           value = msg("Unlimited");
         } else if (fallbackValue === 0) {
-          value = msg("0 GB");
+          value = formatter.format(0);
         } else {
-          value = `${Math.round(fallbackValue / bytesPerGB)} GB`;
+          const sizeGB = Math.floor(fallbackValue / bytesPerGB);
+          value = formatter.format(sizeGB);
         }
         return html`<span class="text-neutral-400"
           >${value} ${msg("(default)")}</span
         >`;
       }
+
+      return html`<span class="text-neutral-400"
+        >${msg("Unlimited")} ${msg("(default)")}</span
+      >`;
     };
 
     return html`
