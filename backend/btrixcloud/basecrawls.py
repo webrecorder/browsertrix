@@ -131,7 +131,12 @@ class BaseCrawlOps:
         return res
 
     async def update_crawl(
-        self, crawl_id: str, org: Organization, update: UpdateCrawl, type_=None
+        self,
+        crawl_id: str,
+        org: Organization,
+        update: UpdateCrawl,
+        collections: Optional[list[str]] = None,
+        type_=None,
     ):
         """Update existing crawl (tags and notes only for now)"""
         update_values = update.dict(exclude_unset=True)
@@ -141,6 +146,8 @@ class BaseCrawlOps:
         query = {"_id": crawl_id, "oid": org.id}
         if type_:
             query["type"] = type_
+        if collections:
+            query["collections"] = collections
 
         # update in db
         result = await self.crawls.find_one_and_update(
