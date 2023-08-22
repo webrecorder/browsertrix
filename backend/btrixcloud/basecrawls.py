@@ -394,9 +394,26 @@ class BaseCrawlOps:
 
         if collection_id:
             aggregate.extend([{"$match": {"collections": {"$in": [collection_id]}}}])
-            aggregate.extend([{"$lookup": { "from": "collections", "localField": "collections", "foreignField": "_id", "as": "result"} }, 
-                              {"$set": {"collectionNames": {"$map": {"input": "$result", "in": "$this.name"}}}},
-                              {"$project": {"result": 0}}])
+            aggregate.extend(
+                [
+                    {
+                        "$lookup": {
+                            "from": "collections",
+                            "localField": "collections",
+                            "foreignField": "_id",
+                            "as": "result",
+                        }
+                    },
+                    {
+                        "$set": {
+                            "collectionNames": {
+                                "$map": {"input": "$result", "in": "$this.name"}
+                            }
+                        }
+                    },
+                    {"$project": {"result": 0}},
+                ]
+            )
 
         if sort_by:
             if sort_by not in ("started", "finished", "fileSize"):
