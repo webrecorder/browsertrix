@@ -226,7 +226,9 @@ export class WorkflowListItem extends LitElement {
   @state()
   private dropdownIsOpen?: boolean;
 
-  private numberFormatter = numberFormatter();
+  private numberFormatter = numberFormatter(undefined, {
+    notation: "compact",
+  });
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("dropdownIsOpen")) {
@@ -385,7 +387,11 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender((workflow) =>
             workflow.crawlCount === 1
               ? msg(str`${workflow.crawlCount} crawl`)
-              : msg(str`${(workflow.crawlCount ?? 0).toLocaleString()} crawls`)
+              : msg(
+                  str`${this.numberFormatter.format(
+                    workflow.crawlCount ?? 0
+                  )} crawls`
+                )
           )}
         </div>
       </div>
