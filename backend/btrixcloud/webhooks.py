@@ -116,9 +116,11 @@ class EventWebhookOps:
                 return
             url = org.webhookUrls.removedFromCollectionUrl
 
-        # Add event name to body
+        # Add event name to body and remove type, which is useful internally
+        # but duplicates the event name in the POST body
         body = notification.body.dict()
         body["event"] = notification.event
+        body.pop("type", None)
 
         try:
             async with aiohttp.ClientSession() as session:
