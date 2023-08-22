@@ -112,10 +112,11 @@ export class QueueExclusionTable extends LiteElement {
     this.results = this.exclusions
       .slice((this.page - 1) * this.pageSize, this.page * this.pageSize)
       .map((str: any) => {
-        const unescaped = str.replace(/\\/g, "");
         return {
-          type: regexEscape(unescaped) === str ? "text" : "regex",
-          value: unescaped,
+          // if escaped version of string, with '\' removed matches string, then consider it
+          // to be matching text, otherwise, regex
+          type: regexEscape(str.replace(/\\/g, "")) === str ? "text" : "regex",
+          value: str,
         };
       });
   }
