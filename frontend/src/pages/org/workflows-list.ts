@@ -2,12 +2,7 @@ import type { HTMLTemplateResult, PropertyValueMap } from "lit";
 import { state, property, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
-import debounce from "lodash/fp/debounce";
-import flow from "lodash/fp/flow";
-import map from "lodash/fp/map";
-import orderBy from "lodash/fp/orderBy";
-import filter from "lodash/fp/filter";
-import Fuse from "fuse.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import queryString from "query-string";
 
 import type { AuthState } from "../../utils/AuthService";
@@ -15,27 +10,42 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, Workflow, WorkflowParams } from "./types";
 import { CopyButton } from "../../components/copy-button";
 import { SlCheckbox } from "@shoelace-style/shoelace";
-import type { APIPaginatedList } from "../../types/api";
+import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
+import type { PageChangeEvent } from "../../components/pagination";
 
-type SortField = "_lastUpdated" | "_name";
+type SearchFields = "name" | "firstSeed";
+type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
 type SortDirection = "asc" | "desc";
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.crawlConfigs";
-const INITIAL_PAGE_SIZE = 30;
+const INITIAL_PAGE_SIZE = 10;
 const POLL_INTERVAL_SECONDS = 10;
-const MIN_SEARCH_LENGTH = 2;
+const ABORT_REASON_THROTTLE = "throttled";
+
 const sortableFields: Record<
   SortField,
   { label: string; defaultDirection?: SortDirection }
 > = {
-  _lastUpdated: {
-    label: msg("Last Updated"),
+  lastRun: {
+    label: msg("Latest Crawl"),
     defaultDirection: "desc",
   },
-  _name: {
+  modified: {
+    label: msg("Last Modified"),
+    defaultDirection: "desc",
+  },
+  name: {
     label: msg("Name"),
     defaultDirection: "asc",
+  },
+  firstSeed: {
+    label: msg("Crawl Start URL"),
+    defaultDirection: "asc",
+  },
+  created: {
+    label: msg("Created"),
+    defaultDirection: "desc",
   },
 };
 
@@ -47,6 +57,11 @@ const sortableFields: Record<
  */
 @localized()
 export class WorkflowsList extends LiteElement {
+  static FieldLabels: Record<SearchFields, string> = {
+    name: msg("Name"),
+    firstSeed: msg("Crawl Start URL"),
+  };
+
   @property({ type: Object })
   authState!: AuthState;
 
@@ -60,7 +75,15 @@ export class WorkflowsList extends LiteElement {
   isCrawler!: boolean;
 
   @state()
-  private workflows?: Workflow[];
+  private workflows?: APIPaginatedList & {
+    items: Workflow[];
+  };
+
+  @state()
+  private searchOptions: any[] = [];
+
+  @state()
+  private isFetching = false;
 
   @state()
   private fetchErrorStatusCode?: number;
@@ -70,27 +93,28 @@ export class WorkflowsList extends LiteElement {
     field: SortField;
     direction: SortDirection;
   } = {
-    field: "_lastUpdated",
-    direction: sortableFields["_lastUpdated"].defaultDirection!,
+    field: "lastRun",
+    direction: sortableFields["lastRun"].defaultDirection!,
   };
+
+  @state()
+  private filterBy: Partial<Record<keyof Workflow, any>> = {};
 
   @state()
   private filterByCurrentUser = false;
 
-  @state()
-  private searchBy: string = "";
-
-  @state()
-  private filterByScheduled: boolean | null = null;
-
   // For fuzzy search:
-  private fuse = new Fuse([], {
-    keys: ["name", "config.seeds", "config.seeds.url"],
-    shouldSort: false,
-    threshold: 0.2, // stricter; default is 0.6
-  });
+  private searchKeys = ["name", "firstSeed"];
 
+  // Use to cancel requests
+  private getWorkflowsController: AbortController | null = null;
   private timerId?: number;
+
+  private get selectedSearchFilterKey() {
+    return Object.keys(WorkflowsList.FieldLabels).find((key) =>
+      Boolean((this.filterBy as any)[key])
+    );
+  }
 
   constructor() {
     super();
@@ -100,11 +124,19 @@ export class WorkflowsList extends LiteElement {
   }
 
   protected async willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("orgId")) {
+      this.fetchConfigSearchValues();
+    }
     if (
       changedProperties.has("orgId") ||
-      changedProperties.has("filterByCurrentUser")
+      changedProperties.has("orderBy") ||
+      changedProperties.has("filterByCurrentUser") ||
+      changedProperties.has("filterByScheduled") ||
+      changedProperties.has("filterBy")
     ) {
-      this.fetchWorkflows();
+      this.fetchWorkflows({
+        page: changedProperties.has("orgId") ? 1 : undefined,
+      });
     }
     if (changedProperties.has("filterByCurrentUser")) {
       window.sessionStorage.setItem(
@@ -119,28 +151,30 @@ export class WorkflowsList extends LiteElement {
     super.disconnectedCallback();
   }
 
-  private async fetchWorkflows() {
+  private async fetchWorkflows(params?: APIPaginationQuery) {
     this.fetchErrorStatusCode = undefined;
 
     this.cancelInProgressGetWorkflows();
-
+    this.isFetching = true;
     try {
-      const workflows = await this.getWorkflows();
+      const workflows = await this.getWorkflows(params);
       this.workflows = workflows;
-
-      // Update search/filter collection
-      this.fuse.setCollection(this.workflows as any);
     } catch (e: any) {
-      if (e.isApiError) {
-        this.fetchErrorStatusCode = e.statusCode;
+      if (e === ABORT_REASON_THROTTLE) {
+        console.debug("Fetch archived items aborted to throttle");
       } else {
-        this.notify({
-          message: msg("Sorry, couldn't retrieve Workflows at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
+        if (e.isApiError) {
+          this.fetchErrorStatusCode = e.statusCode;
+        } else {
+          this.notify({
+            message: msg("Sorry, couldn't retrieve Workflows at this time."),
+            variant: "danger",
+            icon: "exclamation-octagon",
+          });
+        }
       }
     }
+    this.isFetching = false;
 
     // Restart timer for next poll
     this.timerId = window.setTimeout(() => {
@@ -150,13 +184,17 @@ export class WorkflowsList extends LiteElement {
 
   private cancelInProgressGetWorkflows() {
     window.clearTimeout(this.timerId);
+    if (this.getWorkflowsController) {
+      this.getWorkflowsController.abort(ABORT_REASON_THROTTLE);
+      this.getWorkflowsController = null;
+    }
   }
 
   render() {
     return html`
       <header class="contents">
         <div class="flex justify-between w-full h-8 mb-4">
-          <h1 class="text-xl font-semibold">${msg("Crawling")}</h1>
+          <h1 class="text-xl font-semibold">${msg("Crawl Workflows")}</h1>
           ${when(
             this.isCrawler,
             () => html`
@@ -167,7 +205,7 @@ export class WorkflowsList extends LiteElement {
                 @click=${this.navLink}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("New Crawl Workflow")}
+                ${msg("New Workflow")}
               </sl-button>
             `
           )}
@@ -190,20 +228,10 @@ export class WorkflowsList extends LiteElement {
         `,
         () =>
           this.workflows
-            ? this.workflows.length
+            ? this.workflows.total
               ? this.renderWorkflowList()
-              : html`
-                  <div class="border-t border-b py-5">
-                    <p class="text-center text-0-500">
-                      ${msg("No Workflows yet.")}
-                    </p>
-                  </div>
-                `
-            : html`<div
-                class="w-full flex items-center justify-center my-24 text-3xl"
-              >
-                <sl-spinner></sl-spinner>
-              </div>`
+              : this.renderEmptyState()
+            : this.renderLoading()
       )}
     `;
   }
@@ -211,19 +239,7 @@ export class WorkflowsList extends LiteElement {
   private renderControls() {
     return html`
       <div class="flex flex-wrap mb-2 items-center md:gap-4 gap-2">
-        <div class="grow">
-          <sl-input
-            class="w-full"
-            slot="trigger"
-            size="small"
-            placeholder=${msg("Search by Crawl Workflow name or Crawl URL")}
-            clearable
-            ?disabled=${!this.workflows?.length}
-            @sl-input=${this.onSearchInput}
-          >
-            <sl-icon name="search" slot="prefix"></sl-icon>
-          </sl-input>
-        </div>
+        <div class="grow">${this.renderSearch()}</div>
 
         <div class="flex items-center w-full md:w-fit">
           <div class="whitespace-nowrap text-sm text-0-500 mr-2">
@@ -267,31 +283,43 @@ export class WorkflowsList extends LiteElement {
         <div class="text-sm">
           <button
             class="inline-block font-medium border-2 border-transparent ${this
-              .filterByScheduled === null
+              .filterBy.schedule === undefined
               ? "border-b-current text-primary"
               : "text-neutral-500"} mr-3"
-            aria-selected=${this.filterByScheduled === null}
-            @click=${() => (this.filterByScheduled = null)}
+            aria-selected=${this.filterBy.schedule === undefined}
+            @click=${() =>
+              (this.filterBy = {
+                ...this.filterBy,
+                schedule: undefined,
+              })}
           >
             ${msg("All")}
           </button>
           <button
             class="inline-block font-medium border-2 border-transparent ${this
-              .filterByScheduled === true
+              .filterBy.schedule === true
               ? "border-b-current text-primary"
               : "text-neutral-500"} mr-3"
-            aria-selected=${this.filterByScheduled === true}
-            @click=${() => (this.filterByScheduled = true)}
+            aria-selected=${this.filterBy.schedule === true}
+            @click=${() =>
+              (this.filterBy = {
+                ...this.filterBy,
+                schedule: true,
+              })}
           >
             ${msg("Scheduled")}
           </button>
           <button
             class="inline-block font-medium border-2 border-transparent ${this
-              .filterByScheduled === false
+              .filterBy.schedule === false
               ? "border-b-current text-primary"
               : "text-neutral-500"} mr-3"
-            aria-selected=${this.filterByScheduled === false}
-            @click=${() => (this.filterByScheduled = false)}
+            aria-selected=${this.filterBy.schedule === false}
+            @click=${() =>
+              (this.filterBy = {
+                ...this.filterBy,
+                schedule: false,
+              })}
           >
             ${msg("No schedule")}
           </button>
@@ -312,42 +340,64 @@ export class WorkflowsList extends LiteElement {
     `;
   }
 
+  private renderSearch() {
+    return html`
+      <btrix-search-combobox
+        .searchKeys=${this.searchKeys}
+        .searchOptions=${this.searchOptions}
+        .keyLabels=${WorkflowsList.FieldLabels}
+        selectedKey=${ifDefined(this.selectedSearchFilterKey)}
+        placeholder=${msg("Search all Workflows by name or Crawl Start URL")}
+        @on-select=${(e: CustomEvent) => {
+          const { key, value } = e.detail;
+          this.filterBy = {
+            [key]: value,
+          };
+        }}
+        @on-clear=${() => {
+          const { name, firstSeed, ...otherFilters } = this.filterBy;
+          this.filterBy = otherFilters;
+        }}
+      >
+      </btrix-search-combobox>
+    `;
+  }
+
   private renderWorkflowList() {
     if (!this.workflows) return;
-
-    const flowFns = [
-      map((workflow: Workflow) => ({
-        ...workflow,
-        _lastUpdated: this.workflowLastUpdated(workflow),
-        _name: workflow.name || workflow.firstSeed,
-      })),
-      orderBy(this.orderBy.field, this.orderBy.direction),
-      map(this.renderWorkflowItem),
-    ];
-
-    if (this.filterByScheduled === true) {
-      flowFns.unshift(filter(({ schedule }: any) => Boolean(schedule)));
-    } else if (this.filterByScheduled === false) {
-      flowFns.unshift(filter(({ schedule }: any) => !schedule));
-    }
-
-    if (this.searchBy.length >= MIN_SEARCH_LENGTH) {
-      flowFns.unshift(this.filterResults);
-    }
+    const { page, total, pageSize } = this.workflows;
 
     return html`
       <btrix-workflow-list>
-        ${flow(...flowFns)(this.workflows)}
+        ${this.workflows.items.map(this.renderWorkflowItem)}
       </btrix-workflow-list>
+      ${when(
+        total > pageSize,
+        () => html`
+          <footer class="mt-6 flex justify-center">
+            <btrix-pagination
+              page=${page}
+              totalCount=${total}
+              size=${pageSize}
+              @page-change=${async (e: PageChangeEvent) => {
+                await this.fetchWorkflows({
+                  page: e.detail.page,
+                });
+
+                // Scroll to top of list
+                // TODO once deep-linking is implemented, scroll to top of pushstate
+                this.scrollIntoView({ behavior: "smooth" });
+              }}
+            ></btrix-pagination>
+          </footer>
+        `
+      )}
     `;
   }
 
   private renderWorkflowItem = (workflow: Workflow) =>
     html`
-      <btrix-workflow-list-item
-        .workflow=${workflow}
-        lastUpdated=${this.workflowLastUpdated(workflow)}
-      >
+      <btrix-workflow-list-item .workflow=${workflow}>
         <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
       </btrix-workflow-list-item>
     `;
@@ -480,43 +530,90 @@ export class WorkflowsList extends LiteElement {
     );
   }
 
-  private workflowLastUpdated(workflow: Workflow): Date {
-    return new Date(
-      Math.max(
-        ...[
-          workflow.lastCrawlTime,
-          workflow.lastCrawlStartTime,
-          workflow.modified,
-          workflow.created,
-        ]
-          .filter((date) => date)
-          .map((date) => new Date(`${date}Z`).getTime())
-      )
-    );
+  private renderEmptyState() {
+    if (Object.keys(this.filterBy).length) {
+      return html`
+        <div class="border rounded-lg bg-neutral-50 p-4">
+          <p class="text-center">
+            <span class="text-neutral-400"
+              >${msg("No matching Workflows found.")}</span
+            >
+            <button
+              class="text-neutral-500 font-medium underline hover:no-underline"
+              @click=${() => {
+                this.filterBy = {};
+              }}
+            >
+              ${msg("Clear search and filters")}
+            </button>
+          </p>
+        </div>
+      `;
+    }
+
+    if (this.workflows?.page && this.workflows?.page > 1) {
+      return html`
+        <div class="border-t border-b py-5">
+          <p class="text-center text-neutral-500">
+            ${msg("Could not find page.")}
+          </p>
+        </div>
+      `;
+    }
+
+    if (this.isFetching) {
+      return this.renderLoading();
+    }
+
+    return html`
+      <div class="border-t border-b py-5">
+        <p class="text-center text-neutral-500">${msg("No Workflows yet.")}</p>
+      </div>
+    `;
   }
 
-  private onSearchInput = debounce(200)((e: any) => {
-    this.searchBy = e.target.value;
-  }) as any;
-
-  private filterResults = () => {
-    const results = this.fuse.search(this.searchBy);
-
-    return results.map(({ item }) => item);
-  };
+  private renderLoading() {
+    return html`<div
+      class="w-full flex items-center justify-center my-24 text-3xl"
+    >
+      <sl-spinner></sl-spinner>
+    </div>`;
+  }
 
   /**
    * Fetch Workflows and update state
    **/
-  private async getWorkflows(): Promise<Workflow[]> {
-    const params = this.filterByCurrentUser ? `?userid=${this.userId}` : "";
-
-    const data: APIPaginatedList = await this.apiFetch(
-      `/orgs/${this.orgId}/crawlconfigs${params}`,
-      this.authState!
+  private async getWorkflows(
+    queryParams?: APIPaginationQuery & {}
+  ): Promise<APIPaginatedList> {
+    const query = queryString.stringify(
+      {
+        ...this.filterBy,
+        page: queryParams?.page || this.workflows?.page || 1,
+        pageSize:
+          queryParams?.pageSize ||
+          this.workflows?.pageSize ||
+          INITIAL_PAGE_SIZE,
+        userid: this.filterByCurrentUser ? this.userId : undefined,
+        sortBy: this.orderBy.field,
+        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
+      },
+      {
+        arrayFormat: "comma",
+      }
     );
 
-    return data.items;
+    this.getWorkflowsController = new AbortController();
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/crawlconfigs?${query}`,
+      this.authState!,
+      {
+        signal: this.getWorkflowsController.signal,
+      }
+    );
+    this.getWorkflowsController = null;
+
+    return data;
   }
 
   /**
@@ -552,6 +649,7 @@ export class WorkflowsList extends LiteElement {
         }
       );
 
+      this.fetchWorkflows();
       this.notify({
         message: msg(
           html`Deactivated <strong>${this.renderName(workflow)}</strong>.`
@@ -559,8 +657,6 @@ export class WorkflowsList extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-
-      this.workflows = this.workflows!.filter((t) => t.id !== workflow.id);
     } catch {
       this.notify({
         message: msg("Sorry, couldn't deactivate Workflow at this time."),
@@ -580,6 +676,7 @@ export class WorkflowsList extends LiteElement {
         }
       );
 
+      this.fetchWorkflows();
       this.notify({
         message: msg(
           html`Deleted <strong>${this.renderName(workflow)}</strong>.`
@@ -587,8 +684,6 @@ export class WorkflowsList extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-
-      this.workflows = this.workflows!.filter((t) => t.id !== workflow.id);
     } catch {
       this.notify({
         message: msg("Sorry, couldn't delete Workflow at this time."),
@@ -681,6 +776,31 @@ export class WorkflowsList extends LiteElement {
         variant: "danger",
         icon: "exclamation-octagon",
       });
+    }
+  }
+
+  private async fetchConfigSearchValues() {
+    try {
+      const data: {
+        crawlIds: string[];
+        names: string[];
+        descriptions: string[];
+        firstSeeds: string[];
+      } = await this.apiFetch(
+        `/orgs/${this.orgId}/crawlconfigs/search-values`,
+        this.authState!
+      );
+
+      // Update search/filter collection
+      const toSearchItem = (key: SearchFields) => (value: string) => ({
+        [key]: value,
+      });
+      this.searchOptions = [
+        ...data.names.map(toSearchItem("name")),
+        ...data.firstSeeds.map(toSearchItem("firstSeed")),
+      ];
+    } catch (e) {
+      console.debug(e);
     }
   }
 }

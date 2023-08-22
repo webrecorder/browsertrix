@@ -1,6 +1,8 @@
 import { parseCron } from "@cheap-glitch/mi-cron";
 import { msg, str } from "@lit/localize";
 
+import * as numberUtils from "./number";
+
 export const getNextDate = parseCron.nextDate;
 
 export type ScheduleInterval = "daily" | "weekly" | "monthly";
@@ -60,7 +62,8 @@ export function humanizeNextDate(
  **/
 export function humanizeSchedule(
   schedule: string,
-  options: { length?: "short" } = {}
+  options: { length?: "short" } = {},
+  numberFormatter: any = numberUtils.numberFormatter
 ): string {
   const interval = getScheduleInterval(schedule);
   const parsed = parseCron(schedule);
@@ -77,21 +80,27 @@ export function humanizeSchedule(
   let intervalMsg: any = "";
 
   if (options.length === "short") {
-    const formattedTime = nextDate.toLocaleString(undefined, {
-      minute: "numeric",
-      hour: "numeric",
-    });
-
     switch (interval) {
-      case "daily":
-        intervalMsg = msg(str`${formattedTime} every day`);
+      case "daily": {
+        const formattedTime = nextDate.toLocaleString(undefined, {
+          minute: "numeric",
+          hour: "numeric",
+        });
+        intervalMsg = msg(str`${formattedTime} daily`);
         break;
+      }
       case "weekly":
         intervalMsg = msg(str`Every ${formattedWeekDay}`);
         break;
-      case "monthly":
-        intervalMsg = msg(str`Day ${days[0]} of every month`);
+      case "monthly": {
+        const { format } = numberFormatter();
+        intervalMsg = msg(
+          str`Monthly on the ${format(days[0], { ordinal: true })}`
+        );
+
         break;
+      }
+
       default:
         break;
     }

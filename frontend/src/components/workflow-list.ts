@@ -27,6 +27,7 @@ import type { Crawl, Workflow } from "../types/crawler";
 import { srOnly, truncate, dropdown } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 import { humanizeNextDate, humanizeSchedule } from "../utils/cron";
+import { numberFormatter } from "../utils/number";
 
 const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;
@@ -43,7 +44,7 @@ const rowCss = css`
   }
   @media only screen and (min-width: ${largeBreakpointCss}) {
     .row {
-      grid-template-columns: 1fr 15rem 11rem 11rem 3rem;
+      grid-template-columns: 1fr 17rem 10rem 11rem 3rem;
     }
   }
 
@@ -209,9 +210,6 @@ export class WorkflowListItem extends LitElement {
   @property({ type: Object })
   workflow?: Workflow;
 
-  @property({ type: Date })
-  lastUpdated?: Date;
-
   @query(".row")
   row!: HTMLElement;
 
@@ -228,8 +226,9 @@ export class WorkflowListItem extends LitElement {
   @state()
   private dropdownIsOpen?: boolean;
 
-  // TODO localize
-  private numberFormatter = new Intl.NumberFormat();
+  private numberFormatter = numberFormatter(undefined, {
+    notation: "compact",
+  });
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("dropdownIsOpen")) {
@@ -274,20 +273,23 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender(this.renderName)}
         </div>
         <div class="desc">
-          ${this.safeRender(() =>
-            this.lastUpdated
-              ? html`
-                  <sl-format-date
-                    date=${this.lastUpdated.toString()}
-                    month="2-digit"
-                    day="2-digit"
-                    year="2-digit"
-                    hour="2-digit"
-                    minute="2-digit"
-                  ></sl-format-date>
-                `
-              : ""
-          )}
+          ${this.safeRender((workflow) => {
+            if (workflow.schedule) {
+              return msg(
+                str`${humanizeSchedule(
+                  workflow.schedule,
+                  {
+                    length: "short",
+                  },
+                  numberFormatter
+                )}`
+              );
+            }
+            if (workflow.lastStartedByName) {
+              return msg(str`Manual run by ${workflow.lastStartedByName}`);
+            }
+            return msg("---");
+          })}
         </div>
       </div>
       <div class="col">
@@ -305,13 +307,21 @@ export class WorkflowListItem extends LitElement {
         <div class="desc duration">
           ${this.safeRender((workflow) => {
             if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
-              return msg(
-                str`Finished in ${RelativeDuration.humanize(
-                  new Date(`${workflow.lastCrawlTime}Z`).valueOf() -
-                    new Date(`${workflow.lastCrawlStartTime}Z`).valueOf(),
-                  { compact: true }
-                )}`
-              );
+              return html`<sl-format-date
+                  date=${workflow.lastRun.toString()}
+                  month="2-digit"
+                  day="2-digit"
+                  year="2-digit"
+                  hour="2-digit"
+                  minute="2-digit"
+                ></sl-format-date>
+                ${msg(
+                  str`in ${RelativeDuration.humanize(
+                    new Date(`${workflow.lastCrawlTime}Z`).valueOf() -
+                      new Date(`${workflow.lastCrawlStartTime}Z`).valueOf(),
+                    { compact: true }
+                  )}`
+                )}`;
             }
             if (workflow.lastCrawlStartTime) {
               const diff =
@@ -339,7 +349,7 @@ export class WorkflowListItem extends LitElement {
               workflow.lastCrawlSize
             ) {
               return html`<sl-format-bytes
-                  value=${workflow.totalSize}
+                  value=${+workflow.totalSize}
                   display="narrow"
                 ></sl-format-bytes>
                 <span class="currCrawlSize">
@@ -352,7 +362,7 @@ export class WorkflowListItem extends LitElement {
             }
             if (workflow.totalSize && workflow.lastCrawlSize) {
               return html`<sl-format-bytes
-                value=${workflow.totalSize}
+                value=${+workflow.totalSize}
                 display="narrow"
               ></sl-format-bytes>`;
             }
@@ -366,7 +376,7 @@ export class WorkflowListItem extends LitElement {
             }
             if (workflow.totalSize) {
               return html`<sl-format-bytes
-                value=${workflow.totalSize}
+                value=${+workflow.totalSize}
                 display="narrow"
               ></sl-format-bytes>`;
             }
@@ -377,27 +387,33 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender((workflow) =>
             workflow.crawlCount === 1
               ? msg(str`${workflow.crawlCount} crawl`)
-              : msg(str`${(workflow.crawlCount ?? 0).toLocaleString()} crawls`)
+              : msg(
+                  str`${this.numberFormatter.format(
+                    workflow.crawlCount ?? 0
+                  )} crawls`
+                )
           )}
         </div>
       </div>
       <div class="col">
         <div class="detail truncate">
-          ${this.safeRender((workflow) =>
-            workflow.lastStartedByName
-              ? html`<span class="userName"
-                  >${workflow.lastStartedByName}</span
-                >`
-              : notSpecified
+          ${this.safeRender(
+            (workflow) =>
+              html`<span class="userName">${workflow.modifiedByName}</span>`
           )}
         </div>
         <div class="desc">
-          ${this.safeRender((workflow) =>
-            workflow.schedule
-              ? humanizeSchedule(workflow.schedule, {
-                  length: "short",
-                })
-              : msg("No Schedule")
+          ${this.safeRender(
+            (workflow) => html`
+              <sl-format-date
+                date=${workflow.modified.toString()}
+                month="2-digit"
+                day="2-digit"
+                year="2-digit"
+                hour="2-digit"
+                minute="2-digit"
+              ></sl-format-date>
+            `
           )}
         </div>
       </div>
@@ -522,7 +538,7 @@ export class WorkflowList extends LitElement {
       }
 
       .row {
-        display none;
+        display: none;
         font-size: var(--sl-font-size-x-small);
         color: var(--sl-color-neutral-600);
       }
@@ -553,10 +569,10 @@ export class WorkflowList extends LitElement {
 
   render() {
     return html` <div class="listHeader row">
-        <div class="col">${msg("Name & Last Updated")}</div>
-        <div class="col">${msg("Last Crawl Status")}</div>
+        <div class="col">${msg("Name & Schedule")}</div>
+        <div class="col">${msg("Latest Crawl")}</div>
         <div class="col">${msg("Total Size")}</div>
-        <div class="col">${msg("Started By & Schedule")}</div>
+        <div class="col">${msg("Last Modified")}</div>
         <div class="col action">
           <span class="srOnly">${msg("Actions")}</span>
         </div>
