@@ -69,10 +69,6 @@ data:
     namespace: {{ .Values.crawler_namespace }}
     termination_grace_secs: "{{ .Values.grace_period_secs | default 600 }}"
  
-    volume_storage_class: "{{ .Values.volume_storage_class }}"
-
-    requests_hd: "{{ .Values.crawler_storage }}"
-
     # redis
     redis_image: {{ .Values.redis_image }}
     redis_image_pull_policy: {{ .Values.redis_pull_policy }}
@@ -81,14 +77,26 @@ data:
 
     redis_memory: "{{ .Values.redis_memory }}"
 
+    redis_storage: "{{ .Values.redis_storage }}"
 
     # crawler
     crawler_image: {{ .Values.crawler_image }}
     crawler_image_pull_policy: {{ .Values.crawler_pull_policy }}
 
-    crawler_cpu: "{{ mul .Values.crawler_cpu_per_browser .Values.crawler_browser_instances }}m"
+    crawler_cpu_base: "{{ .Values.crawler_cpu_base }}"
+    crawler_memory_base: "{{ .Values.crawler_memory_base }}"
 
-    crawler_memory: "{{ mul .Values.crawler_memory_per_browser .Values.crawler_browser_instances }}Mi"
+    crawler_extra_cpu_per_browser: "{{ .Values.crawler_extra_cpu_per_browser | default 0 }}"
+    crawler_extra_memory_per_browser: "{{ .Values.crawler_extra_memory_per_browser | default 0 }}"
+
+    crawler_browser_instances: "{{ .Values.crawler_browser_instances }}"
+
+    crawler_cpu: "{{ .Values.crawler_cpu }}"
+    crawler_memory: "{{ .Values.crawler_memory }}"
+
+    crawler_storage: "{{ .Values.crawler_storage }}"
+ 
+    volume_storage_class: "{{ .Values.volume_storage_class }}"
 
     crawler_liveness_port: "{{ .Values.crawler_liveness_port | default 0 }}"
 
