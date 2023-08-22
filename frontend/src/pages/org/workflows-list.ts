@@ -194,7 +194,7 @@ export class WorkflowsList extends LiteElement {
     return html`
       <header class="contents">
         <div class="flex justify-between w-full h-8 mb-4">
-          <h1 class="text-xl font-semibold">${msg("Crawling")}</h1>
+          <h1 class="text-xl font-semibold">${msg("Crawl Workflows")}</h1>
           ${when(
             this.isCrawler,
             () => html`
@@ -205,7 +205,7 @@ export class WorkflowsList extends LiteElement {
                 @click=${this.navLink}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("New Crawl Workflow")}
+                ${msg("New Workflow")}
               </sl-button>
             `
           )}
