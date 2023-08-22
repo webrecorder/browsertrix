@@ -28,7 +28,7 @@ const sortableFields: Record<
   { label: string; defaultDirection?: SortDirection }
 > = {
   lastRun: {
-    label: msg("Last Run"),
+    label: msg("Latest Crawl"),
     defaultDirection: "desc",
   },
   modified: {
