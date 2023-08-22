@@ -9,6 +9,7 @@ from datetime import datetime
 
 from typing import Union
 
+from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
 
@@ -205,11 +206,8 @@ class OrgOps:
         """Update organization event webhook URLs"""
         return await self.orgs.find_one_and_update(
             {"_id": org.id},
-            {
-                "$set": {
-                    "webhookUrls": urls.dict(exclude_unset=True, exclude_defaults=True)
-                }
-            },
+            {"$set": {"webhookUrls": urls.dict(exclude_unset=True)}},
+            return_document=ReturnDocument.AFTER,
         )
 
     async def handle_new_user_invite(self, invite_token: str, user: User):
@@ -436,7 +434,10 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         org: Organization = Depends(org_owner_dep),
     ):
         await ops.set_origin(org, request)
-        await ops.update_event_webhook_urls(org, urls)
+        result = await ops.update_event_webhook_urls(org, urls)
+
+        if not result:
+            return {"updated": False}
 
         return {"updated": True}
 

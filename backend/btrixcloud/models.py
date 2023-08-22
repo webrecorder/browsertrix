@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum, IntEnum
 
 from typing import Optional, List, Dict, Union, Literal, Any
-from pydantic import BaseModel, UUID4, conint, Field, HttpUrl, EmailStr
+from pydantic import BaseModel, UUID4, conint, Field, HttpUrl, AnyHttpUrl, EmailStr
 from fastapi_users import models as fastapi_users_models
 
 from .db import BaseMongoModel
@@ -650,9 +650,9 @@ class Organization(BaseMongoModel):
 
     quotas: Optional[OrgQuotas] = OrgQuotas()
 
-    webhookUrls: Optional[OrgWebhookUrls]
+    webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 
-    origin: Optional[HttpUrl]
+    origin: Optional[AnyHttpUrl]
 
     def is_owner(self, user):
         """Check if user is owner"""
@@ -723,8 +723,9 @@ class OrgOut(BaseMongoModel):
     users: Optional[Dict[str, Any]]
     usage: Optional[Dict[str, int]]
     default: bool = False
+    origin: Optional[AnyHttpUrl]
 
-    webhooks: Optional[OrgWebhookUrls] = OrgWebhookUrls()
+    webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
     quotas: Optional[OrgQuotas] = OrgQuotas()
 
 
@@ -882,14 +883,14 @@ class WebhookNotificationBody(BaseModel):
 class ArchivedItemCreatedBody(WebhookNotificationBody):
     """Webhook notification POST body for when archived item is created"""
 
-    crawlId: UUID4
+    crawlId: str
 
 
 # ============================================================================
 class CollectionItemAddedRemovedBody(WebhookNotificationBody):
     """Webhook notification POST body for when item is added to or removed from collection"""
 
-    collectionId: UUID4
+    collectionId: str
     crawlIds: List[str]
     type: str = "added"
 

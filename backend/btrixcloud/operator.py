@@ -766,7 +766,7 @@ class BtrixOperator(K8sAPI):
                 self.crawls, self.crawl_configs, self.collections, crawl_id, cid
             )
 
-        await self.event_webhook_ops.create_item_created_notification(crawl_id)
+            await self.event_webhook_ops.create_item_created_notification(crawl_id)
 
     async def inc_crawl_complete_stats(self, crawl, finished):
         """Increment Crawl Stats"""

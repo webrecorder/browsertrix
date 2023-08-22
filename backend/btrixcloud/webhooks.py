@@ -116,12 +116,16 @@ class EventWebhookOps:
                 return
             url = org.webhookUrls.removedFromCollectionUrl
 
+        # Add event name to body
+        body = notification.body.dict()
+        body["event"] = notification.event
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.request(
                     "POST",
                     url,
-                    json=notification.body.to_dict(),
+                    json=body,
                     raise_for_status=True,
                 ):
                     await self.webhooks.find_one_and_update(
@@ -158,13 +162,16 @@ class EventWebhookOps:
             print(f"Crawl {crawl_id} not found, skipping event webhook", flush=True)
             return
 
+        download_urls = []
+        for resource in crawl.resources:
+            download_url = f"{org.origin}{resource.path}"
+            download_urls.append(download_url)
+
         notification = WebhookNotification(
             id=uuid.uuid4(),
             event=WebhookEventType.ARCHIVED_ITEM_CREATED,
             oid=org.id,
-            body=ArchivedItemCreatedBody(
-                crawlId=crawl.id, downloadUrls=crawl.resources
-            ),
+            body=ArchivedItemCreatedBody(crawlId=crawl.id, downloadUrls=download_urls),
             created=datetime.utcnow(),
         )
 
@@ -186,7 +193,7 @@ class EventWebhookOps:
         added: bool = True,
     ):
         """Create webhook notification for item added or removed from collection"""
-        if not org.webookUrls:
+        if not org.webhookUrls:
             return
 
         if added:
@@ -214,7 +221,7 @@ class EventWebhookOps:
             oid=org.id,
             body=CollectionItemAddedRemovedBody(
                 crawlIds=crawl_ids,
-                collectionId=coll_id,
+                collectionId=str(coll_id),
                 type=type_,
                 downloadUrls=[coll_download_url],
             ),
@@ -286,5 +293,7 @@ def init_event_webhooks_api(mdb, org_ops):
     #     request with the ids of the archived item and collection and a
     #     download link for the collection.
     #     """
+
+    org_ops.router.include_router(router)
 
     return ops

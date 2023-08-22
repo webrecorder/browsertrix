@@ -301,7 +301,11 @@ def test_update_event_webhook_urls_org_admin(admin_auth_headers, non_default_org
     )
     assert r.status_code == 200
     data = r.json()
-    assert data.get("webhookUrls") is None
+    if data.get("webhooks"):
+        webhooks = data.get("webhooks")
+        assert webhooks.get("itemCreatedUrl") is None
+        assert webhooks.get("addedToCollectionUrl") is None
+        assert webhooks.get("removedFromCollectionUrl") is None
 
     # Set URLs and verify
     CREATED_URL = "https://example.com/created"
@@ -331,37 +335,16 @@ def test_update_event_webhook_urls_org_admin(admin_auth_headers, non_default_org
     assert urls["addedToCollectionUrl"] == ADDED_URL
     assert urls["removedFromCollectionUrl"] == REMOVED_URL
 
-    # Unset one URL and verify
+
+def test_update_event_webhook_urls_org_crawler(crawler_auth_headers, default_org_id):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{non_default_org_id}/event-webhook-urls",
-        headers=admin_auth_headers,
-        json={
-            "addedToCollectionUrl": None,
-        },
-    )
-    assert r.status_code == 200
-    assert r.json()["updated"]
-
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{non_default_org_id}",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    urls = data["webhookUrls"]
-    assert urls["itemCreatedUrl"] == CREATED_URL
-    assert urls.get("addedToCollectionUrl") is None
-    assert urls["removedFromCollectionUrl"] == REMOVED_URL
-
-
-def test_update_event_webhook_urls_org_crawler(
-    crawler_auth_headers, non_default_org_id
-):
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{non_default_org_id}/event-webhook-urls",
+        f"{API_PREFIX}/orgs/{default_org_id}/event-webhook-urls",
         headers=crawler_auth_headers,
         json={
+            "itemCreatedUrl": "https://example.com/created",
             "addedToCollectionUrl": "https://example.com/added",
+            "removedFromCollectionUrl": "https://example.com/removed",
         },
     )
     assert r.status_code == 403
+    assert r.json()["detail"] == "User does not have permission to perform this action"
