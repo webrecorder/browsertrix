@@ -243,6 +243,39 @@ class OrgOps:
         """Return org-specific max pages per crawl setting or 0."""
         return await get_max_pages_per_crawl(self.orgs, org.id)
 
+    async def inc_bytes_stored(self, org: Organization, size: int):
+        """Increase org bytesStored count (pass negative value to subtract)."""
+        await inc_org_bytes_stored(self.orgs, org.id, size)
+
+    # pylint: disable=invalid-name
+    async def storage_quota_reached(self, org: Organization):
+        """Return boolean indicating if storage quota is met or exceeded."""
+        quota = await get_org_storage_quota(self.orgs, org.id)
+        if not quota:
+            return False
+
+        BYTES_IN_GB = 1073741824
+        quota_bytes = quota * BYTES_IN_GB
+
+        if org.bytesStored >= quota_bytes:
+            return True
+
+        return False
+
+
+# ============================================================================
+async def inc_org_bytes_stored(orgs, oid: uuid.UUID, size: int):
+    """Increase org bytesStored count (pass negative value to subtract)."""
+    await orgs.find_one_and_update({"_id": oid}, {"$inc": {"bytesStored": size}})
+
+
+# ============================================================================
+async def add_crawl_files_to_org_bytes_stored(crawls, orgs, crawl_id: str, size: int):
+    """Add crawl's files to org bytesStored"""
+    crawl = await crawls.find_one({"_id": crawl_id})
+    oid = crawl["oid"]
+    await orgs.find_one_and_update({"_id": oid}, {"$inc": {"bytesStored": size}})
+
 
 # ============================================================================
 async def inc_org_stats(orgs, oid, duration):
@@ -269,6 +302,16 @@ async def get_max_pages_per_crawl(orgs, oid):
     if org:
         org = Organization.from_dict(org)
         return org.quotas.maxPagesPerCrawl
+    return 0
+
+
+# ============================================================================
+async def get_org_storage_quota(orgs, oid):
+    """return max allowed concurrent crawls, if any"""
+    org = await orgs.find_one({"_id": oid})
+    if org:
+        org = Organization.from_dict(org)
+        return org.quotas.storageQuotaGB
     return 0
 
 

@@ -24,6 +24,7 @@ from .models import (
     PaginatedResponse,
     User,
 )
+from .orgs import inc_org_bytes_stored
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .storages import get_presigned_url, delete_crawl_file_object
 from .utils import dt_now, get_redis_crawl_stats
@@ -54,6 +55,7 @@ class BaseCrawlOps:
 
     def __init__(self, mdb, users, crawl_configs, crawl_manager, colls):
         self.crawls = mdb["crawls"]
+        self.orgs = mdb["organizations"]
         self.crawl_configs = crawl_configs
         self.crawl_manager = crawl_manager
         self.user_manager = users
@@ -199,6 +201,7 @@ class BaseCrawlOps:
             size += await self._delete_crawl_files(crawl, org)
             if crawl.get("cid"):
                 cids_to_update.add(crawl.get("cid"))
+            await inc_org_bytes_stored(self.orgs, org.id, -size)
 
         query = {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id}
         if type_:

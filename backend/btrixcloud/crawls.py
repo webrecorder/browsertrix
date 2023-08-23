@@ -221,6 +221,7 @@ class CrawlOps(BaseCrawlOps):
 
         for cid in cids_to_update:
             await self.crawl_configs.stats_recompute_remove_crawl(cid, size)
+            await self.orgs.inc_bytes_stored(org, -size)
 
         return count
 

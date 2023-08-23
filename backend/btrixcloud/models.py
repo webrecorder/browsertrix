@@ -623,6 +623,7 @@ class OrgQuotas(BaseModel):
 
     maxConcurrentCrawls: Optional[int] = 0
     maxPagesPerCrawl: Optional[int] = 0
+    storageQuotaGB: Optional[int] = 0
 
 
 # ============================================================================
@@ -636,6 +637,8 @@ class Organization(BaseMongoModel):
     storage: Union[S3Storage, DefaultStorage]
 
     usage: Dict[str, int] = {}
+
+    bytesStored: int = 0
 
     default: bool = False
 
@@ -741,6 +744,7 @@ class ProfileFile(BaseModel):
     filename: str
     hash: str
     size: int
+    def_storage_name: Optional[str]
 
 
 # ============================================================================

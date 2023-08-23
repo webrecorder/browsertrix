@@ -11,7 +11,9 @@ from pydantic import UUID4
 from fastapi import APIRouter, Depends, Request, HTTPException
 import aiohttp
 
+from .orgs import inc_org_bytes_stored
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
+from .storages import delete_crawl_file_object
 from .models import (
     Profile,
     ProfileWithCrawlConfigs,
@@ -35,6 +37,7 @@ class ProfileOps:
 
     def __init__(self, mdb, crawl_manager):
         self.profiles = mdb["profiles"]
+        self.orgs = mdb["organizations"]
 
         self.crawl_manager = crawl_manager
         self.browser_fqdn_suffix = os.environ.get("CRAWLER_FQDN_SUFFIX")
@@ -157,9 +160,11 @@ class ProfileOps:
 
         await self.crawl_manager.delete_profile_browser(browser_commit.browserid)
 
+        file_size = resource["bytes"]
+
         profile_file = ProfileFile(
             hash=resource["hash"],
-            size=resource["bytes"],
+            size=file_size,
             filename=resource["path"],
         )
 
@@ -167,6 +172,8 @@ class ProfileOps:
         if baseid:
             print("baseid", baseid)
             baseid = uuid.UUID(baseid)
+
+        oid = uuid.UUID(metadata.get("btrix.org"))
 
         profile = Profile(
             id=profileid,
@@ -176,13 +183,15 @@ class ProfileOps:
             origins=json["origins"],
             resource=profile_file,
             userid=uuid.UUID(metadata.get("btrix.user")),
-            oid=uuid.UUID(metadata.get("btrix.org")),
+            oid=oid,
             baseid=baseid,
         )
 
         await self.profiles.find_one_and_update(
             {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
         )
+
+        await inc_org_bytes_stored(self.orgs, oid, file_size)
 
         return {"added": True, "id": str(profile.id)}
 
@@ -283,9 +292,7 @@ class ProfileOps:
 
         return crawlconfig_names
 
-    async def delete_profile(
-        self, profileid: uuid.UUID, org: Optional[Organization] = None
-    ):
+    async def delete_profile(self, profileid: uuid.UUID, org: Organization):
         """delete profile, if not used in active crawlconfig"""
         profile = await self.get_profile_with_configs(profileid, org)
 
@@ -296,9 +303,10 @@ class ProfileOps:
         if org:
             query["oid"] = org.id
 
-        # pylint: disable=fixme
-        # todo: delete the file itself!
-        # delete profile.pathname
+        # Delete file from storage
+        if profile.resource:
+            await delete_crawl_file_object(org, profile.resource, self.crawl_manager)
+            await inc_org_bytes_stored(self.orgs, org.id, -profile.resource.size)
 
         res = await self.profiles.delete_one(query)
         if not res or res.deleted_count != 1:

@@ -28,6 +28,7 @@ from .models import (
     PaginatedResponse,
     User,
 )
+from .orgs import inc_org_bytes_stored
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .storages import do_upload_single, do_upload_multipart
 from .utils import dt_now
@@ -163,6 +164,9 @@ class UploadOps(BaseCrawlOps):
         await self.crawls.find_one_and_update(
             {"_id": crawl_id}, {"$set": uploaded.to_dict()}, upsert=True
         )
+
+        await inc_org_bytes_stored(self.orgs, org.id, file_size)
+
         return {"id": crawl_id, "added": True}
 
     async def delete_uploads(
