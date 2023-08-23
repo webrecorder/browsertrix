@@ -608,6 +608,7 @@ class OrgQuotas(BaseModel):
     """Organization quotas (settable by superadmin)"""
 
     maxConcurrentCrawls: Optional[int] = 0
+    maxPagesPerCrawl: Optional[int] = 0
 
 
 # ============================================================================
