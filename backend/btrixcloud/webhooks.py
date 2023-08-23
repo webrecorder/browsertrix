@@ -120,7 +120,7 @@ class EventWebhookOps:
         # internally but duplicates the event name in the POST body
         body = notification.body.dict()
         body["event"] = notification.event
-        body["oid"] = notification.oid
+        body["orgId"] = str(notification.oid)
         body.pop("type", None)
 
         try:
