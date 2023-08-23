@@ -292,8 +292,19 @@ def init_event_webhooks_api(mdb, org_ops):
     #    org: Organization = Depends(org_owner_dep)
     # ):
     #     """
-    #     When an archived item is added to a collection, we will send a POST
-    #     request with the ids of the archived item and collection and a
+    #     When archived items are added to a collection, we will send a POST
+    #     request with the ids of the archived item(s) and collection and a
+    #     download link for the collection.
+    #     """
+
+    # @app.webhooks.post("removed-from-collection")
+    # def removed_from_collection(
+    #    body: CollectionItemAddedRemovedBody,
+    #    org: Organization = Depends(org_owner_dep)
+    # ):
+    #     """
+    #     When an archived items are removed from a collection, we will send a POST
+    #     request with the ids of the archived item(s) and collection and a
     #     download link for the collection.
     #     """
 
