@@ -44,7 +44,8 @@ def test_create_collection(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/replay.json",
         headers=crawler_auth_headers,
     )
-    assert _coll_id in r.json()["collections"]
+    assert _coll_id in r.json()["collectionIds"]
+    assert r.json()["collections"] == [{"name": COLLECTION_NAME, "id": _coll_id}]
 
 
 def test_create_collection_taken_name(
@@ -185,7 +186,7 @@ def test_add_remove_crawl_from_collection(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
         headers=crawler_auth_headers,
     )
-    assert _coll_id in r.json()["collections"]
+    assert _coll_id in r.json()["collectionIds"]
 
     # Remove crawls
     r = requests.post(
@@ -207,13 +208,13 @@ def test_add_remove_crawl_from_collection(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
         headers=crawler_auth_headers,
     )
-    assert _coll_id not in r.json()["collections"]
+    assert _coll_id not in r.json()["collectionIds"]
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/replay.json",
         headers=crawler_auth_headers,
     )
-    assert _coll_id not in r.json()["collections"]
+    assert _coll_id not in r.json()["collectionIds"]
 
     # Add crawls back for further tests
     r = requests.post(
@@ -350,7 +351,8 @@ def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/replay.json",
         headers=crawler_auth_headers,
     )
-    assert _coll_id in r.json()["collections"]
+    assert _coll_id in r.json()["collectionIds"]
+    assert r.json()["collections"] == [{"name": UPDATED_NAME, "id": _coll_id}]
 
 
 def test_download_streaming_collection(crawler_auth_headers, default_org_id):
@@ -432,7 +434,7 @@ def test_remove_upload_from_collection(crawler_auth_headers, default_org_id):
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/replay.json",
         headers=crawler_auth_headers,
     )
-    assert _coll_id not in r.json()["collections"]
+    assert _coll_id not in r.json()["collectionIds"]
 
 
 def test_filter_sort_collections(
@@ -629,7 +631,7 @@ def test_delete_collection(crawler_auth_headers, default_org_id, crawler_crawl_i
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/replay.json",
         headers=crawler_auth_headers,
     )
-    assert _second_coll_id not in r.json()["collections"]
+    assert _second_coll_id not in r.json()["collectionIds"]
 
     # Make a new empty (no crawls) collection and delete it
     r = requests.post(

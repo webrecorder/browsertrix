@@ -308,10 +308,18 @@ class BaseCrawl(BaseMongoModel):
 
     errors: Optional[List[str]] = []
 
-    collections: Optional[List[UUID4]] = []
+    collectionIds: Optional[List[UUID4]] = []
 
     fileSize: int = 0
     fileCount: int = 0
+
+
+# ============================================================================
+class CollIdName(BaseModel):
+    """Collection id and name object"""
+
+    id: UUID4
+    name: str
 
 
 # ============================================================================
@@ -346,7 +354,7 @@ class CrawlOut(BaseMongoModel):
 
     errors: Optional[List[str]]
 
-    collections: Optional[List[UUID4]] = []
+    collectionIds: Optional[List[UUID4]] = []
 
     # automated crawl fields
     config: Optional[RawCrawlConfig]
@@ -365,6 +373,7 @@ class CrawlOutWithResources(CrawlOut):
     """Crawl output model including resources"""
 
     resources: Optional[List[CrawlFileOut]] = []
+    collections: Optional[List[CollIdName]] = []
 
 
 # ============================================================================
