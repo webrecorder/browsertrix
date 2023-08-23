@@ -11,6 +11,7 @@ from .crawlconfigs import (
     inc_crawl_count,
 )
 from .crawls import add_new_crawl
+from .orgs import storage_quota_reached
 from .utils import register_exit_handler
 
 
@@ -25,6 +26,7 @@ class ScheduledJob(K8sAPI):
         _, mdb = init_db()
         self.crawls = mdb["crawls"]
         self.crawlconfigs = mdb["crawl_configs"]
+        self.orgs = mdb["organizations"]
 
     async def run(self):
         """run crawl!"""
@@ -46,6 +48,13 @@ class ScheduledJob(K8sAPI):
         oid = data["ORG_ID"]
 
         crawlconfig = await get_crawl_config(self.crawlconfigs, uuid.UUID(self.cid))
+
+        if await storage_quota_reached(self.orgs, uuid.UUID(oid)):
+            print(
+                f"Scheduled crawl from workflow {self.cid} not started - storage quota reached",
+                flush=True,
+            )
+            return
 
         # k8s create
         crawl_id = await self.new_crawl_job(

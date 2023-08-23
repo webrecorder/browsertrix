@@ -165,7 +165,7 @@ class UploadOps(BaseCrawlOps):
             {"_id": crawl_id}, {"$set": uploaded.to_dict()}, upsert=True
         )
 
-        await inc_org_bytes_stored(self.orgs, org.id, file_size)
+        await inc_org_bytes_stored(self.orgs_db, org.id, file_size)
 
         return {"id": crawl_id, "added": True}
 
