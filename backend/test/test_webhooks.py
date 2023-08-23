@@ -50,14 +50,29 @@ def test_get_webhook_event(admin_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     item = r.json()
+
     assert item["id"]
-    assert item["event"]
     assert item["oid"]
-    assert item["body"]
     assert item["success"] is False
     assert item["attempts"] == 1
     assert item["created"]
     assert item["lastAttempted"]
+
+    body = item["body"]
+    assert body
+
+    event = item["event"]
+    assert event
+
+    if event == "archived-item-created":
+        assert len(body["downloadUrls"]) >= 1
+        assert body["itemId"]
+
+    elif event in ("added-to-collection", "removed-from-collection"):
+        assert len(body["downloadUrls"]) == 1
+        assert body["collectionId"]
+        assert len(body["itemIds"]) >= 1
+        assert body["type"] in ("added", "removed")
 
 
 def test_retry_webhook_event(admin_auth_headers, default_org_id):
