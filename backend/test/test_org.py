@@ -293,10 +293,10 @@ def test_delete_invite_by_email(admin_auth_headers, non_default_org_id):
     assert data["detail"] == "invite_not_found"
 
 
-def test_update_event_webhook_urls_org_admin(admin_auth_headers, non_default_org_id):
+def test_update_event_webhook_urls_org_admin(admin_auth_headers, default_org_id):
     # Verify no URLs are configured
     r = requests.get(
-        f"{API_PREFIX}/orgs/{non_default_org_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -313,7 +313,7 @@ def test_update_event_webhook_urls_org_admin(admin_auth_headers, non_default_org
     REMOVED_URL = "http://example.com/removed"
 
     r = requests.post(
-        f"{API_PREFIX}/orgs/{non_default_org_id}/event-webhook-urls",
+        f"{API_PREFIX}/orgs/{default_org_id}/event-webhook-urls",
         headers=admin_auth_headers,
         json={
             "itemCreatedUrl": CREATED_URL,
@@ -325,7 +325,7 @@ def test_update_event_webhook_urls_org_admin(admin_auth_headers, non_default_org
     assert r.json()["updated"]
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{non_default_org_id}",
+        f"{API_PREFIX}/orgs/{default_org_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
