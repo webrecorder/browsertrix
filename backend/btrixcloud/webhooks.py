@@ -116,10 +116,11 @@ class EventWebhookOps:
                 return
             url = org.webhookUrls.removedFromCollectionUrl
 
-        # Add event name to body and remove type, which is useful internally
-        # but duplicates the event name in the POST body
+        # Add event name and oid to body and remove type, which is useful
+        # internally but duplicates the event name in the POST body
         body = notification.body.dict()
         body["event"] = notification.event
+        body["oid"] = notification.oid
         body.pop("type", None)
 
         try:
