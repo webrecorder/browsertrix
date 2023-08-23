@@ -174,7 +174,7 @@ class EventWebhookOps:
             id=uuid.uuid4(),
             event=WebhookEventType.ARCHIVED_ITEM_CREATED,
             oid=org.id,
-            body=ArchivedItemCreatedBody(crawlId=crawl.id, downloadUrls=download_urls),
+            body=ArchivedItemCreatedBody(itemId=crawl.id, downloadUrls=download_urls),
             created=datetime.utcnow(),
         )
 
@@ -223,7 +223,7 @@ class EventWebhookOps:
             event=event_type,
             oid=org.id,
             body=CollectionItemAddedRemovedBody(
-                crawlIds=crawl_ids,
+                itemIds=crawl_ids,
                 collectionId=str(coll_id),
                 type=type_,
                 downloadUrls=[coll_download_url],

@@ -883,7 +883,7 @@ class WebhookNotificationBody(BaseModel):
 class ArchivedItemCreatedBody(WebhookNotificationBody):
     """Webhook notification POST body for when archived item is created"""
 
-    crawlId: str
+    itemId: str
 
 
 # ============================================================================
@@ -891,7 +891,7 @@ class CollectionItemAddedRemovedBody(WebhookNotificationBody):
     """Webhook notification POST body for when item is added to or removed from collection"""
 
     collectionId: str
-    crawlIds: List[str]
+    itemIds: List[str]
     type: str = "added"
 
 
