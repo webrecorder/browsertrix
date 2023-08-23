@@ -1,0 +1,83 @@
+# Hosted Config (eg. for k3s)
+# --------------------------------
+#
+# This config can be used to run Browsertrix Cloud hosted on a remote server.
+# This requires setting the hostname and signing hostname.
+#
+#
+# The `ingress.host` and `ingress.cert_email` and optional `signer.host` must be set below.
+#
+# k3s
+# ---
+#
+# One way to deploy this is with k3s, which will require the following changes:
+#
+# Make sure to disable traefik on your k3s cluster by adding `--no-deploy traefik` to the systemd unit that starts k3s _before_ starting your server. One way to check that traefik is not running your cluster is with `kubectl get deployments -n kube-system` and see if traefik shows up in the output
+#
+# Once traefik has been disabled, you must install `nginx-ingress` which can be installed by: 
+# helm upgrade --install nginx ingress-nginx/ingress-nginx -n ingress-nginx --create-namespace
+#
+# You'll also need to install cert-manager. Browsertrix cloud recommends installing cert-manager through jetpack with the following command: 
+#
+# helm repo add jetstack https://charts.jetstack.io
+# helm repo update
+# 
+# helm repo update jetstack
+# helm upgrade --install \
+#   cert-manager jetstack/cert-manager \
+#   --namespace cert-manager \
+#   --create-namespace \
+#   --version v1.12.0 \
+#   --set installCRDs=true
+#
+# run with:
+#
+# helm3 upgrade --install -f ./chart/values.yaml -f ./chart/examples/microk8s-hosted.yaml btrix ./chart/
+#
+#
+# If developing locally, you must import your built containers with ctr
+#
+# `docker save webrecorder/browsertrix-backend:latest | k3s ctr images import --base-name webrecorder/browsertrix-backend:latest -`
+# `docker save webrecorder/browsertrix-frontend:latest | k3s ctr images import --base-name webrecorder/browsertrix-frontend:latest -`
+
+
+ingress:
+  # required: set host to use tls
+  # uncomment and replace example below with your registered domain
+  # host: "yourdomain.org"
+
+  # required: set email to use tls
+  # uncomment and replace example below with your valid email address
+  #cert_email: "you@yourdomain.org"
+
+  scheme: "https"
+  tls: true
+
+ingress_class: "nginx"
+
+
+# optionally, set host below to enable WACZ signing
+signer:
+  enabled: true
+
+  # uncomment and replace example below with your registered domain
+  # host: "second.yourdomain.org"
+
+
+# optionally, override default mongodb auth, used for all data storage:
+
+#mongo_auth:
+  # username: root
+  # password: PASSWORD!
+  
+
+# optionally, set these to custom values
+
+#superuser:
+  # set this to enable a superuser admim
+  # email: admin@example.com
+
+  # optional: if not set, automatically generated
+  # change or remove this
+  # password: PASSWORD!
+

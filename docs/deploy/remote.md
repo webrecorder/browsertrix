@@ -1,6 +1,6 @@
-# Production: Self-Hosted and Cloud
+# Remote: Self-Hosted and Cloud
 
-For production and hosted deployments (both on a single machine or in the cloud), the only requirement is to have a designed domain and (strongly recommended, but not required) second domain for signing web archives. 
+For remote and hosted deployments (both on a single machine or in the cloud), the only requirement is to have a designed domain and (strongly recommended, but not required) second domain for signing web archives. 
 
 We are also experimenting with [Ansible playbooks](../deploy/ansible) for cloud deployment setups.
 
@@ -9,7 +9,7 @@ The production deployments also allow using an external mongodb server, and/or e
 
 ## Single Machine Deployment with MicroK8S
 
-For a single-machine production deployment, we recommend using [MicroK8s](https://microk8s.io/).
+For a single-machine remote deployment, we recommend using [MicroK8s](https://microk8s.io/).
 
 1. Install MicroK8S, as suggested in [the local deployment guide](../deploy/local.md) and ensure the `ingress` and `cert-manager` addons are also enabled.
 
@@ -25,6 +25,39 @@ For a single-machine production deployment, we recommend using [MicroK8s](https:
    helm upgrade --install -f ./chart/values.yaml -f ./chart/my-config.yaml btrix ./chart/
    ```
 
+## Single Machine Deployment with k3s
+
+Another option for a single-machine remote deployment is [k3s](https://k3s.io)
+
+1. Install K3s, as suggested in the [local deployment guide](../deploy/local.md). Make sure to **disable traefik** which can be done by adding `--no-deploy traefik` to the `systemd` unit when installing k3s
+
+2. Install `nginx-ingress` with: `helm upgrade --install nginx ingress-nginx/ingress-nginx -n ingress-nginx --create-namespace`
+3. Install `cert-manager`. We recommend installing `cert-manager` through Jetpack, like so: 
+
+```zsh
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
+
+helm repo update jetstack
+helm upgrade --install \
+  cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --version v1.12.0 \
+  --set installCRDs=true
+``` 
+
+4. Copy `cp ./chart/examples/k3s-hosted.yaml ./chart/my-config.yaml` to make local changes.
+
+5. Set the `ingress.host`, `ingress.cert_email` and `signing.host` fields in `./chart/my-config.yaml` to your host and domain
+
+6. Set the super-admin username and password, and mongodb username and password in `./chart/my-config.yaml`
+
+7. Run with:
+
+   ```shell
+   helm upgrade --install -f ./chart/values.yaml -f ./chart/my-config.yaml btrix ./chart/
+   ```
 
 ### Using Custom Storage
 
