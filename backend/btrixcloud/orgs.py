@@ -250,7 +250,7 @@ class OrgOps:
     # pylint: disable=invalid-name
     async def storage_quota_reached(self, org: Organization):
         """Return boolean indicating if storage quota is met or exceeded."""
-        await storage_quota_reached(self.orgs, org.id)
+        return await storage_quota_reached(self.orgs, org.id)
 
 
 # ============================================================================
@@ -458,7 +458,8 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
 
     @router.get("/storage-quota", tags=["organizations"])
     async def get_storage_quota_reached(org: Organization = Depends(org_dep)):
-        return await ops.storage_quota_reached(org)
+        reached = await ops.storage_quota_reached(org)
+        return {"reached": reached}
 
     @router.patch("/user-role", tags=["organizations"])
     async def set_role(

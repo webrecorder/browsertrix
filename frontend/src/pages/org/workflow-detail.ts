@@ -44,6 +44,9 @@ export class WorkflowDetail extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
+  @property({ type: Boolean })
+  orgStorageQuotaReached!: boolean;
+
   @property({ type: String })
   workflowId!: string;
 
@@ -580,15 +583,21 @@ export class WorkflowDetail extends LiteElement {
           </sl-button-group>
         `,
         () => html`
-          <sl-button
-            size="small"
-            variant="primary"
-            class="mr-2"
-            @click=${() => this.runNow()}
+          <sl-tooltip
+            content=${msg("Org Storage Full")}
+            ?disabled=${this.orgStorageQuotaReached === false}
           >
-            <sl-icon name="play" slot="prefix"></sl-icon>
-            <span>${msg("Run Crawl")}</span>
-          </sl-button>
+            <sl-button
+              size="small"
+              variant="primary"
+              class="mr-2"
+              ?disabled=${this.orgStorageQuotaReached === true}
+              @click=${() => this.runNow()}
+            >
+              <sl-icon name="play" slot="prefix"></sl-icon>
+              <span>${msg("Run Crawl")}</span>
+            </sl-button>
+          </sl-tooltip>
         `
       )}
 
@@ -1016,10 +1025,19 @@ export class WorkflowDetail extends LiteElement {
             `
           )}
 
-          <sl-button size="small" @click=${() => this.runNow()}>
-            <sl-icon name="play" slot="prefix"></sl-icon>
-            ${msg("Run Crawl")}
-          </sl-button>
+          <sl-tooltip
+            content=${msg("Org Storage Full")}
+            ?disabled=${this.orgStorageQuotaReached === false}
+          >
+            <sl-button
+              size="small"
+              ?disabled=${this.orgStorageQuotaReached === true}
+              @click=${() => this.runNow()}
+            >
+              <sl-icon name="play" slot="prefix"></sl-icon>
+              ${msg("Run Crawl")}
+            </sl-button>
+          </sl-tooltip>
         </div>
       </section>
     `;
@@ -1410,6 +1428,17 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private async runNow(): Promise<void> {
+    if (this.orgStorageQuotaReached === true) {
+      this.notify({
+        message: msg(
+          "The org has reached its storage limit. Delete any archived items that are un-needed to free up space, or contact us to purchase a plan with more storage."
+        ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+      return;
+    }
+
     try {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${this.workflow!.id}/run`,

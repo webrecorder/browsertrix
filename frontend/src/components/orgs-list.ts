@@ -50,10 +50,20 @@ export class OrgsList extends LiteElement {
         @sl-request-close=${() => (this.currOrg = null)}
       >
         ${Object.entries(this.currOrg.quotas).map(([key, value]) => {
-          const label =
-            key === "maxConcurrentCrawls"
-              ? msg("Max Concurrent Crawls")
-              : msg("Max Pages Per Crawl");
+          let label;
+          switch (key) {
+            case "maxConcurrentCrawls":
+              label = msg("Max Concurrent Crawls");
+              break;
+            case "maxPagesPerCrawl":
+              label = msg("Max Pages Per Crawl");
+              break;
+            case "storageQuotaGB":
+              label = msg("Org Storage Quota (GB)");
+              break;
+            default:
+              label = msg("Unlabeled");
+          }
           return html` <sl-input
             name=${key}
             label=${label}

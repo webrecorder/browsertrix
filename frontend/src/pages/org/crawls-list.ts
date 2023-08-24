@@ -67,6 +67,9 @@ export class CrawlsList extends LiteElement {
   orgId?: string;
 
   @property({ type: Boolean })
+  orgStorageQuotaReached?: boolean;
+
+  @property({ type: Boolean })
   isCrawler!: boolean;
 
   @property({ type: String })
@@ -209,13 +212,19 @@ export class CrawlsList extends LiteElement {
             ${when(
               this.isCrawler,
               () => html`
-                <sl-button
-                  size="small"
-                  @click=${() => (this.isUploadingArchive = true)}
+                <sl-tooltip
+                  content=${msg("Org Storage Full")}
+                  ?disabled=${this.orgStorageQuotaReached === false}
                 >
-                  <sl-icon slot="prefix" name="upload"></sl-icon>
-                  ${msg("Upload WACZ")}
-                </sl-button>
+                  <sl-button
+                    size="small"
+                    @click=${() => (this.isUploadingArchive = true)}
+                    ?disabled=${this.orgStorageQuotaReached === true}
+                  >
+                    <sl-icon slot="prefix" name="upload"></sl-icon>
+                    ${msg("Upload WACZ")}
+                  </sl-button>
+                </sl-tooltip>
               `
             )}
           </div>

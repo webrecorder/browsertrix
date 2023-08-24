@@ -7,7 +7,7 @@ import type { ViewState } from "../../utils/APIRouter";
 import type { AuthState } from "../../utils/AuthService";
 import type { CurrentUser } from "../../types/user";
 import type { Crawl } from "../../types/crawler";
-import type { OrgData } from "../../utils/orgs";
+import type { OrgData, OrgStorageQuotaReached } from "../../utils/orgs";
 import { isAdmin, isCrawler } from "../../utils/orgs";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { needLogin } from "../../utils/auth";
@@ -51,6 +51,9 @@ type Params = {
 };
 const defaultTab = "workflows";
 
+const POLL_INTERVAL_SECONDS = 10;
+const ABORT_REASON_THROTTLE = "throttled";
+
 @needLogin
 @localized()
 export class Org extends LiteElement {
@@ -73,6 +76,9 @@ export class Org extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
+  @property({ type: Boolean })
+  orgStorageQuotaReached: boolean = false;
+
   @property({ type: String })
   orgTab: OrgTab = defaultTab;
 
@@ -81,6 +87,17 @@ export class Org extends LiteElement {
 
   @state()
   private isSavingOrgName = false;
+
+  @state()
+  private isFetching = false;
+
+  @state()
+  private fetchErrorStatusCode?: number;
+
+  // Use to cancel requests
+  private getStorageQuotaReachedController: AbortController | null = null;
+
+  private timerId?: number;
 
   get userOrg() {
     if (!this.userInfo) return null;
@@ -112,6 +129,48 @@ export class Org extends LiteElement {
           icon: "exclamation-octagon",
         });
       }
+      this.checkIfStorageQuotaReached();
+    }
+  }
+
+  private async checkIfStorageQuotaReached() {
+    this.fetchErrorStatusCode = undefined;
+
+    this.cancelInProgressGetStorageQuotaReached();
+    this.isFetching = true;
+    try {
+      const quotaReached = await this.getOrgStorageQuotaReached();
+      this.orgStorageQuotaReached = quotaReached.reached;
+    } catch (e: any) {
+      if (e === ABORT_REASON_THROTTLE) {
+        console.debug("Fetch storage quota reached aborted to throttle");
+      } else {
+        if (e.isApiError) {
+          this.fetchErrorStatusCode = e.statusCode;
+        } else {
+          this.notify({
+            message: msg(
+              "Sorry, couldn't determine if storage quota reached at this time."
+            ),
+            variant: "danger",
+            icon: "exclamation-octagon",
+          });
+        }
+      }
+    }
+    this.isFetching = false;
+
+    // Restart timer for next poll
+    this.timerId = window.setTimeout(() => {
+      this.checkIfStorageQuotaReached();
+    }, 1000 * POLL_INTERVAL_SECONDS);
+  }
+
+  private cancelInProgressGetStorageQuotaReached() {
+    window.clearTimeout(this.timerId);
+    if (this.getStorageQuotaReachedController) {
+      this.getStorageQuotaReachedController.abort(ABORT_REASON_THROTTLE);
+      this.getStorageQuotaReachedController = null;
     }
   }
 
@@ -240,6 +299,7 @@ export class Org extends LiteElement {
       return html` <btrix-crawl-detail
         .authState=${this.authState!}
         orgId=${this.orgId}
+        .orgStorageQuotaReached=${this.orgStorageQuotaReached!}
         crawlId=${this.params.itemId}
         collectionId=${this.params.collectionId || ""}
         workflowId=${this.params.workflowId || ""}
@@ -252,6 +312,7 @@ export class Org extends LiteElement {
       .authState=${this.authState!}
       userId=${this.userInfo!.id}
       orgId=${this.orgId}
+      .orgStorageQuotaReached=${this.orgStorageQuotaReached!}
       ?isCrawler=${this.isCrawler}
       itemType=${ifDefined(this.params.itemType || undefined)}
       ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "items"}
@@ -269,6 +330,7 @@ export class Org extends LiteElement {
           class="col-span-5 mt-6"
           .authState=${this.authState!}
           orgId=${this.orgId!}
+          .orgStorageQuotaReached=${this.orgStorageQuotaReached!}
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
@@ -292,6 +354,7 @@ export class Org extends LiteElement {
     return html`<btrix-workflows-list
       .authState=${this.authState!}
       orgId=${this.orgId!}
+      .orgStorageQuotaReached=${this.orgStorageQuotaReached!}
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
     ></btrix-workflows-list>`;
@@ -329,6 +392,7 @@ export class Org extends LiteElement {
         return html`<btrix-collection-edit
           .authState=${this.authState!}
           orgId=${this.orgId!}
+          .orgStorageQuotaReached=${this.orgStorageQuotaReached!}
           collectionId=${this.params.collectionId}
           ?isCrawler=${this.isCrawler}
         ></btrix-collection-edit>`;
@@ -348,6 +412,7 @@ export class Org extends LiteElement {
       return html`<btrix-collections-new
         .authState=${this.authState!}
         orgId=${this.orgId!}
+        .orgStorageQuotaReached=${this.orgStorageQuotaReached!}
         ?isCrawler=${this.isCrawler}
       ></btrix-collections-new>`;
     }
@@ -509,5 +574,22 @@ export class Org extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  /**
+   * Fetch Workflows and update state
+   **/
+  private async getOrgStorageQuotaReached(): Promise<OrgStorageQuotaReached> {
+    this.getStorageQuotaReachedController = new AbortController();
+    const data: OrgStorageQuotaReached = await this.apiFetch(
+      `/orgs/${this.orgId}/storage-quota`,
+      this.authState!,
+      {
+        signal: this.getStorageQuotaReachedController.signal,
+      }
+    );
+    this.getStorageQuotaReachedController = null;
+
+    return data;
   }
 }

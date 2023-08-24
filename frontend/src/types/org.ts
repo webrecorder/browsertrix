@@ -22,3 +22,7 @@ export type OrgData = {
 };
 
 export type OrgConfig = any;
+
+export type OrgStorageQuotaReached = {
+  reached: boolean;
+};
