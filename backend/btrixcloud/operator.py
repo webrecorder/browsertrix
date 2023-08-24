@@ -634,7 +634,10 @@ class BtrixOperator(K8sAPI):
                 + "gracefully stopping crawl"
             )
 
-        if crawl.max_crawl_size and stats["size"] > crawl.max_crawl_size:
+        if stats["size"] is not None:
+            status.size = humanize.naturalsize(stats["size"])
+
+        if crawl.max_crawl_size and status.size > crawl.max_crawl_size:
             crawl.stopping = True
             print(
                 "Maximum crawl size {crawl.max_crawl_size} hit, gracefully stopping crawl"
@@ -649,8 +652,6 @@ class BtrixOperator(K8sAPI):
         # update status
         status.pagesDone = stats["done"]
         status.pagesFound = stats["found"]
-        if stats["size"] is not None:
-            status.size = humanize.naturalsize(stats["size"])
 
         # check if done / failed
         status_count = {}
