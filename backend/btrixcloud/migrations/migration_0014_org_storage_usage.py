@@ -1,5 +1,5 @@
 """
-Migration 0013 - Set org storage usage
+Migration 0014 - Calculate and store org storage usage
 """
 from btrixcloud.migrations import BaseMigration
 
