@@ -456,6 +456,10 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
 
         return {"updated": True}
 
+    @router.get("/storage-quota", tags=["organizations"])
+    async def get_storage_quota_reached(org: Organization = Depends(org_dep)):
+        return await ops.storage_quota_reached(org)
+
     @router.patch("/user-role", tags=["organizations"])
     async def set_role(
         update: UpdateRole,
