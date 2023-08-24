@@ -627,6 +627,13 @@ class OrgQuotas(BaseModel):
 
 
 # ============================================================================
+class OrgStorageQuotaReachedOut(BaseModel):
+    """Organization quotas (settable by superadmin)"""
+
+    reached: bool
+
+
+# ============================================================================
 class Organization(BaseMongoModel):
     """Organization Base Model"""
 

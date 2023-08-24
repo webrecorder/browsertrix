@@ -27,6 +27,7 @@ from .models import (
     UserRole,
     User,
     PaginatedResponse,
+    OrgStorageQuotaReachedOut,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
@@ -456,7 +457,11 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
 
         return {"updated": True}
 
-    @router.get("/storage-quota", tags=["organizations"])
+    @router.get(
+        "/storage-quota",
+        tags=["organizations"],
+        response_model=OrgStorageQuotaReachedOut,
+    )
     async def get_storage_quota_reached(org: Organization = Depends(org_dep)):
         reached = await ops.storage_quota_reached(org)
         return {"reached": reached}
