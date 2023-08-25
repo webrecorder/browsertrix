@@ -38,6 +38,7 @@ body:
       label: Todo
       description: |
         Webrecorder team only! :)
+        
         Any other linked issues / tasks to complete to implement this feature (leave blank if unknown).
       placeholder: |
         - [ ] Mockups: 
