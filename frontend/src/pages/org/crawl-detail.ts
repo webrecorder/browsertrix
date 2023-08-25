@@ -759,13 +759,13 @@ ${this.crawl?.description}
                 () => html`
                   <ul>
                     ${this.crawl!.collections.map(
-                      (id) =>
+                      ({ id, name }) =>
                         html`<li class="mt-1">
                           <a
                             class="text-primary hover:text-indigo-400"
                             href=${`/orgs/${this.orgId}/collections/view/${id}`}
                             @click=${this.navLink}
-                            >${id}</a
+                            >${name}</a
                           >
                         </li>`
                     )}

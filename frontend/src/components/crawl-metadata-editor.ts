@@ -127,7 +127,7 @@ export class CrawlMetadataEditor extends LiteElement {
         <div class="mt-4">
           <btrix-collections-add
             .authState=${this.authState}
-            .initialCollections=${this.crawl.collections}
+            .initialCollections=${this.crawl.collectionIds}
             .orgId=${this.crawl.oid}
             .configId=${"temp"}
             label=${msg("Add to Collection")}
@@ -193,7 +193,7 @@ export class CrawlMetadataEditor extends LiteElement {
       crawlDescription === (this.crawl.description ?? "") &&
       JSON.stringify(this.tagsToSave) === JSON.stringify(this.crawl.tags) &&
       JSON.stringify(this.collectionsToSave) ===
-        JSON.stringify(this.crawl.collections)
+        JSON.stringify(this.crawl.collectionIds)
     ) {
       // No changes have been made
       this.requestClose();
