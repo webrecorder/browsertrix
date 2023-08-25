@@ -262,7 +262,7 @@ class BtrixOperator(K8sAPI):
 
         has_redis_children = redis_sts in data.children[STS]
         if has_redis_children:
-            children[2]["spec"]["volumeClaimTemplates"] = data.children[STS][redis_sts][
+            children[1]["spec"]["volumeClaimTemplates"] = data.children[STS][redis_sts][
                 "spec"
             ]["volumeClaimTemplates"]
 

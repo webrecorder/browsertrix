@@ -54,7 +54,7 @@ server {
       set $crawl $2;
       set $num $3;
       set $auth_bearer $arg_auth_bearer;
-      set $svc_suffix "${CRAWLER_SVC_SUFFIX}";
+      set $svc_suffix ".crawler";
       set $fqdn_suffix "${CRAWLER_FQDN_SUFFIX}";
 
       auth_request  /access_check;
@@ -88,7 +88,7 @@ server {
 
       auth_request  /access_check_profiles;
 
-      proxy_pass http://browser-$browserid-0.browser-$browserid$fqdn_suffix:6080/websockify;
+      proxy_pass http://browser-$browserid-0.browser$fqdn_suffix:6080/websockify;
       proxy_set_header Host "localhost";
 
       proxy_send_timeout 10m;
@@ -107,7 +107,7 @@ server {
 
       auth_request  /access_check_profiles;
 
-      proxy_pass http://browser-$browserid-0.browser-$browserid$fqdn_suffix:9223/vnc/;
+      proxy_pass http://browser-$browserid-0.browser$fqdn_suffix:9223/vnc/;
       proxy_set_header Host "localhost";
     }
 

@@ -15,11 +15,6 @@ spec:
     updateStrategy:
       method: InPlace
  
-  - apiVersion: v1
-    resource: services
-    updateStrategy:
-      method: OnDelete
- 
   hooks:
     sync:
       webhook:
