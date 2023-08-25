@@ -16,7 +16,7 @@ def test_workflow_crawl_auto_added_to_collection(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    assert auto_add_collection_id in r.json()["collections"]
+    assert auto_add_collection_id in r.json()["collectionIds"]
 
 
 def test_workflow_crawl_auto_added_subsequent_runs(
@@ -59,7 +59,7 @@ def test_workflow_crawl_auto_added_subsequent_runs(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    assert auto_add_collection_id in r.json()["collections"]
+    assert auto_add_collection_id in r.json()["collectionIds"]
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{auto_add_collection_id}",

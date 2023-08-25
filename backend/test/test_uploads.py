@@ -48,7 +48,7 @@ def test_list_stream_upload(admin_auth_headers, default_org_id, uploads_collecti
     assert found
     assert found["name"] == "My Upload"
     assert found["description"] == "Testing\nData"
-    assert found["collections"] == [uploads_collection_id]
+    assert found["collectionIds"] == [uploads_collection_id]
     assert sorted(found["tags"]) == ["one", "two"]
     assert "files" not in found
     assert "resources" not in found
@@ -61,7 +61,7 @@ def test_get_stream_upload(admin_auth_headers, default_org_id, uploads_collectio
     )
     assert r.status_code == 200
     result = r.json()
-    assert uploads_collection_id in result["collections"]
+    assert uploads_collection_id in result["collectionIds"]
     assert "files" not in result
     upload_dl_path = result["resources"][0]["path"]
     assert "test-" in result["resources"][0]["name"]
@@ -124,7 +124,7 @@ def test_list_uploads(admin_auth_headers, default_org_id, uploads_collection_id)
 
     assert found
     assert found["name"] == "test2.wacz"
-    assert found["collections"] == [uploads_collection_id]
+    assert found["collectionIds"] == [uploads_collection_id]
     assert sorted(found["tags"]) == ["four", "three"]
 
     assert "files" not in res
@@ -170,7 +170,7 @@ def test_get_upload_replay_json(
     assert data
     assert data["id"] == upload_id
     assert data["name"] == "My Upload"
-    assert data["collections"] == [uploads_collection_id]
+    assert data["collectionIds"] == [uploads_collection_id]
     assert sorted(data["tags"]) == ["one", "two"]
     assert data["resources"]
     assert data["resources"][0]["path"]
@@ -193,7 +193,7 @@ def test_get_upload_replay_json_admin(
     assert data
     assert data["id"] == upload_id
     assert data["name"] == "My Upload"
-    assert data["collections"] == [uploads_collection_id]
+    assert data["collectionIds"] == [uploads_collection_id]
     assert sorted(data["tags"]) == ["one", "two"]
     assert data["resources"]
     assert data["resources"][0]["path"]

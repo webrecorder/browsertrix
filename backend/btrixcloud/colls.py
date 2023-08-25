@@ -16,6 +16,7 @@ from .models import (
     Collection,
     CollIn,
     CollOut,
+    CollIdName,
     UpdateColl,
     AddRemoveCrawlList,
     CrawlOutWithResources,
@@ -33,13 +34,17 @@ class CollectionOps:
 
     # pylint: disable=too-many-arguments
 
-    def __init__(self, mdb, crawls, crawl_manager, orgs):
+    def __init__(self, mdb, crawl_manager, orgs):
         self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
+        self.crawl_ops = None
 
-        self.crawl_ops = crawls
         self.crawl_manager = crawl_manager
         self.orgs = orgs
+
+    def set_crawl_ops(self, ops):
+        """set crawl ops"""
+        self.crawl_ops = ops
 
     async def init_index(self):
         """init lookup index"""
@@ -253,6 +258,18 @@ class CollectionOps:
 
         return all_files
 
+    async def get_collection_names(self, uuids: List[uuid.UUID]):
+        """return object of {_id, names} given list of collection ids"""
+        cursor = self.collections.find(
+            {"_id": {"$in": uuids}}, projection=["_id", "name"]
+        )
+        names = await cursor.to_list(length=1000)
+        names = [
+            CollIdName(id=namedata["_id"], name=namedata["name"]) for namedata in names
+        ]
+        print("names", names)
+        return names
+
     async def get_collection_search_values(self, org: Organization):
         """Return list of collection names"""
         names = await self.collections.distinct("name", {"oid": org.id})
@@ -292,7 +309,7 @@ async def update_collection_counts_and_tags(
     total_size = 0
     tags = []
 
-    cursor = crawls.find({"collections": collection_id})
+    cursor = crawls.find({"collectionIds": collection_id})
     crawls = await cursor.to_list(length=10_000)
     for crawl in crawls:
         if crawl["state"] not in SUCCESSFUL_STATES:
@@ -325,8 +342,8 @@ async def update_collection_counts_and_tags(
 async def update_crawl_collections(collections, crawls, crawl_id: str):
     """Update counts and tags for all collections in crawl"""
     crawl = await crawls.find_one({"_id": crawl_id})
-    crawl_collections = crawl.get("collections")
-    for collection_id in crawl_collections:
+    crawl_coll_ids = crawl.get("collectionIds")
+    for collection_id in crawl_coll_ids:
         await update_collection_counts_and_tags(collections, crawls, collection_id)
 
 
@@ -340,18 +357,18 @@ async def add_successful_crawl_to_collections(
     if auto_add_collections:
         await crawls.find_one_and_update(
             {"_id": crawl_id},
-            {"$set": {"collections": auto_add_collections}},
+            {"$set": {"collectionIds": auto_add_collections}},
         )
         await update_crawl_collections(collections, crawls, crawl_id)
 
 
 # ============================================================================
 # pylint: disable=too-many-locals
-def init_collections_api(app, mdb, crawls, orgs, crawl_manager):
+def init_collections_api(app, mdb, orgs, crawl_manager):
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
 
-    colls = CollectionOps(mdb, crawls, crawl_manager, orgs)
+    colls = CollectionOps(mdb, crawl_manager, orgs)
 
     org_crawl_dep = orgs.org_crawl_dep
     org_viewer_dep = orgs.org_viewer_dep

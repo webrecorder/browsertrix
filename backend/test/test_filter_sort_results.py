@@ -200,7 +200,7 @@ def test_get_crawls_by_collection_id(
     )
     assert r.json()["total"] >= 1
     for crawl in r.json()["items"]:
-        assert collection_id in crawl["collections"]
+        assert collection_id in crawl["collectionIds"]
 
 
 def test_sort_crawls(
