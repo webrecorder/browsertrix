@@ -9,7 +9,6 @@ from .db import init_db
 from .crawlconfigs import (
     get_crawl_config,
     inc_crawl_count,
-    set_config_current_crawl_info,
 )
 from .crawls import add_new_crawl
 from .utils import register_exit_handler
@@ -55,17 +54,14 @@ class ScheduledJob(K8sAPI):
 
         # db create
         await inc_crawl_count(self.crawlconfigs, crawlconfig.id)
-        new_crawl = await add_new_crawl(
-            self.crawls, crawl_id, crawlconfig, uuid.UUID(userid), manual=False
+        await add_new_crawl(
+            self.crawls,
+            self.crawlconfigs,
+            crawl_id,
+            crawlconfig,
+            uuid.UUID(userid),
+            manual=False,
         )
-        # pylint: disable=duplicate-code
-        await set_config_current_crawl_info(
-            self.crawlconfigs.crawl_configs,
-            crawlconfig.id,
-            new_crawl["id"],
-            new_crawl["started"],
-        )
-
         print("Crawl Created: " + crawl_id)
 
 
