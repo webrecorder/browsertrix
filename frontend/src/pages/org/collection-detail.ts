@@ -598,13 +598,13 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
-  private renderArchivedItem = (wc: Crawl | Upload) =>
+  private renderArchivedItem = (wc: Crawl | Upload, idx: number) =>
     html`
       <btrix-crawl-list-item .crawl=${wc}>
         <sl-menu slot="menu">
           <sl-menu-item
             style="--sl-color-neutral-700: var(--warning)"
-            @click=${() => this.removeArchivedItem(wc.id)}
+            @click=${() => this.removeArchivedItem(wc.id, idx)}
           >
             <sl-icon name="folder-minus" slot="prefix"></sl-icon>
             ${msg("Remove from Collection")}
@@ -789,7 +789,7 @@ export class CollectionDetail extends LiteElement {
     return data;
   }
 
-  private async removeArchivedItem(id: string) {
+  private async removeArchivedItem(id: string, pageIndex: number) {
     try {
       const data: Crawl | Upload = await this.apiFetch(
         `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
@@ -799,15 +799,24 @@ export class CollectionDetail extends LiteElement {
           body: JSON.stringify({ crawlIds: [id] }),
         }
       );
-      const { page, items } = this.archivedItems!;
-      this.fetchArchivedItems({
-        page: items.length === 1 ? page - 1 : page,
-      });
-      this.fetchCollection();
+
+      const { page, items, total } = this.archivedItems!;
+      // Update state for immediate feedback while retrieving list
+      this.archivedItems = {
+        ...this.archivedItems!,
+        total: total - 1,
+        items: [...items.slice(0, pageIndex), ...items.slice(pageIndex + 1)],
+      };
+
       this.notify({
         message: msg(str`Successfully removed item from Collection.`),
         variant: "success",
         icon: "check2-circle",
+      });
+      this.fetchCollection();
+      this.fetchArchivedItems({
+        // Update page if last item
+        page: items.length === 1 && page > 1 ? page - 1 : page,
       });
     } catch (e: any) {
       console.debug(e?.message);
