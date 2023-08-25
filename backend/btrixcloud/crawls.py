@@ -256,7 +256,11 @@ class CrawlOps(BaseCrawlOps):
     async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
         """initialize new crawl"""
         return await add_new_crawl(
-            self.crawls, self.crawl_configs, crawl_id, crawlconfig, user.id
+            self.crawls,
+            self.crawl_configs.crawl_configs,
+            crawl_id,
+            crawlconfig,
+            user.id,
         )
 
     async def update_crawl_scale(
