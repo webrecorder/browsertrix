@@ -600,7 +600,15 @@ export class CollectionDetail extends LiteElement {
   private renderArchivedItem = (wc: Crawl | Upload) =>
     html`
       <btrix-crawl-list-item .crawl=${wc}>
-        <div slot="menuTrigger" role="none"></div>
+        <sl-menu slot="menu">
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--warning)"
+            @click=${() => console.log}
+          >
+            <sl-icon name="folder-minus" slot="prefix"></sl-icon>
+            ${msg("Remove from Collection")}
+          </sl-menu-item>
+        </sl-menu>
       </btrix-crawl-list-item>
     `;
 
