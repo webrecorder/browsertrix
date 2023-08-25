@@ -20,7 +20,7 @@ import type { PageChangeEvent } from "../../components/pagination";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
-const INITIAL_ITEMS_PAGE_SIZE = 10;
+const INITIAL_ITEMS_PAGE_SIZE = 20;
 const TABS = ["replay", "items"] as const;
 export type Tab = (typeof TABS)[number];
 
