@@ -53,7 +53,7 @@ spec:
 
         - name: Size
           type: string
-          jsonPath: .status.size
+          jsonPath: .status.sizeHuman
           description: Crawl Size
 
         - name: Time Started
@@ -68,7 +68,7 @@ spec:
 
         - name: Stopping
           type: boolean
-          jsonPath: .spec.stopping
+          jsonPath: .status.stopping
           description: "if set, crawl is being stopped"
 
         - name: Files Added
