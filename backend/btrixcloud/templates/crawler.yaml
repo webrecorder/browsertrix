@@ -17,7 +17,7 @@ spec:
       crawl: {{ id }}
       role: crawler
 
-  serviceName: crawl-{{ id }}
+  serviceName: crawler
   replicas: {{ scale }}
   podManagementPolicy: OrderedReady
 
@@ -165,23 +165,3 @@ spec:
             periodSeconds: 120
             failureThreshold: 3
           {% endif %}
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: crawl-{{ id }}
-  labels:
-    crawl: {{ id }}
-    role: crawler
-
-spec:
-  clusterIP: None
-  selector:
-    crawl: {{ id }}
-    role: crawler
-
-  ports:
-    - protocol: TCP
-      port: 9037
-      name: screencast

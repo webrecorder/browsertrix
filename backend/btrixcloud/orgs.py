@@ -239,6 +239,10 @@ class OrgOps:
                 org_owners.append(key)
         return org_owners
 
+    async def get_max_pages_per_crawl(self, org: Organization):
+        """Return org-specific max pages per crawl setting or 0."""
+        return await get_max_pages_per_crawl(self.orgs, org.id)
+
 
 # ============================================================================
 async def inc_org_stats(orgs, oid, duration):
@@ -255,6 +259,16 @@ async def get_max_concurrent_crawls(orgs, oid):
     if org:
         org = Organization.from_dict(org)
         return org.quotas.maxConcurrentCrawls
+    return 0
+
+
+# ============================================================================
+async def get_max_pages_per_crawl(orgs, oid):
+    """return max allowed concurrent crawls, if any"""
+    org = await orgs.find_one({"_id": oid})
+    if org:
+        org = Organization.from_dict(org)
+        return org.quotas.maxPagesPerCrawl
     return 0
 
 

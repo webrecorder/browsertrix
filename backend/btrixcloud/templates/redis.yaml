@@ -17,7 +17,7 @@ spec:
       crawl: {{ id }}
       role: redis
 
-  serviceName: redis-{{ id }}
+  serviceName: redis
   replicas: {{ redis_scale }}
   podManagementPolicy: Parallel
 
@@ -115,23 +115,3 @@ spec:
               command:
                 - redis-cli
                 - ping
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: redis-{{ id }}
-  labels:
-    crawl: {{ id }}
-    role: redis
- 
-spec:
-  clusterIP: None
-  selector:
-    crawl: {{ id }}
-    role: redis
-
-  ports:
-    - protocol: TCP
-      port: 6379
-      name: redis

@@ -835,7 +835,7 @@ ${this.crawl?.description}
         .authState=${this.authState!}
         .crawlConfig=${{
           ...this.crawl,
-          autoAddCollections: this.crawl.collections,
+          autoAddCollections: this.crawl.collectionIds,
         }}
         hideTags
       ></btrix-config-details>

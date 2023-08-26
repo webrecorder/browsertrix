@@ -41,9 +41,6 @@ spec:
             - name: CRAWLER_FQDN_SUFFIX
               value: ".{{ .Values.crawler_namespace }}.svc.cluster.local"
 
-            - name: CRAWLER_SVC_SUFFIX
-              value: ".crawl-$crawl"
-
             - name: NGINX_ENTRYPOINT_WORKER_PROCESSES_AUTOTUNE
               value: "1"
 

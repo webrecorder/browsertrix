@@ -100,6 +100,8 @@ def main():
         profiles,
     )
 
+    coll_ops = init_collections_api(app, mdb, org_ops, crawl_manager)
+
     init_base_crawls_api(
         app,
         mdb,
@@ -107,6 +109,7 @@ def main():
         crawl_manager,
         crawl_config_ops,
         org_ops,
+        coll_ops,
         current_active_user,
     )
 
@@ -117,6 +120,7 @@ def main():
         crawl_manager,
         crawl_config_ops,
         org_ops,
+        coll_ops,
         current_active_user,
     )
 
@@ -127,10 +131,9 @@ def main():
         crawl_manager,
         crawl_config_ops,
         org_ops,
+        coll_ops,
         current_active_user,
     )
-
-    coll_ops = init_collections_api(app, mdb, crawls, org_ops, crawl_manager)
 
     crawl_config_ops.set_coll_ops(coll_ops)
 
