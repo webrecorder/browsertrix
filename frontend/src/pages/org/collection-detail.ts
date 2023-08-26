@@ -20,6 +20,7 @@ import type { PageChangeEvent } from "../../components/pagination";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
+const INITIAL_ITEMS_PAGE_SIZE = 20;
 const TABS = ["replay", "items"] as const;
 export type Tab = (typeof TABS)[number];
 
@@ -80,7 +81,7 @@ export class CollectionDetail extends LiteElement {
       this.fetchCollection();
     }
     if (changedProperties.has("collectionId")) {
-      this.fetchArchivedItems();
+      this.fetchArchivedItems({ page: 1 });
     }
   }
 
@@ -597,10 +598,18 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
-  private renderArchivedItem = (wc: Crawl | Upload) =>
+  private renderArchivedItem = (wc: Crawl | Upload, idx: number) =>
     html`
       <btrix-crawl-list-item .crawl=${wc}>
-        <div slot="menuTrigger" role="none"></div>
+        <sl-menu slot="menu">
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--warning)"
+            @click=${() => this.removeArchivedItem(wc.id, idx)}
+          >
+            <sl-icon name="folder-minus" slot="prefix"></sl-icon>
+            ${msg("Remove from Collection")}
+          </sl-menu-item>
+        </sl-menu>
       </btrix-crawl-list-item>
     `;
 
@@ -731,7 +740,7 @@ export class CollectionDetail extends LiteElement {
   private async fetchArchivedItems(params?: APIPaginationQuery): Promise<void> {
     this.cancelInProgressGetArchivedItems();
     try {
-      this.archivedItems = await this.getArchivedItems();
+      this.archivedItems = await this.getArchivedItems(params);
     } catch (e: any) {
       if (e === ABORT_REASON_THROTTLE) {
         console.debug("Fetch web captures aborted to throttle");
@@ -759,15 +768,66 @@ export class CollectionDetail extends LiteElement {
       APIPaginationQuery &
       APISortQuery
   ): Promise<APIPaginatedList> {
-    const query = queryString.stringify(params || {}, {
-      arrayFormat: "comma",
-    });
+    const query = queryString.stringify(
+      {
+        ...params,
+        page: params?.page || this.archivedItems?.page || 1,
+        pageSize:
+          params?.pageSize ||
+          this.archivedItems?.pageSize ||
+          INITIAL_ITEMS_PAGE_SIZE,
+      },
+      {
+        arrayFormat: "comma",
+      }
+    );
     const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.orgId}/all-crawls?collectionId=${this.collectionId}&${query}`,
       this.authState!
     );
 
     return data;
+  }
+
+  private async removeArchivedItem(id: string, pageIndex: number) {
+    try {
+      const data: Crawl | Upload = await this.apiFetch(
+        `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({ crawlIds: [id] }),
+        }
+      );
+
+      const { page, items, total } = this.archivedItems!;
+      // Update state for immediate feedback while retrieving list
+      this.archivedItems = {
+        ...this.archivedItems!,
+        total: total - 1,
+        items: [...items.slice(0, pageIndex), ...items.slice(pageIndex + 1)],
+      };
+
+      this.notify({
+        message: msg(str`Successfully removed item from Collection.`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+      this.fetchCollection();
+      this.fetchArchivedItems({
+        // Update page if last item
+        page: items.length === 1 && page > 1 ? page - 1 : page,
+      });
+    } catch (e: any) {
+      console.debug(e?.message);
+      this.notify({
+        message: msg(
+          "Sorry, couldn't remove item from Collection at this time."
+        ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 }
 customElements.define("btrix-collection-detail", CollectionDetail);

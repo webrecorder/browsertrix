@@ -236,12 +236,12 @@ class CrawlOps(BaseCrawlOps):
 
     async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
         """initialize new crawl"""
-        new_crawl = await add_new_crawl(self.crawls, crawl_id, crawlconfig, user.id)
-        return await set_config_current_crawl_info(
+        return await add_new_crawl(
+            self.crawls,
             self.crawl_configs.crawl_configs,
-            crawlconfig.id,
-            new_crawl["id"],
-            new_crawl["started"],
+            crawl_id,
+            crawlconfig,
+            user.id,
         )
 
     async def update_crawl_scale(
@@ -513,8 +513,14 @@ class CrawlOps(BaseCrawlOps):
 
 
 # ============================================================================
+# pylint: disable=too-many-arguments
 async def add_new_crawl(
-    crawls, crawl_id: str, crawlconfig: CrawlConfig, userid: UUID4, manual=True
+    crawls,
+    crawlconfigs,
+    crawl_id: str,
+    crawlconfig: CrawlConfig,
+    userid: UUID4,
+    manual=True,
 ):
     """initialize new crawl"""
     started = dt_now()
@@ -540,7 +546,14 @@ async def add_new_crawl(
 
     try:
         result = await crawls.insert_one(crawl.to_dict())
-        return {"id": str(result.inserted_id), "started": str(started)}
+
+        return await set_config_current_crawl_info(
+            crawlconfigs,
+            crawlconfig.id,
+            result.inserted_id,
+            started,
+        )
+
     except pymongo.errors.DuplicateKeyError:
         # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
         return False
