@@ -24,7 +24,7 @@ body:
     attributes:
       label: Requirements
       description: |
-        Webrecorder team only! :)
+        Intended primarily for use by Webrecorder team, leave blank if unknown.
         
         List the outcomes of the feature being implemented without design or implementation details.
       placeholder: |
@@ -37,9 +37,9 @@ body:
     attributes:
       label: Todo
       description: |
-        Webrecorder team only! :)
-        
-        Any other linked issues / tasks to complete to implement this feature (leave blank if unknown).
+        Intended primarily for use by Webrecorder team, leave blank if unknown.
+
+        Any other linked issues / tasks to complete to implement this feature.
       placeholder: |
         - [ ] Mockups: 
         - [ ] Design: 
