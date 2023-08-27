@@ -196,6 +196,30 @@ def test_update_crawl_timeout(crawler_auth_headers, default_org_id, sample_crawl
     assert data["crawlTimeout"] == 60
 
 
+def test_update_max_crawl_size(crawler_auth_headers, default_org_id, sample_crawl_data):
+    # Verify that updating crawl timeout works
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={"maxCrawlSize": 4096},
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["settings_changed"] == True
+    assert data["metadata_changed"] == False
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+
+    assert data["maxCrawlSize"] == 4096
+
+
 def test_verify_delete_tags(crawler_auth_headers, default_org_id):
     # Verify that deleting tags and name works as well
     r = requests.patch(
@@ -224,9 +248,9 @@ def test_verify_revs_history(crawler_auth_headers, default_org_id):
     assert r.status_code == 200
 
     data = r.json()
-    assert data["total"] == 2
+    assert data["total"] == 3
     items = data["items"]
-    assert len(items) == 2
+    assert len(items) == 3
     sorted_data = sorted(items, key=lambda revision: revision["rev"])
     assert sorted_data[0]["config"]["scopeType"] == "prefix"
 

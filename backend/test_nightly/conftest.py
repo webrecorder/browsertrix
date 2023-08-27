@@ -228,6 +228,30 @@ def timeout_crawl(admin_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="session")
+def max_crawl_size_crawl_id(admin_auth_headers, default_org_id):
+    # Start crawl
+    crawl_data = {
+        "runNow": True,
+        "name": "Crawl with 5 MB max crawl size limit",
+        # Note crawl will exceed this size, as crawl begins to gracefully
+        # shut down when operator notices this value has been exceeded.
+        "maxCrawlSize": 5242880,
+        "config": {
+            "seeds": [{"url": "https://webrecorder.net/"}],
+            "scopeType": "domain",
+            "limit": 100,
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+    return data["run_now_job"]
+
+
+@pytest.fixture(scope="session")
 def error_crawl_id(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,

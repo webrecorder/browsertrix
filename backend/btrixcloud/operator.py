@@ -88,6 +88,7 @@ class CrawlSpec(BaseModel):
     started: str
     stopping: bool = False
     expire_time: Optional[datetime] = None
+    max_crawl_size: Optional[int] = None
 
 
 # ============================================================================
@@ -97,7 +98,9 @@ class CrawlStatus(BaseModel):
     state: str = "starting"
     pagesFound: int = 0
     pagesDone: int = 0
-    size: str = ""
+    size: int = 0
+    # human readable size string
+    sizeHuman: str = ""
     scale: int = 1
     filesAdded: int = 0
     filesAddedSize: int = 0
@@ -110,11 +113,10 @@ class CrawlStatus(BaseModel):
 
 
 # ============================================================================
-# pylint: disable=too-many-statements
+# pylint: disable=too-many-statements, too-many-public-methods, too-many-branches
+# pylint: disable=too-many-instance-attributes,too-many-locals
 class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
-
-    # pylint: disable=too-many-instance-attributes,too-many-locals
 
     def __init__(self):
         super().__init__()
@@ -209,6 +211,7 @@ class BtrixOperator(K8sAPI):
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
             expire_time=from_k8s_date(spec.get("expireTime")),
+            max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),
         )
 
         if status.state in ("starting", "waiting_org_limit"):
@@ -226,7 +229,7 @@ class BtrixOperator(K8sAPI):
         if has_crawl_children:
             pods = data.related[POD]
             status = await self.sync_crawl_state(redis_url, crawl, status, pods)
-            if crawl.stopping:
+            if status.stopping:
                 await self.check_if_finished(crawl, status)
 
             if status.finished:
@@ -618,31 +621,42 @@ class BtrixOperator(K8sAPI):
 
         return True
 
-    # pylint: disable=too-many-branches
+    def is_crawl_stopping(self, crawl, size):
+        """return true if crawl should begin graceful stopping phase"""
+
+        # if user requested stop, then enter stopping phase
+        if crawl.stopping:
+            print("Graceful Stop: User requested stop")
+            return True
+
+        # check crawl expiry
+        if crawl.expire_time and datetime.utcnow() > crawl.expire_time:
+            print(f"Graceful Stop: Job duration expired at {crawl.expire_time}")
+            return True
+
+        if crawl.max_crawl_size and size > crawl.max_crawl_size:
+            print(f"Graceful Stop: Maximum crawl size {crawl.max_crawl_size} hit")
+            return True
+
+        return False
+
     async def update_crawl_state(self, redis, crawl, status):
         """update crawl state and check if crawl is now done"""
         results = await redis.hvals(f"{crawl.id}:status")
         stats = await get_redis_crawl_stats(redis, crawl.id)
 
-        # check crawl expiry
-        if crawl.expire_time and datetime.utcnow() > crawl.expire_time:
-            crawl.stopping = True
-            print(
-                "Job duration expired at {crawl.expire_time}, "
-                + "gracefully stopping crawl"
-            )
-
-        if crawl.stopping:
-            print("Graceful Stop")
-            await redis.set(f"{crawl.id}:stopping", "1")
-            # backwards compatibility with older crawler
-            await redis.set("crawl-stop", "1")
-
         # update status
         status.pagesDone = stats["done"]
         status.pagesFound = stats["found"]
-        if stats["size"] is not None:
-            status.size = humanize.naturalsize(stats["size"])
+        status.size = stats["size"]
+        status.sizeHuman = humanize.naturalsize(status.size)
+
+        status.stopping = self.is_crawl_stopping(crawl, status.size)
+
+        if status.stopping:
+            await redis.set(f"{crawl.id}:stopping", "1")
+            # backwards compatibility with older crawler
+            await redis.set("crawl-stop", "1")
 
         # check if done / failed
         status_count = {}
@@ -669,7 +683,7 @@ class BtrixOperator(K8sAPI):
         # check if all crawlers failed
         elif status_count.get("failed", 0) >= crawl.scale:
             # if stopping, and no pages finished, mark as canceled
-            if crawl.stopping and not status.pagesDone:
+            if status.stopping and not status.pagesDone:
                 state = "canceled"
             else:
                 state = "failed"

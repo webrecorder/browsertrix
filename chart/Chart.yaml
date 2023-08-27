@@ -20,7 +20,7 @@ dependencies:
     condition: addons.admin.logging
     repository: file://./admin/logging
   - name: btrix-crds
-    version: 0.1.0
+    version: 0.1.1
     repository: file://./btrix-crds
   - name: metacontroller-helm
     version: v4.10.1

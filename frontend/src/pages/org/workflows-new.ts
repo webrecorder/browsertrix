@@ -27,6 +27,7 @@ const defaultValue = {
   },
   tags: [],
   crawlTimeout: null,
+  maxCrawlSize: null,
   jobType: undefined,
   scale: 1,
   autoAddCollections: [],

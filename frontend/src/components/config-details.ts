@@ -96,6 +96,41 @@ export class ConfigDetails extends LiteElement {
       }
     };
 
+    const renderSize = (valueBytes?: number | null, fallbackValue?: number) => {
+      const bytesPerGB = 1073741824;
+
+      // Eventually we will want to set this to the selected locale
+      const formatter = new Intl.NumberFormat(undefined, {
+        style: "unit",
+        unit: "gigabyte",
+        unitDisplay: "narrow",
+      });
+
+      if (valueBytes) {
+        const sizeGB = Math.floor(valueBytes / bytesPerGB);
+        return formatter.format(sizeGB);
+      }
+
+      if (typeof fallbackValue === "number") {
+        let value = "";
+        if (fallbackValue === Infinity) {
+          value = msg("Unlimited");
+        } else if (fallbackValue === 0) {
+          value = formatter.format(0);
+        } else {
+          const sizeGB = Math.floor(fallbackValue / bytesPerGB);
+          value = formatter.format(sizeGB);
+        }
+        return html`<span class="text-neutral-400"
+          >${value} ${msg("(default)")}</span
+        >`;
+      }
+
+      return html`<span class="text-neutral-400"
+        >${msg("Unlimited")} ${msg("(default)")}</span
+      >`;
+    };
+
     return html`
       <section id="crawler-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
@@ -167,6 +202,10 @@ export class ConfigDetails extends LiteElement {
           ${this.renderSetting(
             msg("Crawl Time Limit"),
             renderTimeLimit(crawlConfig?.crawlTimeout, Infinity)
+          )}
+          ${this.renderSetting(
+            msg("Crawl Size Limit"),
+            renderSize(crawlConfig?.maxCrawlSize, Infinity)
           )}
           ${this.renderSetting(msg("Crawler Instances"), crawlConfig?.scale)}
         </btrix-desc-list>
