@@ -27,7 +27,6 @@ from .models import (
     UserRole,
     User,
     PaginatedResponse,
-    OrgStorageQuotaReachedOut,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
@@ -258,24 +257,21 @@ class OrgOps:
 async def inc_org_bytes_stored(orgs, oid: uuid.UUID, size: int):
     """Increase org bytesStored count (pass negative value to subtract)."""
     await orgs.find_one_and_update({"_id": oid}, {"$inc": {"bytesStored": size}})
+    return await storage_quota_reached(orgs, oid)
 
 
 # ============================================================================
 # pylint: disable=invalid-name
 async def storage_quota_reached(orgs, oid: uuid.UUID):
     """Return boolean indicating if storage quota is met or exceeded."""
-    BYTES_IN_GB = 1073741824
-
     quota = await get_org_storage_quota(orgs, oid)
     if not quota:
         return False
 
-    quota_bytes = quota * BYTES_IN_GB
-
     org = await orgs.find_one({"_id": oid})
     org = Organization.from_dict(org)
 
-    if org.bytesStored >= quota_bytes:
+    if org.bytesStored >= quota:
         return True
 
     return False
@@ -323,7 +319,7 @@ async def get_org_storage_quota(orgs, oid):
     org = await orgs.find_one({"_id": oid})
     if org:
         org = Organization.from_dict(org)
-        return org.quotas.storageQuotaGB
+        return org.quotas.storageQuota
     return 0
 
 
@@ -456,15 +452,6 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
         await ops.update_quotas(org, quotas)
 
         return {"updated": True}
-
-    @router.get(
-        "/storage-quota",
-        tags=["organizations"],
-        response_model=OrgStorageQuotaReachedOut,
-    )
-    async def get_storage_quota_reached(org: Organization = Depends(org_dep)):
-        reached = await ops.storage_quota_reached(org)
-        return {"reached": reached}
 
     @router.patch("/user-role", tags=["organizations"])
     async def set_role(

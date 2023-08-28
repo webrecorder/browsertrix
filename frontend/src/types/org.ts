@@ -12,6 +12,7 @@ export type OrgData = {
   id: string;
   name: string;
   quotas: Record<string, number>;
+  bytesStored: number;
   users?: {
     [id: string]: {
       role: (typeof AccessCode)[UserRole];
@@ -22,7 +23,3 @@ export type OrgData = {
 };
 
 export type OrgConfig = any;
-
-export type OrgStorageQuotaReached = {
-  reached: boolean;
-};

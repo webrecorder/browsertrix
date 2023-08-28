@@ -268,7 +268,7 @@ export class BrowserProfilesList extends LiteElement {
           "My Profile"
         )}&description=&profileId=`
       );
-    } catch (e) {
+    } catch (e: any) {
       this.isSubmitting = false;
 
       this.notify({
@@ -300,7 +300,7 @@ export class BrowserProfilesList extends LiteElement {
           profile.description || ""
         )}&profileId=${window.encodeURIComponent(profile.id)}&navigateUrl=`
       );
-    } catch (e) {
+    } catch (e: any) {
       this.notify({
         message: msg("Sorry, couldn't create browser profile at this time."),
         variant: "danger",
@@ -334,6 +334,15 @@ export class BrowserProfilesList extends LiteElement {
           duration: 15000,
         });
       } else {
+        if (!data.storageQuotaReached) {
+          this.dispatchEvent(
+            new CustomEvent("storage-quota-update", {
+              detail: { reached: false },
+              bubbles: true,
+            })
+          );
+        }
+
         this.notify({
           message: msg(html`Deleted <strong>${profile.name}</strong>.`),
           variant: "success",
@@ -344,7 +353,7 @@ export class BrowserProfilesList extends LiteElement {
           (p) => p.id !== profile.id
         );
       }
-    } catch (e) {
+    } catch (e: any) {
       this.notify({
         message: msg("Sorry, couldn't delete browser profile at this time."),
         variant: "danger",
@@ -376,7 +385,7 @@ export class BrowserProfilesList extends LiteElement {
       const data = await this.getProfiles();
 
       this.browserProfiles = data;
-    } catch (e) {
+    } catch (e: any) {
       this.notify({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
         variant: "danger",

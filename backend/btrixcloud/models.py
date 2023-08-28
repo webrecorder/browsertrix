@@ -623,14 +623,7 @@ class OrgQuotas(BaseModel):
 
     maxConcurrentCrawls: Optional[int] = 0
     maxPagesPerCrawl: Optional[int] = 0
-    storageQuotaGB: Optional[int] = 0
-
-
-# ============================================================================
-class OrgStorageQuotaReachedOut(BaseModel):
-    """Organization quotas (settable by superadmin)"""
-
-    reached: bool
+    storageQuota: Optional[int] = 0
 
 
 # ============================================================================
@@ -687,7 +680,6 @@ class Organization(BaseMongoModel):
 
         result = self.to_dict(
             exclude_unset=True,
-            exclude_defaults=True,
             exclude_none=True,
             exclude=exclude,
         )
@@ -720,6 +712,7 @@ class OrgOut(BaseMongoModel):
     users: Optional[Dict[str, Any]]
     usage: Optional[Dict[str, int]]
     default: bool = False
+    bytesStored: int
 
     quotas: Optional[OrgQuotas] = OrgQuotas()
 

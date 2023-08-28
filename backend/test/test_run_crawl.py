@@ -46,6 +46,7 @@ def test_create_new_config(admin_auth_headers, default_org_id):
     data = r.json()
     assert data["added"]
     assert data["run_now_job"] == None
+    assert data["storageQuotaReached"] is False
 
 
 def test_wait_for_complete(admin_auth_headers, default_org_id, admin_crawl_id):
@@ -272,6 +273,7 @@ def test_delete_crawls_crawler(
     assert r.status_code == 200
     data = r.json()
     assert data["deleted"] == 1
+    assert data["storageQuotaReached"] is False
 
     # Test that crawl is not found after deleting
     r = requests.get(
@@ -298,6 +300,7 @@ def test_delete_crawls_org_owner(
     assert r.status_code == 200
     data = r.json()
     assert data["deleted"]
+    assert data["storageQuotaReached"] is False
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",

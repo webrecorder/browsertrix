@@ -58,8 +58,9 @@ export class OrgsList extends LiteElement {
             case "maxPagesPerCrawl":
               label = msg("Max Pages Per Crawl");
               break;
-            case "storageQuotaGB":
+            case "storageQuota":
               label = msg("Org Storage Quota (GB)");
+              value = Math.floor(value / 1e9);
               break;
             default:
               label = msg("Unlabeled");
@@ -88,7 +89,11 @@ export class OrgsList extends LiteElement {
     const inputEl = e.target as SlInput;
     const quotas = this.currOrg?.quotas;
     if (quotas) {
-      quotas[inputEl.name] = Number(inputEl.value);
+      if (inputEl.name === "storageQuota") {
+        quotas[inputEl.name] = Number(inputEl.value) * 1e9;
+      } else {
+        quotas[inputEl.name] = Number(inputEl.value);
+      }
     }
   }
 

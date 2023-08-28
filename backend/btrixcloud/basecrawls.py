@@ -201,7 +201,6 @@ class BaseCrawlOps:
             size += await self._delete_crawl_files(crawl, org)
             if crawl.get("cid"):
                 cids_to_update.add(crawl.get("cid"))
-            await inc_org_bytes_stored(self.orgs_db, org.id, -size)
 
         query = {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id}
         if type_:
@@ -209,7 +208,9 @@ class BaseCrawlOps:
 
         res = await self.crawls.delete_many(query)
 
-        return res.deleted_count, size, cids_to_update
+        quota_reached = await inc_org_bytes_stored(self.orgs_db, org.id, -size)
+
+        return res.deleted_count, size, cids_to_update, quota_reached
 
     async def _delete_crawl_files(self, crawl, org: Organization):
         """Delete files associated with crawl from storage."""
@@ -487,15 +488,15 @@ class BaseCrawlOps:
         return crawls, total
 
     async def delete_crawls_all_types(
-        self, delete_list: DeleteCrawlList, org: Optional[Organization] = None
+        self, delete_list: DeleteCrawlList, org: Organization
     ):
         """Delete uploaded crawls"""
-        deleted_count, _, _ = await self.delete_crawls(org, delete_list)
+        deleted_count, _, _, quota_reached = await self.delete_crawls(org, delete_list)
 
         if deleted_count < 1:
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
-        return {"deleted": True}
+        return {"deleted": True, "storageQuotaReached": quota_reached}
 
     async def get_all_crawl_search_values(
         self, org: Organization, type_: Optional[str] = None

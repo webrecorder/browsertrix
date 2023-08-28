@@ -100,7 +100,7 @@ export class CollectionEditor extends LiteElement {
   orgId!: string;
 
   @property({ type: Boolean })
-  orgStorageQuotaReached!: boolean;
+  orgStorageQuotaReached = false;
 
   @property({ type: Boolean })
   isCrawler?: boolean;

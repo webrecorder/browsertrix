@@ -1,10 +1,10 @@
 """
-Migration 0014 - Calculate and store org storage usage
+Migration 0015 - Calculate and store org storage usage
 """
 from btrixcloud.migrations import BaseMigration
 
 
-MIGRATION_VERSION = "0014"
+MIGRATION_VERSION = "0015"
 
 
 class Migration(BaseMigration):

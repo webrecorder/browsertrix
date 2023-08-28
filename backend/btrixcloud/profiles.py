@@ -11,7 +11,7 @@ from pydantic import UUID4
 from fastapi import APIRouter, Depends, Request, HTTPException
 import aiohttp
 
-from .orgs import inc_org_bytes_stored
+from .orgs import inc_org_bytes_stored, storage_quota_reached
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import delete_crawl_file_object
 from .models import (
@@ -142,7 +142,6 @@ class ProfileOps:
         profileid: uuid.UUID = None,
     ):
         """commit profile and shutdown profile browser"""
-
         if not profileid:
             profileid = uuid.uuid4()
 
@@ -175,6 +174,9 @@ class ProfileOps:
 
         oid = uuid.UUID(metadata.get("btrix.org"))
 
+        if await storage_quota_reached(self.orgs, oid):
+            raise HTTPException(status_code=403, detail="storage_quota_reached")
+
         profile = Profile(
             id=profileid,
             name=browser_commit.name,
@@ -191,9 +193,13 @@ class ProfileOps:
             {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
         )
 
-        await inc_org_bytes_stored(self.orgs, oid, file_size)
+        quota_reached = await inc_org_bytes_stored(self.orgs, oid, file_size)
 
-        return {"added": True, "id": str(profile.id)}
+        return {
+            "added": True,
+            "id": str(profile.id),
+            "storageQuotaReached": quota_reached,
+        }
 
     async def update_profile_metadata(
         self, profileid: UUID4, update: ProfileCreateUpdate
@@ -312,7 +318,9 @@ class ProfileOps:
         if not res or res.deleted_count != 1:
             raise HTTPException(status_code=404, detail="profile_not_found")
 
-        return {"success": True}
+        quota_reached = await storage_quota_reached(self.orgs, org.id)
+
+        return {"success": True, "storageQuotaReached": quota_reached}
 
     async def delete_profile_browser(self, browserid):
         """delete profile browser immediately"""

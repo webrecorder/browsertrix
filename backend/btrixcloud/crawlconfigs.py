@@ -1,6 +1,7 @@
 """
 Crawl Config API handling
 """
+# pylint: disable=too-many-lines
 
 from typing import List, Union, Optional
 
@@ -689,7 +690,7 @@ class CrawlConfigOps:
             )
 
         if await self.org_ops.storage_quota_reached(org):
-            raise HTTPException(status_code=507, detail="storage_quota_reached")
+            raise HTTPException(status_code=403, detail="storage_quota_reached")
 
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
@@ -965,7 +966,7 @@ def init_crawl_config_api(
             "added": True,
             "id": str(cid),
             "run_now_job": new_job_name,
-            "storage_quota_reached": quota_reached,
+            "storageQuotaReached": quota_reached,
         }
 
     @router.patch("/{cid}", dependencies=[Depends(org_crawl_dep)])

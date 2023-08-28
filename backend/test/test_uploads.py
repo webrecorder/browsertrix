@@ -101,7 +101,9 @@ def test_upload_form(admin_auth_headers, default_org_id, uploads_collection_id):
     )
 
     assert r.status_code == 200
-    assert r.json()["added"]
+    data = r.json()
+    assert data["added"]
+    assert data["storageQuotaReached"] is False
 
     global upload_id_2
     upload_id_2 = r.json()["id"]
@@ -306,7 +308,9 @@ def test_delete_stream_upload(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
         json={"crawl_ids": [upload_id]},
     )
-    assert r.json()["deleted"] == True
+    data = r.json()
+    assert data["deleted"]
+    assert data["storageQuotaReached"] is False
 
 
 def test_ensure_deleted(admin_auth_headers, default_org_id):
@@ -817,4 +821,6 @@ def test_delete_form_upload_from_all_crawls(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
         json={"crawl_ids": [upload_id_2]},
     )
-    assert r.json()["deleted"] == True
+    data = r.json()
+    assert data["deleted"]
+    assert data["storageQuotaReached"] is False
