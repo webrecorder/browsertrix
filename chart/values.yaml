@@ -111,6 +111,8 @@ job_memory: "70Mi"
 
 profile_browser_idle_seconds: 60
 
+index_dev_logging: false
+
 
 # Nginx Image
 # =========================================

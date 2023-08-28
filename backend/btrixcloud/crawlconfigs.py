@@ -485,13 +485,14 @@ class CrawlConfigOps:
         result = results[0]
         items = result["items"]
 
-        explain_output = await self.mdb.command(
-            "aggregate",
-            "crawl_configs",
-            pipeline=aggregate,
-            explain=True,
-        )
-        pprint(explain_output)
+        if os.environ.get("INDEX_DEV_LOGGING", "false") == "true":
+            explain_output = await self.mdb.command(
+                "aggregate",
+                "crawl_configs",
+                pipeline=aggregate,
+                explain=True,
+            )
+            pprint(explain_output)
 
         try:
             total = int(result["total"][0]["count"])
