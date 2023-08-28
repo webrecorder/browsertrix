@@ -124,7 +124,8 @@ frontend_memory: "36Mi"
 # if set, maps nginx to a fixed port on host machine
 # must be between 30000 - 32767
 # use for deployments on localhost when not using ingress
-# local_service_port: 30870
+# if using ingress, this value is ignored
+local_service_port: 30870
 
 
 # MongoDB Image

@@ -98,15 +98,16 @@ spec:
     app: {{ .Values.name }}
     role: frontend
 
-  {{- if .Values.local_service_port }}
-  type: NodePort
-  {{- end }}
-
   ports:
     - protocol: TCP
       port: 80
       name: frontend
-      {{- if .Values.local_service_port }}
+
+  {{- if and .Values.local_service_port (not .Values.ingress.host) }}
       nodePort: {{ .Values.local_service_port }}
-      {{- end }}
+
+  type: NodePort
+  {{- end }}
+
+
 

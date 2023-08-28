@@ -64,8 +64,8 @@ directly from the latest GitHub release.
 
 
 ```
-helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-VERSION.tgz \
---set local_service_port 30870
+helm upgrade --install btrix \
+https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-VERSION.tgz
 ```
 
 ??? info "MicroK8S"
@@ -76,8 +76,7 @@ helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/re
 
     ```sh
     microk8s helm3 upgrade --install btrix \
-    https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-VERSION.tgz \
-    --set local_service_port 30870
+    https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-VERSION.tgz
     ```
 
     Subsequent commands will also use `microk8s helm3` instead of `helm`.
@@ -87,13 +86,12 @@ The default setup includes the full Browsertrix Cloud system, with frontend, bac
 
 An admin user with name `admin@example.com` and password `PASSW0RD!` will be automatically created.
 
-The service will be accessible on port 30870 per the config above.
-
 With Helm, additional YAML files can be added to further override previous settings.
 
 Some possible settings can be changed are found in [chart/examples/local-config.yaml](https://github.com/webrecorder/browsertrix-cloud/blob/main/chart/examples/local-config.yaml).
 
-For example, to change the default superadmin, uncomment the `superadmin` block in `local-config.yaml`, and then change the username (`admin@example.com`) and password (`PASSW0RD!`) to different values. (The admin username and password will be updated with each deployment)
+For example, to change the default superadmin, uncomment the `superadmin` block in `local-config.yaml`, and then change the username (`admin@example.com`) and password (`PASSW0RD!`) to different values. (The admin username and password will be updated with each deployment).
+To change the local port, change `local_service_port` setting.
 
 You can then redeploy with these additional settings by running:
 

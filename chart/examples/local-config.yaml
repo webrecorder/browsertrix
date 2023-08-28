@@ -4,10 +4,12 @@
 # This config is designed for local (non-hosted) use, with either Docker Desktop, minikube or local microk8s.
 # With this setup, the cluster should be accessed locally via 'localhost'
 
-# run service on localhost on port
-local_service_port: 30870
+# use custom port for local access, default is localhost:30870
+# uncomment and change below
+# local_service_port: 30870
 
-default_org: "My Local Organization"
+# Uncomment to set custom organization name
+# default_org: "My Local Organization"
 
 # use version specified in values.yaml, uncomment to use :latest release instead
 # backend_image: docker.io/webrecorder/browsertrix-backend:latest
