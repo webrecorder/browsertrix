@@ -137,7 +137,7 @@ export class CollectionsAdd extends LiteElement {
               (collection) => collection.id === collId
             );
             if (coll) {
-              this.collectionIds.push(coll.id);
+              this.collectionIds = [...this.collectionIds, coll.id];
               await this.dispatchChange();
             }
           }
