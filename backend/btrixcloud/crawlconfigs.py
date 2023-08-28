@@ -96,6 +96,21 @@ class CrawlConfigOps:
             [("cid", pymongo.HASHED), ("rev", pymongo.ASCENDING)]
         )
 
+        await self.config_revs.create_index(
+            [("lastCrawlTime", pymongo.DESCENDING), ("modified", pymongo.DESCENDING)]
+        )
+
+        await self.config_revs.create_index(
+            [
+                ("lastCrawlStartTime", pymongo.DESCENDING),
+                ("modified", pymongo.DESCENDING),
+            ]
+        )
+
+        await self.config_revs.create_index([("modified", pymongo.DESCENDING)])
+
+        await self.config_revs.create_index([("created", pymongo.DESCENDING)])
+
     def set_coll_ops(self, coll_ops):
         """set collection ops"""
         self.coll_ops = coll_ops
