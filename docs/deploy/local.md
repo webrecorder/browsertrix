@@ -8,7 +8,9 @@ Before running Browsertrix Cloud, you'll need to set up a running [Kubernetes](h
 
 Today, there are numerous ways to deploy Kubernetes fairly easily, and we recommend trying one of the single-node options, which include Docker Desktop, microk8s, minikube and k3s.
 
-The instructions below assume you have cloned the [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud) repository locally, and have local package managers for your platform (eg. `brew` for macOS, `choco` for Windows, etc...) already installed.
+The instructions below assume you have the local package managers for your platform (eg. `brew` for macOS, `choco` for Windows, etc...) already installed.
+Cloning the repository at [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud) is only needed
+to access additional configuration files.
 
 Here are some environment specific instructions for setting up a local cluster from different Kubernetes vendors:
 
@@ -54,34 +56,53 @@ Here are some environment specific instructions for setting up a local cluster f
 
 ## Launching Browsertrix Cloud with Helm
 
-Once you have a running Kubernetes cluster with one of the options above, and Helm 3 installed, you can then run from the Browsertrix Cloud repo directory:
+Once you have a running Kubernetes cluster with one of the options above, and Helm 3 installed, you can install the latest release of Browsertrix Cloud
+directly from the latest GitHub release.
 
-```shell
-helm upgrade --install -f ./chart/values.yaml \
--f ./chart/examples/local-config.yaml btrix ./chart/
+<insert-version></insert-version>
+
+
+```
+helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-<span>VERSION</span>.tgz \
+--set local_service_port 30870
 ```
 
 ??? info "MicroK8S"
 
     If using microk8s, the command will be:
 
+    <insert-version></insert-version>
+
     ```sh
-    microk8s helm3 upgrade --install -f ./chart/values.yaml \
-    -f ./chart/examples/local-config.yaml btrix ./chart/
+    microk8s helm3 upgrade --install btrix \
+    https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-VERSION.tgz \
+    --set local_service_port 30870
     ```
 
     Subsequent commands will also use `microk8s helm3` instead of `helm`.
 
 
-The local setup includes the full Browsertrix Cloud system, with frontend, backend api, db (via MongoDB) and storage (via Minio)
+The default setup includes the full Browsertrix Cloud system, with frontend, backend api, db (via MongoDB) and storage (via Minio)
 
 An admin user with name `admin@example.com` and password `PASSW0RD!` will be automatically created.
 
-This config uses the standard config (`./chart/values.yaml`) with a couple additional settings for local deployment (`./chart/examples/local-config.yaml`). With Helm, additional YAML files can be added to further override previous settings.
+The service will be accessible on port 30870 per the config above.
 
-These settings can be changed in [charts/examples/local-config.yaml](https://github.com/webrecorder/browsertrix-cloud/blob/main/chart/examples/local-config.yaml).
+With Helm, additional YAML files can be added to further override previous settings.
+
+Some possible settings can be changed are found in [chart/examples/local-config.yaml](https://github.com/webrecorder/browsertrix-cloud/blob/main/chart/examples/local-config.yaml).
 
 For example, to change the default superadmin, uncomment the `superadmin` block in `local-config.yaml`, and then change the username (`admin@example.com`) and password (`PASSW0RD!`) to different values. (The admin username and password will be updated with each deployment)
+
+You can then redeploy with these additional settings by running:
+
+```
+helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-<span>VERSION</span>.tgz \
+-f ./chart/examples/local-config.yaml
+```
+
+The above examples assumes running from a cloned Browsertrix Cloud repo, however the config file can be saved anywhere and specified with `-f <extra-config.yaml>`.
+
 
 ## Waiting for Cluster to Start
 
@@ -128,10 +149,11 @@ The outputs of these commands will be helpful if you'd like to report an issue [
 
 ## Updating the Cluster
 
-To update the cluster, re-run the same command again, which will pull the latest images. In this way, you can upgrade to the latest release of Browsertrix Cloud. The upgrade will preserve the database and current archives.
+To update the cluster, for example to update to new version `NEWVERSION`, re-run the same command again, which will pull the latest images. In this way, you can upgrade to the latest release of Browsertrix Cloud. The upgrade will preserve the database and current archives.
 
 ```shell
-helm upgrade --install -f ./chart/values.yaml -f ./chart/examples/local-config.yaml btrix ./chart/
+helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/NEWVERSION/browsertrix-cloud-NEWVERSION.tgz
+
 ```
 
 ## Uninstalling
@@ -148,4 +170,4 @@ To fully delete all persistent data (db + archives) created in the cluster, also
 
 ## Deploying for Local Development
 
-These instructions are intended for deploying the cluster from the latest release. See [setting up cluster for local development](../develop/local-dev-setup.md) for additional customizations related to developing Browsertrix Cloud and deploying from local images.
+These instructions are intended for deploying the cluster from the latest releases published on GitHub. See [setting up cluster for local development](../develop/local-dev-setup.md) for additional customizations related to developing Browsertrix Cloud and deploying from local images.
