@@ -9,6 +9,7 @@ Before running Browsertrix Cloud, you'll need to set up a running [Kubernetes](h
 Today, there are numerous ways to deploy Kubernetes fairly easily, and we recommend trying one of the single-node options, which include Docker Desktop, microk8s, minikube and k3s.
 
 The instructions below assume you have the local package managers for your platform (eg. `brew` for macOS, `choco` for Windows, etc...) already installed.
+
 Cloning the repository at [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud) is only needed
 to access additional configuration files.
 
@@ -63,7 +64,7 @@ directly from the latest GitHub release.
 
 
 ```
-helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-<span>VERSION</span>.tgz \
+helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-VERSION.tgz \
 --set local_service_port 30870
 ```
 
@@ -96,8 +97,10 @@ For example, to change the default superadmin, uncomment the `superadmin` block 
 
 You can then redeploy with these additional settings by running:
 
+<insert-version></insert-version>
+
 ```
-helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-<span>VERSION</span>.tgz \
+helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-VERSION.tgz \
 -f ./chart/examples/local-config.yaml
 ```
 
