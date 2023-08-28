@@ -9,7 +9,11 @@ local_service_port: 30870
 
 default_org: "My Local Organization"
 
-# overrides to use existing images in local Docker, otherwise will pull from latest
+# use version specified in values.yaml, uncomment to use :latest release instead
+# backend_image: docker.io/webrecorder/browsertrix-backend:latest
+# frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
+
+# overrides to use existing images in local Docker, otherwise will pull from repository
 # backend_pull_policy: "Never"
 # frontend_pull_policy: "Never"
 # crawler_pull_policy: "Never"
