@@ -1,6 +1,10 @@
 # test overrides
 # --------------
 
+# use local images built to :latest tag
+backend_image: docker.io/webrecorder/browsertrix-backend:latest
+frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
+
 backend_pull_policy: "Never"
 frontend_pull_policy: "Never"
 
