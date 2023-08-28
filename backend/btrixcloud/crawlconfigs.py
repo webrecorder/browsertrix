@@ -1,6 +1,7 @@
 """
 Crawl Config API handling
 """
+# pylint: disable=too-many-lines
 
 from typing import List, Union, Optional
 
