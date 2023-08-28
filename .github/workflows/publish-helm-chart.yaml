@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - chart-publish
+      - 1.6.4-work
 
 jobs:
   package_chart:
