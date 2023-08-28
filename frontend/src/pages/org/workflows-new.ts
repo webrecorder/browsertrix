@@ -110,6 +110,10 @@ export class WorkflowsNew extends LiteElement {
 
     const jobType = this.initialWorkflow.jobType || this.jobType;
 
+    if (this.initialWorkflow) {
+      this.initialWorkflow.autoAddCollections = [];
+    }
+
     if (this.isCrawler && jobType) {
       return html`
         ${this.renderHeader()}
