@@ -83,7 +83,7 @@ class CrawlConfigOps:
 
         await self.crawl_configs.create_index(
             [
-                ("oid", pymongo.ASCENDING),
+                ("oid", pymongo.HASHED),
                 ("inactive", pymongo.ASCENDING),
                 ("tags", pymongo.ASCENDING),
             ]
@@ -91,7 +91,7 @@ class CrawlConfigOps:
 
         await self.crawl_configs.create_index(
             [
-                ("oid", pymongo.ASCENDING),
+                ("oid", pymongo.HASHED),
                 ("inactive", pymongo.ASCENDING),
                 ("lastRun", pymongo.DESCENDING),
                 ("modified", pymongo.DESCENDING),
@@ -100,7 +100,7 @@ class CrawlConfigOps:
 
         await self.crawl_configs.create_index(
             [
-                ("oid", pymongo.ASCENDING),
+                ("oid", pymongo.HASHED),
                 ("inactive", pymongo.ASCENDING),
                 ("name", pymongo.ASCENDING),
                 ("firstSeed", pymongo.ASCENDING),
@@ -109,7 +109,7 @@ class CrawlConfigOps:
 
         await self.config_revs.create_index(
             [
-                ("oid", pymongo.ASCENDING),
+                ("oid", pymongo.HASHED),
                 ("inactive", pymongo.ASCENDING),
                 ("cid", pymongo.HASHED),
             ]
@@ -117,7 +117,7 @@ class CrawlConfigOps:
 
         await self.config_revs.create_index(
             [
-                ("oid", pymongo.ASCENDING),
+                ("oid", pymongo.HASHED),
                 ("inactive", pymongo.ASCENDING),
                 ("cid", pymongo.HASHED),
                 ("rev", pymongo.ASCENDING),
@@ -126,7 +126,7 @@ class CrawlConfigOps:
 
         await self.config_revs.create_index(
             [
-                ("oid", pymongo.ASCENDING),
+                ("oid", pymongo.HASHED),
                 ("inactive", pymongo.ASCENDING),
                 ("lastCrawlTime", pymongo.DESCENDING),
                 ("modified", pymongo.DESCENDING),
@@ -135,16 +135,28 @@ class CrawlConfigOps:
 
         await self.config_revs.create_index(
             [
-                ("oid", pymongo.ASCENDING),
+                ("oid", pymongo.HASHED),
                 ("inactive", pymongo.ASCENDING),
                 ("lastCrawlStartTime", pymongo.DESCENDING),
                 ("modified", pymongo.DESCENDING),
             ]
         )
 
-        await self.config_revs.create_index([("modified", pymongo.DESCENDING)])
+        await self.config_revs.create_index(
+            [
+                ("oid", pymongo.HASHED),
+                ("inactive", pymongo.ASCENDING),
+                ("modified", pymongo.DESCENDING),
+            ]
+        )
 
-        await self.config_revs.create_index([("created", pymongo.DESCENDING)])
+        await self.config_revs.create_index(
+            [
+                ("oid", pymongo.HASHED),
+                ("inactive", pymongo.ASCENDING),
+                ("created", pymongo.DESCENDING),
+            ]
+        )
 
     def set_coll_ops(self, coll_ops):
         """set collection ops"""
