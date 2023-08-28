@@ -81,13 +81,15 @@ class CrawlConfigOps:
             [("oid", pymongo.HASHED), ("inactive", pymongo.ASCENDING)]
         )
 
-        await self.crawl_configs.create_index(
-            [
-                ("oid", pymongo.HASHED),
-                ("inactive", pymongo.ASCENDING),
-                ("tags", pymongo.ASCENDING),
-            ]
-        )
+        # TODO: Re-enable this - might need to remove oid
+        # pymongo.errors.WriteError: Error: hashed indexes do not currently support array values
+        # await self.crawl_configs.create_index(
+        #     [
+        #         ("oid", pymongo.HASHED),
+        #         ("inactive", pymongo.ASCENDING),
+        #         ("tags", pymongo.ASCENDING),
+        #     ]
+        # )
 
         await self.crawl_configs.create_index(
             [
@@ -111,7 +113,7 @@ class CrawlConfigOps:
             [
                 ("oid", pymongo.HASHED),
                 ("inactive", pymongo.ASCENDING),
-                ("cid", pymongo.HASHED),
+                ("cid", pymongo.ASCENDING),
             ]
         )
 
@@ -119,7 +121,7 @@ class CrawlConfigOps:
             [
                 ("oid", pymongo.HASHED),
                 ("inactive", pymongo.ASCENDING),
-                ("cid", pymongo.HASHED),
+                ("cid", pymongo.ASCENDING),
                 ("rev", pymongo.ASCENDING),
             ]
         )
