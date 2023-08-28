@@ -11,6 +11,7 @@ import re
 import os
 from datetime import datetime
 import urllib.parse
+from pprint import pprint
 
 import pymongo
 from pydantic import UUID4
@@ -49,6 +50,7 @@ class CrawlConfigOps:
 
     def __init__(self, dbclient, mdb, user_manager, org_ops, crawl_manager, profiles):
         self.dbclient = dbclient
+        self.mdb = mdb
         self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
         self.config_revs = mdb["configs_revs"]
@@ -80,29 +82,61 @@ class CrawlConfigOps:
         )
 
         await self.crawl_configs.create_index(
-            [("oid", pymongo.ASCENDING), ("tags", pymongo.ASCENDING)]
+            [
+                ("oid", pymongo.ASCENDING),
+                ("inactive", pymongo.ASCENDING),
+                ("tags", pymongo.ASCENDING),
+            ]
         )
 
         await self.crawl_configs.create_index(
-            [("lastRun", pymongo.DESCENDING), ("modified", pymongo.DESCENDING)]
+            [
+                ("oid", pymongo.ASCENDING),
+                ("inactive", pymongo.ASCENDING),
+                ("lastRun", pymongo.DESCENDING),
+                ("modified", pymongo.DESCENDING),
+            ]
         )
 
         await self.crawl_configs.create_index(
-            [("name", pymongo.ASCENDING), ("firstSeed", pymongo.ASCENDING)]
-        )
-
-        await self.config_revs.create_index([("cid", pymongo.HASHED)])
-
-        await self.config_revs.create_index(
-            [("cid", pymongo.HASHED), ("rev", pymongo.ASCENDING)]
-        )
-
-        await self.config_revs.create_index(
-            [("lastCrawlTime", pymongo.DESCENDING), ("modified", pymongo.DESCENDING)]
+            [
+                ("oid", pymongo.ASCENDING),
+                ("inactive", pymongo.ASCENDING),
+                ("name", pymongo.ASCENDING),
+                ("firstSeed", pymongo.ASCENDING),
+            ]
         )
 
         await self.config_revs.create_index(
             [
+                ("oid", pymongo.ASCENDING),
+                ("inactive", pymongo.ASCENDING),
+                ("cid", pymongo.HASHED),
+            ]
+        )
+
+        await self.config_revs.create_index(
+            [
+                ("oid", pymongo.ASCENDING),
+                ("inactive", pymongo.ASCENDING),
+                ("cid", pymongo.HASHED),
+                ("rev", pymongo.ASCENDING),
+            ]
+        )
+
+        await self.config_revs.create_index(
+            [
+                ("oid", pymongo.ASCENDING),
+                ("inactive", pymongo.ASCENDING),
+                ("lastCrawlTime", pymongo.DESCENDING),
+                ("modified", pymongo.DESCENDING),
+            ]
+        )
+
+        await self.config_revs.create_index(
+            [
+                ("oid", pymongo.ASCENDING),
+                ("inactive", pymongo.ASCENDING),
                 ("lastCrawlStartTime", pymongo.DESCENDING),
                 ("modified", pymongo.DESCENDING),
             ]
@@ -436,6 +470,14 @@ class CrawlConfigOps:
         results = await cursor.to_list(length=1)
         result = results[0]
         items = result["items"]
+
+        explain_output = await self.mdb.command(
+            "aggregate",
+            "crawl_configs",
+            pipeline=aggregate,
+            explain=True,
+        )
+        pprint(explain_output)
 
         try:
             total = int(result["total"][0]["count"])
