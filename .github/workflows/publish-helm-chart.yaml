@@ -31,6 +31,13 @@ jobs:
       - name: Upload Chart To GitHub
         uses: softprops/action-gh-release@v1
         with:
+          body: |
+            Deploy this release to Kubernetes with Helm using:
+
+            ```
+            helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/${{ env.version }}/browsertrix-cloud-${{ env.version }}.tgz
+            ```
+
           files: .chart-out/browsertrix-cloud-${{ env.version }}.tgz
           tag_name: v${{ env.version }}
           fail_on_unmatched_files: true
