@@ -125,7 +125,7 @@ def main():
         org_ops,
         coll_ops,
         current_active_user,
-        event_webhook_ops
+        event_webhook_ops,
     )
 
     init_uploads_api(
