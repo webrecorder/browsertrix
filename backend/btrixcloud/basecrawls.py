@@ -137,13 +137,39 @@ class BaseCrawlOps:
         )
         return res
 
+    async def _update_crawl_collections(
+        self, crawl_id: str, org: Organization, collection_ids: List[UUID4]
+    ):
+        """Update crawl collections to match updated list."""
+        crawl = await self.get_crawl(crawl_id, org, cls_type=CrawlOut)
+
+        prior_coll_ids = set(crawl.collectionIds)
+        updated_coll_ids = set(collection_ids)
+
+        # Add new collections
+        added = list(updated_coll_ids.difference(prior_coll_ids))
+        for coll_id in added:
+            await self.colls.add_crawls_to_collection(coll_id, [crawl_id], org)
+
+        # Remove collections crawl no longer belongs to
+        removed = list(prior_coll_ids.difference(updated_coll_ids))
+        for coll_id in removed:
+            await self.colls.remove_crawls_from_collection(coll_id, [crawl_id], org)
+
     async def update_crawl(
         self, crawl_id: str, org: Organization, update: UpdateCrawl, type_=None
     ):
-        """Update existing crawl (tags and notes only for now)"""
+        """Update existing crawl"""
         update_values = update.dict(exclude_unset=True)
         if len(update_values) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
+
+        # Update collections then unset from update_values
+        # We handle these separately due to updates required for collection changes
+        collection_ids = update_values.get("collectionIds", [])
+        if collection_ids:
+            await self._update_crawl_collections(crawl_id, org, collection_ids)
+            update_values.pop("collectionIds", None)
 
         query = {"_id": crawl_id, "oid": org.id}
         if type_:
