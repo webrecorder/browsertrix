@@ -14,6 +14,7 @@ from .utils import register_exit_handler
 from .invites import InviteOps
 from .users import init_user_manager
 from .orgs import OrgOps
+from .colls import CollectionOps
 from .crawlconfigs import CrawlConfigOps
 from .crawls import CrawlOps
 from .profiles import ProfileOps
@@ -51,13 +52,23 @@ def main():
 
     profile_ops = ProfileOps(mdb, crawl_manager)
 
+    event_webhook_ops = EventWebhookOps(mdb, org_ops)
+
     crawl_config_ops = CrawlConfigOps(
         dbclient, mdb, user_manager, org_ops, crawl_manager, profile_ops
     )
 
-    crawl_ops = CrawlOps(mdb, user_manager, crawl_manager, crawl_config_ops, org_ops)
+    coll_ops = CollectionOps(mdb, crawl_manager, orgs, event_webhook_ops)
 
-    event_webhook_ops = EventWebhookOps(mdb, org_ops, crawl_ops)
+    crawl_ops = CrawlOps(
+        mdb,
+        user_manager,
+        crawl_manager,
+        crawl_config_ops,
+        org_ops,
+        coll_ops,
+        event_webhook_ops,
+    )
 
     init_operator_webhook(app_root, mdb, event_webhook_ops)
 
