@@ -759,6 +759,58 @@ def test_get_upload_replay_json_admin_from_all_crawls(
     assert "files" not in data
 
 
+def test_update_upload_metadata_all_crawls(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["name"] == "New Upload Name"
+    assert sorted(data["tags"]) == ["wr-test-1-updated", "wr-test-2-updated"]
+    assert data["description"] == "Lorem ipsum test note."
+    assert len(data["collectionIds"]) == 1
+
+    # Make new collection
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=admin_auth_headers,
+        json={"name": "Patch Update Test Collection 2"},
+    )
+    new_coll_id = r.json()["id"]
+
+    # Submit patch request to update name, tags, and description
+    UPDATED_NAME = "New Upload Name 2"
+    UPDATED_TAGS = ["wr-test-1-updated-again", "wr-test-2-updated-again"]
+    UPDATED_DESC = "Lorem ipsum test note 2."
+    UPDATED_COLLECTION_IDS = [new_coll_id]
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{upload_id}",
+        headers=admin_auth_headers,
+        json={
+            "tags": UPDATED_TAGS,
+            "description": UPDATED_DESC,
+            "name": UPDATED_NAME,
+            "collectionIds": UPDATED_COLLECTION_IDS,
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["updated"]
+
+    # Verify update was successful
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
+    assert data["description"] == UPDATED_DESC
+    assert data["name"] == UPDATED_NAME
+    assert data["collectionIds"] == UPDATED_COLLECTION_IDS
+
+
 def test_delete_form_upload_from_all_crawls(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",

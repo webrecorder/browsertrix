@@ -629,6 +629,12 @@ def init_base_crawls_api(
     async def get_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl(crawl_id, org)
 
+    @app.patch("/orgs/{oid}/all-crawls/{crawl_id}", tags=["all-crawls"])
+    async def update_crawl(
+        update: UpdateCrawl, crawl_id: str, org: Organization = Depends(org_crawl_dep)
+    ):
+        return await ops.update_crawl(crawl_id, org, update)
+
     @app.post("/orgs/{oid}/all-crawls/delete", tags=["all-crawls"])
     async def delete_crawls_all_types(
         delete_list: DeleteCrawlList,
