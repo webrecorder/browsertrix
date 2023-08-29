@@ -60,7 +60,7 @@ export class CollectionsAdd extends LiteElement {
   emptyText?: string;
 
   @state()
-  private collections: { [id: string]: Collection } = {};
+  private collectionsData: { [id: string]: Collection } = {};
 
   @state()
   private collectionIds: string[] = [];
@@ -137,11 +137,17 @@ export class CollectionsAdd extends LiteElement {
               (collection) => collection.id === collId
             );
             if (coll) {
-              this.collectionIds = [...this.collectionIds, coll.id];
-              await this.dispatchChange();
+              const { id } = coll;
+              if (!this.collectionsData[id]) {
+                this.collectionsData = {
+                  ...this.collectionsData,
+                  [id]: await this.getCollection(id),
+                };
+              }
+              this.collectionIds = [...this.collectionIds, id];
+              this.dispatchChange();
             }
           }
-          await this.updateComplete;
         }}
       >
         <sl-input
@@ -203,7 +209,7 @@ export class CollectionsAdd extends LiteElement {
   }
 
   private renderCollectionItem(id: string) {
-    const collection = this.collections[id];
+    const collection = this.collectionsData[id];
     return html`<li class="mt-1 p-1 pl-3 border rounded-sm">
       <div
         class="flex flex-row gap-2 justify-between items-center transition-opacity delay-75 ${collection
@@ -259,7 +265,7 @@ export class CollectionsAdd extends LiteElement {
 
   private filterOutSelectedCollections(results: CollectionList) {
     return results.filter((result) => {
-      return !Object.keys(this.collections).some((id) => id === result.id);
+      return !this.collectionIds.some((id) => id === result.id);
     });
   }
 
@@ -302,19 +308,23 @@ export class CollectionsAdd extends LiteElement {
 
   private async initializeCollectionsFromIds() {
     if (!this.collectionIds) return;
-    this.collectionIds.forEach(async (collId) => {
-      const data: Collection = await this.apiFetch(
-        `/orgs/${this.orgId}/collections/${collId}`,
-        this.authState!
-      );
+    this.collectionIds.forEach(async (id) => {
+      const data = await this.getCollection(id);
       if (data) {
-        this.collections = {
-          ...this.collections,
-          [collId]: data,
+        this.collectionsData = {
+          ...this.collectionsData,
+          [id]: data,
         };
       }
     });
   }
+
+  private getCollection = (collId: string): Promise<Collection> => {
+    return this.apiFetch(
+      `/orgs/${this.orgId}/collections/${collId}`,
+      this.authState!
+    );
+  };
 
   private async dispatchChange() {
     await this.updateComplete;
