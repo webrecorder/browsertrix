@@ -767,8 +767,8 @@ def test_update_upload_metadata_all_crawls(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     assert data["name"] == "My Upload Updated"
-    assert sorted(data["tags"]) == ["wr-test-1-updated", "wr-test-2-updated"]
-    assert data["description"] == "Lorem ipsum test note."
+    assert not data["tags"]
+    assert not data["description"]
     assert len(data["collectionIds"]) == 1
 
     # Make new collection
