@@ -169,7 +169,7 @@ class BaseCrawlOps:
         collection_ids = update_values.get("collectionIds", [])
         if collection_ids:
             await self._update_crawl_collections(crawl_id, org, collection_ids)
-            update_values.pop("collectionIds", None)
+        update_values.pop("collectionIds", None)
 
         query = {"_id": crawl_id, "oid": org.id}
         if type_:
