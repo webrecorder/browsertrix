@@ -8,7 +8,7 @@ import uuid
 import aiohttp
 import backoff
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import UUID4
+from pydantic import UUID4, Union
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
@@ -168,7 +168,6 @@ class EventWebhookOps:
 
     async def _create_collection_items_modified_notification(
         self,
-        crawl_ids: List[str],
         coll_id: uuid.UUID,
         org: Organization,
         event: str,
@@ -206,7 +205,6 @@ class EventWebhookOps:
             return
 
         await self._create_collection_items_modified_notification(
-            crawl_ids,
             coll_id,
             org,
             event=WebhookEventType.ADDED_TO_COLLECTION,
@@ -228,7 +226,6 @@ class EventWebhookOps:
             return
 
         await self._create_collection_items_modified_notification(
-            crawl_ids,
             coll_id,
             org,
             event=WebhookEventType.REMOVED_FROM_COLLECTION,
