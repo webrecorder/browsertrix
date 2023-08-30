@@ -1,7 +1,7 @@
 const path = require("path");
 require(path.resolve(process.cwd(), "./webpack.config.js"));
 
-// for testing: for prod, the Dockerfile should have the official prod version used
+// for testing: for prod, using the version specified in Helm values.yaml
 const RWP_BASE_URL = process.env.RWP_BASE_URL || "https://replayweb.page/";
 
 if (!process.env.API_BASE_URL) {
