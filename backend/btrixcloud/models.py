@@ -894,7 +894,7 @@ class WebhookEventType(str, Enum):
 
 # ============================================================================
 class BaseCollectionItemBody(WebhookNotificationBody):
-    """Webhook notification POST body for when item is added to or removed from collection"""
+    """Webhook notification base POST body for collection changes"""
 
     collectionId: str
     itemIds: List[str]
@@ -902,11 +902,15 @@ class BaseCollectionItemBody(WebhookNotificationBody):
 
 # ============================================================================
 class CollectionItemAddedBody(BaseCollectionItemBody):
+    """Webhook notification POST body for collection additions"""
+
     event: str = Field(WebhookEventType.ADDED_TO_COLLECTION, const=True)
 
 
 # ============================================================================
 class CollectionItemRemovedBody(BaseCollectionItemBody):
+    """Webhook notification POST body for collection removals"""
+
     event: str = Field(WebhookEventType.REMOVED_FROM_COLLECTION, const=True)
 
 
