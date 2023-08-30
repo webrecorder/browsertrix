@@ -35,5 +35,10 @@ module.exports = {
       res.set("Content-Type", "application/javascript");
       res.send(`importScripts("${RWP_BASE_URL}sw.js")`);
     });
+
+    server.app.get("/replay/ui.js", (req, res) => {
+      res.set("Content-Type", "application/javascript");
+      res.redirect(307, RWP_BASE_URL + "ui.js");
+    });
   },
 };
