@@ -135,8 +135,8 @@ class CollectionOps:
         await update_collection_counts_and_tags(self.collections, self.crawls, coll_id)
 
         asyncio.create_task(
-            self.event_webhook_ops.create_added_removed_collection_notification(
-                crawl_ids, coll_id, org, added=True
+            self.event_webhook_ops.create_added_to_collection_notification(
+                crawl_ids, coll_id, org
             )
         )
 
@@ -159,8 +159,8 @@ class CollectionOps:
         await update_collection_counts_and_tags(self.collections, self.crawls, coll_id)
 
         asyncio.create_task(
-            self.event_webhook_ops.create_added_removed_collection_notification(
-                crawl_ids, coll_id, org, added=False
+            self.event_webhook_ops.create_removed_from_collection_notification(
+                crawl_ids, coll_id, org
             )
         )
 
@@ -281,7 +281,6 @@ class CollectionOps:
         names = [
             CollIdName(id=namedata["_id"], name=namedata["name"]) for namedata in names
         ]
-        print("names", names)
         return names
 
     async def get_collection_search_values(self, org: Organization):

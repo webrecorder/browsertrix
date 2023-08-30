@@ -629,9 +629,9 @@ class OrgQuotas(BaseModel):
 class OrgWebhookUrls(BaseModel):
     """Organization webhook URLs"""
 
-    itemCreatedUrl: Optional[HttpUrl]
-    addedToCollectionUrl: Optional[HttpUrl]
-    removedFromCollectionUrl: Optional[HttpUrl]
+    itemCreated: Optional[HttpUrl]
+    addedToCollection: Optional[HttpUrl]
+    removedFromCollection: Optional[HttpUrl]
 
 
 # ============================================================================
@@ -878,30 +878,44 @@ class WebhookNotificationBody(BaseModel):
 
     downloadUrls: Optional[List] = None
 
-
-# ============================================================================
-class ArchivedItemCreatedBody(WebhookNotificationBody):
-    """Webhook notification POST body for when archived item is created"""
-
-    itemId: str
-
-
-# ============================================================================
-class CollectionItemAddedRemovedBody(WebhookNotificationBody):
-    """Webhook notification POST body for when item is added to or removed from collection"""
-
-    collectionId: str
-    itemIds: List[str]
-    type: str = "added"
+    # Store as str, not UUID, to make JSON-serializable
+    orgId: str
+    event: str
 
 
 # ============================================================================
 class WebhookEventType(str, Enum):
     """Webhook Event Types"""
 
-    ARCHIVED_ITEM_CREATED = "archived-item-created"
-    ADDED_TO_COLLECTION = "added-to-collection"
-    REMOVED_FROM_COLLECTION = "removed-from-collection"
+    ARCHIVED_ITEM_CREATED = "itemCreated"
+    ADDED_TO_COLLECTION = "addedToCollection"
+    REMOVED_FROM_COLLECTION = "removedFromCollection"
+
+
+# ============================================================================
+class BaseCollectionItemBody(WebhookNotificationBody):
+    """Webhook notification POST body for when item is added to or removed from collection"""
+
+    collectionId: str
+    itemIds: List[str]
+
+
+# ============================================================================
+class CollectionItemAddedBody(BaseCollectionItemBody):
+    event: str = Field(WebhookEventType.ADDED_TO_COLLECTION, const=True)
+
+
+# ============================================================================
+class CollectionItemRemovedBody(BaseCollectionItemBody):
+    event: str = Field(WebhookEventType.REMOVED_FROM_COLLECTION, const=True)
+
+
+# ============================================================================
+class ArchivedItemCreatedBody(WebhookNotificationBody):
+    """Webhook notification POST body for when archived item is created"""
+
+    itemId: str
+    event: str = Field(WebhookEventType.ARCHIVED_ITEM_CREATED, const=True)
 
 
 # ============================================================================
@@ -910,7 +924,9 @@ class WebhookNotification(BaseMongoModel):
 
     event: WebhookEventType
     oid: UUID4
-    body: Union[ArchivedItemCreatedBody, CollectionItemAddedRemovedBody]
+    body: Union[
+        ArchivedItemCreatedBody, CollectionItemAddedBody, CollectionItemRemovedBody
+    ]
     success: bool = False
     attempts: int = 0
     created: datetime

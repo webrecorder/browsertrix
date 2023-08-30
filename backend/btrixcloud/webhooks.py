@@ -15,7 +15,8 @@ from .models import (
     WebhookEventType,
     WebhookNotification,
     ArchivedItemCreatedBody,
-    CollectionItemAddedRemovedBody,
+    CollectionItemAddedBody,
+    CollectionItemRemovedBody,
     PaginatedResponse,
     Organization,
 )
@@ -88,47 +89,20 @@ class EventWebhookOps:
             )
             return
 
-        # Get configured URL for this notification type
-        if notification.event == WebhookEventType.ARCHIVED_ITEM_CREATED:
-            if not org.webhookUrls.itemCreatedUrl:
-                print(
-                    "Webhook Item Created URL not configured, skipping",
-                    flush=True,
-                )
-                return
-            url = org.webhookUrls.itemCreatedUrl
-
-        elif notification.event == WebhookEventType.ADDED_TO_COLLECTION:
-            if not org.webhookUrls.addedToCollectionUrl:
-                print(
-                    "Webhook Item Added to Collection URL not configured, skipping",
-                    flush=True,
-                )
-                return
-            url = org.webhookUrls.addedToCollectionUrl
-
-        elif notification.event == WebhookEventType.REMOVED_FROM_COLLECTION:
-            if not org.webhookUrls.removedFromCollectionUrl:
-                print(
-                    "Webhook Item Removed from Collection URL not configured, skipping",
-                    flush=True,
-                )
-                return
-            url = org.webhookUrls.removedFromCollectionUrl
-
-        # Add event name and oid to body and remove type, which is useful
-        # internally but duplicates the event name in the POST body
-        body = notification.body.dict()
-        body["event"] = notification.event
-        body["orgId"] = str(notification.oid)
-        body.pop("type", None)
+        webhook_url = getattr(org.webhookUrls, notification.event)
+        if not webhook_url:
+            print(
+                f"Webhook URL for event {notification.event} not configured, skipping",
+                flush=True,
+            )
+            return
 
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.request(
                     "POST",
-                    url,
-                    json=body,
+                    webhook_url,
+                    json=notification.body.dict(),
                     raise_for_status=True,
                 ):
                     await self.webhooks.find_one_and_update(
@@ -156,7 +130,7 @@ class EventWebhookOps:
 
         org = await self.org_ops.get_org_by_id(crawl_res["oid"])
 
-        if not org.webhookUrls or not org.webhookUrls.itemCreatedUrl:
+        if not org.webhookUrls or not org.webhookUrls.itemCreated:
             return
 
         # Get full crawl with resources
@@ -174,7 +148,11 @@ class EventWebhookOps:
             id=uuid.uuid4(),
             event=WebhookEventType.ARCHIVED_ITEM_CREATED,
             oid=org.id,
-            body=ArchivedItemCreatedBody(itemId=crawl.id, downloadUrls=download_urls),
+            body=ArchivedItemCreatedBody(
+                itemId=crawl.id,
+                downloadUrls=download_urls,
+                orgId=str(org.id),
+            ),
             created=datetime.utcnow(),
         )
 
@@ -183,34 +161,20 @@ class EventWebhookOps:
         await self.send_notification(org, notification)
 
         if crawl.collections:
-            for coll_id in crawl.collections:
-                await self.create_added_removed_collection_notification(
+            for coll_id in crawl.collectionIds:
+                await self.create_added_to_collection_notification(
                     crawl_ids=[crawl_id], coll_id=coll_id, org=org
                 )
 
-    async def create_added_removed_collection_notification(
+    async def create_added_to_collection_notification(
         self,
         crawl_ids: List[str],
         coll_id: uuid.UUID,
         org: Organization,
-        added: bool = True,
     ):
-        """Create webhook notification for item added or removed from collection"""
-        if not org.webhookUrls:
+        """Create webhook notification for item added to collection"""
+        if not org.webhookUrls or not org.webhookUrls.addedToCollection:
             return
-
-        if added:
-            type_ = "added"
-            if not org.webhookUrls.addedToCollectionUrl:
-                return
-        else:
-            type_ = "removed"
-            if not org.webhookUrls.removedFromCollectionUrl:
-                return
-
-        event_type = WebhookEventType.ADDED_TO_COLLECTION
-        if not added:
-            event_type = WebhookEventType.REMOVED_FROM_COLLECTION
 
         coll_download_url = f"/api/orgs/{org.id}/collections/{coll_id}/download"
         if org.origin:
@@ -220,13 +184,46 @@ class EventWebhookOps:
 
         notification = WebhookNotification(
             id=uuid.uuid4(),
-            event=event_type,
+            event=WebhookEventType.ADDED_TO_COLLECTION,
             oid=org.id,
-            body=CollectionItemAddedRemovedBody(
+            body=CollectionItemAddedBody(
                 itemIds=crawl_ids,
                 collectionId=str(coll_id),
-                type=type_,
                 downloadUrls=[coll_download_url],
+                orgId=str(org.id),
+            ),
+            created=datetime.utcnow(),
+        )
+
+        await self.webhooks.insert_one(notification.to_dict())
+
+        await self.send_notification(org, notification)
+
+    async def create_removed_from_collection_notification(
+        self,
+        crawl_ids: List[str],
+        coll_id: uuid.UUID,
+        org: Organization,
+    ):
+        """Create webhook notification for item removed from collection"""
+        if not org.webhookUrls or not org.webhookUrls.removedFromCollection:
+            return
+
+        coll_download_url = f"/api/orgs/{org.id}/collections/{coll_id}/download"
+        if org.origin:
+            coll_download_url = (
+                f"{org.origin}/api/orgs/{org.id}/collections/{coll_id}/download"
+            )
+
+        notification = WebhookNotification(
+            id=uuid.uuid4(),
+            event=WebhookEventType.REMOVED_FROM_COLLECTION,
+            oid=org.id,
+            body=CollectionItemRemovedBody(
+                itemIds=crawl_ids,
+                collectionId=str(coll_id),
+                downloadUrls=[coll_download_url],
+                orgId=str(org.id),
             ),
             created=datetime.utcnow(),
         )
