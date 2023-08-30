@@ -212,4 +212,5 @@ class K8sAPI:
             resp = await self.core_api.read_namespaced_pod_log(
                 pod, self.namespace, container=container, tail_lines=lines
             )
+            print("============== LOGS FOR POD: {pod} ==============")
             print(resp)
