@@ -71,6 +71,7 @@ export class CrawlMetadataEditor extends LiteElement {
     if (changedProperties.has("crawl") && this.crawl) {
       this.includeName = this.crawl.type === "upload";
       this.tagsToSave = this.crawl.tags || [];
+      this.collectionsToSave = this.crawl.collectionIds || [];
     }
   }
 
@@ -188,24 +189,36 @@ export class CrawlMetadataEditor extends LiteElement {
     if (!(await this.checkFormValidity(formEl))) return;
     const { crawlDescription, name } = serialize(formEl);
 
+    const params: {
+      collectionIds?: string[];
+      tags?: string[];
+      description?: string;
+      name?: string;
+    } = {};
+    if (this.includeName && name && name !== this.crawl.name) {
+      params.name = name as string;
+    }
     if (
-      (!this.includeName || name === this.crawl.name) &&
-      crawlDescription === (this.crawl.description ?? "") &&
-      JSON.stringify(this.tagsToSave) === JSON.stringify(this.crawl.tags) &&
-      JSON.stringify(this.collectionsToSave) ===
-        JSON.stringify(this.crawl.collectionIds)
+      crawlDescription &&
+      crawlDescription !== (this.crawl.description ?? "")
     ) {
+      params.description = crawlDescription as string;
+    }
+    if (JSON.stringify(this.tagsToSave) !== JSON.stringify(this.crawl.tags)) {
+      params.tags = this.tagsToSave;
+    }
+    if (
+      JSON.stringify(this.collectionsToSave) !==
+      JSON.stringify(this.crawl.collectionIds)
+    ) {
+      params.collectionIds = this.collectionsToSave;
+    }
+
+    if (!Object.keys(params).length) {
       // No changes have been made
       this.requestClose();
       return;
     }
-
-    const params = {
-      collectionIds: this.collectionsToSave,
-      tags: this.tagsToSave,
-      description: crawlDescription,
-      name,
-    };
 
     this.isSubmittingUpdate = true;
 
