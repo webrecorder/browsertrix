@@ -16,9 +16,9 @@ def test_list_webhook_events(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     urls = data["webhookUrls"]
-    assert urls["itemCreatedUrl"]
-    assert urls["addedToCollectionUrl"]
-    assert urls["removedFromCollectionUrl"]
+    assert urls["itemCreated"]
+    assert urls["addedToCollection"]
+    assert urls["removedFromCollection"]
 
     # Verify list endpoint works as expected
     r = requests.get(
@@ -64,15 +64,14 @@ def test_get_webhook_event(admin_auth_headers, default_org_id):
     event = item["event"]
     assert event
 
-    if event == "archived-item-created":
+    if event == "itemCreated":
         assert len(body["downloadUrls"]) >= 1
         assert body["itemId"]
 
-    elif event in ("added-to-collection", "removed-from-collection"):
+    elif event in ("addedToCollection", "removedFromCollection"):
         assert len(body["downloadUrls"]) == 1
         assert body["collectionId"]
         assert len(body["itemIds"]) >= 1
-        assert body["type"] in ("added", "removed")
 
 
 def test_retry_webhook_event(admin_auth_headers, default_org_id):
