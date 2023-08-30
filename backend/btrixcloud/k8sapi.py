@@ -205,3 +205,11 @@ class K8sAPI:
                 self.api_client.set_default_header("Content-Type", content_type)
             else:
                 del self.api_client.default_headers["Content-Type"]
+
+    async def print_pod_logs(self, pod_names, container, lines=100):
+        """print pod logs"""
+        for pod in pod_names:
+            resp = await self.core_api.read_namespaced_pod_log(
+                pod, self.namespace, container=container, tail_lines=lines
+            )
+            print(resp)
