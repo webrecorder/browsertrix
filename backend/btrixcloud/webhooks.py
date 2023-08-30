@@ -166,6 +166,35 @@ class EventWebhookOps:
                     crawl_ids=[crawl_id], coll_id=coll_id, org=org
                 )
 
+    async def _create_collection_items_modified_notification(
+        self,
+        crawl_ids: List[str],
+        coll_id: uuid.UUID,
+        org: Organization,
+        event: str,
+        body: Union[CollectionItemAddedBody, CollectionItemRemovedBody],
+    ):
+        """Create webhook notification for item added/removed to collection."""
+        coll_download_url = f"/api/orgs/{org.id}/collections/{coll_id}/download"
+        if org.origin:
+            coll_download_url = (
+                f"{org.origin}/api/orgs/{org.id}/collections/{coll_id}/download"
+            )
+
+        body.downloadUrls = [coll_download_url]
+
+        notification = WebhookNotification(
+            id=uuid.uuid4(),
+            event=event,
+            oid=org.id,
+            body=body,
+            created=datetime.utcnow(),
+        )
+
+        await self.webhooks.insert_one(notification.to_dict())
+
+        await self.send_notification(org, notification)
+
     async def create_added_to_collection_notification(
         self,
         crawl_ids: List[str],
@@ -176,28 +205,17 @@ class EventWebhookOps:
         if not org.webhookUrls or not org.webhookUrls.addedToCollection:
             return
 
-        coll_download_url = f"/api/orgs/{org.id}/collections/{coll_id}/download"
-        if org.origin:
-            coll_download_url = (
-                f"{org.origin}/api/orgs/{org.id}/collections/{coll_id}/download"
-            )
-
-        notification = WebhookNotification(
-            id=uuid.uuid4(),
+        await self._create_collection_items_modified_notification(
+            crawl_ids,
+            coll_id,
+            org,
             event=WebhookEventType.ADDED_TO_COLLECTION,
-            oid=org.id,
             body=CollectionItemAddedBody(
                 itemIds=crawl_ids,
                 collectionId=str(coll_id),
-                downloadUrls=[coll_download_url],
                 orgId=str(org.id),
             ),
-            created=datetime.utcnow(),
         )
-
-        await self.webhooks.insert_one(notification.to_dict())
-
-        await self.send_notification(org, notification)
 
     async def create_removed_from_collection_notification(
         self,
@@ -209,28 +227,17 @@ class EventWebhookOps:
         if not org.webhookUrls or not org.webhookUrls.removedFromCollection:
             return
 
-        coll_download_url = f"/api/orgs/{org.id}/collections/{coll_id}/download"
-        if org.origin:
-            coll_download_url = (
-                f"{org.origin}/api/orgs/{org.id}/collections/{coll_id}/download"
-            )
-
-        notification = WebhookNotification(
-            id=uuid.uuid4(),
+        await self._create_collection_items_modified_notification(
+            crawl_ids,
+            coll_id,
+            org,
             event=WebhookEventType.REMOVED_FROM_COLLECTION,
-            oid=org.id,
             body=CollectionItemRemovedBody(
                 itemIds=crawl_ids,
                 collectionId=str(coll_id),
-                downloadUrls=[coll_download_url],
                 orgId=str(org.id),
             ),
-            created=datetime.utcnow(),
         )
-
-        await self.webhooks.insert_one(notification.to_dict())
-
-        await self.send_notification(org, notification)
 
 
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
