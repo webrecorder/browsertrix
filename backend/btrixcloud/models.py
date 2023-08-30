@@ -388,6 +388,7 @@ class UpdateCrawl(BaseModel):
     description: Optional[str]
     tags: Optional[List[str]]
     description: Optional[str]
+    collectionIds: Optional[List[UUID4]]
 
 
 # ============================================================================
