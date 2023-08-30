@@ -698,6 +698,7 @@ class BtrixOperator(K8sAPI):
             )
 
             if state == "failed" and prev_state != "failed":
+                print("crawl failed: ", pod_names, stats)
                 asyncio.create_task(self.print_pod_logs(pod_names, "crawler"))
 
         # check for other statuses
