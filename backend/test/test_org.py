@@ -303,9 +303,9 @@ def test_update_event_webhook_urls_org_admin(admin_auth_headers, default_org_id)
     data = r.json()
     if data.get("webhooks"):
         webhooks = data.get("webhooks")
-        assert webhooks.get("itemCreatedUrl") is None
-        assert webhooks.get("addedToCollectionUrl") is None
-        assert webhooks.get("removedFromCollectionUrl") is None
+        assert webhooks.get("itemCreated") is None
+        assert webhooks.get("addedToCollection") is None
+        assert webhooks.get("removedFromCollection") is None
 
     # Set URLs and verify
     CREATED_URL = "https://example.com/created"
@@ -316,9 +316,9 @@ def test_update_event_webhook_urls_org_admin(admin_auth_headers, default_org_id)
         f"{API_PREFIX}/orgs/{default_org_id}/event-webhook-urls",
         headers=admin_auth_headers,
         json={
-            "itemCreatedUrl": CREATED_URL,
-            "addedToCollectionUrl": ADDED_URL,
-            "removedFromCollectionUrl": REMOVED_URL,
+            "itemCreated": CREATED_URL,
+            "addedToCollection": ADDED_URL,
+            "removedFromCollection": REMOVED_URL,
         },
     )
     assert r.status_code == 200
@@ -331,9 +331,9 @@ def test_update_event_webhook_urls_org_admin(admin_auth_headers, default_org_id)
     assert r.status_code == 200
     data = r.json()
     urls = data["webhookUrls"]
-    assert urls["itemCreatedUrl"] == CREATED_URL
-    assert urls["addedToCollectionUrl"] == ADDED_URL
-    assert urls["removedFromCollectionUrl"] == REMOVED_URL
+    assert urls["itemCreated"] == CREATED_URL
+    assert urls["addedToCollection"] == ADDED_URL
+    assert urls["removedFromCollection"] == REMOVED_URL
 
 
 def test_update_event_webhook_urls_org_crawler(crawler_auth_headers, default_org_id):
@@ -341,9 +341,9 @@ def test_update_event_webhook_urls_org_crawler(crawler_auth_headers, default_org
         f"{API_PREFIX}/orgs/{default_org_id}/event-webhook-urls",
         headers=crawler_auth_headers,
         json={
-            "itemCreatedUrl": "https://example.com/created",
-            "addedToCollectionUrl": "https://example.com/added",
-            "removedFromCollectionUrl": "https://example.com/removed",
+            "itemCreated": "https://example.com/created",
+            "addedToCollection": "https://example.com/added",
+            "removedFromCollection": "https://example.com/removed",
         },
     )
     assert r.status_code == 403
