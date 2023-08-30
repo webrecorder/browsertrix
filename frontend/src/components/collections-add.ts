@@ -243,6 +243,7 @@ export class CollectionsAdd extends LiteElement {
           ...this.collectionIds.slice(0, collIdIndex),
           ...this.collectionIds.slice(collIdIndex + 1),
         ];
+        this.dispatchChange();
       }
     }
   }

@@ -201,6 +201,7 @@ export class CrawlMetadataEditor extends LiteElement {
     }
 
     const params = {
+      collectionIds: this.collectionsToSave,
       tags: this.tagsToSave,
       description: crawlDescription,
       name,
@@ -210,9 +211,7 @@ export class CrawlMetadataEditor extends LiteElement {
 
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.crawl!.oid}/${
-          this.crawl!.type === "crawl" ? "crawls" : "uploads"
-        }/${this.crawl.id}`,
+        `/orgs/${this.crawl!.oid}/all-crawls/${this.crawl.id}`,
         this.authState!,
         {
           method: "PATCH",
