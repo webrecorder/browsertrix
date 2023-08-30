@@ -6,3 +6,8 @@ mv ./tmp-package.json ./frontend/package.json
 
 echo '""" current version """' > ./backend/btrixcloud/version.py
 echo "__version__ = \"$version\"" >> ./backend/btrixcloud/version.py
+
+sed -E -i "" "s/^version:.*$/version: $version/" chart/Chart.yaml
+
+sed -E -i "" "s/\/browsertrix-backend:[[:alnum:].-]+/\/browsertrix-backend:$version/" chart/values.yaml
+sed -E -i "" "s/\/browsertrix-frontend:[[:alnum:].-]+/\/browsertrix-frontend:$version/" chart/values.yaml
