@@ -2,13 +2,13 @@
 
 import asyncio
 from datetime import datetime
-from typing import List
+from typing import List, Union
 import uuid
 
 import aiohttp
 import backoff
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import UUID4, Union
+from pydantic import UUID4
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
