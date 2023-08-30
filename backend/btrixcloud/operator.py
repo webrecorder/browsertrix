@@ -808,7 +808,7 @@ class BtrixOperator(K8sAPI):
 
 
 # ============================================================================
-def init_operator_webhook(app, mdb, event_webhook_ops):
+def init_operator_api(app, mdb, event_webhook_ops):
     """regsiters webhook handlers for metacontroller"""
 
     oper = BtrixOperator(mdb, event_webhook_ops)

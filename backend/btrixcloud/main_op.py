@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from .crawlmanager import CrawlManager
 from .db import init_db
 from .emailsender import EmailSender
-from .operator import init_operator_webhook
+from .operator import init_operator_api
 from .utils import register_exit_handler
 
 from .invites import InviteOps
@@ -70,7 +70,7 @@ def main():
         event_webhook_ops,
     )
 
-    init_operator_webhook(app_root, mdb, event_webhook_ops)
+    init_operator_api(app_root, mdb, event_webhook_ops)
 
 
 # ============================================================================
