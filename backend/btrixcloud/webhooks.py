@@ -158,7 +158,7 @@ class EventWebhookOps:
 
         await self.send_notification(org, notification)
 
-        if crawl.collections:
+        if crawl.collectionIds:
             for coll_id in crawl.collectionIds:
                 await self.create_added_to_collection_notification(
                     crawl_ids=[crawl_id], coll_id=coll_id, org=org
