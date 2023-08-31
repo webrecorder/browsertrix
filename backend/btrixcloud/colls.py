@@ -85,6 +85,11 @@ class CollectionOps:
                 await update_collection_counts_and_tags(
                     self.collections, self.crawls, coll_id
                 )
+                asyncio.create_task(
+                    self.event_webhook_ops.create_added_to_collection_notification(
+                        crawl_ids, coll_id, org
+                    )
+                )
 
             return {"added": True, "id": coll_id, "name": name}
         except pymongo.errors.DuplicateKeyError:
