@@ -37,7 +37,7 @@ bootstrap(){
     ./scripts/build-frontend.sh
 
     echo "Installing..."
-    helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
+    helm upgrade --install -f ./chart/values.yaml -f ./chart/examples/local-config.yaml btrix ./chart
 }
 
 bootstrapMicrok8s(){
@@ -48,7 +48,7 @@ bootstrapMicrok8s(){
     ./scripts/build-frontend.sh
 
     echo "Installing..."
-    microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
+    microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/examples/local-config.yaml btrix ./chart
 }
 
 waitUntilReady(){
