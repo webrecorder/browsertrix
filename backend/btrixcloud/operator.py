@@ -220,7 +220,7 @@ class BtrixOperator(K8sAPI):
             scheduled = not manual
             asyncio.create_task(
                 self.event_webhook_ops.create_crawl_started_notification(
-                    crawl_id, oid, scheduled=scheduled
+                    crawl_id, uuid.UUID(oid), scheduled=scheduled
                 )
             )
 
