@@ -11,6 +11,7 @@ from .crawlconfigs import (
     inc_crawl_count,
 )
 from .crawls import add_new_crawl
+from .crawlmanager import CrawlManager
 from .emailsender import EmailSender
 from .invites import InviteOps
 from .users import init_user_manager
@@ -31,10 +32,12 @@ class ScheduledJob(K8sAPI):
         super().__init__()
         self.cid = os.environ["CID"]
 
-        _, mdb = init_db()
+        dbclient, mdb = init_db()
 
         self.crawls = mdb["crawls"]
         self.crawlconfigs = mdb["crawl_configs"]
+
+        email = EmailSender()
 
         invite_ops = InviteOps(mdb, email)
 
