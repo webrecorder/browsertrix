@@ -939,6 +939,7 @@ class CrawlFinishedBody(BaseArchivedItemBody):
     """Webhook notification POST body for when crawl finishes"""
 
     event: str = Field(WebhookEventType.CRAWL_FINISHED, const=True)
+    state: str
 
 
 # ============================================================================

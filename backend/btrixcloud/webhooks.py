@@ -164,10 +164,7 @@ class EventWebhookOps:
                     crawl_ids=[crawl_id], coll_id=coll_id, org=org
                 )
 
-    async def create_crawl_finished_notification(
-        self,
-        crawl_id: str,
-    ):
+    async def create_crawl_finished_notification(self, crawl_id: str, state: str):
         """Create webhook notification for finished crawl."""
         crawl_res = await self.crawls.find_one({"_id": crawl_id})
         org = await self.org_ops.get_org_by_id(crawl_res["oid"])
@@ -182,6 +179,7 @@ class EventWebhookOps:
             body=CrawlFinishedBody(
                 itemId=crawl_id,
                 orgId=str(org.id),
+                state=state,
             ),
         )
 
