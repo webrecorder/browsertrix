@@ -55,7 +55,6 @@ class CrawlConfigOps:
         org_ops,
         crawl_manager,
         profiles,
-        event_webhook_ops,
     ):
         self.dbclient = dbclient
         self.crawls = mdb["crawls"]
@@ -66,7 +65,6 @@ class CrawlConfigOps:
         self.crawl_manager = crawl_manager
         self.profiles = profiles
         self.profiles.set_crawlconfigs(self)
-        self.event_webhook_ops = event_webhook_ops
         self.crawl_ops = None
         self.default_filename_template = os.environ["DEFAULT_CRAWL_FILENAME_TEMPLATE"]
 
@@ -180,12 +178,6 @@ class CrawlConfigOps:
 
     async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
         """increments crawl count for this config and adds new crawl"""
-        asyncio.create_task(
-            self.event_webhook_ops.create_crawl_started_notification(
-                crawl_id, crawlconfig.oid
-            )
-        )
-
         inc = inc_crawl_count(self.crawl_configs, crawlconfig.id)
         add = self.crawl_ops.add_new_crawl(crawl_id, crawlconfig, user)
         await asyncio.gather(inc, add)
@@ -886,14 +878,11 @@ def init_crawl_config_api(
     org_ops,
     crawl_manager,
     profiles,
-    event_webhook_ops,
 ):
     """Init /crawlconfigs api routes"""
     # pylint: disable=invalid-name
 
-    ops = CrawlConfigOps(
-        dbclient, mdb, user_manager, org_ops, crawl_manager, profiles, event_webhook_ops
-    )
+    ops = CrawlConfigOps(dbclient, mdb, user_manager, org_ops, crawl_manager, profiles)
 
     router = ops.router
 

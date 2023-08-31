@@ -171,6 +171,7 @@ class BtrixOperator(K8sAPI):
         crawl_id = spec["id"]
         cid = spec["cid"]
         oid = spec["oid"]
+        manual = spec["manual"]
 
         scale = spec.get("scale", 1)
         status.scale = scale
@@ -214,6 +215,14 @@ class BtrixOperator(K8sAPI):
             expire_time=from_k8s_date(spec.get("expireTime")),
             max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),
         )
+
+        if status.state == "running":
+            scheduled = not manual
+            asyncio.create_task(
+                self.event_webhook_ops.create_crawl_started_notification(
+                    crawl_id, oid, scheduled=scheduled
+                )
+            )
 
         if status.state in ("starting", "waiting_org_limit"):
             if not await self.can_start_new(crawl, data, status):

@@ -208,6 +208,16 @@ class EventWebhookOps:
         self, crawl_id: str, oid: uuid.UUID, scheduled: bool = False
     ):
         """Create webhook notification for started crawl."""
+        # Check if already created this event
+        existing_notification = await self.webhooks.find_one(
+            {
+                "event": WebhookEventType.CRAWL_STARTED,
+                "body.itemId": crawl_id,
+            }
+        )
+        if existing_notification:
+            return
+
         org = await self.org_ops.get_org_by_id(oid)
 
         if not org.webhookUrls or not org.webhookUrls.crawlStarted:

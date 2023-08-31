@@ -61,7 +61,6 @@ def main():
         org_ops,
         crawl_manager,
         profile_ops,
-        event_webhook_ops,
     )
 
     coll_ops = CollectionOps(mdb, crawl_manager, org_ops, event_webhook_ops)

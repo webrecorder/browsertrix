@@ -101,7 +101,6 @@ def main():
         org_ops,
         crawl_manager,
         profiles,
-        event_webhook_ops,
     )
 
     coll_ops = init_collections_api(app, mdb, org_ops, crawl_manager, event_webhook_ops)

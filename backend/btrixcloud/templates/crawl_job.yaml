@@ -19,6 +19,7 @@ spec:
   oid: "{{ oid }}"
   scale: {{ scale }}
   maxCrawlSize: {{ max_crawl_size }}
+  manual: {{ manual }}
   ttlSecondsAfterFinished: 30
 
   {% if expire_time %}
