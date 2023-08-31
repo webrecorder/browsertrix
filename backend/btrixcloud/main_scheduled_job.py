@@ -13,9 +13,14 @@ from .crawlconfigs import (
 from .crawls import add_new_crawl
 from .emailsender import EmailSender
 from .invites import InviteOps
+from .users import init_user_manager
 from .orgs import OrgOps
-from .utils import register_exit_handler
+from .colls import CollectionOps
+from .crawlconfigs import CrawlConfigOps
+from .crawls import CrawlOps
+from .profiles import ProfileOps
 from .webhooks import EventWebhookOps
+from .utils import register_exit_handler
 
 
 # ============================================================================
@@ -31,9 +36,41 @@ class ScheduledJob(K8sAPI):
         self.crawls = mdb["crawls"]
         self.crawlconfigs = mdb["crawl_configs"]
 
-        email = EmailSender()
         invite_ops = InviteOps(mdb, email)
+
+        user_manager = init_user_manager(mdb, email, invite_ops)
+
         org_ops = OrgOps(mdb, invite_ops)
+
+        event_webhook_ops = EventWebhookOps(mdb, org_ops)
+
+        user_manager.set_org_ops(org_ops)
+
+        crawl_manager = CrawlManager()
+
+        profile_ops = ProfileOps(mdb, crawl_manager)
+
+        crawl_config_ops = CrawlConfigOps(
+            dbclient,
+            mdb,
+            user_manager,
+            org_ops,
+            crawl_manager,
+            profile_ops,
+            event_webhook_ops,
+        )
+
+        coll_ops = CollectionOps(mdb, crawl_manager, org_ops, event_webhook_ops)
+
+        CrawlOps(
+            mdb,
+            user_manager,
+            crawl_manager,
+            crawl_config_ops,
+            org_ops,
+            coll_ops,
+            event_webhook_ops,
+        )
 
         self.event_webhook_ops = EventWebhookOps(mdb, org_ops)
 
@@ -63,6 +100,12 @@ class ScheduledJob(K8sAPI):
             self.cid, userid, oid, scale, crawl_timeout, manual=False
         )
 
+        asyncio.create_task(
+            self.event_webhook_ops.create_crawl_started_notification(
+                crawl_id, crawlconfig.oid, scheduled=True
+            )
+        )
+
         # db create
         await inc_crawl_count(self.crawlconfigs, crawlconfig.id)
         await add_new_crawl(
@@ -74,12 +117,6 @@ class ScheduledJob(K8sAPI):
             manual=False,
         )
         print("Crawl Created: " + crawl_id)
-
-        asyncio.create_task(
-            self.event_webhook_ops.create_crawl_started_notification(
-                crawl_id, crawlconfig.oid, scheduled=True
-            )
-        )
 
 
 # ============================================================================
