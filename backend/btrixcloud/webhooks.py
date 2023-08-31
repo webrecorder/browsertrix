@@ -14,7 +14,9 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
     WebhookEventType,
     WebhookNotification,
-    ArchivedItemCreatedBody,
+    CrawlStartedBody,
+    CrawlFinishedBody,
+    UploadFinishedBody,
     CollectionItemAddedBody,
     CollectionItemRemovedBody,
     PaginatedResponse,
@@ -124,16 +126,14 @@ class EventWebhookOps:
                 {"$set": {"lastAttempted": datetime.utcnow()}, "$inc": {"attempts": 1}},
             )
 
-    async def create_item_created_notification(self, crawl_id: str):
-        """Create webhook notification for item creation"""
-        crawl_res = await self.crawls.find_one({"_id": crawl_id})
-
-        org = await self.org_ops.get_org_by_id(crawl_res["oid"])
-
-        if not org.webhookUrls or not org.webhookUrls.itemCreated:
-            return
-
-        # Get full crawl with resources
+    async def _create_item_finished_notification(
+        self,
+        crawl_id: str,
+        org: Organization,
+        event: str,
+        body: Union[CrawlFinishedBody, UploadFinishedBody],
+    ):
+        """Create webhook notification for finished crawl/upload."""
         crawl = await self.crawl_ops.get_crawl(crawl_id, org)
         if not crawl:
             print(f"Crawl {crawl_id} not found, skipping event webhook", flush=True)
@@ -144,15 +144,13 @@ class EventWebhookOps:
             download_url = f"{org.origin}{resource.path}"
             download_urls.append(download_url)
 
+        body.downloadUrls = download_urls
+
         notification = WebhookNotification(
             id=uuid.uuid4(),
-            event=WebhookEventType.ARCHIVED_ITEM_CREATED,
+            event=event,
             oid=org.id,
-            body=ArchivedItemCreatedBody(
-                itemId=crawl.id,
-                downloadUrls=download_urls,
-                orgId=str(org.id),
-            ),
+            body=body,
             created=datetime.utcnow(),
         )
 
@@ -165,6 +163,73 @@ class EventWebhookOps:
                 await self.create_added_to_collection_notification(
                     crawl_ids=[crawl_id], coll_id=coll_id, org=org
                 )
+
+    async def create_crawl_finished_notification(
+        self,
+        crawl_id: str,
+    ):
+        """Create webhook notification for finished crawl."""
+        crawl_res = await self.crawls.find_one({"_id": crawl_id})
+        org = await self.org_ops.get_org_by_id(crawl_res["oid"])
+
+        if not org.webhookUrls or not org.webhookUrls.crawlFinished:
+            return
+
+        await self._create_item_finished_notification(
+            crawl_id,
+            org,
+            event=WebhookEventType.CRAWL_FINISHED,
+            body=CrawlFinishedBody(
+                itemId=crawl_id,
+                orgId=str(org.id),
+            ),
+        )
+
+    async def create_upload_finished_notification(
+        self,
+        crawl_id: str,
+    ):
+        """Create webhook notification for finished upload."""
+        crawl_res = await self.crawls.find_one({"_id": crawl_id})
+        org = await self.org_ops.get_org_by_id(crawl_res["oid"])
+
+        if not org.webhookUrls or not org.webhookUrls.uploadFinished:
+            return
+
+        await self._create_item_finished_notification(
+            crawl_id,
+            org,
+            event=WebhookEventType.UPLOAD_FINISHED,
+            body=UploadFinishedBody(
+                itemId=crawl_id,
+                orgId=str(org.id),
+            ),
+        )
+
+    async def create_crawl_started_notification(
+        self, crawl_id: str, oid: uuid.UUID, scheduled: bool = False
+    ):
+        """Create webhook notification for started crawl."""
+        org = await self.org_ops.get_org_by_id(oid)
+
+        if not org.webhookUrls or not org.webhookUrls.crawlStarted:
+            return
+
+        notification = WebhookNotification(
+            id=uuid.uuid4(),
+            event=WebhookEventType.CRAWL_STARTED,
+            oid=oid,
+            body=CrawlStartedBody(
+                itemId=crawl_id,
+                orgId=str(oid),
+                scheduled=scheduled,
+            ),
+            created=datetime.utcnow(),
+        )
+
+        await self.webhooks.insert_one(notification.to_dict())
+
+        await self.send_notification(org, notification)
 
     async def _create_collection_items_modified_notification(
         self,

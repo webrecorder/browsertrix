@@ -173,7 +173,7 @@ class UploadOps(BaseCrawlOps):
         )
 
         asyncio.create_task(
-            self.event_webhook_ops.create_item_created_notification(crawl_id)
+            self.event_webhook_ops.create_upload_finished_notification(crawl_id)
         )
 
         return {"id": crawl_id, "added": True}

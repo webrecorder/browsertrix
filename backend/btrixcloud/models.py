@@ -629,7 +629,9 @@ class OrgQuotas(BaseModel):
 class OrgWebhookUrls(BaseModel):
     """Organization webhook URLs"""
 
-    itemCreated: Optional[HttpUrl]
+    crawlStarted: Optional[HttpUrl]
+    crawlFinished: Optional[HttpUrl]
+    uploadFinished: Optional[HttpUrl]
     addedToCollection: Optional[HttpUrl]
     removedFromCollection: Optional[HttpUrl]
 
@@ -887,7 +889,10 @@ class WebhookNotificationBody(BaseModel):
 class WebhookEventType(str, Enum):
     """Webhook Event Types"""
 
-    ARCHIVED_ITEM_CREATED = "itemCreated"
+    CRAWL_STARTED = "crawlStarted"
+    CRAWL_FINISHED = "crawlFinished"
+    UPLOAD_FINISHED = "uploadFinished"
+
     ADDED_TO_COLLECTION = "addedToCollection"
     REMOVED_FROM_COLLECTION = "removedFromCollection"
 
@@ -915,11 +920,32 @@ class CollectionItemRemovedBody(BaseCollectionItemBody):
 
 
 # ============================================================================
-class ArchivedItemCreatedBody(WebhookNotificationBody):
-    """Webhook notification POST body for when archived item is created"""
+class BaseArchivedItemBody(WebhookNotificationBody):
+    """Webhook notification POST body for when archived item is started or finished"""
 
     itemId: str
-    event: str = Field(WebhookEventType.ARCHIVED_ITEM_CREATED, const=True)
+
+
+# ============================================================================
+class CrawlStartedBody(BaseArchivedItemBody):
+    """Webhook notification POST body for when crawl starts"""
+
+    scheduled: bool = False
+    event: str = Field(WebhookEventType.CRAWL_STARTED, const=True)
+
+
+# ============================================================================
+class CrawlFinishedBody(BaseArchivedItemBody):
+    """Webhook notification POST body for when crawl finishes"""
+
+    event: str = Field(WebhookEventType.CRAWL_FINISHED, const=True)
+
+
+# ============================================================================
+class UploadFinishedBody(BaseArchivedItemBody):
+    """Webhook notification POST body for when upload finishes"""
+
+    event: str = Field(WebhookEventType.UPLOAD_FINISHED, const=True)
 
 
 # ============================================================================
@@ -929,7 +955,11 @@ class WebhookNotification(BaseMongoModel):
     event: WebhookEventType
     oid: UUID4
     body: Union[
-        ArchivedItemCreatedBody, CollectionItemAddedBody, CollectionItemRemovedBody
+        CrawlStartedBody,
+        CrawlFinishedBody,
+        UploadFinishedBody,
+        CollectionItemAddedBody,
+        CollectionItemRemovedBody,
     ]
     success: bool = False
     attempts: int = 0

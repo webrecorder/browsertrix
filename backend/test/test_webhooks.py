@@ -16,7 +16,9 @@ def test_list_webhook_events(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     urls = data["webhookUrls"]
-    assert urls["itemCreated"]
+    assert urls["crawlStarted"]
+    assert urls["crawlFinished"]
+    assert urls["uploadFinished"]
     assert urls["addedToCollection"]
     assert urls["removedFromCollection"]
 
@@ -64,8 +66,12 @@ def test_get_webhook_event(admin_auth_headers, default_org_id):
     event = item["event"]
     assert event
 
-    if event == "itemCreated":
+    if event in ("crawlFinished", "uploadFinished"):
         assert len(body["downloadUrls"]) >= 1
+        assert body["itemId"]
+
+    elif event in ("crawlStarted"):
+        assert len(body["downloadUrls"]) == 0
         assert body["itemId"]
 
     elif event in ("addedToCollection", "removedFromCollection"):

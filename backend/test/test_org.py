@@ -303,22 +303,28 @@ def test_update_event_webhook_urls_org_admin(admin_auth_headers, default_org_id)
     data = r.json()
     if data.get("webhooks"):
         webhooks = data.get("webhooks")
-        assert webhooks.get("itemCreated") is None
+        assert webhooks.get("crawlStarted") is None
+        assert webhooks.get("crawlFinished") is None
+        assert webhooks.get("uploadFinished") is None
         assert webhooks.get("addedToCollection") is None
         assert webhooks.get("removedFromCollection") is None
 
     # Set URLs and verify
-    CREATED_URL = "https://example.com/created"
-    ADDED_URL = "https://example.com/added"
-    REMOVED_URL = "http://example.com/removed"
+    CRAWL_STARTED_URL = "https://example.com/crawl/started"
+    CRAWL_FINISHED_URL = "https://example.com/crawl/finished"
+    UPLOAD_FINISHED_URL = "https://example.com/crawl/finished"
+    COLL_ADDED_URL = "https://example.com/coll/added"
+    COLL_REMOVED_URL = "http://example.com/coll/removed"
 
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/event-webhook-urls",
         headers=admin_auth_headers,
         json={
-            "itemCreated": CREATED_URL,
-            "addedToCollection": ADDED_URL,
-            "removedFromCollection": REMOVED_URL,
+            "crawlStarted": CRAWL_STARTED_URL,
+            "crawlFinished": CRAWL_FINISHED_URL,
+            "uploadFinished": UPLOAD_FINISHED_URL,
+            "addedToCollection": COLL_ADDED_URL,
+            "removedFromCollection": COLL_REMOVED_URL,
         },
     )
     assert r.status_code == 200
@@ -331,9 +337,11 @@ def test_update_event_webhook_urls_org_admin(admin_auth_headers, default_org_id)
     assert r.status_code == 200
     data = r.json()
     urls = data["webhookUrls"]
-    assert urls["itemCreated"] == CREATED_URL
-    assert urls["addedToCollection"] == ADDED_URL
-    assert urls["removedFromCollection"] == REMOVED_URL
+    assert urls["crawlStarted"] == CRAWL_STARTED_URL
+    assert urls["crawlFinished"] == CRAWL_FINISHED_URL
+    assert urls["uploadFinished"] == UPLOAD_FINISHED_URL
+    assert urls["addedToCollection"] == COLL_ADDED_URL
+    assert urls["removedFromCollection"] == COLL_REMOVED_URL
 
 
 def test_update_event_webhook_urls_org_crawler(crawler_auth_headers, default_org_id):
@@ -341,7 +349,9 @@ def test_update_event_webhook_urls_org_crawler(crawler_auth_headers, default_org
         f"{API_PREFIX}/orgs/{default_org_id}/event-webhook-urls",
         headers=crawler_auth_headers,
         json={
-            "itemCreated": "https://example.com/created",
+            "crawlStarted": "https://example.com/crawlstarted",
+            "crawlFinished": "https://example.com/crawlfinished",
+            "uploadFinished": "https://example.com/uploadfinished",
             "addedToCollection": "https://example.com/added",
             "removedFromCollection": "https://example.com/removed",
         },

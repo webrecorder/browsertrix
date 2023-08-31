@@ -11,7 +11,11 @@ from .crawlconfigs import (
     inc_crawl_count,
 )
 from .crawls import add_new_crawl
+from .emailsender import EmailSender
+from .invites import InviteOps
+from .orgs import OrgOps
 from .utils import register_exit_handler
+from .webhooks import EventWebhookOps
 
 
 # ============================================================================
@@ -23,8 +27,15 @@ class ScheduledJob(K8sAPI):
         self.cid = os.environ["CID"]
 
         _, mdb = init_db()
+
         self.crawls = mdb["crawls"]
         self.crawlconfigs = mdb["crawl_configs"]
+
+        email = EmailSender()
+        invite_ops = InviteOps(mdb, email)
+        org_ops = OrgOps(mdb, invite_ops)
+
+        self.event_webhook_ops = EventWebhookOps(mdb, org_ops)
 
     async def run(self):
         """run crawl!"""
@@ -63,6 +74,12 @@ class ScheduledJob(K8sAPI):
             manual=False,
         )
         print("Crawl Created: " + crawl_id)
+
+        asyncio.create_task(
+            self.event_webhook_ops.create_crawl_started_notification(
+                crawl_id, crawlconfig.oid, scheduled=True
+            )
+        )
 
 
 # ============================================================================

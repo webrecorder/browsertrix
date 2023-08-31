@@ -38,6 +38,8 @@ def main():
 
     org_ops = OrgOps(mdb, invite_ops)
 
+    event_webhook_ops = EventWebhookOps(mdb, org_ops)
+
     user_manager.set_org_ops(org_ops)
 
     # pylint: disable=import-outside-toplevel
@@ -52,10 +54,14 @@ def main():
 
     profile_ops = ProfileOps(mdb, crawl_manager)
 
-    event_webhook_ops = EventWebhookOps(mdb, org_ops)
-
     crawl_config_ops = CrawlConfigOps(
-        dbclient, mdb, user_manager, org_ops, crawl_manager, profile_ops
+        dbclient,
+        mdb,
+        user_manager,
+        org_ops,
+        crawl_manager,
+        profile_ops,
+        event_webhook_ops,
     )
 
     coll_ops = CollectionOps(mdb, crawl_manager, org_ops, event_webhook_ops)
