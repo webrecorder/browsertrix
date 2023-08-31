@@ -882,7 +882,6 @@ class WebhookNotificationBody(BaseModel):
 
     # Store as str, not UUID, to make JSON-serializable
     orgId: str
-    event: str
 
 
 # ============================================================================
