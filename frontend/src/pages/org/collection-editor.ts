@@ -1055,7 +1055,7 @@ export class CollectionEditor extends LiteElement {
         class="flex flex-col items-center justify-center text-center p-4 my-12"
       >
         <p class="text-neutral-400 text-center max-w-[24em]">
-          ${msg("Your organization hasn't uploaded any archived items.")}
+          ${msg("Your organization doesn't have any uploads.")}
         </p>
       </div>`;
     }
