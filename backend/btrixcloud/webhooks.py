@@ -53,6 +53,7 @@ class EventWebhookOps:
         org: Organization,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        success: Optional[bool] = None,
     ):
         """List all webhook notifications"""
         # Zero-index page for query
@@ -60,6 +61,9 @@ class EventWebhookOps:
         skip = page_size * page
 
         query = {"oid": org.id}
+
+        if success:
+            query["success"] = success
 
         total = await self.webhooks.count_documents(query)
 
@@ -325,9 +329,10 @@ def init_event_webhooks_api(mdb, org_ops):
         org: Organization = Depends(org_owner_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        success: Optional[bool] = None,
     ):
         notifications, total = await ops.list_notifications(
-            org, page_size=pageSize, page=page
+            org, page_size=pageSize, page=page, success=success
         )
         return paginated_format(notifications, total, page, pageSize)
 
