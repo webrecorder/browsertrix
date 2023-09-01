@@ -296,7 +296,7 @@ export class ConfigDetails extends LiteElement {
                     html`<sl-tag class="mt-1 mr-2" variant="neutral">
                       ${coll.name}
                       <span class="pl-1 font-monostyle text-xs">
-                        (${msg(str`${coll.crawlCount} Crawls`)})
+                        (${msg(str`${coll.crawlCount} items`)})
                       </span>
                     </sl-tag>`
                 )
