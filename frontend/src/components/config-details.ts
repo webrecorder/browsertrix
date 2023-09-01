@@ -96,34 +96,13 @@ export class ConfigDetails extends LiteElement {
       }
     };
 
-    const renderSize = (valueBytes?: number | null, fallbackValue?: number) => {
-      const bytesPerGB = 1e9;
-
+    const renderSize = (valueBytes?: number | null) => {
       // Eventually we will want to set this to the selected locale
-      const formatter = new Intl.NumberFormat(undefined, {
-        style: "unit",
-        unit: "gigabyte",
-        unitDisplay: "narrow",
-      });
-
       if (valueBytes) {
-        const sizeGB = Math.floor(valueBytes / bytesPerGB);
-        return formatter.format(sizeGB);
-      }
-
-      if (typeof fallbackValue === "number") {
-        let value = "";
-        if (fallbackValue === Infinity) {
-          value = msg("Unlimited");
-        } else if (fallbackValue === 0) {
-          value = formatter.format(0);
-        } else {
-          const sizeGB = Math.floor(fallbackValue / bytesPerGB);
-          value = formatter.format(sizeGB);
-        }
-        return html`<span class="text-neutral-400"
-          >${value} ${msg("(default)")}</span
-        >`;
+        return html`<sl-format-bytes
+          value=${valueBytes}
+          display="narrow"
+        ></sl-format-bytes>`;
       }
 
       return html`<span class="text-neutral-400"
@@ -205,7 +184,7 @@ export class ConfigDetails extends LiteElement {
           )}
           ${this.renderSetting(
             msg("Crawl Size Limit"),
-            renderSize(crawlConfig?.maxCrawlSize, Infinity)
+            renderSize(crawlConfig?.maxCrawlSize)
           )}
           ${this.renderSetting(msg("Crawler Instances"), crawlConfig?.scale)}
         </btrix-desc-list>
