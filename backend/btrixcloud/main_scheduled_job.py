@@ -24,6 +24,7 @@ class ScheduledJob(K8sAPI):
         self.cid = os.environ["CID"]
 
         _, mdb = init_db()
+
         self.crawls = mdb["crawls"]
         self.crawlconfigs = mdb["crawl_configs"]
         self.orgs = mdb["organizations"]

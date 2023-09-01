@@ -4,6 +4,8 @@ repo_name: Browsertrix Cloud
 edit_uri: edit/main/docs/
 extra_css:
     - stylesheets/extra.css
+extra_javascript:
+    - js/insertversion.js
 theme:
   name: material
   custom_dir: docs/overrides

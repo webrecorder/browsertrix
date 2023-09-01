@@ -169,7 +169,7 @@ class BaseCrawlOps:
         # Update collections then unset from update_values
         # We handle these separately due to updates required for collection changes
         collection_ids = update_values.get("collectionIds")
-        if collection_ids:
+        if collection_ids is not None:
             await self._update_crawl_collections(crawl_id, org, collection_ids)
         update_values.pop("collectionIds", None)
 

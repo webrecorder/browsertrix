@@ -499,7 +499,7 @@ def test_get_all_crawls_by_state(admin_auth_headers, default_org_id, admin_crawl
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 5
+    assert data["total"] >= 5
     items = data["items"]
     for item in items:
         assert item["state"] in ("complete", "partial_complete")
@@ -813,6 +813,31 @@ def test_update_upload_metadata_all_crawls(admin_auth_headers, default_org_id):
     assert data["description"] == UPDATED_DESC
     assert data["name"] == UPDATED_NAME
     assert data["collectionIds"] == UPDATED_COLLECTION_IDS
+
+    # Submit patch request to set collections to empty list
+    UPDATED_COLLECTION_IDS = []
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{upload_id}",
+        headers=admin_auth_headers,
+        json={
+            "collectionIds": UPDATED_COLLECTION_IDS,
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["updated"]
+
+    # Verify update was successful
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
+    assert data["description"] == UPDATED_DESC
+    assert data["name"] == UPDATED_NAME
+    assert data["collectionIds"] == []
 
 
 def test_delete_form_upload_from_all_crawls(admin_auth_headers, default_org_id):

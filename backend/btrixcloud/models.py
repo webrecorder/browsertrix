@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum, IntEnum
 
 from typing import Optional, List, Dict, Union, Literal, Any
-from pydantic import BaseModel, UUID4, conint, Field, HttpUrl, EmailStr
+from pydantic import BaseModel, UUID4, conint, Field, HttpUrl, AnyHttpUrl, EmailStr
 from fastapi_users import models as fastapi_users_models
 
 from .db import BaseMongoModel
@@ -627,6 +627,17 @@ class OrgQuotas(BaseModel):
 
 
 # ============================================================================
+class OrgWebhookUrls(BaseModel):
+    """Organization webhook URLs"""
+
+    crawlStarted: Optional[HttpUrl]
+    crawlFinished: Optional[HttpUrl]
+    uploadFinished: Optional[HttpUrl]
+    addedToCollection: Optional[HttpUrl]
+    removedFromCollection: Optional[HttpUrl]
+
+
+# ============================================================================
 class Organization(BaseMongoModel):
     """Organization Base Model"""
 
@@ -643,6 +654,10 @@ class Organization(BaseMongoModel):
     default: bool = False
 
     quotas: Optional[OrgQuotas] = OrgQuotas()
+
+    webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
+
+    origin: Optional[AnyHttpUrl]
 
     def is_owner(self, user):
         """Check if user is owner"""
@@ -713,7 +728,9 @@ class OrgOut(BaseMongoModel):
     usage: Optional[Dict[str, int]]
     default: bool = False
     bytesStored: int
+    origin: Optional[AnyHttpUrl]
 
+    webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
     quotas: Optional[OrgQuotas] = OrgQuotas()
 
 
@@ -854,3 +871,101 @@ class UserDB(User, fastapi_users_models.BaseUserDB):
     """
 
     invites: Dict[str, InvitePending] = {}
+
+
+# ============================================================================
+
+### WEBHOOKS ###
+
+
+# ============================================================================
+class WebhookNotificationBody(BaseModel):
+    """Base POST body model for webhook notifications"""
+
+    downloadUrls: Optional[List] = None
+
+    # Store as str, not UUID, to make JSON-serializable
+    orgId: str
+
+
+# ============================================================================
+class WebhookEventType(str, Enum):
+    """Webhook Event Types"""
+
+    CRAWL_STARTED = "crawlStarted"
+    CRAWL_FINISHED = "crawlFinished"
+    UPLOAD_FINISHED = "uploadFinished"
+
+    ADDED_TO_COLLECTION = "addedToCollection"
+    REMOVED_FROM_COLLECTION = "removedFromCollection"
+
+
+# ============================================================================
+class BaseCollectionItemBody(WebhookNotificationBody):
+    """Webhook notification base POST body for collection changes"""
+
+    collectionId: str
+    itemIds: List[str]
+
+
+# ============================================================================
+class CollectionItemAddedBody(BaseCollectionItemBody):
+    """Webhook notification POST body for collection additions"""
+
+    event: str = Field(WebhookEventType.ADDED_TO_COLLECTION, const=True)
+
+
+# ============================================================================
+class CollectionItemRemovedBody(BaseCollectionItemBody):
+    """Webhook notification POST body for collection removals"""
+
+    event: str = Field(WebhookEventType.REMOVED_FROM_COLLECTION, const=True)
+
+
+# ============================================================================
+class BaseArchivedItemBody(WebhookNotificationBody):
+    """Webhook notification POST body for when archived item is started or finished"""
+
+    itemId: str
+
+
+# ============================================================================
+class CrawlStartedBody(BaseArchivedItemBody):
+    """Webhook notification POST body for when crawl starts"""
+
+    scheduled: bool = False
+    event: str = Field(WebhookEventType.CRAWL_STARTED, const=True)
+
+
+# ============================================================================
+class CrawlFinishedBody(BaseArchivedItemBody):
+    """Webhook notification POST body for when crawl finishes"""
+
+    event: str = Field(WebhookEventType.CRAWL_FINISHED, const=True)
+    state: str
+
+
+# ============================================================================
+class UploadFinishedBody(BaseArchivedItemBody):
+    """Webhook notification POST body for when upload finishes"""
+
+    event: str = Field(WebhookEventType.UPLOAD_FINISHED, const=True)
+
+
+# ============================================================================
+class WebhookNotification(BaseMongoModel):
+    """Base POST body model for webhook notifications"""
+
+    event: WebhookEventType
+    oid: UUID4
+    body: Union[
+        CrawlStartedBody,
+        CrawlFinishedBody,
+        UploadFinishedBody,
+        CollectionItemAddedBody,
+        CollectionItemRemovedBody,
+    ]
+    success: bool = False
+    attempts: int = 0
+    created: datetime
+    lastAttempted: Optional[datetime]

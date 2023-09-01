@@ -1,0 +1,47 @@
+name: Publish Helm Chart
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  package_chart:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 3.10.2
+
+      - name: Package Chart
+        run: |
+          mkdir .chart-out
+          helm package chart/ --destination .chart-out
+
+      - name: Get Version
+        run: |
+          echo "version=$(cat version.txt)" >> "$GITHUB_ENV"
+
+      - name: Upload Chart To GitHub
+        uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            ## Deployment
+
+            This release can be deployed with Helm by running:
+
+            ```
+            helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/v${{ env.version }}/browsertrix-cloud-${{ env.version }}.tgz
+            ```
+
+            See [the development guide](https://docs.browsertrix.cloud/deploy/) for more info how to deploy Browsertrix Cloud.
+
+          files: .chart-out/browsertrix-cloud-${{ env.version }}.tgz
+          tag_name: v${{ env.version }}
+          fail_on_unmatched_files: true
+          draft: true

@@ -42,15 +42,19 @@ class CrawlOps(BaseCrawlOps):
     """Crawl Ops"""
 
     # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
-    def __init__(self, mdb, users, crawl_manager, crawl_configs, orgs, colls):
+    def __init__(
+        self, mdb, users, crawl_manager, crawl_configs, orgs, colls, event_webhook_ops
+    ):
         super().__init__(mdb, users, crawl_configs, crawl_manager, colls)
         self.crawls = self.crawls
         self.crawl_configs = crawl_configs
         self.user_manager = users
         self.orgs = orgs
+        self.event_webhook_ops = event_webhook_ops
 
         self.crawl_configs.set_crawl_ops(self)
         self.colls.set_crawl_ops(self)
+        self.event_webhook_ops.set_crawl_ops(self)
 
     async def init_index(self):
         """init index for crawls db collection"""
@@ -626,12 +630,22 @@ async def recompute_crawl_file_count_and_size(crawls, crawl_id):
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
 def init_crawls_api(
-    app, mdb, users, crawl_manager, crawl_config_ops, orgs, colls, user_dep
+    app,
+    mdb,
+    users,
+    crawl_manager,
+    crawl_config_ops,
+    orgs,
+    colls,
+    user_dep,
+    event_webhook_ops,
 ):
     """API for crawl management, including crawl done callback"""
     # pylint: disable=invalid-name
 
-    ops = CrawlOps(mdb, users, crawl_manager, crawl_config_ops, orgs, colls)
+    ops = CrawlOps(
+        mdb, users, crawl_manager, crawl_config_ops, orgs, colls, event_webhook_ops
+    )
 
     org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep

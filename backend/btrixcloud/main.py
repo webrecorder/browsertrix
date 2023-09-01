@@ -25,6 +25,7 @@ from .crawlconfigs import init_crawl_config_api
 from .colls import init_collections_api
 from .crawls import init_crawls_api
 from .basecrawls import init_base_crawls_api
+from .webhooks import init_event_webhooks_api
 
 from .crawlmanager import CrawlManager
 from .utils import run_once_lock, register_exit_handler
@@ -41,7 +42,7 @@ db_inited = {"inited": False}
 
 
 # ============================================================================
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals, duplicate-code
 def main():
     """init browsertrix cloud api"""
 
@@ -74,6 +75,8 @@ def main():
 
     org_ops = init_orgs_api(app, mdb, user_manager, invites, current_active_user)
 
+    event_webhook_ops = init_event_webhooks_api(mdb, org_ops)
+
     user_manager.set_org_ops(org_ops)
 
     # pylint: disable=import-outside-toplevel
@@ -100,7 +103,7 @@ def main():
         profiles,
     )
 
-    coll_ops = init_collections_api(app, mdb, org_ops, crawl_manager)
+    coll_ops = init_collections_api(app, mdb, org_ops, crawl_manager, event_webhook_ops)
 
     init_base_crawls_api(
         app,
@@ -122,6 +125,7 @@ def main():
         org_ops,
         coll_ops,
         current_active_user,
+        event_webhook_ops,
     )
 
     init_uploads_api(
@@ -133,6 +137,7 @@ def main():
         org_ops,
         coll_ops,
         current_active_user,
+        event_webhook_ops,
     )
 
     crawl_config_ops.set_coll_ops(coll_ops)

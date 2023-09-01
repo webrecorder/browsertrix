@@ -1,6 +1,7 @@
 "A small dirty script to check that none of the password config options have been set to real passwords"
 from collections.abc import Generator
 import yaml
+from yaml.parser import ParserError
 from yaml.scanner import ScannerError
 from yaml.constructor import ConstructorError
 import sys
@@ -45,7 +46,7 @@ for file in changed_files:
                     else:
                         print(f"top level key '{password_keys[0]}' with subkey '{password_keys[1]}' in {file} contains a real password!")
                     WE_DUN_GOOFED = True
-        except ScannerError:
+        except (ScannerError, ParserError):
             print(f"Couldn't parse yaml file for: {file}")
             pass
         except ConstructorError:

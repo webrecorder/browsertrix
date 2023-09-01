@@ -6,13 +6,12 @@ import os
 import base64
 from urllib.parse import unquote
 
+import asyncio
 from io import BufferedReader
 from typing import Optional, List
 from fastapi import Depends, UploadFile, File
-
 from fastapi import HTTPException
 from pydantic import UUID4
-
 from starlette.requests import Request
 from pathvalidate import sanitize_filename
 
@@ -40,6 +39,15 @@ MIN_UPLOAD_PART_SIZE = 10000000
 # ============================================================================
 class UploadOps(BaseCrawlOps):
     """upload ops"""
+
+    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods, too-many-function-args
+    def __init__(
+        self, mdb, users, crawl_manager, crawl_configs, orgs, colls, event_webhook_ops
+    ):
+        super().__init__(mdb, users, crawl_configs, crawl_manager, colls)
+
+        self.orgs = orgs
+        self.event_webhook_ops = event_webhook_ops
 
     # pylint: disable=too-many-arguments, too-many-locals, duplicate-code, invalid-name
     async def upload_stream(
@@ -170,6 +178,10 @@ class UploadOps(BaseCrawlOps):
             {"_id": crawl_id}, {"$set": uploaded.to_dict()}, upsert=True
         )
 
+        asyncio.create_task(
+            self.event_webhook_ops.create_upload_finished_notification(crawl_id)
+        )
+
         quota_reached = await inc_org_bytes_stored(self.orgs_db, org.id, file_size)
 
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
@@ -237,12 +249,21 @@ class UploadFileReader(BufferedReader):
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name
 def init_uploads_api(
-    app, mdb, users, crawl_manager, crawl_configs, orgs, colls, user_dep
+    app,
+    mdb,
+    users,
+    crawl_manager,
+    crawl_configs,
+    orgs,
+    colls,
+    user_dep,
+    event_webhook_ops,
 ):
     """uploads api"""
 
-    # ops = CrawlOps(mdb, users, crawl_manager, crawl_config_ops, orgs)
-    ops = UploadOps(mdb, users, crawl_configs, crawl_manager, colls)
+    ops = UploadOps(
+        mdb, users, crawl_manager, crawl_configs, orgs, colls, event_webhook_ops
+    )
 
     org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep

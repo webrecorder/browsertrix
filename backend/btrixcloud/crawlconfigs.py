@@ -47,7 +47,15 @@ class CrawlConfigOps:
 
     # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
 
-    def __init__(self, dbclient, mdb, user_manager, org_ops, crawl_manager, profiles):
+    def __init__(
+        self,
+        dbclient,
+        mdb,
+        user_manager,
+        org_ops,
+        crawl_manager,
+        profiles,
+    ):
         self.dbclient = dbclient
         self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
@@ -873,7 +881,13 @@ async def stats_recompute_last(
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
 def init_crawl_config_api(
-    dbclient, mdb, user_dep, user_manager, org_ops, crawl_manager, profiles
+    dbclient,
+    mdb,
+    user_dep,
+    user_manager,
+    org_ops,
+    crawl_manager,
+    profiles,
 ):
     """Init /crawlconfigs api routes"""
     # pylint: disable=invalid-name
