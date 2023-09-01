@@ -97,7 +97,7 @@ export class ConfigDetails extends LiteElement {
     };
 
     const renderSize = (valueBytes?: number | null, fallbackValue?: number) => {
-      const bytesPerGB = 1073741824;
+      const bytesPerGB = 1e9;
 
       // Eventually we will want to set this to the selected locale
       const formatter = new Intl.NumberFormat(undefined, {

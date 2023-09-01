@@ -215,7 +215,7 @@ const DEFAULT_BEHAVIORS = [
   "autofetch",
   "siteSpecific",
 ];
-const BYTES_PER_GB = 1073741824;
+const BYTES_PER_GB = 1e9;
 
 @localized()
 export class CrawlConfigEditor extends LiteElement {
