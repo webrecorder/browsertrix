@@ -770,12 +770,12 @@ class BtrixOperator(K8sAPI):
         if redis:
             await self.add_crawl_errors_to_db(redis, crawl_id)
 
-        await self.event_webhook_ops.create_crawl_finished_notification(crawl_id, state)
-
         if state in SUCCESSFUL_STATES:
             await add_successful_crawl_to_collections(
                 self.crawls, self.crawl_configs, self.collections, crawl_id, cid
             )
+
+        await self.event_webhook_ops.create_crawl_finished_notification(crawl_id, state)
 
     async def inc_crawl_complete_stats(self, crawl, finished):
         """Increment Crawl Stats"""
