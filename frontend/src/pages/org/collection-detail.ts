@@ -742,7 +742,7 @@ export class CollectionDetail extends LiteElement {
     try {
       this.archivedItems = await this.getArchivedItems(params);
     } catch (e: any) {
-      if (e === ABORT_REASON_THROTTLE) {
+      if (e.name === "AbortError") {
         console.debug("Fetch web captures aborted to throttle");
       } else {
         this.notify({
