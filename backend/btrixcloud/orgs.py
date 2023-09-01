@@ -261,7 +261,7 @@ class OrgOps:
     async def storage_quota_reached(self, org: Organization):
         """Return boolean indicating if storage quota is met or exceeded."""
         return await storage_quota_reached(self.orgs, org.id)
-    
+
     async def set_origin(self, org: Organization, request: Request):
         """Get origin from request and store in db for use in event webhooks"""
         headers = request.headers
