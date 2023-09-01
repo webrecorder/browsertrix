@@ -7,6 +7,15 @@ on:
     paths:
       - 'backend/**'
       - 'chart/**'
+
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'chart/**'
+
+env:
+  ECHO_SERVER_HOST_URL: http://10.0.1.1:18080
+
 jobs:
   btrix-microk8s-test:
     runs-on: ubuntu-latest
@@ -14,7 +23,7 @@ jobs:
       - uses: balchua/microk8s-actions@v0.3.1
         with:
           channel: '1.25/stable'
-          addons: '["dns", "helm3", "hostpath-storage", "registry", "metrics-server"]'
+          addons: '["dns", "helm3", "hostpath-storage", "registry", "metrics-server", "host-access"]'
       - name: Checkout
         uses: actions/checkout@v3
 

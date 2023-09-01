@@ -2,7 +2,9 @@
 
 import asyncio
 from datetime import datetime
-from typing import List, Union
+import os
+import socket
+from typing import List, Union, Optional
 import uuid
 
 import aiohttp
@@ -28,7 +30,7 @@ from .models import (
 class EventWebhookOps:
     """Event webhook notification management"""
 
-    # pylint: disable=
+    # pylint: disable=invalid-name, too-many-arguments, too-many-locals
 
     def __init__(self, mdb, org_ops):
         self.webhooks = mdb["webhooks"]
@@ -61,14 +63,14 @@ class EventWebhookOps:
         sort_direction: Optional[int] = -1,
     ):
         """List all webhook notifications"""
-        # pylint: disable=invalid-name
+        # pylint: disable=duplicate-code
         # Zero-index page for query
         page = page - 1
         skip = page_size * page
 
         query = {"oid": org.id}
 
-        if success:
+        if success in (True, False):
             query["success"] = success
 
         if event:
@@ -124,7 +126,12 @@ class EventWebhookOps:
 
         return WebhookNotification.from_dict(res)
 
-    @backoff.on_exception(backoff.expo, aiohttp.ClientError, max_tries=5, max_time=60)
+    @backoff.on_exception(
+        backoff.expo,
+        (aiohttp.ClientError, aiohttp.client_exceptions.ClientConnectorError),
+        max_tries=5,
+        max_time=60,
+    )
     async def send_notification(
         self, org: Organization, notification: WebhookNotification
     ):
@@ -144,13 +151,24 @@ class EventWebhookOps:
             )
             return
 
+        require_ssl_webhooks = os.environ.get("REQUIRE_SSL_WEBHOOKS")
+        ssl = None
+        if require_ssl_webhooks is not None and require_ssl_webhooks.lower() == "false":
+            ssl = False
+
+        conn = aiohttp.TCPConnector(
+            family=socket.AF_INET,
+            ssl=ssl,
+        )
+
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(connector=conn) as session:
                 async with session.request(
                     "POST",
                     webhook_url,
                     json=notification.body.dict(),
                     raise_for_status=True,
+                    ssl=ssl,
                 ):
                     await self.webhooks.find_one_and_update(
                         {"_id": notification.id},
@@ -228,10 +246,7 @@ class EventWebhookOps:
             ),
         )
 
-    async def create_upload_finished_notification(
-        self,
-        crawl_id: str,
-    ):
+    async def create_upload_finished_notification(self, crawl_id: str):
         """Create webhook notification for finished upload."""
         crawl_res = await self.crawls.find_one({"_id": crawl_id})
         org = await self.org_ops.get_org_by_id(crawl_res["oid"])
@@ -244,8 +259,7 @@ class EventWebhookOps:
             org,
             event=WebhookEventType.UPLOAD_FINISHED,
             body=UploadFinishedBody(
-                itemId=crawl_id,
-                orgId=str(org.id),
+                itemId=crawl_id, orgId=str(org.id), state="complete"
             ),
         )
 

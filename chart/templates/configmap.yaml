@@ -16,6 +16,8 @@ data:
 
   DEFAULT_ORG: "{{ .Values.default_org }}"
 
+  REQUIRE_SSL_WEBHOOKS: "{{ .Values.require_ssl_webhooks }}"
+
   INVITE_EXPIRE_SECONDS: "{{ .Values.invite_expire_seconds }}"
 
   JOB_IMAGE: "{{ .Values.backend_image }}"
