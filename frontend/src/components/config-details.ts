@@ -95,7 +95,6 @@ export class ConfigDetails extends LiteElement {
         >`;
       }
     };
-
     const renderSize = (valueBytes?: number | null) => {
       // Eventually we will want to set this to the selected locale
       if (valueBytes) {
