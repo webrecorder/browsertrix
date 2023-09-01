@@ -291,3 +291,70 @@ def test_delete_invite_by_email(admin_auth_headers, non_default_org_id):
     assert r.status_code == 404
     data = r.json()
     assert data["detail"] == "invite_not_found"
+
+
+def test_update_event_webhook_urls_org_admin(admin_auth_headers, default_org_id):
+    # Verify no URLs are configured
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    if data.get("webhooks"):
+        webhooks = data.get("webhooks")
+        assert webhooks.get("crawlStarted") is None
+        assert webhooks.get("crawlFinished") is None
+        assert webhooks.get("uploadFinished") is None
+        assert webhooks.get("addedToCollection") is None
+        assert webhooks.get("removedFromCollection") is None
+
+    # Set URLs and verify
+    CRAWL_STARTED_URL = "https://example.com/crawl/started"
+    CRAWL_FINISHED_URL = "https://example.com/crawl/finished"
+    UPLOAD_FINISHED_URL = "https://example.com/crawl/finished"
+    COLL_ADDED_URL = "https://example.com/coll/added"
+    COLL_REMOVED_URL = "http://example.com/coll/removed"
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/event-webhook-urls",
+        headers=admin_auth_headers,
+        json={
+            "crawlStarted": CRAWL_STARTED_URL,
+            "crawlFinished": CRAWL_FINISHED_URL,
+            "uploadFinished": UPLOAD_FINISHED_URL,
+            "addedToCollection": COLL_ADDED_URL,
+            "removedFromCollection": COLL_REMOVED_URL,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    urls = data["webhookUrls"]
+    assert urls["crawlStarted"] == CRAWL_STARTED_URL
+    assert urls["crawlFinished"] == CRAWL_FINISHED_URL
+    assert urls["uploadFinished"] == UPLOAD_FINISHED_URL
+    assert urls["addedToCollection"] == COLL_ADDED_URL
+    assert urls["removedFromCollection"] == COLL_REMOVED_URL
+
+
+def test_update_event_webhook_urls_org_crawler(crawler_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/event-webhook-urls",
+        headers=crawler_auth_headers,
+        json={
+            "crawlStarted": "https://example.com/crawlstarted",
+            "crawlFinished": "https://example.com/crawlfinished",
+            "uploadFinished": "https://example.com/uploadfinished",
+            "addedToCollection": "https://example.com/added",
+            "removedFromCollection": "https://example.com/removed",
+        },
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "User does not have permission to perform this action"

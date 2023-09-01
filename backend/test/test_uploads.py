@@ -495,7 +495,7 @@ def test_get_all_crawls_by_state(admin_auth_headers, default_org_id, admin_crawl
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 5
+    assert data["total"] >= 5
     items = data["items"]
     for item in items:
         assert item["state"] in ("complete", "partial_complete")

@@ -22,7 +22,6 @@ from .utils import (
 )
 from .k8sapi import K8sAPI
 
-from .db import init_db
 from .orgs import inc_org_stats, get_max_concurrent_crawls
 from .basecrawls import (
     NON_RUNNING_STATES,
@@ -87,6 +86,7 @@ class CrawlSpec(BaseModel):
     storage_name: str
     started: str
     stopping: bool = False
+    scheduled: bool = False
     expire_time: Optional[datetime] = None
     max_crawl_size: Optional[int] = None
 
@@ -118,11 +118,13 @@ class CrawlStatus(BaseModel):
 class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
 
-    def __init__(self):
+    def __init__(self, mdb, event_webhook_ops):
         super().__init__()
+
+        self.event_webhook_ops = event_webhook_ops
+
         self.config_file = "/config/config.yaml"
 
-        _, mdb = init_db()
         self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
@@ -212,6 +214,7 @@ class BtrixOperator(K8sAPI):
             stopping=spec.get("stopping", False),
             expire_time=from_k8s_date(spec.get("expireTime")),
             max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),
+            scheduled=spec.get("manual") != "1",
         )
 
         if status.state in ("starting", "waiting_org_limit"):
@@ -523,12 +526,18 @@ class BtrixOperator(K8sAPI):
         try:
             # set state to running (if not already)
             if status.state not in RUNNING_STATES:
-                await self.set_state(
+                # if true (state is set), also run webhook
+                if await self.set_state(
                     "running",
                     status,
                     crawl.id,
                     allowed_from=["starting", "waiting_capacity"],
-                )
+                ):
+                    asyncio.create_task(
+                        self.event_webhook_ops.create_crawl_started_notification(
+                            crawl.id, crawl.oid, scheduled=crawl.scheduled
+                        )
+                    )
 
             file_done = await redis.lpop(self.done_key)
 
@@ -765,6 +774,8 @@ class BtrixOperator(K8sAPI):
                 self.crawls, self.crawl_configs, self.collections, crawl_id, cid
             )
 
+        await self.event_webhook_ops.create_crawl_finished_notification(crawl_id, state)
+
     async def inc_crawl_complete_stats(self, crawl, finished):
         """Increment Crawl Stats"""
 
@@ -805,10 +816,10 @@ class BtrixOperator(K8sAPI):
 
 
 # ============================================================================
-def init_operator_webhook(app):
+def init_operator_api(app, mdb, event_webhook_ops):
     """regsiters webhook handlers for metacontroller"""
 
-    oper = BtrixOperator()
+    oper = BtrixOperator(mdb, event_webhook_ops)
 
     @app.post("/op/crawls/sync")
     async def mc_sync_crawls(data: MCSyncData):

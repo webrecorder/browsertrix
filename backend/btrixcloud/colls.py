@@ -6,6 +6,7 @@ from datetime import datetime
 import uuid
 from typing import Optional, List
 
+import asyncio
 import pymongo
 from fastapi import Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
@@ -34,13 +35,14 @@ class CollectionOps:
 
     # pylint: disable=too-many-arguments
 
-    def __init__(self, mdb, crawl_manager, orgs):
+    def __init__(self, mdb, crawl_manager, orgs, event_webhook_ops):
         self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
         self.crawl_ops = None
 
         self.crawl_manager = crawl_manager
         self.orgs = orgs
+        self.event_webhook_ops = event_webhook_ops
 
     def set_crawl_ops(self, ops):
         """set crawl ops"""
@@ -82,6 +84,11 @@ class CollectionOps:
                 await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
                 await update_collection_counts_and_tags(
                     self.collections, self.crawls, coll_id
+                )
+                asyncio.create_task(
+                    self.event_webhook_ops.create_added_to_collection_notification(
+                        crawl_ids, coll_id, org
+                    )
                 )
 
             return {"added": True, "id": coll_id, "name": name}
@@ -132,6 +139,12 @@ class CollectionOps:
 
         await update_collection_counts_and_tags(self.collections, self.crawls, coll_id)
 
+        asyncio.create_task(
+            self.event_webhook_ops.create_added_to_collection_notification(
+                crawl_ids, coll_id, org
+            )
+        )
+
         return await self.get_collection(coll_id, org)
 
     async def remove_crawls_from_collection(
@@ -149,6 +162,12 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         await update_collection_counts_and_tags(self.collections, self.crawls, coll_id)
+
+        asyncio.create_task(
+            self.event_webhook_ops.create_removed_from_collection_notification(
+                crawl_ids, coll_id, org
+            )
+        )
 
         return await self.get_collection(coll_id, org)
 
@@ -267,7 +286,6 @@ class CollectionOps:
         names = [
             CollIdName(id=namedata["_id"], name=namedata["name"]) for namedata in names
         ]
-        print("names", names)
         return names
 
     async def get_collection_search_values(self, org: Organization):
@@ -364,11 +382,11 @@ async def add_successful_crawl_to_collections(
 
 # ============================================================================
 # pylint: disable=too-many-locals
-def init_collections_api(app, mdb, orgs, crawl_manager):
+def init_collections_api(app, mdb, orgs, crawl_manager, event_webhook_ops):
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
 
-    colls = CollectionOps(mdb, crawl_manager, orgs)
+    colls = CollectionOps(mdb, crawl_manager, orgs, event_webhook_ops)
 
     org_crawl_dep = orgs.org_crawl_dep
     org_viewer_dep = orgs.org_viewer_dep
