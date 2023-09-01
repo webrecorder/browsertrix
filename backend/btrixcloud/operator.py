@@ -40,7 +40,6 @@ from .crawls import (
 from .models import CrawlFile, CrawlCompleteIn
 
 
-STS = "StatefulSet.apps/v1"
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
 POD = "Pod.v1"
@@ -189,7 +188,9 @@ class BtrixOperator(K8sAPI):
             else:
                 finalize = True
 
-            return await self.finalize_crawl(crawl_id, status, data.related, finalize)
+            return await self.finalize_crawl(
+                crawl_id, status, data.children[PVC], finalize
+            )
 
         if status.finished:
             return await self.handle_finished_delete_if_needed(crawl_id, status, spec)
@@ -225,12 +226,8 @@ class BtrixOperator(K8sAPI):
                 "starting", status, crawl.id, allowed_from=["waiting_org_limit"]
             )
 
-        crawl_sts = f"crawl-{crawl_id}"
-        redis_sts = f"redis-{crawl_id}"
-
-        has_crawl_children = crawl_sts in data.children[STS]
-        if has_crawl_children:
-            pods = data.related[POD]
+        pods = data.children[POD]
+        if len(pods):
             status = await self.sync_crawl_state(redis_url, crawl, status, pods)
             if status.stopping:
                 await self.check_if_finished(crawl, status)
@@ -252,25 +249,16 @@ class BtrixOperator(K8sAPI):
         params["profile_filename"] = configmap["PROFILE_FILENAME"]
         params["scale"] = spec.get("scale", 1)
         params["force_restart"] = spec.get("forceRestart")
-
         params["redis_url"] = redis_url
-        params["redis_scale"] = 1 if status.initRedis else 0
 
-        children = self.load_from_yaml("crawler.yaml", params)
-        children.extend(self.load_from_yaml("redis.yaml", params))
+        children = []
 
-        # to minimize merging, just patch in volumeClaimTemplates from actual children
-        # as they may get additional settings that cause more frequent updates
-        if has_crawl_children:
-            children[0]["spec"]["volumeClaimTemplates"] = data.children[STS][crawl_sts][
-                "spec"
-            ]["volumeClaimTemplates"]
+        for i in range(0, scale):
+            params["index"] = i
+            children.extend(self.load_from_yaml("crawler.yaml", params))
 
-        has_redis_children = redis_sts in data.children[STS]
-        if has_redis_children:
-            children[1]["spec"]["volumeClaimTemplates"] = data.children[STS][redis_sts][
-                "spec"
-            ]["volumeClaimTemplates"]
+        if status.initRedis:
+            children.extend(self.load_from_yaml("redis.yaml", params))
 
         return {
             "status": status.dict(exclude_none=True, exclude={"resync_after": True}),
@@ -338,7 +326,6 @@ class BtrixOperator(K8sAPI):
         """return configmap related to crawl"""
         spec = data.parent.get("spec", {})
         cid = spec["cid"]
-        crawl_id = spec["id"]
         oid = spec.get("oid")
         return {
             "relatedResources": [
@@ -346,18 +333,6 @@ class BtrixOperator(K8sAPI):
                     "apiVersion": "v1",
                     "resource": "configmaps",
                     "labelSelector": {"matchLabels": {"btrix.crawlconfig": cid}},
-                },
-                {
-                    "apiVersion": "v1",
-                    "resource": "persistentvolumeclaims",
-                    "labelSelector": {"matchLabels": {"crawl": crawl_id}},
-                },
-                {
-                    "apiVersion": "v1",
-                    "resource": "pods",
-                    "labelSelector": {
-                        "matchLabels": {"crawl": crawl_id, "role": "crawler"}
-                    },
                 },
                 {
                     "apiVersion": "btrix.cloud/v1",
@@ -418,19 +393,6 @@ class BtrixOperator(K8sAPI):
 
         return self._done_response(status)
 
-    async def delete_pvc(self, crawl_id):
-        """delete all pvcs for crawl"""
-        # until delete policy is supported in StatefulSet
-        # now, delete pvcs explicitly
-        # (don't want to make them children as already owned by sts)
-        try:
-            await self.core_api.delete_collection_namespaced_persistent_volume_claim(
-                namespace=self.namespace, label_selector=f"crawl={crawl_id}"
-            )
-        # pylint: disable=bare-except, broad-except
-        except Exception as exc:
-            print("PVC Delete failed", exc, flush=True)
-
     # pylint: disable=too-many-arguments
     async def cancel_crawl(self, redis_url, crawl_id, cid, status, state):
         """immediately cancel crawl with specified state
@@ -456,14 +418,15 @@ class BtrixOperator(K8sAPI):
             "finalized": finalized,
         }
 
-    async def finalize_crawl(self, crawl_id, status, related, finalized=True):
+    async def finalize_crawl(self, crawl_id, status, pvcs, finalized=True):
         """ensure crawl id ready for deletion
         return with finalized state"""
 
-        pvcs = list(related[PVC].keys())
+        pvcs = list(pvcs.keys())
         if pvcs:
-            print(f"Deleting PVCs for {crawl_id}", pvcs)
-            asyncio.create_task(self.delete_pvc(crawl_id))
+            print("not empty")
+            #print(f"Deleting PVCs for {crawl_id}", pvcs)
+            #asyncio.create_task(self.delete_pvc(crawl_id))
             finalized = False
 
         return self._done_response(status, finalized)

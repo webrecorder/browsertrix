@@ -164,6 +164,8 @@ redis_cpu: "5m"
 
 redis_memory: "48Mi"
 
+redis_storage: "5Gi"
+
 
 # Crawler Image
 # =========================================

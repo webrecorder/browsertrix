@@ -71,7 +71,8 @@ data:
  
     volume_storage_class: "{{ .Values.volume_storage_class }}"
 
-    requests_hd: "{{ .Values.crawler_storage }}"
+    crawler_storage: "{{ .Values.crawler_storage }}"
+    redis_storage: "{{ .Values.redis_storage }}"
 
     # redis
     redis_image: {{ .Values.redis_image }}
