@@ -46,8 +46,6 @@ metadata:
 spec:
   hostname: crawl-{{ id }}-{{ index }}
   subdomain: crawler
-  dnsPolicy: ClusterFirst
-  enableServiceLinks: true
 
   terminationGracePeriodSeconds: {{ termination_grace_secs }}
   volumes:

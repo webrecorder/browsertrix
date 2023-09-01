@@ -39,8 +39,6 @@ metadata:
 spec:
   hostname: redis-{{ id }}
   subdomain: redis
-  dnsPolicy: ClusterFirst
-  enableServiceLinks: true
 
   terminationGracePeriodSeconds: 10
   volumes:
