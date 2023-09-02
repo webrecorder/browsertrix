@@ -74,10 +74,18 @@ spec:
                 crawl: {{ id }}
 
   tolerations:
-    - key: "nodeType"
-      operator: "Equal"
-      value: "crawling"
-      effect: "NoSchedule"
+    - key: nodeType
+      operator: Equal
+      value: crawling
+      effect: NoSchedule
+    - key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+      effect: NoExecute
+    - key: node.kubernetes.io/unreachable
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300
 
   containers:
     - name: redis
