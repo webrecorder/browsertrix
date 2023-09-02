@@ -182,18 +182,14 @@ class BtrixOperator(K8sAPI):
             # if not yet finished, assume it was canceled, mark as such
             print(f"Finalizing crawl {crawl_id}, finished {status.finished}")
             if not status.finished:
-                finalize = await self.cancel_crawl(
-                    redis_url, crawl_id, cid, status, "canceled"
-                )
-            else:
-                finalize = True
+                await self.cancel_crawl(redis_url, crawl_id, cid, status, "canceled")
 
-            return await self.finalize_crawl(
-                crawl_id, status, data.children[PVC], finalize
-            )
+            return await self.finalize_response(crawl_id, status, data.children)
 
         if status.finished:
-            return await self.handle_finished_delete_if_needed(crawl_id, status, spec)
+            return await self.handle_finished_delete_if_needed(
+                crawl_id, status, spec, data.children
+            )
 
         try:
             configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
@@ -202,7 +198,7 @@ class BtrixOperator(K8sAPI):
             # fail crawl if config somehow missing, shouldn't generally happen
             await self.cancel_crawl(redis_url, crawl_id, cid, status, "failed")
 
-            return self._done_response(status)
+            return self._empty_response(status)
 
         crawl = CrawlSpec(
             id=crawl_id,
@@ -220,7 +216,7 @@ class BtrixOperator(K8sAPI):
 
         if status.state in ("starting", "waiting_org_limit"):
             if not await self.can_start_new(crawl, data, status):
-                return self._done_response(status)
+                return self._empty_response(status)
 
             await self.set_state(
                 "starting", status, crawl.id, allowed_from=["waiting_org_limit"]
@@ -234,7 +230,7 @@ class BtrixOperator(K8sAPI):
 
             if status.finished:
                 return await self.handle_finished_delete_if_needed(
-                    crawl_id, status, spec
+                    crawl_id, status, spec, data.children
                 )
 
         params = {}
@@ -379,7 +375,7 @@ class BtrixOperator(K8sAPI):
         )
         return False
 
-    async def handle_finished_delete_if_needed(self, crawl_id, status, spec):
+    async def handle_finished_delete_if_needed(self, crawl_id, status, spec, children):
         """return status for finished job (no children)
         also check if deletion is necessary
         """
@@ -391,7 +387,7 @@ class BtrixOperator(K8sAPI):
 
             asyncio.create_task(self.delete_crawl_job(crawl_id))
 
-        return self._done_response(status)
+        return await self.finalize_response(crawl_id, status, children)
 
     # pylint: disable=too-many-arguments
     async def cancel_crawl(self, redis_url, crawl_id, cid, status, state):
@@ -410,26 +406,33 @@ class BtrixOperator(K8sAPI):
             if redis:
                 await redis.close()
 
-    def _done_response(self, status, finalized=False):
+    def _empty_response(self, status):
         """done response for removing crawl"""
         return {
             "status": status.dict(exclude_none=True, exclude={"resync_after": True}),
             "children": [],
-            "finalized": finalized,
         }
 
-    async def finalize_crawl(self, crawl_id, status, pvcs, finalized=True):
-        """ensure crawl id ready for deletion
-        return with finalized state"""
+    async def finalize_response(self, crawl_id, status, children):
+        """ensure crawl id ready for deletion"""
 
-        pvcs = list(pvcs.keys())
-        if pvcs:
-            print("not empty")
-            #print(f"Deleting PVCs for {crawl_id}", pvcs)
-            #asyncio.create_task(self.delete_pvc(crawl_id))
-            finalized = False
+        redis_pod = f"redis-{crawl_id}"
+        new_children = []
 
-        return self._done_response(status, finalized)
+        if redis_pod in children[POD]:
+            # if has other pods, keep redis pod until they are removed
+            if len(children[POD]) > 1:
+                new_children = [children[POD][redis_pod]]
+
+        # keep pvs until pods are removed
+        if new_children:
+            new_children.extend(list(children[PVC].values()))
+
+        return {
+            "status": status.dict(exclude_none=True, exclude={"resync_after": True}),
+            "children": new_children,
+            "finalized": not new_children,
+        }
 
     async def _get_redis(self, redis_url):
         """init redis, ensure connectivity"""
