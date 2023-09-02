@@ -28,6 +28,8 @@ from .models import (
 class EventWebhookOps:
     """Event webhook notification management"""
 
+    # pylint: disable=
+
     def __init__(self, mdb, org_ops):
         self.webhooks = mdb["webhooks"]
         self.colls = mdb["collections"]
@@ -54,8 +56,12 @@ class EventWebhookOps:
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         success: Optional[bool] = None,
+        event: Optional[str] = None,
+        sort_by: Optional[str] = None,
+        sort_direction: Optional[int] = -1,
     ):
         """List all webhook notifications"""
+        # pylint: disable=invalid-name
         # Zero-index page for query
         page = page - 1
         skip = page_size * page
@@ -65,11 +71,46 @@ class EventWebhookOps:
         if success:
             query["success"] = success
 
-        total = await self.webhooks.count_documents(query)
+        if event:
+            query["event"] = event
 
-        cursor = self.webhooks.find(query, skip=skip, limit=page_size)
-        results = await cursor.to_list(length=page_size)
-        notifications = [WebhookNotification.from_dict(res) for res in results]
+        aggregate = [{"$match": query}]
+
+        if sort_by:
+            SORT_FIELDS = ("success", "event", "attempts", "created", "lastAttempted")
+            if sort_by not in SORT_FIELDS:
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+
+        aggregate.extend(
+            [
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
+            ]
+        )
+
+        # Get total
+        cursor = self.webhooks.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
+
+        notifications = [WebhookNotification.from_dict(res) for res in items]
 
         return notifications, total
 
@@ -317,6 +358,7 @@ class EventWebhookOps:
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
 def init_event_webhooks_api(mdb, org_ops):
     """init event webhooks system"""
+    # pylint: disable=invalid-name
 
     ops = EventWebhookOps(mdb, org_ops)
 
@@ -330,9 +372,18 @@ def init_event_webhooks_api(mdb, org_ops):
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         success: Optional[bool] = None,
+        event: Optional[str] = None,
+        sortBy: Optional[str] = None,
+        sortDirection: Optional[int] = -1,
     ):
         notifications, total = await ops.list_notifications(
-            org, page_size=pageSize, page=page, success=success
+            org,
+            page_size=pageSize,
+            page=page,
+            success=success,
+            event=event,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
         )
         return paginated_format(notifications, total, page, pageSize)
 
