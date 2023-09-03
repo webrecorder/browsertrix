@@ -249,12 +249,13 @@ class BtrixOperator(K8sAPI):
 
         children = []
 
-        for i in range(0, scale):
-            params["index"] = i
-            children.extend(self.load_from_yaml("crawler.yaml", params))
-
         if status.initRedis:
             children.extend(self.load_from_yaml("redis.yaml", params))
+
+        for i in range(0, scale):
+            params["index"] = i
+            params["priorityClassName"] = f"crawl-instance-{i}"
+            children.extend(self.load_from_yaml("crawler.yaml", params))
 
         return {
             "status": status.dict(exclude_none=True, exclude={"resync_after": True}),
@@ -465,8 +466,8 @@ class BtrixOperator(K8sAPI):
 
     async def sync_crawl_state(self, redis_url, crawl, status, pods):
         """sync crawl state for running crawl"""
-        # check if at least one pod started running
-        if not self.check_if_pods_running(pods):
+        # check if at least one crawler pod started running
+        if not self.check_if_crawler_running(pods):
             if self.should_mark_waiting(status.state, crawl.started):
                 await self.set_state(
                     "waiting_capacity",
@@ -533,12 +534,16 @@ class BtrixOperator(K8sAPI):
         finally:
             await redis.close()
 
-    def check_if_pods_running(self, pods):
+    def check_if_crawler_running(self, pods):
         """check if at least one crawler pod has started"""
         try:
             for pod in pods.values():
+                if pod["metadata"]["labels"]["role"] != "crawler":
+                    continue
+
                 status = pod["status"]
-                if status["phase"] == "Running":
+                print("phase", status["phase"])
+                if status["phase"] in ("Running", "Succeeded"):
                     return True
 
                 # consider 'ContainerCreating' as running

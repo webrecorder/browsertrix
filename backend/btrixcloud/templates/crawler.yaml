@@ -47,6 +47,10 @@ spec:
   hostname: crawl-{{ id }}-{{ index }}
   subdomain: crawler
 
+  {% if priorityClassName %}
+  priorityClassName: {{ priorityClassName }}
+  {% endif %}
+
   terminationGracePeriodSeconds: {{ termination_grace_secs }}
   volumes:
     - name: crawl-config

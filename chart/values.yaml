@@ -48,6 +48,10 @@ default_crawl_filename_template: "@ts-@hostsuffix.wacz"
 crawler_extra_args: ""
 
 
+# max allowed crawl scale per crawl
+max_crawl_scale: 3
+
+
 # Cluster Settings
 # =========================================
 name: browsertrix-cloud

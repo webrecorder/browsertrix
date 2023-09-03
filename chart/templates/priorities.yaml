@@ -1,0 +1,12 @@
+
+{{- range untilStep 0 (int .Values.max_crawl_scale) 1 }}
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: crawl-instance-{{ . }}
+value: -{{ . }}
+globalDefault: false
+description: "Priority for crawl instance #{{ . }}"
+
+{{- end }}
