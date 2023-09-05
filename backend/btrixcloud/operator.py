@@ -48,6 +48,8 @@ CJS = "CrawlJob.btrix.cloud/v1"
 
 DEFAULT_TTL = 30
 
+REDIS_TTL = 60
+
 # time in seconds before a crawl is deemed 'waiting' instead of 'starting'
 STARTING_TIME_SECS = 60
 
@@ -107,6 +109,7 @@ class CrawlStatus(BaseModel):
     finished: Optional[str] = None
     stopping: bool = False
     initRedis: bool = False
+    lastActiveTime: str = ""
 
     # don't include in status, use by metacontroller
     resync_after: Optional[int] = None
@@ -274,11 +277,11 @@ class BtrixOperator(K8sAPI):
 
     # pylint: disable=too-many-arguments
     async def _resolve_scale(self, crawl_id, desired_scale, redis, status, pods):
-        """ if desired_scale >= actual scale, just set (also limit by number of pages
-found)
-            if desired scale < actual scale, attempt to shut down each crawl instance
-via redis setting. if contiguous instances shutdown (successful exit), lower
-scale. also clean up previous scale state """
+        """if desired_scale >= actual scale, just set (also limit by number of pages
+        found)
+                    if desired scale < actual scale, attempt to shut down each crawl instance
+        via redis setting. if contiguous instances shutdown (successful exit), lower
+        scale. also clean up previous scale state"""
 
         # actual scale (minus redis pod)
         actual_scale = len(pods)
@@ -526,13 +529,20 @@ scale. also clean up previous scale state """
                 )
 
             # for now, don't reset redis once inited
-            # status.initRedis = False
+            if (
+                status.lastActiveTime
+                and (dt_now() - from_k8s_date(status.lastActiveTime)).total_seconds()
+                > REDIS_TTL
+            ):
+                print(f"Pausing redis, no running crawler pods for >{REDIS_TTL} secs")
+                status.initRedis = False
 
             # if still running, resync after N seconds
             status.resync_after = self.fast_retry_secs
             return status
 
         status.initRedis = True
+        status.lastActiveTime = to_k8s_date(dt_now())
 
         redis = await self._get_redis(redis_url)
         if not redis:
