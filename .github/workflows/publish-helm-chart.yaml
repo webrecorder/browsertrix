@@ -41,7 +41,7 @@ jobs:
 
             See [the development guide](https://docs.browsertrix.cloud/deploy/) for more info how to deploy Browsertrix Cloud.
 
-          files: .chart-out/browsertrix-cloud-$v{{ env.version }}.tgz
+          files: .chart-out/browsertrix-cloud-v${{ env.version }}.tgz
           tag_name: v${{ env.version }}
           fail_on_unmatched_files: true
           draft: true
