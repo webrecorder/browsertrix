@@ -144,7 +144,8 @@ class K8sAPI:
                 plural="crawljobs",
                 name=f"crawljob-{crawl_id}",
                 grace_period_seconds=0,
-                propagation_policy="Foreground",
+                # delete as background to allow operator to do proper cleanup
+                propagation_policy="Background",
             )
             return {"success": True}
 
@@ -161,7 +162,7 @@ class K8sAPI:
                 plural="profilejobs",
                 name=f"profilejob-{browserid}",
                 grace_period_seconds=0,
-                propagation_policy="Foreground",
+                propagation_policy="Background",
             )
             return True
 

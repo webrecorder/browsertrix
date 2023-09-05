@@ -5,7 +5,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: pvc-redis-{{ id }}
+  name: redis-{{ id }}
   namespace: {{ namespace }}
   labels:
     crawl: {{ id }}
@@ -26,6 +26,7 @@ spec:
 # --------
 # REDIS
 # --------
+{% if init_redis %}
 ---
 apiVersion: v1
 kind: Pod
@@ -51,7 +52,7 @@ spec:
 
     - name: redis-data
       persistentVolumeClaim:
-        claimName: pvc-redis-{{ id }}
+        claimName: redis-{{ id }}
 
   affinity:
     nodeAffinity:
@@ -113,3 +114,4 @@ spec:
           command:
             - redis-cli
             - ping
+{% endif %}

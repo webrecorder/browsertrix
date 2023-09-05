@@ -5,7 +5,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: pvc-crawl-{{ id }}-{{ index }}
+  name: crawl-{{ id }}-{{ index }}
   namespace: {{ namespace }}
   labels:
     crawl: {{ id }}
@@ -51,6 +51,8 @@ spec:
   priorityClassName: {{ priorityClassName }}
   {% endif %}
 
+  restartPolicy: OnFailure
+
   terminationGracePeriodSeconds: {{ termination_grace_secs }}
   volumes:
     - name: crawl-config
@@ -59,7 +61,7 @@ spec:
 
     - name: crawl-data
       persistentVolumeClaim:
-        claimName: pvc-crawl-{{ id }}-{{ index }}
+        claimName: crawl-{{ id }}-{{ index }}
 
   affinity:
     nodeAffinity:
