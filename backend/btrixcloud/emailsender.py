@@ -16,6 +16,8 @@ class EmailSender:
         self.password = os.environ.get("EMAIL_PASSWORD")
         self.reply_to = os.environ.get("EMAIL_REPLY_TO") or self.sender
         self.smtp_server = os.environ.get("EMAIL_SMTP_HOST")
+        self.smtp_port = int(os.environ.get("EMAIL_SMTP_PORT", 587))
+        self.smtp_use_tls = bool(os.environ.get("EMAIL_SMTP_USE_TLS", True))
 
         self.default_origin = os.environ.get("APP_ORIGIN")
 
@@ -35,11 +37,13 @@ class EmailSender:
         msg.set_content(message)
 
         context = ssl.create_default_context()
-        with smtplib.SMTP(self.smtp_server, 587) as server:
+        with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+            if self.smtp_use_tls:
+                server.ehlo()  # Can be omitted
+                server.starttls(context=context)
             server.ehlo()  # Can be omitted
-            server.starttls(context=context)
-            server.ehlo()  # Can be omitted
-            server.login(self.sender, self.password)
+            if self.password is not None:
+                server.login(self.sender, self.password)
             server.send_message(msg)
             # server.sendmail(self.sender, receiver, message)
 
