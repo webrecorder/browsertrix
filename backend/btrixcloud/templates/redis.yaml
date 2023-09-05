@@ -5,7 +5,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: redis-{{ id }}
+  name: {{ name }}
   namespace: {{ namespace }}
   labels:
     crawl: {{ id }}
@@ -31,14 +31,14 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: redis-{{ id }}
+  name: {{ name }}
   namespace: {{ namespace }}
   labels:
     crawl: {{ id }}
     role: redis
 
 spec:
-  hostname: redis-{{ id }}
+  hostname: {{ name }}
   subdomain: redis
 
   terminationGracePeriodSeconds: 10
@@ -52,7 +52,7 @@ spec:
 
     - name: redis-data
       persistentVolumeClaim:
-        claimName: redis-{{ id }}
+        claimName: {{ name }}
 
   affinity:
     nodeAffinity:

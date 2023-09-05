@@ -28,6 +28,7 @@ from .basecrawls import (
     NON_RUNNING_STATES,
     RUNNING_STATES,
     RUNNING_AND_STARTING_ONLY,
+    RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
 )
 from .colls import add_successful_crawl_to_collections
@@ -45,6 +46,7 @@ CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
 POD = "Pod.v1"
 CJS = "CrawlJob.btrix.cloud/v1"
+# METRICS = "PodMetrics.metrics.k8s.io/v1beta1"
 
 DEFAULT_TTL = 30
 
@@ -110,6 +112,7 @@ class CrawlStatus(BaseModel):
     stopping: bool = False
     initRedis: bool = False
     lastActiveTime: str = ""
+    resources: Optional[dict] = {}
 
     # don't include in status, use by metacontroller
     resync_after: Optional[int] = None
@@ -247,7 +250,7 @@ class BtrixOperator(K8sAPI):
         else:
             status.scale = crawl.scale
 
-        children = self._load_redis(params, status)
+        children = self._load_redis(params, status, data.children)
 
         params["storage_name"] = configmap["STORAGE_NAME"]
         params["store_path"] = configmap["STORE_PATH"]
@@ -258,7 +261,7 @@ class BtrixOperator(K8sAPI):
         params["redis_url"] = redis_url
 
         for i in range(0, status.scale):
-            children.extend(self._load_crawler(params, i))
+            children.extend(self._load_crawler(params, i, status, data.children))
 
         return {
             "status": status.dict(exclude_none=True, exclude={"resync_after": True}),
@@ -266,12 +269,17 @@ class BtrixOperator(K8sAPI):
             "resyncAfterSeconds": status.resync_after,
         }
 
-    def _load_redis(self, params, status):
+    def _load_redis(self, params, status, children):
+        name = f"redis-{params['id']}"
+        self.sync_resources(status.resources, "redis", name, children)
+        params["name"] = name
         params["init_redis"] = status.initRedis
         return self.load_from_yaml("redis.yaml", params)
 
-    def _load_crawler(self, params, i):
-        params["index"] = str(i)
+    def _load_crawler(self, params, i, status, children):
+        name = f"crawl-{params['id']}-{i}"
+        self.sync_resources(status.resources, str(i), name, children)
+        params["name"] = name
         params["priorityClassName"] = f"crawl-instance-{i}"
         return self.load_from_yaml("crawler.yaml", params)
 
@@ -315,6 +323,22 @@ class BtrixOperator(K8sAPI):
                 await redis.hdel(f"{crawl_id}:status", name)
 
         return new_scale
+
+    def sync_resources(self, resources, id_, name, children):
+        """set crawljob status from current resources"""
+        if id_ not in resources:
+            resources[id_] = {}
+
+        pod = children[POD].get(name)
+        if pod:
+            src = pod["spec"]["containers"][0]["resources"]["requests"]
+            resources[id_]["memory"] = src.get("memory")
+            resources[id_]["cpu"] = src.get("cpu")
+
+        pvc = children[PVC].get(name)
+        if pvc:
+            src = pvc["spec"]["resources"]["requests"]
+            resources[id_]["storage"] = src.get("storage")
 
     async def set_state(self, state, status, crawl_id, allowed_from, **kwargs):
         """set status state and update db, if changed
@@ -376,6 +400,7 @@ class BtrixOperator(K8sAPI):
         """return configmap related to crawl"""
         spec = data.parent.get("spec", {})
         cid = spec["cid"]
+        # crawl_id = spec["id"]
         oid = spec.get("oid")
         return {
             "relatedResources": [
@@ -389,6 +414,12 @@ class BtrixOperator(K8sAPI):
                     "resource": "crawljobs",
                     "labelSelector": {"matchLabels": {"oid": oid}},
                 },
+                # enable for podmetrics
+                #    {
+                #        "apiVersion": "metrics.k8s.io/v1beta1",
+                #        "resource": "pods",
+                #        "labelSelector": {"matchLabels": {"crawl": crawl_id}},
+                #    },
             ]
         }
 
@@ -464,7 +495,7 @@ class BtrixOperator(K8sAPI):
         if redis_pod in children[POD]:
             # if has other pods, keep redis pod until they are removed
             if len(children[POD]) > 1:
-                new_children = self._load_redis(params, status)
+                new_children = self._load_redis(params, status, children)
 
         # keep pvs until pods are removed
         if new_children:
@@ -529,9 +560,8 @@ class BtrixOperator(K8sAPI):
                 )
 
             # for now, don't reset redis once inited
-            if (
-                status.lastActiveTime
-                and (dt_now() - from_k8s_date(status.lastActiveTime)).total_seconds()
+            if status.lastActiveTime and (
+                (dt_now() - from_k8s_date(status.lastActiveTime)).total_seconds()
                 > REDIS_TTL
             ):
                 print(f"Pausing redis, no running crawler pods for >{REDIS_TTL} secs")
@@ -769,7 +799,7 @@ class BtrixOperator(K8sAPI):
         if state in SUCCESSFUL_STATES:
             allowed_from = RUNNING_STATES
         else:
-            allowed_from = RUNNING_AND_STARTING_ONLY
+            allowed_from = RUNNING_AND_STARTING_STATES
 
         # if set_state returns false, already set to same status, return
         if not await self.set_state(

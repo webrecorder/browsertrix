@@ -5,7 +5,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: crawl-{{ id }}-{{ index }}
+  name: {{ name }}
   namespace: {{ namespace }}
   labels:
     crawl: {{ id }}
@@ -32,7 +32,7 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: crawl-{{ id }}-{{ index }}
+  name: {{ name }}
   namespace: {{ namespace }}
   labels:
     crawl: {{ id }}
@@ -44,7 +44,7 @@ metadata:
   {% endif %}
 
 spec:
-  hostname: crawl-{{ id }}-{{ index }}
+  hostname: {{ name }}
   subdomain: crawler
 
   {% if priorityClassName %}
@@ -61,7 +61,7 @@ spec:
 
     - name: crawl-data
       persistentVolumeClaim:
-        claimName: crawl-{{ id }}-{{ index }}
+        claimName: {{ name }}
 
   affinity:
     nodeAffinity:
@@ -155,11 +155,11 @@ spec:
 
       resources:
         limits:
-          memory: {{ crawler_memory }}
+          memory: "{{ crawler_memory }}"
 
         requests:
-          cpu: {{ crawler_cpu }}
-          memory: {{ crawler_memory }}
+          cpu: "1"
+          memory: "{{ crawler_memory }}"
 
       {% if crawler_liveness_port and crawler_liveness_port != '0' %}
       livenessProbe:
