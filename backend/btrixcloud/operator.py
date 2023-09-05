@@ -81,7 +81,7 @@ class CrawlSpec(BaseModel):
     id: str
     cid: uuid.UUID
     oid: uuid.UUID
-    scale: int
+    scale: int = 1
     storage_path: str
     storage_name: str
     started: str
@@ -173,9 +173,6 @@ class BtrixOperator(K8sAPI):
         cid = spec["cid"]
         oid = spec["oid"]
 
-        scale = spec.get("scale", 1)
-        status.scale = scale
-
         redis_url = self.get_redis_url(crawl_id)
 
         params = {}
@@ -217,7 +214,7 @@ class BtrixOperator(K8sAPI):
             oid=oid,
             storage_name=configmap["STORAGE_NAME"],
             storage_path=configmap["STORE_PATH"],
-            scale=scale,
+            scale=spec.get("scale", 1),
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
             expire_time=from_k8s_date(spec.get("expireTime")),
@@ -244,6 +241,8 @@ class BtrixOperator(K8sAPI):
                 return self.finalize_response(
                     crawl_id, status, spec, data.children, params
                 )
+        else:
+            status.scale = crawl.scale
 
         children = self._load_redis(params, status)
 
@@ -251,12 +250,11 @@ class BtrixOperator(K8sAPI):
         params["store_path"] = configmap["STORE_PATH"]
         params["store_filename"] = configmap["STORE_FILENAME"]
         params["profile_filename"] = configmap["PROFILE_FILENAME"]
-        params["scale"] = spec.get("scale", 1)
         params["force_restart"] = spec.get("forceRestart")
 
         params["redis_url"] = redis_url
 
-        for i in range(0, scale):
+        for i in range(0, status.scale):
             children.extend(self._load_crawler(params, i))
 
         return {
@@ -273,6 +271,47 @@ class BtrixOperator(K8sAPI):
         params["index"] = str(i)
         params["priorityClassName"] = f"crawl-instance-{i}"
         return self.load_from_yaml("crawler.yaml", params)
+
+    # pylint: disable=too-many-arguments
+    async def _resolve_scale(self, crawl_id, desired_scale, redis, status, pods):
+        """ if desired_scale >= actual scale, just set (also limit by number of pages
+found)
+            if desired scale < actual scale, attempt to shut down each crawl instance
+via redis setting. if contiguous instances shutdown (successful exit), lower
+scale. also clean up previous scale state """
+
+        # actual scale (minus redis pod)
+        actual_scale = len(pods)
+        if pods.get(f"redis-{crawl_id}"):
+            actual_scale -= 1
+
+        # ensure at least enough pages for the scale
+        if status.pagesFound and status.pagesFound < desired_scale:
+            desired_scale = status.pagesFound
+
+        # if desired_scale same or scaled up, return desired_scale
+        if desired_scale >= actual_scale:
+            return desired_scale
+
+        new_scale = actual_scale
+        for i in range(actual_scale - 1, desired_scale - 1, -1):
+            name = f"crawl-{crawl_id}-{i}"
+            pod = pods.get(name)
+            if pod:
+                print(f"Attempting scaling down of pod {i}")
+                await redis.hset(f"{crawl_id}:stopone", name, "1")
+
+            if pod["status"].get("phase") == "Succeeded" and new_scale == i + 1:
+                new_scale = i
+                print(f"Scaled down pod index {i}, scale to {new_scale}")
+
+        if new_scale < actual_scale:
+            for i in range(new_scale, actual_scale):
+                name = f"crawl-{crawl_id}-{i}"
+                await redis.hdel(f"{crawl_id}:stopone", name)
+                await redis.hdel(f"{crawl_id}:status", name)
+
+        return new_scale
 
     async def set_state(self, state, status, crawl_id, allowed_from, **kwargs):
         """set status state and update db, if changed
@@ -486,7 +525,8 @@ class BtrixOperator(K8sAPI):
                     allowed_from=RUNNING_AND_STARTING_ONLY,
                 )
 
-            status.initRedis = False
+            # for now, don't reset redis once inited
+            # status.initRedis = False
 
             # if still running, resync after N seconds
             status.resync_after = self.fast_retry_secs
@@ -533,7 +573,7 @@ class BtrixOperator(K8sAPI):
             status.filesAddedSize = int(await redis.get("filesAddedSize") or 0)
 
             # update stats and get status
-            return await self.update_crawl_state(redis, crawl, status)
+            return await self.update_crawl_state(redis, crawl, status, pods)
 
         # pylint: disable=broad-except
         except Exception as exc:
@@ -629,9 +669,9 @@ class BtrixOperator(K8sAPI):
 
         return False
 
-    async def update_crawl_state(self, redis, crawl, status):
+    async def update_crawl_state(self, redis, crawl, status, pods):
         """update crawl state and check if crawl is now done"""
-        results = await redis.hvals(f"{crawl.id}:status")
+        results = await redis.hgetall(f"{crawl.id}:status")
         stats = await get_redis_crawl_stats(redis, crawl.id)
 
         # update status
@@ -647,10 +687,18 @@ class BtrixOperator(K8sAPI):
             # backwards compatibility with older crawler
             await redis.set("crawl-stop", "1")
 
+        # resolve scale
+        if crawl.scale != status.scale:
+            status.scale = await self._resolve_scale(
+                crawl.id, crawl.scale, redis, status, pods
+            )
+
         # check if done / failed
         status_count = {}
-        for res in results:
-            status_count[res] = status_count.get(res, 0) + 1
+        for i in range(crawl.scale):
+            res = results.get(f"crawl-{crawl.id}-{i}")
+            if res:
+                status_count[res] = status_count.get(res, 0) + 1
 
         # check if all crawlers are done
         if status_count.get("done", 0) >= crawl.scale:
