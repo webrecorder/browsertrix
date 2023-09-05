@@ -750,6 +750,32 @@ ${this.crawl?.description}
             () => html`<sl-skeleton></sl-skeleton>`
           )}
         </btrix-desc-list-item>
+        <btrix-desc-list-item label=${msg("In Collections")}>
+          ${when(
+            this.crawl,
+            () =>
+              when(
+                this.crawl!.collections.length,
+                () => html`
+                  <ul>
+                    ${this.crawl!.collections.map(
+                      ({ id, name }) =>
+                        html`<li class="mt-1">
+                          <a
+                            class="text-primary hover:text-indigo-400"
+                            href=${`/orgs/${this.orgId}/collections/view/${id}`}
+                            @click=${this.navLink}
+                            >${name}</a
+                          >
+                        </li>`
+                    )}
+                  </ul>
+                `,
+                () => noneText
+              ),
+            () => html`<sl-skeleton></sl-skeleton>`
+          )}
+        </btrix-desc-list-item>
       </btrix-desc-list>
     `;
   }
