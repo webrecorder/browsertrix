@@ -2,7 +2,8 @@ const path = require("path");
 require(path.resolve(process.cwd(), "./webpack.config.js"));
 
 // for testing: for prod, using the version specified in Helm values.yaml
-const RWP_BASE_URL = process.env.RWP_BASE_URL || "https://replayweb.page/";
+const RWP_BASE_URL =
+  process.env.RWP_BASE_URL || "https://cdn.jsdelivr.net/npm/replaywebpage/";
 
 if (!process.env.API_BASE_URL) {
   throw new Error(
