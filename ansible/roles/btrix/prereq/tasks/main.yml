@@ -1,0 +1,26 @@
+---
+- name: Gather installed helm version, if there is any
+  ansible.builtin.shell: helm version
+  register: helm_result
+  failed_when: helm_result.rc != 0 and helm_result.rc != 127
+  # Since this is a reporting task, it should never change
+  # as well run and register a result in any case
+  changed_when: false
+  check_mode: false
+
+- name: Install Helm
+  ansible.builtin.shell: |
+    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    chmod +700 get_helm.sh
+    ./get_helm.sh
+  when: helm_result.rc != 0
+
+- name: Install kubectl
+  ansible.builtin.shell: |
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+- name: Install jq
+  ansible.builtin.package:
+    name: jq
+    state: present

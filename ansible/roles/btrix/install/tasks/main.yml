@@ -1,0 +1,55 @@
+---
+- name: Create directory .kube
+  file:
+    path: ~{{ ansible_user }}/.kube
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: "u=rwx,g=rx,o="
+
+- name: Check whether kube config exists
+  stat:
+    path: ~/.kube/config
+  register: kubeconfig_result
+
+- name: Get k3s config
+  ansible.posix.synchronize:
+    src: rsync://{{ controller_ip }}/home/{{ ansible_user }}/.kube/config
+    dest: ~/.kube/config
+  when: not kubeconfig_result.stat.exists
+
+- name: Check whether CRDs installed
+  ansible.builtin.command: kubectl get crd
+  register: crd_register
+
+- name: Run all admin bookstrap scripts
+  ansible.builtin.command: >-
+      ../chart/admin/logging/scripts/eck_install.sh
+  register: addons_init
+  when: "crd_register.stdout | length < 16"
+  changed_when: true
+
+- name: Install Cert-Manager
+  ansible.builtin.command: kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
+  changed_when: true
+
+- name: Install ingress-nginx
+  ansible.builtin.command: helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace
+
+- name: Install Metrics Server
+  ansible.builtin.shell: |
+    helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+    helm upgrade --install metrics-server metrics-server/metrics-server
+
+- name: Output values yaml
+  ansible.builtin.template:
+    src: k8s-manifest.yaml.j2
+    dest: ../chart/{{ project_name }}-values.yaml
+    mode: u+rw
+
+- name: d_ocean | helm | deploy btrix
+  ansible.builtin.command: helm upgrade --install -f ../chart/values.yaml -f ../chart/{{ project_name }}-values.yaml btrix ../chart/
+  register: helm_result
+  changed_when: helm_result.rc == 0
+  environment:
+    KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+  tags: helm_upgrade

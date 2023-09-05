@@ -1,0 +1,30 @@
+---
+
+# Can be skipped if k3s is installed, this installs k3s
+- hosts: k3s_cluster
+  gather_facts: yes
+  connection: local # Comment if deploying to remote host
+  become: yes
+  roles:
+    - role: prereq
+    - role: download
+
+# Can be skipped if k3s is installed, this configures the master k3s node
+- hosts: controller
+  connection: local # Comment if deploying to remote host
+  become: yes
+  roles:
+    - role: k3s/master
+
+# Uncomment for multi-node deployment
+# - hosts: node
+#   roles:
+#     - role: k3s/node
+
+# Ansible controller to install browsertrix cloud
+- hosts: 127.0.0.1
+  connection: local
+  become: yes # Can be removed if not using the btrix/prereq role
+  roles:
+    - role: btrix/prereq # Only required if you wish to install & configure Helm / Kubectl
+    - role: btrix/install
