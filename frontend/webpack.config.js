@@ -126,7 +126,6 @@ const main = {
     new HtmlWebpackPlugin({
       template: "src/index.ejs",
       templateParameters: {
-        rwp_base_url: RWP_BASE_URL,
         glitchtip_dsn: process.env.GLITCHTIP_DSN || "",
         environment: isDevServer ? "development" : "production",
         version,
