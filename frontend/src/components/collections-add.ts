@@ -199,7 +199,7 @@ export class CollectionsAdd extends LiteElement {
               <div
                 class="flex-auto text-right text-neutral-500 text-xs font-monostyle"
               >
-                ${msg(str`${item.crawlCount} Crawls`)}
+                ${msg(str`${item.crawlCount} items`)}
               </div>
             </div>
           </sl-menu-item>
@@ -220,7 +220,7 @@ export class CollectionsAdd extends LiteElement {
           ${collection?.name}
         </div>
         <div class="text-neutral-500 text-xs text-right font-monostyle">
-          ${msg(str`${collection?.crawlCount || 0} Crawls`)}
+          ${msg(str`${collection?.crawlCount || 0} items`)}
         </div>
         <sl-icon-button
           name="x-lg"
