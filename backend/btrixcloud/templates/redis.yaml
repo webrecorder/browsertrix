@@ -39,7 +39,7 @@ spec:
 
         resources:
           requests:
-            storage: 1Gi
+            storage: {{ redis_storage }}
 
         {% if volume_storage_class %}
         storageClassName: {{ volume_storage_class }}

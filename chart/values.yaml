@@ -117,9 +117,9 @@ profile_browser_idle_seconds: 60
 frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.7.0-beta.0"
 frontend_pull_policy: "Always"
 
-frontend_cpu: "5m"
+frontend_cpu: "10m"
 
-frontend_memory: "36Mi"
+frontend_memory: "64Mi"
 
 # if set, maps nginx to a fixed port on host machine
 # must be between 30000 - 32767
@@ -165,6 +165,9 @@ redis_cpu: "5m"
 redis_memory: "48Mi"
 
 
+redis_storage: "1Gi"
+
+
 # Crawler Image
 # =========================================
 
@@ -180,15 +183,34 @@ crawler_namespace: "crawlers"
 # num retries
 crawl_retries: 1000
 
+# Crawler Resources
+# -----------------
+
+# base cpu for for 1 browser
+crawler_cpu_base: 900m
+
+# base memory per for 1 browser
+crawler_memory_base: 1024Mi
+
+# number of browsers per crawler instances
 crawler_browser_instances: 2
 
-# note: the following values are multipled by 'crawler_browser_instances' to get final value
+# this value is added to crawler_cpu_base, for each additional browser
+# crawler_cpu = crawler_cpu_base + crawler_pu_per_extra_browser * (crawler_browser_instances - 1)
+crawler_extra_cpu_per_browser: 300m
 
-# this value is an integer in 'm' (millicpu) units, multiplied by 'crawler_browser_instances'
-crawler_cpu_per_browser: 650
+crawler_extra_memory_per_browser: 256Mi
 
-# this value is an integer in 'Mi' (Megabyte) units, multiplied by 'crawler_browser_instances'
-crawler_memory_per_browser: 675
+# if not set, defaults to the following, but can be overridden directly:
+# crawler_cpu = crawler_cpu_base + crawler_cpu_per_extra_browser * (crawler_browser_instances - 1)
+# crawler_cpu:
+
+# if not set, defaults to the following, but can be overridden directly:
+# crawler_memory = crawler_memory_base + crawler_memory_per_extra_browser * (crawler_browser_instances - 1)
+# crawler_memory:
+
+# Other Crawler Settings
+# ----------------------
 
 # minimum size allocated to each crawler
 # should be at least double crawl session size to ensure space for WACZ
