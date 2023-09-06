@@ -60,7 +60,7 @@ export class CollectionsAdd extends LiteElement {
   emptyText?: string;
 
   @state()
-  private collections: CollectionList = [];
+  private collectionsData: { [id: string]: Collection } = {};
 
   @state()
   private collectionIds: string[] = [];
@@ -78,12 +78,17 @@ export class CollectionsAdd extends LiteElement {
   @state()
   private searchResultsOpen = false;
 
-  async connectedCallback() {
+  connectedCallback() {
     if (this.initialCollections) {
       this.collectionIds = this.initialCollections;
     }
-    await this.initializeCollectionsFromIds();
     super.connectedCallback();
+    this.initializeCollectionsFromIds();
+  }
+
+  disconnectedCallback() {
+    this.onSearchInput.cancel();
+    super.disconnectedCallback();
   }
 
   render() {
@@ -95,12 +100,12 @@ export class CollectionsAdd extends LiteElement {
         ${this.renderSearch()}
       </div>
 
-      ${when(this.collections, () =>
-        this.collections.length
+      ${when(this.collectionIds, () =>
+        this.collectionIds.length
           ? html`
               <div class="mb-2">
                 <ul class="contents">
-                  ${this.collections.map(this.renderCollectionItem, this)}
+                  ${this.collectionIds.map(this.renderCollectionItem, this)}
                 </ul>
               </div>
             `
@@ -132,12 +137,17 @@ export class CollectionsAdd extends LiteElement {
               (collection) => collection.id === collId
             );
             if (coll) {
-              this.collections.push(coll);
-              this.collectionIds.push(coll.id);
-              await this.dispatchChange();
+              const { id } = coll;
+              if (!this.collectionsData[id]) {
+                this.collectionsData = {
+                  ...this.collectionsData,
+                  [id]: await this.getCollection(id),
+                };
+              }
+              this.collectionIds = [...this.collectionIds, id];
+              this.dispatchChange();
             }
           }
-          await this.updateComplete;
         }}
       >
         <sl-input
@@ -167,7 +177,12 @@ export class CollectionsAdd extends LiteElement {
       `;
     }
 
-    if (!this.searchResults.length) {
+    // Filter out stale search results from last debounce invocation
+    const searchResults = this.searchResults.filter((res) =>
+      new RegExp(`^${this.searchByValue}`, "i").test(res.name)
+    );
+
+    if (!searchResults.length) {
       return html`
         <sl-menu-item slot="menu-item" disabled
           >${msg("No matching Collections found.")}</sl-menu-item
@@ -176,7 +191,7 @@ export class CollectionsAdd extends LiteElement {
     }
 
     return html`
-      ${this.searchResults.map((item: Collection) => {
+      ${searchResults.map((item: Collection) => {
         return html`
           <sl-menu-item class="w-full" slot="menu-item" data-key=${item.id}>
             <div class="flex w-full gap-2 items-center">
@@ -184,7 +199,7 @@ export class CollectionsAdd extends LiteElement {
               <div
                 class="flex-auto text-right text-neutral-500 text-xs font-monostyle"
               >
-                ${msg(str`${item.crawlCount} Crawls`)}
+                ${msg(str`${item.crawlCount} items`)}
               </div>
             </div>
           </sl-menu-item>
@@ -193,40 +208,44 @@ export class CollectionsAdd extends LiteElement {
     `;
   }
 
-  private renderCollectionItem(collection: Collection) {
-    return html`<li class="mt-1 p-2 pl-5 pr-5 border rounded-sm">
-        <div class="flex flex-row gap-2 justify-between items-center">
-          <div class="justify-self-stretch grow truncate">${
-            collection.name
-          }</div>
-          <div class="text-neutral-500 text-xs text-right font-monostyle">
-            ${msg(str`${collection.crawlCount} Crawls`)}
-          </div>
-          <sl-icon-button
-            name="x-lg"
-            data-key=${collection.id}
-            @click=${this.removeCollection}>
-          </sl-icon-button>
-        </dib>
-      </li>`;
+  private renderCollectionItem(id: string) {
+    const collection = this.collectionsData[id];
+    return html`<li class="mt-1 p-1 pl-3 border rounded-sm">
+      <div
+        class="flex flex-row gap-2 justify-between items-center transition-opacity delay-75 ${collection
+          ? "opacity-100"
+          : "opacity-0"}"
+      >
+        <div class="justify-self-stretch grow truncate">
+          ${collection?.name}
+        </div>
+        <div class="text-neutral-500 text-xs text-right font-monostyle">
+          ${msg(str`${collection?.crawlCount || 0} items`)}
+        </div>
+        <sl-icon-button
+          name="x-lg"
+          data-key=${id}
+          ?disabled=${!collection}
+          @click=${this.removeCollection}
+        >
+        </sl-icon-button>
+      </div>
+    </li>`;
   }
 
-  private async removeCollection(event: Event) {
+  private removeCollection(event: Event) {
     const target = event.currentTarget as HTMLElement;
     const collectionId = target.getAttribute("data-key");
     if (collectionId) {
       const collIdIndex = this.collectionIds.indexOf(collectionId);
       if (collIdIndex > -1) {
-        this.collectionIds.splice(collIdIndex, 1);
-      }
-      const collIndex = this.collections.findIndex(
-        (collection) => collection.id === collectionId
-      );
-      if (collIndex > -1) {
-        this.collections.splice(collIndex, 1);
+        this.collectionIds = [
+          ...this.collectionIds.slice(0, collIdIndex),
+          ...this.collectionIds.slice(collIdIndex + 1),
+        ];
+        this.dispatchChange();
       }
     }
-    await this.requestUpdate();
   }
 
   private onSearchInput = debounce(200)(async (e: any) => {
@@ -247,9 +266,7 @@ export class CollectionsAdd extends LiteElement {
 
   private filterOutSelectedCollections(results: CollectionList) {
     return results.filter((result) => {
-      return this.collections.every((coll) => {
-        return coll.id !== result.id;
-      });
+      return !this.collectionIds.some((id) => id === result.id);
     });
   }
 
@@ -291,17 +308,24 @@ export class CollectionsAdd extends LiteElement {
   }
 
   private async initializeCollectionsFromIds() {
-    for (let i = 0; i < this.collectionIds?.length; i++) {
-      const collId = this.collectionIds[i];
-      const data: Collection = await this.apiFetch(
-        `/orgs/${this.orgId}/collections/${collId}`,
-        this.authState!
-      );
+    if (!this.collectionIds) return;
+    this.collectionIds.forEach(async (id) => {
+      const data = await this.getCollection(id);
       if (data) {
-        this.collections.push(data);
+        this.collectionsData = {
+          ...this.collectionsData,
+          [id]: data,
+        };
       }
-    }
+    });
   }
+
+  private getCollection = (collId: string): Promise<Collection> => {
+    return this.apiFetch(
+      `/orgs/${this.orgId}/collections/${collId}`,
+      this.authState!
+    );
+  };
 
   private async dispatchChange() {
     await this.updateComplete;

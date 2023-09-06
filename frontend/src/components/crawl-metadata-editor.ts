@@ -53,6 +53,9 @@ export class CrawlMetadataEditor extends LiteElement {
   @state()
   private tagsToSave: Tags = [];
 
+  @state()
+  private collectionsToSave: string[] = [];
+
   // For fuzzy search:
   private fuse = new Fuse([], {
     shouldSort: false,
@@ -68,6 +71,7 @@ export class CrawlMetadataEditor extends LiteElement {
     if (changedProperties.has("crawl") && this.crawl) {
       this.includeName = this.crawl.type === "upload";
       this.tagsToSave = this.crawl.tags || [];
+      this.collectionsToSave = this.crawl.collectionIds || [];
     }
   }
 
@@ -121,6 +125,18 @@ export class CrawlMetadataEditor extends LiteElement {
           @tags-change=${(e: TagsChangeEvent) =>
             (this.tagsToSave = e.detail.tags)}
         ></btrix-tag-input>
+        <div class="mt-4">
+          <btrix-collections-add
+            .authState=${this.authState}
+            .initialCollections=${this.crawl.collectionIds}
+            .orgId=${this.crawl.oid}
+            .configId=${"temp"}
+            label=${msg("Add to Collection")}
+            @collections-change=${(e: CustomEvent) =>
+              (this.collectionsToSave = e.detail.collections)}
+          >
+          </btrix-collections-add>
+        </div>
       </form>
       <div slot="footer" class="flex justify-between">
         <sl-button form="crawlDetailsForm" type="reset" size="small"
@@ -173,29 +189,42 @@ export class CrawlMetadataEditor extends LiteElement {
     if (!(await this.checkFormValidity(formEl))) return;
     const { crawlDescription, name } = serialize(formEl);
 
+    const params: {
+      collectionIds?: string[];
+      tags?: string[];
+      description?: string;
+      name?: string;
+    } = {};
+    if (this.includeName && name && name !== this.crawl.name) {
+      params.name = name as string;
+    }
     if (
-      (!this.includeName || name === this.crawl.name) &&
-      crawlDescription === (this.crawl!.description ?? "") &&
-      JSON.stringify(this.tagsToSave) === JSON.stringify(this.crawl!.tags)
+      crawlDescription &&
+      crawlDescription !== (this.crawl.description ?? "")
     ) {
+      params.description = crawlDescription as string;
+    }
+    if (JSON.stringify(this.tagsToSave) !== JSON.stringify(this.crawl.tags)) {
+      params.tags = this.tagsToSave;
+    }
+    if (
+      JSON.stringify(this.collectionsToSave) !==
+      JSON.stringify(this.crawl.collectionIds)
+    ) {
+      params.collectionIds = this.collectionsToSave;
+    }
+
+    if (!Object.keys(params).length) {
       // No changes have been made
       this.requestClose();
       return;
     }
 
-    const params = {
-      tags: this.tagsToSave,
-      description: crawlDescription,
-      name,
-    };
-
     this.isSubmittingUpdate = true;
 
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.crawl!.oid}/${
-          this.crawl!.type === "crawl" ? "crawls" : "uploads"
-        }/${this.crawl.id}`,
+        `/orgs/${this.crawl!.oid}/all-crawls/${this.crawl.id}`,
         this.authState!,
         {
           method: "PATCH",

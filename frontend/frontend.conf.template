@@ -42,6 +42,11 @@ server {
       return 200 'importScripts("${RWP_BASE_URL}sw.js");';
     }
 
+    location /replay/ui.js {
+      add_header Content-Type application/javascript;
+      return 307 ${RWP_BASE_URL}ui.js;
+    }
+
     # used by docker only: k8s deployment handles /api directly via ingress
     location /api/ {
       proxy_pass http://${BACKEND_HOST}:8000;

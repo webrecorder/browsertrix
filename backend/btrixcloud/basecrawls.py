@@ -519,6 +519,8 @@ class BaseCrawlOps:
             if not cid:
                 continue
             config = await self.crawl_configs.get_crawl_config(cid, org)
+            if not config:
+                continue
             first_seed = config.config.seeds[0]
             first_seeds.add(first_seed.url)
 

@@ -75,3 +75,4 @@ Currently, we provide playbooks for the following tested environments:
 
 - [DigitalOcean](ansible/digitalocean.md)
 - [Microk8s](ansible/microk8s.md)
+- [k3s](ansible/k3s.md)

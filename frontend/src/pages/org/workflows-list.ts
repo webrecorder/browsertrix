@@ -160,18 +160,16 @@ export class WorkflowsList extends LiteElement {
       const workflows = await this.getWorkflows(params);
       this.workflows = workflows;
     } catch (e: any) {
-      if (e === ABORT_REASON_THROTTLE) {
+      if (e.isApiError) {
+        this.fetchErrorStatusCode = e.statusCode;
+      } else if (e.name === "AbortError") {
         console.debug("Fetch archived items aborted to throttle");
       } else {
-        if (e.isApiError) {
-          this.fetchErrorStatusCode = e.statusCode;
-        } else {
-          this.notify({
-            message: msg("Sorry, couldn't retrieve Workflows at this time."),
-            variant: "danger",
-            icon: "exclamation-octagon",
-          });
-        }
+        this.notify({
+          message: msg("Sorry, couldn't retrieve Workflows at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
       }
     }
     this.isFetching = false;

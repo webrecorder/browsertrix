@@ -1,6 +1,4 @@
 # syntax=docker/dockerfile:1.4
-ARG RWP_BASE_URL=https://cdn.jsdelivr.net/npm/replaywebpage/
-
 FROM --platform=$BUILDPLATFORM docker.io/library/node:16 as build_deps
 
 WORKDIR /app
@@ -27,21 +25,16 @@ COPY --link src ./src/
 ARG GIT_COMMIT_HASH
 ARG GIT_BRANCH_NAME
 ARG VERSION
-ARG RWP_BASE_URL
 
 ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
     GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
-    VERSION=${VERSION} \
-    RWP_BASE_URL=${RWP_BASE_URL}
+    VERSION=${VERSION}
 
 # Prevent Docker image including node_modules to save space
 RUN yarn build && \
   rm -rf ./node_modules
 
 FROM docker.io/library/nginx:1.23.2
-
-ARG RWP_BASE_URL
-ENV RWP_BASE_URL=${RWP_BASE_URL}
 
 COPY --link --from=build_deps /app/dist /usr/share/nginx/html
 

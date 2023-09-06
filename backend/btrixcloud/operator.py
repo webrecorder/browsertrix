@@ -15,6 +15,8 @@ import humanize
 
 from pydantic import BaseModel
 
+from kubernetes.utils import parse_quantity
+
 from .utils import (
     from_k8s_date,
     to_k8s_date,
@@ -142,6 +144,29 @@ class BtrixOperator(K8sAPI):
 
         with open(self.config_file, encoding="utf-8") as fh_config:
             self.shared_params = yaml.safe_load(fh_config)
+
+        self.compute_crawler_resources()
+
+    def compute_crawler_resources(self):
+        """compute memory / cpu resources for crawlers"""
+        # pylint: disable=invalid-name
+        p = self.shared_params
+        num = max(int(p["crawler_browser_instances"]) - 1, 0)
+        if not p.get("crawler_cpu"):
+            base = parse_quantity(p["crawler_cpu_base"])
+            extra = parse_quantity(p["crawler_extra_cpu_per_browser"])
+
+            p["crawler_cpu"] = float(base + num * extra)
+
+            print(f"cpu = {base} + {num} * {extra} = {p['crawler_cpu']}")
+
+        if not p.get("crawler_memory"):
+            base = parse_quantity(p["crawler_memory_base"])
+            extra = parse_quantity(p["crawler_extra_memory_per_browser"])
+
+            p["crawler_memory"] = float(base + num * extra)
+
+            print(f"memory = {base} + {num} * {extra} = {p['crawler_memory']}")
 
     async def sync_profile_browsers(self, data: MCSyncData):
         """sync profile browsers"""
