@@ -132,6 +132,8 @@ class BtrixOperator(K8sAPI):
 
         self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
+        self.log_failed_crawl_lines = int(os.environ.get("LOG_FAILED_CRAWL_LINES") or 0)
+
         with open(self.config_file, encoding="utf-8") as fh_config:
             self.shared_params = yaml.safe_load(fh_config)
 
@@ -697,9 +699,17 @@ class BtrixOperator(K8sAPI):
                 redis, crawl.id, crawl.cid, status, state=state
             )
 
-            if state == "failed" and prev_state != "failed":
+            if (
+                self.log_failed_crawl_lines
+                and state == "failed"
+                and prev_state != "failed"
+            ):
                 print("crawl failed: ", pod_names, stats)
-                asyncio.create_task(self.print_pod_logs(pod_names, "crawler"))
+                asyncio.create_task(
+                    self.print_pod_logs(
+                        pod_names, "crawler", self.log_failed_crawl_lines
+                    )
+                )
 
         # check for other statuses
         else:

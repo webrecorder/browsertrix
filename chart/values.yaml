@@ -111,6 +111,11 @@ job_memory: "70Mi"
 
 profile_browser_idle_seconds: 60
 
+# if set, print last 'log_failed_crawl_lines' of each failed
+# crawl pod to backend operator stdout
+# mostly intended for debugging / testing
+# log_failed_crawl_lines: 200
+
 
 # Nginx Image
 # =========================================
