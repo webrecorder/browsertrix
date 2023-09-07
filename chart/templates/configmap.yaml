@@ -6,7 +6,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 
 data:
-  APP_ORIGIN: {{.Values.ingress.scheme }}://{{ .Values.ingress.host | default "localhost:9870" }}
+  APP_ORIGIN: {{ .Values.ingress.tls | ternary "https" "http" }}://{{ .Values.ingress.host | default "localhost:9870" }}
 
   CRON_NAMESPACE: {{ .Release.Namespace }}
 
@@ -44,6 +44,8 @@ data:
   FAST_RETRY_SECS: "{{ .Values.operator_fast_resync_secs | default 3 }}"
 
   MAX_CRAWL_SCALE: "{{ .Values.max_crawl_scale | default 3 }}"
+  
+  LOG_FAILED_CRAWL_LINES: "{{ .Values.log_failed_crawl_lines | default 0 }}"
 
 ---
 apiVersion: v1

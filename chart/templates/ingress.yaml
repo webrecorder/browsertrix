@@ -8,9 +8,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
-    # cors enabled via backend directly on allowed paths
-    #nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
     nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
     nginx.ingress.kubernetes.io/proxy-buffering: "off"
@@ -19,7 +16,7 @@ metadata:
     {{- end }}
     nginx.ingress.kubernetes.io/upstream-vhost: "{{ .Values.ingress.host }}"
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      proxy_set_header X-Forwarded-Proto {{ .Values.ingress.scheme | default "https" }};
+      proxy_set_header X-Forwarded-Proto {{ .Values.ingress.tls | ternary "https" "http" }};
 
 spec:
   ingressClassName: {{ .Values.ingress_class | default "nginx" }}
@@ -34,16 +31,16 @@ spec:
   - host: {{ .Values.ingress.host }}
     http:
       paths:
-      - path: /(api/.*)
-        pathType: ImplementationSpecific
+      - path: /api/
+        pathType: Prefix
         backend:
           service:
             name: browsertrix-cloud-backend
             port:
               number: 8000
 
-      - path: /(.*)
-        pathType: ImplementationSpecific
+      - path: /
+        pathType: Prefix
         backend:
           service:
             name: browsertrix-cloud-frontend
@@ -59,17 +56,16 @@ metadata:
   name: ingress-authsign
   namespace: {{ .Release.Namespace }}
   annotations:
-    kubernetes.io/ingress.class: {{ .Values.ingress_class | default "nginx" }}
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
     nginx.ingress.kubernetes.io/upstream-vhost: "{{ .Values.signer.host }}"
 
 spec:
+  ingressClassName: {{ .Values.ingress_class | default "nginx" }}
   rules:
   - host: {{ .Values.signer.host }}
     http:
       paths:
-      - path: /(.*)
+      - path: /
         pathType: Prefix
         backend:
           service:

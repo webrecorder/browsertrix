@@ -2035,9 +2035,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
           }));
 
       const crawlId = data.run_now_job;
-      let message = msg("Workflow created.");
+      const storageQuotaReached = data.storageQuotaReached;
 
-      if (crawlId) {
+      let message = msg("Workflow created.");
+      if (crawlId && !storageQuotaReached) {
         message = msg("Crawl started with new template.");
       } else if (this.configId) {
         message = msg("Workflow updated.");
@@ -2050,9 +2051,19 @@ https://archiveweb.page/images/${"logo.svg"}`}
         duration: 8000,
       });
 
+      if (storageQuotaReached) {
+        this.notify({
+          message: msg(
+            "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
+          ),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
+
       this.navTo(
         `/orgs/${this.orgId}/workflows/crawl/${this.configId || data.id}${
-          crawlId ? "#watch" : ""
+          crawlId && !storageQuotaReached ? "#watch" : ""
         }`
       );
     } catch (e: any) {

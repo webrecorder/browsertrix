@@ -29,6 +29,7 @@ type UploadMetadata = {
 };
 
 const ABORT_REASON_USER_CANCEL = "user-canceled";
+const ABORT_REASON_QUOTA_REACHED = "storage_quota_reached";
 
 /**
  * Usage:
@@ -413,11 +414,23 @@ export class FileUploader extends LiteElement {
         collections: this.collectionIds,
         tags: this.tagsToSave,
       });
+
       const data = await this.upload(
         `orgs/${this.orgId}/uploads/stream?${query}`,
         file
       );
+
       this.uploadRequest = null;
+
+      // Dispatch event here because we're not using apiFetch() for uploads
+      if (data.storageQuotaReached) {
+        this.dispatchEvent(
+          new CustomEvent("storage-quota-update", {
+            detail: { reached: true },
+            bubbles: true,
+          })
+        );
+      }
 
       if (data.id && data.added) {
         this.dispatchEvent(
@@ -448,9 +461,22 @@ export class FileUploader extends LiteElement {
       if (err === ABORT_REASON_USER_CANCEL) {
         console.debug("Fetch crawls aborted to user cancel");
       } else {
+        let message = msg("Sorry, couldn't upload file at this time.");
+        console.debug(err);
+        if (err === ABORT_REASON_QUOTA_REACHED) {
+          message = msg(
+            "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
+          );
+          this.dispatchEvent(
+            new CustomEvent("storage-quota-update", {
+              detail: { reached: true },
+              bubbles: true,
+            })
+          );
+        }
         console.debug(err);
         this.notify({
-          message: msg("Sorry, couldn't upload file at this time."),
+          message: message,
           variant: "danger",
           icon: "exclamation-octagon",
         });
@@ -463,7 +489,7 @@ export class FileUploader extends LiteElement {
   private upload(
     url: string,
     file: File
-  ): Promise<{ id: string; added: boolean }> {
+  ): Promise<{ id: string; added: boolean; storageQuotaReached: boolean }> {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
 
@@ -475,6 +501,9 @@ export class FileUploader extends LiteElement {
       xhr.addEventListener("load", () => {
         if (xhr.status === 200) {
           resolve(JSON.parse(xhr.response));
+        }
+        if (xhr.status === 403) {
+          reject(ABORT_REASON_QUOTA_REACHED);
         }
       });
       xhr.addEventListener("error", () => {

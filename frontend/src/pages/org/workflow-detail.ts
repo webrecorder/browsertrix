@@ -44,6 +44,9 @@ export class WorkflowDetail extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
+  @property({ type: Boolean })
+  orgStorageQuotaReached = false;
+
   @property({ type: String })
   workflowId!: string;
 
@@ -257,6 +260,8 @@ export class WorkflowDetail extends LiteElement {
       if (this.lastCrawlId) {
         this.fetchCurrentCrawlStats();
       }
+      // TODO: Check if storage quota has been exceeded here by running
+      // crawl??
     } catch (e: any) {
       this.notify({
         message:
@@ -580,15 +585,21 @@ export class WorkflowDetail extends LiteElement {
           </sl-button-group>
         `,
         () => html`
-          <sl-button
-            size="small"
-            variant="primary"
-            class="mr-2"
-            @click=${() => this.runNow()}
+          <sl-tooltip
+            content=${msg("Org Storage Full")}
+            ?disabled=${!this.orgStorageQuotaReached}
           >
-            <sl-icon name="play" slot="prefix"></sl-icon>
-            <span>${msg("Run Crawl")}</span>
-          </sl-button>
+            <sl-button
+              size="small"
+              variant="primary"
+              class="mr-2"
+              ?disabled=${this.orgStorageQuotaReached}
+              @click=${() => this.runNow()}
+            >
+              <sl-icon name="play" slot="prefix"></sl-icon>
+              <span>${msg("Run Crawl")}</span>
+            </sl-button>
+          </sl-tooltip>
         `
       )}
 
@@ -1016,10 +1027,19 @@ export class WorkflowDetail extends LiteElement {
             `
           )}
 
-          <sl-button size="small" @click=${() => this.runNow()}>
-            <sl-icon name="play" slot="prefix"></sl-icon>
-            ${msg("Run Crawl")}
-          </sl-button>
+          <sl-tooltip
+            content=${msg("Org Storage Full")}
+            ?disabled=${!this.orgStorageQuotaReached}
+          >
+            <sl-button
+              size="small"
+              ?disabled=${this.orgStorageQuotaReached}
+              @click=${() => this.runNow()}
+            >
+              <sl-icon name="play" slot="prefix"></sl-icon>
+              ${msg("Run Crawl")}
+            </sl-button>
+          </sl-tooltip>
         </div>
       </section>
     `;
@@ -1410,6 +1430,17 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private async runNow(): Promise<void> {
+    if (this.orgStorageQuotaReached) {
+      this.notify({
+        message: msg(
+          "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
+        ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+      return;
+    }
+
     try {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${this.workflow!.id}/run`,
@@ -1430,9 +1461,25 @@ export class WorkflowDetail extends LiteElement {
         icon: "check2-circle",
         duration: 8000,
       });
-    } catch {
+    } catch (e: any) {
+      let message = msg("Sorry, couldn't run crawl at this time.");
+      if (e.isApiError && e.statusCode === 403) {
+        if (e.details === "storage_quota_reached") {
+          message = msg(
+            "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
+          );
+          this.dispatchEvent(
+            new CustomEvent("storage-quota-update", {
+              detail: { reached: true },
+              bubbles: true,
+            })
+          );
+        } else {
+          message = msg("You do not have permission to run crawls.");
+        }
+      }
       this.notify({
-        message: msg("Sorry, couldn't run crawl at this time."),
+        message: message,
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -1451,7 +1498,6 @@ export class WorkflowDetail extends LiteElement {
           }),
         }
       );
-
       this.crawls = {
         ...this.crawls!,
         items: this.crawls!.items.filter((c) => c.id !== crawl.id),

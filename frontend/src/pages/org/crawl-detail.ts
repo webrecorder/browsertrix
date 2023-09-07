@@ -998,7 +998,6 @@ ${this.crawl?.description}
           }),
         }
       );
-
       this.navTo(this.listUrl);
       this.notify({
         message: msg(`Successfully deleted crawl`),

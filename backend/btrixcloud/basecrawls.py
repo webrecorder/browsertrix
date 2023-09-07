@@ -24,6 +24,7 @@ from .models import (
     PaginatedResponse,
     User,
 )
+from .orgs import inc_org_bytes_stored
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .storages import get_presigned_url, delete_crawl_file_object
 from .utils import dt_now, get_redis_crawl_stats
@@ -54,6 +55,7 @@ class BaseCrawlOps:
 
     def __init__(self, mdb, users, crawl_configs, crawl_manager, colls):
         self.crawls = mdb["crawls"]
+        self.orgs_db = mdb["organizations"]
         self.crawl_configs = crawl_configs
         self.crawl_manager = crawl_manager
         self.user_manager = users
@@ -206,7 +208,9 @@ class BaseCrawlOps:
 
         res = await self.crawls.delete_many(query)
 
-        return res.deleted_count, size, cids_to_update
+        quota_reached = await inc_org_bytes_stored(self.orgs_db, org.id, -size)
+
+        return res.deleted_count, size, cids_to_update, quota_reached
 
     async def _delete_crawl_files(self, crawl, org: Organization):
         """Delete files associated with crawl from storage."""
@@ -484,15 +488,15 @@ class BaseCrawlOps:
         return crawls, total
 
     async def delete_crawls_all_types(
-        self, delete_list: DeleteCrawlList, org: Optional[Organization] = None
+        self, delete_list: DeleteCrawlList, org: Organization
     ):
         """Delete uploaded crawls"""
-        deleted_count, _, _ = await self.delete_crawls(org, delete_list)
+        deleted_count, _, _, quota_reached = await self.delete_crawls(org, delete_list)
 
         if deleted_count < 1:
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
-        return {"deleted": True}
+        return {"deleted": True, "storageQuotaReached": quota_reached}
 
     async def get_all_crawl_search_values(
         self, org: Organization, type_: Optional[str] = None

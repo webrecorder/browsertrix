@@ -154,6 +154,22 @@ export default class LiteElement extends LitElement {
       });
     }
 
-    return await resp.json();
+    const body = await resp.json();
+
+    if (options?.method && options?.method !== "GET" && resp.status === 200) {
+      try {
+        const storageQuotaReached = body.storageQuotaReached;
+        if (typeof storageQuotaReached === "boolean") {
+          this.dispatchEvent(
+            new CustomEvent("storage-quota-update", {
+              detail: { reached: storageQuotaReached },
+              bubbles: true,
+            })
+          );
+        }
+      } catch {}
+    }
+
+    return await body;
   }
 }

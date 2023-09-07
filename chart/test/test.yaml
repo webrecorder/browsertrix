@@ -34,3 +34,5 @@ max_pages_per_crawl: 4
 
 registration_enabled: "0"
 
+# log failed crawl pods to operator backend
+log_failed_crawl_lines: 200

@@ -624,6 +624,7 @@ class OrgQuotas(BaseModel):
 
     maxConcurrentCrawls: Optional[int] = 0
     maxPagesPerCrawl: Optional[int] = 0
+    storageQuota: Optional[int] = 0
 
 
 # ============================================================================
@@ -648,6 +649,8 @@ class Organization(BaseMongoModel):
     storage: Union[S3Storage, DefaultStorage]
 
     usage: Dict[str, int] = {}
+
+    bytesStored: int = 0
 
     default: bool = False
 
@@ -693,7 +696,6 @@ class Organization(BaseMongoModel):
 
         result = self.to_dict(
             exclude_unset=True,
-            exclude_defaults=True,
             exclude_none=True,
             exclude=exclude,
         )
@@ -726,6 +728,7 @@ class OrgOut(BaseMongoModel):
     users: Optional[Dict[str, Any]]
     usage: Optional[Dict[str, int]]
     default: bool = False
+    bytesStored: int
     origin: Optional[AnyHttpUrl]
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
@@ -759,6 +762,7 @@ class ProfileFile(BaseModel):
     filename: str
     hash: str
     size: int
+    def_storage_name: Optional[str]
 
 
 # ============================================================================

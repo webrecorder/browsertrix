@@ -27,6 +27,7 @@ from .models import (
     PaginatedResponse,
     User,
 )
+from .orgs import inc_org_bytes_stored, storage_quota_reached
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .storages import do_upload_single, do_upload_multipart
 from .utils import dt_now
@@ -62,6 +63,8 @@ class UploadOps(BaseCrawlOps):
         replaceId: Optional[str],
     ):
         """Upload streaming file, length unknown"""
+        if await storage_quota_reached(self.orgs_db, org.id):
+            raise HTTPException(status_code=403, detail="storage_quota_reached")
 
         prev_upload = None
         if replaceId:
@@ -119,6 +122,9 @@ class UploadOps(BaseCrawlOps):
         user: User,
     ):
         """handle uploading content to uploads subdir + request subdir"""
+        if await storage_quota_reached(self.orgs_db, org.id):
+            raise HTTPException(status_code=403, detail="storage_quota_reached")
+
         id_ = uuid.uuid4()
         files = []
         prefix = f"{org.id}/uploads/{id_}/"
@@ -176,18 +182,20 @@ class UploadOps(BaseCrawlOps):
             self.event_webhook_ops.create_upload_finished_notification(crawl_id)
         )
 
-        return {"id": crawl_id, "added": True}
+        quota_reached = await inc_org_bytes_stored(self.orgs_db, org.id, file_size)
 
-    async def delete_uploads(
-        self, delete_list: DeleteCrawlList, org: Optional[Organization] = None
-    ):
+        return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
+
+    async def delete_uploads(self, delete_list: DeleteCrawlList, org: Organization):
         """Delete uploaded crawls"""
-        deleted_count, _, _ = await self.delete_crawls(org, delete_list, "upload")
+        deleted_count, _, _, quota_reached = await self.delete_crawls(
+            org, delete_list, "upload"
+        )
 
         if deleted_count < 1:
             raise HTTPException(status_code=404, detail="uploaded_crawl_not_found")
 
-        return {"deleted": True}
+        return {"deleted": True, "storageQuotaReached": quota_reached}
 
 
 # ============================================================================

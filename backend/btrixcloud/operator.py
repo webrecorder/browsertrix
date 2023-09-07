@@ -42,6 +42,7 @@ from .crawls import (
     add_crawl_errors,
 )
 from .models import CrawlFile, CrawlCompleteIn
+from .orgs import add_crawl_files_to_org_bytes_stored
 
 
 CMAP = "ConfigMap.v1"
@@ -141,6 +142,8 @@ class BtrixOperator(K8sAPI):
         self.done_key = "crawls-done"
 
         self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
+
+        self.log_failed_crawl_lines = int(os.environ.get("LOG_FAILED_CRAWL_LINES") or 0)
 
         with open(self.config_file, encoding="utf-8") as fh_config:
             self.shared_params = yaml.safe_load(fh_config)
@@ -767,13 +770,29 @@ class BtrixOperator(K8sAPI):
 
         # check if all crawlers failed
         elif status_count.get("failed", 0) >= crawl.scale:
+            prev_state = None
+
             # if stopping, and no pages finished, mark as canceled
             if status.stopping and not status.pagesDone:
                 state = "canceled"
             else:
                 state = "failed"
+                prev_state = status.state
 
             await self.mark_finished(crawl.id, crawl.cid, status, state=state)
+
+            if (
+                self.log_failed_crawl_lines
+                and state == "failed"
+                and prev_state != "failed"
+            ):
+                pod_names = list(pods.keys())
+                print("crawl failed: ", pod_names, stats)
+                asyncio.create_task(
+                    self.print_pod_logs(
+                        pod_names, "crawler", self.log_failed_crawl_lines
+                    )
+                )
 
         # check for other statuses
         else:
@@ -832,6 +851,10 @@ class BtrixOperator(K8sAPI):
         """Run tasks after crawl completes in asyncio.task coroutine."""
         await stats_recompute_last(
             self.crawl_configs, self.crawls, cid, files_added_size, 1
+        )
+
+        await add_crawl_files_to_org_bytes_stored(
+            self.crawls, self.orgs, crawl_id, files_added_size
         )
 
         if state in SUCCESSFUL_STATES:
