@@ -439,6 +439,7 @@ export class Org extends LiteElement {
   }
 
   private async onStorageQuotaUpdate(e: CustomEvent) {
+    e.stopPropagation();
     const { reached } = e.detail;
     this.orgStorageQuotaReached = reached;
   }
