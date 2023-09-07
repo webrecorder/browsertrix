@@ -124,13 +124,17 @@ export default class LiteElement extends LitElement {
     });
 
     const body = await resp.json();
+    let detail;
+    try {
+      detail = body.detail;
+    } catch {}
 
     if (resp.status !== 200) {
       if (resp.status === 401) {
         this.dispatchEvent(new CustomEvent("need-login"));
       }
 
-      if (resp.status === 403 && body.detail === "storage_quota_reached") {
+      if (resp.status === 403 && detail === "storage_quota_reached") {
         this.dispatchEvent(
           new CustomEvent("storage-quota-update", {
             detail: { reached: true },
@@ -139,24 +143,19 @@ export default class LiteElement extends LitElement {
         );
       }
 
-      let detail;
       let errorMessage: string = msg("Unknown API error");
 
-      try {
-        detail = body.detail;
+      if (typeof detail === "string") {
+        errorMessage = detail;
+      } else if (Array.isArray(detail) && detail.length) {
+        const fieldDetail = detail[0];
+        const { loc, msg } = fieldDetail;
 
-        if (typeof detail === "string") {
-          errorMessage = detail;
-        } else if (Array.isArray(detail) && detail.length) {
-          const fieldDetail = detail[0];
-          const { loc, msg } = fieldDetail;
-
-          const fieldName = loc
-            .filter((v: any) => v !== "body" && typeof v === "string")
-            .join(" ");
-          errorMessage = `${fieldName} ${msg}`;
-        }
-      } catch {}
+        const fieldName = loc
+          .filter((v: any) => v !== "body" && typeof v === "string")
+          .join(" ");
+        errorMessage = `${fieldName} ${msg}`;
+      }
 
       throw new APIError({
         message: errorMessage,
