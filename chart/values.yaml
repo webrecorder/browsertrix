@@ -292,7 +292,6 @@ email:
 ingress:
   #host: ""
   cert_email: "test@example.com"
-  scheme: "http"
   tls: false
 
 ingress_class: nginx
