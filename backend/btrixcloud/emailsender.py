@@ -39,9 +39,9 @@ class EmailSender:
         context = ssl.create_default_context()
         with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
             if self.smtp_use_tls:
-                server.ehlo()  # Can be omitted
+                server.ehlo()
                 server.starttls(context=context)
-            server.ehlo()  # Can be omitted
+            server.ehlo()
             if self.password is not None:
                 server.login(self.sender, self.password)
             server.send_message(msg)
