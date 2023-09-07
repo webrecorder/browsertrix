@@ -100,9 +100,6 @@ export class CollectionEditor extends LiteElement {
   orgId!: string;
 
   @property({ type: Boolean })
-  orgStorageQuotaReached = false;
-
-  @property({ type: Boolean })
   isCrawler?: boolean;
 
   @property({ type: String })
@@ -951,7 +948,7 @@ export class CollectionEditor extends LiteElement {
       return html`
         <div class="h-full flex justify-center items-center">
           ${when(
-            this.isCrawler && !this.orgStorageQuotaReached,
+            this.isCrawler,
             () => html`
               <sl-button
                 href=${`/orgs/${this.orgId}/workflows?new&jobType=`}

@@ -16,9 +16,6 @@ export class CollectionsNew extends LiteElement {
   orgId!: string;
 
   @property({ type: Boolean })
-  orgStorageQuotaReached = false;
-
-  @property({ type: Boolean })
   isCrawler?: boolean;
 
   @state()
@@ -36,7 +33,6 @@ export class CollectionsNew extends LiteElement {
       <btrix-collection-editor
         .authState=${this.authState}
         orgId=${this.orgId}
-        ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
         ?isSubmitting=${this.isSubmitting}
         ?isCrawler=${this.isCrawler}
         @on-submit=${this.onSubmit}

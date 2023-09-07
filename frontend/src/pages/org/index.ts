@@ -347,7 +347,6 @@ export class Org extends LiteElement {
         return html`<btrix-collection-edit
           .authState=${this.authState!}
           orgId=${this.orgId!}
-          ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
           collectionId=${this.params.collectionId}
           ?isCrawler=${this.isCrawler}
         ></btrix-collection-edit>`;
@@ -367,7 +366,6 @@ export class Org extends LiteElement {
       return html`<btrix-collections-new
         .authState=${this.authState!}
         orgId=${this.orgId!}
-        ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
         ?isCrawler=${this.isCrawler}
       ></btrix-collections-new>`;
     }
