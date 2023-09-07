@@ -204,19 +204,16 @@ export class BrowserProfilesNew extends LiteElement {
       this.navTo(`/orgs/${this.orgId}/browser-profiles/profile/${data.id}`);
     } catch (e: any) {
       this.isSubmitting = false;
+
+      if (e.details === "storage_quota_reached") {
+        return;
+      }
       let message = msg("Sorry, couldn't create browser profile at this time.");
 
       if (e.isApiError && e.statusCode === 403) {
-        if (e.details === "storage_quota_reached") {
-          message = msg(
-            "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
-          );
-        } else {
-          message = msg(
-            "You do not have permission to create browser profiles."
-          );
-        }
+        message = msg("You do not have permission to create browser profiles.");
       }
+
       this.notify({
         message: message,
         variant: "danger",

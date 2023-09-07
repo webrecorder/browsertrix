@@ -1430,17 +1430,6 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private async runNow(): Promise<void> {
-    if (this.orgStorageQuotaReached) {
-      this.notify({
-        message: msg(
-          "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
-        ),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-      return;
-    }
-
     try {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${this.workflow!.id}/run`,
@@ -1462,15 +1451,12 @@ export class WorkflowDetail extends LiteElement {
         duration: 8000,
       });
     } catch (e: any) {
+      if (e.details === "storage_quota_reached") {
+        return;
+      }
       let message = msg("Sorry, couldn't run crawl at this time.");
       if (e.isApiError && e.statusCode === 403) {
-        if (e.details === "storage_quota_reached") {
-          message = msg(
-            "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
-          );
-        } else {
-          message = msg("You do not have permission to run crawls.");
-        }
+        message = msg("You do not have permission to run crawls.");
       }
       this.notify({
         message: message,

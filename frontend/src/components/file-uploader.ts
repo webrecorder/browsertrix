@@ -464,22 +464,19 @@ export class FileUploader extends LiteElement {
         let message = msg("Sorry, couldn't upload file at this time.");
         console.debug(err);
         if (err === ABORT_REASON_QUOTA_REACHED) {
-          message = msg(
-            "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
-          );
           this.dispatchEvent(
             new CustomEvent("storage-quota-update", {
               detail: { reached: true },
               bubbles: true,
             })
           );
+        } else {
+          this.notify({
+            message: message,
+            variant: "danger",
+            icon: "exclamation-octagon",
+          });
         }
-        console.debug(err);
-        this.notify({
-          message: message,
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
       }
     }
     this.isUploading = false;

@@ -6,6 +6,7 @@ import { msg, localized, str } from "@lit/localize";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { Profile } from "./types";
+import { APIError } from "../../utils/api";
 
 /**
  * Usage:
@@ -632,17 +633,15 @@ export class BrowserProfilesDetail extends LiteElement {
         throw data;
       }
     } catch (e: any) {
+      if (e.details === "storage_quota_reached") {
+        return;
+      }
       let message = msg("Sorry, couldn't save browser profile at this time.");
 
       if (e.isApiError && e.statusCode === 403) {
-        if (e.details === "storage_quota_reached") {
-          message = msg(
-            "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
-          );
-        } else {
-          message = msg("You do not have permission to edit browser profiles.");
-        }
+        message = msg("You do not have permission to edit browser profiles.");
       }
+
       this.notify({
         message: message,
         variant: "danger",

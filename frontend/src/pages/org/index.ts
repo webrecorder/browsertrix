@@ -442,6 +442,17 @@ export class Org extends LiteElement {
     e.stopPropagation();
     const { reached } = e.detail;
     this.orgStorageQuotaReached = reached;
+
+    if (reached) {
+      this.notify({
+        message: msg(
+          "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
+        ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+        duration: Infinity,
+      });
+    }
   }
 
   private async onUserRoleChange(e: UserRoleChangeEvent) {
