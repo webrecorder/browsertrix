@@ -40,6 +40,7 @@ from .crawls import (
     add_crawl_errors,
 )
 from .models import CrawlFile, CrawlCompleteIn
+from .orgs import add_crawl_files_to_org_bytes_stored
 
 
 STS = "StatefulSet.apps/v1"
@@ -808,6 +809,10 @@ class BtrixOperator(K8sAPI):
         """Run tasks after crawl completes in asyncio.task coroutine."""
         await stats_recompute_last(
             self.crawl_configs, self.crawls, cid, files_added_size, 1
+        )
+
+        await add_crawl_files_to_org_bytes_stored(
+            self.crawls, self.orgs, crawl_id, files_added_size
         )
 
         if redis:

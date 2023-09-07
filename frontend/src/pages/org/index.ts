@@ -77,10 +77,16 @@ export class Org extends LiteElement {
   orgTab: OrgTab = defaultTab;
 
   @state()
+  private orgStorageQuotaReached = false;
+
+  @state()
   private org?: OrgData | null;
 
   @state()
   private isSavingOrgName = false;
+
+  @state()
+  private isFetching = false;
 
   get userOrg() {
     if (!this.userInfo) return null;
@@ -103,6 +109,7 @@ export class Org extends LiteElement {
     if (changedProperties.has("orgId") && this.orgId) {
       try {
         this.org = await this.getOrg(this.orgId);
+        this.checkStorageQuota();
       } catch {
         this.org = null;
 
@@ -245,6 +252,7 @@ export class Org extends LiteElement {
         workflowId=${this.params.workflowId || ""}
         itemType=${this.params.itemType || "crawl"}
         ?isCrawler=${this.isCrawler}
+        @storage-quota-update=${this.onStorageQuotaUpdate}
       ></btrix-crawl-detail>`;
     }
 
@@ -252,9 +260,11 @@ export class Org extends LiteElement {
       .authState=${this.authState!}
       userId=${this.userInfo!.id}
       orgId=${this.orgId}
+      ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
       ?isCrawler=${this.isCrawler}
       itemType=${ifDefined(this.params.itemType || undefined)}
       ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "items"}
+      @storage-quota-update=${this.onStorageQuotaUpdate}
     ></btrix-crawls-list>`;
   }
 
@@ -269,10 +279,12 @@ export class Org extends LiteElement {
           class="col-span-5 mt-6"
           .authState=${this.authState!}
           orgId=${this.orgId!}
+          ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
+          @storage-quota-update=${this.onStorageQuotaUpdate}
         ></btrix-workflow-detail>
       `;
     }
@@ -286,14 +298,17 @@ export class Org extends LiteElement {
         orgId=${this.orgId!}
         ?isCrawler=${this.isCrawler}
         .initialWorkflow=${workflow}
+        @storage-quota-update=${this.onStorageQuotaUpdate}
       ></btrix-workflows-new>`;
     }
 
     return html`<btrix-workflows-list
       .authState=${this.authState!}
       orgId=${this.orgId!}
+      ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
+      @storage-quota-update=${this.onStorageQuotaUpdate}
     ></btrix-workflows-list>`;
   }
 
@@ -305,6 +320,7 @@ export class Org extends LiteElement {
         .authState=${this.authState!}
         .orgId=${this.orgId!}
         profileId=${this.params.browserProfileId}
+        @storage-quota-update=${this.onStorageQuotaUpdate}
       ></btrix-browser-profiles-detail>`;
     }
 
@@ -313,6 +329,7 @@ export class Org extends LiteElement {
         .authState=${this.authState!}
         .orgId=${this.orgId!}
         .browserId=${this.params.browserId}
+        @storage-quota-update=${this.onStorageQuotaUpdate}
       ></btrix-browser-profiles-new>`;
     }
 
@@ -320,6 +337,7 @@ export class Org extends LiteElement {
       .authState=${this.authState!}
       .orgId=${this.orgId!}
       ?showCreateDialog=${isNewResourceTab}
+      @storage-quota-update=${this.onStorageQuotaUpdate}
     ></btrix-browser-profiles-list>`;
   }
 
@@ -420,6 +438,11 @@ export class Org extends LiteElement {
     this.removeMember(e.detail.member);
   }
 
+  private async onStorageQuotaUpdate(e: CustomEvent) {
+    const { reached } = e.detail;
+    this.orgStorageQuotaReached = reached;
+  }
+
   private async onUserRoleChange(e: UserRoleChangeEvent) {
     const { user, newRole } = e.detail;
 
@@ -508,6 +531,23 @@ export class Org extends LiteElement {
         variant: "danger",
         icon: "exclamation-octagon",
       });
+    }
+  }
+
+  checkStorageQuota() {
+    if (
+      !this.org ||
+      !this.org.quotas.storageQuota ||
+      this.org.quotas.storageQuota == 0
+    ) {
+      this.orgStorageQuotaReached = false;
+      return;
+    }
+
+    if (this.org.bytesStored > this.org.quotas.storageQuota) {
+      this.orgStorageQuotaReached = true;
+    } else {
+      this.orgStorageQuotaReached = false;
     }
   }
 }

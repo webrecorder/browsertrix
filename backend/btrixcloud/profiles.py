@@ -11,7 +11,9 @@ from pydantic import UUID4
 from fastapi import APIRouter, Depends, Request, HTTPException
 import aiohttp
 
+from .orgs import inc_org_bytes_stored, storage_quota_reached
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
+from .storages import delete_crawl_file_object
 from .models import (
     Profile,
     ProfileWithCrawlConfigs,
@@ -35,6 +37,7 @@ class ProfileOps:
 
     def __init__(self, mdb, crawl_manager):
         self.profiles = mdb["profiles"]
+        self.orgs = mdb["organizations"]
 
         self.crawl_manager = crawl_manager
         self.browser_fqdn_suffix = os.environ.get("CRAWLER_FQDN_SUFFIX")
@@ -139,7 +142,6 @@ class ProfileOps:
         profileid: uuid.UUID = None,
     ):
         """commit profile and shutdown profile browser"""
-
         if not profileid:
             profileid = uuid.uuid4()
 
@@ -157,9 +159,11 @@ class ProfileOps:
 
         await self.crawl_manager.delete_profile_browser(browser_commit.browserid)
 
+        file_size = resource["bytes"]
+
         profile_file = ProfileFile(
             hash=resource["hash"],
-            size=resource["bytes"],
+            size=file_size,
             filename=resource["path"],
         )
 
@@ -167,6 +171,11 @@ class ProfileOps:
         if baseid:
             print("baseid", baseid)
             baseid = uuid.UUID(baseid)
+
+        oid = uuid.UUID(metadata.get("btrix.org"))
+
+        if await storage_quota_reached(self.orgs, oid):
+            raise HTTPException(status_code=403, detail="storage_quota_reached")
 
         profile = Profile(
             id=profileid,
@@ -176,7 +185,7 @@ class ProfileOps:
             origins=json["origins"],
             resource=profile_file,
             userid=uuid.UUID(metadata.get("btrix.user")),
-            oid=uuid.UUID(metadata.get("btrix.org")),
+            oid=oid,
             baseid=baseid,
         )
 
@@ -184,7 +193,13 @@ class ProfileOps:
             {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
         )
 
-        return {"added": True, "id": str(profile.id)}
+        quota_reached = await inc_org_bytes_stored(self.orgs, oid, file_size)
+
+        return {
+            "added": True,
+            "id": str(profile.id),
+            "storageQuotaReached": quota_reached,
+        }
 
     async def update_profile_metadata(
         self, profileid: UUID4, update: ProfileCreateUpdate
@@ -283,9 +298,7 @@ class ProfileOps:
 
         return crawlconfig_names
 
-    async def delete_profile(
-        self, profileid: uuid.UUID, org: Optional[Organization] = None
-    ):
+    async def delete_profile(self, profileid: uuid.UUID, org: Organization):
         """delete profile, if not used in active crawlconfig"""
         profile = await self.get_profile_with_configs(profileid, org)
 
@@ -296,15 +309,18 @@ class ProfileOps:
         if org:
             query["oid"] = org.id
 
-        # pylint: disable=fixme
-        # todo: delete the file itself!
-        # delete profile.pathname
+        # Delete file from storage
+        if profile.resource:
+            await delete_crawl_file_object(org, profile.resource, self.crawl_manager)
+            await inc_org_bytes_stored(self.orgs, org.id, -profile.resource.size)
 
         res = await self.profiles.delete_one(query)
         if not res or res.deleted_count != 1:
             raise HTTPException(status_code=404, detail="profile_not_found")
 
-        return {"success": True}
+        quota_reached = await storage_quota_reached(self.orgs, org.id)
+
+        return {"success": True, "storageQuotaReached": quota_reached}
 
     async def delete_profile_browser(self, browserid):
         """delete profile browser immediately"""

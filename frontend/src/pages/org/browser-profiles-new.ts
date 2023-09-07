@@ -202,11 +202,29 @@ export class BrowserProfilesNew extends LiteElement {
       });
 
       this.navTo(`/orgs/${this.orgId}/browser-profiles/profile/${data.id}`);
-    } catch (e) {
+    } catch (e: any) {
       this.isSubmitting = false;
+      let message = msg("Sorry, couldn't create browser profile at this time.");
 
+      if (e.isApiError && e.statusCode === 403) {
+        if (e.details === "storage_quota_reached") {
+          message = msg(
+            "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
+          );
+          this.dispatchEvent(
+            new CustomEvent("storage-quota-update", {
+              detail: { reached: true },
+              bubbles: true,
+            })
+          );
+        } else {
+          message = msg(
+            "You do not have permission to create browser profiles."
+          );
+        }
+      }
       this.notify({
-        message: msg("Sorry, couldn't create browser profile at this time."),
+        message: message,
         variant: "danger",
         icon: "exclamation-octagon",
       });
