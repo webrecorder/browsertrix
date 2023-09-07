@@ -1,4 +1,19 @@
 {{- if .Values.minio_local }}
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: minio-auth
+  namespace: {{ .Release.Namespace }}
+
+type: Opaque
+stringData:
+ {{- with (first .Values.storages) }}
+  MINIO_ROOT_USER: "{{ .access_key }}"
+  MINIO_ROOT_PASSWORD: "{{ .secret_key }}"
+
+  MC_HOST: "{{ $.Values.minio_scheme }}://{{ .access_key }}:{{ .secret_key }}@{{ $.Values.minio_host }}"
+{{- end }}
 
 ---
 kind: PersistentVolumeClaim
@@ -81,7 +96,7 @@ spec:
           args: ["server", "/data", "--console-address", ":9001"]
           envFrom:
             - secretRef:
-                name: auth-secrets
+                name: minio-auth
 
           volumeMounts:
             - name: data-minio
