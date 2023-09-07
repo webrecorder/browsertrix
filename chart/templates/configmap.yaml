@@ -6,7 +6,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 
 data:
-  APP_ORIGIN: {{.Values.ingress.scheme }}://{{ .Values.ingress.host | default "localhost:9870" }}
+  APP_ORIGIN: {{ .Values.ingress.tls | ternary "https" "http" }}://{{ .Values.ingress.host | default "localhost:9870" }}
 
   CRON_NAMESPACE: {{ .Release.Namespace }}
 
