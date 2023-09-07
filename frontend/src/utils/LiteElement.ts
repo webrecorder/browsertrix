@@ -123,6 +123,8 @@ export default class LiteElement extends LitElement {
       ...opts,
     });
 
+    const body = await resp.json();
+
     if (resp.status !== 200) {
       if (resp.status === 401) {
         this.dispatchEvent(new CustomEvent("need-login"));
@@ -141,7 +143,7 @@ export default class LiteElement extends LitElement {
       let errorMessage: string = msg("Unknown API error");
 
       try {
-        detail = (await resp.json()).detail;
+        detail = body.detail;
 
         if (typeof detail === "string") {
           errorMessage = detail;
@@ -162,8 +164,6 @@ export default class LiteElement extends LitElement {
         details: detail,
       });
     }
-
-    const body = await resp.json();
 
     if (options?.method && options?.method !== "GET") {
       try {
