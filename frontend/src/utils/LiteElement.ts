@@ -128,6 +128,15 @@ export default class LiteElement extends LitElement {
         this.dispatchEvent(new CustomEvent("need-login"));
       }
 
+      if (resp.status === 403 && body.detail === "storage_quota_reached") {
+        this.dispatchEvent(
+          new CustomEvent("storage-quota-update", {
+            detail: { reached: true },
+            bubbles: true,
+          })
+        );
+      }
+
       let detail;
       let errorMessage: string = msg("Unknown API error");
 
@@ -156,7 +165,7 @@ export default class LiteElement extends LitElement {
 
     const body = await resp.json();
 
-    if (options?.method && options?.method !== "GET" && resp.status === 200) {
+    if (options?.method && options?.method !== "GET") {
       try {
         const storageQuotaReached = body.storageQuotaReached;
         if (typeof storageQuotaReached === "boolean") {
