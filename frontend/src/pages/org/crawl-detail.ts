@@ -972,16 +972,6 @@ ${this.crawl?.description}
           }),
         }
       );
-
-      if (!data.storageQuotaReached) {
-        this.dispatchEvent(
-          new CustomEvent("storage-quota-update", {
-            detail: { reached: false },
-            bubbles: true,
-          })
-        );
-      }
-
       this.navTo(this.listUrl);
       this.notify({
         message: msg(`Successfully deleted crawl`),

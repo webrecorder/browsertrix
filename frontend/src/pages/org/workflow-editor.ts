@@ -2059,12 +2059,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
           variant: "danger",
           icon: "exclamation-octagon",
         });
-        this.dispatchEvent(
-          new CustomEvent("storage-quota-update", {
-            detail: { reached: true },
-            bubbles: true,
-          })
-        );
       }
 
       this.navTo(

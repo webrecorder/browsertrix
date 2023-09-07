@@ -334,15 +334,6 @@ export class BrowserProfilesList extends LiteElement {
           duration: 15000,
         });
       } else {
-        if (!data.storageQuotaReached) {
-          this.dispatchEvent(
-            new CustomEvent("storage-quota-update", {
-              detail: { reached: false },
-              bubbles: true,
-            })
-          );
-        }
-
         this.notify({
           message: msg(html`Deleted <strong>${profile.name}</strong>.`),
           variant: "success",

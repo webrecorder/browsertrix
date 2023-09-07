@@ -422,6 +422,7 @@ export class FileUploader extends LiteElement {
 
       this.uploadRequest = null;
 
+      // Dispatch event here because we're not using apiFetch() for uploads
       if (data.storageQuotaReached) {
         this.dispatchEvent(
           new CustomEvent("storage-quota-update", {

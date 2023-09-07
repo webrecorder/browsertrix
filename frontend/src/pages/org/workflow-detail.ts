@@ -1498,16 +1498,6 @@ export class WorkflowDetail extends LiteElement {
           }),
         }
       );
-
-      if (!data.storageQuotaReached) {
-        this.dispatchEvent(
-          new CustomEvent("storage-quota-update", {
-            detail: { reached: false },
-            bubbles: true,
-          })
-        );
-      }
-
       this.crawls = {
         ...this.crawls!,
         items: this.crawls!.items.filter((c) => c.id !== crawl.id),

@@ -201,15 +201,6 @@ export class BrowserProfilesNew extends LiteElement {
         icon: "check2-circle",
       });
 
-      if (data.storageQuotaReached) {
-        this.dispatchEvent(
-          new CustomEvent("storage-quota-update", {
-            detail: { reached: true },
-            bubbles: true,
-          })
-        );
-      }
-
       this.navTo(`/orgs/${this.orgId}/browser-profiles/profile/${data.id}`);
     } catch (e: any) {
       this.isSubmitting = false;
