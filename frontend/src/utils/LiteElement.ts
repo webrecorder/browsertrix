@@ -124,12 +124,11 @@ export default class LiteElement extends LitElement {
     });
 
     const body = await resp.json();
-    let detail;
-    try {
-      detail = body.detail;
-    } catch {}
+    let detail = body.detail;
 
     if (resp.status !== 200) {
+      let errorMessage: string = msg("Unknown API error");
+
       if (resp.status === 401) {
         this.dispatchEvent(new CustomEvent("need-login"));
       }
@@ -143,12 +142,10 @@ export default class LiteElement extends LitElement {
         );
       }
 
-      let errorMessage: string = msg("Unknown API error");
-
       if (typeof detail === "string") {
         errorMessage = detail;
       } else if (Array.isArray(detail) && detail.length) {
-        const fieldDetail = detail[0];
+        const fieldDetail = detail[0] || {};
         const { loc, msg } = fieldDetail;
 
         const fieldName = loc
@@ -164,18 +161,16 @@ export default class LiteElement extends LitElement {
       });
     }
 
-    if (options?.method && options?.method !== "GET") {
-      try {
-        const storageQuotaReached = body.storageQuotaReached;
-        if (typeof storageQuotaReached === "boolean") {
-          this.dispatchEvent(
-            new CustomEvent("storage-quota-update", {
-              detail: { reached: storageQuotaReached },
-              bubbles: true,
-            })
-          );
-        }
-      } catch {}
+    if (options?.method && options.method !== "GET") {
+      const storageQuotaReached = body.storageQuotaReached;
+      if (typeof storageQuotaReached === "boolean") {
+        this.dispatchEvent(
+          new CustomEvent("storage-quota-update", {
+            detail: { reached: storageQuotaReached },
+            bubbles: true,
+          })
+        );
+      }
     }
 
     return await body;
