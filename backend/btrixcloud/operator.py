@@ -136,6 +136,8 @@ class BtrixOperator(K8sAPI):
 
         self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
+        self.log_failed_crawl_lines = int(os.environ.get("LOG_FAILED_CRAWL_LINES") or 0)
+
         with open(self.config_file, encoding="utf-8") as fh_config:
             self.shared_params = yaml.safe_load(fh_config)
 
@@ -580,8 +582,10 @@ class BtrixOperator(K8sAPI):
             status.filesAdded = int(await redis.get("filesAdded") or 0)
             status.filesAddedSize = int(await redis.get("filesAddedSize") or 0)
 
+            pod_names = list(pods.keys())
+
             # update stats and get status
-            return await self.update_crawl_state(redis, crawl, status)
+            return await self.update_crawl_state(redis, crawl, status, pod_names)
 
         # pylint: disable=broad-except
         except Exception as exc:
@@ -674,7 +678,7 @@ class BtrixOperator(K8sAPI):
 
         return False
 
-    async def update_crawl_state(self, redis, crawl, status):
+    async def update_crawl_state(self, redis, crawl, status, pod_names):
         """update crawl state and check if crawl is now done"""
         results = await redis.hvals(f"{crawl.id}:status")
         stats = await get_redis_crawl_stats(redis, crawl.id)
@@ -716,15 +720,30 @@ class BtrixOperator(K8sAPI):
 
         # check if all crawlers failed
         elif status_count.get("failed", 0) >= crawl.scale:
+            prev_state = None
+
             # if stopping, and no pages finished, mark as canceled
             if status.stopping and not status.pagesDone:
                 state = "canceled"
             else:
                 state = "failed"
+                prev_state = status.state
 
             status = await self.mark_finished(
                 redis, crawl.id, crawl.cid, status, state=state
             )
+
+            if (
+                self.log_failed_crawl_lines
+                and state == "failed"
+                and prev_state != "failed"
+            ):
+                print("crawl failed: ", pod_names, stats)
+                asyncio.create_task(
+                    self.print_pod_logs(
+                        pod_names, "crawler", self.log_failed_crawl_lines
+                    )
+                )
 
         # check for other statuses
         else:
