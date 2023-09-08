@@ -282,6 +282,7 @@ email:
   sender_email: example@example.com
   password: password
   reply_to_email: example@example.com
+  use_tls: True
 
 
 # Deployment options
