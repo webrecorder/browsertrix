@@ -304,6 +304,9 @@ class BtrixOperator(K8sAPI):
         else:
             params["force_restart"] = False
 
+        # for debugging, don't restart failed crawl contains to get logs of initial failure
+        params["never_restart_failed"] = self.log_failed_crawl_lines > 0
+
         for i in range(0, status.scale):
             children.extend(self._load_crawler(params, i, status, data.children))
 

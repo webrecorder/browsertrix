@@ -47,7 +47,7 @@ spec:
   priorityClassName: {{ priorityClassName }}
   {% endif %}
 
-  restartPolicy: OnFailure
+  restartPolicy: {{ "Never" if never_restart_failed else "OnFailure" }}
 
   terminationGracePeriodSeconds: {{ termination_grace_secs }}
   volumes:
