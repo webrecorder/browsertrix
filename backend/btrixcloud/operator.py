@@ -116,6 +116,7 @@ class CrawlStatus(BaseModel):
     initRedis: bool = False
     lastActiveTime: str = ""
     resources: Optional[dict] = {}
+    restartTime: Optional[str]
 
     # don't include in status, use by metacontroller
     resync_after: Optional[int] = None
@@ -159,17 +160,23 @@ class BtrixOperator(K8sAPI):
             base = parse_quantity(p["crawler_cpu_base"])
             extra = parse_quantity(p["crawler_extra_cpu_per_browser"])
 
+            # cpu is a floating value of cpu cores
             p["crawler_cpu"] = float(base + num * extra)
 
             print(f"cpu = {base} + {num} * {extra} = {p['crawler_cpu']}")
+        else:
+            print(f"cpu = {p['crawler_cpu']}")
 
         if not p.get("crawler_memory"):
             base = parse_quantity(p["crawler_memory_base"])
             extra = parse_quantity(p["crawler_extra_memory_per_browser"])
 
-            p["crawler_memory"] = float(base + num * extra)
+            # memory is always an int
+            p["crawler_memory"] = int(base + num * extra)
 
             print(f"memory = {base} + {num} * {extra} = {p['crawler_memory']}")
+        else:
+            print(f"memory = {p['crawler_memory']}")
 
     async def sync_profile_browsers(self, data: MCSyncData):
         """sync profile browsers"""
@@ -233,7 +240,7 @@ class BtrixOperator(K8sAPI):
         # do_crawl_finished_tasks() doesn't reach the end or taking too long
         if status.finished:
             print(
-                "warn crawl {crawl_id} finished but not deleted, post-finish tasks taking too long?"
+                f"warn crawl {crawl_id} finished but not deleted, post-finish taking too long?"
             )
             asyncio.create_task(self.delete_crawl_job(crawl_id))
             return self.finalize_response(crawl_id, status, spec, data.children, params)
@@ -285,9 +292,16 @@ class BtrixOperator(K8sAPI):
         params["store_path"] = configmap["STORE_PATH"]
         params["store_filename"] = configmap["STORE_FILENAME"]
         params["profile_filename"] = configmap["PROFILE_FILENAME"]
-        params["force_restart"] = spec.get("forceRestart")
-
+        params["restart_time"] = spec.get("restartTime")
         params["redis_url"] = redis_url
+
+        if spec.get("restartTime") != status.restartTime:
+            # pylint: disable=invalid-name
+            status.restartTime = spec.get("restartTime")
+            status.resync_after = self.fast_retry_secs
+            params["force_restart"] = True
+        else:
+            params["force_restart"] = False
 
         for i in range(0, status.scale):
             children.extend(self._load_crawler(params, i, status, data.children))

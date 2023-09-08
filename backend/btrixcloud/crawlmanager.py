@@ -267,9 +267,9 @@ class CrawlManager(K8sAPI):
         )
 
     async def rollover_restart_crawl(self, crawl_id, oid):
-        """Rolling restart of crawl by updating forceRestart field"""
+        """Rolling restart of crawl by updating restartTime field"""
         update = to_k8s_date(dt_now())
-        return await self._patch_job(crawl_id, {"forceRestart": update})
+        return await self._patch_job(crawl_id, {"restartTime": update})
 
     async def scale_crawl(self, crawl_id, oid, scale=1):
         """Set the crawl scale (job parallelism) on the specified job"""

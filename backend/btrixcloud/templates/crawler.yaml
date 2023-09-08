@@ -28,6 +28,7 @@ spec:
 # -------
 # CRAWLER
 # -------
+{% if not force_restart %}
 ---
 apiVersion: v1
 kind: Pod
@@ -37,11 +38,6 @@ metadata:
   labels:
     crawl: {{ id }}
     role: crawler
-
-  {% if force_restart %}
-  annotations:
-    btrix.crawlForceRestart: "{{ force_restart }}"
-  {% endif %}
 
 spec:
   hostname: {{ name }}
@@ -158,7 +154,7 @@ spec:
           memory: "{{ crawler_memory }}"
 
         requests:
-          cpu: "1"
+          cpu: "{{ crawler_cpu }}"
           memory: "{{ crawler_memory }}"
 
       {% if crawler_liveness_port and crawler_liveness_port != '0' %}
@@ -171,3 +167,5 @@ spec:
         periodSeconds: 120
         failureThreshold: 3
       {% endif %}
+
+{% endif %}
