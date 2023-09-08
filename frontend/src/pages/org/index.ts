@@ -582,5 +582,9 @@ export class Org extends LiteElement {
     } else {
       this.orgStorageQuotaReached = false;
     }
+
+    if (this.orgStorageQuotaReached) {
+      this.showStorageQuotaAlert = true;
+    }
   }
 }
