@@ -22,7 +22,8 @@ class CrawlManager(K8sAPI):
         self.job_image = os.environ["JOB_IMAGE"]
         self.job_image_pull_policy = os.environ.get("JOB_PULL_POLICY", "Always")
 
-        self.cron_namespace = os.environ.get("CRON_NAMESPACE", "default")
+        # self.cron_namespace = os.environ.get("CRON_NAMESPACE", "default")
+        self.cron_namespace = self.namespace
 
         self._default_storages = {}
 
@@ -340,13 +341,11 @@ class CrawlManager(K8sAPI):
         await self.batch_api.delete_collection_namespaced_cron_job(
             namespace=self.cron_namespace,
             label_selector=label,
-            propagation_policy="Foreground",
         )
 
         await self.core_api.delete_collection_namespaced_config_map(
             namespace=self.namespace,
             label_selector=label,
-            propagation_policy="Foreground",
         )
 
     async def _update_scheduled_job(self, crawlconfig, schedule):

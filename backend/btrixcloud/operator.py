@@ -5,6 +5,7 @@ import traceback
 import os
 from pprint import pprint
 from typing import Optional
+from pprint import pprint
 
 from datetime import datetime
 import json
@@ -26,7 +27,7 @@ from .utils import (
 )
 from .k8sapi import K8sAPI
 
-from .orgs import inc_org_stats, get_max_concurrent_crawls
+from .orgs import inc_org_stats, get_max_concurrent_crawls, storage_quota_reached
 from .basecrawls import (
     NON_RUNNING_STATES,
     RUNNING_STATES,
@@ -44,6 +45,11 @@ from .crawls import (
 )
 from .models import CrawlFile, CrawlCompleteIn
 from .orgs import add_crawl_files_to_org_bytes_stored
+from .crawlconfigs import (
+    get_crawl_config,
+    inc_crawl_count,
+)
+from .crawls import add_new_crawl
 
 
 CMAP = "ConfigMap.v1"
@@ -61,11 +67,6 @@ STARTING_TIME_SECS = 60
 
 
 # ============================================================================
-class DeleteCrawlException(Exception):
-    """throw to force deletion of crawl objects"""
-
-
-# ============================================================================
 class MCBaseRequest(BaseModel):
     """base metacontroller model, used for customize hook"""
 
@@ -78,6 +79,18 @@ class MCSyncData(MCBaseRequest):
     """sync / finalize metacontroller model"""
 
     children: dict
+    related: dict
+    finalizing: bool = False
+
+
+# ============================================================================
+class MCDecoratorSyncData(BaseModel):
+    """sync for decoratorcontroller model"""
+
+    object: dict
+    controller: dict
+
+    attachments: dict
     related: dict
     finalizing: bool = False
 
@@ -444,7 +457,7 @@ class BtrixOperator(K8sAPI):
         )
 
     def get_related(self, data: MCBaseRequest):
-        """return configmap related to crawl"""
+        """return objects related to crawl pods"""
         spec = data.parent.get("spec", {})
         cid = spec["cid"]
         # crawl_id = spec["id"]
@@ -924,6 +937,86 @@ class BtrixOperator(K8sAPI):
             if redis:
                 await redis.close()
 
+    def get_cronjob_crawl_related(self, data: MCBaseRequest):
+        """return configmap related to crawl"""
+        labels = data.parent.get("metadata", {}).get("labels", {})
+        cid = labels.get("btrix.crawlconfig")
+        return {
+            "relatedResources": [
+                {
+                    "apiVersion": "v1",
+                    "resource": "configmaps",
+                    "labelSelector": {"matchLabels": {"btrix.crawlconfig": cid}},
+                }
+            ]
+        }
+
+    async def sync_cronjob_crawl(self, data: MCDecoratorSyncData):
+        """create crawljobs from a job object spawned by cronjob"""
+
+        labels = data.object.get("metadata", {}).get("labels", {})
+        cid = labels.get("btrix.crawlconfig")
+
+        crawl_id = labels.get("crawl")
+        has_prev = not crawl_id
+
+        has_run = labels.get("has_run") or "0"
+
+        configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
+
+        oid = configmap.get("ORG_ID")
+        userid = configmap.get("USER_ID")
+
+        if crawl_id:
+            if has_run == "1":
+                return {"attachments": []}
+
+            if len(data.attachments) and data.attachments[CJS][crawl_id].get("status", {}).get(
+                "state"
+            ):
+                has_run = "1"
+
+        if not crawl_id:
+            if await storage_quota_reached(self.orgs, uuid.UUID(oid)):
+                print(
+                    f"Scheduled crawl from workflow {cid} not started - storage quota reached",
+                    flush=True,
+                )
+                return
+
+        crawl_id, data = self.new_crawl_job_yaml(
+            cid,
+            userid=userid,
+            oid=oid,
+            scale=int(configmap.get("INITIAL_SCALE", 1)),
+            crawl_timeout=int(configmap.get("CRAWL_TIMEOUT", 0)),
+            max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),
+            manual=False,
+            crawl_id=crawl_id,
+        )
+
+        attachments = list(yaml.safe_load_all(data))
+
+        if not has_prev:
+            crawlconfig = await get_crawl_config(self.crawl_configs, uuid.UUID(cid))
+
+            # db create
+            await inc_crawl_count(self.crawl_configs, crawlconfig.id)
+            await add_new_crawl(
+                self.crawls,
+                self.crawl_configs,
+                crawl_id,
+                crawlconfig,
+                uuid.UUID(userid),
+                manual=False,
+            )
+            print("Crawl Created: " + crawl_id)
+
+        return {
+            "attachments": attachments,
+            "labels": {"crawl": crawl_id, "has_run": has_run},
+        }
+
 
 # ============================================================================
 def init_operator_api(app, mdb, event_webhook_ops):
@@ -947,6 +1040,14 @@ def init_operator_api(app, mdb, event_webhook_ops):
     @app.post("/op/profilebrowsers/sync")
     async def mc_sync_profile_browsers(data: MCSyncData):
         return await oper.sync_profile_browsers(data)
+
+    @app.post("/op/cronjob/sync")
+    async def mc_sync_cronjob_crawls(data: MCDecoratorSyncData):
+        return await oper.sync_cronjob_crawl(data)
+
+    @app.post("/op/cronjob/customize")
+    async def mc_cronjob_related(data: MCBaseRequest):
+        return oper.get_cronjob_crawl_related(data)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz():

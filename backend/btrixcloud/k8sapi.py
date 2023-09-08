@@ -70,8 +70,16 @@ class K8sAPI:
         )
 
     # pylint: disable=too-many-arguments
-    async def new_crawl_job(
-        self, cid, userid, oid, scale=1, crawl_timeout=0, max_crawl_size=0, manual=True
+    def new_crawl_job_yaml(
+        self,
+        cid,
+        userid,
+        oid,
+        scale=1,
+        crawl_timeout=0,
+        max_crawl_size=0,
+        manual=True,
+        crawl_id=None,
     ):
         """load job template from yaml"""
         if crawl_timeout:
@@ -79,9 +87,10 @@ class K8sAPI:
         else:
             crawl_expire_time = ""
 
-        ts_now = dt_now().strftime("%Y%m%d%H%M%S")
-        prefix = "manual" if manual else "sched"
-        crawl_id = f"{prefix}-{ts_now}-{cid[:12]}"
+        if not crawl_id:
+            ts_now = dt_now().strftime("%Y%m%d%H%M%S")
+            prefix = "manual" if manual else "sched"
+            crawl_id = f"{prefix}-{ts_now}-{cid[:12]}"
 
         params = {
             "id": crawl_id,
@@ -95,6 +104,11 @@ class K8sAPI:
         }
 
         data = self.templates.env.get_template("crawl_job.yaml").render(params)
+        return crawl_id, data
+
+    async def new_crawl_job(self, *args, **kwargs):
+        """load and init crawl job via k8s api"""
+        crawl_id, data = self.new_crawl_job_yaml(*args, **kwargs)
 
         # create job directly
         await self.create_from_yaml(data)

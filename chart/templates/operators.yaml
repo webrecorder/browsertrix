@@ -70,3 +70,38 @@ spec:
           name: {{ .Values.name }}-backend
           port: {{ .Values.opPort }}
         path: /op/profilebrowsers/sync
+
+---
+apiVersion: metacontroller.k8s.io/v1alpha1
+kind: DecoratorController
+metadata:
+  name: cron-crawljobs-operator
+spec:
+  resyncPeriodSeconds: {{ .Values.operator_resync_seconds | default 10 }}
+  resources:
+  - apiVersion: batch/v1
+    resource: jobs
+    labelSelector:
+      matchLabels:
+        role: scheduled-crawljob
+
+  attachments:
+  - apiVersion: btrix.cloud/v1
+    resource: crawljobs
+
+  hooks:
+    sync:
+      webhook:
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/cronjob/sync
+
+    customize:
+      webhook:
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/cronjob/customize
