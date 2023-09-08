@@ -774,12 +774,13 @@ export class WorkflowsList extends LiteElement {
       // Scroll to top of list
       this.scrollIntoView({ behavior: "smooth" });
     } catch (e: any) {
-      if (e.details === "storage_quota_reached") {
-        return;
-      }
       let message = msg("Sorry, couldn't run crawl at this time.");
       if (e.isApiError && e.statusCode === 403) {
-        message = msg("You do not have permission to run crawls.");
+        if (e.details === "storage_quota_reached") {
+          message = msg("Your org does not have enough storage to run crawls.");
+        } else {
+          message = msg("You do not have permission to run crawls.");
+        }
       }
       this.notify({
         message: message,

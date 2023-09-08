@@ -205,13 +205,18 @@ export class BrowserProfilesNew extends LiteElement {
     } catch (e: any) {
       this.isSubmitting = false;
 
-      if (e.details === "storage_quota_reached") {
-        return;
-      }
       let message = msg("Sorry, couldn't create browser profile at this time.");
 
       if (e.isApiError && e.statusCode === 403) {
-        message = msg("You do not have permission to create browser profiles.");
+        if (e.details === "storage_quota_reached") {
+          message = msg(
+            "Your org does not have enough storage to save this browser profile."
+          );
+        } else {
+          message = msg(
+            "You do not have permission to create browser profiles."
+          );
+        }
       }
 
       this.notify({

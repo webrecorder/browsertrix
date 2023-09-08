@@ -2037,13 +2037,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const crawlId = data.run_now_job;
       const storageQuotaReached = data.storageQuotaReached;
 
-      if (storageQuotaReached) {
-      }
-
       if (crawlId && storageQuotaReached) {
         this.notify({
+          title: msg("Workflow saved."),
           message: msg(
-            "Workflow created but could not start crawl due to storage quota."
+            "Could not start crawl with new workflow settings due to storage quota."
           ),
           variant: "warning",
           icon: "exclamation-triangle",
@@ -2052,7 +2050,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       } else {
         let message = msg("Workflow created.");
         if (crawlId) {
-          message = msg("Crawl started with new workflow.");
+          message = msg("Crawl started with new workflow settings.");
         } else if (this.configId) {
           message = msg("Workflow updated.");
         }
