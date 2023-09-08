@@ -328,11 +328,13 @@ class BtrixOperator(K8sAPI):
 
     # pylint: disable=too-many-arguments
     async def _resolve_scale(self, crawl_id, desired_scale, redis, status, pods):
-        """if desired_scale >= actual scale, just set (also limit by number of pages
-        found)
-                    if desired scale < actual scale, attempt to shut down each crawl instance
-        via redis setting. if contiguous instances shutdown (successful exit), lower
-        scale. also clean up previous scale state"""
+        """Resolve scale
+        If desired_scale >= actual scale, just set (also limit by number of pages
+        found).
+        If desired scale < actual scale, attempt to shut down each crawl instance
+        via redis setting. If contiguous instances shutdown (successful exit), lower
+        scale and clean up previous scale state.
+        """
 
         # actual scale (minus redis pod)
         actual_scale = len(pods)
