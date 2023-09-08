@@ -633,6 +633,7 @@ export class WorkflowDetail extends LiteElement {
             () => html`
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--success)"
+                ?disabled=${this.orgStorageQuotaReached}
                 @click=${() => this.runNow()}
               >
                 <sl-icon name="play" slot="prefix"></sl-icon>
