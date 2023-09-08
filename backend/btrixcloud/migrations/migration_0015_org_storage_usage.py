@@ -18,13 +18,13 @@ class Migration(BaseMigration):
 
         Calculate and store org storage usage
         """
-        orgs = self.mdb["orgs"]
+        organizations = self.mdb["organizations"]
         crawls = self.mdb["crawls"]
         profiles = self.mdb["profiles"]
 
-        orgs = [res async for res in orgs.find({})]
+        orgs = [res async for res in organizations.find({})]
         for org in orgs:
-            oid = org.get("id")
+            oid = org.get("_id")
 
             bytes_stored = 0
 
@@ -33,14 +33,14 @@ class Migration(BaseMigration):
                 for crawl_file in crawl.get("files", []):
                     bytes_stored += crawl_file.get("size", 0)
 
-            profiles = [res async for res in profiles.find({"oid": org["id"]})]
+            profiles = [res async for res in profiles.find({"oid": oid})]
             for profile in profiles:
                 profile_file = profile.get("resource")
                 if profile_file:
                     bytes_stored += profile_file.get("size", 0)
 
             try:
-                await orgs.find_one_and_update(
+                res = await organizations.find_one_and_update(
                     {"_id": oid}, {"$set": {"bytesStored": bytes_stored}}
                 )
             # pylint: disable=broad-exception-caught
