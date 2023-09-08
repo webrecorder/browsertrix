@@ -199,21 +199,15 @@ export class WorkflowsList extends LiteElement {
           ${when(
             this.isCrawler,
             () => html`
-              <sl-tooltip
-                content=${msg("Org Storage Full")}
-                ?disabled=${!this.orgStorageQuotaReached}
+              <sl-button
+                href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
+                variant="primary"
+                size="small"
+                @click=${this.navLink}
               >
-                <sl-button
-                  href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
-                  variant="primary"
-                  size="small"
-                  ?disabled=${this.orgStorageQuotaReached}
-                  @click=${this.navLink}
-                >
-                  <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                  ${msg("New Workflow")}
-                </sl-button>
-              </sl-tooltip>
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                ${msg("New Workflow")}
+              </sl-button>
             `
           )}
         </div>
