@@ -476,13 +476,6 @@ export class Org extends LiteElement {
     }
   }
 
-  firstUpdated() {
-    window.setTimeout(() => {
-      this.orgStorageQuotaReached = true;
-      this.showStorageQuotaAlert = true;
-    }, 2000);
-  }
-
   private async onUserRoleChange(e: UserRoleChangeEvent) {
     const { user, newRole } = e.detail;
 
