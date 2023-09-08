@@ -6,7 +6,6 @@ import { msg, localized, str } from "@lit/localize";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { Profile } from "./types";
-import { APIError } from "../../utils/api";
 
 /**
  * Usage:
