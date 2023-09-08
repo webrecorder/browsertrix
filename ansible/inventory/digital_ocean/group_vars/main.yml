@@ -1,0 +1,52 @@
+---
+project_name: "default"
+
+main_node_size: "s-1vcpu-2gb"
+crawl_node_size: "c-4"
+droplet_region: "sfo3"
+
+node_pools:
+  - name=main-app;size={{ main_node_size }};label=nodeType=main;count=2
+  - name=crawling;size={{ crawl_node_size }};label=nodeType=crawling;taint=nodeType=crawling:NoSchedule;auto-scale=true;min-nodes=1;max-nodes=3;count=1
+
+enable_admin_addons: true
+
+admin_node_pool:
+  name: admin-app
+  size: s-4vcpu-8gb
+  label: nodeType=admin
+  count: 1
+
+db_name: "{{ project_name }}"
+k8s_name: "{{ project_name }}"
+
+bucket_name: "{{ project_name }}"
+bucket_path: "crawls"
+
+registry_name: "{{ project_name }}"
+
+domain: "browsertrix.cloud"
+subdomain: "{{ project_name }}"
+
+
+configure_kubectl: false
+use_do_registry: false
+image_tag: "latest"
+
+enable_signing: true
+signing_host: "signing"
+
+superuser_email: "dev@webrecorder.net"
+superuser_password: "PassW0rd!"
+
+org_name: "{{ project_name }}"
+
+registration_enabled: false
+
+cert_email: "{{ superuser_email }}"
+
+smtp_port: ""
+smtp_host: ""
+sender_email: ""
+reply_to_email: ""
+sender_password: ""

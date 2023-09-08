@@ -45,11 +45,3 @@
     src: k8s-manifest.yaml.j2
     dest: ../chart/{{ project_name }}-values.yaml
     mode: u+rw
-
-- name: d_ocean | helm | deploy btrix
-  ansible.builtin.command: helm upgrade --install -f ../chart/values.yaml -f ../chart/{{ project_name }}-values.yaml btrix ../chart/
-  register: helm_result
-  changed_when: helm_result.rc == 0
-  environment:
-    KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
-  tags: helm_upgrade
