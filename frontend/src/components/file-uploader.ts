@@ -459,24 +459,26 @@ export class FileUploader extends LiteElement {
       }
     } catch (err: any) {
       if (err === ABORT_REASON_USER_CANCEL) {
-        console.debug("Fetch crawls aborted to user cancel");
+        console.debug("Upload aborted to user cancel");
       } else {
         let message = msg("Sorry, couldn't upload file at this time.");
         console.debug(err);
         if (err === ABORT_REASON_QUOTA_REACHED) {
+          message = msg(
+            "Your org does not have enough storage to upload this file."
+          );
           this.dispatchEvent(
             new CustomEvent("storage-quota-update", {
               detail: { reached: true },
               bubbles: true,
             })
           );
-        } else {
-          this.notify({
-            message: message,
-            variant: "danger",
-            icon: "exclamation-octagon",
-          });
         }
+        this.notify({
+          message: message,
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
       }
     }
     this.isUploading = false;
