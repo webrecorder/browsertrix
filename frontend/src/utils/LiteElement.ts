@@ -123,8 +123,8 @@ export default class LiteElement extends LitElement {
       ...opts,
     });
 
-    const body = await resp.json();
     if (resp.ok) {
+      const body = await resp.json();
       if (options?.method && options.method !== "GET") {
         const storageQuotaReached = body.storageQuotaReached;
         if (typeof storageQuotaReached === "boolean") {
@@ -140,7 +140,11 @@ export default class LiteElement extends LitElement {
       return body;
     }
 
-    const errorDetail = body.detail;
+    let errorDetail;
+    try {
+      errorDetail = (await resp.json()).detail;
+    } catch {}
+
     let errorMessage: string = msg("Unknown API error");
 
     switch (resp.status) {
