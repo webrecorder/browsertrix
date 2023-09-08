@@ -3,6 +3,7 @@
 import asyncio
 import traceback
 import os
+from pprint import pprint
 from typing import Optional
 
 from datetime import datetime
@@ -803,7 +804,12 @@ class BtrixOperator(K8sAPI):
                 and prev_state != "failed"
             ):
                 pod_names = list(pods.keys())
+
                 print("crawl failed: ", pod_names, stats)
+                for name in pod_names:
+                    print(f"============== POD STATUS: {name} ==============")
+                    pprint(pods[name]["status"])
+
                 asyncio.create_task(
                     self.print_pod_logs(
                         pod_names, "crawler", self.log_failed_crawl_lines
