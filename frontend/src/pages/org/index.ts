@@ -195,7 +195,7 @@ export class Org extends LiteElement {
             <strong>${msg("Your org has reached its storage limit")}</strong
             ><br />
             ${msg(
-              "Delete unused archived items and browser profiles to free up space, or contact us to upgrade your storage plan."
+              "To run crawls again, delete unneeded archived items and unused browser profiles to free up space, or contact us to upgrade your storage plan."
             )}
           </sl-alert>
         </div>
