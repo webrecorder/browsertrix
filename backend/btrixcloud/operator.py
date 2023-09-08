@@ -232,7 +232,7 @@ class BtrixOperator(K8sAPI):
                     # instead of fetching the state (that was already set)
                     # return exception to ignore this request, keep previous
                     # finished state
-                    raise HTTPException(status_code=400, detail="out of sync status")
+                    raise HTTPException(status_code=400, detail="out_of_sync_status")
 
             return self.finalize_response(crawl_id, status, spec, data.children, params)
 
