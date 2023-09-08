@@ -120,6 +120,9 @@ profile_browser_idle_seconds: 60
 # mostly intended for debugging / testing
 # log_failed_crawl_lines: 200
 
+# disable frontend from starting
+no_frontend: true
+
 
 # Nginx Image
 # =========================================

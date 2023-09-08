@@ -1,6 +1,11 @@
 # test overrides
 # --------------
 
+no_frontend: 1
+
+crawler_browser_instances: 1
+
+
 # use local images built to :latest tag
 backend_image: docker.io/webrecorder/browsertrix-backend:latest
 frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
