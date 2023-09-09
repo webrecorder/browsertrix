@@ -1,9 +1,11 @@
 # test overrides
 # --------------
 
-no_frontend: 1
+#no_frontend: 1
 
 crawler_browser_instances: 1
+
+backend_workers: 1
 
 
 # use local images built to :latest tag
