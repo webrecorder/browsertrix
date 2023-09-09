@@ -529,7 +529,8 @@ class BtrixOperator(K8sAPI):
         if redis:
             res = await redis.lrange(f"{crawl_id}:e", 0, -1)
             print(f"============== REDIS ERROR LOGS ==============")
-            print(res.join("\n"))
+            if res:
+                print("\n".join(res))
 
         asyncio.create_task(self.print_pod_logs(pod_names, self.log_failed_crawl_lines))
 
