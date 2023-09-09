@@ -144,7 +144,6 @@ def test_stop_crawl_partial(
         time.sleep(2)
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
         done = data.get("stats") and data.get("stats").get("done") > 0
-        print("crawl stats", data.get("stats"), flush=True)
 
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/stop",
@@ -152,8 +151,6 @@ def test_stop_crawl_partial(
     )
     data = r.json()
     assert data["success"] == True
-
-    print("stop request", flush=True)
 
     # test crawl
     data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
@@ -166,8 +163,6 @@ def test_stop_crawl_partial(
     )
     assert r.json()["lastCrawlStopping"] == True
 
-    print("stopping", flush=True)
-
     while data["state"] in (
         "running",
         "generate-wacz",
@@ -176,8 +171,6 @@ def test_stop_crawl_partial(
     ):
         time.sleep(5)
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
-
-        print("state", data["state"], flush=True)
 
     assert data["state"] in ("partial_complete", "complete")
     assert data["stopping"] == True

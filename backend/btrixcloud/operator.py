@@ -229,7 +229,9 @@ class BtrixOperator(K8sAPI):
         if data.finalizing:
             if not status.finished:
                 # if can't cancel, already finished
-                if not await self.cancel_crawl(crawl_id, cid, status, "canceled", pods):
+                if not await self.mark_finished(
+                    crawl_id, uuid.UUID(cid), status, "canceled"
+                ):
                     # instead of fetching the state (that was already set)
                     # return exception to ignore this request, keep previous
                     # finished state
@@ -251,7 +253,7 @@ class BtrixOperator(K8sAPI):
         # pylint: disable=bare-except, broad-except
         except:
             # fail crawl if config somehow missing, shouldn't generally happen
-            await self.cancel_crawl(crawl_id, cid, status, "failed", pods)
+            await self.fail_crawl(crawl_id, uuid.UUID(cid), status, pods)
 
             return self._empty_response(status)
 
@@ -508,41 +510,23 @@ class BtrixOperator(K8sAPI):
         )
         return False
 
-    # pylint: disable=too-many-arguments
-    async def cancel_crawl(self, crawl_id, cid, status, state, pods, stats=None):
-        """immediately cancel crawl with specified state
-        return true if db mark_finished update succeeds"""
-
+    async def fail_crawl(self, crawl_id, cid, status, pods, stats=None):
+        """Mark crawl as failed, log crawl state and print crawl logs, if possible"""
         prev_state = status.state
 
-        if not isinstance(cid, uuid.UUID):
-            cid = uuid.UUID(cid)
-
-        try:
-            if not await self.mark_finished(crawl_id, cid, status, state, stats=stats):
-                return False
-        # pylint: disable=bare-except
-        except:
-            traceback.print_exc()
+        if not await self.mark_finished(crawl_id, cid, status, "failed", stats=stats):
             return False
 
-        if state == "failed":
-            if (
-                self.log_failed_crawl_lines
-                and state == "failed"
-                and prev_state != "failed"
-            ):
-                pod_names = list(pods.keys())
+        if self.log_failed_crawl_lines and prev_state != "failed":
+            pod_names = list(pods.keys())
 
-                for name in pod_names:
-                    print(f"============== POD STATUS: {name} ==============")
-                    pprint(pods[name]["status"])
+            for name in pod_names:
+                print(f"============== POD STATUS: {name} ==============")
+                pprint(pods[name]["status"])
 
-                asyncio.create_task(
-                    self.print_pod_logs(
-                        pod_names, "crawler", self.log_failed_crawl_lines
-                    )
-                )
+            asyncio.create_task(
+                self.print_pod_logs(pod_names, self.log_failed_crawl_lines)
+            )
 
         return True
 
@@ -606,7 +590,6 @@ class BtrixOperator(K8sAPI):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
         res = self.check_if_crawler_running(pods)
-        print("res", res)
         if res == "Pending":
             if self.should_mark_waiting(status.state, crawl.started):
                 await self.set_state(
@@ -629,7 +612,7 @@ class BtrixOperator(K8sAPI):
             return status
 
         if res == "Failed":
-            await self.cancel_crawl(crawl.id, crawl.cid, status, "failed", pods)
+            await self.fail_crawl(crawl.id, crawl.cid, status, pods)
             return status
 
         status.initRedis = True
@@ -810,9 +793,7 @@ class BtrixOperator(K8sAPI):
             # check if one-page crawls actually succeeded
             # if only one page found, and no files, assume failed
             if status.pagesFound == 1 and not status.filesAdded:
-                await self.cancel_crawl(
-                    crawl.id, crawl.cid, status, "failed", pods, stats
-                )
+                await self.fail_crawl(crawl.id, crawl.cid, status, pods, stats)
                 return status
 
             completed = status.pagesDone and status.pagesDone >= status.pagesFound
@@ -825,11 +806,11 @@ class BtrixOperator(K8sAPI):
         elif status_count.get("failed", 0) >= crawl.scale:
             # if stopping, and no pages finished, mark as canceled
             if status.stopping and not status.pagesDone:
-                state = "canceled"
+                await self.mark_finished(
+                    crawl.id, crawl.cid, status, "canceled", crawl, stats
+                )
             else:
-                state = "failed"
-
-            await self.cancel_crawl(crawl.id, crawl.cid, status, state, pods, stats)
+                await self.fail_crawl(crawl.id, crawl.cid, status, pods, stats)
 
         # check for other statuses
         else:
