@@ -1,8 +1,6 @@
 # test overrides
 # --------------
 
-#no_frontend: 1
-
 crawler_browser_instances: 1
 
 backend_workers: 1

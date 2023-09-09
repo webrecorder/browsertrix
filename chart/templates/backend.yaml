@@ -183,17 +183,9 @@ spec:
 
   ports:
     - protocol: TCP
-      port: {{ .Values.opPort }}
-      name: operator
-
-    - protocol: TCP
       port: 8000
       name: api
 
-  {{- if and .Values.no_frontend .Values.local_service_port (not .Values.ingress.host) }}
-      nodePort: {{ .Values.local_service_port }}
-
-  type: NodePort
-  {{- end }}
-
-
+    - protocol: TCP
+      port: {{ .Values.opPort }}
+      name: operator
