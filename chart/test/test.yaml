@@ -16,6 +16,7 @@ crawler_memory: 1100Mi
 # use local images built to :latest tag
 backend_image: docker.io/webrecorder/browsertrix-backend:latest
 frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
+crawler_image: docker.io/webrecorder/browsertrix-crawler:dev
 
 backend_pull_policy: "Never"
 frontend_pull_policy: "Never"
@@ -48,3 +49,4 @@ registration_enabled: "0"
 
 # log failed crawl pods to operator backend
 log_failed_crawl_lines: 200
+
