@@ -143,7 +143,7 @@ def test_stop_crawl_partial(
     while not done:
         time.sleep(2)
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
-        done = data.get("stats") and data.get("stats").get("found") > 0
+        done = data.get("stats") and data.get("stats").get("done") > 0
         print("crawl stats", data.get("stats"), flush=True)
 
     r = requests.post(
