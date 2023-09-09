@@ -1,5 +1,3 @@
-{{ if not .Values.no_frontend }}
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -112,4 +110,4 @@ spec:
   {{- end }}
 
 
-{{ end }}
+

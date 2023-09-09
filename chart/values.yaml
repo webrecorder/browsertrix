@@ -120,10 +120,6 @@ profile_browser_idle_seconds: 60
 # mostly intended for debugging / testing
 # log_failed_crawl_lines: 200
 
-# disable frontend from starting
-no_frontend: true
-
-
 # Nginx Image
 # =========================================
 frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.7.0-beta.0"
