@@ -310,7 +310,7 @@ def auto_add_crawl_id(crawler_auth_headers, default_org_id, auto_add_collection_
         "autoAddCollections": [auto_add_collection_id],
         "config": {
             "seeds": [{"url": "https://webrecorder.net/"}],
-            "exclude": "community",
+            "limit": 1,
         },
     }
     r = requests.post(
