@@ -528,7 +528,7 @@ class BtrixOperator(K8sAPI):
 
         if redis:
             res = await redis.lrange(f"{crawl_id}:e", 0, -1)
-            print(f"============== REDIS ERROR LOGS ==============")
+            print("============== REDIS ERROR LOGS ==============")
             if res:
                 print("\n".join(res))
 
