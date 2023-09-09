@@ -305,9 +305,6 @@ class BtrixOperator(K8sAPI):
         else:
             params["force_restart"] = False
 
-        # for debugging, don't restart failed crawl contains to get logs of initial failure
-        params["never_restart_failed"] = self.log_failed_crawl_lines > 0
-
         for i in range(0, status.scale):
             children.extend(self._load_crawler(params, i, status, data.children))
 
@@ -595,8 +592,7 @@ class BtrixOperator(K8sAPI):
     async def sync_crawl_state(self, redis_url, crawl, status, pods):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
-        res = self.check_if_crawler_running(pods)
-        if res == "Pending":
+        if not self.check_if_crawler_running(pods):
             if self.should_mark_waiting(status.state, crawl.started):
                 await self.set_state(
                     "waiting_capacity",
@@ -615,11 +611,6 @@ class BtrixOperator(K8sAPI):
 
             # if still running, resync after N seconds
             status.resync_after = self.fast_retry_secs
-            return status
-
-        if res == "Failed":
-            redis = await self._get_redis(redis_url)
-            await self.fail_crawl(crawl.id, crawl.cid, status, pods, redis=redis)
             return status
 
         status.initRedis = True
@@ -685,7 +676,7 @@ class BtrixOperator(K8sAPI):
                 status = pod["status"]
                 phase = status["phase"]
                 if phase in ("Running", "Succeeded"):
-                    return "Running"
+                    return True
 
                 # consider 'ContainerCreating' as running
                 if phase == "Pending":
@@ -694,10 +685,7 @@ class BtrixOperator(K8sAPI):
                         and status["containerStatuses"][0]["state"]["waiting"]["reason"]
                         == "ContainerCreating"
                     ):
-                        return "Running"
-
-                if phase == "Failed" and self.log_failed_crawl_lines:
-                    return "Failed"
+                        return True
 
                 # print("non-running pod status", pod["status"], flush=True)
 
@@ -706,7 +694,7 @@ class BtrixOperator(K8sAPI):
             # assume no valid pod found
             pass
 
-        return "Pending"
+        return False
 
     def should_mark_waiting(self, state, started):
         """Should the crawl be marked as waiting for capacity?"""
