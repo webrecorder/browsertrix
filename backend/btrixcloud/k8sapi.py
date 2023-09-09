@@ -210,8 +210,12 @@ class K8sAPI:
     async def print_pod_logs(self, pod_names, container, lines=100):
         """print pod logs"""
         for pod in pod_names:
-            resp = await self.core_api.read_namespaced_pod_log(
-                pod, self.namespace, container=container, tail_lines=lines
-            )
             print(f"============== LOGS FOR POD: {pod} ==============")
-            print(resp)
+            try:
+                resp = await self.core_api.read_namespaced_pod_log(
+                    pod, self.namespace, container=container, tail_lines=lines
+                )
+                print(resp)
+            # pylint: disable=bare-except
+            except:
+                print("Logs Not Found")

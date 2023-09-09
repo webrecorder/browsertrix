@@ -22,6 +22,8 @@ _all_crawls_config_id = None
 
 NON_DEFAULT_ORG_NAME = "Non-default org"
 
+FINISHED_STATES = ("complete", "partial_complete", "canceled", "failed")
+
 
 @pytest.fixture(scope="session")
 def admin_auth_headers():
@@ -110,7 +112,7 @@ def admin_crawl_id(admin_auth_headers, default_org_id):
             headers=admin_auth_headers,
         )
         data = r.json()
-        if data["state"] == "complete":
+        if data["state"] in FINISHED_STATES:
             return crawl_id
         time.sleep(5)
 
@@ -193,7 +195,7 @@ def _crawler_create_config_only(crawler_auth_headers, default_org_id):
         "config": {
             "seeds": [{"url": "https://webrecorder.net/"}],
             "pageExtraDelay": 10,
-            "limit": 4,
+            "limit": 3,
             "exclude": "community",
         },
     }
@@ -236,7 +238,7 @@ def crawler_crawl_id(crawler_auth_headers, default_org_id):
             headers=crawler_auth_headers,
         )
         data = r.json()
-        if data["state"] == "complete":
+        if data["state"] in FINISHED_STATES:
             return crawl_id
         time.sleep(5)
 
@@ -264,7 +266,7 @@ def wr_specs_crawl_id(crawler_auth_headers, default_org_id):
             headers=crawler_auth_headers,
         )
         data = r.json()
-        if data["state"] == "complete":
+        if data["state"] in FINISHED_STATES:
             return crawl_id
         time.sleep(5)
 
@@ -331,7 +333,7 @@ def auto_add_crawl_id(crawler_auth_headers, default_org_id, auto_add_collection_
             headers=crawler_auth_headers,
         )
         data = r.json()
-        if data["state"] == "complete":
+        if data["state"] in FINISHED_STATES:
             return crawl_id
         time.sleep(5)
 
@@ -371,7 +373,7 @@ def all_crawls_crawl_id(crawler_auth_headers, default_org_id):
             headers=crawler_auth_headers,
         )
         data = r.json()
-        if data["state"] == "complete":
+        if data["state"] in FINISHED_STATES:
             break
         time.sleep(5)
 
