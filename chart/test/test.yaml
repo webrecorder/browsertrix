@@ -3,8 +3,15 @@
 
 crawler_browser_instances: 1
 
-backend_workers: 1
+backend_workers: 2
 
+frontend_memory: 32Mi
+
+# base cpu for for 1 browser
+crawler_cpu: 1100m
+
+# base memory per for 1 browser
+crawler_memory: 1100Mi
 
 # use local images built to :latest tag
 backend_image: docker.io/webrecorder/browsertrix-backend:latest
