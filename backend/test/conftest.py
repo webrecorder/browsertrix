@@ -87,6 +87,7 @@ def admin_crawl_id(admin_auth_headers, default_org_id):
         "tags": ["wr-test-1", "wr-test-2"],
         "config": {
             "seeds": [{"url": "https://webrecorder.net/"}],
+            "exclude": "community",
             # limit now set via 'max_pages_per_crawl' global limit
             # "limit": 1,
         },
@@ -191,8 +192,9 @@ def _crawler_create_config_only(crawler_auth_headers, default_org_id):
         "description": "crawler test crawl",
         "config": {
             "seeds": [{"url": "https://webrecorder.net/"}],
-            "pageExtraDelay": 20,
+            "pageExtraDelay": 10,
             "limit": 4,
+            "exclude": "community",
         },
     }
     r = requests.post(
@@ -308,6 +310,7 @@ def auto_add_crawl_id(crawler_auth_headers, default_org_id, auto_add_collection_
         "autoAddCollections": [auto_add_collection_id],
         "config": {
             "seeds": [{"url": "https://webrecorder.net/"}],
+            "exclude": "community",
         },
     }
     r = requests.post(
@@ -347,6 +350,7 @@ def all_crawls_crawl_id(crawler_auth_headers, default_org_id):
         "description": "Lorem ipsum",
         "config": {
             "seeds": [{"url": "https://webrecorder.net/"}],
+            "exclude": "community",
         },
     }
     r = requests.post(
