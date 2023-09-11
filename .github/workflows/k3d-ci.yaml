@@ -85,7 +85,7 @@ jobs:
         run: kubectl wait --for=condition=ready pod --all --timeout=240s
 
       - name: Run Tests
-        run: pytest -vv ./backend/test/*.py
+        run: pytest -s -vv ./backend/test/*.py
 
       - name: Print Backend Logs (API)
         if: ${{ failure() }}
