@@ -67,6 +67,8 @@ reset(){
 
     echo "Deleting data..."
     kubectl delete pvc --all
+    kubectl delete cronjob --all
+    kubectl delete configmap -n crawlers -l btrix.crawlconfig --all
 }
 
 resetMicrok8s(){
@@ -75,6 +77,8 @@ resetMicrok8s(){
 
     echo "Deleting data..."
     microk8s kubectl delete pvc --all
+    microk8s kubectl delete cronjob --all
+    microk8s kubectl delete configmap -n crawlers -l btrix.crawlconfig --all
 }
 
 runTests() {
@@ -123,7 +127,7 @@ fi
 if [[ $1 = "reset" ]]; then
     
     echo "Current context: $CONTEXT"
-    echo "Resetting k8s cluster will delete the database. Are you sure you want to do this?"
+    echo "Resetting k8s cluster will delete the database. It's advised to wait until all crawls have finished before resetting to avoid crawljobs persisting. Are you sure you want to do this?"
     if [[ "$(read -e -p '[y/N] > '; echo $REPLY)" == [Yy]* ]] ; then
         echo Continuing
     else
