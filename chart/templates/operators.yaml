@@ -10,11 +10,16 @@ spec:
     apiVersion: btrix.cloud/v1
     resource: crawljobs
   childResources:
-  - apiVersion: apps/v1
-    resource: statefulsets
+  - apiVersion: v1
+    resource: pods
+    updateStrategy:
+      method: OnDelete
+
+  - apiVersion: v1
+    resource: persistentvolumeclaims
     updateStrategy:
       method: InPlace
- 
+
   hooks:
     sync:
       webhook:
@@ -52,15 +57,10 @@ spec:
     apiVersion: btrix.cloud/v1
     resource: profilejobs
   childResources:
-  - apiVersion: apps/v1
-    resource: statefulsets
+  - apiVersion: v1
+    resource: pods
     updateStrategy:
       method: InPlace
- 
-  - apiVersion: v1
-    resource: services
-    updateStrategy:
-      method: OnDelete
  
   hooks:
     sync:

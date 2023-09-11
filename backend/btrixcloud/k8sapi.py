@@ -59,7 +59,7 @@ class K8sAPI:
     def get_redis_url(self, crawl_id):
         """get redis url for crawl id"""
         redis_url = (
-            f"redis://redis-{crawl_id}-0.redis.{self.namespace}.svc.cluster.local/0"
+            f"redis://redis-{crawl_id}.redis.{self.namespace}.svc.cluster.local/0"
         )
         return redis_url
 
@@ -144,7 +144,8 @@ class K8sAPI:
                 plural="crawljobs",
                 name=f"crawljob-{crawl_id}",
                 grace_period_seconds=0,
-                propagation_policy="Foreground",
+                # delete as background to allow operator to do proper cleanup
+                propagation_policy="Background",
             )
             return {"success": True}
 
@@ -161,7 +162,7 @@ class K8sAPI:
                 plural="profilejobs",
                 name=f"profilejob-{browserid}",
                 grace_period_seconds=0,
-                propagation_policy="Foreground",
+                propagation_policy="Background",
             )
             return True
 
@@ -206,11 +207,15 @@ class K8sAPI:
             else:
                 del self.api_client.default_headers["Content-Type"]
 
-    async def print_pod_logs(self, pod_names, container, lines=100):
+    async def print_pod_logs(self, pod_names, lines=100):
         """print pod logs"""
         for pod in pod_names:
-            resp = await self.core_api.read_namespaced_pod_log(
-                pod, self.namespace, container=container, tail_lines=lines
-            )
             print(f"============== LOGS FOR POD: {pod} ==============")
-            print(resp)
+            try:
+                resp = await self.core_api.read_namespaced_pod_log(
+                    pod, self.namespace, tail_lines=lines
+                )
+                print(resp)
+            # pylint: disable=bare-except
+            except:
+                print("Logs Not Found")

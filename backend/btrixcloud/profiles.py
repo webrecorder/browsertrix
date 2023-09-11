@@ -335,7 +335,7 @@ class ProfileOps:
             async with aiohttp.ClientSession() as session:
                 async with session.request(
                     method,
-                    f"http://browser-{browserid}-0.browser{self.browser_fqdn_suffix}:9223{path}",
+                    f"http://browser-{browserid}.browser{self.browser_fqdn_suffix}:9223{path}",
                     json=json,
                 ) as resp:
                     json = await resp.json()

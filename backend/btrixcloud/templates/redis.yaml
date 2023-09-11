@@ -1,117 +1,117 @@
-# --------
-# REDIS
-# --------
----
-apiVersion: apps/v1
-kind: StatefulSet
+# -------
+# PVC
+# -------
+
+apiVersion: v1
+kind: PersistentVolumeClaim
 metadata:
-  name: redis-{{ id }}
+  name: {{ name }}
   namespace: {{ namespace }}
   labels:
     crawl: {{ id }}
     role: redis
 
 spec:
-  selector:
-    matchLabels:
-      crawl: {{ id }}
-      role: redis
+  accessModes:
+    - ReadWriteOnce
 
-  serviceName: redis
-  replicas: {{ redis_scale }}
-  podManagementPolicy: Parallel
+  resources:
+    requests:
+      storage: {{ redis_storage }}
 
-  # not yet supported
-  #persistentVolumeClaimRetentionPolicy:
-  #  whenDeleted: Delete
-  #  whenScaled: Delete
+  {% if volume_storage_class %}
+  storageClassName: {{ volume_storage_class }}
+  {% endif %}
 
-  volumeClaimTemplates:
-    - metadata:
-        name: redis-data
-        labels:
-          crawl: {{ id }}
-          role: redis
+# --------
+# REDIS
+# --------
+{% if init_redis %}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  labels:
+    crawl: {{ id }}
+    role: redis
 
-      spec:
-        accessModes:
-          - ReadWriteOnce
+spec:
+  hostname: {{ name }}
+  subdomain: redis
 
-        resources:
-          requests:
-            storage: {{ redis_storage }}
+  terminationGracePeriodSeconds: 10
+  volumes:
+    - name: shared-redis-conf
+      configMap:
+        name: shared-redis-conf
+        items:
+          - key: redis.conf
+            path: redis.conf
 
-        {% if volume_storage_class %}
-        storageClassName: {{ volume_storage_class }}
-        {% endif %}
+    - name: redis-data
+      persistentVolumeClaim:
+        claimName: {{ name }}
 
-  template:
-    metadata:
-      labels:
-        crawl: {{ id }}
-        role: redis
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          preference:
+            matchExpressions:
+            - key: nodeType
+              operator: In
+              values:
+                - "{{ redis_node_type }}"
 
-    spec:
-      terminationGracePeriodSeconds: 10
-      #nodeSelector: {{ crawl_node_selector }}
-      volumes:
+    podAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 2
+          podAffinityTerm:
+            topologyKey: "failure-domain.beta.kubernetes.io/zone"
+            labelSelector:
+              matchLabels:
+                crawl: {{ id }}
+
+  tolerations:
+    - key: nodeType
+      operator: Equal
+      value: crawling
+      effect: NoSchedule
+    - key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+      effect: NoExecute
+    - key: node.kubernetes.io/unreachable
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300
+
+  containers:
+    - name: redis
+      image: {{ redis_image }}
+      imagePullPolicy: {{ redis_image_pull_policy }}
+
+      args: ["/redis-conf/redis.conf", "--appendonly", "yes"]
+      volumeMounts:
+        - name: redis-data
+          mountPath: /data
+
         - name: shared-redis-conf
-          configMap:
-            name: shared-redis-conf
-            items:
-              - key: redis.conf
-                path: redis.conf
+          mountPath: /redis-conf
 
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 1
-              preference:
-                matchExpressions:
-                - key: nodeType
-                  operator: In
-                  values:
-                    - "{{ redis_node_type }}"
+      resources:
+        limits:
+          memory: {{ redis_memory }}
 
-        podAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 2
-              podAffinityTerm:
-                topologyKey: "failure-domain.beta.kubernetes.io/zone"
-                labelSelector:
-                  matchLabels:
-                    job-name: job-{{ id }}
-                    crawl: {{ id }}
+        requests:
+          cpu: {{ redis_cpu }}
+          memory: {{ redis_memory }}
 
-      tolerations:
-        - key: "nodeType"
-          operator: "Equal"
-          value: "crawling"
-          effect: "NoSchedule"
-
-      containers:
-        - name: redis
-          image: {{ redis_image }}
-          imagePullPolicy: {{ redis_image_pull_policy }}
-
-          args: ["/redis-conf/redis.conf", "--appendonly", "yes"]
-          volumeMounts:
-            - name: redis-data
-              mountPath: /data
-
-            - name: shared-redis-conf
-              mountPath: /redis-conf
-
-          resources:
-            limits:
-              memory: {{ redis_memory }}
-
-            requests:
-              cpu: {{ redis_cpu }}
-              memory: {{ redis_memory }}
-
-          readinessProbe:
-            exec:
-              command:
-                - redis-cli
-                - ping
+      readinessProbe:
+        exec:
+          command:
+            - redis-cli
+            - ping
+{% endif %}

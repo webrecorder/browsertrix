@@ -4,6 +4,7 @@ Crawl-related models and types
 
 from datetime import datetime
 from enum import Enum, IntEnum
+import os
 
 from typing import Optional, List, Dict, Union, Literal, Any
 from pydantic import BaseModel, UUID4, conint, Field, HttpUrl, AnyHttpUrl, EmailStr
@@ -12,7 +13,7 @@ from fastapi_users import models as fastapi_users_models
 from .db import BaseMongoModel
 
 # crawl scale for constraint
-MAX_CRAWL_SCALE = 3
+MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
 
 
 # pylint: disable=invalid-name

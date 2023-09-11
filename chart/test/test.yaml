@@ -36,3 +36,6 @@ registration_enabled: "0"
 
 # log failed crawl pods to operator backend
 log_failed_crawl_lines: 200
+
+# disable for tests
+disk_utilization_threshold: 0
