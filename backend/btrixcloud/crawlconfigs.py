@@ -28,6 +28,7 @@ from .models import (
     User,
     PaginatedResponse,
 )
+from .basecrawls import FAILED_STATES
 
 
 ALLOWED_SORT_KEYS = (

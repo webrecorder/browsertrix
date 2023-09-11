@@ -137,7 +137,7 @@ class CrawlStatus(BaseModel):
 
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-public-methods, too-many-branches
-# pylint: disable=too-many-instance-attributes,too-many-locals
+# pylint: disable=too-many-instance-attributes, too-many-locals, too-many-lines
 class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
 
@@ -217,6 +217,7 @@ class BtrixOperator(K8sAPI):
 
         return {"status": {}, "children": children}
 
+    # pylint: disable=too-many-return-statements
     async def sync_crawls(self, data: MCSyncData):
         """sync crawls"""
 
@@ -1021,7 +1022,9 @@ class BtrixOperator(K8sAPI):
             # pylint: disable=duplicate-code
             crawlconfig = await get_crawl_config(self.crawl_configs, uuid.UUID(cid))
             if not crawlconfig:
-                print(f"warn: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?")
+                print(
+                    f"warn: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
+                )
                 return {"attachments": []}
 
             # db create
