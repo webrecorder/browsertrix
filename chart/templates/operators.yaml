@@ -77,7 +77,7 @@ kind: DecoratorController
 metadata:
   name: cron-crawljobs-operator
 spec:
-  resyncPeriodSeconds: {{ .Values.operator_resync_seconds | default 10 }}
+  resyncPeriodSeconds: 30
   resources:
   - apiVersion: batch/v1
     resource: jobs
@@ -88,6 +88,8 @@ spec:
   attachments:
   - apiVersion: btrix.cloud/v1
     resource: crawljobs
+    updateStrategy:
+      method: InPlace
 
   hooks:
     sync:

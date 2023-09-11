@@ -5,7 +5,6 @@ import traceback
 import os
 from pprint import pprint
 from typing import Optional
-from pprint import pprint
 
 from datetime import datetime
 import json
@@ -443,6 +442,8 @@ class BtrixOperator(K8sAPI):
 
             if actual_state != state:
                 print(f"state mismatch, actual state {actual_state}, requested {state}")
+                if not actual_state and state == "canceled":
+                    return True
 
         if status.state != state:
             print(
@@ -569,7 +570,7 @@ class BtrixOperator(K8sAPI):
                 ttl = spec.get("ttlSecondsAfterFinished", DEFAULT_TTL)
                 finished = from_k8s_date(status.finished)
                 if (dt_now() - finished).total_seconds() > ttl > 0:
-                    print("Job expired, deleting: " + crawl_id)
+                    print("CrawlJob expired, deleting: " + crawl_id)
                     finalized = True
             else:
                 finalized = True
@@ -873,11 +874,11 @@ class BtrixOperator(K8sAPI):
             self.crawl_configs, self.crawls, cid, files_added_size, 1
         )
 
-        await add_crawl_files_to_org_bytes_stored(
-            self.crawls, self.orgs, crawl_id, files_added_size
-        )
-
         if state in SUCCESSFUL_STATES:
+            await add_crawl_files_to_org_bytes_stored(
+                self.crawls, self.orgs, crawl_id, files_added_size
+            )
+
             await add_successful_crawl_to_collections(
                 self.crawls, self.crawl_configs, self.collections, crawl_id, cid
             )
@@ -954,37 +955,47 @@ class BtrixOperator(K8sAPI):
     async def sync_cronjob_crawl(self, data: MCDecoratorSyncData):
         """create crawljobs from a job object spawned by cronjob"""
 
-        labels = data.object.get("metadata", {}).get("labels", {})
+        metadata = data.object["metadata"]
+        labels = metadata.get("labels", {})
         cid = labels.get("btrix.crawlconfig")
 
-        crawl_id = labels.get("crawl")
-        has_prev = not crawl_id
+        name = metadata.get("name")
+        crawl_id = name
 
-        has_run = labels.get("has_run") or "0"
+        actual_state, finished = await get_crawl_state(self.crawls, crawl_id)
+        if finished:
+            status = None
+            # mark job as completed
+            if not data.object["status"].get("succeeded"):
+                print("Cron Job Complete!", finished)
+                status = {
+                    "succeeded": 1,
+                    "startTime": metadata.get("creationTimestamp"),
+                    "completionTime": to_k8s_date(finished),
+                }
+
+            return {
+                "attachments": [],
+                "annotations": {"finished": finished},
+                "status": status,
+            }
 
         configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
 
         oid = configmap.get("ORG_ID")
         userid = configmap.get("USER_ID")
 
-        if crawl_id:
-            if has_run == "1":
-                return {"attachments": []}
+        crawljobs = data.attachments[CJS]
 
-            if len(data.attachments) and data.attachments[CJS][crawl_id].get("status", {}).get(
-                "state"
-            ):
-                has_run = "1"
-
-        if not crawl_id:
+        if not crawljobs:
             if await storage_quota_reached(self.orgs, uuid.UUID(oid)):
                 print(
                     f"Scheduled crawl from workflow {cid} not started - storage quota reached",
                     flush=True,
                 )
-                return
+                return {"attachments": []}
 
-        crawl_id, data = self.new_crawl_job_yaml(
+        crawl_id, crawljob = self.new_crawl_job_yaml(
             cid,
             userid=userid,
             oid=oid,
@@ -995,9 +1006,13 @@ class BtrixOperator(K8sAPI):
             crawl_id=crawl_id,
         )
 
-        attachments = list(yaml.safe_load_all(data))
+        attachments = list(yaml.safe_load_all(crawljob))
 
-        if not has_prev:
+        if crawl_id in crawljobs:
+            attachments[0]["status"] = crawljobs[CJS][crawl_id]["status"]
+
+        if not actual_state:
+            # pylint: disable=duplicate-code
             crawlconfig = await get_crawl_config(self.crawl_configs, uuid.UUID(cid))
 
             # db create
@@ -1010,11 +1025,10 @@ class BtrixOperator(K8sAPI):
                 uuid.UUID(userid),
                 manual=False,
             )
-            print("Crawl Created: " + crawl_id)
+            print("Scheduled Crawl Created: " + crawl_id)
 
         return {
             "attachments": attachments,
-            "labels": {"crawl": crawl_id, "has_run": has_run},
         }
 
 

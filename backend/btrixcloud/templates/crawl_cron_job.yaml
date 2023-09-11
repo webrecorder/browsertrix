@@ -9,17 +9,18 @@ metadata:
 spec:
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 2
-  failedJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 2
 
   schedule: "{{ schedule }}"
 
   jobTemplate:
     metadata:
       labels:
-        role: "scheduled-crawljob"
         btrix.crawlconfig: "{{ cid }}"
+        role: "scheduled-crawljob"
 
     spec:
+      suspend: true
       template:
         spec:
           restartPolicy: Never
