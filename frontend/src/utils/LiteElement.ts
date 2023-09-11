@@ -125,16 +125,14 @@ export default class LiteElement extends LitElement {
 
     if (resp.ok) {
       const body = await resp.json();
-      if (options?.method && options.method !== "GET") {
-        const storageQuotaReached = body.storageQuotaReached;
-        if (typeof storageQuotaReached === "boolean") {
-          this.dispatchEvent(
-            new CustomEvent("storage-quota-update", {
-              detail: { reached: storageQuotaReached },
-              bubbles: true,
-            })
-          );
-        }
+      const storageQuotaReached = body.storageQuotaReached;
+      if (typeof storageQuotaReached === "boolean") {
+        this.dispatchEvent(
+          new CustomEvent("storage-quota-update", {
+            detail: { reached: storageQuotaReached },
+            bubbles: true,
+          })
+        );
       }
 
       return body;
