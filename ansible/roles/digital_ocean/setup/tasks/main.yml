@@ -288,6 +288,7 @@
   ansible.builtin.shell: |
     helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
     helm upgrade --install metrics-server metrics-server/metrics-server
+  changed_when: false
 
 # Helm Output
 # ===========================================
@@ -296,4 +297,3 @@
     src: do-values.template.yaml
     dest: ../chart/{{ project_name }}-values.yaml
     mode: u+rw
-
