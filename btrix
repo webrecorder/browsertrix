@@ -68,7 +68,7 @@ reset(){
     echo "Deleting data..."
     kubectl delete pvc --all
     kubectl delete cronjob --all
-    kubectl delete configmap -n crawlers -l btrix.crawlconfig --all
+    kubectl delete configmap -n crawlers -l btrix.crawlconfig
 }
 
 resetMicrok8s(){
@@ -78,7 +78,7 @@ resetMicrok8s(){
     echo "Deleting data..."
     microk8s kubectl delete pvc --all
     microk8s kubectl delete cronjob --all
-    microk8s kubectl delete configmap -n crawlers -l btrix.crawlconfig --all
+    microk8s kubectl delete configmap -n crawlers -l btrix.crawlconfig
 }
 
 runTests() {
