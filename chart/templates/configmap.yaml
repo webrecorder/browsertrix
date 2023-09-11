@@ -8,8 +8,6 @@ metadata:
 data:
   APP_ORIGIN: {{ .Values.ingress.tls | ternary "https" "http" }}://{{ .Values.ingress.host | default "localhost:9870" }}
 
-  CRON_NAMESPACE: {{ .Release.Namespace }}
-
   CRAWLER_NAMESPACE: {{ .Values.crawler_namespace }}
 
   CRAWLER_FQDN_SUFFIX: ".{{ .Values.crawler_namespace }}.svc.cluster.local"
@@ -17,9 +15,6 @@ data:
   DEFAULT_ORG: "{{ .Values.default_org }}"
 
   INVITE_EXPIRE_SECONDS: "{{ .Values.invite_expire_seconds }}"
-
-  JOB_IMAGE: "{{ .Values.backend_image }}"
-  JOB_PULL_POLICY: "{{ .Values.backend_pull_policy }}"
 
   REGISTRATION_ENABLED: "{{ .Values.registration_enabled | default 0 }}"
 

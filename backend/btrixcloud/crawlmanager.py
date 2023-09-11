@@ -19,12 +19,6 @@ class CrawlManager(K8sAPI):
 
     def __init__(self):
         super().__init__()
-        self.job_image = os.environ["JOB_IMAGE"]
-        self.job_image_pull_policy = os.environ.get("JOB_PULL_POLICY", "Always")
-
-        # self.cron_namespace = os.environ.get("CRON_NAMESPACE", "default")
-        self.cron_namespace = self.namespace
-
         self._default_storages = {}
 
         self.loop = asyncio.get_running_loop()
@@ -339,7 +333,7 @@ class CrawlManager(K8sAPI):
         """Delete Crawl Cron Job and all dependent resources, including configmap and secrets"""
 
         await self.batch_api.delete_collection_namespaced_cron_job(
-            namespace=self.cron_namespace,
+            namespace=self.namespace,
             label_selector=label,
         )
 
@@ -357,7 +351,7 @@ class CrawlManager(K8sAPI):
         try:
             cron_job = await self.batch_api.read_namespaced_cron_job(
                 name=cron_job_id,
-                namespace=self.cron_namespace,
+                namespace=self.namespace,
             )
         # pylint: disable=bare-except
         except:
@@ -367,7 +361,7 @@ class CrawlManager(K8sAPI):
         if not crawlconfig.schedule:
             if cron_job:
                 await self.batch_api.delete_namespaced_cron_job(
-                    name=cron_job.metadata.name, namespace=self.cron_namespace
+                    name=cron_job.metadata.name, namespace=self.namespace
                 )
             return
 
@@ -378,7 +372,7 @@ class CrawlManager(K8sAPI):
 
                 await self.batch_api.patch_namespaced_cron_job(
                     name=cron_job.metadata.name,
-                    namespace=self.cron_namespace,
+                    namespace=self.namespace,
                     body=cron_job,
                 )
             return
@@ -386,14 +380,12 @@ class CrawlManager(K8sAPI):
         params = {
             "id": cron_job_id,
             "cid": str(crawlconfig.id),
-            "image": self.job_image,
-            "image_pull_policy": self.job_image_pull_policy,
             "schedule": schedule,
         }
 
         data = self.templates.env.get_template("crawl_cron_job.yaml").render(params)
 
-        await self.create_from_yaml(data, self.cron_namespace)
+        await self.create_from_yaml(data, self.namespace)
 
         return cron_job_id
 
