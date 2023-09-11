@@ -792,7 +792,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: uuid.UUID):
         update_query["crawlCount"] = len(results)
 
         update_query["crawlSuccessfulCount"] = len(
-            [res for res in results if res["state"] not in ("canceled", "failed")]
+            [res for res in results if res["state"] not in FAILED_STATES]
         )
 
         last_crawl = results[0]

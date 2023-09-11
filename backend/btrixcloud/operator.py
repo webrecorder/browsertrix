@@ -283,6 +283,20 @@ class BtrixOperator(K8sAPI):
             scheduled=spec.get("manual") != "1",
         )
 
+        # first, check storage quota, and fail immediately if quota reached
+        if status.state in ("starting", "skipped_quota_reached"):
+            # only check on very first run, before any pods/pvcs created
+            # for now, allow if crawl has already started (pods/pvcs created)
+            if (
+                not pods
+                and not data.children[PVC]
+                and await storage_quota_reached(self.orgs, crawl.oid)
+            ):
+                await self.mark_finished(
+                    crawl.id, crawl.cid, status, "skipped_quota_reached"
+                )
+                return self._empty_response(status)
+
         if status.state in ("starting", "waiting_org_limit"):
             if not await self.can_start_new(crawl, data, status):
                 return self._empty_response(status)
@@ -987,14 +1001,6 @@ class BtrixOperator(K8sAPI):
 
         crawljobs = data.attachments[CJS]
 
-        if not crawljobs:
-            if await storage_quota_reached(self.orgs, uuid.UUID(oid)):
-                print(
-                    f"Scheduled crawl from workflow {cid} not started - storage quota reached",
-                    flush=True,
-                )
-                return {"attachments": []}
-
         crawl_id, crawljob = self.new_crawl_job_yaml(
             cid,
             userid=userid,
@@ -1014,6 +1020,9 @@ class BtrixOperator(K8sAPI):
         if not actual_state:
             # pylint: disable=duplicate-code
             crawlconfig = await get_crawl_config(self.crawl_configs, uuid.UUID(cid))
+            if not crawlconfig:
+                print(f"warn: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?")
+                return {"attachments": []}
 
             # db create
             await inc_crawl_count(self.crawl_configs, crawlconfig.id)
