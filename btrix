@@ -79,12 +79,12 @@ resetMicrok8s(){
 
 runTests() {
     echo "Running backend tests..."
-    python3 -m pytest backend/test/*.py
+    python3 -m pytest backend/test/test_*.py
 }
 
 runNightlyTests() {
     echo "Running nightly backend tests..."
-    python3 -m pytest backend/test_nightly/*.py
+    python3 -m pytest backend/test_nightly/test_*.py
 }
 
 CONTEXT=$(cat ~/.kube/config | grep "current-context:" | sed "s/current-context: //")
