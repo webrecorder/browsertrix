@@ -8,11 +8,6 @@ on:
       - 'backend/**'
       - 'chart/**'
 
-  pull_request:
-    paths:
-      - 'backend/**'
-      - 'chart/**'
-
 env:
   ECHO_SERVER_HOST_URL: http://10.0.1.1:18080
 
