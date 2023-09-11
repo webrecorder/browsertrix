@@ -36,7 +36,7 @@ import type { Collection } from "../../types/collection";
 import type { Crawl, CrawlState, Upload, Workflow } from "../../types/crawler";
 import type { PageChangeEvent } from "../../components/pagination";
 
-const TABS = ["crawls", "uploads", "metadata"] as const;
+const TABS = ["metadata", "crawls", "uploads"] as const;
 type Tab = (typeof TABS)[number];
 type SearchFields = "name" | "firstSeed";
 type SearchResult = {
