@@ -75,7 +75,7 @@ def main():
         event_webhook_ops,
     )
 
-    init_operator_api(app_root, mdb, event_webhook_ops)
+    init_operator_api(app_root, mdb, crawl_config_ops, event_webhook_ops)
 
 
 # ============================================================================

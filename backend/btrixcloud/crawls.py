@@ -16,7 +16,6 @@ from pydantic import UUID4
 from redis import asyncio as exceptions
 import pymongo
 
-from .crawlconfigs import set_config_current_crawl_info
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import get_wacz_logs
 from .utils import dt_now, parse_jsonl_error_messages
@@ -241,15 +240,43 @@ class CrawlOps(BaseCrawlOps):
                 wacz_files.append(file_)
         return wacz_files
 
-    async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
+    # pylint: disable=too-many-arguments
+    async def add_new_crawl(
+        self,
+        crawl_id: str,
+        crawlconfig: CrawlConfig,
+        userid: uuid.UUID,
+        started: str,
+        manual: bool,
+    ):
         """initialize new crawl"""
-        return await add_new_crawl(
-            self.crawls,
-            self.crawl_configs.crawl_configs,
-            crawl_id,
-            crawlconfig,
-            user.id,
+        crawl = Crawl(
+            id=crawl_id,
+            state="starting",
+            userid=userid,
+            oid=crawlconfig.oid,
+            cid=crawlconfig.id,
+            cid_rev=crawlconfig.rev,
+            scale=crawlconfig.scale,
+            jobType=crawlconfig.jobType,
+            config=crawlconfig.config,
+            profileid=crawlconfig.profileid,
+            schedule=crawlconfig.schedule,
+            crawlTimeout=crawlconfig.crawlTimeout,
+            maxCrawlSize=crawlconfig.maxCrawlSize,
+            manual=manual,
+            started=started,
+            tags=crawlconfig.tags,
+            name=crawlconfig.name,
         )
+
+        try:
+            await self.crawls.insert_one(crawl.to_dict())
+            return dt_now
+
+        except pymongo.errors.DuplicateKeyError:
+            # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
+            return None
 
     async def update_crawl_scale(
         self, crawl_id: str, org: Organization, crawl_scale: CrawlScale, user: User
@@ -517,54 +544,6 @@ class CrawlOps(BaseCrawlOps):
             await restart_c
 
         return resp
-
-
-# ============================================================================
-# pylint: disable=too-many-arguments
-async def add_new_crawl(
-    crawls,
-    crawlconfigs,
-    crawl_id: str,
-    crawlconfig: CrawlConfig,
-    userid: UUID4,
-    manual=True,
-):
-    """initialize new crawl"""
-    started = dt_now()
-
-    crawl = Crawl(
-        id=crawl_id,
-        state="starting",
-        userid=userid,
-        oid=crawlconfig.oid,
-        cid=crawlconfig.id,
-        cid_rev=crawlconfig.rev,
-        scale=crawlconfig.scale,
-        jobType=crawlconfig.jobType,
-        config=crawlconfig.config,
-        profileid=crawlconfig.profileid,
-        schedule=crawlconfig.schedule,
-        crawlTimeout=crawlconfig.crawlTimeout,
-        maxCrawlSize=crawlconfig.maxCrawlSize,
-        manual=manual,
-        started=started,
-        tags=crawlconfig.tags,
-        name=crawlconfig.name,
-    )
-
-    try:
-        result = await crawls.insert_one(crawl.to_dict())
-
-        return await set_config_current_crawl_info(
-            crawlconfigs,
-            crawlconfig.id,
-            result.inserted_id,
-            started,
-        )
-
-    except pymongo.errors.DuplicateKeyError:
-        # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
-        return False
 
 
 # ============================================================================

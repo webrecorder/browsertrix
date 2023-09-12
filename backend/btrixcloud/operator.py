@@ -46,10 +46,7 @@ from .models import CrawlFile, CrawlCompleteIn
 from .orgs import add_crawl_files_to_org_bytes_stored
 from .crawlconfigs import (
     get_crawl_config,
-    inc_crawl_count,
 )
-from .crawls import add_new_crawl
-
 
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
@@ -141,9 +138,10 @@ class CrawlStatus(BaseModel):
 class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
 
-    def __init__(self, mdb, event_webhook_ops):
+    def __init__(self, mdb, crawl_config_ops, event_webhook_ops):
         super().__init__()
 
+        self.crawl_config_ops = crawl_config_ops
         self.event_webhook_ops = event_webhook_ops
 
         self.config_file = "/config/config.yaml"
@@ -1028,14 +1026,8 @@ class BtrixOperator(K8sAPI):
                 return {"attachments": []}
 
             # db create
-            await inc_crawl_count(self.crawl_configs, crawlconfig.id)
-            await add_new_crawl(
-                self.crawls,
-                self.crawl_configs,
-                crawl_id,
-                crawlconfig,
-                uuid.UUID(userid),
-                manual=False,
+            await self.crawl_config_ops.add_new_crawl(
+                crawl_id, crawlconfig, uuid.UUID(userid), manual=False
             )
             print("Scheduled Crawl Created: " + crawl_id)
 
@@ -1045,10 +1037,10 @@ class BtrixOperator(K8sAPI):
 
 
 # ============================================================================
-def init_operator_api(app, mdb, event_webhook_ops):
+def init_operator_api(app, mdb, crawl_config_ops, event_webhook_ops):
     """regsiters webhook handlers for metacontroller"""
 
-    oper = BtrixOperator(mdb, event_webhook_ops)
+    oper = BtrixOperator(mdb, crawl_config_ops, event_webhook_ops)
 
     @app.post("/op/crawls/sync")
     async def mc_sync_crawls(data: MCSyncData):

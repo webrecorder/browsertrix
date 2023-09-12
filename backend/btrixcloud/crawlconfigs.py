@@ -29,6 +29,7 @@ from .models import (
     PaginatedResponse,
 )
 from .basecrawls import FAILED_STATES
+from .utils import dt_now
 
 
 ALLOWED_SORT_KEYS = (
@@ -180,15 +181,24 @@ class CrawlConfigOps:
         )
 
         if crawl_id and run_now:
-            await self.add_new_crawl(crawl_id, crawlconfig, user)
+            await self.add_new_crawl(crawl_id, crawlconfig, user.id, manual=True)
 
         return result.inserted_id, crawl_id, quota_reached
 
-    async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
+    async def add_new_crawl(
+        self, crawl_id: str, crawlconfig: CrawlConfig, userid: uuid.UUID, manual: bool
+    ):
         """increments crawl count for this config and adds new crawl"""
+
+        started = dt_now()
+
         inc = inc_crawl_count(self.crawl_configs, crawlconfig.id)
-        add = self.crawl_ops.add_new_crawl(crawl_id, crawlconfig, user)
-        await asyncio.gather(inc, add)
+        add = self.crawl_ops.add_new_crawl(
+            crawl_id, crawlconfig, userid, started, manual
+        )
+        info = self.set_config_current_crawl_info(crawlconfig.id, crawl_id, started)
+
+        await asyncio.gather(inc, add, info)
 
     def check_attr_changed(
         self, crawlconfig: CrawlConfig, update: UpdateCrawlConfig, attr_name: str
@@ -705,12 +715,33 @@ class CrawlConfigOps:
             crawl_id = await self.crawl_manager.create_crawl_job(
                 crawlconfig, userid=str(user.id)
             )
-            await self.add_new_crawl(crawl_id, crawlconfig, user)
+            await self.add_new_crawl(crawl_id, crawlconfig, user.id, manual=True)
             return crawl_id
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
+
+    async def set_config_current_crawl_info(
+        self, cid: uuid.UUID, crawl_id: str, crawl_start: datetime
+    ):
+        """Set current crawl info in config when crawl begins"""
+        result = await self.crawl_configs.find_one_and_update(
+            {"_id": cid, "inactive": {"$ne": True}},
+            {
+                "$set": {
+                    "lastCrawlId": crawl_id,
+                    "lastCrawlStartTime": crawl_start,
+                    "lastCrawlTime": None,
+                    "lastRun": crawl_start,
+                    "isCrawlRunning": True,
+                }
+            },
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+        if result:
+            return True
+        return False
 
 
 # ============================================================================
@@ -739,29 +770,6 @@ async def inc_crawl_count(crawl_configs, cid: uuid.UUID):
         {"_id": cid, "inactive": {"$ne": True}},
         {"$inc": {"crawlAttemptCount": 1}},
     )
-
-
-# ============================================================================
-async def set_config_current_crawl_info(
-    crawl_configs, cid: uuid.UUID, crawl_id: str, crawl_start: datetime
-):
-    """Set current crawl info in config when crawl begins"""
-    result = await crawl_configs.find_one_and_update(
-        {"_id": cid, "inactive": {"$ne": True}},
-        {
-            "$set": {
-                "lastCrawlId": crawl_id,
-                "lastCrawlStartTime": crawl_start,
-                "lastCrawlTime": None,
-                "lastRun": crawl_start,
-                "isCrawlRunning": True,
-            }
-        },
-        return_document=pymongo.ReturnDocument.AFTER,
-    )
-    if result:
-        return True
-    return False
 
 
 # ============================================================================
