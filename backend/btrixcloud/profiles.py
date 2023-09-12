@@ -20,7 +20,8 @@ from .models import (
     UrlIn,
     ProfileLaunchBrowserIn,
     BrowserId,
-    ProfileCreateUpdate,
+    ProfileCreate,
+    ProfileUpdate,
     Organization,
     User,
     PaginatedResponse,
@@ -136,9 +137,9 @@ class ProfileOps:
 
     async def commit_to_profile(
         self,
-        browser_commit: ProfileCreateUpdate,
+        browser_commit: ProfileCreate,
         metadata: dict,
-        profileid: uuid.UUID = None,
+        profileid: Optional[uuid.UUID] = None,
     ):
         """commit profile and shutdown profile browser"""
         if not profileid:
@@ -200,9 +201,7 @@ class ProfileOps:
             "storageQuotaReached": quota_reached,
         }
 
-    async def update_profile_metadata(
-        self, profileid: UUID4, update: ProfileCreateUpdate
-    ):
+    async def update_profile_metadata(self, profileid: UUID4, update: ProfileUpdate):
         """Update name and description metadata only on existing profile"""
         query = {"name": update.name}
         if update.description is not None:
@@ -243,7 +242,7 @@ class ProfileOps:
         self, profileid: uuid.UUID, org: Optional[Organization] = None
     ):
         """get profile by id and org"""
-        query = {"_id": profileid}
+        query: dict[str, object] = {"_id": profileid}
         if org:
             query["oid"] = org.id
 
@@ -304,7 +303,7 @@ class ProfileOps:
         if len(profile.crawlconfigs) > 0:
             return {"error": "in_use", "crawlconfigs": profile.crawlconfigs}
 
-        query = {"_id": profileid}
+        query: dict[str, object] = {"_id": profileid}
         if org:
             query["oid"] = org.id
 
@@ -384,7 +383,7 @@ def init_profiles_api(mdb, crawl_manager, org_ops, user_dep):
 
     @router.post("")
     async def commit_browser_to_new(
-        browser_commit: ProfileCreateUpdate,
+        browser_commit: ProfileCreate,
         org: Organization = Depends(org_crawl_dep),
     ):
         metadata = await browser_get_metadata(browser_commit.browserid, org)
@@ -393,7 +392,7 @@ def init_profiles_api(mdb, crawl_manager, org_ops, user_dep):
 
     @router.patch("/{profileid}")
     async def commit_browser_to_existing(
-        browser_commit: ProfileCreateUpdate,
+        browser_commit: ProfileUpdate,
         profileid: UUID4,
         org: Organization = Depends(org_crawl_dep),
     ):

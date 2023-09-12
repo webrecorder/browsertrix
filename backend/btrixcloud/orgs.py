@@ -7,7 +7,7 @@ import urllib.parse
 import uuid
 from datetime import datetime
 
-from typing import Union
+from typing import Union, Optional
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -128,6 +128,7 @@ class OrgOps:
         self, oid: uuid.UUID, user: User, role: UserRole = UserRole.VIEWER
     ):
         """Get an org for user by unique id"""
+        query: dict[str, object]
         if user.is_superuser:
             query = {"_id": oid}
         else:
@@ -236,10 +237,10 @@ class OrgOps:
         return True
 
     async def add_user_to_org(
-        self, org: Organization, userid: uuid.UUID, role: UserRole = UserRole.OWNER
+        self, org: Organization, userid: uuid.UUID, role: Optional[UserRole] = None
     ):
         """Add user to organization with specified role"""
-        org.users[str(userid)] = role
+        org.users[str(userid)] = role or UserRole.OWNER
         await self.update(org)
 
     async def get_org_owners(self, org: Organization):
@@ -328,7 +329,7 @@ class OrgOps:
 
 # ============================================================================
 # pylint: disable=too-many-statements
-def init_orgs_api(app, mdb, user_manager, invites, user_dep: User):
+def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
 

@@ -14,6 +14,12 @@ repos:
       args: ["btrixcloud/"]
 - repo: local
   hooks:
+    - id: mypy
+      name: mypy
+      entry: cd backend && mypy
+      args: ["btrixcloud/"]
+- repo: local
+  hooks:
     - id: husky-run-pre-commit
       name: husky
       language: system

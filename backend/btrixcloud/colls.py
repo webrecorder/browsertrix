@@ -64,7 +64,7 @@ class CollectionOps:
         oid: uuid.UUID,
         name: str,
         crawl_ids: Optional[List[str]],
-        description: str = None,
+        description: Optional[str] = None,
     ):
         """Add new collection"""
         crawl_ids = crawl_ids if crawl_ids else []
@@ -174,7 +174,7 @@ class CollectionOps:
         self, coll_id: uuid.UUID, org: Organization, resources=False, public_only=False
     ):
         """Get collection by id"""
-        query = {"_id": coll_id}
+        query: dict[str, object] = {"_id": coll_id}
         if public_only:
             query["isPublic"] = True
 
@@ -193,7 +193,7 @@ class CollectionOps:
         oid: uuid.UUID,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sort_by: str = None,
+        sort_by: Optional[str] = None,
         sort_direction: int = 1,
         name: Optional[str] = None,
         name_prefix: Optional[str] = None,
@@ -204,7 +204,7 @@ class CollectionOps:
         page = page - 1
         skip = page * page_size
 
-        match_query = {"oid": oid}
+        match_query: dict[str, object] = {"oid": oid}
 
         if name:
             match_query["name"] = name
@@ -398,7 +398,7 @@ def init_collections_api(app, mdb, orgs, crawl_manager, event_webhook_ops):
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sortBy: str = None,
+        sortBy: Optional[str] = None,
         sortDirection: int = 1,
         name: Optional[str] = None,
         namePrefix: Optional[str] = None,

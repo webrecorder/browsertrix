@@ -494,7 +494,7 @@ class BtrixOperator(K8sAPI):
         if len(data.related[CJS]) <= max_crawls:
             return True
 
-        name = data.parent.get("metadata").get("name")
+        name = data.parent.get("metadata", {}).get("name")
 
         # def metadata_key(val):
         #    return val.get("metadata").get("creationTimestamp")

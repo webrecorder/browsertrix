@@ -83,18 +83,18 @@ class CrawlOps(BaseCrawlOps):
     async def list_crawls(
         self,
         org: Optional[Organization] = None,
-        cid: uuid.UUID = None,
-        userid: uuid.UUID = None,
-        crawl_id: str = None,
+        cid: Optional[uuid.UUID] = None,
+        userid: Optional[uuid.UUID] = None,
+        crawl_id: str = "",
         running_only=False,
         state: Optional[List[str]] = None,
-        first_seed: str = None,
-        name: str = None,
-        description: str = None,
-        collection_id: uuid.UUID = None,
+        first_seed: str = "",
+        name: str = "",
+        description: str = "",
+        collection_id: Optional[uuid.UUID] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sort_by: str = None,
+        sort_by: str = "",
         sort_direction: int = -1,
         resources: bool = False,
     ):
@@ -106,7 +106,7 @@ class CrawlOps(BaseCrawlOps):
 
         oid = org.id if org else None
 
-        query = {"type": {"$in": ["crawl", None]}}
+        query: dict[str, object] = {"type": {"$in": ["crawl", None]}}
         if oid:
             query["oid"] = oid
 
@@ -651,8 +651,9 @@ def init_crawls_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
+        states = []
         if state:
-            state = state.split(",")
+            states = state.split(",")
 
         if firstSeed:
             firstSeed = urllib.parse.unquote(firstSeed)
@@ -668,7 +669,7 @@ def init_crawls_api(
             userid=userid,
             cid=cid,
             running_only=runningOnly,
-            state=state,
+            state=states,
             first_seed=firstSeed,
             name=name,
             description=description,
@@ -696,8 +697,9 @@ def init_crawls_api(
         sortDirection: Optional[int] = -1,
     ):
         # pylint: disable=duplicate-code
+        states = []
         if state:
-            state = state.split(",")
+            states = state.split(",")
 
         if firstSeed:
             firstSeed = urllib.parse.unquote(firstSeed)
@@ -713,7 +715,7 @@ def init_crawls_api(
             userid=userid,
             cid=cid,
             running_only=False,
-            state=state,
+            state=states,
             first_seed=firstSeed,
             name=name,
             description=description,

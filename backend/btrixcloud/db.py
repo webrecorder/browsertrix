@@ -6,7 +6,7 @@ import os
 import urllib
 import asyncio
 
-from typing import Optional
+from typing import Optional, Union
 
 import motor.motor_asyncio
 from pydantic import BaseModel, UUID4
@@ -170,7 +170,7 @@ async def create_indexes(org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_
 class BaseMongoModel(BaseModel):
     """Base pydantic model that is also a mongo doc"""
 
-    id: Optional[UUID4]
+    id: Optional[Union[UUID4, str]]
 
     @property
     def id_str(self):

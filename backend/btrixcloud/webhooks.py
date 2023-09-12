@@ -66,7 +66,7 @@ class EventWebhookOps:
         page = page - 1
         skip = page_size * page
 
-        query = {"oid": org.id}
+        query: dict[str, object] = {"oid": org.id}
 
         if success in (True, False):
             query["success"] = success
@@ -198,7 +198,7 @@ class EventWebhookOps:
 
         notification = WebhookNotification(
             id=uuid.uuid4(),
-            event=event,
+            event=WebhookEventType(event),
             oid=org.id,
             body=body,
             created=datetime.utcnow(),
@@ -303,7 +303,7 @@ class EventWebhookOps:
 
         notification = WebhookNotification(
             id=uuid.uuid4(),
-            event=event,
+            event=WebhookEventType(event),
             oid=org.id,
             body=body,
             created=datetime.utcnow(),

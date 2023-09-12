@@ -269,8 +269,8 @@ def init_uploads_api(
     @app.put("/orgs/{oid}/uploads/formdata", tags=["uploads"])
     async def upload_formdata(
         uploads: List[UploadFile] = File(...),
-        name: Optional[str] = "",
-        description: Optional[str] = "",
+        name: str = "",
+        description: str = "",
         collections: Optional[str] = "",
         tags: Optional[str] = "",
         org: Organization = Depends(org_crawl_dep),
@@ -294,8 +294,8 @@ def init_uploads_api(
     async def upload_stream(
         request: Request,
         filename: str,
-        name: Optional[str] = "",
-        description: Optional[str] = "",
+        name: str = "",
+        description: str = "",
         collections: Optional[str] = "",
         tags: Optional[str] = "",
         replaceId: Optional[str] = "",
