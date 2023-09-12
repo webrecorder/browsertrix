@@ -187,6 +187,13 @@ export class CollectionEditor extends LiteElement {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
 
+  private get hasItemSelection() {
+    return Boolean(
+      Object.keys(this.selectedCrawls).length ||
+        Object.keys(this.selectedUploads).length
+    );
+  }
+
   private get selectedSearchFilterKey() {
     return Object.keys(this.fieldLabels).find((key) =>
       Boolean((this.filterWorkflowsBy as any)[key])
@@ -437,7 +444,11 @@ export class CollectionEditor extends LiteElement {
             )}
             ?loading=${this.isSubmitting}
           >
-            ${this.collectionId ? msg("Save Crawls") : msg("Create Collection")}
+            ${this.collectionId
+              ? msg("Save Crawls")
+              : this.hasItemSelection
+              ? msg("Create Collection")
+              : msg("Create Collection without Items")}
           </sl-button>
         </footer>
       </section>
@@ -516,7 +527,9 @@ export class CollectionEditor extends LiteElement {
           >
             ${this.collectionId
               ? msg("Save Uploads")
-              : msg("Create Collection")}
+              : this.hasItemSelection
+              ? msg("Create Collection")
+              : msg("Create Collection without Items")}
           </sl-button>
         </footer>
       </section>
@@ -587,6 +600,8 @@ export class CollectionEditor extends LiteElement {
           >
             ${this.collectionId
               ? msg("Save Metadata")
+              : this.hasItemSelection
+              ? msg("Create Collection")
               : msg("Create Collection without Items")}
           </sl-button>
         </footer>
