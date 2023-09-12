@@ -123,21 +123,55 @@ export default class LiteElement extends LitElement {
       ...opts,
     });
 
-    if (resp.status !== 200) {
-      if (resp.status === 401) {
-        this.dispatchEvent(new CustomEvent("need-login"));
+    if (resp.ok) {
+      const body = await resp.json();
+      const storageQuotaReached = body.storageQuotaReached;
+      if (typeof storageQuotaReached === "boolean") {
+        this.dispatchEvent(
+          new CustomEvent("storage-quota-update", {
+            detail: { reached: storageQuotaReached },
+            bubbles: true,
+          })
+        );
       }
 
-      let detail;
-      let errorMessage: string = msg("Unknown API error");
+      return body;
+    }
 
-      try {
-        detail = (await resp.json()).detail;
+    let errorDetail;
+    try {
+      errorDetail = (await resp.json()).detail;
+    } catch {}
 
-        if (typeof detail === "string") {
-          errorMessage = detail;
-        } else if (Array.isArray(detail) && detail.length) {
-          const fieldDetail = detail[0];
+    let errorMessage: string = msg("Unknown API error");
+
+    switch (resp.status) {
+      case 401: {
+        this.dispatchEvent(new CustomEvent("need-login"));
+        errorMessage = msg("Need login");
+        break;
+      }
+      case 403: {
+        if (errorDetail === "storage_quota_reached") {
+          this.dispatchEvent(
+            new CustomEvent("storage-quota-update", {
+              detail: { reached: true },
+              bubbles: true,
+            })
+          );
+          errorMessage = msg("Storage quota reached");
+          break;
+        }
+      }
+      case 404: {
+        errorMessage = msg("Not found");
+        break;
+      }
+      default: {
+        if (typeof errorDetail === "string") {
+          errorMessage = errorDetail;
+        } else if (Array.isArray(errorDetail) && errorDetail.length) {
+          const fieldDetail = errorDetail[0] || {};
           const { loc, msg } = fieldDetail;
 
           const fieldName = loc
@@ -145,31 +179,14 @@ export default class LiteElement extends LitElement {
             .join(" ");
           errorMessage = `${fieldName} ${msg}`;
         }
-      } catch {}
-
-      throw new APIError({
-        message: errorMessage,
-        status: resp.status,
-        details: detail,
-      });
+        break;
+      }
     }
 
-    const body = await resp.json();
-
-    if (options?.method && options?.method !== "GET" && resp.status === 200) {
-      try {
-        const storageQuotaReached = body.storageQuotaReached;
-        if (typeof storageQuotaReached === "boolean") {
-          this.dispatchEvent(
-            new CustomEvent("storage-quota-update", {
-              detail: { reached: storageQuotaReached },
-              bubbles: true,
-            })
-          );
-        }
-      } catch {}
-    }
-
-    return await body;
+    throw new APIError({
+      message: errorMessage,
+      status: resp.status,
+      details: errorDetail,
+    });
   }
 }

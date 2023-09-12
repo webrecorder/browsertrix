@@ -24,7 +24,7 @@ from .models import (
     PaginatedResponse,
     User,
 )
-from .orgs import inc_org_bytes_stored
+from .orgs import inc_org_bytes_stored, storage_quota_reached
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .storages import get_presigned_url, delete_crawl_file_object
 from .utils import dt_now, get_redis_crawl_stats
@@ -126,6 +126,8 @@ class BaseCrawlOps:
         if user:
             # pylint: disable=invalid-name
             crawl.userName = user.name
+
+        crawl.storageQuotaReached = await storage_quota_reached(self.orgs_db, crawl.oid)
 
         return crawl
 

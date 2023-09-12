@@ -80,6 +80,9 @@ export class Org extends LiteElement {
   private orgStorageQuotaReached = false;
 
   @state()
+  private showStorageQuotaAlert = false;
+
+  @state()
   private org?: OrgData | null;
 
   @state()
@@ -162,7 +165,7 @@ export class Org extends LiteElement {
     }
 
     return html`
-      ${this.renderOrgNavBar()}
+      ${this.renderStorageAlert()} ${this.renderOrgNavBar()}
       <main>
         <div
           class="w-full max-w-screen-lg mx-auto px-3 box-border py-5"
@@ -171,6 +174,32 @@ export class Org extends LiteElement {
           ${tabPanelContent}
         </div>
       </main>
+    `;
+  }
+
+  private renderStorageAlert() {
+    return html`
+      <div
+        class="transition-all ${this.showStorageQuotaAlert
+          ? "bg-slate-100 border-b py-5"
+          : ""}"
+      >
+        <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
+          <sl-alert
+            variant="warning"
+            closable
+            ?open=${this.showStorageQuotaAlert}
+            @sl-after-hide=${() => (this.showStorageQuotaAlert = false)}
+          >
+            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+            <strong>${msg("Your org has reached its storage limit")}</strong
+            ><br />
+            ${msg(
+              "To run crawls again, delete unneeded archived items and unused browser profiles to free up space, or contact us to upgrade your storage plan."
+            )}
+          </sl-alert>
+        </div>
+      </div>
     `;
   }
 
@@ -439,8 +468,12 @@ export class Org extends LiteElement {
   }
 
   private async onStorageQuotaUpdate(e: CustomEvent) {
+    e.stopPropagation();
     const { reached } = e.detail;
     this.orgStorageQuotaReached = reached;
+    if (reached) {
+      this.showStorageQuotaAlert = true;
+    }
   }
 
   private async onUserRoleChange(e: UserRoleChangeEvent) {
@@ -548,6 +581,10 @@ export class Org extends LiteElement {
       this.orgStorageQuotaReached = true;
     } else {
       this.orgStorageQuotaReached = false;
+    }
+
+    if (this.orgStorageQuotaReached) {
+      this.showStorageQuotaAlert = true;
     }
   }
 }

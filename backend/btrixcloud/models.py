@@ -372,6 +372,8 @@ class CrawlOut(BaseMongoModel):
     manual: Optional[bool]
     cid_rev: Optional[int]
 
+    storageQuotaReached: Optional[bool]
+
 
 # ============================================================================
 class CrawlOutWithResources(CrawlOut):

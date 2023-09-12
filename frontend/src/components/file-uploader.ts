@@ -459,13 +459,13 @@ export class FileUploader extends LiteElement {
       }
     } catch (err: any) {
       if (err === ABORT_REASON_USER_CANCEL) {
-        console.debug("Fetch crawls aborted to user cancel");
+        console.debug("Upload aborted to user cancel");
       } else {
         let message = msg("Sorry, couldn't upload file at this time.");
         console.debug(err);
         if (err === ABORT_REASON_QUOTA_REACHED) {
           message = msg(
-            "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
+            "Your org does not have enough storage to upload this file."
           );
           this.dispatchEvent(
             new CustomEvent("storage-quota-update", {
@@ -474,7 +474,6 @@ export class FileUploader extends LiteElement {
             })
           );
         }
-        console.debug(err);
         this.notify({
           message: message,
           variant: "danger",

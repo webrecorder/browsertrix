@@ -2037,27 +2037,28 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const crawlId = data.run_now_job;
       const storageQuotaReached = data.storageQuotaReached;
 
-      let message = msg("Workflow created.");
-      if (crawlId && !storageQuotaReached) {
-        message = msg("Crawl started with new template.");
-      } else if (this.configId) {
-        message = msg("Workflow updated.");
-      }
-
-      this.notify({
-        message,
-        variant: "success",
-        icon: "check2-circle",
-        duration: 8000,
-      });
-
-      if (storageQuotaReached) {
+      if (crawlId && storageQuotaReached) {
         this.notify({
+          title: msg("Workflow saved."),
           message: msg(
-            "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
+            "Could not start crawl with new workflow settings due to storage quota."
           ),
-          variant: "danger",
-          icon: "exclamation-octagon",
+          variant: "warning",
+          icon: "exclamation-triangle",
+          duration: 8000,
+        });
+      } else {
+        let message = msg("Workflow created.");
+        if (crawlId) {
+          message = msg("Crawl started with new workflow settings.");
+        } else if (this.configId) {
+          message = msg("Workflow updated.");
+        }
+
+        this.notify({
+          message,
+          variant: "success",
+          icon: "check2-circle",
         });
       }
 

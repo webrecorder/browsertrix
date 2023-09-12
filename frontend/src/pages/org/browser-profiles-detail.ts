@@ -637,18 +637,13 @@ export class BrowserProfilesDetail extends LiteElement {
       if (e.isApiError && e.statusCode === 403) {
         if (e.details === "storage_quota_reached") {
           message = msg(
-            "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
-          );
-          this.dispatchEvent(
-            new CustomEvent("storage-quota-update", {
-              detail: { reached: true },
-              bubbles: true,
-            })
+            "Your org does not have enough storage to save this browser profile."
           );
         } else {
           message = msg("You do not have permission to edit browser profiles.");
         }
       }
+
       this.notify({
         message: message,
         variant: "danger",

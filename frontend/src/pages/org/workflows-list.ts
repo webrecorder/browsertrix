@@ -199,21 +199,15 @@ export class WorkflowsList extends LiteElement {
           ${when(
             this.isCrawler,
             () => html`
-              <sl-tooltip
-                content=${msg("Org Storage Full")}
-                ?disabled=${!this.orgStorageQuotaReached}
+              <sl-button
+                href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
+                variant="primary"
+                size="small"
+                @click=${this.navLink}
               >
-                <sl-button
-                  href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
-                  variant="primary"
-                  size="small"
-                  ?disabled=${this.orgStorageQuotaReached}
-                  @click=${this.navLink}
-                >
-                  <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                  ${msg("New Workflow")}
-                </sl-button>
-              </sl-tooltip>
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                ${msg("New Workflow")}
+              </sl-button>
             `
           )}
         </div>
@@ -434,6 +428,7 @@ export class WorkflowsList extends LiteElement {
         () => html`
           <sl-menu-item
             style="--sl-color-neutral-700: var(--success)"
+            ?disabled=${this.orgStorageQuotaReached}
             @click=${() => this.runNow(workflow)}
           >
             <sl-icon name="play" slot="prefix"></sl-icon>
@@ -745,17 +740,6 @@ export class WorkflowsList extends LiteElement {
   }
 
   private async runNow(workflow: Workflow): Promise<void> {
-    if (this.orgStorageQuotaReached) {
-      this.notify({
-        message: msg(
-          "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
-        ),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-      return;
-    }
-
     try {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/run`,
@@ -788,15 +772,7 @@ export class WorkflowsList extends LiteElement {
       let message = msg("Sorry, couldn't run crawl at this time.");
       if (e.isApiError && e.statusCode === 403) {
         if (e.details === "storage_quota_reached") {
-          message = msg(
-            "The org has reached its storage limit. Delete any archived items that are unneeded to free up space, or contact us to purchase a plan with more storage."
-          );
-          this.dispatchEvent(
-            new CustomEvent("storage-quota-update", {
-              detail: { reached: true },
-              bubbles: true,
-            })
-          );
+          message = msg("Your org does not have enough storage to run crawls.");
         } else {
           message = msg("You do not have permission to run crawls.");
         }
