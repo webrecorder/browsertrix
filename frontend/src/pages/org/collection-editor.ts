@@ -87,6 +87,11 @@ export type CollectionSubmitEvent = CustomEvent<{
     isPublic: boolean;
   };
 }>;
+type FormValues = {
+  name: string;
+  description: string;
+  isPublic?: string;
+};
 
 /**
  * @event on-submit
@@ -1279,9 +1284,30 @@ export class CollectionEditor extends LiteElement {
       return;
     }
 
-    const formValues = serialize(form);
-    const values: any = {};
+    const formValues = serialize(form) as FormValues;
+    let values: any = {};
 
+    if (this.collectionId) {
+      values = this.getEditedValues(formValues);
+    } else {
+      values.name = formValues.name;
+      values.description = formValues.description;
+      values.isPublic = Boolean(formValues.isPublic);
+      values.crawlIds = [
+        ...Object.keys(this.selectedCrawls),
+        Object.keys(this.selectedUploads),
+      ];
+    }
+
+    this.dispatchEvent(
+      <CollectionSubmitEvent>new CustomEvent("on-submit", {
+        detail: { values },
+      })
+    );
+  }
+
+  private getEditedValues(formValues: FormValues) {
+    const values: any = {};
     switch (this.activeTab) {
       case "metadata": {
         values.name = formValues.name;
@@ -1307,11 +1333,7 @@ export class CollectionEditor extends LiteElement {
         break;
     }
 
-    this.dispatchEvent(
-      <CollectionSubmitEvent>new CustomEvent("on-submit", {
-        detail: { values },
-      })
-    );
+    return values;
   }
 
   private getActivePanelFromHash = () => {
