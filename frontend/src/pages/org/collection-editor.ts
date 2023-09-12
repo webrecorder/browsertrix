@@ -114,8 +114,14 @@ export class CollectionEditor extends LiteElement {
   @state()
   private collectionCrawls?: Crawl[];
 
+  @state()
+  private collectionUploads?: Upload[];
+
   // Store crawl IDs to compare later
   private savedCollectionCrawlIds: string[] = [];
+
+  // Store upload IDs to compare later
+  private savedCollectionUploadIds: string[] = [];
 
   @state()
   private workflows?: APIPaginatedList & {
@@ -144,6 +150,10 @@ export class CollectionEditor extends LiteElement {
     [crawlId: string]: Crawl;
   } = {};
 
+  @state()
+  private selectedUploads: {
+    [uploadId: string]: Upload;
+  } = {};
   @state()
   private activeTab: Tab = TABS[0];
 
@@ -381,20 +391,13 @@ export class CollectionEditor extends LiteElement {
             !this.collectionId,
             () => html`
               <sl-button
+                type="button"
                 size="small"
                 class="mr-auto"
                 @click=${() => this.goToTab("metadata")}
               >
                 <sl-icon slot="prefix" name="chevron-left"></sl-icon>
                 ${msg("Previous Step")}
-              </sl-button>
-              <sl-button
-                size="small"
-                variant="primary"
-                @click=${() => this.goToTab("uploads")}
-              >
-                <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-                ${msg("Next Step")}
               </sl-button>
             `
           )}
@@ -412,6 +415,20 @@ export class CollectionEditor extends LiteElement {
               ? msg("Save Crawl Selection")
               : msg("Save Collection")}
           </sl-button>
+          ${when(
+            !this.collectionId,
+            () => html`
+              <sl-button
+                type="button"
+                size="small"
+                variant="primary"
+                @click=${() => this.goToTab("uploads")}
+              >
+                <sl-icon slot="suffix" name="chevron-right"></sl-icon>
+                ${msg("Select Uploads")}
+              </sl-button>
+            `
+          )}
         </footer>
       </section>
     `;
@@ -426,7 +443,7 @@ export class CollectionEditor extends LiteElement {
           </h4>
           <div class="border rounded-lg py-2 flex-1">
             ${guard(
-              [this.collectionCrawls, this.selectedCrawls],
+              [this.collectionUploads, this.selectedUploads],
               this.renderCollectionUploadList
             )}
           </div>
@@ -435,7 +452,7 @@ export class CollectionEditor extends LiteElement {
           <h4 class="text-base font-semibold mb-3">${msg("All Uploads")}</h4>
           <div class="flex-1">
             ${guard(
-              [this.isCrawler, this.uploads, this.selectedCrawls],
+              [this.isCrawler, this.uploads, this.selectedUploads],
               this.renderUploadList
             )}
           </div>
@@ -467,6 +484,7 @@ export class CollectionEditor extends LiteElement {
             !this.collectionId,
             () => html`
               <sl-button
+                type="button"
                 class="mr-auto"
                 size="small"
                 @click=${() => this.goToTab("crawls")}
@@ -526,19 +544,6 @@ export class CollectionEditor extends LiteElement {
           </label>
         </div>
         <footer class="border-t px-6 py-4 flex gap-2 justify-end">
-          ${when(
-            !this.collectionId,
-            () => html`
-              <sl-button
-                size="small"
-                variant="primary"
-                @click=${() => this.goToTab("crawls")}
-              >
-                <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-                ${msg("Next Step")}
-              </sl-button>
-            `
-          )}
           <sl-button
             type="submit"
             size="small"
@@ -549,8 +554,24 @@ export class CollectionEditor extends LiteElement {
             )}
             ?loading=${this.isSubmitting}
           >
-            ${this.collectionId ? msg("Save Metadata") : msg("Save Collection")}
+            ${this.collectionId
+              ? msg("Save Metadata")
+              : msg("Save Collection without Items")}
           </sl-button>
+          ${when(
+            !this.collectionId,
+            () => html`
+              <sl-button
+                type="button"
+                size="small"
+                variant="primary"
+                @click=${() => this.goToTab("crawls")}
+              >
+                <sl-icon slot="suffix" name="chevron-right"></sl-icon>
+                ${msg("Select Items")}
+              </sl-button>
+            `
+          )}
         </footer>
       </section>
     `;
@@ -561,8 +582,7 @@ export class CollectionEditor extends LiteElement {
       return this.renderLoading();
     }
 
-    const crawlsInCollection =
-      this.collectionCrawls?.filter((crawl) => crawl.type !== "upload") || [];
+    const crawlsInCollection = this.collectionCrawls || [];
 
     if (!crawlsInCollection.length) {
       return html`
@@ -601,13 +621,11 @@ export class CollectionEditor extends LiteElement {
   };
 
   private renderCollectionUploadList = () => {
-    if (this.collectionId && !this.collectionCrawls) {
+    if (this.collectionId && !this.collectionUploads) {
       return this.renderLoading();
     }
 
-    const uploadsInCollection = (this.collectionCrawls?.filter(
-      (crawl) => crawl.type === "upload"
-    ) || []) as Upload[];
+    const uploadsInCollection = this.collectionUploads || [];
 
     if (!uploadsInCollection.length) {
       return html`
@@ -645,9 +663,9 @@ export class CollectionEditor extends LiteElement {
         aria-controls=${selectedCrawlIds.join(" ")}
         @on-change=${(e: CheckboxChangeEvent) => {
           if (e.detail.checked || !allChecked) {
-            this.selectCrawls(crawls);
+            this.selectItemss(crawls, "crawl");
           } else {
-            this.deselectCrawls(crawls);
+            this.deselectItems(crawls, "crawl");
           }
         }}
       >
@@ -724,39 +742,39 @@ export class CollectionEditor extends LiteElement {
     `;
   };
 
-  private renderCrawl(crawl: Crawl, workflowId?: string) {
+  private renderCrawl(item: Crawl, workflowId?: string) {
     return html`
       <btrix-checkbox-list-item
-        id=${crawl.id}
+        id=${item.id}
         name="crawlIds"
-        value=${crawl.id}
-        ?checked=${this.selectedCrawls[crawl.id]}
+        value=${item.id}
+        ?checked=${this.selectedCrawls[item.id]}
         @on-change=${(e: CheckboxChangeEvent) => {
           if (e.detail.checked) {
             this.selectedCrawls = mergeDeep(this.selectedCrawls, {
-              [crawl.id]: crawl,
+              [item.id]: item,
             });
           } else {
-            this.selectedCrawls = omit([crawl.id])(this.selectedCrawls) as any;
+            this.selectedCrawls = omit([item.id])(this.selectedCrawls) as any;
           }
         }}
       >
         <div class="flex items-center">
           <btrix-crawl-status
-            state=${crawl.state}
+            state=${item.state}
             hideLabel
           ></btrix-crawl-status>
           <div class="flex-1">
             ${workflowId
               ? html`<sl-format-date
-                  date=${`${crawl.finished}Z`}
+                  date=${`${item.finished}Z`}
                   month="2-digit"
                   day="2-digit"
                   year="2-digit"
                   hour="2-digit"
                   minute="2-digit"
                 ></sl-format-date>`
-              : this.renderSeedsLabel(crawl.firstSeed, crawl.seedCount)}
+              : this.renderSeedsLabel(item.firstSeed, item.seedCount)}
           </div>
           <div class="w-16 font-monostyle truncate">
             <sl-tooltip content=${msg("Pages in crawl")}>
@@ -766,7 +784,7 @@ export class CollectionEditor extends LiteElement {
                   name="file-earmark-richtext"
                 ></sl-icon>
                 <div class="ml-1 text-xs">
-                  ${this.numberFormatter.format(+(crawl.stats?.done || 0))}
+                  ${this.numberFormatter.format(+(item.stats?.done || 0))}
                 </div>
               </div>
             </sl-tooltip>
@@ -774,7 +792,7 @@ export class CollectionEditor extends LiteElement {
           <div class="w-14">
             <sl-format-bytes
               class="text-neutral-500 text-xs font-monostyle"
-              value=${crawl.fileSize || 0}
+              value=${item.fileSize || 0}
               display="narrow"
             ></sl-format-bytes>
           </div>
@@ -783,29 +801,29 @@ export class CollectionEditor extends LiteElement {
     `;
   }
 
-  private renderUpload = (crawl: Upload) => {
+  private renderUpload = (item: Upload) => {
     return html`
       <btrix-checkbox-list-item
-        id=${crawl.id}
+        id=${item.id}
         name="crawlIds"
-        value=${crawl.id}
-        ?checked=${this.selectedCrawls[crawl.id]}
+        value=${item.id}
+        ?checked=${this.selectedUploads[item.id]}
         @on-change=${(e: CheckboxChangeEvent) => {
           if (e.detail.checked) {
-            this.selectedCrawls = mergeDeep(this.selectedCrawls, {
-              [crawl.id]: crawl,
+            this.selectedUploads = mergeDeep(this.selectedUploads, {
+              [item.id]: item,
             });
           } else {
-            this.selectedCrawls = omit([crawl.id])(this.selectedCrawls) as any;
+            this.selectedUploads = omit([item.id])(this.selectedUploads) as any;
           }
         }}
       >
         <div class="flex items-center">
-          <div class="flex-1">${crawl.name}</div>
+          <div class="flex-1">${item.name}</div>
           <div class="w-14">
             <sl-format-bytes
               class="text-neutral-500 text-xs font-monostyle"
-              value=${crawl.fileSize || 0}
+              value=${item.fileSize || 0}
               display="narrow"
             ></sl-format-bytes>
           </div>
@@ -1003,7 +1021,7 @@ export class CollectionEditor extends LiteElement {
           if (e.detail.checked || !allChecked) {
             this.selectWorkflow(workflow.id);
           } else {
-            this.deselectCrawls(crawls);
+            this.deselectItems(crawls, "crawl");
           }
         }}
       >
@@ -1076,28 +1094,28 @@ export class CollectionEditor extends LiteElement {
     `;
   };
 
-  private renderUploadItem = (crawl: Upload) => {
+  private renderUploadItem = (upload: Upload) => {
     return html`
       <btrix-checkbox-list-item
-        ?checked=${this.selectedCrawls[crawl.id]}
+        ?checked=${this.selectedUploads[upload.id]}
         @on-change=${(e: CheckboxChangeEvent) => {
           if (e.detail.checked) {
-            this.collectionCrawls = uniqBy("id")([
-              ...(this.collectionCrawls || []),
-              ...[crawl],
+            this.collectionUploads = uniqBy("id")([
+              ...(this.collectionUploads || []),
+              ...[upload],
             ] as any) as any;
-            this.selectCrawls([crawl]);
+            this.selectItemss([upload], "upload");
           } else {
-            this.deselectCrawls([crawl]);
+            this.deselectItems([upload], "upload");
           }
         }}
       >
         <div class="flex items-center">
-          <div class="flex-1">${crawl.name}</div>
+          <div class="flex-1">${upload.name}</div>
           <div class="w-14">
             <sl-format-bytes
               class="text-neutral-500 text-xs font-monostyle"
-              value=${crawl.fileSize || 0}
+              value=${upload.fileSize || 0}
               display="narrow"
             ></sl-format-bytes>
           </div>
@@ -1165,26 +1183,33 @@ export class CollectionEditor extends LiteElement {
     </div>
   `;
 
-  private selectCrawls(crawls: (Crawl | Upload)[]) {
-    const allCrawls = crawls.reduce(
-      (acc: any, crawl: Crawl | Upload) => ({
+  private selectItemss(items: (Crawl | Upload)[], itemType: Crawl["type"]) {
+    const allItems = items.reduce(
+      (acc: any, item) => ({
         ...acc,
-        [crawl.id]: crawl,
+        [item.id]: item,
       }),
       {}
     );
-    this.selectedCrawls = mergeDeep(this.selectedCrawls, allCrawls);
+    if (itemType === "upload") {
+      this.selectedUploads = mergeDeep(this.selectedUploads, allItems);
+    } else {
+      this.selectedCrawls = mergeDeep(this.selectedCrawls, allItems);
+    }
   }
 
-  private deselectCrawls(crawls: (Crawl | Upload)[]) {
-    this.selectedCrawls = omit(crawls.map(({ id }) => id))(
-      this.selectedCrawls
-    ) as any;
+  private deselectItems(items: (Crawl | Upload)[], itemType: Crawl["type"]) {
+    const omitter = omit(items.map(({ id }) => id));
+    if (itemType === "upload") {
+      this.selectedUploads = omitter(this.selectedUploads) as any;
+    } else {
+      this.selectedCrawls = omitter(this.selectedCrawls) as any;
+    }
   }
 
   private async selectWorkflow(workflowId: string) {
     const crawls = await this.fetchWorkflowCrawls(workflowId);
-    this.selectCrawls(crawls);
+    this.selectItemss(crawls, "crawl");
   }
 
   private checkboxGroupUpdated = async (el: any) => {
@@ -1257,16 +1282,29 @@ export class CollectionEditor extends LiteElement {
     const formValues = serialize(form);
     const values: any = {};
 
-    if (this.activeTab === "metadata") {
-      values.name = formValues.name;
-      values.description = formValues.description;
-      values.isPublic =
-        formValues.isPublic === true || formValues.isPublic === "on";
-    } else {
-      values.crawlIds = Object.keys(this.selectedCrawls);
-      if (this.collectionId) {
-        values.oldCrawlIds = this.savedCollectionCrawlIds;
+    switch (this.activeTab) {
+      case "metadata": {
+        values.name = formValues.name;
+        values.description = formValues.description;
+        values.isPublic = Boolean(formValues.isPublic);
+        break;
       }
+      case "crawls": {
+        values.crawlIds = Object.keys(this.selectedCrawls);
+        if (this.collectionId) {
+          values.oldCrawlIds = this.savedCollectionCrawlIds;
+        }
+        break;
+      }
+      case "uploads": {
+        values.crawlIds = Object.keys(this.selectedUploads);
+        if (this.collectionId) {
+          values.oldCrawlIds = this.savedCollectionUploadIds;
+        }
+        break;
+      }
+      default:
+        break;
     }
 
     this.dispatchEvent(
@@ -1384,23 +1422,26 @@ export class CollectionEditor extends LiteElement {
         crawlsRes.status === "fulfilled" ? crawlsRes.value.items : [];
       const uploads =
         uploadsRes.status === "fulfilled" ? uploadsRes.value.items : [];
-      const crawlsAndUploads = [...crawls, ...uploads];
 
-      this.selectedCrawls = mergeDeep(
-        this.selectedCrawls,
-        crawlsAndUploads.reduce(
-          (acc, crawl) => ({
+      const keyByid = (items: (Crawl | Upload)[]) =>
+        items.reduce(
+          (acc: any, item) => ({
             ...acc,
-            [crawl.id]: crawl,
+            [item.id]: item,
           }),
           {}
-        )
-      );
+        );
+      this.selectedCrawls = mergeDeep(this.selectedCrawls, keyByid(crawls));
+      this.selectedUploads = mergeDeep(this.selectedUploads, keyByid(uploads));
 
       // TODO remove omit once API removes errors
-      this.collectionCrawls = crawlsAndUploads.map(omit("errors")) as Crawl[];
+      this.collectionCrawls = crawls.map(omit("errors")) as Crawl[];
+      this.collectionUploads = uploads;
       // Store crawl IDs to compare later
       this.savedCollectionCrawlIds = this.collectionCrawls.map(({ id }) => id);
+      this.savedCollectionUploadIds = this.collectionUploads.map(
+        ({ id }) => id
+      );
     } catch {
       this.notify({
         message: msg(
