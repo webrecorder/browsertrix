@@ -37,6 +37,7 @@ DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 
 
 # ============================================================================
+# pylint: disable=too-many-public-methods
 class OrgOps:
     """Organization API operations"""
 
@@ -277,6 +278,28 @@ class OrgOps:
             {"_id": org.id}, {"$set": {"origin": origin}}
         )
 
+    async def inc_org_stats(self, oid, duration):
+        """inc crawl duration stats for org oid"""
+        # init org crawl stats
+        yymm = datetime.utcnow().strftime("%Y-%m")
+        await self.orgs.find_one_and_update(
+            {"_id": oid}, {"$inc": {f"usage.{yymm}": duration}}
+        )
+
+    async def get_max_concurrent_crawls(self, oid):
+        """return max allowed concurrent crawls, if any"""
+        org = await self.orgs.find_one({"_id": oid})
+        if org:
+            org = Organization.from_dict(org)
+            return org.quotas.maxConcurrentCrawls
+        return 0
+
+    async def add_crawl_files_to_org_bytes_stored(self, oid: uuid.UUID, size: int):
+        """Add crawl's files to org bytesStored"""
+        await self.orgs.find_one_and_update(
+            {"_id": oid}, {"$inc": {"bytesStored": size}}
+        )
+
 
 # ============================================================================
 async def inc_org_bytes_stored(orgs, oid: uuid.UUID, size: int):
@@ -300,32 +323,6 @@ async def storage_quota_reached(orgs, oid: uuid.UUID):
         return True
 
     return False
-
-
-# ============================================================================
-async def add_crawl_files_to_org_bytes_stored(crawls, orgs, crawl_id: str, size: int):
-    """Add crawl's files to org bytesStored"""
-    crawl = await crawls.find_one({"_id": crawl_id})
-    oid = crawl["oid"]
-    await orgs.find_one_and_update({"_id": oid}, {"$inc": {"bytesStored": size}})
-
-
-# ============================================================================
-async def inc_org_stats(orgs, oid, duration):
-    """inc crawl duration stats for org oid"""
-    # init org crawl stats
-    yymm = datetime.utcnow().strftime("%Y-%m")
-    await orgs.find_one_and_update({"_id": oid}, {"$inc": {f"usage.{yymm}": duration}})
-
-
-# ============================================================================
-async def get_max_concurrent_crawls(orgs, oid):
-    """return max allowed concurrent crawls, if any"""
-    org = await orgs.find_one({"_id": oid})
-    if org:
-        org = Organization.from_dict(org)
-        return org.quotas.maxConcurrentCrawls
-    return 0
 
 
 # ============================================================================

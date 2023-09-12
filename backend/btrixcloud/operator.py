@@ -26,12 +26,8 @@ from .utils import (
 )
 from .k8sapi import K8sAPI
 
-from .orgs import (
-    inc_org_stats,
-    get_max_concurrent_crawls,
-    storage_quota_reached,
-    add_crawl_files_to_org_bytes_stored,
-)
+from .orgs import storage_quota_reached
+
 from .basecrawls import (
     NON_RUNNING_STATES,
     RUNNING_STATES,
@@ -133,14 +129,15 @@ class CrawlStatus(BaseModel):
 
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-public-methods, too-many-branches
-# pylint: disable=too-many-instance-attributes, too-many-locals, too-many-lines
+# pylint: disable=too-many-instance-attributes, too-many-locals, too-many-lines, too-many-arguments
 class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
 
-    def __init__(self, mdb, crawl_config_ops, coll_ops, event_webhook_ops):
+    def __init__(self, mdb, crawl_config_ops, org_ops, coll_ops, event_webhook_ops):
         super().__init__()
 
         self.crawl_config_ops = crawl_config_ops
+        self.org_ops = org_ops
         self.coll_ops = coll_ops
         self.event_webhook_ops = event_webhook_ops
 
@@ -241,7 +238,7 @@ class BtrixOperator(K8sAPI):
             if not status.finished:
                 # if can't cancel, already finished
                 if not await self.mark_finished(
-                    crawl_id, uuid.UUID(cid), status, "canceled"
+                    crawl_id, uuid.UUID(cid), uuid.UUID(oid), status, "canceled"
                 ):
                     # instead of fetching the state (that was already set)
                     # return exception to ignore this request, keep previous
@@ -292,7 +289,7 @@ class BtrixOperator(K8sAPI):
                 and await storage_quota_reached(self.orgs, crawl.oid)
             ):
                 await self.mark_finished(
-                    crawl.id, crawl.cid, status, "skipped_quota_reached"
+                    crawl.id, crawl.cid, crawl.oid, status, "skipped_quota_reached"
                 )
                 return self._empty_response(status)
 
@@ -500,7 +497,7 @@ class BtrixOperator(K8sAPI):
     async def can_start_new(self, crawl: CrawlSpec, data: MCSyncData, status):
         """return true if crawl can start, otherwise set crawl to 'queued' state
         until more crawls for org finish"""
-        max_crawls = await get_max_concurrent_crawls(self.orgs, crawl.oid)
+        max_crawls = await self.org_ops.get_max_concurrent_crawls(crawl.oid)
         if not max_crawls:
             return True
 
@@ -538,7 +535,9 @@ class BtrixOperator(K8sAPI):
         """Mark crawl as failed, log crawl state and print crawl logs, if possible"""
         prev_state = status.state
 
-        if not await self.mark_finished(crawl_id, cid, status, "failed", stats=stats):
+        if not await self.mark_finished(
+            crawl_id, cid, None, status, "failed", stats=stats
+        ):
             return False
 
         if not self.log_failed_crawl_lines or prev_state == "failed":
@@ -816,14 +815,16 @@ class BtrixOperator(K8sAPI):
 
             state = "complete" if completed else "partial_complete"
 
-            await self.mark_finished(crawl.id, crawl.cid, status, state, crawl, stats)
+            await self.mark_finished(
+                crawl.id, crawl.cid, crawl.oid, status, state, crawl, stats
+            )
 
         # check if all crawlers failed
         elif status_count.get("failed", 0) >= crawl.scale:
             # if stopping, and no pages finished, mark as canceled
             if status.stopping and not status.pagesDone:
                 await self.mark_finished(
-                    crawl.id, crawl.cid, status, "canceled", crawl, stats
+                    crawl.id, crawl.cid, crawl.oid, status, "canceled", crawl, stats
                 )
             else:
                 await self.fail_crawl(crawl.id, crawl.cid, status, pods, stats)
@@ -845,7 +846,9 @@ class BtrixOperator(K8sAPI):
         return status
 
     # pylint: disable=too-many-arguments
-    async def mark_finished(self, crawl_id, cid, status, state, crawl=None, stats=None):
+    async def mark_finished(
+        self, crawl_id, cid, oid, status, state, crawl=None, stats=None
+    ):
         """mark crawl as finished, set finished timestamp and final state"""
 
         finished = dt_now()
@@ -875,19 +878,23 @@ class BtrixOperator(K8sAPI):
             await self.inc_crawl_complete_stats(crawl, finished)
 
         asyncio.create_task(
-            self.do_crawl_finished_tasks(crawl_id, cid, status.filesAddedSize, state)
+            self.do_crawl_finished_tasks(
+                crawl_id, cid, oid, status.filesAddedSize, state
+            )
         )
 
         return True
 
     # pylint: disable=too-many-arguments
-    async def do_crawl_finished_tasks(self, crawl_id, cid, files_added_size, state):
+    async def do_crawl_finished_tasks(
+        self, crawl_id, cid, oid, files_added_size, state
+    ):
         """Run tasks after crawl completes in asyncio.task coroutine."""
         await self.crawl_config_ops.stats_recompute_last(cid, files_added_size, 1)
 
-        if state in SUCCESSFUL_STATES:
-            await add_crawl_files_to_org_bytes_stored(
-                self.crawls, self.orgs, crawl_id, files_added_size
+        if state in SUCCESSFUL_STATES and oid:
+            await self.org_ops.add_crawl_files_to_org_bytes_stored(
+                oid, files_added_size
             )
 
             await self.coll_ops.add_successful_crawl_to_collections(
@@ -911,7 +918,7 @@ class BtrixOperator(K8sAPI):
 
         print(f"Duration: {duration}", flush=True)
 
-        await inc_org_stats(self.orgs, crawl.oid, duration)
+        await self.org_ops.inc_org_stats(crawl.oid, duration)
 
     async def add_crawl_errors_to_db(self, crawl_id, inc=100):
         """Pull crawl errors from redis and write to mongo db"""
@@ -1035,10 +1042,10 @@ class BtrixOperator(K8sAPI):
 
 
 # ============================================================================
-def init_operator_api(app, mdb, crawl_config_ops, coll_ops, event_webhook_ops):
+def init_operator_api(app, mdb, crawl_config_ops, org_ops, coll_ops, event_webhook_ops):
     """regsiters webhook handlers for metacontroller"""
 
-    oper = BtrixOperator(mdb, crawl_config_ops, coll_ops, event_webhook_ops)
+    oper = BtrixOperator(mdb, crawl_config_ops, org_ops, coll_ops, event_webhook_ops)
 
     @app.post("/op/crawls/sync")
     async def mc_sync_crawls(data: MCSyncData):
