@@ -1189,13 +1189,7 @@ export class CollectionEditor extends LiteElement {
   `;
 
   private selectItems(items: (Crawl | Upload)[], itemType: Crawl["type"]) {
-    const allItems = items.reduce(
-      (acc: any, item) => ({
-        ...acc,
-        [item.id]: item,
-      }),
-      {}
-    );
+    const allItems = keyBy("id")(items);
     if (itemType === "upload") {
       this.selectedUploads = mergeDeep(this.selectedUploads, allItems);
     } else {
@@ -1445,16 +1439,11 @@ export class CollectionEditor extends LiteElement {
       const uploads =
         uploadsRes.status === "fulfilled" ? uploadsRes.value.items : [];
 
-      const keyByid = (items: (Crawl | Upload)[]) =>
-        items.reduce(
-          (acc: any, item) => ({
-            ...acc,
-            [item.id]: item,
-          }),
-          {}
-        );
-      this.selectedCrawls = mergeDeep(this.selectedCrawls, keyByid(crawls));
-      this.selectedUploads = mergeDeep(this.selectedUploads, keyByid(uploads));
+      this.selectedCrawls = mergeDeep(this.selectedCrawls, keyBy("id")(crawls));
+      this.selectedUploads = mergeDeep(
+        this.selectedUploads,
+        keyBy("id")(uploads)
+      );
 
       // TODO remove omit once API removes errors
       this.collectionCrawls = crawls.map(omit("errors")) as Crawl[];
