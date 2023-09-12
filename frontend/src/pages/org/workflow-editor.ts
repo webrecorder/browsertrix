@@ -90,7 +90,7 @@ type FormState = {
   scale: WorkflowParams["scale"];
   blockAds: WorkflowParams["config"]["blockAds"];
   lang: WorkflowParams["config"]["lang"];
-  scheduleType: "now" | "date" | "cron" | "none";
+  scheduleType: "date" | "cron" | "none";
   scheduleFrequency: "daily" | "weekly" | "monthly" | "";
   scheduleDayOfMonth?: number;
   scheduleDayOfWeek?: number;
@@ -165,7 +165,7 @@ const getDefaultFormState = (): FormState => ({
   scale: 1,
   blockAds: true,
   lang: undefined,
-  scheduleType: "now",
+  scheduleType: "none",
   scheduleFrequency: "weekly",
   scheduleDayOfMonth: new Date().getDate(),
   scheduleDayOfWeek: new Date().getDay(),
@@ -300,7 +300,6 @@ export class CrawlConfigEditor extends LiteElement {
     FormState["scheduleType"],
     string
   > = {
-    now: msg("Run Immediately on Save"),
     date: msg("Run on a Specific Date & Time"),
     cron: msg("Run on a Recurring Basis"),
     none: msg("No Schedule"),
@@ -473,11 +472,7 @@ export class CrawlConfigEditor extends LiteElement {
         period: hours > 11 ? "PM" : "AM",
       };
     } else {
-      if (this.configId) {
-        formState.scheduleType = "none";
-      } else {
-        formState.scheduleType = "now";
-      }
+      formState.scheduleType = "none";
     }
 
     if (this.initialWorkflow.tags?.length) {
@@ -751,8 +746,7 @@ export class CrawlConfigEditor extends LiteElement {
                   ?disabled=${this.isSubmitting || this.formHasError}
                   ?loading=${this.isSubmitting}
                 >
-                  ${this.formState.scheduleType === "now" ||
-                  this.formState.runNow
+                  ${this.formState.runNow
                     ? msg("Save & Run Crawl")
                     : this.formState.scheduleType === "none"
                     ? msg("Save Workflow")
@@ -1512,12 +1506,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
             this.updateFormState({
               scheduleType: (e.target as SlRadio)
                 .value as FormState["scheduleType"],
-              runNow: (e.target as SlRadio).value === "now",
             })}
         >
-          <sl-radio value="now">${this.scheduleTypeLabels["now"]}</sl-radio>
-          <sl-radio value="cron">${this.scheduleTypeLabels["cron"]}</sl-radio>
           <sl-radio value="none">${this.scheduleTypeLabels["none"]}</sl-radio>
+          <sl-radio value="cron">${this.scheduleTypeLabels["cron"]}</sl-radio>
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
@@ -2154,7 +2146,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       description: this.formState.description,
       scale: this.formState.scale,
       profileid: this.formState.browserProfile?.id || "",
-      runNow: this.formState.runNow || this.formState.scheduleType === "now",
+      runNow: this.formState.runNow,
       schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
       crawlTimeout: this.formState.crawlTimeoutMinutes * 60,
       maxCrawlSize: this.formState.maxCrawlSizeGB * BYTES_PER_GB,
