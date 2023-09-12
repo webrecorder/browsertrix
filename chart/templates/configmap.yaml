@@ -10,6 +10,8 @@ data:
 
   CRAWLER_NAMESPACE: {{ .Values.crawler_namespace }}
 
+  DEFAULT_NAMESPACE: {{ .Release.Namespace }}
+
   CRAWLER_FQDN_SUFFIX: ".{{ .Values.crawler_namespace }}.svc.cluster.local"
 
   DEFAULT_ORG: "{{ .Values.default_org }}"

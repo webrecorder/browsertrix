@@ -1,6 +1,7 @@
 """
 Migration 0016 - Updating scheduled cron jobs after Operator changes v2
 """
+import os
 from btrixcloud.models import CrawlConfig, UpdateCrawlConfig
 from btrixcloud.crawlmanager import CrawlManager
 from btrixcloud.migrations import BaseMigration
@@ -49,10 +50,13 @@ class Migration(BaseMigration):
 
         # Delete existing scheduled jobs from default namespace
         print("Deleting cronjobs from default namespace")
+
+        default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
+
         await crawl_manager.batch_api.delete_collection_namespaced_cron_job(
-            namespace="default", label_selector="btrix.crawlconfig"
+            namespace=default_namespace, label_selector="btrix.crawlconfig"
         )
         result = await crawl_manager.batch_api.list_namespaced_cron_job(
-            namespace="default", label_selector="btrix.crawlconfig"
+            namespace=default_namespace, label_selector="btrix.crawlconfig"
         )
         assert len(result.items) == 0
