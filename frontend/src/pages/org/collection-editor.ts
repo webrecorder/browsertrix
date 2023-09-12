@@ -663,7 +663,7 @@ export class CollectionEditor extends LiteElement {
         aria-controls=${selectedCrawlIds.join(" ")}
         @on-change=${(e: CheckboxChangeEvent) => {
           if (e.detail.checked || !allChecked) {
-            this.selectItemss(crawls, "crawl");
+            this.selectItems(crawls, "crawl");
           } else {
             this.deselectItems(crawls, "crawl");
           }
@@ -1104,7 +1104,7 @@ export class CollectionEditor extends LiteElement {
               ...(this.collectionUploads || []),
               ...[upload],
             ] as any) as any;
-            this.selectItemss([upload], "upload");
+            this.selectItems([upload], "upload");
           } else {
             this.deselectItems([upload], "upload");
           }
@@ -1183,7 +1183,7 @@ export class CollectionEditor extends LiteElement {
     </div>
   `;
 
-  private selectItemss(items: (Crawl | Upload)[], itemType: Crawl["type"]) {
+  private selectItems(items: (Crawl | Upload)[], itemType: Crawl["type"]) {
     const allItems = items.reduce(
       (acc: any, item) => ({
         ...acc,
@@ -1209,7 +1209,7 @@ export class CollectionEditor extends LiteElement {
 
   private async selectWorkflow(workflowId: string) {
     const crawls = await this.fetchWorkflowCrawls(workflowId);
-    this.selectItemss(crawls, "crawl");
+    this.selectItems(crawls, "crawl");
   }
 
   private checkboxGroupUpdated = async (el: any) => {
