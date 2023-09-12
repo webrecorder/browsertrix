@@ -22,50 +22,6 @@ CHUNK_SIZE = 1024 * 256
 
 
 # ============================================================================
-async def extract_and_parse_log_file(client, bucket, key, log_zipinfo, cd_start):
-    """Return parsed JSON from extracted and uncompressed log"""
-    # pylint: disable=too-many-locals
-    file_head = await fetch(
-        client, bucket, key, cd_start + log_zipinfo.header_offset + 26, 4
-    )
-    name_len = parse_little_endian_to_int(file_head[0:2])
-    extra_len = parse_little_endian_to_int(file_head[2:4])
-
-    content = await fetch(
-        client,
-        bucket,
-        key,
-        cd_start + log_zipinfo.header_offset + 30 + name_len + extra_len,
-        log_zipinfo.compress_size,
-    )
-
-    if log_zipinfo.compress_type == zipfile.ZIP_DEFLATED:
-        uncompressed_content = zlib.decompressobj(-zlib.MAX_WBITS).decompress(content)
-    else:
-        uncompressed_content = content
-
-    content_length = len(uncompressed_content)
-    if not log_zipinfo.file_size == content_length:
-        # pylint: disable=line-too-long
-        detail = f"Error extracting log file {log_zipinfo.filename} from WACZ {os.path.basename(key)}."
-        detail += f" Expected {log_zipinfo.file_size} bytes uncompressed but found {content_length}"
-        print(detail, flush=True)
-        raise HTTPException(status_code=500, detail=detail)
-
-    parsed_log_lines = []
-
-    for json_line in uncompressed_content.decode("utf-8").split("\n"):
-        if not json_line:
-            continue
-        try:
-            result = json.loads(json_line)
-            parsed_log_lines.append(result)
-        except json.JSONDecodeError as err:
-            print(f"Error decoding json-l line: {json_line}. Error: {err}", flush=True)
-
-    return parsed_log_lines
-
-
 def sync_get_log_stream(client, bucket, key, log_zipinfo, cd_start):
     """Return uncompressed byte stream of log file in WACZ"""
     # pylint: disable=too-many-locals
