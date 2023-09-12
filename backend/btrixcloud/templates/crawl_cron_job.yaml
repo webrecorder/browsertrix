@@ -8,29 +8,23 @@ metadata:
 
 spec:
   concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 0
-  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
 
   schedule: "{{ schedule }}"
 
   jobTemplate:
+    metadata:
+      labels:
+        btrix.crawlconfig: "{{ cid }}"
+        role: "scheduled-crawljob"
+
     spec:
+      suspend: true
       template:
         spec:
-          restartPolicy: OnFailure
+          restartPolicy: Never
           containers:
-            - name: scheduled
-              image: "{{ image }}"
-              imagePullPolicy: "{{ image_pull_policy }}"
-              command:
-                - python
-                - -m
-                - btrixcloud.main_scheduled_job
-
-              env:
-                - name: CID
-                  value: "{{ cid }}"
-
-              envFrom:
-                - secretRef:
-                    name: mongo-auth
+            - name: noop
+              image: "docker.io/tianon/true"
+              imagePullPolicy: IfNotPresent

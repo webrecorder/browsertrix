@@ -34,7 +34,7 @@ RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
 
 STARTING_STATES = ("starting", "waiting_capacity", "waiting_org_limit")
 
-FAILED_STATES = ("canceled", "failed")
+FAILED_STATES = ("canceled", "failed", "skipped_quota_reached")
 
 SUCCESSFUL_STATES = ("complete", "partial_complete")
 

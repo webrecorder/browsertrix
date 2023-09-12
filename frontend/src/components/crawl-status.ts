@@ -180,6 +180,16 @@ export class CrawlStatus extends LitElement {
         break;
       }
 
+      case "skipped_quota_reached": {
+        icon = html`<sl-icon
+          name="exclamation-triangle"
+          slot="prefix"
+          style="color: var(--danger)"
+        ></sl-icon>`;
+        label = msg("Skipped (Quota Reached)");
+        break;
+      }
+
       case "partial_complete": {
         icon = html`<sl-icon
           name="dash-circle"

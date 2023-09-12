@@ -1240,7 +1240,7 @@ export class WorkflowDetail extends LiteElement {
   private async getCrawls(): Promise<APIPaginatedList> {
     const query = queryString.stringify(
       {
-        state: this.filterBy.state || inactiveCrawlStates,
+        state: this.filterBy.state,
         cid: this.workflowId,
         sortBy: "started",
       },

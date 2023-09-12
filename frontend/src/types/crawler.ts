@@ -102,6 +102,7 @@ export type CrawlState =
   | "pending-wait"
   | "complete"
   | "failed"
+  | "skipped_quota_reached"
   | "partial_complete"
   | "timed_out"
   | "stopping"

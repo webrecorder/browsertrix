@@ -26,7 +26,7 @@ from .utils import (
 )
 from .k8sapi import K8sAPI
 
-from .orgs import inc_org_stats, get_max_concurrent_crawls
+from .orgs import inc_org_stats, get_max_concurrent_crawls, storage_quota_reached
 from .basecrawls import (
     NON_RUNNING_STATES,
     RUNNING_STATES,
@@ -44,6 +44,11 @@ from .crawls import (
 )
 from .models import CrawlFile, CrawlCompleteIn
 from .orgs import add_crawl_files_to_org_bytes_stored
+from .crawlconfigs import (
+    get_crawl_config,
+    inc_crawl_count,
+)
+from .crawls import add_new_crawl
 
 
 CMAP = "ConfigMap.v1"
@@ -61,11 +66,6 @@ STARTING_TIME_SECS = 60
 
 
 # ============================================================================
-class DeleteCrawlException(Exception):
-    """throw to force deletion of crawl objects"""
-
-
-# ============================================================================
 class MCBaseRequest(BaseModel):
     """base metacontroller model, used for customize hook"""
 
@@ -78,6 +78,18 @@ class MCSyncData(MCBaseRequest):
     """sync / finalize metacontroller model"""
 
     children: dict
+    related: dict
+    finalizing: bool = False
+
+
+# ============================================================================
+class MCDecoratorSyncData(BaseModel):
+    """sync for decoratorcontroller model"""
+
+    object: dict
+    controller: dict
+
+    attachments: dict
     related: dict
     finalizing: bool = False
 
@@ -125,7 +137,7 @@ class CrawlStatus(BaseModel):
 
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-public-methods, too-many-branches
-# pylint: disable=too-many-instance-attributes,too-many-locals
+# pylint: disable=too-many-instance-attributes, too-many-locals, too-many-lines
 class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
 
@@ -205,6 +217,7 @@ class BtrixOperator(K8sAPI):
 
         return {"status": {}, "children": children}
 
+    # pylint: disable=too-many-return-statements
     async def sync_crawls(self, data: MCSyncData):
         """sync crawls"""
 
@@ -270,6 +283,20 @@ class BtrixOperator(K8sAPI):
             max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),
             scheduled=spec.get("manual") != "1",
         )
+
+        # first, check storage quota, and fail immediately if quota reached
+        if status.state in ("starting", "skipped_quota_reached"):
+            # only check on very first run, before any pods/pvcs created
+            # for now, allow if crawl has already started (pods/pvcs created)
+            if (
+                not pods
+                and not data.children[PVC]
+                and await storage_quota_reached(self.orgs, crawl.oid)
+            ):
+                await self.mark_finished(
+                    crawl.id, crawl.cid, status, "skipped_quota_reached"
+                )
+                return self._empty_response(status)
 
         if status.state in ("starting", "waiting_org_limit"):
             if not await self.can_start_new(crawl, data, status):
@@ -430,6 +457,8 @@ class BtrixOperator(K8sAPI):
 
             if actual_state != state:
                 print(f"state mismatch, actual state {actual_state}, requested {state}")
+                if not actual_state and state == "canceled":
+                    return True
 
         if status.state != state:
             print(
@@ -444,7 +473,7 @@ class BtrixOperator(K8sAPI):
         )
 
     def get_related(self, data: MCBaseRequest):
-        """return configmap related to crawl"""
+        """return objects related to crawl pods"""
         spec = data.parent.get("spec", {})
         cid = spec["cid"]
         # crawl_id = spec["id"]
@@ -556,7 +585,7 @@ class BtrixOperator(K8sAPI):
                 ttl = spec.get("ttlSecondsAfterFinished", DEFAULT_TTL)
                 finished = from_k8s_date(status.finished)
                 if (dt_now() - finished).total_seconds() > ttl > 0:
-                    print("Job expired, deleting: " + crawl_id)
+                    print("CrawlJob expired, deleting: " + crawl_id)
                     finalized = True
             else:
                 finalized = True
@@ -860,11 +889,11 @@ class BtrixOperator(K8sAPI):
             self.crawl_configs, self.crawls, cid, files_added_size, 1
         )
 
-        await add_crawl_files_to_org_bytes_stored(
-            self.crawls, self.orgs, crawl_id, files_added_size
-        )
-
         if state in SUCCESSFUL_STATES:
+            await add_crawl_files_to_org_bytes_stored(
+                self.crawls, self.orgs, crawl_id, files_added_size
+            )
+
             await add_successful_crawl_to_collections(
                 self.crawls, self.crawl_configs, self.collections, crawl_id, cid
             )
@@ -924,6 +953,96 @@ class BtrixOperator(K8sAPI):
             if redis:
                 await redis.close()
 
+    def get_cronjob_crawl_related(self, data: MCBaseRequest):
+        """return configmap related to crawl"""
+        labels = data.parent.get("metadata", {}).get("labels", {})
+        cid = labels.get("btrix.crawlconfig")
+        return {
+            "relatedResources": [
+                {
+                    "apiVersion": "v1",
+                    "resource": "configmaps",
+                    "labelSelector": {"matchLabels": {"btrix.crawlconfig": cid}},
+                }
+            ]
+        }
+
+    async def sync_cronjob_crawl(self, data: MCDecoratorSyncData):
+        """create crawljobs from a job object spawned by cronjob"""
+
+        metadata = data.object["metadata"]
+        labels = metadata.get("labels", {})
+        cid = labels.get("btrix.crawlconfig")
+
+        name = metadata.get("name")
+        crawl_id = name
+
+        actual_state, finished = await get_crawl_state(self.crawls, crawl_id)
+        if finished:
+            status = None
+            # mark job as completed
+            if not data.object["status"].get("succeeded"):
+                print("Cron Job Complete!", finished)
+                status = {
+                    "succeeded": 1,
+                    "startTime": metadata.get("creationTimestamp"),
+                    "completionTime": to_k8s_date(finished),
+                }
+
+            return {
+                "attachments": [],
+                "annotations": {"finished": finished},
+                "status": status,
+            }
+
+        configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
+
+        oid = configmap.get("ORG_ID")
+        userid = configmap.get("USER_ID")
+
+        crawljobs = data.attachments[CJS]
+
+        crawl_id, crawljob = self.new_crawl_job_yaml(
+            cid,
+            userid=userid,
+            oid=oid,
+            scale=int(configmap.get("INITIAL_SCALE", 1)),
+            crawl_timeout=int(configmap.get("CRAWL_TIMEOUT", 0)),
+            max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),
+            manual=False,
+            crawl_id=crawl_id,
+        )
+
+        attachments = list(yaml.safe_load_all(crawljob))
+
+        if crawl_id in crawljobs:
+            attachments[0]["status"] = crawljobs[CJS][crawl_id]["status"]
+
+        if not actual_state:
+            # pylint: disable=duplicate-code
+            crawlconfig = await get_crawl_config(self.crawl_configs, uuid.UUID(cid))
+            if not crawlconfig:
+                print(
+                    f"warn: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
+                )
+                return {"attachments": []}
+
+            # db create
+            await inc_crawl_count(self.crawl_configs, crawlconfig.id)
+            await add_new_crawl(
+                self.crawls,
+                self.crawl_configs,
+                crawl_id,
+                crawlconfig,
+                uuid.UUID(userid),
+                manual=False,
+            )
+            print("Scheduled Crawl Created: " + crawl_id)
+
+        return {
+            "attachments": attachments,
+        }
+
 
 # ============================================================================
 def init_operator_api(app, mdb, event_webhook_ops):
@@ -947,6 +1066,14 @@ def init_operator_api(app, mdb, event_webhook_ops):
     @app.post("/op/profilebrowsers/sync")
     async def mc_sync_profile_browsers(data: MCSyncData):
         return await oper.sync_profile_browsers(data)
+
+    @app.post("/op/cronjob/sync")
+    async def mc_sync_cronjob_crawls(data: MCDecoratorSyncData):
+        return await oper.sync_cronjob_crawl(data)
+
+    @app.post("/op/cronjob/customize")
+    async def mc_cronjob_related(data: MCBaseRequest):
+        return oper.get_cronjob_crawl_related(data)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz():
