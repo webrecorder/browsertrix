@@ -348,6 +348,7 @@ export class CollectionEditor extends LiteElement {
           <div class="border rounded-lg py-2 flex-1">
             ${guard(
               [
+                this.activeTab === "crawls",
                 this.isCrawler,
                 this.collectionCrawls,
                 this.selectedCrawls,
@@ -610,6 +611,12 @@ export class CollectionEditor extends LiteElement {
   };
 
   private renderCollectionWorkflowList = () => {
+    if (this.activeTab !== "crawls") {
+      // Prevent rendering workflow list when tab isn't visible
+      // in order to accurately calculate visible item size
+      return;
+    }
+
     if (this.collectionId && !this.collectionCrawls) {
       return this.renderLoading();
     }
