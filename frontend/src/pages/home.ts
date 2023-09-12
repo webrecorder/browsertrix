@@ -13,7 +13,7 @@ const sortByName = sortBy("name");
  * @event success
  */
 @localized()
-export class InviteForm extends LiteElement {
+export class Home extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
 
@@ -174,4 +174,3 @@ export class InviteForm extends LiteElement {
     return !formEl.querySelector("[data-invalid]");
   }
 }
-
