@@ -1,5 +1,5 @@
 import type { TemplateResult } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, query } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
@@ -17,7 +17,7 @@ import uniqBy from "lodash/fp/uniqBy";
 import Fuse from "fuse.js";
 import queryString from "query-string";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import type { SlMenuItem } from "@shoelace-style/shoelace";
+import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 
 import type {
   CheckboxChangeEvent,
@@ -179,6 +179,9 @@ export class CollectionEditor extends LiteElement {
 
   @state()
   private searchResultsOpen = false;
+
+  @query("#collectionForm-name-input")
+  private nameInput?: SlInput;
 
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
@@ -534,6 +537,7 @@ export class CollectionEditor extends LiteElement {
         <div class="p-6">
           <sl-input
             class="mb-2 with-max-help-text"
+            id="collectionForm-name-input"
             name="name"
             label=${msg("Name")}
             placeholder=${msg("My Collection")}
@@ -580,7 +584,13 @@ export class CollectionEditor extends LiteElement {
                 type="button"
                 size="small"
                 variant="primary"
-                @click=${() => this.goToTab("crawls")}
+                @click=${async () => {
+                  await this.nameInput;
+                  const isValid = this.nameInput!.reportValidity();
+                  if (isValid) {
+                    this.goToTab("crawls");
+                  }
+                }}
               >
                 <sl-icon slot="suffix" name="chevron-right"></sl-icon>
                 ${msg("Select Items")}
@@ -1284,9 +1294,11 @@ export class CollectionEditor extends LiteElement {
     await this.updateComplete;
 
     const form = event.target as HTMLFormElement;
-    // if (form.querySelector("[data-invalid]")) {
-    //   return;
-    // }
+    const isNameValid = this.nameInput!.checkValidity();
+    if (!isNameValid) {
+      this.goToTab("metadata");
+      return;
+    }
 
     const formValues = serialize(form) as FormValues;
     let values: any = {};
