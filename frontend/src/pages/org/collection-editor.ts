@@ -216,6 +216,16 @@ export class CollectionEditor extends LiteElement {
   };
 
   protected async willUpdate(changedProperties: Map<string, any>) {
+    if (
+      changedProperties.has("activeTab") &&
+      !changedProperties.get("activeTab") &&
+      this.activeTab
+    ) {
+      // First tab load
+      if (this.activeTab !== "metadata" && !this.collectionId) {
+        this.goToTab("metadata");
+      }
+    }
     if (changedProperties.has("orgId") && this.orgId) {
       this.fetchSearchValues();
     }
@@ -1274,9 +1284,9 @@ export class CollectionEditor extends LiteElement {
     await this.updateComplete;
 
     const form = event.target as HTMLFormElement;
-    if (form.querySelector("[data-invalid]")) {
-      return;
-    }
+    // if (form.querySelector("[data-invalid]")) {
+    //   return;
+    // }
 
     const formValues = serialize(form) as FormValues;
     let values: any = {};

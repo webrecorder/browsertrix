@@ -106,16 +106,19 @@ export class CollectionEdit extends LiteElement {
         ),
         variant: "success",
         icon: "check2-circle",
-        duration: 8000,
       });
     } catch (e: any) {
       if (e?.isApiError) {
-        this.serverError = e?.message;
+        this.serverError = e?.message as string;
       } else {
         this.serverError = msg("Something unexpected went wrong");
       }
 
-      console.log(this.serverError);
+      this.notify({
+        message: this.serverError,
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
     }
 
     this.isSubmitting = false;
