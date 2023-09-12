@@ -24,7 +24,6 @@ from .models import (
     PaginatedResponse,
     User,
 )
-from .orgs import inc_org_bytes_stored, storage_quota_reached
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .storages import get_presigned_url, delete_crawl_file_object
 from .utils import dt_now, get_redis_crawl_stats
@@ -53,12 +52,12 @@ class BaseCrawlOps:
 
     # pylint: disable=duplicate-code, too-many-arguments, too-many-locals
 
-    def __init__(self, mdb, users, crawl_configs, crawl_manager, colls):
+    def __init__(self, mdb, users, orgs, crawl_configs, crawl_manager, colls):
         self.crawls = mdb["crawls"]
-        self.orgs_db = mdb["organizations"]
         self.crawl_configs = crawl_configs
         self.crawl_manager = crawl_manager
         self.user_manager = users
+        self.orgs = orgs
         self.colls = colls
 
         self.presign_duration_seconds = (
@@ -210,7 +209,7 @@ class BaseCrawlOps:
 
         res = await self.crawls.delete_many(query)
 
-        quota_reached = await inc_org_bytes_stored(self.orgs_db, org.id, -size)
+        quota_reached = await self.orgs.inc_org_bytes_stored(org.id, -size)
 
         return res.deleted_count, size, cids_to_update, quota_reached
 
@@ -544,7 +543,7 @@ def init_base_crawls_api(
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code, too-many-arguments, too-many-locals
 
-    ops = BaseCrawlOps(mdb, users, crawl_config_ops, crawl_manager, colls)
+    ops = BaseCrawlOps(mdb, users, orgs, crawl_config_ops, crawl_manager, colls)
 
     org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep

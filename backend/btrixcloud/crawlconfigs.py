@@ -166,7 +166,7 @@ class CrawlConfigOps:
         )
 
         run_now = config.runNow
-        quota_reached = await self.org_ops.storage_quota_reached(org)
+        quota_reached = await self.org_ops.storage_quota_reached(org.id)
 
         if quota_reached:
             run_now = False
@@ -756,7 +756,7 @@ class CrawlConfigOps:
                 detail=f"crawl-config-{cid} missing, can not start crawl",
             )
 
-        if await self.org_ops.storage_quota_reached(org):
+        if await self.org_ops.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
         try:

@@ -11,7 +11,6 @@ from pydantic import UUID4
 from fastapi import APIRouter, Depends, Request, HTTPException
 import aiohttp
 
-from .orgs import inc_org_bytes_stored, storage_quota_reached
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import delete_crawl_file_object
 from .models import (
@@ -35,9 +34,9 @@ BROWSER_EXPIRE = 300
 class ProfileOps:
     """Profile management"""
 
-    def __init__(self, mdb, crawl_manager):
+    def __init__(self, mdb, orgs, crawl_manager):
         self.profiles = mdb["profiles"]
-        self.orgs = mdb["organizations"]
+        self.orgs = orgs
 
         self.crawl_manager = crawl_manager
         self.browser_fqdn_suffix = os.environ.get("CRAWLER_FQDN_SUFFIX")
@@ -174,7 +173,7 @@ class ProfileOps:
 
         oid = uuid.UUID(metadata.get("btrix.org"))
 
-        if await storage_quota_reached(self.orgs, oid):
+        if await self.orgs.storage_quota_reached(oid):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
         profile = Profile(
@@ -193,7 +192,7 @@ class ProfileOps:
             {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
         )
 
-        quota_reached = await inc_org_bytes_stored(self.orgs, oid, file_size)
+        quota_reached = await self.orgs.inc_org_bytes_stored(oid, file_size)
 
         return {
             "added": True,
@@ -312,13 +311,13 @@ class ProfileOps:
         # Delete file from storage
         if profile.resource:
             await delete_crawl_file_object(org, profile.resource, self.crawl_manager)
-            await inc_org_bytes_stored(self.orgs, org.id, -profile.resource.size)
+            await self.orgs.inc_org_bytes_stored(org.id, -profile.resource.size)
 
         res = await self.profiles.delete_one(query)
         if not res or res.deleted_count != 1:
             raise HTTPException(status_code=404, detail="profile_not_found")
 
-        quota_reached = await storage_quota_reached(self.orgs, org.id)
+        quota_reached = await self.orgs.storage_quota_reached(org.id)
 
         return {"success": True, "storageQuotaReached": quota_reached}
 
@@ -351,7 +350,7 @@ class ProfileOps:
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
 def init_profiles_api(mdb, crawl_manager, org_ops, user_dep):
     """init profile ops system"""
-    ops = ProfileOps(mdb, crawl_manager)
+    ops = ProfileOps(mdb, org_ops, crawl_manager)
 
     router = ops.router
 

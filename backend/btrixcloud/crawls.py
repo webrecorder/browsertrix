@@ -44,11 +44,10 @@ class CrawlOps(BaseCrawlOps):
     def __init__(
         self, mdb, users, crawl_manager, crawl_configs, orgs, colls, event_webhook_ops
     ):
-        super().__init__(mdb, users, crawl_configs, crawl_manager, colls)
+        super().__init__(mdb, users, orgs, crawl_configs, crawl_manager, colls)
         self.crawls = self.crawls
         self.crawl_configs = crawl_configs
         self.user_manager = users
-        self.orgs = orgs
         self.event_webhook_ops = event_webhook_ops
 
         self.crawl_configs.set_crawl_ops(self)
