@@ -1,11 +1,12 @@
 """
 Storage API
 """
-from typing import Union
+from typing import Optional, Union
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
 
 import asyncio
+import heapq
 import json
 
 from datetime import datetime
@@ -17,7 +18,12 @@ import aiobotocore.session
 import boto3
 
 from .models import Organization, DefaultStorage, S3Storage, User
-from .zip import get_zip_file, extract_and_parse_log_file
+from .zip import (
+    get_zip_file,
+    sync_get_zip_file,
+    extract_and_parse_log_file,
+    sync_get_log_stream,
+)
 
 
 CHUNK_SIZE = 1024 * 256
@@ -316,6 +322,93 @@ async def delete_file(org, filename, crawl_manager, def_storage_name="default"):
         status_code = response["ResponseMetadata"]["HTTPStatusCode"]
 
     return status_code == 204
+
+
+# ============================================================================
+async def sync_get_wacz_logs(org, wacz_files, log_levels, contexts, crawl_manager):
+    """Return generator of log lines from WACZ"""
+    client, bucket, key, _ = await get_sync_client(org, crawl_manager)
+
+    loop = asyncio.get_event_loop()
+
+    resp = await loop.run_in_executor(
+        None, _sync_get_logs, wacz_files, log_levels, contexts, client, bucket, key
+    )
+
+    return resp
+
+
+# ============================================================================
+def _parse_json(line):
+    """Parse JSON str into dict."""
+    parsed_json: Optional[dict] = None
+    try:
+        parsed_json = json.loads(line)
+    except json.JSONDecodeError as err:
+        print(f"Error decoding json-l line: {line}. Error: {err}", flush=True)
+    return parsed_json
+
+
+# ============================================================================
+def _sync_get_logs(wacz_files, log_levels, contexts, client, bucket, key):
+    """generate streaming zip as sync"""
+
+    # pylint: disable=too-many-function-args
+    def stream_log_bytes_as_line_dicts(stream_generator):
+        """Yield parsed JSON lines as dicts from stream generator."""
+        last_line = ""
+        try:
+            while True:
+                next_chunk = next(stream_generator)
+                next_chunk = next_chunk.decode("utf-8", errors="ignore")
+                chunk = last_line + next_chunk
+                chunk_by_line = chunk.split("\n")
+                last_line = chunk_by_line.pop()
+                for line in chunk_by_line:
+                    json_dict = _parse_json(line)
+                    if json_dict:
+                        yield json_dict
+        except StopIteration:
+            json_dict = _parse_json(line)
+            if json_dict:
+                yield json_dict
+
+    def stream_json_lines(iterator, log_levels, contexts):
+        """Yield parsed JSON dicts as JSON-lines bytes after filtering as necessary"""
+        for line_dict in iterator:
+            if log_levels and line_dict["logLevel"] not in log_levels:
+                continue
+            if contexts and line_dict["context"] not in contexts:
+                continue
+            json_str = json.dumps(line_dict, ensure_ascii=False) + "\n"
+            yield json_str.encode("utf-8")
+
+    log_generators = []
+
+    for wacz_file in wacz_files:
+        wacz_key = key + wacz_file.filename
+        cd_start, zip_file = sync_get_zip_file(client, bucket, wacz_key)
+
+        log_files = [
+            f
+            for f in zip_file.filelist
+            if f.filename.startswith("logs/") and not f.is_dir()
+        ]
+
+        wacz_log_streams = []
+
+        for log_zipinfo in log_files:
+            log_stream = sync_get_log_stream(
+                client, bucket, wacz_key, log_zipinfo, cd_start
+            )
+            wacz_log_streams.extend(
+                stream_log_bytes_as_line_dicts(log_stream, log_levels, contexts)
+            )
+
+        log_generators.append(wacz_log_streams)
+
+    heap_iter = heapq.merge(*log_generators, key=lambda entry: entry["timestamp"])
+    return stream_json_lines(heap_iter, log_levels, contexts)
 
 
 # ============================================================================

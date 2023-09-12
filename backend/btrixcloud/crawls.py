@@ -2,7 +2,6 @@
 # pylint: disable=too-many-lines
 
 import asyncio
-import heapq
 import uuid
 import json
 import re
@@ -18,7 +17,7 @@ import pymongo
 
 from .crawlconfigs import set_config_current_crawl_info
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .storages import get_wacz_logs
+from .storages import sync_get_wacz_logs
 from .utils import dt_now, parse_jsonl_error_messages
 from .basecrawls import BaseCrawlOps
 from .models import (
@@ -931,27 +930,13 @@ def init_crawls_api(
         if context:
             contexts = context.split(",")
 
-        def stream_json_lines(iterator, log_levels, contexts):
-            """Return iterator as generator, filtering as necessary"""
-            for line_dict in iterator:
-                if log_levels and line_dict["logLevel"] not in log_levels:
-                    continue
-                if contexts and line_dict["context"] not in contexts:
-                    continue
-
-                # Convert to JSON-lines bytes
-                json_str = json.dumps(line_dict, ensure_ascii=False) + "\n"
-                yield json_str.encode("utf-8")
-
         # If crawl is finished, stream logs from WACZ files
         if crawl.finished:
-            logs = []
             wacz_files = await ops.get_wacz_files(crawl_id, org)
-            for wacz_file in wacz_files:
-                wacz_logs = await get_wacz_logs(org, wacz_file, crawl_manager)
-                logs.append(wacz_logs)
-            heap_iter = heapq.merge(*logs, key=lambda entry: entry["timestamp"])
-            return StreamingResponse(stream_json_lines(heap_iter, log_levels, contexts))
+            resp = await sync_get_wacz_logs(
+                org, wacz_files, log_levels, contexts, crawl_manager
+            )
+            return StreamingResponse(resp)
 
         raise HTTPException(status_code=400, detail="crawl_not_finished")
 
