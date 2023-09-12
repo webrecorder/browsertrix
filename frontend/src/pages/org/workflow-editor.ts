@@ -78,11 +78,11 @@ type FormState = {
   includeLinkedPages: boolean;
   useSitemap: boolean;
   customIncludeUrlList: string;
-  crawlTimeoutMinutes: number | null;
+  crawlTimeoutMinutes: number;
   behaviorTimeoutSeconds: number | null;
   pageLoadTimeoutSeconds: number | null;
   pageExtraDelaySeconds: number | null;
-  maxCrawlSizeGB: number | null;
+  maxCrawlSizeGB: number;
   maxScopeDepth: number | null;
   scopeType: WorkflowParams["config"]["scopeType"];
   exclusions: WorkflowParams["config"]["exclude"];
@@ -153,7 +153,7 @@ const getDefaultFormState = (): FormState => ({
   includeLinkedPages: false,
   useSitemap: true,
   customIncludeUrlList: "",
-  crawlTimeoutMinutes: null,
+  crawlTimeoutMinutes: 0,
   maxCrawlSizeGB: 0,
   behaviorTimeoutSeconds: null,
   pageLoadTimeoutSeconds: null,
@@ -488,12 +488,12 @@ export class CrawlConfigEditor extends LiteElement {
       formState.autoAddCollections = this.initialWorkflow.autoAddCollections;
     }
 
-    const secondsToMinutes = (value: any, fallback: number | null) => {
+    const secondsToMinutes = (value: any, fallback: number = 0) => {
       if (typeof value === "number" && value > 0) return value / 60;
       return fallback;
     };
 
-    const bytesToGB = (value: any, fallback: number | null) => {
+    const bytesToGB = (value: any, fallback: number = 0) => {
       if (typeof value === "number" && value > 0)
         return Math.floor(value / BYTES_PER_GB);
       return fallback;
@@ -2146,12 +2146,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
       profileid: this.formState.browserProfile?.id || "",
       runNow: this.formState.runNow || this.formState.scheduleType === "now",
       schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
-      crawlTimeout: this.formState.crawlTimeoutMinutes
-        ? this.formState.crawlTimeoutMinutes * 60
-        : null,
-      maxCrawlSize: this.formState.maxCrawlSizeGB
-        ? this.formState.maxCrawlSizeGB * BYTES_PER_GB
-        : null,
+      crawlTimeout: this.formState.crawlTimeoutMinutes * 60,
+      maxCrawlSize: this.formState.maxCrawlSizeGB * BYTES_PER_GB,
       tags: this.formState.tags,
       autoAddCollections: this.formState.autoAddCollections,
       config: {

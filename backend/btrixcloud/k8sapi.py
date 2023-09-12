@@ -89,8 +89,8 @@ class K8sAPI:
             "oid": oid,
             "userid": userid,
             "scale": scale,
-            "expire_time": crawl_expire_time,
-            "max_crawl_size": max_crawl_size,
+            "expire_time": crawl_expire_time or 0,
+            "max_crawl_size": max_crawl_size or 0,
             "manual": "1" if manual else "0",
         }
 

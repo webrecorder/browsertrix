@@ -128,8 +128,8 @@ class CrawlConfigIn(BaseModel):
     autoAddCollections: Optional[List[UUID4]] = []
     tags: Optional[List[str]] = []
 
-    crawlTimeout: Optional[int] = 0
-    maxCrawlSize: Optional[int] = 0
+    crawlTimeout: int = 0
+    maxCrawlSize: int = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
 
     crawlFilenameTemplate: Optional[str]

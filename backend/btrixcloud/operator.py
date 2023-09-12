@@ -267,7 +267,7 @@ class BtrixOperator(K8sAPI):
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
             expire_time=from_k8s_date(spec.get("expireTime")),
-            max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),
+            max_crawl_size=int(spec.get("maxCrawlSize") or 0),
             scheduled=spec.get("manual") != "1",
         )
 
