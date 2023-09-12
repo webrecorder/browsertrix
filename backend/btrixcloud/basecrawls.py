@@ -126,7 +126,7 @@ class BaseCrawlOps:
             # pylint: disable=invalid-name
             crawl.userName = user.name
 
-        crawl.storageQuotaReached = await storage_quota_reached(self.orgs_db, crawl.oid)
+        crawl.storageQuotaReached = await self.orgs.storage_quota_reached(crawl.oid)
 
         return crawl
 
