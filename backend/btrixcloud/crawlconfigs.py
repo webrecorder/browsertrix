@@ -981,7 +981,7 @@ def init_crawl_config_api(
 
     @router.delete("/{cid}")
     async def make_inactive(cid: str, org: Organization = Depends(org_crawl_dep)):
-        crawlconfig = await ops.get_crawl_config(uuid.UUID(cid), org)
+        crawlconfig = await ops.get_crawl_config(uuid.UUID(cid), org.id)
 
         if not crawlconfig:
             raise HTTPException(

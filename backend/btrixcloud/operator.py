@@ -1011,7 +1011,9 @@ class BtrixOperator(K8sAPI):
 
         if not actual_state:
             # pylint: disable=duplicate-code
-            crawlconfig = await self.crawl_config_ops.get_crawl_config(uuid.UUID(cid))
+            crawlconfig = await self.crawl_config_ops.get_crawl_config(
+                uuid.UUID(cid), uuid.UUID(oid)
+            )
             if not crawlconfig:
                 print(
                     f"warn: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"

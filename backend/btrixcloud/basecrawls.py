@@ -234,7 +234,7 @@ class BaseCrawlOps:
         """Resolve running crawl data"""
         # pylint: disable=too-many-branches
         config = await self.crawl_configs.get_crawl_config(
-            crawl.cid, org.id, active_only=False
+            crawl.cid, org.id if org else None, active_only=False
         )
         if config and config.config.seeds:
             if add_first_seed:
