@@ -56,7 +56,6 @@ export class CollectionsNew extends LiteElement {
 
   private async onSubmit(e: CollectionSubmitEvent) {
     this.isSubmitting = true;
-    console.log("submit", e.detail.values);
 
     try {
       const { name, description, crawlIds, isPublic } = e.detail.values;
@@ -69,7 +68,7 @@ export class CollectionsNew extends LiteElement {
             name,
             description,
             crawlIds,
-            public: isPublic === "on",
+            public: isPublic,
           }),
         }
       );
@@ -81,7 +80,7 @@ export class CollectionsNew extends LiteElement {
         duration: 8000,
       });
 
-      this.navTo(`/orgs/${this.orgId}/collections`);
+      this.navTo(`/orgs/${this.orgId}/collections/view/${data.id}`);
     } catch (e: any) {
       if (e?.isApiError) {
         this.serverError = e?.message;

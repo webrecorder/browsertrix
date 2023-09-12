@@ -87,7 +87,7 @@ export class CollectionEdit extends LiteElement {
       e.detail.values;
 
     try {
-      if (oldCrawlIds && oldCrawlIds) {
+      if (crawlIds && oldCrawlIds) {
         await this.saveCrawlSelection({
           crawlIds,
           oldCrawlIds,
@@ -96,11 +96,10 @@ export class CollectionEdit extends LiteElement {
         await this.saveMetadata({
           name,
           description,
-          isPublic: isPublic === "on",
+          isPublic,
         });
       }
 
-      this.navTo(`/orgs/${this.orgId}/collections/view/${this.collectionId}`);
       this.notify({
         message: msg(
           html`Successfully updated <strong>${name}</strong> Collection.`

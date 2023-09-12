@@ -84,7 +84,7 @@ export type CollectionSubmitEvent = CustomEvent<{
     description: string | null;
     crawlIds: string[];
     oldCrawlIds?: string[];
-    isPublic: string | null;
+    isPublic: boolean;
   };
 }>;
 
@@ -375,31 +375,43 @@ export class CollectionEditor extends LiteElement {
           </footer>
         </section>
         <footer
-          class="col-span-full border rounded-lg px-6 py-4 flex justify-end"
+          class="col-span-full border rounded-lg px-6 py-4 flex gap-2 justify-end"
         >
           ${when(
-            this.collectionId,
+            !this.collectionId,
             () => html`
               <sl-button
                 size="small"
-                variant="primary"
-                ?disabled=${this.isSubmitting ||
-                Object.values(this.workflowIsLoading).some(
-                  (isLoading) => isLoading === true
-                )}
-                ?loading=${this.isSubmitting}
-                @click=${this.submitCrawlSelectionChanges}
+                class="mr-auto"
+                @click=${() => this.goToTab("metadata")}
               >
-                ${msg("Save Crawl Selection")}
+                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+                ${msg("Previous Step")}
               </sl-button>
-            `,
-            () => html`
-              <sl-button size="small" @click=${() => this.goToTab("uploads")}>
+              <sl-button
+                size="small"
+                variant="primary"
+                @click=${() => this.goToTab("uploads")}
+              >
                 <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-                ${msg("Select Uploads")}
+                ${msg("Next Step")}
               </sl-button>
             `
           )}
+          <sl-button
+            type="submit"
+            size="small"
+            variant=${this.collectionId ? "primary" : "default"}
+            ?disabled=${this.isSubmitting ||
+            Object.values(this.workflowIsLoading).some(
+              (isLoading) => isLoading === true
+            )}
+            ?loading=${this.isSubmitting}
+          >
+            ${this.collectionId
+              ? msg("Save Crawl Selection")
+              : msg("Save Collection")}
+          </sl-button>
         </footer>
       </section>
     `;
@@ -449,41 +461,35 @@ export class CollectionEditor extends LiteElement {
           </footer>
         </section>
         <footer
-          class="col-span-full border rounded-lg px-6 py-4 flex justify-between"
+          class="col-span-full border rounded-lg px-6 py-4 flex gap-2 justify-end"
         >
           ${when(
             !this.collectionId,
             () => html`
-              <sl-button size="small" @click=${() => this.goToTab("crawls")}>
-                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-                ${msg("Select Crawls")}
-              </sl-button>
-            `
-          )}
-          ${when(
-            this.collectionId,
-            () => html`
               <sl-button
-                class="ml-auto"
+                class="mr-auto"
                 size="small"
-                variant="primary"
-                ?disabled=${this.isSubmitting ||
-                Object.values(this.workflowIsLoading).some(
-                  (isLoading) => isLoading === true
-                )}
-                ?loading=${this.isSubmitting}
-                @click=${this.submitCrawlSelectionChanges}
+                @click=${() => this.goToTab("crawls")}
               >
-                ${msg("Save Upload Selection")}
-              </sl-button>
-            `,
-            () => html`
-              <sl-button size="small" @click=${() => this.goToTab("metadata")}>
-                <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-                ${msg("Enter Metadata")}
+                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+                ${msg("Previous Step")}
               </sl-button>
             `
           )}
+          <sl-button
+            type="submit"
+            size="small"
+            variant="primary"
+            ?disabled=${this.isSubmitting ||
+            Object.values(this.workflowIsLoading).some(
+              (isLoading) => isLoading === true
+            )}
+            ?loading=${this.isSubmitting}
+          >
+            ${this.collectionId
+              ? msg("Save Upload Selection")
+              : msg("Save Collection")}
+          </sl-button>
         </footer>
       </section>
     `;
@@ -519,21 +525,24 @@ export class CollectionEditor extends LiteElement {
             >
           </label>
         </div>
-        <footer class="border-t px-6 py-4 flex justify-between">
+        <footer class="border-t px-6 py-4 flex gap-2 justify-end">
           ${when(
             !this.collectionId,
             () => html`
-              <sl-button size="small" @click=${() => this.goToTab("uploads")}>
-                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-                ${msg("Select Uploads")}
+              <sl-button
+                size="small"
+                variant="primary"
+                @click=${() => this.goToTab("crawls")}
+              >
+                <sl-icon slot="suffix" name="chevron-right"></sl-icon>
+                ${msg("Next Step")}
               </sl-button>
             `
           )}
           <sl-button
-            class="ml-auto"
             type="submit"
             size="small"
-            variant="primary"
+            variant=${this.collectionId ? "primary" : "default"}
             ?disabled=${this.isSubmitting ||
             Object.values(this.workflowIsLoading).some(
               (isLoading) => isLoading === true
@@ -1235,19 +1244,6 @@ export class CollectionEditor extends LiteElement {
     }
   }) as any;
 
-  private async submitCrawlSelectionChanges() {
-    this.dispatchEvent(
-      <CollectionSubmitEvent>new CustomEvent("on-submit", {
-        detail: {
-          values: {
-            oldCrawlIds: this.savedCollectionCrawlIds,
-            crawlIds: Object.keys(this.selectedCrawls),
-          },
-        },
-      })
-    );
-  }
-
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -1258,11 +1254,21 @@ export class CollectionEditor extends LiteElement {
       return;
     }
 
-    const values = serialize(form);
-    if (!this.collectionId) {
-      // Crawl IDs can only be saved in new collections
+    const formValues = serialize(form);
+    const values: any = {};
+
+    if (this.activeTab === "metadata") {
+      values.name = formValues.name;
+      values.description = formValues.description;
+      values.isPublic =
+        formValues.isPublic === true || formValues.isPublic === "on";
+    } else {
       values.crawlIds = Object.keys(this.selectedCrawls);
+      if (this.collectionId) {
+        values.oldCrawlIds = this.savedCollectionCrawlIds;
+      }
     }
+
     this.dispatchEvent(
       <CollectionSubmitEvent>new CustomEvent("on-submit", {
         detail: { values },
