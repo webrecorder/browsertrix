@@ -32,4 +32,4 @@ jobs:
       - name: Lint
         run: |
           cd ansible
-          pipenv run ansible-lint -c ./lint-cfg.yml ./playbooks/do_setup.yml
+          pipenv run ansible-lint -c ./lint-cfg.yml ./do_setup.yml
