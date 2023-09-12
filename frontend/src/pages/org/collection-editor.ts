@@ -417,29 +417,9 @@ export class CollectionEditor extends LiteElement {
                 <sl-icon slot="prefix" name="chevron-left"></sl-icon>
                 ${msg("Previous Step")}
               </sl-button>
-            `
-          )}
-          <sl-button
-            type="submit"
-            size="small"
-            variant=${this.collectionId ? "primary" : "default"}
-            ?disabled=${this.isSubmitting ||
-            Object.values(this.workflowIsLoading).some(
-              (isLoading) => isLoading === true
-            )}
-            ?loading=${this.isSubmitting}
-          >
-            ${this.collectionId
-              ? msg("Save Crawl Selection")
-              : msg("Save Collection")}
-          </sl-button>
-          ${when(
-            !this.collectionId,
-            () => html`
               <sl-button
                 type="button"
                 size="small"
-                variant="primary"
                 @click=${() => this.goToTab("uploads")}
               >
                 <sl-icon slot="suffix" name="chevron-right"></sl-icon>
@@ -447,6 +427,18 @@ export class CollectionEditor extends LiteElement {
               </sl-button>
             `
           )}
+          <sl-button
+            type="submit"
+            size="small"
+            variant="primary"
+            ?disabled=${this.isSubmitting ||
+            Object.values(this.workflowIsLoading).some(
+              (isLoading) => isLoading === true
+            )}
+            ?loading=${this.isSubmitting}
+          >
+            ${this.collectionId ? msg("Save Crawls") : msg("Create Collection")}
+          </sl-button>
         </footer>
       </section>
     `;
@@ -523,8 +515,8 @@ export class CollectionEditor extends LiteElement {
             ?loading=${this.isSubmitting}
           >
             ${this.collectionId
-              ? msg("Save Upload Selection")
-              : msg("Save Collection")}
+              ? msg("Save Uploads")
+              : msg("Create Collection")}
           </sl-button>
         </footer>
       </section>
@@ -563,20 +555,6 @@ export class CollectionEditor extends LiteElement {
           </label>
         </div>
         <footer class="border-t px-6 py-4 flex gap-2 justify-end">
-          <sl-button
-            type="submit"
-            size="small"
-            variant=${this.collectionId ? "primary" : "default"}
-            ?disabled=${this.isSubmitting ||
-            Object.values(this.workflowIsLoading).some(
-              (isLoading) => isLoading === true
-            )}
-            ?loading=${this.isSubmitting}
-          >
-            ${this.collectionId
-              ? msg("Save Metadata")
-              : msg("Save Collection without Items")}
-          </sl-button>
           ${when(
             !this.collectionId,
             () => html`
@@ -597,6 +575,20 @@ export class CollectionEditor extends LiteElement {
               </sl-button>
             `
           )}
+          <sl-button
+            type="submit"
+            size="small"
+            variant=${this.collectionId ? "primary" : "default"}
+            ?disabled=${this.isSubmitting ||
+            Object.values(this.workflowIsLoading).some(
+              (isLoading) => isLoading === true
+            )}
+            ?loading=${this.isSubmitting}
+          >
+            ${this.collectionId
+              ? msg("Save Metadata")
+              : msg("Create Collection without Items")}
+          </sl-button>
         </footer>
       </section>
     `;
