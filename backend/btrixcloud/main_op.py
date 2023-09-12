@@ -65,7 +65,7 @@ def main():
 
     coll_ops = CollectionOps(mdb, crawl_manager, org_ops, event_webhook_ops)
 
-    CrawlOps(
+    crawl_ops = CrawlOps(
         mdb,
         user_manager,
         crawl_manager,
@@ -76,7 +76,7 @@ def main():
     )
 
     init_operator_api(
-        app_root, mdb, crawl_config_ops, org_ops, coll_ops, event_webhook_ops
+        app_root, mdb, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
     )
 
 

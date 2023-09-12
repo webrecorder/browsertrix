@@ -555,47 +555,41 @@ class CrawlOps(BaseCrawlOps):
 
         return resp
 
+    async def update_crawl_state_if_allowed(
+        self, crawl_id, state, allowed_from, **kwargs
+    ):
+        """update crawl state and other properties in db if state has changed"""
+        kwargs["state"] = state
+        query = {"_id": crawl_id, "type": "crawl"}
+        if allowed_from:
+            query["state"] = {"$in": list(allowed_from)}
 
-# ============================================================================
-async def update_crawl_state_if_allowed(
-    crawls, crawl_id, state, allowed_from, **kwargs
-):
-    """update crawl state and other properties in db if state has changed"""
-    kwargs["state"] = state
-    query = {"_id": crawl_id, "type": "crawl"}
-    if allowed_from:
-        query["state"] = {"$in": list(allowed_from)}
+        return await self.crawls.find_one_and_update(query, {"$set": kwargs})
 
-    return await crawls.find_one_and_update(query, {"$set": kwargs})
+    async def get_crawl_state(self, crawl_id):
+        """return current crawl state of a crawl"""
+        res = await self.crawls.find_one(
+            {"_id": crawl_id}, projection=["state", "finished"]
+        )
+        if not res:
+            return None, None
+        return res.get("state"), res.get("finished")
 
+    async def add_crawl_errors(self, crawl_id, errors):
+        """add crawl errors from redis to mmongodb errors field"""
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id}, {"$push": {"errors": {"$each": errors}}}
+        )
 
-# ============================================================================
-async def get_crawl_state(crawls, crawl_id):
-    """return current crawl state of a crawl"""
-    res = await crawls.find_one({"_id": crawl_id}, projection=["state", "finished"])
-    if not res:
-        return None, None
-    return res.get("state"), res.get("finished")
-
-
-# ============================================================================
-async def add_crawl_errors(crawls, crawl_id, errors):
-    """add crawl errors from redis to mmongodb errors field"""
-    await crawls.find_one_and_update(
-        {"_id": crawl_id}, {"$push": {"errors": {"$each": errors}}}
-    )
-
-
-# ============================================================================
-async def add_crawl_file(crawls, crawl_id, crawl_file, size):
-    """add new crawl file to crawl"""
-    await crawls.find_one_and_update(
-        {"_id": crawl_id},
-        {
-            "$push": {"files": crawl_file.dict()},
-            "$inc": {"fileCount": 1, "fileSize": size},
-        },
-    )
+    async def add_crawl_file(self, crawl_id, crawl_file, size):
+        """add new crawl file to crawl"""
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id},
+            {
+                "$push": {"files": crawl_file.dict()},
+                "$inc": {"fileCount": 1, "fileSize": size},
+            },
+        )
 
 
 # ============================================================================

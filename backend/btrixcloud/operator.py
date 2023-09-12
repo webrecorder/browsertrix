@@ -35,12 +35,6 @@ from .basecrawls import (
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
 )
-from .crawls import (
-    add_crawl_file,
-    update_crawl_state_if_allowed,
-    get_crawl_state,
-    add_crawl_errors,
-)
 from .models import CrawlFile, CrawlCompleteIn
 
 CMAP = "ConfigMap.v1"
@@ -133,19 +127,19 @@ class CrawlStatus(BaseModel):
 class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
 
-    def __init__(self, mdb, crawl_config_ops, org_ops, coll_ops, event_webhook_ops):
+    def __init__(
+        self, mdb, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
+    ):
         super().__init__()
 
         self.crawl_config_ops = crawl_config_ops
+        self.crawl_ops = crawl_ops
         self.org_ops = org_ops
         self.coll_ops = coll_ops
         self.event_webhook_ops = event_webhook_ops
 
         self.config_file = "/config/config.yaml"
 
-        self.collections = mdb["collections"]
-        self.crawls = mdb["crawls"]
-        self.crawl_configs = mdb["crawl_configs"]
         self.orgs = mdb["organizations"]
 
         self.done_key = "crawls-done"
@@ -435,8 +429,8 @@ class BtrixOperator(K8sAPI):
          - not complete or partial_complete -> failed
         """
         if not allowed_from or status.state in allowed_from:
-            res = await update_crawl_state_if_allowed(
-                self.crawls, crawl_id, state=state, allowed_from=allowed_from, **kwargs
+            res = await self.crawl_ops.update_crawl_state_if_allowed(
+                crawl_id, state=state, allowed_from=allowed_from, **kwargs
             )
             if res:
                 print(f"Setting state: {status.state} -> {state}, {crawl_id}")
@@ -444,7 +438,7 @@ class BtrixOperator(K8sAPI):
                 return True
 
             # get actual crawl state
-            actual_state, finished = await get_crawl_state(self.crawls, crawl_id)
+            actual_state, finished = await self.crawl_ops.get_crawl_state(crawl_id)
             if actual_state:
                 status.state = actual_state
             if finished:
@@ -749,7 +743,7 @@ class BtrixOperator(K8sAPI):
 
         await redis.incr("filesAddedSize", filecomplete.size)
 
-        await add_crawl_file(self.crawls, crawl.id, crawl_file, filecomplete.size)
+        await self.crawl_ops.add_crawl_file(crawl.id, crawl_file, filecomplete.size)
 
         return True
 
@@ -897,9 +891,7 @@ class BtrixOperator(K8sAPI):
                 oid, files_added_size
             )
 
-            await self.coll_ops.add_successful_crawl_to_collections(
-                self.crawls, self.crawl_configs, self.collections, crawl_id, cid
-            )
+            await self.coll_ops.add_successful_crawl_to_collections(crawl_id, cid)
 
         await self.event_webhook_ops.create_crawl_finished_notification(crawl_id, state)
 
@@ -941,7 +933,7 @@ class BtrixOperator(K8sAPI):
                 if not errors:
                     break
 
-                await add_crawl_errors(self.crawls, crawl_id, errors)
+                await self.crawl_ops.add_crawl_errors(crawl_id, errors)
 
                 if len(errors) < inc:
                     # If we have fewer than inc errors, we can assume this is the
@@ -980,7 +972,7 @@ class BtrixOperator(K8sAPI):
         name = metadata.get("name")
         crawl_id = name
 
-        actual_state, finished = await get_crawl_state(self.crawls, crawl_id)
+        actual_state, finished = await self.crawl_ops.get_crawl_state(crawl_id)
         if finished:
             status = None
             # mark job as completed
@@ -1042,10 +1034,14 @@ class BtrixOperator(K8sAPI):
 
 
 # ============================================================================
-def init_operator_api(app, mdb, crawl_config_ops, org_ops, coll_ops, event_webhook_ops):
+def init_operator_api(
+    app, mdb, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
+):
     """regsiters webhook handlers for metacontroller"""
 
-    oper = BtrixOperator(mdb, crawl_config_ops, org_ops, coll_ops, event_webhook_ops)
+    oper = BtrixOperator(
+        mdb, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
+    )
 
     @app.post("/op/crawls/sync")
     async def mc_sync_crawls(data: MCSyncData):
