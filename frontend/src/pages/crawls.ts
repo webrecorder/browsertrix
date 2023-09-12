@@ -308,7 +308,7 @@ export class Crawls extends LiteElement {
     try {
       this.crawls = await this.getCrawls(params);
     } catch (e: any) {
-      if (e === ABORT_REASON_THROTTLE) {
+      if (e.name === "AbortError") {
         console.debug("Fetch crawls aborted to throttle");
       } else {
         this.notify({

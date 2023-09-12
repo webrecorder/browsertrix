@@ -44,6 +44,9 @@ spec:
             - name: NGINX_ENTRYPOINT_WORKER_PROCESSES_AUTOTUNE
               value: "1"
 
+            - name: RWP_BASE_URL
+              value: {{ .Values.rwp_base_url }}
+
             {{- if .Values.minio_local }}
             - name: LOCAL_MINIO_HOST
               value: "{{ .Values.minio_host }}"
