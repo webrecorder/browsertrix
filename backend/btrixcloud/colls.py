@@ -38,6 +38,7 @@ class CollectionOps:
     def __init__(self, mdb, crawl_manager, orgs, event_webhook_ops):
         self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
+        self.crawl_configs = mdb["crawl_configs"]
         self.crawl_ops = None
 
         self.crawl_manager = crawl_manager
@@ -82,9 +83,7 @@ class CollectionOps:
             org = await self.orgs.get_org_by_id(oid)
             if crawl_ids:
                 await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
-                await update_collection_counts_and_tags(
-                    self.collections, self.crawls, coll_id
-                )
+                await self.update_collection_counts_and_tags(coll_id)
                 asyncio.create_task(
                     self.event_webhook_ops.create_added_to_collection_notification(
                         crawl_ids, coll_id, org
@@ -137,7 +136,7 @@ class CollectionOps:
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        await update_collection_counts_and_tags(self.collections, self.crawls, coll_id)
+        await self.update_collection_counts_and_tags(coll_id)
 
         asyncio.create_task(
             self.event_webhook_ops.create_added_to_collection_notification(
@@ -161,7 +160,7 @@ class CollectionOps:
         if not result:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
-        await update_collection_counts_and_tags(self.collections, self.crawls, coll_id)
+        await self.update_collection_counts_and_tags(coll_id)
 
         asyncio.create_task(
             self.event_webhook_ops.create_removed_from_collection_notification(
@@ -316,68 +315,58 @@ class CollectionOps:
             resp, headers=headers, media_type="application/wacz+zip"
         )
 
+    async def update_collection_counts_and_tags(self, collection_id: uuid.UUID):
+        """Set current crawl info in config when crawl begins"""
+        crawl_count = 0
+        page_count = 0
+        total_size = 0
+        tags = []
 
-# ============================================================================
-async def update_collection_counts_and_tags(
-    collections, crawls, collection_id: uuid.UUID
-):
-    """Set current crawl info in config when crawl begins"""
-    crawl_count = 0
-    page_count = 0
-    total_size = 0
-    tags = []
+        cursor = self.crawls.find({"collectionIds": collection_id})
+        crawls = await cursor.to_list(length=10_000)
+        for crawl in crawls:
+            if crawl["state"] not in SUCCESSFUL_STATES:
+                continue
+            crawl_count += 1
+            files = crawl.get("files", [])
+            for file in files:
+                total_size += file.get("size", 0)
+            if crawl.get("stats"):
+                page_count += crawl.get("stats", {}).get("done", 0)
+            if crawl.get("tags"):
+                tags.extend(crawl.get("tags"))
 
-    cursor = crawls.find({"collectionIds": collection_id})
-    crawls = await cursor.to_list(length=10_000)
-    for crawl in crawls:
-        if crawl["state"] not in SUCCESSFUL_STATES:
-            continue
-        crawl_count += 1
-        files = crawl.get("files", [])
-        for file in files:
-            total_size += file.get("size", 0)
-        if crawl.get("stats"):
-            page_count += crawl.get("stats", {}).get("done", 0)
-        if crawl.get("tags"):
-            tags.extend(crawl.get("tags"))
+        sorted_tags = [tag for tag, count in Counter(tags).most_common()]
 
-    sorted_tags = [tag for tag, count in Counter(tags).most_common()]
-
-    await collections.find_one_and_update(
-        {"_id": collection_id},
-        {
-            "$set": {
-                "crawlCount": crawl_count,
-                "pageCount": page_count,
-                "totalSize": total_size,
-                "tags": sorted_tags,
-            }
-        },
-    )
-
-
-# ============================================================================
-async def update_crawl_collections(collections, crawls, crawl_id: str):
-    """Update counts and tags for all collections in crawl"""
-    crawl = await crawls.find_one({"_id": crawl_id})
-    crawl_coll_ids = crawl.get("collectionIds")
-    for collection_id in crawl_coll_ids:
-        await update_collection_counts_and_tags(collections, crawls, collection_id)
-
-
-# ============================================================================
-async def add_successful_crawl_to_collections(
-    crawls, crawl_configs, collections, crawl_id: str, cid: uuid.UUID
-):
-    """Add successful crawl to its auto-add collections."""
-    workflow = await crawl_configs.find_one({"_id": cid})
-    auto_add_collections = workflow.get("autoAddCollections")
-    if auto_add_collections:
-        await crawls.find_one_and_update(
-            {"_id": crawl_id},
-            {"$set": {"collectionIds": auto_add_collections}},
+        await self.collections.find_one_and_update(
+            {"_id": collection_id},
+            {
+                "$set": {
+                    "crawlCount": crawl_count,
+                    "pageCount": page_count,
+                    "totalSize": total_size,
+                    "tags": sorted_tags,
+                }
+            },
         )
-        await update_crawl_collections(collections, crawls, crawl_id)
+
+    async def update_crawl_collections(self, crawl_id: str):
+        """Update counts and tags for all collections in crawl"""
+        crawl = await self.crawls.find_one({"_id": crawl_id})
+        crawl_coll_ids = crawl.get("collectionIds")
+        for collection_id in crawl_coll_ids:
+            await self.update_collection_counts_and_tags(collection_id)
+
+    async def add_successful_crawl_to_collections(self, crawl_id: str, cid: uuid.UUID):
+        """Add successful crawl to its auto-add collections."""
+        workflow = await self.crawl_configs.find_one({"_id": cid})
+        auto_add_collections = workflow.get("autoAddCollections")
+        if auto_add_collections:
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id},
+                {"$set": {"collectionIds": auto_add_collections}},
+            )
+            await self.update_crawl_collections(crawl_id)
 
 
 # ============================================================================

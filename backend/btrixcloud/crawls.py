@@ -226,7 +226,10 @@ class CrawlOps(BaseCrawlOps):
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
         for cid in cids_to_update:
-            await self.crawl_configs.stats_recompute_remove_crawl(cid, size)
+            if not await self.crawl_configs.stats_recompute_last(cid, -size, -1):
+                raise HTTPException(
+                    status_code=404, detail=f"crawl_config_not_found: {cid}"
+                )
 
         return {"deleted": True, "storageQuotaReached": quota_reached}
 
@@ -343,7 +346,14 @@ class CrawlOps(BaseCrawlOps):
             if not graceful:
                 await self.update_crawl_state(crawl_id, "canceled")
                 crawl = await self.get_crawl_raw(crawl_id, org)
-                await self.crawl_configs.stats_recompute_remove_crawl(crawl["cid"], 0)
+                if not await self.crawl_configs.stats_recompute_last(
+                    crawl["cid"], 0, -1
+                ):
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"crawl_config_not_found: {crawl['cid']}",
+                    )
+
                 return {"success": True}
 
         # return whatever detail may be included in the response

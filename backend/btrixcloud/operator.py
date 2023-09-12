@@ -26,7 +26,12 @@ from .utils import (
 )
 from .k8sapi import K8sAPI
 
-from .orgs import inc_org_stats, get_max_concurrent_crawls, storage_quota_reached
+from .orgs import (
+    inc_org_stats,
+    get_max_concurrent_crawls,
+    storage_quota_reached,
+    add_crawl_files_to_org_bytes_stored,
+)
 from .basecrawls import (
     NON_RUNNING_STATES,
     RUNNING_STATES,
@@ -34,8 +39,6 @@ from .basecrawls import (
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
 )
-from .colls import add_successful_crawl_to_collections
-from .crawlconfigs import stats_recompute_last
 from .crawls import (
     add_crawl_file,
     update_crawl_state_if_allowed,
@@ -43,10 +46,6 @@ from .crawls import (
     add_crawl_errors,
 )
 from .models import CrawlFile, CrawlCompleteIn
-from .orgs import add_crawl_files_to_org_bytes_stored
-from .crawlconfigs import (
-    get_crawl_config,
-)
 
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
@@ -138,10 +137,11 @@ class CrawlStatus(BaseModel):
 class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
 
-    def __init__(self, mdb, crawl_config_ops, event_webhook_ops):
+    def __init__(self, mdb, crawl_config_ops, coll_ops, event_webhook_ops):
         super().__init__()
 
         self.crawl_config_ops = crawl_config_ops
+        self.coll_ops = coll_ops
         self.event_webhook_ops = event_webhook_ops
 
         self.config_file = "/config/config.yaml"
@@ -883,16 +883,14 @@ class BtrixOperator(K8sAPI):
     # pylint: disable=too-many-arguments
     async def do_crawl_finished_tasks(self, crawl_id, cid, files_added_size, state):
         """Run tasks after crawl completes in asyncio.task coroutine."""
-        await stats_recompute_last(
-            self.crawl_configs, self.crawls, cid, files_added_size, 1
-        )
+        await self.crawl_config_ops.stats_recompute_last(cid, files_added_size, 1)
 
         if state in SUCCESSFUL_STATES:
             await add_crawl_files_to_org_bytes_stored(
                 self.crawls, self.orgs, crawl_id, files_added_size
             )
 
-            await add_successful_crawl_to_collections(
+            await self.coll_ops.add_successful_crawl_to_collections(
                 self.crawls, self.crawl_configs, self.collections, crawl_id, cid
             )
 
@@ -1018,7 +1016,7 @@ class BtrixOperator(K8sAPI):
 
         if not actual_state:
             # pylint: disable=duplicate-code
-            crawlconfig = await get_crawl_config(self.crawl_configs, uuid.UUID(cid))
+            crawlconfig = await self.crawl_config_ops.get_crawl_config(uuid.UUID(cid))
             if not crawlconfig:
                 print(
                     f"warn: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
@@ -1037,10 +1035,10 @@ class BtrixOperator(K8sAPI):
 
 
 # ============================================================================
-def init_operator_api(app, mdb, crawl_config_ops, event_webhook_ops):
+def init_operator_api(app, mdb, crawl_config_ops, coll_ops, event_webhook_ops):
     """regsiters webhook handlers for metacontroller"""
 
-    oper = BtrixOperator(mdb, crawl_config_ops, event_webhook_ops)
+    oper = BtrixOperator(mdb, crawl_config_ops, coll_ops, event_webhook_ops)
 
     @app.post("/op/crawls/sync")
     async def mc_sync_crawls(data: MCSyncData):
