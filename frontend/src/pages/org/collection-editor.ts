@@ -1289,7 +1289,7 @@ export class CollectionEditor extends LiteElement {
       values.isPublic = Boolean(formValues.isPublic);
       values.crawlIds = [
         ...Object.keys(this.selectedCrawls),
-        Object.keys(this.selectedUploads),
+        ...Object.keys(this.selectedUploads),
       ];
     }
 
