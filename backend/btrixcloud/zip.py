@@ -2,13 +2,9 @@
 Methods for interacting with zip/WACZ files
 """
 import io
-import json
-import os
 import struct
 import zipfile
 import zlib
-
-from fastapi import HTTPException
 
 
 # ============================================================================
