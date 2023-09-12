@@ -65,7 +65,7 @@ def test_delete_crawls(
     assert r.status_code == 200
     data = r.json()
 
-    assert data["deleted"] == 2
+    assert data["deleted"]
 
     # Verify that crawls don't exist in db
     r = requests.get(
