@@ -146,7 +146,7 @@ class CrawlConfigOps:
         data["modified"] = data["created"]
 
         # Ensure page limit is below org maxPagesPerCall if set
-        max_pages = await self.org_ops.get_max_pages_per_crawl(org)
+        max_pages = await self.org_ops.get_max_pages_per_crawl(org.id)
         if max_pages > 0:
             data["config"]["limit"] = max_pages
 

@@ -26,8 +26,6 @@ from .utils import (
 )
 from .k8sapi import K8sAPI
 
-from .orgs import storage_quota_reached
-
 from .basecrawls import (
     NON_RUNNING_STATES,
     RUNNING_STATES,
@@ -128,7 +126,7 @@ class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
 
     def __init__(
-        self, mdb, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
+        self, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
     ):
         super().__init__()
 
@@ -139,8 +137,6 @@ class BtrixOperator(K8sAPI):
         self.event_webhook_ops = event_webhook_ops
 
         self.config_file = "/config/config.yaml"
-
-        self.orgs = mdb["organizations"]
 
         self.done_key = "crawls-done"
 
@@ -280,7 +276,7 @@ class BtrixOperator(K8sAPI):
             if (
                 not pods
                 and not data.children[PVC]
-                and await storage_quota_reached(self.orgs, crawl.oid)
+                and await self.org_ops.storage_quota_reached(crawl.oid)
             ):
                 await self.mark_finished(
                     crawl.id, crawl.cid, crawl.oid, status, "skipped_quota_reached"
@@ -1035,12 +1031,12 @@ class BtrixOperator(K8sAPI):
 
 # ============================================================================
 def init_operator_api(
-    app, mdb, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
+    app, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
 ):
     """regsiters webhook handlers for metacontroller"""
 
     oper = BtrixOperator(
-        mdb, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
+        crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
     )
 
     @app.post("/op/crawls/sync")

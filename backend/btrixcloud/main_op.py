@@ -76,7 +76,7 @@ def main():
     )
 
     init_operator_api(
-        app_root, mdb, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
+        app_root, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
     )
 
 

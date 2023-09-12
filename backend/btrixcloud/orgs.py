@@ -250,9 +250,13 @@ class OrgOps:
                 org_owners.append(key)
         return org_owners
 
-    async def get_max_pages_per_crawl(self, org: Organization):
+    async def get_max_pages_per_crawl(self, oid: uuid.UUID):
         """Return org-specific max pages per crawl setting or 0."""
-        return await get_max_pages_per_crawl(self.orgs, org.id)
+        org = await self.orgs.find_one({"_id": oid})
+        if org:
+            org = Organization.from_dict(org)
+            return org.quotas.maxPagesPerCrawl
+        return 0
 
     async def inc_bytes_stored(self, org: Organization, size: int):
         """Increase org bytesStored count (pass negative value to subtract)."""
@@ -323,16 +327,6 @@ async def storage_quota_reached(orgs, oid: uuid.UUID):
         return True
 
     return False
-
-
-# ============================================================================
-async def get_max_pages_per_crawl(orgs, oid):
-    """return max allowed concurrent crawls, if any"""
-    org = await orgs.find_one({"_id": oid})
-    if org:
-        org = Organization.from_dict(org)
-        return org.quotas.maxPagesPerCrawl
-    return 0
 
 
 # ============================================================================
