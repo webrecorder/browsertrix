@@ -200,7 +200,7 @@ class CollectionOps:
         name_prefix: Optional[str] = None,
     ):
         """List all collections for org"""
-        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-locals, duplicate-code
         # Zero-index page for query
         page = page - 1
         skip = page * page_size

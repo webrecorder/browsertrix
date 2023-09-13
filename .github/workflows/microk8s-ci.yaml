@@ -7,6 +7,10 @@ on:
     paths:
       - 'backend/**'
       - 'chart/**'
+
+env:
+  ECHO_SERVER_HOST_URL: http://10.0.1.1:18080
+
 jobs:
   btrix-microk8s-test:
     runs-on: ubuntu-latest
@@ -14,7 +18,7 @@ jobs:
       - uses: balchua/microk8s-actions@v0.3.1
         with:
           channel: '1.25/stable'
-          addons: '["dns", "helm3", "hostpath-storage", "registry", "metrics-server"]'
+          addons: '["dns", "helm3", "hostpath-storage", "registry", "metrics-server", "host-access"]'
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -60,7 +64,7 @@ jobs:
         run: sudo microk8s kubectl wait --for=condition=ready pod --all --timeout=240s
 
       - name: Run Tests
-        run: pytest -vv ./backend/test/*.py
+        run: pytest -vv ./backend/test/test_*.py
 
       - name: Print Backend Logs
         if: ${{ failure() }}

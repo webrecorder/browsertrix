@@ -1,10 +1,24 @@
+import json
+import os
 import time
 
 import requests
 
 from .conftest import API_PREFIX
+from .utils import read_in_chunks
 
 _webhook_event_id = None
+
+curr_dir = os.path.dirname(os.path.realpath(__file__))
+
+ECHO_SERVER_URL = "http://localhost:18080"
+
+# Pull address to echo server running on host from CI env var.
+# If not set, default to host.docker.internal (for local testing with
+# Docker Desktop).
+ECHO_SERVER_URL_FROM_K8S = os.environ.get(
+    "ECHO_SERVER_HOST_URL", "http://host.docker.internal:18080"
+)
 
 
 def test_list_webhook_events(admin_auth_headers, default_org_id):
@@ -89,7 +103,7 @@ def test_retry_webhook_event(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     assert r.json()["success"]
 
-    # Give it some time to run
+    # Give it some time to run with exponential backoff retries
     time.sleep(90)
 
     # Verify attempts have been increased
@@ -107,3 +121,167 @@ def test_retry_webhook_event(admin_auth_headers, default_org_id):
     assert item["attempts"] == 2
     assert item["created"]
     assert item["lastAttempted"]
+
+
+def test_webhooks_sent(
+    admin_auth_headers,
+    default_org_id,
+    all_crawls_crawl_id,
+    echo_server,
+):
+    # Reconfigure event webhooks to use echo server
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/event-webhook-urls",
+        headers=admin_auth_headers,
+        json={
+            "crawlStarted": ECHO_SERVER_URL_FROM_K8S,
+            "crawlFinished": ECHO_SERVER_URL_FROM_K8S,
+            "uploadFinished": ECHO_SERVER_URL_FROM_K8S,
+            "addedToCollection": ECHO_SERVER_URL_FROM_K8S,
+            "removedFromCollection": ECHO_SERVER_URL_FROM_K8S,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # Create collection with all_crawls_crawl_id already in it
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=admin_auth_headers,
+        json={
+            "name": "Event webhooks test collection",
+            "crawlIds": [all_crawls_crawl_id],
+        },
+    )
+    assert r.status_code == 200
+    webhooks_coll_id = r.json()["id"]
+    assert webhooks_coll_id
+
+    # Create and run workflow that adds crawl to collection
+    crawl_data = {
+        "runNow": True,
+        "name": "Webhook crawl test",
+        "autoAddCollections": [webhooks_coll_id],
+        "config": {
+            "seeds": [{"url": "https://webrecorder.net/"}],
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    webhooks_config_id = data["id"]
+    assert webhooks_config_id
+    webhooks_crawl_id = data["run_now_job"]
+
+    # Wait for crawl to complete
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{webhooks_crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] == "complete":
+            break
+        time.sleep(5)
+
+    # Create upload and add to collection
+    with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
+        r = requests.put(
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?filename=webhookstest.wacz&name=Webhooks%20Upload&collections={webhooks_coll_id}",
+            headers=admin_auth_headers,
+            data=read_in_chunks(fh),
+        )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+    webhooks_upload_id = data["id"]
+
+    # Remove upload from collection
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{webhooks_coll_id}/remove",
+        json={"crawlIds": [webhooks_upload_id]},
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"]
+
+    # Re-add upload to collection
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{webhooks_coll_id}/add",
+        json={"crawlIds": [webhooks_upload_id]},
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"]
+
+    # Wait to ensure async notifications are all sent
+    time.sleep(10)
+
+    # Send GET request to echo server to retrieve and verify POSTed data
+    r = requests.get(ECHO_SERVER_URL)
+    assert r.status_code == 200
+
+    data = r.json()
+
+    crawl_started_count = 0
+    crawl_finished_count = 0
+    upload_finished_count = 0
+    added_to_collection_count = 0
+    removed_from_collection_count = 0
+
+    for post in data["post_bodies"]:
+        assert post["orgId"]
+        event = post["event"]
+        assert event
+
+        if event == "crawlStarted":
+            crawl_started_count += 1
+            assert post["itemId"]
+            assert post["scheduled"] in (True, False)
+            assert post.get("downloadUrls") is None
+
+        elif event == "crawlFinished":
+            crawl_finished_count += 1
+            assert post["itemId"]
+            assert post["state"]
+            assert post["downloadUrls"]
+
+        elif event == "uploadFinished":
+            upload_finished_count += 1
+            assert post["itemId"]
+            assert post["state"]
+            assert post["downloadUrls"]
+
+        elif event == "addedToCollection":
+            added_to_collection_count += 1
+            assert post["downloadUrls"] and len(post["downloadUrls"]) == 1
+            assert post["itemIds"]
+            assert post["collectionId"]
+
+        elif event == "removedFromCollection":
+            removed_from_collection_count += 1
+            assert post["downloadUrls"] and len(post["downloadUrls"]) == 1
+            assert post["itemIds"]
+            assert post["collectionId"]
+
+    # Allow for some variability here due to timing of crawls
+    assert crawl_started_count >= 1
+    assert crawl_finished_count >= 1
+    assert upload_finished_count == 1
+    assert added_to_collection_count >= 3
+    assert removed_from_collection_count == 1
+
+    # Check that we've had expected number of successful webhook notifications
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/webhooks?success=True",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] >= 7

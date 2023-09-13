@@ -633,11 +633,11 @@ class OrgQuotas(BaseModel):
 class OrgWebhookUrls(BaseModel):
     """Organization webhook URLs"""
 
-    crawlStarted: Optional[HttpUrl]
-    crawlFinished: Optional[HttpUrl]
-    uploadFinished: Optional[HttpUrl]
-    addedToCollection: Optional[HttpUrl]
-    removedFromCollection: Optional[HttpUrl]
+    crawlStarted: Optional[AnyHttpUrl]
+    crawlFinished: Optional[AnyHttpUrl]
+    uploadFinished: Optional[AnyHttpUrl]
+    addedToCollection: Optional[AnyHttpUrl]
+    removedFromCollection: Optional[AnyHttpUrl]
 
 
 # ============================================================================
@@ -953,6 +953,7 @@ class UploadFinishedBody(BaseArchivedItemBody):
     """Webhook notification POST body for when upload finishes"""
 
     event: str = Field(WebhookEventType.UPLOAD_FINISHED, const=True)
+    state: str
 
 
 # ============================================================================

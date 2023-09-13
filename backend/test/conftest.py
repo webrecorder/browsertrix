@@ -1,5 +1,8 @@
+import os
 import pytest
 import requests
+import socket
+import subprocess
 import time
 
 
@@ -23,6 +26,8 @@ _all_crawls_config_id = None
 NON_DEFAULT_ORG_NAME = "Non-default org"
 
 FINISHED_STATES = ("complete", "partial_complete", "canceled", "failed")
+
+curr_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 
 
 @pytest.fixture(scope="session")
@@ -401,3 +406,16 @@ def uploads_collection_id(crawler_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     return r.json()["id"]
+
+
+@pytest.fixture(scope="function")
+def echo_server():
+    print(f"Echo server starting", flush=True)
+    p = subprocess.Popen(["python3", os.path.join(curr_dir, "echo_server.py")])
+    print(f"Echo server started", flush=True)
+    time.sleep(1)
+    yield p
+    time.sleep(10)
+    print(f"Echo server terminating", flush=True)
+    p.terminate()
+    print(f"Echo server terminated", flush=True)
