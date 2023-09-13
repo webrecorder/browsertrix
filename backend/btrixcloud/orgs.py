@@ -37,6 +37,7 @@ DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 
 
 # ============================================================================
+# pylint: disable=too-many-public-methods
 class OrgOps:
     """Organization API operations"""
 
@@ -249,18 +250,43 @@ class OrgOps:
                 org_owners.append(key)
         return org_owners
 
-    async def get_max_pages_per_crawl(self, org: Organization):
+    async def get_max_pages_per_crawl(self, oid: uuid.UUID):
         """Return org-specific max pages per crawl setting or 0."""
-        return await get_max_pages_per_crawl(self.orgs, org.id)
+        org = await self.orgs.find_one({"_id": oid})
+        if org:
+            org = Organization.from_dict(org)
+            return org.quotas.maxPagesPerCrawl
+        return 0
 
-    async def inc_bytes_stored(self, org: Organization, size: int):
+    async def inc_org_bytes_stored(self, oid: uuid.UUID, size: int):
         """Increase org bytesStored count (pass negative value to subtract)."""
-        await inc_org_bytes_stored(self.orgs, org.id, size)
+        await self.orgs.find_one_and_update(
+            {"_id": oid}, {"$inc": {"bytesStored": size}}
+        )
+        return await self.storage_quota_reached(oid)
 
     # pylint: disable=invalid-name
-    async def storage_quota_reached(self, org: Organization):
+    async def storage_quota_reached(self, oid: uuid.UUID):
         """Return boolean indicating if storage quota is met or exceeded."""
-        return await storage_quota_reached(self.orgs, org.id)
+        quota = await self.get_org_storage_quota(oid)
+        if not quota:
+            return False
+
+        org = await self.orgs.find_one({"_id": oid})
+        org = Organization.from_dict(org)
+
+        if org.bytesStored >= quota:
+            return True
+
+        return False
+
+    async def get_org_storage_quota(self, oid):
+        """return max allowed concurrent crawls, if any"""
+        org = await self.orgs.find_one({"_id": oid})
+        if org:
+            org = Organization.from_dict(org)
+            return org.quotas.storageQuota
+        return 0
 
     async def set_origin(self, org: Organization, request: Request):
         """Get origin from request and store in db for use in event webhooks"""
@@ -277,75 +303,27 @@ class OrgOps:
             {"_id": org.id}, {"$set": {"origin": origin}}
         )
 
+    async def inc_org_stats(self, oid, duration):
+        """inc crawl duration stats for org oid"""
+        # init org crawl stats
+        yymm = datetime.utcnow().strftime("%Y-%m")
+        await self.orgs.find_one_and_update(
+            {"_id": oid}, {"$inc": {f"usage.{yymm}": duration}}
+        )
 
-# ============================================================================
-async def inc_org_bytes_stored(orgs, oid: uuid.UUID, size: int):
-    """Increase org bytesStored count (pass negative value to subtract)."""
-    await orgs.find_one_and_update({"_id": oid}, {"$inc": {"bytesStored": size}})
-    return await storage_quota_reached(orgs, oid)
+    async def get_max_concurrent_crawls(self, oid):
+        """return max allowed concurrent crawls, if any"""
+        org = await self.orgs.find_one({"_id": oid})
+        if org:
+            org = Organization.from_dict(org)
+            return org.quotas.maxConcurrentCrawls
+        return 0
 
-
-# ============================================================================
-# pylint: disable=invalid-name
-async def storage_quota_reached(orgs, oid: uuid.UUID):
-    """Return boolean indicating if storage quota is met or exceeded."""
-    quota = await get_org_storage_quota(orgs, oid)
-    if not quota:
-        return False
-
-    org = await orgs.find_one({"_id": oid})
-    org = Organization.from_dict(org)
-
-    if org.bytesStored >= quota:
-        return True
-
-    return False
-
-
-# ============================================================================
-async def add_crawl_files_to_org_bytes_stored(crawls, orgs, crawl_id: str, size: int):
-    """Add crawl's files to org bytesStored"""
-    crawl = await crawls.find_one({"_id": crawl_id})
-    oid = crawl["oid"]
-    await orgs.find_one_and_update({"_id": oid}, {"$inc": {"bytesStored": size}})
-
-
-# ============================================================================
-async def inc_org_stats(orgs, oid, duration):
-    """inc crawl duration stats for org oid"""
-    # init org crawl stats
-    yymm = datetime.utcnow().strftime("%Y-%m")
-    await orgs.find_one_and_update({"_id": oid}, {"$inc": {f"usage.{yymm}": duration}})
-
-
-# ============================================================================
-async def get_max_concurrent_crawls(orgs, oid):
-    """return max allowed concurrent crawls, if any"""
-    org = await orgs.find_one({"_id": oid})
-    if org:
-        org = Organization.from_dict(org)
-        return org.quotas.maxConcurrentCrawls
-    return 0
-
-
-# ============================================================================
-async def get_max_pages_per_crawl(orgs, oid):
-    """return max allowed concurrent crawls, if any"""
-    org = await orgs.find_one({"_id": oid})
-    if org:
-        org = Organization.from_dict(org)
-        return org.quotas.maxPagesPerCrawl
-    return 0
-
-
-# ============================================================================
-async def get_org_storage_quota(orgs, oid):
-    """return max allowed concurrent crawls, if any"""
-    org = await orgs.find_one({"_id": oid})
-    if org:
-        org = Organization.from_dict(org)
-        return org.quotas.storageQuota
-    return 0
+    async def add_crawl_files_to_org_bytes_stored(self, oid: uuid.UUID, size: int):
+        """Add crawl's files to org bytesStored"""
+        await self.orgs.find_one_and_update(
+            {"_id": oid}, {"$inc": {"bytesStored": size}}
+        )
 
 
 # ============================================================================

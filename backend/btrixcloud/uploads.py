@@ -27,7 +27,6 @@ from .models import (
     PaginatedResponse,
     User,
 )
-from .orgs import inc_org_bytes_stored, storage_quota_reached
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .storages import do_upload_single, do_upload_multipart
 from .utils import dt_now
@@ -44,9 +43,8 @@ class UploadOps(BaseCrawlOps):
     def __init__(
         self, mdb, users, crawl_manager, crawl_configs, orgs, colls, event_webhook_ops
     ):
-        super().__init__(mdb, users, crawl_configs, crawl_manager, colls)
+        super().__init__(mdb, users, orgs, crawl_configs, crawl_manager, colls)
 
-        self.orgs = orgs
         self.event_webhook_ops = event_webhook_ops
 
     # pylint: disable=too-many-arguments, too-many-locals, duplicate-code, invalid-name
@@ -63,7 +61,7 @@ class UploadOps(BaseCrawlOps):
         replaceId: Optional[str],
     ):
         """Upload streaming file, length unknown"""
-        if await storage_quota_reached(self.orgs_db, org.id):
+        if await self.orgs.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
         prev_upload = None
@@ -122,7 +120,7 @@ class UploadOps(BaseCrawlOps):
         user: User,
     ):
         """handle uploading content to uploads subdir + request subdir"""
-        if await storage_quota_reached(self.orgs_db, org.id):
+        if await self.orgs.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
         id_ = uuid.uuid4()
@@ -182,7 +180,7 @@ class UploadOps(BaseCrawlOps):
             self.event_webhook_ops.create_upload_finished_notification(crawl_id)
         )
 
-        quota_reached = await inc_org_bytes_stored(self.orgs_db, org.id, file_size)
+        quota_reached = await self.orgs.inc_org_bytes_stored(org.id, file_size)
 
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 

@@ -29,6 +29,7 @@ from .models import (
     PaginatedResponse,
 )
 from .basecrawls import FAILED_STATES
+from .utils import dt_now
 
 
 ALLOWED_SORT_KEYS = (
@@ -145,7 +146,7 @@ class CrawlConfigOps:
         data["modified"] = data["created"]
 
         # Ensure page limit is below org maxPagesPerCall if set
-        max_pages = await self.org_ops.get_max_pages_per_crawl(org)
+        max_pages = await self.org_ops.get_max_pages_per_crawl(org.id)
         if max_pages > 0:
             data["config"]["limit"] = max_pages
 
@@ -165,7 +166,7 @@ class CrawlConfigOps:
         )
 
         run_now = config.runNow
-        quota_reached = await self.org_ops.storage_quota_reached(org)
+        quota_reached = await self.org_ops.storage_quota_reached(org.id)
 
         if quota_reached:
             run_now = False
@@ -180,15 +181,31 @@ class CrawlConfigOps:
         )
 
         if crawl_id and run_now:
-            await self.add_new_crawl(crawl_id, crawlconfig, user)
+            await self.add_new_crawl(crawl_id, crawlconfig, user.id, manual=True)
 
         return result.inserted_id, crawl_id, quota_reached
 
-    async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
+    async def add_new_crawl(
+        self, crawl_id: str, crawlconfig: CrawlConfig, userid: uuid.UUID, manual: bool
+    ):
         """increments crawl count for this config and adds new crawl"""
-        inc = inc_crawl_count(self.crawl_configs, crawlconfig.id)
-        add = self.crawl_ops.add_new_crawl(crawl_id, crawlconfig, user)
-        await asyncio.gather(inc, add)
+
+        started = dt_now()
+
+        inc = self.inc_crawl_count(crawlconfig.id)
+        add = self.crawl_ops.add_new_crawl(
+            crawl_id, crawlconfig, userid, started, manual
+        )
+        info = self.set_config_current_crawl_info(crawlconfig.id, crawl_id, started)
+
+        await asyncio.gather(inc, add, info)
+
+    async def inc_crawl_count(self, cid: uuid.UUID):
+        """inc crawl count for config"""
+        await self.crawl_configs.find_one_and_update(
+            {"_id": cid, "inactive": {"$ne": True}},
+            {"$inc": {"crawlAttemptCount": 1}},
+        )
 
     def check_attr_changed(
         self, crawlconfig: CrawlConfig, update: UpdateCrawlConfig, attr_name: str
@@ -205,7 +222,7 @@ class CrawlConfigOps:
     ):
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
 
-        orig_crawl_config = await self.get_crawl_config(cid, org)
+        orig_crawl_config = await self.get_crawl_config(cid, org.id)
         if not orig_crawl_config:
             raise HTTPException(status_code=400, detail="config_not_found")
 
@@ -478,15 +495,52 @@ class CrawlConfigOps:
 
         return None
 
-    async def stats_recompute_remove_crawl(self, cid: uuid.UUID, size: int):
-        """Update last crawl, crawl count and total size by removing size of last crawl"""
-        result = await stats_recompute_last(
-            self.crawl_configs, self.crawls, cid, -size, -1
+    async def stats_recompute_last(self, cid: uuid.UUID, size: int, inc_crawls=1):
+        """recompute stats by incrementing size counter and number of crawls"""
+        update_query = {
+            "lastCrawlId": None,
+            "lastCrawlStartTime": None,
+            "lastStartedBy": None,
+            "lastCrawlTime": None,
+            "lastCrawlState": None,
+            "lastCrawlSize": None,
+            "lastCrawlStopping": False,
+            "isCrawlRunning": False,
+        }
+
+        match_query = {"cid": cid, "finished": {"$ne": None}, "inactive": {"$ne": True}}
+        last_crawl = await self.crawls.find_one(
+            match_query, sort=[("finished", pymongo.DESCENDING)]
         )
-        if not result:
-            raise HTTPException(
-                status_code=404, detail=f"Crawl Config '{cid}' not found to update"
+
+        if last_crawl:
+            last_crawl_finished = last_crawl.get("finished")
+
+            update_query["lastCrawlId"] = str(last_crawl.get("_id"))
+            update_query["lastCrawlStartTime"] = last_crawl.get("started")
+            update_query["lastStartedBy"] = last_crawl.get("userid")
+            update_query["lastCrawlTime"] = last_crawl_finished
+            update_query["lastCrawlState"] = last_crawl.get("state")
+            update_query["lastCrawlSize"] = sum(
+                file_.get("size", 0) for file_ in last_crawl.get("files", [])
             )
+
+            if last_crawl_finished:
+                update_query["lastRun"] = last_crawl_finished
+
+        result = await self.crawl_configs.find_one_and_update(
+            {"_id": cid, "inactive": {"$ne": True}},
+            {
+                "$set": update_query,
+                "$inc": {
+                    "totalSize": size,
+                    "crawlCount": inc_crawls,
+                    "crawlSuccessfulCount": inc_crawls,
+                },
+            },
+        )
+
+        return result is not None
 
     def _add_curr_crawl_stats(self, crawlconfig, crawl):
         """Add stats from current running crawl, if any"""
@@ -502,7 +556,7 @@ class CrawlConfigOps:
         also include inactive crawl configs"""
 
         crawlconfig = await self.get_crawl_config(
-            cid, org, active_only=False, config_cls=CrawlConfigOut
+            cid, org.id, active_only=False, config_cls=CrawlConfigOut
         )
         if not crawlconfig:
             raise HTTPException(
@@ -540,15 +594,19 @@ class CrawlConfigOps:
     async def get_crawl_config(
         self,
         cid: uuid.UUID,
-        org: Optional[Organization],
+        oid: Optional[uuid.UUID],
         active_only: bool = True,
         config_cls=CrawlConfig,
     ):
         """Get crawl config by id"""
-        oid = org.id if org else None
-        return await get_crawl_config(
-            self.crawl_configs, cid, oid, active_only, config_cls
-        )
+        query = {"_id": cid}
+        if oid:
+            query["oid"] = oid
+        if active_only:
+            query["inactive"] = {"$ne": True}
+
+        res = await self.crawl_configs.find_one(query)
+        return config_cls.from_dict(res)
 
     async def get_crawl_config_revs(
         self, cid: uuid.UUID, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
@@ -621,7 +679,7 @@ class CrawlConfigOps:
     async def add_or_remove_exclusion(self, regex, cid, org, user, add=True):
         """added or remove regex to crawl config"""
         # get crawl config
-        crawl_config = await self.get_crawl_config(cid, org, active_only=False)
+        crawl_config = await self.get_crawl_config(cid, org.id, active_only=False)
 
         # update exclusion
         exclude = crawl_config.config.exclude or []
@@ -676,7 +734,7 @@ class CrawlConfigOps:
 
     async def run_now(self, cid: str, org: Organization, user: User):
         """run specified crawlconfig now"""
-        crawlconfig = await self.get_crawl_config(uuid.UUID(cid), org)
+        crawlconfig = await self.get_crawl_config(uuid.UUID(cid), org.id)
 
         if not crawlconfig:
             raise HTTPException(
@@ -698,70 +756,40 @@ class CrawlConfigOps:
                 detail=f"crawl-config-{cid} missing, can not start crawl",
             )
 
-        if await self.org_ops.storage_quota_reached(org):
+        if await self.org_ops.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
                 crawlconfig, userid=str(user.id)
             )
-            await self.add_new_crawl(crawl_id, crawlconfig, user)
+            await self.add_new_crawl(crawl_id, crawlconfig, user.id, manual=True)
             return crawl_id
 
         except Exception as exc:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
 
-
-# ============================================================================
-async def get_crawl_config(
-    crawl_configs,
-    cid: uuid.UUID,
-    oid: Optional[uuid.UUID] = None,
-    active_only: bool = True,
-    config_cls=CrawlConfig,
-):
-    """Get crawl config by id"""
-    query = {"_id": cid}
-    if oid:
-        query["oid"] = oid
-    if active_only:
-        query["inactive"] = {"$ne": True}
-
-    res = await crawl_configs.find_one(query)
-    return config_cls.from_dict(res)
-
-
-# ============================================================================
-async def inc_crawl_count(crawl_configs, cid: uuid.UUID):
-    """inc crawl count for config"""
-    await crawl_configs.find_one_and_update(
-        {"_id": cid, "inactive": {"$ne": True}},
-        {"$inc": {"crawlAttemptCount": 1}},
-    )
-
-
-# ============================================================================
-async def set_config_current_crawl_info(
-    crawl_configs, cid: uuid.UUID, crawl_id: str, crawl_start: datetime
-):
-    """Set current crawl info in config when crawl begins"""
-    result = await crawl_configs.find_one_and_update(
-        {"_id": cid, "inactive": {"$ne": True}},
-        {
-            "$set": {
-                "lastCrawlId": crawl_id,
-                "lastCrawlStartTime": crawl_start,
-                "lastCrawlTime": None,
-                "lastRun": crawl_start,
-                "isCrawlRunning": True,
-            }
-        },
-        return_document=pymongo.ReturnDocument.AFTER,
-    )
-    if result:
-        return True
-    return False
+    async def set_config_current_crawl_info(
+        self, cid: uuid.UUID, crawl_id: str, crawl_start: datetime
+    ):
+        """Set current crawl info in config when crawl begins"""
+        result = await self.crawl_configs.find_one_and_update(
+            {"_id": cid, "inactive": {"$ne": True}},
+            {
+                "$set": {
+                    "lastCrawlId": crawl_id,
+                    "lastCrawlStartTime": crawl_start,
+                    "lastCrawlTime": None,
+                    "lastRun": crawl_start,
+                    "isCrawlRunning": True,
+                }
+            },
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+        if result:
+            return True
+        return False
 
 
 # ============================================================================
@@ -823,57 +851,6 @@ async def stats_recompute_all(crawl_configs, crawls, cid: uuid.UUID):
         {"_id": cid, "inactive": {"$ne": True}},
         {"$set": update_query},
         return_document=pymongo.ReturnDocument.AFTER,
-    )
-
-    return result
-
-
-# ============================================================================
-async def stats_recompute_last(
-    crawl_configs, crawls, cid: uuid.UUID, size: int, inc_crawls=1
-):
-    """recompute stats by incrementing size counter and number of crawls"""
-    update_query = {
-        "lastCrawlId": None,
-        "lastCrawlStartTime": None,
-        "lastStartedBy": None,
-        "lastCrawlTime": None,
-        "lastCrawlState": None,
-        "lastCrawlSize": None,
-        "lastCrawlStopping": False,
-        "isCrawlRunning": False,
-    }
-
-    match_query = {"cid": cid, "finished": {"$ne": None}, "inactive": {"$ne": True}}
-    last_crawl = await crawls.find_one(
-        match_query, sort=[("finished", pymongo.DESCENDING)]
-    )
-
-    if last_crawl:
-        last_crawl_finished = last_crawl.get("finished")
-
-        update_query["lastCrawlId"] = str(last_crawl.get("_id"))
-        update_query["lastCrawlStartTime"] = last_crawl.get("started")
-        update_query["lastStartedBy"] = last_crawl.get("userid")
-        update_query["lastCrawlTime"] = last_crawl_finished
-        update_query["lastCrawlState"] = last_crawl.get("state")
-        update_query["lastCrawlSize"] = sum(
-            file_.get("size", 0) for file_ in last_crawl.get("files", [])
-        )
-
-        if last_crawl_finished:
-            update_query["lastRun"] = last_crawl_finished
-
-    result = await crawl_configs.find_one_and_update(
-        {"_id": cid, "inactive": {"$ne": True}},
-        {
-            "$set": update_query,
-            "$inc": {
-                "totalSize": size,
-                "crawlCount": inc_crawls,
-                "crawlSuccessfulCount": inc_crawls,
-            },
-        },
     )
 
     return result
@@ -1004,7 +981,7 @@ def init_crawl_config_api(
 
     @router.delete("/{cid}")
     async def make_inactive(cid: str, org: Organization = Depends(org_crawl_dep)):
-        crawlconfig = await ops.get_crawl_config(uuid.UUID(cid), org)
+        crawlconfig = await ops.get_crawl_config(uuid.UUID(cid), org.id)
 
         if not crawlconfig:
             raise HTTPException(

@@ -16,7 +16,6 @@ from pydantic import UUID4
 from redis import asyncio as exceptions
 import pymongo
 
-from .crawlconfigs import set_config_current_crawl_info
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import get_wacz_logs
 from .utils import dt_now, parse_jsonl_error_messages
@@ -45,11 +44,10 @@ class CrawlOps(BaseCrawlOps):
     def __init__(
         self, mdb, users, crawl_manager, crawl_configs, orgs, colls, event_webhook_ops
     ):
-        super().__init__(mdb, users, crawl_configs, crawl_manager, colls)
+        super().__init__(mdb, users, orgs, crawl_configs, crawl_manager, colls)
         self.crawls = self.crawls
         self.crawl_configs = crawl_configs
         self.user_manager = users
-        self.orgs = orgs
         self.event_webhook_ops = event_webhook_ops
 
         self.crawl_configs.set_crawl_ops(self)
@@ -227,7 +225,10 @@ class CrawlOps(BaseCrawlOps):
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
         for cid in cids_to_update:
-            await self.crawl_configs.stats_recompute_remove_crawl(cid, size)
+            if not await self.crawl_configs.stats_recompute_last(cid, -size, -1):
+                raise HTTPException(
+                    status_code=404, detail=f"crawl_config_not_found: {cid}"
+                )
 
         return {"deleted": True, "storageQuotaReached": quota_reached}
 
@@ -241,15 +242,43 @@ class CrawlOps(BaseCrawlOps):
                 wacz_files.append(file_)
         return wacz_files
 
-    async def add_new_crawl(self, crawl_id: str, crawlconfig: CrawlConfig, user: User):
+    # pylint: disable=too-many-arguments
+    async def add_new_crawl(
+        self,
+        crawl_id: str,
+        crawlconfig: CrawlConfig,
+        userid: uuid.UUID,
+        started: str,
+        manual: bool,
+    ):
         """initialize new crawl"""
-        return await add_new_crawl(
-            self.crawls,
-            self.crawl_configs.crawl_configs,
-            crawl_id,
-            crawlconfig,
-            user.id,
+        crawl = Crawl(
+            id=crawl_id,
+            state="starting",
+            userid=userid,
+            oid=crawlconfig.oid,
+            cid=crawlconfig.id,
+            cid_rev=crawlconfig.rev,
+            scale=crawlconfig.scale,
+            jobType=crawlconfig.jobType,
+            config=crawlconfig.config,
+            profileid=crawlconfig.profileid,
+            schedule=crawlconfig.schedule,
+            crawlTimeout=crawlconfig.crawlTimeout,
+            maxCrawlSize=crawlconfig.maxCrawlSize,
+            manual=manual,
+            started=started,
+            tags=crawlconfig.tags,
+            name=crawlconfig.name,
         )
+
+        try:
+            await self.crawls.insert_one(crawl.to_dict())
+            return dt_now
+
+        except pymongo.errors.DuplicateKeyError:
+            # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
+            return None
 
     async def update_crawl_scale(
         self, crawl_id: str, org: Organization, crawl_scale: CrawlScale, user: User
@@ -316,7 +345,14 @@ class CrawlOps(BaseCrawlOps):
             if not graceful:
                 await self.update_crawl_state(crawl_id, "canceled")
                 crawl = await self.get_crawl_raw(crawl_id, org)
-                await self.crawl_configs.stats_recompute_remove_crawl(crawl["cid"], 0)
+                if not await self.crawl_configs.stats_recompute_last(
+                    crawl["cid"], 0, -1
+                ):
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"crawl_config_not_found: {crawl['cid']}",
+                    )
+
                 return {"success": True}
 
         # return whatever detail may be included in the response
@@ -518,95 +554,41 @@ class CrawlOps(BaseCrawlOps):
 
         return resp
 
+    async def update_crawl_state_if_allowed(
+        self, crawl_id, state, allowed_from, **kwargs
+    ):
+        """update crawl state and other properties in db if state has changed"""
+        kwargs["state"] = state
+        query = {"_id": crawl_id, "type": "crawl"}
+        if allowed_from:
+            query["state"] = {"$in": list(allowed_from)}
 
-# ============================================================================
-# pylint: disable=too-many-arguments
-async def add_new_crawl(
-    crawls,
-    crawlconfigs,
-    crawl_id: str,
-    crawlconfig: CrawlConfig,
-    userid: UUID4,
-    manual=True,
-):
-    """initialize new crawl"""
-    started = dt_now()
+        return await self.crawls.find_one_and_update(query, {"$set": kwargs})
 
-    crawl = Crawl(
-        id=crawl_id,
-        state="starting",
-        userid=userid,
-        oid=crawlconfig.oid,
-        cid=crawlconfig.id,
-        cid_rev=crawlconfig.rev,
-        scale=crawlconfig.scale,
-        jobType=crawlconfig.jobType,
-        config=crawlconfig.config,
-        profileid=crawlconfig.profileid,
-        schedule=crawlconfig.schedule,
-        crawlTimeout=crawlconfig.crawlTimeout,
-        maxCrawlSize=crawlconfig.maxCrawlSize,
-        manual=manual,
-        started=started,
-        tags=crawlconfig.tags,
-        name=crawlconfig.name,
-    )
+    async def get_crawl_state(self, crawl_id):
+        """return current crawl state of a crawl"""
+        res = await self.crawls.find_one(
+            {"_id": crawl_id}, projection=["state", "finished"]
+        )
+        if not res:
+            return None, None
+        return res.get("state"), res.get("finished")
 
-    try:
-        result = await crawls.insert_one(crawl.to_dict())
-
-        return await set_config_current_crawl_info(
-            crawlconfigs,
-            crawlconfig.id,
-            result.inserted_id,
-            started,
+    async def add_crawl_errors(self, crawl_id, errors):
+        """add crawl errors from redis to mongodb errors field"""
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id}, {"$push": {"errors": {"$each": errors}}}
         )
 
-    except pymongo.errors.DuplicateKeyError:
-        # print(f"Crawl Already Added: {crawl.id} - {crawl.state}")
-        return False
-
-
-# ============================================================================
-async def update_crawl_state_if_allowed(
-    crawls, crawl_id, state, allowed_from, **kwargs
-):
-    """update crawl state and other properties in db if state has changed"""
-    kwargs["state"] = state
-    query = {"_id": crawl_id, "type": "crawl"}
-    if allowed_from:
-        query["state"] = {"$in": list(allowed_from)}
-
-    return await crawls.find_one_and_update(query, {"$set": kwargs})
-
-
-# ============================================================================
-async def get_crawl_state(crawls, crawl_id):
-    """return current crawl state of a crawl"""
-    res = await crawls.find_one({"_id": crawl_id}, projection=["state", "finished"])
-    if not res:
-        return None, None
-    return res.get("state"), res.get("finished")
-
-
-# ============================================================================
-async def add_crawl_errors(crawls, crawl_id, errors):
-    """add crawl errors from redis to mmongodb errors field"""
-    await crawls.find_one_and_update(
-        {"_id": crawl_id}, {"$push": {"errors": {"$each": errors}}}
-    )
-
-
-# ============================================================================
-async def add_crawl_file(crawls, crawl_id, crawl_file, size):
-    """add new crawl file to crawl"""
-    await crawls.find_one_and_update(
-        {"_id": crawl_id},
-        {
-            "$push": {"files": crawl_file.dict()},
-            "$inc": {"fileCount": 1, "fileSize": size},
-        },
-    )
+    async def add_crawl_file(self, crawl_id, crawl_file, size):
+        """add new crawl file to crawl"""
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id},
+            {
+                "$push": {"files": crawl_file.dict()},
+                "$inc": {"fileCount": 1, "fileSize": size},
+            },
+        )
 
 
 # ============================================================================

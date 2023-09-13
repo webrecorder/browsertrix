@@ -52,7 +52,7 @@ def main():
 
     crawl_manager = CrawlManager()
 
-    profile_ops = ProfileOps(mdb, crawl_manager)
+    profile_ops = ProfileOps(mdb, org_ops, crawl_manager)
 
     crawl_config_ops = CrawlConfigOps(
         dbclient,
@@ -65,7 +65,7 @@ def main():
 
     coll_ops = CollectionOps(mdb, crawl_manager, org_ops, event_webhook_ops)
 
-    CrawlOps(
+    crawl_ops = CrawlOps(
         mdb,
         user_manager,
         crawl_manager,
@@ -75,7 +75,9 @@ def main():
         event_webhook_ops,
     )
 
-    init_operator_api(app_root, mdb, event_webhook_ops)
+    init_operator_api(
+        app_root, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
+    )
 
 
 # ============================================================================

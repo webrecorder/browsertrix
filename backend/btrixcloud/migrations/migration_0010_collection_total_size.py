@@ -1,7 +1,7 @@
 """
 Migration 0010 - Precomputing collection total size
 """
-from btrixcloud.colls import update_collection_counts_and_tags
+from btrixcloud.colls import CollectionOps
 from btrixcloud.migrations import BaseMigration
 
 
@@ -20,17 +20,16 @@ class Migration(BaseMigration):
         Recompute collection data to include totalSize.
         """
         # pylint: disable=duplicate-code
-        colls = self.mdb["collections"]
-        crawls = self.mdb["crawls"]
+        coll_ops = CollectionOps(self.mdb, None, None, None)
 
-        colls_to_update = [res async for res in colls.find({})]
+        colls_to_update = [res async for res in coll_ops.collections.find({})]
         if not colls_to_update:
             return
 
         for coll in colls_to_update:
             coll_id = coll["_id"]
             try:
-                await update_collection_counts_and_tags(colls, crawls, coll_id)
+                await coll_ops.update_collection_counts_and_tags(coll_id)
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(f"Unable to update collection {coll_id}: {err}", flush=True)
