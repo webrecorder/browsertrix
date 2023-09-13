@@ -363,13 +363,16 @@ def _sync_get_logs(wacz_files, log_levels, contexts, client, bucket, key):
                 chunk_by_line = chunk.split("\n")
                 last_line = chunk_by_line.pop()
                 for line in chunk_by_line:
+                    if not line:
+                        continue
                     json_dict = _parse_json(line)
                     if json_dict:
                         yield json_dict
         except StopIteration:
-            json_dict = _parse_json(last_line)
-            if json_dict:
-                yield json_dict
+            if last_line:
+                json_dict = _parse_json(last_line)
+                if json_dict:
+                    yield json_dict
 
     def stream_json_lines(iterator, log_levels, contexts):
         """Yield parsed JSON dicts as JSON-lines bytes after filtering as necessary"""
