@@ -1031,6 +1031,12 @@ https://example.com/path`}
           @sl-input=${async (e: Event) => {
             const inputEl = e.target as SlInput;
             await inputEl.updateComplete;
+            this.updateFormState(
+              {
+                primarySeedUrl: inputEl.value,
+              },
+              true
+            );
             if (!inputEl.checkValidity() && validURL(inputEl.value)) {
               inputEl.setCustomValidity("");
               inputEl.helpText = "";
