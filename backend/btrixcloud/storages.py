@@ -323,8 +323,8 @@ async def delete_file(org, filename, crawl_manager, def_storage_name="default"):
 
 
 # ============================================================================
-async def sync_get_wacz_logs(org, wacz_files, log_levels, contexts, crawl_manager):
-    """Return generator of log lines from WACZ"""
+async def sync_stream_wacz_logs(org, wacz_files, log_levels, contexts, crawl_manager):
+    """Return filtered stream of logs from specified WACZs sorted by timestamp"""
     client, bucket, key, _ = await get_sync_client(org, crawl_manager)
 
     loop = asyncio.get_event_loop()

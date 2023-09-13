@@ -17,7 +17,7 @@ import pymongo
 
 from .crawlconfigs import set_config_current_crawl_info
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .storages import sync_get_wacz_logs
+from .storages import sync_stream_wacz_logs
 from .utils import dt_now, parse_jsonl_error_messages
 from .basecrawls import BaseCrawlOps
 from .models import (
@@ -933,7 +933,7 @@ def init_crawls_api(
         # If crawl is finished, stream logs from WACZ files
         if crawl.finished:
             wacz_files = await ops.get_wacz_files(crawl_id, org)
-            resp = await sync_get_wacz_logs(
+            resp = await sync_stream_wacz_logs(
                 org, wacz_files, log_levels, contexts, crawl_manager
             )
             return StreamingResponse(resp)
