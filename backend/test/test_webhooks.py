@@ -222,7 +222,7 @@ def test_webhooks_sent(
     assert data["id"]
 
     # Wait to ensure async notifications are all sent
-    time.sleep(10)
+    time.sleep(30)
 
     # Send GET request to echo server to retrieve and verify POSTed data
     r = requests.get(ECHO_SERVER_URL)
