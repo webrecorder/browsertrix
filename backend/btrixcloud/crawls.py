@@ -575,7 +575,7 @@ class CrawlOps(BaseCrawlOps):
         return res.get("state"), res.get("finished")
 
     async def add_crawl_errors(self, crawl_id, errors):
-        """add crawl errors from redis to mmongodb errors field"""
+        """add crawl errors from redis to mongodb errors field"""
         await self.crawls.find_one_and_update(
             {"_id": crawl_id}, {"$push": {"errors": {"$each": errors}}}
         )
