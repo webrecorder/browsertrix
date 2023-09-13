@@ -955,7 +955,6 @@ https://example.com/path`}
     const exampleHost = exampleUrl.host;
     const exampleProtocol = exampleUrl.protocol;
     const examplePathname = exampleUrl.pathname;
-    const examplePathnameNoTrailing = examplePathname.replace(/\/$/, "");
     const exampleDomain = `${exampleProtocol}//${exampleHost}`;
 
     let helpText: TemplateResult | string;
@@ -967,9 +966,9 @@ https://example.com/path`}
             <span class="text-blue-500 break-word break-word"
               >${exampleDomain}</span
             ><span class="text-blue-500 font-medium break-word"
-              >${examplePathnameNoTrailing.slice(
+              >${examplePathname.slice(
                 0,
-                examplePathnameNoTrailing.lastIndexOf("/")
+                examplePathname.lastIndexOf("/")
               )}/</span
             >`
         );
