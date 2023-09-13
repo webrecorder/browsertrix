@@ -198,7 +198,7 @@ class EventWebhookOps:
 
         notification = WebhookNotification(
             id=uuid.uuid4(),
-            event=WebhookEventType(event),
+            event=event,
             oid=org.id,
             body=body,
             created=datetime.utcnow(),
@@ -303,7 +303,7 @@ class EventWebhookOps:
 
         notification = WebhookNotification(
             id=uuid.uuid4(),
-            event=WebhookEventType(event),
+            event=event,
             oid=org.id,
             body=body,
             created=datetime.utcnow(),
