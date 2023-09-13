@@ -399,9 +399,7 @@ def _sync_get_logs(wacz_files, log_levels, contexts, client, bucket, key):
             log_stream = sync_get_log_stream(
                 client, bucket, wacz_key, log_zipinfo, cd_start
             )
-            wacz_log_streams.extend(
-                stream_log_bytes_as_line_dicts(log_stream, log_levels, contexts)
-            )
+            wacz_log_streams.extend(stream_log_bytes_as_line_dicts(log_stream))
 
         log_generators.append(wacz_log_streams)
 
