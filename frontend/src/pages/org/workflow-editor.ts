@@ -1533,16 +1533,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         )
       )}
       ${when(this.formState.scheduleType === "cron", this.renderScheduleCron)}
-      ${this.renderFormCol(html`<sl-checkbox
-        name="runNow"
-        ?checked=${this.formState.runNow}
-      >
-        ${msg("Run on Save")}
-      </sl-checkbox>`)}
-      ${this.renderHelpTextCol(
-        msg(`Start a crawl immediately upon saving workflow settings.`),
-        false
-      )}
     `;
   }
 
