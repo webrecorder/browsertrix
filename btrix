@@ -62,6 +62,10 @@ waitUntilReadyMicrok8s(){
 }
 
 reset(){
+    echo "Stopping all crawls & profile browsers"
+    kubectl delete cjs -n crawlers --all
+    kubectl delete pjs -n crawlers --all
+
     echo "Uninstalling..."
     helm uninstall btrix
 
@@ -72,6 +76,10 @@ reset(){
 }
 
 resetMicrok8s(){
+    echo "Stopping all crawls & profile browsers"
+    microk8s kubectl delete cjs -n crawlers --all
+    microk8s kubectl delete pjs -n crawlers --all
+
     echo "Uninstalling..."
     microk8s helm uninstall btrix
 
@@ -127,7 +135,7 @@ fi
 if [[ $1 = "reset" ]]; then
     
     echo "Current context: $CONTEXT"
-    echo "Resetting k8s cluster will delete the database. It's advised to wait until all crawls have finished before resetting to avoid crawljobs persisting. Are you sure you want to do this?"
+    echo "Resetting k8s cluster will delete the database. All running crawls will first be canceled. Are you sure you want to do this?"
     if [[ "$(read -e -p '[y/N] > '; echo $REPLY)" == [Yy]* ]] ; then
         echo Continuing
     else
