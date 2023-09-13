@@ -349,7 +349,7 @@ def _parse_json(line):
 
 # ============================================================================
 def _sync_get_logs(wacz_files, log_levels, contexts, client, bucket, key):
-    """generate streaming zip as sync"""
+    """Generate filtered stream of logs from specified WACZs sorted by timestamp"""
 
     # pylint: disable=too-many-function-args
     def stream_log_bytes_as_line_dicts(stream_generator):
