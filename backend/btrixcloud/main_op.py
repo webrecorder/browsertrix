@@ -5,7 +5,7 @@ import sys
 
 from fastapi import FastAPI
 
-# from .crawlmanager import CrawlManager
+from .crawlmanager import CrawlManager
 from .db import init_db
 from .emailsender import EmailSender
 from .operator import init_operator_api
@@ -50,8 +50,7 @@ def main():
         )
         sys.exit(1)
 
-    # don't init here, just use none
-    # crawl_manager = CrawlManager()
+    crawl_manager = CrawlManager()
 
     profile_ops = ProfileOps(mdb, org_ops, crawl_manager)
 
