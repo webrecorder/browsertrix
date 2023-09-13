@@ -367,7 +367,7 @@ def _sync_get_logs(wacz_files, log_levels, contexts, client, bucket, key):
                     if json_dict:
                         yield json_dict
         except StopIteration:
-            json_dict = _parse_json(line)
+            json_dict = _parse_json(last_line)
             if json_dict:
                 yield json_dict
 
