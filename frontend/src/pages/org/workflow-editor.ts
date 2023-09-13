@@ -954,7 +954,7 @@ https://example.com/path`}
     }
     const exampleHost = exampleUrl.host;
     const exampleProtocol = exampleUrl.protocol;
-    const examplePathname = exampleUrl.pathname.replace(/\/$/, "");
+    const examplePathname = exampleUrl.pathname;
     const exampleDomain = `${exampleProtocol}//${exampleHost}`;
 
     let helpText: TemplateResult | string;
@@ -966,7 +966,10 @@ https://example.com/path`}
             <span class="text-blue-500 break-word break-word"
               >${exampleDomain}</span
             ><span class="text-blue-500 font-medium break-word"
-              >/path/page-2</span
+              >${examplePathname.slice(
+                0,
+                examplePathname.lastIndexOf("/")
+              )}/</span
             >`
         );
         break;
@@ -1028,6 +1031,12 @@ https://example.com/path`}
           @sl-input=${async (e: Event) => {
             const inputEl = e.target as SlInput;
             await inputEl.updateComplete;
+            this.updateFormState(
+              {
+                primarySeedUrl: inputEl.value,
+              },
+              true
+            );
             if (!inputEl.checkValidity() && validURL(inputEl.value)) {
               inputEl.setCustomValidity("");
               inputEl.helpText = "";
