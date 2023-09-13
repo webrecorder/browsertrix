@@ -20,8 +20,6 @@ class Migration(BaseMigration):
         Recompute collection data to include totalSize.
         """
         # pylint: disable=duplicate-code
-        # colls = self.mdb["collections"]
-        # crawls = self.mdb["crawls"]
         coll_ops = CollectionOps(self.mdb, None, None, None)
 
         colls_to_update = [res async for res in coll_ops.collections.find({})]
