@@ -2,8 +2,6 @@
 
 import asyncio
 from datetime import datetime
-import os
-import socket
 from typing import List, Union, Optional
 import uuid
 
@@ -151,24 +149,13 @@ class EventWebhookOps:
             )
             return
 
-        require_ssl_webhooks = os.environ.get("REQUIRE_SSL_WEBHOOKS")
-        ssl = None
-        if require_ssl_webhooks is not None and require_ssl_webhooks.lower() == "false":
-            ssl = False
-
-        conn = aiohttp.TCPConnector(
-            family=socket.AF_INET,
-            ssl=ssl,
-        )
-
         try:
-            async with aiohttp.ClientSession(connector=conn) as session:
+            async with aiohttp.ClientSession() as session:
                 async with session.request(
                     "POST",
                     webhook_url,
                     json=notification.body.dict(),
                     raise_for_status=True,
-                    ssl=ssl,
                 ):
                     await self.webhooks.find_one_and_update(
                         {"_id": notification.id},

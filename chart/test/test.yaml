@@ -12,8 +12,6 @@ default_crawl_filename_template: "@ts-testing-@hostsuffix.wacz"
 
 operator_resync_seconds: 3
 
-require_ssl_webhooks: False
-
 mongo_auth:
   # specify either username + password (for local mongo)
   username: root

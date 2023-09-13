@@ -89,10 +89,6 @@ superuser:
 # Set name for default organization created with superuser
 default_org: "My Organization"
 
-# Determine whether to use SSL for webhook event notifications
-# Set to False to disable
-require_ssl_webhooks: True
-
 
 # API Image
 # =========================================
