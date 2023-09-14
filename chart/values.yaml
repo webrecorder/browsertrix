@@ -125,7 +125,7 @@ frontend_memory: "36Mi"
 # must be between 30000 - 32767
 # use for deployments on localhost when not using ingress
 # local_service_port: 30870
-
+# local_backend_port: 30871 # only needed when using an external ingress
 
 # MongoDB Image
 # =========================================
