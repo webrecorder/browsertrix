@@ -319,7 +319,7 @@ export class WorkflowDetail extends LiteElement {
           </div>
         </header>
 
-        <section class="col-span-1 border rounded-lg py-2">
+        <section class="col-span-1 border rounded-lg py-2 px-4">
           ${this.renderDetails()}
         </section>
 

@@ -121,7 +121,9 @@ export class CollectionDetail extends LiteElement {
         </sl-button>
         ${when(this.isCrawler, this.renderActions)}
       </header>
-      <div class="border rounded-lg py-2 mb-3">${this.renderInfoBar()}</div>
+      <div class="border rounded-lg py-2 px-4 mb-3">
+        ${this.renderInfoBar()}
+      </div>
       <div class="mb-3">${this.renderTabs()}</div>
 
       ${choose(
