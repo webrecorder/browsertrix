@@ -130,7 +130,7 @@ class CrawlConfigIn(BaseModel):
 
     crawlTimeout: int = 0
     maxCrawlSize: int = 0
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1  # type: ignore
 
     crawlFilenameTemplate: Optional[str]
 
@@ -149,7 +149,7 @@ class ConfigRevision(BaseMongoModel):
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1  # type: ignore
 
     modified: datetime
     modifiedBy: Optional[UUID4]
@@ -170,7 +170,7 @@ class CrawlConfigCore(BaseMongoModel):
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1  # type: ignore
 
     oid: UUID4
 
@@ -180,6 +180,8 @@ class CrawlConfigCore(BaseMongoModel):
 # ============================================================================
 class CrawlConfig(CrawlConfigCore):
     """Schedulable config"""
+
+    id: UUID4
 
     name: Optional[str]
     description: Optional[str]
@@ -245,19 +247,19 @@ class UpdateCrawlConfig(BaseModel):
     """Update crawl config name, crawl schedule, or tags"""
 
     # metadata: not revision tracked
-    name: Optional[str]
-    tags: Optional[List[str]]
-    description: Optional[str]
-    autoAddCollections: Optional[List[UUID4]]
+    name: Optional[str] = None
+    tags: Optional[List[str]] = None
+    description: Optional[str] = None
+    autoAddCollections: Optional[List[UUID4]] = None
 
     # crawl data: revision tracked
-    schedule: Optional[str]
-    profileid: Optional[str]
-    crawlTimeout: Optional[int]
-    maxCrawlSize: Optional[int]
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
-    crawlFilenameTemplate: Optional[str]
-    config: Optional[RawCrawlConfig]
+    schedule: Optional[str] = None
+    profileid: Optional[str] = None
+    crawlTimeout: Optional[int] = None
+    maxCrawlSize: Optional[int] = None
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = None  # type: ignore
+    crawlFilenameTemplate: Optional[str] = None
+    config: Optional[RawCrawlConfig] = None
 
 
 # ============================================================================
@@ -299,17 +301,17 @@ class BaseCrawl(BaseMongoModel):
     oid: UUID4
 
     started: datetime
-    finished: Optional[datetime]
+    finished: Optional[datetime] = None
 
-    name: Optional[str]
+    name: Optional[str] = ""
 
     state: str
 
-    stats: Optional[Dict[str, int]]
+    stats: Optional[Dict[str, int]] = None
 
     files: Optional[List[CrawlFile]] = []
 
-    description: Optional[str]
+    description: Optional[str] = ""
 
     errors: Optional[List[str]] = []
 
@@ -364,7 +366,6 @@ class CrawlOut(BaseMongoModel):
     # automated crawl fields
     config: Optional[RawCrawlConfig]
     cid: Optional[UUID4]
-    name: Optional[str]
     firstSeed: Optional[str]
     seedCount: Optional[int]
     profileName: Optional[str]
@@ -390,7 +391,6 @@ class UpdateCrawl(BaseModel):
     name: Optional[str]
     description: Optional[str]
     tags: Optional[List[str]]
-    description: Optional[str]
     collectionIds: Optional[List[UUID4]]
 
 
@@ -410,7 +410,7 @@ class DeleteCrawlList(BaseModel):
 class CrawlScale(BaseModel):
     """scale the crawl to N parallel containers"""
 
-    scale: conint(ge=1, le=MAX_CRAWL_SCALE) = 1
+    scale: conint(ge=1, le=MAX_CRAWL_SCALE) = 1  # type: ignore
 
 
 # ============================================================================
@@ -633,16 +633,18 @@ class OrgQuotas(BaseModel):
 class OrgWebhookUrls(BaseModel):
     """Organization webhook URLs"""
 
-    crawlStarted: Optional[AnyHttpUrl]
-    crawlFinished: Optional[AnyHttpUrl]
-    uploadFinished: Optional[AnyHttpUrl]
-    addedToCollection: Optional[AnyHttpUrl]
-    removedFromCollection: Optional[AnyHttpUrl]
+    crawlStarted: Optional[AnyHttpUrl] = None
+    crawlFinished: Optional[AnyHttpUrl] = None
+    uploadFinished: Optional[AnyHttpUrl] = None
+    addedToCollection: Optional[AnyHttpUrl] = None
+    removedFromCollection: Optional[AnyHttpUrl] = None
 
 
 # ============================================================================
 class Organization(BaseMongoModel):
     """Organization Base Model"""
+
+    id: UUID4
 
     name: str
 
@@ -660,7 +662,7 @@ class Organization(BaseMongoModel):
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 
-    origin: Optional[AnyHttpUrl]
+    origin: Optional[AnyHttpUrl] = None
 
     def is_owner(self, user):
         """Check if user is owner"""
@@ -764,7 +766,7 @@ class ProfileFile(BaseModel):
     filename: str
     hash: str
     size: int
-    def_storage_name: Optional[str]
+    def_storage_name: Optional[str] = ""
 
 
 # ============================================================================
@@ -781,6 +783,7 @@ class Profile(BaseMongoModel):
     resource: Optional[ProfileFile]
 
     created: Optional[datetime]
+    baseid: Optional[UUID4] = None
 
 
 # ============================================================================
@@ -812,10 +815,19 @@ class BrowserId(BaseModel):
 
 
 # ============================================================================
-class ProfileCreateUpdate(BaseModel):
-    """Profile metadata for committing current browser to profile"""
+class ProfileCreate(BaseModel):
+    """Create new profile for browser id"""
 
-    browserid: Optional[str]
+    browserid: str
+    name: str
+    description: Optional[str] = ""
+
+
+# ============================================================================
+class ProfileUpdate(BaseModel):
+    """Update existing profile with new browser profile or metadata only"""
+
+    browserid: Optional[str] = ""
     name: str
     description: Optional[str] = ""
 
@@ -851,7 +863,7 @@ class UserCreate(fastapi_users_models.BaseUserCreate):
 
     name: Optional[str] = ""
 
-    inviteToken: Optional[UUID4]
+    inviteToken: Optional[UUID4] = None
 
     newOrg: bool
     newOrgName: Optional[str] = ""
@@ -864,7 +876,7 @@ class UserUpdate(User, fastapi_users_models.CreateUpdateDictModel):
     """
 
     password: Optional[str]
-    email: Optional[EmailStr]
+    email: EmailStr
 
 
 # ============================================================================
@@ -972,4 +984,4 @@ class WebhookNotification(BaseMongoModel):
     success: bool = False
     attempts: int = 0
     created: datetime
-    lastAttempted: Optional[datetime]
+    lastAttempted: Optional[datetime] = None

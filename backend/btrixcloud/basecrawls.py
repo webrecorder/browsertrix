@@ -4,7 +4,7 @@ import asyncio
 import uuid
 import os
 from datetime import timedelta
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Type
 import urllib.parse
 import contextlib
 
@@ -72,7 +72,7 @@ class BaseCrawlOps:
     ):
         """Get data for single crawl"""
 
-        query = {"_id": crawlid}
+        query: dict[str, object] = {"_id": crawlid}
         if org:
             query["oid"] = org.id
 
@@ -98,7 +98,7 @@ class BaseCrawlOps:
         crawlid: str,
         org: Optional[Organization] = None,
         type_: Optional[str] = None,
-        cls_type: Union[CrawlOut, CrawlOutWithResources] = CrawlOutWithResources,
+        cls_type: Type[Union[CrawlOut, CrawlOutWithResources]] = CrawlOutWithResources,
     ):
         """Get data for single base crawl"""
         res = await self.get_crawl_raw(crawlid, org, type_)
@@ -261,7 +261,11 @@ class BaseCrawlOps:
             except exceptions.ConnectionError:
                 pass
 
-        if files and crawl.state in SUCCESSFUL_STATES:
+        if (
+            files
+            and crawl.state in SUCCESSFUL_STATES
+            and isinstance(crawl, CrawlOutWithResources)
+        ):
             crawl.resources = await self._files_to_resources(files, org, crawl.id)
 
         return crawl
@@ -302,7 +306,7 @@ class BaseCrawlOps:
             out_files.append(
                 CrawlFileOut(
                     name=file_.filename,
-                    path=presigned_url,
+                    path=presigned_url or "",
                     hash=file_.hash,
                     size=file_.size,
                     crawlId=crawl_id,
@@ -333,7 +337,7 @@ class BaseCrawlOps:
             await redis.close()
 
     async def add_to_collection(
-        self, crawl_ids: List[uuid.UUID], collection_id: uuid.UUID, org: Organization
+        self, crawl_ids: List[str], collection_id: uuid.UUID, org: Organization
     ):
         """Add crawls to collection."""
         for crawl_id in crawl_ids:
@@ -370,18 +374,18 @@ class BaseCrawlOps:
     async def list_all_base_crawls(
         self,
         org: Optional[Organization] = None,
-        userid: uuid.UUID = None,
-        name: str = None,
-        description: str = None,
-        collection_id: str = None,
+        userid: Optional[uuid.UUID] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        collection_id: Optional[str] = None,
         states: Optional[List[str]] = None,
         first_seed: Optional[str] = None,
         type_: Optional[str] = None,
         cid: Optional[UUID4] = None,
-        cls_type: Union[CrawlOut, CrawlOutWithResources] = CrawlOut,
+        cls_type: Type[Union[CrawlOut, CrawlOutWithResources]] = CrawlOut,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sort_by: str = None,
+        sort_by: Optional[str] = None,
         sort_direction: int = -1,
     ):
         """List crawls of all types from the db"""
@@ -395,7 +399,7 @@ class BaseCrawlOps:
         if cls_type == CrawlOutWithResources:
             resources = True
 
-        query = {}
+        query: dict[str, object] = {}
         if type_:
             query["type"] = type_
         if oid:
@@ -503,7 +507,7 @@ class BaseCrawlOps:
         self, org: Organization, type_: Optional[str] = None
     ):
         """List unique names, first seeds, and descriptions from all captures in org"""
-        match_query = {"oid": org.id}
+        match_query: dict[str, object] = {"oid": org.id}
         if type_:
             match_query["type"] = type_
 

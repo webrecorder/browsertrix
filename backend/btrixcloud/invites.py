@@ -94,9 +94,9 @@ class InviteOps:
         """remove invite from invite list"""
         await self.invites.delete_one({"_id": invite_token})
 
-    async def remove_invite_by_email(self, email: str, oid: str = None):
+    async def remove_invite_by_email(self, email: str, oid: Optional[uuid.UUID] = None):
         """remove invite from invite list by email"""
-        query = {"email": email}
+        query: dict[str, object] = {"email": email}
         if oid:
             query["oid"] = oid
         # Use delete_many rather than delete_one to clean up any duplicate
@@ -119,7 +119,7 @@ class InviteOps:
         user_manager,
         org=None,
         allow_existing=False,
-        headers: dict = None,
+        headers: Optional[dict] = None,
     ):
         """Invite user to org (if not specified, to default org).
 

@@ -329,11 +329,11 @@ class CrawlConfigOps:
         org: Organization,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        created_by: uuid.UUID = None,
-        modified_by: uuid.UUID = None,
-        first_seed: str = None,
-        name: str = None,
-        description: str = None,
+        created_by: Optional[uuid.UUID] = None,
+        modified_by: Optional[uuid.UUID] = None,
+        first_seed: str = "",
+        name: str = "",
+        description: str = "",
         tags: Optional[List[str]] = None,
         schedule: Optional[bool] = None,
         sort_by: str = "lastRun",
@@ -497,7 +497,7 @@ class CrawlConfigOps:
 
     async def stats_recompute_last(self, cid: uuid.UUID, size: int, inc_crawls=1):
         """recompute stats by incrementing size counter and number of crawls"""
-        update_query = {
+        update_query: dict[str, object] = {
             "lastCrawlId": None,
             "lastCrawlStartTime": None,
             "lastStartedBy": None,
@@ -599,7 +599,7 @@ class CrawlConfigOps:
         config_cls=CrawlConfig,
     ):
         """Get crawl config by id"""
-        query = {"_id": cid}
+        query: dict[str, object] = {"_id": cid}
         if oid:
             query["oid"] = oid
         if active_only:
@@ -800,7 +800,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: uuid.UUID):
     Should only be called when a crawl completes from operator or on migration
     when no crawls are running.
     """
-    update_query = {
+    update_query: dict[str, object] = {
         "crawlCount": 0,
         "crawlSuccessfulCount": 0,
         "totalSize": 0,
@@ -890,7 +890,7 @@ def init_crawl_config_api(
         description: Optional[str] = None,
         tag: Union[List[str], None] = Query(default=None),
         schedule: Optional[bool] = None,
-        sortBy: str = None,
+        sortBy: str = "",
         sortDirection: int = -1,
     ):
         # pylint: disable=duplicate-code

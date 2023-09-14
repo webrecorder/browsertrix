@@ -1,4 +1,4 @@
-name: Backend Lint Check
+name: Backend Lint + Type Check
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
           cd backend/
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install -U black pylint
+          pip install -U black pylint mypy
 
       - name: Style Check
         run: |
@@ -35,3 +35,8 @@ jobs:
         run: |
           cd backend/
           pylint btrixcloud/
+
+      - name: Type Check
+        run: |
+          cd backend/
+          mypy --install-types --non-interactive btrixcloud/

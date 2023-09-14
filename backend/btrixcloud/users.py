@@ -276,14 +276,14 @@ class OA2BearerOrQuery(OAuth2PasswordBearer):
     """Override bearer check to also test query"""
 
     async def __call__(
-        self, request: Request = None, websocket: WebSocket = None
+        self, request: Request = None, websocket: WebSocket = None  # type: ignore
     ) -> Optional[str]:
         param = None
         exc = None
         # use websocket as request if no request
-        request = request or websocket
+        request = request or websocket  # type: ignore
         try:
-            param = await super().__call__(request)
+            param = await super().__call__(request)  # type: ignore
             if param:
                 return param
 
@@ -291,7 +291,8 @@ class OA2BearerOrQuery(OAuth2PasswordBearer):
         except Exception as super_exc:
             exc = super_exc
 
-        param = request.query_params.get("auth_bearer")
+        if request:
+            param = request.query_params.get("auth_bearer")
 
         if param:
             return param
@@ -411,7 +412,7 @@ def init_users_api(app, user_manager):
 
     @users_router.get("/me/invite/{token}", tags=["invites"])
     async def get_existing_user_invite_info(
-        token: str, user: User = Depends(current_active_user)
+        token: str, user: UserDB = Depends(current_active_user)
     ):
         try:
             invite = user.invites[token]
