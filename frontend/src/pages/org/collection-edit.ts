@@ -87,7 +87,7 @@ export class CollectionEdit extends LiteElement {
       e.detail.values;
 
     try {
-      if (oldCrawlIds && oldCrawlIds) {
+      if (crawlIds && oldCrawlIds) {
         await this.saveCrawlSelection({
           crawlIds,
           oldCrawlIds,
@@ -96,27 +96,29 @@ export class CollectionEdit extends LiteElement {
         await this.saveMetadata({
           name,
           description,
-          isPublic: isPublic === "on",
+          isPublic,
         });
       }
 
-      this.navTo(`/orgs/${this.orgId}/collections/view/${this.collectionId}`);
       this.notify({
         message: msg(
           html`Successfully updated <strong>${name}</strong> Collection.`
         ),
         variant: "success",
         icon: "check2-circle",
-        duration: 8000,
       });
     } catch (e: any) {
       if (e?.isApiError) {
-        this.serverError = e?.message;
+        this.serverError = e?.message as string;
       } else {
         this.serverError = msg("Something unexpected went wrong");
       }
 
-      console.log(this.serverError);
+      this.notify({
+        message: this.serverError,
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
     }
 
     this.isSubmitting = false;
