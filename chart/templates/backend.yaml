@@ -181,11 +181,17 @@ spec:
     app: {{ .Values.name }}
     role: backend
 
+  {{- if .Values.local_backend_port }}
+  type: NodePort
+  {{- end }}
+
   ports:
     - protocol: TCP
       port: 8000
       name: api
-
+      {{- if .Values.local_backend_port }}
+      nodePort: {{ .Values.local_backend_port }}
+      {{- end }}
     - protocol: TCP
       port: {{ .Values.opPort }}
       name: operator

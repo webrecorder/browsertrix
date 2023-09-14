@@ -136,6 +136,7 @@ frontend_memory: "64Mi"
 # if using ingress, this value is ignored
 local_service_port: 30870
 
+# local_backend_port: 30871 # only needed when using an external ingress
 
 # MongoDB Image
 # =========================================
