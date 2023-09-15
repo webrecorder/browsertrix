@@ -822,10 +822,14 @@ class BtrixOperator(K8sAPI):
         # check for other statuses
         else:
             new_status = None
-            if status_count.get("uploading-wacz"):
-                new_status = "uploading-wacz"
+            if status_count.get("running"):
+                if status.state in ("generate-wacz", "uploading-wacz", "pending-wacz"):
+                    new_status = "running"
+
             elif status_count.get("generate-wacz"):
                 new_status = "generate-wacz"
+            elif status_count.get("uploading-wacz"):
+                new_status = "uploading-wacz"
             elif status_count.get("pending-wait"):
                 new_status = "pending-wait"
             if new_status:
