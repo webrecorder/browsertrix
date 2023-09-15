@@ -35,7 +35,7 @@ STARTING_STATES = ("starting", "waiting_capacity", "waiting_org_limit")
 
 FAILED_STATES = ("canceled", "failed", "skipped_quota_reached")
 
-SUCCESSFUL_STATES = ("complete", "partial_complete")
+SUCCESSFUL_STATES = ("complete", "partial_complete", "stopped")
 
 RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
 

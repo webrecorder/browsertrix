@@ -104,7 +104,7 @@ export type CrawlState =
   | "failed"
   | "skipped_quota_reached"
   | "partial_complete"
-  | "timed_out"
+  | "stopped"
   | "stopping"
   | "canceled";
 

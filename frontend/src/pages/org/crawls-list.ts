@@ -41,7 +41,7 @@ const sortableFields: Record<
 const finishedCrawlStates: CrawlState[] = [
   "complete",
   "partial_complete",
-  "timed_out",
+  "stopped",
 ];
 
 /**

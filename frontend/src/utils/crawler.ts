@@ -14,7 +14,7 @@ export const inactiveCrawlStates: CrawlState[] = [
   "canceled",
   "partial_complete",
   "skipped_quota_reached",
-  "timed_out",
+  "stopped",
   "failed",
 ];
 

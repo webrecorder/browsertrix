@@ -200,13 +200,13 @@ export class CrawlStatus extends LitElement {
         break;
       }
 
-      case "timed_out": {
+      case "stopped": {
         icon = html`<sl-icon
-          name="exclamation-circle"
+          name="dash-circle"
           slot="prefix"
           style="color: var(--warning)"
         ></sl-icon>`;
-        label = msg("Timed Out");
+        label = msg("Stopped");
         break;
       }
 

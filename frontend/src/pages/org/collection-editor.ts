@@ -71,7 +71,7 @@ const sortableFields: Record<
 const finishedCrawlStates: CrawlState[] = [
   "complete",
   "partial_complete",
-  "timed_out",
+  "stopped",
 ];
 const WORKFLOW_CRAWL_LIMIT = 100;
 const WORKFLOW_PAGE_SIZE = 10;

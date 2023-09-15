@@ -801,9 +801,13 @@ class BtrixOperator(K8sAPI):
                 await self.fail_crawl(crawl.id, crawl.cid, status, pods, stats)
                 return status
 
-            completed = status.pagesDone and status.pagesDone >= status.pagesFound
+            # completed = status.pagesDone and status.pagesDone >= status.pagesFound
+            # state = "complete" if completed else "partial_complete"
 
-            state = "complete" if completed else "partial_complete"
+            if status.stopping and status.pagesDone < status.pagesFound:
+                state = "stopped"
+            else:
+                state = "complete"
 
             await self.mark_finished(
                 crawl.id, crawl.cid, crawl.oid, status, state, crawl, stats
@@ -822,10 +826,14 @@ class BtrixOperator(K8sAPI):
         # check for other statuses
         else:
             new_status = None
-            if status_count.get("uploading-wacz"):
-                new_status = "uploading-wacz"
-            elif status_count.get("generate-wacz"):
+            if status_count.get("running") > 0:
+                if status.state in ("generate-wacz", "uploading-wacz", "pending-wacz"):
+                    new_status = "running"
+
+            if status_count.get("generate-wacz"):
                 new_status = "generate-wacz"
+            elif status_count.get("uploading-wacz"):
+                new_status = "uploading-wacz"
             elif status_count.get("pending-wait"):
                 new_status = "pending-wait"
             if new_status:
