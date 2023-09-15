@@ -5,6 +5,8 @@ on:
     # Run daily at 8am UTC
     - cron:  '0 8 * * *'
 
+  push:
+
 jobs:
   btrix-k3d-nightly-test:
     runs-on: ubuntu-latest
