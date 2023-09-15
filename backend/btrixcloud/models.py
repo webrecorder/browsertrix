@@ -16,7 +16,72 @@ from .db import BaseMongoModel
 MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
 
 
-# pylint: disable=invalid-name
+# pylint: disable=too-many-lines, invalid-name
+
+
+# ============================================================================
+
+### CRAWL STATES ###
+
+
+# def makeglobal(enumtype):
+# globals().update(enum.__members__)
+# return enum
+#    for member in enumtype:
+#        globals()[member.name] = member
+
+
+# ============================================================================
+class CrawlState(str, Enum):
+    """Crawl State Enum"""
+
+    # --- states ---
+    STARTING = "starting"
+
+    WAITING_CAPACITY = "waiting_capacity"
+    WAITING_ORG_LIMIT = "waiting_org_limit"
+
+    RUNNING = "running"
+
+    GENERATE_WACZ = "generate-wacz"
+    UPLOADING_WACZ = "uploading-wacz"
+    PENDING_WAIT = "pending-wait"
+
+    CANCELED = "canceled"
+    FAILED = "failed"
+    SKIPPED_QUOTA_REACHED = "skipped_quota_reached"
+
+    STOPPED = "stopped"
+    PARTIAL_COMPLETE = "partial_complete"
+    COMPLETE = "complete"
+
+
+CS = CrawlState
+
+
+# ============================================================================
+class CrawlStates(List[CrawlState]):
+    """list of crawl states"""
+
+    STARTING_STATES = (CS.STARTING, CS.WAITING_CAPACITY, CS.WAITING_ORG_LIMIT)
+
+    POST_PROCESS_STATES = (CS.PENDING_WAIT, CS.GENERATE_WACZ, CS.UPLOADING_WACZ)
+
+    RUNNING_STATES = (CS.RUNNING, *POST_PROCESS_STATES)
+
+    FAILED_STATES = (CS.CANCELED, CS.FAILED, CS.SKIPPED_QUOTA_REACHED)
+
+    SUCCESSFUL_STATES = (CS.COMPLETE, CS.PARTIAL_COMPLETE, CS.STOPPED)
+
+    RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
+
+    RUNNING_AND_STARTING_ONLY = (CS.STARTING, *RUNNING_STATES)
+
+    FINISHED_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
+
+    ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *FINISHED_STATES)
+
+
 # ============================================================================
 
 ### MAIN USER MODEL ###
@@ -208,7 +273,7 @@ class CrawlConfig(CrawlConfigCore):
     lastCrawlStartTime: Optional[datetime]
     lastStartedBy: Optional[UUID4]
     lastCrawlTime: Optional[datetime]
-    lastCrawlState: Optional[str]
+    lastCrawlState: Optional[CrawlState]
     lastCrawlSize: Optional[int]
 
     lastRun: Optional[datetime]
@@ -305,7 +370,7 @@ class BaseCrawl(BaseMongoModel):
 
     name: Optional[str] = ""
 
-    state: str
+    state: CrawlState
 
     stats: Optional[Dict[str, int]] = None
 
@@ -350,7 +415,7 @@ class CrawlOut(BaseMongoModel):
     started: datetime
     finished: Optional[datetime]
 
-    state: str
+    state: CrawlState
 
     stats: Optional[Dict[str, int]]
 

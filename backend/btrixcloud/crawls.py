@@ -20,6 +20,8 @@ from .storages import sync_stream_wacz_logs
 from .utils import dt_now, parse_jsonl_error_messages
 from .basecrawls import BaseCrawlOps
 from .models import (
+    CrawlState,
+    CrawlStates,
     UpdateCrawl,
     DeleteCrawlList,
     CrawlConfig,
@@ -32,7 +34,6 @@ from .models import (
     User,
     PaginatedResponse,
 )
-from .basecrawls import RUNNING_AND_STARTING_STATES, ALL_CRAWL_STATES
 
 
 # ============================================================================
@@ -116,11 +117,13 @@ class CrawlOps(BaseCrawlOps):
             query["userid"] = userid
 
         if running_only:
-            query["state"] = {"$in": list(RUNNING_AND_STARTING_STATES)}
+            query["state"] = {"$in": list(CrawlStates.RUNNING_AND_STARTING_STATES)}
 
         # Override running_only if state list is explicitly passed
         if state:
-            validated_states = [value for value in state if value in ALL_CRAWL_STATES]
+            validated_states = [
+                value for value in state if value in CrawlStates.ALL_CRAWL_STATES
+            ]
             query["state"] = {"$in": validated_states}
 
         if crawl_id:
@@ -253,7 +256,7 @@ class CrawlOps(BaseCrawlOps):
         """initialize new crawl"""
         crawl = Crawl(
             id=crawl_id,
-            state="starting",
+            state=CrawlState.STARTING,
             userid=userid,
             oid=crawlconfig.oid,
             cid=crawlconfig.id,
@@ -310,7 +313,7 @@ class CrawlOps(BaseCrawlOps):
             {
                 "_id": crawl_id,
                 "type": "crawl",
-                "state": {"$in": RUNNING_AND_STARTING_STATES},
+                "state": {"$in": list(CrawlStates.RUNNING_AND_STARTING_STATES)},
             },
             {"$set": data},
         )

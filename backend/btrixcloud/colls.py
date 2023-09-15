@@ -11,7 +11,7 @@ import pymongo
 from fastapi import Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
 
-from .basecrawls import SUCCESSFUL_STATES
+from .models import CrawlStates
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
     Collection,
@@ -265,7 +265,7 @@ class CollectionOps:
 
         crawls, _ = await self.crawl_ops.list_all_base_crawls(
             collection_id=coll_id,
-            states=SUCCESSFUL_STATES,
+            states=CrawlStates.SUCCESSFUL_STATES,
             page_size=10_000,
             cls_type=CrawlOutWithResources,
         )
@@ -325,7 +325,7 @@ class CollectionOps:
         cursor = self.crawls.find({"collectionIds": collection_id})
         crawls = await cursor.to_list(length=10_000)
         for crawl in crawls:
-            if crawl["state"] not in SUCCESSFUL_STATES:
+            if crawl["state"] not in CrawlStates.SUCCESSFUL_STATES:
                 continue
             crawl_count += 1
             files = crawl.get("files", [])

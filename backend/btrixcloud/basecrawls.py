@@ -13,6 +13,7 @@ from fastapi import HTTPException, Depends
 from redis import exceptions
 
 from .models import (
+    CrawlStates,
     CrawlFile,
     CrawlFileOut,
     BaseCrawl,
@@ -27,23 +28,6 @@ from .models import (
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .storages import get_presigned_url, delete_crawl_file_object
 from .utils import dt_now, get_redis_crawl_stats
-
-
-RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
-
-STARTING_STATES = ("starting", "waiting_capacity", "waiting_org_limit")
-
-FAILED_STATES = ("canceled", "failed", "skipped_quota_reached")
-
-SUCCESSFUL_STATES = ("complete", "partial_complete", "stopped")
-
-RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
-
-RUNNING_AND_STARTING_ONLY = ("starting", *RUNNING_STATES)
-
-NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
-
-ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
 
 
 # ============================================================================
@@ -253,7 +237,7 @@ class BaseCrawlOps:
 
         # if running, get stats directly from redis
         # more responsive, saves db update in operator
-        if crawl.state in RUNNING_STATES:
+        if crawl.state in CrawlStates.RUNNING_STATES:
             try:
                 async with self.get_redis(crawl.id) as redis:
                     crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
@@ -263,7 +247,7 @@ class BaseCrawlOps:
 
         if (
             files
-            and crawl.state in SUCCESSFUL_STATES
+            and crawl.state in CrawlStates.SUCCESSFUL_STATES
             and isinstance(crawl, CrawlOutWithResources)
         ):
             crawl.resources = await self._files_to_resources(files, org, crawl.id)

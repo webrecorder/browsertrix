@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
+    CrawlStates,
     CrawlConfigIn,
     ConfigRevision,
     CrawlConfig,
@@ -28,7 +29,6 @@ from .models import (
     User,
     PaginatedResponse,
 )
-from .basecrawls import FAILED_STATES
 from .utils import dt_now
 
 
@@ -821,7 +821,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: uuid.UUID):
         update_query["crawlCount"] = len(results)
 
         update_query["crawlSuccessfulCount"] = len(
-            [res for res in results if res["state"] not in FAILED_STATES]
+            [res for res in results if res["state"] not in CrawlStates.FAILED_STATES]
         )
 
         last_crawl = results[0]
