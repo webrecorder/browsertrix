@@ -335,7 +335,7 @@ class OrgOps:
 
     async def get_org_metrics(self, org: Organization):
         """Calculate and return org metrics"""
-        # pylint: ignore=too-many-locals
+        # pylint: disable=too-many-locals
         storage_quota_gb = 0
         storage_quota = await self.get_org_storage_quota(org.id)
         if storage_quota:
