@@ -17,6 +17,7 @@ module.exports = [
       watchFiles: ["src/**/*", __filename],
       open: true,
       compress: true,
+      hot: false,
       static: [
         {
           directory: shoelaceAssetsSrcPath,
