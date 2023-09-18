@@ -643,34 +643,31 @@ export class CrawlConfigEditor extends LiteElement {
     const isActive = tabName === this.progressState.activeTab;
     const isConfirmSettings = tabName === "confirmSettings";
     const { error: isInvalid, completed } = this.progressState.tabs[tabName];
-    const iconProps = {
-      name: "circle",
-      library: "default",
-      class: "text-neutral-400",
-    };
-    if (isConfirmSettings) {
-      iconProps.name = "info-circle";
-      iconProps.class = "text-base";
-    } else {
-      if (isInvalid) {
-        iconProps.name = "exclamation-circle";
-        iconProps.class = "text-danger";
-      } else if (isActive) {
-        iconProps.name = "pencil-circle-dashed";
-        iconProps.library = "app";
-        iconProps.class = "text-base";
-      } else if (completed) {
-        iconProps.name = "check-circle";
-      }
-    }
+    let icon: TemplateResult = html``;
 
-    return html`
-      <btrix-tab
-        slot="nav"
-        name="newJobConfig-${tabName}"
-        class="whitespace-nowrap"
-        @click=${this.tabClickHandler(tabName)}
-      >
+    if (!this.configId) {
+      const iconProps = {
+        name: "circle",
+        library: "default",
+        class: "text-neutral-400",
+      };
+      if (isConfirmSettings) {
+        iconProps.name = "info-circle";
+        iconProps.class = "text-base";
+      } else {
+        if (isInvalid) {
+          iconProps.name = "exclamation-circle";
+          iconProps.class = "text-danger";
+        } else if (isActive) {
+          iconProps.name = "pencil-circle-dashed";
+          iconProps.library = "app";
+          iconProps.class = "text-base";
+        } else if (completed) {
+          iconProps.name = "check-circle";
+        }
+      }
+
+      icon = html`
         <sl-tooltip
           content=${msg("Form section contains errors")}
           ?disabled=${!isInvalid}
@@ -682,7 +679,22 @@ export class CrawlConfigEditor extends LiteElement {
             class="inline-block align-middle mr-1 text-base ${iconProps.class}"
           ></sl-icon>
         </sl-tooltip>
-        <span class="inline-block align-middle whitespace-normal">
+      `;
+    }
+
+    return html`
+      <btrix-tab
+        slot="nav"
+        name="newJobConfig-${tabName}"
+        class="whitespace-nowrap"
+        @click=${this.tabClickHandler(tabName)}
+      >
+        ${icon}
+        <span
+          class="inline-block align-middle whitespace-normal${this.configId
+            ? " ml-1"
+            : ""}"
+        >
           ${content}
         </span>
       </btrix-tab>
@@ -1974,6 +1986,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const nextTab = STEPS[STEPS.indexOf(activeTab!) + 1] as StepName;
       this.updateProgressState({
         activeTab: nextTab,
+        tabs: {
+          [activeTab]: {
+            completed: true,
+          },
+        },
       });
     }
   }
