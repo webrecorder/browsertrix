@@ -80,7 +80,9 @@ export type Workflow = CrawlConfig & {
   autoAddCollections: string[];
 };
 
-export type ListWorkflow = Omit<Workflow, "config">;
+export type ListWorkflow = Omit<Workflow, "config"> & {
+  seedCount: number;
+};
 
 export type Profile = {
   id: string;
