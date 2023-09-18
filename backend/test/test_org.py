@@ -358,3 +358,27 @@ def test_update_event_webhook_urls_org_crawler(crawler_auth_headers, default_org
     )
     assert r.status_code == 403
     assert r.json()["detail"] == "User does not have permission to perform this action"
+
+
+def test_org_metrics(crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/metrics",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["storageUsedBytes"] > 0
+    assert data["storageUsedGB"] > 0
+    assert data["storageQuotaBytes"] >= 0
+    assert data["storageQuotaGB"] >= 0
+    assert data["archivedItemCount"] > 0
+    assert data["crawlCount"] > 0
+    assert data["uploadCount"] >= 0
+    assert data["archivedItemCount"] == data["crawlCount"] + data["uploadCount"]
+    assert data["pageCount"] > 0
+    assert data["profileCount"] >= 0
+    assert data["workflowsRunningCount"] >= 0
+    assert data["workflowsQueuedCount"] >= 0
+    assert data["collectionsCount"] > 0
+    assert data["publicCollectionsCount"] >= 0
