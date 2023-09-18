@@ -745,7 +745,7 @@ class OrgMetrics(BaseModel):
 
     storageUsedBytes: int
     storageUsedGB: float
-    storageQuota: int
+    storageQuotaBytes: int
     storageQuotaGB: float
     archivedItemCount: int
     crawlCount: int

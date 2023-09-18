@@ -374,7 +374,7 @@ class OrgOps:
         return {
             "storageUsedBytes": org.bytesStored,
             "storageUsedGB": round((org.bytesStored / BYTES_IN_GB), 2),
-            "storageQuota": storage_quota,
+            "storageQuotaBytes": storage_quota,
             "storageQuotaGB": storage_quota_gb,
             "archivedItemCount": archived_item_count,
             "crawlCount": crawl_count,
