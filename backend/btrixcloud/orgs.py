@@ -343,6 +343,8 @@ class OrgOps:
 
         max_concurrent_crawls = await self.get_max_concurrent_crawls(org.id)
 
+        # Calculate these counts in loop to avoid having db iterate through
+        # archived items several times.
         archived_item_count = 0
         crawl_count = 0
         upload_count = 0
