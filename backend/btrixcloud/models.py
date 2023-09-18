@@ -221,8 +221,59 @@ class CrawlConfig(CrawlConfigCore):
 
 
 # ============================================================================
-class CrawlConfigOut(CrawlConfig):
+class CrawlConfigOut(BaseMongoModel):
     """Crawl Config Output"""
+
+    config: Optional[RawCrawlConfig]
+
+    schedule: Optional[str] = ""
+
+    jobType: Optional[JobType] = JobType.CUSTOM
+    config: RawCrawlConfig
+
+    tags: Optional[List[str]] = []
+
+    crawlTimeout: Optional[int] = 0
+    maxCrawlSize: Optional[int] = 0
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1  # type: ignore
+
+    oid: UUID4
+
+    profileid: Optional[UUID4]
+
+    id: UUID4
+
+    name: Optional[str]
+    description: Optional[str]
+
+    created: datetime
+    createdBy: Optional[UUID4]
+
+    modified: Optional[datetime]
+    modifiedBy: Optional[UUID4]
+
+    autoAddCollections: Optional[List[UUID4]] = []
+
+    inactive: Optional[bool] = False
+
+    rev: int = 0
+
+    crawlAttemptCount: Optional[int] = 0
+    crawlCount: Optional[int] = 0
+    crawlSuccessfulCount: Optional[int] = 0
+
+    totalSize: Optional[int] = 0
+
+    lastCrawlId: Optional[str]
+    lastCrawlStartTime: Optional[datetime]
+    lastStartedBy: Optional[UUID4]
+    lastCrawlTime: Optional[datetime]
+    lastCrawlState: Optional[str]
+    lastCrawlSize: Optional[int]
+
+    lastRun: Optional[datetime]
+
+    isCrawlRunning: Optional[bool] = False
 
     lastCrawlStopping: Optional[bool] = False
 
@@ -234,8 +285,6 @@ class CrawlConfigOut(CrawlConfig):
 
     firstSeed: Optional[str]
     seedCount: int = 0
-
-    config: Optional[RawCrawlConfig]
 
 
 # ============================================================================
