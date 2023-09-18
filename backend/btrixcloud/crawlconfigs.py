@@ -372,9 +372,10 @@ class CrawlConfigOps:
         aggregate = [
             {"$match": match_query},
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
+            {"$set": {"seedCount": {"$size": "$config.seeds"}}},
             # Set firstSeed
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            {"$unset": ["firstSeedObject"]},
+            {"$unset": ["firstSeedObject", "config"]},
         ]
 
         if first_seed:
@@ -589,7 +590,24 @@ class CrawlConfigOps:
                 crawlconfig.profileid, org
             )
 
+        crawlconfig.seedCount = await self.get_crawl_config_seed_count(cid, org)
+
         return crawlconfig
+
+    async def get_crawl_config_seed_count(self, cid: uuid.UUID, org: Organization):
+        """Return count of seeds in crawl config"""
+        cursor = self.crawl_configs.aggregate(
+            [
+                {"$match": {"_id": cid, "oid": org.id}},
+                {"$project": {"seedCount": {"$size": "$config.seeds"}}},
+            ]
+        )
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        seed_count = result["seedCount"]
+        if seed_count:
+            return int(seed_count)
+        return 0
 
     async def get_crawl_config(
         self,

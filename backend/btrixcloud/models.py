@@ -233,6 +233,9 @@ class CrawlConfigOut(CrawlConfig):
     lastStartedByName: Optional[str]
 
     firstSeed: Optional[str]
+    seedCount: int = 0
+
+    config: Optional[RawCrawlConfig]
 
 
 # ============================================================================

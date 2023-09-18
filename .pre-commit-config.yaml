@@ -17,6 +17,7 @@ repos:
     - id: mypy
       name: mypy
       entry: cd backend && mypy
+      language: python
       args: ["btrixcloud/"]
 - repo: local
   hooks:
