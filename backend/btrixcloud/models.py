@@ -429,6 +429,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     cid: UUID4
 
+    config: RawCrawlConfig
+
     cid_rev: int = 0
 
     # schedule: Optional[str]
