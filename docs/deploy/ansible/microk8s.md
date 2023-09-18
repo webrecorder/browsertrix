@@ -13,12 +13,22 @@ To run this ansible playbook, you need to:
 - Make sure you can ssh to it, with a sudo user: ssh <your-user>@<your-domain>
 - Install Ansible on your local machine (the control machine).
 
+!!! note
+
+    Ansible requires an SSH key with no password. You cannot use a passphrase.
+		Sudo must similarly be available without a passphrase for ansible to work
+
+??? info Debian Users
+
+		You will need to install `acl` on the target Ansible machine to set permissions: 
+		`sudo apt-get install acl`
+
 #### Install
 
 1. Clone the repo:
 ```zsh
 git clone https://github.com/webrecorder/browsertrix-cloud.git
-cd browsertrix-cloud
+cd browsertrix-cloud/ansible
 ```
 
 2. [Look at the configuration options](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/group_vars/microk8s/main.yml) and modify them or pass them as extra variables as shown below. 
