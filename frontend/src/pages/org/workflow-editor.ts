@@ -706,8 +706,13 @@ export class CrawlConfigEditor extends LiteElement {
     { isFirst = false, isLast = false } = {}
   ) {
     return html`
-      <div class="border rounded-lg flex flex-col h-full">
-        <div class="flex-1 p-6 grid grid-cols-5 gap-4">
+      <div class="flex flex-col h-full min-h-[21rem]">
+        <div
+          class="flex-1 p-6 grid grid-cols-5 gap-4 border rounded-lg ${!this
+            .configId && !isLast
+            ? "border-b-0 rounded-b-none"
+            : "mb-4"}"
+        >
           ${content}
           ${when(this.serverError, () =>
             this.renderErrorAlert(this.serverError!)
@@ -720,6 +725,37 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   private renderFooter({ isFirst = false, isLast = false }) {
+    if (this.configId) {
+      return html`
+        <footer
+          class="px-6 py-4 flex gap-2 items-center justify-end border rounded-lg"
+        >
+          <div class="mr-auto">${this.renderRunNowToggle()}</div>
+          <sl-button
+            type="submit"
+            size="small"
+            variant="primary"
+            ?disabled=${this.isSubmitting}
+            ?loading=${this.isSubmitting}
+          >
+            ${msg("Save Changes")}
+          </sl-button>
+        </footer>
+      `;
+    }
+
+    if (!this.configId) {
+      return html`
+        <footer
+          class="px-6 py-4 flex gap-2 items-center justify-end border ${isLast
+            ? "rounded-lg"
+            : "rounded-b-lg"}"
+        >
+          ${this.renderSteppedFooterButtons({ isFirst, isLast })}
+        </footer>
+      `;
+    }
+
     return html`
       <div class="px-6 py-4 border-t flex gap-2 items-center justify-end">
         ${when(
