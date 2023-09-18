@@ -341,6 +341,8 @@ class OrgOps:
         if storage_quota:
             storage_quota_gb = round(storage_quota / BYTES_IN_GB)
 
+        max_concurrent_crawls = await self.get_max_concurrent_crawls(org.id)
+
         archived_item_count = 0
         crawl_count = 0
         upload_count = 0
@@ -382,7 +384,7 @@ class OrgOps:
             "pageCount": page_count,
             "profileCount": profile_count,
             "workflowsRunningCount": workflows_running_count,
-            "maxConcurrentCrawls": org.quotas.maxConcurrentCrawls,
+            "maxConcurrentCrawls": max_concurrent_crawls,
             "workflowsQueuedCount": workflows_queued_count,
             "collectionsCount": collections_count,
             "publicCollectionsCount": public_collections_count,
