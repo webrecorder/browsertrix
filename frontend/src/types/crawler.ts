@@ -80,43 +80,7 @@ export type Workflow = CrawlConfig & {
   autoAddCollections: string[];
 };
 
-export type ListWorkflow = {
-  id: string;
-  jobType?: JobType;
-  name: string;
-  description: string | null;
-  schedule: string;
-  scale: number;
-  profileid: string | null;
-  tags: string[];
-  crawlTimeout: number | null;
-  maxCrawlSize: number | null;
-  oid: string;
-  profileName: string | null;
-  createdBy: string; // User ID
-  createdByName: string | null; // User full name
-  created: string; // Date string
-  modifiedBy: string; // User ID
-  modifiedByName: string | null; // User full name
-  modified: string; // Date string
-  crawlCount: number;
-  crawlAttemptCount: number;
-  crawlSuccessfulCount: number;
-  lastCrawlId: string | null; // last finished or current crawl
-  lastCrawlStartTime: string | null;
-  lastCrawlTime: string | null; // when last crawl finished
-  lastCrawlState: CrawlState;
-  lastCrawlSize: number | null;
-  lastStartedByName: string | null;
-  lastCrawlStopping: boolean | null;
-  lastRun: string;
-  totalSize: string | null;
-  inactive: boolean;
-  firstSeed: string;
-  isCrawlRunning: boolean | null;
-  autoAddCollections: string[];
-  seedCount: number;
-};
+export type ListWorkflow = Omit<Workflow, "config">;
 
 export type Profile = {
   id: string;
