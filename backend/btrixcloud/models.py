@@ -740,6 +740,26 @@ class OrgOut(BaseMongoModel):
 
 
 # ============================================================================
+class OrgMetrics(BaseModel):
+    """Organization API metrics model"""
+
+    storageUsedBytes: int
+    storageUsedGB: float
+    storageQuota: int
+    storageQuotaGB: float
+    archivedItemCount: int
+    crawlCount: int
+    uploadCount: int
+    pageCount: int
+    profileCount: int
+    workflowsRunningCount: int
+    maxConcurrentCrawls: int
+    workflowsQueuedCount: int
+    collectionsCount: int
+    publicCollectionsCount: int
+
+
+# ============================================================================
 
 ### PAGINATION ###
 
