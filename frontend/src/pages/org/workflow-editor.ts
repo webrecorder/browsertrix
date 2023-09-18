@@ -185,9 +185,6 @@ const getDefaultFormState = (): FormState => ({
   autoscrollBehavior: true,
 });
 const defaultProgressState = getDefaultProgressState();
-const orderedTabNames = STEPS.filter(
-  (stepName) => defaultProgressState.tabs[stepName as StepName]
-) as StepName[];
 
 function getLocalizedWeekDays() {
   const now = new Date();
@@ -551,6 +548,14 @@ export class CrawlConfigEditor extends LiteElement {
       crawlMetadata: msg("Metadata"),
       confirmSettings: msg("Review Settings"),
     };
+    let orderedTabNames = STEPS.filter(
+      (stepName) => defaultProgressState.tabs[stepName as StepName]
+    ) as StepName[];
+
+    if (this.configId) {
+      // Remove review tab
+      orderedTabNames = orderedTabNames.slice(0, -1);
+    }
 
     return html`
       <form
@@ -563,7 +568,11 @@ export class CrawlConfigEditor extends LiteElement {
       >
         <btrix-tab-list
           activePanel="newJobConfig-${this.progressState.activeTab}"
-          progressPanel="newJobConfig-${this.progressState.activeTab}"
+          progressPanel=${ifDefined(
+            this.configId
+              ? undefined
+              : `newJobConfig-${this.progressState.activeTab}`
+          )}
         >
           <header slot="header" class="flex justify-between items-baseline">
             <h3 class="font-semibold">
