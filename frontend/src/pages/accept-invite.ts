@@ -3,7 +3,7 @@ import { msg, str, localized } from "@lit/localize";
 
 import LiteElement, { html } from "../utils/LiteElement";
 import type { AuthState } from "../utils/AuthService";
-import { DASHBOARD_ROUTE } from "../routes";
+import { ROUTES } from "../routes";
 
 @localized()
 export class AcceptInvite extends LiteElement {
@@ -158,7 +158,7 @@ export class AcceptInvite extends LiteElement {
         icon: "check2-circle",
       });
 
-      this.navTo(DASHBOARD_ROUTE);
+      this.navTo(ROUTES.home);
     } catch (err: any) {
       if (err.isApiError && err.message === "Invalid Invite Code") {
         this.serverError = msg("This invitation is not valid");
@@ -175,6 +175,6 @@ export class AcceptInvite extends LiteElement {
       icon: "info-circle",
     });
 
-    this.navTo(DASHBOARD_ROUTE);
+    this.navTo(ROUTES.home);
   }
 }

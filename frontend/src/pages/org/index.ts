@@ -138,6 +138,8 @@ export class Org extends LiteElement {
 
     let tabPanelContent = "" as any;
 
+    console.log(this.orgTab);
+
     switch (this.orgTab) {
       case "items":
         tabPanelContent = this.renderArchive();

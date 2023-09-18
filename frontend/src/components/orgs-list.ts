@@ -6,7 +6,6 @@ import type { OrgData } from "../utils/orgs";
 import LiteElement, { html } from "../utils/LiteElement";
 
 import { isAdmin } from "../utils/orgs";
-import { DASHBOARD_ROUTE } from "../routes";
 import { SlInput } from "@shoelace-style/shoelace";
 
 @localized()

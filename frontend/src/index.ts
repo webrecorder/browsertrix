@@ -19,7 +19,7 @@ import type { CurrentUser, UserOrg } from "./types/user";
 import type { AuthStorageEventData } from "./utils/AuthService";
 import type { OrgData } from "./utils/orgs";
 import theme from "./theme";
-import { ROUTES, DASHBOARD_ROUTE } from "./routes";
+import { ROUTES } from "./routes";
 import "./shoelace";
 import "./components";
 import "./pages";
@@ -128,7 +128,7 @@ export class App extends LiteElement {
         window.location.pathname === "/reset-password")
     ) {
       // Redirect to logged in home page
-      this.viewState = this.router.match(DASHBOARD_ROUTE);
+      this.viewState = this.router.match(ROUTES.home);
       window.history.replaceState(this.viewState, "", this.viewState.pathname);
     } else {
       this.viewState = this.router.match(
@@ -217,7 +217,7 @@ export class App extends LiteElement {
 
     if (newViewPath === "/log-in" && this.authService.authState) {
       // Redirect to logged in home page
-      this.viewState = this.router.match(DASHBOARD_ROUTE);
+      this.viewState = this.router.match(ROUTES.home);
     } else {
       this.viewState = this.router.match(newViewPath);
     }
@@ -794,7 +794,7 @@ export class App extends LiteElement {
     });
 
     if (!detail.api) {
-      this.navigate(detail.redirectUrl || DASHBOARD_ROUTE);
+      this.navigate(detail.redirectUrl || ROUTES.home);
     }
 
     if (detail.firstLogin) {

@@ -6,7 +6,7 @@ import type { ViewState } from "../utils/APIRouter";
 import LiteElement, { html } from "../utils/LiteElement";
 import type { LoggedInEventDetail } from "../utils/AuthService";
 import AuthService from "../utils/AuthService";
-import { DASHBOARD_ROUTE } from "../routes";
+import { ROUTES } from "../routes";
 
 type FormContext = {
   successMessage?: string;
@@ -146,7 +146,7 @@ export class LogInPage extends LiteElement {
   viewState!: ViewState;
 
   @property({ type: String })
-  redirectUrl: string = DASHBOARD_ROUTE;
+  redirectUrl: string = ROUTES.home;
 
   private formStateService = interpret(machine);
 
