@@ -229,7 +229,6 @@ class CrawlConfigOut(BaseMongoModel):
     schedule: Optional[str] = ""
 
     jobType: Optional[JobType] = JobType.CUSTOM
-    config: RawCrawlConfig
 
     tags: Optional[List[str]] = []
 
