@@ -264,7 +264,7 @@ export class App extends LiteElement {
     const isAdmin = this.userInfo?.isAdmin;
     let homeHref = "/";
     if (!isAdmin && this.selectedOrgId) {
-      homeHref = `/orgs/${this.selectedOrgId}/workflows/crawls`;
+      homeHref = `/orgs/${this.selectedOrgId}`;
     }
 
     return html`
@@ -392,7 +392,7 @@ export class App extends LiteElement {
           @sl-select=${(e: CustomEvent) => {
             const { value } = e.detail.item;
             if (value) {
-              this.navigate(`/orgs/${value}/workflows/crawls`);
+              this.navigate(`/orgs/${value}`);
               if (this.userInfo) {
                 this.persistUserSettings(this.userInfo.id, { orgId: value });
               }
@@ -624,10 +624,11 @@ export class App extends LiteElement {
       case "org": {
         const orgId = this.viewState.params.orgId;
         const orgPath = this.viewState.pathname;
-        const orgTab = window.location.pathname
-          .slice(window.location.pathname.indexOf(orgId) + orgId.length)
-          .replace(/^\//, "")
-          .split("/")[0];
+        const orgTab =
+          window.location.pathname
+            .slice(window.location.pathname.indexOf(orgId) + orgId.length)
+            .replace(/(^\/|\/$)/, "")
+            .split("/")[0] || "home";
         return html`<btrix-org
           class="w-full"
           @navigate=${this.onNavigateTo}

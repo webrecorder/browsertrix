@@ -24,6 +24,7 @@ import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./browser-profiles-new";
 import "./settings";
+import "./dashboard";
 import type {
   Member,
   OrgNameChangeEvent,
@@ -33,6 +34,7 @@ import type {
 import type { Tab as CollectionTab } from "./collection-detail";
 
 export type OrgTab =
+  | "home"
   | "crawls"
   | "workflows"
   | "items"
@@ -49,7 +51,7 @@ type Params = {
   collectionTab?: string;
   itemType?: Crawl["type"];
 };
-const defaultTab = "workflows";
+const defaultTab = "home";
 
 @needLogin
 @localized()
@@ -138,9 +140,10 @@ export class Org extends LiteElement {
 
     let tabPanelContent = "" as any;
 
-    console.log(this.orgTab);
-
     switch (this.orgTab) {
+      case "home":
+        tabPanelContent = this.renderDashboard();
+        break;
       case "items":
         tabPanelContent = this.renderArchive();
         break;
@@ -210,6 +213,11 @@ export class Org extends LiteElement {
       <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
         <nav class="-ml-3 flex items-end overflow-x-auto">
           ${this.renderNavTab({
+            tabName: "home",
+            label: msg("Overview"),
+            path: "",
+          })}
+          ${this.renderNavTab({
             tabName: "workflows",
             label: msg("Crawling"),
             path: "workflows/crawls",
@@ -228,12 +236,14 @@ export class Org extends LiteElement {
             this.renderNavTab({
               tabName: "browser-profiles",
               label: msg("Browser Profiles"),
+              path: "browser-profiles",
             })
           )}
           ${when(this.isAdmin || this.userInfo?.isAdmin, () =>
             this.renderNavTab({
               tabName: "settings",
               label: msg("Org Settings"),
+              path: "settings",
             })
           )}
         </nav>
@@ -250,7 +260,7 @@ export class Org extends LiteElement {
   }: {
     tabName: OrgTab;
     label: string;
-    path?: string;
+    path: string;
   }) {
     const isActive = this.orgTab === tabName;
 
@@ -258,7 +268,7 @@ export class Org extends LiteElement {
       <a
         id="${tabName}-tab"
         class="block flex-shrink-0 px-3 hover:bg-neutral-50 rounded-t transition-colors"
-        href=${`/orgs/${this.orgId}/${path || tabName}`}
+        href=${`/orgs/${this.orgId}${path ? `/${path}` : ""}`}
         aria-selected=${isActive}
         @click=${this.navLink}
       >
@@ -271,6 +281,10 @@ export class Org extends LiteElement {
         </div>
       </a>
     `;
+  }
+
+  private renderDashboard() {
+    return html` <btrix-dashboard .org=${this.org}></btrix-dashboard> `;
   }
 
   private renderArchive() {
