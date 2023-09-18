@@ -16,7 +16,7 @@ from .db import BaseMongoModel
 MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
 
 
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, too-many-lines
 # ============================================================================
 
 ### MAIN USER MODEL ###
