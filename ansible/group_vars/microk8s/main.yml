@@ -19,7 +19,7 @@ microk8s_channel: stable
 your_user: root          # if your cloud provide uses another user change this
 browsertrix_cloud_home: "/opt/browsertrix-cloud"
 microk8s_user_home: "/home/{{ microk8s_user }}"
-microk8s_user: conan     # change this to a different user if you don't want conan the deployer 
+microk8s_user: conan     # change this to a different user if you don't want conan the deployer
 microk8s_plugins:
   dns: true              # CoreDNS
   ingress: true          # Ingress controller for external access
@@ -28,3 +28,10 @@ microk8s_plugins:
   registry: true         # Private image registry exposed on localhost:32000
   storage: true          # Storage class; allocates storage from host
   cert-manager: true     # Cert manager
+
+
+# These options are only necessary for HTTPS
+enable_signing: false           # Change this if you want HTTPS
+signing_domain: "mydomain.com"  # Set to your domain for HTTPS
+cert_email: "user@mydomain.com" # Email for CertBot
+signing_authtoken: "{{ 99999999 | random | to_uuid }}"
