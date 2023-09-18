@@ -354,9 +354,10 @@ class OrgOps:
             if item["state"] not in SUCCESSFUL_STATES:
                 continue
             archived_item_count += 1
-            if item["type"] == "crawl":
+            type_ = item.get("type")
+            if type_ == "crawl":
                 crawl_count += 1
-            if item["type"] == "upload":
+            if type_ == "upload":
                 upload_count += 1
             if item.get("stats"):
                 page_count += item.get("stats", {}).get("done", 0)
