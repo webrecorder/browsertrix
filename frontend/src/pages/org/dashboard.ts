@@ -1,9 +1,11 @@
 import type { TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import type { SlSelectEvent } from "@shoelace-style/shoelace";
 
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { OrgData } from "../../utils/orgs";
+import type { SelectNewDialogEvent } from "./index";
 
 @localized()
 export class Dashboard extends LiteElement {
@@ -53,7 +55,31 @@ export class Dashboard extends LiteElement {
                   icon: "file-richtext-fill",
                 })}
               </dl>
-            `
+            `,
+            html`<footer class="mt-4 flex justify-end">
+              <sl-dropdown
+                distance="4"
+                placement="bottom-end"
+                @sl-select=${(e: SlSelectEvent) => {
+                  this.dispatchEvent(
+                    <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                      detail: e.detail.item.value,
+                    })
+                  );
+                }}
+              >
+                <sl-button slot="trigger" size="small" caret>
+                  <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                  ${msg("Add New...")}
+                </sl-button>
+                <sl-menu>
+                  <sl-menu-item value="browser-profile">
+                    ${msg("Browser Profile")}
+                  </sl-menu-item>
+                  <sl-menu-item value="upload">${msg("Upload")}</sl-menu-item>
+                </sl-menu>
+              </sl-dropdown>
+            </footer> `
           )}
           ${this.renderCard(
             msg("Crawling"),
@@ -74,7 +100,7 @@ export class Dashboard extends LiteElement {
               </dl>
             `,
             html`
-              <footer class="text-right">
+              <footer class="mt-4 flex justify-end">
                 <sl-button
                   href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
                   size="small"
@@ -100,7 +126,7 @@ export class Dashboard extends LiteElement {
               </dl>
             `,
             html`
-              <footer class="text-right">
+              <footer class="mt-4 flex justify-end">
                 <sl-button
                   href=${`/orgs/${this.orgId}/collections/new`}
                   size="small"

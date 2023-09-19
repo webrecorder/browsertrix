@@ -6,7 +6,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import type { ViewState } from "../../utils/APIRouter";
 import type { AuthState } from "../../utils/AuthService";
 import type { CurrentUser } from "../../types/user";
-import type { Crawl } from "../../types/crawler";
+import type { Crawl, JobType } from "../../types/crawler";
 import type { OrgData } from "../../utils/orgs";
 import { isAdmin, isCrawler } from "../../utils/orgs";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -25,6 +25,8 @@ import "./browser-profiles-list";
 import "./browser-profiles-new";
 import "./settings";
 import "./dashboard";
+import "./components/file-uploader";
+import "./components/new-browser-profile-dialog";
 import type {
   Member,
   OrgNameChangeEvent,
@@ -33,6 +35,9 @@ import type {
 } from "./settings";
 import type { Tab as CollectionTab } from "./collection-detail";
 
+export type SelectNewDialogEvent = CustomEvent<
+  "workflow" | "collection" | "browser-profile" | "upload"
+>;
 export type OrgTab =
   | "home"
   | "crawls"
@@ -50,6 +55,8 @@ type Params = {
   collectionId?: string;
   collectionTab?: string;
   itemType?: Crawl["type"];
+  jobType?: JobType;
+  name: string;
 };
 const defaultTab = "home";
 
@@ -85,13 +92,20 @@ export class Org extends LiteElement {
   private showStorageQuotaAlert = false;
 
   @state()
+  private openDialogName?:
+    | "workflow"
+    | "collection"
+    | "browser-profile"
+    | "upload";
+
+  @state()
+  private isDialogVisible = false;
+
+  @state()
   private org?: OrgData | null;
 
   @state()
   private isSavingOrgName = false;
-
-  @state()
-  private isFetching = false;
 
   get userOrg() {
     if (!this.userInfo) return null;
@@ -179,6 +193,7 @@ export class Org extends LiteElement {
           ${tabPanelContent}
         </div>
       </main>
+      ${this.renderNewResourceDialogs()}
     `;
   }
 
@@ -283,9 +298,52 @@ export class Org extends LiteElement {
     `;
   }
 
+  private renderNewResourceDialogs() {
+    if (!this.authState || !this.orgId || !this.isCrawler) {
+      return;
+    }
+    if (!this.isDialogVisible) {
+      return;
+    }
+    return html`
+      <div
+        @sl-hide=${(e: CustomEvent) => {
+          e.stopPropagation();
+          this.openDialogName = undefined;
+        }}
+        @sl-after-hide=${(e: CustomEvent) => {
+          e.stopPropagation();
+          this.isDialogVisible = false;
+        }}
+      >
+        <btrix-file-uploader
+          orgId=${this.orgId}
+          .authState=${this.authState}
+          ?open=${this.openDialogName === "upload"}
+          @request-close=${() => (this.openDialogName = undefined)}
+          @uploaded=${() => {
+            if (this.orgTab === "home") {
+              this.navTo(`/orgs/${this.orgId}/items/upload`);
+            }
+          }}
+        ></btrix-file-uploader>
+        <btrix-new-browser-profile-dialog
+          .authState=${this.authState}
+          orgId=${this.orgId}
+          ?open=${this.openDialogName === "browser-profile"}
+        >
+        </btrix-new-browser-profile-dialog>
+      </div>
+    `;
+  }
+
   private renderDashboard() {
     return html`
-      <btrix-dashboard orgId=${this.orgId} .org=${this.org}></btrix-dashboard>
+      <btrix-dashboard
+        orgId=${this.orgId}
+        .org=${this.org || null}
+        @select-new-dialog=${this.onSelectNewDialog}
+      ></btrix-dashboard>
     `;
   }
 
@@ -310,8 +368,8 @@ export class Org extends LiteElement {
       ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
       ?isCrawler=${this.isCrawler}
       itemType=${ifDefined(this.params.itemType || undefined)}
-      ?shouldFetch=${this.orgTab === "crawls" || this.orgTab === "items"}
       @storage-quota-update=${this.onStorageQuotaUpdate}
+      @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-crawls-list>`;
   }
 
@@ -345,7 +403,9 @@ export class Org extends LiteElement {
         orgId=${this.orgId!}
         ?isCrawler=${this.isCrawler}
         .initialWorkflow=${workflow}
+        jobType=${ifDefined(this.params.jobType)}
         @storage-quota-update=${this.onStorageQuotaUpdate}
+        @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }
 
@@ -356,12 +416,11 @@ export class Org extends LiteElement {
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
       @storage-quota-update=${this.onStorageQuotaUpdate}
+      @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-workflows-list>`;
   }
 
   private renderBrowserProfiles() {
-    const isNewResourceTab = this.params.hasOwnProperty("new");
-
     if (this.params.browserProfileId) {
       return html`<btrix-browser-profiles-detail
         .authState=${this.authState!}
@@ -383,8 +442,8 @@ export class Org extends LiteElement {
     return html`<btrix-browser-profiles-list
       .authState=${this.authState!}
       .orgId=${this.orgId!}
-      ?showCreateDialog=${isNewResourceTab}
       @storage-quota-update=${this.onStorageQuotaUpdate}
+      @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-browser-profiles-list>`;
   }
 
@@ -409,11 +468,12 @@ export class Org extends LiteElement {
       ></btrix-collection-detail>`;
     }
 
-    if (this.orgPath.endsWith("/new")) {
+    if (this.orgPath.includes("/new")) {
       return html`<btrix-collections-new
         .authState=${this.authState!}
         orgId=${this.orgId!}
         ?isCrawler=${this.isCrawler}
+        name=${this.params.name}
       ></btrix-collections-new>`;
     }
 
@@ -421,6 +481,7 @@ export class Org extends LiteElement {
       .authState=${this.authState!}
       orgId=${this.orgId!}
       ?isCrawler=${this.isCrawler}
+      @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-collections-list>`;
   }
 
@@ -442,6 +503,13 @@ export class Org extends LiteElement {
       @org-user-role-change=${this.onUserRoleChange}
       @org-remove-member=${this.onOrgRemoveMember}
     ></btrix-org-settings>`;
+  }
+
+  private async onSelectNewDialog(e: SelectNewDialogEvent) {
+    e.stopPropagation();
+    this.isDialogVisible = true;
+    await this.updateComplete;
+    this.openDialogName = e.detail;
   }
 
   private async getOrg(orgId: string): Promise<OrgData> {

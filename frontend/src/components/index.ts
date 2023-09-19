@@ -140,9 +140,6 @@ import("./markdown-editor").then(({ MarkdownEditor }) => {
 import("./markdown-viewer").then(({ MarkdownViewer }) => {
   customElements.define("btrix-markdown-viewer", MarkdownViewer);
 });
-import("./file-uploader").then(({ FileUploader }) => {
-  customElements.define("btrix-file-uploader", FileUploader);
-});
 import("./file-list").then(({ FileList, FileListItem }) => {
   customElements.define("btrix-file-list", FileList);
   customElements.define("btrix-file-list-item", FileListItem);
@@ -156,7 +153,6 @@ import("./code").then(({ Code }) => {
 import("./search-combobox").then(({ SearchCombobox }) => {
   customElements.define("btrix-search-combobox", SearchCombobox);
 });
-
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);
 customElements.define("btrix-time-input", TimeInput);
