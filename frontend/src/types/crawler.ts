@@ -78,7 +78,10 @@ export type Workflow = CrawlConfig & {
   firstSeed: string;
   isCrawlRunning: boolean | null;
   autoAddCollections: string[];
+  seedCount: number;
 };
+
+export type ListWorkflow = Omit<Workflow, "config">;
 
 export type Profile = {
   id: string;

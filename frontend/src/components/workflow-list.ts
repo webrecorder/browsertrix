@@ -23,7 +23,7 @@ import { msg, localized, str } from "@lit/localize";
 import type { SlIconButton, SlMenu } from "@shoelace-style/shoelace";
 
 import { RelativeDuration } from "./relative-duration";
-import type { Crawl, Workflow } from "../types/crawler";
+import type { Crawl, ListWorkflow } from "../types/crawler";
 import { srOnly, truncate, dropdown } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 import { humanizeNextDate, humanizeSchedule } from "../utils/cron";
@@ -208,7 +208,7 @@ export class WorkflowListItem extends LitElement {
   ];
 
   @property({ type: Object })
-  workflow?: Workflow;
+  workflow?: ListWorkflow;
 
   @query(".row")
   row!: HTMLElement;
@@ -470,7 +470,7 @@ export class WorkflowListItem extends LitElement {
     </div> `;
   }
 
-  private safeRender(render: (workflow: Workflow) => any) {
+  private safeRender(render: (workflow: ListWorkflow) => any) {
     if (!this.workflow) {
       return html`<sl-skeleton></sl-skeleton>`;
     }
@@ -478,12 +478,12 @@ export class WorkflowListItem extends LitElement {
   }
 
   // TODO consolidate collections/workflow name
-  private renderName(workflow: Workflow) {
+  private renderName(workflow: ListWorkflow) {
     if (workflow.name)
       return html`<span class="truncate">${workflow.name}</span>`;
     if (!workflow.firstSeed)
       return html`<span class="truncate">${workflow.id}</span>`;
-    const remainder = workflow.config.seeds.length - 1;
+    const remainder = workflow.seedCount - 1;
     let nameSuffix: any = "";
     if (remainder) {
       if (remainder === 1) {

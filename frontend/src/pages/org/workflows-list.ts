@@ -7,7 +7,7 @@ import queryString from "query-string";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, Workflow, WorkflowParams } from "./types";
+import type { Crawl, ListWorkflow, Workflow, WorkflowParams } from "./types";
 import { CopyButton } from "../../components/copy-button";
 import { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
@@ -79,7 +79,7 @@ export class WorkflowsList extends LiteElement {
 
   @state()
   private workflows?: APIPaginatedList & {
-    items: Workflow[];
+    items: ListWorkflow[];
   };
 
   @state()
@@ -101,7 +101,7 @@ export class WorkflowsList extends LiteElement {
   };
 
   @state()
-  private filterBy: Partial<Record<keyof Workflow, any>> = {};
+  private filterBy: Partial<Record<keyof ListWorkflow, any>> = {};
 
   @state()
   private filterByCurrentUser = false;
@@ -396,14 +396,14 @@ export class WorkflowsList extends LiteElement {
     `;
   }
 
-  private renderWorkflowItem = (workflow: Workflow) =>
+  private renderWorkflowItem = (workflow: ListWorkflow) =>
     html`
       <btrix-workflow-list-item .workflow=${workflow}>
         <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
       </btrix-workflow-list-item>
     `;
 
-  private renderMenuItems(workflow: Workflow) {
+  private renderMenuItems(workflow: ListWorkflow) {
     return html`
       ${when(
         workflow.isCrawlRunning,
@@ -511,23 +511,21 @@ export class WorkflowsList extends LiteElement {
     `;
   }
 
-  private renderName(crawlConfig: Workflow) {
+  private renderName(crawlConfig: ListWorkflow) {
     if (crawlConfig.name) return crawlConfig.name;
-    const { config } = crawlConfig;
-    const firstSeed = config.seeds[0];
-    let firstSeedURL = firstSeed.url;
-    if (config.seeds.length === 1) {
-      return firstSeedURL;
+    const { firstSeed, seedCount } = crawlConfig;
+    if (seedCount === 1) {
+      return firstSeed;
     }
-    const remainderCount = config.seeds.length - 1;
+    const remainderCount = seedCount - 1;
     if (remainderCount === 1) {
       return msg(
-        html`${firstSeedURL}
+        html`${firstSeed}
           <span class="text-neutral-500">+${remainderCount} URL</span>`
       );
     }
     return msg(
-      html`${firstSeedURL}
+      html`${firstSeed}
         <span class="text-neutral-500">+${remainderCount} URLs</span>`
     );
   }
@@ -621,9 +619,13 @@ export class WorkflowsList extends LiteElement {
   /**
    * Create a new template using existing template data
    */
-  private async duplicateConfig(workflow: Workflow) {
+  private async duplicateConfig(workflow: ListWorkflow) {
+    const fullWorkflow: Workflow = await this.apiFetch(
+      `/orgs/${this.orgId}/crawlconfigs/${workflow.id}`,
+      this.authState!
+    );
     const workflowParams: WorkflowParams = {
-      ...workflow,
+      ...fullWorkflow,
       name: msg(str`${this.renderName(workflow)} Copy`),
     };
 
@@ -641,7 +643,7 @@ export class WorkflowsList extends LiteElement {
     });
   }
 
-  private async deactivate(workflow: Workflow): Promise<void> {
+  private async deactivate(workflow: ListWorkflow): Promise<void> {
     try {
       await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${workflow.id}`,
@@ -668,7 +670,7 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async delete(workflow: Workflow): Promise<void> {
+  private async delete(workflow: ListWorkflow): Promise<void> {
     try {
       await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${workflow.id}`,
@@ -695,7 +697,7 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async cancel(crawlId: Workflow["lastCrawlId"]) {
+  private async cancel(crawlId: ListWorkflow["lastCrawlId"]) {
     if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
       const data = await this.apiFetch(
@@ -717,7 +719,7 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async stop(crawlId: Workflow["lastCrawlId"]) {
+  private async stop(crawlId: ListWorkflow["lastCrawlId"]) {
     if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
       const data = await this.apiFetch(
@@ -739,7 +741,7 @@ export class WorkflowsList extends LiteElement {
     }
   }
 
-  private async runNow(workflow: Workflow): Promise<void> {
+  private async runNow(workflow: ListWorkflow): Promise<void> {
     try {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/run`,

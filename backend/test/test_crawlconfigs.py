@@ -267,6 +267,10 @@ def test_workflow_total_size_and_last_crawl_stats(
     assert data["total"] > 0
     items = data["items"]
     for workflow in items:
+        assert workflow.get("config") is None
+        assert workflow["seedCount"]
+        assert workflow["firstSeed"]
+
         last_crawl_id = workflow.get("lastCrawlId")
         if last_crawl_id and last_crawl_id in (admin_crawl_id, crawler_crawl_id):
             assert workflow["totalSize"] > 0

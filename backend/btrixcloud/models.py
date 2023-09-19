@@ -16,7 +16,7 @@ from .db import BaseMongoModel
 MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
 
 
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, too-many-lines
 # ============================================================================
 
 ### MAIN USER MODEL ###
@@ -164,7 +164,7 @@ class CrawlConfigCore(BaseMongoModel):
     schedule: Optional[str] = ""
 
     jobType: Optional[JobType] = JobType.CUSTOM
-    config: RawCrawlConfig
+    config: Optional[RawCrawlConfig]
 
     tags: Optional[List[str]] = []
 
@@ -178,10 +178,8 @@ class CrawlConfigCore(BaseMongoModel):
 
 
 # ============================================================================
-class CrawlConfig(CrawlConfigCore):
-    """Schedulable config"""
-
-    id: UUID4
+class CrawlConfigAdditional(BaseModel):
+    """Additional fields shared by CrawlConfig and CrawlConfigOut."""
 
     name: Optional[str]
     description: Optional[str]
@@ -215,13 +213,22 @@ class CrawlConfig(CrawlConfigCore):
 
     isCrawlRunning: Optional[bool] = False
 
+
+# ============================================================================
+class CrawlConfig(CrawlConfigCore, CrawlConfigAdditional):
+    """Schedulable config"""
+
+    id: UUID4
+
+    config: RawCrawlConfig
+
     def get_raw_config(self):
         """serialize config for browsertrix-crawler"""
         return self.config.dict(exclude_unset=True, exclude_none=True)
 
 
 # ============================================================================
-class CrawlConfigOut(CrawlConfig):
+class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     """Crawl Config Output"""
 
     lastCrawlStopping: Optional[bool] = False
@@ -233,6 +240,7 @@ class CrawlConfigOut(CrawlConfig):
     lastStartedByName: Optional[str]
 
     firstSeed: Optional[str]
+    seedCount: int = 0
 
 
 # ============================================================================
@@ -420,6 +428,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     type: str = Field("crawl", const=True)
 
     cid: UUID4
+
+    config: RawCrawlConfig
 
     cid_rev: int = 0
 

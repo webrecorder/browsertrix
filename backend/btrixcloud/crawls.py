@@ -131,7 +131,7 @@ class CrawlOps(BaseCrawlOps):
             {"$match": query},
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
-            {"$unset": ["firstSeedObject", "errors"]},
+            {"$unset": ["firstSeedObject", "errors", "config"]},
         ]
 
         if not resources:
