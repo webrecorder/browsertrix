@@ -126,8 +126,8 @@ export class CollectionsList extends LiteElement {
   render() {
     return html`
       <header class="contents">
-        <div class="flex justify-between w-full h-8 mb-4">
-          <h1 class="text-xl font-semibold">${msg("Collections")}</h1>
+        <div class="flex justify-between w-full mb-4">
+          <h1 class="text-xl font-semibold leading-8">${msg("Collections")}</h1>
           ${when(
             this.isCrawler,
             () => html`
@@ -138,7 +138,7 @@ export class CollectionsList extends LiteElement {
                 @click=${this.navLink}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("Create Collection")}
+                ${msg("New Collection")}
               </sl-button>
             `
           )}

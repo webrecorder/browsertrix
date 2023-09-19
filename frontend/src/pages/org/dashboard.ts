@@ -11,8 +11,8 @@ export class Dashboard extends LiteElement {
   org: OrgData | null = null;
 
   render() {
-    return html`<header class="md:flex items-center gap-2 pb-3 mb-7 border-b">
-        <h1 class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate">
+    return html`<header class="flex justify-between gap-2 pb-3 mb-7 border-b">
+        <h1 class="min-w-0 text-xl font-semibold leading-8">
           ${this.org?.name}
         </h1>
       </header>
@@ -72,7 +72,7 @@ export class Dashboard extends LiteElement {
             `,
             html`
               <footer class="text-right">
-                <sl-button>
+                <sl-button size="small">
                   <sl-icon slot="prefix" name="plus-lg"></sl-icon>${msg(
                     "New Workflow"
                   )}
@@ -94,7 +94,7 @@ export class Dashboard extends LiteElement {
             `,
             html`
               <footer class="text-right">
-                <sl-button>
+                <sl-button size="small">
                   <sl-icon slot="prefix" name="plus-lg"></sl-icon>${msg(
                     "New Collection"
                   )}
