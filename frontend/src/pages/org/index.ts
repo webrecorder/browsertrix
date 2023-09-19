@@ -34,6 +34,7 @@ import type {
   OrgRemoveMemberEvent,
 } from "./settings";
 import type { Tab as CollectionTab } from "./collection-detail";
+import type { SelectJobTypeEvent } from "./components/new-workflow-dialog";
 
 export type SelectNewDialogEvent = CustomEvent<
   "workflow" | "collection" | "browser-profile" | "upload"
