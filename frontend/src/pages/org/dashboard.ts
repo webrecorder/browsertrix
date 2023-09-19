@@ -7,6 +7,9 @@ import type { OrgData } from "../../utils/orgs";
 
 @localized()
 export class Dashboard extends LiteElement {
+  @property({ type: String })
+  orgId!: string;
+
   @property({ type: Object })
   org: OrgData | null = null;
 
@@ -72,7 +75,11 @@ export class Dashboard extends LiteElement {
             `,
             html`
               <footer class="text-right">
-                <sl-button size="small">
+                <sl-button
+                  href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
+                  size="small"
+                  @click=${this.navLink}
+                >
                   <sl-icon slot="prefix" name="plus-lg"></sl-icon>${msg(
                     "New Workflow"
                   )}
@@ -94,7 +101,11 @@ export class Dashboard extends LiteElement {
             `,
             html`
               <footer class="text-right">
-                <sl-button size="small">
+                <sl-button
+                  href=${`/orgs/${this.orgId}/collections/new`}
+                  size="small"
+                  @click=${this.navLink}
+                >
                   <sl-icon slot="prefix" name="plus-lg"></sl-icon>${msg(
                     "New Collection"
                   )}

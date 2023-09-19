@@ -284,7 +284,9 @@ export class Org extends LiteElement {
   }
 
   private renderDashboard() {
-    return html` <btrix-dashboard .org=${this.org}></btrix-dashboard> `;
+    return html`
+      <btrix-dashboard orgId=${this.orgId} .org=${this.org}></btrix-dashboard>
+    `;
   }
 
   private renderArchive() {
