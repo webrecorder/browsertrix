@@ -1,19 +1,49 @@
-import type { TemplateResult } from "lit";
+import type { PropertyValues, TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
 
 import LiteElement, { html } from "../../utils/LiteElement";
+import type { AuthState } from "../../utils/AuthService";
 import type { OrgData } from "../../utils/orgs";
 import type { SelectNewDialogEvent } from "./index";
 
+type Metrics = {
+  storageUsedBytes: number;
+  storageUsedGB: number;
+  storageQuotaBytes: number;
+  storageQuotaGB: number;
+  archivedItemCount: number;
+  crawlCount: number;
+  uploadCount: number;
+  pageCount: number;
+  profileCount: number;
+  workflowsRunningCount: number;
+  maxConcurrentCrawls: number;
+  workflowsQueuedCount: number;
+  collectionsCount: number;
+  publicCollectionsCount: number;
+};
+
 @localized()
 export class Dashboard extends LiteElement {
+  @property({ type: Object })
+  authState!: AuthState;
+
   @property({ type: String })
   orgId!: string;
 
   @property({ type: Object })
   org: OrgData | null = null;
+
+  @state()
+  private metrics?: Metrics;
+
+  willUpdate(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("orgId")) {
+      this.fetchMetrics();
+    }
+  }
 
   render() {
     return html`<header class="flex justify-between gap-2 pb-3 mb-7 border-b">
@@ -25,38 +55,41 @@ export class Dashboard extends LiteElement {
         <div class="flex flex-col md:flex-row gap-6">
           ${this.renderCard(
             msg("Storage"),
-            html`
+            (metrics) => html`
               <div class="font-semibold mb-3">
-                <sl-format-bytes value=${0}></sl-format-bytes> ${msg("Used")}
+                <sl-format-bytes
+                  value=${metrics.storageUsedBytes ?? 0}
+                ></sl-format-bytes>
+                ${msg("Used")}
               </div>
               <dl>
                 ${this.renderStat({
-                  value: 0,
+                  value: metrics.archivedItemCount,
+                  singleLabel: msg("Archived Item"),
+                  pluralLabel: msg("Archived Items"),
+                  icon: "file-zip-fill",
+                })}
+                ${this.renderStat({
+                  value: metrics.crawlCount,
                   singleLabel: msg("Crawl"),
                   pluralLabel: msg("Crawls"),
                   icon: "gear-wide-connected",
                 })}
                 ${this.renderStat({
-                  value: 0,
+                  value: metrics.uploadCount,
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
                   icon: "upload",
                 })}
                 ${this.renderStat({
-                  value: 0,
+                  value: metrics.profileCount,
                   singleLabel: msg("Browser Profile"),
                   pluralLabel: msg("Browser Profiles"),
                   icon: "window-fullscreen",
                 })}
-                ${this.renderStat({
-                  value: 0,
-                  singleLabel: msg("Total Page"),
-                  pluralLabel: msg("Total Pages"),
-                  icon: "file-richtext-fill",
-                })}
               </dl>
             `,
-            html`<footer class="mt-4 flex justify-end">
+            (metrics) => html`<footer class="mt-4 flex justify-end">
               <sl-dropdown
                 distance="4"
                 placement="bottom-end"
@@ -68,7 +101,13 @@ export class Dashboard extends LiteElement {
                   );
                 }}
               >
-                <sl-button slot="trigger" size="small" caret>
+                <sl-button
+                  slot="trigger"
+                  size="small"
+                  caret
+                  ?disabled=${metrics.storageQuotaBytes > 0 &&
+                  metrics.storageUsedBytes >= metrics.storageQuotaBytes}
+                >
                   <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                   ${msg("Add New...")}
                 </sl-button>
@@ -83,23 +122,29 @@ export class Dashboard extends LiteElement {
           )}
           ${this.renderCard(
             msg("Crawling"),
-            html`
+            (metrics) => html`
               <dl>
                 ${this.renderStat({
-                  value: 0,
+                  value: metrics.workflowsRunningCount,
                   singleLabel: msg("Crawl Running"),
                   pluralLabel: msg("Crawls Running"),
                   icon: "record-fill",
                 })}
                 ${this.renderStat({
-                  value: 0,
+                  value: metrics.workflowsQueuedCount,
                   singleLabel: msg("Crawl Workflow Waiting"),
                   pluralLabel: msg("Crawl Workflows Waiting"),
                   icon: "hourglass-split",
                 })}
+                ${this.renderStat({
+                  value: metrics.pageCount,
+                  singleLabel: msg("Page Crawled"),
+                  pluralLabel: msg("Pages Crawled"),
+                  icon: "file-richtext-fill",
+                })}
               </dl>
             `,
-            html`
+            (metrics) => html`
               <footer class="mt-4 flex justify-end">
                 <sl-button
                   href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
@@ -115,17 +160,23 @@ export class Dashboard extends LiteElement {
           )}
           ${this.renderCard(
             msg("Collections"),
-            html`
+            (metrics) => html`
               <dl>
                 ${this.renderStat({
-                  value: 0,
-                  singleLabel: msg("Collection"),
-                  pluralLabel: msg("Collections"),
+                  value: metrics.collectionsCount,
+                  singleLabel: msg("Collection Total"),
+                  pluralLabel: msg("Collections Total"),
                   icon: "collection-fill",
+                })}
+                ${this.renderStat({
+                  value: metrics.publicCollectionsCount,
+                  singleLabel: msg("Public Collection"),
+                  pluralLabel: msg("Public Collections"),
+                  icon: "people-fill",
                 })}
               </dl>
             `,
-            html`
+            (metrics) => html`
               <footer class="mt-4 flex justify-end">
                 <sl-button
                   href=${`/orgs/${this.orgId}/collections/new`}
@@ -145,16 +196,20 @@ export class Dashboard extends LiteElement {
 
   private renderCard(
     title: string,
-    content: TemplateResult,
-    footer?: TemplateResult
+    renderContent: (metric: Metrics) => TemplateResult,
+    renderFooter?: (metric: Metrics) => TemplateResult
   ) {
+    if (!this.metrics) {
+      return html`todo`;
+    }
+
     return html`
       <section class="flex-1 flex flex-col border rounded p-4">
         <h2 class="text-lg font-semibold leading-none border-b pb-3 mb-3">
           ${title}
         </h2>
-        <div class="flex-1">${content}</div>
-        ${footer}
+        <div class="flex-1">${renderContent(this.metrics)}</div>
+        ${renderFooter ? renderFooter(this.metrics) : ""}
       </section>
     `;
   }
@@ -177,6 +232,23 @@ export class Dashboard extends LiteElement {
         <dd class="mr-1">${stat.value.toLocaleString()}</dd>
       </div>
     `;
+  }
+
+  private async fetchMetrics() {
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${this.orgId}/metrics`,
+        this.authState!
+      );
+
+      this.metrics = data;
+    } catch (e: any) {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve org metrics at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 }
 customElements.define("btrix-dashboard", Dashboard);

@@ -340,6 +340,7 @@ export class Org extends LiteElement {
   private renderDashboard() {
     return html`
       <btrix-dashboard
+        .authState=${this.authState!}
         orgId=${this.orgId}
         .org=${this.org || null}
         @select-new-dialog=${this.onSelectNewDialog}
