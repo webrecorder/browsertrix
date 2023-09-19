@@ -225,12 +225,17 @@ export class CollectionsList extends LiteElement {
           </p>
           <div>
             <sl-button
-              href=${`/orgs/${this.orgId}/collections/new`}
               variant="primary"
-              @click=${this.navLink}
+              @click=${() => {
+                this.dispatchEvent(
+                  <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                    detail: "collection",
+                  })
+                );
+              }}
             >
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-              ${msg("Create Collection")}
+              ${msg("Create a New Collection")}
             </sl-button>
           </div>
         `,
@@ -435,12 +440,17 @@ export class CollectionsList extends LiteElement {
             </p>
             <div>
               <sl-button
-                href=${`/orgs/${this.orgId}/collections/new`}
                 variant="primary"
-                @click=${this.navLink}
+                @click=${() => {
+                  this.dispatchEvent(
+                    <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                      detail: "collection",
+                    })
+                  );
+                }}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("Create Collection")}
+                ${msg("Create a New Collection")}
               </sl-button>
             </div>
           `,

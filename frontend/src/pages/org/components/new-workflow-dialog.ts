@@ -67,7 +67,7 @@ export class NewWorkflowDialog extends LitElement {
   render() {
     return html`
       <btrix-dialog
-        label=${msg("New Crawl Workflow")}
+        label=${msg("Create a New Crawl Workflow")}
         ?open=${this.open}
         style="--width: 50rem"
       >

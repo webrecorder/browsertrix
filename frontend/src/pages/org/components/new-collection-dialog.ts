@@ -29,7 +29,7 @@ export class NewCollectionDialog extends LiteElement {
 
   render() {
     return html` <btrix-dialog
-      label=${msg(str`New Collection`)}
+      label=${msg(str`Create a New Collection`)}
       ?open=${this.open}
       @sl-initial-focus=${async (e: CustomEvent) => {
         const nameInput = (await this.form).querySelector(
