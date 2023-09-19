@@ -48,6 +48,11 @@ export class Dashboard extends LiteElement {
   }
 
   render() {
+    const quotaReached =
+      this.metrics &&
+      this.metrics.storageQuotaBytes > 0 &&
+      this.metrics.storageUsedBytes >= this.metrics.storageQuotaBytes;
+
     return html`<header
         class="flex items-center justify-between gap-2 pb-3 mb-7 border-b"
       >
@@ -73,7 +78,7 @@ export class Dashboard extends LiteElement {
               );
             }}
           >
-            <sl-button slot="trigger" variant="primary" size="small" caret>
+            <sl-button slot="trigger" size="small" caret>
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>
               ${msg("Add New...")}
             </sl-button>
@@ -81,11 +86,18 @@ export class Dashboard extends LiteElement {
               <sl-menu-item value="workflow"
                 >${msg("Crawl Workflow")}</sl-menu-item
               >
-              <sl-menu-item value="upload">${msg("Upload")}</sl-menu-item>
+              <sl-menu-item
+                value="upload"
+                ?disabled=${!this.metrics || quotaReached}
+                >${msg("Upload")}</sl-menu-item
+              >
               <sl-menu-item value="collection">
                 ${msg("Collection")}
               </sl-menu-item>
-              <sl-menu-item value="browser-profile">
+              <sl-menu-item
+                value="browser-profile"
+                ?disabled=${!this.metrics || quotaReached}
+              >
                 ${msg("Browser Profile")}
               </sl-menu-item>
             </sl-menu>
@@ -129,37 +141,7 @@ export class Dashboard extends LiteElement {
                   iconProps: { name: "window-fullscreen" },
                 })}
               </dl>
-            `,
-            (metrics) => html`<footer class="mt-4 flex justify-end">
-              <sl-dropdown
-                distance="4"
-                placement="bottom-end"
-                @sl-select=${(e: SlSelectEvent) => {
-                  this.dispatchEvent(
-                    <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
-                      detail: e.detail.item.value,
-                    })
-                  );
-                }}
-              >
-                <sl-button
-                  slot="trigger"
-                  size="small"
-                  caret
-                  ?disabled=${metrics.storageQuotaBytes > 0 &&
-                  metrics.storageUsedBytes >= metrics.storageQuotaBytes}
-                >
-                  <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                  ${msg("Add New...")}
-                </sl-button>
-                <sl-menu>
-                  <sl-menu-item value="browser-profile">
-                    ${msg("Browser Profile")}
-                  </sl-menu-item>
-                  <sl-menu-item value="upload">${msg("Upload")}</sl-menu-item>
-                </sl-menu>
-              </sl-dropdown>
-            </footer> `
+            `
           )}
           ${this.renderCard(
             msg("Crawling"),
@@ -184,19 +166,6 @@ export class Dashboard extends LiteElement {
                   iconProps: { name: "file-richtext-fill" },
                 })}
               </dl>
-            `,
-            (metrics) => html`
-              <footer class="mt-4 flex justify-end">
-                <sl-button
-                  href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
-                  size="small"
-                  @click=${this.navLink}
-                >
-                  <sl-icon slot="prefix" name="plus-lg"></sl-icon>${msg(
-                    "New Workflow"
-                  )}
-                </sl-button>
-              </footer>
             `
           )}
           ${this.renderCard(
@@ -216,19 +185,6 @@ export class Dashboard extends LiteElement {
                   iconProps: { name: "people-fill" },
                 })}
               </dl>
-            `,
-            (metrics) => html`
-              <footer class="mt-4 flex justify-end">
-                <sl-button
-                  href=${`/orgs/${this.orgId}/collections/new`}
-                  size="small"
-                  @click=${this.navLink}
-                >
-                  <sl-icon slot="prefix" name="plus-lg"></sl-icon>${msg(
-                    "New Collection"
-                  )}
-                </sl-button>
-              </footer>
             `
           )}
         </div>
