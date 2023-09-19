@@ -731,6 +731,9 @@ export class CrawlConfigEditor extends LiteElement {
           class="px-6 py-4 flex gap-2 items-center justify-end border rounded-lg"
         >
           <div class="mr-auto">${this.renderRunNowToggle()}</div>
+          <aside class="text-xs text-neutral-500">
+            ${msg("Changes in all sections will be saved")}
+          </aside>
           <sl-button
             type="submit"
             size="small"
@@ -738,7 +741,7 @@ export class CrawlConfigEditor extends LiteElement {
             ?disabled=${this.isSubmitting}
             ?loading=${this.isSubmitting}
           >
-            ${msg("Save Changes")}
+            ${msg("Save Workflow")}
           </sl-button>
         </footer>
       `;
@@ -2108,13 +2111,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
       if (crawlId && storageQuotaReached) {
         this.notify({
-          title: msg("Workflow saved."),
+          title: msg("Workflow saved without starting crawl."),
           message: msg(
-            "Could not start crawl with new workflow settings due to storage quota."
+            "Could not run crawl with new workflow settings due to storage quota."
           ),
           variant: "warning",
-          icon: "exclamation-triangle",
-          duration: 8000,
+          icon: "exclamation-circle",
+          duration: 12000,
         });
       } else {
         let message = msg("Workflow created.");
@@ -2138,12 +2141,24 @@ https://archiveweb.page/images/${"logo.svg"}`}
       );
     } catch (e: any) {
       if (e?.isApiError) {
-        const isConfigError = ({ loc }: any) =>
-          loc.some((v: string) => v === "config");
-        if (e.details && e.details.some(isConfigError)) {
-          this.serverError = this.formatConfigServerError(e.details);
+        if (e.details === "crawl_already_running") {
+          this.notify({
+            title: msg("Workflow saved without starting crawl."),
+            message: msg(
+              "Could not run crawl with new workflow settings due to already running crawl."
+            ),
+            variant: "warning",
+            icon: "exclamation-circle",
+            duration: 12000,
+          });
         } else {
-          this.serverError = e.message;
+          const isConfigError = ({ loc }: any) =>
+            loc.some((v: string) => v === "config");
+          if (Array.isArray(e.details) && e.details.some(isConfigError)) {
+            this.serverError = this.formatConfigServerError(e.details);
+          } else {
+            this.serverError = e.message;
+          }
         }
       } else {
         this.serverError = msg("Something unexpected went wrong");

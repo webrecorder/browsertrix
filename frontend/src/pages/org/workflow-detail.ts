@@ -1449,7 +1449,6 @@ export class WorkflowDetail extends LiteElement {
         message: msg("Starting crawl."),
         variant: "success",
         icon: "check2-circle",
-        duration: 8000,
       });
     } catch (e: any) {
       let message = msg("Sorry, couldn't run crawl at this time.");
