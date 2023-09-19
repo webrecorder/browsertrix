@@ -334,14 +334,50 @@ export class CrawlConfigEditor extends LiteElement {
     this.initializeEditor();
     super.connectedCallback();
 
-    window.addEventListener("hashchange", () => {
-      const hashValue = window.location.hash.slice(1);
-      if (STEPS.includes(hashValue as any)) {
-        this.updateProgressState({
-          activeTab: hashValue as StepName,
-        });
-      }
-    });
+    window.addEventListener("hashchange", this.onHashChange);
+  }
+
+  disconnectedCallback(): void {
+    window.removeEventListener("hashchange", this.onHashChange);
+    super.disconnectedCallback();
+  }
+
+  private onHashChange = async () => {
+    const hashValue = window.location.hash.slice(1);
+    if (STEPS.includes(hashValue as any)) {
+      this.updateProgressState({
+        activeTab: hashValue as StepName,
+      });
+    }
+
+    const details = await this.openActiveDetail();
+    if (details) {
+      details.scrollIntoView(true);
+    } else {
+      this.scrollToPanelTop();
+
+      // Focus on first field in section
+      (
+        (await this.activeTabPanel)?.querySelector(
+          "sl-input, sl-textarea, sl-select, sl-radio-group"
+        ) as HTMLElement
+      )?.focus();
+    }
+  };
+
+  private async openActiveDetail(): Promise<SlDetails | null> {
+    const section = this.querySelector(
+      `#${this.progressState.activeTab}`
+    ) as HTMLElement;
+    const details = section?.querySelector("sl-details") as SlDetails;
+    if (!details) {
+      return null;
+    }
+    if (!details.open) {
+      details.show();
+      await details.updateComplete;
+    }
+    return details;
   }
 
   async willUpdate(changedProperties: Map<string, any>) {
@@ -377,40 +413,20 @@ export class CrawlConfigEditor extends LiteElement {
     }
   }
 
-  async updated(changedProperties: Map<string, any>) {
-    if (changedProperties.has("progressState") && this.progressState) {
-      if (
-        changedProperties.get("progressState")?.activeTab !==
-        this.progressState.activeTab
-      ) {
-        const section = this.querySelector(
-          `#${this.progressState.activeTab}`
-        ) as HTMLElement;
-        const details = section?.querySelector("sl-details") as SlDetails;
-        if (details) {
-          if (!details.open) {
-            details.show();
-            await details.updateComplete;
-            section.scrollIntoView(true);
-          }
-        } else {
-          this.scrollToPanelTop();
-
-          // Focus on first field in section
-          (
-            (await this.activeTabPanel)?.querySelector(
-              "sl-input, sl-textarea, sl-select, sl-radio-group"
-            ) as HTMLElement
-          )?.focus();
-        }
-      }
-    }
-  }
-
   async firstUpdated() {
     // Focus on first field in section
+    let section: any = await this.openActiveDetail();
+    if (section) {
+      if (
+        this.progressState.activeTab &&
+        this.progressState.activeTab !== STEPS[0]
+      )
+        section.scrollIntoView(true);
+    } else {
+      section = await this.activeTabPanel;
+    }
     (
-      (await this.activeTabPanel)?.querySelector(
+      section?.querySelector(
         "sl-input, sl-textarea, sl-select, sl-radio-group"
       ) as HTMLElement
     )?.focus();
@@ -706,6 +722,7 @@ export class CrawlConfigEditor extends LiteElement {
       return html`
         <section id="${name}" class="mb-4 scroll-m-4">
           <sl-details
+            class="scroll-m-4"
             @sl-show=${() => {
               if (this.progressState.activeTab !== name) {
                 this.updateProgressState({
@@ -715,7 +732,20 @@ export class CrawlConfigEditor extends LiteElement {
             }}
           >
             <h3 slot="summary" class="text-base leading-none font-semibold">
-              ${this.tabLabels[name]}
+              <btrix-observable
+                @intersect=${({ target, detail }: CustomEvent) => {
+                  if (!detail.entry.isIntersecting) return;
+                  if (!(target as LitElement).closest("sl-details")?.open)
+                    return;
+                  if (this.progressState.activeTab !== name) {
+                    this.updateProgressState({
+                      activeTab: name,
+                    });
+                  }
+                }}
+              >
+                ${this.tabLabels[name]}
+              </btrix-observable>
             </h3>
             <div class="px-2 grid grid-cols-5 gap-4">
               ${content}
