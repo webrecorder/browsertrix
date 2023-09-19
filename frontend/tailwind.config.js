@@ -94,7 +94,7 @@ module.exports = {
     extend: makeTheme(),
   },
 
-  content: ["./**/*.html", "./src/**/*.{ts,js,ejs}"],
+  content: ["./src/**/*.html", "./src/**/*.{ts,js,ejs}"],
 
   extract: {
     include: ["./src/**/*.{ts,js}"],
