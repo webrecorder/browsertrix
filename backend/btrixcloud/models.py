@@ -221,6 +221,9 @@ class CrawlConfig(CrawlConfigCore, CrawlConfigAdditional):
     id: UUID4
 
     config: RawCrawlConfig
+    createdByName: Optional[str]
+    modifiedByName: Optional[str]
+    lastStartedByName: Optional[str]
 
     def get_raw_config(self):
         """serialize config for browsertrix-crawler"""
@@ -232,13 +235,7 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     """Crawl Config Output"""
 
     lastCrawlStopping: Optional[bool] = False
-
     profileName: Optional[str]
-
-    createdByName: Optional[str]
-    modifiedByName: Optional[str]
-    lastStartedByName: Optional[str]
-
     firstSeed: Optional[str]
     seedCount: int = 0
 
