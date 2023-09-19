@@ -259,6 +259,7 @@ class UpdateCrawlConfig(BaseModel):
     tags: Optional[List[str]] = None
     description: Optional[str] = None
     autoAddCollections: Optional[List[UUID4]] = None
+    runNow: bool = False
 
     # crawl data: revision tracked
     schedule: Optional[str] = None

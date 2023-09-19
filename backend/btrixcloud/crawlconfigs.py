@@ -220,6 +220,7 @@ class CrawlConfigOps:
     async def update_crawl_config(
         self, cid: uuid.UUID, org: Organization, user: User, update: UpdateCrawlConfig
     ):
+        # pylint: disable=too-many-locals
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
 
         orig_crawl_config = await self.get_crawl_config(cid, org.id)
@@ -265,7 +266,9 @@ class CrawlConfigOps:
             != sorted(update.autoAddCollections)
         )
 
-        if not changed and not metadata_changed:
+        run_now = update.runNow
+
+        if not changed and not metadata_changed and not run_now:
             return {
                 "updated": True,
                 "settings_changed": changed,
@@ -318,11 +321,15 @@ class CrawlConfigOps:
                     status_code=404, detail=f"Crawl Config '{cid}' not found"
                 )
 
-        return {
+        ret = {
             "updated": True,
             "settings_changed": changed,
             "metadata_changed": metadata_changed,
         }
+        if run_now:
+            crawl_id = await self.run_now(str(cid), org, user)
+            ret["started"] = crawl_id
+        return ret
 
     async def get_crawl_configs(
         self,
