@@ -285,6 +285,15 @@ export class CrawlConfigEditor extends LiteElement {
 
   private readonly daysOfWeek = getLocalizedWeekDays();
 
+  private readonly tabLabels: Record<StepName, string> = {
+    crawlSetup: msg("Scope"),
+    crawlLimits: msg("Limits"),
+    browserSettings: msg("Browser Settings"),
+    crawlScheduling: msg("Scheduling"),
+    crawlMetadata: msg("Metadata"),
+    confirmSettings: msg("Review Settings"),
+  };
+
   private readonly scopeTypeLabels: Record<FormState["scopeType"], string> = {
     prefix: msg("Pages in the Same Directory"),
     host: msg("Pages on This Domain"),
@@ -540,14 +549,6 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   render() {
-    const tabLabels: Record<StepName, string> = {
-      crawlSetup: msg("Scope"),
-      crawlLimits: msg("Limits"),
-      browserSettings: msg("Browser Settings"),
-      crawlScheduling: msg("Scheduling"),
-      crawlMetadata: msg("Metadata"),
-      confirmSettings: msg("Review Settings"),
-    };
     let orderedTabNames = STEPS.filter(
       (stepName) => defaultProgressState.tabs[stepName as StepName]
     ) as StepName[];
@@ -570,23 +571,27 @@ export class CrawlConfigEditor extends LiteElement {
           activePanel="newJobConfig-${this.progressState.activeTab}"
           progressPanel="newJobConfig-${this.progressState.activeTab}"
         >
-          <header slot="header" class="flex justify-between items-baseline">
-            <h3 class="font-semibold">
-              ${tabLabels[this.progressState.activeTab]}
-            </h3>
-            <p class="text-xs text-neutral-500 font-normal">
-              ${msg(
-                html`Fields marked with
-                  <span style="color:var(--sl-input-required-content-color)"
-                    >*</span
-                  >
-                  are required`
-              )}
-            </p>
-          </header>
-
+          ${when(
+            !this.configId,
+            () => html`
+              <header slot="header" class="flex justify-between items-baseline">
+                <h3 class="font-semibold">
+                  ${this.tabLabels[this.progressState.activeTab]}
+                </h3>
+                <p class="text-xs text-neutral-500 font-normal">
+                  ${msg(
+                    html`Fields marked with
+                      <span style="color:var(--sl-input-required-content-color)"
+                        >*</span
+                      >
+                      are required`
+                  )}
+                </p>
+              </header>
+            `
+          )}
           ${orderedTabNames.map((tabName) =>
-            this.renderNavItem(tabName, tabLabels[tabName])
+            this.renderNavItem(tabName, this.tabLabels[tabName])
           )}
           ${this.renderPanel(
             "crawlSetup",
@@ -606,9 +611,12 @@ export class CrawlConfigEditor extends LiteElement {
           ${this.renderPanel("browserSettings", this.renderCrawlBehaviors())}
           ${this.renderPanel("crawlScheduling", this.renderJobScheduling())}
           ${this.renderPanel("crawlMetadata", this.renderJobMetadata())}
-          ${this.renderPanel("confirmSettings", this.renderConfirmSettings(), {
-            isLast: true,
-          })}
+          ${when(!this.configId, () =>
+            this.renderPanel("confirmSettings", this.renderConfirmSettings(), {
+              isLast: true,
+            })
+          )}
+          ${when(this.configId, () => html` ${this.renderFooter()} `)}
         </btrix-tab-list>
       </form>
     `;
@@ -682,93 +690,45 @@ export class CrawlConfigEditor extends LiteElement {
     { isFirst = false, isLast = false } = {}
   ) {
     const panelContent = html`
-      <div class="flex flex-col h-full min-h-[21rem]">
-        <div
-          class="flex-1 p-6 grid grid-cols-5 gap-4 border rounded-lg ${!this
-            .configId && !isLast
-            ? "border-b-0 rounded-b-none"
-            : "mb-4"}"
-        >
-          ${content}
-          ${when(this.serverError, () =>
-            this.renderErrorAlert(this.serverError!)
-          )}
-        </div>
-
-        ${this.renderFooter({ isFirst, isLast })}
+      <div
+        class="flex-1 p-6 grid grid-cols-5 gap-4 border rounded-lg ${!this
+          .configId && !isLast
+          ? "border-b-0 rounded-b-none"
+          : "mb-4"}"
+      >
+        ${content}
+        ${when(this.serverError, () =>
+          this.renderErrorAlert(this.serverError!)
+        )}
       </div>
     `;
 
+    if (this.configId) {
+      return html`<section
+        id="${name}"
+        class="mb-8 last-of-type:mb-0 scroll-m-4"
+      >
+        <h3 class="text-lg leading-none font-semibold mb-4">
+          ${this.tabLabels[name]}
+        </h3>
+        ${panelContent}
+      </section>`;
+    }
+
     return html`
       <btrix-tab-panel name="newJobConfig-${name}" class="scroll-m-3">
-        ${panelContent}
+        <div class="flex flex-col h-full min-h-[21rem]">
+          ${panelContent} ${this.renderSteppedFooter({ isFirst, isLast })}
+        </div>
       </btrix-tab-panel>
     `;
   }
 
-  private renderFooter({ isFirst = false, isLast = false }) {
-    if (this.configId) {
-      return html`
-        <footer
-          class="px-6 py-4 flex gap-2 items-center justify-end border rounded-lg"
-        >
-          <div class="mr-auto">${this.renderRunNowToggle()}</div>
-          <sl-button
-            type="submit"
-            size="small"
-            variant="primary"
-            ?disabled=${this.isSubmitting}
-            ?loading=${this.isSubmitting}
-          >
-            ${msg("Save Changes")}
-          </sl-button>
-        </footer>
-      `;
-    }
+  private renderSteppedFooter({ isFirst = false, isLast = false }) {
+    let buttons: TemplateResult;
 
-    if (!this.configId) {
-      return html`
-        <footer
-          class="px-6 py-4 flex gap-2 items-center justify-end border ${isLast
-            ? "rounded-lg"
-            : "rounded-b-lg"}"
-        >
-          ${this.renderSteppedFooterButtons({ isFirst, isLast })}
-        </footer>
-      `;
-    }
-
-    return html`
-      <div class="px-6 py-4 border-t flex gap-2 items-center justify-end">
-        ${when(
-          this.configId,
-          () => html`
-            <div class="mr-auto">${this.renderRunNowToggle()}</div>
-            <sl-button
-              type="submit"
-              size="small"
-              variant="primary"
-              ?disabled=${this.isSubmitting}
-              ?loading=${this.isSubmitting}
-            >
-              ${msg("Save Changes")}
-            </sl-button>
-          `,
-          () => this.renderSteppedFooterButtons({ isFirst, isLast })
-        )}
-      </div>
-    `;
-  }
-
-  private renderSteppedFooterButtons({
-    isFirst,
-    isLast,
-  }: {
-    isFirst: boolean;
-    isLast: boolean;
-  }) {
     if (isLast) {
-      return html`<sl-button
+      buttons = html`<sl-button
           class="mr-auto"
           size="small"
           @click=${this.backStep}
@@ -776,7 +736,7 @@ export class CrawlConfigEditor extends LiteElement {
           <sl-icon slot="prefix" name="chevron-left"></sl-icon>
           ${msg("Previous Step")}
         </sl-button>
-        ${this.renderRunNowToggle()}
+        <div class="mr-1">${this.renderRunNowToggle()}</div>
         <sl-button
           type="submit"
           size="small"
@@ -786,48 +746,78 @@ export class CrawlConfigEditor extends LiteElement {
         >
           ${msg("Save Workflow")}
         </sl-button>`;
+    } else {
+      buttons = html`
+        ${isFirst
+          ? html`
+              <sl-button class="mr-auto" size="small" type="reset">
+                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+                ${msg("Start Over")}
+              </sl-button>
+            `
+          : html`
+              <sl-button class="mr-auto" size="small" @click=${this.backStep}>
+                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+                ${msg("Previous Step")}
+              </sl-button>
+            `}
+        <sl-button size="small" variant="primary" @click=${this.nextStep}>
+          <sl-icon slot="suffix" name="chevron-right"></sl-icon>
+          ${msg("Next Step")}
+        </sl-button>
+        <sl-button
+          size="small"
+          @click=${() => {
+            if (this.hasRequiredFields()) {
+              this.updateProgressState({
+                activeTab: "confirmSettings",
+              });
+            } else {
+              this.nextStep();
+            }
+          }}
+        >
+          <sl-icon slot="suffix" name="chevron-double-right"></sl-icon>
+          ${msg("Review & Save")}
+        </sl-button>
+      `;
     }
+
     return html`
-      ${isFirst
-        ? html`
-            <sl-button class="mr-auto" size="small" type="reset">
-              <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-              ${msg("Start Over")}
-            </sl-button>
-          `
-        : html`
-            <sl-button class="mr-auto" size="small" @click=${this.backStep}>
-              <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-              ${msg("Previous Step")}
-            </sl-button>
-          `}
-      <sl-button size="small" variant="primary" @click=${this.nextStep}>
-        <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-        ${msg("Next Step")}
-      </sl-button>
-      <sl-button
-        size="small"
-        @click=${() => {
-          if (this.hasRequiredFields()) {
-            this.updateProgressState({
-              activeTab: "confirmSettings",
-            });
-          } else {
-            this.nextStep();
-          }
-        }}
+      <footer
+        class="px-6 py-4 flex gap-2 items-center justify-end border ${isLast
+          ? "rounded-lg"
+          : "rounded-b-lg"}"
       >
-        <sl-icon slot="suffix" name="chevron-double-right"></sl-icon>
-        ${msg("Review & Save")}
-      </sl-button>
+        ${buttons}
+      </footer>
+    `;
+  }
+
+  private renderFooter() {
+    return html`
+      <footer
+        class="sticky p-6 flex items-center justify-between border rounded-lg"
+      >
+        ${this.renderRunNowToggle()}
+        <sl-button
+          type="submit"
+          size="small"
+          variant="primary"
+          ?disabled=${this.isSubmitting}
+          ?loading=${this.isSubmitting}
+        >
+          ${msg("Save Changes")}
+        </sl-button>
+      </footer>
     `;
   }
 
   private renderRunNowToggle() {
     return html`
       <sl-switch
-        class="mr-1"
         ?checked=${this.formState.runNow}
+        size="small"
         @sl-change=${(e: SlChangeEvent) => {
           this.updateFormState(
             {
