@@ -1,5 +1,6 @@
 import type { PropertyValues, TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
 
@@ -199,17 +200,22 @@ export class Dashboard extends LiteElement {
     renderContent: (metric: Metrics) => TemplateResult,
     renderFooter?: (metric: Metrics) => TemplateResult
   ) {
-    if (!this.metrics) {
-      return html`todo`;
-    }
-
     return html`
-      <section class="flex-1 flex flex-col border rounded p-4">
+      <section
+        class="flex-1 flex flex-col border rounded p-4 transition-opacity delay-75 ${this
+          .metrics
+          ? "opacity-100"
+          : "opacity-0"}"
+      >
         <h2 class="text-lg font-semibold leading-none border-b pb-3 mb-3">
           ${title}
         </h2>
-        <div class="flex-1">${renderContent(this.metrics)}</div>
-        ${renderFooter ? renderFooter(this.metrics) : ""}
+        <div class="flex-1">
+          ${when(this.metrics, () => renderContent(this.metrics!))}
+        </div>
+        ${when(renderFooter && this.metrics, () =>
+          renderFooter!(this.metrics!)
+        )}
       </section>
     `;
   }
