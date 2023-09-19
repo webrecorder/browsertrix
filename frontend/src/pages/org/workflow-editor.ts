@@ -3,6 +3,7 @@ import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import type {
   SlChangeEvent,
   SlCheckbox,
+  SlDetails,
   SlInput,
   SlRadio,
   SlRadioGroup,
@@ -377,19 +378,31 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   async updated(changedProperties: Map<string, any>) {
-    if (changedProperties.get("progressState") && this.progressState) {
+    if (changedProperties.has("progressState") && this.progressState) {
       if (
-        changedProperties.get("progressState").activeTab !==
+        changedProperties.get("progressState")?.activeTab !==
         this.progressState.activeTab
       ) {
-        this.scrollToPanelTop();
+        const section = this.querySelector(
+          `#${this.progressState.activeTab}`
+        ) as HTMLElement;
+        const details = section?.querySelector("sl-details") as SlDetails;
+        if (details) {
+          if (!details.open) {
+            details.show();
+            await details.updateComplete;
+            section.scrollIntoView(true);
+          }
+        } else {
+          this.scrollToPanelTop();
 
-        // Focus on first field in section
-        (
-          (await this.activeTabPanel)?.querySelector(
-            "sl-input, sl-textarea, sl-select, sl-radio-group"
-          ) as HTMLElement
-        )?.focus();
+          // Focus on first field in section
+          (
+            (await this.activeTabPanel)?.querySelector(
+              "sl-input, sl-textarea, sl-select, sl-radio-group"
+            ) as HTMLElement
+          )?.focus();
+        }
       }
     }
   }
@@ -689,36 +702,47 @@ export class CrawlConfigEditor extends LiteElement {
     content: TemplateResult,
     { isFirst = false, isLast = false } = {}
   ) {
-    const panelContent = html`
-      <div
-        class="flex-1 p-6 grid grid-cols-5 gap-4 border rounded-lg ${!this
-          .configId && !isLast
-          ? "border-b-0 rounded-b-none"
-          : "mb-4"}"
-      >
-        ${content}
-        ${when(this.serverError, () =>
-          this.renderErrorAlert(this.serverError!)
-        )}
-      </div>
-    `;
-
     if (this.configId) {
-      return html`<section
-        id="${name}"
-        class="mb-8 last-of-type:mb-0 scroll-m-4"
-      >
-        <h3 class="text-lg leading-none font-semibold mb-4">
-          ${this.tabLabels[name]}
-        </h3>
-        ${panelContent}
-      </section>`;
+      return html`
+        <section id="${name}" class="mb-4 scroll-m-4">
+          <sl-details
+            @sl-show=${() => {
+              if (this.progressState.activeTab !== name) {
+                this.updateProgressState({
+                  activeTab: name,
+                });
+              }
+            }}
+          >
+            <h3 slot="summary" class="text-base leading-none font-semibold">
+              ${this.tabLabels[name]}
+            </h3>
+            <div class="px-2 grid grid-cols-5 gap-4">
+              ${content}
+              ${when(this.serverError, () =>
+                this.renderErrorAlert(this.serverError!)
+              )}
+            </div>
+          </sl-details>
+        </section>
+      `;
     }
 
     return html`
       <btrix-tab-panel name="newJobConfig-${name}" class="scroll-m-3">
         <div class="flex flex-col h-full min-h-[21rem]">
-          ${panelContent} ${this.renderSteppedFooter({ isFirst, isLast })}
+          <div
+            class="flex-1 p-6 grid grid-cols-5 gap-4 border rounded-lg ${!this
+              .configId && !isLast
+              ? "border-b-0 rounded-b-none"
+              : "mb-4"}"
+          >
+            ${content}
+            ${when(this.serverError, () =>
+              this.renderErrorAlert(this.serverError!)
+            )}
+          </div>
+          ${this.renderSteppedFooter({ isFirst, isLast })}
         </div>
       </btrix-tab-panel>
     `;
