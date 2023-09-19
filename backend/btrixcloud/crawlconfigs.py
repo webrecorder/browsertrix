@@ -501,7 +501,6 @@ class CrawlConfigOps:
             update_query["lastCrawlId"] = str(last_crawl.get("_id"))
             update_query["lastCrawlStartTime"] = last_crawl.get("started")
             update_query["lastStartedBy"] = last_crawl.get("userid")
-            # TODO: Implement in crawls!
             update_query["lastStartedByName"] = last_crawl.get("userName")
             update_query["lastCrawlTime"] = last_crawl_finished
             update_query["lastCrawlState"] = last_crawl.get("state")
@@ -819,7 +818,6 @@ async def stats_recompute_all(crawl_configs, crawls, cid: uuid.UUID):
         update_query["lastCrawlId"] = str(last_crawl.get("_id"))
         update_query["lastCrawlStartTime"] = last_crawl.get("started")
         update_query["lastStartedBy"] = last_crawl.get("userid")
-        # TODO: Implement in crawls!
         update_query["lastStartedByName"] = last_crawl.get("userName")
         update_query["lastCrawlTime"] = last_crawl_finished
         update_query["lastCrawlState"] = last_crawl.get("state")

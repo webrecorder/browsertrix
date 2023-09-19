@@ -161,6 +161,7 @@ class UploadOps(BaseCrawlOps):
             collectionIds=collection_uuids,
             tags=tags,
             userid=user.id,
+            userName=user.name,
             oid=org.id,
             files=files,
             state="complete",

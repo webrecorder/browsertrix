@@ -165,15 +165,6 @@ class CrawlOps(BaseCrawlOps):
         aggregate.extend(
             [
                 {
-                    "$lookup": {
-                        "from": "users",
-                        "localField": "userid",
-                        "foreignField": "id",
-                        "as": "userName",
-                    },
-                },
-                {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
-                {
                     "$facet": {
                         "items": [
                             {"$skip": skip},
@@ -248,12 +239,19 @@ class CrawlOps(BaseCrawlOps):
         userid: uuid.UUID,
         started: str,
         manual: bool,
+        username: str = "",
     ):
         """initialize new crawl"""
+        if not username:
+            user = await self.user_manager.get(userid)
+            if user:
+                username = user.name
+
         crawl = Crawl(
             id=crawl_id,
             state="starting",
             userid=userid,
+            userName=username,
             oid=crawlconfig.oid,
             cid=crawlconfig.id,
             cid_rev=crawlconfig.rev,

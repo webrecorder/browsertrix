@@ -304,6 +304,7 @@ class BaseCrawl(BaseMongoModel):
     id: str
 
     userid: UUID4
+    userName: Optional[str]
     oid: UUID4
 
     started: datetime
@@ -346,9 +347,8 @@ class CrawlOut(BaseMongoModel):
     id: str
 
     userid: UUID4
-    oid: UUID4
-
     userName: Optional[str]
+    oid: UUID4
 
     name: Optional[str]
     description: Optional[str]
