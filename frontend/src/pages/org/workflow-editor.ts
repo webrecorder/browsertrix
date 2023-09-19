@@ -568,11 +568,7 @@ export class CrawlConfigEditor extends LiteElement {
       >
         <btrix-tab-list
           activePanel="newJobConfig-${this.progressState.activeTab}"
-          progressPanel=${ifDefined(
-            this.configId
-              ? undefined
-              : `newJobConfig-${this.progressState.activeTab}`
-          )}
+          progressPanel="newJobConfig-${this.progressState.activeTab}"
         >
           <header slot="header" class="flex justify-between items-baseline">
             <h3 class="font-semibold">
@@ -592,48 +588,27 @@ export class CrawlConfigEditor extends LiteElement {
           ${orderedTabNames.map((tabName) =>
             this.renderNavItem(tabName, tabLabels[tabName])
           )}
-
-          <btrix-tab-panel name="newJobConfig-crawlSetup" class="scroll-m-3">
-            ${this.renderPanelContent(
-              html`
-                ${when(this.jobType === "url-list", this.renderUrlListSetup)}
-                ${when(
-                  this.jobType === "seed-crawl",
-                  this.renderSeededCrawlSetup
-                )}
-                ${when(this.jobType === "custom", () =>
-                  this.renderUrlListSetup(true)
-                )}
-              `,
-              { isFirst: true }
-            )}
-          </btrix-tab-panel>
-          <btrix-tab-panel name="newJobConfig-crawlLimits" class="scroll-m-3">
-            ${this.renderPanelContent(this.renderCrawlLimits())}
-          </btrix-tab-panel>
-          <btrix-tab-panel
-            name="newJobConfig-browserSettings"
-            class="scroll-m-3"
-          >
-            ${this.renderPanelContent(this.renderCrawlBehaviors())}
-          </btrix-tab-panel>
-          <btrix-tab-panel
-            name="newJobConfig-crawlScheduling"
-            class="scroll-m-3"
-          >
-            ${this.renderPanelContent(this.renderJobScheduling())}
-          </btrix-tab-panel>
-          <btrix-tab-panel name="newJobConfig-crawlMetadata" class="scroll-m-3">
-            ${this.renderPanelContent(this.renderJobMetadata())}
-          </btrix-tab-panel>
-          <btrix-tab-panel
-            name="newJobConfig-confirmSettings"
-            class="scroll-m-3"
-          >
-            ${this.renderPanelContent(this.renderConfirmSettings(), {
-              isLast: true,
-            })}
-          </btrix-tab-panel>
+          ${this.renderPanel(
+            "crawlSetup",
+            html`
+              ${when(this.jobType === "url-list", this.renderUrlListSetup)}
+              ${when(
+                this.jobType === "seed-crawl",
+                this.renderSeededCrawlSetup
+              )}
+              ${when(this.jobType === "custom", () =>
+                this.renderUrlListSetup(true)
+              )}
+            `,
+            { isFirst: true }
+          )}
+          ${this.renderPanel("crawlLimits", this.renderCrawlLimits())}
+          ${this.renderPanel("browserSettings", this.renderCrawlBehaviors())}
+          ${this.renderPanel("crawlScheduling", this.renderJobScheduling())}
+          ${this.renderPanel("crawlMetadata", this.renderJobMetadata())}
+          ${this.renderPanel("confirmSettings", this.renderConfirmSettings(), {
+            isLast: true,
+          })}
         </btrix-tab-list>
       </form>
     `;
@@ -701,11 +676,12 @@ export class CrawlConfigEditor extends LiteElement {
     `;
   }
 
-  private renderPanelContent(
+  private renderPanel(
+    name: StepName,
     content: TemplateResult,
     { isFirst = false, isLast = false } = {}
   ) {
-    return html`
+    const panelContent = html`
       <div class="flex flex-col h-full min-h-[21rem]">
         <div
           class="flex-1 p-6 grid grid-cols-5 gap-4 border rounded-lg ${!this
@@ -721,6 +697,12 @@ export class CrawlConfigEditor extends LiteElement {
 
         ${this.renderFooter({ isFirst, isLast })}
       </div>
+    `;
+
+    return html`
+      <btrix-tab-panel name="newJobConfig-${name}" class="scroll-m-3">
+        ${panelContent}
+      </btrix-tab-panel>
     `;
   }
 
