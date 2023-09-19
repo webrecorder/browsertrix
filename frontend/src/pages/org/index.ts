@@ -173,7 +173,7 @@ export class Org extends LiteElement {
       ${this.renderStorageAlert()} ${this.renderOrgNavBar()}
       <main>
         <div
-          class="w-full max-w-screen-lg mx-auto px-3 box-border py-5"
+          class="w-full max-w-screen-lg mx-auto px-3 box-border py-7"
           aria-labelledby="${this.orgTab}-tab"
         >
           ${tabPanelContent}
