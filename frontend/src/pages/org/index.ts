@@ -27,6 +27,8 @@ import "./settings";
 import "./dashboard";
 import "./components/file-uploader";
 import "./components/new-browser-profile-dialog";
+import "./components/new-collection-dialog";
+import "./components/new-workflow-dialog";
 import type {
   Member,
   OrgNameChangeEvent,
@@ -334,6 +336,21 @@ export class Org extends LiteElement {
           ?open=${this.openDialogName === "browser-profile"}
         >
         </btrix-new-browser-profile-dialog>
+        <btrix-new-workflow-dialog
+          orgId=${this.orgId}
+          ?open=${this.openDialogName === "workflow"}
+          @select-job-type=${(e: SelectJobTypeEvent) => {
+            this.openDialogName = undefined;
+            this.navTo(`/orgs/${this.orgId}/workflows?new&jobType=${e.detail}`);
+          }}
+        >
+        </btrix-new-workflow-dialog>
+        <btrix-new-collection-dialog
+          .authState=${this.authState}
+          orgId=${this.orgId}
+          ?open=${this.openDialogName === "collection"}
+        >
+        </btrix-new-collection-dialog>
       </div>
     `;
   }

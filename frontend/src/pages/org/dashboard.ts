@@ -62,6 +62,34 @@ export class Dashboard extends LiteElement {
             label="Edit org settings"
             @click=${this.navLink}
           ></sl-icon-button>
+          <sl-dropdown
+            distance="4"
+            placement="bottom-end"
+            @sl-select=${(e: SlSelectEvent) => {
+              this.dispatchEvent(
+                <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                  detail: e.detail.item.value,
+                })
+              );
+            }}
+          >
+            <sl-button slot="trigger" variant="primary" size="small" caret>
+              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+              ${msg("Add New...")}
+            </sl-button>
+            <sl-menu>
+              <sl-menu-item value="workflow"
+                >${msg("Crawl Workflow")}</sl-menu-item
+              >
+              <sl-menu-item value="upload">${msg("Upload")}</sl-menu-item>
+              <sl-menu-item value="collection">
+                ${msg("Collection")}
+              </sl-menu-item>
+              <sl-menu-item value="browser-profile">
+                ${msg("Browser Profile")}
+              </sl-menu-item>
+            </sl-menu>
+          </sl-dropdown>
         </div>
       </header>
       <main>

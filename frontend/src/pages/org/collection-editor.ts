@@ -36,7 +36,7 @@ import type { Collection } from "../../types/collection";
 import type { Crawl, CrawlState, Upload, Workflow } from "../../types/crawler";
 import type { PageChangeEvent } from "../../components/pagination";
 
-const TABS = ["metadata", "crawls", "uploads"] as const;
+const TABS = ["crawls", "uploads", "metadata"] as const;
 type Tab = (typeof TABS)[number];
 type SearchFields = "name" | "firstSeed";
 type SearchResult = {
@@ -111,7 +111,7 @@ export class CollectionEditor extends LiteElement {
   collectionId?: string;
 
   @property({ type: Object })
-  metadataValues?: Collection;
+  metadataValues?: Partial<Collection>;
 
   @property({ type: Boolean })
   isSubmitting = false;
@@ -226,16 +226,6 @@ export class CollectionEditor extends LiteElement {
   };
 
   protected async willUpdate(changedProperties: Map<string, any>) {
-    if (
-      changedProperties.has("activeTab") &&
-      !changedProperties.get("activeTab") &&
-      this.activeTab
-    ) {
-      // First tab load
-      if (this.activeTab !== "metadata" && !this.collectionId) {
-        this.goToTab("metadata");
-      }
-    }
     if (changedProperties.has("orgId") && this.orgId) {
       this.fetchSearchValues();
     }
@@ -419,15 +409,6 @@ export class CollectionEditor extends LiteElement {
               <sl-button
                 type="button"
                 size="small"
-                class="mr-auto"
-                @click=${() => this.goToTab("metadata")}
-              >
-                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-                ${msg("Previous Step")}
-              </sl-button>
-              <sl-button
-                type="button"
-                size="small"
                 @click=${() => this.goToTab("uploads")}
               >
                 <sl-icon slot="suffix" name="chevron-right"></sl-icon>
@@ -514,6 +495,14 @@ export class CollectionEditor extends LiteElement {
                 <sl-icon slot="prefix" name="chevron-left"></sl-icon>
                 ${msg("Previous Step")}
               </sl-button>
+              <sl-button
+                type="button"
+                size="small"
+                @click=${() => this.goToTab("metadata")}
+              >
+                <sl-icon slot="suffix" name="chevron-right"></sl-icon>
+                ${msg("Add Metadata")}
+              </sl-button>
             `
           )}
           <sl-button
@@ -574,25 +563,19 @@ export class CollectionEditor extends LiteElement {
             () => html`
               <sl-button
                 type="button"
+                class="mr-auto"
                 size="small"
-                variant="primary"
-                @click=${async () => {
-                  await this.nameInput;
-                  const isValid = this.nameInput!.reportValidity();
-                  if (isValid) {
-                    this.goToTab("crawls");
-                  }
-                }}
+                @click=${() => this.goToTab("uploads")}
               >
-                <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-                ${msg("Select Items")}
+                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+                ${msg("Previous Step")}
               </sl-button>
             `
           )}
           <sl-button
             type="submit"
             size="small"
-            variant=${this.collectionId ? "primary" : "default"}
+            variant="primary"
             ?disabled=${this.isSubmitting ||
             Object.values(this.workflowIsLoading).some(
               (isLoading) => isLoading === true
@@ -601,9 +584,7 @@ export class CollectionEditor extends LiteElement {
           >
             ${this.collectionId
               ? msg("Save Metadata")
-              : this.hasItemSelection
-              ? msg("Create Collection")
-              : msg("Create Collection without Items")}
+              : msg("Create Collection")}
           </sl-button>
         </footer>
       </section>
@@ -1367,7 +1348,7 @@ export class CollectionEditor extends LiteElement {
   }
 
   private getActivePanelFromHash = () => {
-    const hashValue = window.location.hash.slice(1);
+    const hashValue = window.location.hash.slice(1).split("?")[0];
     if (TABS.includes(hashValue as any)) {
       this.activeTab = hashValue as Tab;
     } else {

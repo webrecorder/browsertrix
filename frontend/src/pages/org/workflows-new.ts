@@ -1,4 +1,4 @@
-import type { TemplateResult, LitElement } from "lit";
+import type { TemplateResult, LitElement, PropertyValues } from "lit";
 import { state, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
@@ -7,9 +7,8 @@ import { mergeDeep } from "immutable";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { JobType, WorkflowParams } from "./types";
+import type { SelectNewDialogEvent } from "./index";
 import "./workflow-editor";
-import seededCrawlSvg from "../../assets/images/new-crawl-config_Seeded-Crawl.svg";
-import urlListSvg from "../../assets/images/new-crawl-config_URL-List.svg";
 
 const defaultValue = {
   name: "",
@@ -50,6 +49,9 @@ export class WorkflowsNew extends LiteElement {
   @property({ type: Boolean })
   isCrawler!: boolean;
 
+  @property({ type: String })
+  jobType?: JobType;
+
   // Use custom property accessor to prevent
   // overriding default Workflow values
   @property({ type: Object })
@@ -61,26 +63,10 @@ export class WorkflowsNew extends LiteElement {
     this._initialWorkflow = mergeDeep(this._initialWorkflow, val);
   }
 
-  @state()
-  private jobType?: JobType;
-
-  connectedCallback() {
-    super.connectedCallback();
-    if (!this.jobType) {
-      const url = new URL(window.location.href);
-      this.jobType = (url.searchParams.get("jobType") as JobType) || undefined;
-    }
-  }
-
   private renderHeader() {
     let href = `/orgs/${this.orgId}/workflows/crawls`;
     let label = msg("Back to Crawl Workflows");
 
-    // Allow user to go back to choose crawl type if new (not duplicated) config
-    if (this.jobType && !this.initialWorkflow.jobType) {
-      href = `/orgs/${this.orgId}/workflows?new`;
-      label = msg("Choose Crawl Type");
-    }
     return html`
       <nav class="mb-5">
         <a
@@ -110,7 +96,11 @@ export class WorkflowsNew extends LiteElement {
 
     const jobType = this.initialWorkflow.jobType || this.jobType;
 
-    if (this.isCrawler && jobType) {
+    if (!this.isCrawler) {
+      return this.renderNoAccess();
+    }
+
+    if (jobType) {
       return html`
         ${this.renderHeader()}
         <h2 class="text-xl font-semibold mb-6">
@@ -123,75 +113,18 @@ export class WorkflowsNew extends LiteElement {
           .authState=${this.authState}
           @reset=${async (e: Event) => {
             await (e.target as LitElement).updateComplete;
-            this.jobType = undefined;
+            this.dispatchEvent(
+              <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                detail: "workflow",
+              })
+            );
           }}
         ></btrix-workflow-editor>
       `;
     }
 
-    return html`
-      ${this.renderHeader()}
-      <h2 class="text-xl font-semibold mb-6">${msg("New Crawl Workflow")}</h2>
-      ${when(this.isCrawler, this.renderChooseJobType, this.renderNoAccess)}
-    `;
+    return html``;
   }
-
-  private renderChooseJobType = () => {
-    return html`
-      <style>
-        .jobTypeButton:hover img {
-          transform: scale(1.05);
-        }
-      </style>
-      <h3 class="text-lg font-semibold mb-3">${msg("Choose Crawl Type")}</h3>
-      <div
-        class="border rounded p-8 md:py-12 flex flex-col md:flex-row items-start justify-evenly"
-      >
-        <a
-          role="button"
-          class="jobTypeButton"
-          href=${`/orgs/${this.orgId}/workflows?new&jobType=url-list`}
-          @click=${(e: any) => {
-            this.navLink(e);
-            this.jobType = "url-list";
-          }}
-        >
-          <figure class="w-64 m-4">
-            <img class="transition-transform" src=${urlListSvg} />
-            <figcaption>
-              <div class="text-lg font-medium my-3">${msg("URL List")}</div>
-              <p class="text-sm text-neutral-500">
-                ${msg(
-                  "The crawler visits every URL specified in a list, and optionally every URL linked on those pages."
-                )}
-              </p>
-            </figcaption>
-          </figure>
-        </a>
-        <a
-          role="button"
-          class="jobTypeButton"
-          href=${`/orgs/${this.orgId}/workflows?new&jobType=seed-crawl`}
-          @click=${(e: any) => {
-            this.navLink(e);
-            this.jobType = "seed-crawl";
-          }}
-        >
-          <figure class="w-64 m-4">
-            <img class="transition-transform" src=${seededCrawlSvg} />
-            <figcaption>
-              <div class="text-lg font-medium my-3">${msg("Seeded Crawl")}</div>
-              <p class="text-sm text-neutral-500">
-                ${msg(
-                  "The crawler automatically discovers and archives pages starting from a single seed URL."
-                )}
-              </p>
-            </figcaption>
-          </figure>
-        </a>
-      </div>
-    `;
-  };
 
   private renderNoAccess = () => html`
     <btrix-alert variant="danger">
