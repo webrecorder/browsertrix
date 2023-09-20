@@ -1,6 +1,7 @@
 import type { PropertyValues, TemplateResult } from "lit";
 import { state, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
 
@@ -79,25 +80,25 @@ export class Dashboard extends LiteElement {
                   value: metrics.archivedItemCount,
                   singleLabel: msg("Archived Item"),
                   pluralLabel: msg("Archived Items"),
-                  icon: "file-zip-fill",
+                  iconProps: { name: "file-zip-fill" },
                 })}
                 ${this.renderStat({
                   value: metrics.crawlCount,
                   singleLabel: msg("Crawl"),
                   pluralLabel: msg("Crawls"),
-                  icon: "gear-wide-connected",
+                  iconProps: { name: "gear-wide-connected" },
                 })}
                 ${this.renderStat({
                   value: metrics.uploadCount,
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
-                  icon: "upload",
+                  iconProps: { name: "upload" },
                 })}
                 ${this.renderStat({
                   value: metrics.profileCount,
                   singleLabel: msg("Browser Profile"),
                   pluralLabel: msg("Browser Profiles"),
-                  icon: "window-fullscreen",
+                  iconProps: { name: "window-fullscreen" },
                 })}
               </dl>
             `,
@@ -140,19 +141,19 @@ export class Dashboard extends LiteElement {
                   value: metrics.workflowsRunningCount,
                   singleLabel: msg("Crawl Running"),
                   pluralLabel: msg("Crawls Running"),
-                  icon: "record-fill",
+                  iconProps: { name: "dot", library: "app" },
                 })}
                 ${this.renderStat({
                   value: metrics.workflowsQueuedCount,
                   singleLabel: msg("Crawl Workflow Waiting"),
                   pluralLabel: msg("Crawl Workflows Waiting"),
-                  icon: "hourglass-split",
+                  iconProps: { name: "hourglass-split" },
                 })}
                 ${this.renderStat({
                   value: metrics.pageCount,
                   singleLabel: msg("Page Crawled"),
                   pluralLabel: msg("Pages Crawled"),
-                  icon: "file-richtext-fill",
+                  iconProps: { name: "file-richtext-fill" },
                 })}
               </dl>
             `,
@@ -178,13 +179,13 @@ export class Dashboard extends LiteElement {
                   value: metrics.collectionsCount,
                   singleLabel: msg("Collection Total"),
                   pluralLabel: msg("Collections Total"),
-                  icon: "collection-fill",
+                  iconProps: { name: "collection-fill" },
                 })}
                 ${this.renderStat({
                   value: metrics.publicCollectionsCount,
                   singleLabel: msg("Public Collection"),
                   pluralLabel: msg("Public Collections"),
-                  icon: "people-fill",
+                  iconProps: { name: "people-fill" },
                 })}
               </dl>
             `,
@@ -235,13 +236,14 @@ export class Dashboard extends LiteElement {
     value: number;
     singleLabel: string;
     pluralLabel: string;
-    icon: string;
+    iconProps: { name: string; library?: string };
   }) {
     return html`
       <div class="flex items-center mb-2 last:mb-0">
         <sl-icon
           class="text-base text-neutral-500 mr-2"
-          name=${stat.icon}
+          name=${stat.iconProps.name}
+          library=${ifDefined(stat.iconProps.library)}
         ></sl-icon>
         <dt class="order-last">
           ${stat.value === 1 ? stat.singleLabel : stat.pluralLabel}
