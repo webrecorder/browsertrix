@@ -47,10 +47,21 @@ export class Dashboard extends LiteElement {
   }
 
   render() {
-    return html`<header class="flex justify-between gap-2 pb-3 mb-7 border-b">
+    return html`<header
+        class="flex items-center justify-between gap-2 pb-3 mb-7 border-b"
+      >
         <h1 class="min-w-0 text-xl font-semibold leading-8">
           ${this.org?.name}
         </h1>
+        <div>
+          <sl-icon-button
+            href=${`/orgs/${this.orgId}/settings`}
+            class="text-lg"
+            name="gear"
+            label="Edit org settings"
+            @click=${this.navLink}
+          ></sl-icon-button>
+        </div>
       </header>
       <main>
         <div class="flex flex-col md:flex-row gap-6">
