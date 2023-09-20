@@ -1,6 +1,7 @@
-import { LitElement, html, css } from "lit";
-import { property } from "lit/decorators.js";
+import { LitElement, html, css, PropertyValues } from "lit";
+import { property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { ref } from "lit/directives/ref.js";
 
 /**
  * Show scalar value within a range
@@ -12,69 +13,139 @@ import { ifDefined } from "lit/directives/if-defined.js";
  */
 export class Meter extends LitElement {
   @property({ type: Number })
+  min = 0;
+  @property({ type: Number })
   max = 1;
 
   @property({ type: Number })
   value = 0;
 
   @property({ type: Number })
-  min?: number;
-
-  @property({ type: Number })
   high?: number;
 
+  @property({ type: String })
+  valueText?: string;
+
+  @property({ type: String })
+  valueLabel?: string;
+
+  @property({ type: String })
+  maxLabel?: string;
+
+  @state()
+  private showCompactLabels = false;
+
+  @query(".bar")
+  private bar?: HTMLElement;
+
+  @query(".max-text")
+  private maxText?: HTMLElement;
+
   static styles = css`
-    meter {
-      display: block;
-      -moz-appearance: none;
-      -webkit-appearance: none;
-      appearance: none;
-      width: 100%;
-      height: 1rem;
-      border-radius: var(--sl-border-radius-medium);
+    .meter {
+      position: relative;
     }
 
-    meter,
-    meter::-webkit-meter-bar {
-      background: none;
+    .track {
+      display: flex;
+      height: 1rem;
+      border-radius: var(--sl-border-radius-medium);
       background-color: var(--sl-color-neutral-100);
       box-shadow: inset 0px 1px 1px 0px rgba(0, 0, 0, 0.25);
     }
 
-    meter::-moz-meter-bar {
-      background: none;
-      background-color: var(--sl-color-blue-500);
-      border-radius: var(--sl-border-radius-medium);
-    }
-    .value-bar {
+    .bar {
       height: 1rem;
-      background-color: var(--sl-color-blue-500);
       border-radius: var(--sl-border-radius-medium);
     }
 
-    meter.danger .value-bar {
+    .bar.default {
+      background-color: var(--sl-color-blue-500);
+    }
+
+    .bar.danger {
       background-color: var(--sl-color-red-500);
     }
-    meter.danger::-moz-meter-bar {
-      background-color: var(--sl-color-red-500);
+
+    .labels {
+      display: flex;
+      text-align: right;
+      white-space: nowrap;
+      color: var(--sl-color-neutral-500);
+      font-size: var(--sl-font-size-x-small);
+      font-family: var(--font-monostyle-family);
+      font-variation-settings: var(--font-monostyle-variation);
+      line-height: 1;
+      margin-top: var(--sl-spacing-x-small);
+    }
+
+    .label.max {
+      flex-grow: 1;
+    }
+
+    .max-text {
+      display: inline-block;
     }
   `;
 
+  updated(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("value")) {
+      this.repositionLabels();
+    }
+  }
+
   render() {
+    const barWidth = `${Math.min(100, (this.value / this.max) * 100)}%`;
     return html`
-      <style></style>
-      <meter
-        class="${this.value >= (this.high || this.max) ? "danger" : ""}"
-        value=${this.value}
-        max=${this.max}
-        min=${ifDefined(this.min)}
-        high=${ifDefined(this.high)}
+      <div
+        class="meter"
+        role="${"meter" as any}"
+        aria-valuenow=${this.value}
+        aria-valuetext=${ifDefined(this.valueText)}
+        aria-valuemin=${this.min}
+        aria-valuemax=${this.max}
       >
-        <div
-          class="value-bar"
-          style="width:${Math.min(100, (this.value / this.max) * 100)}%"
-        ></div>
-      </meter>
+        <div class="track">
+          <div
+            class="bar ${this.value >= (this.high || this.max)
+              ? "danger"
+              : "default"}"
+            style="width:${barWidth}"
+          ></div>
+        </div>
+        <div class="labels">
+          ${this.showCompactLabels
+            ? html`
+                <div class="label max">
+                  ${this.valueLabel || this.value} /
+                  <span class="max-text">${this.maxLabel || this.max}</span>
+                </div>
+              `
+            : html`
+          <div class="label value" style="width:${barWidth}">
+            ${this.valueLabel || this.value}
+          </div>
+          <div class="label max">
+            <span class="max-text">${this.maxLabel || this.max}</span>
+          </div>
+        </div>
+          `}
+        </div>
+      </div>
     `;
+  }
+
+  // TODO reposition on window resize
+  private repositionLabels() {
+    if (!this.bar) return;
+
+    const track = this.bar.closest(".track") as HTMLElement;
+    const pad = 8;
+    const remaining = track.clientWidth - this.bar.clientWidth - pad;
+
+    // Show compact value/max label when almost touching
+    if (this.maxText && this.maxText.clientWidth >= remaining) {
+      this.showCompactLabels = true;
+    }
   }
 }

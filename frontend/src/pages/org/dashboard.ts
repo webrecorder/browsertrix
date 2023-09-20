@@ -41,6 +41,13 @@ export class Dashboard extends LiteElement {
   @state()
   private metrics?: Metrics;
 
+  private gbFormatter = Intl.NumberFormat("en", {
+    notation: "compact",
+    style: "unit",
+    unit: "gigabyte",
+    unitDisplay: "narrow",
+  });
+
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("orgId")) {
       this.fetchMetrics();
@@ -69,12 +76,41 @@ export class Dashboard extends LiteElement {
           ${this.renderCard(
             msg("Storage"),
             (metrics) => html`
-              <div class="font-semibold mb-3">
-                <sl-format-bytes
-                  value=${metrics.storageUsedBytes ?? 0}
-                ></sl-format-bytes>
-                ${msg("Used")}
-              </div>
+              ${when(
+                metrics.storageQuotaBytes,
+                () => html`
+                  <div class="font-semibold mb-1">
+                    ${msg(
+                      str`${Math.round(
+                        (metrics.storageUsedBytes / metrics.storageQuotaBytes) *
+                          100
+                      )}% used`
+                    )}
+                  </div>
+                  <div class="mb-2">
+                    <btrix-meter
+                      value=${metrics.storageUsedBytes}
+                      max=${metrics.storageQuotaBytes}
+                      high=${metrics.storageQuotaBytes}
+                      valueText=${msg("gigabyte")}
+                      valueLabel=${this.gbFormatter.format(
+                        metrics.storageUsedGB
+                      )}
+                      maxLabel=${this.gbFormatter.format(
+                        metrics.storageQuotaGB
+                      )}
+                    ></btrix-meter>
+                  </div>
+                `,
+                () => html`
+                  <div class="font-semibold mb-3">
+                    <sl-format-bytes
+                      value=${metrics.storageUsedBytes ?? 0}
+                    ></sl-format-bytes>
+                    ${msg("Used")}
+                  </div>
+                `
+              )}
               <dl>
                 ${this.renderStat({
                   value: metrics.archivedItemCount,
