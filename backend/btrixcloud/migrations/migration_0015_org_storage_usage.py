@@ -7,7 +7,7 @@ from btrixcloud.migrations import BaseMigration
 MIGRATION_VERSION = "0015"
 
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals, duplicate-code
 class Migration(BaseMigration):
     """Migration class."""
 
