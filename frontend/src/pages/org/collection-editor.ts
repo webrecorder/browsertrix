@@ -552,9 +552,12 @@ export class CollectionEditor extends LiteElement {
             ></btrix-markdown-editor>
           </fieldset>
           <label>
-            <sl-switch name="isPublic" ?checked=${this.metadataValues?.isPublic}
-              >Publicly Accessible</sl-switch
+            <sl-switch
+              name="isPublic"
+              ?checked=${this.metadataValues?.isPublic}
             >
+              ${msg("Publicly Accessible")}
+            </sl-switch>
           </label>
         </div>
         <footer class="border-t px-6 py-4 flex gap-2 justify-end">

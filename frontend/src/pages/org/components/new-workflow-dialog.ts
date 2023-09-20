@@ -15,12 +15,14 @@ export class NewWorkflowDialog extends LitElement {
   static styles = css`
     .title,
     .container {
-      margin: var(--sl-spacing-large);
+      margin: var(--sl-spacing-large) 0;
     }
 
     .container {
       display: flex;
-      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--sl-spacing-4x-large);
+      justify-content: center;
     }
 
     .heading {
@@ -34,11 +36,11 @@ export class NewWorkflowDialog extends LitElement {
     .description {
       color: var(--sl-color-neutral-500);
       margin: 0;
-      max-width: 23em;
     }
 
     .jobTypeButton {
       display: block;
+      width: min-content;
     }
 
     figure {
@@ -69,7 +71,7 @@ export class NewWorkflowDialog extends LitElement {
       <btrix-dialog
         label=${msg("Create a New Crawl Workflow")}
         ?open=${this.open}
-        style="--width: 50rem"
+        style="--width: 46rem"
       >
         <h3 class="title heading">${msg("Choose Crawl Type")}</h3>
         <div class="container">

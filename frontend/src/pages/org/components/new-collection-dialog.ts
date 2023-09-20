@@ -31,6 +31,7 @@ export class NewCollectionDialog extends LiteElement {
     return html` <btrix-dialog
       label=${msg(str`Create a New Collection`)}
       ?open=${this.open}
+      style="--width: 46rem"
       @sl-initial-focus=${async (e: CustomEvent) => {
         const nameInput = (await this.form).querySelector(
           'sl-input[name="name"]'
@@ -42,13 +43,9 @@ export class NewCollectionDialog extends LiteElement {
       }}
     >
       <form id="collectionForm" @reset=${this.onReset} @submit=${this.onSubmit}>
-        <p class="text-neutral-500 max-w-prose mb-5">
-          ${msg(
-            "Choose a unique name for your collection. You can change it before saving the collection."
-          )}
-        </p>
         <sl-input
-          class="with-max-help-text"
+          class="mb-2 with-max-help-text"
+          id="collectionForm-name-input"
           name="name"
           label=${msg("Collection Name")}
           placeholder=${msg("My Collection")}
@@ -58,10 +55,21 @@ export class NewCollectionDialog extends LiteElement {
           @sl-input=${this.validateNameMax.validate}
         ></sl-input>
 
+        <fieldset>
+          <label class="form-label">${msg("Description")}</label>
+          <btrix-markdown-editor
+            name="description"
+            maxlength=${4000}
+          ></btrix-markdown-editor>
+        </fieldset>
+        <label>
+          <sl-switch name="isPublic"> ${msg("Publicly Accessible")} </sl-switch>
+        </label>
         <input class="invisible h-0 w-0" type="submit" />
       </form>
-      <div slot="footer" class="flex justify-between">
+      <div slot="footer" class="flex gap-3 items-center justify-end">
         <sl-button
+          class="mr-auto"
           size="small"
           @click=${async () => {
             // Using reset method instead of type="reset" fixes
@@ -70,6 +78,9 @@ export class NewCollectionDialog extends LiteElement {
           }}
           >${msg("Cancel")}</sl-button
         >
+        <aside class="text-xs text-neutral-500">
+          ${msg("You can rename your collection later")}
+        </aside>
         <sl-button
           variant="primary"
           size="small"
@@ -84,7 +95,7 @@ export class NewCollectionDialog extends LiteElement {
             ) as HTMLInputElement;
             form.requestSubmit(submitInput);
           }}
-          >${msg("Continue")}</sl-button
+          >${msg("Create Collection")}</sl-button
         >
       </div>
     </btrix-dialog>`;
@@ -108,10 +119,40 @@ export class NewCollectionDialog extends LiteElement {
       return;
     }
 
-    const { name } = serialize(form);
+    const { name, description, isPublic } = serialize(form);
+    this.isSubmitting = true;
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${this.orgId}/collections`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            name,
+            description,
+            public: Boolean(isPublic),
+          }),
+        }
+      );
 
-    this.hideDialog();
-    this.navTo(`/orgs/${this.orgId}/collections/new?name=${name}#crawls`);
+      this.navTo(`/orgs/${this.orgId}/collections/edit/${data.id}#crawls`);
+      this.notify({
+        message: msg(str`Successfully created "${data.name}" Collection.`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+      this.hideDialog();
+    } catch (e: any) {
+      this.notify({
+        message:
+          (e?.isApiError && e?.message) ||
+          msg("Something unexpected went wrong"),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSubmitting = false;
   }
 }
 customElements.define("btrix-new-collection-dialog", NewCollectionDialog);

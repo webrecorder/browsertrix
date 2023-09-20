@@ -38,9 +38,8 @@ import type {
 import type { Tab as CollectionTab } from "./collection-detail";
 import type { SelectJobTypeEvent } from "./components/new-workflow-dialog";
 
-export type SelectNewDialogEvent = CustomEvent<
-  "workflow" | "collection" | "browser-profile" | "upload"
->;
+type ResourceName = "workflow" | "collection" | "browser-profile" | "upload";
+export type SelectNewDialogEvent = CustomEvent<ResourceName>;
 export type OrgTab =
   | "home"
   | "crawls"
@@ -59,7 +58,7 @@ type Params = {
   collectionTab?: string;
   itemType?: Crawl["type"];
   jobType?: JobType;
-  name: string;
+  new?: ResourceName;
 };
 const defaultTab = "home";
 
@@ -102,7 +101,7 @@ export class Org extends LiteElement {
     | "upload";
 
   @state()
-  private isDialogVisible = false;
+  private isCreateDialogVisible = false;
 
   @state()
   private org?: OrgData | null;
@@ -305,7 +304,7 @@ export class Org extends LiteElement {
     if (!this.authState || !this.orgId || !this.isCrawler) {
       return;
     }
-    if (!this.isDialogVisible) {
+    if (!this.isCreateDialogVisible) {
       return;
     }
     return html`
@@ -316,7 +315,7 @@ export class Org extends LiteElement {
         }}
         @sl-after-hide=${(e: CustomEvent) => {
           e.stopPropagation();
-          this.isDialogVisible = false;
+          this.isCreateDialogVisible = false;
         }}
       >
         <btrix-file-uploader
@@ -487,15 +486,6 @@ export class Org extends LiteElement {
       ></btrix-collection-detail>`;
     }
 
-    if (this.orgPath.includes("/new")) {
-      return html`<btrix-collections-new
-        .authState=${this.authState!}
-        orgId=${this.orgId!}
-        ?isCrawler=${this.isCrawler}
-        name=${this.params.name}
-      ></btrix-collections-new>`;
-    }
-
     return html`<btrix-collections-list
       .authState=${this.authState!}
       orgId=${this.orgId!}
@@ -526,7 +516,7 @@ export class Org extends LiteElement {
 
   private async onSelectNewDialog(e: SelectNewDialogEvent) {
     e.stopPropagation();
-    this.isDialogVisible = true;
+    this.isCreateDialogVisible = true;
     await this.updateComplete;
     this.openDialogName = e.detail;
   }
