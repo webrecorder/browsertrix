@@ -37,8 +37,6 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 
-BYTES_IN_GB = 1_000_000_000
-
 
 # ============================================================================
 # pylint: disable=too-many-public-methods, too-many-instance-attributes
@@ -266,11 +264,23 @@ class OrgOps:
             return org.quotas.maxPagesPerCrawl
         return 0
 
-    async def inc_org_bytes_stored(self, oid: uuid.UUID, size: int):
+    async def inc_org_bytes_stored(self, oid: uuid.UUID, size: int, type_="crawl"):
         """Increase org bytesStored count (pass negative value to subtract)."""
         await self.orgs.find_one_and_update(
             {"_id": oid}, {"$inc": {"bytesStored": size}}
         )
+        if type_ == "crawl":
+            await self.orgs.find_one_and_update(
+                {"_id": oid}, {"$inc": {"bytesStoredCrawls": size}}
+            )
+        elif type_ == "upload":
+            await self.orgs.find_one_and_update(
+                {"_id": oid}, {"$inc": {"bytesStoredUploads": size}}
+            )
+        elif type_ == "profile":
+            await self.orgs.find_one_and_update(
+                {"_id": oid}, {"$inc": {"bytesStoredProfiles": size}}
+            )
         return await self.storage_quota_reached(oid)
 
     # pylint: disable=invalid-name
@@ -336,11 +346,7 @@ class OrgOps:
     async def get_org_metrics(self, org: Organization):
         """Calculate and return org metrics"""
         # pylint: disable=too-many-locals
-        storage_quota_gb = 0
         storage_quota = await self.get_org_storage_quota(org.id)
-        if storage_quota:
-            storage_quota_gb = round(storage_quota / BYTES_IN_GB)
-
         max_concurrent_crawls = await self.get_max_concurrent_crawls(org.id)
 
         # Calculate these counts in loop to avoid having db iterate through
@@ -378,9 +384,10 @@ class OrgOps:
 
         return {
             "storageUsedBytes": org.bytesStored,
-            "storageUsedGB": round((org.bytesStored / BYTES_IN_GB), 2),
+            "storageUsedBytesCrawls": org.bytesStoredCrawls,
+            "storageUsedBytesUploads": org.bytesStoredUploads,
+            "storageUsedBytesProfiles": org.bytesStoredProfiles,
             "storageQuotaBytes": storage_quota,
-            "storageQuotaGB": storage_quota_gb,
             "archivedItemCount": archived_item_count,
             "crawlCount": crawl_count,
             "uploadCount": upload_count,

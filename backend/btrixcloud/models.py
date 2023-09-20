@@ -666,6 +666,9 @@ class Organization(BaseMongoModel):
     usage: Dict[str, int] = {}
 
     bytesStored: int = 0
+    bytesStoredCrawls: int = 0
+    bytesStoredUploads: int = 0
+    bytesStoredProfiles: int = 0
 
     default: bool = False
 
@@ -744,6 +747,9 @@ class OrgOut(BaseMongoModel):
     usage: Optional[Dict[str, int]]
     default: bool = False
     bytesStored: int
+    bytesStoredCrawls: int
+    bytesStoredUploads: int
+    bytesStoredProfiles: int
     origin: Optional[AnyHttpUrl]
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
@@ -755,9 +761,10 @@ class OrgMetrics(BaseModel):
     """Organization API metrics model"""
 
     storageUsedBytes: int
-    storageUsedGB: float
     storageQuotaBytes: int
-    storageQuotaGB: float
+    storageQuotaBytesCrawls: int
+    storageQuotaBytesUploads: int
+    storageQuotaBytesProfiles: int
     archivedItemCount: int
     crawlCount: int
     uploadCount: int

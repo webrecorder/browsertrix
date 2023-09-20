@@ -193,7 +193,7 @@ class ProfileOps:
             {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
         )
 
-        quota_reached = await self.orgs.inc_org_bytes_stored(oid, file_size)
+        quota_reached = await self.orgs.inc_org_bytes_stored(oid, file_size, "profile")
 
         return {
             "added": True,
@@ -310,7 +310,9 @@ class ProfileOps:
         # Delete file from storage
         if profile.resource:
             await delete_crawl_file_object(org, profile.resource, self.crawl_manager)
-            await self.orgs.inc_org_bytes_stored(org.id, -profile.resource.size)
+            await self.orgs.inc_org_bytes_stored(
+                org.id, -profile.resource.size, "profile"
+            )
 
         res = await self.profiles.delete_one(query)
         if not res or res.deleted_count != 1:
