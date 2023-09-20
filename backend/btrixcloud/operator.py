@@ -132,8 +132,9 @@ class PodResources(BaseModel):
 class PodInfo(BaseModel):
     """Aggregate pod status info held in CrawlJob"""
 
-    crashTime: Optional[str] = None
-    isNewCrash: Optional[bool] = Field(default=None, exclude=True)
+    exitTime: Optional[str] = None
+    exitCode: Optional[int]
+    isNewExit: Optional[bool] = Field(default=None, exclude=True)
     reason: Optional[str] = None
 
     allocated: PodResources = PodResources()
@@ -211,13 +212,14 @@ class CrawlStatus(BaseModel):
         lambda: PodInfo()  # pylint: disable=unnecessary-lambda
     )
     restartTime: Optional[str]
+    execTime: int = 0
 
     # don't include in status, use by metacontroller
     resync_after: Optional[int] = None
 
 
 # ============================================================================
-# pylint: disable=too-many-statements, too-many-public-methods, too-many-branches
+# pylint: disable=too-many-statements, too-many-public-methods, too-many-branches, too-many-nested-blocks
 # pylint: disable=too-many-instance-attributes, too-many-locals, too-many-lines, too-many-arguments
 class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
@@ -330,16 +332,20 @@ class BtrixOperator(K8sAPI):
         # if finalizing, crawl is being deleted
         if data.finalizing:
             if not status.finished:
+                await self.mark_for_cancelation(crawl_id)
+
                 # if can't cancel, already finished
-                if not await self.mark_finished(
-                    crawl_id, uuid.UUID(cid), uuid.UUID(oid), status, "canceled"
+                if not await self.cancel_crawl(
+                    crawl_id, uuid.UUID(cid), uuid.UUID(oid), status
                 ):
                     # instead of fetching the state (that was already set)
                     # return exception to ignore this request, keep previous
                     # finished state
                     raise HTTPException(status_code=400, detail="out_of_sync_status")
 
-            return self.finalize_response(crawl_id, status, spec, data.children, params)
+            return await self.finalize_response(
+                crawl_id, uuid.UUID(oid), status, spec, data.children, params
+            )
 
         # just in case, finished but not deleted, can only get here if
         # do_crawl_finished_tasks() doesn't reach the end or taking too long
@@ -348,7 +354,9 @@ class BtrixOperator(K8sAPI):
                 f"warn crawl {crawl_id} finished but not deleted, post-finish taking too long?"
             )
             asyncio.create_task(self.delete_crawl_job(crawl_id))
-            return self.finalize_response(crawl_id, status, spec, data.children, params)
+            return await self.finalize_response(
+                crawl_id, uuid.UUID(oid), status, spec, data.children, params
+            )
 
         try:
             configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
@@ -407,8 +415,8 @@ class BtrixOperator(K8sAPI):
             self.handle_auto_size(crawl.id, status.podStatus)
 
             if status.finished:
-                return self.finalize_response(
-                    crawl_id, status, spec, data.children, params
+                return await self.finalize_response(
+                    crawl_id, uuid.UUID(oid), status, spec, data.children, params
                 )
         else:
             status.scale = crawl.scale
@@ -654,6 +662,12 @@ class BtrixOperator(K8sAPI):
         )
         return False
 
+    async def cancel_crawl(self, crawl_id, cid, oid, status, crawl=None, stats=None):
+        """Mark crawl as canceled"""
+        return await self.mark_finished(
+            crawl_id, cid, oid, status, "canceled", crawl, stats
+        )
+
     async def fail_crawl(self, crawl_id, cid, status, pods, stats=None):
         """Mark crawl as failed, log crawl state and print crawl logs, if possible"""
         prev_state = status.state
@@ -683,16 +697,45 @@ class BtrixOperator(K8sAPI):
             "children": [],
         }
 
-    def finalize_response(self, crawl_id, status, spec, children, params):
+    async def finalize_response(
+        self,
+        crawl_id: str,
+        oid: uuid.UUID,
+        status: CrawlStatus,
+        spec: dict,
+        children: dict,
+        params: dict,
+    ):
         """ensure crawl id ready for deletion"""
 
         redis_pod = f"redis-{crawl_id}"
         new_children = []
+
+        keep_redis = False
+
         finalized = False
 
-        if redis_pod in children[POD]:
+        pods = children[POD]
+
+        # check if all crawler pods are done
+        _, _2, done = self.sync_pod_status(pods, status)
+
+        # keep all children until crawler pods are done
+        if not done:
+            new_children = list(pods.values())
+
+        elif redis_pod in pods:
             # if has other pods, keep redis pod until they are removed
             if len(children[POD]) > 1:
+                keep_redis = True
+            # only down to redis pod
+            else:
+                # if unable to update exec time, ensure redis pod is still up
+                if not await self.store_exec_time(crawl_id, oid, status):
+                    keep_redis = True
+
+            # should we keep redis pod?
+            if keep_redis:
                 new_children = self._load_redis(params, status, children)
 
         # keep pvs until pods are removed
@@ -735,7 +778,7 @@ class BtrixOperator(K8sAPI):
     async def sync_crawl_state(self, redis_url, crawl, status, pods, metrics):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
-        crawler_running, redis_running = self.sync_pod_status(pods, status)
+        crawler_running, redis_running, _ = self.sync_pod_status(pods, status)
         redis = None
 
         try:
@@ -825,6 +868,7 @@ class BtrixOperator(K8sAPI):
         """check status of pods"""
         crawler_running = False
         redis_running = False
+        done = True
         try:
             for name, pod in pods.items():
                 running = False
@@ -849,29 +893,48 @@ class BtrixOperator(K8sAPI):
                         running = True
 
                     terminated = cstatus["state"].get("terminated")
-                    exit_code = terminated and terminated.get("exitCode")
-                    if terminated and exit_code:
-                        crash_time = terminated.get("finishedAt")
-                        pod_status = status.podStatus[name]
-                        pod_status.isNewCrash = pod_status.crashTime != crash_time
-                        pod_status.crashTime = crash_time
-
-                        # detect reason
-                        if terminated.get("reason") == "OOMKilled" or exit_code == 137:
-                            pod_status.reason = "oom"
-                        else:
-                            pod_status.reason = "interrupt: " + str(exit_code)
+                    if terminated:
+                        self.handle_terminated_pod(name, role, status, terminated)
 
                 if role == "crawler":
                     crawler_running = crawler_running or running
+                    done = done and phase == "Succeeded"
                 elif role == "redis":
                     redis_running = redis_running or running
 
         # pylint: disable=broad-except
         except Exception as exc:
+            done = False
             print(exc)
 
-        return crawler_running, redis_running
+        return crawler_running, redis_running, done
+
+    def handle_terminated_pod(self, name, role, status, terminated):
+        """handle terminated pod state"""
+        if not terminated:
+            return
+
+        exit_time = terminated.get("finishedAt")
+        if not exit_time:
+            return
+
+        pod_status = status.podStatus[name]
+
+        pod_status.isNewExit = pod_status.exitTime != exit_time
+        if pod_status.isNewExit and role == "crawler":
+            self.inc_exec_time(status, exit_time, terminated.get("startedAt"))
+            pod_status.exitTime = exit_time
+
+        # detect reason
+        exit_code = terminated.get("exitCode")
+        pod_status.reason = "done"
+
+        if exit_code == 0:
+            pod_status.reason = "done"
+        elif terminated.get("reason") == "OOMKilled" or exit_code == 137:
+            pod_status.reason = "oom"
+        else:
+            pod_status.reason = "interrupt: " + str(exit_code)
 
     def should_mark_waiting(self, state, started):
         """Should the crawl be marked as waiting for capacity?"""
@@ -912,7 +975,7 @@ class BtrixOperator(K8sAPI):
         """auto scale pods here, experimental"""
         for name, pod in pod_status.items():
             # if pod crashed due to OOM, increase mem
-            # if pod.isNewCrash and pod.reason == "oom":
+            # if pod.isNewExit and pod.reason == "oom":
             #    pod.newMemory = int(float(pod.allocated.memory) * 1.2)
             #    print(f"Resizing pod {name} -> mem {pod.newMemory} - OOM Detected")
 
@@ -924,7 +987,7 @@ class BtrixOperator(K8sAPI):
     async def log_crashes(self, crawl_id, pod_status, redis):
         """report/log any pod crashes here"""
         for name, pod in pod_status.items():
-            if not pod.isNewCrash:
+            if not pod.isNewExit or not pod.exitCode:
                 continue
 
             log = self.get_log_line(
@@ -1053,9 +1116,7 @@ class BtrixOperator(K8sAPI):
         elif status_count.get("failed", 0) >= crawl.scale:
             # if stopping, and no pages finished, mark as canceled
             if status.stopping and not status.pagesDone:
-                await self.mark_finished(
-                    crawl.id, crawl.cid, crawl.oid, status, "canceled", crawl, stats
-                )
+                await self.cancel_crawl(crawl.id, crawl.cid, status, pods, crawl, stats)
             else:
                 await self.fail_crawl(crawl.id, crawl.cid, status, pods, stats)
 
@@ -1138,6 +1199,25 @@ class BtrixOperator(K8sAPI):
         # finally, delete job
         await self.delete_crawl_job(crawl_id)
 
+    def inc_exec_time(self, status, finished_at, started_at):
+        """increment execTime on pod status"""
+        end_time = from_k8s_date(finished_at)
+        start_time = from_k8s_date(started_at)
+        status.execTime += (end_time - start_time).total_seconds()
+
+    async def store_exec_time(self, crawl_id, oid, status):
+        """store execTime in crawl (if not already set), and increment org counter"""
+        try:
+            if await self.crawl_ops.store_exec_time(crawl_id, status.execTime):
+                print("Exec Time", status.execTime, flush=True)
+                await self.org_ops.inc_org_time_stats(oid, status.execTime, True)
+
+            return True
+        # pylint: disable=broad-except
+        except Exception as exc:
+            print(exc, flush=True)
+            return False
+
     async def inc_crawl_complete_stats(self, crawl, finished):
         """Increment Crawl Stats"""
 
@@ -1147,7 +1227,20 @@ class BtrixOperator(K8sAPI):
 
         print(f"Duration: {duration}", flush=True)
 
-        await self.org_ops.inc_org_stats(crawl.oid, duration)
+        await self.org_ops.inc_org_time_stats(crawl.oid, duration)
+
+    async def mark_for_cancelation(self, crawl_id):
+        """mark crawl as canceled in redis"""
+        try:
+            redis_url = self.get_redis_url(crawl_id)
+            redis = await self._get_redis(redis_url)
+            if not redis:
+                return
+
+            await redis.set(f"{crawl_id}:stopping", "2")
+        finally:
+            if redis:
+                await redis.close()
 
     async def add_crawl_errors_to_db(self, crawl_id, inc=100):
         """Pull crawl errors from redis and write to mongo db"""
