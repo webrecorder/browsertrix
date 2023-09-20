@@ -1,7 +1,6 @@
 import { LitElement, html, css, PropertyValues } from "lit";
 import { property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { ref } from "lit/directives/ref.js";
 
 /**
  * Show scalar value within a range
@@ -88,12 +87,6 @@ export class Meter extends LitElement {
     }
   `;
 
-  updated(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("value")) {
-      this.repositionLabels();
-    }
-  }
-
   render() {
     const barWidth = `${Math.min(100, (this.value / this.max) * 100)}%`;
     return html`
@@ -105,47 +98,44 @@ export class Meter extends LitElement {
         aria-valuemin=${this.min}
         aria-valuemax=${this.max}
       >
-        <div class="track">
-          <div
-            class="bar ${this.value >= (this.high || this.max)
-              ? "danger"
-              : "default"}"
-            style="width:${barWidth}"
-          ></div>
-        </div>
-        <div class="labels">
-          ${this.showCompactLabels
-            ? html`
-                <div class="label max">
-                  ${this.valueLabel || this.value} /
-                  <span class="max-text">${this.maxLabel || this.max}</span>
-                </div>
-              `
-            : html`
-          <div class="label value" style="width:${barWidth}">
-            ${this.valueLabel || this.value}
+        <sl-resize-observer @sl-resize=${this.onTrackResize}>
+          <div class="track">
+            <div
+              class="bar ${this.value >= (this.high || this.max)
+                ? "danger"
+                : "default"}"
+              style="width:${barWidth}"
+            ></div>
           </div>
+        </sl-resize-observer>
+        <div class="labels">
+          ${!this.showCompactLabels
+            ? html`<div class="label value" style="width:${barWidth}">
+                ${this.valueLabel || this.value}
+              </div>`
+            : ""}
           <div class="label max">
+            ${this.showCompactLabels
+              ? html`${this.valueLabel || this.value} /`
+              : ""}
             <span class="max-text">${this.maxLabel || this.max}</span>
           </div>
-        </div>
-          `}
         </div>
       </div>
     `;
   }
 
-  // TODO reposition on window resize
-  private repositionLabels() {
-    if (!this.bar) return;
-
-    const track = this.bar.closest(".track") as HTMLElement;
+  private onTrackResize(e: CustomEvent) {
+    const { entries } = e.detail;
+    const entry = entries[0];
+    const trackWidth = entry.contentBoxSize[0].inlineSize;
+    const barWidth = entry.target.querySelector(".bar").clientWidth;
     const pad = 8;
-    const remaining = track.clientWidth - this.bar.clientWidth - pad;
+    const remaining = Math.ceil(trackWidth - barWidth - pad);
 
     // Show compact value/max label when almost touching
-    if (this.maxText && this.maxText.clientWidth >= remaining) {
-      this.showCompactLabels = true;
-    }
+    this.showCompactLabels = Boolean(
+      this.maxText && this.maxText.clientWidth >= remaining
+    );
   }
 }
