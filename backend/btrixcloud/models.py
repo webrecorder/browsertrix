@@ -761,10 +761,10 @@ class OrgMetrics(BaseModel):
     """Organization API metrics model"""
 
     storageUsedBytes: int
+    storageUsedCrawls: int
+    storageUsedUploads: int
+    storageUsedProfiles: int
     storageQuotaBytes: int
-    storageQuotaBytesCrawls: int
-    storageQuotaBytesUploads: int
-    storageQuotaBytesProfiles: int
     archivedItemCount: int
     crawlCount: int
     uploadCount: int
