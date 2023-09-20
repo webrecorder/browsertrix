@@ -38,7 +38,8 @@ import type {
 import type { Tab as CollectionTab } from "./collection-detail";
 import type { SelectJobTypeEvent } from "./components/new-workflow-dialog";
 
-type ResourceName = "workflow" | "collection" | "browser-profile" | "upload";
+const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
+type ResourceName = (typeof RESOURCE_NAMES)[number];
 export type SelectNewDialogEvent = CustomEvent<ResourceName>;
 export type OrgTab =
   | "home"
@@ -94,11 +95,7 @@ export class Org extends LiteElement {
   private showStorageQuotaAlert = false;
 
   @state()
-  private openDialogName?:
-    | "workflow"
-    | "collection"
-    | "browser-profile"
-    | "upload";
+  private openDialogName?: ResourceName;
 
   @state()
   private isCreateDialogVisible = false;
@@ -140,6 +137,35 @@ export class Org extends LiteElement {
           icon: "exclamation-octagon",
         });
       }
+    }
+    if (changedProperties.has("openDialogName")) {
+      // Sync URL to create dialog
+      const url = new URL(window.location.href);
+      if (this.openDialogName) {
+        if (url.searchParams.get("new") !== this.openDialogName) {
+          url.searchParams.set("new", this.openDialogName);
+          this.navTo(`${url.pathname}${url.search}`);
+        }
+      } else {
+        const prevOpenDialogName = changedProperties.get("openDialogName");
+        if (
+          prevOpenDialogName &&
+          prevOpenDialogName === url.searchParams.get("new")
+        ) {
+          url.searchParams.delete("new");
+          this.navTo(`${url.pathname}${url.search}`);
+        }
+      }
+    }
+  }
+
+  firstUpdated() {
+    // Sync URL to create dialog
+    const url = new URL(window.location.href);
+    const dialogName = url.searchParams.get("new");
+    if (dialogName && RESOURCE_NAMES.includes(dialogName)) {
+      this.openDialogName = dialogName;
+      this.isCreateDialogVisible = true;
     }
   }
 
