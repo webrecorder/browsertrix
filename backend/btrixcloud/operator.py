@@ -2,6 +2,7 @@
 
 import asyncio
 import traceback
+import math
 import os
 from pprint import pprint
 from typing import Optional, DefaultDict
@@ -1110,6 +1111,8 @@ class BtrixOperator(K8sAPI):
         if crawl and state in SUCCESSFUL_STATES:
             await self.inc_crawl_complete_stats(crawl, finished)
 
+        await self.compute_execution_time(crawl_id, oid, crawl)
+
         asyncio.create_task(
             self.do_crawl_finished_tasks(
                 crawl_id, cid, oid, status.filesAddedSize, state
@@ -1136,6 +1139,57 @@ class BtrixOperator(K8sAPI):
 
         # finally, delete job
         await self.delete_crawl_job(crawl_id)
+
+    async def compute_execution_time(self, crawl_id, oid, crawl=None):
+        """Compute execution time for crawl from start and end times in redis"""
+        DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+        redis = None
+        try:
+            redis_url = self.get_redis_url(crawl_id)
+            redis = await self._get_redis(redis_url)
+            if not redis:
+                return
+
+            scale = 2
+            if crawl:
+                scale = crawl.scale
+
+            execution_secs = 0
+
+            for i in range(scale):
+                name = f"crawl-{crawl_id}-{i}"
+
+                start_times = await redis.lrange(f"{crawl_id}:start:{name}", 0, -1)
+                end_times = await redis.lrange(f"{crawl_id}:end:{name}", 0, -1)
+
+                if not len(start_times) == len(end_times):
+                    # TODO: Handle this exception state
+                    print(
+                        f"Warning: Start and end times array lengths differ", flush=True
+                    )
+
+                for time_idx in range(len(start_times)):
+                    start_time = datetime.strptime(
+                        start_times[time_idx], DATETIME_FORMAT
+                    )
+                    end_time = datetime.strptime(end_times[time_idx], DATETIME_FORMAT)
+
+                    duration = end_time - start_time
+                    seconds = duration.total_seconds()
+
+                    # Round up to nearest int
+                    execution_secs += math.ceil(seconds)
+
+            await self.crawl_ops.add_execution_seconds(crawl_id, oid, execution_secs)
+
+        # pylint: disable=bare-except
+        except Exception as err:
+            # likely redis has already been deleted, so nothing to do
+            print(f"Error computing execution time: {err}", flush=True)
+            pass
+        finally:
+            if redis:
+                await redis.close()
 
     async def inc_crawl_complete_stats(self, crawl, finished):
         """Increment Crawl Stats"""

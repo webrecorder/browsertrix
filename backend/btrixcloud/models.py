@@ -177,6 +177,8 @@ class CrawlConfigCore(BaseMongoModel):
 
     profileid: Optional[UUID4]
 
+    executionSeconds: int = 0
+
 
 # ============================================================================
 class CrawlConfigAdditional(BaseModel):
@@ -385,6 +387,8 @@ class CrawlOut(BaseMongoModel):
     cid_rev: Optional[int]
 
     storageQuotaReached: Optional[bool]
+
+    executionSeconds: int = 0
 
 
 # ============================================================================
@@ -667,6 +671,8 @@ class Organization(BaseMongoModel):
 
     usage: Dict[str, int] = {}
 
+    executionSeconds: Dict[str, int] = {}
+
     bytesStored: int = 0
     bytesStoredCrawls: int = 0
     bytesStoredUploads: int = 0
@@ -714,6 +720,9 @@ class Organization(BaseMongoModel):
         if not self.is_crawler(user):
             exclude.add("usage")
 
+        if not self.is_crawler(user):
+            exclude.add("executionSeconds")
+
         result = self.to_dict(
             exclude_unset=True,
             exclude_none=True,
@@ -747,6 +756,7 @@ class OrgOut(BaseMongoModel):
     name: str
     users: Optional[Dict[str, Any]]
     usage: Optional[Dict[str, int]]
+    executionSeconds: Optional[Dict[str, int]]
     default: bool = False
     bytesStored: int
     bytesStoredCrawls: int
