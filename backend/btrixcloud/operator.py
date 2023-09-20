@@ -1111,8 +1111,6 @@ class BtrixOperator(K8sAPI):
         if crawl and state in SUCCESSFUL_STATES:
             await self.inc_crawl_complete_stats(crawl, finished)
 
-        await self.compute_execution_time(crawl_id, oid, crawl)
-
         asyncio.create_task(
             self.do_crawl_finished_tasks(
                 crawl_id, cid, oid, status.filesAddedSize, state
@@ -1126,6 +1124,8 @@ class BtrixOperator(K8sAPI):
         self, crawl_id, cid, oid, files_added_size, state
     ):
         """Run tasks after crawl completes in asyncio.task coroutine."""
+        await self.compute_execution_time(crawl_id, oid, crawl)
+
         await self.crawl_config_ops.stats_recompute_last(cid, files_added_size, 1)
 
         if state in SUCCESSFUL_STATES and oid:
