@@ -340,7 +340,7 @@ class OrgOps:
     async def add_crawl_files_to_org_bytes_stored(self, oid: uuid.UUID, size: int):
         """Add crawl's files to org bytesStored"""
         await self.orgs.find_one_and_update(
-            {"_id": oid}, {"$inc": {"bytesStored": size}}
+            {"_id": oid}, {"$inc": {"bytesStored": size, "bytesStoredCrawls": size}}
         )
 
     async def get_org_metrics(self, org: Organization):
