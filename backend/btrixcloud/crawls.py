@@ -572,12 +572,12 @@ class CrawlOps(BaseCrawlOps):
         await self.crawls.find_one_and_update(
             {"_id": crawl_id},
             {
-                "$inc": {"executionSeconds": execution_seconds},
+                "$set": {"executionSeconds": execution_seconds},
             },
         )
         crawl = await self.get_crawl_raw(crawl_id)
-        await self.crawl_configs.add_execution_seconds(crawl["cid"], execution_seconds)
-        await self.orgs.add_execution_seconds(oid, execution_seconds)
+        await self.crawl_configs.inc_execution_seconds(crawl["cid"], execution_seconds)
+        await self.orgs.inc_execution_seconds(oid, execution_seconds)
 
 
 # ============================================================================

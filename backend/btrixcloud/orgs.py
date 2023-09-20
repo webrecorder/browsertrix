@@ -391,7 +391,7 @@ class OrgOps:
             "publicCollectionsCount": public_collections_count,
         }
 
-    async def add_execution_seconds(self, oid: uuid.UUID, execution_seconds: int):
+    async def inc_execution_seconds(self, oid: uuid.UUID, execution_seconds: int):
         """add execution seconds to org, tracked by month"""
         yymm = datetime.utcnow().strftime("%Y-%m")
         await self.orgs.find_one_and_update(
