@@ -87,6 +87,10 @@ export class Meter extends LitElement {
     }
   `;
 
+  firstUpdated() {
+    this.repositionLabels();
+  }
+
   render() {
     const barWidth = `${Math.min(100, (this.value / this.max) * 100)}%`;
     return html`
@@ -129,9 +133,16 @@ export class Meter extends LitElement {
     const { entries } = e.detail;
     const entry = entries[0];
     const trackWidth = entry.contentBoxSize[0].inlineSize;
-    const barWidth = entry.target.querySelector(".bar").clientWidth;
+    this.repositionLabels(trackWidth);
+  }
+
+  private repositionLabels(trackWidth?: number) {
+    if (!this.bar) return;
+    const trackW = trackWidth || this.bar.closest(".track")?.clientWidth;
+    if (!trackW) return;
+    const barWidth = this.bar.clientWidth;
     const pad = 8;
-    const remaining = Math.ceil(trackWidth - barWidth - pad);
+    const remaining = Math.ceil(trackW - barWidth - pad);
 
     // Show compact value/max label when almost touching
     this.showCompactLabels = Boolean(
