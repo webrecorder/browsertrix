@@ -384,9 +384,9 @@ class OrgOps:
 
         return {
             "storageUsedBytes": org.bytesStored,
-            "storageUsedBytesCrawls": org.bytesStoredCrawls,
-            "storageUsedBytesUploads": org.bytesStoredUploads,
-            "storageUsedBytesProfiles": org.bytesStoredProfiles,
+            "storageUsedCrawls": org.bytesStoredCrawls,
+            "storageUsedUploads": org.bytesStoredUploads,
+            "storageUsedProfiles": org.bytesStoredProfiles,
             "storageQuotaBytes": storage_quota,
             "archivedItemCount": archived_item_count,
             "crawlCount": crawl_count,
