@@ -473,6 +473,32 @@ class BtrixOperator(K8sAPI):
 
         return self.load_from_yaml("crawler.yaml", params)
 
+    async def set_crawler_end_time_in_redis(self, crawl_id, name, end_time):
+        """set end time in redis for crashed crawler pod"""
+        try:
+            redis_url = self.get_redis_url(crawl_id)
+            redis = await self._get_redis(redis_url)
+            if not redis:
+                return
+
+            # Ensure end time wasn't already added by crawler
+            start_times_length = await redis.llen(f"{crawl_id}:start:{name}")
+            end_times_length = await redis.llen(f"{crawl_id}:end:{name}")
+            if start_times_length == end_times_length:
+                return
+
+            await redis.rpush(f"{crawl_id}:end:{name}", end_time)
+
+        # pylint: disable=broad-except
+        except Exception as err:
+            print(
+                f"Setting end time in redis for crashed crawler {name} failed: {err}",
+                flush=True,
+            )
+
+        finally:
+            await redis.close()
+
     # pylint: disable=too-many-arguments
     async def _resolve_scale(self, crawl_id, desired_scale, redis, status, pods):
         """Resolve scale
@@ -823,6 +849,7 @@ class BtrixOperator(K8sAPI):
 
     def sync_pod_status(self, pods, status):
         """check status of pods"""
+        # pylint: disable=invalid-name
         crawler_running = False
         redis_running = False
         try:
@@ -945,6 +972,16 @@ class BtrixOperator(K8sAPI):
             "details": details,
         }
         return json.dumps(err)
+=======
+    async def handle_crashes(self, crawl_id, podStatus):
+        """log crawler pod crashes and update end_time in redis as necessary"""
+        for name, pod in podStatus.items():
+            if pod.isNewCrash:
+                print(f"pod {name} crashed, reason: {pod.reason}")
+                await self.set_crawler_end_time_in_redis(
+                    crawl_id, name, podStatus.crashTime
+                )
+>>>>>>> 1d4e7912 (Set end time for unexpectedly restarted crawler pods)
 
     async def add_file_to_crawl(self, cc_data, crawl, redis):
         """Handle finished CrawlFile to db"""
