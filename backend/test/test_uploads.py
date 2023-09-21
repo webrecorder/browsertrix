@@ -840,12 +840,79 @@ def test_update_upload_metadata_all_crawls(admin_auth_headers, default_org_id):
     assert data["collectionIds"] == []
 
 
-def test_delete_form_upload_from_all_crawls(admin_auth_headers, default_org_id):
+def test_delete_form_upload_and_crawls_from_all_crawls(
+    admin_auth_headers,
+    default_org_id,
+    all_crawls_delete_crawl_ids,
+    all_crawls_delete_config_id,
+):
+    crawls_to_delete = all_crawls_delete_crawl_ids
+    crawls_to_delete.append(upload_id_2)
+
+    # Get org metrics
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/metrics",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+
+    org_bytes = data["storageUsedBytes"]
+    org_crawl_bytes = data["storageUsedCrawls"]
+    org_upload_bytes = data["storageUsedUploads"]
+
+    # Get workflow and crawl sizes
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{all_crawls_delete_config_id}",
+        headers=admin_auth_headers,
+    )
+    workflow_size = r.json()["totalSize"]
+
+    crawl_id_1 = all_crawls_delete_crawl_ids[0]
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id_1}/replay.json",
+        headers=admin_auth_headers,
+    )
+    crawl_1_size = r.json()["fileSize"]
+
+    crawl_id_2 = all_crawls_delete_crawl_ids[1]
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id_2}/replay.json",
+        headers=admin_auth_headers,
+    )
+    crawl_2_size = r.json()["fileSize"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id_2}/replay.json",
+        headers=admin_auth_headers,
+    )
+    upload_size = r.json()["fileSize"]
+
+    combined_crawl_size = crawl_1_size + crawl_2_size
+    total_size = combined_crawl_size + upload_size
+
+    # Delete mixed type archived items
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
         headers=admin_auth_headers,
-        json={"crawl_ids": [upload_id_2]},
+        json={"crawl_ids": crawls_to_delete},
     )
     data = r.json()
     assert data["deleted"]
     assert data["storageQuotaReached"] is False
+
+    # Check that org and workflow size figures are as expected
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/metrics",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+
+    assert data["storageUsedBytes"] == org_bytes - total_size
+    assert data["storageUsedCrawls"] == org_crawl_bytes - combined_crawl_size
+    assert data["storageUsedUploads"] == org_upload_bytes - upload_size
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{all_crawls_delete_config_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.json()["totalSize"] == workflow_size - combined_crawl_size
