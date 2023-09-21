@@ -15,7 +15,7 @@ export class Meter extends LitElement {
   @property({ type: Number })
   min = 0;
   @property({ type: Number })
-  max = 1;
+  max = 100;
 
   @property({ type: Number })
   value = 0;
@@ -100,12 +100,13 @@ export class Meter extends LitElement {
   }
 
   render() {
-    const barWidth = `${Math.min(100, (this.value / this.max) * 100)}%`;
+    const boundedValue = Math.max(Math.min(this.value, this.max), this.min);
+    const barWidth = `${(boundedValue / this.max) * 100}%`;
     return html`
       <div
         class="meter"
-        role="${"meter" as any}"
-        aria-valuenow=${this.value}
+        role="meter"
+        aria-valuenow=${boundedValue}
         aria-valuetext=${ifDefined(this.valueText)}
         aria-valuemin=${this.min}
         aria-valuemax=${this.max}
