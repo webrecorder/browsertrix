@@ -22,7 +22,7 @@ _admin_config_id = None
 _crawler_config_id = None
 _auto_add_config_id = None
 _all_crawls_config_id = None
-_all_crawls_delete_config_id
+_all_crawls_delete_config_id = None
 
 NON_DEFAULT_ORG_NAME = "Non-default org"
 
