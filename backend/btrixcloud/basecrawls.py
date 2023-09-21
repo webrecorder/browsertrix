@@ -546,6 +546,7 @@ class BaseCrawlOps:
                 crawl_raw = await self.get_crawl_raw(crawl_id, org)
                 if crawl_raw.get("type") == type_:
                     filtered_list.append(crawl_id)
+            # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(err, flush=True)
         return filtered_list
