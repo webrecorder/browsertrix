@@ -266,20 +266,19 @@ class OrgOps:
 
     async def inc_org_bytes_stored(self, oid: uuid.UUID, size: int, type_="crawl"):
         """Increase org bytesStored count (pass negative value to subtract)."""
-        await self.orgs.find_one_and_update(
-            {"_id": oid}, {"$inc": {"bytesStored": size}}
-        )
         if type_ == "crawl":
             await self.orgs.find_one_and_update(
-                {"_id": oid}, {"$inc": {"bytesStoredCrawls": size}}
+                {"_id": oid}, {"$inc": {"bytesStored": size, "bytesStoredCrawls": size}}
             )
         elif type_ == "upload":
             await self.orgs.find_one_and_update(
-                {"_id": oid}, {"$inc": {"bytesStoredUploads": size}}
+                {"_id": oid},
+                {"$inc": {"bytesStored": size, "bytesStoredUploads": size}},
             )
         elif type_ == "profile":
             await self.orgs.find_one_and_update(
-                {"_id": oid}, {"$inc": {"bytesStoredProfiles": size}}
+                {"_id": oid},
+                {"$inc": {"bytesStored": size, "bytesStoredProfiles": size}},
             )
         return await self.storage_quota_reached(oid)
 
@@ -336,12 +335,6 @@ class OrgOps:
             org = Organization.from_dict(org)
             return org.quotas.maxConcurrentCrawls
         return 0
-
-    async def add_crawl_files_to_org_bytes_stored(self, oid: uuid.UUID, size: int):
-        """Add crawl's files to org bytesStored"""
-        await self.orgs.find_one_and_update(
-            {"_id": oid}, {"$inc": {"bytesStored": size, "bytesStoredCrawls": size}}
-        )
 
     async def get_org_metrics(self, org: Organization):
         """Calculate and return org metrics"""

@@ -216,15 +216,19 @@ class CrawlOps(BaseCrawlOps):
     ):
         """Delete a list of crawls by id for given org"""
 
-        count, size, cids_to_update, quota_reached = await super().delete_crawls(
+        count, cids_to_update, quota_reached = await super().delete_crawls(
             org, delete_list, type_
         )
 
         if count < 1:
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
-        for cid in cids_to_update:
-            if not await self.crawl_configs.stats_recompute_last(cid, -size, -1):
+        for cid, cid_dict in cids_to_update.items():
+            cid_size = cid_dict["size"]
+            cid_inc = cid_dict["inc"]
+            if not await self.crawl_configs.stats_recompute_last(
+                cid, -cid_size, -cid_inc
+            ):
                 raise HTTPException(
                     status_code=404, detail=f"crawl_config_not_found: {cid}"
                 )

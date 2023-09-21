@@ -188,7 +188,7 @@ class UploadOps(BaseCrawlOps):
 
     async def delete_uploads(self, delete_list: DeleteCrawlList, org: Organization):
         """Delete uploaded crawls"""
-        deleted_count, _, _, quota_reached = await self.delete_crawls(
+        deleted_count, _, quota_reached = await self.delete_crawls(
             org, delete_list, "upload"
         )
 
