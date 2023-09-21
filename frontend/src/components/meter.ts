@@ -1,6 +1,7 @@
 import { LitElement, html, css, PropertyValues } from "lit";
 import { property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import debounce from "lodash/fp/debounce";
 
 /**
  * Show scalar value within a range
@@ -31,11 +32,11 @@ export class Meter extends LitElement {
   @property({ type: String })
   maxLabel?: string;
 
-  @state()
-  private showCompactLabels = false;
-
   @query(".bar")
   private bar?: HTMLElement;
+
+  @query(".labels")
+  private labels?: HTMLElement;
 
   @query(".max-text")
   private maxText?: HTMLElement;
@@ -82,13 +83,20 @@ export class Meter extends LitElement {
       flex-grow: 1;
     }
 
+    .value-text.withSeparator:after {
+      content: "/";
+      padding: 0 0.5ch;
+    }
+
     .max-text {
       display: inline-block;
     }
   `;
 
-  firstUpdated() {
-    this.repositionLabels();
+  updated(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("value") || changedProperties.has("max")) {
+      this.repositionLabels();
+    }
   }
 
   render() {
@@ -113,15 +121,12 @@ export class Meter extends LitElement {
           </div>
         </sl-resize-observer>
         <div class="labels">
-          ${!this.showCompactLabels
-            ? html`<div class="label value" style="width:${barWidth}">
-                ${this.valueLabel || this.value}
-              </div>`
-            : ""}
+          <div class="label value" style="width:${barWidth}">
+            <span class="value-text withSeparator"
+              >${this.valueLabel || this.value}</span
+            >
+          </div>
           <div class="label max">
-            ${this.showCompactLabels
-              ? html`${this.valueLabel || this.value} /`
-              : ""}
             <span class="max-text">${this.maxLabel || this.max}</span>
           </div>
         </div>
@@ -129,15 +134,15 @@ export class Meter extends LitElement {
     `;
   }
 
-  private onTrackResize(e: CustomEvent) {
+  private onTrackResize = debounce(100)((e: CustomEvent) => {
     const { entries } = e.detail;
     const entry = entries[0];
     const trackWidth = entry.contentBoxSize[0].inlineSize;
     this.repositionLabels(trackWidth);
-  }
+  }) as any;
 
   private repositionLabels(trackWidth?: number) {
-    if (!this.bar) return;
+    if (!this.bar || !this.maxText) return;
     const trackW = trackWidth || this.bar.closest(".track")?.clientWidth;
     if (!trackW) return;
     const barWidth = this.bar.clientWidth;
@@ -145,8 +150,11 @@ export class Meter extends LitElement {
     const remaining = Math.ceil(trackW - barWidth - pad);
 
     // Show compact value/max label when almost touching
-    this.showCompactLabels = Boolean(
-      this.maxText && this.maxText.clientWidth >= remaining
-    );
+    const valueText = this.labels?.querySelector(".value-text");
+    if (this.maxText && this.maxText.clientWidth >= remaining) {
+      valueText?.classList.add("withSeparator");
+    } else {
+      valueText?.classList.remove("withSeparator");
+    }
   }
 }
