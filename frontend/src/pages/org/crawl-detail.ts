@@ -176,22 +176,16 @@ export class CrawlDetail extends LiteElement {
         break;
       case "logs":
         sectionContent = this.renderPanel(
-          html`
-            ${this.renderTitle(msg("Error Logs"))}
-            ${when(
-              this.logs?.total,
-              () =>
-                html`<sl-button
-                  href=${`/api/orgs/${this.orgId}/crawls/${this.crawlId}/logs?auth_bearer=${authToken}`}
-                  download=${`btrix-${this.crawlId}-logs.txt`}
-                  size="small"
-                  variant="primary"
-                >
-                  <sl-icon slot="prefix" name="download"></sl-icon>
-                  ${msg("Download Logs")}</sl-button
-                >`
-            )}
-          `,
+          html` ${this.renderTitle(msg("Error Logs"))}
+            <sl-button
+              href=${`/api/orgs/${this.orgId}/crawls/${this.crawlId}/logs?auth_bearer=${authToken}`}
+              download=${`btrix-${this.crawlId}-logs.txt`}
+              size="small"
+              variant="primary"
+            >
+              <sl-icon slot="prefix" name="download"></sl-icon>
+              ${msg("Download Logs")}
+            </sl-button>`,
           this.renderLogs()
         );
         break;
