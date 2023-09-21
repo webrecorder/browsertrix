@@ -206,6 +206,7 @@ class BaseCrawlOps:
                     cids_to_update[cid]["inc"] += 1
                     cids_to_update[cid]["size"] += size
                 else:
+                    cids_to_update[cid] = {}
                     cids_to_update[cid]["inc"] = 1
                     cids_to_update[cid]["size"] = size
 
