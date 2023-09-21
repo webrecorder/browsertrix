@@ -199,16 +199,17 @@ class BaseCrawlOps:
 
         for crawl_id in delete_list.crawl_ids:
             crawl = await self.get_crawl_raw(crawl_id, org)
-            size += await self._delete_crawl_files(crawl, org)
+            crawl_size = await self._delete_crawl_files(crawl, org)
+            size += crawl_size
             cid = crawl.get("cid")
             if cid:
                 if cids_to_update.get(cid):
                     cids_to_update[cid]["inc"] += 1
-                    cids_to_update[cid]["size"] += size
+                    cids_to_update[cid]["size"] += crawl_size
                 else:
                     cids_to_update[cid] = {}
                     cids_to_update[cid]["inc"] = 1
-                    cids_to_update[cid]["size"] = size
+                    cids_to_update[cid]["size"] = crawl_size
 
         query = {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id, "type": type_}
         res = await self.crawls.delete_many(query)
@@ -518,12 +519,7 @@ class BaseCrawlOps:
             for cid, cid_dict in cids_to_update.items():
                 cid_size = cid_dict["size"]
                 cid_inc = cid_dict["inc"]
-                if not await self.crawl_configs.stats_recompute_last(
-                    cid, -cid_size, -cid_inc
-                ):
-                    raise HTTPException(
-                        status_code=404, detail=f"crawl_config_not_found: {cid}"
-                    )
+                await self.crawl_configs.stats_recompute_last(cid, -cid_size, -cid_inc)
 
         uploads_to_delete = await self._filter_delete_list_by_type(
             delete_list, org, "upload"
@@ -546,9 +542,12 @@ class BaseCrawlOps:
         """Return delete_list filtered by type"""
         filtered_list = []
         for crawl_id in delete_list.crawl_ids:
-            crawl_raw = await self.get_crawl_raw(crawl_id, org)
-            if crawl_raw.get("type") == type_:
-                filtered_list.append(crawl_id)
+            try:
+                crawl_raw = await self.get_crawl_raw(crawl_id, org)
+                if crawl_raw.get("type") == type_:
+                    filtered_list.append(crawl_id)
+            except Exception as err:
+                print(err, flush=True)
         return filtered_list
 
     async def get_all_crawl_search_values(

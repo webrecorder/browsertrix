@@ -226,12 +226,7 @@ class CrawlOps(BaseCrawlOps):
         for cid, cid_dict in cids_to_update.items():
             cid_size = cid_dict["size"]
             cid_inc = cid_dict["inc"]
-            if not await self.crawl_configs.stats_recompute_last(
-                cid, -cid_size, -cid_inc
-            ):
-                raise HTTPException(
-                    status_code=404, detail=f"crawl_config_not_found: {cid}"
-                )
+            await self.crawl_configs.stats_recompute_last(cid, -cid_size, -cid_inc)
 
         return {"deleted": True, "storageQuotaReached": quota_reached}
 
