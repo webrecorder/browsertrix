@@ -510,9 +510,10 @@ class BaseCrawlOps:
 
         deleted_count = 0
 
-        crawls_to_delete = await self._filter_delete_list_by_type(
-            delete_list, org, "crawl"
+        crawls_to_delete, uploads_to_delete = self._split_delete_list_by_type(
+            delete_list, org
         )
+
         if len(crawls_to_delete) > 0:
             crawl_delete_list = DeleteCrawlList(crawl_ids=crawls_to_delete)
             deleted, cids_to_update, quota_reached = await self.delete_crawls(
@@ -525,9 +526,6 @@ class BaseCrawlOps:
                 cid_inc = cid_dict["inc"]
                 await self.crawl_configs.stats_recompute_last(cid, -cid_size, -cid_inc)
 
-        uploads_to_delete = await self._filter_delete_list_by_type(
-            delete_list, org, "upload"
-        )
         if len(uploads_to_delete) > 0:
             upload_delete_list = DeleteCrawlList(crawl_ids=uploads_to_delete)
             deleted, _, quota_reached = await self.delete_crawls(
@@ -540,20 +538,25 @@ class BaseCrawlOps:
 
         return {"deleted": True, "storageQuotaReached": quota_reached}
 
-    async def _filter_delete_list_by_type(
-        self, delete_list: DeleteCrawlList, org: Organization, type_: str
+    async def _split_delete_list_by_type(
+        self, delete_list: DeleteCrawlList, org: Organization
     ):
-        """Return delete_list filtered by type"""
-        filtered_list = []
+        """Return separate crawl and upload arrays from mixed input"""
+        crawls = []
+        uploads = []
+
         for crawl_id in delete_list.crawl_ids:
             try:
                 crawl_raw = await self.get_crawl_raw(crawl_id, org)
-                if crawl_raw.get("type") == type_:
-                    filtered_list.append(crawl_id)
+                crawl_type = crawl_raw.get("type")
+                if crawl_type == "crawl":
+                    crawls.append(crawl_id)
+                elif crawl_type == "upload":
+                    uploads.append(crawl_id)
             # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(err, flush=True)
-        return filtered_list
+        return crawls, uploads
 
     async def get_all_crawl_search_values(
         self, org: Organization, type_: Optional[str] = None
