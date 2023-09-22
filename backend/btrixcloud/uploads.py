@@ -180,13 +180,15 @@ class UploadOps(BaseCrawlOps):
             self.event_webhook_ops.create_upload_finished_notification(crawl_id)
         )
 
-        quota_reached = await self.orgs.inc_org_bytes_stored(org.id, file_size)
+        quota_reached = await self.orgs.inc_org_bytes_stored(
+            org.id, file_size, "upload"
+        )
 
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 
     async def delete_uploads(self, delete_list: DeleteCrawlList, org: Organization):
         """Delete uploaded crawls"""
-        deleted_count, _, _, quota_reached = await self.delete_crawls(
+        deleted_count, _, quota_reached = await self.delete_crawls(
             org, delete_list, "upload"
         )
 

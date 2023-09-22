@@ -369,9 +369,16 @@ def test_org_metrics(crawler_auth_headers, default_org_id):
     data = r.json()
 
     assert data["storageUsedBytes"] > 0
-    assert data["storageUsedGB"] > 0
+    assert data["storageUsedCrawls"] > 0
+    assert data["storageUsedUploads"] >= 0
+    assert data["storageUsedProfiles"] >= 0
+    assert (
+        data["storageUsedBytes"]
+        == data["storageUsedCrawls"]
+        + data["storageUsedUploads"]
+        + data["storageUsedProfiles"]
+    )
     assert data["storageQuotaBytes"] >= 0
-    assert data["storageQuotaGB"] >= 0
     assert data["archivedItemCount"] > 0
     assert data["crawlCount"] > 0
     assert data["uploadCount"] >= 0

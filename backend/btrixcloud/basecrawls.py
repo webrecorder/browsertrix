@@ -190,28 +190,37 @@ class BaseCrawlOps:
         return {"updated": True}
 
     async def delete_crawls(
-        self, org: Organization, delete_list: DeleteCrawlList, type_=None
+        self, org: Organization, delete_list: DeleteCrawlList, type_: str
     ):
         """Delete a list of crawls by id for given org"""
-        cids_to_update = set()
+        cids_to_update: dict[str, dict[str, int]] = {}
 
         size = 0
 
         for crawl_id in delete_list.crawl_ids:
             crawl = await self.get_crawl_raw(crawl_id, org)
-            size += await self._delete_crawl_files(crawl, org)
-            if crawl.get("cid"):
-                cids_to_update.add(crawl.get("cid"))
+            if crawl.get("type") != type_:
+                continue
 
-        query = {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id}
-        if type_:
-            query["type"] = type_
+            crawl_size = await self._delete_crawl_files(crawl, org)
+            size += crawl_size
 
+            cid = crawl.get("cid")
+            if cid:
+                if cids_to_update.get(cid):
+                    cids_to_update[cid]["inc"] += 1
+                    cids_to_update[cid]["size"] += crawl_size
+                else:
+                    cids_to_update[cid] = {}
+                    cids_to_update[cid]["inc"] = 1
+                    cids_to_update[cid]["size"] = crawl_size
+
+        query = {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id, "type": type_}
         res = await self.crawls.delete_many(query)
 
-        quota_reached = await self.orgs.inc_org_bytes_stored(org.id, -size)
+        quota_reached = await self.orgs.inc_org_bytes_stored(org.id, -size, type_)
 
-        return res.deleted_count, size, cids_to_update, quota_reached
+        return res.deleted_count, cids_to_update, quota_reached
 
     async def _delete_crawl_files(self, crawl, org: Organization):
         """Delete files associated with crawl from storage."""
@@ -496,12 +505,60 @@ class BaseCrawlOps:
         self, delete_list: DeleteCrawlList, org: Organization
     ):
         """Delete uploaded crawls"""
-        deleted_count, _, _, quota_reached = await self.delete_crawls(org, delete_list)
+        if len(delete_list.crawl_ids) == 0:
+            raise HTTPException(status_code=400, detail="nothing_to_delete")
+
+        deleted_count = 0
+        # Value is set in delete calls, but initialize to keep linter happy.
+        quota_reached = False
+
+        crawls_to_delete, uploads_to_delete = await self._split_delete_list_by_type(
+            delete_list, org
+        )
+
+        if len(crawls_to_delete) > 0:
+            crawl_delete_list = DeleteCrawlList(crawl_ids=crawls_to_delete)
+            deleted, cids_to_update, quota_reached = await self.delete_crawls(
+                org, crawl_delete_list, "crawl"
+            )
+            deleted_count += deleted
+
+            for cid, cid_dict in cids_to_update.items():
+                cid_size = cid_dict["size"]
+                cid_inc = cid_dict["inc"]
+                await self.crawl_configs.stats_recompute_last(cid, -cid_size, -cid_inc)
+
+        if len(uploads_to_delete) > 0:
+            upload_delete_list = DeleteCrawlList(crawl_ids=uploads_to_delete)
+            deleted, _, quota_reached = await self.delete_crawls(
+                org, upload_delete_list, "upload"
+            )
+            deleted_count += deleted
 
         if deleted_count < 1:
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
         return {"deleted": True, "storageQuotaReached": quota_reached}
+
+    async def _split_delete_list_by_type(
+        self, delete_list: DeleteCrawlList, org: Organization
+    ):
+        """Return separate crawl and upload arrays from mixed input"""
+        crawls: list[str] = []
+        uploads: list[str] = []
+
+        for crawl_id in delete_list.crawl_ids:
+            try:
+                crawl_raw = await self.get_crawl_raw(crawl_id, org)
+                crawl_type = crawl_raw.get("type")
+                if crawl_type == "crawl":
+                    crawls.append(crawl_id)
+                elif crawl_type == "upload":
+                    uploads.append(crawl_id)
+            # pylint: disable=broad-exception-caught
+            except Exception as err:
+                print(err, flush=True)
+        return crawls, uploads
 
     async def get_all_crawl_search_values(
         self, org: Organization, type_: Optional[str] = None

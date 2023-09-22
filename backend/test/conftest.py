@@ -22,6 +22,7 @@ _admin_config_id = None
 _crawler_config_id = None
 _auto_add_config_id = None
 _all_crawls_config_id = None
+_all_crawls_delete_config_id = None
 
 NON_DEFAULT_ORG_NAME = "Non-default org"
 
@@ -406,6 +407,69 @@ def uploads_collection_id(crawler_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     return r.json()["id"]
+
+
+@pytest.fixture(scope="session")
+def all_crawls_delete_crawl_ids(admin_auth_headers, default_org_id):
+    crawl_data = {
+        "runNow": True,
+        "name": "All Crawls Delete Test Workflow",
+        "description": "Lorem ipsum",
+        "config": {
+            "seeds": [{"url": "https://webrecorder.net/"}],
+            "exclude": "community",
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    global _all_crawls_delete_config_id
+    _all_crawls_delete_config_id = data["id"]
+
+    return_crawl_ids = []
+
+    crawl_id = data["run_now_job"]
+    return_crawl_ids.append(crawl_id)
+
+    # Wait for crawl to complete
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] in FINISHED_STATES:
+            break
+        time.sleep(5)
+
+    # Run workflow again and wait for second crawl to complete
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{_all_crawls_delete_config_id}/run",
+        headers=admin_auth_headers,
+    )
+    crawl_2_id = r.json()["started"]
+    return_crawl_ids.append(crawl_2_id)
+
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_2_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] in FINISHED_STATES:
+            break
+        time.sleep(5)
+
+    return return_crawl_ids
+
+
+@pytest.fixture(scope="session")
+def all_crawls_delete_config_id(admin_crawl_id):
+    return _all_crawls_delete_config_id
 
 
 @pytest.fixture(scope="function")

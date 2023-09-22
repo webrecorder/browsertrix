@@ -887,10 +887,7 @@ class BtrixOperator(K8sAPI):
         await self.crawl_config_ops.stats_recompute_last(cid, files_added_size, 1)
 
         if state in SUCCESSFUL_STATES and oid:
-            await self.org_ops.add_crawl_files_to_org_bytes_stored(
-                oid, files_added_size
-            )
-
+            await self.org_ops.inc_org_bytes_stored(oid, files_added_size, "crawl")
             await self.coll_ops.add_successful_crawl_to_collections(crawl_id, cid)
 
         await self.event_webhook_ops.create_crawl_finished_notification(crawl_id, state)
