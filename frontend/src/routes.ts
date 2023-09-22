@@ -26,5 +26,3 @@ export const ROUTES = {
   // Redirect for https://github.com/webrecorder/browsertrix-cloud/issues/935
   awpUploadRedirect: "/orgs/:orgId/artifacts/upload/:uploadId",
 } as const;
-
-export const DASHBOARD_ROUTE = "/";

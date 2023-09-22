@@ -75,13 +75,6 @@ export class CrawlsList extends LiteElement {
   @property({ type: String })
   itemType: Crawl["type"] = null;
 
-  /**
-   * Fetch & refetch data when needed,
-   * e.g. when component is visible
-   **/
-  @property({ type: Boolean })
-  shouldFetch?: boolean;
-
   @state()
   private archivedItems?: Crawls;
 
@@ -136,29 +129,24 @@ export class CrawlsList extends LiteElement {
 
   protected willUpdate(changedProperties: Map<string, any>) {
     if (
-      changedProperties.has("shouldFetch") ||
       changedProperties.has("filterByCurrentUser") ||
       changedProperties.has("filterBy") ||
       changedProperties.has("orderBy") ||
       changedProperties.has("itemType")
     ) {
-      if (this.shouldFetch) {
-        if (changedProperties.has("itemType")) {
-          this.filterBy = {};
-          this.orderBy = {
-            field: "finished",
-            direction: sortableFields["finished"].defaultDirection!,
-          };
-          this.archivedItems = undefined;
-        }
-
-        this.fetchArchivedItems({
-          page: 1,
-          pageSize: INITIAL_PAGE_SIZE,
-        });
-      } else {
-        this.cancelInProgressGetArchivedItems();
+      if (changedProperties.has("itemType")) {
+        this.filterBy = {};
+        this.orderBy = {
+          field: "finished",
+          direction: sortableFields["finished"].defaultDirection!,
+        };
+        this.archivedItems = undefined;
       }
+
+      this.fetchArchivedItems({
+        page: 1,
+        pageSize: INITIAL_PAGE_SIZE,
+      });
 
       if (changedProperties.has("filterByCurrentUser")) {
         window.sessionStorage.setItem(
@@ -203,10 +191,8 @@ export class CrawlsList extends LiteElement {
     return html`
       <main>
         <header class="contents">
-          <div class="md:flex items-center gap-2 pb-3 mb-3 border-b">
-            <h1
-              class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
-            >
+          <div class="flex justify-between gap-2 pb-3 mb-3 border-b">
+            <h1 class="text-xl font-semibold leading-8 mb-2 md:mb-0">
               ${msg("Archived Items")}
             </h1>
             ${when(
@@ -600,8 +586,6 @@ export class CrawlsList extends LiteElement {
    * Fetch archived items and update internal state
    */
   private async fetchArchivedItems(params?: APIPaginationQuery): Promise<void> {
-    if (!this.shouldFetch) return;
-
     this.cancelInProgressGetArchivedItems();
     try {
       this.archivedItems = await this.getArchivedItems(params);

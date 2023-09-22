@@ -22,7 +22,6 @@ import { humanizeSchedule, humanizeNextDate } from "../../utils/cron";
 import { APIPaginatedList } from "../../types/api";
 import { inactiveCrawlStates, isActive } from "../../utils/crawler";
 import { SlSelect } from "@shoelace-style/shoelace";
-import { DASHBOARD_ROUTE } from "../../routes";
 
 const SECTIONS = ["crawls", "watch", "settings"] as const;
 type Tab = (typeof SECTIONS)[number];

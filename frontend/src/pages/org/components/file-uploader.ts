@@ -7,12 +7,16 @@ import queryString from "query-string";
 import throttle from "lodash/fp/throttle";
 import type { SlButton } from "@shoelace-style/shoelace";
 
-import type { Tags, TagInputEvent, TagsChangeEvent } from "./tag-input";
-import type { AuthState } from "../utils/AuthService";
-import LiteElement, { html } from "../utils/LiteElement";
-import { APIError } from "../utils/api";
-import { maxLengthValidator } from "../utils/form";
-import type { FileRemoveEvent } from "./file-list";
+import type {
+  Tags,
+  TagInputEvent,
+  TagsChangeEvent,
+} from "../../../components/tag-input";
+import type { AuthState } from "../../../utils/AuthService";
+import LiteElement, { html } from "../../../utils/LiteElement";
+import { APIError } from "../../../utils/api";
+import { maxLengthValidator } from "../../../utils/form";
+import type { FileRemoveEvent } from "../../../components/file-list";
 
 export type FileUploaderRequestCloseEvent = CustomEvent<{}>;
 export type FileUploaderUploadStartEvent = CustomEvent<{
@@ -533,3 +537,4 @@ export class FileUploader extends LiteElement {
     return !formEl.querySelector("[data-invalid]");
   }
 }
+customElements.define("btrix-file-uploader", FileUploader);
