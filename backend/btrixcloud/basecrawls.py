@@ -512,7 +512,7 @@ class BaseCrawlOps:
         # Value is set in delete calls, but initialize to keep linter happy.
         quota_reached = False
 
-        crawls_to_delete, uploads_to_delete = self._split_delete_list_by_type(
+        crawls_to_delete, uploads_to_delete = await self._split_delete_list_by_type(
             delete_list, org
         )
 
@@ -544,8 +544,8 @@ class BaseCrawlOps:
         self, delete_list: DeleteCrawlList, org: Organization
     ):
         """Return separate crawl and upload arrays from mixed input"""
-        crawls = []
-        uploads = []
+        crawls: list[str] = []
+        uploads: list[str] = []
 
         for crawl_id in delete_list.crawl_ids:
             try:
