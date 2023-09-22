@@ -509,6 +509,8 @@ class BaseCrawlOps:
             raise HTTPException(status_code=400, detail="nothing_to_delete")
 
         deleted_count = 0
+        # Value is set in delete calls, but initialize to keep linter happy.
+        quota_reached = False
 
         crawls_to_delete, uploads_to_delete = self._split_delete_list_by_type(
             delete_list, org
