@@ -183,8 +183,8 @@ export class Dashboard extends LiteElement {
                 })}
                 ${this.renderStat({
                   value: metrics.publicCollectionsCount,
-                  singleLabel: msg("Public Collection"),
-                  pluralLabel: msg("Public Collections"),
+                  singleLabel: msg("Shareable Collection"),
+                  pluralLabel: msg("Shareable Collections"),
                   iconProps: { name: "people-fill" },
                 })}
               </dl>
