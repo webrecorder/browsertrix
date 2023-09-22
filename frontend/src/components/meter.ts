@@ -3,6 +3,30 @@ import { property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import debounce from "lodash/fp/debounce";
 
+export class MeterBar extends LitElement {
+  /* Percentage of value / max */
+  @property({ type: Number })
+  value = 0;
+
+  static styles = css`
+    :host {
+      display: contents;
+    }
+
+    .bar {
+      height: 1rem;
+      background-color: var(--background-color, var(--sl-color-blue-500));
+    }
+  `;
+
+  render() {
+    return html`<sl-tooltip>
+      <div slot="content"><slot></slot></div>
+      <div class="bar" style="width:${this.value}%"></div>
+    </sl-tooltip>`;
+  }
+}
+
 /**
  * Show scalar value within a range
  *
@@ -14,11 +38,15 @@ import debounce from "lodash/fp/debounce";
 export class Meter extends LitElement {
   @property({ type: Number })
   min = 0;
+
   @property({ type: Number })
   max = 100;
 
   @property({ type: Number })
   value = 0;
+
+  @property({ type: Array })
+  subValues?: number[];
 
   @property({ type: Number })
   high?: number;
@@ -32,13 +60,13 @@ export class Meter extends LitElement {
   @property({ type: String })
   maxLabel?: string;
 
-  @query(".bar")
-  private bar?: HTMLElement;
+  @query(".valueBar")
+  private valueBar?: HTMLElement;
 
   @query(".labels")
   private labels?: HTMLElement;
 
-  @query(".max-text")
+  @query(".maxText")
   private maxText?: HTMLElement;
 
   static styles = css`
@@ -54,17 +82,10 @@ export class Meter extends LitElement {
       box-shadow: inset 0px 1px 1px 0px rgba(0, 0, 0, 0.25);
     }
 
-    .bar {
-      height: 1rem;
+    .valueBar {
+      display: flex;
       border-radius: var(--sl-border-radius-medium);
-    }
-
-    .bar.default {
-      background-color: var(--sl-color-blue-500);
-    }
-
-    .bar.danger {
-      background-color: var(--sl-color-red-500);
+      overflow: hidden;
     }
 
     .labels {
@@ -83,12 +104,12 @@ export class Meter extends LitElement {
       flex-grow: 1;
     }
 
-    .value-text.withSeparator:after {
+    .valueText.withSeparator:after {
       content: "/";
       padding: 0 0.5ch;
     }
 
-    .max-text {
+    .maxText {
       display: inline-block;
     }
   `;
@@ -113,22 +134,19 @@ export class Meter extends LitElement {
       >
         <sl-resize-observer @sl-resize=${this.onTrackResize}>
           <div class="track">
-            <div
-              class="bar ${this.value >= (this.high || this.max)
-                ? "danger"
-                : "default"}"
-              style="width:${barWidth}"
-            ></div>
+            <div class="valueBar" style="width:${barWidth}">
+              <slot></slot>
+            </div>
           </div>
         </sl-resize-observer>
         <div class="labels">
           <div class="label value" style="width:${barWidth}">
-            <span class="value-text withSeparator"
+            <span class="valueText withSeparator"
               >${this.valueLabel || this.value}</span
             >
           </div>
           <div class="label max">
-            <span class="max-text">${this.maxLabel || this.max}</span>
+            <span class="maxText">${this.maxLabel || this.max}</span>
           </div>
         </div>
       </div>
@@ -143,15 +161,15 @@ export class Meter extends LitElement {
   }) as any;
 
   private repositionLabels(trackWidth?: number) {
-    if (!this.bar || !this.maxText) return;
-    const trackW = trackWidth || this.bar.closest(".track")?.clientWidth;
+    if (!this.valueBar || !this.maxText) return;
+    const trackW = trackWidth || this.valueBar.closest(".track")?.clientWidth;
     if (!trackW) return;
-    const barWidth = this.bar.clientWidth;
+    const barWidth = this.valueBar.clientWidth;
     const pad = 8;
     const remaining = Math.ceil(trackW - barWidth - pad);
 
     // Show compact value/max label when almost touching
-    const valueText = this.labels?.querySelector(".value-text");
+    const valueText = this.labels?.querySelector(".valueText");
     if (this.maxText && this.maxText.clientWidth >= remaining) {
       valueText?.classList.add("withSeparator");
     } else {

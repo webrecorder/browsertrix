@@ -95,13 +95,49 @@ export class Dashboard extends LiteElement {
                       max=${metrics.storageQuotaBytes}
                       high=${metrics.storageQuotaBytes}
                       valueText=${msg("gigabyte")}
-                      valueLabel=${this.gbFormatter.format(
-                        metrics.storageUsedBytes / BYTES_PER_GB
-                      )}
-                      maxLabel=${this.gbFormatter.format(
-                        metrics.storageQuotaBytes / BYTES_PER_GB
-                      )}
-                    ></btrix-meter>
+                      valueLabel=${this.bytesLabel(metrics.storageUsedBytes)}
+                      maxLabel=${this.bytesLabel(metrics.storageUsedBytes)}
+                    >
+                      <btrix-meter-bar
+                        value=${(metrics.storageUsedCrawls /
+                          metrics.storageUsedBytes) *
+                        100}
+                        style="--background-color:var(--sl-color-sky-400)"
+                      >
+                        <div class="text-center">
+                          <div>${msg("Crawls")}</div>
+                          <div class="text-xs opacity-80">
+                            ${this.bytesLabel(metrics.storageUsedCrawls)}
+                          </div>
+                        </div>
+                      </btrix-meter-bar>
+                      <btrix-meter-bar
+                        value=${(metrics.storageUsedUploads /
+                          metrics.storageUsedBytes) *
+                        100}
+                        style="--background-color:var(--sl-color-lime-400)"
+                      >
+                        <div class="text-center">
+                          <div>${msg("Uploads")}</div>
+                          <div class="text-xs opacity-80">
+                            ${this.bytesLabel(metrics.storageUsedUploads)}
+                          </div>
+                        </div>
+                      </btrix-meter-bar>
+                      <btrix-meter-bar
+                        value=${(metrics.storageUsedProfiles /
+                          metrics.storageUsedBytes) *
+                        100}
+                        style="--background-color:var(--sl-color-fuchsia-400)"
+                      >
+                        <div class="text-center">
+                          <div>${msg("Browser Profiles")}</div>
+                          <div class="text-xs opacity-80">
+                            ${this.bytesLabel(metrics.storageUsedProfiles)}
+                          </div>
+                        </div>
+                      </btrix-meter-bar>
+                    </btrix-meter>
                   </div>
                 `,
                 () => html`
@@ -291,12 +327,21 @@ export class Dashboard extends LiteElement {
     `;
   }
 
+  private bytesLabel(n: number) {
+    return this.gbFormatter.format(n / BYTES_PER_GB);
+  }
+
   private async fetchMetrics() {
     try {
       const data = await this.apiFetch(
         `/orgs/${this.orgId}/metrics`,
         this.authState!
       );
+
+      // TODO remove after testing
+      data.storageUsedCrawls = data.storageUsedBytes * 0.25;
+      data.storageUsedUploads = data.storageUsedBytes * 0.25;
+      data.storageUsedProfiles = data.storageUsedBytes * 0.5;
 
       this.metrics = data;
     } catch (e: any) {
