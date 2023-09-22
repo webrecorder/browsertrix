@@ -1,11 +1,13 @@
 import type { LitElement, TemplateResult } from "lit";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import type {
+  SlChangeEvent,
   SlCheckbox,
   SlInput,
   SlRadio,
   SlRadioGroup,
   SlSelect,
+  SlSwitch,
   SlTextarea,
 } from "@shoelace-style/shoelace";
 import { state, property, query, queryAsync } from "lit/decorators.js";
@@ -90,7 +92,7 @@ type FormState = {
   scale: WorkflowParams["scale"];
   blockAds: WorkflowParams["config"]["blockAds"];
   lang: WorkflowParams["config"]["lang"];
-  scheduleType: "now" | "date" | "cron" | "none";
+  scheduleType: "date" | "cron" | "none";
   scheduleFrequency: "daily" | "weekly" | "monthly" | "";
   scheduleDayOfMonth?: number;
   scheduleDayOfWeek?: number;
@@ -165,7 +167,7 @@ const getDefaultFormState = (): FormState => ({
   scale: 1,
   blockAds: true,
   lang: undefined,
-  scheduleType: "now",
+  scheduleType: "none",
   scheduleFrequency: "weekly",
   scheduleDayOfMonth: new Date().getDate(),
   scheduleDayOfWeek: new Date().getDay(),
@@ -174,7 +176,7 @@ const getDefaultFormState = (): FormState => ({
     minute: 0,
     period: "AM",
   },
-  runNow: false,
+  runNow: true,
   jobName: "",
   browserProfile: null,
   tags: [],
@@ -183,9 +185,6 @@ const getDefaultFormState = (): FormState => ({
   autoscrollBehavior: true,
 });
 const defaultProgressState = getDefaultProgressState();
-const orderedTabNames = STEPS.filter(
-  (stepName) => defaultProgressState.tabs[stepName as StepName]
-) as StepName[];
 
 function getLocalizedWeekDays() {
   const now = new Date();
@@ -300,7 +299,6 @@ export class CrawlConfigEditor extends LiteElement {
     FormState["scheduleType"],
     string
   > = {
-    now: msg("Run Immediately on Save"),
     date: msg("Run on a Specific Date & Time"),
     cron: msg("Run on a Recurring Basis"),
     none: msg("No Schedule"),
@@ -473,11 +471,7 @@ export class CrawlConfigEditor extends LiteElement {
         period: hours > 11 ? "PM" : "AM",
       };
     } else {
-      if (this.configId) {
-        formState.scheduleType = "none";
-      } else {
-        formState.scheduleType = "now";
-      }
+      formState.scheduleType = "none";
     }
 
     if (this.initialWorkflow.tags?.length) {
@@ -554,6 +548,14 @@ export class CrawlConfigEditor extends LiteElement {
       crawlMetadata: msg("Metadata"),
       confirmSettings: msg("Review Settings"),
     };
+    let orderedTabNames = STEPS.filter(
+      (stepName) => defaultProgressState.tabs[stepName as StepName]
+    ) as StepName[];
+
+    if (this.configId) {
+      // Remove review tab
+      orderedTabNames = orderedTabNames.slice(0, -1);
+    }
 
     return html`
       <form
@@ -566,7 +568,11 @@ export class CrawlConfigEditor extends LiteElement {
       >
         <btrix-tab-list
           activePanel="newJobConfig-${this.progressState.activeTab}"
-          progressPanel="newJobConfig-${this.progressState.activeTab}"
+          progressPanel=${ifDefined(
+            this.configId
+              ? undefined
+              : `newJobConfig-${this.progressState.activeTab}`
+          )}
         >
           <header slot="header" class="flex justify-between items-baseline">
             <h3 class="font-semibold">
@@ -637,34 +643,31 @@ export class CrawlConfigEditor extends LiteElement {
     const isActive = tabName === this.progressState.activeTab;
     const isConfirmSettings = tabName === "confirmSettings";
     const { error: isInvalid, completed } = this.progressState.tabs[tabName];
-    const iconProps = {
-      name: "circle",
-      library: "default",
-      class: "text-neutral-400",
-    };
-    if (isConfirmSettings) {
-      iconProps.name = "info-circle";
-      iconProps.class = "text-base";
-    } else {
-      if (isInvalid) {
-        iconProps.name = "exclamation-circle";
-        iconProps.class = "text-danger";
-      } else if (isActive) {
-        iconProps.name = "pencil-circle-dashed";
-        iconProps.library = "app";
-        iconProps.class = "text-base";
-      } else if (completed) {
-        iconProps.name = "check-circle";
-      }
-    }
+    let icon: TemplateResult = html``;
 
-    return html`
-      <btrix-tab
-        slot="nav"
-        name="newJobConfig-${tabName}"
-        class="whitespace-nowrap"
-        @click=${this.tabClickHandler(tabName)}
-      >
+    if (!this.configId) {
+      const iconProps = {
+        name: "circle",
+        library: "default",
+        class: "text-neutral-400",
+      };
+      if (isConfirmSettings) {
+        iconProps.name = "info-circle";
+        iconProps.class = "text-base";
+      } else {
+        if (isInvalid) {
+          iconProps.name = "exclamation-circle";
+          iconProps.class = "text-danger";
+        } else if (isActive) {
+          iconProps.name = "pencil-circle-dashed";
+          iconProps.library = "app";
+          iconProps.class = "text-base";
+        } else if (completed) {
+          iconProps.name = "check-circle";
+        }
+      }
+
+      icon = html`
         <sl-tooltip
           content=${msg("Form section contains errors")}
           ?disabled=${!isInvalid}
@@ -676,7 +679,22 @@ export class CrawlConfigEditor extends LiteElement {
             class="inline-block align-middle mr-1 text-base ${iconProps.class}"
           ></sl-icon>
         </sl-tooltip>
-        <span class="inline-block align-middle whitespace-normal">
+      `;
+    }
+
+    return html`
+      <btrix-tab
+        slot="nav"
+        name="newJobConfig-${tabName}"
+        class="whitespace-nowrap"
+        @click=${this.tabClickHandler(tabName)}
+      >
+        ${icon}
+        <span
+          class="inline-block align-middle whitespace-normal${this.configId
+            ? " ml-1"
+            : ""}"
+        >
           ${content}
         </span>
       </btrix-tab>
@@ -688,8 +706,13 @@ export class CrawlConfigEditor extends LiteElement {
     { isFirst = false, isLast = false } = {}
   ) {
     return html`
-      <div class="border rounded-lg flex flex-col h-full">
-        <div class="flex-1 p-6 grid grid-cols-5 gap-4">
+      <div class="flex flex-col h-full min-h-[21rem]">
+        <div
+          class="flex-1 p-6 grid grid-cols-5 gap-4 border rounded-lg ${!this
+            .configId && !isLast
+            ? "border-b-0 rounded-b-none"
+            : "mb-4"}"
+        >
           ${content}
           ${when(this.serverError, () =>
             this.renderErrorAlert(this.serverError!)
@@ -702,95 +725,141 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   private renderFooter({ isFirst = false, isLast = false }) {
+    if (this.configId) {
+      return html`
+        <footer
+          class="px-6 py-4 flex gap-2 items-center justify-end border rounded-lg"
+        >
+          <div class="mr-auto">${this.renderRunNowToggle()}</div>
+          <aside class="text-xs text-neutral-500">
+            ${msg("Changes in all sections will be saved")}
+          </aside>
+          <sl-button
+            type="submit"
+            size="small"
+            variant="primary"
+            ?disabled=${this.isSubmitting}
+            ?loading=${this.isSubmitting}
+          >
+            ${msg("Save Workflow")}
+          </sl-button>
+        </footer>
+      `;
+    }
+
+    if (!this.configId) {
+      return html`
+        <footer
+          class="px-6 py-4 flex gap-2 items-center justify-end border ${isLast
+            ? "rounded-lg"
+            : "rounded-b-lg"}"
+        >
+          ${this.renderSteppedFooterButtons({ isFirst, isLast })}
+        </footer>
+      `;
+    }
+
     return html`
-      <div class="px-6 py-4 border-t flex justify-between">
-        ${isFirst
-          ? html`
-              <sl-button size="small" type="reset">
-                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-                ${this.configId ? msg("Cancel") : msg("Start Over")}
-              </sl-button>
-            `
-          : html`
-              <sl-button size="small" @click=${this.backStep}>
-                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-                ${msg("Previous Step")}
-              </sl-button>
-            `}
+      <div class="px-6 py-4 border-t flex gap-2 items-center justify-end">
         ${when(
           this.configId,
           () => html`
-            <div>
-              ${when(
-                !isLast,
-                () => html`
-                  <sl-button class="mr-1" size="small" @click=${this.nextStep}>
-                    <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-                    ${msg("Next")}
-                  </sl-button>
-                `
-              )}
-
-              <sl-button
-                type="submit"
-                size="small"
-                variant="primary"
-                ?disabled=${this.isSubmitting}
-                ?loading=${this.isSubmitting}
-              >
-                ${msg("Save Changes")}
-              </sl-button>
-            </div>
+            <div class="mr-auto">${this.renderRunNowToggle()}</div>
+            <sl-button
+              type="submit"
+              size="small"
+              variant="primary"
+              ?disabled=${this.isSubmitting}
+              ?loading=${this.isSubmitting}
+            >
+              ${msg("Save Changes")}
+            </sl-button>
           `,
-          () =>
-            isLast
-              ? html`<sl-button
-                  type="submit"
-                  size="small"
-                  variant="primary"
-                  ?disabled=${this.isSubmitting || this.formHasError}
-                  ?loading=${this.isSubmitting}
-                >
-                  ${this.formState.scheduleType === "now" ||
-                  this.formState.runNow
-                    ? msg("Save & Run Crawl")
-                    : this.formState.scheduleType === "none"
-                    ? msg("Save Workflow")
-                    : msg("Save & Schedule Crawl")}
-                </sl-button>`
-              : html`
-                  <div>
-                    <sl-button
-                      class="mr-1"
-                      size="small"
-                      variant="primary"
-                      @click=${this.nextStep}
-                    >
-                      <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-                      ${msg("Next Step")}
-                    </sl-button>
-                    <sl-button
-                      size="small"
-                      @click=${() => {
-                        if (this.hasRequiredFields()) {
-                          this.updateProgressState({
-                            activeTab: "confirmSettings",
-                          });
-                        } else {
-                          this.nextStep();
-                        }
-                      }}
-                    >
-                      <sl-icon
-                        slot="suffix"
-                        name="chevron-double-right"
-                      ></sl-icon>
-                      ${msg("Review & Save")}
-                    </sl-button>
-                  </div>
-                `
+          () => this.renderSteppedFooterButtons({ isFirst, isLast })
         )}
       </div>
+    `;
+  }
+
+  private renderSteppedFooterButtons({
+    isFirst,
+    isLast,
+  }: {
+    isFirst: boolean;
+    isLast: boolean;
+  }) {
+    if (isLast) {
+      return html`<sl-button
+          class="mr-auto"
+          size="small"
+          @click=${this.backStep}
+        >
+          <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+          ${msg("Previous Step")}
+        </sl-button>
+        ${this.renderRunNowToggle()}
+        <sl-button
+          type="submit"
+          size="small"
+          variant="primary"
+          ?disabled=${this.isSubmitting || this.formHasError}
+          ?loading=${this.isSubmitting}
+        >
+          ${msg("Save Workflow")}
+        </sl-button>`;
+    }
+    return html`
+      ${isFirst
+        ? html`
+            <sl-button class="mr-auto" size="small" type="reset">
+              <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+              ${msg("Start Over")}
+            </sl-button>
+          `
+        : html`
+            <sl-button class="mr-auto" size="small" @click=${this.backStep}>
+              <sl-icon slot="prefix" name="chevron-left"></sl-icon>
+              ${msg("Previous Step")}
+            </sl-button>
+          `}
+      <sl-button size="small" variant="primary" @click=${this.nextStep}>
+        <sl-icon slot="suffix" name="chevron-right"></sl-icon>
+        ${msg("Next Step")}
+      </sl-button>
+      <sl-button
+        size="small"
+        @click=${() => {
+          if (this.hasRequiredFields()) {
+            this.updateProgressState({
+              activeTab: "confirmSettings",
+            });
+          } else {
+            this.nextStep();
+          }
+        }}
+      >
+        <sl-icon slot="suffix" name="chevron-double-right"></sl-icon>
+        ${msg("Review & Save")}
+      </sl-button>
+    `;
+  }
+
+  private renderRunNowToggle() {
+    return html`
+      <sl-switch
+        class="mr-1"
+        ?checked=${this.formState.runNow}
+        @sl-change=${(e: SlChangeEvent) => {
+          this.updateFormState(
+            {
+              runNow: (e.target as SlSwitch).checked,
+            },
+            true
+          );
+        }}
+      >
+        ${msg("Run on Save")}
+      </sl-switch>
     `;
   }
 
@@ -1505,24 +1574,23 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return html`
       ${this.renderFormCol(html`
         <sl-radio-group
-          label=${msg("Crawl Schedule Type")}
+          label=${msg("Crawl Schedule")}
           name="scheduleType"
           value=${this.formState.scheduleType}
           @sl-change=${(e: Event) =>
             this.updateFormState({
               scheduleType: (e.target as SlRadio)
                 .value as FormState["scheduleType"],
-              runNow: (e.target as SlRadio).value === "now",
             })}
         >
-          <sl-radio value="now">${this.scheduleTypeLabels["now"]}</sl-radio>
-          <sl-radio value="cron">${this.scheduleTypeLabels["cron"]}</sl-radio>
           <sl-radio value="none">${this.scheduleTypeLabels["none"]}</sl-radio>
+          <sl-radio value="cron">${this.scheduleTypeLabels["cron"]}</sl-radio>
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Should a crawl run immediately when setup is complete, on a set
-        day, or on a recurring schedule?`)
+        msg(
+          `Configure crawls to run every day, week, or month at a specified time.`
+        )
       )}
       ${when(this.formState.scheduleType === "cron", this.renderScheduleCron)}
     `;
@@ -1640,17 +1708,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(`A crawl will run at this time in your current timezone.`)
-      )}
-      ${this.renderFormCol(html`<sl-checkbox
-        name="runNow"
-        ?checked=${this.formState.runNow}
-      >
-        ${msg("Also run a crawl immediately on save")}
-      </sl-checkbox>`)}
-      ${this.renderHelpTextCol(
-        msg(`If checked, a crawl will run at the time specified above and also
-        once when setup is complete.`),
-        false
       )}
     `;
   };
@@ -1908,6 +1965,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private updateFormStateOnChange(e: Event) {
     const elem = e.target as SlTextarea | SlInput | SlCheckbox;
     const name = elem.name;
+    if (!this.formState.hasOwnProperty(name)) {
+      return;
+    }
     const tagName = elem.tagName.toLowerCase();
     let value: any;
     switch (tagName) {
@@ -1932,11 +1992,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       default:
         return;
     }
-    if (name in this.formState) {
-      this.updateFormState({
-        [name]: value,
-      });
-    }
+    this.updateFormState({
+      [name]: value,
+    });
   }
 
   private tabClickHandler = (step: StepName) => (e: MouseEvent) => {
@@ -1967,6 +2025,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const nextTab = STEPS[STEPS.indexOf(activeTab!) + 1] as StepName;
       this.updateProgressState({
         activeTab: nextTab,
+        tabs: {
+          [activeTab]: {
+            completed: true,
+          },
+        },
       });
     }
   }
@@ -2048,13 +2111,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
       if (crawlId && storageQuotaReached) {
         this.notify({
-          title: msg("Workflow saved."),
+          title: msg("Workflow saved without starting crawl."),
           message: msg(
-            "Could not start crawl with new workflow settings due to storage quota."
+            "Could not run crawl with new workflow settings due to storage quota."
           ),
           variant: "warning",
-          icon: "exclamation-triangle",
-          duration: 8000,
+          icon: "exclamation-circle",
+          duration: 12000,
         });
       } else {
         let message = msg("Workflow created.");
@@ -2078,12 +2141,24 @@ https://archiveweb.page/images/${"logo.svg"}`}
       );
     } catch (e: any) {
       if (e?.isApiError) {
-        const isConfigError = ({ loc }: any) =>
-          loc.some((v: string) => v === "config");
-        if (e.details && e.details.some(isConfigError)) {
-          this.serverError = this.formatConfigServerError(e.details);
+        if (e.details === "crawl_already_running") {
+          this.notify({
+            title: msg("Workflow saved without starting crawl."),
+            message: msg(
+              "Could not run crawl with new workflow settings due to already running crawl."
+            ),
+            variant: "warning",
+            icon: "exclamation-circle",
+            duration: 12000,
+          });
         } else {
-          this.serverError = e.message;
+          const isConfigError = ({ loc }: any) =>
+            loc.some((v: string) => v === "config");
+          if (Array.isArray(e.details) && e.details.some(isConfigError)) {
+            this.serverError = this.formatConfigServerError(e.details);
+          } else {
+            this.serverError = e.message;
+          }
         }
       } else {
         this.serverError = msg("Something unexpected went wrong");
@@ -2154,7 +2229,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       description: this.formState.description,
       scale: this.formState.scale,
       profileid: this.formState.browserProfile?.id || "",
-      runNow: this.formState.runNow || this.formState.scheduleType === "now",
+      runNow: this.formState.runNow,
       schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
       crawlTimeout: this.formState.crawlTimeoutMinutes * 60,
       maxCrawlSize: this.formState.maxCrawlSizeGB * BYTES_PER_GB,
