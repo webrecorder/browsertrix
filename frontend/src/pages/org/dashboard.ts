@@ -12,9 +12,10 @@ import type { SelectNewDialogEvent } from "./index";
 
 type Metrics = {
   storageUsedBytes: number;
-  storageUsedGB: number;
+  storageUsedCrawls: number;
+  storageUsedUploads: number;
+  storageUsedProfiles: number;
   storageQuotaBytes: number;
-  storageQuotaGB: number;
   archivedItemCount: number;
   crawlCount: number;
   uploadCount: number;
@@ -26,6 +27,7 @@ type Metrics = {
   collectionsCount: number;
   publicCollectionsCount: number;
 };
+const BYTES_PER_GB = 1e9;
 
 @localized()
 export class Dashboard extends LiteElement {
@@ -94,10 +96,10 @@ export class Dashboard extends LiteElement {
                       high=${metrics.storageQuotaBytes}
                       valueText=${msg("gigabyte")}
                       valueLabel=${this.gbFormatter.format(
-                        metrics.storageUsedGB
+                        metrics.storageUsedBytes / BYTES_PER_GB
                       )}
                       maxLabel=${this.gbFormatter.format(
-                        metrics.storageQuotaGB
+                        metrics.storageQuotaBytes / BYTES_PER_GB
                       )}
                     ></btrix-meter>
                   </div>
