@@ -199,7 +199,7 @@ class BaseCrawlOps:
 
         for crawl_id in delete_list.crawl_ids:
             crawl = await self.get_crawl_raw(crawl_id, org)
-            if crawl.type != type_:
+            if crawl.get("type") != type_:
                 continue
 
             crawl_size = await self._delete_crawl_files(crawl, org)
