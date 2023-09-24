@@ -4,7 +4,9 @@ import asyncio
 import traceback
 import os
 from pprint import pprint
-from typing import Optional
+from typing import Optional, DefaultDict
+
+from collections import defaultdict
 
 from datetime import datetime
 import json
@@ -96,6 +98,14 @@ class CrawlSpec(BaseModel):
 
 
 # ============================================================================
+class PodInfo(BaseModel):
+    oom_time: Optional[datetime] = None
+
+    memory: Optional[int] = 0
+    cpu: Optional[int] = 0
+
+
+# ============================================================================
 class CrawlStatus(BaseModel):
     """status from k8s CrawlJob object"""
 
@@ -112,7 +122,7 @@ class CrawlStatus(BaseModel):
     stopping: bool = False
     initRedis: bool = False
     lastActiveTime: str = ""
-    resources: Optional[dict] = {}
+    pods: Optional[DefaultDict[str, PodInfo]] = defaultdict(lambda: defaultdict(PodInfo))
     restartTime: Optional[str]
 
     # don't include in status, use by metacontroller
@@ -602,7 +612,12 @@ class BtrixOperator(K8sAPI):
     async def sync_crawl_state(self, redis_url, crawl, status, pods):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
-        if not self.check_if_crawler_running(pods):
+        crawler_running, redis_running, oom_killed = self.check_pod_status(pods, status)
+
+        if oom_killed:
+            print("*** OOM Killed Detected for", oom_killed)
+
+        if not crawler_running:
             if self.should_mark_waiting(status.state, crawl.started):
                 await self.set_state(
                     "waiting_capacity",
@@ -676,35 +691,52 @@ class BtrixOperator(K8sAPI):
         finally:
             await redis.close()
 
-    def check_if_crawler_running(self, pods):
-        """check if at least one crawler pod has started"""
+    def check_pod_status(self, pods, pod_info_dict):
+        """check status of pods"""
+        crawler_running = False
+        redis_running = False
+        oom_killed = set()
         try:
-            for pod in pods.values():
-                if pod["metadata"]["labels"]["role"] != "crawler":
-                    continue
+            for name, pod in pods.items():
+                running = False
 
                 status = pod["status"]
                 phase = status["phase"]
+                role = pod["metadata"]["labels"]["role"]
+
                 if phase in ("Running", "Succeeded"):
-                    return True
+                    running = True
 
-                # consider 'ContainerCreating' as running
-                if phase == "Pending":
+                if "containerStatuses" in status:
+                    cstatus = status["containerStatuses"][0]
+
+                    # consider 'ContainerCreating' as running
+                    waiting = cstatus["state"].get("waiting")
                     if (
-                        "containerStatuses" in status
-                        and status["containerStatuses"][0]["state"]["waiting"]["reason"]
-                        == "ContainerCreating"
+                        phase == "Pending"
+                        and waiting
+                        and waiting.get("reason") == "ContainerCreating"
                     ):
-                        return True
+                        running = True
 
-                # print("non-running pod status", pod["status"], flush=True)
+                    terminated = cstatus["state"].get("terminated")
+                    if terminated and (
+                        terminated.get("reason") == "OOMKilled"
+                        or terminated.get("exitCode") == 137
+                    ):
+                        pod_info_dict[name].oom_last_time = terminanted.get("finished_at")
+
+                if role == "crawler":
+                    crawler_running = crawler_running or running
+                elif role == "redis":
+                    redis_running = redis_running or running
 
         # pylint: disable=bare-except
         except:
             # assume no valid pod found
             pass
 
-        return False
+        return crawler_running, redis_running, oom_killed
 
     def should_mark_waiting(self, state, started):
         """Should the crawl be marked as waiting for capacity?"""
