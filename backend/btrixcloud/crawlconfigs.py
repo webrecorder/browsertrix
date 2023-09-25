@@ -601,6 +601,8 @@ class CrawlConfigOps:
 
         crawlconfig.seedCount = await self.get_crawl_config_seed_count(cid, org)
 
+        crawlconfig.config.seeds = None
+
         return crawlconfig
 
     async def get_crawl_config_seed_count(self, cid: uuid.UUID, org: Organization):
@@ -818,6 +820,24 @@ class CrawlConfigOps:
             return True
         return False
 
+    async def get_seeds(
+        self,
+        cid: uuid.UUID,
+        oid: uuid.UUID,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ):
+        """Get paginated list of seeds for crawlconfig"""
+        skip = (page - 1) * page_size
+        upper_bound = skip + page_size
+
+        config = await self.get_crawl_config(cid, oid)
+        try:
+            return config.config.seeds[skip:upper_bound], len(config.config.seeds)
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            return [], 0
+
 
 # ============================================================================
 # pylint: disable=too-many-locals
@@ -955,6 +975,16 @@ def init_crawl_config_api(
         org: Organization = Depends(org_viewer_dep),
     ):
         return await ops.get_crawl_config_search_values(org)
+
+    @router.get("/{cid}/seeds", response_model=PaginatedResponse)
+    async def get_crawl_config_seeds(
+        cid: str,
+        org: Organization = Depends(org_viewer_dep),
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ):
+        seeds, total = await ops.get_seeds(uuid.UUID(cid), org.id, pageSize, page)
+        return paginated_format(seeds, total, page, pageSize)
 
     @router.get("/{cid}", response_model=CrawlConfigOut)
     async def get_crawl_config_out(

@@ -120,6 +120,8 @@ class BaseCrawlOps:
 
         if crawl.type == "crawl":
             crawl = await self._resolve_crawl_refs(crawl, org)
+            if crawl.config and crawl.config.seeds:
+                crawl.config.seeds = None
 
         user = await self.user_manager.get(crawl.userid)
         if user:

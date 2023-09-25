@@ -472,6 +472,30 @@ def all_crawls_delete_config_id(admin_crawl_id):
     return _all_crawls_delete_config_id
 
 
+@pytest.fixture(scope="session")
+def url_list_config_id(crawler_auth_headers, default_org_id):
+    # Start crawl.
+    crawl_data = {
+        "runNow": False,
+        "name": "URL List config",
+        "description": "Contains 3 seeds",
+        "config": {
+            "seeds": [
+                {"url": "https://webrecorder.net"},
+                {"url": "https://example.com"},
+                {"url": "https://specs.webrecorder.net"},
+            ],
+            "limit": 1,
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=crawl_data,
+    )
+    return r.json()["id"]
+
+
 @pytest.fixture(scope="function")
 def echo_server():
     print(f"Echo server starting", flush=True)
