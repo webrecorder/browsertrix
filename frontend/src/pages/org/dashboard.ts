@@ -280,7 +280,7 @@ export class Dashboard extends LiteElement {
                 class="text-danger"
                 name="exclamation-triangle"
               ></sl-icon>
-              <span>${msg("Storage Full")}</span>
+              <span>${msg("Storage is Full")}</span>
             </div>
           `,
           () => html`
