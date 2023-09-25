@@ -65,6 +65,7 @@ class CollectionOps:
         name: str,
         crawl_ids: Optional[List[str]],
         description: Optional[str] = None,
+        isPublic: Optional[bool] = False,
     ):
         """Add new collection"""
         crawl_ids = crawl_ids if crawl_ids else []
@@ -77,6 +78,7 @@ class CollectionOps:
             name=name,
             description=description,
             modified=modified,
+            isPublic=isPublic,
         )
         try:
             await self.collections.insert_one(coll.to_dict())
@@ -386,7 +388,11 @@ def init_collections_api(app, mdb, orgs, crawl_manager, event_webhook_ops):
         new_coll: CollIn, org: Organization = Depends(org_crawl_dep)
     ):
         return await colls.add_collection(
-            org.id, new_coll.name, new_coll.crawlIds, new_coll.description
+            org.id,
+            new_coll.name,
+            new_coll.crawlIds,
+            new_coll.description,
+            new_coll.isPublic,
         )
 
     @app.get(
