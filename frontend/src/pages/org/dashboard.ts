@@ -50,6 +50,13 @@ export class Dashboard extends LiteElement {
     unitDisplay: "narrow",
   });
 
+  private readonly colors = {
+    default: "neutral",
+    crawls: "sky",
+    uploads: "lime",
+    browserProfiles: "fuchsia",
+  };
+
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("orgId")) {
       this.fetchMetrics();
@@ -101,19 +108,25 @@ export class Dashboard extends LiteElement {
                   value: metrics.crawlCount,
                   singleLabel: msg("Crawl"),
                   pluralLabel: msg("Crawls"),
-                  iconProps: { name: "gear-wide-connected" },
+                  iconProps: {
+                    name: "gear-wide-connected",
+                    color: this.colors.crawls,
+                  },
                 })}
                 ${this.renderStat({
                   value: metrics.uploadCount,
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
-                  iconProps: { name: "upload" },
+                  iconProps: { name: "upload", color: this.colors.uploads },
                 })}
                 ${this.renderStat({
                   value: metrics.profileCount,
                   singleLabel: msg("Browser Profile"),
                   pluralLabel: msg("Browser Profiles"),
-                  iconProps: { name: "window-fullscreen" },
+                  iconProps: {
+                    name: "window-fullscreen",
+                    color: this.colors.browserProfiles,
+                  },
                 })}
               </dl>
             `,
@@ -156,13 +169,17 @@ export class Dashboard extends LiteElement {
                   value: metrics.workflowsRunningCount,
                   singleLabel: msg("Crawl Running"),
                   pluralLabel: msg("Crawls Running"),
-                  iconProps: { name: "dot", library: "app" },
+                  iconProps: {
+                    name: "dot",
+                    library: "app",
+                    color: metrics.workflowsRunningCount ? "green" : "neutral",
+                  },
                 })}
                 ${this.renderStat({
                   value: metrics.workflowsQueuedCount,
                   singleLabel: msg("Crawl Workflow Waiting"),
                   pluralLabel: msg("Crawl Workflows Waiting"),
-                  iconProps: { name: "hourglass-split" },
+                  iconProps: { name: "hourglass-split", color: "purple" },
                 })}
                 ${this.renderStat({
                   value: metrics.pageCount,
@@ -200,7 +217,7 @@ export class Dashboard extends LiteElement {
                   value: metrics.publicCollectionsCount,
                   singleLabel: msg("Shareable Collection"),
                   pluralLabel: msg("Shareable Collections"),
-                  iconProps: { name: "people-fill" },
+                  iconProps: { name: "people-fill", color: "emerald" },
                 })}
               </dl>
             `,
@@ -247,7 +264,7 @@ export class Dashboard extends LiteElement {
           <btrix-meter-bar
             value=${(metrics.storageUsedCrawls / metrics.storageUsedBytes) *
             100}
-            style="--background-color:var(--sl-color-sky-400)"
+            style="--background-color:var(--sl-color-${this.colors.crawls}-400)"
           >
             <div class="text-center">
               <div>${msg("Crawls")}</div>
@@ -259,7 +276,8 @@ export class Dashboard extends LiteElement {
           <btrix-meter-bar
             value=${(metrics.storageUsedUploads / metrics.storageUsedBytes) *
             100}
-            style="--background-color:var(--sl-color-lime-400)"
+            style="--background-color:var(--sl-color-${this.colors
+              .uploads}-400)"
           >
             <div class="text-center">
               <div>${msg("Uploads")}</div>
@@ -271,7 +289,8 @@ export class Dashboard extends LiteElement {
           <btrix-meter-bar
             value=${(metrics.storageUsedProfiles / metrics.storageUsedBytes) *
             100}
-            style="--background-color:var(--sl-color-fuchsia-400)"
+            style="--background-color:var(--sl-color-${this.colors
+              .browserProfiles}-400)"
           >
             <div class="text-center">
               <div>${msg("Browser Profiles")}</div>
@@ -314,7 +333,7 @@ export class Dashboard extends LiteElement {
     value: number;
     singleLabel: string;
     pluralLabel: string;
-    iconProps: { name: string; library?: string };
+    iconProps: { name: string; library?: string; color?: string };
   }) {
     return html`
       <div class="flex items-center mb-2 last:mb-0">
@@ -322,6 +341,8 @@ export class Dashboard extends LiteElement {
           class="text-base text-neutral-500 mr-2"
           name=${stat.iconProps.name}
           library=${ifDefined(stat.iconProps.library)}
+          style="color:var(--sl-color-${stat.iconProps.color ||
+          this.colors.default}-500)"
         ></sl-icon>
         <dt class="order-last">
           ${stat.value === 1 ? stat.singleLabel : stat.pluralLabel}
