@@ -99,12 +99,6 @@ export class Dashboard extends LiteElement {
               )}
               <dl>
                 ${this.renderStat({
-                  value: metrics.archivedItemCount,
-                  singleLabel: msg("Archived Item"),
-                  pluralLabel: msg("Archived Items"),
-                  iconProps: { name: "file-zip-fill" },
-                })}
-                ${this.renderStat({
                   value: metrics.crawlCount,
                   singleLabel: msg("Crawl"),
                   pluralLabel: msg("Crawls"),
@@ -127,6 +121,13 @@ export class Dashboard extends LiteElement {
                     name: "window-fullscreen",
                     color: this.colors.browserProfiles,
                   },
+                })}
+                <sl-divider></sl-divider>
+                ${this.renderStat({
+                  value: metrics.archivedItemCount,
+                  singleLabel: msg("Archived Item"),
+                  pluralLabel: msg("Archived Items"),
+                  iconProps: { name: "file-zip-fill" },
                 })}
               </dl>
             `,
