@@ -857,6 +857,11 @@ ${this.crawl?.description}
           ...this.crawl,
           autoAddCollections: this.crawl.collectionIds,
         }}
+        .seeds=${
+          [
+            /* TODO */
+          ]
+        }
         hideTags
       ></btrix-config-details>
     `;

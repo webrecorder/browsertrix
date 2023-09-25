@@ -1825,6 +1825,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           return html`<btrix-config-details
             .authState=${this.authState!}
             .crawlConfig=${{ ...crawlConfig, profileName, oid: this.orgId }}
+            .seeds=${crawlConfig.config.seeds}
           >
           </btrix-config-details>`;
         })}

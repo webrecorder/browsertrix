@@ -17,6 +17,7 @@ import type {
   Workflow,
   WorkflowParams,
   JobType,
+  Seed,
 } from "./types";
 import { humanizeSchedule, humanizeNextDate } from "../../utils/cron";
 import { APIPaginatedList } from "../../types/api";
@@ -63,6 +64,11 @@ export class WorkflowDetail extends LiteElement {
 
   @state()
   private workflow?: Workflow;
+
+  @state()
+  private seeds?: APIPaginatedList & {
+    items: Seed[];
+  };
 
   @state()
   private crawls?: APIPaginatedList; // Only inactive crawls
@@ -253,7 +259,13 @@ export class WorkflowDetail extends LiteElement {
 
     try {
       this.getWorkflowPromise = this.getWorkflow();
-      this.workflow = await this.getWorkflowPromise;
+      this.getSeeds();
+      const [workflow, seeds] = await Promise.all([
+        this.getWorkflowPromise,
+        this.getSeeds(),
+      ]);
+      this.workflow = workflow;
+      this.seeds = seeds;
       this.lastCrawlId = this.workflow.lastCrawlId;
       this.lastCrawlStartTime = this.workflow.lastCrawlStartTime;
       if (this.lastCrawlId) {
@@ -1167,6 +1179,7 @@ export class WorkflowDetail extends LiteElement {
       <btrix-config-details
         .authState=${this.authState!}
         .crawlConfig=${this.workflow}
+        .seeds=${this.seeds?.items}
         anchorLinks
       ></btrix-config-details>
     </section>`;
@@ -1219,6 +1232,14 @@ export class WorkflowDetail extends LiteElement {
   private async getWorkflow(): Promise<Workflow> {
     const data: Workflow = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}`,
+      this.authState!
+    );
+    return data;
+  }
+
+  private async getSeeds(): Promise<APIPaginatedList> {
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}/seeds`,
       this.authState!
     );
     return data;
