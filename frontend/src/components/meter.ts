@@ -146,7 +146,7 @@ export class Meter extends LitElement {
             <div class="valueBar" style="width:${barWidth}">
               <slot @slotchange=${this.handleSlotchange}></slot>
             </div>
-            <slot name="available"></slot>
+            ${this.value < this.max ? html`<slot name="available"></slot>` : ""}
           </div>
         </sl-resize-observer>
         <div class="labels">
