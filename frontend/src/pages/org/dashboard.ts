@@ -43,13 +43,6 @@ export class Dashboard extends LiteElement {
   @state()
   private metrics?: Metrics;
 
-  private gbFormatter = Intl.NumberFormat("en", {
-    notation: "compact",
-    style: "unit",
-    unit: "gigabyte",
-    unitDisplay: "narrow",
-  });
-
   private readonly colors = {
     default: "neutral",
     crawls: "green",
@@ -93,9 +86,10 @@ export class Dashboard extends LiteElement {
                   !metrics.storageQuotaBytes,
                   () => html`
                     ${this.renderStat({
-                      value: this.gbFormatter.format(
-                        (metrics.storageUsedBytes ?? 0) / BYTES_PER_GB
-                      ),
+                      value: html`<sl-format-bytes
+                        value=${metrics.storageUsedBytes ?? 0}
+                        display="narrow"
+                      ></sl-format-bytes>`,
                       singleLabel: msg("of Data Stored"),
                       pluralLabel: msg("of Data Stored"),
                       iconProps: { name: "database" },
@@ -370,7 +364,7 @@ export class Dashboard extends LiteElement {
   }
 
   private renderStat(stat: {
-    value: number | string;
+    value: number | string | TemplateResult;
     singleLabel: string;
     pluralLabel: string;
     iconProps: { name: string; library?: string; color?: string };
