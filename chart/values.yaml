@@ -22,8 +22,9 @@ crawler_extract_full_text: false
 
 # max pages per crawl
 # set to non-zero value to enforce global max pages per crawl limit
+# if 0, there is no page limit (may need to adjust crawler/redis settings for larger crawls)
 # if set, each workflow can have a lower limit, but not higher
-max_pages_per_crawl: 0
+max_pages_per_crawl: 50000
 
 # User Agent Options
 # set to add suffix to default browser User Agent
