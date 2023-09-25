@@ -85,17 +85,8 @@ export class Dashboard extends LiteElement {
           ${this.renderCard(
             msg("Storage"),
             (metrics) => html`
-              ${when(
-                metrics.storageQuotaBytes,
-                () => this.renderStorageMeter(metrics),
-                () => html`
-                  <div class="font-semibold mb-3">
-                    <sl-format-bytes
-                      value=${metrics.storageUsedBytes ?? 0}
-                    ></sl-format-bytes>
-                    ${msg("Used")}
-                  </div>
-                `
+              ${when(metrics.storageQuotaBytes, () =>
+                this.renderStorageMeter(metrics)
               )}
               <dl>
                 ${this.renderStat({
@@ -129,6 +120,19 @@ export class Dashboard extends LiteElement {
                   pluralLabel: msg("Archived Items"),
                   iconProps: { name: "file-zip-fill" },
                 })}
+                ${when(
+                  !metrics.storageQuotaBytes,
+                  () => html`
+                    ${this.renderStat({
+                      value: this.gbFormatter.format(
+                        (metrics.storageUsedBytes ?? 0) / BYTES_PER_GB
+                      ),
+                      singleLabel: msg("of Data Stored"),
+                      pluralLabel: msg("of Data Stored"),
+                      iconProps: { name: "database" },
+                    })}
+                  `
+                )}
               </dl>
             `,
             (metrics) => html`<footer class="mt-4 flex justify-end">
@@ -246,12 +250,26 @@ export class Dashboard extends LiteElement {
       metrics.storageUsedBytes,
       metrics.storageQuotaBytes
     );
+    const isStorageFull = metrics.storageUsedBytes >= metrics.storageQuotaBytes;
     return html`
       <div class="font-semibold mb-1">
-        ${msg(
-          str`${Math.round(
-            (metrics.storageUsedBytes / metrics.storageQuotaBytes) * 100
-          )}% used`
+        ${when(
+          isStorageFull,
+          () => html`
+            <div class="flex gap-2 items-center">
+              <sl-icon
+                class="text-danger"
+                name="exclamation-triangle"
+              ></sl-icon>
+              <span>${msg("Storage Full")}</span>
+            </div>
+          `,
+          () => html`
+            <sl-format-bytes
+              value=${maxBytes - metrics.storageUsedBytes}
+            ></sl-format-bytes>
+            ${msg("Available")}
+          `
         )}
       </div>
       <div class="mb-2">
@@ -259,8 +277,6 @@ export class Dashboard extends LiteElement {
           value=${metrics.storageUsedBytes}
           max=${maxBytes}
           valueText=${msg("gigabyte")}
-          valueLabel=${this.bytesLabel(metrics.storageUsedBytes)}
-          maxLabel=${this.bytesLabel(metrics.storageQuotaBytes)}
         >
           <btrix-meter-bar
             value=${(metrics.storageUsedCrawls / metrics.storageUsedBytes) *
@@ -270,7 +286,14 @@ export class Dashboard extends LiteElement {
             <div class="text-center">
               <div>${msg("Crawls")}</div>
               <div class="text-xs opacity-80">
-                ${this.bytesLabel(metrics.storageUsedCrawls)}
+                <sl-format-bytes
+                  value=${metrics.storageUsedCrawls}
+                  display="narrow"
+                ></sl-format-bytes>
+                |
+                ${this.renderPercentage(
+                  metrics.storageUsedCrawls / metrics.storageUsedBytes
+                )}
               </div>
             </div>
           </btrix-meter-bar>
@@ -283,7 +306,14 @@ export class Dashboard extends LiteElement {
             <div class="text-center">
               <div>${msg("Uploads")}</div>
               <div class="text-xs opacity-80">
-                ${this.bytesLabel(metrics.storageUsedUploads)}
+                <sl-format-bytes
+                  value=${metrics.storageUsedUploads}
+                  display="narrow"
+                ></sl-format-bytes>
+                |
+                ${this.renderPercentage(
+                  metrics.storageUsedUploads / metrics.storageUsedBytes
+                )}
               </div>
             </div>
           </btrix-meter-bar>
@@ -296,10 +326,39 @@ export class Dashboard extends LiteElement {
             <div class="text-center">
               <div>${msg("Browser Profiles")}</div>
               <div class="text-xs opacity-80">
-                ${this.bytesLabel(metrics.storageUsedProfiles)}
+                <sl-format-bytes
+                  value=${metrics.storageUsedProfiles}
+                  display="narrow"
+                ></sl-format-bytes>
+                |
+                ${this.renderPercentage(
+                  metrics.storageUsedProfiles / metrics.storageUsedBytes
+                )}
               </div>
             </div>
           </btrix-meter-bar>
+
+          <div slot="available" class="flex-1">
+            <sl-tooltip>
+              <div slot="content" class="text-xs opacity-80">
+                ${this.renderPercentage(
+                  (metrics.storageQuotaBytes - metrics.storageUsedBytes) /
+                    metrics.storageQuotaBytes
+                )}
+              </div>
+              <div class="w-full h-full" role="none"></div>
+            </sl-tooltip>
+          </div>
+          <sl-format-bytes
+            slot="valueLabel"
+            value=${metrics.storageUsedBytes}
+            display="narrow"
+          ></sl-format-bytes>
+          <sl-format-bytes
+            slot="maxLabel"
+            value=${metrics.storageQuotaBytes}
+            display="narrow"
+          ></sl-format-bytes>
         </btrix-meter>
       </div>
     `;
@@ -331,7 +390,7 @@ export class Dashboard extends LiteElement {
   }
 
   private renderStat(stat: {
-    value: number;
+    value: number | string;
     singleLabel: string;
     pluralLabel: string;
     iconProps: { name: string; library?: string; color?: string };
@@ -353,8 +412,10 @@ export class Dashboard extends LiteElement {
     `;
   }
 
-  private bytesLabel(n: number) {
-    return this.gbFormatter.format(n / BYTES_PER_GB);
+  private renderPercentage(ratio: number) {
+    const percent = ratio * 100;
+    if (percent < 1) return `<1%`;
+    return `${percent.toFixed(2)}%`;
   }
 
   private async fetchMetrics() {
@@ -363,11 +424,6 @@ export class Dashboard extends LiteElement {
         `/orgs/${this.orgId}/metrics`,
         this.authState!
       );
-
-      // TODO remove after testing
-      data.storageUsedCrawls = data.storageUsedBytes * 0.25;
-      data.storageUsedUploads = data.storageUsedBytes * 0.25;
-      data.storageUsedProfiles = data.storageUsedBytes * 0.5;
 
       this.metrics = data;
     } catch (e: any) {

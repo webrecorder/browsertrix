@@ -16,10 +16,14 @@ export class MeterBar extends LitElement {
     .bar {
       height: 1rem;
       background-color: var(--background-color, var(--sl-color-blue-500));
+      min-width: 4px;
     }
   `;
 
   render() {
+    if (this.value <= 0) {
+      return;
+    }
     return html`<sl-tooltip>
       <div slot="content"><slot></slot></div>
       <div class="bar" style="width:${this.value}%"></div>
@@ -50,12 +54,6 @@ export class Meter extends LitElement {
 
   @property({ type: String })
   valueText?: string;
-
-  @property({ type: String })
-  valueLabel?: string;
-
-  @property({ type: String })
-  maxLabel?: string;
 
   @query(".valueBar")
   private valueBar?: HTMLElement;
@@ -101,9 +99,13 @@ export class Meter extends LitElement {
       flex-grow: 1;
     }
 
+    .valueText {
+      display: inline-flex;
+    }
+
     .valueText.withSeparator:after {
       content: "/";
-      padding: 0 0.5ch;
+      padding: 0 0.3ch;
     }
 
     .maxText {
@@ -135,16 +137,19 @@ export class Meter extends LitElement {
             <div class="valueBar" style="width:${barWidth}">
               <slot></slot>
             </div>
+            <slot name="available"></slot>
           </div>
         </sl-resize-observer>
         <div class="labels">
           <div class="label value" style="width:${barWidth}">
-            <span class="valueText withSeparator"
-              >${this.valueLabel || this.value}</span
-            >
+            <span class="valueText withSeparator">
+              <slot name="valueLabel">${this.value}</slot>
+            </span>
           </div>
           <div class="label max">
-            <span class="maxText">${this.maxLabel || this.max}</span>
+            <span class="maxText">
+              <slot name="maxLabel">${this.max}</slot>
+            </span>
           </div>
         </div>
       </div>
