@@ -144,7 +144,7 @@ def main():
 
     # run only in first worker
     if run_once_lock("btrix-init-db"):
-        asyncio.create_task(
+        asyncio.wait_for(
             update_and_prepare_db(
                 mdb,
                 user_manager,
@@ -154,10 +154,11 @@ def main():
                 coll_ops,
                 invites,
                 db_inited,
-            )
+            ),
+            timeout=300,
         )
     else:
-        asyncio.create_task(ping_db(mdb, db_inited))
+        asyncio.wait_for(ping_db(mdb, db_inited), timeout=300)
 
     app.include_router(org_ops.router)
 
