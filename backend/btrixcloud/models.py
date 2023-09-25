@@ -214,7 +214,6 @@ class CrawlConfigAdditional(BaseModel):
     isCrawlRunning: Optional[bool] = False
 
 
-
 # ============================================================================
 class CrawlConfig(CrawlConfigCore, CrawlConfigAdditional):
     """Schedulable config"""

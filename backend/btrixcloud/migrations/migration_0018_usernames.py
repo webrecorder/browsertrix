@@ -1,5 +1,5 @@
 """
-Migration 0017 - Store crawl and workflow userName directly in db
+Migration 0018 - Store crawl and workflow userName directly in db
 """
 from btrixcloud.migrations import BaseMigration
 
@@ -8,7 +8,7 @@ from btrixcloud.invites import init_invites
 from btrixcloud.users import init_user_manager
 
 
-MIGRATION_VERSION = "0017"
+MIGRATION_VERSION = "0018"
 
 
 # pylint: disable=too-many-locals, invalid-name
