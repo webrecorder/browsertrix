@@ -1,5 +1,10 @@
 import { LitElement, html, css, PropertyValues } from "lit";
-import { property, query, state } from "lit/decorators.js";
+import {
+  property,
+  query,
+  queryAssignedElements,
+  state,
+} from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import debounce from "lodash/fp/debounce";
 
@@ -17,6 +22,7 @@ export class MeterBar extends LitElement {
       height: 1rem;
       background-color: var(--background-color, var(--sl-color-blue-500));
       min-width: 4px;
+      border-right: var(--border-right, 0);
     }
   `;
 
@@ -113,6 +119,9 @@ export class Meter extends LitElement {
     }
   `;
 
+  @queryAssignedElements({ selector: "btrix-meter-bar" })
+  bars?: Array<HTMLElement>;
+
   updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("value") || changedProperties.has("max")) {
       this.repositionLabels();
@@ -135,7 +144,7 @@ export class Meter extends LitElement {
         <sl-resize-observer @sl-resize=${this.onTrackResize}>
           <div class="track">
             <div class="valueBar" style="width:${barWidth}">
-              <slot></slot>
+              <slot @slotchange=${this.handleSlotchange}></slot>
             </div>
             <slot name="available"></slot>
           </div>
@@ -178,5 +187,15 @@ export class Meter extends LitElement {
     } else {
       valueText?.classList.remove("withSeparator");
     }
+  }
+
+  private handleSlotchange() {
+    if (!this.bars) return;
+    this.bars.forEach((el, i, arr) => {
+      if (i < arr.length - 1) {
+        el.style.cssText +=
+          "--border-right: 1px solid var(--sl-color-neutral-600)";
+      }
+    });
   }
 }

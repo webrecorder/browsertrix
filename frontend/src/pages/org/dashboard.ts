@@ -52,9 +52,9 @@ export class Dashboard extends LiteElement {
 
   private readonly colors = {
     default: "neutral",
-    crawls: "sky",
-    uploads: "lime",
-    browserProfiles: "fuchsia",
+    crawls: "green",
+    uploads: "sky",
+    browserProfiles: "indigo",
   };
 
   willUpdate(changedProperties: PropertyValues<this>) {
@@ -251,6 +251,20 @@ export class Dashboard extends LiteElement {
       metrics.storageQuotaBytes
     );
     const isStorageFull = metrics.storageUsedBytes >= metrics.storageQuotaBytes;
+    const renderBar = (value: number, color: string) => html`
+      <btrix-meter-bar
+        value=${(value / metrics.storageUsedBytes) * 100}
+        style="--background-color:var(--sl-color-${color}-400)"
+      >
+        <div class="text-center">
+          <div>${msg("Uploads")}</div>
+          <div class="text-xs opacity-80">
+            <sl-format-bytes value=${value} display="narrow"></sl-format-bytes>
+            | ${this.renderPercentage(value / metrics.storageUsedBytes)}
+          </div>
+        </div>
+      </btrix-meter-bar>
+    `;
     return html`
       <div class="font-semibold mb-1">
         ${when(
@@ -278,66 +292,15 @@ export class Dashboard extends LiteElement {
           max=${maxBytes}
           valueText=${msg("gigabyte")}
         >
-          <btrix-meter-bar
-            value=${(metrics.storageUsedCrawls / metrics.storageUsedBytes) *
-            100}
-            style="--background-color:var(--sl-color-${this.colors.crawls}-400)"
-          >
-            <div class="text-center">
-              <div>${msg("Crawls")}</div>
-              <div class="text-xs opacity-80">
-                <sl-format-bytes
-                  value=${metrics.storageUsedCrawls}
-                  display="narrow"
-                ></sl-format-bytes>
-                |
-                ${this.renderPercentage(
-                  metrics.storageUsedCrawls / metrics.storageUsedBytes
-                )}
-              </div>
-            </div>
-          </btrix-meter-bar>
-          <btrix-meter-bar
-            value=${(metrics.storageUsedUploads / metrics.storageUsedBytes) *
-            100}
-            style="--background-color:var(--sl-color-${this.colors
-              .uploads}-400)"
-          >
-            <div class="text-center">
-              <div>${msg("Uploads")}</div>
-              <div class="text-xs opacity-80">
-                <sl-format-bytes
-                  value=${metrics.storageUsedUploads}
-                  display="narrow"
-                ></sl-format-bytes>
-                |
-                ${this.renderPercentage(
-                  metrics.storageUsedUploads / metrics.storageUsedBytes
-                )}
-              </div>
-            </div>
-          </btrix-meter-bar>
-          <btrix-meter-bar
-            value=${(metrics.storageUsedProfiles / metrics.storageUsedBytes) *
-            100}
-            style="--background-color:var(--sl-color-${this.colors
-              .browserProfiles}-400)"
-          >
-            <div class="text-center">
-              <div>${msg("Browser Profiles")}</div>
-              <div class="text-xs opacity-80">
-                <sl-format-bytes
-                  value=${metrics.storageUsedProfiles}
-                  display="narrow"
-                ></sl-format-bytes>
-                |
-                ${this.renderPercentage(
-                  metrics.storageUsedProfiles / metrics.storageUsedBytes
-                )}
-              </div>
-            </div>
-          </btrix-meter-bar>
-
+          ${when(metrics.storageUsedCrawls, () =>
+            renderBar(metrics.storageUsedCrawls, this.colors.crawls)
+          )}
+          ${when(metrics.storageUsedUploads, () =>
+            renderBar(metrics.storageUsedUploads, this.colors.uploads)
+          )}
+          ${when(metrics.storageUsedProfiles, () =>
+            renderBar(metrics.storageUsedProfiles, this.colors.browserProfiles)
+          )}
           <div slot="available" class="flex-1">
             <sl-tooltip>
               <div slot="content" class="text-xs opacity-80">
