@@ -80,66 +80,7 @@ export class Dashboard extends LiteElement {
             (metrics) => html`
               ${when(
                 metrics.storageQuotaBytes,
-                () => html`
-                  <div class="font-semibold mb-1">
-                    ${msg(
-                      str`${Math.round(
-                        (metrics.storageUsedBytes / metrics.storageQuotaBytes) *
-                          100
-                      )}% used`
-                    )}
-                  </div>
-                  <div class="mb-2">
-                    <btrix-meter
-                      value=${metrics.storageUsedBytes}
-                      max=${metrics.storageQuotaBytes}
-                      high=${metrics.storageQuotaBytes}
-                      valueText=${msg("gigabyte")}
-                      valueLabel=${this.bytesLabel(metrics.storageUsedBytes)}
-                      maxLabel=${this.bytesLabel(metrics.storageUsedBytes)}
-                    >
-                      <btrix-meter-bar
-                        value=${(metrics.storageUsedCrawls /
-                          metrics.storageUsedBytes) *
-                        100}
-                        style="--background-color:var(--sl-color-sky-400)"
-                      >
-                        <div class="text-center">
-                          <div>${msg("Crawls")}</div>
-                          <div class="text-xs opacity-80">
-                            ${this.bytesLabel(metrics.storageUsedCrawls)}
-                          </div>
-                        </div>
-                      </btrix-meter-bar>
-                      <btrix-meter-bar
-                        value=${(metrics.storageUsedUploads /
-                          metrics.storageUsedBytes) *
-                        100}
-                        style="--background-color:var(--sl-color-lime-400)"
-                      >
-                        <div class="text-center">
-                          <div>${msg("Uploads")}</div>
-                          <div class="text-xs opacity-80">
-                            ${this.bytesLabel(metrics.storageUsedUploads)}
-                          </div>
-                        </div>
-                      </btrix-meter-bar>
-                      <btrix-meter-bar
-                        value=${(metrics.storageUsedProfiles /
-                          metrics.storageUsedBytes) *
-                        100}
-                        style="--background-color:var(--sl-color-fuchsia-400)"
-                      >
-                        <div class="text-center">
-                          <div>${msg("Browser Profiles")}</div>
-                          <div class="text-xs opacity-80">
-                            ${this.bytesLabel(metrics.storageUsedProfiles)}
-                          </div>
-                        </div>
-                      </btrix-meter-bar>
-                    </btrix-meter>
-                  </div>
-                `,
+                () => this.renderStorageMeter(metrics),
                 () => html`
                   <div class="font-semibold mb-3">
                     <sl-format-bytes
@@ -279,6 +220,69 @@ export class Dashboard extends LiteElement {
           )}
         </div>
       </main> `;
+  }
+
+  private renderStorageMeter(metrics: Metrics) {
+    // Account for usage that exceeds max
+    const maxBytes = Math.max(
+      metrics.storageUsedBytes,
+      metrics.storageQuotaBytes
+    );
+    return html`
+      <div class="font-semibold mb-1">
+        ${msg(
+          str`${Math.round(
+            (metrics.storageUsedBytes / metrics.storageQuotaBytes) * 100
+          )}% used`
+        )}
+      </div>
+      <div class="mb-2">
+        <btrix-meter
+          value=${metrics.storageUsedBytes}
+          max=${maxBytes}
+          valueText=${msg("gigabyte")}
+          valueLabel=${this.bytesLabel(metrics.storageUsedBytes)}
+          maxLabel=${this.bytesLabel(metrics.storageQuotaBytes)}
+        >
+          <btrix-meter-bar
+            value=${(metrics.storageUsedCrawls / metrics.storageUsedBytes) *
+            100}
+            style="--background-color:var(--sl-color-sky-400)"
+          >
+            <div class="text-center">
+              <div>${msg("Crawls")}</div>
+              <div class="text-xs opacity-80">
+                ${this.bytesLabel(metrics.storageUsedCrawls)}
+              </div>
+            </div>
+          </btrix-meter-bar>
+          <btrix-meter-bar
+            value=${(metrics.storageUsedUploads / metrics.storageUsedBytes) *
+            100}
+            style="--background-color:var(--sl-color-lime-400)"
+          >
+            <div class="text-center">
+              <div>${msg("Uploads")}</div>
+              <div class="text-xs opacity-80">
+                ${this.bytesLabel(metrics.storageUsedUploads)}
+              </div>
+            </div>
+          </btrix-meter-bar>
+          <btrix-meter-bar
+            value=${(metrics.storageUsedProfiles / metrics.storageUsedBytes) *
+            100}
+            style="--background-color:var(--sl-color-fuchsia-400)"
+          >
+            <div class="text-center">
+              <div>${msg("Browser Profiles")}</div>
+              <div class="text-xs opacity-80">
+                ${this.bytesLabel(metrics.storageUsedProfiles)}
+              </div>
+            </div>
+          </btrix-meter-bar>
+        </btrix-meter>
+      </div>
+    `;
   }
 
   private renderCard(

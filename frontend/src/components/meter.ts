@@ -32,7 +32,7 @@ export class MeterBar extends LitElement {
  *
  * Usage example:
  * ```ts
- * <btrix-meter max="50" value="40" low="10" high="49"></btrix-meter>
+ * <btrix-meter max="50" value="40" low="10"></btrix-meter>
  * ```
  */
 export class Meter extends LitElement {
@@ -47,9 +47,6 @@ export class Meter extends LitElement {
 
   @property({ type: Array })
   subValues?: number[];
-
-  @property({ type: Number })
-  high?: number;
 
   @property({ type: String })
   valueText?: string;
@@ -121,6 +118,7 @@ export class Meter extends LitElement {
   }
 
   render() {
+    // meter spec disallow values that exceed max
     const boundedValue = Math.max(Math.min(this.value, this.max), this.min);
     const barWidth = `${(boundedValue / this.max) * 100}%`;
     return html`
