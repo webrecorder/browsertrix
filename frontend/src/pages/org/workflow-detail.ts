@@ -549,6 +549,7 @@ export class WorkflowDetail extends LiteElement {
       () => html`
         <btrix-workflow-editor
           .initialWorkflow=${this.workflow}
+          .initialSeeds=${this.seeds?.items}
           jobType=${this.workflow!.jobType}
           configId=${this.workflow!.id}
           orgId=${this.orgId}
@@ -769,21 +770,19 @@ export class WorkflowDetail extends LiteElement {
   private renderName() {
     if (!this.workflow) return "";
     if (this.workflow.name) return this.workflow.name;
-    const { config } = this.workflow;
-    const firstSeed = config.seeds[0];
-    let firstSeedURL = firstSeed.url;
-    if (config.seeds.length === 1) {
-      return firstSeedURL;
+    const { seedCount, firstSeed } = this.workflow;
+    if (seedCount === 1) {
+      return firstSeed;
     }
-    const remainderCount = config.seeds.length - 1;
+    const remainderCount = seedCount - 1;
     if (remainderCount === 1) {
       return msg(
-        html`${firstSeedURL}
+        html`${firstSeed}
           <span class="text-neutral-500">+${remainderCount} URL</span>`
       );
     }
     return msg(
-      html`${firstSeedURL}
+      html`${firstSeed}
         <span class="text-neutral-500">+${remainderCount} URLs</span>`
     );
   }

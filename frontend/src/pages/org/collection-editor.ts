@@ -1189,10 +1189,7 @@ export class CollectionEditor extends LiteElement {
   private renderCrawlName(item: Workflow | Crawl) {
     if (item.name) return html`<span class="min-w-0">${item.name}</span>`;
     if (!item.firstSeed) return html`<span class="min-w-0">${item.id}</span>`;
-    return this.renderSeedsLabel(
-      item.firstSeed,
-      (item as Crawl).seedCount || item.config?.seeds.length
-    );
+    return this.renderSeedsLabel(item.firstSeed, (item as Crawl).seedCount);
   }
 
   private renderSeedsLabel(firstSeed: string, seedCount: number) {
