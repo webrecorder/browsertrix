@@ -41,6 +41,7 @@ export class NewWorkflowDialog extends LitElement {
     .jobTypeButton {
       display: block;
       width: min-content;
+      cursor: pointer;
     }
 
     figure {
