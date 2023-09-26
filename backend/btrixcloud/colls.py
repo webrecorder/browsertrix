@@ -392,7 +392,7 @@ def init_collections_api(app, mdb, orgs, crawl_manager, event_webhook_ops):
             new_coll.name,
             new_coll.crawlIds,
             new_coll.description,
-            new_coll.isPublic,
+            new_coll.public,
         )
 
     @app.get(
