@@ -359,7 +359,7 @@ def test_sort_crawl_configs(
     # Sort by created, descending (default)
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=created",
-        headers=configer_auth_headers,
+        headers=crawler_auth_headers,
     )
     data = r.json()
     assert data["total"] == 8
@@ -377,7 +377,7 @@ def test_sort_crawl_configs(
     # Sort by created, ascending
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=created&sortDirection=1",
-        headers=configer_auth_headers,
+        headers=crawler_auth_headers,
     )
     data = r.json()
     items = data["items"]
@@ -393,7 +393,7 @@ def test_sort_crawl_configs(
     # Sort by modified
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=modified",
-        headers=configer_auth_headers,
+        headers=crawler_auth_headers,
     )
     data = r.json()
     items = data["items"]
@@ -409,7 +409,7 @@ def test_sort_crawl_configs(
     # Sort by modified, ascending
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=modified&sortDirection=1",
-        headers=configer_auth_headers,
+        headers=crawler_auth_headers,
     )
     data = r.json()
     items = data["items"]
@@ -425,7 +425,7 @@ def test_sort_crawl_configs(
     # Sort by first seed
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=firstSeed",
-        headers=configer_auth_headers,
+        headers=crawler_auth_headers,
     )
     data = r.json()
     items = data["items"]
@@ -443,7 +443,7 @@ def test_sort_crawl_configs(
     # Sort by first seed, ascending
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=firstSeed&sortDirection=1",
-        headers=configer_auth_headers,
+        headers=crawler_auth_headers,
     )
     data = r.json()
     items = data["items"]
