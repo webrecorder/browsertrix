@@ -409,8 +409,10 @@ class CrawlOps(BaseCrawlOps):
 
         return {"total": total, "results": results, "matched": matched}
 
-    async def match_crawl_queue(self, crawl_id, regex):
-        """get list of urls that match regex"""
+    async def match_crawl_queue(self, crawl_id, regex, offset=0, limit=1000):
+        """get list of urls that match regex, starting at offset and at most
+        around 'limit'. (limit rounded to next step boundary, so
+        limit <= next_offset < limit + step"""
         total = 0
         matched = []
         step = 50
@@ -427,7 +429,9 @@ class CrawlOps(BaseCrawlOps):
             except re.error as exc:
                 raise HTTPException(status_code=400, detail="invalid_regex") from exc
 
-            for count in range(0, total, step):
+            next_offset = -1
+
+            for count in range(offset, total, step):
                 results = await self._crawl_queue_range(
                     redis, f"{crawl_id}:q", count, step
                 )
@@ -436,7 +440,13 @@ class CrawlOps(BaseCrawlOps):
                     if regex.search(url):
                         matched.append(url)
 
-        return {"total": total, "matched": matched}
+                # if exceeded limit set nextOffset to next step boundary
+                # and break
+                if len(matched) >= limit:
+                    next_offset = count + step
+                    break
+
+        return {"total": total, "matched": matched, "nextOffset": next_offset}
 
     async def filter_crawl_queue(self, crawl_id, regex):
         """filter out urls that match regex"""
@@ -867,11 +877,15 @@ def init_crawls_api(
         tags=["crawls"],
     )
     async def match_crawl_queue(
-        crawl_id, regex: str, org: Organization = Depends(org_crawl_dep)
+        crawl_id,
+        regex: str,
+        offset: int = 0,
+        limit: int = 1000,
+        org: Organization = Depends(org_crawl_dep),
     ):
         await ops.get_crawl_raw(crawl_id, org)
 
-        return await ops.match_crawl_queue(crawl_id, regex)
+        return await ops.match_crawl_queue(crawl_id, regex, offset, limit)
 
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/exclusions",
