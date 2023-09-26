@@ -340,7 +340,7 @@ class BaseCrawlOps:
         if crawl.state in RUNNING_STATES:
             try:
                 async with self.get_redis(crawl.id) as redis:
-                    crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
+                    crawl.stats, _ = await get_redis_crawl_stats(redis, crawl.id)
             # redis not available, ignore
             except exceptions.ConnectionError:
                 pass

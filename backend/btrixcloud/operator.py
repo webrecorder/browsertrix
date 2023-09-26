@@ -98,11 +98,33 @@ class CrawlSpec(BaseModel):
 
 
 # ============================================================================
-class PodInfo(BaseModel):
-    oom_time: Optional[datetime] = None
+class PodResources(BaseModel):
+    """Pod Resources"""
 
     memory: Optional[int] = 0
-    cpu: Optional[int] = 0
+    cpu: Optional[float] = 0
+    storage: Optional[int] = 0
+
+    def __init__(self, *a, **kw):
+        if "memory" in kw:
+            kw["memory"] = int(parse_quantity(kw["memory"]))
+        if "cpu" in kw:
+            kw["cpu"] = float(parse_quantity(kw["cpu"]))
+        if "storage" in kw:
+            kw["storage"] = int(parse_quantity(kw["storage"]))
+        super().__init__(*a, **kw)
+
+
+# ============================================================================
+class PodInfo(BaseModel):
+    """Aggregate pod status info held in CrawlJob"""
+
+    crashTime: Optional[str]
+    isNewCrash: Optional[bool]
+    reason: Optional[str]
+
+    allocated: PodResources = PodResources()
+    used: PodResources = PodResources()
 
 
 # ============================================================================
@@ -122,7 +144,7 @@ class CrawlStatus(BaseModel):
     stopping: bool = False
     initRedis: bool = False
     lastActiveTime: str = ""
-    pods: Optional[DefaultDict[str, PodInfo]] = defaultdict(lambda: defaultdict(PodInfo))
+    podStatus: Optional[DefaultDict[str, PodInfo]] = defaultdict(PodInfo)
     restartTime: Optional[str]
 
     # don't include in status, use by metacontroller
@@ -338,14 +360,14 @@ class BtrixOperator(K8sAPI):
 
     def _load_redis(self, params, status, children):
         name = f"redis-{params['id']}"
-        self.sync_resources(status.resources, "redis", name, children)
+        self.sync_resources(status, name, children)
         params["name"] = name
         params["init_redis"] = status.initRedis
         return self.load_from_yaml("redis.yaml", params)
 
     def _load_crawler(self, params, i, status, children):
         name = f"crawl-{params['id']}-{i}"
-        self.sync_resources(status.resources, str(i), name, children)
+        self.sync_resources(status, name, children)
         params["name"] = name
         params["priorityClassName"] = f"crawl-instance-{i}"
         return self.load_from_yaml("crawler.yaml", params)
@@ -393,21 +415,20 @@ class BtrixOperator(K8sAPI):
 
         return new_scale
 
-    def sync_resources(self, resources, id_, name, children):
+    def sync_resources(self, status, name, children):
         """set crawljob status from current resources"""
-        if id_ not in resources:
-            resources[id_] = {}
+        resources = status.podStatus[name].allocated
 
         pod = children[POD].get(name)
         if pod:
             src = pod["spec"]["containers"][0]["resources"]["requests"]
-            resources[id_]["memory"] = src.get("memory")
-            resources[id_]["cpu"] = src.get("cpu")
+            resources.memory = parse_quantity(src.get("memory"))
+            resources.cpu = parse_quantity(src.get("cpu"))
 
         pvc = children[PVC].get(name)
         if pvc:
             src = pvc["spec"]["resources"]["requests"]
-            resources[id_]["storage"] = src.get("storage")
+            resources.storage = parse_quantity(src.get("storage"))
 
     async def set_state(self, state, status, crawl_id, allowed_from, **kwargs):
         """set status state and update db, if changed
@@ -612,10 +633,9 @@ class BtrixOperator(K8sAPI):
     async def sync_crawl_state(self, redis_url, crawl, status, pods):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
-        crawler_running, redis_running, oom_killed = self.check_pod_status(pods, status)
+        crawler_running = self.sync_pod_status(pods, status)
 
-        if oom_killed:
-            print("*** OOM Killed Detected for", oom_killed)
+        self.handle_crashes(status.podStatus)
 
         if not crawler_running:
             if self.should_mark_waiting(status.state, crawl.started):
@@ -691,24 +711,22 @@ class BtrixOperator(K8sAPI):
         finally:
             await redis.close()
 
-    def check_pod_status(self, pods, pod_info_dict):
+    def sync_pod_status(self, pods, status):
         """check status of pods"""
         crawler_running = False
-        redis_running = False
-        oom_killed = set()
         try:
             for name, pod in pods.items():
                 running = False
 
-                status = pod["status"]
-                phase = status["phase"]
+                pstatus = pod["status"]
+                phase = pstatus["phase"]
                 role = pod["metadata"]["labels"]["role"]
 
                 if phase in ("Running", "Succeeded"):
                     running = True
 
-                if "containerStatuses" in status:
-                    cstatus = status["containerStatuses"][0]
+                if "containerStatuses" in pstatus:
+                    cstatus = pstatus["containerStatuses"][0]
 
                     # consider 'ContainerCreating' as running
                     waiting = cstatus["state"].get("waiting")
@@ -720,23 +738,32 @@ class BtrixOperator(K8sAPI):
                         running = True
 
                     terminated = cstatus["state"].get("terminated")
-                    if terminated and (
-                        terminated.get("reason") == "OOMKilled"
-                        or terminated.get("exitCode") == 137
-                    ):
-                        pod_info_dict[name].oom_last_time = terminanted.get("finished_at")
+                    exit_code = terminated and terminated.get("exitCode")
+                    if terminated and exit_code:
+                        crash_time = terminated.get("finishedAt")
+                        podStatus = status.podStatus[name]
+                        podStatus.isNewCrash = podStatus.crashTime != crash_time
+                        podStatus.crashTime = crash_time
+
+                        # detect reason
+                        if (
+                            terminated.get("reason") == "OOMKilled"
+                            or terminated.get("exitCode") == 137
+                        ):
+                            podStatus.reason = "oom"
+                        else:
+                            podStatus.reason = "interrupt"
 
                 if role == "crawler":
                     crawler_running = crawler_running or running
-                elif role == "redis":
-                    redis_running = redis_running or running
+                # elif role == "redis":
+                #    redis_running = redis_running or running
 
-        # pylint: disable=bare-except
-        except:
-            # assume no valid pod found
-            pass
+        # pylint: disable=broad-except
+        except Exception as exc:
+            print(exc)
 
-        return crawler_running, redis_running, oom_killed
+        return crawler_running
 
     def should_mark_waiting(self, state, started):
         """Should the crawl be marked as waiting for capacity?"""
@@ -748,6 +775,12 @@ class BtrixOperator(K8sAPI):
             return (datetime.utcnow() - started).total_seconds() > STARTING_TIME_SECS
 
         return False
+
+    def handle_crashes(self, podStatus):
+        """report/log any pod crashes here"""
+        for name, pod in podStatus.items():
+            if pod.isNewCrash:
+                print(f"pod {name} crashed, reason: {pod.reason}")
 
     async def add_file_to_crawl(self, cc_data, crawl, redis):
         """Handle finished CrawlFile to db"""
@@ -797,13 +830,16 @@ class BtrixOperator(K8sAPI):
     async def update_crawl_state(self, redis, crawl, status, pods):
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
-        stats = await get_redis_crawl_stats(redis, crawl.id)
+        stats, sizes = await get_redis_crawl_stats(redis, crawl.id)
 
         # update status
         status.pagesDone = stats["done"]
         status.pagesFound = stats["found"]
         status.size = stats["size"]
         status.sizeHuman = humanize.naturalsize(status.size)
+
+        for key, value in sizes.items():
+            status.podStatus[key].used.storage = int(value)
 
         status.stopping = self.is_crawl_stopping(crawl, status.size)
 
