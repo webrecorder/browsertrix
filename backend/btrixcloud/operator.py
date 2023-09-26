@@ -972,16 +972,6 @@ class BtrixOperator(K8sAPI):
             "details": details,
         }
         return json.dumps(err)
-=======
-    async def handle_crashes(self, crawl_id, podStatus):
-        """log crawler pod crashes and update end_time in redis as necessary"""
-        for name, pod in podStatus.items():
-            if pod.isNewCrash:
-                print(f"pod {name} crashed, reason: {pod.reason}")
-                await self.set_crawler_end_time_in_redis(
-                    crawl_id, name, podStatus.crashTime
-                )
->>>>>>> 1d4e7912 (Set end time for unexpectedly restarted crawler pods)
 
     async def add_file_to_crawl(self, cc_data, crawl, redis):
         """Handle finished CrawlFile to db"""
@@ -1161,7 +1151,7 @@ class BtrixOperator(K8sAPI):
         self, crawl_id, cid, oid, files_added_size, state
     ):
         """Run tasks after crawl completes in asyncio.task coroutine."""
-        await self.compute_execution_time(crawl_id, oid, crawl)
+        await self.compute_execution_time(crawl_id, oid)
 
         await self.crawl_config_ops.stats_recompute_last(cid, files_added_size, 1)
 
@@ -1177,8 +1167,9 @@ class BtrixOperator(K8sAPI):
         # finally, delete job
         await self.delete_crawl_job(crawl_id)
 
-    async def compute_execution_time(self, crawl_id, oid, crawl=None):
+    async def compute_execution_time(self, crawl_id, oid):
         """Compute execution time for crawl from start and end times in redis"""
+        # pylint: disable=invalid-name
         DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
         redis = None
         try:
@@ -1206,13 +1197,11 @@ class BtrixOperator(K8sAPI):
                 if len(start_times) != len(end_times):
                     # TODO: Handle this exception state
                     print(
-                        f"Warning: Start and end times array lengths differ", flush=True
+                        "Warning: Start and end times array lengths differ", flush=True
                     )
 
-                for time_idx in range(len(start_times)):
-                    start_time = datetime.strptime(
-                        start_times[time_idx], DATETIME_FORMAT
-                    )
+                for time_idx, start_time in enumerate(start_times):
+                    start_time = datetime.strptime(start_time, DATETIME_FORMAT)
                     end_time = datetime.strptime(end_times[time_idx], DATETIME_FORMAT)
 
                     duration = end_time - start_time
@@ -1223,11 +1212,10 @@ class BtrixOperator(K8sAPI):
 
             await self.crawl_ops.add_execution_seconds(crawl_id, oid, execution_secs)
 
-        # pylint: disable=bare-except
+        # pylint: disable=broad-exception-caught
         except Exception as err:
             # likely redis has already been deleted, so nothing to do
             print(f"Error computing execution time: {err}", flush=True)
-            pass
         finally:
             if redis:
                 await redis.close()
