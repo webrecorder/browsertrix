@@ -259,7 +259,6 @@ export class WorkflowDetail extends LiteElement {
 
     try {
       this.getWorkflowPromise = this.getWorkflow();
-      this.getSeeds();
       const [workflow, seeds] = await Promise.all([
         this.getWorkflowPromise,
         this.getSeeds(),

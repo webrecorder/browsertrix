@@ -913,8 +913,7 @@ ${this.crawl?.description}
     }
     try {
       this.logs = await this.getCrawlLogs(params);
-    } catch (e: any) {
-      console.log("fetch error:", e);
+    } catch {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl logs at this time."),
         variant: "danger",
