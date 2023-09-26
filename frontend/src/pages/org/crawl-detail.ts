@@ -854,7 +854,7 @@ ${this.crawl?.description}
   }
 
   private renderLoading = () => html`<div
-    class="w-full flex items-center justify-center my-24 text-2xl"
+    class="w-full flex items-center justify-center my-24 text-3xl"
   >
     <sl-spinner></sl-spinner>
   </div>`;

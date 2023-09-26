@@ -161,6 +161,7 @@ export class WorkflowDetail extends LiteElement {
       (changedProperties.get("isEditing") === true && this.isEditing === false)
     ) {
       this.fetchWorkflow();
+      this.fetchSeeds();
     }
     if (changedProperties.has("isEditing") && this.isEditing) {
       this.stopPoll();
@@ -259,12 +260,7 @@ export class WorkflowDetail extends LiteElement {
 
     try {
       this.getWorkflowPromise = this.getWorkflow();
-      const [workflow, seeds] = await Promise.all([
-        this.getWorkflowPromise,
-        this.getSeeds(),
-      ]);
-      this.workflow = workflow;
-      this.seeds = seeds;
+      this.workflow = await this.getWorkflowPromise;
       this.lastCrawlId = this.workflow.lastCrawlId;
       this.lastCrawlStartTime = this.workflow.lastCrawlStartTime;
       if (this.lastCrawlId) {
@@ -333,15 +329,7 @@ export class WorkflowDetail extends LiteElement {
           ${this.renderDetails()}
         </section>
 
-        ${when(
-          this.workflow,
-          this.renderTabList,
-          () => html`<div
-            class="w-full flex items-center justify-center my-24 text-3xl"
-          >
-            <sl-spinner></sl-spinner>
-          </div>`
-        )}
+        ${when(this.workflow, this.renderTabList, this.renderLoading)}
       </div>
 
       <btrix-dialog
@@ -544,11 +532,11 @@ export class WorkflowDetail extends LiteElement {
     </header>
 
     ${when(
-      !this.isLoading,
+      !this.isLoading && this.seeds,
       () => html`
         <btrix-workflow-editor
           .initialWorkflow=${this.workflow}
-          .initialSeeds=${this.seeds?.items}
+          .initialSeeds=${this.seeds!.items}
           jobType=${this.workflow!.jobType}
           configId=${this.workflow!.id}
           orgId=${this.orgId}
@@ -558,7 +546,8 @@ export class WorkflowDetail extends LiteElement {
               `/orgs/${this.orgId}/workflows/crawl/${this.workflow!.id}`
             )}
         ></btrix-workflow-editor>
-      `
+      `,
+      this.renderLoading
     )}
   `;
 
@@ -1173,7 +1162,11 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private renderSettings() {
-    return html`<section class="border rounded-lg py-3 px-5">
+    return html`<section
+      class="border rounded-lg py-3 px-5"
+      aria-live="polite"
+      aria-busy=${this.isLoading || !this.seeds}
+    >
       <btrix-config-details
         .authState=${this.authState!}
         .crawlConfig=${this.workflow}
@@ -1182,6 +1175,12 @@ export class WorkflowDetail extends LiteElement {
       ></btrix-config-details>
     </section>`;
   }
+
+  private renderLoading = () => html`<div
+    class="w-full flex items-center justify-center my-24 text-3xl"
+  >
+    <sl-spinner></sl-spinner>
+  </div>`;
 
   private showDialog = async () => {
     await this.getWorkflowPromise;
@@ -1233,6 +1232,20 @@ export class WorkflowDetail extends LiteElement {
       this.authState!
     );
     return data;
+  }
+
+  private async fetchSeeds(): Promise<void> {
+    try {
+      this.seeds = await this.getSeeds();
+    } catch {
+      this.notify({
+        message: msg(
+          "Sorry, couldn't retrieve all crawl settings at this time."
+        ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 
   private async getSeeds(): Promise<APIPaginatedList> {
