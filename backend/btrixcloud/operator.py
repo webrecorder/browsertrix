@@ -1140,7 +1140,7 @@ class BtrixOperator(K8sAPI):
 
         asyncio.create_task(
             self.do_crawl_finished_tasks(
-                crawl_id, cid, oid, status.filesAddedSize, state
+                crawl_id, cid, oid, status.filesAddedSize, state, crawl
             )
         )
 
@@ -1148,10 +1148,10 @@ class BtrixOperator(K8sAPI):
 
     # pylint: disable=too-many-arguments
     async def do_crawl_finished_tasks(
-        self, crawl_id, cid, oid, files_added_size, state
+        self, crawl_id, cid, oid, files_added_size, state, crawl
     ):
         """Run tasks after crawl completes in asyncio.task coroutine."""
-        await self.compute_execution_time(crawl_id, oid)
+        await self.compute_execution_time(crawl_id, oid, crawl)
 
         await self.crawl_config_ops.stats_recompute_last(cid, files_added_size, 1)
 
@@ -1167,7 +1167,7 @@ class BtrixOperator(K8sAPI):
         # finally, delete job
         await self.delete_crawl_job(crawl_id)
 
-    async def compute_execution_time(self, crawl_id, oid):
+    async def compute_execution_time(self, crawl_id, oid, crawl=None):
         """Compute execution time for crawl from start and end times in redis"""
         # pylint: disable=invalid-name
         DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
