@@ -231,13 +231,17 @@ class CrawlConfig(CrawlConfigCore, CrawlConfigAdditional):
 
 
 # ============================================================================
-class CrawlConfigOut(CrawlConfig):
+class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     """Crawl Config Output"""
 
     lastCrawlStopping: Optional[bool] = False
     profileName: Optional[str]
     firstSeed: Optional[str]
     seedCount: int = 0
+
+    createdByName: Optional[str]
+    modifiedByName: Optional[str]
+    lastStartedByName: Optional[str]
 
 
 # ============================================================================
