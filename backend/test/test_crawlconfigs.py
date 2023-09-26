@@ -108,6 +108,7 @@ def test_verify_update(crawler_auth_headers, default_org_id):
     assert data["description"] == UPDATED_DESCRIPTION
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
     assert data["autoAddCollections"] == [_coll_id]
+    assert data["firstSeed"] == "https://example.com/"
 
 
 def test_update_config_invalid_format(

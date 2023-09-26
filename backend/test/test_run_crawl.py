@@ -116,6 +116,19 @@ def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_craw
         assert crawl["seedCount"] > 0
 
 
+def test_crawl_seeds_endpoint(admin_auth_headers, default_org_id, admin_crawl_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/seeds",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["total"] == 1
+    assert data["items"][0]["url"] == "https://webrecorder.net/"
+    assert data["items"][0]["depth"] == 1
+
+
 def test_crawls_exclude_errors(admin_auth_headers, default_org_id, admin_crawl_id):
     # Get endpoint
     r = requests.get(

@@ -599,6 +599,9 @@ class CrawlConfigOps:
                 crawlconfig.profileid, org
             )
 
+        if crawlconfig.config and crawlconfig.config.seeds:
+            crawlconfig.firstSeed = crawlconfig.config.seeds[0].url
+
         crawlconfig.seedCount = await self.get_crawl_config_seed_count(cid, org)
 
         crawlconfig.config.seeds = None
