@@ -92,7 +92,7 @@ export class Dashboard extends LiteElement {
                       ></sl-format-bytes>`,
                       singleLabel: msg("of Data Stored"),
                       pluralLabel: msg("of Data Stored"),
-                      iconProps: { name: "database" },
+                      iconProps: { name: "device-hdd-fill" },
                     })}
                     <sl-divider
                       style="--spacing:var(--sl-spacing-small)"
