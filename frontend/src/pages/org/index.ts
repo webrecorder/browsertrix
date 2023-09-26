@@ -419,7 +419,8 @@ export class Org extends LiteElement {
 
   private renderWorkflows() {
     const isEditing = this.params.hasOwnProperty("edit");
-    const isNewResourceTab = this.params.hasOwnProperty("new");
+    const isNewResourceTab =
+      this.params.hasOwnProperty("new") && this.params.jobType;
     const workflowId = this.params.workflowId;
 
     if (workflowId) {
