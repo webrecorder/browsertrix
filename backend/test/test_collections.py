@@ -8,6 +8,7 @@ from .conftest import API_PREFIX
 from .utils import read_in_chunks
 
 COLLECTION_NAME = "Test collection"
+PUBLIC_COLLECTION_NAME = "Public Test collection"
 UPDATED_NAME = "Updated tést cöllection"
 SECOND_COLLECTION_NAME = "second-collection"
 DESCRIPTION = "Test description"
@@ -46,6 +47,31 @@ def test_create_collection(
     )
     assert _coll_id in r.json()["collectionIds"]
     assert r.json()["collections"] == [{"name": COLLECTION_NAME, "id": _coll_id}]
+
+
+def test_create_public_collection(crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={
+            "crawlIds": [crawler_crawl_id],
+            "name": PUBLIC_COLLECTION_NAME,
+            "isPublic": True,
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+    assert data["name"] == PUBLIC_COLLECTION_NAME
+
+    _public_coll_id = data["id"]
+
+    # Verify that it is public
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.json()["isPubilc"] == True
 
 
 def test_create_collection_taken_name(
