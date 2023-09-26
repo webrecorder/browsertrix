@@ -369,19 +369,22 @@ export class Dashboard extends LiteElement {
     pluralLabel: string;
     iconProps: { name: string; library?: string; color?: string };
   }) {
+    const { value, iconProps } = stat;
     return html`
       <div class="flex items-center mb-2 last:mb-0">
         <sl-icon
           class="text-base text-neutral-500 mr-2"
-          name=${stat.iconProps.name}
-          library=${ifDefined(stat.iconProps.library)}
-          style="color:var(--sl-color-${stat.iconProps.color ||
+          name=${iconProps.name}
+          library=${ifDefined(iconProps.library)}
+          style="color:var(--sl-color-${iconProps.color ||
           this.colors.default}-500)"
         ></sl-icon>
         <dt class="order-last">
-          ${stat.value === 1 ? stat.singleLabel : stat.pluralLabel}
+          ${value === 1 ? stat.singleLabel : stat.pluralLabel}
         </dt>
-        <dd class="mr-1">${stat.value.toLocaleString()}</dd>
+        <dd class="mr-1">
+          ${typeof value === "number" ? value.toLocaleString() : value}
+        </dd>
       </div>
     `;
   }
