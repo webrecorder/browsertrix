@@ -506,7 +506,7 @@ class CollIn(BaseModel):
     description: Optional[str]
     crawlIds: Optional[List[str]] = []
 
-    public: Optional[bool] = False
+    isPublic: Optional[bool] = False
 
 
 # ============================================================================
