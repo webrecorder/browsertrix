@@ -119,9 +119,9 @@ class PodResources(BaseModel):
 class PodInfo(BaseModel):
     """Aggregate pod status info held in CrawlJob"""
 
-    crashTime: Optional[str]
-    isNewCrash: Optional[bool]
-    reason: Optional[str]
+    crashTime: Optional[str] = None
+    isNewCrash: Optional[bool] = None
+    reason: Optional[str] = None
 
     allocated: PodResources = PodResources()
     used: PodResources = PodResources()
@@ -144,7 +144,9 @@ class CrawlStatus(BaseModel):
     stopping: bool = False
     initRedis: bool = False
     lastActiveTime: str = ""
-    podStatus: Optional[DefaultDict[str, PodInfo]] = defaultdict(PodInfo)
+    podStatus: Optional[DefaultDict[str, PodInfo]] = defaultdict(
+        lambda: PodInfo()  # pylint: disable=unnecessary-lambda
+    )
     restartTime: Optional[str]
 
     # don't include in status, use by metacontroller
@@ -633,9 +635,13 @@ class BtrixOperator(K8sAPI):
     async def sync_crawl_state(self, redis_url, crawl, status, pods):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
-        crawler_running = self.sync_pod_status(pods, status)
+        crawler_running, redis_running = self.sync_pod_status(pods, status)
+        redis = None
 
-        self.handle_crashes(status.podStatus)
+        if redis_running:
+            redis = await self._get_redis(redis_url)
+
+        await self.handle_crashes(crawl.id, status.podStatus, redis)
 
         if not crawler_running:
             if self.should_mark_waiting(status.state, crawl.started):
@@ -661,7 +667,6 @@ class BtrixOperator(K8sAPI):
         status.initRedis = True
         status.lastActiveTime = to_k8s_date(dt_now())
 
-        redis = await self._get_redis(redis_url)
         if not redis:
             # if still running, resync after N seconds
             status.resync_after = self.fast_retry_secs
@@ -714,6 +719,7 @@ class BtrixOperator(K8sAPI):
     def sync_pod_status(self, pods, status):
         """check status of pods"""
         crawler_running = False
+        redis_running = False
         try:
             for name, pod in pods.items():
                 running = False
@@ -741,29 +747,29 @@ class BtrixOperator(K8sAPI):
                     exit_code = terminated and terminated.get("exitCode")
                     if terminated and exit_code:
                         crash_time = terminated.get("finishedAt")
-                        podStatus = status.podStatus[name]
-                        podStatus.isNewCrash = podStatus.crashTime != crash_time
-                        podStatus.crashTime = crash_time
+                        pod_status = status.podStatus[name]
+                        pod_status.isNewCrash = pod_status.crashTime != crash_time
+                        pod_status.crashTime = crash_time
 
                         # detect reason
                         if (
                             terminated.get("reason") == "OOMKilled"
                             or terminated.get("exitCode") == 137
                         ):
-                            podStatus.reason = "oom"
+                            pod_status.reason = "oom"
                         else:
-                            podStatus.reason = "interrupt"
+                            pod_status.reason = "interrupt"
 
                 if role == "crawler":
                     crawler_running = crawler_running or running
-                # elif role == "redis":
-                #    redis_running = redis_running or running
+                elif role == "redis":
+                    redis_running = redis_running or running
 
         # pylint: disable=broad-except
         except Exception as exc:
             print(exc)
 
-        return crawler_running
+        return crawler_running, redis_running
 
     def should_mark_waiting(self, state, started):
         """Should the crawl be marked as waiting for capacity?"""
@@ -776,11 +782,30 @@ class BtrixOperator(K8sAPI):
 
         return False
 
-    def handle_crashes(self, podStatus):
+    async def handle_crashes(self, crawl_id, pod_status, redis):
         """report/log any pod crashes here"""
-        for name, pod in podStatus.items():
-            if pod.isNewCrash:
-                print(f"pod {name} crashed, reason: {pod.reason}")
+        for name, pod in pod_status.items():
+            if not pod.isNewCrash:
+                continue
+
+            log = self.get_log_line(
+                "Crawler Instance Crashed", {"reason": pod.reason, "pod": name}
+            )
+            if not redis:
+                print(log)
+            else:
+                await redis.lpush(f"{crawl_id}:e", log)
+
+    def get_log_line(self, message, details):
+        """get crawler error line for logging"""
+        err = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "logLevel": "error",
+            "context": "k8s",
+            "message": message,
+            "details": details,
+        }
+        return json.dumps(err)
 
     async def add_file_to_crawl(self, cc_data, crawl, redis):
         """Handle finished CrawlFile to db"""
