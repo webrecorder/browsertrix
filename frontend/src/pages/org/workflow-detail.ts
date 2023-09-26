@@ -115,6 +115,7 @@ export class WorkflowDetail extends LiteElement {
   private isPanelHeaderVisible?: boolean;
 
   private getWorkflowPromise?: Promise<Workflow>;
+  private getSeedsPromise?: Promise<APIPaginatedList>;
 
   private readonly jobTypeLabels: Record<JobType, string> = {
     "url-list": msg("URL List"),
@@ -1236,7 +1237,8 @@ export class WorkflowDetail extends LiteElement {
 
   private async fetchSeeds(): Promise<void> {
     try {
-      this.seeds = await this.getSeeds();
+      this.getSeedsPromise = this.getSeeds();
+      this.seeds = await this.getSeedsPromise;
     } catch {
       this.notify({
         message: msg(
@@ -1317,17 +1319,21 @@ export class WorkflowDetail extends LiteElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig() {
+    if (!this.workflow) await this.getWorkflowPromise;
+    if (!this.seeds) await this.getSeedsPromise;
+    await this.updateComplete;
     if (!this.workflow) return;
 
     const workflowParams: WorkflowParams = {
       ...this.workflow,
-      name: msg(str`${this.renderName()} Copy`),
+      name: this.workflow.name ? msg(str`${this.workflow.name} Copy`) : "",
     };
 
     this.navTo(
       `/orgs/${this.orgId}/workflows?new&jobType=${workflowParams.jobType}`,
       {
         workflow: workflowParams,
+        seeds: this.seeds?.items,
       }
     );
 

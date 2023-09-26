@@ -6,7 +6,7 @@ import { mergeDeep } from "immutable";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { JobType, WorkflowParams } from "./types";
+import type { JobType, Seed, WorkflowParams } from "./types";
 import "./workflow-editor";
 import seededCrawlSvg from "../../assets/images/new-crawl-config_Seeded-Crawl.svg";
 import urlListSvg from "../../assets/images/new-crawl-config_URL-List.svg";
@@ -49,6 +49,9 @@ export class WorkflowsNew extends LiteElement {
 
   @property({ type: Boolean })
   isCrawler!: boolean;
+
+  @property({ type: Array })
+  initialSeeds?: Seed[];
 
   // Use custom property accessor to prevent
   // overriding default Workflow values
@@ -118,6 +121,7 @@ export class WorkflowsNew extends LiteElement {
         </h2>
         <btrix-workflow-editor
           .initialWorkflow=${this.initialWorkflow}
+          .initialSeeds=${this.initialSeeds}
           jobType=${jobType}
           orgId=${this.orgId}
           .authState=${this.authState}

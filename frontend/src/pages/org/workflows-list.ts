@@ -22,6 +22,7 @@ const FILTER_BY_CURRENT_USER_STORAGE_KEY =
 const INITIAL_PAGE_SIZE = 10;
 const POLL_INTERVAL_SECONDS = 10;
 const ABORT_REASON_THROTTLE = "throttled";
+const SEEDS_MAX = 1000;
 
 const sortableFields: Record<
   SortField,
@@ -622,27 +623,41 @@ export class WorkflowsList extends LiteElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig(workflow: ListWorkflow) {
-    const fullWorkflow: Workflow = await this.apiFetch(
-      `/orgs/${this.orgId}/crawlconfigs/${workflow.id}`,
-      this.authState!
-    );
+    const [fullWorkflow, seeds] = await Promise.all([
+      this.getWorkflow(workflow),
+      this.getSeeds(workflow),
+    ]);
+
     const workflowParams: WorkflowParams = {
       ...fullWorkflow,
-      name: msg(str`${this.renderName(workflow)} Copy`),
+      name: workflow.name ? msg(str`${workflow.name} Copy`) : "",
     };
 
     this.navTo(
       `/orgs/${this.orgId}/workflows?new&jobType=${workflowParams.jobType}`,
       {
         workflow: workflowParams,
+        seeds: seeds.items,
       }
     );
 
-    this.notify({
-      message: msg(str`Copied Workflow to new template.`),
-      variant: "success",
-      icon: "check2-circle",
-    });
+    // TODO handle more than 1000 seeds
+    if (seeds.total > SEEDS_MAX) {
+      this.notify({
+        title: msg(str`Partially copied Workflow`),
+        message: msg(
+          str`Only first ${SEEDS_MAX.toLocaleString()} URLs were copied.`
+        ),
+        variant: "warning",
+        icon: "exclamation-triangle",
+      });
+    } else {
+      this.notify({
+        message: msg(str`Copied Workflow to new template.`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    }
   }
 
   private async deactivate(workflow: ListWorkflow): Promise<void> {
@@ -812,6 +827,22 @@ export class WorkflowsList extends LiteElement {
     } catch (e) {
       console.debug(e);
     }
+  }
+
+  private async getWorkflow(workflow: ListWorkflow): Promise<Workflow> {
+    const data: Workflow = await this.apiFetch(
+      `/orgs/${this.orgId}/crawlconfigs/${workflow.id}`,
+      this.authState!
+    );
+    return data;
+  }
+
+  private async getSeeds(workflow: ListWorkflow): Promise<APIPaginatedList> {
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/seeds`,
+      this.authState!
+    );
+    return data;
   }
 }
 
