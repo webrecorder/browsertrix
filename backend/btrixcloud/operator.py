@@ -473,14 +473,12 @@ class BtrixOperator(K8sAPI):
 
         return self.load_from_yaml("crawler.yaml", params)
 
-    async def set_crawler_end_time_in_redis(self, crawl_id, name, end_time):
+    async def set_crawler_end_time_in_redis(self, crawl_id, name, end_time, redis):
         """set end time in redis for crashed crawler pod"""
-        try:
-            redis_url = self.get_redis_url(crawl_id)
-            redis = await self._get_redis(redis_url)
-            if not redis:
-                return
+        if not redis:
+            return
 
+        try:
             # Ensure end time wasn't already added by crawler
             start_times_length = await redis.llen(f"{crawl_id}:start:{name}")
             end_times_length = await redis.llen(f"{crawl_id}:end:{name}")
@@ -495,9 +493,6 @@ class BtrixOperator(K8sAPI):
                 f"Setting end time in redis for crashed crawler {name} failed: {err}",
                 flush=True,
             )
-
-        finally:
-            await redis.close()
 
     # pylint: disable=too-many-arguments
     async def _resolve_scale(self, crawl_id, desired_scale, redis, status, pods):
@@ -961,6 +956,10 @@ class BtrixOperator(K8sAPI):
                 print(log)
             else:
                 await redis.lpush(f"{crawl_id}:e", log)
+
+            await self.set_crawler_end_time_in_redis(
+                crawl_id, name, pod.crashTime, redis
+            )
 
     def get_log_line(self, message, details):
         """get crawler error line for logging"""
