@@ -805,50 +805,59 @@ ${this.crawl?.description}
   }
 
   private renderLogs() {
-    if (!this.logs) {
-      return html`<div
-        class="w-full flex items-center justify-center my-24 text-3xl"
-      >
-        <sl-spinner></sl-spinner>
-      </div>`;
-    }
-
-    if (!this.logs.total) {
-      return html`<div class="border rounded-lg p-4">
-        <p class="text-sm text-neutral-400">
-          ${msg("No error logs to display.")}
-        </p>
-      </div>`;
-    }
-
     return html`
-      <btrix-crawl-logs
-        .logs=${this.logs}
-        @page-change=${async (e: PageChangeEvent) => {
-          await this.fetchCrawlLogs({
-            page: e.detail.page,
-          });
-          // Scroll to top of list
-          this.scrollIntoView();
-        }}
-      ></btrix-crawl-logs>
+      <div aria-live="polite" aria-busy=${!this.logs}>
+        ${when(this.logs, () =>
+          this.logs!.total
+            ? html`
+                <btrix-crawl-logs
+                  .logs=${this.logs}
+                  @page-change=${async (e: PageChangeEvent) => {
+                    await this.fetchCrawlLogs({
+                      page: e.detail.page,
+                    });
+                    // Scroll to top of list
+                    this.scrollIntoView();
+                  }}
+                ></btrix-crawl-logs>
+              `
+            : html`<div class="border rounded-lg p-4">
+                <p class="text-sm text-neutral-400">
+                  ${msg("No error logs to display.")}
+                </p>
+              </div>`
+        )}
+      </div>
     `;
   }
 
   private renderConfig() {
-    if (!this.crawl?.config || !this.seeds) return "";
     return html`
-      <btrix-config-details
-        .authState=${this.authState!}
-        .crawlConfig=${{
-          ...this.crawl,
-          autoAddCollections: this.crawl.collectionIds,
-        }}
-        .seeds=${this.seeds.items}
-        hideTags
-      ></btrix-config-details>
+      <div aria-live="polite" aria-busy=${!this.crawl || !this.seeds}>
+        ${when(
+          this.crawl && this.seeds,
+          () => html`
+            <btrix-config-details
+              .authState=${this.authState!}
+              .crawlConfig=${{
+                ...this.crawl,
+                autoAddCollections: this.crawl!.collectionIds,
+              }}
+              .seeds=${this.seeds!.items}
+              hideTags
+            ></btrix-config-details>
+          `,
+          this.renderLoading
+        )}
+      </div>
     `;
   }
+
+  private renderLoading = () => html`<div
+    class="w-full flex items-center justify-center my-24 text-2xl"
+  >
+    <sl-spinner></sl-spinner>
+  </div>`;
 
   /**
    * Fetch crawl and update internal state
