@@ -231,7 +231,7 @@ class CrawlConfig(CrawlConfigCore, CrawlConfigAdditional):
 
 
 # ============================================================================
-class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
+class CrawlConfigOut(CrawlConfig):
     """Crawl Config Output"""
 
     lastCrawlStopping: Optional[bool] = False
