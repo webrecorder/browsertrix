@@ -59,6 +59,13 @@ export class Dashboard extends LiteElement {
         <h1 class="min-w-0 text-xl font-semibold leading-8 mr-auto">
           ${this.org?.name}
         </h1>
+        <sl-icon-button
+          href=${`/orgs/${this.orgId}/settings`}
+          class="text-lg"
+          name="gear"
+          label="Edit org settings"
+          @click=${this.navLink}
+        ></sl-icon-button>
         <sl-dropdown
           distance="4"
           placement="bottom-end"
@@ -94,13 +101,6 @@ export class Dashboard extends LiteElement {
             </sl-menu-item>
           </sl-menu>
         </sl-dropdown>
-        <sl-icon-button
-          href=${`/orgs/${this.orgId}/settings`}
-          class="text-lg"
-          name="gear"
-          label="Edit org settings"
-          @click=${this.navLink}
-        ></sl-icon-button>
       </header>
       <main>
         <div class="flex flex-col md:flex-row gap-6">
