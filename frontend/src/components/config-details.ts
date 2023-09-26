@@ -72,8 +72,7 @@ export class ConfigDetails extends LiteElement {
     const crawlConfig = this.crawlConfig;
     const seedsConfig = crawlConfig?.config;
     const exclusions = seedsConfig?.exclude || [];
-    const seeds = this.seeds || [];
-    const maxPages = seeds[0]?.limit ?? seedsConfig?.limit;
+    const maxPages = (this.seeds && this.seeds[0]?.limit) ?? seedsConfig?.limit;
     const renderTimeLimit = (
       valueSeconds?: number | null,
       fallbackValue?: number
