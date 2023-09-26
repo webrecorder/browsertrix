@@ -11,7 +11,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { isActive } from "../../utils/crawler";
 import { CopyButton } from "../../components/copy-button";
-import type { Crawl, Workflow } from "./types";
+import type { Crawl, Seed } from "./types";
 import { APIPaginatedList } from "../../types/api";
 
 const SECTIONS = [
@@ -64,6 +64,11 @@ export class CrawlDetail extends LiteElement {
 
   @state()
   private crawl?: Crawl;
+
+  @state()
+  private seeds?: APIPaginatedList & {
+    items: Seed[];
+  };
 
   @state()
   private logs?: APIPaginatedList;
@@ -121,29 +126,11 @@ export class CrawlDetail extends LiteElement {
     return this.crawl.resources.length > 0;
   }
 
-  firstUpdated() {
-    this.fetchCrawl();
-    this.fetchCrawlLogs();
-  }
-
   willUpdate(changedProperties: Map<string, any>) {
-    const prevId = changedProperties.get("crawlId");
-
-    if (prevId && prevId !== this.crawlId) {
-      // Handle update on URL change, e.g. from re-run
+    if (changedProperties.has("crawlId") && this.crawlId) {
       this.fetchCrawl();
       this.fetchCrawlLogs();
-    } else {
-      const prevCrawl = changedProperties.get("crawl");
-
-      if (prevCrawl && this.crawl) {
-        if (
-          (prevCrawl.state === "running" || prevCrawl.state === "stopping") &&
-          !this.isActive
-        ) {
-          this.crawlDone();
-        }
-      }
+      this.fetchSeeds();
     }
   }
 
@@ -849,7 +836,7 @@ ${this.crawl?.description}
   }
 
   private renderConfig() {
-    if (!this.crawl?.config) return "";
+    if (!this.crawl?.config || !this.seeds) return "";
     return html`
       <btrix-config-details
         .authState=${this.authState!}
@@ -857,11 +844,7 @@ ${this.crawl?.description}
           ...this.crawl,
           autoAddCollections: this.crawl.collectionIds,
         }}
-        .seeds=${
-          [
-            /* TODO */
-          ]
-        }
+        .seeds=${this.seeds.items}
         hideTags
       ></btrix-config-details>
     `;
@@ -882,12 +865,34 @@ ${this.crawl?.description}
     }
   }
 
+  private async fetchSeeds(): Promise<void> {
+    try {
+      this.seeds = await this.getSeeds();
+    } catch {
+      this.notify({
+        message: msg(
+          "Sorry, couldn't retrieve all crawl settings at this time."
+        ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
   private async getCrawl(): Promise<Crawl> {
     const apiPath = `/orgs/${this.orgId}/${
       this.itemType === "upload" ? "uploads" : "crawls"
     }/${this.crawlId}/replay.json`;
     const data: Crawl = await this.apiFetch(apiPath, this.authState!);
 
+    return data;
+  }
+
+  private async getSeeds(): Promise<APIPaginatedList> {
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/crawls/${this.crawlId}/seeds`,
+      this.authState!
+    );
     return data;
   }
 
@@ -899,7 +904,8 @@ ${this.crawl?.description}
     }
     try {
       this.logs = await this.getCrawlLogs(params);
-    } catch {
+    } catch (e: any) {
+      console.log("fetch error:", e);
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl logs at this time."),
         variant: "danger",
