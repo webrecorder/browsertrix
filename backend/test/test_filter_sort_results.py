@@ -218,6 +218,7 @@ def test_sort_crawls(
 
     last_created = None
     for crawl in items:
+        assert crawl["userName"]
         if last_created:
             assert crawl["started"] <= last_created
         last_created = crawl["started"]
@@ -232,6 +233,7 @@ def test_sort_crawls(
 
     last_created = None
     for crawl in items:
+        assert crawl["userName"]
         if last_created:
             assert crawl["started"] >= last_created
         last_created = crawl["started"]
@@ -246,6 +248,7 @@ def test_sort_crawls(
 
     last_finished = None
     for crawl in items:
+        assert crawl["userName"]
         if not crawl["finished"]:
             continue
         if last_finished:
@@ -262,6 +265,7 @@ def test_sort_crawls(
 
     last_finished = None
     for crawl in items:
+        assert crawl["userName"]
         if not crawl["finished"]:
             continue
         if last_finished:
@@ -278,6 +282,7 @@ def test_sort_crawls(
 
     last_size = None
     for crawl in items:
+        assert crawl["userName"]
         if last_size:
             assert crawl["fileSize"] <= last_size
         last_size = crawl["fileSize"]
@@ -292,6 +297,7 @@ def test_sort_crawls(
 
     last_size = None
     for crawl in items:
+        assert crawl["userName"]
         if last_size:
             assert crawl["fileSize"] >= last_size
         last_size = crawl["fileSize"]
@@ -306,6 +312,7 @@ def test_sort_crawls(
 
     last_first_seed = None
     for crawl in items:
+        assert crawl["userName"]
         if not crawl["firstSeed"]:
             continue
         if last_first_seed:
@@ -322,6 +329,7 @@ def test_sort_crawls(
 
     last_first_seed = None
     for crawl in items:
+        assert crawl["userName"]
         if not crawl["firstSeed"]:
             continue
         if last_first_seed:
@@ -351,7 +359,7 @@ def test_sort_crawl_configs(
     # Sort by created, descending (default)
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=created",
-        headers=crawler_auth_headers,
+        headers=configer_auth_headers,
     )
     data = r.json()
     assert data["total"] == 8
@@ -359,84 +367,96 @@ def test_sort_crawl_configs(
     assert len(items) == 8
 
     last_created = None
-    for crawl in items:
+    for config in items:
+        assert config["createdByName"]
+        assert config["modifiedByName"]
         if last_created:
-            assert crawl["created"] <= last_created
-        last_created = crawl["created"]
+            assert config["created"] <= last_created
+        last_created = config["created"]
 
     # Sort by created, ascending
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=created&sortDirection=1",
-        headers=crawler_auth_headers,
+        headers=configer_auth_headers,
     )
     data = r.json()
     items = data["items"]
 
     last_created = None
-    for crawl in items:
+    for config in items:
+        assert config["createdByName"]
+        assert config["modifiedByName"]
         if last_created:
-            assert crawl["created"] >= last_created
-        last_created = crawl["created"]
+            assert config["created"] >= last_created
+        last_created = config["created"]
 
     # Sort by modified
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=modified",
-        headers=crawler_auth_headers,
+        headers=configer_auth_headers,
     )
     data = r.json()
     items = data["items"]
 
     last_modified = None
-    for crawl in items:
+    for config in items:
+        assert config["createdByName"]
+        assert config["modifiedByName"]
         if last_modified:
-            assert crawl["modified"] <= last_modified
-        last_modified = crawl["modified"]
+            assert config["modified"] <= last_modified
+        last_modified = config["modified"]
 
     # Sort by modified, ascending
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=modified&sortDirection=1",
-        headers=crawler_auth_headers,
+        headers=configer_auth_headers,
     )
     data = r.json()
     items = data["items"]
 
     last_modified = None
-    for crawl in items:
+    for config in items:
+        assert config["createdByName"]
+        assert config["modifiedByName"]
         if last_modified:
-            assert crawl["modified"] >= last_modified
-        last_modified = crawl["modified"]
+            assert config["modified"] >= last_modified
+        last_modified = config["modified"]
 
     # Sort by first seed
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=firstSeed",
-        headers=crawler_auth_headers,
+        headers=configer_auth_headers,
     )
     data = r.json()
     items = data["items"]
 
     last_first_seed = None
-    for crawl in items:
-        if not crawl["firstSeed"]:
+    for config in items:
+        assert config["createdByName"]
+        assert config["modifiedByName"]
+        if not config["firstSeed"]:
             continue
         if last_first_seed:
-            assert crawl["firstSeed"] <= last_first_seed
-        last_first_seed = crawl["firstSeed"]
+            assert config["firstSeed"] <= last_first_seed
+        last_first_seed = config["firstSeed"]
 
     # Sort by first seed, ascending
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?sortBy=firstSeed&sortDirection=1",
-        headers=crawler_auth_headers,
+        headers=configer_auth_headers,
     )
     data = r.json()
     items = data["items"]
 
     last_first_seed = None
-    for crawl in items:
-        if not crawl["firstSeed"]:
+    for config in items:
+        assert config["createdByName"]
+        assert config["modifiedByName"]
+        if not config["firstSeed"]:
             continue
         if last_first_seed:
-            assert crawl["firstSeed"] >= last_first_seed
-        last_first_seed = crawl["firstSeed"]
+            assert config["firstSeed"] >= last_first_seed
+        last_first_seed = config["firstSeed"]
 
     # Sort by lastCrawlTime
     r = requests.get(
@@ -448,6 +468,8 @@ def test_sort_crawl_configs(
 
     last_crawl_time = None
     for config in items:
+        assert config["createdByName"]
+        assert config["modifiedByName"]
         config_last_time = config.get("lastCrawlTime")
         if not config_last_time:
             continue
@@ -465,6 +487,8 @@ def test_sort_crawl_configs(
 
     last_crawl_time = None
     for config in items:
+        assert config["createdByName"]
+        assert config["modifiedByName"]
         config_last_time = config.get("lastCrawlTime")
         if not config_last_time:
             continue
@@ -482,6 +506,8 @@ def test_sort_crawl_configs(
 
     last_crawl_time = None
     for config in items:
+        assert config["createdByName"]
+        assert config["modifiedByName"]
         config_last_time = config.get("lastCrawlStartTime")
         if not config_last_time:
             continue
@@ -499,6 +525,8 @@ def test_sort_crawl_configs(
 
     last_crawl_time = None
     for config in items:
+        assert config["createdByName"]
+        assert config["modifiedByName"]
         config_last_time = config.get("lastCrawlStartTime")
         if not config_last_time:
             continue
@@ -516,6 +544,8 @@ def test_sort_crawl_configs(
 
     last_updated_time = None
     for config in items:
+        assert config["createdByName"]
+        assert config["modifiedByName"]
         config_last_updated = config.get("lastRun")
         if not config_last_updated:
             continue
@@ -533,6 +563,8 @@ def test_sort_crawl_configs(
 
     last_updated_time = None
     for config in items:
+        assert config["createdByName"]
+        assert config["modifiedByName"]
         config_last_updated = config.get("lastRun")
         if not config_last_updated:
             continue
