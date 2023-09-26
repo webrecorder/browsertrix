@@ -1189,19 +1189,19 @@ class BtrixOperator(K8sAPI):
                 start_times = await redis.lrange(f"{crawl_id}:start:{name}", 0, -1)
                 end_times = await redis.lrange(f"{crawl_id}:end:{name}", 0, -1)
 
-                # Add current time as last end time if it was never set
-                if len(end_times) - len(start_times) == 1:
-                    end_times.append(datetime.strftime(datetime.now(), DATETIME_FORMAT))
+                for time_idx, start_time_str in enumerate(start_times):
+                    start_time = datetime.strptime(start_time_str, DATETIME_FORMAT)
 
-                if len(start_times) != len(end_times):
-                    # TODO: Handle this exception state
-                    print(
-                        "Warning: Start and end times array lengths differ", flush=True
-                    )
-
-                for time_idx, start_time in enumerate(start_times):
-                    start_time = datetime.strptime(start_time, DATETIME_FORMAT)
-                    end_time = datetime.strptime(end_times[time_idx], DATETIME_FORMAT)
+                    try:
+                        end_time = datetime.strptime(
+                            end_times[time_idx], DATETIME_FORMAT
+                        )
+                    except IndexError:
+                        print(
+                            f"Start time {start_time_str} has no corresponding end time, using current time",
+                            flush=True,
+                        )
+                        end_time = datetime.now()
 
                     duration = end_time - start_time
                     seconds = duration.total_seconds()
