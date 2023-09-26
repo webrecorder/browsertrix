@@ -65,7 +65,7 @@ class CollectionOps:
         name: str,
         crawl_ids: Optional[List[str]],
         description: Optional[str] = None,
-        isPublic: Optional[bool] = False,
+        is_public: Optional[bool] = False,
     ):
         """Add new collection"""
         crawl_ids = crawl_ids if crawl_ids else []
@@ -78,7 +78,7 @@ class CollectionOps:
             name=name,
             description=description,
             modified=modified,
-            isPublic=isPublic,
+            isPublic=is_public,
         )
         try:
             await self.collections.insert_one(coll.to_dict())
