@@ -473,19 +473,29 @@ class BtrixOperator(K8sAPI):
 
         return self.load_from_yaml("crawler.yaml", params)
 
-    async def set_crawler_end_time_in_redis(self, crawl_id, name, end_time, redis):
-        """set end time in redis for crashed crawler pod"""
+    async def set_crawler_end_time_in_redis(self, crawl_id, name, restart_time, redis):
+        """set end time in redis for crashed crawler pod if necessary"""
         if not redis:
             return
 
+        # Determine if crawler pod already set new start time after restart
+        expected_list_difference = 0
+        latest_start_time_list = await redis.lrange(f"{crawl_id}:start:{name}", -1, -1)
+        latest_start_time = latest_start_time_list[0]
+        if latest_start_time > restart_time:
+            expected_list_difference = 1
+
         try:
-            # Ensure end time wasn't already added by crawler
             start_times_length = await redis.llen(f"{crawl_id}:start:{name}")
             end_times_length = await redis.llen(f"{crawl_id}:end:{name}")
-            if start_times_length == end_times_length:
-                return
 
-            await redis.rpush(f"{crawl_id}:end:{name}", end_time)
+            if (start_times_length - end_times_length) > expected_list_difference:
+                # pylint: disable=line-too-long
+                print(
+                    f"Setting end time for crashed crawler pod {name} to last restart time",
+                    flush=True,
+                )
+                await redis.rpush(f"{crawl_id}:end:{name}", restart_time)
 
         # pylint: disable=broad-except
         except Exception as err:
@@ -1197,6 +1207,7 @@ class BtrixOperator(K8sAPI):
                             end_times[time_idx], DATETIME_FORMAT
                         )
                     except IndexError:
+                        # pylint: disable=line-too-long
                         print(
                             f"Start time {start_time_str} has no corresponding end time, using current time",
                             flush=True,
