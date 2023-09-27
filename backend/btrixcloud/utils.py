@@ -28,6 +28,17 @@ def to_k8s_date(dt_val):
     return dt_val.isoformat("T") + "Z"
 
 
+def from_timestamp_str(string):
+    """convert iso date string with or without milliseconds to datetime"""
+    DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+    DATETIME_FORMAT_NO_MS = "%Y-%m-%dT%H:%M:%SZ"
+    for dt_format in (DATETIME_FORMAT, DATETIME_FORMAT_NO_MS):
+        try:
+            return datetime.strptime(string, dt_format)
+        except ValueError:
+            pass
+
+
 def dt_now():
     """get current ts"""
     return datetime.utcnow().replace(microsecond=0, tzinfo=None)

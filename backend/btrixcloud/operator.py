@@ -24,6 +24,7 @@ from kubernetes.utils import parse_quantity
 from .utils import (
     from_k8s_date,
     to_k8s_date,
+    from_timestamp_str,
     dt_now,
     get_redis_crawl_stats,
 )
@@ -476,6 +477,7 @@ class BtrixOperator(K8sAPI):
     async def set_crawler_end_time_in_redis(self, crawl_id, name, restart_time, redis):
         """set end time in redis for crashed crawler pod if necessary"""
         if not redis:
+            print("redis not available to set crawler end time", flush=True)
             return
 
         # Determine if crawler pod already set new start time after restart
@@ -483,11 +485,16 @@ class BtrixOperator(K8sAPI):
         latest_start_time_list = await redis.lrange(f"{crawl_id}:start:{name}", -1, -1)
         latest_start_time = latest_start_time_list[0]
         if latest_start_time > restart_time:
+            print(f"Crawler {name} set new start time since last restart", flush=True)
             expected_list_difference = 1
 
         try:
             start_times_length = await redis.llen(f"{crawl_id}:start:{name}")
+            print(
+                f"Crawler {name} start times length: {start_times_length}", flush=True
+            )
             end_times_length = await redis.llen(f"{crawl_id}:end:{name}")
+            print(f"Crawler {name} end times length: {end_times_length}", flush=True)
 
             if (start_times_length - end_times_length) > expected_list_difference:
                 # pylint: disable=line-too-long
@@ -886,6 +893,10 @@ class BtrixOperator(K8sAPI):
                         crash_time = terminated.get("finishedAt")
                         pod_status = status.podStatus[name]
                         pod_status.isNewCrash = pod_status.crashTime != crash_time
+                        print(
+                            f"pod {name} isNewCrash: {pod_status.isNewCrash}",
+                            flush=True,
+                        )
                         pod_status.crashTime = crash_time
 
                         # detect reason
@@ -958,6 +969,12 @@ class BtrixOperator(K8sAPI):
         for name, pod in pod_status.items():
             if not pod.isNewCrash:
                 continue
+
+            print(f"pod {name} that crashed:", flush=True)
+            print(pod, flush=True)
+
+            if not redis:
+                print("no redis avialable", flush=True)
 
             log = self.get_log_line(
                 "Crawler Instance Crashed", {"reason": pod.reason, "pod": name}
@@ -1178,9 +1195,10 @@ class BtrixOperator(K8sAPI):
 
     async def compute_execution_time(self, crawl_id, oid, crawl=None):
         """Compute execution time for crawl from start and end times in redis"""
-        # pylint: disable=invalid-name
-        DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
         redis = None
+
+        print("Computing execution time", flush=True)
+
         try:
             redis_url = self.get_redis_url(crawl_id)
             redis = await self._get_redis(redis_url)
@@ -1199,13 +1217,16 @@ class BtrixOperator(K8sAPI):
                 start_times = await redis.lrange(f"{crawl_id}:start:{name}", 0, -1)
                 end_times = await redis.lrange(f"{crawl_id}:end:{name}", 0, -1)
 
-                for time_idx, start_time_str in enumerate(start_times):
-                    start_time = datetime.strptime(start_time_str, DATETIME_FORMAT)
+                print(f"Crawler {name} start times:", flush=True)
+                print(start_times, flush=True)
 
+                print(f"Crawler {name} end times:", flush=True)
+                print(end_times, flush=True)
+
+                for time_idx, start_time_str in enumerate(start_times):
+                    start_time = from_timestamp_str(start_time_str)
                     try:
-                        end_time = datetime.strptime(
-                            end_times[time_idx], DATETIME_FORMAT
-                        )
+                        end_time = from_timestamp_str(end_times[time_idx])
                     except IndexError:
                         # pylint: disable=line-too-long
                         print(
@@ -1216,15 +1237,19 @@ class BtrixOperator(K8sAPI):
 
                     duration = end_time - start_time
                     seconds = duration.total_seconds()
+                    print(f"Seconds used in {name}: {seconds}", flush=True)
 
                     # Round up to nearest int
                     execution_secs += math.ceil(seconds)
 
+            print(
+                f"Adding {executation_secs} total execution seconds to db", flush=True
+            )
             await self.crawl_ops.add_execution_seconds(crawl_id, oid, execution_secs)
 
         # pylint: disable=broad-exception-caught
         except Exception as err:
-            # likely redis has already been deleted, so nothing to do
+            # likely redis has already bexen deleted, so nothing to do
             print(f"Error computing execution time: {err}", flush=True)
         finally:
             if redis:
