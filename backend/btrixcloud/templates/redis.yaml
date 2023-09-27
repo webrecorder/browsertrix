@@ -26,7 +26,7 @@ spec:
 # --------
 # REDIS
 # --------
-{% if init_redis %}
+{% if init_redis and not do_restart %}
 ---
 apiVersion: v1
 kind: Pod
@@ -103,11 +103,11 @@ spec:
 
       resources:
         limits:
-          memory: {{ redis_memory }}
+          memory: {{ memory }}
 
         requests:
-          cpu: {{ redis_cpu }}
-          memory: {{ redis_memory }}
+          cpu: {{ cpu }}
+          memory: {{ memory }}
 
       readinessProbe:
         initialDelaySeconds: 10
