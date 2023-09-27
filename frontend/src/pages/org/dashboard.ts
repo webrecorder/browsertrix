@@ -79,7 +79,7 @@ export class Dashboard extends LiteElement {
         >
           <sl-button slot="trigger" size="small" caret>
             <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-            ${msg("Add New...")}
+            ${msg("Create New...")}
           </sl-button>
           <sl-menu>
             <sl-menu-item value="workflow"
