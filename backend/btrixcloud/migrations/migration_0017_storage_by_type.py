@@ -54,11 +54,16 @@ class Migration(BaseMigration):
                 if profile_file:
                     bytes_stored_profiles += profile_file.get("size", 0)
 
+            org_total_bytes = (
+                bytes_stored_crawls + bytes_stored_uploads + bytes_stored_profiles
+            )
+
             try:
                 res = await mdb_orgs.find_one_and_update(
                     {"_id": oid},
                     {
                         "$set": {
+                            "bytesStored": org_total_bytes,
                             "bytesStoredCrawls": bytes_stored_crawls,
                             "bytesStoredUploads": bytes_stored_uploads,
                             "bytesStoredProfiles": bytes_stored_profiles,
