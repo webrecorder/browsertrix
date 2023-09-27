@@ -1242,9 +1242,7 @@ class BtrixOperator(K8sAPI):
                     # Round up to nearest int
                     execution_secs += math.ceil(seconds)
 
-            print(
-                f"Adding {executation_secs} total execution seconds to db", flush=True
-            )
+            print(f"Adding {execution_secs} total execution seconds to db", flush=True)
             await self.crawl_ops.add_execution_seconds(crawl_id, oid, execution_secs)
 
         # pylint: disable=broad-exception-caught
