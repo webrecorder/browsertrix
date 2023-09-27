@@ -12,9 +12,10 @@ import type { SelectNewDialogEvent } from "./index";
 
 type Metrics = {
   storageUsedBytes: number;
-  storageUsedGB: number;
+  storageUsedCrawls: number;
+  storageUsedUploads: number;
+  storageUsedProfiles: number;
   storageQuotaBytes: number;
-  storageQuotaGB: number;
   archivedItemCount: number;
   crawlCount: number;
   uploadCount: number;
@@ -26,6 +27,7 @@ type Metrics = {
   collectionsCount: number;
   publicCollectionsCount: number;
 };
+const BYTES_PER_GB = 1e9;
 
 @localized()
 export class Dashboard extends LiteElement {
@@ -40,6 +42,13 @@ export class Dashboard extends LiteElement {
 
   @state()
   private metrics?: Metrics;
+
+  private readonly colors = {
+    default: "neutral",
+    crawls: "green",
+    uploads: "sky",
+    browserProfiles: "indigo",
+  };
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("orgId")) {
@@ -69,36 +78,59 @@ export class Dashboard extends LiteElement {
           ${this.renderCard(
             msg("Storage"),
             (metrics) => html`
-              <div class="font-semibold mb-3">
-                <sl-format-bytes
-                  value=${metrics.storageUsedBytes ?? 0}
-                ></sl-format-bytes>
-                ${msg("Used")}
-              </div>
+              ${when(metrics.storageQuotaBytes, () =>
+                this.renderStorageMeter(metrics)
+              )}
               <dl>
-                ${this.renderStat({
-                  value: metrics.archivedItemCount,
-                  singleLabel: msg("Archived Item"),
-                  pluralLabel: msg("Archived Items"),
-                  iconProps: { name: "file-zip-fill" },
-                })}
+                ${when(
+                  !metrics.storageQuotaBytes,
+                  () => html`
+                    ${this.renderStat({
+                      value: html`<sl-format-bytes
+                        value=${metrics.storageUsedBytes ?? 0}
+                        display="narrow"
+                      ></sl-format-bytes>`,
+                      singleLabel: msg("of Data Stored"),
+                      pluralLabel: msg("of Data Stored"),
+                      iconProps: { name: "device-hdd-fill" },
+                    })}
+                    <sl-divider
+                      style="--spacing:var(--sl-spacing-small)"
+                    ></sl-divider>
+                  `
+                )}
                 ${this.renderStat({
                   value: metrics.crawlCount,
                   singleLabel: msg("Crawl"),
                   pluralLabel: msg("Crawls"),
-                  iconProps: { name: "gear-wide-connected" },
+                  iconProps: {
+                    name: "gear-wide-connected",
+                    color: this.colors.crawls,
+                  },
                 })}
                 ${this.renderStat({
                   value: metrics.uploadCount,
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
-                  iconProps: { name: "upload" },
+                  iconProps: { name: "upload", color: this.colors.uploads },
                 })}
                 ${this.renderStat({
                   value: metrics.profileCount,
                   singleLabel: msg("Browser Profile"),
                   pluralLabel: msg("Browser Profiles"),
-                  iconProps: { name: "window-fullscreen" },
+                  iconProps: {
+                    name: "window-fullscreen",
+                    color: this.colors.browserProfiles,
+                  },
+                })}
+                <sl-divider
+                  style="--spacing:var(--sl-spacing-small)"
+                ></sl-divider>
+                ${this.renderStat({
+                  value: metrics.archivedItemCount,
+                  singleLabel: msg("Archived Item"),
+                  pluralLabel: msg("Archived Items"),
+                  iconProps: { name: "file-zip-fill" },
                 })}
               </dl>
             `,
@@ -141,13 +173,17 @@ export class Dashboard extends LiteElement {
                   value: metrics.workflowsRunningCount,
                   singleLabel: msg("Crawl Running"),
                   pluralLabel: msg("Crawls Running"),
-                  iconProps: { name: "dot", library: "app" },
+                  iconProps: {
+                    name: "dot",
+                    library: "app",
+                    color: metrics.workflowsRunningCount ? "green" : "neutral",
+                  },
                 })}
                 ${this.renderStat({
                   value: metrics.workflowsQueuedCount,
                   singleLabel: msg("Crawl Workflow Waiting"),
                   pluralLabel: msg("Crawl Workflows Waiting"),
-                  iconProps: { name: "hourglass-split" },
+                  iconProps: { name: "hourglass-split", color: "purple" },
                 })}
                 ${this.renderStat({
                   value: metrics.pageCount,
@@ -185,7 +221,7 @@ export class Dashboard extends LiteElement {
                   value: metrics.publicCollectionsCount,
                   singleLabel: msg("Shareable Collection"),
                   pluralLabel: msg("Shareable Collections"),
-                  iconProps: { name: "people-fill" },
+                  iconProps: { name: "people-fill", color: "emerald" },
                 })}
               </dl>
             `,
@@ -205,6 +241,104 @@ export class Dashboard extends LiteElement {
           )}
         </div>
       </main> `;
+  }
+
+  private renderStorageMeter(metrics: Metrics) {
+    // Account for usage that exceeds max
+    const maxBytes = Math.max(
+      metrics.storageUsedBytes,
+      metrics.storageQuotaBytes
+    );
+    const isStorageFull = metrics.storageUsedBytes >= metrics.storageQuotaBytes;
+    const renderBar = (value: number, label: string, color: string) => html`
+      <btrix-meter-bar
+        value=${(value / metrics.storageUsedBytes) * 100}
+        style="--background-color:var(--sl-color-${color}-400)"
+      >
+        <div class="text-center">
+          <div>${label}</div>
+          <div class="text-xs opacity-80">
+            <sl-format-bytes value=${value} display="narrow"></sl-format-bytes>
+            | ${this.renderPercentage(value / metrics.storageUsedBytes)}
+          </div>
+        </div>
+      </btrix-meter-bar>
+    `;
+    return html`
+      <div class="font-semibold mb-1">
+        ${when(
+          isStorageFull,
+          () => html`
+            <div class="flex gap-2 items-center">
+              <sl-icon
+                class="text-danger"
+                name="exclamation-triangle"
+              ></sl-icon>
+              <span>${msg("Storage is Full")}</span>
+            </div>
+          `,
+          () => html`
+            <sl-format-bytes
+              value=${maxBytes - metrics.storageUsedBytes}
+            ></sl-format-bytes>
+            ${msg("Available")}
+          `
+        )}
+      </div>
+      <div class="mb-2">
+        <btrix-meter
+          value=${metrics.storageUsedBytes}
+          max=${maxBytes}
+          valueText=${msg("gigabyte")}
+        >
+          ${when(metrics.storageUsedCrawls, () =>
+            renderBar(
+              metrics.storageUsedCrawls,
+              msg("Crawls"),
+              this.colors.crawls
+            )
+          )}
+          ${when(metrics.storageUsedUploads, () =>
+            renderBar(
+              metrics.storageUsedUploads,
+              msg("Uploads"),
+              this.colors.uploads
+            )
+          )}
+          ${when(metrics.storageUsedProfiles, () =>
+            renderBar(
+              metrics.storageUsedProfiles,
+              msg("Profiles"),
+              this.colors.browserProfiles
+            )
+          )}
+          <div slot="available" class="flex-1">
+            <sl-tooltip>
+              <div slot="content">
+                <div>${msg("Available")}</div>
+                <div class="text-xs opacity-80">
+                  ${this.renderPercentage(
+                    (metrics.storageQuotaBytes - metrics.storageUsedBytes) /
+                      metrics.storageQuotaBytes
+                  )}
+                </div>
+              </div>
+              <div class="w-full h-full"></div>
+            </sl-tooltip>
+          </div>
+          <sl-format-bytes
+            slot="valueLabel"
+            value=${metrics.storageUsedBytes}
+            display="narrow"
+          ></sl-format-bytes>
+          <sl-format-bytes
+            slot="maxLabel"
+            value=${metrics.storageQuotaBytes}
+            display="narrow"
+          ></sl-format-bytes>
+        </btrix-meter>
+      </div>
+    `;
   }
 
   private renderCard(
@@ -233,24 +367,35 @@ export class Dashboard extends LiteElement {
   }
 
   private renderStat(stat: {
-    value: number;
+    value: number | string | TemplateResult;
     singleLabel: string;
     pluralLabel: string;
-    iconProps: { name: string; library?: string };
+    iconProps: { name: string; library?: string; color?: string };
   }) {
+    const { value, iconProps } = stat;
     return html`
       <div class="flex items-center mb-2 last:mb-0">
         <sl-icon
           class="text-base text-neutral-500 mr-2"
-          name=${stat.iconProps.name}
-          library=${ifDefined(stat.iconProps.library)}
+          name=${iconProps.name}
+          library=${ifDefined(iconProps.library)}
+          style="color:var(--sl-color-${iconProps.color ||
+          this.colors.default}-500)"
         ></sl-icon>
         <dt class="order-last">
-          ${stat.value === 1 ? stat.singleLabel : stat.pluralLabel}
+          ${value === 1 ? stat.singleLabel : stat.pluralLabel}
         </dt>
-        <dd class="mr-1">${stat.value.toLocaleString()}</dd>
+        <dd class="mr-1">
+          ${typeof value === "number" ? value.toLocaleString() : value}
+        </dd>
       </div>
     `;
+  }
+
+  private renderPercentage(ratio: number) {
+    const percent = ratio * 100;
+    if (percent < 1) return `<1%`;
+    return `${percent.toFixed(2)}%`;
   }
 
   private async fetchMetrics() {

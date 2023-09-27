@@ -153,6 +153,10 @@ import("./code").then(({ Code }) => {
 import("./search-combobox").then(({ SearchCombobox }) => {
   customElements.define("btrix-search-combobox", SearchCombobox);
 });
+import("./meter").then(({ Meter, MeterBar }) => {
+  customElements.define("btrix-meter", Meter);
+  customElements.define("btrix-meter-bar", MeterBar);
+});
 customElements.define("btrix-alert", Alert);
 customElements.define("btrix-input", Input);
 customElements.define("btrix-time-input", TimeInput);
