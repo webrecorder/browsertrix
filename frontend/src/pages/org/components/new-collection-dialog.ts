@@ -130,7 +130,7 @@ export class NewCollectionDialog extends LiteElement {
           body: JSON.stringify({
             name,
             description,
-            public: Boolean(isPublic),
+            isPublic: Boolean(isPublic),
           }),
         }
       );
