@@ -130,7 +130,7 @@ export class WorkflowDetail extends LiteElement {
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Crawls"),
     watch: msg("Watch Crawl"),
-    logs: msg("Crawl Logs"),
+    logs: msg("Logs"),
     settings: msg("Workflow Settings"),
   };
 
@@ -502,6 +502,19 @@ export class WorkflowDetail extends LiteElement {
         >
           <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
           <span> ${msg("Edit Crawler Instances")} </span>
+        </sl-button>`;
+    }
+    if (this.activePanel === "logs") {
+      const authToken = this.authState!.headers.Authorization.split(" ")[1];
+      return html` <h3>${this.tabLabels[this.activePanel]}</h3>
+        <sl-button
+          href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
+          download=${`btrix-${this.lastCrawlId}-logs.txt`}
+          size="small"
+          ?disabled=${!this.logs?.total}
+        >
+          <sl-icon slot="prefix" name="download"></sl-icon>
+          ${msg("Download Logs")}
         </sl-button>`;
     }
 
@@ -1064,21 +1077,74 @@ export class WorkflowDetail extends LiteElement {
     return html`
       <div aria-live="polite" aria-busy=${this.isLoading}>
         ${when(
-          this.logs,
-          () => html`
-            <btrix-crawl-logs
-              .logs=${this.logs}
-              @page-change=${async (e: PageChangeEvent) => {
-                await this.fetchCrawlLogs({
-                  page: e.detail.page,
-                });
-                // Scroll to top of list
-                this.scrollIntoView();
-              }}
-            ></btrix-crawl-logs>
-          `
+          this.workflow?.isCrawlRunning,
+          () => html`<div class="mb-4">
+            <btrix-alert variant="success" class="text-sm">
+              ${msg(
+                html`Viewing logs for currently running crawl.
+                  <a
+                    href="${`${window.location.pathname}#watch`}"
+                    class="underline hover:no-underline"
+                    >Watch Crawl Progress</a
+                  >`
+              )}
+            </btrix-alert>
+          </div>`
+        )}
+        ${when(
+          this.lastCrawlId,
+          () =>
+            this.logs?.total
+              ? html`<btrix-crawl-logs
+                  .logs=${this.logs}
+                  @page-change=${async (e: PageChangeEvent) => {
+                    await this.fetchCrawlLogs({
+                      page: e.detail.page,
+                    });
+                    // Scroll to top of list
+                    this.scrollIntoView();
+                  }}
+                ></btrix-crawl-logs>`
+              : html`
+                  <div
+                    class="border rounded-lg p-4 flex flex-col items-center justify-center"
+                  >
+                    <p class="text-center text-neutral-400">
+                      ${msg("No logs found.")}
+                    </p>
+                  </div>
+                `,
+          () => this.renderNoCrawlLogs()
         )}
       </div>
+    `;
+  }
+
+  private renderNoCrawlLogs() {
+    return html`
+      <section
+        class="border rounded-lg p-4 h-56 min-h-max flex flex-col items-center justify-center"
+      >
+        <p class="font-medium text-base">
+          ${msg("Logs will show here after you run a crawl.")}
+        </p>
+        <div class="mt-4">
+          <sl-tooltip
+            content=${msg("Org Storage Full")}
+            ?disabled=${!this.orgStorageQuotaReached}
+          >
+            <sl-button
+              size="small"
+              variant="primary"
+              ?disabled=${this.orgStorageQuotaReached}
+              @click=${() => this.runNow()}
+            >
+              <sl-icon name="play" slot="prefix"></sl-icon>
+              ${msg("Run Crawl")}
+            </sl-button>
+          </sl-tooltip>
+        </div>
+      </section>
     `;
   }
 
@@ -1570,7 +1636,7 @@ export class WorkflowDetail extends LiteElement {
     params: Partial<APIPaginatedList> = {}
   ): Promise<void> {
     try {
-      this.logs = await this.getCrawlLogs(params);
+      this.logs = await this.getCrawlErrors(params);
     } catch {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl logs at this time."),
@@ -1580,7 +1646,7 @@ export class WorkflowDetail extends LiteElement {
     }
   }
 
-  private async getCrawlLogs(
+  private async getCrawlErrors(
     params: Partial<APIPaginatedList>
   ): Promise<APIPaginatedList> {
     const page = params.page || this.logs?.page || 1;
