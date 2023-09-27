@@ -134,10 +134,12 @@ class PodInfo(BaseModel):
 
     allocated: PodResources = PodResources()
     used: PodResources = PodResources()
-    # percent: PodResourcePercentage = PodResourcePercentage()
+
+    newCpu: Optional[int] = None
+    newMemory: Optional[int] = None
 
     # newAllocated: PodResources = PodResources()
-    force_restart: Optional[bool] = Field(default=False, exclude=True)
+    # force_restart: Optional[bool] = Field(default=False, exclude=True)
 
     def dict(self, *a, **kw):
         res = super().dict(*a, **kw)
@@ -172,6 +174,16 @@ class PodInfo(BaseModel):
             if self.allocated.storage
             else 0
         )
+
+    def should_restart_pod(self):
+        """return true if pod should be restarted"""
+        if self.newMemory and self.newMemory != self.allocated.memory:
+            return True
+
+        if self.newCpu and self.newCpu != self.allocated.cpu:
+            return True
+
+        return False
 
 
 # ============================================================================
@@ -381,7 +393,7 @@ class BtrixOperator(K8sAPI):
             )
 
             # auto sizing handled here
-            # self.handle_auto_size(crawl.id, status.podStatus)
+            self.handle_auto_size(crawl.id, status.podStatus)
 
             if status.finished:
                 return self.finalize_response(
@@ -390,7 +402,7 @@ class BtrixOperator(K8sAPI):
         else:
             status.scale = crawl.scale
 
-        children = self._load_redis(params, status)
+        children = self._load_redis(params, status, data.children)
 
         params["storage_name"] = configmap["STORAGE_NAME"]
         params["store_path"] = configmap["STORE_PATH"]
@@ -408,7 +420,7 @@ class BtrixOperator(K8sAPI):
             params["force_restart"] = False
 
         for i in range(0, status.scale):
-            children.extend(self._load_crawler(params, i, status))
+            children.extend(self._load_crawler(params, i, status, data.children))
 
         return {
             "status": status.dict(exclude_none=True, exclude={"resync_after": True}),
@@ -416,32 +428,34 @@ class BtrixOperator(K8sAPI):
             "resyncAfterSeconds": status.resync_after,
         }
 
-    def _load_redis(self, params, status):
+    def _load_redis(self, params, status, children):
         name = f"redis-{params['id']}"
+        has_pod = name in children[POD]
 
         pod_info = status.podStatus[name]
         params["name"] = name
-        params["cpu"] = pod_info.allocated.cpu or params.get("redis_cpu")
-        params["memory"] = pod_info.allocated.memory or params.get("redis_memory")
-        params["do_restart"] = pod_info.force_restart
-        if params.get("do_restart"):
-            pod_info.force_restart = False
+        params["cpu"] = pod_info.newCpu or params.get("redis_cpu")
+        params["memory"] = pod_info.newMemory or params.get("redis_memory")
+        restart = pod_info.should_restart_pod() and has_pod
+        if restart:
             print(f"Restart {name}")
 
-        params["init_redis"] = status.initRedis
+        params["init_redis"] = status.initRedis and not restart
 
         return self.load_from_yaml("redis.yaml", params)
 
-    def _load_crawler(self, params, i, status):
+    def _load_crawler(self, params, i, status, children):
         name = f"crawl-{params['id']}-{i}"
+        has_pod = name in children[POD]
 
         pod_info = status.podStatus[name]
         params["name"] = name
-        params["cpu"] = pod_info.allocated.cpu or params.get("crawler_cpu")
-        params["memory"] = pod_info.allocated.memory or params.get("crawler_memory")
-        params["do_restart"] = pod_info.force_restart or params.get("force_restart")
+        params["cpu"] = pod_info.newCpu or params.get("crawler_cpu")
+        params["memory"] = pod_info.newMemory or params.get("crawler_memory")
+        params["do_restart"] = (
+            pod_info.should_restart_pod() or params.get("force_restart")
+        ) and has_pod
         if params.get("do_restart"):
-            pod_info.force_restart = False
             print(f"Restart {name}")
 
         params["priorityClassName"] = f"crawl-instance-{i}"
@@ -665,7 +679,7 @@ class BtrixOperator(K8sAPI):
         if redis_pod in children[POD]:
             # if has other pods, keep redis pod until they are removed
             if len(children[POD]) > 1:
-                new_children = self._load_redis(params, status)
+                new_children = self._load_redis(params, status, children)
 
         # keep pvs until pods are removed
         if new_children:
@@ -832,7 +846,7 @@ class BtrixOperator(K8sAPI):
                         if terminated.get("reason") == "OOMKilled" or exit_code == 137:
                             pod_status.reason = "oom"
                         else:
-                            pod_status.reason = "interrupt: " + exit_code
+                            pod_status.reason = "interrupt: " + str(exit_code)
 
                 if role == "crawler":
                     crawler_running = crawler_running or running
@@ -876,17 +890,14 @@ class BtrixOperator(K8sAPI):
         """auto scale pods here, experimental"""
         for name, pod in pod_status.items():
             # if pod crashed due to OOM, increase mem
-            if pod.isNewCrash and pod.reason == "oom":
-                incr_mem = True
+            # if pod.isNewCrash and pod.reason == "oom":
+            #    pod.newMemory = int(float(pod.allocated.memory) * 1.2)
+            #    print(f"Resizing pod {name} -> mem {pod.newMemory} - OOM Detected")
 
             # if redis is using >0.90 of its memory, increase mem
-            if name.startswith("redis") and pod.get_memory_percentage() > 0.90:
-                incr_mem = True
-
-            if incr_mem:
-                pod.allocated.memory = int(float(pod.allocated.memory) * 1.2)
-                pod.force_restart = True
-                print(f"Resizing pod {name} to memory {pod.allocated.memory}")
+            if name.startswith("redis") and pod.get_percent_memory() > 0.90:
+                pod.newMemory = int(float(pod.allocated.memory) * 1.2)
+                print(f"Resizing pod {name} -> mem {pod.newMemory} - Redis Capacity")
 
     async def log_crashes(self, crawl_id, pod_status, redis):
         """report/log any pod crashes here"""

@@ -26,7 +26,7 @@ spec:
 # --------
 # REDIS
 # --------
-{% if init_redis and not do_restart %}
+{% if init_redis %}
 ---
 apiVersion: v1
 kind: Pod
