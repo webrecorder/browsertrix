@@ -62,6 +62,9 @@ export class NewCollectionDialog extends LiteElement {
             maxlength=${4000}
           ></btrix-markdown-editor>
         </fieldset>
+        <label>
+          <sl-switch name="isPublic"> ${msg("Publicly Accessible")} </sl-switch>
+        </label>
         <input class="invisible h-0 w-0" type="submit" />
       </form>
       <div slot="footer" class="flex gap-3 items-center justify-end">
@@ -116,7 +119,7 @@ export class NewCollectionDialog extends LiteElement {
       return;
     }
 
-    const { name, description } = serialize(form);
+    const { name, description, isPublic } = serialize(form);
     this.isSubmitting = true;
     try {
       const data = await this.apiFetch(
@@ -127,6 +130,7 @@ export class NewCollectionDialog extends LiteElement {
           body: JSON.stringify({
             name,
             description,
+            public: Boolean(isPublic),
           }),
         }
       );
