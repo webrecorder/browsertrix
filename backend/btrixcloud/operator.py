@@ -137,6 +137,7 @@ class PodInfo(BaseModel):
     crashTime: Optional[str] = None
     isNewCrash: Optional[bool] = Field(default=None, exclude=True)
     reason: Optional[str] = None
+    restartCount: int = 0
 
     allocated: PodResources = PodResources()
     used: PodResources = PodResources()
@@ -893,8 +894,13 @@ class BtrixOperator(K8sAPI):
                         crash_time = terminated.get("finishedAt")
                         pod_status = status.podStatus[name]
                         pod_status.isNewCrash = pod_status.crashTime != crash_time
+                        pod_status.restartCount += 1
                         print(
                             f"pod {name} isNewCrash: {pod_status.isNewCrash}",
+                            flush=True,
+                        )
+                        print(
+                            f"pod {name} restart count: {pod_status.restartCount}",
                             flush=True,
                         )
                         pod_status.crashTime = crash_time
@@ -1209,7 +1215,7 @@ class BtrixOperator(K8sAPI):
             if crawl:
                 scale = crawl.scale
 
-            execution_secs = 0
+            execution_time = 0.0
 
             for i in range(scale):
                 name = f"crawl-{crawl_id}-{i}"
@@ -1223,10 +1229,10 @@ class BtrixOperator(K8sAPI):
                 print(f"Crawler {name} end times:", flush=True)
                 print(end_times, flush=True)
 
-                for time_idx, start_time_str in enumerate(start_times):
+                for i, start_time_str in enumerate(start_times):
                     start_time = from_timestamp_str(start_time_str)
                     try:
-                        end_time = from_timestamp_str(end_times[time_idx])
+                        end_time = from_timestamp_str(end_times[i])
                     except IndexError:
                         # pylint: disable=line-too-long
                         print(
@@ -1237,12 +1243,17 @@ class BtrixOperator(K8sAPI):
 
                     duration = end_time - start_time
                     seconds = duration.total_seconds()
-                    print(f"Seconds used in {name}: {seconds}", flush=True)
+                    print(
+                        f"Seconds used in crawling session {i+1}: {seconds}", flush=True
+                    )
+                    execution_time += seconds
 
-                    # Round up to nearest int
-                    execution_secs += math.ceil(seconds)
-
-            print(f"Adding {execution_secs} total execution seconds to db", flush=True)
+            execution_secs = math.ceil(execution_time)
+            # pylint: disable=line-too-long
+            print(
+                f"Adding {execution_secs} (rounded up from {execution_time}) total execution seconds to db",
+                flush=True,
+            )
             await self.crawl_ops.add_execution_seconds(crawl_id, oid, execution_secs)
 
         # pylint: disable=broad-exception-caught
