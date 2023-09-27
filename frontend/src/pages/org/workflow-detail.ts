@@ -30,6 +30,7 @@ type Tab = (typeof SECTIONS)[number];
 const DEFAULT_SECTION: Tab = "crawls";
 const POLL_INTERVAL_SECONDS = 10;
 const ABORT_REASON_CANCLED = "canceled";
+const LOGS_PAGE_SIZE = 50;
 
 /**
  * Usage:
@@ -172,12 +173,11 @@ export class WorkflowDetail extends LiteElement {
     if (changedProperties.has("isEditing") && this.isEditing) {
       this.stopPoll();
     }
-    if (
-      changedProperties.get("lastCrawlId") &&
-      !this.lastCrawlId &&
-      this.activePanel === "watch"
-    ) {
-      this.handleCrawlRunEnd();
+    if (changedProperties.has("lastCrawlId")) {
+      if (this.lastCrawlId) {
+        this.logs = undefined;
+        this.fetchCrawlLogs();
+      }
     }
     if (
       !this.isEditing &&
@@ -272,7 +272,6 @@ export class WorkflowDetail extends LiteElement {
 
       if (this.lastCrawlId) {
         this.fetchCurrentCrawlStats();
-        this.fetchCrawlLogs();
       }
       // TODO: Check if storage quota has been exceeded here by running
       // crawl??
@@ -1000,6 +999,7 @@ export class WorkflowDetail extends LiteElement {
             ></btrix-screencast>
           </div>
 
+          <section class="mt-4">${this.renderCrawlErrors()}</section>
           <section class="mt-8">${this.renderExclusions()}</section>
 
           <btrix-dialog
@@ -1148,10 +1148,39 @@ export class WorkflowDetail extends LiteElement {
     `;
   }
 
+  private renderCrawlErrors() {
+    return html`
+      <sl-details summary="Toggle Me">
+        <h3
+          slot="summary"
+          class="leading-none text font-semibold flex items-center gap-2"
+        >
+          ${msg("Error Logs")}
+          <btrix-badge variant=${this.logs?.total ? "danger" : "neutral"}
+            >${this.logs?.total
+              ? this.logs?.total.toLocaleString()
+              : 0}</btrix-badge
+          >
+        </h3>
+        <btrix-crawl-logs .logs=${this.logs}></btrix-crawl-logs>
+        ${when(
+          this.logs?.total && this.logs.total > LOGS_PAGE_SIZE,
+          () => html`
+            <p class="text-xs text-neutral-500 my-4">
+              ${msg(
+                str`Displaying latest ${LOGS_PAGE_SIZE.toLocaleString()} errors of ${this.logs!.total.toLocaleString()}.`
+              )}
+            </p>
+          `
+        )}
+      </sl-details>
+    `;
+  }
+
   private renderExclusions() {
     return html`
       <header class="flex items-center justify-between">
-        <h3 class="leading-none text-lg font-semibold mb-2">
+        <h3 class="leading-none text-base font-semibold mb-2">
           ${msg("Crawl URLs")}
         </h3>
         <sl-button
@@ -1650,7 +1679,7 @@ export class WorkflowDetail extends LiteElement {
     params: Partial<APIPaginatedList>
   ): Promise<APIPaginatedList> {
     const page = params.page || this.logs?.page || 1;
-    const pageSize = params.pageSize || this.logs?.pageSize || 50;
+    const pageSize = params.pageSize || this.logs?.pageSize || LOGS_PAGE_SIZE;
 
     const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.orgId}/crawls/${

@@ -816,6 +816,7 @@ ${this.crawl?.description}
             ? html`
                 <btrix-crawl-logs
                   .logs=${this.logs}
+                  paginate
                   @page-change=${async (e: PageChangeEvent) => {
                     await this.fetchCrawlLogs({
                       page: e.detail.page,
