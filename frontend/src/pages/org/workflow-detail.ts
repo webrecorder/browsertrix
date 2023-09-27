@@ -23,8 +23,9 @@ import { humanizeSchedule, humanizeNextDate } from "../../utils/cron";
 import { APIPaginatedList } from "../../types/api";
 import { inactiveCrawlStates, isActive } from "../../utils/crawler";
 import { SlSelect } from "@shoelace-style/shoelace";
+import type { PageChangeEvent } from "../../components/pagination";
 
-const SECTIONS = ["crawls", "watch", "settings"] as const;
+const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];
 const DEFAULT_SECTION: Tab = "crawls";
 const POLL_INTERVAL_SECONDS = 10;
@@ -72,6 +73,9 @@ export class WorkflowDetail extends LiteElement {
 
   @state()
   private crawls?: APIPaginatedList; // Only inactive crawls
+
+  @state()
+  private logs?: APIPaginatedList;
 
   @state()
   private lastCrawlId: Workflow["lastCrawlId"] = null;
@@ -126,6 +130,7 @@ export class WorkflowDetail extends LiteElement {
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Crawls"),
     watch: msg("Watch Crawl"),
+    logs: msg("Crawl Logs"),
     settings: msg("Workflow Settings"),
   };
 
@@ -264,8 +269,10 @@ export class WorkflowDetail extends LiteElement {
       this.workflow = await this.getWorkflowPromise;
       this.lastCrawlId = this.workflow.lastCrawlId;
       this.lastCrawlStartTime = this.workflow.lastCrawlStartTime;
+
       if (this.lastCrawlId) {
         this.fetchCurrentCrawlStats();
+        this.fetchCrawlLogs();
       }
       // TODO: Check if storage quota has been exceeded here by running
       // crawl??
@@ -428,9 +435,8 @@ export class WorkflowDetail extends LiteElement {
         </header>
       </btrix-observable>
 
-      ${this.renderTab("crawls")}
-      ${this.renderTab("watch", { disabled: !this.lastCrawlId })}
-      ${this.renderTab("settings")}
+      ${this.renderTab("crawls")} ${this.renderTab("watch")}
+      ${this.renderTab("logs")} ${this.renderTab("settings")}
 
       <btrix-tab-panel name="crawls">${this.renderCrawls()}</btrix-tab-panel>
       <btrix-tab-panel name="watch">
@@ -449,6 +455,7 @@ export class WorkflowDetail extends LiteElement {
           )
         )}
       </btrix-tab-panel>
+      <btrix-tab-panel name="logs">${this.renderLogs()}</btrix-tab-panel>
       <btrix-tab-panel name="settings">
         ${this.renderSettings()}
       </btrix-tab-panel>
@@ -1053,6 +1060,28 @@ export class WorkflowDetail extends LiteElement {
     `;
   }
 
+  private renderLogs() {
+    return html`
+      <div aria-live="polite" aria-busy=${this.isLoading}>
+        ${when(
+          this.logs,
+          () => html`
+            <btrix-crawl-logs
+              .logs=${this.logs}
+              @page-change=${async (e: PageChangeEvent) => {
+                await this.fetchCrawlLogs({
+                  page: e.detail.page,
+                });
+                // Scroll to top of list
+                this.scrollIntoView();
+              }}
+            ></btrix-crawl-logs>
+          `
+        )}
+      </div>
+    `;
+  }
+
   private renderExclusions() {
     return html`
       <header class="flex items-center justify-between">
@@ -1535,6 +1564,36 @@ export class WorkflowDetail extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  private async fetchCrawlLogs(
+    params: Partial<APIPaginatedList> = {}
+  ): Promise<void> {
+    try {
+      this.logs = await this.getCrawlLogs(params);
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve crawl logs at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getCrawlLogs(
+    params: Partial<APIPaginatedList>
+  ): Promise<APIPaginatedList> {
+    const page = params.page || this.logs?.page || 1;
+    const pageSize = params.pageSize || this.logs?.pageSize || 50;
+
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/crawls/${
+        this.workflow!.lastCrawlId
+      }/errors?page=${page}&pageSize=${pageSize}`,
+      this.authState!
+    );
+
+    return data;
   }
 }
 
