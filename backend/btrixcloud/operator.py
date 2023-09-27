@@ -894,7 +894,8 @@ class BtrixOperator(K8sAPI):
                         crash_time = terminated.get("finishedAt")
                         pod_status = status.podStatus[name]
                         pod_status.isNewCrash = pod_status.crashTime != crash_time
-                        pod_status.restartCount += 1
+                        if pod_status.isNewCrash:
+                            pod_status.restartCount += 1
                         print(
                             f"pod {name} isNewCrash: {pod_status.isNewCrash}",
                             flush=True,
@@ -1254,7 +1255,7 @@ class BtrixOperator(K8sAPI):
                 f"Adding {execution_secs} (rounded up from {execution_time}) total execution seconds to db",
                 flush=True,
             )
-            await self.crawl_ops.add_execution_seconds(crawl_id, oid, execution_secs)
+            await self.crawl_ops.inc_execution_seconds(crawl_id, oid, execution_secs)
 
         # pylint: disable=broad-exception-caught
         except Exception as err:
