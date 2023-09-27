@@ -314,13 +314,16 @@ export class Dashboard extends LiteElement {
           )}
           <div slot="available" class="flex-1">
             <sl-tooltip>
-              <div slot="content" class="text-xs opacity-80">
-                ${this.renderPercentage(
-                  (metrics.storageQuotaBytes - metrics.storageUsedBytes) /
-                    metrics.storageQuotaBytes
-                )}
+              <div slot="content">
+                <div>${msg("Available")}</div>
+                <div class="text-xs opacity-80">
+                  ${this.renderPercentage(
+                    (metrics.storageQuotaBytes - metrics.storageUsedBytes) /
+                      metrics.storageQuotaBytes
+                  )}
+                </div>
               </div>
-              <div class="w-full h-full" role="none"></div>
+              <div class="w-full h-full"></div>
             </sl-tooltip>
           </div>
           <sl-format-bytes
