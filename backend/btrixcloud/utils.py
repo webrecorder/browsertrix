@@ -30,13 +30,16 @@ def to_k8s_date(dt_val):
 
 def from_timestamp_str(string):
     """convert iso date string with or without milliseconds to datetime"""
-    DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
-    DATETIME_FORMAT_NO_MS = "%Y-%m-%dT%H:%M:%SZ"
-    for dt_format in (DATETIME_FORMAT, DATETIME_FORMAT_NO_MS):
+    dt: Optional[datetime] = None
+    datetime_format = "%Y-%m-%dT%H:%M:%S.%fZ"
+    datetime_format_no_ms = "%Y-%m-%dT%H:%M:%SZ"
+    for dt_format in (datetime_format, datetime_format_no_ms):
         try:
-            return datetime.strptime(string, dt_format)
+            dt = datetime.strptime(string, dt_format)
+            break
         except ValueError:
             pass
+    return dt
 
 
 def dt_now():
