@@ -22,6 +22,7 @@ const FILTER_BY_CURRENT_USER_STORAGE_KEY =
 const INITIAL_PAGE_SIZE = 10;
 const POLL_INTERVAL_SECONDS = 10;
 const ABORT_REASON_THROTTLE = "throttled";
+// NOTE Backend pagination max is 1000
 const SEEDS_MAX = 1000;
 
 const sortableFields: Record<
@@ -641,7 +642,6 @@ export class WorkflowsList extends LiteElement {
       }
     );
 
-    // TODO handle more than 1000 seeds
     if (seeds.total > SEEDS_MAX) {
       this.notify({
         title: msg(str`Partially copied Workflow`),
@@ -838,6 +838,7 @@ export class WorkflowsList extends LiteElement {
   }
 
   private async getSeeds(workflow: ListWorkflow): Promise<APIPaginatedList> {
+    // NOTE Returns first 1000 seeds (backend pagination max)
     const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/seeds`,
       this.authState!

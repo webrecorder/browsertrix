@@ -898,6 +898,7 @@ ${this.crawl?.description}
   }
 
   private async getSeeds(): Promise<APIPaginatedList> {
+    // NOTE Returns first 1000 seeds (backend pagination max)
     const data: APIPaginatedList = await this.apiFetch(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/seeds`,
       this.authState!
