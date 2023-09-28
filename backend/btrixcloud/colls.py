@@ -322,9 +322,7 @@ class CollectionOps:
         total_size = 0
         tags = []
 
-        cursor = self.crawls.find({"collectionIds": collection_id})
-        crawls = await cursor.to_list(length=10_000)
-        for crawl in crawls:
+        async for crawl in self.crawls.find({"collectionIds": collection_id}):
             if crawl["state"] not in SUCCESSFUL_STATES:
                 continue
             crawl_count += 1

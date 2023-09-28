@@ -23,11 +23,7 @@ class Migration(BaseMigration):
         # pylint: disable=duplicate-code
         crawls = self.mdb["crawls"]
 
-        crawls_to_update = [res async for res in crawls.find({})]
-        if not crawls_to_update:
-            return
-
-        for crawl in crawls_to_update:
+        async for crawl in crawls.find({}):
             crawl_id = crawl["_id"]
             try:
                 await recompute_crawl_file_count_and_size(crawls, crawl_id)
