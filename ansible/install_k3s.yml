@@ -28,3 +28,4 @@
   roles:
     - role: btrix/prereq # Only required if you wish to install & configure Helm / Kubectl
     - role: btrix/install
+    - role: btrix/deploy
