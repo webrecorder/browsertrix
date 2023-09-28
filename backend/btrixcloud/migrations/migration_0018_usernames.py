@@ -31,8 +31,7 @@ class Migration(BaseMigration):
         invites = init_invites(self.mdb, email)
         user_manager = init_user_manager(self.mdb, email, invites)
 
-        crawls = [res async for res in mdb_crawls.find({})]
-        for crawl in crawls:
+        async for crawl in mdb_crawls.find({}):
             crawl_id = crawl["_id"]
             if crawl.get("userName"):
                 continue
@@ -48,8 +47,7 @@ class Migration(BaseMigration):
                     f"Unable to update userName for crawl {crawl_id}: {err}", flush=True
                 )
 
-        configs = [res async for res in mdb_configs.find({})]
-        for config in configs:
+        async for config in mdb_configs.find({}):
             cid = config["_id"]
             if config.get("createdByName") and config.get("modifiedByName"):
                 continue
