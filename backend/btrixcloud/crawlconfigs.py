@@ -807,6 +807,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: uuid.UUID):
 
         total_size = 0
         successful_count = 0
+        last_crawl: Optional[dict[str, object]] = None
 
         async for res in crawls.find(match_query).sort("finished", pymongo.DESCENDING):
             files = res.get("files", [])
