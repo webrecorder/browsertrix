@@ -807,35 +807,40 @@ async def stats_recompute_all(crawl_configs, crawls, cid: uuid.UUID):
 
         total_size = 0
         successful_count = 0
+
         last_crawl: Optional[dict[str, object]] = None
+        last_crawl_size = 0
 
         async for res in crawls.find(match_query).sort("finished", pymongo.DESCENDING):
             files = res.get("files", [])
+            crawl_size = 0
             for file in files:
-                total_size += file.get("size", 0)
+                crawl_size += file.get("size", 0)
+
+            total_size += crawl_size
 
             if res["state"] not in FAILED_STATES:
                 successful_count += 1
 
             last_crawl = res
+            last_crawl_size = crawl_size
 
-        update_query["totalSize"] = total_size
-        update_query["crawlSuccessfulCount"] = successful_count
+        if last_crawl:
+            update_query["totalSize"] = total_size
+            update_query["crawlSuccessfulCount"] = successful_count
 
-        update_query["lastCrawlId"] = str(last_crawl.get("_id"))
-        update_query["lastCrawlStartTime"] = last_crawl.get("started")
-        update_query["lastStartedBy"] = last_crawl.get("userid")
-        update_query["lastStartedByName"] = last_crawl.get("userName")
-        update_query["lastCrawlState"] = last_crawl.get("state")
-        update_query["lastCrawlSize"] = sum(
-            file_.get("size", 0) for file_ in last_crawl.get("files", [])
-        )
+            update_query["lastCrawlId"] = str(last_crawl.get("_id"))
+            update_query["lastCrawlStartTime"] = last_crawl.get("started")
+            update_query["lastStartedBy"] = last_crawl.get("userid")
+            update_query["lastStartedByName"] = last_crawl.get("userName")
+            update_query["lastCrawlState"] = last_crawl.get("state")
+            update_query["lastCrawlSize"] = last_crawl_size
 
-        last_crawl_finished = last_crawl.get("finished")
-        update_query["lastCrawlTime"] = last_crawl_finished
+            last_crawl_finished = last_crawl.get("finished")
+            update_query["lastCrawlTime"] = last_crawl_finished
 
-        if last_crawl_finished:
-            update_query["lastRun"] = last_crawl_finished
+            if last_crawl_finished:
+                update_query["lastRun"] = last_crawl_finished
 
     result = await crawl_configs.find_one_and_update(
         {"_id": cid, "inactive": {"$ne": True}},
