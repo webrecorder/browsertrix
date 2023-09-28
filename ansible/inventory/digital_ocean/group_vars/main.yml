@@ -1,15 +1,15 @@
 ---
 project_name: "default"
 
-main_node_size: "s-1vcpu-2gb"
+main_node_size: "s-4vcpu-8gb"
 crawl_node_size: "c-4"
 droplet_region: "sfo3"
 
 node_pools:
-  - name=main-app;size={{ main_node_size }};label=nodeType=main;count=2
+  - name=main-app;size={{ main_node_size }};label=nodeType=main;min-nodes=1;max-nodes=2;count=1
   - name=crawling;size={{ crawl_node_size }};label=nodeType=crawling;taint=nodeType=crawling:NoSchedule;auto-scale=true;min-nodes=1;max-nodes=3;count=1
 
-enable_admin_addons: true
+enable_admin_addons: false
 
 admin_node_pool:
   name: admin-app

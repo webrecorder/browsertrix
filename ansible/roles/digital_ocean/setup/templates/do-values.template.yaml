@@ -4,12 +4,11 @@ main_node_type: main
 crawler_node_type: crawling
 redis_node_type: crawling
 
-crawler_requests_cpu: "1200m"
-crawler_limits_cpu: "2200m"
-crawler_requests_memory: "1200Mi"
-crawler_limits_memory: "3200Mi"
-
 crawler_pull_policy: "Always"
+
+crawler_browser_instances: 4
+
+crawler_storage: "220Gi"
 
 # Registry
 {% if use_do_registry %}
@@ -39,7 +38,6 @@ storages:
 ingress:
   host: {{ full_domain }}
   cert_email: {{ cert_email }}
-  scheme: "https"
   tls: true
 
 
