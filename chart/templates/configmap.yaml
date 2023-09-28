@@ -34,7 +34,7 @@ data:
 
   IDLE_TIMEOUT: "{{ .Values.profile_browser_idle_seconds | default 60 }}"
 
-  RERUN_LAST_MIGRATION: "{{ .Values.rerun_last_migration }}"
+  RERUN_FROM_MIGRATION: "{{ .Values.rerun_from_migration }}"
 
   PRESIGN_DURATION_MINUTES: "{{ .Values.storage_presign_duration_minutes | default 60 }}"
 

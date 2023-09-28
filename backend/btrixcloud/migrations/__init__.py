@@ -15,7 +15,7 @@ class BaseMigration:
     def __init__(self, mdb, migration_version="0001"):
         self.mdb = mdb
         self.migration_version = migration_version
-        self.rerun_migration = os.environ.get("RERUN_LAST_MIGRATION") == "1"
+        self.rerun_from_migration = os.environ.get("RERUN_FROM_MIGRATION")
 
     async def get_db_version(self):
         """Get current db version from database."""
@@ -37,7 +37,7 @@ class BaseMigration:
             {}, {"$set": {"version": self.migration_version}}, upsert=True
         )
 
-    async def migrate_up_needed(self):
+    async def migrate_up_needed(self, ignore_rerun=False):
         """Verify migration up is needed and return boolean indicator."""
         db_version = await self.get_db_version()
         print(f"Current database version before migration: {db_version}")
@@ -48,8 +48,12 @@ class BaseMigration:
         if db_version < self.migration_version:
             return True
 
-        if self.rerun_migration and db_version == self.migration_version:
-            print("Rerunning last migration")
+        if (
+            not ignore_rerun
+            and self.rerun_from_migration
+            and self.rerun_from_migration <= self.migration_version
+        ):
+            print(f"Rerunning migrations from: {self.migration_version}")
             return True
         return False
 
