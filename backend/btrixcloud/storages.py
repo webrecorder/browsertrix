@@ -18,7 +18,7 @@ from stream_zip import stream_zip, NO_COMPRESSION_64
 import aiobotocore.session
 import boto3
 
-from .models import Organization, DefaultStorage, S3Storage, User
+from .models import CrawlFile, Organization, DefaultStorage, S3Storage, User
 from .zip import (
     sync_get_zip_file,
     sync_get_log_stream,
@@ -350,7 +350,7 @@ def _parse_json(line):
 
 # ============================================================================
 def _sync_get_logs(
-    wacz_files,
+    wacz_files: List[CrawlFile],
     log_levels: List[str],
     contexts: List[str],
     client,
@@ -386,7 +386,7 @@ def _sync_get_logs(
             json_str = json.dumps(line_dict, ensure_ascii=False) + "\n"
             yield json_str.encode("utf-8")
 
-    def organize_based_on_instance_number(wacz_files):
+    def organize_based_on_instance_number(wacz_files: List[CrawlFile]) -> List[List[CrawlFile]]:
         """Place wacz_files into their own list based on instance number"""
         waczs_groups = {}
         for file in wacz_files:
