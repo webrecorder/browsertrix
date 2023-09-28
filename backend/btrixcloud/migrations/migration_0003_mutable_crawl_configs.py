@@ -26,8 +26,7 @@ class Migration(BaseMigration):
         crawl_configs = self.mdb["crawl_configs"]
 
         # Return early if there are no configs
-        crawl_config_results = [res async for res in crawl_configs.find({})]
-        if not crawl_config_results:
+        if not crawl_configs.count_documents({}):
             return
 
         utc_now_datetime = datetime.utcnow().replace(microsecond=0, tzinfo=None)
@@ -45,14 +44,9 @@ class Migration(BaseMigration):
         await crawl_configs.update_many({}, [{"$set": {"modified": "$created"}}])
         await crawl_configs.update_many({}, {"$set": {"rev": 0}})
 
-        # Return early if there are no crawls
-        crawl_results = [res async for res in crawls.find({})]
-        if not crawl_results:
-            return
-
         await crawls.update_many({}, {"$set": {"cid_rev": 0}})
 
-        for crawl_result in crawl_results:
+        async for crawl_result in crawls.find({}):
             config_result = await crawl_configs.find_one({"_id": crawl_result["cid"]})
             if not config_result:
                 continue

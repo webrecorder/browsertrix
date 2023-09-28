@@ -37,8 +37,7 @@ class Migration(BaseMigration):
                 {"schedule": {"$nin": ["", None]}},
             ]
         }
-        configs_to_update = [res async for res in crawl_configs.find(match_query)]
-        for config_dict in configs_to_update:
+        async for config_dict in crawl_configs.find(match_query):
             config = CrawlConfig.from_dict(config_dict)
             print(
                 f"Updating Crawl Config {config.id}: schedule: {config.schedule}, "

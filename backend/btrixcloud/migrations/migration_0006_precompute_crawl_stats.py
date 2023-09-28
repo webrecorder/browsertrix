@@ -24,11 +24,7 @@ class Migration(BaseMigration):
         crawl_configs = self.mdb["crawl_configs"]
         crawls = self.mdb["crawls"]
 
-        configs = [res async for res in crawl_configs.find({"inactive": {"$ne": True}})]
-        if not configs:
-            return
-
-        for config in configs:
+        async for config in crawl_configs.find({"inactive": {"$ne": True}}):
             config_id = config["_id"]
             try:
                 await stats_recompute_all(crawl_configs, crawls, config_id)

@@ -23,25 +23,22 @@ class Migration(BaseMigration):
         mdb_crawls = self.mdb["crawls"]
         mdb_profiles = self.mdb["profiles"]
 
-        orgs = [res async for res in mdb_orgs.find({})]
-        for org in orgs:
+        async for org in mdb_orgs.find({}):
             oid = org.get("_id")
 
             bytes_stored = 0
 
-            crawls = [res async for res in mdb_crawls.find({"oid": oid})]
-            for crawl in crawls:
+            async for crawl in mdb_crawls.find({"oid": oid}):
                 for crawl_file in crawl.get("files", []):
                     bytes_stored += crawl_file.get("size", 0)
 
-            profiles = [res async for res in mdb_profiles.find({"oid": oid})]
-            for profile in profiles:
+            async for profile in mdb_profiles.find({"oid": oid}):
                 profile_file = profile.get("resource")
                 if profile_file:
                     bytes_stored += profile_file.get("size", 0)
 
             try:
-                res = await mdb_orgs.find_one_and_update(
+                await mdb_orgs.find_one_and_update(
                     {"_id": oid}, {"$set": {"bytesStored": bytes_stored}}
                 )
             # pylint: disable=broad-exception-caught

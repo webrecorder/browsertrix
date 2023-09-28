@@ -22,11 +22,7 @@ class Migration(BaseMigration):
         # pylint: disable=duplicate-code
         coll_ops = CollectionOps(self.mdb, None, None, None)
 
-        colls_to_update = [res async for res in coll_ops.collections.find({})]
-        if not colls_to_update:
-            return
-
-        for coll in colls_to_update:
+        async for coll in coll_ops.collections.find({}):
             coll_id = coll["_id"]
             try:
                 await coll_ops.update_collection_counts_and_tags(coll_id)
