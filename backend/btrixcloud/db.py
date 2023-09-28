@@ -148,7 +148,7 @@ async def await_db_and_migrations(mdb, db_inited):
     print("Database setup started", flush=True)
 
     base_migration = BaseMigration(mdb, CURR_DB_VERSION)
-    while await base_migration.migrate_up_needed():
+    while await base_migration.migrate_up_needed(ignore_rerun=True):
         version = await base_migration.get_db_version()
         print(
             f"Waiting for migrations to finish, DB at {version}, latest {CURR_DB_VERSION}",
