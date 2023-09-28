@@ -151,7 +151,8 @@ async def await_db_and_migrations(mdb, db_inited):
     while await base_migration.migrate_up_needed():
         version = await base_migration.get_db_version()
         print(
-            f"Waiting for migrations to finish, DB at {version}, latest {CURR_DB_VERSION}"
+            f"Waiting for migrations to finish, DB at {version}, latest {CURR_DB_VERSION}",
+            flush=True,
         )
 
         await asyncio.sleep(5)
