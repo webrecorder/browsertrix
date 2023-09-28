@@ -110,8 +110,21 @@ spec:
           memory: {{ redis_memory }}
 
       readinessProbe:
+        initialDelaySeconds: 10
+        timeoutSeconds: 5
         exec:
           command:
-            - redis-cli
-            - ping
+            - bash
+            - -c
+            - "res=$(redis-cli ping); [[ $res = 'PONG' ]]"
+
+      livenessProbe:
+        initialDelaySeconds: 10
+        timeoutSeconds: 5
+        exec:
+          command:
+            - bash
+            - -c
+            - "res=$(redis-cli ping); [[ $res = 'PONG' ]]"
+
 {% endif %}
