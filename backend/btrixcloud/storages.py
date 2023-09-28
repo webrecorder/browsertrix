@@ -1,7 +1,7 @@
 """
 Storage API
 """
-from typing import Optional, Union, Iterator, Iterable, List
+from typing import Optional, Union, Iterator, Iterable, List, Dict
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
 
@@ -386,9 +386,12 @@ def _sync_get_logs(
             json_str = json.dumps(line_dict, ensure_ascii=False) + "\n"
             yield json_str.encode("utf-8")
 
-    def organize_based_on_instance_number(wacz_files: List[CrawlFile]) -> List[List[CrawlFile]]:
+    def organize_based_on_instance_number(
+        wacz_files: List[CrawlFile],
+    ) -> List[List[CrawlFile]]:
         """Place wacz_files into their own list based on instance number"""
-        waczs_groups = {}
+        wacz_files = sorted(wacz_files, key=lambda file: file.filename)
+        waczs_groups: Dict[str, List[CrawlFile]] = {}
         for file in wacz_files:
             instance_number = file.filename[
                 file.filename.rfind("-") + 1 : file.filename.rfind(".")
