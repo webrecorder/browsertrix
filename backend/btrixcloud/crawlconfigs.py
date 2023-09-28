@@ -605,7 +605,7 @@ class CrawlConfigOps:
         total = await self.config_revs.count_documents(match_query)
 
         cursor = self.config_revs.find({"cid": cid}, skip=skip, limit=page_size)
-        results = await cursor.to_list(length=1000)
+        results = await cursor.to_list(length=page_size)
         revisions = [ConfigRevision.from_dict(res) for res in results]
 
         return revisions, total
@@ -801,38 +801,40 @@ async def stats_recompute_all(crawl_configs, crawls, cid: uuid.UUID):
     }
 
     match_query = {"cid": cid, "finished": {"$ne": None}}
-    cursor = crawls.find(match_query).sort("finished", pymongo.DESCENDING)
-    results = await cursor.to_list(length=10_000)
-    if results:
-        update_query["crawlCount"] = len(results)
+    count = await crawls.count_documents(match_query)
+    if count:
+        update_query["crawlCount"] = count
 
-        update_query["crawlSuccessfulCount"] = len(
-            [res for res in results if res["state"] not in FAILED_STATES]
-        )
+        total_size = 0
+        successful_count = 0
 
-        last_crawl = results[0]
+        async for res in crawls.find(match_query).sort("finished", pymongo.DESCENDING):
+            files = res.get("files", [])
+            for file in files:
+                total_size += file.get("size", 0)
 
-        last_crawl_finished = last_crawl.get("finished")
+            if res["state"] not in FAILED_STATES:
+                successful_count += 1
+
+            last_crawl = res
+
+        update_query["totalSize"] = total_size
+        update_query["crawlSuccessfulCount"] = successful_count
 
         update_query["lastCrawlId"] = str(last_crawl.get("_id"))
         update_query["lastCrawlStartTime"] = last_crawl.get("started")
         update_query["lastStartedBy"] = last_crawl.get("userid")
         update_query["lastStartedByName"] = last_crawl.get("userName")
-        update_query["lastCrawlTime"] = last_crawl_finished
         update_query["lastCrawlState"] = last_crawl.get("state")
         update_query["lastCrawlSize"] = sum(
             file_.get("size", 0) for file_ in last_crawl.get("files", [])
         )
 
+        last_crawl_finished = last_crawl.get("finished")
+        update_query["lastCrawlTime"] = last_crawl_finished
+
         if last_crawl_finished:
             update_query["lastRun"] = last_crawl_finished
-
-        total_size = 0
-        for res in results:
-            files = res.get("files", [])
-            for file in files:
-                total_size += file.get("size", 0)
-        update_query["totalSize"] = total_size
 
     result = await crawl_configs.find_one_and_update(
         {"_id": cid, "inactive": {"$ne": True}},

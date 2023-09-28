@@ -26,7 +26,7 @@ class Migration(BaseMigration):
         crawl_configs = self.mdb["crawl_configs"]
 
         # Return early if there are no configs
-        if not crawl_configs.count_documents({}):
+        if not await crawl_configs.count_documents({}):
             return
 
         utc_now_datetime = datetime.utcnow().replace(microsecond=0, tzinfo=None)

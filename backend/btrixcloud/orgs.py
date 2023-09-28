@@ -349,9 +349,7 @@ class OrgOps:
         upload_count = 0
         page_count = 0
 
-        cursor = self.crawls_db.find({"oid": org.id})
-        items = await cursor.to_list(length=10_000)
-        for item in items:
+        async for item in self.crawls_db.find({"oid": org.id}):
             if item["state"] not in SUCCESSFUL_STATES:
                 continue
             archived_item_count += 1
