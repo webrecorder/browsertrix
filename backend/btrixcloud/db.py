@@ -52,15 +52,14 @@ def init_db():
 
 
 # ============================================================================
-async def ping_db(mdb, db_inited):
+async def ping_db(mdb):
     """run in loop until db is up, set db_inited['inited'] property to true"""
     print("Waiting DB", flush=True)
     while True:
         try:
             result = await mdb.command("ping")
             assert result.get("ok")
-            db_inited["inited"] = True
-            print("DB Ready!")
+            print("DB reached")
             break
         # pylint: disable=broad-exception-caught
         except Exception:
@@ -88,13 +87,14 @@ async def update_and_prepare_db(
     - Create/update default org
 
     """
-    await ping_db(mdb, db_inited)
+    await ping_db(mdb)
     print("Database setup started", flush=True)
     if await run_db_migrations(mdb, user_manager):
         await drop_indexes(mdb)
     await create_indexes(org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_ops)
     await user_manager.create_super_user()
     await org_ops.create_default_org()
+    db_inited["inited"] = True
     print("Database updated and ready", flush=True)
 
 
@@ -139,6 +139,25 @@ async def run_db_migrations(mdb, user_manager):
                 flush=True,
             )
     return migrations_run
+
+
+# ============================================================================
+async def await_db_and_migrations(mdb, db_inited):
+    """await that db is available and any migrations in progress finish"""
+    await ping_db(mdb)
+    print("Database setup started", flush=True)
+
+    base_migration = BaseMigration(mdb, CURR_DB_VERSION)
+    while await base_migration.migrate_up_needed():
+        version = await base_migration.get_db_version()
+        print(
+            f"Waiting for migrations to finish, DB at {version}, latest {CURR_DB_VERSION}"
+        )
+
+        await asyncio.sleep(5)
+
+    db_inited["inited"] = True
+    print("Database updated and ready", flush=True)
 
 
 # ============================================================================
