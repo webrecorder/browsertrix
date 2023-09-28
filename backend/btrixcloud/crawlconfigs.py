@@ -129,6 +129,7 @@ class CrawlConfigOps:
 
         return profileid, profile_filename
 
+    # pylint: disable=invalid-name
     async def add_crawl_config(
         self,
         config: CrawlConfigIn,
@@ -136,14 +137,19 @@ class CrawlConfigOps:
         user: User,
     ):
         """Add new crawl config"""
-
         data = config.dict()
         data["oid"] = org.id
         data["createdBy"] = user.id
+        data["createdByName"] = user.name
         data["modifiedBy"] = user.id
+        data["modifiedByName"] = user.name
         data["_id"] = uuid.uuid4()
         data["created"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
         data["modified"] = data["created"]
+
+        if config.runNow:
+            data["lastStartedBy"] = user.id
+            data["lastStartedByName"] = user.name
 
         # Ensure page limit is below org maxPagesPerCall if set
         max_pages = await self.org_ops.get_max_pages_per_crawl(org.id)
@@ -181,12 +187,12 @@ class CrawlConfigOps:
         )
 
         if crawl_id and run_now:
-            await self.add_new_crawl(crawl_id, crawlconfig, user.id, manual=True)
+            await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
 
         return result.inserted_id, crawl_id, quota_reached
 
     async def add_new_crawl(
-        self, crawl_id: str, crawlconfig: CrawlConfig, userid: uuid.UUID, manual: bool
+        self, crawl_id: str, crawlconfig: CrawlConfig, user: User, manual: bool
     ):
         """increments crawl count for this config and adds new crawl"""
 
@@ -194,9 +200,11 @@ class CrawlConfigOps:
 
         inc = self.inc_crawl_count(crawlconfig.id)
         add = self.crawl_ops.add_new_crawl(
-            crawl_id, crawlconfig, userid, started, manual
+            crawl_id, crawlconfig, user.id, started, manual
         )
-        info = self.set_config_current_crawl_info(crawlconfig.id, crawl_id, started)
+        info = self.set_config_current_crawl_info(
+            crawlconfig.id, crawl_id, started, user
+        )
 
         await asyncio.gather(inc, add, info)
 
@@ -286,6 +294,7 @@ class CrawlConfigOps:
         # set update query
         query = update.dict(exclude_unset=True)
         query["modifiedBy"] = user.id
+        query["modifiedByName"] = user.name
         query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
         query["profileid"], profile_filename = await self._lookup_profile(
@@ -410,43 +419,6 @@ class CrawlConfigOps:
         aggregate.extend(
             [
                 {
-                    "$lookup": {
-                        "from": "users",
-                        "localField": "createdBy",
-                        "foreignField": "id",
-                        "as": "userName",
-                    },
-                },
-                {"$set": {"createdByName": {"$arrayElemAt": ["$userName.name", 0]}}},
-                {
-                    "$lookup": {
-                        "from": "users",
-                        "localField": "lastStartedBy",
-                        "foreignField": "id",
-                        "as": "startedName",
-                    },
-                },
-                {
-                    "$set": {
-                        "lastStartedByName": {"$arrayElemAt": ["$startedName.name", 0]}
-                    }
-                },
-                {
-                    "$lookup": {
-                        "from": "users",
-                        "localField": "modifiedBy",
-                        "foreignField": "id",
-                        "as": "modifiedUserName",
-                    },
-                },
-                {
-                    "$set": {
-                        "modifiedByName": {
-                            "$arrayElemAt": ["$modifiedUserName.name", 0]
-                        }
-                    }
-                },
-                {
                     "$facet": {
                         "items": [
                             {"$skip": skip},
@@ -529,6 +501,7 @@ class CrawlConfigOps:
             update_query["lastCrawlId"] = str(last_crawl.get("_id"))
             update_query["lastCrawlStartTime"] = last_crawl.get("started")
             update_query["lastStartedBy"] = last_crawl.get("userid")
+            update_query["lastStartedByName"] = last_crawl.get("userName")
             update_query["lastCrawlTime"] = last_crawl_finished
             update_query["lastCrawlState"] = last_crawl.get("state")
             update_query["lastCrawlSize"] = sum(
@@ -577,22 +550,6 @@ class CrawlConfigOps:
             self._add_curr_crawl_stats(
                 crawlconfig, await self.get_running_crawl(crawlconfig)
             )
-
-        user = await self.user_manager.get(crawlconfig.createdBy)
-        # pylint: disable=invalid-name
-        if user:
-            crawlconfig.createdByName = user.name
-
-        modified_user = await self.user_manager.get(crawlconfig.modifiedBy)
-        # pylint: disable=invalid-name
-        if modified_user:
-            crawlconfig.modifiedByName = modified_user.name
-
-        if crawlconfig.lastStartedBy:
-            last_started_user = await self.user_manager.get(crawlconfig.lastStartedBy)
-            # pylint: disable=invalid-name
-            if last_started_user:
-                crawlconfig.lastStartedByName = last_started_user.name
 
         if crawlconfig.profileid:
             crawlconfig.profileName = await self.profiles.get_profile_name(
@@ -790,7 +747,7 @@ class CrawlConfigOps:
             crawl_id = await self.crawl_manager.create_crawl_job(
                 crawlconfig, userid=str(user.id)
             )
-            await self.add_new_crawl(crawl_id, crawlconfig, user.id, manual=True)
+            await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
             return crawl_id
 
         except Exception as exc:
@@ -798,7 +755,7 @@ class CrawlConfigOps:
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
 
     async def set_config_current_crawl_info(
-        self, cid: uuid.UUID, crawl_id: str, crawl_start: datetime
+        self, cid: uuid.UUID, crawl_id: str, crawl_start: datetime, user: User
     ):
         """Set current crawl info in config when crawl begins"""
         result = await self.crawl_configs.find_one_and_update(
@@ -810,6 +767,8 @@ class CrawlConfigOps:
                     "lastCrawlTime": None,
                     "lastRun": crawl_start,
                     "isCrawlRunning": True,
+                    "lastStartedBy": user.id,
+                    "lastStartedByName": user.name,
                 }
             },
             return_document=pymongo.ReturnDocument.AFTER,
@@ -834,6 +793,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: uuid.UUID):
         "lastCrawlId": None,
         "lastCrawlStartTime": None,
         "lastStartedBy": None,
+        "lastStartedByName": None,
         "lastCrawlTime": None,
         "lastCrawlState": None,
         "lastCrawlSize": None,
@@ -858,6 +818,7 @@ async def stats_recompute_all(crawl_configs, crawls, cid: uuid.UUID):
         update_query["lastCrawlId"] = str(last_crawl.get("_id"))
         update_query["lastCrawlStartTime"] = last_crawl.get("started")
         update_query["lastStartedBy"] = last_crawl.get("userid")
+        update_query["lastStartedByName"] = last_crawl.get("userName")
         update_query["lastCrawlTime"] = last_crawl_finished
         update_query["lastCrawlState"] = last_crawl.get("state")
         update_query["lastCrawlSize"] = sum(

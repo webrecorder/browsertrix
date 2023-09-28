@@ -14,6 +14,21 @@ _coll_id = None
 _admin_crawl_cid = None
 
 
+def test_crawl_config_usernames(
+    crawler_auth_headers, default_org_id, crawler_config_id
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{crawler_config_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["createdByName"]
+    assert data["modifiedByName"]
+    assert data["lastStartedByName"]
+
+
 def test_add_crawl_config(crawler_auth_headers, default_org_id, sample_crawl_data):
     # Create crawl config
     sample_crawl_data["schedule"] = "0 0 * * *"
