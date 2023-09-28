@@ -17,7 +17,9 @@ class EmailSender:
         self.reply_to = os.environ.get("EMAIL_REPLY_TO") or self.sender
         self.smtp_server = os.environ.get("EMAIL_SMTP_HOST")
         self.smtp_port = int(os.environ.get("EMAIL_SMTP_PORT", 587))
-        self.smtp_use_tls = bool(os.environ.get("EMAIL_SMTP_USE_TLS", True))
+        self.smtp_use_tls = (
+            os.environ.get("EMAIL_SMTP_USE_TLS", "true").lower() != "false"
+        )
 
         self.default_origin = os.environ.get("APP_ORIGIN")
 
