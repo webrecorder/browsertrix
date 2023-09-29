@@ -101,3 +101,10 @@ def parse_jsonl_error_messages(errors):
                 flush=True,
             )
     return parsed_errors
+
+
+def is_bool(stri: str) -> bool:
+    """Check if the string parameter is stringly true"""
+    if stri:
+        return stri.lower() in ("true", "1", "yes")
+    return False
