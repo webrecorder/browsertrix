@@ -390,7 +390,7 @@ def _sync_get_logs(
         wacz_files: List[CrawlFile],
     ) -> List[List[CrawlFile]]:
         """Place wacz_files into their own list based on instance number"""
-        wacz_files = sorted(wacz_files, key=lambda file: file.filename)
+        wacz_files.sort(key=lambda file: file.filename)
         waczs_groups: Dict[str, List[CrawlFile]] = {}
         for file in wacz_files:
             instance_number = file.filename[
@@ -417,6 +417,7 @@ def _sync_get_logs(
                 for f in zip_file.filelist
                 if f.filename.startswith("logs/") and not f.is_dir()
             ]
+            log_files.sort(key=lambda log_zipinfo: log_zipinfo.filename)
 
             for log_zipinfo in log_files:
                 wacz_log_streams.append(
