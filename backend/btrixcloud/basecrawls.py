@@ -184,6 +184,69 @@ class BaseCrawlOps:
 
         return {"updated": True}
 
+    async def update_crawl_state(self, crawl_id: str, state: str):
+        """called only when job container is being stopped/canceled"""
+
+        data = {"state": state}
+        # if cancelation, set the finish time here
+        if state == "canceled":
+            data["finished"] = dt_now()
+
+        await self.crawls.find_one_and_update(
+            {
+                "_id": crawl_id,
+                "type": "crawl",
+                "state": {"$in": RUNNING_AND_STARTING_STATES},
+            },
+            {"$set": data},
+        )
+
+    async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
+        """stop or cancel specified crawl"""
+        crawl = await self.get_crawl_raw(crawl_id, org)
+        if crawl.get("type") != "crawl":
+            return
+
+        result = None
+        try:
+            result = await self.crawl_manager.shutdown_crawl(
+                crawl_id, org.id_str, graceful=graceful
+            )
+
+            if result.get("success"):
+                if graceful:
+                    await self.crawls.find_one_and_update(
+                        {"_id": crawl_id, "type": "crawl", "oid": org.id},
+                        {"$set": {"stopping": True}},
+                    )
+                return result
+
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            # if reached here, probably crawl doesn't exist anymore
+            raise HTTPException(
+                status_code=404, detail=f"crawl_not_found, (details: {exc})"
+            )
+
+        # if job no longer running, canceling is considered success,
+        # but graceful stoppage is not possible, so would be a failure
+        if result.get("error") == "Not Found":
+            if not graceful:
+                await self.update_crawl_state(crawl_id, "canceled")
+                crawl = await self.get_crawl_raw(crawl_id, org)
+                if not await self.crawl_configs.stats_recompute_last(
+                    crawl["cid"], 0, -1
+                ):
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"crawl_config_not_found: {crawl['cid']}",
+                    )
+
+                return {"success": True}
+
+        # return whatever detail may be included in the response
+        raise HTTPException(status_code=400, detail=result)
+
     async def delete_crawls(
         self, org: Organization, delete_list: DeleteCrawlList, type_: str
     ):
@@ -692,9 +755,18 @@ def init_base_crawls_api(
         org: Organization = Depends(org_crawl_dep),
     ):
         for crawl_id in delete_list.crawl_ids:
-            crawl_raw = await ops.get_crawl_raw(crawl_id, org)
-            crawl = BaseCrawl.from_dict(crawl_raw)
-            if (crawl.userid != user.id) and not org.is_owner(user):
+            crawl = await ops.get_crawl_raw(crawl_id, org)
+
+            if (crawl.get("userid") != user.id) and not org.is_owner(user):
                 raise HTTPException(status_code=403, detail="not_allowed")
+
+            if (crawl.get("type") == "crawl") and not crawl.get("finished"):
+                try:
+                    await ops.shutdown_crawl(crawl_id, org, graceful=False)
+                except Exception as exc:
+                    # pylint: disable=raise-missing-from
+                    raise HTTPException(
+                        status_code=400, detail=f"Error Stopping Crawl: {exc}"
+                    )
 
         return await ops.delete_crawls_all_types(delete_list, org)

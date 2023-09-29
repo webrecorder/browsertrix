@@ -306,7 +306,7 @@ def test_delete_stream_upload(admin_auth_headers, crawler_auth_headers, default_
     # Verify non-admin user who didn't upload crawl can't delete it
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
-        headers=crawler__auth_headers,
+        headers=crawler_auth_headers,
         json={"crawl_ids": [upload_id]},
     )
     assert r.status_code == 403
