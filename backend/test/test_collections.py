@@ -1,3 +1,4 @@
+from pickle import PickleBuffer
 import requests
 import os
 
@@ -49,7 +50,9 @@ def test_create_collection(
     assert r.json()["collections"] == [{"name": COLLECTION_NAME, "id": _coll_id}]
 
 
-def test_create_public_collection(crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id):
+def test_create_public_collection(
+    crawler_auth_headers, default_org_id, crawler_crawl_id, admin_crawl_id
+):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections",
         headers=crawler_auth_headers,
@@ -411,10 +414,10 @@ def test_list_collections(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 2
+    assert data["total"] == 3
 
     items = data["items"]
-    assert len(items) == 2
+    assert len(items) == 3
 
     first_coll = [coll for coll in items if coll["name"] == UPDATED_NAME][0]
     assert first_coll["id"]
@@ -529,11 +532,12 @@ def test_filter_sort_collections(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 2
+    assert data["total"] == 3
 
     items = data["items"]
-    assert items[0]["name"] == SECOND_COLLECTION_NAME
-    assert items[1]["name"] == UPDATED_NAME
+    assert items[0]["name"] == PUBLIC_COLLECTION_NAME
+    assert items[1]["name"] == SECOND_COLLECTION_NAME
+    assert items[2]["name"] == UPDATED_NAME
 
     # Test sorting by name, descending
     r = requests.get(
@@ -542,11 +546,12 @@ def test_filter_sort_collections(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 2
+    assert data["total"] == 3
 
     items = data["items"]
     assert items[0]["name"] == UPDATED_NAME
     assert items[1]["name"] == SECOND_COLLECTION_NAME
+    assert items[2]["name"] == PUBLIC_COLLECTION_NAME
 
     # Test sorting by description, ascending (default)
     r = requests.get(
@@ -555,13 +560,16 @@ def test_filter_sort_collections(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 2
+    assert data["total"] == 3
 
     items = data["items"]
-    assert items[0]["name"] == SECOND_COLLECTION_NAME
+    assert items[0]["name"] == SECOND_COLLECTION_NAME or items[0]["name"] == PUBLIC_COLLECTION_NAME
     assert items[0].get("description") is None
-    assert items[1]["name"] == UPDATED_NAME
-    assert items[1]["description"] == DESCRIPTION
+    assert items[1]["name"] == PUBLIC_COLLECTION_NAME or items[1]["name"] == SECOND_COLLECTION_NAME
+    assert items[1]["name"] != items[0]["name"]
+    assert items[1].get("description") is None
+    assert items[2]["name"] == UPDATED_NAME
+    assert items[2]["description"] == DESCRIPTION
 
     # Test sorting by description, descending
     r = requests.get(
@@ -570,13 +578,16 @@ def test_filter_sort_collections(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 2
+    assert data["total"] == 3
 
     items = data["items"]
     assert items[0]["name"] == UPDATED_NAME
     assert items[0]["description"] == DESCRIPTION
-    assert items[1]["name"] == SECOND_COLLECTION_NAME
+    assert items[1]["name"] == SECOND_COLLECTION_NAME or items[1]["name"] == PUBLIC_COLLECTION_NAME
     assert items[1].get("description") is None
+    assert items[2]["name"] == PUBLIC_COLLECTION_NAME or items[2]["name"] == SECOND_COLLECTION_NAME
+    assert items[1]["name"] != items[2]["name"]
+    assert items[2].get("description") is None
 
     # Test sorting by modified, ascending
     r = requests.get(
@@ -585,7 +596,7 @@ def test_filter_sort_collections(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 2
+    assert data["total"] == 3
 
     items = data["items"]
     assert items[0]["modified"] <= items[1]["modified"]
@@ -597,7 +608,7 @@ def test_filter_sort_collections(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 2
+    assert data["total"] == 3
 
     items = data["items"]
     assert items[0]["modified"] >= items[1]["modified"]
@@ -609,7 +620,7 @@ def test_filter_sort_collections(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 2
+    assert data["total"] == 3
 
     items = data["items"]
     assert items[0]["totalSize"] <= items[1]["totalSize"]
@@ -621,7 +632,7 @@ def test_filter_sort_collections(
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 2
+    assert data["total"] == 3
 
     items = data["items"]
     assert items[0]["totalSize"] >= items[1]["totalSize"]

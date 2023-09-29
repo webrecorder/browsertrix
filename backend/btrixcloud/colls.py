@@ -59,23 +59,19 @@ class CollectionOps:
             [("oid", pymongo.ASCENDING), ("description", pymongo.ASCENDING)]
         )
 
-    async def add_collection(
-        self,
-        oid: uuid.UUID,
-        coll: CollIn
-    ):
+    async def add_collection(self, oid: uuid.UUID, coll_in: CollIn):
         """Add new collection"""
-        crawl_ids = coll.crawl_ids if coll.crawl_ids else []
+        crawl_ids = coll_in.crawlIds if coll_in.crawlIds else []
         coll_id = uuid.uuid4()
         modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
         coll = Collection(
-            id=coll.coll_id,
+            id=coll_id,
             oid=oid,
-            name=coll.name,
-            description=coll.description,
+            name=coll_in.name,
+            description=coll_in.description,
             modified=modified,
-            isPublic=coll.is_public,
+            isPublic=coll_in.isPublic,
         )
         try:
             await self.collections.insert_one(coll.to_dict())
@@ -89,7 +85,7 @@ class CollectionOps:
                     )
                 )
 
-            return {"added": True, "id": coll_id, "name": name}
+            return {"added": True, "id": coll_id, "name": coll.name}
         except pymongo.errors.DuplicateKeyError:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="collection_name_taken")
@@ -384,10 +380,7 @@ def init_collections_api(app, mdb, orgs, crawl_manager, event_webhook_ops):
     async def add_collection(
         new_coll: CollIn, org: Organization = Depends(org_crawl_dep)
     ):
-        return await colls.add_collection(
-            org.id,
-            new_coll
-        )
+        return await colls.add_collection(org.id, new_coll)
 
     @app.get(
         "/orgs/{oid}/collections",
