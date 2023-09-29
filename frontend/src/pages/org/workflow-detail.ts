@@ -1489,10 +1489,20 @@ export class WorkflowDetail extends LiteElement {
       });
       this.fetchCrawls();
     } catch (e: any) {
+      let message = msg(
+        str`Sorry, couldn't delete archived item at this time.`
+      );
+      if (e.isApiError) {
+        if (e.details == "not_allowed") {
+          message = msg(
+            str`Only org owners can delete other users' archived items.`
+          );
+        } else if (e.message) {
+          message = e.message;
+        }
+      }
       this.notify({
-        message:
-          (e.isApiError && e.message) ||
-          msg("Sorry, couldn't run crawl at this time."),
+        message: message,
         variant: "danger",
         icon: "exclamation-octagon",
       });
