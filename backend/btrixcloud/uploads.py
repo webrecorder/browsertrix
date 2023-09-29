@@ -399,6 +399,12 @@ def init_uploads_api(
     @app.post("/orgs/{oid}/uploads/delete", tags=["uploads"])
     async def delete_uploads(
         delete_list: DeleteCrawlList,
+        user: User = Depends(user_dep),
         org: Organization = Depends(org_crawl_dep),
     ):
+        for crawl_id in delete_list.crawl_ids:
+            crawl_raw = await ops.get_crawl_raw(crawl_id, org)
+            crawl = UploadedCrawl.from_dict(crawl_raw)
+            if (crawl.userid != user.id) and not org.is_owner(user):
+                raise HTTPException(status_code=403, detail="not_allowed")
         return await ops.delete_uploads(delete_list, org)

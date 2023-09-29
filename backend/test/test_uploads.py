@@ -302,7 +302,17 @@ def test_update_upload_metadata(admin_auth_headers, default_org_id):
     assert data["collectionIds"] == UPDATED_COLLECTION_IDS
 
 
-def test_delete_stream_upload(admin_auth_headers, default_org_id):
+def test_delete_stream_upload(admin_auth_headers, crawler_auth_headers, default_org_id):
+    # Verify non-admin user who didn't upload crawl can't delete it
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
+        headers=crawler__auth_headers,
+        json={"crawl_ids": [upload_id]},
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "not_allowed"
+
+    # Verify user who created upload can delete it
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
         headers=admin_auth_headers,
@@ -842,6 +852,7 @@ def test_update_upload_metadata_all_crawls(admin_auth_headers, default_org_id):
 
 def test_delete_form_upload_and_crawls_from_all_crawls(
     admin_auth_headers,
+    crawler_auth_headers,
     default_org_id,
     all_crawls_delete_crawl_ids,
     all_crawls_delete_config_id,
@@ -889,6 +900,15 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
 
     combined_crawl_size = crawl_1_size + crawl_2_size
     total_size = combined_crawl_size + upload_size
+
+    # Verify that non-admin user can't delete another's items
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
+        headers=crawler_auth_headers,
+        json={"crawl_ids": crawls_to_delete},
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "not_allowed"
 
     # Delete mixed type archived items
     r = requests.post(

@@ -263,7 +263,7 @@ def test_delete_crawls_crawler(
     )
     assert r.status_code == 403
     data = r.json()
-    assert data["detail"] == "Not Allowed"
+    assert data["detail"] == "not_allowed"
 
     # Test that crawler user can delete own crawl
     r = requests.post(

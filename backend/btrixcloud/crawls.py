@@ -762,7 +762,7 @@ def init_crawls_api(
             crawl_raw = await ops.get_crawl_raw(crawl_id, org)
             crawl = Crawl.from_dict(crawl_raw)
             if (crawl.userid != user.id) and not org.is_owner(user):
-                raise HTTPException(status_code=403, detail="Not Allowed")
+                raise HTTPException(status_code=403, detail="not_allowed")
 
             if not crawl.finished:
                 try:
