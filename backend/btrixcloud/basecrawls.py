@@ -547,21 +547,23 @@ class BaseCrawlOps:
         return crawls, total
 
     async def delete_crawls_all_types(
-        self, delete_list: DeleteCrawlList, org: Organization
+        self,
+        crawls_to_delete: list[str],
+        uploads_to_delete: list[str],
+        org: Organization,
     ):
         """Delete uploaded crawls"""
-        if len(delete_list.crawl_ids) == 0:
+        crawls_length = len(crawls_to_delete)
+        uploads_length = len(uploads_to_delete)
+
+        if crawls_length + uploads_length == 0:
             raise HTTPException(status_code=400, detail="nothing_to_delete")
 
         deleted_count = 0
         # Value is set in delete calls, but initialize to keep linter happy.
         quota_reached = False
 
-        crawls_to_delete, uploads_to_delete = await self._split_delete_list_by_type(
-            delete_list, org
-        )
-
-        if len(crawls_to_delete) > 0:
+        if crawls_length:
             crawl_delete_list = DeleteCrawlList(crawl_ids=crawls_to_delete)
             deleted, cids_to_update, quota_reached = await self.delete_crawls(
                 org, crawl_delete_list, "crawl"
@@ -573,7 +575,7 @@ class BaseCrawlOps:
                 cid_inc = cid_dict["inc"]
                 await self.crawl_configs.stats_recompute_last(cid, -cid_size, -cid_inc)
 
-        if len(uploads_to_delete) > 0:
+        if uploads_length:
             upload_delete_list = DeleteCrawlList(crawl_ids=uploads_to_delete)
             deleted, _, quota_reached = await self.delete_crawls(
                 org, upload_delete_list, "upload"
@@ -584,26 +586,6 @@ class BaseCrawlOps:
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
         return {"deleted": True, "storageQuotaReached": quota_reached}
-
-    async def _split_delete_list_by_type(
-        self, delete_list: DeleteCrawlList, org: Organization
-    ):
-        """Return separate crawl and upload arrays from mixed input"""
-        crawls: list[str] = []
-        uploads: list[str] = []
-
-        for crawl_id in delete_list.crawl_ids:
-            try:
-                crawl_raw = await self.get_crawl_raw(crawl_id, org)
-                crawl_type = crawl_raw.get("type")
-                if crawl_type == "crawl":
-                    crawls.append(crawl_id)
-                elif crawl_type == "upload":
-                    uploads.append(crawl_id)
-            # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(err, flush=True)
-        return crawls, uploads
 
     async def get_all_crawl_search_values(
         self, org: Organization, type_: Optional[str] = None
@@ -754,19 +736,27 @@ def init_base_crawls_api(
         user: User = Depends(user_dep),
         org: Organization = Depends(org_crawl_dep),
     ):
+        crawls: list[str] = []
+        uploads: list[str] = []
+
         for crawl_id in delete_list.crawl_ids:
             crawl = await ops.get_crawl_raw(crawl_id, org)
 
             if (crawl.get("userid") != user.id) and not org.is_owner(user):
                 raise HTTPException(status_code=403, detail="not_allowed")
 
-            if (crawl.get("type") == "crawl") and not crawl.get("finished"):
-                try:
-                    await ops.shutdown_crawl(crawl_id, org, graceful=False)
-                except Exception as exc:
-                    # pylint: disable=raise-missing-from
-                    raise HTTPException(
-                        status_code=400, detail=f"Error Stopping Crawl: {exc}"
-                    )
+            type_ = crawl.get("type")
+            if type_ == "crawl":
+                crawls.append(crawl_id)
+                if not crawl.get("finished"):
+                    try:
+                        await ops.shutdown_crawl(crawl_id, org, graceful=False)
+                    except Exception as exc:
+                        # pylint: disable=raise-missing-from
+                        raise HTTPException(
+                            status_code=400, detail=f"Error Stopping Crawl: {exc}"
+                        )
+            if type_ == "upload":
+                uploads.append(crawl_id)
 
-        return await ops.delete_crawls_all_types(delete_list, org)
+        return await ops.delete_crawls_all_types(crawls, uploads, org)
