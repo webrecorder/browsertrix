@@ -71,7 +71,7 @@ def test_create_public_collection(crawler_auth_headers, default_org_id, crawler_
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{_public_coll_id}",
         headers=crawler_auth_headers,
     )
-    assert r.json()["isPubilc"] == True
+    assert r.json()["isPublic"]
 
 
 def test_create_collection_taken_name(
