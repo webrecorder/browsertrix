@@ -68,7 +68,7 @@ export class CollectionsNew extends LiteElement {
             name,
             description,
             crawlIds,
-            isPublic: isPublic,
+            isPublic,
           }),
         }
       );
