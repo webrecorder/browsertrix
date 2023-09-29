@@ -562,9 +562,15 @@ def test_filter_sort_collections(
     assert data["total"] == 3
 
     items = data["items"]
-    assert items[0]["name"] == SECOND_COLLECTION_NAME or items[0]["name"] == PUBLIC_COLLECTION_NAME
+    assert (
+        items[0]["name"] == SECOND_COLLECTION_NAME
+        or items[0]["name"] == PUBLIC_COLLECTION_NAME
+    )
     assert items[0].get("description") is None
-    assert items[1]["name"] == PUBLIC_COLLECTION_NAME or items[1]["name"] == SECOND_COLLECTION_NAME
+    assert (
+        items[1]["name"] == PUBLIC_COLLECTION_NAME
+        or items[1]["name"] == SECOND_COLLECTION_NAME
+    )
     assert items[1]["name"] != items[0]["name"]
     assert items[1].get("description") is None
     assert items[2]["name"] == UPDATED_NAME
@@ -582,9 +588,15 @@ def test_filter_sort_collections(
     items = data["items"]
     assert items[0]["name"] == UPDATED_NAME
     assert items[0]["description"] == DESCRIPTION
-    assert items[1]["name"] == SECOND_COLLECTION_NAME or items[1]["name"] == PUBLIC_COLLECTION_NAME
+    assert (
+        items[1]["name"] == SECOND_COLLECTION_NAME
+        or items[1]["name"] == PUBLIC_COLLECTION_NAME
+    )
     assert items[1].get("description") is None
-    assert items[2]["name"] == PUBLIC_COLLECTION_NAME or items[2]["name"] == SECOND_COLLECTION_NAME
+    assert (
+        items[2]["name"] == PUBLIC_COLLECTION_NAME
+        or items[2]["name"] == SECOND_COLLECTION_NAME
+    )
     assert items[1]["name"] != items[2]["name"]
     assert items[2].get("description") is None
 
