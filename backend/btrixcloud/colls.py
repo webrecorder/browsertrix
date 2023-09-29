@@ -62,23 +62,20 @@ class CollectionOps:
     async def add_collection(
         self,
         oid: uuid.UUID,
-        name: str,
-        crawl_ids: Optional[List[str]],
-        description: Optional[str] = None,
-        is_public: Optional[bool] = False,
+        coll: CollIn
     ):
         """Add new collection"""
-        crawl_ids = crawl_ids if crawl_ids else []
+        crawl_ids = coll.crawl_ids if coll.crawl_ids else []
         coll_id = uuid.uuid4()
         modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
         coll = Collection(
-            id=coll_id,
+            id=coll.coll_id,
             oid=oid,
-            name=name,
-            description=description,
+            name=coll.name,
+            description=coll.description,
             modified=modified,
-            isPublic=is_public,
+            isPublic=coll.is_public,
         )
         try:
             await self.collections.insert_one(coll.to_dict())
@@ -389,10 +386,7 @@ def init_collections_api(app, mdb, orgs, crawl_manager, event_webhook_ops):
     ):
         return await colls.add_collection(
             org.id,
-            new_coll.name,
-            new_coll.crawlIds,
-            new_coll.description,
-            new_coll.isPublic,
+            new_coll
         )
 
     @app.get(
