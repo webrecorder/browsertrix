@@ -25,7 +25,7 @@ export class NewBrowserProfileDialog extends LiteElement {
 
   render() {
     return html` <btrix-dialog
-      label=${msg(str`New Browser Profile`)}
+      label=${msg(str`Create a New Browser Profile`)}
       ?open=${this.open}
       @sl-initial-focus=${async (e: CustomEvent) => {
         const nameInput = (await this.form).querySelector(

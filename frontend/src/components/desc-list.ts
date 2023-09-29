@@ -46,6 +46,10 @@ export class DescListItem extends LitElement {
       justify-content: var(--justify-item, initial);
       border-right: var(--border-right, 0px);
     }
+
+    .content {
+      width: var(--width-full, initial);
+    }
   `;
 
   @property({ type: String })
@@ -71,6 +75,7 @@ export class DescList extends LitElement {
     .vertical {
       grid-template-columns: 100%;
       gap: 1rem;
+      --width-full: 100%;
     }
 
     .horizontal {

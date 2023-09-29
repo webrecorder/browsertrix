@@ -22,11 +22,7 @@ class Migration(BaseMigration):
         crawls = self.mdb["crawls"]
         crawl_configs = self.mdb["crawl_configs"]
 
-        configs = [res async for res in crawl_configs.find({"inactive": {"$ne": True}})]
-        if not configs:
-            return
-
-        for config in configs:
+        async for config in crawl_configs.find({"inactive": {"$ne": True}}):
             config_id = config["_id"]
             try:
                 if not config.get("name"):

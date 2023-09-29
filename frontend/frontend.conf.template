@@ -9,6 +9,12 @@ server {
     }
 }
 
+# if behind proxy passthrough X-Forwarded-Proto header
+map $http_x_forwarded_proto $ingress_proto {
+    ""       $scheme;
+    default  $http_x_forwarded_proto;
+}
+
 
 server {
     listen 80 default_server;
@@ -51,7 +57,7 @@ server {
     location /api/ {
       proxy_pass http://${BACKEND_HOST}:8000;
       proxy_set_header Host $http_host;
-      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Forwarded-Proto $ingress_proto;
     }
 
     location ~* /watch/([^/]+)/([^/]+)/([^/]+)/ws {
@@ -125,4 +131,3 @@ server {
 
     include ./includes/*.conf;
 }
-

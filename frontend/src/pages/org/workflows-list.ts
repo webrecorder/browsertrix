@@ -12,6 +12,7 @@ import { CopyButton } from "../../components/copy-button";
 import { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
 import type { PageChangeEvent } from "../../components/pagination";
+import type { SelectNewDialogEvent } from "./index";
 
 type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
@@ -204,10 +205,15 @@ export class WorkflowsList extends LiteElement {
             this.isCrawler,
             () => html`
               <sl-button
-                href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
                 variant="primary"
                 size="small"
-                @click=${this.navLink}
+                @click=${() => {
+                  this.dispatchEvent(
+                    <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                      detail: "workflow",
+                    })
+                  );
+                }}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                 ${msg("New Workflow")}

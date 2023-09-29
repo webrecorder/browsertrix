@@ -341,6 +341,9 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   async willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("jobType") && this.jobType) {
+      this.initializeEditor();
+    }
     if (changedProperties.has("authState") && this.authState) {
       await this.fetchAPIDefaults();
       if (this.orgId) {

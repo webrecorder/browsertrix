@@ -23,42 +23,38 @@ class Migration(BaseMigration):
         mdb_crawls = self.mdb["crawls"]
         mdb_profiles = self.mdb["profiles"]
 
-        orgs = [res async for res in mdb_orgs.find({})]
-        for org in orgs:
+        async for org in mdb_orgs.find({}):
             oid = org.get("_id")
 
             bytes_stored_crawls = 0
             bytes_stored_uploads = 0
             bytes_stored_profiles = 0
 
-            crawls = [
-                res
-                async for res in mdb_crawls.find(
-                    {"oid": oid, "type": {"$in": [None, "crawl"]}}
-                )
-            ]
-            for crawl in crawls:
+            async for crawl in mdb_crawls.find(
+                {"oid": oid, "type": {"$in": [None, "crawl"]}}
+            ):
                 for crawl_file in crawl.get("files", []):
                     bytes_stored_crawls += crawl_file.get("size", 0)
 
-            uploads = [
-                res async for res in mdb_crawls.find({"oid": oid, "type": "upload"})
-            ]
-            for upload in uploads:
+            async for upload in mdb_crawls.find({"oid": oid, "type": "upload"}):
                 for upload_file in upload.get("files", []):
                     bytes_stored_uploads += upload_file.get("size", 0)
 
-            profiles = [res async for res in mdb_profiles.find({"oid": oid})]
-            for profile in profiles:
+            async for profile in mdb_profiles.find({"oid": oid}):
                 profile_file = profile.get("resource")
                 if profile_file:
                     bytes_stored_profiles += profile_file.get("size", 0)
 
+            org_total_bytes = (
+                bytes_stored_crawls + bytes_stored_uploads + bytes_stored_profiles
+            )
+
             try:
-                res = await mdb_orgs.find_one_and_update(
+                await mdb_orgs.find_one_and_update(
                     {"_id": oid},
                     {
                         "$set": {
+                            "bytesStored": org_total_bytes,
                             "bytesStoredCrawls": bytes_stored_crawls,
                             "bytesStoredUploads": bytes_stored_uploads,
                             "bytesStoredProfiles": bytes_stored_profiles,

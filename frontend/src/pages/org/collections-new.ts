@@ -18,6 +18,9 @@ export class CollectionsNew extends LiteElement {
   @property({ type: Boolean })
   isCrawler?: boolean;
 
+  @property({ type: String })
+  name?: string;
+
   @state()
   private collection?: Collection;
 
@@ -29,10 +32,15 @@ export class CollectionsNew extends LiteElement {
 
   render() {
     return html`${this.renderHeader()}
-      <h2 class="text-xl font-semibold mb-6">${msg("New Collection")}</h2>
+      <h2 class="text-xl font-semibold mb-6">
+        ${msg("New Collection")}${this.name ? html` &mdash; ${this.name}` : ""}
+      </h2>
       <btrix-collection-editor
         .authState=${this.authState}
         orgId=${this.orgId}
+        .metadataValues=${{
+          name: this.name || "",
+        }}
         ?isSubmitting=${this.isSubmitting}
         ?isCrawler=${this.isCrawler}
         @on-submit=${this.onSubmit}
@@ -68,7 +76,7 @@ export class CollectionsNew extends LiteElement {
             name,
             description,
             crawlIds,
-            public: isPublic,
+            isPublic,
           }),
         }
       );

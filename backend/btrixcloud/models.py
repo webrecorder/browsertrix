@@ -221,6 +221,9 @@ class CrawlConfig(CrawlConfigCore, CrawlConfigAdditional):
     id: UUID4
 
     config: RawCrawlConfig
+    createdByName: Optional[str]
+    modifiedByName: Optional[str]
+    lastStartedByName: Optional[str]
 
     def get_raw_config(self):
         """serialize config for browsertrix-crawler"""
@@ -232,15 +235,13 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     """Crawl Config Output"""
 
     lastCrawlStopping: Optional[bool] = False
-
     profileName: Optional[str]
+    firstSeed: Optional[str]
+    seedCount: int = 0
 
     createdByName: Optional[str]
     modifiedByName: Optional[str]
     lastStartedByName: Optional[str]
-
-    firstSeed: Optional[str]
-    seedCount: int = 0
 
 
 # ============================================================================
@@ -307,6 +308,7 @@ class BaseCrawl(BaseMongoModel):
     id: str
 
     userid: UUID4
+    userName: Optional[str]
     oid: UUID4
 
     started: datetime
@@ -349,9 +351,8 @@ class CrawlOut(BaseMongoModel):
     id: str
 
     userid: UUID4
-    oid: UUID4
-
     userName: Optional[str]
+    oid: UUID4
 
     name: Optional[str]
     description: Optional[str]

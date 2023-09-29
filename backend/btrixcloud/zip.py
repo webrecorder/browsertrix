@@ -40,7 +40,21 @@ def sync_get_log_stream(client, bucket, key, log_zipinfo, cd_start):
     else:
         uncompressed_content = content
 
-    return uncompressed_content
+    return sync_iter_lines(uncompressed_content)
+
+
+def sync_iter_lines(chunk_iter, keepends=True):
+    """
+    Iter by lines, adapted from botocore
+    """
+    pending = b""
+    for chunk in chunk_iter:
+        lines = (pending + chunk).splitlines(True)
+        for line in lines[:-1]:
+            yield line.splitlines(keepends)[0]
+        pending = lines[-1]
+    if pending:
+        yield pending.splitlines(keepends)[0]
 
 
 async def get_zip_file(client, bucket, key):

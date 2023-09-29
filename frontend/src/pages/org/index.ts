@@ -27,6 +27,8 @@ import "./settings";
 import "./dashboard";
 import "./components/file-uploader";
 import "./components/new-browser-profile-dialog";
+import "./components/new-collection-dialog";
+import "./components/new-workflow-dialog";
 import type {
   Member,
   OrgNameChangeEvent,
@@ -34,10 +36,11 @@ import type {
   OrgRemoveMemberEvent,
 } from "./settings";
 import type { Tab as CollectionTab } from "./collection-detail";
+import type { SelectJobTypeEvent } from "./components/new-workflow-dialog";
 
-export type SelectNewDialogEvent = CustomEvent<
-  "workflow" | "collection" | "browser-profile" | "upload"
->;
+const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
+type ResourceName = (typeof RESOURCE_NAMES)[number];
+export type SelectNewDialogEvent = CustomEvent<ResourceName>;
 export type OrgTab =
   | "home"
   | "crawls"
@@ -56,7 +59,7 @@ type Params = {
   collectionTab?: string;
   itemType?: Crawl["type"];
   jobType?: JobType;
-  name: string;
+  new?: ResourceName;
 };
 const defaultTab = "home";
 
@@ -92,14 +95,10 @@ export class Org extends LiteElement {
   private showStorageQuotaAlert = false;
 
   @state()
-  private openDialogName?:
-    | "workflow"
-    | "collection"
-    | "browser-profile"
-    | "upload";
+  private openDialogName?: ResourceName;
 
   @state()
-  private isDialogVisible = false;
+  private isCreateDialogVisible = false;
 
   @state()
   private org?: OrgData | null;
@@ -138,6 +137,35 @@ export class Org extends LiteElement {
           icon: "exclamation-octagon",
         });
       }
+    }
+    if (changedProperties.has("openDialogName")) {
+      // Sync URL to create dialog
+      const url = new URL(window.location.href);
+      if (this.openDialogName) {
+        if (url.searchParams.get("new") !== this.openDialogName) {
+          url.searchParams.set("new", this.openDialogName);
+          this.navTo(`${url.pathname}${url.search}`);
+        }
+      } else {
+        const prevOpenDialogName = changedProperties.get("openDialogName");
+        if (
+          prevOpenDialogName &&
+          prevOpenDialogName === url.searchParams.get("new")
+        ) {
+          url.searchParams.delete("new");
+          this.navTo(`${url.pathname}${url.search}`);
+        }
+      }
+    }
+  }
+
+  firstUpdated() {
+    // Sync URL to create dialog
+    const url = new URL(window.location.href);
+    const dialogName = url.searchParams.get("new");
+    if (dialogName && RESOURCE_NAMES.includes(dialogName)) {
+      this.openDialogName = dialogName;
+      this.isCreateDialogVisible = true;
     }
   }
 
@@ -215,7 +243,7 @@ export class Org extends LiteElement {
             <strong>${msg("Your org has reached its storage limit")}</strong
             ><br />
             ${msg(
-              "To run crawls again, delete unneeded archived items and unused browser profiles to free up space, or contact us to upgrade your storage plan."
+              "To add archived items again, delete unneeded items and unused browser profiles to free up space, or contact us to upgrade your storage plan."
             )}
           </sl-alert>
         </div>
@@ -302,7 +330,7 @@ export class Org extends LiteElement {
     if (!this.authState || !this.orgId || !this.isCrawler) {
       return;
     }
-    if (!this.isDialogVisible) {
+    if (!this.isCreateDialogVisible) {
       return;
     }
     return html`
@@ -313,7 +341,7 @@ export class Org extends LiteElement {
         }}
         @sl-after-hide=${(e: CustomEvent) => {
           e.stopPropagation();
-          this.isDialogVisible = false;
+          this.isCreateDialogVisible = false;
         }}
       >
         <btrix-file-uploader
@@ -333,6 +361,21 @@ export class Org extends LiteElement {
           ?open=${this.openDialogName === "browser-profile"}
         >
         </btrix-new-browser-profile-dialog>
+        <btrix-new-workflow-dialog
+          orgId=${this.orgId}
+          ?open=${this.openDialogName === "workflow"}
+          @select-job-type=${(e: SelectJobTypeEvent) => {
+            this.openDialogName = undefined;
+            this.navTo(`/orgs/${this.orgId}/workflows?new&jobType=${e.detail}`);
+          }}
+        >
+        </btrix-new-workflow-dialog>
+        <btrix-new-collection-dialog
+          .authState=${this.authState}
+          orgId=${this.orgId}
+          ?open=${this.openDialogName === "collection"}
+        >
+        </btrix-new-collection-dialog>
       </div>
     `;
   }
@@ -376,7 +419,8 @@ export class Org extends LiteElement {
 
   private renderWorkflows() {
     const isEditing = this.params.hasOwnProperty("edit");
-    const isNewResourceTab = this.params.hasOwnProperty("new");
+    const isNewResourceTab =
+      this.params.hasOwnProperty("new") && this.params.jobType;
     const workflowId = this.params.workflowId;
 
     if (workflowId) {
@@ -470,15 +514,6 @@ export class Org extends LiteElement {
       ></btrix-collection-detail>`;
     }
 
-    if (this.orgPath.includes("/new")) {
-      return html`<btrix-collections-new
-        .authState=${this.authState!}
-        orgId=${this.orgId!}
-        ?isCrawler=${this.isCrawler}
-        name=${this.params.name}
-      ></btrix-collections-new>`;
-    }
-
     return html`<btrix-collections-list
       .authState=${this.authState!}
       orgId=${this.orgId!}
@@ -509,7 +544,7 @@ export class Org extends LiteElement {
 
   private async onSelectNewDialog(e: SelectNewDialogEvent) {
     e.stopPropagation();
-    this.isDialogVisible = true;
+    this.isCreateDialogVisible = true;
     await this.updateComplete;
     this.openDialogName = e.detail;
   }

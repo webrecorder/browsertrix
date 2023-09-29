@@ -25,11 +25,8 @@ class Migration(BaseMigration):
 
         # Migrate workflows
         crawl_configs = self.mdb["crawl_configs"]
-        crawl_config_results = [res async for res in crawl_configs.find({})]
-        if not crawl_config_results:
-            return
 
-        for config_dict in crawl_config_results:
+        async for config_dict in crawl_configs.find({}):
             seeds_to_migrate = []
             seed_dicts = []
 
@@ -65,9 +62,8 @@ class Migration(BaseMigration):
 
         # Migrate seeds copied into crawls
         crawls = self.mdb["crawls"]
-        crawl_results = [res async for res in crawls.find({})]
 
-        for crawl_dict in crawl_results:
+        async for crawl_dict in crawls.find({}):
             seeds_to_migrate = []
             seed_dicts = []
 
@@ -102,15 +98,13 @@ class Migration(BaseMigration):
                 )
 
         # Test migration
-        crawl_config_results = [res async for res in crawl_configs.find({})]
-        for config_dict in crawl_config_results:
+        async for config_dict in crawl_configs.find({}):
             config = CrawlConfig.from_dict(config_dict)
             for seed in config.config.seeds:
                 assert isinstance(seed, Seed)
                 assert seed.url
 
-        crawl_results = [res async for res in crawls.find({})]
-        for crawl_dict in crawl_results:
+        async for crawl_dict in crawls.find({}):
             crawl = Crawl.from_dict(crawl_dict)
             for seed in crawl.config.seeds:
                 assert isinstance(seed, Seed)

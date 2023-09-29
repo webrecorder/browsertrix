@@ -1,0 +1,10 @@
+---
+- name: deploy browsertrix cloud on digital ocean
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - inventory/digital_ocean/group_vars/main.yml
+  roles:
+    - role: digital_ocean/setup
+    - role: btrix/deploy

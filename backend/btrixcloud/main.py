@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
 
-from .db import init_db, ping_db, update_and_prepare_db
+from .db import init_db, await_db_and_migrations, update_and_prepare_db
 
 from .emailsender import EmailSender
 from .invites import init_invites
@@ -157,7 +157,7 @@ def main():
             )
         )
     else:
-        asyncio.create_task(ping_db(mdb, db_inited))
+        asyncio.create_task(await_db_and_migrations(mdb, db_inited))
 
     app.include_router(org_ops.router)
 

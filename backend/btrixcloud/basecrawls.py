@@ -123,11 +123,6 @@ class BaseCrawlOps:
             if crawl.config and crawl.config.seeds:
                 crawl.config.seeds = None
 
-        user = await self.user_manager.get(crawl.userid)
-        if user:
-            # pylint: disable=invalid-name
-            crawl.userName = user.name
-
         crawl.storageQuotaReached = await self.orgs.storage_quota_reached(crawl.oid)
 
         return crawl
@@ -257,10 +252,6 @@ class BaseCrawlOps:
             crawl.profileName = await self.crawl_configs.profiles.get_profile_name(
                 crawl.profileid, org
             )
-
-        user = await self.user_manager.get(crawl.userid)
-        if user:
-            crawl.userName = user.name
 
         # if running, get stats directly from redis
         # more responsive, saves db update in operator
@@ -458,15 +449,6 @@ class BaseCrawlOps:
 
         aggregate.extend(
             [
-                {
-                    "$lookup": {
-                        "from": "users",
-                        "localField": "userid",
-                        "foreignField": "id",
-                        "as": "userName",
-                    },
-                },
-                {"$set": {"userName": {"$arrayElemAt": ["$userName.name", 0]}}},
                 {
                     "$facet": {
                         "items": [

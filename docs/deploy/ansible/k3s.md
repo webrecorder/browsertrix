@@ -29,14 +29,9 @@ cp -r ansible/inventory/sample-k3s ansible/inventory/my-deployment
 
 2. Change the [hosts IP address](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/inventory/sample-k3s/hosts.ini) in your just created inventory
 
-3. Copy the playbook into the root ansible directory:
-```zsh
-cp ansible/playbooks/install_k3s.yml ansible/install_k3s.yml
-```
+4. You may need to make modifications to the playbook itself based on your configuration. The playbook lists sections that can be removed or changed based on whether you'd like to install a multi-node or single-node k3s installation for your Browsertrix Cloud deployment. By default the playbook assumes you'll run in a single-node environment deploying directly to `localhost`
 
-5. You may need to make modifications to the playbook itself based on your configuration. The playbook lists sections that can be removed or changed based on whether you'd like to install a multi-node or single-node k3s installation for your Browsertrix Cloud deployment. By default the playbook assumes you'll run in a single-node environment deploying directly to `localhost`
-
-6. Run the playbook:
+5. Run the playbook:
 ```zsh
 ansible-playbook -i inventory/my-deployment/hosts.ini install_k3s.yml
 ```
@@ -47,5 +42,5 @@ ansible-playbook -i inventory/my-deployment/hosts.ini install_k3s.yml
 
 2. Run the playbook:
 ```zsh
-ansible-playbook -i inventory/hosts playbooks/install_k3s.yml -t helm_upgrade
+ansible-playbook -i inventory/hosts install_k3s.yml -t helm_upgrade
 ```

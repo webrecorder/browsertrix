@@ -121,7 +121,9 @@ export class CollectionDetail extends LiteElement {
         </sl-button>
         ${when(this.isCrawler, this.renderActions)}
       </header>
-      <div class="border rounded-lg py-2 mb-3">${this.renderInfoBar()}</div>
+      <div class="border rounded-lg py-2 px-4 mb-3">
+        ${this.renderInfoBar()}
+      </div>
       <div class="mb-3">${this.renderTabs()}</div>
 
       ${choose(
@@ -218,19 +220,21 @@ export class CollectionDetail extends LiteElement {
         </p>
         <div class="flex items-center rounded border">
           <div class="text-base">
+            <sl-tooltip content="Open in New Tab">
+              <sl-icon-button
+                href=${publicReplayUrl}
+                name="box-arrow-up-right"
+                target="_blank"
+              >
+              </sl-icon-button>
+            </sl-tooltip>
+          </div>
+          <div class="flex-1 min-w-0 truncate">${publicReplayUrl}</div>
+          <div class="text-base">
             <btrix-copy-button
               .getValue=${() => publicReplayUrl}
               content=${msg("Copy Public URL")}
             ></btrix-copy-button>
-          </div>
-          <div class="flex-1 min-w-0 truncate">${publicReplayUrl}</div>
-          <div class="text-base">
-            <sl-icon-button
-              href=${publicReplayUrl}
-              name="box-arrow-up-right"
-              target="_blank"
-            >
-            </sl-icon-button>
           </div>
         </div>
       </section>
