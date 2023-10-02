@@ -466,14 +466,16 @@ export class WorkflowDetail extends LiteElement {
     if (this.activePanel === "logs") {
       const authToken = this.authState!.headers.Authorization.split(" ")[1];
       const isDownloadEnabled = Boolean(
-        this.logs && this.workflow?.lastCrawlId && !this.workflow.isCrawlRunning
+        this.logs?.total &&
+          this.workflow?.lastCrawlId &&
+          !this.workflow.isCrawlRunning
       );
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-tooltip
           content=${msg(
             "Downloading will be enabled when this crawl is finished."
           )}
-          ?disabled=${isDownloadEnabled}
+          ?disabled=${!this.workflow?.isCrawlRunning}
         >
           <sl-button
             href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
@@ -1080,7 +1082,7 @@ export class WorkflowDetail extends LiteElement {
                     class="border rounded-lg p-4 flex flex-col items-center justify-center"
                   >
                     <p class="text-center text-neutral-400">
-                      ${msg("No logs found.")}
+                      ${msg("No logs found for latest crawl.")}
                     </p>
                   </div>
                 `,
