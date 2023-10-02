@@ -303,6 +303,10 @@ export class ConfigDetails extends LiteElement {
         msg("Include Any Linked Page"),
         Boolean(crawlConfig?.config.extraHops)
       )}
+      ${this.renderSetting(
+        msg("Fail On Failed URL"),
+        Boolean(crawlConfig?.config.failOnFailedSeed)
+      )}
     `;
   };
 
