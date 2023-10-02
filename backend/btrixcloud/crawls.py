@@ -596,6 +596,25 @@ class CrawlOps(BaseCrawlOps):
             },
         )
 
+    async def get_crawl_seeds(
+        self,
+        crawl_id: str,
+        org: Organization,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ):
+        """Get paginated list of seeds from crawl"""
+        skip = (page - 1) * page_size
+        upper_bound = skip + page_size
+
+        crawl_raw = await self.get_crawl_raw(crawl_id, org)
+        crawl = Crawl.from_dict(crawl_raw)
+        try:
+            return crawl.config.seeds[skip:upper_bound], len(crawl.config.seeds)
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            return [], 0
+
 
 # ============================================================================
 async def recompute_crawl_file_count_and_size(crawls, crawl_id):
@@ -908,6 +927,20 @@ def init_crawls_api(
         user: User = Depends(user_dep),
     ):
         return await ops.add_or_remove_exclusion(crawl_id, regex, org, user, add=False)
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/seeds",
+        tags=["crawls"],
+        response_model=PaginatedResponse,
+    )
+    async def get_crawl_config_seeds(
+        crawl_id: str,
+        org: Organization = Depends(org_viewer_dep),
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+    ):
+        seeds, total = await ops.get_crawl_seeds(crawl_id, org, pageSize, page)
+        return paginated_format(seeds, total, page, pageSize)
 
     @app.get("/orgs/{oid}/crawls/{crawl_id}/logs", tags=["crawls"])
     async def stream_crawl_logs(

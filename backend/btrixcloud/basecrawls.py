@@ -120,6 +120,8 @@ class BaseCrawlOps:
 
         if crawl.type == "crawl":
             crawl = await self._resolve_crawl_refs(crawl, org)
+            if crawl.config and crawl.config.seeds:
+                crawl.config.seeds = None
 
         crawl.storageQuotaReached = await self.orgs.storage_quota_reached(crawl.oid)
 

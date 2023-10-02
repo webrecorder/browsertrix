@@ -440,7 +440,7 @@ export class Org extends LiteElement {
     }
 
     if (isNewResourceTab) {
-      const workflow = this.viewStateData?.workflow;
+      const { workflow, seeds } = this.viewStateData || {};
 
       return html` <btrix-workflows-new
         class="col-span-5 mt-6"
@@ -448,6 +448,7 @@ export class Org extends LiteElement {
         orgId=${this.orgId!}
         ?isCrawler=${this.isCrawler}
         .initialWorkflow=${workflow}
+        .initialSeeds=${seeds}
         jobType=${ifDefined(this.params.jobType)}
         @storage-quota-update=${this.onStorageQuotaUpdate}
         @select-new-dialog=${this.onSelectNewDialog}

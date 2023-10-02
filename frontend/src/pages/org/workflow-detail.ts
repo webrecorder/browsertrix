@@ -17,6 +17,7 @@ import type {
   Workflow,
   WorkflowParams,
   JobType,
+  Seed,
 } from "./types";
 import { humanizeSchedule, humanizeNextDate } from "../../utils/cron";
 import { APIPaginatedList } from "../../types/api";
@@ -65,6 +66,11 @@ export class WorkflowDetail extends LiteElement {
   private workflow?: Workflow;
 
   @state()
+  private seeds?: APIPaginatedList & {
+    items: Seed[];
+  };
+
+  @state()
   private crawls?: APIPaginatedList; // Only inactive crawls
 
   @state()
@@ -109,6 +115,7 @@ export class WorkflowDetail extends LiteElement {
   private isPanelHeaderVisible?: boolean;
 
   private getWorkflowPromise?: Promise<Workflow>;
+  private getSeedsPromise?: Promise<APIPaginatedList>;
 
   private readonly jobTypeLabels: Record<JobType, string> = {
     "url-list": msg("URL List"),
@@ -155,6 +162,7 @@ export class WorkflowDetail extends LiteElement {
       (changedProperties.get("isEditing") === true && this.isEditing === false)
     ) {
       this.fetchWorkflow();
+      this.fetchSeeds();
     }
     if (changedProperties.has("isEditing") && this.isEditing) {
       this.stopPoll();
@@ -322,15 +330,7 @@ export class WorkflowDetail extends LiteElement {
           ${this.renderDetails()}
         </section>
 
-        ${when(
-          this.workflow,
-          this.renderTabList,
-          () => html`<div
-            class="w-full flex items-center justify-center my-24 text-3xl"
-          >
-            <sl-spinner></sl-spinner>
-          </div>`
-        )}
+        ${when(this.workflow, this.renderTabList, this.renderLoading)}
       </div>
 
       <btrix-dialog
@@ -533,10 +533,11 @@ export class WorkflowDetail extends LiteElement {
     </header>
 
     ${when(
-      !this.isLoading,
+      !this.isLoading && this.seeds,
       () => html`
         <btrix-workflow-editor
           .initialWorkflow=${this.workflow}
+          .initialSeeds=${this.seeds!.items}
           jobType=${this.workflow!.jobType}
           configId=${this.workflow!.id}
           orgId=${this.orgId}
@@ -546,7 +547,8 @@ export class WorkflowDetail extends LiteElement {
               `/orgs/${this.orgId}/workflows/crawl/${this.workflow!.id}`
             )}
         ></btrix-workflow-editor>
-      `
+      `,
+      this.renderLoading
     )}
   `;
 
@@ -757,21 +759,19 @@ export class WorkflowDetail extends LiteElement {
   private renderName() {
     if (!this.workflow) return "";
     if (this.workflow.name) return this.workflow.name;
-    const { config } = this.workflow;
-    const firstSeed = config.seeds[0];
-    let firstSeedURL = firstSeed.url;
-    if (config.seeds.length === 1) {
-      return firstSeedURL;
+    const { seedCount, firstSeed } = this.workflow;
+    if (seedCount === 1) {
+      return firstSeed;
     }
-    const remainderCount = config.seeds.length - 1;
+    const remainderCount = seedCount - 1;
     if (remainderCount === 1) {
       return msg(
-        html`${firstSeedURL}
+        html`${firstSeed}
           <span class="text-neutral-500">+${remainderCount} URL</span>`
       );
     }
     return msg(
-      html`${firstSeedURL}
+      html`${firstSeed}
         <span class="text-neutral-500">+${remainderCount} URLs</span>`
     );
   }
@@ -1163,14 +1163,25 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private renderSettings() {
-    return html`<section class="border rounded-lg py-3 px-5">
+    return html`<section
+      class="border rounded-lg py-3 px-5"
+      aria-live="polite"
+      aria-busy=${this.isLoading || !this.seeds}
+    >
       <btrix-config-details
         .authState=${this.authState!}
         .crawlConfig=${this.workflow}
+        .seeds=${this.seeds?.items}
         anchorLinks
       ></btrix-config-details>
     </section>`;
   }
+
+  private renderLoading = () => html`<div
+    class="w-full flex items-center justify-center my-24 text-3xl"
+  >
+    <sl-spinner></sl-spinner>
+  </div>`;
 
   private showDialog = async () => {
     await this.getWorkflowPromise;
@@ -1219,6 +1230,29 @@ export class WorkflowDetail extends LiteElement {
   private async getWorkflow(): Promise<Workflow> {
     const data: Workflow = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}`,
+      this.authState!
+    );
+    return data;
+  }
+
+  private async fetchSeeds(): Promise<void> {
+    try {
+      this.getSeedsPromise = this.getSeeds();
+      this.seeds = await this.getSeedsPromise;
+    } catch {
+      this.notify({
+        message: msg(
+          "Sorry, couldn't retrieve all crawl settings at this time."
+        ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getSeeds(): Promise<APIPaginatedList> {
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}/seeds`,
       this.authState!
     );
     return data;
@@ -1285,17 +1319,21 @@ export class WorkflowDetail extends LiteElement {
    * Create a new template using existing template data
    */
   private async duplicateConfig() {
+    if (!this.workflow) await this.getWorkflowPromise;
+    if (!this.seeds) await this.getSeedsPromise;
+    await this.updateComplete;
     if (!this.workflow) return;
 
     const workflowParams: WorkflowParams = {
       ...this.workflow,
-      name: msg(str`${this.renderName()} Copy`),
+      name: this.workflow.name ? msg(str`${this.workflow.name} Copy`) : "",
     };
 
     this.navTo(
       `/orgs/${this.orgId}/workflows?new&jobType=${workflowParams.jobType}`,
       {
         workflow: workflowParams,
+        seeds: this.seeds?.items,
       }
     );
 

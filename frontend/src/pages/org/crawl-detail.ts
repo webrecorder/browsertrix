@@ -11,7 +11,7 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { isActive } from "../../utils/crawler";
 import { CopyButton } from "../../components/copy-button";
-import type { Crawl, Workflow } from "./types";
+import type { Crawl, Seed } from "./types";
 import { APIPaginatedList } from "../../types/api";
 
 const SECTIONS = [
@@ -64,6 +64,11 @@ export class CrawlDetail extends LiteElement {
 
   @state()
   private crawl?: Crawl;
+
+  @state()
+  private seeds?: APIPaginatedList & {
+    items: Seed[];
+  };
 
   @state()
   private logs?: APIPaginatedList;
@@ -121,29 +126,11 @@ export class CrawlDetail extends LiteElement {
     return this.crawl.resources.length > 0;
   }
 
-  firstUpdated() {
-    this.fetchCrawl();
-    this.fetchCrawlLogs();
-  }
-
   willUpdate(changedProperties: Map<string, any>) {
-    const prevId = changedProperties.get("crawlId");
-
-    if (prevId && prevId !== this.crawlId) {
-      // Handle update on URL change, e.g. from re-run
+    if (changedProperties.has("crawlId") && this.crawlId) {
       this.fetchCrawl();
       this.fetchCrawlLogs();
-    } else {
-      const prevCrawl = changedProperties.get("crawl");
-
-      if (prevCrawl && this.crawl) {
-        if (
-          (prevCrawl.state === "running" || prevCrawl.state === "stopping") &&
-          !this.isActive
-        ) {
-          this.crawlDone();
-        }
-      }
+      this.fetchSeeds();
     }
   }
 
@@ -822,49 +809,59 @@ ${this.crawl?.description}
   }
 
   private renderLogs() {
-    if (!this.logs) {
-      return html`<div
-        class="w-full flex items-center justify-center my-24 text-3xl"
-      >
-        <sl-spinner></sl-spinner>
-      </div>`;
-    }
-
-    if (!this.logs.total) {
-      return html`<div class="border rounded-lg p-4">
-        <p class="text-sm text-neutral-400">
-          ${msg("No error logs to display.")}
-        </p>
-      </div>`;
-    }
-
     return html`
-      <btrix-crawl-logs
-        .logs=${this.logs}
-        @page-change=${async (e: PageChangeEvent) => {
-          await this.fetchCrawlLogs({
-            page: e.detail.page,
-          });
-          // Scroll to top of list
-          this.scrollIntoView();
-        }}
-      ></btrix-crawl-logs>
+      <div aria-live="polite" aria-busy=${!this.logs}>
+        ${when(this.logs, () =>
+          this.logs!.total
+            ? html`
+                <btrix-crawl-logs
+                  .logs=${this.logs}
+                  @page-change=${async (e: PageChangeEvent) => {
+                    await this.fetchCrawlLogs({
+                      page: e.detail.page,
+                    });
+                    // Scroll to top of list
+                    this.scrollIntoView();
+                  }}
+                ></btrix-crawl-logs>
+              `
+            : html`<div class="border rounded-lg p-4">
+                <p class="text-sm text-neutral-400">
+                  ${msg("No error logs to display.")}
+                </p>
+              </div>`
+        )}
+      </div>
     `;
   }
 
   private renderConfig() {
-    if (!this.crawl?.config) return "";
     return html`
-      <btrix-config-details
-        .authState=${this.authState!}
-        .crawlConfig=${{
-          ...this.crawl,
-          autoAddCollections: this.crawl.collectionIds,
-        }}
-        hideTags
-      ></btrix-config-details>
+      <div aria-live="polite" aria-busy=${!this.crawl || !this.seeds}>
+        ${when(
+          this.crawl && this.seeds,
+          () => html`
+            <btrix-config-details
+              .authState=${this.authState!}
+              .crawlConfig=${{
+                ...this.crawl,
+                autoAddCollections: this.crawl!.collectionIds,
+              }}
+              .seeds=${this.seeds!.items}
+              hideTags
+            ></btrix-config-details>
+          `,
+          this.renderLoading
+        )}
+      </div>
     `;
   }
+
+  private renderLoading = () => html`<div
+    class="w-full flex items-center justify-center my-24 text-3xl"
+  >
+    <sl-spinner></sl-spinner>
+  </div>`;
 
   /**
    * Fetch crawl and update internal state
@@ -881,12 +878,35 @@ ${this.crawl?.description}
     }
   }
 
+  private async fetchSeeds(): Promise<void> {
+    try {
+      this.seeds = await this.getSeeds();
+    } catch {
+      this.notify({
+        message: msg(
+          "Sorry, couldn't retrieve all crawl settings at this time."
+        ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
   private async getCrawl(): Promise<Crawl> {
     const apiPath = `/orgs/${this.orgId}/${
       this.itemType === "upload" ? "uploads" : "crawls"
     }/${this.crawlId}/replay.json`;
     const data: Crawl = await this.apiFetch(apiPath, this.authState!);
 
+    return data;
+  }
+
+  private async getSeeds(): Promise<APIPaginatedList> {
+    // NOTE Returns first 1000 seeds (backend pagination max)
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/crawls/${this.crawlId}/seeds`,
+      this.authState!
+    );
     return data;
   }
 

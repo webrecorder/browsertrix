@@ -6,7 +6,7 @@ import { mergeDeep } from "immutable";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { JobType, WorkflowParams } from "./types";
+import type { JobType, Seed, WorkflowParams } from "./types";
 import type { SelectNewDialogEvent } from "./index";
 import "./workflow-editor";
 
@@ -48,6 +48,9 @@ export class WorkflowsNew extends LiteElement {
 
   @property({ type: Boolean })
   isCrawler!: boolean;
+
+  @property({ type: Array })
+  initialSeeds?: Seed[];
 
   @property({ type: String })
   jobType?: JobType;
@@ -108,6 +111,7 @@ export class WorkflowsNew extends LiteElement {
         </h2>
         <btrix-workflow-editor
           .initialWorkflow=${this.initialWorkflow}
+          .initialSeeds=${this.initialSeeds}
           jobType=${jobType}
           orgId=${this.orgId}
           .authState=${this.authState}

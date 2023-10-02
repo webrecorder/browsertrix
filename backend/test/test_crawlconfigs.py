@@ -123,6 +123,7 @@ def test_verify_update(crawler_auth_headers, default_org_id):
     assert data["description"] == UPDATED_DESCRIPTION
     assert sorted(data["tags"]) == sorted(UPDATED_TAGS)
     assert data["autoAddCollections"] == [_coll_id]
+    assert data["firstSeed"] == "https://example.com/"
 
 
 def test_update_config_invalid_format(
@@ -408,3 +409,58 @@ def test_incremental_workflow_total_size_and_last_crawl_stats(
     assert data["lastCrawlStartTime"] == last_crawl_started
     assert data["lastCrawlTime"] == last_crawl_finished
     assert data["lastRun"] == last_run
+
+
+def test_get_config_seeds(crawler_auth_headers, default_org_id, url_list_config_id):
+    # Make sure seeds aren't included in the crawlconfig detail
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{url_list_config_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json().get("config").get("seeds") is None
+
+    # Test getting seeds from separate endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{url_list_config_id}/seeds",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 3
+
+    EXPECTED_SEED_URLS = [
+        "https://webrecorder.net",
+        "https://example.com",
+        "https://specs.webrecorder.net",
+    ]
+    found_seed_urls = []
+
+    for item in data["items"]:
+        found_seed_urls.append(item["url"])
+
+    assert sorted(found_seed_urls) == sorted(EXPECTED_SEED_URLS)
+
+    # Test getting seeds with low page size
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{url_list_config_id}/seeds?pageSize=2",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 3
+    items = data["items"]
+    assert len(items) == 2
+    for item in items:
+        assert item["url"] in EXPECTED_SEED_URLS
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{url_list_config_id}/seeds?pageSize=2&page=2",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 3
+    items = data["items"]
+    assert len(items) == 1
+    assert items[0]["url"] in EXPECTED_SEED_URLS

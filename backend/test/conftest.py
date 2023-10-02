@@ -94,7 +94,7 @@ def admin_crawl_id(admin_auth_headers, default_org_id):
         "description": "Admin Test Crawl description",
         "tags": ["wr-test-1", "wr-test-2"],
         "config": {
-            "seeds": [{"url": "https://webrecorder.net/"}],
+            "seeds": [{"url": "https://webrecorder.net/", "depth": 1}],
             "exclude": "community",
             # limit now set via 'max_pages_per_crawl' global limit
             # "limit": 1,
@@ -470,6 +470,30 @@ def all_crawls_delete_crawl_ids(admin_auth_headers, default_org_id):
 @pytest.fixture(scope="session")
 def all_crawls_delete_config_id(admin_crawl_id):
     return _all_crawls_delete_config_id
+
+
+@pytest.fixture(scope="session")
+def url_list_config_id(crawler_auth_headers, default_org_id):
+    # Start crawl.
+    crawl_data = {
+        "runNow": False,
+        "name": "URL List config",
+        "description": "Contains 3 seeds",
+        "config": {
+            "seeds": [
+                {"url": "https://webrecorder.net"},
+                {"url": "https://example.com"},
+                {"url": "https://specs.webrecorder.net"},
+            ],
+            "limit": 1,
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=crawl_data,
+    )
+    return r.json()["id"]
 
 
 @pytest.fixture(scope="function")

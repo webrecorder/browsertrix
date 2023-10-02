@@ -77,7 +77,7 @@ class Seed(BaseModel):
 class RawCrawlConfig(BaseModel):
     """Base Crawl Config"""
 
-    seeds: List[Seed]
+    seeds: Optional[List[Seed]]
 
     scopeType: Optional[ScopeType] = ScopeType.PREFIX
 

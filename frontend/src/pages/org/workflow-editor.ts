@@ -54,6 +54,9 @@ import type { CollectionList } from "../../types/collection";
 
 type NewCrawlConfigParams = WorkflowParams & {
   runNow: boolean;
+  config: WorkflowParams["config"] & {
+    seeds: Seed[];
+  };
 };
 
 const STEPS = [
@@ -232,6 +235,9 @@ export class CrawlConfigEditor extends LiteElement {
 
   @property({ type: Object })
   initialWorkflow?: WorkflowParams;
+
+  @property({ type: Array })
+  initialSeeds?: Seed[];
 
   @state()
   private tagOptions: string[] = [];
@@ -427,14 +433,16 @@ export class CrawlConfigEditor extends LiteElement {
     if (!this.initialWorkflow) return defaultFormState;
     const formState: Partial<FormState> = {};
     const seedsConfig = this.initialWorkflow.config;
-    const { seeds } = seedsConfig;
     let primarySeedConfig: SeedConfig | Seed = seedsConfig;
     if (this.initialWorkflow.jobType === "seed-crawl") {
-      if (typeof seeds[0] === "string") {
-        formState.primarySeedUrl = seeds[0];
-      } else {
-        primarySeedConfig = seeds[0];
-        formState.primarySeedUrl = primarySeedConfig.url;
+      if (this.initialSeeds) {
+        const firstSeed = this.initialSeeds[0];
+        if (typeof firstSeed === "string") {
+          formState.primarySeedUrl = firstSeed;
+        } else {
+          primarySeedConfig = firstSeed;
+          formState.primarySeedUrl = primarySeedConfig.url;
+        }
       }
       if (primarySeedConfig.include?.length) {
         formState.customIncludeUrlList = primarySeedConfig.include
@@ -445,14 +453,16 @@ export class CrawlConfigEditor extends LiteElement {
         // to indicate 'Custom Page Prefix' option
         formState.scopeType = "custom";
       }
-      const additionalSeeds = seeds.slice(1);
-      if (additionalSeeds.length) {
+      const additionalSeeds = this.initialSeeds?.slice(1);
+      if (additionalSeeds?.length) {
         formState.urlList = mapSeedToUrl(additionalSeeds).join("\n");
       }
       formState.useSitemap = seedsConfig.useSitemap;
     } else {
       // Treat "custom" like URL list
-      formState.urlList = mapSeedToUrl(seeds).join("\n");
+      if (this.initialSeeds) {
+        formState.urlList = mapSeedToUrl(this.initialSeeds).join("\n");
+      }
 
       if (this.initialWorkflow.jobType === "custom") {
         formState.scopeType = seedsConfig.scopeType || "page";
@@ -1828,6 +1838,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           return html`<btrix-config-details
             .authState=${this.authState!}
             .crawlConfig=${{ ...crawlConfig, profileName, oid: this.orgId }}
+            .seeds=${crawlConfig.config.seeds}
           >
           </btrix-config-details>`;
         })}

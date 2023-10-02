@@ -29,6 +29,9 @@ export class ConfigDetails extends LiteElement {
   @property({ type: Object })
   crawlConfig?: CrawlConfig;
 
+  @property({ type: Array })
+  seeds?: Seed[];
+
   @property({ type: Boolean })
   anchorLinks = false;
 
@@ -69,7 +72,7 @@ export class ConfigDetails extends LiteElement {
     const crawlConfig = this.crawlConfig;
     const seedsConfig = crawlConfig?.config;
     const exclusions = seedsConfig?.exclude || [];
-    const maxPages = seedsConfig?.seeds[0]?.limit ?? seedsConfig?.limit;
+    const maxPages = (this.seeds && this.seeds[0]?.limit) ?? seedsConfig?.limit;
     const renderTimeLimit = (
       valueSeconds?: number | null,
       fallbackValue?: number
@@ -292,9 +295,7 @@ export class ConfigDetails extends LiteElement {
         msg("List of URLs"),
         html`
           <ul>
-            ${crawlConfig?.config.seeds.map(
-              (seed: Seed) => html` <li>${seed.url}</li> `
-            )}
+            ${this.seeds?.map((seed: Seed) => html` <li>${seed.url}</li> `)}
           </ul>
         `,
         true
@@ -307,10 +308,11 @@ export class ConfigDetails extends LiteElement {
   };
 
   private renderConfirmSeededSettings = () => {
+    if (!this.seeds) return;
     const crawlConfig = this.crawlConfig!;
     const seedsConfig = crawlConfig.config;
-    const additionalUrlList = seedsConfig.seeds.slice(1);
-    const primarySeedConfig: SeedConfig | Seed = seedsConfig.seeds[0];
+    const additionalUrlList = this.seeds.slice(1);
+    const primarySeedConfig: SeedConfig | Seed | undefined = this.seeds[0];
     const primarySeedUrl = primarySeedConfig.url;
     const includeUrlList =
       primarySeedConfig.include || seedsConfig.include || [];
