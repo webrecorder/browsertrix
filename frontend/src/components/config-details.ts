@@ -304,7 +304,7 @@ export class ConfigDetails extends LiteElement {
         Boolean(crawlConfig?.config.extraHops)
       )}
       ${this.renderSetting(
-        msg("Fail On Failed URL"),
+        msg("Stop Crawl On Failed URL"),
         Boolean(crawlConfig?.config.failOnFailedSeed)
       )}
     `;
