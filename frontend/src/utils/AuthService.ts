@@ -27,6 +27,11 @@ export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
   readonly detail: T;
 }
 
+export interface NeedLoginEvent extends CustomEvent {
+  readonly bubbles: boolean;
+  readonly composed: boolean;
+}
+
 type AuthRequestEventData = {
   name: "requesting_auth";
 };
@@ -51,6 +56,7 @@ export default class AuthService {
   static storageKey = "btrix.auth";
   static unsupportedAuthErrorCode = "UNSUPPORTED_AUTH_TYPE";
   static loggedInEvent = "logged-in";
+  static needLoginEvent = "need-login";
 
   static broadcastChannel = new BroadcastChannel(AuthService.storageKey);
   static storage = {
@@ -83,6 +89,13 @@ export default class AuthService {
 
   static createLoggedInEvent = (detail: LoggedInEventDetail): LoggedInEvent => {
     return new CustomEvent(AuthService.loggedInEvent, { detail });
+  };
+
+  static createNeedLoginEvent = (): NeedLoginEvent => {
+    return new CustomEvent(AuthService.needLoginEvent, {
+      bubbles: true,
+      composed: true,
+    });
   };
 
   static async login({

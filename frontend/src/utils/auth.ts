@@ -1,6 +1,6 @@
 import LiteElement from "../utils/LiteElement";
 import type { AuthState } from "../utils/AuthService";
-import type { CurrentUser } from "../types/user";
+import AuthService from "../utils/AuthService";
 
 /**
  * Block rendering and dispatch event if user is not logged in
@@ -27,7 +27,7 @@ export function needLogin<T extends { new (...args: any[]): LiteElement }>(
       if (this.authState) {
         super.update(changedProperties);
       } else {
-        this.dispatchEvent(new CustomEvent("need-login"));
+        this.dispatchEvent(AuthService.createNeedLoginEvent());
       }
     }
   };
