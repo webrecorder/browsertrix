@@ -994,7 +994,7 @@ https://example.com/path`}
         name="failOnFailedSeed"
         ?checked=${this.formState.failOnFailedSeed}
       >
-        ${msg("Stop Crawl On Failed URL")}
+        ${msg("Stop Crawl on Failed URL")}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
         msg(
