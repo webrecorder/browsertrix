@@ -40,8 +40,12 @@ from .models import CrawlFile, CrawlCompleteIn
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
 POD = "Pod.v1"
-CJS = "CrawlJob.btrix.cloud/v1"
-METRICS = "PodMetrics.metrics.k8s.io/v1beta1"
+
+BTRIX_API = "btrix.cloud/v1"
+CJS = f"CrawlJob.{BTRIX_API}"
+
+METRICS_API = "metrics.k8s.io/v1beta1"
+METRICS = f"PodMetrics.{METRICS_API}"
 
 DEFAULT_TTL = 30
 
@@ -590,13 +594,13 @@ class BtrixOperator(K8sAPI):
                     "labelSelector": {"matchLabels": {"btrix.crawlconfig": cid}},
                 },
                 {
-                    "apiVersion": "btrix.cloud/v1",
+                    "apiVersion": BTRIX_API,
                     "resource": "crawljobs",
                     "labelSelector": {"matchLabels": {"oid": oid}},
                 },
                 # enable for podmetrics
                 {
-                    "apiVersion": "metrics.k8s.io/v1beta1",
+                    "apiVersion": METRICS_API,
                     "resource": "pods",
                     "labelSelector": {"matchLabels": {"crawl": crawl_id}},
                 },
