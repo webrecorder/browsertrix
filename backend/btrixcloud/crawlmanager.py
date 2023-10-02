@@ -10,7 +10,7 @@ from datetime import timedelta
 
 from .k8sapi import K8sAPI
 from .models import S3Storage
-from .utils import dt_now, to_k8s_date
+from .utils import dt_now, is_bool, to_k8s_date
 
 
 # ============================================================================
@@ -222,8 +222,8 @@ class CrawlManager(K8sAPI):
             access_key = self._secret_data(storage_secret, "STORE_ACCESS_KEY")
             secret_key = self._secret_data(storage_secret, "STORE_SECRET_KEY")
             region = self._secret_data(storage_secret, "STORE_REGION") or ""
-            use_access_for_presign = (
-                self._secret_data(storage_secret, "STORE_USE_ACCESS_FOR_PRESIGN") == "1"
+            use_access_for_presign = is_bool(
+                self._secret_data(storage_secret, "STORE_USE_ACCESS_FOR_PRESIGN")
             )
 
             self._default_storages[name] = S3Storage(

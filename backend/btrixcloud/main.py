@@ -28,7 +28,7 @@ from .basecrawls import init_base_crawls_api
 from .webhooks import init_event_webhooks_api
 
 from .crawlmanager import CrawlManager
-from .utils import run_once_lock, register_exit_handler
+from .utils import run_once_lock, register_exit_handler, is_bool
 
 
 API_PREFIX = "/api"
@@ -54,7 +54,7 @@ def main():
     dbclient, mdb = init_db()
 
     settings = {
-        "registrationEnabled": os.environ.get("REGISTRATION_ENABLED") == "1",
+        "registrationEnabled": is_bool(os.environ.get("REGISTRATION_ENABLED")),
         "jwtTokenLifetime": JWT_TOKEN_LIFETIME,
         "defaultBehaviorTimeSeconds": int(
             os.environ.get("DEFAULT_BEHAVIOR_TIME_SECONDS", 300)

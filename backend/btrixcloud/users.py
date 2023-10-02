@@ -35,7 +35,7 @@ from .models import (
     PaginatedResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-
+from .utils import is_bool
 
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
@@ -63,7 +63,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         self.invites = invites
         self.org_ops = None
 
-        self.registration_enabled = os.environ.get("REGISTRATION_ENABLED") == "1"
+        self.registration_enabled = is_bool(os.environ.get("REGISTRATION_ENABLED"))
 
     def set_org_ops(self, ops):
         """set org ops"""

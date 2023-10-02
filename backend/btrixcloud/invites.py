@@ -12,6 +12,7 @@ from fastapi import HTTPException
 
 from .pagination import DEFAULT_PAGE_SIZE
 from .models import UserRole, InvitePending, InviteRequest
+from .utils import is_bool
 
 
 # ============================================================================
@@ -22,7 +23,7 @@ class InviteOps:
         self.invites = mdb["invites"]
         self.orgs = mdb["organizations"]
         self.email = email
-        self.allow_dupe_invites = os.environ.get("ALLOW_DUPE_INVITES", "0") == "1"
+        self.allow_dupe_invites = is_bool(os.environ.get("ALLOW_DUPE_INVITES", "0"))
 
     async def init_index(self):
         """Create TTL index so that invites auto-expire"""
