@@ -166,6 +166,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             print(res, flush=True)
         except (DuplicateKeyError, UserAlreadyExists):
             print(f"User {email} already exists", flush=True)
+        # pylint: disable=raise-missing-from
         except InvalidPasswordException:
             raise HTTPException(status_code=422, detail="invalid_password")
 
@@ -200,6 +201,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
                     created_user, user_create, request=None
                 )
                 return created_user
+            # pylint: disable=raise-missing-from
             except InvalidPasswordException:
                 raise HTTPException(status_code=422, detail="invalid_password")
 
