@@ -6,7 +6,7 @@ import os
 import uuid
 import asyncio
 
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import UUID4
 import passlib.pwd
@@ -17,7 +17,7 @@ from fastapi.security import OAuth2PasswordBearer
 from pymongo.errors import DuplicateKeyError
 
 from fastapi_users import FastAPIUsers, BaseUserManager
-from fastapi_users.manager import UserAlreadyExists
+from fastapi_users.manager import UserAlreadyExists, InvalidPasswordException
 from fastapi_users.authentication import (
     AuthenticationBackend,
     BearerTransport,
@@ -95,6 +95,23 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         created_user = await super().create(user, safe, request)
         await self.on_after_register_custom(created_user, user, request)
         return created_user
+
+    async def validate_password(
+        self, password: str, user: Union[UserCreate, UserDB]
+    ) -> None:
+        """
+        Validate a password.
+
+        Overloaded to set password requirements.
+
+        :param password: The password to validate.
+        :param user: The user associated to this password.
+        :raises InvalidPasswordException: The password is invalid.
+        :return: None if the password is valid.
+        """
+        pw_length = len(password)
+        if not 8 <= pw_length <= 64:
+            raise InvalidPasswordException(reason="invalid_password_length")
 
     async def get_user_names_by_ids(self, user_ids):
         """return list of user names for given ids"""

@@ -37,7 +37,7 @@ export class ResetPassword extends LiteElement {
                 id="password"
                 name="password"
                 type="password"
-                label="${msg("New password")}"
+                label="${msg("New password (8-64 characters)")}"
                 autocomplete="new-password"
                 passwordToggle
                 required
@@ -95,17 +95,19 @@ export class ResetPassword extends LiteElement {
       case 400:
       case 422:
         const { detail } = await resp.json();
-
         if (detail === "RESET_PASSWORD_BAD_TOKEN") {
           // TODO password validation details
           this.serverError = msg(
             "Password reset email is not valid. Request a new password reset email"
           );
-        } else {
-          // TODO password validation details
-          this.serverError = msg("Invalid password");
+        } else if (
+          detail.code &&
+          detail.code === "RESET_PASSWORD_INVALID_PASSWORD"
+        ) {
+          this.serverError = msg(
+            "Invalid password. Must be between 8 and 64 characters"
+          );
         }
-
         break;
       default:
         this.serverError = msg("Something unexpected went wrong");

@@ -310,7 +310,7 @@ export class AccountSettings extends LiteElement {
             id="newPassword"
             name="newPassword"
             type="password"
-            label="${msg("New password")}"
+            label="${msg("New password (8-64 characters)")}"
             autocomplete="new-password"
             password-toggle
             required
@@ -351,8 +351,6 @@ export class AccountSettings extends LiteElement {
         email: this.authState.username,
         password: formData.get("password") as string,
       });
-
-      this.dispatchEvent(AuthService.createLoggedInEvent(nextAuthState));
     } catch (e: any) {
       console.debug(e);
     }
@@ -371,6 +369,7 @@ export class AccountSettings extends LiteElement {
 
     const params = {
       password: formData.get("newPassword"),
+      email: this.userInfo?.email,
     };
 
     try {
@@ -385,13 +384,17 @@ export class AccountSettings extends LiteElement {
           successMessage: "Successfully updated password",
         },
       });
+
+      this.dispatchEvent(AuthService.createLoggedInEvent(nextAuthState));
     } catch (e) {
       console.error(e);
 
       this.formStateService.send({
         type: "ERROR",
         detail: {
-          serverError: msg("Something went wrong changing password"),
+          serverError: msg(
+            "Something went wrong changing password. Verify that new password meets requirements (8-64 characters)."
+          ),
         },
       });
     }
