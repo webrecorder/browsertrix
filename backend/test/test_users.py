@@ -1,6 +1,6 @@
 import requests
 
-from .conftest import API_PREFIX, CRAWLER_USERNAME
+from .conftest import API_PREFIX, CRAWLER_USERNAME, ADMIN_PW
 
 
 def test_create_super_user(admin_auth_headers):
@@ -42,3 +42,19 @@ def test_me_with_orgs(crawler_auth_headers, default_org_id):
     assert default_org["name"]
     assert default_org["default"]
     assert default_org["role"] == 20
+
+
+def test_add_user_to_org_invalid_password(admin_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/add-user",
+        json={
+            "email": "invalidpassword@example.com",
+            "password": "pw",
+            "name": "new-user 1",
+            "description": "test invalid password",
+            "role": 20,
+        },
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 422
+    assert r.json()["detail"] == "invalid_password"

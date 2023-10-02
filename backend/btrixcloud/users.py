@@ -164,9 +164,10 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             )
             print(f"Super user {email} created", flush=True)
             print(res, flush=True)
-
         except (DuplicateKeyError, UserAlreadyExists):
             print(f"User {email} already exists", flush=True)
+        except InvalidPasswordException:
+            raise HTTPException(status_code=422, detail="invalid_password")
 
     async def create_non_super_user(
         self,
@@ -191,9 +192,16 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
                 newOrg=False,
                 is_verified=True,
             )
-            created_user = await super().create(user_create, safe=False, request=None)
-            await self.on_after_register_custom(created_user, user_create, request=None)
-            return created_user
+            try:
+                created_user = await super().create(
+                    user_create, safe=False, request=None
+                )
+                await self.on_after_register_custom(
+                    created_user, user_create, request=None
+                )
+                return created_user
+            except InvalidPasswordException:
+                raise HTTPException(status_code=422, detail="invalid_password")
 
         except (DuplicateKeyError, UserAlreadyExists):
             print(f"User {email} already exists", flush=True)
