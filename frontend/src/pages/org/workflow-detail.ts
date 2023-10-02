@@ -465,16 +465,26 @@ export class WorkflowDetail extends LiteElement {
     }
     if (this.activePanel === "logs") {
       const authToken = this.authState!.headers.Authorization.split(" ")[1];
+      const isDownloadEnabled = Boolean(
+        this.logs && this.workflow?.lastCrawlId && !this.workflow.isCrawlRunning
+      );
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
-        <sl-button
-          href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
-          download=${`btrix-${this.lastCrawlId}-logs.txt`}
-          size="small"
-          ?disabled=${!this.logs?.total}
+        <sl-tooltip
+          content=${msg(
+            "Downloading will be enabled when this crawl is finished."
+          )}
+          ?disabled=${isDownloadEnabled}
         >
-          <sl-icon slot="prefix" name="download"></sl-icon>
-          ${msg("Download Logs")}
-        </sl-button>`;
+          <sl-button
+            href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
+            download=${`btrix-${this.lastCrawlId}-logs.txt`}
+            size="small"
+            ?disabled=${!isDownloadEnabled}
+          >
+            <sl-icon slot="prefix" name="download"></sl-icon>
+            ${msg("Download Logs")}
+          </sl-button>
+        </sl-tooltip>`;
     }
 
     return html`<h3>${this.tabLabels[this.activePanel]}</h3>`;
@@ -1110,7 +1120,7 @@ export class WorkflowDetail extends LiteElement {
 
   private renderCrawlErrors() {
     return html`
-      <sl-details summary="Toggle Me">
+      <sl-details>
         <h3
           slot="summary"
           class="leading-none text font-semibold flex items-center gap-2"
