@@ -69,6 +69,11 @@ jobs:
         with:
           version: 3.10.2
 
+      - name: Install Additional Helm Dependencies
+        run: |
+          helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+          helm upgrade --install metrics-server metrics-server/metrics-server
+
       - name: Start Cluster with Helm
         run: |
           helm upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml btrix ./chart/
