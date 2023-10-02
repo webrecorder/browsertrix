@@ -116,27 +116,8 @@ export class Dashboard extends LiteElement {
           ${this.renderCard(
             msg("Storage"),
             (metrics) => html`
-              ${when(metrics.storageQuotaBytes, () =>
-                this.renderStorageMeter(metrics)
-              )}
+              ${this.renderStorageMeter(metrics)}
               <dl>
-                ${when(
-                  !metrics.storageQuotaBytes,
-                  () => html`
-                    ${this.renderStat({
-                      value: html`<sl-format-bytes
-                        value=${metrics.storageUsedBytes ?? 0}
-                        display="narrow"
-                      ></sl-format-bytes>`,
-                      singleLabel: msg("of Data Stored"),
-                      pluralLabel: msg("of Data Stored"),
-                      iconProps: { name: "device-hdd-fill" },
-                    })}
-                    <sl-divider
-                      style="--spacing:var(--sl-spacing-small)"
-                    ></sl-divider>
-                  `
-                )}
                 ${this.renderStat({
                   value: metrics.crawlCount,
                   singleLabel: msg("Crawl"),
@@ -226,12 +207,14 @@ export class Dashboard extends LiteElement {
   }
 
   private renderStorageMeter(metrics: Metrics) {
+    const hasQuota = Boolean(metrics.storageQuotaBytes);
     // Account for usage that exceeds max
     const maxBytes = Math.max(
       metrics.storageUsedBytes,
-      metrics.storageQuotaBytes
+      hasQuota ? metrics.storageQuotaBytes : metrics.storageUsedBytes
     );
-    const isStorageFull = metrics.storageUsedBytes >= metrics.storageQuotaBytes;
+    const isStorageFull =
+      hasQuota && metrics.storageUsedBytes >= metrics.storageQuotaBytes;
     const renderBar = (value: number, label: string, color: string) => html`
       <btrix-meter-bar
         value=${(value / metrics.storageUsedBytes) * 100}
@@ -259,12 +242,20 @@ export class Dashboard extends LiteElement {
               <span>${msg("Storage is Full")}</span>
             </div>
           `,
-          () => html`
-            <sl-format-bytes
-              value=${maxBytes - metrics.storageUsedBytes}
-            ></sl-format-bytes>
-            ${msg("Available")}
-          `
+          () =>
+            hasQuota
+              ? html`
+                  <sl-format-bytes
+                    value=${maxBytes - metrics.storageUsedBytes}
+                  ></sl-format-bytes>
+                  ${msg("Available")}
+                `
+              : html`
+                  <sl-format-bytes
+                    value=${metrics.storageUsedBytes}
+                  ></sl-format-bytes>
+                  ${msg("of Data Stored")}
+                `
         )}
       </div>
       <div class="mb-2">
