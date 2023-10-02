@@ -1666,12 +1666,18 @@ export class WorkflowDetail extends LiteElement {
   ): Promise<void> {
     try {
       this.logs = await this.getCrawlErrors(params);
-    } catch {
-      this.notify({
-        message: msg("Sorry, couldn't retrieve crawl logs at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
+    } catch (e: any) {
+      if (e.isApiError && e.statusCode === 503) {
+        // TODO check for more specific error following
+        // https://github.com/webrecorder/browsertrix-cloud/issues/1238
+        console.info(e.message);
+      } else {
+        this.notify({
+          message: msg("Sorry, couldn't retrieve crawl logs at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
     }
   }
 
