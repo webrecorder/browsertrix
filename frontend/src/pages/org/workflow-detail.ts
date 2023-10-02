@@ -173,12 +173,6 @@ export class WorkflowDetail extends LiteElement {
     if (changedProperties.has("isEditing") && this.isEditing) {
       this.stopPoll();
     }
-    if (changedProperties.has("lastCrawlId")) {
-      if (this.lastCrawlId) {
-        this.logs = undefined;
-        this.fetchCrawlLogs();
-      }
-    }
     if (
       !this.isEditing &&
       changedProperties.has("activePanel") &&
@@ -219,59 +213,25 @@ export class WorkflowDetail extends LiteElement {
     this.activePanel = tab;
   }
 
-  private async handleCrawlRunEnd() {
-    this.goToTab("crawls", { replace: true });
-    await this.fetchWorkflow();
-
-    let notifyOpts = {
-      message: msg("Crawl finished."),
-      variant: "info",
-      icon: "info-circle",
-    } as any;
-    // TODO consolidate with `CrawlStatus.getContent`
-    switch (this.workflow!.lastCrawlState) {
-      case "complete":
-        notifyOpts = {
-          message: msg("Crawl complete."),
-          variant: "success",
-          icon: "check-circle",
-        };
-        break;
-      case "canceled":
-        notifyOpts = {
-          message: msg("Crawl canceled."),
-          variant: "danger",
-          icon: "x-octagon",
-        };
-        break;
-      case "failed":
-        notifyOpts = {
-          message: msg("Crawl failed."),
-          variant: "danger",
-          icon: "exclamation-triangle",
-        };
-        break;
-      default:
-        break;
-    }
-    this.notify({
-      ...notifyOpts,
-      duration: 8000,
-    });
-  }
-
   private async fetchWorkflow() {
     this.stopPoll();
     this.isLoading = true;
 
     try {
+      const prevLastCrawlId = this.lastCrawlId;
       this.getWorkflowPromise = this.getWorkflow();
       this.workflow = await this.getWorkflowPromise;
       this.lastCrawlId = this.workflow.lastCrawlId;
       this.lastCrawlStartTime = this.workflow.lastCrawlStartTime;
 
       if (this.lastCrawlId) {
-        this.fetchCurrentCrawlStats();
+        if (this.workflow.isCrawlRunning) {
+          this.fetchCurrentCrawlStats();
+          this.fetchCrawlLogs();
+        } else if (this.lastCrawlId !== prevLastCrawlId) {
+          this.logs = undefined;
+          this.fetchCrawlLogs();
+        }
       }
       // TODO: Check if storage quota has been exceeded here by running
       // crawl??
@@ -1603,6 +1563,7 @@ export class WorkflowDetail extends LiteElement {
       this.lastCrawlId = data.started;
       // remove 'Z' from timestamp to match API response
       this.lastCrawlStartTime = new Date().toISOString().slice(0, -1);
+      this.logs = undefined;
       this.fetchWorkflow();
       this.goToTab("watch");
 
