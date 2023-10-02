@@ -131,7 +131,7 @@ export class WorkflowDetail extends LiteElement {
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Crawls"),
     watch: msg("Watch Crawl"),
-    logs: msg("Logs"),
+    logs: msg("Error Logs"),
     settings: msg("Workflow Settings"),
   };
 
