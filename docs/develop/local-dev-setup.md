@@ -18,8 +18,10 @@ so that local changes to it will not be accidentally committed to git. From the 
 cp ./chart/examples/local-config.yaml ./chart/local.yaml
 ```
 
-2. Uncomment pull policies in `./chart/local.yaml`, which will ensure the local images are used:
+2. Uncomment `backend_image`, `frontend_image`, and pull policies in `./chart/local.yaml`, which will ensure the local images are used:
 ```yaml
+backend_image: docker.io/webrecorder/browsertrix-backend:latest
+frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
 backend_pull_policy: 'Never'
 frontend_pull_policy: 'Never'
 ```
