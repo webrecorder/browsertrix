@@ -700,7 +700,7 @@ def init_crawls_api(
         user: User = Depends(user_dep),
         org: Organization = Depends(org_crawl_dep),
     ):
-        return await ops.delete_crawls(org, delete_list, user)
+        return await ops.delete_crawls(org, delete_list, "crawl", user)
 
     @app.get(
         "/orgs/all/crawls/{crawl_id}/replay.json",
