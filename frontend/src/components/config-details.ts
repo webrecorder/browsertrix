@@ -295,7 +295,19 @@ export class ConfigDetails extends LiteElement {
         msg("List of URLs"),
         html`
           <ul>
-            ${this.seeds?.map((seed: Seed) => html` <li>${seed.url}</li> `)}
+            ${this.seeds?.map(
+              (seed: Seed) =>
+                html`
+                  <li>
+                    <a
+                      class="text-primary hover:text-indigo-400"
+                      href="${seed.url}"
+                      target="_blank"
+                      >${seed.url}</a
+                    >
+                  </li>
+                `
+            )}
           </ul>
         `,
         true
@@ -317,7 +329,16 @@ export class ConfigDetails extends LiteElement {
     const includeUrlList =
       primarySeedConfig.include || seedsConfig.include || [];
     return html`
-      ${this.renderSetting(msg("Primary Seed URL"), primarySeedUrl, true)}
+      ${this.renderSetting(
+        msg("Primary Seed URL"),
+        html`<a
+          class="text-primary hover:text-indigo-400"
+          href="${primarySeedUrl}"
+          target="_blank"
+          >${primarySeedUrl}</a
+        >`,
+        true
+      )}
       ${this.renderSetting(
         msg("Crawl Scope"),
         this.scopeTypeLabels[
@@ -367,7 +388,14 @@ export class ConfigDetails extends LiteElement {
               <ul>
                 ${additionalUrlList.map(
                   (seed) =>
-                    html`<li>${typeof seed === "string" ? seed : seed.url}</li>`
+                    html`<li>
+                      <a
+                        class="text-primary hover:text-indigo-400"
+                        href="${typeof seed === "string" ? seed : seed.url}"
+                        target="_blank"
+                        >${typeof seed === "string" ? seed : seed.url}</a
+                      >
+                    </li>`
                 )}
               </ul>
             `
