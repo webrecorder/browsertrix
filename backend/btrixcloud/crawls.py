@@ -700,7 +700,7 @@ def init_crawls_api(
         # - Crawler users can delete their own crawls
         # - Org owners can delete any crawls in org
         for crawl_id in delete_list.crawl_ids:
-            crawl_raw = await ops.get_crawl_raw(crawl_id, org)
+            crawl = await ops.get_crawl_raw(crawl_id, org)
             if (crawl.get("userid") != user.id) and not org.is_owner(user):
                 raise HTTPException(status_code=403, detail="not_allowed")
 
