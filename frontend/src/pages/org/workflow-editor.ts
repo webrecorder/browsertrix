@@ -994,11 +994,11 @@ https://example.com/path`}
         name="failOnFailedSeed"
         ?checked=${this.formState.failOnFailedSeed}
       >
-        ${msg("Stop Crawl on Failed URL")}
+        ${msg("Fail Crawl on Failed URL")}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
-        msg(
-          `If checked, the crawler will stop crawling if any of the provided URLs are invalid or unsuccessfully crawled.`
+msg(
+          `If checked, the crawler will immediately interrupt and fail the crawl if any of the provided URLs are invalid or unsuccessfully crawled.`
         ),
         false
       )}
