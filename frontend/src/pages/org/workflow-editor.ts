@@ -914,43 +914,36 @@ export class CrawlConfigEditor extends LiteElement {
           placeholder=${`https://example.com
 https://example.com/path`}
           required
-          @sl-input=${async (e: Event) => {
-            const inputEl = e.target as SlInput;
-            await inputEl.updateComplete;
-            if (
-              !inputEl.checkValidity() &&
-              !urlListToArray(inputEl.value).some((url) => !validURL(url))
-            ) {
-              inputEl.setCustomValidity("");
-              inputEl.helpText = "";
+          @keyup=${async (e: KeyboardEvent) => {
+            if (e.key === "Enter") {
+              const inputEl = e.target as SlInput;
+              await inputEl.updateComplete;
+              if (!inputEl.value) return;
+              const { isValid, helpText } = this.validateUrlList(inputEl.value);
+              inputEl.helpText = helpText;
+              if (isValid) {
+                inputEl.setCustomValidity("");
+              } else {
+                inputEl.setCustomValidity(helpText);
+              }
             }
           }}
-          @sl-change=${async (e: Event) => {
+          @sl-input=${(e: CustomEvent) => {
             const inputEl = e.target as SlInput;
-            console.log("val:", inputEl.value);
+            if (!inputEl.value) {
+              inputEl.helpText = msg("At least 1 URL is required.");
+            }
+          }}
+          @sl-change=${async (e: CustomEvent) => {
+            const inputEl = e.target as SlInput;
             if (!inputEl.value) return;
-            const urlList = urlListToArray(inputEl.value);
-            const invalidUrl = urlList.find((url) => !validURL(url));
-            console.log("urlList:", urlList);
-            let helpText = "";
-            if (urlList.length > URL_LIST_MAX_URLS) {
-              helpText = msg(
-                str`Please shorten list to ${URL_LIST_MAX_URLS.toLocaleString()} or less URLs.`
-              );
-            }
-            if (invalidUrl) {
-              helpText = msg(
-                str`Please remove or fix the following invalid URL: ${invalidUrl}`
-              );
-            }
-            if (helpText) {
-              inputEl.setCustomValidity(helpText);
-            } else {
-              helpText = msg(
-                str`${urlList.length.toLocaleString()} URLs entered`
-              );
-            }
+            const { isValid, helpText } = this.validateUrlList(inputEl.value);
             inputEl.helpText = helpText;
+            if (isValid) {
+              inputEl.setCustomValidity("");
+            } else {
+              inputEl.setCustomValidity(helpText);
+            }
           }}
         ></sl-textarea>
       `)}
@@ -2229,6 +2222,33 @@ https://archiveweb.page/images/${"logo.svg"}`}
         ${detailsWithoutDictError.map(renderDetail)}
       </ul>
     `;
+  }
+
+  private validateUrlList(
+    value: string,
+    max = URL_LIST_MAX_URLS
+  ): { isValid: boolean; helpText: string } {
+    const urlList = urlListToArray(value);
+    let isValid = true;
+    let helpText =
+      urlList.length === 1
+        ? msg(str`${urlList.length.toLocaleString()} URL entered`)
+        : msg(str`${urlList.length.toLocaleString()} URLs entered`);
+    if (urlList.length > max) {
+      isValid = false;
+      helpText = msg(
+        str`Please shorten list to ${max.toLocaleString()} or less URLs.`
+      );
+    } else {
+      const invalidUrl = urlList.find((url) => !validURL(url));
+      if (invalidUrl) {
+        isValid = false;
+        helpText = msg(
+          str`Please remove or fix the following invalid URL: ${invalidUrl}`
+        );
+      }
+    }
+    return { isValid, helpText };
   }
 
   private onTagInput = (e: TagInputEvent) => {
