@@ -99,6 +99,7 @@ export class BrowserProfilesNew extends LiteElement {
             <a
               class="text-primary hover:text-indigo-400"
               href="https://docs.browsertrix.cloud/user-guide/browser-profiles/"
+              target="_blank"
               >${msg("browser profiles documentation page.")}</a
             >
           </p>
