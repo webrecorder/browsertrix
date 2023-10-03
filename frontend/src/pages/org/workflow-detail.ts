@@ -23,12 +23,14 @@ import { humanizeSchedule, humanizeNextDate } from "../../utils/cron";
 import { APIPaginatedList } from "../../types/api";
 import { inactiveCrawlStates, isActive } from "../../utils/crawler";
 import { SlSelect } from "@shoelace-style/shoelace";
+import type { PageChangeEvent } from "../../components/pagination";
 
-const SECTIONS = ["crawls", "watch", "settings"] as const;
+const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];
 const DEFAULT_SECTION: Tab = "crawls";
 const POLL_INTERVAL_SECONDS = 10;
 const ABORT_REASON_CANCLED = "canceled";
+const LOGS_PAGE_SIZE = 50;
 
 /**
  * Usage:
@@ -72,6 +74,9 @@ export class WorkflowDetail extends LiteElement {
 
   @state()
   private crawls?: APIPaginatedList; // Only inactive crawls
+
+  @state()
+  private logs?: APIPaginatedList;
 
   @state()
   private lastCrawlId: Workflow["lastCrawlId"] = null;
@@ -126,6 +131,7 @@ export class WorkflowDetail extends LiteElement {
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Crawls"),
     watch: msg("Watch Crawl"),
+    logs: msg("Error Logs"),
     settings: msg("Workflow Settings"),
   };
 
@@ -168,13 +174,6 @@ export class WorkflowDetail extends LiteElement {
       this.stopPoll();
     }
     if (
-      changedProperties.get("lastCrawlId") &&
-      !this.lastCrawlId &&
-      this.activePanel === "watch"
-    ) {
-      this.handleCrawlRunEnd();
-    }
-    if (
       !this.isEditing &&
       changedProperties.has("activePanel") &&
       this.activePanel
@@ -214,58 +213,25 @@ export class WorkflowDetail extends LiteElement {
     this.activePanel = tab;
   }
 
-  private async handleCrawlRunEnd() {
-    this.goToTab("crawls", { replace: true });
-    await this.fetchWorkflow();
-
-    let notifyOpts = {
-      message: msg("Crawl finished."),
-      variant: "info",
-      icon: "info-circle",
-    } as any;
-    // TODO consolidate with `CrawlStatus.getContent`
-    switch (this.workflow!.lastCrawlState) {
-      case "complete":
-        notifyOpts = {
-          message: msg("Crawl complete."),
-          variant: "success",
-          icon: "check-circle",
-        };
-        break;
-      case "canceled":
-        notifyOpts = {
-          message: msg("Crawl canceled."),
-          variant: "danger",
-          icon: "x-octagon",
-        };
-        break;
-      case "failed":
-        notifyOpts = {
-          message: msg("Crawl failed."),
-          variant: "danger",
-          icon: "exclamation-triangle",
-        };
-        break;
-      default:
-        break;
-    }
-    this.notify({
-      ...notifyOpts,
-      duration: 8000,
-    });
-  }
-
   private async fetchWorkflow() {
     this.stopPoll();
     this.isLoading = true;
 
     try {
+      const prevLastCrawlId = this.lastCrawlId;
       this.getWorkflowPromise = this.getWorkflow();
       this.workflow = await this.getWorkflowPromise;
       this.lastCrawlId = this.workflow.lastCrawlId;
       this.lastCrawlStartTime = this.workflow.lastCrawlStartTime;
+
       if (this.lastCrawlId) {
-        this.fetchCurrentCrawlStats();
+        if (this.workflow.isCrawlRunning) {
+          this.fetchCurrentCrawlStats();
+          this.fetchCrawlLogs();
+        } else if (this.lastCrawlId !== prevLastCrawlId) {
+          this.logs = undefined;
+          this.fetchCrawlLogs();
+        }
       }
       // TODO: Check if storage quota has been exceeded here by running
       // crawl??
@@ -428,9 +394,8 @@ export class WorkflowDetail extends LiteElement {
         </header>
       </btrix-observable>
 
-      ${this.renderTab("crawls")}
-      ${this.renderTab("watch", { disabled: !this.lastCrawlId })}
-      ${this.renderTab("settings")}
+      ${this.renderTab("crawls")} ${this.renderTab("watch")}
+      ${this.renderTab("logs")} ${this.renderTab("settings")}
 
       <btrix-tab-panel name="crawls">${this.renderCrawls()}</btrix-tab-panel>
       <btrix-tab-panel name="watch">
@@ -449,6 +414,7 @@ export class WorkflowDetail extends LiteElement {
           )
         )}
       </btrix-tab-panel>
+      <btrix-tab-panel name="logs">${this.renderLogs()}</btrix-tab-panel>
       <btrix-tab-panel name="settings">
         ${this.renderSettings()}
       </btrix-tab-panel>
@@ -496,6 +462,31 @@ export class WorkflowDetail extends LiteElement {
           <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
           <span> ${msg("Edit Crawler Instances")} </span>
         </sl-button>`;
+    }
+    if (this.activePanel === "logs") {
+      const authToken = this.authState!.headers.Authorization.split(" ")[1];
+      const isDownloadEnabled = Boolean(
+        this.logs?.total &&
+          this.workflow?.lastCrawlId &&
+          !this.workflow.isCrawlRunning
+      );
+      return html` <h3>${this.tabLabels[this.activePanel]}</h3>
+        <sl-tooltip
+          content=${msg(
+            "Downloading will be enabled when this crawl is finished."
+          )}
+          ?disabled=${!this.workflow?.isCrawlRunning}
+        >
+          <sl-button
+            href=${`/api/orgs/${this.orgId}/crawls/${this.lastCrawlId}/logs?auth_bearer=${authToken}`}
+            download=${`btrix-${this.lastCrawlId}-logs.txt`}
+            size="small"
+            ?disabled=${!isDownloadEnabled}
+          >
+            <sl-icon slot="prefix" name="download"></sl-icon>
+            ${msg("Download Logs")}
+          </sl-button>
+        </sl-tooltip>`;
     }
 
     return html`<h3>${this.tabLabels[this.activePanel]}</h3>`;
@@ -933,7 +924,7 @@ export class WorkflowDetail extends LiteElement {
 
       case "waiting_capacity":
         waitingMsg = msg(
-          "Crawl waiting for available resources before it can start..."
+          "Crawl waiting for available resources before it can continue..."
         );
         break;
 
@@ -980,6 +971,7 @@ export class WorkflowDetail extends LiteElement {
             ></btrix-screencast>
           </div>
 
+          <section class="mt-4">${this.renderCrawlErrors()}</section>
           <section class="mt-8">${this.renderExclusions()}</section>
 
           <btrix-dialog
@@ -1053,10 +1045,116 @@ export class WorkflowDetail extends LiteElement {
     `;
   }
 
+  private renderLogs() {
+    return html`
+      <div aria-live="polite" aria-busy=${this.isLoading}>
+        ${when(
+          this.workflow?.isCrawlRunning,
+          () => html`<div class="mb-4">
+            <btrix-alert variant="success" class="text-sm">
+              ${msg(
+                html`Viewing error logs for currently running crawl.
+                  <a
+                    href="${`${window.location.pathname}#watch`}"
+                    class="underline hover:no-underline"
+                    >Watch Crawl Progress</a
+                  >`
+              )}
+            </btrix-alert>
+          </div>`
+        )}
+        ${when(
+          this.lastCrawlId,
+          () =>
+            this.logs?.total
+              ? html`<btrix-crawl-logs
+                  .logs=${this.logs}
+                  @page-change=${async (e: PageChangeEvent) => {
+                    await this.fetchCrawlLogs({
+                      page: e.detail.page,
+                    });
+                    // Scroll to top of list
+                    this.scrollIntoView();
+                  }}
+                ></btrix-crawl-logs>`
+              : html`
+                  <div
+                    class="border rounded-lg p-4 flex flex-col items-center justify-center"
+                  >
+                    <p class="text-center text-neutral-400">
+                      ${this.workflow?.lastCrawlState === "waiting_capacity"
+                        ? msg("Error logs currently not available.")
+                        : msg("No error logs found yet for latest crawl.")}
+                    </p>
+                  </div>
+                `,
+          () => this.renderNoCrawlLogs()
+        )}
+      </div>
+    `;
+  }
+
+  private renderNoCrawlLogs() {
+    return html`
+      <section
+        class="border rounded-lg p-4 h-56 min-h-max flex flex-col items-center justify-center"
+      >
+        <p class="font-medium text-base">
+          ${msg("Logs will show here after you run a crawl.")}
+        </p>
+        <div class="mt-4">
+          <sl-tooltip
+            content=${msg("Org Storage Full")}
+            ?disabled=${!this.orgStorageQuotaReached}
+          >
+            <sl-button
+              size="small"
+              variant="primary"
+              ?disabled=${this.orgStorageQuotaReached}
+              @click=${() => this.runNow()}
+            >
+              <sl-icon name="play" slot="prefix"></sl-icon>
+              ${msg("Run Crawl")}
+            </sl-button>
+          </sl-tooltip>
+        </div>
+      </section>
+    `;
+  }
+
+  private renderCrawlErrors() {
+    return html`
+      <sl-details>
+        <h3
+          slot="summary"
+          class="leading-none text font-semibold flex items-center gap-2"
+        >
+          ${msg("Error Logs")}
+          <btrix-badge variant=${this.logs?.total ? "danger" : "neutral"}
+            >${this.logs?.total
+              ? this.logs?.total.toLocaleString()
+              : 0}</btrix-badge
+          >
+        </h3>
+        <btrix-crawl-logs .logs=${this.logs}></btrix-crawl-logs>
+        ${when(
+          this.logs?.total && this.logs.total > LOGS_PAGE_SIZE,
+          () => html`
+            <p class="text-xs text-neutral-500 my-4">
+              ${msg(
+                str`Displaying latest ${LOGS_PAGE_SIZE.toLocaleString()} errors of ${this.logs!.total.toLocaleString()}.`
+              )}
+            </p>
+          `
+        )}
+      </sl-details>
+    `;
+  }
+
   private renderExclusions() {
     return html`
       <header class="flex items-center justify-between">
-        <h3 class="leading-none text-lg font-semibold mb-2">
+        <h3 class="leading-none text-base font-semibold mb-2">
           ${msg("Crawl URLs")}
         </h3>
         <sl-button
@@ -1479,6 +1577,7 @@ export class WorkflowDetail extends LiteElement {
       this.lastCrawlId = data.started;
       // remove 'Z' from timestamp to match API response
       this.lastCrawlStartTime = new Date().toISOString().slice(0, -1);
+      this.logs = undefined;
       this.fetchWorkflow();
       this.goToTab("watch");
 
@@ -1535,6 +1634,42 @@ export class WorkflowDetail extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  private async fetchCrawlLogs(
+    params: Partial<APIPaginatedList> = {}
+  ): Promise<void> {
+    try {
+      this.logs = await this.getCrawlErrors(params);
+    } catch (e: any) {
+      if (e.isApiError && e.statusCode === 503) {
+        // do nothing, keep logs if previously loaded
+      } else {
+        this.notify({
+          message: msg(
+            "Sorry, couldn't retrieve crawl error logs at this time."
+          ),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
+    }
+  }
+
+  private async getCrawlErrors(
+    params: Partial<APIPaginatedList>
+  ): Promise<APIPaginatedList> {
+    const page = params.page || this.logs?.page || 1;
+    const pageSize = params.pageSize || this.logs?.pageSize || LOGS_PAGE_SIZE;
+
+    const data: APIPaginatedList = await this.apiFetch(
+      `/orgs/${this.orgId}/crawls/${
+        this.workflow!.lastCrawlId
+      }/errors?page=${page}&pageSize=${pageSize}`,
+      this.authState!
+    );
+
+    return data;
   }
 }
 

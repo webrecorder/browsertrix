@@ -84,6 +84,9 @@ export class CrawlLogs extends LitElement {
   @property({ type: Object })
   logs?: APIPaginatedList;
 
+  @property({ type: Boolean })
+  paginate = false;
+
   @state()
   private selectedLog:
     | (CrawlLog & {
@@ -145,14 +148,17 @@ export class CrawlLogs extends LitElement {
           `;
         })}
       </btrix-numbered-list>
-      <footer>
-        <btrix-pagination
-          page=${this.logs.page}
-          totalCount=${this.logs.total}
-          size=${this.logs.pageSize}
-        >
-        </btrix-pagination>
-      </footer>
+      ${this.paginate
+        ? html`<footer>
+            <btrix-pagination
+              page=${this.logs.page}
+              totalCount=${this.logs.total}
+              size=${this.logs.pageSize}
+            >
+            </btrix-pagination>
+          </footer>`
+        : ""}
+
       <btrix-dialog
         label=${msg("Log Details")}
         ?open=${this.selectedLog}

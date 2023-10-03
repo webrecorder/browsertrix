@@ -816,6 +816,7 @@ ${this.crawl?.description}
             ? html`
                 <btrix-crawl-logs
                   .logs=${this.logs}
+                  paginate
                   @page-change=${async (e: PageChangeEvent) => {
                     await this.fetchCrawlLogs({
                       page: e.detail.page,
@@ -917,7 +918,7 @@ ${this.crawl?.description}
       return;
     }
     try {
-      this.logs = await this.getCrawlLogs(params);
+      this.logs = await this.getCrawlErrors(params);
     } catch {
       this.notify({
         message: msg("Sorry, couldn't retrieve crawl logs at this time."),
@@ -927,7 +928,7 @@ ${this.crawl?.description}
     }
   }
 
-  private async getCrawlLogs(
+  private async getCrawlErrors(
     params: Partial<APIPaginatedList>
   ): Promise<APIPaginatedList> {
     const page = params.page || this.logs?.page || 1;
