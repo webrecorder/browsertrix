@@ -26,7 +26,7 @@ jobs:
             -p "30870:30870@agent:0:direct"
             --agents 1
             --no-lb
-            --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
+            --k3s-arg "--disable=traefik --disable=servicelb"
 
       - name: Checkout
         uses: actions/checkout@v3
@@ -68,11 +68,6 @@ jobs:
         uses: azure/setup-helm@v3
         with:
           version: 3.10.2
-
-      - name: Install Additional Helm Dependencies
-        run: |
-          helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
-          helm upgrade --install metrics-server metrics-server/metrics-server
 
       - name: Start Cluster with Helm
         run: |
