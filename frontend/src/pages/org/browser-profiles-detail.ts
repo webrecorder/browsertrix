@@ -215,7 +215,7 @@ export class BrowserProfilesDetail extends LiteElement {
         )}
       </div>
 
-      <sl-dialog
+      <btrix-dialog
         label=${msg(str`Edit Profile`)}
         ?open=${this.isEditDialogOpen}
         @sl-request-close=${() => (this.isEditDialogOpen = false)}
@@ -223,7 +223,7 @@ export class BrowserProfilesDetail extends LiteElement {
         @sl-after-hide=${() => (this.isEditDialogContentVisible = false)}
       >
         ${this.isEditDialogContentVisible ? this.renderEditProfile() : ""}
-      </sl-dialog> `;
+      </btrix-dialog> `;
   }
 
   private renderVisitedSites = () => {
@@ -352,14 +352,16 @@ export class BrowserProfilesDetail extends LiteElement {
           ></sl-textarea>
         </div>
 
-        <div class="text-right">
+        <div class="flex justify-between">
           <sl-button
-            variant="text"
+            variant="default"
+            size="small"
             @click=${() => (this.isEditDialogOpen = false)}
             >${msg("Cancel")}</sl-button
           >
           <sl-button
             variant="primary"
+            size="small"
             type="submit"
             ?disabled=${this.isSubmittingProfileChange}
             ?loading=${this.isSubmittingProfileChange}
