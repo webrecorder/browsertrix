@@ -924,7 +924,7 @@ export class WorkflowDetail extends LiteElement {
 
       case "waiting_capacity":
         waitingMsg = msg(
-          "Crawl waiting for available resources before it can start..."
+          "Crawl waiting for available resources before it can continue..."
         );
         break;
 
@@ -1053,7 +1053,7 @@ export class WorkflowDetail extends LiteElement {
           () => html`<div class="mb-4">
             <btrix-alert variant="success" class="text-sm">
               ${msg(
-                html`Viewing logs for currently running crawl.
+                html`Viewing error logs for currently running crawl.
                   <a
                     href="${`${window.location.pathname}#watch`}"
                     class="underline hover:no-underline"
@@ -1082,7 +1082,9 @@ export class WorkflowDetail extends LiteElement {
                     class="border rounded-lg p-4 flex flex-col items-center justify-center"
                   >
                     <p class="text-center text-neutral-400">
-                      ${msg("No logs found for latest crawl.")}
+                      ${this.workflow?.lastCrawlState === "waiting_capacity"
+                        ? msg("Error logs currently not available.")
+                        : msg("No error logs found yet for latest crawl.")}
                     </p>
                   </div>
                 `,
@@ -1641,12 +1643,12 @@ export class WorkflowDetail extends LiteElement {
       this.logs = await this.getCrawlErrors(params);
     } catch (e: any) {
       if (e.isApiError && e.statusCode === 503) {
-        // TODO check for more specific error following
-        // https://github.com/webrecorder/browsertrix-cloud/issues/1238
-        console.info(e.message);
+        // do nothing, keep logs if previously loaded
       } else {
         this.notify({
-          message: msg("Sorry, couldn't retrieve crawl logs at this time."),
+          message: msg(
+            "Sorry, couldn't retrieve crawl error logs at this time."
+          ),
           variant: "danger",
           icon: "exclamation-octagon",
         });

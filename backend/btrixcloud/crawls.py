@@ -520,7 +520,7 @@ class CrawlOps(BaseCrawlOps):
                 total = await redis.llen(f"{crawl_id}:e")
             except exceptions.ConnectionError:
                 # pylint: disable=raise-missing-from
-                raise HTTPException(status_code=503, detail="redis_connection_error")
+                raise HTTPException(status_code=503, detail="error_logs_not_available")
 
         parsed_errors = parse_jsonl_error_messages(errors)
         return parsed_errors, total
