@@ -29,7 +29,7 @@ When enabled, the crawler will visit all the links it finds within each page def
 ??? example "Crawling tags & search queries with URL List crawls"
     This setting can be useful for crawling the content of specific tags or searh queries. Specify the tag or search query URL(s) in the _List of URLs_ field, e.g: `https://example.com/search?q=tag`, and enable _Include Any Linked Page_ to crawl all the content present on that search query page.
 
-### Stop Crawl on Failed URL
+### Fail Crawl on Failed URL
 
 `URL List`{ .badge-blue }
 
