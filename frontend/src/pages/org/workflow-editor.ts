@@ -2252,7 +2252,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     if (urlList.length > max) {
       isValid = false;
       helpText = msg(
-        str`Please shorten list to ${max.toLocaleString()} or less URLs.`
+        str`Please shorten list to ${max.toLocaleString()} or fewer URLs.`
       );
     } else {
       const invalidUrl = urlList.find((url) => !validURL(url));
