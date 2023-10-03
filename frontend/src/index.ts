@@ -804,6 +804,15 @@ export class App extends LiteElement {
   onNeedLogin = () => {
     this.clearUser();
     this.navigate(ROUTES.login);
+    this.onNotify(
+      new CustomEvent("notify", {
+        detail: {
+          message: msg("Please log in to continue."),
+          variant: "warning" as any,
+          icon: "exclamation-triangle",
+        },
+      })
+    );
   };
 
   onNavigateTo(event: NavigateEvent) {
