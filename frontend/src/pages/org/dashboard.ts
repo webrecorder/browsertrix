@@ -299,16 +299,19 @@ export class Dashboard extends LiteElement {
               <div class="w-full h-full"></div>
             </sl-tooltip>
           </div>
-          <sl-format-bytes
-            slot="valueLabel"
-            value=${metrics.storageUsedBytes}
-            display="narrow"
-          ></sl-format-bytes>
-          <sl-format-bytes
-            slot="maxLabel"
-            value=${metrics.storageQuotaBytes}
-            display="narrow"
-          ></sl-format-bytes>
+          ${when(
+            hasQuota,
+            () => html`<sl-format-bytes
+                slot="valueLabel"
+                value=${metrics.storageUsedBytes}
+                display="narrow"
+              ></sl-format-bytes>
+              <sl-format-bytes
+                slot="maxLabel"
+                value=${metrics.storageQuotaBytes}
+                display="narrow"
+              ></sl-format-bytes>`
+          )}
         </btrix-meter>
       </div>
     `;
