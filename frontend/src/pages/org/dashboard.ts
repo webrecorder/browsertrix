@@ -208,11 +208,6 @@ export class Dashboard extends LiteElement {
 
   private renderStorageMeter(metrics: Metrics) {
     const hasQuota = Boolean(metrics.storageQuotaBytes);
-    // Account for usage that exceeds max
-    const maxBytes = Math.max(
-      metrics.storageUsedBytes,
-      hasQuota ? metrics.storageQuotaBytes : metrics.storageUsedBytes
-    );
     const isStorageFull =
       hasQuota && metrics.storageUsedBytes >= metrics.storageQuotaBytes;
     const renderBar = (value: number, label: string, color: string) => html`
@@ -246,7 +241,8 @@ export class Dashboard extends LiteElement {
             hasQuota
               ? html`
                   <sl-format-bytes
-                    value=${maxBytes - metrics.storageUsedBytes}
+                    value=${metrics.storageQuotaBytes -
+                    metrics.storageUsedBytes}
                   ></sl-format-bytes>
                   ${msg("Available")}
                 `
@@ -261,7 +257,7 @@ export class Dashboard extends LiteElement {
       <div class="mb-2">
         <btrix-meter
           value=${metrics.storageUsedBytes}
-          max=${maxBytes}
+          max=${ifDefined(metrics.storageQuotaBytes || undefined)}
           valueText=${msg("gigabyte")}
         >
           ${when(metrics.storageUsedCrawls, () =>

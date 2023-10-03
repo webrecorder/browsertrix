@@ -50,7 +50,7 @@ export class Meter extends LitElement {
   min = 0;
 
   @property({ type: Number })
-  max = 100;
+  max?: number;
 
   @property({ type: Number })
   value = 0;
@@ -130,8 +130,9 @@ export class Meter extends LitElement {
 
   render() {
     // meter spec disallow values that exceed max
-    const boundedValue = Math.max(Math.min(this.value, this.max), this.min);
-    const barWidth = `${(boundedValue / this.max) * 100}%`;
+    const max = this.max ? Math.max(this.value, this.max) : this.value;
+    const boundedValue = Math.max(Math.min(this.value, max), this.min);
+    const barWidth = `${(boundedValue / max) * 100}%`;
     return html`
       <div
         class="meter"
@@ -139,14 +140,14 @@ export class Meter extends LitElement {
         aria-valuenow=${boundedValue}
         aria-valuetext=${ifDefined(this.valueText)}
         aria-valuemin=${this.min}
-        aria-valuemax=${this.max}
+        aria-valuemax=${max}
       >
         <sl-resize-observer @sl-resize=${this.onTrackResize}>
           <div class="track">
             <div class="valueBar" style="width:${barWidth}">
               <slot @slotchange=${this.handleSlotchange}></slot>
             </div>
-            ${this.value < this.max ? html`<slot name="available"></slot>` : ""}
+            ${this.value < max ? html`<slot name="available"></slot>` : ""}
           </div>
         </sl-resize-observer>
         <div class="labels">
@@ -155,13 +156,13 @@ export class Meter extends LitElement {
               <slot name="valueLabel"></slot>
             </span>
           </div>
-          ${this.value >= this.max
-            ? ""
-            : html`<div class="label max">
+          ${this.max
+            ? html`<div class="label max">
                 <span class="maxText withSeparator">
                   <slot name="maxLabel"></slot>
                 </span>
-              </div>`}
+              </div>`
+            : ""}
         </div>
       </div>
     `;
