@@ -187,10 +187,15 @@ class UploadOps(BaseCrawlOps):
 
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 
-    async def delete_uploads(self, delete_list: DeleteCrawlList, org: Organization):
+    async def delete_uploads(
+        self,
+        delete_list: DeleteCrawlList,
+        org: Organization,
+        user: Optional[User] = None,
+    ):
         """Delete uploaded crawls"""
         deleted_count, _, quota_reached = await self.delete_crawls(
-            org, delete_list, "upload"
+            org, delete_list, "upload", user
         )
 
         if deleted_count < 1:
@@ -399,6 +404,7 @@ def init_uploads_api(
     @app.post("/orgs/{oid}/uploads/delete", tags=["uploads"])
     async def delete_uploads(
         delete_list: DeleteCrawlList,
+        user: User = Depends(user_dep),
         org: Organization = Depends(org_crawl_dep),
     ):
-        return await ops.delete_uploads(delete_list, org)
+        return await ops.delete_uploads(delete_list, org, user)

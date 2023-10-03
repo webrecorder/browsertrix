@@ -203,12 +203,16 @@ class CrawlOps(BaseCrawlOps):
         return crawls, total
 
     async def delete_crawls(
-        self, org: Organization, delete_list: DeleteCrawlList, type_="crawl"
+        self,
+        org: Organization,
+        delete_list: DeleteCrawlList,
+        type_="crawl",
+        user: Optional[User] = None,
     ):
         """Delete a list of crawls by id for given org"""
 
         count, cids_to_update, quota_reached = await super().delete_crawls(
-            org, delete_list, type_
+            org, delete_list, type_, user
         )
 
         if count < 1:
@@ -294,65 +298,6 @@ class CrawlOps(BaseCrawlOps):
             raise HTTPException(status_code=404, detail=f"Crawl '{crawl_id}' not found")
 
         return True
-
-    async def update_crawl_state(self, crawl_id: str, state: str):
-        """called only when job container is being stopped/canceled"""
-
-        data = {"state": state}
-        # if cancelation, set the finish time here
-        if state == "canceled":
-            data["finished"] = dt_now()
-
-        await self.crawls.find_one_and_update(
-            {
-                "_id": crawl_id,
-                "type": "crawl",
-                "state": {"$in": RUNNING_AND_STARTING_STATES},
-            },
-            {"$set": data},
-        )
-
-    async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
-        """stop or cancel specified crawl"""
-        result = None
-        try:
-            result = await self.crawl_manager.shutdown_crawl(
-                crawl_id, org.id_str, graceful=graceful
-            )
-
-            if result.get("success"):
-                if graceful:
-                    await self.crawls.find_one_and_update(
-                        {"_id": crawl_id, "type": "crawl", "oid": org.id},
-                        {"$set": {"stopping": True}},
-                    )
-                return result
-
-        except Exception as exc:
-            # pylint: disable=raise-missing-from
-            # if reached here, probably crawl doesn't exist anymore
-            raise HTTPException(
-                status_code=404, detail=f"crawl_not_found, (details: {exc})"
-            )
-
-        # if job no longer running, canceling is considered success,
-        # but graceful stoppage is not possible, so would be a failure
-        if result.get("error") == "Not Found":
-            if not graceful:
-                await self.update_crawl_state(crawl_id, "canceled")
-                crawl = await self.get_crawl_raw(crawl_id, org)
-                if not await self.crawl_configs.stats_recompute_last(
-                    crawl["cid"], 0, -1
-                ):
-                    raise HTTPException(
-                        status_code=404,
-                        detail=f"crawl_config_not_found: {crawl['cid']}",
-                    )
-
-                return {"success": True}
-
-        # return whatever detail may be included in the response
-        raise HTTPException(status_code=400, detail=result)
 
     async def _crawl_queue_len(self, redis, key):
         try:
@@ -774,25 +719,7 @@ def init_crawls_api(
         user: User = Depends(user_dep),
         org: Organization = Depends(org_crawl_dep),
     ):
-        # Ensure user has appropriate permissions for all crawls in list:
-        # - Crawler users can delete their own crawls
-        # - Org owners can delete any crawls in org
-        for crawl_id in delete_list.crawl_ids:
-            crawl_raw = await ops.get_crawl_raw(crawl_id, org)
-            crawl = Crawl.from_dict(crawl_raw)
-            if (crawl.userid != user.id) and not org.is_owner(user):
-                raise HTTPException(status_code=403, detail="Not Allowed")
-
-            if not crawl.finished:
-                try:
-                    await ops.shutdown_crawl(crawl_id, org, graceful=False)
-                except Exception as exc:
-                    # pylint: disable=raise-missing-from
-                    raise HTTPException(
-                        status_code=400, detail=f"Error Stopping Crawl: {exc}"
-                    )
-
-        return await ops.delete_crawls(org, delete_list)
+        return await ops.delete_crawls(org, delete_list, "crawl", user)
 
     @app.get(
         "/orgs/all/crawls/{crawl_id}/replay.json",

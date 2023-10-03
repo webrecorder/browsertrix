@@ -186,8 +186,75 @@ class BaseCrawlOps:
 
         return {"updated": True}
 
+    async def update_crawl_state(self, crawl_id: str, state: str):
+        """called only when job container is being stopped/canceled"""
+
+        data = {"state": state}
+        # if cancelation, set the finish time here
+        if state == "canceled":
+            data["finished"] = dt_now()
+
+        await self.crawls.find_one_and_update(
+            {
+                "_id": crawl_id,
+                "type": "crawl",
+                "state": {"$in": RUNNING_AND_STARTING_STATES},
+            },
+            {"$set": data},
+        )
+
+    async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
+        """stop or cancel specified crawl"""
+        crawl = await self.get_crawl_raw(crawl_id, org)
+        if crawl.get("type") != "crawl":
+            return
+
+        result = None
+        try:
+            result = await self.crawl_manager.shutdown_crawl(
+                crawl_id, org.id_str, graceful=graceful
+            )
+
+            if result.get("success"):
+                if graceful:
+                    await self.crawls.find_one_and_update(
+                        {"_id": crawl_id, "type": "crawl", "oid": org.id},
+                        {"$set": {"stopping": True}},
+                    )
+                return result
+
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            # if reached here, probably crawl doesn't exist anymore
+            raise HTTPException(
+                status_code=404, detail=f"crawl_not_found, (details: {exc})"
+            )
+
+        # if job no longer running, canceling is considered success,
+        # but graceful stoppage is not possible, so would be a failure
+        if result.get("error") == "Not Found":
+            if not graceful:
+                await self.update_crawl_state(crawl_id, "canceled")
+                crawl = await self.get_crawl_raw(crawl_id, org)
+                if not await self.crawl_configs.stats_recompute_last(
+                    crawl["cid"], 0, -1
+                ):
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"crawl_config_not_found: {crawl['cid']}",
+                    )
+
+                return {"success": True}
+
+        # return whatever detail may be included in the response
+        raise HTTPException(status_code=400, detail=result)
+
     async def delete_crawls(
-        self, org: Organization, delete_list: DeleteCrawlList, type_: str
+        self,
+        org: Organization,
+        delete_list: DeleteCrawlList,
+        type_: str,
+        user: Optional[User] = None,
     ):
         """Delete a list of crawls by id for given org"""
         cids_to_update: dict[str, dict[str, int]] = {}
@@ -198,6 +265,21 @@ class BaseCrawlOps:
             crawl = await self.get_crawl_raw(crawl_id, org)
             if crawl.get("type") != type_:
                 continue
+
+            # Ensure user has appropriate permissions for all crawls in list:
+            # - Crawler users can delete their own crawls
+            # - Org owners can delete any crawls in org
+            if user and (crawl.get("userid") != user.id) and not org.is_owner(user):
+                raise HTTPException(status_code=403, detail="not_allowed")
+
+            if type_ == "crawl" and not crawl.get("finished"):
+                try:
+                    await self.shutdown_crawl(crawl_id, org, graceful=False)
+                except Exception as exc:
+                    # pylint: disable=raise-missing-from
+                    raise HTTPException(
+                        status_code=400, detail=f"Error Stopping Crawl: {exc}"
+                    )
 
             crawl_size = await self._delete_crawl_files(crawl, org)
             size += crawl_size
@@ -486,24 +568,37 @@ class BaseCrawlOps:
         return crawls, total
 
     async def delete_crawls_all_types(
-        self, delete_list: DeleteCrawlList, org: Organization
+        self,
+        delete_list: DeleteCrawlList,
+        org: Organization,
+        user: Optional[User] = None,
     ):
         """Delete uploaded crawls"""
-        if len(delete_list.crawl_ids) == 0:
+        crawls: list[str] = []
+        uploads: list[str] = []
+
+        for crawl_id in delete_list.crawl_ids:
+            crawl = await self.get_crawl_raw(crawl_id, org)
+            type_ = crawl.get("type")
+            if type_ == "crawl":
+                crawls.append(crawl_id)
+            if type_ == "upload":
+                uploads.append(crawl_id)
+
+        crawls_length = len(crawls)
+        uploads_length = len(uploads)
+
+        if crawls_length + uploads_length == 0:
             raise HTTPException(status_code=400, detail="nothing_to_delete")
 
         deleted_count = 0
         # Value is set in delete calls, but initialize to keep linter happy.
         quota_reached = False
 
-        crawls_to_delete, uploads_to_delete = await self._split_delete_list_by_type(
-            delete_list, org
-        )
-
-        if len(crawls_to_delete) > 0:
-            crawl_delete_list = DeleteCrawlList(crawl_ids=crawls_to_delete)
+        if crawls_length:
+            crawl_delete_list = DeleteCrawlList(crawl_ids=crawls)
             deleted, cids_to_update, quota_reached = await self.delete_crawls(
-                org, crawl_delete_list, "crawl"
+                org, crawl_delete_list, "crawl", user
             )
             deleted_count += deleted
 
@@ -512,10 +607,10 @@ class BaseCrawlOps:
                 cid_inc = cid_dict["inc"]
                 await self.crawl_configs.stats_recompute_last(cid, -cid_size, -cid_inc)
 
-        if len(uploads_to_delete) > 0:
-            upload_delete_list = DeleteCrawlList(crawl_ids=uploads_to_delete)
+        if uploads_length:
+            upload_delete_list = DeleteCrawlList(crawl_ids=uploads)
             deleted, _, quota_reached = await self.delete_crawls(
-                org, upload_delete_list, "upload"
+                org, upload_delete_list, "upload", user
             )
             deleted_count += deleted
 
@@ -523,26 +618,6 @@ class BaseCrawlOps:
             raise HTTPException(status_code=404, detail="crawl_not_found")
 
         return {"deleted": True, "storageQuotaReached": quota_reached}
-
-    async def _split_delete_list_by_type(
-        self, delete_list: DeleteCrawlList, org: Organization
-    ):
-        """Return separate crawl and upload arrays from mixed input"""
-        crawls: list[str] = []
-        uploads: list[str] = []
-
-        for crawl_id in delete_list.crawl_ids:
-            try:
-                crawl_raw = await self.get_crawl_raw(crawl_id, org)
-                crawl_type = crawl_raw.get("type")
-                if crawl_type == "crawl":
-                    crawls.append(crawl_id)
-                elif crawl_type == "upload":
-                    uploads.append(crawl_id)
-            # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(err, flush=True)
-        return crawls, uploads
 
     async def get_all_crawl_search_values(
         self, org: Organization, type_: Optional[str] = None
@@ -690,6 +765,7 @@ def init_base_crawls_api(
     @app.post("/orgs/{oid}/all-crawls/delete", tags=["all-crawls"])
     async def delete_crawls_all_types(
         delete_list: DeleteCrawlList,
+        user: User = Depends(user_dep),
         org: Organization = Depends(org_crawl_dep),
     ):
-        return await ops.delete_crawls_all_types(delete_list, org)
+        return await ops.delete_crawls_all_types(delete_list, org, user)
