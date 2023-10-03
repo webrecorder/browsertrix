@@ -82,7 +82,6 @@ export class SignUpForm extends LiteElement {
             label="${msg("New password")}"
             help-text=${msg("Must be between 8-64 characters")}
             minlength="8"
-            maxlength="64"
             autocomplete="new-password"
             passwordToggle
             required
