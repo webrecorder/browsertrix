@@ -701,18 +701,8 @@ def init_crawls_api(
         # - Org owners can delete any crawls in org
         for crawl_id in delete_list.crawl_ids:
             crawl_raw = await ops.get_crawl_raw(crawl_id, org)
-            crawl = Crawl.from_dict(crawl_raw)
-            if (crawl.userid != user.id) and not org.is_owner(user):
+            if (crawl.get("userid") != user.id) and not org.is_owner(user):
                 raise HTTPException(status_code=403, detail="not_allowed")
-
-            if not crawl.finished:
-                try:
-                    await ops.shutdown_crawl(crawl_id, org, graceful=False)
-                except Exception as exc:
-                    # pylint: disable=raise-missing-from
-                    raise HTTPException(
-                        status_code=400, detail=f"Error Stopping Crawl: {exc}"
-                    )
 
         return await ops.delete_crawls(org, delete_list)
 
