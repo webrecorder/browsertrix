@@ -26,7 +26,7 @@ jobs:
             -p "30870:30870@agent:0:direct"
             --agents 1
             --no-lb
-            --k3s-arg "--disable=traefik@server:* --disable=servicelb@server:*"
+            --k3s-arg "--disable=traefik,servicelb@server:*"
 
       - name: Checkout
         uses: actions/checkout@v3
