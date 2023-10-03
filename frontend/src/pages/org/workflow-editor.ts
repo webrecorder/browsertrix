@@ -997,9 +997,8 @@ https://example.com/path`}
         ${msg("Fail Crawl on Failed URL")}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
-msg(
-          `If checked, the crawler will immediately interrupt and fail the crawl if any of the provided URLs are invalid or unsuccessfully crawled.`
-        ),
+        msg(
+          `If checked, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled.`
         false
       )}
       ${when(
