@@ -13,7 +13,7 @@ import type { NotifyEvent, NavigateEvent } from "./utils/LiteElement";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import AuthService, { AuthState } from "./utils/AuthService";
-import type { LoggedInEvent } from "./utils/AuthService";
+import type { LoggedInEvent, NeedLoginEvent } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser, UserOrg } from "./types/user";
 import type { AuthStorageEventData } from "./utils/AuthService";
@@ -777,7 +777,7 @@ export class App extends LiteElement {
     this.clearUser();
 
     if (redirect) {
-      this.navigate("/log-in");
+      this.navigate(ROUTES.login);
     }
   }
 
@@ -801,9 +801,18 @@ export class App extends LiteElement {
     this.updateUserInfo();
   }
 
-  onNeedLogin = () => {
+  onNeedLogin = (e: Event) => {
+    e.stopPropagation();
+
     this.clearUser();
-    this.navigate(ROUTES.login);
+    const redirectUrl = (e as NeedLoginEvent).detail?.redirectUrl;
+    this.navigate(
+      `${ROUTES.login}${
+        redirectUrl
+          ? `?redirectUrl=${window.encodeURIComponent(redirectUrl)}`
+          : ""
+      }`
+    );
     this.onNotify(
       new CustomEvent("notify", {
         detail: {

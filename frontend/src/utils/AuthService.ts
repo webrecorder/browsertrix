@@ -30,6 +30,9 @@ export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
 export interface NeedLoginEvent extends CustomEvent {
   readonly bubbles: boolean;
   readonly composed: boolean;
+  readonly detail: {
+    redirectUrl?: string;
+  };
 }
 
 type AuthRequestEventData = {
@@ -91,10 +94,11 @@ export default class AuthService {
     return new CustomEvent(AuthService.loggedInEvent, { detail });
   };
 
-  static createNeedLoginEvent = (): NeedLoginEvent => {
+  static createNeedLoginEvent = (redirectUrl?: string): NeedLoginEvent => {
     return new CustomEvent(AuthService.needLoginEvent, {
       bubbles: true,
       composed: true,
+      detail: { redirectUrl },
     });
   };
 

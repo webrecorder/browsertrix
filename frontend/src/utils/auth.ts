@@ -27,7 +27,11 @@ export function needLogin<T extends { new (...args: any[]): LiteElement }>(
       if (this.authState) {
         super.update(changedProperties);
       } else {
-        this.dispatchEvent(AuthService.createNeedLoginEvent());
+        this.dispatchEvent(
+          AuthService.createNeedLoginEvent(
+            `${window.location.pathname}${window.location.search}${window.location.hash}`
+          )
+        );
       }
     }
   };
