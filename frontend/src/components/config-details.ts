@@ -408,14 +408,14 @@ export class ConfigDetails extends LiteElement {
   private renderAnchorLink(id: string) {
     if (!this.anchorLinks) return;
     const currentUrl = window.location.href;
-    return html`
-      <btrix-copy-button
-        style="font-size: 1rem;"
-        value=${`${currentUrl.replace(window.location.hash, "")}#${id}`}
-        name="link-45deg"
-        content=${msg("Copy Link to Section")}
-      ></btrix-copy-button>
-    `;
+    // return html`
+    //   <btrix-copy-button
+    //     style="font-size: 1rem;"
+    //     value=${`${currentUrl.replace(window.location.hash, "")}#${id}`}
+    //     name="link-45deg"
+    //     content=${msg("Copy Link to Section")}
+    //   ></btrix-copy-button>
+    // `;
   }
 
   private renderSetting(label: string, value: any, breakAll?: boolean) {
