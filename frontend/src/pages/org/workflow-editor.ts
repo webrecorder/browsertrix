@@ -999,7 +999,8 @@ https://example.com/path`}
       ${this.renderHelpTextCol(
         msg(
           `If checked, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled.`
-        false
+          ),
+          false
       )}
       ${when(
         this.formState.includeLinkedPages || this.jobType === "custom",
