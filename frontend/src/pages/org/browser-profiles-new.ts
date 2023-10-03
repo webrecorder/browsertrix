@@ -90,19 +90,25 @@ export class BrowserProfilesNew extends LiteElement {
 
       <div class="h-screen flex flex-col">
         <div
-          class="flex-0 flex items-center justify-between mb-3 p-2 bg-slate-50"
+          class="flex-0 flex items-center justify-between mb-3 p-2 bg-slate-100 rounded-lg"
         >
           <p class="text-sm text-slate-600 mr-3 p-1">
             ${msg(
-              "Interact with the browsing tool to record your browser profile. You will complete and save your profile in the next step."
+              "Interact with the browsing tool to record your browser profile. It is highly recommended to create dedicated accounts to use when crawling. For details refer to the best practices on the "
             )}
+            <a
+              class="text-primary hover:text-indigo-400"
+              href="https://docs.browsertrix.cloud/user-guide/browser-profiles/"
+              >${msg("browser profiles documentation page.")}</a
+            >
           </p>
 
           <sl-button
             variant="primary"
+            size="small"
             @click=${() => (this.isDialogVisible = true)}
           >
-            ${msg("Next")}
+            ${msg("Finish Browsing")}
           </sl-button>
         </div>
 
@@ -115,13 +121,13 @@ export class BrowserProfilesNew extends LiteElement {
         ></btrix-profile-browser>
       </div>
 
-      <sl-dialog
+      <btrix-dialog
         label=${msg(str`Save Browser Profile`)}
         ?open=${this.isDialogVisible}
         @sl-request-close=${() => (this.isDialogVisible = false)}
       >
         ${this.renderForm()}
-      </sl-dialog>
+      </btrix-dialog>
     `;
   }
 
@@ -153,9 +159,10 @@ export class BrowserProfilesNew extends LiteElement {
           value=${this.params.description || ""}
         ></sl-textarea>
 
-        <div class="text-right">
+        <div class="flex justify-between">
           <sl-button
-            variant="text"
+            variant="default"
+            size="small"
             @click=${() => (this.isDialogVisible = false)}
           >
             ${msg("Back")}
@@ -163,11 +170,12 @@ export class BrowserProfilesNew extends LiteElement {
 
           <sl-button
             variant="primary"
+            size="small"
             type="submit"
             ?disabled=${this.isSubmitting}
             ?loading=${this.isSubmitting}
           >
-            ${msg("Create Profile")}
+            ${msg("Save Profile")}
           </sl-button>
         </div>
       </div>
