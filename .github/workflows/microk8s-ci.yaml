@@ -2,8 +2,8 @@ name: Cluster Run (MicroK8s)
 
 on:
   push:
-    #branches:
-    #  - main
+    branches:
+      - main
     paths:
       - 'backend/**'
       - 'chart/**'
