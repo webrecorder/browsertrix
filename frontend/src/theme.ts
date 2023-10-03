@@ -232,6 +232,11 @@ const theme = css`
     --help-text-align: right;
   }
 
+  /* Wrap internal textarea input, e.g. for URL lists */
+  .textarea-wrap::part(textarea) {
+    white-space: pre;
+  }
+
   /* Aesthetically closer to monospaced font: */
   .font-monostyle {
     font-family: var(--font-monostyle-family);

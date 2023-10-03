@@ -218,6 +218,7 @@ const DEFAULT_BEHAVIORS = [
   "siteSpecific",
 ];
 const BYTES_PER_GB = 1e9;
+const URL_LIST_MAX_URLS = 1000;
 
 @localized()
 export class CrawlConfigEditor extends LiteElement {
@@ -904,6 +905,7 @@ export class CrawlConfigEditor extends LiteElement {
       ${this.renderFormCol(html`
         <sl-textarea
           name="urlList"
+          class="textarea-wrap"
           label=${msg("List of URLs")}
           rows="10"
           autocomplete="off"
@@ -923,23 +925,38 @@ https://example.com/path`}
               inputEl.helpText = "";
             }
           }}
-          @sl-blur=${async (e: Event) => {
+          @sl-change=${async (e: Event) => {
             const inputEl = e.target as SlInput;
-            await inputEl.updateComplete;
-            if (
-              inputEl.value &&
-              urlListToArray(inputEl.value).some((url) => !validURL(url))
-            ) {
-              const text = msg("Please fix invalid URL in list.");
-              inputEl.helpText = text;
-              inputEl.setCustomValidity(text);
+            console.log("val:", inputEl.value);
+            if (!inputEl.value) return;
+            const urlList = urlListToArray(inputEl.value);
+            const invalidUrl = urlList.find((url) => !validURL(url));
+            console.log("urlList:", urlList);
+            let helpText = "";
+            if (urlList.length > URL_LIST_MAX_URLS) {
+              helpText = msg(
+                str`Please shorten list to ${URL_LIST_MAX_URLS.toLocaleString()} or less URLs.`
+              );
             }
+            if (invalidUrl) {
+              helpText = msg(
+                str`Please remove or fix the following invalid URL: ${invalidUrl}`
+              );
+            }
+            if (helpText) {
+              inputEl.setCustomValidity(helpText);
+            } else {
+              helpText = msg(
+                str`${urlList.length.toLocaleString()} URLs entered`
+              );
+            }
+            inputEl.helpText = helpText;
           }}
         ></sl-textarea>
       `)}
       ${this.renderHelpTextCol(
-        msg(`The crawler will visit and record each URL listed in the order
-        defined here.`)
+        msg(str`The crawler will visit and record each URL listed in the order
+        defined here. You can enter a maximum of ${URL_LIST_MAX_URLS.toLocaleString()} URLs, separated by a new line.`)
       )}
       ${when(
         isCustom,
