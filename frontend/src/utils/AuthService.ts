@@ -1,3 +1,4 @@
+import { ROUTES } from "../routes";
 import { APIError } from "./api";
 
 export type Auth = {
@@ -324,6 +325,7 @@ export default class AuthService {
         }, FRESHNESS_TIMER_INTERVAL);
       } catch (e) {
         console.debug(e);
+        this.logout();
       }
     }
   }
