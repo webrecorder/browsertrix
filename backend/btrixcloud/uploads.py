@@ -187,10 +187,15 @@ class UploadOps(BaseCrawlOps):
 
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 
-    async def delete_uploads(self, delete_list: DeleteCrawlList, org: Organization):
+    async def delete_uploads(
+        self,
+        delete_list: DeleteCrawlList,
+        org: Organization,
+        user: Optional[User] = None,
+    ):
         """Delete uploaded crawls"""
         deleted_count, _, quota_reached = await self.delete_crawls(
-            org, delete_list, "upload"
+            org, delete_list, "upload", user
         )
 
         if deleted_count < 1:
@@ -402,9 +407,4 @@ def init_uploads_api(
         user: User = Depends(user_dep),
         org: Organization = Depends(org_crawl_dep),
     ):
-        for crawl_id in delete_list.crawl_ids:
-            crawl_raw = await ops.get_crawl_raw(crawl_id, org)
-            crawl = UploadedCrawl.from_dict(crawl_raw)
-            if (crawl.userid != user.id) and not org.is_owner(user):
-                raise HTTPException(status_code=403, detail="not_allowed")
-        return await ops.delete_uploads(delete_list, org)
+        return await ops.delete_uploads(delete_list, org, user)

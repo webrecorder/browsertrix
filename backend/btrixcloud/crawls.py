@@ -696,15 +696,7 @@ def init_crawls_api(
         user: User = Depends(user_dep),
         org: Organization = Depends(org_crawl_dep),
     ):
-        # Ensure user has appropriate permissions for all crawls in list:
-        # - Crawler users can delete their own crawls
-        # - Org owners can delete any crawls in org
-        for crawl_id in delete_list.crawl_ids:
-            crawl = await ops.get_crawl_raw(crawl_id, org)
-            if (crawl.get("userid") != user.id) and not org.is_owner(user):
-                raise HTTPException(status_code=403, detail="not_allowed")
-
-        return await ops.delete_crawls(org, delete_list)
+        return await ops.delete_crawls(org, delete_list, user)
 
     @app.get(
         "/orgs/all/crawls/{crawl_id}/replay.json",

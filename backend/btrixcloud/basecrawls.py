@@ -248,7 +248,11 @@ class BaseCrawlOps:
         raise HTTPException(status_code=400, detail=result)
 
     async def delete_crawls(
-        self, org: Organization, delete_list: DeleteCrawlList, type_: str
+        self,
+        org: Organization,
+        delete_list: DeleteCrawlList,
+        type_: str,
+        user: Optional[User] = None,
     ):
         """Delete a list of crawls by id for given org"""
         cids_to_update: dict[str, dict[str, int]] = {}
@@ -259,6 +263,12 @@ class BaseCrawlOps:
             crawl = await self.get_crawl_raw(crawl_id, org)
             if crawl.get("type") != type_:
                 continue
+
+            # Ensure user has appropriate permissions for all crawls in list:
+            # - Crawler users can delete their own crawls
+            # - Org owners can delete any crawls in org
+            if user and (crawl.get("userid") != user.id) and not org.is_owner(user):
+                raise HTTPException(status_code=403, detail="not_allowed")
 
             if type_ == "crawl" and not crawl.get("finished"):
                 try:
@@ -559,6 +569,7 @@ class BaseCrawlOps:
         self,
         delete_list: DeleteCrawlList,
         org: Organization,
+        user: Optional[User] = None,
     ):
         """Delete uploaded crawls"""
         crawls: list[str] = []
@@ -585,7 +596,7 @@ class BaseCrawlOps:
         if crawls_length:
             crawl_delete_list = DeleteCrawlList(crawl_ids=crawls)
             deleted, cids_to_update, quota_reached = await self.delete_crawls(
-                org, crawl_delete_list, "crawl"
+                org, crawl_delete_list, "crawl", user
             )
             deleted_count += deleted
 
@@ -597,7 +608,7 @@ class BaseCrawlOps:
         if uploads_length:
             upload_delete_list = DeleteCrawlList(crawl_ids=uploads)
             deleted, _, quota_reached = await self.delete_crawls(
-                org, upload_delete_list, "upload"
+                org, upload_delete_list, "upload", user
             )
             deleted_count += deleted
 
@@ -755,9 +766,4 @@ def init_base_crawls_api(
         user: User = Depends(user_dep),
         org: Organization = Depends(org_crawl_dep),
     ):
-        for crawl_id in delete_list.crawl_ids:
-            crawl = await ops.get_crawl_raw(crawl_id, org)
-            if (crawl.get("userid") != user.id) and not org.is_owner(user):
-                raise HTTPException(status_code=403, detail="not_allowed")
-
-        return await ops.delete_crawls_all_types(delete_list, org)
+        return await ops.delete_crawls_all_types(delete_list, org, user)
