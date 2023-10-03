@@ -116,27 +116,8 @@ export class Dashboard extends LiteElement {
           ${this.renderCard(
             msg("Storage"),
             (metrics) => html`
-              ${when(metrics.storageQuotaBytes, () =>
-                this.renderStorageMeter(metrics)
-              )}
+              ${this.renderStorageMeter(metrics)}
               <dl>
-                ${when(
-                  !metrics.storageQuotaBytes,
-                  () => html`
-                    ${this.renderStat({
-                      value: html`<sl-format-bytes
-                        value=${metrics.storageUsedBytes ?? 0}
-                        display="narrow"
-                      ></sl-format-bytes>`,
-                      singleLabel: msg("of Data Stored"),
-                      pluralLabel: msg("of Data Stored"),
-                      iconProps: { name: "device-hdd-fill" },
-                    })}
-                    <sl-divider
-                      style="--spacing:var(--sl-spacing-small)"
-                    ></sl-divider>
-                  `
-                )}
                 ${this.renderStat({
                   value: metrics.crawlCount,
                   singleLabel: msg("Crawl"),
@@ -226,12 +207,9 @@ export class Dashboard extends LiteElement {
   }
 
   private renderStorageMeter(metrics: Metrics) {
-    // Account for usage that exceeds max
-    const maxBytes = Math.max(
-      metrics.storageUsedBytes,
-      metrics.storageQuotaBytes
-    );
-    const isStorageFull = metrics.storageUsedBytes >= metrics.storageQuotaBytes;
+    const hasQuota = Boolean(metrics.storageQuotaBytes);
+    const isStorageFull =
+      hasQuota && metrics.storageUsedBytes >= metrics.storageQuotaBytes;
     const renderBar = (value: number, label: string, color: string) => html`
       <btrix-meter-bar
         value=${(value / metrics.storageUsedBytes) * 100}
@@ -259,18 +237,27 @@ export class Dashboard extends LiteElement {
               <span>${msg("Storage is Full")}</span>
             </div>
           `,
-          () => html`
-            <sl-format-bytes
-              value=${maxBytes - metrics.storageUsedBytes}
-            ></sl-format-bytes>
-            ${msg("Available")}
-          `
+          () =>
+            hasQuota
+              ? html`
+                  <sl-format-bytes
+                    value=${metrics.storageQuotaBytes -
+                    metrics.storageUsedBytes}
+                  ></sl-format-bytes>
+                  ${msg("Available")}
+                `
+              : html`
+                  <sl-format-bytes
+                    value=${metrics.storageUsedBytes}
+                  ></sl-format-bytes>
+                  ${msg("of Data Stored")}
+                `
         )}
       </div>
       <div class="mb-2">
         <btrix-meter
           value=${metrics.storageUsedBytes}
-          max=${maxBytes}
+          max=${ifDefined(metrics.storageQuotaBytes || undefined)}
           valueText=${msg("gigabyte")}
         >
           ${when(metrics.storageUsedCrawls, () =>
@@ -308,16 +295,19 @@ export class Dashboard extends LiteElement {
               <div class="w-full h-full"></div>
             </sl-tooltip>
           </div>
-          <sl-format-bytes
-            slot="valueLabel"
-            value=${metrics.storageUsedBytes}
-            display="narrow"
-          ></sl-format-bytes>
-          <sl-format-bytes
-            slot="maxLabel"
-            value=${metrics.storageQuotaBytes}
-            display="narrow"
-          ></sl-format-bytes>
+          ${when(
+            hasQuota,
+            () => html`<sl-format-bytes
+                slot="valueLabel"
+                value=${metrics.storageUsedBytes}
+                display="narrow"
+              ></sl-format-bytes>
+              <sl-format-bytes
+                slot="maxLabel"
+                value=${metrics.storageQuotaBytes}
+                display="narrow"
+              ></sl-format-bytes>`
+          )}
         </btrix-meter>
       </div>
     `;
