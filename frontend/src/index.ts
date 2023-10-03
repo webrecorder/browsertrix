@@ -107,6 +107,7 @@ export class App extends LiteElement {
     }
     super.connectedCallback();
 
+    window.addEventListener("need-login", this.onNeedLogin);
     window.addEventListener("popstate", () => {
       this.syncViewState();
     });
@@ -616,7 +617,6 @@ export class App extends LiteElement {
         return html`<btrix-orgs
           class="w-full md:bg-neutral-50"
           @navigate="${this.onNavigateTo}"
-          @need-login="${this.onNeedLogin}"
           .authState="${this.authService.authState}"
           .userInfo="${this.userInfo}"
         ></btrix-orgs>`;
@@ -632,7 +632,6 @@ export class App extends LiteElement {
         return html`<btrix-org
           class="w-full"
           @navigate=${this.onNavigateTo}
-          @need-login=${this.onNeedLogin}
           @update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
             this.updateUserInfo();
@@ -653,7 +652,6 @@ export class App extends LiteElement {
           class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
           @navigate="${this.onNavigateTo}"
           @logged-in=${this.onLoggedIn}
-          @need-login="${this.onNeedLogin}"
           .authState="${this.authService.authState}"
           .userInfo="${this.userInfo}"
         ></btrix-account-settings>`;
@@ -665,7 +663,6 @@ export class App extends LiteElement {
               class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
               @navigate="${this.onNavigateTo}"
               @logged-in=${this.onLoggedIn}
-              @need-login="${this.onNeedLogin}"
               .authState="${this.authService.authState}"
               .userInfo="${this.userInfo}"
             ></btrix-users-invite>`;
@@ -684,7 +681,6 @@ export class App extends LiteElement {
             return html`<btrix-crawls
               class="w-full"
               @navigate=${this.onNavigateTo}
-              @need-login=${this.onNeedLogin}
               @notify=${this.onNotify}
               .authState=${this.authService.authState}
               crawlId=${this.viewState.params.crawlId}
@@ -805,10 +801,10 @@ export class App extends LiteElement {
     this.updateUserInfo();
   }
 
-  onNeedLogin() {
+  onNeedLogin = () => {
     this.clearUser();
     this.navigate(ROUTES.login);
-  }
+  };
 
   onNavigateTo(event: NavigateEvent) {
     event.stopPropagation();

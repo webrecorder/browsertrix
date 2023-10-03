@@ -47,7 +47,7 @@ export type AuthStorageEventData = {
 };
 
 // Check for token freshness every 5 minutes
-const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
+const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 0.5;
 
 export default class AuthService {
   private timerId?: number;
@@ -320,6 +320,7 @@ export default class AuthService {
         }, FRESHNESS_TIMER_INTERVAL);
       } catch (e) {
         console.debug(e);
+        window.dispatchEvent(AuthService.createNeedLoginEvent());
       }
     }
   }
