@@ -1109,6 +1109,7 @@ https://example.com/path`}
     }
     const exclusions = trimArray(this.formState.exclusions || []);
     const additionalUrlList = urlListToArray(this.formState.urlList);
+    const maxAdditionalURls = 100;
 
     return html`
       ${this.renderFormCol(html`
@@ -1303,34 +1304,48 @@ https://example.net`}
                 value=${this.formState.urlList}
                 placeholder=${`https://webrecorder.net/blog
 https://archiveweb.page/images/${"logo.svg"}`}
-                @sl-input=${async (e: Event) => {
-                  const inputEl = e.target as SlInput;
-                  await inputEl.updateComplete;
-                  if (
-                    !inputEl.checkValidity() &&
-                    !urlListToArray(inputEl.value).some((url) => !validURL(url))
-                  ) {
-                    inputEl.setCustomValidity("");
-                    inputEl.helpText = "";
+                @keyup=${async (e: KeyboardEvent) => {
+                  if (e.key === "Enter") {
+                    const inputEl = e.target as SlInput;
+                    await inputEl.updateComplete;
+                    if (!inputEl.value) return;
+                    const { isValid, helpText } = this.validateUrlList(
+                      inputEl.value,
+                      maxAdditionalURls
+                    );
+                    inputEl.helpText = helpText;
+                    if (isValid) {
+                      inputEl.setCustomValidity("");
+                    } else {
+                      inputEl.setCustomValidity(helpText);
+                    }
                   }
                 }}
-                @sl-blur=${async (e: Event) => {
+                @sl-input=${(e: CustomEvent) => {
                   const inputEl = e.target as SlInput;
-                  await inputEl.updateComplete;
-                  if (
-                    inputEl.value &&
-                    urlListToArray(inputEl.value).some((url) => !validURL(url))
-                  ) {
-                    const text = msg("Please fix invalid URL in list.");
-                    inputEl.helpText = text;
-                    inputEl.setCustomValidity(text);
+                  if (!inputEl.value) {
+                    inputEl.helpText = msg("At least 1 URL is required.");
+                  }
+                }}
+                @sl-change=${async (e: CustomEvent) => {
+                  const inputEl = e.target as SlInput;
+                  if (!inputEl.value) return;
+                  const { isValid, helpText } = this.validateUrlList(
+                    inputEl.value,
+                    maxAdditionalURls
+                  );
+                  inputEl.helpText = helpText;
+                  if (isValid) {
+                    inputEl.setCustomValidity("");
+                  } else {
+                    inputEl.setCustomValidity(helpText);
                   }
                 }}
               ></sl-textarea>
             `)}
             ${this.renderHelpTextCol(
-              msg(`The crawler will visit and record each URL listed here. Other
-              links on these pages will not be crawled.`)
+              msg(str`The crawler will visit and record each URL listed here. Other
+              links on these pages will not be crawled. You can enter up to ${maxAdditionalURls.toLocaleString()} URLs.`)
             )}
           </div>
         </btrix-details>
