@@ -107,7 +107,7 @@ export class App extends LiteElement {
     }
     super.connectedCallback();
 
-    this.addEventListener("need-login", this.onNeedLogin);
+    window.addEventListener("need-login", this.onNeedLogin);
     window.addEventListener("popstate", () => {
       this.syncViewState();
     });

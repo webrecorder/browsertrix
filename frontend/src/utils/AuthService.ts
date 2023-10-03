@@ -325,7 +325,13 @@ export default class AuthService {
         }, FRESHNESS_TIMER_INTERVAL);
       } catch (e) {
         console.debug(e);
-        this.logout();
+        window.dispatchEvent(
+          AuthService.createNeedLoginEvent(
+            `${
+              ROUTES.login
+            }?redirectUrl=${`${window.location.pathname}${window.location.search}${window.location.hash}`}`
+          )
+        );
       }
     }
   }
