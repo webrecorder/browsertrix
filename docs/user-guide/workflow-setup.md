@@ -33,7 +33,7 @@ When enabled, the crawler will visit all the links it finds within each page def
 
 `URL List`{ .badge-blue }
 
-When enabled, the crawler will stop crawling if any of the provided URLs are invalid or unsuccessfully crawled. The resulting archived item will have a status of "Partial Complete".
+When enabled, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled. The resulting archived item will have a status of "Failed".
 
 ### Crawl Start URL
 
