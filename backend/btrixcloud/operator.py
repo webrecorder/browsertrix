@@ -995,6 +995,9 @@ class BtrixOperator(K8sAPI):
         results = await redis.hgetall(f"{crawl.id}:status")
         stats, sizes = await get_redis_crawl_stats(redis, crawl.id)
 
+        # need to add size of previously completed WACZ files as well!
+        stats["size"] += status.filesAddedSize
+
         # update status
         status.pagesDone = stats["done"]
         status.pagesFound = stats["found"]
