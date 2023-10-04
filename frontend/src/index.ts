@@ -586,7 +586,8 @@ export class App extends LiteElement {
           @logged-in=${this.onLoggedIn}
           .authState=${this.authService.authState}
           .viewState=${this.viewState}
-          redirectUrl=${this.viewState.params.redirectUrl}
+          redirectUrl=${this.viewState.params.redirectUrl ||
+          this.viewState.data?.redirectUrl}
         ></btrix-log-in>`;
 
       case "resetPassword":
@@ -806,13 +807,9 @@ export class App extends LiteElement {
 
     this.clearUser();
     const redirectUrl = (e as NeedLoginEvent).detail?.redirectUrl;
-    this.navigate(
-      `${ROUTES.login}${
-        redirectUrl
-          ? `?redirectUrl=${window.encodeURIComponent(redirectUrl)}`
-          : ""
-      }`
-    );
+    this.navigate(ROUTES.login, {
+      redirectUrl,
+    });
     this.onNotify(
       new CustomEvent("notify", {
         detail: {
