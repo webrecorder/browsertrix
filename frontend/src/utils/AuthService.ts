@@ -325,13 +325,14 @@ export default class AuthService {
         }, FRESHNESS_TIMER_INTERVAL);
       } catch (e) {
         console.debug(e);
-        window.dispatchEvent(
-          AuthService.createNeedLoginEvent(
-            `${
-              ROUTES.login
-            }?redirectUrl=${`${window.location.pathname}${window.location.search}${window.location.hash}`}`
-          )
-        );
+
+        this.logout();
+        const { pathname, search, hash } = window.location;
+        const redirectUrl =
+          pathname !== ROUTES.login && pathname !== ROUTES.home
+            ? `${pathname}${search}${hash}`
+            : "";
+        window.dispatchEvent(AuthService.createNeedLoginEvent(redirectUrl));
       }
     }
   }
