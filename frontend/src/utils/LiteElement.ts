@@ -3,6 +3,7 @@ import type { TemplateResult } from "lit";
 import { msg } from "@lit/localize";
 
 import type { Auth } from "../utils/AuthService";
+import AuthService from "../utils/AuthService";
 import { APIError } from "./api";
 
 export interface NavigateEvent extends CustomEvent {
@@ -147,7 +148,7 @@ export default class LiteElement extends LitElement {
 
     switch (resp.status) {
       case 401: {
-        this.dispatchEvent(new CustomEvent("need-login"));
+        this.dispatchEvent(AuthService.createNeedLoginEvent());
         errorMessage = msg("Need login");
         break;
       }

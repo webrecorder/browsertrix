@@ -124,7 +124,7 @@ export class Org extends LiteElement {
   }
 
   async willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("orgId") && this.orgId) {
+    if (changedProperties.has("orgId") && this.orgId && this.authState) {
       try {
         this.org = await this.getOrg(this.orgId);
         this.checkStorageQuota();
