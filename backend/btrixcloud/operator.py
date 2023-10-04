@@ -244,6 +244,7 @@ class BtrixOperator(K8sAPI):
         with open(self.config_file, encoding="utf-8") as fh_config:
             self.shared_params = yaml.safe_load(fh_config)
 
+        self._has_pod_metrics = False
         self.compute_crawler_resources()
 
     def compute_crawler_resources(self):
@@ -272,6 +273,11 @@ class BtrixOperator(K8sAPI):
             print(f"memory = {base} + {num} * {extra} = {p['crawler_memory']}")
         else:
             print(f"memory = {p['crawler_memory']}")
+
+    async def async_init(self):
+        """perform any async init here"""
+        self._has_pod_metrics = await self.is_pod_metrics_available()
+        print("Pod Metrics Available:", self._has_pod_metrics)
 
     async def sync_profile_browsers(self, data: MCSyncData):
         """sync profile browsers"""
@@ -586,26 +592,29 @@ class BtrixOperator(K8sAPI):
         cid = spec["cid"]
         crawl_id = spec["id"]
         oid = spec.get("oid")
-        return {
-            "relatedResources": [
-                {
-                    "apiVersion": "v1",
-                    "resource": "configmaps",
-                    "labelSelector": {"matchLabels": {"btrix.crawlconfig": cid}},
-                },
-                {
-                    "apiVersion": BTRIX_API,
-                    "resource": "crawljobs",
-                    "labelSelector": {"matchLabels": {"oid": oid}},
-                },
-                # enable for podmetrics
+        related_resources = [
+            {
+                "apiVersion": "v1",
+                "resource": "configmaps",
+                "labelSelector": {"matchLabels": {"btrix.crawlconfig": cid}},
+            },
+            {
+                "apiVersion": BTRIX_API,
+                "resource": "crawljobs",
+                "labelSelector": {"matchLabels": {"oid": oid}},
+            },
+        ]
+
+        if self._has_pod_metrics:
+            related_resources.append(
                 {
                     "apiVersion": METRICS_API,
                     "resource": "pods",
                     "labelSelector": {"matchLabels": {"crawl": crawl_id}},
-                },
-            ]
-        }
+                }
+            )
+
+        return {"relatedResources": related_resources}
 
     async def can_start_new(self, crawl: CrawlSpec, data: MCSyncData, status):
         """return true if crawl can start, otherwise set crawl to 'queued' state
@@ -883,6 +892,14 @@ class BtrixOperator(K8sAPI):
             )
             pod_info = pod_status[f"redis-{crawl_id}"]
             pod_info.used.storage = storage
+
+            # if no pod metrics, get memory estimate from redis itself
+            if not self._has_pod_metrics:
+                stats = await redis.info("memory")
+                pod_info.used.memory = int(stats.get("used_memory_rss", 0))
+
+                # stats = await redis.info("cpu")
+                # pod_info.used.cpu = float(stats.get("used_cpu_sys", 0))
 
         for name, metric in metrics.items():
             usage = metric["containers"][0]["usage"]
@@ -1287,3 +1304,5 @@ def init_operator_api(
     @app.get("/healthz", include_in_schema=False)
     async def healthz():
         return {}
+
+    return oper

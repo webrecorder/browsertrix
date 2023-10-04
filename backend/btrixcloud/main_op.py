@@ -75,7 +75,7 @@ def main():
         event_webhook_ops,
     )
 
-    init_operator_api(
+    return init_operator_api(
         app_root, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
     )
 
@@ -85,4 +85,5 @@ def main():
 async def startup():
     """init on startup"""
     register_exit_handler()
-    main()
+    oper = main()
+    await oper.async_init()

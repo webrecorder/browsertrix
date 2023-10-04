@@ -233,3 +233,22 @@ class K8sAPI:
             # pylint: disable=bare-except
             except:
                 print("Logs Not Found")
+
+    async def is_pod_metrics_available(self):
+        """return true/false if metrics server api is available by
+        attempting list operation. if operation succeeds, then
+        metrics are available, otherwise not available
+        """
+        try:
+            await self.custom_api.list_namespaced_custom_object(
+                group="metrics.k8s.io",
+                version="v1beta1",
+                namespace=self.namespace,
+                plural="pods",
+                limit=1,
+            )
+            return True
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            print(exc)
+            return False
