@@ -10,7 +10,6 @@ import contextlib
 
 from pydantic import UUID4
 from fastapi import HTTPException, Depends
-from redis import exceptions
 
 from .models import (
     CrawlFile,
@@ -26,7 +25,7 @@ from .models import (
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .storages import get_presigned_url, delete_crawl_file_object
-from .utils import dt_now, get_redis_crawl_stats
+from .utils import dt_now
 
 
 RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
@@ -334,16 +333,6 @@ class BaseCrawlOps:
             crawl.profileName = await self.crawl_configs.profiles.get_profile_name(
                 crawl.profileid, org
             )
-
-        # if running, get stats directly from redis
-        # more responsive, saves db update in operator
-        if crawl.state in RUNNING_STATES:
-            try:
-                async with self.get_redis(crawl.id) as redis:
-                    crawl.stats, _ = await get_redis_crawl_stats(redis, crawl.id)
-            # redis not available, ignore
-            except exceptions.ConnectionError:
-                pass
 
         if (
             files

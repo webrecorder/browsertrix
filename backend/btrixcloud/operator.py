@@ -1001,6 +1001,8 @@ class BtrixOperator(K8sAPI):
         status.size = stats["size"]
         status.sizeHuman = humanize.naturalsize(status.size)
 
+        await self.crawl_ops.update_running_crawl_stats(crawl.id, stats)
+
         for key, value in sizes.items():
             value = int(value)
             if value > 0:

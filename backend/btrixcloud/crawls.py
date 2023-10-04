@@ -516,6 +516,11 @@ class CrawlOps(BaseCrawlOps):
 
         return await self.crawls.find_one_and_update(query, {"$set": kwargs})
 
+    async def update_running_crawl_stats(self, crawl_id, stats):
+        """update running crawl stats"""
+        query = {"_id": crawl_id, "type": "crawl", "state": "running"}
+        return await self.crawls.find_one_and_update(query, {"$set": {"stats": stats}})
+
     async def get_crawl_state(self, crawl_id):
         """return current crawl state of a crawl"""
         res = await self.crawls.find_one(
