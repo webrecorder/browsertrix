@@ -290,12 +290,13 @@ export class ConfigDetails extends LiteElement {
 
   private renderConfirmUrlListSettings = () => {
     const crawlConfig = this.crawlConfig;
+
     return html`
       ${this.renderSetting(
         msg("List of URLs"),
         html`
-          <ul>
-            ${this.seeds?.map((seed: Seed) => html` <li>${seed.url}</li> `)}
+          <ul class="whitespace-nowrap overflow-x-auto overflow-y-hidden">
+            ${this.seeds?.map((seed: Seed) => html`<li>${seed.url}</li>`)}
           </ul>
         `,
         true
@@ -368,7 +369,7 @@ export class ConfigDetails extends LiteElement {
         msg("List of Additional URLs"),
         additionalUrlList?.length
           ? html`
-              <ul>
+              <ul class="whitespace-nowrap overflow-x-auto overflow-y-hidden">
                 ${additionalUrlList.map(
                   (seed) =>
                     html`<li>${typeof seed === "string" ? seed : seed.url}</li>`
