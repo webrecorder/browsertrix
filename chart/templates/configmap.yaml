@@ -53,7 +53,7 @@ metadata:
 
 data:
   CRAWL_ARGS: >-
-    --workers {{ .Values.crawler_browser_instances | default 1 }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --maxPageLimit {{ .Values.max_pages_per_crawl | default 0 }} --healthCheckPort {{ .Values.crawler_liveness_port }} --diskUtilization {{ .Values.disk_utilization_threshold }} --userAgentSuffix {{ .Values.user_agent_suffix | quote }} --userAgent {{ .Values.user_agent | quote }} --logging {{ .Values.crawler_logging_opts }} --text {{ .Values.crawler_extract_full_text }} --generateWACZ --collection thecrawl --screencastPort 9037 --logErrorsToRedis {{ .Values.crawler_extra_args }} --restartsOnError
+    --workers {{ .Values.crawler_browser_instances | default 1 }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --maxPageLimit {{ .Values.max_pages_per_crawl | default 0 }} --healthCheckPort {{ .Values.crawler_liveness_port }} --diskUtilization {{ .Values.disk_utilization_threshold }} --userAgentSuffix {{ .Values.user_agent_suffix | quote }} --userAgent {{ .Values.user_agent | quote }} --logging {{ .Values.crawler_logging_opts }} --text {{ .Values.crawler_extract_full_text }} --generateWACZ --collection thecrawl --screencastPort 9037 --logErrorsToRedis --restartsOnError --headless {{ .Values.crawler_extra_args }}
 
 ---
 apiVersion: v1
