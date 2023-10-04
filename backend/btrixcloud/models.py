@@ -103,6 +103,7 @@ class RawCrawlConfig(BaseModel):
     combineWARC: Optional[bool]
 
     useSitemap: Optional[bool] = False
+    failOnFailedSeed: Optional[bool] = False
 
     logging: Optional[str]
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"

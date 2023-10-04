@@ -82,6 +82,7 @@ type FormState = {
   urlList: string;
   includeLinkedPages: boolean;
   useSitemap: boolean;
+  failOnFailedSeed: boolean;
   customIncludeUrlList: string;
   crawlTimeoutMinutes: number;
   behaviorTimeoutSeconds: number | null;
@@ -157,6 +158,7 @@ const getDefaultFormState = (): FormState => ({
   urlList: "",
   includeLinkedPages: false,
   useSitemap: true,
+  failOnFailedSeed: false,
   customIncludeUrlList: "",
   crawlTimeoutMinutes: 0,
   maxCrawlSizeGB: 0,
@@ -467,6 +469,8 @@ export class CrawlConfigEditor extends LiteElement {
       if (this.initialWorkflow.jobType === "custom") {
         formState.scopeType = seedsConfig.scopeType || "page";
       }
+
+      formState.failOnFailedSeed = seedsConfig.failOnFailedSeed;
     }
 
     if (this.initialWorkflow.schedule) {
@@ -543,6 +547,8 @@ export class CrawlConfigEditor extends LiteElement {
       includeLinkedPages:
         Boolean(primarySeedConfig.extraHops || seedsConfig.extraHops) ?? true,
       useSitemap: defaultFormState.useSitemap,
+      failOnFailedSeed:
+        seedsConfig.failOnFailedSeed ?? defaultFormState.failOnFailedSeed,
       pageLimit:
         this.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
       autoscrollBehavior: this.initialWorkflow.config.behaviors
@@ -992,6 +998,18 @@ https://example.com/path`}
       ${this.renderHelpTextCol(
         msg(`If checked, the crawler will visit pages one link away from a Crawl
         URL.`),
+        false
+      )}
+      ${this.renderFormCol(html`<sl-checkbox
+        name="failOnFailedSeed"
+        ?checked=${this.formState.failOnFailedSeed}
+      >
+        ${msg("Fail Crawl on Failed URL")}
+      </sl-checkbox>`)}
+      ${this.renderHelpTextCol(
+        msg(
+          `If checked, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled.`
+        ),
         false
       )}
       ${when(
@@ -2273,7 +2291,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private parseUrlListConfig(): Pick<
     NewCrawlConfigParams["config"],
-    "seeds" | "scopeType" | "extraHops" | "useSitemap"
+    "seeds" | "scopeType" | "extraHops" | "useSitemap" | "failOnFailedSeed"
   > {
     const config = {
       seeds: urlListToArray(this.formState.urlList).map((seedUrl) => {
@@ -2283,6 +2301,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       scopeType: "page" as FormState["scopeType"],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
       useSitemap: false,
+      failOnFailedSeed: this.formState.failOnFailedSeed,
     };
 
     return config;
@@ -2290,7 +2309,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private parseSeededConfig(): Pick<
     NewCrawlConfigParams["config"],
-    "seeds" | "scopeType" | "useSitemap"
+    "seeds" | "scopeType" | "useSitemap" | "failOnFailedSeed"
   > {
     const primarySeedUrl = this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeUrlList
@@ -2325,6 +2344,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       seeds: [primarySeed, ...additionalSeedUrlList],
       scopeType: this.formState.scopeType,
       useSitemap: this.formState.useSitemap,
+      failOnFailedSeed: false,
     };
     return config;
   }

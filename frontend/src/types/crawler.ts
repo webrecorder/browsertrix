@@ -29,6 +29,7 @@ export type SeedConfig = Pick<
   behaviors?: string | null;
   extraHops?: number | null;
   useSitemap: boolean;
+  failOnFailedSeed: boolean;
   depth?: number | null;
 };
 
