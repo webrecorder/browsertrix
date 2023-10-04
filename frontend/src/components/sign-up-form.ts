@@ -79,7 +79,9 @@ export class SignUpForm extends LiteElement {
             id="password"
             name="password"
             type="password"
-            label=${msg("Create a password")}
+            label="${msg("New password")}"
+            help-text=${msg("Must be between 8-64 characters")}
+            minlength="8"
             autocomplete="new-password"
             passwordToggle
             required
@@ -172,9 +174,12 @@ export class SignUpForm extends LiteElement {
         const { detail } = await resp.json();
         if (detail === "REGISTER_USER_ALREADY_EXISTS") {
           shouldLogIn = true;
+        } else if (detail.code && detail.code === "REGISTER_INVALID_PASSWORD") {
+          this.serverError = msg(
+            "Invalid password. Must be between 8 and 64 characters"
+          );
         } else {
-          // TODO show validation details
-          this.serverError = msg("Invalid email address or password");
+          this.serverError = msg("Invalid email or password");
         }
         break;
       default:

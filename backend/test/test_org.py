@@ -226,7 +226,7 @@ def test_send_and_accept_org_invite(
         json={
             "name": "accepted",
             "email": expected_stored_email,
-            "password": "testpw",
+            "password": "testingpassword",
             "inviteToken": token,
             "newOrg": False,
         },
