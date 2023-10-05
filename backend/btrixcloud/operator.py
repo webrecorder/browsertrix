@@ -4,6 +4,7 @@ import asyncio
 import traceback
 import os
 import time
+import math
 from pprint import pprint
 from typing import Optional, DefaultDict
 
@@ -495,7 +496,7 @@ class BtrixOperator(K8sAPI):
         if start_time != await redis.getset(f"{crawl_id}:start:{name}", 0):
             return
 
-        duration = int(time.time()) - (int(start_time) / 1000)
+        duration = math.ceil(time.time()) - (int(start_time) / 1000)
         print("crashed crawl duration", duration, flush=True)
         await redis.incrby(f"{crawl_id}:execTime", duration)
 
@@ -1207,11 +1208,24 @@ class BtrixOperator(K8sAPI):
             if not redis:
                 return False
 
-            exec_time = await redis.getset(f"{crawl_id}:execTime", 0)
+            # add any remaining unfinished start ranges
+            keys = await redis.keys(f"{crawl_id}:start:*")
+            remainder = 0
+            now = int(time.time())
+            for key in keys:
+                start_time = int(await redis.getset(key, 0) or 0)
+                if start_time:
+                    remainder += math.ceil(now - (int(start_time) / 1000))
+
+            exec_time = (
+                int(await redis.getset(f"{crawl_id}:execTime", 0) or 0) + remainder
+            )
             print(f"Exec Time: {exec_time}", flush=True)
 
-            if exec_time and exec_time != "0":
-                await self.org_ops.inc_org_time_stats(oid, int(exec_time), is_exec_time=True)
+            if exec_time:
+                await self.org_ops.inc_org_time_stats(
+                    oid, int(exec_time), is_exec_time=True
+                )
 
             return True
 
