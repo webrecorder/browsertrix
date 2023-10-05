@@ -109,3 +109,8 @@ def is_bool(stri: Optional[str]) -> bool:
     if stri:
         return stri.lower() in ("true", "1", "yes")
     return False
+
+
+def slug_from_name(name: str) -> str:
+    """Generate slug from name"""
+    return "".join([char if char.isalnum() else "-" for char in name])

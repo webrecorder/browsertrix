@@ -33,6 +33,7 @@ from .models import (
     PaginatedResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
+from .utils import slug_from_name
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
@@ -93,6 +94,7 @@ class OrgOps:
         org = Organization(
             id=id_,
             name=org_name,
+            slug=slug_from_name(org_name),
             users={str(user.id): UserRole.OWNER},
             storage=DefaultStorage(name=storage_name, path=storage_path),
         )
@@ -163,6 +165,7 @@ class OrgOps:
                 print("Default organization already exists - skipping", flush=True)
             else:
                 default_org.name = DEFAULT_ORG
+                default_org.slug = slug_from_name(DEFAULT_ORG)
                 await self.update(default_org)
                 print(f'Default organization renamed to "{DEFAULT_ORG}"', flush=True)
             return
@@ -172,6 +175,7 @@ class OrgOps:
         org = Organization(
             id=id_,
             name=DEFAULT_ORG,
+            slug=slug_from_name(DEFAULT_ORG),
             users={},
             storage=DefaultStorage(name=storage_name, path=storage_path),
             default=True,
@@ -484,9 +488,15 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
         id_ = uuid.uuid4()
         storage_path = str(id_) + "/"
+
+        slug = new_org.slug
+        if not slug:
+            slug = slug_from_name(new_org.name)
+
         org = Organization(
             id=id_,
             name=new_org.name,
+            slug=slug,
             users={},
             storage=DefaultStorage(name="default", path=storage_path),
         )
@@ -506,11 +516,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         rename: RenameOrg,
         org: Organization = Depends(org_owner_dep),
     ):
-        if not rename.name and not rename.slug:
-            return HTTPException(status_code=400, detail="nothing_to_update")
-
-        if rename.name:
-            org.name = rename.name
+        org.name = rename.name
         if rename.slug:
             org.slug = rename.slug
         try:

@@ -2,6 +2,7 @@
 Migration 0019 - Organization slug
 """
 from btrixcloud.migrations import BaseMigration
+from btrixcloud.utils import slug_from_name
 
 
 MIGRATION_VERSION = "0019"
@@ -22,7 +23,7 @@ class Migration(BaseMigration):
         mdb_orgs = self.mdb["organizations"]
         async for org in mdb_orgs.find({}):
             oid = org["_id"]
-            slug = "".join([char if char.isalnum() else "-" for char in org["name"]])
+            slug = slug_from_name(org["name"])
             try:
                 await mdb_orgs.find_one_and_update(
                     {"_id": oid}, {"$set": {"slug": slug}}
