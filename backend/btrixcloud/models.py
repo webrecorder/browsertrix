@@ -660,6 +660,7 @@ class Organization(BaseMongoModel):
     id: UUID4
 
     name: str
+    slug: str
 
     users: Dict[str, UserRole]
 
@@ -745,6 +746,7 @@ class OrgOut(BaseMongoModel):
 
     id: UUID4
     name: str
+    slug: str
     users: Optional[Dict[str, Any]]
     usage: Optional[Dict[str, int]]
     default: bool = False

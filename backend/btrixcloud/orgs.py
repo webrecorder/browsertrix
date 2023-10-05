@@ -61,7 +61,8 @@ class OrgOps:
         """init lookup index"""
         while True:
             try:
-                return await self.orgs.create_index("name", unique=True)
+                await self.orgs.create_index("name", unique=True)
+                return await self.orgs.create_index("slug", unique=True)
             # pylint: disable=duplicate-code
             except AutoReconnect:
                 print(
