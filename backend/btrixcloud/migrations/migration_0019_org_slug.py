@@ -21,7 +21,7 @@ class Migration(BaseMigration):
         """
         # pylint: disable=duplicate-code
         mdb_orgs = self.mdb["organizations"]
-        async for org in mdb_orgs.find({}):
+        async for org in mdb_orgs.find({"slug": None}):
             oid = org["_id"]
             slug = slug_from_name(org["name"])
             try:
