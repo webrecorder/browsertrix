@@ -2,8 +2,8 @@
 
 import asyncio
 import traceback
-import math
 import os
+import time
 from pprint import pprint
 from typing import Optional, DefaultDict
 
@@ -24,7 +24,6 @@ from kubernetes.utils import parse_quantity
 from .utils import (
     from_k8s_date,
     to_k8s_date,
-    from_timestamp_str,
     dt_now,
     get_redis_crawl_stats,
 )
@@ -137,7 +136,7 @@ class PodInfo(BaseModel):
     crashTime: Optional[str] = None
     isNewCrash: Optional[bool] = Field(default=None, exclude=True)
     reason: Optional[str] = None
-    restartCount: int = 0
+    running: bool = False
 
     allocated: PodResources = PodResources()
     used: PodResources = PodResources()
@@ -341,7 +340,9 @@ class BtrixOperator(K8sAPI):
                     # finished state
                     raise HTTPException(status_code=400, detail="out_of_sync_status")
 
-            return self.finalize_response(crawl_id, status, spec, data.children, params)
+            return await self.finalize_response(
+                crawl_id, uuid.UUID(oid), status, spec, data.children, params
+            )
 
         # just in case, finished but not deleted, can only get here if
         # do_crawl_finished_tasks() doesn't reach the end or taking too long
@@ -350,7 +351,9 @@ class BtrixOperator(K8sAPI):
                 f"warn crawl {crawl_id} finished but not deleted, post-finish taking too long?"
             )
             asyncio.create_task(self.delete_crawl_job(crawl_id))
-            return self.finalize_response(crawl_id, status, spec, data.children, params)
+            return await self.finalize_response(
+                crawl_id, uuid.UUID(oid), status, spec, data.children, params
+            )
 
         try:
             configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
@@ -409,8 +412,8 @@ class BtrixOperator(K8sAPI):
             self.handle_auto_size(crawl.id, status.podStatus)
 
             if status.finished:
-                return self.finalize_response(
-                    crawl_id, status, spec, data.children, params
+                return await self.finalize_response(
+                    crawl_id, uuid.UUID(oid), status, spec, data.children, params
                 )
         else:
             status.scale = crawl.scale
@@ -475,42 +478,26 @@ class BtrixOperator(K8sAPI):
 
         return self.load_from_yaml("crawler.yaml", params)
 
-    async def set_crawler_end_time_in_redis(self, crawl_id, name, restart_time, redis):
-        """set end time in redis for crashed crawler pod if necessary"""
-        if not redis:
-            print("redis not available to set crawler end time", flush=True)
+    async def _check_crawler_end_time(self, crawl_id, name, restart_time, redis):
+        """update execution time time in redis for crashed crawler pod, if start time
+        still set"""
+        print("checking end time", flush=True)
+        # Determine if crawler pod already set new start time after restart
+        start_time = await redis.get(f"{crawl_id}:start:{name}")
+        if not start_time or start_time == "0":
             return
 
-        # Determine if crawler pod already set new start time after restart
-        expected_list_difference = 0
-        latest_start_time_list = await redis.lrange(f"{crawl_id}:start:{name}", -1, -1)
-        latest_start_time = latest_start_time_list[0]
-        if latest_start_time > restart_time:
-            print(f"Crawler {name} set new start time since last restart", flush=True)
-            expected_list_difference = 1
+        # if start time after crawl restart time, already tracking new crawl
+        if restart_time and int(start_time) > restart_time:
+            return
 
-        try:
-            start_times_length = await redis.llen(f"{crawl_id}:start:{name}")
-            print(
-                f"Crawler {name} start times length: {start_times_length}", flush=True
-            )
-            end_times_length = await redis.llen(f"{crawl_id}:end:{name}")
-            print(f"Crawler {name} end times length: {end_times_length}", flush=True)
+        # if start time somehow changed, already tracking new crawl
+        if start_time != await redis.getset(f"{crawl_id}:start:{name}", 0):
+            return
 
-            if (start_times_length - end_times_length) > expected_list_difference:
-                # pylint: disable=line-too-long
-                print(
-                    f"Setting end time for crashed crawler pod {name} to last restart time",
-                    flush=True,
-                )
-                await redis.rpush(f"{crawl_id}:end:{name}", restart_time)
-
-        # pylint: disable=broad-except
-        except Exception as err:
-            print(
-                f"Setting end time in redis for crashed crawler {name} failed: {err}",
-                flush=True,
-            )
+        duration = int(time.time()) - (int(start_time) / 1000)
+        print("crashed crawl duration", duration, flush=True)
+        await redis.incrby(f"{crawl_id}:execTime", duration)
 
     # pylint: disable=too-many-arguments
     async def _resolve_scale(self, crawl_id, desired_scale, redis, status, pods):
@@ -722,16 +709,36 @@ class BtrixOperator(K8sAPI):
             "children": [],
         }
 
-    def finalize_response(self, crawl_id, status, spec, children, params):
+    async def finalize_response(
+        self,
+        crawl_id: str,
+        oid: uuid.UUID,
+        status: CrawlStatus,
+        spec: dict,
+        children: dict,
+        params: dict,
+    ):
         """ensure crawl id ready for deletion"""
 
         redis_pod = f"redis-{crawl_id}"
         new_children = []
+
+        keep_redis = False
+
         finalized = False
 
         if redis_pod in children[POD]:
             # if has other pods, keep redis pod until they are removed
             if len(children[POD]) > 1:
+                keep_redis = True
+            # only down to redis pod
+            else:
+                # if unable to update exec time, ensure redis pod is still up
+                if not await self.inc_execution_time(crawl_id, oid):
+                    keep_redis = True
+
+            # should we keep redis pod?
+            if keep_redis:
                 new_children = self._load_redis(params, status, children)
 
         # keep pvs until pods are removed
@@ -862,7 +869,6 @@ class BtrixOperator(K8sAPI):
 
     def sync_pod_status(self, pods, status):
         """check status of pods"""
-        # pylint: disable=invalid-name
         crawler_running = False
         redis_running = False
         try:
@@ -872,6 +878,10 @@ class BtrixOperator(K8sAPI):
                 pstatus = pod["status"]
                 phase = pstatus["phase"]
                 role = pod["metadata"]["labels"]["role"]
+
+                # is pod actually running
+                pod_status = status.podStatus[name]
+                pod_status.running = phase == "Running"
 
                 if phase in ("Running", "Succeeded"):
                     running = True
@@ -894,16 +904,6 @@ class BtrixOperator(K8sAPI):
                         crash_time = terminated.get("finishedAt")
                         pod_status = status.podStatus[name]
                         pod_status.isNewCrash = pod_status.crashTime != crash_time
-                        if pod_status.isNewCrash:
-                            pod_status.restartCount += 1
-                        print(
-                            f"pod {name} isNewCrash: {pod_status.isNewCrash}",
-                            flush=True,
-                        )
-                        print(
-                            f"pod {name} restart count: {pod_status.restartCount}",
-                            flush=True,
-                        )
                         pod_status.crashTime = crash_time
 
                         # detect reason
@@ -977,12 +977,6 @@ class BtrixOperator(K8sAPI):
             if not pod.isNewCrash:
                 continue
 
-            print(f"pod {name} that crashed:", flush=True)
-            print(pod, flush=True)
-
-            if not redis:
-                print("no redis avialable", flush=True)
-
             log = self.get_log_line(
                 "Crawler Instance Crashed", {"reason": pod.reason, "pod": name}
             )
@@ -991,9 +985,11 @@ class BtrixOperator(K8sAPI):
             else:
                 await redis.lpush(f"{crawl_id}:e", log)
 
-            await self.set_crawler_end_time_in_redis(
-                crawl_id, name, pod.crashTime, redis
-            )
+                # if pod not running already
+                if not pod.running:
+                    await self._check_crawler_end_time(
+                        crawl_id, name, pod.crashTime, redis
+                    )
 
     def get_log_line(self, message, details):
         """get crawler error line for logging"""
@@ -1173,7 +1169,7 @@ class BtrixOperator(K8sAPI):
 
         asyncio.create_task(
             self.do_crawl_finished_tasks(
-                crawl_id, cid, oid, status.filesAddedSize, state, crawl
+                crawl_id, cid, oid, status.filesAddedSize, state
             )
         )
 
@@ -1181,11 +1177,9 @@ class BtrixOperator(K8sAPI):
 
     # pylint: disable=too-many-arguments
     async def do_crawl_finished_tasks(
-        self, crawl_id, cid, oid, files_added_size, state, crawl
+        self, crawl_id, cid, oid, files_added_size, state
     ):
         """Run tasks after crawl completes in asyncio.task coroutine."""
-        await self.compute_execution_time(crawl_id, oid, crawl)
-
         await self.crawl_config_ops.stats_recompute_last(cid, files_added_size, 1)
 
         if state in SUCCESSFUL_STATES and oid:
@@ -1200,67 +1194,32 @@ class BtrixOperator(K8sAPI):
         # finally, delete job
         await self.delete_crawl_job(crawl_id)
 
-    async def compute_execution_time(self, crawl_id, oid, crawl=None):
-        """Compute execution time for crawl from start and end times in redis"""
+    async def inc_execution_time(self, crawl_id, oid):
+        """increment execution time, from <crawl_id>:execTime key
+        set key to 0 after incremented to avoid double updates
+        return True if actually accessed key, False otherwise (redis down, etc..)
+        """
         redis = None
-
-        print("Computing execution time", flush=True)
 
         try:
             redis_url = self.get_redis_url(crawl_id)
             redis = await self._get_redis(redis_url)
             if not redis:
-                return
+                return False
 
-            scale = 2
-            if crawl:
-                scale = crawl.scale
+            exec_time = await redis.getset(f"{crawl_id}:execTime", 0)
+            print(f"Exec Time: {exec_time}", flush=True)
 
-            execution_time = 0.0
+            if exec_time and exec_time != "0":
+                await self.org_ops.inc_org_time_stats(oid, int(exec_time), is_exec_time=True)
 
-            for i in range(scale):
-                name = f"crawl-{crawl_id}-{i}"
+            return True
 
-                start_times = await redis.lrange(f"{crawl_id}:start:{name}", 0, -1)
-                end_times = await redis.lrange(f"{crawl_id}:end:{name}", 0, -1)
-
-                print(f"Crawler {name} start times:", flush=True)
-                print(start_times, flush=True)
-
-                print(f"Crawler {name} end times:", flush=True)
-                print(end_times, flush=True)
-
-                for i, start_time_str in enumerate(start_times):
-                    start_time = from_timestamp_str(start_time_str)
-                    try:
-                        end_time = from_timestamp_str(end_times[i])
-                    except IndexError:
-                        # pylint: disable=line-too-long
-                        print(
-                            f"Start time {start_time_str} has no corresponding end time, using current time",
-                            flush=True,
-                        )
-                        end_time = datetime.now()
-
-                    duration = end_time - start_time
-                    seconds = duration.total_seconds()
-                    print(
-                        f"Seconds used in crawling session {i+1}: {seconds}", flush=True
-                    )
-                    execution_time += seconds
-
-            execution_secs = math.ceil(execution_time)
-            # pylint: disable=line-too-long
-            print(
-                f"Adding {execution_secs} (rounded up from {execution_time}) total execution seconds to db",
-                flush=True,
-            )
-            await self.crawl_ops.inc_execution_seconds(crawl_id, oid, execution_secs)
-
-        # pylint: disable=broad-exception-caught
+        # pylint: disable=broad-except
         except Exception as err:
-            # likely redis has already bexen deleted, so nothing to do
-            print(f"Error computing execution time: {err}", flush=True)
+            print(f"Error updating execution time: {err}", flush=True)
+            return False
+
         finally:
             if redis:
                 await redis.close()
@@ -1274,7 +1233,7 @@ class BtrixOperator(K8sAPI):
 
         print(f"Duration: {duration}", flush=True)
 
-        await self.org_ops.inc_org_stats(crawl.oid, duration)
+        await self.org_ops.inc_org_time_stats(crawl.oid, duration)
 
     async def add_crawl_errors_to_db(self, crawl_id, inc=100):
         """Pull crawl errors from redis and write to mongo db"""

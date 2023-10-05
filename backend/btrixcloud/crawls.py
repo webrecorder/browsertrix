@@ -565,20 +565,6 @@ class CrawlOps(BaseCrawlOps):
         except Exception:
             return [], 0
 
-    async def inc_execution_seconds(
-        self, crawl_id: str, oid: uuid.UUID, execution_seconds: int
-    ):
-        """add execution seconds to crawl, workflow, and org"""
-        await self.crawls.find_one_and_update(
-            {"_id": crawl_id},
-            {
-                "$inc": {"executionSeconds": execution_seconds},
-            },
-        )
-        crawl = await self.get_crawl_raw(crawl_id)
-        await self.crawl_configs.inc_execution_seconds(crawl["cid"], execution_seconds)
-        await self.orgs.inc_execution_seconds(oid, execution_seconds)
-
 
 # ============================================================================
 async def recompute_crawl_file_count_and_size(crawls, crawl_id):

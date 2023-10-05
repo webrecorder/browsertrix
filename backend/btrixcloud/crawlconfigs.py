@@ -799,15 +799,6 @@ class CrawlConfigOps:
         except Exception:
             return [], 0
 
-    async def inc_execution_seconds(self, cid: uuid.UUID, execution_seconds: int):
-        """add crawl execution seconds to workflow"""
-        await self.crawl_configs.find_one_and_update(
-            {"_id": cid},
-            {
-                "$inc": {"executionSeconds": execution_seconds},
-            },
-        )
-
 
 # ============================================================================
 # pylint: disable=too-many-locals
