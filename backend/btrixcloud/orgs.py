@@ -392,6 +392,11 @@ class OrgOps:
             "publicCollectionsCount": public_collections_count,
         }
 
+    async def get_all_org_slugs(self):
+        """Return list of all org slugs."""
+        slugs = await self.orgs.distinct("slug", {})
+        return {"slugs": slugs}
+
 
 # ============================================================================
 # pylint: disable=too-many-statements
@@ -654,5 +659,9 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     @router.get("/metrics", tags=["organizations"], response_model=OrgMetrics)
     async def get_org_metrics(org: Organization = Depends(org_dep)):
         return await ops.get_org_metrics(org)
+
+    @app.get("/orgs/slugs", tags=["organizations"])
+    async def get_all_org_slugs():
+        return await ops.get_all_org_slugs()
 
     return ops
