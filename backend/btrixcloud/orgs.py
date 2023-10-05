@@ -501,7 +501,13 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         rename: RenameOrg,
         org: Organization = Depends(org_owner_dep),
     ):
-        org.name = rename.name
+        if not rename.name and not rename.slug:
+            return HTTPException(status_code=400, detail="nothing_to_update")
+
+        if rename.name:
+            org.name = rename.name
+        if rename.slug:
+            org.slug = rename.slug
         try:
             await ops.update(org)
         except DuplicateKeyError:

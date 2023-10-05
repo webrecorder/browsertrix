@@ -607,7 +607,8 @@ class RemovePendingInvite(InviteRequest):
 class RenameOrg(BaseModel):
     """Request to invite another user"""
 
-    name: str
+    name: Optional[str] = None
+    slug: Optional[str] = None
 
 
 # ============================================================================
