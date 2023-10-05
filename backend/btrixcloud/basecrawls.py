@@ -52,7 +52,15 @@ class BaseCrawlOps:
     # pylint: disable=duplicate-code, too-many-arguments, too-many-locals
 
     def __init__(
-        self, mdb, users, orgs, crawl_configs, crawl_manager, colls, storage_ops
+        self,
+        mdb,
+        users,
+        orgs,
+        crawl_configs,
+        crawl_manager,
+        colls,
+        storage_ops,
+        background_jobs,
     ):
         self.crawls = mdb["crawls"]
         self.crawl_configs = crawl_configs
@@ -61,6 +69,7 @@ class BaseCrawlOps:
         self.orgs = orgs
         self.colls = colls
         self.storage_ops = storage_ops
+        self.background_job_ops = background_jobs
 
         self.presign_duration_seconds = (
             int(os.environ.get("PRESIGN_DURATION_MINUTES", 60)) * 60
@@ -312,6 +321,9 @@ class BaseCrawlOps:
             size += file_.size
             if not await self.storage_ops.delete_crawl_file_object(org, file_):
                 raise HTTPException(status_code=400, detail="file_deletion_error")
+            await self.background_job_ops.create_delete_replica_job(
+                org.id, file_.filename
+            )
 
         return size
 
@@ -651,13 +663,29 @@ class BaseCrawlOps:
 
 # ============================================================================
 def init_base_crawls_api(
-    app, mdb, users, crawl_manager, crawl_config_ops, orgs, colls, storage_ops, user_dep
+    app,
+    mdb,
+    users,
+    crawl_manager,
+    crawl_config_ops,
+    orgs,
+    colls,
+    storage_ops,
+    background_jobs,
+    user_dep,
 ):
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code, too-many-arguments, too-many-locals
 
     ops = BaseCrawlOps(
-        mdb, users, orgs, crawl_config_ops, crawl_manager, colls, storage_ops
+        mdb,
+        users,
+        orgs,
+        crawl_config_ops,
+        crawl_manager,
+        colls,
+        storage_ops,
+        background_jobs,
     )
 
     org_viewer_dep = orgs.org_viewer_dep

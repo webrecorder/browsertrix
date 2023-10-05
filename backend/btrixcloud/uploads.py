@@ -38,7 +38,7 @@ MIN_UPLOAD_PART_SIZE = 10000000
 class UploadOps(BaseCrawlOps):
     """upload ops"""
 
-    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods, too-many-function-args
+    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods, too-many-function-args, duplicate-code
     def __init__(
         self,
         mdb,
@@ -48,10 +48,18 @@ class UploadOps(BaseCrawlOps):
         orgs,
         colls,
         storage_ops,
+        background_job_ops,
         event_webhook_ops,
     ):
         super().__init__(
-            mdb, users, orgs, crawl_configs, crawl_manager, colls, storage_ops
+            mdb,
+            users,
+            orgs,
+            crawl_configs,
+            crawl_manager,
+            colls,
+            storage_ops,
+            background_job_ops,
         )
 
         self.event_webhook_ops = event_webhook_ops
@@ -193,6 +201,9 @@ class UploadOps(BaseCrawlOps):
             org.id, file_size, "upload"
         )
 
+        for file in files:
+            await self.background_job_ops.create_replica_job(org.id, file.filename)
+
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 
     async def delete_uploads(
@@ -261,7 +272,7 @@ class UploadFileReader(BufferedReader):
 
 
 # ============================================================================
-# pylint: disable=too-many-arguments, too-many-locals, invalid-name
+# pylint: disable=too-many-arguments, too-many-locals, invalid-name, duplicate-code
 def init_uploads_api(
     app,
     mdb,
@@ -271,6 +282,7 @@ def init_uploads_api(
     orgs,
     colls,
     storage_ops,
+    background_jobs,
     user_dep,
     event_webhook_ops,
 ):
@@ -284,6 +296,7 @@ def init_uploads_api(
         orgs,
         colls,
         storage_ops,
+        background_jobs,
         event_webhook_ops,
     )
 

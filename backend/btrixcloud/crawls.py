@@ -38,7 +38,7 @@ from .basecrawls import RUNNING_AND_STARTING_STATES, ALL_CRAWL_STATES
 class CrawlOps(BaseCrawlOps):
     """Crawl Ops"""
 
-    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
+    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods, duplicate-code
     def __init__(
         self,
         mdb,
@@ -48,10 +48,18 @@ class CrawlOps(BaseCrawlOps):
         orgs,
         colls,
         storage_ops,
+        background_jobs,
         event_webhook_ops,
     ):
         super().__init__(
-            mdb, users, orgs, crawl_configs, crawl_manager, colls, storage_ops
+            mdb,
+            users,
+            orgs,
+            crawl_configs,
+            crawl_manager,
+            colls,
+            storage_ops,
+            background_jobs,
         )
         self.crawls = self.crawls
         self.crawl_configs = crawl_configs
@@ -609,6 +617,7 @@ def init_crawls_api(
     orgs,
     colls,
     storage_ops,
+    background_jobs,
     user_dep,
     event_webhook_ops,
 ):
@@ -623,6 +632,7 @@ def init_crawls_api(
         orgs,
         colls,
         storage_ops,
+        background_jobs,
         event_webhook_ops,
     )
 

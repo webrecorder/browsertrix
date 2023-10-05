@@ -1035,3 +1035,50 @@ class WebhookNotification(BaseMongoModel):
     attempts: int = 0
     created: datetime
     lastAttempted: Optional[datetime] = None
+
+
+# ============================================================================
+
+### BACKGROUND JOBS ###
+
+
+# ============================================================================
+class BackgroundJob(BaseMongoModel):
+    """Model for tracking background jobs"""
+
+    oid: UUID4
+    success: bool = False
+    started: datetime
+    finished: Optional[datetime] = None
+
+
+# ============================================================================
+class UpdateBackgroundJob(BaseModel):
+    """Model for updating background job after job completes"""
+
+    success: Optional[bool] = None
+    finished: Optional[datetime] = None
+
+
+# ============================================================================
+class ReplicateJob(BaseMongoModel):
+    """Model for tracking replication jobs"""
+
+    type: str = Field("replicate", const=True)
+    file_path: str
+
+
+# ============================================================================
+class DeleteReplicaJob(BaseMongoModel):
+    """Model for tracking replication jobs"""
+
+    type: str = Field("delete_replica", const=True)
+    file_path: str
+
+
+# ============================================================================
+class BackgroundJobOut(BackgroundJob):
+    """Model for tracking background jobs"""
+
+    type: str
+    file_path: str

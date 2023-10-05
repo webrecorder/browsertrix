@@ -20,6 +20,7 @@ from .crawls import CrawlOps
 from .profiles import ProfileOps
 from .storages import init_storages_api
 from .webhooks import EventWebhookOps
+from .background_jobs import BackgroundJobOps
 
 app_root = FastAPI()
 
@@ -55,7 +56,11 @@ def main():
 
     storage_ops = init_storages_api(org_ops, crawl_manager, None)
 
-    profile_ops = ProfileOps(mdb, org_ops, crawl_manager, storage_ops)
+    background_job_ops = BackgroundJobOps(mdb, org_ops, crawl_manager)
+
+    profile_ops = ProfileOps(
+        mdb, org_ops, crawl_manager, storage_ops, background_job_ops
+    )
 
     crawl_config_ops = CrawlConfigOps(
         dbclient,
@@ -76,11 +81,18 @@ def main():
         org_ops,
         coll_ops,
         storage_ops,
+        background_job_ops,
         event_webhook_ops,
     )
 
     return init_operator_api(
-        app_root, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
+        app_root,
+        crawl_config_ops,
+        crawl_ops,
+        org_ops,
+        coll_ops,
+        event_webhook_ops,
+        background_job_ops,
     )
 
 

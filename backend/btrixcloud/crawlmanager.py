@@ -4,6 +4,7 @@ import os
 import asyncio
 import secrets
 import json
+import uuid
 
 from datetime import timedelta
 
@@ -64,6 +65,50 @@ class CrawlManager(K8sAPI):
         await self.create_from_yaml(data)
 
         return browserid
+
+    async def run_replicate_job(
+        self,
+        oid: uuid.UUID,
+        primary_file_path: str,
+        replica_file_path: str,
+    ):
+        """run job to replicate file from primary storage to replica storage"""
+
+        job_id = f"replicatejob-{secrets.token_hex(5)}"
+
+        params = {
+            "id": job_id,
+            "oid": str(oid),
+            "primary_file_path": primary_file_path,
+            "replica_file_path": replica_file_path,
+        }
+
+        data = self.templates.env.get_template("replicate_job.yaml").render(params)
+
+        await self.create_from_yaml(data)
+
+        return job_id
+
+    async def run_delete_replica_job(
+        self,
+        oid: uuid.UUID,
+        replica_file_path: str,
+    ):
+        """run job to delete replicated file"""
+
+        job_id = f"deletereplicajob-{secrets.token_hex(5)}"
+
+        params = {
+            "id": job_id,
+            "oid": str(oid),
+            "replica_file_path": replica_file_path,
+        }
+
+        data = self.templates.env.get_template("delete_replica_job.yaml").render(params)
+
+        await self.create_from_yaml(data)
+
+        return job_id
 
     async def add_crawl_config(
         self,
