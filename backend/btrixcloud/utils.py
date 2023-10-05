@@ -9,7 +9,6 @@ import signal
 import atexit
 
 from datetime import datetime
-from typing import Optional
 
 from redis import asyncio as exceptions
 
@@ -29,7 +28,7 @@ def to_k8s_date(dt_val):
     return dt_val.isoformat("T") + "Z"
 
 
-def from_timestamp_str(string):
+def from_timestamp_str(string) -> Optional[datetime]:
     """convert iso date string with or without milliseconds to datetime"""
     dt_instance: Optional[datetime] = None
     datetime_format = "%Y-%m-%dT%H:%M:%S.%fZ"
