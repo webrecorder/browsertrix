@@ -1,0 +1,24 @@
+---
+- hosts: microk8s
+  gather_facts: yes
+  connection: local
+  become: yes
+  vars_files:
+    - inventory/microk8s/group_vars/main.yml
+  roles:
+    - microk8s/debian # Change to redhat if using a redhat distro
+    - microk8s/common
+    - btrix/deploy
+
+  handlers:
+  - name: Reboot System
+    ansible.builtin.reboot:
+    when:
+      - skip_handlers | default("false") == "false"
+
+  - name: microk8s ready
+    ansible.builtin.command:
+      cmd: microk8s.status --wait-ready
+    changed_when: false
+    when:
+      - skip_handlers | default("false") == "false"

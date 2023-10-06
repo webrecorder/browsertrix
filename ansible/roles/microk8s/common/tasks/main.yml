@@ -1,0 +1,209 @@
+---
+- name: microk8s | Install microk8s
+  community.general.snap:
+    name: microk8s
+    classic: true
+    channel: "{{ microk8s_channel }}"
+  notify: microk8s ready
+  tags:
+    - microk8s
+    - microk8s.install
+
+- name: microk8s | create kubectl alias
+  ansible.builtin.command:
+    cmd: snap alias microk8s.kubectl kubectl
+  changed_when: false
+  tags:
+    - microk8s
+    - microk8s.alias
+    - microk8s.alias.kubectl
+
+- name: microk8s | create helm3 alias
+  ansible.builtin.command:
+    cmd: snap alias microk8s.helm3 helm
+  changed_when: false
+  when:
+    - microk8s_plugins is defined
+    - microk8s_plugins.helm3 is defined
+    - microk8s_plugins.helm3
+  tags:
+    - microk8s
+    - microk8s.alias
+    - microk8s.alias.helm
+
+- name: microk8s | create dir for microk8s certificates
+  ansible.builtin.file:
+    path: /usr/share/ca-certificates/extra
+    state: directory
+    mode: 0755
+  tags:
+    - microk8s
+    - microk8s.certs
+    - microk8s.certs.dir
+
+- name: microk8s | Disable snap autoupdate
+  ansible.builtin.blockinfile:
+    dest: /etc/hosts
+    marker: "# {mark} ANSIBLE MANAGED: microk8s Disable snap autoupdate"
+    content: |
+      127.0.0.1 api.snapcraft.io
+  when:
+    - (microk8s_disable_snap_autoupdate | bool)
+  tags:
+    - microk8s
+    - microk8s.disable_autoupdate
+
+# ===========================================
+# Configure microk8s user and group
+- name: microk8s user group | create {{ ansible_user }} group
+  ansible.builtin.group:
+    name: "{{ ansible_user }}"
+    state: present
+
+- name: microk8s user group | add user to group
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    groups: microk8s
+    append: true
+
+- name: microk8s user group | Create .kube folder for the user
+  ansible.builtin.file:
+    path: "{{ ansible_user_home }}/.kube"
+    state: directory
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: 0750
+
+- name: microk8s user group | create kubectl config
+  ansible.builtin.shell:
+    cmd: microk8s config > {{ ansible_user_home }}/.kube/config
+  args:
+    executable: /bin/bash
+    creates: "{{ ansible_user_home }}/.kube/config"
+  environment:
+    PATH: '${PATH}:/snap/bin/'
+
+- name: microk8s user group | check permissions on config directory
+  ansible.builtin.file:
+    path: "{{ ansible_user_home }}/.kube"
+    state: directory
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    recurse: true
+
+- name: microk8s user group | check permission on config file
+  ansible.builtin.file:
+    path: "{{ ansible_user_home }}/.kube/config"
+    state: file
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: 0600
+
+# ===========================================
+# Configure plugins
+- name: microk8s plugins | enable plugins
+  ansible.builtin.command:
+    cmd: "microk8s.enable {{ microk8s_plugin.key }}"
+  with_dict: "{{ microk8s_plugins }}"
+  loop_control:
+    loop_var: microk8s_plugin
+    label: "{{ microk8s_plugin.key }}"
+  when:
+    - microk8s_plugins is defined
+    - microk8s_plugin.value
+    - microk8s_plugin.key != "registry"
+    - microk8s_plugin.key != "dns"
+  register: microk8s_cmd_result
+  changed_when:
+    - "'Addon {{ microk8s_plugin.key }} is already enabled'
+      not in microk8s_cmd_result.stdout"
+
+- name: microk8s plugins | disable plugins
+  ansible.builtin.command:
+    cmd: "microk8s.disable {{ microk8s_plugin.key }}"
+  with_dict: "{{ microk8s_plugins | default({}) }}"
+  loop_control:
+    loop_var: microk8s_plugin
+    label: "{{ microk8s_plugin.key }}"
+  register: microk8s_cmd_result
+  changed_when:
+    - "'Addon {{ microk8s_plugin.key }} is already disabled'
+      not in microk8s_cmd_result.stdout"
+  when:
+    - microk8s_plugins is defined
+    - not (microk8s_plugin.value | bool)
+    - microk8s_plugin.key != "registry"
+
+- name: microk8s plugins | Enable registry
+  ansible.builtin.command:
+    cmd: "microk8s.enable registry:size={{ microk8s_registry_size }}"
+  register: microk8s_cmd_result
+  changed_when:
+    - "'Addon registry is already enabled' not in microk8s_cmd_result.stdout"
+  when:
+    - microk8s_plugins is defined
+    - microk8s_plugins.registry is defined
+    - (microk8s_plugins.registry | bool)
+
+- name: microk8s plugins | Disable registry
+  ansible.builtin.command:
+    cmd: "microk8s.disable registry:size={{ microk8s_registry_size }}"
+  register: microk8s_cmd_result
+  changed_when:
+    - "'Addon registry is already disabled' not in microk8s_cmd_result.stdout"
+  when:
+    - microk8s_plugins is defined
+    - microk8s_plugins.registry is defined
+    - not (microk8s_plugins.registry | bool)
+
+- name: microk8s plugins | Enable DNS
+  ansible.builtin.command:
+    cmd: 'microk8s.enable dns:{{ microk8s_dns_servers | join(",") }}'
+  register: microk8s_cmd_result
+  changed_when:
+    - "'Addon dns is already enabled' not in microk8s_cmd_result.stdout"
+  when:
+    - microk8s_plugins is defined
+    - microk8s_plugins.dns is defined
+    - (microk8s_plugins.dns | bool)
+
+# ===========================================
+# deploy browsertrix
+- name: microk8s deploy | create browsertrix repo
+  ansible.builtin.git:
+    repo: "https://github.com/webrecorder/browsertrix-cloud"
+    dest: "{{ browsertrix_cloud_home }}"
+    clone: true
+    update: true
+    force: true
+    version: main
+  tags:
+    - helm_upgrade
+
+- name: microk8s deploy | Make repos git safe
+  ansible.builtin.command: git config --global --add safe.directory "{{ browsertrix_cloud_home }}"
+  become: true
+  changed_when: false
+  tags:
+    - helm_upgrade
+
+- name: microk8s deploy | grant permissions on deploy user
+  ansible.builtin.file:
+    path: "{{ browsertrix_cloud_home }}"
+    state: directory
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    follow: false
+    recurse: true
+    mode: 0775
+  tags:
+    - helm_upgrade
+
+- name: micork8s deploy | helm | output values yaml
+  ansible.builtin.template:
+    src: btrix_values.j2
+    dest: ../chart/{{ project_name }}-values.yaml
+    mode: u+rw
+  tags:
+    - helm_upgrade

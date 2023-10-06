@@ -1,4 +1,5 @@
 ---
+project_name: "default"
 ansible_ssh_private_key_file: "~/.ssh/id_rsa"
 microk8s_cache_valid_time: 3600
 allow_world_readable_tmpfiles: true
@@ -18,8 +19,8 @@ microk8s_channel: stable
 
 your_user: root          # if your cloud provide uses another user change this
 browsertrix_cloud_home: "/opt/browsertrix-cloud"
-ansible_user_home: "/home/{{ microk8s_user }}"
-ansible_user: conan     # change this to a different user if you don't want conan the deployer
+microk8s_user_home: "/home/{{ microk8s_user }}"
+microk8s_user: conan     # change this to a different user if you don't want conan the deployer
 microk8s_plugins:
   dns: true              # CoreDNS
   ingress: true          # Ingress controller for external access

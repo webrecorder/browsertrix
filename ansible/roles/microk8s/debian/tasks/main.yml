@@ -1,0 +1,35 @@
+---
+# ===========================================
+# Install microk8s
+- name: microk8s | ensure dependencies are installed (Debian)
+  ansible.builtin.apt:
+    name:
+      - snapd
+      - fuse
+      - udev
+    state: present
+    update_cache: true
+    cache_valid_time: "{{ microk8s_cache_valid_time }}"
+  when:
+    - ansible_os_family == "Debian"
+  tags:
+    - microk8s
+    - microk8s.dependencies
+    - microk8s.dependencies.apt
+
+- name: microk8s | start and enable services (Debian)
+  ansible.builtin.service:
+    name: "{{ microk8s_service }}"
+    state: started
+    enabled: true
+  loop:
+    - udev
+  loop_control:
+    loop_var: microk8s_service
+    label: "{{ microk8s_service }}"
+  when:
+    - ansible_os_family == "Debian"
+  tags:
+    - microk8s
+    - microk8s.dependencies
+    - microk8s.dependencies.services
