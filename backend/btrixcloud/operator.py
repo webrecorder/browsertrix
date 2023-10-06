@@ -1130,7 +1130,7 @@ class BtrixOperator(K8sAPI):
             )
 
         # check if all crawlers failed
-        elif done and status_count.get("failed", 0) >= crawl.scale:
+        elif status_count.get("failed", 0) >= crawl.scale:
             # if stopping, and no pages finished, mark as canceled
             if status.stopping and not status.pagesDone:
                 await self.mark_finished(
