@@ -213,6 +213,7 @@ class CrawlStatus(BaseModel):
     )
     restartTime: Optional[str]
     execTime: int = 0
+    canceled: bool = False
 
     # don't include in status, use by metacontroller
     resync_after: Optional[int] = None
@@ -332,11 +333,9 @@ class BtrixOperator(K8sAPI):
         # if finalizing, crawl is being deleted
         if data.finalizing:
             if not status.finished:
-                await self.mark_for_cancelation(crawl_id)
-
                 # if can't cancel, already finished
                 if not await self.cancel_crawl(
-                    crawl_id, uuid.UUID(cid), uuid.UUID(oid), status
+                    crawl_id, uuid.UUID(cid), uuid.UUID(oid), status, data.children[POD]
                 ):
                     # instead of fetching the state (that was already set)
                     # return exception to ignore this request, keep previous
@@ -662,11 +661,38 @@ class BtrixOperator(K8sAPI):
         )
         return False
 
-    async def cancel_crawl(self, crawl_id, cid, oid, status, crawl=None, stats=None):
+    async def cancel_crawl(self, crawl_id, cid, oid, status, pods):
         """Mark crawl as canceled"""
-        return await self.mark_finished(
-            crawl_id, cid, oid, status, "canceled", crawl, stats
-        )
+        if not await self.mark_finished(crawl_id, cid, oid, status, "canceled"):
+            return True
+
+        await self.mark_for_cancelation(crawl_id)
+
+        if not status.canceled:
+            cancel_time = datetime.utcnow()
+
+            for pod in pods.values():
+                pstatus = pod["status"]
+                role = pod["metadata"]["labels"]["role"]
+
+                if role != "crawler":
+                    continue
+
+                if "containerStatuses" not in pstatus:
+                    continue
+
+                cstatus = pstatus["containerStatuses"][0]
+
+                running = cstatus["state"].get("running")
+
+                if not running:
+                    continue
+
+                self.inc_exec_time(status, cancel_time, running.get("startedAt"))
+
+            status.canceled = True
+
+        return status.canceled
 
     async def fail_crawl(self, crawl_id, cid, status, pods, stats=None):
         """Mark crawl as failed, log crawl state and print crawl logs, if possible"""
@@ -711,31 +737,15 @@ class BtrixOperator(K8sAPI):
         redis_pod = f"redis-{crawl_id}"
         new_children = []
 
-        keep_redis = False
-
         finalized = False
+
+        exec_updated = False
 
         pods = children[POD]
 
-        # check if all crawler pods are done
-        _, _2, done = self.sync_pod_status(pods, status)
-
-        # keep all children until crawler pods are done
-        if not done:
-            new_children = list(pods.values())
-
-        elif redis_pod in pods:
+        if redis_pod in pods:
             # if has other pods, keep redis pod until they are removed
-            if len(children[POD]) > 1:
-                keep_redis = True
-            # only down to redis pod
-            else:
-                # if unable to update exec time, ensure redis pod is still up
-                if not await self.store_exec_time(crawl_id, oid, status):
-                    keep_redis = True
-
-            # should we keep redis pod?
-            if keep_redis:
+            if len(pods) > 1:
                 new_children = self._load_redis(params, status, children)
 
         # keep pvs until pods are removed
@@ -743,6 +753,9 @@ class BtrixOperator(K8sAPI):
             new_children.extend(list(children[PVC].values()))
 
         if not children[POD] and not children[PVC]:
+            # ensure exec time was successfully updated
+            exec_updated = await self.store_exec_time(crawl_id, oid, status.execTime)
+
             # keep parent until ttl expired, if any
             if status.finished:
                 ttl = spec.get("ttlSecondsAfterFinished", DEFAULT_TTL)
@@ -756,7 +769,7 @@ class BtrixOperator(K8sAPI):
         return {
             "status": status.dict(exclude_none=True, exclude={"resync_after": True}),
             "children": new_children,
-            "finalized": finalized,
+            "finalized": finalized and exec_updated,
         }
 
     async def _get_redis(self, redis_url):
@@ -778,7 +791,7 @@ class BtrixOperator(K8sAPI):
     async def sync_crawl_state(self, redis_url, crawl, status, pods, metrics):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
-        crawler_running, redis_running, _ = self.sync_pod_status(pods, status)
+        crawler_running, redis_running, done = self.sync_pod_status(pods, status)
         redis = None
 
         try:
@@ -852,7 +865,7 @@ class BtrixOperator(K8sAPI):
             status.filesAddedSize = int(await redis.get("filesAddedSize") or 0)
 
             # update stats and get status
-            return await self.update_crawl_state(redis, crawl, status, pods)
+            return await self.update_crawl_state(redis, crawl, status, pods, done)
 
         # pylint: disable=broad-except
         except Exception as exc:
@@ -1054,7 +1067,7 @@ class BtrixOperator(K8sAPI):
 
         return False
 
-    async def update_crawl_state(self, redis, crawl, status, pods):
+    async def update_crawl_state(self, redis, crawl, status, pods, done):
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
         stats, sizes = await get_redis_crawl_stats(redis, crawl.id)
@@ -1097,7 +1110,7 @@ class BtrixOperator(K8sAPI):
                 status_count[res] = status_count.get(res, 0) + 1
 
         # check if all crawlers are done
-        if status_count.get("done", 0) >= crawl.scale:
+        if done and status_count.get("done", 0) >= crawl.scale:
             # check if one-page crawls actually succeeded
             # if only one page found, and no files, assume failed
             if status.pagesFound == 1 and not status.filesAdded:
@@ -1113,10 +1126,12 @@ class BtrixOperator(K8sAPI):
             )
 
         # check if all crawlers failed
-        elif status_count.get("failed", 0) >= crawl.scale:
+        elif done and status_count.get("failed", 0) >= crawl.scale:
             # if stopping, and no pages finished, mark as canceled
             if status.stopping and not status.pagesDone:
-                await self.cancel_crawl(crawl.id, crawl.cid, status, pods, crawl, stats)
+                await self.mark_finished(
+                    crawl.id, crawl.cid, crawl.oid, status, "canceled", crawl, stats
+                )
             else:
                 await self.fail_crawl(crawl.id, crawl.cid, status, pods, stats)
 
@@ -1201,16 +1216,21 @@ class BtrixOperator(K8sAPI):
 
     def inc_exec_time(self, status, finished_at, started_at):
         """increment execTime on pod status"""
-        end_time = from_k8s_date(finished_at)
+        end_time = (
+            from_k8s_date(finished_at)
+            if not isinstance(finished_at, datetime)
+            else finished_at
+        )
         start_time = from_k8s_date(started_at)
-        status.execTime += (end_time - start_time).total_seconds()
+        exec_time = (end_time - start_time).total_seconds()
+        status.execTime += int(exec_time)
 
-    async def store_exec_time(self, crawl_id, oid, status):
+    async def store_exec_time(self, crawl_id, oid, exec_time):
         """store execTime in crawl (if not already set), and increment org counter"""
         try:
-            if await self.crawl_ops.store_exec_time(crawl_id, status.execTime):
-                print("Exec Time", status.execTime, flush=True)
-                await self.org_ops.inc_org_time_stats(oid, status.execTime, True)
+            if await self.crawl_ops.store_exec_time(crawl_id, exec_time):
+                print(f"Exec Time: {exec_time}", flush=True)
+                await self.org_ops.inc_org_time_stats(oid, exec_time, True)
 
             return True
         # pylint: disable=broad-except
@@ -1235,9 +1255,10 @@ class BtrixOperator(K8sAPI):
             redis_url = self.get_redis_url(crawl_id)
             redis = await self._get_redis(redis_url)
             if not redis:
-                return
+                return False
 
-            await redis.set(f"{crawl_id}:stopping", "2")
+            await redis.set(f"{crawl_id}:canceled", "1")
+            return True
         finally:
             if redis:
                 await redis.close()
