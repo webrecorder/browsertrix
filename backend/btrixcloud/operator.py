@@ -133,7 +133,7 @@ class PodInfo(BaseModel):
     """Aggregate pod status info held in CrawlJob"""
 
     exitTime: Optional[str] = None
-    exitCode: Optional[int]
+    exitCode: Optional[int] = None
     isNewExit: Optional[bool] = Field(default=None, exclude=True)
     reason: Optional[str] = None
 
@@ -664,14 +664,14 @@ class BtrixOperator(K8sAPI):
     async def cancel_crawl(self, crawl_id, cid, oid, status, pods):
         """Mark crawl as canceled"""
         if not await self.mark_finished(crawl_id, cid, oid, status, "canceled"):
-            return True
+            return False
 
         await self.mark_for_cancelation(crawl_id)
 
         if not status.canceled:
             cancel_time = datetime.utcnow()
 
-            for pod in pods.values():
+            for name, pod in pods.items():
                 pstatus = pod["status"]
                 role = pod["metadata"]["labels"]["role"]
 
@@ -685,10 +685,14 @@ class BtrixOperator(K8sAPI):
 
                 running = cstatus["state"].get("running")
 
-                if not running:
-                    continue
+                if running:
+                    self.inc_exec_time(
+                        name, status, cancel_time, running.get("startedAt")
+                    )
 
-                self.inc_exec_time(status, cancel_time, running.get("startedAt"))
+                self.handle_terminated_pod(
+                    name, role, status, cstatus["state"].get("terminated")
+                )
 
             status.canceled = True
 
@@ -905,9 +909,9 @@ class BtrixOperator(K8sAPI):
                     ):
                         running = True
 
-                    terminated = cstatus["state"].get("terminated")
-                    if terminated:
-                        self.handle_terminated_pod(name, role, status, terminated)
+                    self.handle_terminated_pod(
+                        name, role, status, cstatus["state"].get("terminated")
+                    )
 
                 if role == "crawler":
                     crawler_running = crawler_running or running
@@ -935,7 +939,7 @@ class BtrixOperator(K8sAPI):
 
         pod_status.isNewExit = pod_status.exitTime != exit_time
         if pod_status.isNewExit and role == "crawler":
-            self.inc_exec_time(status, exit_time, terminated.get("startedAt"))
+            self.inc_exec_time(name, status, exit_time, terminated.get("startedAt"))
             pod_status.exitTime = exit_time
 
         # detect reason
@@ -1214,7 +1218,7 @@ class BtrixOperator(K8sAPI):
         # finally, delete job
         await self.delete_crawl_job(crawl_id)
 
-    def inc_exec_time(self, status, finished_at, started_at):
+    def inc_exec_time(self, name, status, finished_at, started_at):
         """increment execTime on pod status"""
         end_time = (
             from_k8s_date(finished_at)
@@ -1222,8 +1226,10 @@ class BtrixOperator(K8sAPI):
             else finished_at
         )
         start_time = from_k8s_date(started_at)
-        exec_time = (end_time - start_time).total_seconds()
-        status.execTime += int(exec_time)
+        exec_time = int((end_time - start_time).total_seconds())
+        status.execTime += exec_time
+        print(f"{name} exec time: {exec_time}")
+        return exec_time
 
     async def store_exec_time(self, crawl_id, oid, exec_time):
         """store execTime in crawl (if not already set), and increment org counter"""
