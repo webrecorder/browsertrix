@@ -228,6 +228,7 @@ class BtrixOperator(K8sAPI):
         super().__init__()
 
         self.crawl_config_ops = crawl_config_ops
+        self.user_ops = crawl_config_ops.user_manager
         self.crawl_ops = crawl_ops
         self.org_ops = org_ops
         self.coll_ops = coll_ops
@@ -1261,8 +1262,9 @@ class BtrixOperator(K8sAPI):
                 return {"attachments": []}
 
             # db create
+            user = await self.user_ops.get_user_by_id(uuid.UUID(userid))
             await self.crawl_config_ops.add_new_crawl(
-                crawl_id, crawlconfig, uuid.UUID(userid), manual=False
+                crawl_id, crawlconfig, user, manual=False
             )
             print("Scheduled Crawl Created: " + crawl_id)
 
