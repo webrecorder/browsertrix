@@ -4,7 +4,9 @@ import asyncio
 import traceback
 import os
 from pprint import pprint
-from typing import Optional
+from typing import Optional, DefaultDict
+
+from collections import defaultdict
 
 from datetime import datetime
 import json
@@ -14,7 +16,7 @@ from fastapi import HTTPException
 import yaml
 import humanize
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from kubernetes.utils import parse_quantity
 
@@ -38,8 +40,12 @@ from .models import CrawlFile, CrawlCompleteIn
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
 POD = "Pod.v1"
-CJS = "CrawlJob.btrix.cloud/v1"
-# METRICS = "PodMetrics.metrics.k8s.io/v1beta1"
+
+BTRIX_API = "btrix.cloud/v1"
+CJS = f"CrawlJob.{BTRIX_API}"
+
+METRICS_API = "metrics.k8s.io/v1beta1"
+METRICS = f"PodMetrics.{METRICS_API}"
 
 DEFAULT_TTL = 30
 
@@ -96,6 +102,95 @@ class CrawlSpec(BaseModel):
 
 
 # ============================================================================
+class PodResourcePercentage(BaseModel):
+    """Resource usage percentage ratios"""
+
+    memory: Optional[float] = 0
+    cpu: Optional[float] = 0
+    storage: Optional[float] = 0
+
+
+# ============================================================================
+class PodResources(BaseModel):
+    """Pod Resources"""
+
+    memory: Optional[int] = 0
+    cpu: Optional[float] = 0
+    storage: Optional[int] = 0
+
+    def __init__(self, *a, **kw):
+        if "memory" in kw:
+            kw["memory"] = int(parse_quantity(kw["memory"]))
+        if "cpu" in kw:
+            kw["cpu"] = float(parse_quantity(kw["cpu"]))
+        if "storage" in kw:
+            kw["storage"] = int(parse_quantity(kw["storage"]))
+        super().__init__(*a, **kw)
+
+
+# ============================================================================
+class PodInfo(BaseModel):
+    """Aggregate pod status info held in CrawlJob"""
+
+    crashTime: Optional[str] = None
+    isNewCrash: Optional[bool] = Field(default=None, exclude=True)
+    reason: Optional[str] = None
+
+    allocated: PodResources = PodResources()
+    used: PodResources = PodResources()
+
+    newCpu: Optional[int] = None
+    newMemory: Optional[int] = None
+
+    # newAllocated: PodResources = PodResources()
+    # force_restart: Optional[bool] = Field(default=False, exclude=True)
+
+    def dict(self, *a, **kw):
+        res = super().dict(*a, **kw)
+        percent = {
+            "memory": self.get_percent_memory(),
+            "cpu": self.get_percent_cpu(),
+            "storage": self.get_percent_storage(),
+        }
+        res["percent"] = percent
+        return res
+
+    def get_percent_memory(self):
+        """compute percent memory used"""
+        return (
+            float(self.used.memory) / float(self.allocated.memory)
+            if self.allocated.memory
+            else 0
+        )
+
+    def get_percent_cpu(self):
+        """compute percent cpu used"""
+        return (
+            float(self.used.cpu) / float(self.allocated.cpu)
+            if self.allocated.cpu
+            else 0
+        )
+
+    def get_percent_storage(self):
+        """compute percent storage used"""
+        return (
+            float(self.used.storage) / float(self.allocated.storage)
+            if self.allocated.storage
+            else 0
+        )
+
+    def should_restart_pod(self):
+        """return true if pod should be restarted"""
+        if self.newMemory and self.newMemory != self.allocated.memory:
+            return True
+
+        if self.newCpu and self.newCpu != self.allocated.cpu:
+            return True
+
+        return False
+
+
+# ============================================================================
 class CrawlStatus(BaseModel):
     """status from k8s CrawlJob object"""
 
@@ -112,7 +207,9 @@ class CrawlStatus(BaseModel):
     stopping: bool = False
     initRedis: bool = False
     lastActiveTime: str = ""
-    resources: Optional[dict] = {}
+    podStatus: Optional[DefaultDict[str, PodInfo]] = defaultdict(
+        lambda: PodInfo()  # pylint: disable=unnecessary-lambda
+    )
     restartTime: Optional[str]
 
     # don't include in status, use by metacontroller
@@ -147,6 +244,7 @@ class BtrixOperator(K8sAPI):
         with open(self.config_file, encoding="utf-8") as fh_config:
             self.shared_params = yaml.safe_load(fh_config)
 
+        self._has_pod_metrics = False
         self.compute_crawler_resources()
 
     def compute_crawler_resources(self):
@@ -175,6 +273,11 @@ class BtrixOperator(K8sAPI):
             print(f"memory = {base} + {num} * {extra} = {p['crawler_memory']}")
         else:
             print(f"memory = {p['crawler_memory']}")
+
+    async def async_init(self):
+        """perform any async init here"""
+        self._has_pod_metrics = await self.is_pod_metrics_available()
+        print("Pod Metrics Available:", self._has_pod_metrics)
 
     async def sync_profile_browsers(self, data: MCSyncData):
         """sync profile browsers"""
@@ -292,7 +395,16 @@ class BtrixOperator(K8sAPI):
             )
 
         if len(pods):
-            status = await self.sync_crawl_state(redis_url, crawl, status, pods)
+            for pod_name, pod in pods.items():
+                self.sync_resources(status, pod_name, pod, data.children)
+
+            status = await self.sync_crawl_state(
+                redis_url, crawl, status, pods, data.related.get(METRICS, {})
+            )
+
+            # auto sizing handled here
+            self.handle_auto_size(crawl.id, status.podStatus)
+
             if status.finished:
                 return self.finalize_response(
                     crawl_id, status, spec, data.children, params
@@ -328,16 +440,36 @@ class BtrixOperator(K8sAPI):
 
     def _load_redis(self, params, status, children):
         name = f"redis-{params['id']}"
-        self.sync_resources(status.resources, "redis", name, children)
+        has_pod = name in children[POD]
+
+        pod_info = status.podStatus[name]
         params["name"] = name
-        params["init_redis"] = status.initRedis
+        params["cpu"] = pod_info.newCpu or params.get("redis_cpu")
+        params["memory"] = pod_info.newMemory or params.get("redis_memory")
+        restart = pod_info.should_restart_pod() and has_pod
+        if restart:
+            print(f"Restart {name}")
+
+        params["init_redis"] = status.initRedis and not restart
+
         return self.load_from_yaml("redis.yaml", params)
 
     def _load_crawler(self, params, i, status, children):
         name = f"crawl-{params['id']}-{i}"
-        self.sync_resources(status.resources, str(i), name, children)
+        has_pod = name in children[POD]
+
+        pod_info = status.podStatus[name]
         params["name"] = name
+        params["cpu"] = pod_info.newCpu or params.get("crawler_cpu")
+        params["memory"] = pod_info.newMemory or params.get("crawler_memory")
+        params["do_restart"] = (
+            pod_info.should_restart_pod() or params.get("force_restart")
+        ) and has_pod
+        if params.get("do_restart"):
+            print(f"Restart {name}")
+
         params["priorityClassName"] = f"crawl-instance-{i}"
+
         return self.load_from_yaml("crawler.yaml", params)
 
     # pylint: disable=too-many-arguments
@@ -383,21 +515,18 @@ class BtrixOperator(K8sAPI):
 
         return new_scale
 
-    def sync_resources(self, resources, id_, name, children):
+    def sync_resources(self, status, name, pod, children):
         """set crawljob status from current resources"""
-        if id_ not in resources:
-            resources[id_] = {}
+        resources = status.podStatus[name].allocated
 
-        pod = children[POD].get(name)
-        if pod:
-            src = pod["spec"]["containers"][0]["resources"]["requests"]
-            resources[id_]["memory"] = src.get("memory")
-            resources[id_]["cpu"] = src.get("cpu")
+        src = pod["spec"]["containers"][0]["resources"]["requests"]
+        resources.memory = int(parse_quantity(src.get("memory")))
+        resources.cpu = float(parse_quantity(src.get("cpu")))
 
         pvc = children[PVC].get(name)
         if pvc:
             src = pvc["spec"]["resources"]["requests"]
-            resources[id_]["storage"] = src.get("storage")
+            resources.storage = int(parse_quantity(src.get("storage")))
 
     async def set_state(self, state, status, crawl_id, allowed_from, **kwargs):
         """set status state and update db, if changed
@@ -461,28 +590,31 @@ class BtrixOperator(K8sAPI):
         """return objects related to crawl pods"""
         spec = data.parent.get("spec", {})
         cid = spec["cid"]
-        # crawl_id = spec["id"]
+        crawl_id = spec["id"]
         oid = spec.get("oid")
-        return {
-            "relatedResources": [
+        related_resources = [
+            {
+                "apiVersion": "v1",
+                "resource": "configmaps",
+                "labelSelector": {"matchLabels": {"btrix.crawlconfig": cid}},
+            },
+            {
+                "apiVersion": BTRIX_API,
+                "resource": "crawljobs",
+                "labelSelector": {"matchLabels": {"oid": oid}},
+            },
+        ]
+
+        if self._has_pod_metrics:
+            related_resources.append(
                 {
-                    "apiVersion": "v1",
-                    "resource": "configmaps",
-                    "labelSelector": {"matchLabels": {"btrix.crawlconfig": cid}},
-                },
-                {
-                    "apiVersion": "btrix.cloud/v1",
-                    "resource": "crawljobs",
-                    "labelSelector": {"matchLabels": {"oid": oid}},
-                },
-                # enable for podmetrics
-                #    {
-                #        "apiVersion": "metrics.k8s.io/v1beta1",
-                #        "resource": "pods",
-                #        "labelSelector": {"matchLabels": {"crawl": crawl_id}},
-                #    },
-            ]
-        }
+                    "apiVersion": METRICS_API,
+                    "resource": "pods",
+                    "labelSelector": {"matchLabels": {"crawl": crawl_id}},
+                }
+            )
+
+        return {"relatedResources": related_resources}
 
     async def can_start_new(self, crawl: CrawlSpec, data: MCSyncData, status):
         """return true if crawl can start, otherwise set crawl to 'queued' state
@@ -599,40 +731,51 @@ class BtrixOperator(K8sAPI):
 
             return None
 
-    async def sync_crawl_state(self, redis_url, crawl, status, pods):
+    async def sync_crawl_state(self, redis_url, crawl, status, pods, metrics):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
-        if not self.check_if_crawler_running(pods):
-            if self.should_mark_waiting(status.state, crawl.started):
-                await self.set_state(
-                    "waiting_capacity",
-                    status,
-                    crawl.id,
-                    allowed_from=RUNNING_AND_STARTING_ONLY,
-                )
-
-            # for now, don't reset redis once inited
-            if status.lastActiveTime and (
-                (dt_now() - from_k8s_date(status.lastActiveTime)).total_seconds()
-                > REDIS_TTL
-            ):
-                print(f"Pausing redis, no running crawler pods for >{REDIS_TTL} secs")
-                status.initRedis = False
-
-            # if still running, resync after N seconds
-            status.resync_after = self.fast_retry_secs
-            return status
-
-        status.initRedis = True
-        status.lastActiveTime = to_k8s_date(dt_now())
-
-        redis = await self._get_redis(redis_url)
-        if not redis:
-            # if still running, resync after N seconds
-            status.resync_after = self.fast_retry_secs
-            return status
+        crawler_running, redis_running = self.sync_pod_status(pods, status)
+        redis = None
 
         try:
+            if redis_running:
+                redis = await self._get_redis(redis_url)
+
+            await self.add_used_stats(crawl.id, status.podStatus, redis, metrics)
+
+            await self.log_crashes(crawl.id, status.podStatus, redis)
+
+            if not crawler_running:
+                if self.should_mark_waiting(status.state, crawl.started):
+                    await self.set_state(
+                        "waiting_capacity",
+                        status,
+                        crawl.id,
+                        allowed_from=RUNNING_AND_STARTING_ONLY,
+                    )
+
+                # for now, don't reset redis once inited
+                if status.lastActiveTime and (
+                    (dt_now() - from_k8s_date(status.lastActiveTime)).total_seconds()
+                    > REDIS_TTL
+                ):
+                    print(
+                        f"Pausing redis, no running crawler pods for >{REDIS_TTL} secs"
+                    )
+                    status.initRedis = False
+
+                # if still running, resync after N seconds
+                status.resync_after = self.fast_retry_secs
+                return status
+
+            status.initRedis = True
+            status.lastActiveTime = to_k8s_date(dt_now())
+
+            if not redis:
+                # if still running, resync after N seconds
+                status.resync_after = self.fast_retry_secs
+                return status
+
             # set state to running (if not already)
             if status.state not in RUNNING_STATES:
                 # if true (state is set), also run webhook
@@ -674,37 +817,60 @@ class BtrixOperator(K8sAPI):
             return status
 
         finally:
-            await redis.close()
+            if redis:
+                await redis.close()
 
-    def check_if_crawler_running(self, pods):
-        """check if at least one crawler pod has started"""
+    def sync_pod_status(self, pods, status):
+        """check status of pods"""
+        crawler_running = False
+        redis_running = False
         try:
-            for pod in pods.values():
-                if pod["metadata"]["labels"]["role"] != "crawler":
-                    continue
+            for name, pod in pods.items():
+                running = False
 
-                status = pod["status"]
-                phase = status["phase"]
+                pstatus = pod["status"]
+                phase = pstatus["phase"]
+                role = pod["metadata"]["labels"]["role"]
+
                 if phase in ("Running", "Succeeded"):
-                    return True
+                    running = True
 
-                # consider 'ContainerCreating' as running
-                if phase == "Pending":
+                if "containerStatuses" in pstatus:
+                    cstatus = pstatus["containerStatuses"][0]
+
+                    # consider 'ContainerCreating' as running
+                    waiting = cstatus["state"].get("waiting")
                     if (
-                        "containerStatuses" in status
-                        and status["containerStatuses"][0]["state"]["waiting"]["reason"]
-                        == "ContainerCreating"
+                        phase == "Pending"
+                        and waiting
+                        and waiting.get("reason") == "ContainerCreating"
                     ):
-                        return True
+                        running = True
 
-                # print("non-running pod status", pod["status"], flush=True)
+                    terminated = cstatus["state"].get("terminated")
+                    exit_code = terminated and terminated.get("exitCode")
+                    if terminated and exit_code:
+                        crash_time = terminated.get("finishedAt")
+                        pod_status = status.podStatus[name]
+                        pod_status.isNewCrash = pod_status.crashTime != crash_time
+                        pod_status.crashTime = crash_time
 
-        # pylint: disable=bare-except
-        except:
-            # assume no valid pod found
-            pass
+                        # detect reason
+                        if terminated.get("reason") == "OOMKilled" or exit_code == 137:
+                            pod_status.reason = "oom"
+                        else:
+                            pod_status.reason = "interrupt: " + str(exit_code)
 
-        return False
+                if role == "crawler":
+                    crawler_running = crawler_running or running
+                elif role == "redis":
+                    redis_running = redis_running or running
+
+        # pylint: disable=broad-except
+        except Exception as exc:
+            print(exc)
+
+        return crawler_running, redis_running
 
     def should_mark_waiting(self, state, started):
         """Should the crawl be marked as waiting for capacity?"""
@@ -716,6 +882,68 @@ class BtrixOperator(K8sAPI):
             return (datetime.utcnow() - started).total_seconds() > STARTING_TIME_SECS
 
         return False
+
+    async def add_used_stats(self, crawl_id, pod_status, redis, metrics):
+        """load current usage stats"""
+        if redis:
+            stats = await redis.info("persistence")
+            storage = int(stats.get("aof_current_size", 0)) + int(
+                stats.get("current_cow_size", 0)
+            )
+            pod_info = pod_status[f"redis-{crawl_id}"]
+            pod_info.used.storage = storage
+
+            # if no pod metrics, get memory estimate from redis itself
+            if not self._has_pod_metrics:
+                stats = await redis.info("memory")
+                pod_info.used.memory = int(stats.get("used_memory_rss", 0))
+
+                # stats = await redis.info("cpu")
+                # pod_info.used.cpu = float(stats.get("used_cpu_sys", 0))
+
+        for name, metric in metrics.items():
+            usage = metric["containers"][0]["usage"]
+            pod_info = pod_status[name]
+            pod_info.used.memory = int(parse_quantity(usage["memory"]))
+            pod_info.used.cpu = float(parse_quantity(usage["cpu"]))
+
+    def handle_auto_size(self, _, pod_status):
+        """auto scale pods here, experimental"""
+        for name, pod in pod_status.items():
+            # if pod crashed due to OOM, increase mem
+            # if pod.isNewCrash and pod.reason == "oom":
+            #    pod.newMemory = int(float(pod.allocated.memory) * 1.2)
+            #    print(f"Resizing pod {name} -> mem {pod.newMemory} - OOM Detected")
+
+            # if redis is using >0.90 of its memory, increase mem
+            if name.startswith("redis") and pod.get_percent_memory() > 0.90:
+                pod.newMemory = int(float(pod.allocated.memory) * 1.2)
+                print(f"Resizing pod {name} -> mem {pod.newMemory} - Redis Capacity")
+
+    async def log_crashes(self, crawl_id, pod_status, redis):
+        """report/log any pod crashes here"""
+        for name, pod in pod_status.items():
+            if not pod.isNewCrash:
+                continue
+
+            log = self.get_log_line(
+                "Crawler Instance Crashed", {"reason": pod.reason, "pod": name}
+            )
+            if not redis:
+                print(log)
+            else:
+                await redis.lpush(f"{crawl_id}:e", log)
+
+    def get_log_line(self, message, details):
+        """get crawler error line for logging"""
+        err = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "logLevel": "error",
+            "context": "k8s",
+            "message": message,
+            "details": details,
+        }
+        return json.dumps(err)
 
     async def add_file_to_crawl(self, cc_data, crawl, redis):
         """Handle finished CrawlFile to db"""
@@ -765,13 +993,24 @@ class BtrixOperator(K8sAPI):
     async def update_crawl_state(self, redis, crawl, status, pods):
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
-        stats = await get_redis_crawl_stats(redis, crawl.id)
+        stats, sizes = await get_redis_crawl_stats(redis, crawl.id)
+
+        # need to add size of previously completed WACZ files as well!
+        stats["size"] += status.filesAddedSize
 
         # update status
         status.pagesDone = stats["done"]
         status.pagesFound = stats["found"]
         status.size = stats["size"]
         status.sizeHuman = humanize.naturalsize(status.size)
+
+        await self.crawl_ops.update_running_crawl_stats(crawl.id, stats)
+
+        for key, value in sizes.items():
+            value = int(value)
+            if value > 0:
+                pod_info = status.podStatus[key]
+                pod_info.used.storage = value
 
         status.stopping = self.is_crawl_stopping(crawl, status.size)
 
@@ -1070,3 +1309,5 @@ def init_operator_api(
     @app.get("/healthz", include_in_schema=False)
     async def healthz():
         return {}
+
+    return oper

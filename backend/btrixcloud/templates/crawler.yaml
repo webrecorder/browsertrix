@@ -28,7 +28,7 @@ spec:
 # -------
 # CRAWLER
 # -------
-{% if not force_restart %}
+{% if not do_restart %}
 ---
 apiVersion: v1
 kind: Pod
@@ -151,11 +151,11 @@ spec:
 
       resources:
         limits:
-          memory: "{{ crawler_memory }}"
+          memory: "{{ memory }}"
 
         requests:
-          cpu: "{{ crawler_cpu }}"
-          memory: "{{ crawler_memory }}"
+          cpu: "{{ cpu }}"
+          memory: "{{ memory }}"
 
       {% if crawler_liveness_port and crawler_liveness_port != '0' %}
       livenessProbe:

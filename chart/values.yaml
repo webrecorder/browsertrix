@@ -206,9 +206,9 @@ crawler_browser_instances: 2
 
 # this value is added to crawler_cpu_base, for each additional browser
 # crawler_cpu = crawler_cpu_base + crawler_pu_per_extra_browser * (crawler_browser_instances - 1)
-crawler_extra_cpu_per_browser: 300m
+crawler_extra_cpu_per_browser: 600m
 
-crawler_extra_memory_per_browser: 256Mi
+crawler_extra_memory_per_browser: 768Mi
 
 # if not set, defaults to the following, but can be overridden directly:
 # crawler_cpu = crawler_cpu_base + crawler_cpu_per_extra_browser * (crawler_browser_instances - 1)
