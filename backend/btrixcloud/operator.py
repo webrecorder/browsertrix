@@ -1004,7 +1004,10 @@ class BtrixOperator(K8sAPI):
     async def log_crashes(self, crawl_id, pod_status, redis):
         """report/log any pod crashes here"""
         for name, pod in pod_status.items():
-            if not pod.isNewExit or not pod.exitCode:
+            # log only unexpected exits as crashes
+            # - 0 is success / intended shutdown
+            # - 11 is interrupt / intended restart
+            if not pod.isNewExit or pod.exitCode in (0, 11):
                 continue
 
             log = self.get_log_line(
