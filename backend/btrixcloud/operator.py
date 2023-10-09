@@ -933,6 +933,7 @@ class BtrixOperator(K8sAPI):
 
         exit_time = terminated.get("finishedAt")
         if not exit_time:
+            print("warn: terminated pod missing finishedAt", flush=True)
             return
 
         pod_status = status.podStatus[name]
