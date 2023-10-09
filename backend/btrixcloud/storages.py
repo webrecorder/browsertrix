@@ -498,7 +498,7 @@ def init_storages_api(org_ops, crawl_manager, user_dep):
     storage_ops = StorageOps(org_ops, crawl_manager)
 
     if not org_ops.router:
-        return
+        return storage_ops
 
     router = org_ops.router
     org_owner_dep = org_ops.org_owner_dep
