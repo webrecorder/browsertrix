@@ -16,7 +16,6 @@ from redis import asyncio as exceptions
 import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .storages import sync_stream_wacz_logs
 from .utils import dt_now, parse_jsonl_error_messages
 from .basecrawls import BaseCrawlOps
 from .models import (
@@ -41,9 +40,19 @@ class CrawlOps(BaseCrawlOps):
 
     # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
     def __init__(
-        self, mdb, users, crawl_manager, crawl_configs, orgs, colls, event_webhook_ops
+        self,
+        mdb,
+        users,
+        crawl_manager,
+        crawl_configs,
+        orgs,
+        colls,
+        storage_ops,
+        event_webhook_ops,
     ):
-        super().__init__(mdb, users, orgs, crawl_configs, crawl_manager, colls)
+        super().__init__(
+            mdb, users, orgs, crawl_configs, crawl_manager, colls, storage_ops
+        )
         self.crawls = self.crawls
         self.crawl_configs = crawl_configs
         self.user_manager = users
@@ -594,14 +603,22 @@ def init_crawls_api(
     crawl_config_ops,
     orgs,
     colls,
+    storage_ops,
     user_dep,
     event_webhook_ops,
 ):
     """API for crawl management, including crawl done callback"""
-    # pylint: disable=invalid-name
+    # pylint: disable=invalid-name, duplicate-code
 
     ops = CrawlOps(
-        mdb, users, crawl_manager, crawl_config_ops, orgs, colls, event_webhook_ops
+        mdb,
+        users,
+        crawl_manager,
+        crawl_config_ops,
+        orgs,
+        colls,
+        storage_ops,
+        event_webhook_ops,
     )
 
     org_viewer_dep = orgs.org_viewer_dep
@@ -893,7 +910,7 @@ def init_crawls_api(
         # If crawl is finished, stream logs from WACZ files
         if crawl.finished:
             wacz_files = await ops.get_wacz_files(crawl_id, org)
-            resp = await sync_stream_wacz_logs(
+            resp = await storage_ops.sync_stream_wacz_logs(
                 org, wacz_files, log_levels, contexts, crawl_manager
             )
             return StreamingResponse(resp)

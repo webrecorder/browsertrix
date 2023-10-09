@@ -24,7 +24,6 @@ from .models import (
     User,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
-from .storages import get_presigned_url, delete_crawl_file_object
 from .utils import dt_now
 
 
@@ -46,18 +45,22 @@ ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
 
 
 # ============================================================================
+# pylint: disable=too-many-instance-attributes
 class BaseCrawlOps:
     """operations that apply to all crawls"""
 
     # pylint: disable=duplicate-code, too-many-arguments, too-many-locals
 
-    def __init__(self, mdb, users, orgs, crawl_configs, crawl_manager, colls):
+    def __init__(
+        self, mdb, users, orgs, crawl_configs, crawl_manager, colls, storage_ops
+    ):
         self.crawls = mdb["crawls"]
         self.crawl_configs = crawl_configs
         self.crawl_manager = crawl_manager
         self.user_manager = users
         self.orgs = orgs
         self.colls = colls
+        self.storage_ops = storage_ops
 
         self.presign_duration_seconds = (
             int(os.environ.get("PRESIGN_DURATION_MINUTES", 60)) * 60
@@ -306,7 +309,7 @@ class BaseCrawlOps:
         size = 0
         for file_ in crawl.files:
             size += file_.size
-            if not await delete_crawl_file_object(org, file_, self.crawl_manager):
+            if not await self.storage_ops.delete_crawl_file_object(org, file_):
                 raise HTTPException(status_code=400, detail="file_deletion_error")
 
         return size
@@ -361,8 +364,8 @@ class BaseCrawlOps:
 
             if not presigned_url or now >= file_.expireAt:
                 exp = now + delta
-                presigned_url = await get_presigned_url(
-                    org, file_, self.crawl_manager, self.presign_duration_seconds
+                presigned_url = await self.storage_ops.get_presigned_url(
+                    org, file_, self.presign_duration_seconds
                 )
                 updates.append(
                     (
@@ -647,12 +650,14 @@ class BaseCrawlOps:
 
 # ============================================================================
 def init_base_crawls_api(
-    app, mdb, users, crawl_manager, crawl_config_ops, orgs, colls, user_dep
+    app, mdb, users, crawl_manager, crawl_config_ops, orgs, colls, storage_ops, user_dep
 ):
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code, too-many-arguments, too-many-locals
 
-    ops = BaseCrawlOps(mdb, users, orgs, crawl_config_ops, crawl_manager, colls)
+    ops = BaseCrawlOps(
+        mdb, users, orgs, crawl_config_ops, crawl_manager, colls, storage_ops
+    )
 
     org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep

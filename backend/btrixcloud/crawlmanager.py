@@ -156,8 +156,7 @@ class CrawlManager(K8sAPI):
 
         return True
 
-    # pylint: disable=unused-argument
-    async def check_storage(self, storage_name, is_default=False):
+    async def check_storage(self, storage_name):
         """Check if storage is valid by trying to get the storage secret
         Will throw if not valid, otherwise return True"""
         await self._get_storage_secret(storage_name)
@@ -261,16 +260,16 @@ class CrawlManager(K8sAPI):
             browserid, {"expireTime": to_k8s_date(expire_at)}, "profilejobs"
         )
 
-    async def rollover_restart_crawl(self, crawl_id, oid):
+    async def rollover_restart_crawl(self, crawl_id):
         """Rolling restart of crawl by updating restartTime field"""
         update = to_k8s_date(dt_now())
         return await self._patch_job(crawl_id, {"restartTime": update})
 
-    async def scale_crawl(self, crawl_id, oid, scale=1):
+    async def scale_crawl(self, crawl_id, scale=1):
         """Set the crawl scale (job parallelism) on the specified job"""
         return await self._patch_job(crawl_id, {"scale": scale})
 
-    async def shutdown_crawl(self, crawl_id, oid, graceful=True):
+    async def shutdown_crawl(self, crawl_id, graceful=True):
         """Request a crawl cancelation or stop by calling an API
         on the job pod/container, returning the result"""
         if graceful:

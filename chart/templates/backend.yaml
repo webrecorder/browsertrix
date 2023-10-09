@@ -37,6 +37,10 @@ spec:
               - key: config.yaml
                 path: config.yaml
 
+        - name: storages
+          secret:
+            secretName: storages
+
       containers:
         - name: api
           image: {{ .Values.backend_image }}
@@ -52,6 +56,10 @@ spec:
           env:
             - name: WEB_CONCURRENCY
               value: "{{ .Values.backend_workers | default 4 }}"
+
+          volumeMounts:
+            - name: storages
+              mountPath: /tmp/storages/
 
           resources:
             limits:
@@ -117,6 +125,9 @@ spec:
           volumeMounts:
             - name: config-volume
               mountPath: /config
+
+            - name: storages
+              mountPath: /tmp/storages/
 
           resources:
             limits:
