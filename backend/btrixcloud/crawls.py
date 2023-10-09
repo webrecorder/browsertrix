@@ -565,8 +565,8 @@ class CrawlOps(BaseCrawlOps):
         upper_bound = skip + page_size
 
         crawl_raw = await self.get_crawl_raw(crawl_id, org)
-        crawl = Crawl.from_dict(crawl_raw)
         try:
+            crawl = Crawl.from_dict(crawl_raw)
             return crawl.config.seeds[skip:upper_bound], len(crawl.config.seeds)
         # pylint: disable=broad-exception-caught
         except Exception:

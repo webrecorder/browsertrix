@@ -41,7 +41,7 @@ class StorageOps:
         self.org_ops = org_ops
         self.crawl_manager = crawl_manager
 
-        self.is_local_minio = is_bool(os.environ.get("IS_MINIO_LOCAL"))
+        self.is_local_minio = is_bool(os.environ.get("IS_LOCAL_MINIO"))
 
         with open("/tmp/storages/storages.json", encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
@@ -57,20 +57,23 @@ class StorageOps:
 
     def _create_s3_storage(self, storage):
         """create S3Storage object"""
-        access_endpoint_url = storage.get("access_endpoint_url")
+        endpoint_url = storage["endpoint_url"]
+        bucket_name = storage.get("bucket_name")
+        if bucket_name:
+            endpoint_url += bucket_name + "/"
+
         if self.is_local_minio:
             access_endpoint_url = "/data/"
             use_access_for_presign = False
         else:
-            if not access_endpoint_url:
-                access_endpoint_url = storage.get("endpoint_url")
+            access_endpoint_url = storage.get("access_endpoint_url") or endpoint_url
             use_access_for_presign = True
 
         return S3Storage(
             access_key=storage["access_key"],
             secret_key=storage["secret_key"],
-            endpoint_url=storage["endpoint_url"],
             region=storage.get("region", ""),
+            endpoint_url=endpoint_url,
             access_endpoint_url=access_endpoint_url,
             use_access_for_presign=use_access_for_presign,
         )
