@@ -483,11 +483,9 @@ class CrawlOps(BaseCrawlOps):
         """add new exclusion to config or remove exclusion from config
         for given crawl_id, update config on crawl"""
 
-        crawlraw = await self.crawls.find_one(
-            {"_id": crawl_id, "type": "crawl"}, {"cid": True}
-        )
+        crawl_raw = await self.get_crawl_raw(crawl_id, org, project={"cid": True})
 
-        cid = crawlraw.get("cid")
+        cid = crawl_raw.get("cid")
 
         new_config = await self.crawl_configs.add_or_remove_exclusion(
             regex, cid, org, user, add
@@ -501,7 +499,7 @@ class CrawlOps(BaseCrawlOps):
         resp = {"success": True}
 
         # restart crawl pods
-        restart_c = self.crawl_manager.rollover_restart_crawl(crawl_id, org.id)
+        restart_c = self.crawl_manager.rollover_restart_crawl(crawl_id)
 
         if add:
             filter_q = self.filter_crawl_queue(crawl_id, regex)
@@ -807,7 +805,7 @@ def init_crawls_api(
     ):
         await ops.update_crawl_scale(crawl_id, org, scale, user)
 
-        result = await crawl_manager.scale_crawl(crawl_id, org.id_str, scale.scale)
+        result = await crawl_manager.scale_crawl(crawl_id, scale.scale)
         if not result or not result.get("success"):
             raise HTTPException(
                 status_code=400, detail=result.get("error") or "unknown"

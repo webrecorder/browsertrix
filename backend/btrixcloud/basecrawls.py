@@ -71,6 +71,7 @@ class BaseCrawlOps:
         crawlid: str,
         org: Optional[Organization] = None,
         type_: Optional[str] = None,
+        project: Optional[dict[str, bool]] = None,
     ):
         """Get data for single crawl"""
 
@@ -81,7 +82,7 @@ class BaseCrawlOps:
         if type_:
             query["type"] = type_
 
-        res = await self.crawls.find_one(query)
+        res = await self.crawls.find_one(query, project)
 
         if not res:
             raise HTTPException(status_code=404, detail=f"Crawl not found: {crawlid}")
@@ -214,7 +215,7 @@ class BaseCrawlOps:
         result = None
         try:
             result = await self.crawl_manager.shutdown_crawl(
-                crawl_id, org.id_str, graceful=graceful
+                crawl_id, graceful=graceful
             )
 
             if result.get("success"):
