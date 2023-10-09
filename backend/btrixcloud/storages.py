@@ -9,6 +9,7 @@ import asyncio
 import heapq
 import json
 import itertools
+import os
 
 from datetime import datetime
 
@@ -24,6 +25,8 @@ from .zip import (
     sync_get_log_stream,
 )
 
+from .utils import is_bool
+
 
 CHUNK_SIZE = 1024 * 256
 
@@ -38,7 +41,7 @@ class StorageOps:
         self.org_ops = org_ops
         self.crawl_manager = crawl_manager
 
-        self.is_local_minio = False
+        self.is_local_minio = is_bool(os.environ.get("IS_MINIO_LOCAL"))
 
         with open("/tmp/storages/storages.json", encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
