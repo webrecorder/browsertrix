@@ -519,8 +519,9 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         org.name = rename.name
         if rename.slug:
             org.slug = rename.slug
-       else:
+        else:
             org.slug = slug_from_name(rename.name)
+
         try:
             await ops.update(org)
         except DuplicateKeyError:
