@@ -156,7 +156,6 @@ export class AccountSettings extends LiteElement {
               name="email"
               value=${this.userInfo.email}
               type="email"
-              minlength="2"
               aria-label=${msg("Email")}
             >
               <div slot="suffix">
