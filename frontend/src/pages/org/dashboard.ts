@@ -254,50 +254,51 @@ export class Dashboard extends LiteElement {
                 `
         )}
       </div>
-      <div class="mb-2">
-        <btrix-meter
-          value=${metrics.storageUsedBytes}
-          max=${ifDefined(metrics.storageQuotaBytes || undefined)}
-          valueText=${msg("gigabyte")}
-        >
-          ${when(metrics.storageUsedCrawls, () =>
-            renderBar(
-              metrics.storageUsedCrawls,
-              msg("Crawls"),
-              this.colors.crawls
-            )
-          )}
-          ${when(metrics.storageUsedUploads, () =>
-            renderBar(
-              metrics.storageUsedUploads,
-              msg("Uploads"),
-              this.colors.uploads
-            )
-          )}
-          ${when(metrics.storageUsedProfiles, () =>
-            renderBar(
-              metrics.storageUsedProfiles,
-              msg("Profiles"),
-              this.colors.browserProfiles
-            )
-          )}
-          <div slot="available" class="flex-1">
-            <sl-tooltip>
-              <div slot="content">
-                <div>${msg("Available")}</div>
-                <div class="text-xs opacity-80">
-                  ${this.renderPercentage(
-                    (metrics.storageQuotaBytes - metrics.storageUsedBytes) /
-                      metrics.storageQuotaBytes
-                  )}
-                </div>
+      ${when(
+        hasQuota,
+        () => html`
+          <div class="mb-2">
+            <btrix-meter
+              value=${metrics.storageUsedBytes}
+              max=${ifDefined(metrics.storageQuotaBytes || undefined)}
+              valueText=${msg("gigabyte")}
+            >
+              ${when(metrics.storageUsedCrawls, () =>
+                renderBar(
+                  metrics.storageUsedCrawls,
+                  msg("Crawls"),
+                  this.colors.crawls
+                )
+              )}
+              ${when(metrics.storageUsedUploads, () =>
+                renderBar(
+                  metrics.storageUsedUploads,
+                  msg("Uploads"),
+                  this.colors.uploads
+                )
+              )}
+              ${when(metrics.storageUsedProfiles, () =>
+                renderBar(
+                  metrics.storageUsedProfiles,
+                  msg("Profiles"),
+                  this.colors.browserProfiles
+                )
+              )}
+              <div slot="available" class="flex-1">
+                <sl-tooltip>
+                  <div slot="content">
+                    <div>${msg("Available")}</div>
+                    <div class="text-xs opacity-80">
+                      ${this.renderPercentage(
+                        (metrics.storageQuotaBytes - metrics.storageUsedBytes) /
+                          metrics.storageQuotaBytes
+                      )}
+                    </div>
+                  </div>
+                  <div class="w-full h-full"></div>
+                </sl-tooltip>
               </div>
-              <div class="w-full h-full"></div>
-            </sl-tooltip>
-          </div>
-          ${when(
-            hasQuota,
-            () => html`<sl-format-bytes
+              <sl-format-bytes
                 slot="valueLabel"
                 value=${metrics.storageUsedBytes}
                 display="narrow"
@@ -306,10 +307,11 @@ export class Dashboard extends LiteElement {
                 slot="maxLabel"
                 value=${metrics.storageQuotaBytes}
                 display="narrow"
-              ></sl-format-bytes>`
-          )}
-        </btrix-meter>
-      </div>
+              ></sl-format-bytes>
+            </btrix-meter>
+          </div>
+        `
+      )}
     `;
   }
 
