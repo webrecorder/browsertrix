@@ -311,12 +311,16 @@ export class AccountSettings extends LiteElement {
     const { password, newPassword } = serialize(form);
     let nextAuthState: Auth | null = null;
 
+    this.sectionSubmitting = "password";
+
     try {
       nextAuthState = await AuthService.login({
         email: this.authState.username,
         password: password as string,
       });
-    } catch {}
+    } catch {
+      form.reset();
+    }
 
     if (!nextAuthState) {
       this.notify({
@@ -324,10 +328,9 @@ export class AccountSettings extends LiteElement {
         variant: "danger",
         icon: "exclamation-octagon",
       });
+      this.sectionSubmitting = null;
       return;
     }
-
-    this.sectionSubmitting = "password";
 
     try {
       await this.apiFetch(`/users/me`, nextAuthState!, {
