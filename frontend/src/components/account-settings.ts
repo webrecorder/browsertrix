@@ -129,7 +129,7 @@ export class AccountSettings extends LiteElement {
             >
           </footer>
         </form>
-        <form class="border rounded mb-5">
+        <form class="border rounded mb-5" @submit=${this.onSubmitEmail}>
           <div class="p-4">
             <h2 class="text-lg font-semibold leading-none mb-4">
               ${msg("Email")}
@@ -141,18 +141,46 @@ export class AccountSettings extends LiteElement {
               type="email"
               minlength="2"
               aria-label=${msg("Email")}
-            ></sl-input>
+            >
+              <div slot="suffix">
+                <sl-tooltip
+                  content=${this.userInfo.isVerified
+                    ? msg("Verified")
+                    : msg("Needs verification")}
+                  hoist
+                >
+                  ${this.userInfo.isVerified
+                    ? html`<sl-icon
+                        class="text-success"
+                        name="check-lg"
+                      ></sl-icon>`
+                    : html`<sl-icon
+                        class="text-warning"
+                        name="exclamation-circle"
+                      ></sl-icon>`}
+                </sl-tooltip>
+              </div>
+            </sl-input>
           </div>
-          <footer class="flex items-center justify-between border-t px-4 py-3">
-            <btrix-request-verify
-              email=${this.userInfo.email}
-            ></btrix-request-verify>
-            <sl-button type="submit" size="small" variant="primary"
+          <footer class="flex items-center justify-end border-t px-4 py-3">
+            ${this.userInfo && !this.userInfo.isVerified
+              ? html`
+                  <btrix-request-verify
+                    class="mr-auto"
+                    email=${this.userInfo.email}
+                  ></btrix-request-verify>
+                `
+              : ""}
+            <sl-button
+              type="submit"
+              size="small"
+              variant="primary"
+              ?loading=${this.sectionSubmitting === "email"}
               >${msg("Save")}</sl-button
             >
           </footer>
         </form>
-        <form class="border rounded mb-5">
+        <form class="border rounded mb-5" @submit=${this.onSubmitPassword}>
           <div class="p-4">
             <h2 class="text-lg font-semibold leading-none mb-4">
               ${msg("Password")}
@@ -171,10 +199,15 @@ export class AccountSettings extends LiteElement {
               type="password"
               autocomplete="new-password"
               password-toggle
+              minlength="8"
             ></sl-input>
           </div>
           <footer class="flex items-center justify-end border-t px-4 py-3">
-            <sl-button type="submit" size="small" variant="primary"
+            <sl-button
+              type="submit"
+              size="small"
+              variant="primary"
+              ?loading=${this.sectionSubmitting === "password"}
               >${msg("Save")}</sl-button
             >
           </footer>
@@ -192,7 +225,6 @@ export class AccountSettings extends LiteElement {
     }
     e.preventDefault();
     const newName = input.value.trim();
-
     if (newName === this.userInfo.name) {
       return;
     }
@@ -217,6 +249,84 @@ export class AccountSettings extends LiteElement {
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't update name at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.sectionSubmitting = null;
+  }
+
+  private async onSubmitPassword(e: SubmitEvent) {
+    if (!this.userInfo) return;
+    const form = e.target as HTMLFormElement;
+    const input = form.querySelector("sl-input[name='newPassword']") as SlInput;
+    if (!input.checkValidity()) {
+      return;
+    }
+    e.preventDefault();
+    const newPassword = input.value;
+
+    this.sectionSubmitting = "password";
+
+    try {
+      await this.apiFetch(`/users/me`, this.authState!, {
+        method: "PATCH",
+        body: JSON.stringify({
+          email: this.userInfo.email,
+          password: newPassword,
+        }),
+      });
+
+      this.dispatchEvent(new CustomEvent("update-user-info"));
+      this.notify({
+        message: msg("Your password has been updated."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't update password at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.sectionSubmitting = null;
+  }
+
+  private async onSubmitEmail(e: SubmitEvent) {
+    if (!this.userInfo) return;
+    const form = e.target as HTMLFormElement;
+    const input = form.querySelector("sl-input") as SlInput;
+    if (!input.checkValidity()) {
+      return;
+    }
+    e.preventDefault();
+    const newEmail = input.value.trim();
+    if (newEmail === this.userInfo.email) {
+      return;
+    }
+
+    this.sectionSubmitting = "email";
+
+    try {
+      await this.apiFetch(`/users/me`, this.authState!, {
+        method: "PATCH",
+        body: JSON.stringify({
+          email: newEmail,
+        }),
+      });
+
+      this.dispatchEvent(new CustomEvent("update-user-info"));
+      this.notify({
+        message: msg("Your email has been updated."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't update email at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
