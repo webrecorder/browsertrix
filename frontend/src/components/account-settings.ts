@@ -338,6 +338,7 @@ export class AccountSettings extends LiteElement {
         }),
       });
 
+      form.reset();
       this.dispatchEvent(new CustomEvent("update-user-info"));
       this.notify({
         message: msg("Your password has been updated."),
