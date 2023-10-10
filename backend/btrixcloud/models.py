@@ -374,6 +374,8 @@ class CrawlOut(BaseMongoModel):
 
     collectionIds: Optional[List[UUID4]] = []
 
+    crawlExecSeconds: int = 0
+
     # automated crawl fields
     config: Optional[RawCrawlConfig]
     cid: Optional[UUID4]
@@ -440,6 +442,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     manual: Optional[bool]
 
     stopping: Optional[bool] = False
+
+    crawlExecSeconds: int = 0
 
 
 # ============================================================================
@@ -666,6 +670,7 @@ class Organization(BaseMongoModel):
     storage: Union[S3Storage, DefaultStorage]
 
     usage: Dict[str, int] = {}
+    crawlExecSeconds: Dict[str, int] = {}
 
     bytesStored: int = 0
     bytesStoredCrawls: int = 0
@@ -713,6 +718,7 @@ class Organization(BaseMongoModel):
 
         if not self.is_crawler(user):
             exclude.add("usage")
+            exclude.add("crawlExecSeconds")
 
         result = self.to_dict(
             exclude_unset=True,
@@ -747,6 +753,7 @@ class OrgOut(BaseMongoModel):
     name: str
     users: Optional[Dict[str, Any]]
     usage: Optional[Dict[str, int]]
+    crawlExecSeconds: Optional[Dict[str, int]]
     default: bool = False
     bytesStored: int
     bytesStoredCrawls: int
