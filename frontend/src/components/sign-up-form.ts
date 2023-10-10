@@ -76,20 +76,6 @@ export class SignUpForm extends LiteElement {
         </div>
         <div class="mb-5">
           <btrix-input
-            id="password"
-            name="password"
-            type="password"
-            label="${msg("New password")}"
-            help-text=${msg("Must be between 8-64 characters")}
-            minlength="8"
-            autocomplete="new-password"
-            passwordToggle
-            required
-          >
-          </btrix-input>
-        </div>
-        <div class="mb-5">
-          <btrix-input
             id="name"
             name="name"
             label=${msg("Your name")}
@@ -97,12 +83,27 @@ export class SignUpForm extends LiteElement {
               desc: "Example user's name",
             })}
             autocomplete="nickname"
+            minlength="2"
           >
           </btrix-input>
           <p class="mt-2 text-sm text-gray-500">
-            <span class="text-gray-400">${msg("(optional)")}</span> ${msg(
-              "Your name will be visible to organization collaborators."
-            )}
+            ${msg("Your name will be visible to organization collaborators.")}
+          </p>
+        </div>
+        <div class="mb-5">
+          <btrix-input
+            id="password"
+            name="password"
+            type="password"
+            label="${msg("Password")}"
+            minlength="8"
+            autocomplete="new-password"
+            passwordToggle
+            required
+          >
+          </btrix-input>
+          <p class="mt-2 text-sm text-gray-500">
+            ${msg("Choose a strong password between 8-64 characters.")}
           </p>
         </div>
 
@@ -120,6 +121,7 @@ export class SignUpForm extends LiteElement {
   }
 
   private async onSubmit(event: SubmitEvent) {
+    const form = event.target as HTMLFormElement;
     event.preventDefault();
     event.stopPropagation();
     this.dispatchEvent(new CustomEvent("submit"));
@@ -127,7 +129,7 @@ export class SignUpForm extends LiteElement {
     this.serverError = undefined;
     this.isSubmitting = true;
 
-    const formData = new FormData(event.target as HTMLFormElement);
+    const formData = new FormData(form);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const name = formData.get("name") as string;
