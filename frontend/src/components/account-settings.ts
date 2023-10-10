@@ -1,6 +1,7 @@
 import { LitElement } from "lit";
-import { state, query, property } from "lit/decorators.js";
+import { state, queryAsync, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
+import { when } from "lit/directives/when.js";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { SlInput } from "@shoelace-style/shoelace";
 
@@ -94,6 +95,21 @@ export class AccountSettings extends LiteElement {
   @state()
   sectionSubmitting: null | "name" | "email" | "password" = null;
 
+  @state()
+  private isChangingPassword = false;
+
+  @queryAsync('sl-input[name="password"]')
+  private passwordInput?: Promise<SlInput | null>;
+
+  async updated(changedProperties: Map<string, any>) {
+    if (
+      changedProperties.has("isChangingPassword") &&
+      this.isChangingPassword
+    ) {
+      (await this.passwordInput)?.focus();
+    }
+  }
+
   render() {
     if (!this.userInfo) return;
     return html`
@@ -181,40 +197,61 @@ export class AccountSettings extends LiteElement {
             >
           </footer>
         </form>
-        <form class="border rounded mb-5" @submit=${this.onSubmitPassword}>
-          <div class="p-4">
-            <h2 class="text-lg font-semibold leading-none mb-4">
-              ${msg("Password")}
-            </h2>
-            <sl-input
-              class="mb-3"
-              name="password"
-              label=${msg("Enter your current password")}
-              type="password"
-              autocomplete="current-password"
-              password-toggle
-              required
-            ></sl-input>
-            <sl-input
-              name="newPassword"
-              label=${msg("New password")}
-              type="password"
-              autocomplete="new-password"
-              password-toggle
-              minlength="8"
-              required
-            ></sl-input>
-          </div>
-          <footer class="flex items-center justify-end border-t px-4 py-3">
-            <sl-button
-              type="submit"
-              size="small"
-              variant="primary"
-              ?loading=${this.sectionSubmitting === "password"}
-              >${msg("Save")}</sl-button
-            >
-          </footer>
-        </form>
+        <section class="border rounded mb-5">
+          ${when(
+            this.isChangingPassword,
+            () => html`
+              <form @submit=${this.onSubmitPassword}>
+                <div class="p-4">
+                  <h2 class="text-lg font-semibold leading-none mb-4">
+                    ${msg("Password")}
+                  </h2>
+                  <sl-input
+                    class="mb-3"
+                    name="password"
+                    label=${msg("Enter your current password")}
+                    type="password"
+                    autocomplete="current-password"
+                    password-toggle
+                    required
+                  ></sl-input>
+                  <sl-input
+                    name="newPassword"
+                    label=${msg("New password")}
+                    type="password"
+                    autocomplete="new-password"
+                    password-toggle
+                    minlength="8"
+                    required
+                  ></sl-input>
+                </div>
+                <footer
+                  class="flex items-center justify-end border-t px-4 py-3"
+                >
+                  <sl-button
+                    type="submit"
+                    size="small"
+                    variant="primary"
+                    ?loading=${this.sectionSubmitting === "password"}
+                    >${msg("Save")}</sl-button
+                  >
+                </footer>
+              </form>
+            `,
+            () => html`
+              <div class="px-4 py-3 flex items-center justify-between">
+                <h2 class="text-lg font-semibold leading-none">
+                  ${msg("Password")}
+                </h2>
+                <sl-button
+                  size="small"
+                  @click=${() => (this.isChangingPassword = true)}
+                  >${msg("Change Password")}</sl-button
+                >
+              </div>
+            `
+          )}
+        </section>
       </div>
     `;
   }
@@ -341,7 +378,7 @@ export class AccountSettings extends LiteElement {
         }),
       });
 
-      form.reset();
+      this.isChangingPassword = false;
       this.dispatchEvent(new CustomEvent("update-user-info"));
       this.notify({
         message: msg("Your password has been updated."),
