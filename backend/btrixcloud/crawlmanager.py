@@ -4,13 +4,11 @@ import os
 import asyncio
 import secrets
 import json
-import base64
 
 from datetime import timedelta
 
 from .k8sapi import K8sAPI
-from .models import S3Storage
-from .utils import dt_now, is_bool, to_k8s_date
+from .utils import dt_now, to_k8s_date
 
 
 # ============================================================================
@@ -19,7 +17,6 @@ class CrawlManager(K8sAPI):
 
     def __init__(self):
         super().__init__()
-        self._default_storages = {}
 
         self.loop = asyncio.get_running_loop()
 
@@ -44,7 +41,7 @@ class CrawlManager(K8sAPI):
         else:
             storage_path = ""
 
-        await self.check_storage(storage_name)
+        await self.has_storage(storage_name)
 
         browserid = f"prf-{secrets.token_hex(5)}"
 
@@ -85,7 +82,7 @@ class CrawlManager(K8sAPI):
             storage_name = str(crawlconfig.oid)
             storage_path = ""
 
-        await self.check_storage(storage_name)
+        await self.has_storage(storage_name)
 
         # Create Config Map
         await self._create_config_map(
@@ -156,12 +153,20 @@ class CrawlManager(K8sAPI):
 
         return True
 
-    # pylint: disable=unused-argument
-    async def check_storage(self, storage_name, is_default=False):
+    async def has_storage(self, storage_name):
         """Check if storage is valid by trying to get the storage secret
         Will throw if not valid, otherwise return True"""
-        await self._get_storage_secret(storage_name)
-        return True
+        try:
+            await self.core_api.read_namespaced_secret(
+                f"storage-{storage_name}",
+                namespace=self.namespace,
+            )
+            return True
+
+        # pylint: disable=broad-except
+        except Exception:
+            # pylint: disable=broad-exception-raised,raise-missing-from
+            raise Exception(f"Storage {storage_name} not found")
 
     async def update_org_storage(self, oid, userid, storage):
         """Update storage by either creating a per-org secret, if using custom storage
@@ -206,37 +211,6 @@ class CrawlManager(K8sAPI):
                 name=org_storage_name, namespace=self.namespace, body=crawl_secret
             )
 
-    async def get_default_storage_access_endpoint(self, name):
-        """Get access_endpoint for default storage"""
-        return (await self.get_default_storage(name)).access_endpoint_url
-
-    async def get_default_storage(self, name):
-        """get default storage"""
-        if name not in self._default_storages:
-            storage_secret = await self._get_storage_secret(name)
-
-            access_endpoint_url = self._secret_data(
-                storage_secret, "STORE_ACCESS_ENDPOINT_URL"
-            )
-            endpoint_url = self._secret_data(storage_secret, "STORE_ENDPOINT_URL")
-            access_key = self._secret_data(storage_secret, "STORE_ACCESS_KEY")
-            secret_key = self._secret_data(storage_secret, "STORE_SECRET_KEY")
-            region = self._secret_data(storage_secret, "STORE_REGION") or ""
-            use_access_for_presign = is_bool(
-                self._secret_data(storage_secret, "STORE_USE_ACCESS_FOR_PRESIGN")
-            )
-
-            self._default_storages[name] = S3Storage(
-                access_key=access_key,
-                secret_key=secret_key,
-                endpoint_url=endpoint_url,
-                access_endpoint_url=access_endpoint_url,
-                region=region,
-                use_access_for_presign=use_access_for_presign,
-            )
-
-        return self._default_storages[name]
-
     async def get_profile_browser_metadata(self, browserid):
         """get browser profile labels"""
         try:
@@ -261,16 +235,16 @@ class CrawlManager(K8sAPI):
             browserid, {"expireTime": to_k8s_date(expire_at)}, "profilejobs"
         )
 
-    async def rollover_restart_crawl(self, crawl_id, oid):
+    async def rollover_restart_crawl(self, crawl_id):
         """Rolling restart of crawl by updating restartTime field"""
         update = to_k8s_date(dt_now())
         return await self._patch_job(crawl_id, {"restartTime": update})
 
-    async def scale_crawl(self, crawl_id, oid, scale=1):
+    async def scale_crawl(self, crawl_id, scale=1):
         """Set the crawl scale (job parallelism) on the specified job"""
         return await self._patch_job(crawl_id, {"scale": scale})
 
-    async def shutdown_crawl(self, crawl_id, oid, graceful=True):
+    async def shutdown_crawl(self, crawl_id, graceful=True):
         """Request a crawl cancelation or stop by calling an API
         on the job pod/container, returning the result"""
         if graceful:
@@ -289,10 +263,6 @@ class CrawlManager(K8sAPI):
 
     # ========================================================================
     # Internal Methods
-    def _secret_data(self, secret, name):
-        """decode secret data"""
-        return base64.standard_b64decode(secret.data[name]).decode()
-
     async def _create_config_map(self, crawlconfig, **data):
         """Create Config Map based on CrawlConfig"""
         data["crawl-config.json"] = json.dumps(crawlconfig.get_raw_config())
@@ -314,20 +284,6 @@ class CrawlManager(K8sAPI):
         return await self.core_api.create_namespaced_config_map(
             namespace=self.namespace, body=config_map
         )
-
-    async def _get_storage_secret(self, storage_name):
-        """Check if storage_name is valid by checking existing secret"""
-        try:
-            return await self.core_api.read_namespaced_secret(
-                f"storage-{storage_name}",
-                namespace=self.namespace,
-            )
-        # pylint: disable=broad-except
-        except Exception:
-            # pylint: disable=broad-exception-raised,raise-missing-from
-            raise Exception(f"Storage {storage_name} not found")
-
-        return None
 
     async def _delete_crawl_configs(self, label):
         """Delete Crawl Cron Job and all dependent resources, including configmap and secrets"""

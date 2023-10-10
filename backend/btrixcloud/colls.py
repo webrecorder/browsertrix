@@ -24,9 +24,6 @@ from .models import (
     Organization,
     PaginatedResponse,
 )
-from .storages import (
-    download_streaming_wacz,
-)
 
 
 # ============================================================================
@@ -35,14 +32,14 @@ class CollectionOps:
 
     # pylint: disable=too-many-arguments
 
-    def __init__(self, mdb, crawl_manager, orgs, event_webhook_ops):
+    def __init__(self, mdb, storage_ops, orgs, event_webhook_ops):
         self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
         self.crawl_ops = None
 
-        self.crawl_manager = crawl_manager
         self.orgs = orgs
+        self.storage_ops = storage_ops
         self.event_webhook_ops = event_webhook_ops
 
     def set_crawl_ops(self, ops):
@@ -303,7 +300,7 @@ class CollectionOps:
         """Download all WACZs in collection as streaming nested WACZ"""
         coll = await self.get_collection(coll_id, org, resources=True)
 
-        resp = await download_streaming_wacz(org, self.crawl_manager, coll.resources)
+        resp = await self.storage_ops.download_streaming_wacz(org, coll.resources)
 
         headers = {"Content-Disposition": f'attachment; filename="{coll.name}.wacz"'}
         return StreamingResponse(
@@ -364,11 +361,11 @@ class CollectionOps:
 
 # ============================================================================
 # pylint: disable=too-many-locals
-def init_collections_api(app, mdb, orgs, crawl_manager, event_webhook_ops):
+def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     """init collections api"""
     # pylint: disable=invalid-name, unused-argument, too-many-arguments
 
-    colls = CollectionOps(mdb, crawl_manager, orgs, event_webhook_ops)
+    colls = CollectionOps(mdb, storage_ops, orgs, event_webhook_ops)
 
     org_crawl_dep = orgs.org_crawl_dep
     org_viewer_dep = orgs.org_viewer_dep

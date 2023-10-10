@@ -16,7 +16,6 @@ from redis import asyncio as exceptions
 import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .storages import sync_stream_wacz_logs
 from .utils import dt_now, parse_jsonl_error_messages
 from .basecrawls import BaseCrawlOps
 from .models import (
@@ -41,9 +40,19 @@ class CrawlOps(BaseCrawlOps):
 
     # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
     def __init__(
-        self, mdb, users, crawl_manager, crawl_configs, orgs, colls, event_webhook_ops
+        self,
+        mdb,
+        users,
+        crawl_manager,
+        crawl_configs,
+        orgs,
+        colls,
+        storage_ops,
+        event_webhook_ops,
     ):
-        super().__init__(mdb, users, orgs, crawl_configs, crawl_manager, colls)
+        super().__init__(
+            mdb, users, orgs, crawl_configs, crawl_manager, colls, storage_ops
+        )
         self.crawls = self.crawls
         self.crawl_configs = crawl_configs
         self.user_manager = users
@@ -474,11 +483,9 @@ class CrawlOps(BaseCrawlOps):
         """add new exclusion to config or remove exclusion from config
         for given crawl_id, update config on crawl"""
 
-        crawlraw = await self.crawls.find_one(
-            {"_id": crawl_id, "type": "crawl"}, {"cid": True}
-        )
+        crawl_raw = await self.get_crawl_raw(crawl_id, org, project={"cid": True})
 
-        cid = crawlraw.get("cid")
+        cid = crawl_raw.get("cid")
 
         new_config = await self.crawl_configs.add_or_remove_exclusion(
             regex, cid, org, user, add
@@ -492,7 +499,7 @@ class CrawlOps(BaseCrawlOps):
         resp = {"success": True}
 
         # restart crawl pods
-        restart_c = self.crawl_manager.rollover_restart_crawl(crawl_id, org.id)
+        restart_c = self.crawl_manager.rollover_restart_crawl(crawl_id)
 
         if add:
             filter_q = self.filter_crawl_queue(crawl_id, regex)
@@ -565,8 +572,8 @@ class CrawlOps(BaseCrawlOps):
         upper_bound = skip + page_size
 
         crawl_raw = await self.get_crawl_raw(crawl_id, org)
-        crawl = Crawl.from_dict(crawl_raw)
         try:
+            crawl = Crawl.from_dict(crawl_raw)
             return crawl.config.seeds[skip:upper_bound], len(crawl.config.seeds)
         # pylint: disable=broad-exception-caught
         except Exception:
@@ -601,14 +608,22 @@ def init_crawls_api(
     crawl_config_ops,
     orgs,
     colls,
+    storage_ops,
     user_dep,
     event_webhook_ops,
 ):
     """API for crawl management, including crawl done callback"""
-    # pylint: disable=invalid-name
+    # pylint: disable=invalid-name, duplicate-code
 
     ops = CrawlOps(
-        mdb, users, crawl_manager, crawl_config_ops, orgs, colls, event_webhook_ops
+        mdb,
+        users,
+        crawl_manager,
+        crawl_config_ops,
+        orgs,
+        colls,
+        storage_ops,
+        event_webhook_ops,
     )
 
     org_viewer_dep = orgs.org_viewer_dep
@@ -797,7 +812,7 @@ def init_crawls_api(
     ):
         await ops.update_crawl_scale(crawl_id, org, scale, user)
 
-        result = await crawl_manager.scale_crawl(crawl_id, org.id_str, scale.scale)
+        result = await crawl_manager.scale_crawl(crawl_id, scale.scale)
         if not result or not result.get("success"):
             raise HTTPException(
                 status_code=400, detail=result.get("error") or "unknown"
@@ -900,7 +915,7 @@ def init_crawls_api(
         # If crawl is finished, stream logs from WACZ files
         if crawl.finished:
             wacz_files = await ops.get_wacz_files(crawl_id, org)
-            resp = await sync_stream_wacz_logs(
+            resp = await storage_ops.sync_stream_wacz_logs(
                 org, wacz_files, log_levels, contexts, crawl_manager
             )
             return StreamingResponse(resp)
