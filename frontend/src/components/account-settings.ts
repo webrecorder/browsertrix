@@ -1,7 +1,6 @@
 import { LitElement } from "lit";
 import { state, query, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
-import { createMachine, interpret, assign } from "@xstate/fsm";
 
 import type { CurrentUser } from "../types/user";
 import LiteElement, { html } from "../utils/LiteElement";
@@ -27,7 +26,7 @@ class RequestVerify extends LitElement {
   render() {
     if (this.requestSuccess) {
       return html`
-        <div class="text-sm text-gray-400 inline-flex items-center">
+        <div class="text-sm text-gray-500 inline-flex items-center">
           <sl-icon class="mr-1" name="check-lg"></sl-icon> ${msg("Sent", {
             desc: "Status message after sending verification email",
           })}
@@ -37,7 +36,7 @@ class RequestVerify extends LitElement {
 
     return html`
       <span
-        class="text-sm text-blue-400 hover:text-blue-500"
+        class="text-sm text-primary hover:text-indigo-400"
         role="button"
         ?disabled=${this.isRequesting}
         @click=${this.requestVerification}
@@ -74,331 +73,87 @@ class RequestVerify extends LitElement {
 }
 customElements.define("btrix-request-verify", RequestVerify);
 
-type FormContext = {
-  successMessage?: string;
-  serverError?: string;
-  fieldErrors: { [fieldName: string]: string };
-};
-type FormSuccessEvent = {
-  type: "SUCCESS";
-  detail: {
-    successMessage?: FormContext["successMessage"];
-  };
-};
-type FormErrorEvent = {
-  type: "ERROR";
-  detail: {
-    serverError?: FormContext["serverError"];
-    fieldErrors?: FormContext["fieldErrors"];
-  };
-};
-type FormEvent =
-  | { type: "EDIT" }
-  | { type: "CANCEL" }
-  | { type: "SUBMIT" }
-  | FormSuccessEvent
-  | FormErrorEvent;
-
-type FormTypestate =
-  | {
-      value: "readOnly";
-      context: FormContext;
-    }
-  | {
-      value: "editingForm";
-      context: FormContext;
-    }
-  | {
-      value: "submittingForm";
-      context: FormContext;
-    };
-
-const initialContext = {
-  fieldErrors: {},
-};
-
-const machine = createMachine<FormContext, FormEvent, FormTypestate>(
-  {
-    id: "changePasswordForm",
-    initial: "readOnly",
-    context: initialContext,
-    states: {
-      ["readOnly"]: {
-        on: {
-          EDIT: {
-            target: "editingForm",
-            actions: "reset",
-          },
-        },
-      },
-      ["editingForm"]: {
-        on: { CANCEL: "readOnly", SUBMIT: "submittingForm" },
-      },
-      ["submittingForm"]: {
-        on: {
-          SUCCESS: {
-            target: "readOnly",
-            actions: "setSuccessMessage",
-          },
-          ERROR: {
-            target: "editingForm",
-            actions: "setError",
-          },
-        },
-      },
-    },
-  },
-  {
-    actions: {
-      reset: assign(() => initialContext),
-      setSuccessMessage: assign((context, event) => ({
-        ...context,
-        ...(event as FormSuccessEvent).detail,
-      })),
-      setError: assign((context, event) => ({
-        ...context,
-        ...(event as FormErrorEvent).detail,
-      })),
-    },
-  }
-);
-
 @needLogin
 @localized()
 export class AccountSettings extends LiteElement {
-  private formStateService = interpret(machine);
-
   @property({ type: Object })
   authState?: AuthState;
 
   @property({ type: Object })
   userInfo?: CurrentUser;
 
-  @state()
-  private formState = machine.initialState;
-
-  firstUpdated() {
-    // Enable state machine
-    this.formStateService.subscribe((state) => {
-      this.formState = state;
-    });
-
-    this.formStateService.start();
-  }
-
-  disconnectedCallback() {
-    this.formStateService.stop();
-    super.disconnectedCallback();
-  }
-
   render() {
-    const showForm =
-      this.formState.value === "editingForm" ||
-      this.formState.value === "submittingForm";
-    let successMessage;
-    let verificationMessage;
-
-    if (this.formState.context.successMessage) {
-      successMessage = html`
-        <div>
-          <btrix-alert variant="success"
-            >${this.formState.context.successMessage}</btrix-alert
-          >
-        </div>
-      `;
-    }
-
-    if (this.userInfo) {
-      if (this.userInfo.isVerified) {
-        verificationMessage = html`
-          <sl-tag variant="success" size="small"
-            >${msg("verified", {
-              desc: "Status text when user email is verified",
-            })}</sl-tag
-          >
-        `;
-      } else {
-        verificationMessage = html`
-          <sl-tag class="mr-2" variant="warning" size="small"
-            >${msg("unverified", {
-              desc: "Status text when user email is not yet verified",
-            })}</sl-tag
-          >
-
-          <btrix-request-verify
-            email=${this.userInfo.email}
-          ></btrix-request-verify>
-        `;
-      }
-    }
-
-    return html`<div class="grid gap-4">
-      <h1 class="text-xl font-semibold">${msg("Account Settings")}</h1>
-
-      ${successMessage}
-
-      <section class="p-4 md:p-8 border rounded-lg grid gap-6">
-        <div>
-          <div class="mb-1 text-gray-500">${msg("Name")}</div>
-          <div class="inline-flex items-center">
-            <span class="mr-3">${this.userInfo?.name}</span>
+    if (!this.userInfo) return;
+    return html`
+      <div class="max-w-screen-sm mx-auto">
+        <h1 class="text-xl font-semibold leading-8 mb-7">
+          ${msg("Account Settings")}
+        </h1>
+        <form class="border rounded mb-5">
+          <div class="p-4">
+            <h2 class="text-lg font-semibold leading-none mb-3">
+              ${msg("Display Name")}
+            </h2>
+            <sl-input
+              name="displayName"
+              label=${msg(
+                "Enter your full name, or another name to display in the orgs you belong to."
+              )}
+              value=${this.userInfo.name}
+              maxlength="40"
+              minlength="2"
+            ></sl-input>
           </div>
-        </div>
-
-        <div>
-          <div class="mb-1 text-gray-500">${msg("Email")}</div>
-          <div class="inline-flex items-center">
-            <span class="mr-3">${this.userInfo?.email}</span>
-            ${verificationMessage}
+          <footer class="flex items-center justify-end border-t px-4 py-3">
+            <sl-button size="small" variant="primary">${msg("Save")}</sl-button>
+          </footer>
+        </form>
+        <form class="border rounded mb-5">
+          <div class="p-4">
+            <h2 class="text-lg font-semibold leading-none mb-3">
+              ${msg("Email")}
+            </h2>
+            <sl-input
+              name="email"
+              label=${msg("Update the email you use to log in.")}
+              value=${this.userInfo.email}
+              type="email"
+              minlength="2"
+            ></sl-input>
           </div>
-        </div>
-
-        ${showForm
-          ? this.renderChangePasswordForm()
-          : html`
-              <div>
-                <sl-button
-                  variant="primary"
-                  outline
-                  @click=${() => this.formStateService.send("EDIT")}
-                  >${msg("Change password")}</sl-button
-                >
-              </div>
-            `}
-      </section>
-    </div>`;
-  }
-
-  renderChangePasswordForm() {
-    const passwordFieldError = this.formState.context.fieldErrors.password;
-    let formError;
-
-    if (this.formState.context.serverError) {
-      formError = html`
-        <div class="mb-5">
-          <btrix-alert id="formError" variant="danger"
-            >${this.formState.context.serverError}</btrix-alert
-          >
-        </div>
-      `;
-    }
-
-    return html` <div class="max-w-sm">
-      <h3 class="font-semibold mb-3">${msg("Change password")}</h3>
-      <form @submit=${this.onSubmit} aria-describedby="formError">
-        <div class="mb-5">
-          <sl-input
-            id="password"
-            class="${passwordFieldError ? "text-danger" : ""}"
-            name="password"
-            type="password"
-            label="${msg("Current password")}"
-            aria-describedby="passwordError"
-            autocomplete="current-password"
-            password-toggle
-            required
-          >
-          </sl-input>
-          ${passwordFieldError
-            ? html`<div id="passwordError" class="text-danger" role="alert">
-                ${passwordFieldError}
-              </div>`
-            : ""}
-        </div>
-        <div class="mb-5">
-          <sl-input
-            id="newPassword"
-            name="newPassword"
-            type="password"
-            label="${msg("New password")}"
-            help-text=${msg("Must be between 8-64 characters")}
-            minlength="8"
-            autocomplete="new-password"
-            password-toggle
-            required
-          >
-          </sl-input>
-        </div>
-
-        ${formError}
-
-        <div>
-          <sl-button
-            variant="primary"
-            ?loading=${this.formState.value === "submittingForm"}
-            type="submit"
-            >${msg("Update password")}</sl-button
-          >
-          <sl-button
-            variant="text"
-            @click=${() => this.formStateService.send("CANCEL")}
-            >${msg("Cancel")}</sl-button
-          >
-        </div>
-      </form>
-    </div>`;
-  }
-
-  async onSubmit(event: any) {
-    event.preventDefault();
-    if (!this.authState) return;
-
-    this.formStateService.send("SUBMIT");
-
-    const formData = new FormData(event.target);
-    let nextAuthState: Auth | null = null;
-
-    try {
-      nextAuthState = await AuthService.login({
-        email: this.authState.username,
-        password: formData.get("password") as string,
-      });
-    } catch (e: any) {
-      console.debug(e);
-    }
-
-    if (!nextAuthState) {
-      this.formStateService.send({
-        type: "ERROR",
-        detail: {
-          fieldErrors: {
-            password: msg("Wrong password"),
-          },
-        },
-      });
-      return;
-    }
-
-    const params = {
-      password: formData.get("newPassword"),
-      email: this.userInfo?.email,
-    };
-
-    try {
-      await this.apiFetch("/users/me", nextAuthState, {
-        method: "PATCH",
-        body: JSON.stringify(params),
-      });
-
-      this.formStateService.send({
-        type: "SUCCESS",
-        detail: {
-          successMessage: "Successfully updated password",
-        },
-      });
-
-      this.dispatchEvent(AuthService.createLoggedInEvent(nextAuthState));
-    } catch (e) {
-      console.error(e);
-
-      this.formStateService.send({
-        type: "ERROR",
-        detail: {
-          serverError: msg(
-            "Something went wrong changing password. Verify that new password meets requirements (8-64 characters)."
-          ),
-        },
-      });
-    }
+          <footer class="flex items-center justify-between border-t px-4 py-3">
+            <btrix-request-verify
+              email=${this.userInfo.email}
+            ></btrix-request-verify>
+            <sl-button size="small" variant="primary">${msg("Save")}</sl-button>
+          </footer>
+        </form>
+        <form class="border rounded mb-5">
+          <div class="p-4">
+            <h2 class="text-lg font-semibold leading-none mb-3">
+              ${msg("Password")}
+            </h2>
+            <sl-input
+              class="mb-3"
+              name="password"
+              label=${msg("Enter your current password")}
+              type="password"
+              autocomplete="current-password"
+              password-toggle
+            ></sl-input>
+            <sl-input
+              name="newPassword"
+              label=${msg("New password")}
+              type="password"
+              autocomplete="new-password"
+              password-toggle
+            ></sl-input>
+          </div>
+          <footer class="flex items-center justify-end border-t px-4 py-3">
+            <sl-button size="small" variant="primary">${msg("Save")}</sl-button>
+          </footer>
+        </form>
+      </div>
+    `;
   }
 }
