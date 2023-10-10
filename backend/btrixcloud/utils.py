@@ -11,6 +11,7 @@ import atexit
 from datetime import datetime
 
 from redis import asyncio as exceptions
+from slugify import slugify
 
 
 def get_templates_dir():
@@ -113,4 +114,4 @@ def is_bool(stri: Optional[str]) -> bool:
 
 def slug_from_name(name: str) -> str:
     """Generate slug from name"""
-    return "".join([char if char.isalnum() else "-" for char in name])
+    return slugify(name.replace("'", ""))
