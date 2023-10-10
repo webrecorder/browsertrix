@@ -1,7 +1,6 @@
 """ Crawl API """
 # pylint: disable=too-many-lines
 
-import asyncio
 import uuid
 import json
 import re
@@ -32,6 +31,10 @@ from .models import (
     PaginatedResponse,
 )
 from .basecrawls import RUNNING_AND_STARTING_STATES, ALL_CRAWL_STATES
+
+
+MAX_MATCH_SIZE = 500000
+DEFAULT_RANGE_LIMIT = 50
 
 
 # ============================================================================
@@ -322,16 +325,6 @@ class CrawlOps(BaseCrawlOps):
             # fallback to old crawler queue
             return reversed(await redis.lrange(key, -offset - count, -offset - 1))
 
-    async def _crawl_queue_rem(self, redis, key, values, dircount=1):
-        try:
-            return await redis.zrem(key, *values)
-        except exceptions.ResponseError:
-            # fallback to old crawler queue
-            res = 0
-            for value in values:
-                res += await redis.lrem(key, dircount, value)
-            return res
-
     async def get_crawl_queue(self, crawl_id, offset, count, regex):
         """get crawl queue"""
 
@@ -361,13 +354,13 @@ class CrawlOps(BaseCrawlOps):
 
         return {"total": total, "results": results, "matched": matched}
 
-    async def match_crawl_queue(self, crawl_id, regex, offset=0, limit=1000):
+    async def match_crawl_queue(self, crawl_id, regex, offset=0):
         """get list of urls that match regex, starting at offset and at most
         around 'limit'. (limit rounded to next step boundary, so
         limit <= next_offset < limit + step"""
         total = 0
         matched = []
-        step = 50
+        step = DEFAULT_RANGE_LIMIT
 
         async with self.get_redis(crawl_id) as redis:
             try:
@@ -382,6 +375,7 @@ class CrawlOps(BaseCrawlOps):
                 raise HTTPException(status_code=400, detail="invalid_regex") from exc
 
             next_offset = -1
+            size = 0
 
             for count in range(offset, total, step):
                 results = await self._crawl_queue_range(
@@ -390,74 +384,16 @@ class CrawlOps(BaseCrawlOps):
                 for result in results:
                     url = json.loads(result)["url"]
                     if regex.search(url):
+                        size += len(url)
                         matched.append(url)
 
-                # if exceeded limit set nextOffset to next step boundary
+                # if size of match response exceeds size limit, set nextOffset
                 # and break
-                if len(matched) >= limit:
+                if size > MAX_MATCH_SIZE:
                     next_offset = count + step
                     break
 
         return {"total": total, "matched": matched, "nextOffset": next_offset}
-
-    async def filter_crawl_queue(self, crawl_id, regex):
-        """filter out urls that match regex"""
-        # pylint: disable=too-many-locals
-        total = 0
-        q_key = f"{crawl_id}:q"
-        s_key = f"{crawl_id}:s"
-        step = 50
-        num_removed = 0
-
-        async with self.get_redis(crawl_id) as redis:
-            try:
-                total = await self._crawl_queue_len(redis, f"{crawl_id}:q")
-            except exceptions.ConnectionError:
-                # can't connect to redis, likely not initialized yet
-                pass
-
-            dircount = -1
-
-            try:
-                regex = re.compile(regex)
-            except re.error as exc:
-                raise HTTPException(status_code=400, detail="invalid_regex") from exc
-
-            count = 0
-
-            # pylint: disable=fixme
-            # todo: do this in a more efficient way?
-            # currently quite inefficient as redis does not have a way
-            # to atomically check and remove value from list
-            # so removing each jsob block by value
-            while count < total:
-                if dircount == -1 and count > total / 2:
-                    dircount = 1
-                results = await self._crawl_queue_range(redis, q_key, count, step)
-                count += step
-
-                qrems = []
-                srems = []
-
-                for result in results:
-                    url = json.loads(result)["url"]
-                    if regex.search(url):
-                        srems.append(url)
-                        # await redis.srem(s_key, url)
-                        # res = await self._crawl_queue_rem(redis, q_key, result, dircount)
-                        qrems.append(result)
-
-                if not srems:
-                    continue
-
-                await redis.srem(s_key, *srems)
-                res = await self._crawl_queue_rem(redis, q_key, qrems, dircount)
-                if res:
-                    count -= res
-                    num_removed += res
-                    print(f"Removed {res} from queue", flush=True)
-
-        return num_removed
 
     async def get_errors_from_redis(
         self, crawl_id: str, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
@@ -487,6 +423,18 @@ class CrawlOps(BaseCrawlOps):
 
         cid = crawl_raw.get("cid")
 
+        scale = crawl_raw.get("scale", 1)
+
+        async with self.get_redis(crawl_id) as redis:
+            query = {
+                "regex": regex,
+                "type": "addExclusion" if add else "removeExclusion",
+            }
+            query_str = json.dumps(query)
+
+            for i in range(0, scale):
+                await redis.rpush(f"crawl-{crawl_id}-{i}:msg", query_str)
+
         new_config = await self.crawl_configs.add_or_remove_exclusion(
             regex, cid, org, user, add
         )
@@ -496,21 +444,7 @@ class CrawlOps(BaseCrawlOps):
             {"$set": {"config": new_config.dict()}},
         )
 
-        resp = {"success": True}
-
-        # restart crawl pods
-        restart_c = self.crawl_manager.rollover_restart_crawl(crawl_id)
-
-        if add:
-            filter_q = self.filter_crawl_queue(crawl_id, regex)
-
-            _, num_removed = await asyncio.gather(restart_c, filter_q)
-            resp["num_removed"] = num_removed
-
-        else:
-            await restart_c
-
-        return resp
+        return {"success": True}
 
     async def update_crawl_state_if_allowed(
         self, crawl_id, state, allowed_from, **kwargs
@@ -851,12 +785,11 @@ def init_crawls_api(
         crawl_id,
         regex: str,
         offset: int = 0,
-        limit: int = 1000,
         org: Organization = Depends(org_crawl_dep),
     ):
         await ops.get_crawl_raw(crawl_id, org)
 
-        return await ops.match_crawl_queue(crawl_id, regex, offset, limit)
+        return await ops.match_crawl_queue(crawl_id, regex, offset)
 
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/exclusions",
