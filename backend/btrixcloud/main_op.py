@@ -18,6 +18,7 @@ from .colls import CollectionOps
 from .crawlconfigs import CrawlConfigOps
 from .crawls import CrawlOps
 from .profiles import ProfileOps
+from .storages import init_storages_api
 from .webhooks import EventWebhookOps
 
 app_root = FastAPI()
@@ -52,7 +53,9 @@ def main():
 
     crawl_manager = CrawlManager()
 
-    profile_ops = ProfileOps(mdb, org_ops, crawl_manager)
+    storage_ops = init_storages_api(org_ops, crawl_manager, None)
+
+    profile_ops = ProfileOps(mdb, org_ops, crawl_manager, storage_ops)
 
     crawl_config_ops = CrawlConfigOps(
         dbclient,
@@ -72,10 +75,11 @@ def main():
         crawl_config_ops,
         org_ops,
         coll_ops,
+        storage_ops,
         event_webhook_ops,
     )
 
-    init_operator_api(
+    return init_operator_api(
         app_root, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
     )
 
@@ -85,4 +89,5 @@ def main():
 async def startup():
     """init on startup"""
     register_exit_handler()
-    main()
+    oper = main()
+    await oper.async_init()

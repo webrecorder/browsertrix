@@ -103,11 +103,11 @@ spec:
 
       resources:
         limits:
-          memory: {{ redis_memory }}
+          memory: {{ memory }}
 
         requests:
-          cpu: {{ redis_cpu }}
-          memory: {{ redis_memory }}
+          cpu: {{ cpu }}
+          memory: {{ memory }}
 
       readinessProbe:
         initialDelaySeconds: 10

@@ -121,6 +121,10 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         )
         return await cursor.to_list(length=1000)
 
+    async def get_user_by_id(self, user_id: uuid.UUID):
+        """return user from user_id"""
+        return await self.user_db.get(user_id)
+
     async def get_superuser(self):
         """return current superuser, if any"""
         return await self.user_db.collection.find_one({"is_superuser": True})

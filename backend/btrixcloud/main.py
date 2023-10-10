@@ -89,9 +89,11 @@ def main():
 
     crawl_manager = CrawlManager()
 
-    init_storages_api(org_ops, crawl_manager, current_active_user)
+    storage_ops = init_storages_api(org_ops, crawl_manager, current_active_user)
 
-    profiles = init_profiles_api(mdb, crawl_manager, org_ops, current_active_user)
+    profiles = init_profiles_api(
+        mdb, crawl_manager, org_ops, storage_ops, current_active_user
+    )
 
     crawl_config_ops = init_crawl_config_api(
         dbclient,
@@ -103,7 +105,7 @@ def main():
         profiles,
     )
 
-    coll_ops = init_collections_api(app, mdb, org_ops, crawl_manager, event_webhook_ops)
+    coll_ops = init_collections_api(app, mdb, org_ops, storage_ops, event_webhook_ops)
 
     init_base_crawls_api(
         app,
@@ -113,6 +115,7 @@ def main():
         crawl_config_ops,
         org_ops,
         coll_ops,
+        storage_ops,
         current_active_user,
     )
 
@@ -124,6 +127,7 @@ def main():
         crawl_config_ops,
         org_ops,
         coll_ops,
+        storage_ops,
         current_active_user,
         event_webhook_ops,
     )
@@ -136,6 +140,7 @@ def main():
         crawl_config_ops,
         org_ops,
         coll_ops,
+        storage_ops,
         current_active_user,
         event_webhook_ops,
     )

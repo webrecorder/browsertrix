@@ -325,12 +325,13 @@ class OrgOps:
             {"_id": org.id}, {"$set": {"origin": origin}}
         )
 
-    async def inc_org_stats(self, oid, duration):
+    async def inc_org_time_stats(self, oid, duration, is_exec_time=False):
         """inc crawl duration stats for org oid"""
         # init org crawl stats
+        key = "crawlExecSeconds" if is_exec_time else "usage"
         yymm = datetime.utcnow().strftime("%Y-%m")
         await self.orgs.find_one_and_update(
-            {"_id": oid}, {"$inc": {f"usage.{yymm}": duration}}
+            {"_id": oid}, {"$inc": {f"{key}.{yymm}": duration}}
         )
 
     async def get_max_concurrent_crawls(self, oid):
