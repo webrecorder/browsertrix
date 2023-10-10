@@ -1,6 +1,7 @@
 import { LitElement } from "lit";
 import { state, query, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
+import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { SlInput } from "@shoelace-style/shoelace";
 
 import type { CurrentUser } from "../types/user";
@@ -192,6 +193,7 @@ export class AccountSettings extends LiteElement {
               type="password"
               autocomplete="current-password"
               password-toggle
+              required
             ></sl-input>
             <sl-input
               name="newPassword"
@@ -200,6 +202,7 @@ export class AccountSettings extends LiteElement {
               autocomplete="new-password"
               password-toggle
               minlength="8"
+              required
             ></sl-input>
           </div>
           <footer class="flex items-center justify-end border-t px-4 py-3">
@@ -217,14 +220,14 @@ export class AccountSettings extends LiteElement {
   }
 
   private async onSubmitName(e: SubmitEvent) {
-    if (!this.userInfo) return;
+    if (!this.userInfo || !this.authState) return;
     const form = e.target as HTMLFormElement;
     const input = form.querySelector("sl-input") as SlInput;
     if (!input.checkValidity()) {
       return;
     }
     e.preventDefault();
-    const newName = input.value.trim();
+    const newName = (serialize(form).name as string).trim();
     if (newName === this.userInfo.name) {
       return;
     }
@@ -232,7 +235,7 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = "name";
 
     try {
-      await this.apiFetch(`/users/me`, this.authState!, {
+      await this.apiFetch(`/users/me`, this.authState, {
         method: "PATCH",
         body: JSON.stringify({
           email: this.userInfo.email,
@@ -257,53 +260,15 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = null;
   }
 
-  private async onSubmitPassword(e: SubmitEvent) {
-    if (!this.userInfo) return;
-    const form = e.target as HTMLFormElement;
-    const input = form.querySelector("sl-input[name='newPassword']") as SlInput;
-    if (!input.checkValidity()) {
-      return;
-    }
-    e.preventDefault();
-    const newPassword = input.value;
-
-    this.sectionSubmitting = "password";
-
-    try {
-      await this.apiFetch(`/users/me`, this.authState!, {
-        method: "PATCH",
-        body: JSON.stringify({
-          email: this.userInfo.email,
-          password: newPassword,
-        }),
-      });
-
-      this.dispatchEvent(new CustomEvent("update-user-info"));
-      this.notify({
-        message: msg("Your password has been updated."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-    } catch (e) {
-      this.notify({
-        message: msg("Sorry, couldn't update password at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-
-    this.sectionSubmitting = null;
-  }
-
   private async onSubmitEmail(e: SubmitEvent) {
-    if (!this.userInfo) return;
+    if (!this.userInfo || !this.authState) return;
     const form = e.target as HTMLFormElement;
     const input = form.querySelector("sl-input") as SlInput;
     if (!input.checkValidity()) {
       return;
     }
     e.preventDefault();
-    const newEmail = input.value.trim();
+    const newEmail = (serialize(form).email as string).trim();
     if (newEmail === this.userInfo.email) {
       return;
     }
@@ -311,7 +276,7 @@ export class AccountSettings extends LiteElement {
     this.sectionSubmitting = "email";
 
     try {
-      await this.apiFetch(`/users/me`, this.authState!, {
+      await this.apiFetch(`/users/me`, this.authState, {
         method: "PATCH",
         body: JSON.stringify({
           email: newEmail,
@@ -327,6 +292,62 @@ export class AccountSettings extends LiteElement {
     } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't update email at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.sectionSubmitting = null;
+  }
+
+  private async onSubmitPassword(e: SubmitEvent) {
+    if (!this.userInfo || !this.authState) return;
+    const form = e.target as HTMLFormElement;
+    const inputs = Array.from(form.querySelectorAll("sl-input")) as SlInput[];
+    if (inputs.some((input) => !input.checkValidity())) {
+      return;
+    }
+    e.preventDefault();
+    const { password, newPassword } = serialize(form);
+    let nextAuthState: Auth | null = null;
+
+    try {
+      nextAuthState = await AuthService.login({
+        email: this.authState.username,
+        password: password as string,
+      });
+    } catch {}
+
+    if (!nextAuthState) {
+      this.notify({
+        message: msg("Please correct your current password."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+      return;
+    }
+
+    this.sectionSubmitting = "password";
+
+    try {
+      await this.apiFetch(`/users/me`, nextAuthState!, {
+        method: "PATCH",
+        body: JSON.stringify({
+          email: this.userInfo.email,
+          password: newPassword,
+        }),
+      });
+
+      this.dispatchEvent(new CustomEvent("update-user-info"));
+      this.notify({
+        message: msg("Your password has been updated."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e) {
+      console.log(e);
+      this.notify({
+        message: msg("Sorry, couldn't update password at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
