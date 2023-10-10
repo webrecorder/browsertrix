@@ -728,10 +728,7 @@ export class CrawlConfigEditor extends LiteElement {
     return html`
       <div class="flex flex-col h-full min-h-[21rem]">
         <div
-          class="flex-1 p-6 grid grid-cols-5 gap-4 border rounded-lg ${!this
-            .configId && !isLast
-            ? "border-b-0 rounded-b-none"
-            : "mb-4"}"
+          class="flex-1 p-6 grid grid-cols-5 gap-4 border rounded-lg border-b-0 rounded-b-none"
         >
           ${content}
           ${when(this.serverError, () =>
@@ -748,7 +745,7 @@ export class CrawlConfigEditor extends LiteElement {
     if (this.configId) {
       return html`
         <footer
-          class="px-6 py-4 flex gap-2 items-center justify-end border rounded-lg"
+          class="px-6 py-4 flex gap-2 items-center justify-end border rounded-b-lg sticky bottom-0 bg-white"
         >
           <div class="mr-auto">${this.renderRunNowToggle()}</div>
           <aside class="text-xs text-neutral-500">
@@ -770,9 +767,7 @@ export class CrawlConfigEditor extends LiteElement {
     if (!this.configId) {
       return html`
         <footer
-          class="px-6 py-4 flex gap-2 items-center justify-end border ${isLast
-            ? "rounded-lg"
-            : "rounded-b-lg"}"
+          class="px-6 py-4 flex gap-2 items-center justify-end border sticky bottom-0 bg-white rounded-b-lg"
         >
           ${this.renderSteppedFooterButtons({ isFirst, isLast })}
         </footer>
