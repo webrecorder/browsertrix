@@ -3,6 +3,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import slugify from "slugify";
 import type { SlInput } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "../../utils/AuthService";
@@ -85,6 +86,9 @@ export class OrgSettings extends LiteElement {
 
   @state()
   private isSubmittingInvite = false;
+
+  @state()
+  private slugValue = "";
 
   private get tabLabels(): Record<Tab, string> {
     return {
@@ -205,11 +209,16 @@ export class OrgSettings extends LiteElement {
               minlength="2"
               maxlength="30"
               required
+              help-text=${msg(
+                str`Org URL will be ${window.location.protocol}//${
+                  window.location.hostname
+                }/${
+                  this.slugValue ? this.slugify(this.slugValue) : this.org.slug
+                }`
+              )}
               @sl-input=${(e: InputEvent) => {
                 const input = e.target as SlInput;
-                input.value = input.value
-                  .replace(/[/\\!?#%*:|'"<>()\[\],\.\s]/, "-")
-                  .replace(/--/, "-");
+                this.slugValue = input.value;
               }}
             >
             </sl-input>
@@ -411,6 +420,12 @@ export class OrgSettings extends LiteElement {
     `;
   }
 
+  private slugify(value: string) {
+    return slugify(value, {
+      strict: true,
+    });
+  }
+
   private async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;
     return !formEl.querySelector("[data-invalid]");
@@ -445,7 +460,8 @@ export class OrgSettings extends LiteElement {
     const formEl = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(formEl))) return;
 
-    const { orgName, orgSlug } = serialize(formEl);
+    const { orgName } = serialize(formEl);
+    const orgSlug = this.slugify(this.slugValue);
     const detail: any = { name: orgName };
 
     if (orgSlug !== this.org.slug) {
