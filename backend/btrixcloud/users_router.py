@@ -172,7 +172,7 @@ def get_custom_users_router(
     ):
         try:
             return await user_manager.update(
-                user_update, user, safe=False, request=request
+                user_update, user, safe=False, request=request  # type: ignore
             )
         except InvalidPasswordException as e:
             raise HTTPException(
