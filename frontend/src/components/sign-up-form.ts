@@ -63,7 +63,7 @@ export class SignUpForm extends LiteElement {
 
     return html`
       <form @submit=${this.onSubmit} aria-describedby="formError">
-        <div class="mb-5 ml-7">
+        <div class="mb-5">
           ${this.email
             ? html`
                 <div style="font-size: var(--sl-input-label-font-size-medium)">
@@ -96,14 +96,16 @@ export class SignUpForm extends LiteElement {
             name="name"
             label=${msg("Your name")}
             placeholder=${msg("Lisa Simpson", {
-              desc: "Example user's name",
+              desc: "Example user’s name",
             })}
             autocomplete="nickname"
             minlength="2"
           >
           </btrix-input>
           <p class="mt-2 text-gray-500">
-            ${msg("Your name will be visible to organization collaborators.")}
+            ${msg(
+              "Your full name, or another name that org collaborators will see."
+            )}
           </p>
         </div>
         <div class="mb-5">

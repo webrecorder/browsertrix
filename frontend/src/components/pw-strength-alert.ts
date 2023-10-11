@@ -21,6 +21,10 @@ export class PasswordStrengthAlert extends LitElement {
   @property({ type: String })
   min = 1;
 
+  /** Optimal score */
+  @property({ type: String })
+  optimal = 4;
+
   static styles = css`
     sl-alert::part(message) {
       /* Decrease padding size: */
@@ -138,6 +142,16 @@ export class PasswordStrengthAlert extends LitElement {
                       (text) => html`<li>${text}</li>`
                     )}
                   </ul>`
+          )}
+          ${when(
+            score >= this.min && score < this.optimal,
+            () => html`
+              <p class="text">
+                ${msg(
+                  "Tip: To generate very strong passwords, install a built-in password manager."
+                )}
+              </p>
+            `
           )}
         </div>
       </sl-alert>
