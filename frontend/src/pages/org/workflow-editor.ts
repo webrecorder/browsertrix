@@ -1482,9 +1482,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
               scale: +(e.target as SlCheckbox).value,
             })}
         >
-          <sl-radio-button value="1" size="small">1</sl-radio-button>
-          <sl-radio-button value="2" size="small">2</sl-radio-button>
-          <sl-radio-button value="3" size="small">3</sl-radio-button>
+          <sl-radio-button value="1" size="small">1×</sl-radio-button>
+          <sl-radio-button value="2" size="small">2×</sl-radio-button>
+          <sl-radio-button value="3" size="small">3×</sl-radio-button>
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
