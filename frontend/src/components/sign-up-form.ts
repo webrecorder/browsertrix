@@ -61,7 +61,7 @@ export class SignUpForm extends LiteElement {
 
     return html`
       <form @submit=${this.onSubmit} aria-describedby="formError">
-        <div class="mb-5">
+        <div class="mb-5 ml-7">
           ${this.email
             ? html`
                 <div style="font-size: var(--sl-input-label-font-size-medium)">
@@ -88,7 +88,7 @@ export class SignUpForm extends LiteElement {
                 </btrix-input>
               `}
         </div>
-        <div class="mb-5">
+        <div class="mb-5 list-">
           <btrix-input
             id="name"
             name="name"
@@ -139,75 +139,14 @@ export class SignUpForm extends LiteElement {
   }
 
   private renderPasswordStrength = () => {
-    if (!this.pwStrengthResults) return;
-    const { score, feedback } = this.pwStrengthResults;
-    let scoreProps = {
-      icon: "exclamation-triangle",
-      label: msg("Please choose a stronger password"),
-      className: "text-danger",
-      variant: "danger",
-    };
-    switch (score) {
-      case 2:
-        scoreProps = {
-          icon: "exclamation-circle",
-          label: msg("Weak password"),
-          className: "text-warning",
-          variant: "warning",
-        };
-        break;
-      case 3:
-        scoreProps = {
-          icon: "shield-check",
-          label: msg("Acceptably strong password"),
-          className: "text-primary",
-          variant: "primary",
-        };
-        break;
-      case 4:
-        scoreProps = {
-          icon: "shield-fill-check",
-          label: msg("Very strong password"),
-          className: "text-success",
-          variant: "success",
-        };
-        break;
-      default:
-        break;
-    }
     return html`
-      <sl-alert
-        variant=${scoreProps.variant as any}
-        open
-        class="my-3"
-        style="--sl-spacing-large: var(--sl-spacing-small)"
-      >
-        <div class="flex items-center gap-2">
-          <sl-icon
-            class="${scoreProps.className} text-base"
-            name=${scoreProps.icon}
-          ></sl-icon>
-          <p class="text-gray-900 font-semibold">${scoreProps.label}</p>
-        </div>
-        <div class="text-gray-700 ml-6">
-          ${when(
-            feedback.warning,
-            () => html` <p class="mt-2">${feedback.warning}</p> `
-          )}
-          ${when(feedback.suggestions.length, () =>
-            feedback.suggestions.length === 1
-              ? html`<p class="mt-2">
-                  ${msg("Suggestion:")} ${feedback.suggestions[0]}
-                </p>`
-              : html`<p class="my-2">${msg("Suggestions:")}</p>
-                  <ul class="list-disc list-inside">
-                    ${feedback.suggestions.map(
-                      (text) => html`<li>${text}</li>`
-                    )}
-                  </ul>`
-          )}
-        </div>
-      </sl-alert>
+      <div class="my-3">
+        <btrix-pw-strength-alert
+          .result=${this.pwStrengthResults}
+          min=${PASSWORD_MIN_SCORE}
+        >
+        </btrix-pw-strength-alert>
+      </div>
     `;
   };
 
