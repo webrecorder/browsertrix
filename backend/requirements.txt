@@ -16,3 +16,5 @@ https://github.com/ikreymer/stream-zip/archive/refs/heads/stream-uncompress.zip
 boto3
 backoff>=2.2.1
 python-slugify>=8.0.1
+mypy_boto3_s3
+types_aiobotocore_s3
