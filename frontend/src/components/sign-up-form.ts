@@ -158,7 +158,7 @@ export class SignUpForm extends LiteElement {
 
   private onPasswordInput = debounce(150)(async (e: InputEvent) => {
     const { value } = e.target as BtrixInput;
-    if (!value || value.length < PASSWORD_MINLENGTH) {
+    if (!value || value.length < 4) {
       this.pwStrengthResults = null;
       return;
     }
