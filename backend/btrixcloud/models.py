@@ -633,9 +633,9 @@ class S3Storage(BaseModel):
     endpoint_url: str
     access_key: str
     secret_key: str
-    access_endpoint_url: Optional[str]
-    region: Optional[str] = ""
-    use_access_for_presign: Optional[bool] = True
+    access_endpoint_url: str
+    region: str = ""
+    use_access_for_presign: bool = True
 
 
 # ============================================================================
