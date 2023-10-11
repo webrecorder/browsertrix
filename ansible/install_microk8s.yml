@@ -1,5 +1,5 @@
 ---
-- hosts: microk8s
+- hosts: all
   gather_facts: yes
   connection: local
   become: yes

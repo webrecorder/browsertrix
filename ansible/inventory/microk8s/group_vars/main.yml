@@ -19,8 +19,8 @@ microk8s_channel: stable
 
 your_user: root          # if your cloud provide uses another user change this
 browsertrix_cloud_home: "/opt/browsertrix-cloud"
-microk8s_user_home: "/home/{{ microk8s_user }}"
-microk8s_user: conan     # change this to a different user if you don't want conan the deployer
+ansible_user_home: "/home/{{ ansible_user }}"
+ansible_user: conan     # change this to a different user if you don't want conan the deployer
 microk8s_plugins:
   dns: true              # CoreDNS
   ingress: true          # Ingress controller for external access

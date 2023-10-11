@@ -100,6 +100,17 @@
     group: '{{ ansible_user }}'
     mode: 0600
 
+- name: synlink microk8 executable
+  file:
+    src: "/snap/bin/{{item}}"
+    dest: "/usr/bin/{{item}}"
+    state: link
+  loop:
+    - microk8s.enable
+    - microk8s.disable
+    - microk8s.status
+    - helm
+
 # ===========================================
 # Configure plugins
 - name: microk8s plugins | enable plugins
