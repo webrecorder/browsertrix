@@ -14,9 +14,8 @@ import type { AuthState, Auth } from "../utils/AuthService";
 import AuthService from "../utils/AuthService";
 import PasswordService from "../utils/PasswordService";
 
-const PASSWORD_MINLENGTH = 8;
-const PASSWORD_MAXLENGTH = 64;
-const PASSWORD_MIN_SCORE = 3;
+const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
+  PasswordService;
 
 @localized()
 class RequestVerify extends LitElement {
@@ -238,16 +237,17 @@ export class AccountSettings extends LiteElement {
                     required
                     @input=${this.onPasswordInput}
                   ></sl-input>
-                  <p class="mt-2 text-gray-500">
-                    ${msg(
-                      str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`
-                    )}
-                  </p>
+
                   ${when(this.pwStrengthResults, this.renderPasswordStrength)}
                 </div>
                 <footer
                   class="flex items-center justify-end border-t px-4 py-3"
                 >
+                  <p class="mr-auto text-gray-500">
+                    ${msg(
+                      str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`
+                    )}
+                  </p>
                   <sl-button
                     type="submit"
                     size="small"
@@ -277,7 +277,7 @@ export class AccountSettings extends LiteElement {
   }
 
   private renderPasswordStrength = () => html`
-    <div class="my-3">
+    <div class="mt-4">
       <btrix-pw-strength-alert
         .result=${this.pwStrengthResults}
         min=${PASSWORD_MIN_SCORE}
