@@ -1,15 +1,22 @@
 import { LitElement } from "lit";
 import { state, queryAsync, property } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { msg, str, localized } from "@lit/localize";
+import debounce from "lodash/fp/debounce";
 import { when } from "lit/directives/when.js";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { SlInput } from "@shoelace-style/shoelace";
+import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 
 import type { CurrentUser } from "../types/user";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
 import type { AuthState, Auth } from "../utils/AuthService";
 import AuthService from "../utils/AuthService";
+import PasswordService from "../utils/PasswordService";
+
+const PASSWORD_MINLENGTH = 8;
+const PASSWORD_MAXLENGTH = 64;
+const PASSWORD_MIN_SCORE = 3;
 
 @localized()
 class RequestVerify extends LitElement {
@@ -98,6 +105,9 @@ export class AccountSettings extends LiteElement {
   @state()
   private isChangingPassword = false;
 
+  @state()
+  private pwStrengthResults: null | ZxcvbnResult = null;
+
   @queryAsync('sl-input[name="password"]')
   private passwordInput?: Promise<SlInput | null>;
 
@@ -108,6 +118,10 @@ export class AccountSettings extends LiteElement {
     ) {
       (await this.passwordInput)?.focus();
     }
+  }
+
+  protected firstUpdated() {
+    PasswordService.setOptions();
   }
 
   render() {
@@ -222,7 +236,14 @@ export class AccountSettings extends LiteElement {
                     password-toggle
                     minlength="8"
                     required
+                    @input=${this.onPasswordInput}
                   ></sl-input>
+                  <p class="mt-2 text-gray-500">
+                    ${msg(
+                      str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`
+                    )}
+                  </p>
+                  ${when(this.pwStrengthResults, this.renderPasswordStrength)}
                 </div>
                 <footer
                   class="flex items-center justify-end border-t px-4 py-3"
@@ -254,6 +275,32 @@ export class AccountSettings extends LiteElement {
       </div>
     `;
   }
+
+  private renderPasswordStrength = () => html`
+    <div class="my-3">
+      <btrix-pw-strength-alert
+        .result=${this.pwStrengthResults}
+        min=${PASSWORD_MIN_SCORE}
+      >
+      </btrix-pw-strength-alert>
+    </div>
+  `;
+
+  private onPasswordInput = debounce(150)(async (e: InputEvent) => {
+    const { value } = e.target as SlInput;
+    if (!value || value.length < 4) {
+      this.pwStrengthResults = null;
+      return;
+    }
+    const userInputs: string[] = [];
+    if (this.userInfo) {
+      userInputs.push(this.userInfo.name, this.userInfo.email);
+    }
+    this.pwStrengthResults = await PasswordService.checkStrength(
+      value,
+      userInputs
+    );
+  }) as any;
 
   private async onSubmitName(e: SubmitEvent) {
     if (!this.userInfo || !this.authState) return;
