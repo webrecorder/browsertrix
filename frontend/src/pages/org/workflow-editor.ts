@@ -1113,7 +1113,7 @@ https://example.com/path`}
               >${exampleDomain}${examplePathname}</span
             >
             or any URL that begins with those specified in
-            <em>Extra URLs in Scope</em>`
+            <em>Extra URL Prefixes in Scope</em>`
         );
         break;
       default:
@@ -1219,7 +1219,7 @@ https://example.com/path`}
           ${this.renderFormCol(html`
             <sl-textarea
               name="customIncludeUrlList"
-              label=${msg("Extra URLs in Scope")}
+              label=${msg("Extra URL Prefixes in Scope")}
               rows="3"
               autocomplete="off"
               inputmode="url"

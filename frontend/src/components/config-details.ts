@@ -333,7 +333,7 @@ export class ConfigDetails extends LiteElement {
         ]
       )}
       ${this.renderSetting(
-        msg("Extra URLs in Scope"),
+        msg("Extra URL Prefixes in Scope"),
         includeUrlList?.length
           ? html`
               <ul>
