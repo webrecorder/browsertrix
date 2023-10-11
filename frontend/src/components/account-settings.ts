@@ -253,6 +253,8 @@ export class AccountSettings extends LiteElement {
                     size="small"
                     variant="primary"
                     ?loading=${this.sectionSubmitting === "password"}
+                    ?disabled=${!this.pwStrengthResults ||
+                    this.pwStrengthResults.score < PASSWORD_MIN_SCORE}
                     >${msg("Save")}</sl-button
                   >
                 </footer>
