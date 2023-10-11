@@ -50,7 +50,8 @@ def test_get_org_crawler(crawler_auth_headers, default_org_id):
 
 def test_rename_org(admin_auth_headers, default_org_id):
     UPDATED_NAME = "updated org name"
-    rename_data = {"name": UPDATED_NAME}
+    UPDATED_SLUG = "updated-org-name"
+    rename_data = {"name": UPDATED_NAME, "slug": UPDATED_SLUG}
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/rename",
         headers=admin_auth_headers,
@@ -61,11 +62,12 @@ def test_rename_org(admin_auth_headers, default_org_id):
     data = r.json()
     assert data["updated"]
 
-    # Verify that name is now updated.
+    # Verify that name and slug are now updated.
     r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
     assert r.status_code == 200
     data = r.json()
     assert data["name"] == UPDATED_NAME
+    assert data["slug"] == UPDATED_SLUG
 
 
 def test_create_org(admin_auth_headers):
@@ -73,7 +75,7 @@ def test_create_org(admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/orgs/create",
         headers=admin_auth_headers,
-        json={"name": NEW_ORG_NAME},
+        json={"name": NEW_ORG_NAME, "slug": "new-org"},
     )
 
     assert r.status_code == 200
@@ -389,3 +391,21 @@ def test_org_metrics(crawler_auth_headers, default_org_id):
     assert data["workflowsQueuedCount"] >= 0
     assert data["collectionsCount"] > 0
     assert data["publicCollectionsCount"] >= 0
+
+
+def test_get_org_slugs(admin_auth_headers):
+    # Fetch org count and slugs from /orgs
+    r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
+    assert r.status_code == 200
+    data = r.json()
+    org_count = data["total"]
+    org_slugs = [item["slug"] for item in data["items"]]
+
+    # Fetch slugs from /orgs/slugs and verify data looks right
+    r = requests.get(f"{API_PREFIX}/orgs/slugs", headers=admin_auth_headers)
+    assert r.status_code == 200
+    slugs = r.json()["slugs"]
+
+    assert len(slugs) == org_count
+    for slug in slugs:
+        assert slug in org_slugs

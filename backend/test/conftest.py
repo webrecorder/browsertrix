@@ -69,7 +69,7 @@ def non_default_org_id(admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/orgs/create",
         headers=admin_auth_headers,
-        json={"name": NON_DEFAULT_ORG_NAME},
+        json={"name": NON_DEFAULT_ORG_NAME, "slug": "non-default-org"},
     )
     assert r.status_code == 200
 

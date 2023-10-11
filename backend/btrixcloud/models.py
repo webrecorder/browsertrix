@@ -612,6 +612,7 @@ class RenameOrg(BaseModel):
     """Request to invite another user"""
 
     name: str
+    slug: Optional[str] = None
 
 
 # ============================================================================
@@ -664,6 +665,7 @@ class Organization(BaseMongoModel):
     id: UUID4
 
     name: str
+    slug: str
 
     users: Dict[str, UserRole]
 
@@ -751,6 +753,7 @@ class OrgOut(BaseMongoModel):
 
     id: UUID4
     name: str
+    slug: str
     users: Optional[Dict[str, Any]]
     usage: Optional[Dict[str, int]]
     crawlExecSeconds: Optional[Dict[str, int]]
