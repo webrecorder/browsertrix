@@ -10,9 +10,8 @@ import AuthService from "../utils/AuthService";
 import PasswordService from "../utils/PasswordService";
 import type { Input as BtrixInput } from "./input/input";
 
-const PASSWORD_MINLENGTH = 8;
-const PASSWORD_MAXLENGTH = 64;
-const PASSWORD_MIN_SCORE = 3;
+const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
+  PasswordService;
 
 /**
  * @event submit

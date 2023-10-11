@@ -9,9 +9,8 @@ import LiteElement, { html } from "../utils/LiteElement";
 import PasswordService from "../utils/PasswordService";
 import type { Input as BtrixInput } from "../components/input/input";
 
-const PASSWORD_MINLENGTH = 8;
-const PASSWORD_MAXLENGTH = 64;
-const PASSWORD_MIN_SCORE = 3;
+const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
+  PasswordService;
 
 @localized()
 export class ResetPassword extends LiteElement {
