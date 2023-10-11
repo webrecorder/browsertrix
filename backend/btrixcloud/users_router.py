@@ -2,7 +2,6 @@
 
 requires `current` current password for PATCH /users/me
 """
-# pylint: too-many-arguments, redefined-builtin, raise-missing-from
 
 from typing import Type
 
@@ -33,6 +32,7 @@ def get_custom_users_router(
     requires_verification: bool = False,
 ) -> APIRouter:
     """Generate a router with the authentication routes."""
+    # pylint: too-many-arguments, redefined-builtin, raise-missing-from
     router = APIRouter()
 
     get_current_active_user = authenticator.current_user(

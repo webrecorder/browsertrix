@@ -20,7 +20,6 @@ from fastapi_users import FastAPIUsers, BaseUserManager
 from fastapi_users.manager import (
     UserAlreadyExists,
     InvalidPasswordException,
-    UserManagerDependency,
 )
 from fastapi_users.authentication import (
     AuthenticationBackend,
@@ -28,7 +27,6 @@ from fastapi_users.authentication import (
     JWTStrategy,
 )
 from fastapi_users.db import MongoDBUserDatabase
-from fastapi_users.authentication import Authenticator
 
 from .models import (
     User,
