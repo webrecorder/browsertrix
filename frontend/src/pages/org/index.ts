@@ -554,30 +554,17 @@ export class Org extends LiteElement {
 
     return data;
   }
-
   private async onOrgInfoChange(e: OrgInfoChangeEvent) {
-    const { name, slug } = e.detail;
-
-    if (name) {
-      await this.updateOrgName(name);
-    }
-
-    if (slug) {
-      console.log("TODO update slug");
-    }
-  }
-
-  private async updateOrgName(newName: string) {
     this.isSavingOrgName = true;
 
     try {
       await this.apiFetch(`/orgs/${this.org!.id}/rename`, this.authState!, {
         method: "POST",
-        body: JSON.stringify({ name: newName }),
+        body: JSON.stringify(e.detail),
       });
 
       this.notify({
-        message: msg("Updated organization name."),
+        message: msg("Updated organization info."),
         variant: "success",
         icon: "check2-circle",
       });
@@ -589,13 +576,40 @@ export class Org extends LiteElement {
       this.notify({
         message: e.isApiError
           ? e.message
-          : msg("Sorry, couldn't update organization name at this time."),
+          : msg("Sorry, couldn't update organization info at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
     }
 
     this.isSavingOrgName = false;
+  }
+
+  private async updateOrgSlug(newSlug: string) {
+    try {
+      await this.apiFetch(`/orgs/${this.org!.id}`, this.authState!, {
+        method: "PATCH",
+        body: JSON.stringify({ slug: newSlug }),
+      });
+
+      this.notify({
+        message: msg("Updated organization slug."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+
+      this.dispatchEvent(
+        new CustomEvent("update-user-info", { bubbles: true })
+      );
+    } catch (e: any) {
+      this.notify({
+        message: e.isApiError
+          ? e.message
+          : msg("Sorry, couldn't update organization slug at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 
   private async onOrgRemoveMember(e: OrgRemoveMemberEvent) {

@@ -26,7 +26,7 @@ export type Member = User & {
   name: string;
 };
 export type OrgInfoChangeEvent = CustomEvent<{
-  name?: string;
+  name: string;
   slug?: string;
 }>;
 export type UserRoleChangeEvent = CustomEvent<{
@@ -88,7 +88,7 @@ export class OrgSettings extends LiteElement {
 
   private get tabLabels() {
     return {
-      information: msg("Org Information"),
+      information: msg("Information"),
       members: msg("Members"),
     };
   }
@@ -205,9 +205,7 @@ export class OrgSettings extends LiteElement {
               required
               @sl-input=${(e: InputEvent) => {
                 const input = e.target as SlInput;
-                input.value = input.value
-                  .replace(/[/\\?%*:|"<>,\.\s]/, "-")
-                  .replace(/\s/, "-");
+                input.value = input.value.replace(/[/\\?%*:|"<>,\.\s]/, "-");
               }}
             >
             </sl-input>
@@ -444,13 +442,12 @@ export class OrgSettings extends LiteElement {
     if (!(await this.checkFormValidity(formEl))) return;
 
     const { orgName, orgSlug } = serialize(formEl);
-    const detail: any = {};
-    if (orgName !== this.org.name) {
-      detail.name = orgName;
-    }
+    const detail: any = { name: orgName };
+
     if (orgSlug !== this.org.slug) {
       detail.slug = orgSlug;
     }
+
     this.dispatchEvent(
       <OrgInfoChangeEvent>new CustomEvent("org-info-change", {
         detail,
