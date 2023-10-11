@@ -19,7 +19,7 @@ export class PasswordStrengthAlert extends LitElement {
 
   /** Minimum acceptable score */
   @property({ type: String })
-  min = 0;
+  min = 1;
 
   static styles = css`
     sl-alert::part(message) {
@@ -84,7 +84,7 @@ export class PasswordStrengthAlert extends LitElement {
     const { score, feedback } = this.result;
     let scoreProps = {
       icon: "exclamation-triangle",
-      label: msg("Please choose a stronger password"),
+      label: msg("Very weak password"),
       variant: "danger",
     };
     switch (score) {
@@ -112,12 +112,16 @@ export class PasswordStrengthAlert extends LitElement {
       default:
         break;
     }
+    if (score < this.min) {
+      scoreProps.label = msg("Please choose a stronger password");
+    }
     return html`
       <sl-alert variant=${scoreProps.variant as any} open>
         <div class="score">
           <sl-icon class="icon" name=${scoreProps.icon}></sl-icon>
           <p class="label">${scoreProps.label}</p>
         </div>
+
         <div class="feedback">
           ${when(
             feedback.warning,
