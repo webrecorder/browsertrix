@@ -1,6 +1,6 @@
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { msg, localized } from "@lit/localize";
+import { msg, str, localized } from "@lit/localize";
 import debounce from "lodash/fp/debounce";
 import { when } from "lit/directives/when.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
@@ -10,6 +10,8 @@ import AuthService from "../utils/AuthService";
 import PasswordService from "../utils/PasswordService";
 import type { Input as BtrixInput } from "./input/input";
 
+const PASSWORD_MINLENGTH = 8;
+const PASSWORD_MAXLENGTH = 64;
 const PASSWORD_MIN_SCORE = 3;
 
 /**
@@ -110,7 +112,7 @@ export class SignUpForm extends LiteElement {
             name="password"
             type="password"
             label="${msg("Password")}"
-            minlength="8"
+            minlength=${PASSWORD_MINLENGTH}
             autocomplete="new-password"
             passwordToggle
             required
@@ -118,7 +120,9 @@ export class SignUpForm extends LiteElement {
           >
           </btrix-input>
           <p class="mt-2 text-gray-500">
-            ${msg("Choose a strong password between 8 and 64 characters.")}
+            ${msg(
+              str`Choose a strong password between ${PASSWORD_MINLENGTH} and ${PASSWORD_MAXLENGTH} characters.`
+            )}
           </p>
           ${when(this.pwStrengthResults, this.renderPasswordStrength)}
         </div>
@@ -150,10 +154,11 @@ export class SignUpForm extends LiteElement {
     `;
   };
 
-  private onPasswordInput = debounce(100)(async (e: InputEvent) => {
+  private onPasswordInput = debounce(150)(async (e: InputEvent) => {
     const { value } = e.target as BtrixInput;
-    if (!value) {
+    if (!value || value.length < PASSWORD_MINLENGTH) {
       this.pwStrengthResults = null;
+      return;
     }
     const userInputs: string[] = [];
     if (this.email) {
