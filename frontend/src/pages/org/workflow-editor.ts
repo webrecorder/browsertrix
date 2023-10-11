@@ -308,9 +308,9 @@ export class CrawlConfigEditor extends LiteElement {
     FormState["scheduleType"],
     string
   > = {
-    date: msg("Run on a Specific Date & Time"),
-    cron: msg("Run on a Recurring Basis"),
-    none: msg("No Schedule"),
+    date: msg("Run on a specific date & time"),
+    cron: msg("Run on a recurring basis"),
+    none: msg("No schedule"),
   };
 
   private readonly scheduleFrequencyLabels: Record<
@@ -1240,7 +1240,7 @@ https://example.net`}
           name="includeLinkedPages"
           ?checked=${this.formState.includeLinkedPages}
         >
-          ${msg("Include Any Linked Page (“one hop out”)")}
+          ${msg("Include any linked page (“one hop out”)")}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(
@@ -1250,7 +1250,7 @@ https://example.net`}
       )}
       ${this.renderFormCol(html`
         <sl-checkbox name="useSitemap" ?checked=${this.formState.useSitemap}>
-          ${msg("Check For Sitemap")}
+          ${msg("Check for sitemap")}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(
@@ -1540,7 +1540,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         name="autoscrollBehavior"
         ?checked=${this.formState.autoscrollBehavior}
       >
-        ${msg("Auto-Scroll Behavior")}
+        ${msg("Auto-scroll behavior")}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
         msg(
@@ -1588,7 +1588,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <sl-checkbox name="blockAds" ?checked=${this.formState.blockAds}>
-          ${msg("Block Ads by Domain")}
+          ${msg("Block ads by domain")}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(
