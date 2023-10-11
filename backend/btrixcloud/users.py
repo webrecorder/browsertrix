@@ -10,6 +10,7 @@ from typing import Optional, Union
 
 from pydantic import UUID4
 import passlib.pwd
+from passlib.context import CryptContext
 
 from fastapi import Request, Response, HTTPException, Depends, WebSocket
 from fastapi.security import OAuth2PasswordBearer
@@ -410,7 +411,6 @@ def init_users_api(app, user_manager):
     users_router = get_custom_users_router(
         fastapi_users.get_user_manager,
         User,
-        UserUpdate,
         UserDB,
         fastapi_users.authenticator,
         requires_verification=False,
@@ -448,7 +448,7 @@ def init_users_api(app, user_manager):
             ]
         return user_info
 
-    @user_router.put("/me/password-change", tags=["users"])
+    @users_router.put("/me/password-change", tags=["users"])
     async def change_my_password(
         request: Request,
         user_update: UserUpdatePassword,
@@ -463,7 +463,9 @@ def init_users_api(app, user_manager):
 
         update = UserUpdate(email=user_update.email, password=user_update.password)
         try:
+            # pylint: disable=line-too-long
             return await user_manager.update(update, user, safe=True, request=request)  # type: ignore
+        # pylint: disable=raise-missing-from
         except InvalidPasswordException as e:
             raise HTTPException(
                 status_code=400,

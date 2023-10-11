@@ -7,7 +7,6 @@ from typing import Type
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import UUID4
-from passlib.context import CryptContext
 
 from fastapi_users import models
 from fastapi_users.authentication import Authenticator
@@ -20,13 +19,12 @@ from fastapi_users.manager import (
 )
 from fastapi_users.router.common import ErrorCode, ErrorModel
 
-from .models import UserUpdate, UserUpdateNoPassword
+from .models import UserUpdateNoPassword
 
 
 def get_custom_users_router(
     get_user_manager: UserManagerDependency[models.UC, models.UD],
     user_model: Type[models.U],
-    user_update_model: Type[models.UU],
     user_db_model: Type[models.UD],
     authenticator: Authenticator,
     requires_verification: bool = False,
