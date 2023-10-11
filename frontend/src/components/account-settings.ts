@@ -369,10 +369,10 @@ export class AccountSettings extends LiteElement {
     }
 
     try {
-      await this.apiFetch(`/users/me`, nextAuthState!, {
-        method: "PATCH",
+      await this.apiFetch("/users/me/password-change", nextAuthState, {
+        method: "PUT",
         body: JSON.stringify({
-          email: this.userInfo.email,
+          current: password,
           password: newPassword,
         }),
       });

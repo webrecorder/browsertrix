@@ -1,6 +1,6 @@
 """custom user router
 
-requires `current` current password for PATCH /users/me
+disables resetting password via PATCH /user/me and PATCH /user/id
 """
 
 from typing import Type
@@ -20,7 +20,7 @@ from fastapi_users.manager import (
 )
 from fastapi_users.router.common import ErrorCode, ErrorModel
 
-from .models import UserUpdate, UserUpdatePassword
+from .models import UserUpdate, UserUpdateNoPassword
 
 
 def get_custom_users_router(
@@ -86,20 +86,6 @@ def get_custom_users_router(
                                     "detail": ErrorCode.UPDATE_USER_EMAIL_ALREADY_EXISTS
                                 },
                             },
-                            ErrorCode.UPDATE_USER_INVALID_PASSWORD: {
-                                "summary": "Password validation failed.",
-                                "value": {
-                                    "detail": {
-                                        "code": ErrorCode.UPDATE_USER_INVALID_PASSWORD,
-                                        "reason": "Password should be"
-                                        "at least 3 characters",
-                                    }
-                                },
-                            },
-                            "invalid_current_password": {
-                                "summary": "Provided current password is invalid.",
-                                "value": {"detail": "invalid_current_password"},
-                            },
                         }
                     }
                 },
@@ -108,20 +94,12 @@ def get_custom_users_router(
     )
     async def update_me(
         request: Request,
-        user_update: UserUpdatePassword,  # type: ignore
+        user_update: UserUpdateNoPassword,  # type: ignore
         user: user_db_model = Depends(get_current_active_user),  # type: ignore
         user_manager: BaseUserManager[models.UC, models.UD] = Depends(get_user_manager),
     ):
-        """requires current password in current field"""
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        if not pwd_context.verify(
-            user_update.current, pwd_context.hash(user_update.current)
-        ):
-            raise HTTPException(status_code=400, detail="invalid_current_password")
-
-        update = UserUpdate(email=user_update.email, password=user_update.password)
         try:
-            return await user_manager.update(update, user, safe=True, request=request)  # type: ignore
+            return await user_manager.update(user_update, user, safe=True, request=request)  # type: ignore
         except InvalidPasswordException as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -182,16 +160,6 @@ def get_custom_users_router(
                                     "detail": ErrorCode.UPDATE_USER_EMAIL_ALREADY_EXISTS
                                 },
                             },
-                            ErrorCode.UPDATE_USER_INVALID_PASSWORD: {
-                                "summary": "Password validation failed.",
-                                "value": {
-                                    "detail": {
-                                        "code": ErrorCode.UPDATE_USER_INVALID_PASSWORD,
-                                        "reason": "Password should be"
-                                        "at least 3 characters",
-                                    }
-                                },
-                            },
                         }
                     }
                 },
@@ -199,7 +167,7 @@ def get_custom_users_router(
         },
     )
     async def update_user(
-        user_update: user_update_model,  # type: ignore
+        user_update: UserUpdateNoPassword,  # type: ignore
         request: Request,
         user=Depends(get_user_or_404),
         user_manager: BaseUserManager[models.UC, models.UD] = Depends(get_user_manager),

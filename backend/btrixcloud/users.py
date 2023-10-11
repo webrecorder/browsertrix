@@ -33,6 +33,7 @@ from .models import (
     UserCreateIn,
     UserCreate,
     UserUpdate,
+    UserUpdatePassword,
     UserDB,
     UserRole,
     PaginatedResponse,
@@ -446,6 +447,36 @@ def init_users_api(app, user_manager):
                 for org in user_orgs
             ]
         return user_info
+
+    @user_router.put("/me/password-change", tags=["users"])
+    async def change_my_password(
+        request: Request,
+        user_update: UserUpdatePassword,
+        user: UserDB = Depends(current_active_user),
+    ):
+        """update password, requires current password"""
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        if not pwd_context.verify(
+            user_update.current, pwd_context.hash(user_update.current)
+        ):
+            raise HTTPException(status_code=400, detail="invalid_current_password")
+
+        update = UserUpdate(email=user_update.email, password=user_update.password)
+        try:
+            return await user_manager.update(update, user, safe=True, request=request)  # type: ignore
+        except InvalidPasswordException as e:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "code": "UPDATE_USER_INVALID_PASSWORD",
+                    "reason": e.reason,
+                },
+            )
+        except UserAlreadyExists:
+            raise HTTPException(
+                status_code=400,
+                detail="UPDATE_USER_EMAIL_ALREADY_EXISTS",
+            )
 
     @users_router.get("/invite/{token}", tags=["invites"])
     async def get_invite_info(token: str, email: str):
