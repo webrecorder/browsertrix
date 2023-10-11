@@ -2,12 +2,13 @@
 
 requires `current` current password for PATCH /users/me
 """
+# pylint: too-many-arguments, redefined-builtin, raise-missing-from
 
-from passlib.context import CryptContext
 from typing import Type
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import UUID4
+from passlib.context import CryptContext
 
 from fastapi_users import models
 from fastapi_users.authentication import Authenticator
