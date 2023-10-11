@@ -100,6 +100,7 @@ export class SignUpForm extends LiteElement {
             })}
             autocomplete="nickname"
             minlength="2"
+            required
           >
           </btrix-input>
           <p class="mt-2 text-gray-500">
@@ -173,7 +174,6 @@ export class SignUpForm extends LiteElement {
   }) as any;
 
   private async onSubmit(event: SubmitEvent) {
-    const form = event.target as HTMLFormElement;
     event.preventDefault();
     event.stopPropagation();
     this.dispatchEvent(new CustomEvent("submit"));
@@ -181,7 +181,7 @@ export class SignUpForm extends LiteElement {
     this.serverError = undefined;
     this.isSubmitting = true;
 
-    const formData = new FormData(form);
+    const formData = new FormData(event.target as HTMLFormElement);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const name = formData.get("name") as string;
