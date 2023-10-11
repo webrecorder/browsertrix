@@ -4,6 +4,9 @@ import { msg, localized } from "@lit/localize";
 
 import LiteElement, { html } from "../utils/LiteElement";
 import AuthService from "../utils/AuthService";
+import PasswordService from "../utils/PasswordService";
+import type { Input as BtrixInput } from "./input/input";
+import { PropertyValueMap } from "lit";
 
 /**
  * @event submit
@@ -31,6 +34,10 @@ export class SignUpForm extends LiteElement {
 
   @state()
   private isSubmitting: boolean = false;
+
+  protected firstUpdated() {
+    PasswordService.setOptions();
+  }
 
   render() {
     let serverError;
@@ -100,10 +107,11 @@ export class SignUpForm extends LiteElement {
             autocomplete="new-password"
             passwordToggle
             required
+            @input=${this.onPasswordInput}
           >
           </btrix-input>
           <p class="mt-2 text-sm text-gray-500">
-            ${msg("Choose a strong password between 8-64 characters.")}
+            ${msg("Choose a strong password between 8 and 64 characters.")}
           </p>
         </div>
 
@@ -118,6 +126,15 @@ export class SignUpForm extends LiteElement {
         >
       </form>
     `;
+  }
+
+  private async onPasswordInput(e: InputEvent) {
+    const input = e.target as BtrixInput;
+    const userInputs: string[] = [];
+    if (this.email) {
+      userInputs.push(this.email);
+    }
+    console.log(await PasswordService.checkStrength(input.value, userInputs));
   }
 
   private async onSubmit(event: SubmitEvent) {
