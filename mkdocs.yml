@@ -62,6 +62,7 @@ nav:
         - user-guide/crawl-workflows.md
         - user-guide/workflow-setup.md
         - user-guide/browser-profiles.md
+      - user-guide/archived-items.md
       - user-guide/collections.md
       - user-guide/org-settings.md
 
