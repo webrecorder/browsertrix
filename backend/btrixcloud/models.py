@@ -937,6 +937,7 @@ class UserUpdatePassword(User, fastapi_users_models.CreateUpdateDictModel):
 
     current: str
     password: str
+    email: EmailStr
 
 
 # ============================================================================

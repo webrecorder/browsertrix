@@ -352,6 +352,7 @@ export class AccountSettings extends LiteElement {
       await this.apiFetch("/users/me/password-change", this.authState, {
         method: "PUT",
         body: JSON.stringify({
+          email: this.userInfo.email,
           current: password,
           password: newPassword,
         }),
