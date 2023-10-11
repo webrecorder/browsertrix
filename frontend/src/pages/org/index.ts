@@ -31,7 +31,7 @@ import "./components/new-collection-dialog";
 import "./components/new-workflow-dialog";
 import type {
   Member,
-  OrgNameChangeEvent,
+  OrgInfoChangeEvent,
   UserRoleChangeEvent,
   OrgRemoveMemberEvent,
 } from "./settings";
@@ -536,7 +536,7 @@ export class Org extends LiteElement {
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
       ?isSavingOrgName=${this.isSavingOrgName}
-      @org-name-change=${this.onOrgNameChange}
+      @org-info-change=${this.onOrgInfoChange}
       @org-user-role-change=${this.onUserRoleChange}
       @org-remove-member=${this.onOrgRemoveMember}
     ></btrix-org-settings>`;
@@ -555,13 +555,25 @@ export class Org extends LiteElement {
     return data;
   }
 
-  private async onOrgNameChange(e: OrgNameChangeEvent) {
+  private async onOrgInfoChange(e: OrgInfoChangeEvent) {
+    const { name, slug } = e.detail;
+
+    if (name) {
+      await this.updateOrgName(name);
+    }
+
+    if (slug) {
+      console.log("TODO update slug");
+    }
+  }
+
+  private async updateOrgName(newName: string) {
     this.isSavingOrgName = true;
 
     try {
       await this.apiFetch(`/orgs/${this.org!.id}/rename`, this.authState!, {
         method: "POST",
-        body: JSON.stringify({ name: e.detail.value }),
+        body: JSON.stringify({ name: newName }),
       });
 
       this.notify({

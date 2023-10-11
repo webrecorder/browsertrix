@@ -3,6 +3,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import type { SlInput } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -24,8 +25,9 @@ type Invite = User & {
 export type Member = User & {
   name: string;
 };
-export type OrgNameChangeEvent = CustomEvent<{
-  value: string;
+export type OrgInfoChangeEvent = CustomEvent<{
+  name?: string;
+  slug?: string;
 }>;
 export type UserRoleChangeEvent = CustomEvent<{
   user: Member;
@@ -48,7 +50,7 @@ export type OrgRemoveMemberEvent = CustomEvent<{
  * ```
  *
  * @events
- * org-name-change
+ * org-info-change
  * org-user-role-change
  * org-remove-member
  */
@@ -91,7 +93,7 @@ export class OrgSettings extends LiteElement {
     };
   }
 
-  private validateOrgNameMax = maxLengthValidator(50);
+  private validateOrgNameMax = maxLengthValidator(40);
 
   async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
@@ -164,28 +166,73 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderInformation() {
-    return html`<div class="rounded border p-5">
-      <form class="inline-control-form" @submit=${this.onOrgNameSubmit}>
-        <sl-input
-          class="inline-control-input with-max-help-text"
-          name="orgName"
-          size="small"
-          label=${msg("Org Name")}
-          autocomplete="off"
-          value=${this.org.name}
-          required
-          help-text=${this.validateOrgNameMax.helpText}
-          @sl-input=${this.validateOrgNameMax.validate}
-        ></sl-input>
-        <sl-button
-          class="inline-control-button"
-          type="submit"
-          size="small"
-          variant="primary"
-          ?disabled=${this.isSavingOrgName}
-          ?loading=${this.isSavingOrgName}
-          >${msg("Save Changes")}</sl-button
-        >
+    return html`<div class="rounded border">
+      <form @submit=${this.onOrgInfoSubmit}>
+        <div class="grid grid-cols-5 gap-x-4 p-4">
+          <div class="col-span-5 md:col-span-3">
+            <sl-input
+              class="with-max-help-text"
+              name="orgName"
+              size="small"
+              label=${msg("Org Name")}
+              autocomplete="off"
+              value=${this.org.name}
+              minlength="2"
+              required
+              help-text=${this.validateOrgNameMax.helpText}
+              @sl-input=${this.validateOrgNameMax.validate}
+            ></sl-input>
+          </div>
+          <div class="col-span-5 md:col-span-2 flex gap-2 pt-6">
+            <div class="text-base">
+              <sl-icon name="info-circle"></sl-icon>
+            </div>
+            <div class="mt-0.5 text-xs text-neutral-500">
+              ${msg(
+                "Name of your organization that is visible to all org members."
+              )}
+            </div>
+          </div>
+          <div class="col-span-5 md:col-span-3">
+            <sl-input
+              name="orgSlug"
+              size="small"
+              label=${msg("Slug URL")}
+              autocomplete="off"
+              value=${this.org.slug}
+              minlength="2"
+              maxlength="30"
+              required
+              @sl-input=${(e: InputEvent) => {
+                const input = e.target as SlInput;
+                input.value = input.value
+                  .replace(/[/\\?%*:|"<>,\.\s]/, "-")
+                  .replace(/\s/, "-");
+              }}
+            >
+            </sl-input>
+          </div>
+
+          <div class="col-span-5 md:col-span-2 flex gap-2 pt-6">
+            <div class="text-base">
+              <sl-icon name="info-circle"></sl-icon>
+            </div>
+            <div class="mt-0.5 text-xs text-neutral-500">
+              ${msg("Org URL namespace in Browsertrix Cloud.")}
+            </div>
+          </div>
+        </div>
+        <footer class="border-t flex justify-end px-4 py-3">
+          <sl-button
+            class="inline-control-button"
+            type="submit"
+            size="small"
+            variant="primary"
+            ?disabled=${this.isSavingOrgName}
+            ?loading=${this.isSavingOrgName}
+            >${msg("Save Changes")}</sl-button
+          >
+        </footer>
       </form>
     </div>`;
   }
@@ -390,16 +437,23 @@ export class OrgSettings extends LiteElement {
     }
   }
 
-  private async onOrgNameSubmit(e: SubmitEvent) {
+  private async onOrgInfoSubmit(e: SubmitEvent) {
     e.preventDefault();
 
     const formEl = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(formEl))) return;
 
-    const { orgName } = serialize(formEl);
+    const { orgName, orgSlug } = serialize(formEl);
+    const detail: any = {};
+    if (orgName !== this.org.name) {
+      detail.name = orgName;
+    }
+    if (orgSlug !== this.org.slug) {
+      detail.slug = orgSlug;
+    }
     this.dispatchEvent(
-      <OrgNameChangeEvent>new CustomEvent("org-name-change", {
-        detail: { value: orgName },
+      <OrgInfoChangeEvent>new CustomEvent("org-info-change", {
+        detail,
       })
     );
   }
