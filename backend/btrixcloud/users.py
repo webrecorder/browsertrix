@@ -427,6 +427,7 @@ def init_users_api(app, user_manager):
                 {
                     "id": org.id,
                     "name": org.name,
+                    "slug": org.slug,
                     "default": org.default,
                     "role": UserRole.SUPERADMIN
                     if user.is_superuser
