@@ -345,31 +345,11 @@ export class AccountSettings extends LiteElement {
     }
     e.preventDefault();
     const { password, newPassword } = serialize(form);
-    let nextAuthState: Auth | null = null;
 
     this.sectionSubmitting = "password";
 
     try {
-      nextAuthState = await AuthService.login({
-        email: this.authState.username,
-        password: password as string,
-      });
-    } catch {
-      form.reset();
-    }
-
-    if (!nextAuthState) {
-      this.notify({
-        message: msg("Please correct your current password."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-      this.sectionSubmitting = null;
-      return;
-    }
-
-    try {
-      await this.apiFetch("/users/me/password-change", nextAuthState, {
+      await this.apiFetch("/users/me/password-change", this.authState, {
         method: "PUT",
         body: JSON.stringify({
           current: password,
@@ -384,13 +364,20 @@ export class AccountSettings extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-    } catch (e) {
-      console.log(e);
-      this.notify({
-        message: msg("Sorry, couldn't update password at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
+    } catch (e: any) {
+      if (e.isApiError && e.details === "invalid_current_password") {
+        this.notify({
+          message: msg("Please correct your current password and try again."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      } else {
+        this.notify({
+          message: msg("Sorry, couldn't update password at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
     }
 
     this.sectionSubmitting = null;
