@@ -263,7 +263,7 @@ export class AccountSettings extends LiteElement {
       return;
     }
     e.preventDefault();
-    const newName = (serialize(form).name as string).trim();
+    const newName = (serialize(form).displayName as string).trim();
     if (newName === this.userInfo.name) {
       return;
     }
