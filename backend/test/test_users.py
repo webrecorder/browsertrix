@@ -145,15 +145,25 @@ def test_register_user_valid_password(admin_auth_headers, default_org_id):
 
 
 def test_reset_invalid_password(admin_auth_headers):
-    r = requests.patch(
-        f"{API_PREFIX}/users/me",
+    r = requests.put(
+        f"{API_PREFIX}/users/me/password-change",
         headers=admin_auth_headers,
-        json={"email": ADMIN_USERNAME, "password": "12345"},
+        json={"email": ADMIN_USERNAME, "current": "PASSW0RD!", "password": "12345"},
     )
     assert r.status_code == 400
     detail = r.json()["detail"]
     assert detail["code"] == "UPDATE_USER_INVALID_PASSWORD"
     assert detail["reason"] == "invalid_password_length"
+
+
+def test_reset_password_invalid_current(admin_auth_headers):
+    r = requests.put(
+        f"{API_PREFIX}/users/me/password-change",
+        headers=admin_auth_headers,
+        json={"email": ADMIN_USERNAME, "current": "password", "password": "12345678"},
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_current_password"
 
 
 def test_reset_valid_password(admin_auth_headers, default_org_id):
@@ -175,10 +185,14 @@ def test_reset_valid_password(admin_auth_headers, default_org_id):
             print("Waiting for valid user auth headers")
             time.sleep(5)
 
-    r = requests.patch(
-        f"{API_PREFIX}/users/me",
+    r = requests.put(
+        f"{API_PREFIX}/users/me/password-change",
         headers=valid_user_headers,
-        json={"email": VALID_USER_EMAIL, "password": "new!password"},
+        json={
+            "email": VALID_USER_EMAIL,
+            "current": VALID_USER_PW,
+            "password": "new!password",
+        },
     )
     assert r.status_code == 200
     assert r.json()["email"] == VALID_USER_EMAIL
