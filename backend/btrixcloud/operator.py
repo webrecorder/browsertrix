@@ -19,12 +19,12 @@ import humanize
 from pydantic import BaseModel, Field
 
 from kubernetes.utils import parse_quantity
+from redis import asyncio as exceptions
 
 from .utils import (
     from_k8s_date,
     to_k8s_date,
     dt_now,
-    get_redis_crawl_stats,
 )
 from .k8sapi import K8sAPI
 
@@ -1075,10 +1075,26 @@ class BtrixOperator(K8sAPI):
 
         return False
 
+    async def get_redis_crawl_stats(self, redis, crawl_id):
+        """get page stats"""
+        try:
+            # crawler >0.9.0, done key is a value
+            pages_done = int(await redis.get(f"{crawl_id}:d") or 0)
+        except exceptions.ResponseError:
+            # crawler <=0.9.0, done key is a list
+            pages_done = await redis.llen(f"{crawl_id}:d")
+
+        pages_found = await redis.scard(f"{crawl_id}:s")
+        sizes = await redis.hgetall(f"{crawl_id}:size")
+        archive_size = sum(int(x) for x in sizes.values())
+
+        stats = {"found": pages_found, "done": pages_done, "size": archive_size}
+        return stats, sizes
+
     async def update_crawl_state(self, redis, crawl, status, pods, done):
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
-        stats, sizes = await get_redis_crawl_stats(redis, crawl.id)
+        stats, sizes = await self.get_redis_crawl_stats(redis, crawl.id)
 
         # need to add size of previously completed WACZ files as well!
         stats["size"] += status.filesAddedSize

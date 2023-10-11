@@ -10,7 +10,6 @@ import atexit
 
 from datetime import datetime
 
-from redis import asyncio as exceptions
 from slugify import slugify
 
 
@@ -37,23 +36,6 @@ def dt_now():
 def ts_now():
     """get current ts"""
     return str(dt_now())
-
-
-async def get_redis_crawl_stats(redis, crawl_id):
-    """get page stats"""
-    try:
-        # crawler >0.9.0, done key is a value
-        pages_done = int(await redis.get(f"{crawl_id}:d") or 0)
-    except exceptions.ResponseError:
-        # crawler <=0.9.0, done key is a list
-        pages_done = await redis.llen(f"{crawl_id}:d")
-
-    pages_found = await redis.scard(f"{crawl_id}:s")
-    sizes = await redis.hgetall(f"{crawl_id}:size")
-    archive_size = sum(int(x) for x in sizes.values())
-
-    stats = {"found": pages_found, "done": pages_done, "size": archive_size}
-    return stats, sizes
 
 
 def run_once_lock(name):
