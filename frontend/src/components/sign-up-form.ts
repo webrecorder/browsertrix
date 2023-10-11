@@ -9,7 +9,8 @@ import LiteElement, { html } from "../utils/LiteElement";
 import AuthService from "../utils/AuthService";
 import PasswordService from "../utils/PasswordService";
 import type { Input as BtrixInput } from "./input/input";
-import { PropertyValueMap } from "lit";
+
+const PASSWORD_MIN_SCORE = 3;
 
 /**
  * @event submit
@@ -128,6 +129,8 @@ export class SignUpForm extends LiteElement {
           class="w-full"
           variant="primary"
           ?loading=${this.isSubmitting}
+          ?disabled=${!this.pwStrengthResults ||
+          this.pwStrengthResults.score < PASSWORD_MIN_SCORE}
           type="submit"
           >${msg("Sign up")}</sl-button
         >
@@ -138,34 +141,73 @@ export class SignUpForm extends LiteElement {
   private renderPasswordStrength = () => {
     if (!this.pwStrengthResults) return;
     const { score, feedback } = this.pwStrengthResults;
-    console.log({ score });
+    let scoreProps = {
+      icon: "exclamation-triangle",
+      label: msg("Please choose a stronger password"),
+      className: "text-danger",
+      variant: "danger",
+    };
+    switch (score) {
+      case 2:
+        scoreProps = {
+          icon: "exclamation-circle",
+          label: msg("Weak password"),
+          className: "text-warning",
+          variant: "warning",
+        };
+        break;
+      case 3:
+        scoreProps = {
+          icon: "shield-check",
+          label: msg("Acceptably strong password"),
+          className: "text-primary",
+          variant: "primary",
+        };
+        break;
+      case 4:
+        scoreProps = {
+          icon: "shield-fill-check",
+          label: msg("Very strong password"),
+          className: "text-success",
+          variant: "success",
+        };
+        break;
+      default:
+        break;
+    }
     return html`
-      <div class="text-gray-500">
-        ${when(
-          score < 3,
-          () =>
-            html`
-              <p class="my-2 text-warning">
-                ${msg("Please choose a stronger password.")}
-              </p>
-            `
-        )}
-        ${when(
-          feedback.warning,
-          () =>
-            html` <p class="my-2">${msg("Warning:")} ${feedback.warning}</p> `
-        )}
-        ${when(feedback.suggestions.length, () =>
-          feedback.suggestions.length === 1
-            ? html`<p class="my-2">
-                ${msg("Suggestion:")} ${feedback.suggestions[0]}
-              </p>`
-            : html`<p class="my-2">${msg("Suggestions:")}</p>
-                <ul class="list-disc list-inside">
-                  ${feedback.suggestions.map((text) => html`<li>${text}</li>`)}
-                </ul>`
-        )}
-      </div>
+      <sl-alert
+        variant=${scoreProps.variant as any}
+        open
+        class="my-3"
+        style="--sl-spacing-large: var(--sl-spacing-small)"
+      >
+        <div class="flex items-center gap-2">
+          <sl-icon
+            class="${scoreProps.className} text-base"
+            name=${scoreProps.icon}
+          ></sl-icon>
+          <p class="text-gray-900 font-semibold">${scoreProps.label}</p>
+        </div>
+        <div class="text-gray-700 ml-6">
+          ${when(
+            feedback.warning,
+            () => html` <p class="mt-2">${feedback.warning}</p> `
+          )}
+          ${when(feedback.suggestions.length, () =>
+            feedback.suggestions.length === 1
+              ? html`<p class="mt-2">
+                  ${msg("Suggestion:")} ${feedback.suggestions[0]}
+                </p>`
+              : html`<p class="my-2">${msg("Suggestions:")}</p>
+                  <ul class="list-disc list-inside">
+                    ${feedback.suggestions.map(
+                      (text) => html`<li>${text}</li>`
+                    )}
+                  </ul>`
+          )}
+        </div>
+      </sl-alert>
     `;
   };
 
