@@ -216,10 +216,10 @@ export class LogInPage extends LiteElement {
     }
 
     return html`
-      <article class="w-full max-w-sm grid gap-5">
+      <article class="w-full max-w-md grid gap-5">
         ${successMessage}
 
-        <main class="md:bg-white md:shadow-xl md:rounded-lg p-12">
+        <main class="md:bg-white md:border md:shadow-lg md:rounded-lg p-10">
           <div>${form}</div>
         </main>
         <footer class="text-center">${link}</footer>
@@ -284,7 +284,7 @@ export class LogInPage extends LiteElement {
           ?loading=${this.formState.value === "signingIn"}
           ?disabled=${this.formState.value === "backendInitializing"}
           type="submit"
-          >${msg("Log in")}</sl-button
+          >${msg("Log In")}</sl-button
         >
         ${this.formState.value === "backendInitializing"
           ? html` <div class="mt-3">

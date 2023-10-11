@@ -67,7 +67,7 @@ export class Join extends LiteElement {
           </div>
           <p class="text-xl md:text-2xl font-semibold mb-5">
             ${msg(
-              html`You've been invited to join
+              html`You’ve been invited to join
                 <span class="text-primary break-words"
                   >${hasInviteInfo
                     ? this.inviteInfo.orgName || msg("Browsertrix Cloud")
@@ -78,7 +78,7 @@ export class Join extends LiteElement {
         </div>
 
         <main
-          class="max-w-md md:bg-white md:border md:shadow-lg md:rounded-lg md:px-12 md:py-12"
+          class="max-w-md md:bg-white md:border md:shadow-lg md:rounded-lg md:p-10"
         >
           <btrix-sign-up-form
             email=${this.email!}

@@ -105,7 +105,7 @@ export class SignUpForm extends LiteElement {
           </btrix-input>
           <p class="mt-2 text-gray-500">
             ${msg(
-              "Your full name, or another name that org collaborators will see."
+              "Your full name, nickname, or another name that org collaborators can see."
             )}
           </p>
         </div>
@@ -124,7 +124,7 @@ export class SignUpForm extends LiteElement {
           </btrix-input>
           <p class="mt-2 text-gray-500">
             ${msg(
-              str`Choose a strong password between ${PASSWORD_MINLENGTH} and ${PASSWORD_MAXLENGTH} characters.`
+              str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`
             )}
           </p>
           ${when(this.pwStrengthResults, this.renderPasswordStrength)}
@@ -145,17 +145,15 @@ export class SignUpForm extends LiteElement {
     `;
   }
 
-  private renderPasswordStrength = () => {
-    return html`
-      <div class="my-3">
-        <btrix-pw-strength-alert
-          .result=${this.pwStrengthResults}
-          min=${PASSWORD_MIN_SCORE}
-        >
-        </btrix-pw-strength-alert>
-      </div>
-    `;
-  };
+  private renderPasswordStrength = () => html`
+    <div class="my-3">
+      <btrix-pw-strength-alert
+        .result=${this.pwStrengthResults}
+        min=${PASSWORD_MIN_SCORE}
+      >
+      </btrix-pw-strength-alert>
+    </div>
+  `;
 
   private onPasswordInput = debounce(150)(async (e: InputEvent) => {
     const { value } = e.target as BtrixInput;
