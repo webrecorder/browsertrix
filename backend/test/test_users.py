@@ -160,7 +160,7 @@ def test_reset_password_invalid_current(admin_auth_headers):
     r = requests.put(
         f"{API_PREFIX}/users/me/password-change",
         headers=admin_auth_headers,
-        json={"email": ADMIN_USERNAME, "current": "password", "password": "12345678"},
+        json={"email": ADMIN_USERNAME, "current": "invalid", "password": "newpassword"},
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "invalid_current_password"
