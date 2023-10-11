@@ -18,7 +18,7 @@ jobs:
       - uses: balchua/microk8s-actions@v0.3.1
         with:
           channel: '1.25/stable'
-          addons: '["dns", "helm3", "hostpath-storage", "registry", "metrics-server", "host-access"]'
+          addons: '["dns", "helm3", "hostpath-storage", "registry", "host-access"]'
       - name: Checkout
         uses: actions/checkout@v3
 
