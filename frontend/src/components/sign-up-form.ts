@@ -1,6 +1,9 @@
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized } from "@lit/localize";
+import debounce from "lodash/fp/debounce";
+import { when } from "lit/directives/when.js";
+import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 
 import LiteElement, { html } from "../utils/LiteElement";
 import AuthService from "../utils/AuthService";
@@ -34,6 +37,9 @@ export class SignUpForm extends LiteElement {
 
   @state()
   private isSubmitting: boolean = false;
+
+  @state()
+  private pwStrengthResults: null | ZxcvbnResult = null;
 
   protected firstUpdated() {
     PasswordService.setOptions();
@@ -93,7 +99,7 @@ export class SignUpForm extends LiteElement {
             minlength="2"
           >
           </btrix-input>
-          <p class="mt-2 text-sm text-gray-500">
+          <p class="mt-2 text-gray-500">
             ${msg("Your name will be visible to organization collaborators.")}
           </p>
         </div>
@@ -110,9 +116,10 @@ export class SignUpForm extends LiteElement {
             @input=${this.onPasswordInput}
           >
           </btrix-input>
-          <p class="mt-2 text-sm text-gray-500">
+          <p class="mt-2 text-gray-500">
             ${msg("Choose a strong password between 8 and 64 characters.")}
           </p>
+          ${when(this.pwStrengthResults, this.renderPasswordStrength)}
         </div>
 
         ${serverError}
@@ -128,14 +135,54 @@ export class SignUpForm extends LiteElement {
     `;
   }
 
-  private async onPasswordInput(e: InputEvent) {
-    const input = e.target as BtrixInput;
+  private renderPasswordStrength = () => {
+    if (!this.pwStrengthResults) return;
+    const { score, feedback } = this.pwStrengthResults;
+    console.log({ score });
+    return html`
+      <div class="text-gray-500">
+        ${when(
+          score < 3,
+          () =>
+            html`
+              <p class="my-2 text-warning">
+                ${msg("Please choose a stronger password.")}
+              </p>
+            `
+        )}
+        ${when(
+          feedback.warning,
+          () =>
+            html` <p class="my-2">${msg("Warning:")} ${feedback.warning}</p> `
+        )}
+        ${when(feedback.suggestions.length, () =>
+          feedback.suggestions.length === 1
+            ? html`<p class="my-2">
+                ${msg("Suggestion:")} ${feedback.suggestions[0]}
+              </p>`
+            : html`<p class="my-2">${msg("Suggestions:")}</p>
+                <ul class="list-disc list-inside">
+                  ${feedback.suggestions.map((text) => html`<li>${text}</li>`)}
+                </ul>`
+        )}
+      </div>
+    `;
+  };
+
+  private onPasswordInput = debounce(100)(async (e: InputEvent) => {
+    const { value } = e.target as BtrixInput;
+    if (!value) {
+      this.pwStrengthResults = null;
+    }
     const userInputs: string[] = [];
     if (this.email) {
       userInputs.push(this.email);
     }
-    console.log(await PasswordService.checkStrength(input.value, userInputs));
-  }
+    this.pwStrengthResults = await PasswordService.checkStrength(
+      value,
+      userInputs
+    );
+  }) as any;
 
   private async onSubmit(event: SubmitEvent) {
     const form = event.target as HTMLFormElement;
