@@ -456,9 +456,7 @@ def init_users_api(app, user_manager):
     ):
         """update password, requires current password"""
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        if not pwd_context.verify(
-            user_update.current, pwd_context.hash(user_update.current)
-        ):
+        if not pwd_context.verify(user_update.current, user.hashed_password):
             raise HTTPException(status_code=400, detail="invalid_current_password")
 
         update = UserUpdate(email=user_update.email, password=user_update.password)
