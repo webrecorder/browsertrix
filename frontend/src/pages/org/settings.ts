@@ -175,6 +175,7 @@ export class OrgSettings extends LiteElement {
               name="orgName"
               size="small"
               label=${msg("Org Name")}
+              placeholder=${msg("My Organization")}
               autocomplete="off"
               value=${this.org.name}
               minlength="2"
@@ -198,6 +199,7 @@ export class OrgSettings extends LiteElement {
               name="orgSlug"
               size="small"
               label=${msg("Slug URL")}
+              placeholder="my-organization"
               autocomplete="off"
               value=${this.org.slug}
               minlength="2"
@@ -206,7 +208,7 @@ export class OrgSettings extends LiteElement {
               @sl-input=${(e: InputEvent) => {
                 const input = e.target as SlInput;
                 input.value = input.value
-                  .replace(/[/\\?#%*:|"<>,\.\s]/, "-")
+                  .replace(/[/\\!?#%*:|'"<>()\[\],\.\s]/, "-")
                   .replace(/--/, "-");
               }}
             >
