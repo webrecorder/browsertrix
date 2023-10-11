@@ -205,7 +205,9 @@ export class OrgSettings extends LiteElement {
               required
               @sl-input=${(e: InputEvent) => {
                 const input = e.target as SlInput;
-                input.value = input.value.replace(/[/\\?%*:|"<>,\.\s]/, "-");
+                input.value = input.value
+                  .replace(/[/\\?#%*:|"<>,\.\s]/, "-")
+                  .replace(/--/, "-");
               }}
             >
             </sl-input>
