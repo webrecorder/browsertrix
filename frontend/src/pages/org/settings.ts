@@ -86,9 +86,9 @@ export class OrgSettings extends LiteElement {
   @state()
   private isSubmittingInvite = false;
 
-  private get tabLabels() {
+  private get tabLabels(): Record<Tab, string> {
     return {
-      information: msg("Information"),
+      information: msg("General"),
       members: msg("Members"),
     };
   }

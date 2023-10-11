@@ -104,7 +104,7 @@ export class Org extends LiteElement {
   private org?: OrgData | null;
 
   @state()
-  private isSavingOrgName = false;
+  private isSavingOrgInfo = false;
 
   get userOrg() {
     if (!this.userInfo) return null;
@@ -535,7 +535,7 @@ export class Org extends LiteElement {
       .orgId=${this.orgId}
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
-      ?isSavingOrgName=${this.isSavingOrgName}
+      ?isSavingOrgName=${this.isSavingOrgInfo}
       @org-info-change=${this.onOrgInfoChange}
       @org-user-role-change=${this.onUserRoleChange}
       @org-remove-member=${this.onOrgRemoveMember}
@@ -555,7 +555,7 @@ export class Org extends LiteElement {
     return data;
   }
   private async onOrgInfoChange(e: OrgInfoChangeEvent) {
-    this.isSavingOrgName = true;
+    this.isSavingOrgInfo = true;
 
     try {
       await this.apiFetch(`/orgs/${this.org!.id}/rename`, this.authState!, {
@@ -564,7 +564,7 @@ export class Org extends LiteElement {
       });
 
       this.notify({
-        message: msg("Updated organization info."),
+        message: msg("Updated organization."),
         variant: "success",
         icon: "check2-circle",
       });
@@ -576,40 +576,13 @@ export class Org extends LiteElement {
       this.notify({
         message: e.isApiError
           ? e.message
-          : msg("Sorry, couldn't update organization info at this time."),
+          : msg("Sorry, couldn't update organization at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
     }
 
-    this.isSavingOrgName = false;
-  }
-
-  private async updateOrgSlug(newSlug: string) {
-    try {
-      await this.apiFetch(`/orgs/${this.org!.id}`, this.authState!, {
-        method: "PATCH",
-        body: JSON.stringify({ slug: newSlug }),
-      });
-
-      this.notify({
-        message: msg("Updated organization slug."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-
-      this.dispatchEvent(
-        new CustomEvent("update-user-info", { bubbles: true })
-      );
-    } catch (e: any) {
-      this.notify({
-        message: e.isApiError
-          ? e.message
-          : msg("Sorry, couldn't update organization slug at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
+    this.isSavingOrgInfo = false;
   }
 
   private async onOrgRemoveMember(e: OrgRemoveMemberEvent) {
