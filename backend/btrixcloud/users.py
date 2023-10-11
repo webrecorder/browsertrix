@@ -17,13 +17,18 @@ from fastapi.security import OAuth2PasswordBearer
 from pymongo.errors import DuplicateKeyError
 
 from fastapi_users import FastAPIUsers, BaseUserManager
-from fastapi_users.manager import UserAlreadyExists, InvalidPasswordException
+from fastapi_users.manager import (
+    UserAlreadyExists,
+    InvalidPasswordException,
+    UserManagerDependency,
+)
 from fastapi_users.authentication import (
     AuthenticationBackend,
     BearerTransport,
     JWTStrategy,
 )
 from fastapi_users.db import MongoDBUserDatabase
+from fastapi_users.authentication import Authenticator
 
 from .models import (
     User,
@@ -36,6 +41,7 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import is_bool
+from .users_router import get_custom_users_router
 
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
@@ -402,7 +408,14 @@ def init_users_api(app, user_manager):
         tags=["auth"],
     )
 
-    users_router = fastapi_users.get_users_router()
+    users_router = get_custom_users_router(
+        fastapi_users.get_user_manager,
+        User,
+        UserUpdate,
+        UserDB,
+        fastapi_users.authenticator,
+        requires_verification=False,
+    )
 
     @users_router.get("/me-with-orgs", tags=["users"])
     async def me_with_org_info(user: User = Depends(current_active_user)):

@@ -930,6 +930,16 @@ class UserUpdate(User, fastapi_users_models.CreateUpdateDictModel):
 
 
 # ============================================================================
+class UserUpdatePassword(User, fastapi_users_models.CreateUpdateDictModel):
+    """
+    Update password model, requires current password to reset
+    """
+
+    current: str
+    password: str
+
+
+# ============================================================================
 class UserDB(User, fastapi_users_models.BaseUserDB):
     """
     User in DB Model
