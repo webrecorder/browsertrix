@@ -32,7 +32,7 @@ def get_custom_users_router(
     requires_verification: bool = False,
 ) -> APIRouter:
     """Generate a router with the authentication routes."""
-    # pylint: disable=too-many-arguments, redefined-builtin, raise-missing-from
+    # pylint: disable=too-many-arguments, redefined-builtin, raise-missing-from, line-too-long
     router = APIRouter()
 
     get_current_active_user = authenticator.current_user(
