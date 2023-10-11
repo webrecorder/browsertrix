@@ -43,6 +43,9 @@ export class Input extends LiteElement {
   @property()
   required?: any;
 
+  @property()
+  minlength?: number;
+
   @property({ type: Boolean })
   passwordToggle?: boolean;
 
@@ -65,6 +68,7 @@ export class Input extends LiteElement {
           autocomplete=${ifDefined(this.autocomplete)}
           placeholder=${ifDefined(this.placeholder)}
           value=${ifDefined(this.value)}
+          minlength=${ifDefined(this.minlength)}
           ?required=${Boolean(this.required)}
           @keydown=${this.handleKeyDown}
         />

@@ -53,6 +53,7 @@ type UserSettings = {
  * @event logged-in
  * @event log-out
  * @event user-info-change
+ * @event update-user-info
  */
 @localized()
 export class App extends LiteElement {
@@ -653,6 +654,11 @@ export class App extends LiteElement {
           class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
           @navigate="${this.onNavigateTo}"
           @logged-in=${this.onLoggedIn}
+          @update-user-info=${(e: CustomEvent) => {
+            e.stopPropagation();
+            this.updateUserInfo();
+          }}
+          @notify="${this.onNotify}"
           .authState="${this.authService.authState}"
           .userInfo="${this.userInfo}"
         ></btrix-account-settings>`;
