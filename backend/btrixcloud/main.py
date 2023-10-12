@@ -89,7 +89,7 @@ def main():
 
     crawl_manager = CrawlManager()
 
-    storage_ops = init_storages_api(org_ops, crawl_manager, current_active_user)
+    storage_ops = init_storages_api(org_ops, crawl_manager)
 
     profiles = init_profiles_api(
         mdb, crawl_manager, org_ops, storage_ops, current_active_user

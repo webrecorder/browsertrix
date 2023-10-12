@@ -7,7 +7,7 @@ import urllib.parse
 import uuid
 from datetime import datetime
 
-from typing import Union, Optional
+from typing import Optional
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -16,10 +16,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from .basecrawls import SUCCESSFUL_STATES, RUNNING_STATES, STARTING_STATES
 from .models import (
     Organization,
-    BaseStorage,
+    DefaultStorage,
     OrgQuotas,
     OrgMetrics,
     OrgWebhookUrls,
+    CreateOrg,
     RenameOrg,
     UpdateRole,
     RemovePendingInvite,
@@ -88,18 +89,15 @@ class OrgOps:
         """Create new organization with default storage for new user"""
         id_ = uuid.uuid4()
 
-        storage_path = str(id_) + "/"
-
         org = Organization(
             id=id_,
             name=org_name,
             slug=slug_from_name(org_name),
             users={str(user.id): UserRole.OWNER},
-            storage=DefaultStorage(name=storage_name, path=storage_path),
+            storage=DefaultStorage(name=storage_name),
         )
 
-        storage_info = f"storage {storage_name} / {storage_path}"
-        print(f"Creating new org {org_name} with {storage_info}", flush=True)
+        print(f"Creating new org {org_name} with storage {storage_name}", flush=True)
         await self.add_org(org)
 
     async def get_orgs_for_user(
@@ -170,18 +168,16 @@ class OrgOps:
             return
 
         id_ = uuid.uuid4()
-        storage_path = str(id_) + "/"
         org = Organization(
             id=id_,
             name=DEFAULT_ORG,
             slug=slug_from_name(DEFAULT_ORG),
             users={},
-            storage=DefaultStorage(name=storage_name, path=storage_path),
+            storage=DefaultStorage(name=storage_name),
             default=True,
         )
-        storage_info = f"Storage: {storage_name} / {storage_path}"
         print(
-            f'Creating Default Organization "{DEFAULT_ORG}". Storage: {storage_info}',
+            f'Creating Default Organization "{DEFAULT_ORG}". Storage: {storage_name}',
             flush=True,
         )
         await self.add_org(org)
@@ -192,11 +188,18 @@ class OrgOps:
             {"_id": org.id}, {"$set": org.to_dict()}, upsert=True
         )
 
-    async def update_storage(self, org: Organization, storage: BaseStorage):
+    async def update_storage_refs(self, org: Organization):
+        """Update storage + replicas for given org"""
+        set_dict = org.dict(include={"storage": True, "storageReplicas": True})
+
+        return await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
+
+    async def update_custom_storages(self, org: Organization):
         """Update storage on an existing organization"""
-        return await self.orgs.find_one_and_update(
-            {"_id": org.id}, {"$set": {"storage": storage.dict()}}
-        )
+
+        set_dict = org.dict(include={"customStorages": True})
+
+        return await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
 
     async def update_quotas(self, org: Organization, quotas: OrgQuotas):
         """update organization quotas"""
@@ -478,14 +481,13 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
     @app.post("/orgs/create", tags=["organizations"])
     async def create_org(
-        new_org: RenameOrg,
+        new_org: CreateOrg,
         user: User = Depends(user_dep),
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         id_ = uuid.uuid4()
-        storage_path = str(id_) + "/"
 
         slug = new_org.slug
         if not slug:
@@ -496,7 +498,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
             name=new_org.name,
             slug=slug,
             users={},
-            storage=DefaultStorage(name="default", path=storage_path),
+            storage=DefaultStorage(name=new_org.storageName),
         )
         if not await ops.add_org(org):
             return {"added": False, "error": "already_exists"}

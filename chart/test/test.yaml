@@ -27,6 +27,31 @@ superuser:
   password: PASSW0RD!
 
 
+# additional storages
+minio_local_bucket_name: &local_bucket_name "btrix-test-data"
+
+
+storages:
+  - name: "default"
+    access_key: "ADMIN"
+    secret_key: "PASSW0RD"
+    bucket_name: *local_bucket_name
+
+    endpoint_url: "http://local-minio.default:9000/"
+
+  - name: "replica-0"
+    access_key: "ADMIN"
+    secret_key: "PASSW0RD"
+
+    endpoint_url: "http://local-minio.default:9000/btrix-test-data/replica-0/"
+
+  - name: "replica-1"
+    access_key: "ADMIN"
+    secret_key: "PASSW0RD"
+
+    endpoint_url: "http://local-minio.default:9000/btrix-test-data/replica-1/"
+
+
 local_service_port: 30870
 
 # test max pages per crawl global limit

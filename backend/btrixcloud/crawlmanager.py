@@ -23,25 +23,16 @@ class CrawlManager(K8sAPI):
     # pylint: disable=too-many-arguments
     async def run_profile_browser(
         self,
-        userid,
-        oid,
+        userid: str,
+        oid: str,
         url,
-        storage=None,
-        storage_name=None,
-        baseprofile=None,
-        profile_path=None,
+        storage,
+        baseprofile="",
+        profile_filename="",
     ):
         """run browser for profile creation"""
 
-        # if default storage, use name and path + profiles/
-        if storage:
-            storage_name = storage.name
-            storage_path = storage.path + "profiles/"
-        # otherwise, use storage name and existing path from secret
-        else:
-            storage_path = ""
-
-        await self.has_storage(storage_name)
+        storage_name, storage_path = await self.get_valid_storage_refs(storage, oid)
 
         browserid = f"prf-{secrets.token_hex(5)}"
 
@@ -52,7 +43,7 @@ class CrawlManager(K8sAPI):
             "storage_name": storage_name,
             "storage_path": storage_path or "",
             "base_profile": baseprofile or "",
-            "profile_filename": profile_path,
+            "profile_filename": profile_filename or "",
             "idle_timeout": os.environ.get("IDLE_TIMEOUT", "60"),
             "url": url,
             "vnc_password": secrets.token_hex(16),
@@ -75,14 +66,9 @@ class CrawlManager(K8sAPI):
     ):
         """add new crawl, store crawl config in configmap"""
 
-        if storage.type == "default":
-            storage_name = storage.name
-            storage_path = storage.path
-        else:
-            storage_name = str(crawlconfig.oid)
-            storage_path = ""
-
-        await self.has_storage(storage_name)
+        storage_name, storage_path = await self.get_valid_storage_refs(
+            crawlconfig.oid, storage
+        )
 
         # Create Config Map
         await self._create_config_map(
@@ -153,12 +139,26 @@ class CrawlManager(K8sAPI):
 
         return True
 
+    async def get_valid_storage_refs(self, storage, oid):
+        """return storage name and path, also validate that
+        storage secret exists"""
+        if storage.type == "default":
+            storage_name = f"storage-{storage.name}"
+            storage_path = str(oid)
+        else:
+            storage_name = self._get_custom_storage_name(storage.name, oid)
+            storage_path = ""
+
+        await self.has_storage(storage_name)
+
+        return storage_name, storage_path
+
     async def has_storage(self, storage_name):
         """Check if storage is valid by trying to get the storage secret
         Will throw if not valid, otherwise return True"""
         try:
             await self.core_api.read_namespaced_secret(
-                f"storage-{storage_name}",
+                storage_name,
                 namespace=self.namespace,
             )
             return True
@@ -168,24 +168,27 @@ class CrawlManager(K8sAPI):
             # pylint: disable=broad-exception-raised,raise-missing-from
             raise Exception(f"Storage {storage_name} not found")
 
-    async def update_org_storage(self, oid, userid, storage):
-        """Update storage by either creating a per-org secret, if using custom storage
-        or deleting per-org secret, if using default storage"""
-        org_storage_name = f"storage-{oid}"
-        if storage.type == "default":
-            try:
-                await self.core_api.delete_namespaced_secret(
-                    org_storage_name,
-                    namespace=self.namespace,
-                    propagation_policy="Foreground",
-                )
-            # pylint: disable=bare-except
-            except:
-                pass
+    async def _get_custom_storage_name(self, name, oid):
+        return f"cs-{oid[:12]}-{name}"
 
-            return
+    async def remove_org_storage(self, name, oid):
+        """Delete custom org storage secret"""
+        org_storage_name = self._get_custom_storage_name(name, oid)
+        try:
+            await self.core_api.delete_namespaced_secret(
+                org_storage_name,
+                namespace=self.namespace,
+            )
+            return True
+        # pylint: disable=bare-except
+        except:
+            return False
 
-        labels = {"btrix.org": oid, "btrix.user": userid}
+    async def add_org_storage(self, name, oid, storage):
+        """Add custom org storage secret"""
+        labels = {"btrix.org": oid}
+
+        org_storage_name = self._get_custom_storage_name(name, oid)
 
         crawl_secret = self.client.V1Secret(
             metadata={

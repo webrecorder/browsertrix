@@ -609,15 +609,23 @@ class RemovePendingInvite(InviteRequest):
 
 # ============================================================================
 class RenameOrg(BaseModel):
-    """Request to invite another user"""
+    """Rename an existing org"""
 
     name: str
     slug: Optional[str] = None
 
 
 # ============================================================================
+class CreateOrg(RenameOrg):
+    """Create a new org"""
+
+    storageName: str = "default"
+
+
+# ============================================================================
 class StorageRef(BaseModel):
-    """ Reference to actual storage """
+    """Reference to actual storage"""
+
     type: str
     name: str
 
@@ -625,14 +633,39 @@ class StorageRef(BaseModel):
 # ============================================================================
 class DefaultStorage(StorageRef):
     """Storage reference"""
+
     type: Literal["default"] = "default"
-    path: str = ""
 
 
 # ============================================================================
 class CustomStorage(StorageRef):
     """Custom Storage reference"""
+
     type: Literal["custom"] = "custom"
+
+
+# ============================================================================
+class OrgStorageRefsIn(BaseModel):
+    """Input model for setting primary storage + optional replicas"""
+
+    storage: StorageRef
+
+    storageReplicas: List[StorageRef] = []
+
+
+# ============================================================================
+class S3StorageIn(BaseModel):
+    """Custom S3 Storage input model"""
+
+    type: Literal["s3"] = "s3"
+
+    name: str
+
+    access_key: str
+    secret_key: str
+    endpoint_url: str
+    access_endpoint_url: Optional[str]
+    region: str = ""
 
 
 # ============================================================================

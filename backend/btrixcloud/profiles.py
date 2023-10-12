@@ -62,33 +62,26 @@ class ProfileOps:
         self, org: Organization, user: User, profile_launch: ProfileLaunchBrowserIn
     ):
         """Create new profile"""
-        if self.shared_profile_storage:
-            storage_name = self.shared_profile_storage
-            storage = None
-        elif org.storage and org.storage.type == "default":
-            storage_name = None
-            storage = org.storage
-        else:
-            storage_name = str(org.id)
-            storage = None
-
-        profile_path = ""
+        # if self.shared_profile_storage:
+        #    storage_name = self.shared_profile_storage
+        #    storage_path = ""
+        # else:
+        prev_profile = ""
         if profile_launch.profileId:
-            profile_path = await self.get_profile_storage_path(
+            prev_profile = await self.get_profile_storage_path(
                 profile_launch.profileId, org
             )
 
-            if not profile_path:
+            if not prev_profile:
                 raise HTTPException(status_code=400, detail="invalid_base_profile")
 
         browserid = await self.crawl_manager.run_profile_browser(
             str(user.id),
             str(org.id),
             url=profile_launch.url,
-            storage=storage,
-            storage_name=storage_name,
+            storage=org.storage,
             baseprofile=profile_launch.profileId,
-            profile_path=profile_path,
+            profile_filename=prev_profile,
         )
 
         if not browserid:

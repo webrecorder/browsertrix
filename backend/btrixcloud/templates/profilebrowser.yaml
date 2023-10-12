@@ -61,7 +61,7 @@ spec:
 
       envFrom:
         - secretRef:
-            name: storage-{{ storage_name }}
+            name: {{ storage_name }}
 
       env:
         - name: STORE_PATH

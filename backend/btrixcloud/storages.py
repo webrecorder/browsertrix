@@ -1,7 +1,7 @@
 """
 Storage API
 """
-from typing import Optional, Union, Iterator, Iterable, List, Dict, AsyncIterator
+from typing import Optional, Iterator, Iterable, List, Dict, AsyncIterator
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
 
@@ -27,16 +27,19 @@ from .models import (
     CrawlFile,
     CrawlFileOut,
     Organization,
+    StorageRef,
     DefaultStorage,
+    CustomStorage,
     S3Storage,
-    User,
+    S3StorageIn,
+    OrgStorageRefsIn,
 )
 from .zip import (
     sync_get_zip_file,
     sync_get_log_stream,
 )
 
-from .utils import is_bool
+from .utils import is_bool, slug_from_name
 
 
 CHUNK_SIZE = 1024 * 256
@@ -93,31 +96,91 @@ class StorageOps:
         """assert the specified storage exists"""
         return name in self.storages
 
-    async def update_storage(
-        self, storage: Union[S3Storage, DefaultStorage], org: Organization, user: User
+    async def add_custom_storage(
+        self, storagein: S3StorageIn, org: Organization
+    ) -> dict:
+        """Add new custom storage"""
+        name = slug_from_name(storagein.name)
+
+        if name in org.customStorages:
+            raise HTTPException(status_code=400, detail="storage_already_exists")
+
+        storage = S3Storage(
+            **storagein.dict(),
+            access_endpoint_url=storagein.access_endpoint_url or storagein.endpoint_url,
+            use_access_for_presign=True,
+        )
+
+        try:
+            await self.verify_storage_upload(storage, ".btrix-upload-verify")
+        # pylint: disable=raise-missing-from
+        except:
+            raise HTTPException(
+                status_code=400,
+                detail="Could not verify custom storage. Check credentials are valid?",
+            )
+
+        org.customStorages[name] = storage
+
+        await self.crawl_manager.add_org_storage(name, str(org.id), storage)
+
+        await self.org_ops.update_custom_storages(org)
+
+        return {"added": True, "name": name}
+
+    async def remove_custom_storage(
+        self, name: str, org: Organization
+    ) -> dict[str, bool]:
+        """remove custom storage"""
+        if org.storage.type == "custom" and org.storage.name == name:
+            raise HTTPException(status_code=400, detail="storage_in_use")
+
+        for replica in org.storageReplicas:
+            if replica.type == "custom" and replica.name == name:
+                raise HTTPException(status_code=400, detail="storage_in_use")
+
+        # pylint: disable=fixme
+        # TODO: also check if any active crawls running with this storage?
+
+        await self.crawl_manager.remove_org_storage(name, str(org.id))
+
+        try:
+            del org.customStorages[name]
+        # pylint: disable=broad-except,raise-missing-from
+        except:
+            raise HTTPException(status_code=400, detail="no_such_storage")
+
+        await self.org_ops.update_custom_storages(org)
+
+        return {"deleted": True}
+
+    async def update_storage_refs(
+        self,
+        storage_refs: OrgStorageRefsIn,
+        org: Organization,
     ) -> dict[str, bool]:
         """update storage for org"""
-        if storage.type == "default":
-            if not self.has_storage(storage.name):
-                raise HTTPException(
-                    status_code=400, detail=f"Invalid default storage {storage.name}"
-                )
 
-        else:
-            try:
-                await self.verify_storage_upload(storage, ".btrix-upload-verify")
-            # pylint: disable=raise-missing-from
-            except:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Could not verify custom storage. Check credentials are valid?",
-                )
+        self.get_org_storage_by_ref(org, storage_refs.storage)
 
-        await self.org_ops.update_storage(org, storage)
+        for replica in storage_refs.storageReplicas:
+            self.get_org_storage_by_ref(org, replica)
 
-        await self.crawl_manager.update_org_storage(org.id, str(user.id), org.storage)
+        org.storage = storage_refs.storage
+        org.storageReplicas = storage_refs.storageReplicas
+
+        await self.org_ops.update_storage_refs(org)
 
         return {"updated": True}
+
+    def get_available_storages(self, org: Organization) -> List[StorageRef]:
+        """return a list of available default + custom storages"""
+        refs: List[StorageRef] = []
+        for name in self.storages:
+            refs.append(DefaultStorage(name=name))
+        for name in org.customStorages:
+            refs.append(CustomStorage(name=name))
+        return refs
 
     @asynccontextmanager
     async def get_s3_client(
@@ -184,16 +247,18 @@ class StorageOps:
             resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
             assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
 
-    def get_org_primary_storage(
-        self, org: Organization
-    ) -> S3Storage:
+    def get_org_primary_storage(self, org: Organization) -> S3Storage:
         """get org primary storage. if using 'default' storage, lookup by name
-        otherwise, use storage object """
+        otherwise, use storage object"""
 
-        if org.storage.type == "default":
-            s3storage = self.storages.get(storage_name)
-        elif org.storage.type == "custom":
-            s3storage = org.customStorages.get(storage_name)
+        return self.get_org_storage_by_ref(org, org.storage)
+
+    def get_org_storage_by_ref(self, org: Organization, ref: StorageRef) -> S3Storage:
+        """Get a storage object from StorageRef"""
+        if ref.type == "default":
+            s3storage = self.storages.get(ref.name)
+        elif ref.type == "custom":
+            s3storage = org.customStorages.get(ref.name)
 
         if not s3storage:
             raise TypeError("No Default Storage Found, Invalid Storage Type")
@@ -208,7 +273,7 @@ class StorageOps:
         set to true"""
 
         s3storage = org.customStorages.get(storage_name)
-        if not:
+        if not s3storage:
             s3storage = self.storages.get(storage_name)
 
         if not s3storage:
@@ -217,7 +282,10 @@ class StorageOps:
         return s3storage
 
     async def do_upload_single(
-        self, org: Organization, filename: str, data,
+        self,
+        org: Organization,
+        filename: str,
+        data,
     ) -> None:
         """do upload to specified key"""
         s3storage = self.get_org_primary_storage(org)
@@ -328,7 +396,7 @@ class StorageOps:
     ) -> str:
         """generate pre-signed url for crawl file"""
 
-        s3storage = self.get_org_storage_by_name(org, crawlfile.def_storage_name)
+        s3storage = self.get_org_storage_by_name(org, crawlfile.def_storage_name or "")
 
         async with self.get_s3_client(s3storage, s3storage.use_access_for_presign) as (
             client,
@@ -356,8 +424,8 @@ class StorageOps:
         self, org: Organization, crawlfile: CrawlFile
     ) -> bool:
         """delete crawl file from storage."""
-        return await self.delete_file(
-            org, crawlfile.filename, crawlfile.def_storage_name
+        return await self._delete_file(
+            org, crawlfile.filename, crawlfile.def_storage_name or ""
         )
 
     async def _delete_file(
@@ -557,7 +625,7 @@ def _parse_json(line) -> dict:
 
 
 # ============================================================================
-def init_storages_api(org_ops, crawl_manager, user_dep):
+def init_storages_api(org_ops, crawl_manager):
     """API for updating storage for an org"""
 
     storage_ops = StorageOps(org_ops, crawl_manager)
@@ -568,13 +636,28 @@ def init_storages_api(org_ops, crawl_manager, user_dep):
     router = org_ops.router
     org_owner_dep = org_ops.org_owner_dep
 
-    # pylint: disable=bare-except, raise-missing-from
-    @router.patch("/storage", tags=["organizations"])
-    async def update_storage(
-        storage: Union[S3Storage, DefaultStorage],
-        org: Organization = Depends(org_owner_dep),
-        user: User = Depends(user_dep),
+    @router.post("/customStorage", tags=["organizations"])
+    async def add_custom_storage(
+        storage: S3StorageIn, org: Organization = Depends(org_owner_dep)
     ):
-        return await storage_ops.update_storage(storage, org, user)
+        return await storage_ops.add_custom_storage(storage, org)
+
+    @router.delete("/customStorage/{name}", tags=["organizations"])
+    async def remove_custom_storage(
+        name: str, org: Organization = Depends(org_owner_dep)
+    ):
+        return await storage_ops.remove_custom_storage(name, org)
+
+    # pylint: disable=bare-except, raise-missing-from
+    @router.post("/storage", tags=["organizations"])
+    async def update_storage_refs(
+        storage: OrgStorageRefsIn,
+        org: Organization = Depends(org_owner_dep),
+    ):
+        return await storage_ops.update_storage_refs(storage, org)
+
+    @router.get("/storages", tags=["organizations"])
+    def get_available_storages(org: Organization = Depends(org_owner_dep)):
+        return storage_ops.get_available_storages(org)
 
     return storage_ops
