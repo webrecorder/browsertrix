@@ -18,3 +18,10 @@ export function isCrawler(accessCode?: (typeof AccessCode)[UserRole]): boolean {
 
   return accessCode >= AccessCode.crawler;
 }
+
+export function getOrgBasePath() {
+  const path = window.location.pathname.split("/orgs/")[1];
+  if (!path) return "/";
+  const slug = path.slice(0, path.indexOf("/"));
+  return `/orgs/${slug}`;
+}

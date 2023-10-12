@@ -363,7 +363,7 @@ export class WorkflowDetail extends LiteElement {
       <nav class="col-span-1">
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-          href=${`/orgs/${this.orgId}/workflows${
+          href=${`${this.orgBasePath}/workflows${
             workflowId ? `/crawl/${workflowId}` : "/crawls"
           }`}
           @click=${this.navLink}
@@ -535,7 +535,7 @@ export class WorkflowDetail extends LiteElement {
           .authState=${this.authState}
           @reset=${(e: Event) =>
             this.navTo(
-              `/orgs/${this.orgId}/workflows/crawl/${this.workflow!.id}`
+              `${this.orgBasePath}/workflows/crawl/${this.workflow!.id}`
             )}
         ></btrix-workflow-editor>
       `,
@@ -1002,7 +1002,7 @@ export class WorkflowDetail extends LiteElement {
             () => html`
               <sl-button
                 class="mr-2"
-                href=${`/orgs/${this.orgId}/items/crawl/${
+                href=${`${this.orgBasePath}/items/crawl/${
                   this.workflow!.lastCrawlId
                 }?workflowId=${this.workflowId}#replay`}
                 variant="primary"
@@ -1428,7 +1428,7 @@ export class WorkflowDetail extends LiteElement {
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/workflows?new&jobType=${workflowParams.jobType}`,
+      `${this.orgBasePath}/workflows?new&jobType=${workflowParams.jobType}`,
       {
         workflow: workflowParams,
         seeds: this.seeds?.items,
@@ -1487,7 +1487,7 @@ export class WorkflowDetail extends LiteElement {
         }
       );
 
-      this.navTo(`/orgs/${this.orgId}/workflows/crawls`);
+      this.navTo(`${this.orgBasePath}/workflows/crawls`);
 
       this.notify({
         message: isDeactivating

@@ -324,7 +324,7 @@ export class Org extends LiteElement {
       <a
         id="${tabName}-tab"
         class="block flex-shrink-0 px-3 hover:bg-neutral-50 rounded-t transition-colors"
-        href=${`/orgs/${this.slug}${path ? `/${path}` : ""}`}
+        href=${`${this.orgBasePath}${path ? `/${path}` : ""}`}
         aria-selected=${isActive}
         @click=${this.navLink}
       >
@@ -364,7 +364,7 @@ export class Org extends LiteElement {
           @request-close=${() => (this.openDialogName = undefined)}
           @uploaded=${() => {
             if (this.orgTab === "home") {
-              this.navTo(`/orgs/${this.orgId}/items/upload`);
+              this.navTo(`${this.orgBasePath}/items/upload`);
             }
           }}
         ></btrix-file-uploader>
@@ -379,7 +379,7 @@ export class Org extends LiteElement {
           ?open=${this.openDialogName === "workflow"}
           @select-job-type=${(e: SelectJobTypeEvent) => {
             this.openDialogName = undefined;
-            this.navTo(`/orgs/${this.orgId}/workflows?new&jobType=${e.detail}`);
+            this.navTo(`${this.orgBasePath}/workflows?new&jobType=${e.detail}`);
           }}
         >
         </btrix-new-workflow-dialog>

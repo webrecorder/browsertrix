@@ -625,6 +625,7 @@ export class App extends LiteElement {
 
       case "org": {
         const slug = this.viewState.params.slug;
+        console.log(slug);
         const orgPath = this.viewState.pathname;
         const orgTab =
           window.location.pathname

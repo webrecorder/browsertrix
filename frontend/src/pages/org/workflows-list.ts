@@ -641,7 +641,7 @@ export class WorkflowsList extends LiteElement {
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/workflows?new&jobType=${workflowParams.jobType}`,
+      `${this.orgBasePath}/workflows?new&jobType=${workflowParams.jobType}`,
       {
         workflow: workflowParams,
         seeds: seeds.items,
@@ -780,7 +780,7 @@ export class WorkflowsList extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${this.orgId}/workflows/crawl/${workflow.id}#watch"
+              href="${this.orgBasePath}/workflows/crawl/${workflow.id}#watch"
               @click=${this.navLink.bind(this)}
               >Watch crawl</a
             >`

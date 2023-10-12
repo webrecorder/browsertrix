@@ -4,6 +4,7 @@ import { msg } from "@lit/localize";
 
 import type { Auth } from "../utils/AuthService";
 import AuthService from "../utils/AuthService";
+import { getOrgBasePath } from "../utils/orgs";
 import { APIError } from "./api";
 
 export interface NavigateEvent extends CustomEvent {
@@ -46,6 +47,22 @@ export interface NotifyEvent extends CustomEvent {
 export { html };
 
 export default class LiteElement extends LitElement {
+  protected get orgBasePath() {
+    const { pathname } = window.location;
+    const base = "/orgs/";
+
+    if (pathname.startsWith(base)) {
+      let orgPath = pathname.slice(base.length);
+      const subPathIdx = orgPath.indexOf("/");
+      if (subPathIdx > -1) {
+        orgPath = orgPath.slice(0, subPathIdx);
+      }
+      return `${base}${orgPath}`;
+    }
+
+    return "/";
+  }
+
   createRenderRoot() {
     return this;
   }

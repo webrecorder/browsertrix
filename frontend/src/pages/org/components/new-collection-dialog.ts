@@ -147,7 +147,7 @@ export class NewCollectionDialog extends LiteElement {
         }
       );
 
-      this.navTo(`/orgs/${this.orgId}/collections/edit/${data.id}#crawls`);
+      this.navTo(`${this.orgBasePath}/collections/edit/${data.id}#crawls`);
       this.notify({
         message: msg(str`Successfully created "${data.name}" Collection.`),
         variant: "success",

@@ -221,7 +221,7 @@ export class CrawlsList extends LiteElement {
                 variant=${isSelected ? "primary" : "neutral"}
                 ?raised=${isSelected}
                 aria-selected="${isSelected}"
-                href=${`/orgs/${this.orgId}/items${
+                href=${`${this.orgBasePath}/items${
                   itemType ? `/${itemType}` : ""
                 }`}
                 @click=${this.navLink}

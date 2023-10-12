@@ -136,7 +136,7 @@ export class NewBrowserProfileDialog extends LiteElement {
       });
       await this.hideDialog();
       this.navTo(
-        `/orgs/${this.orgId}/browser-profiles/profile/browser/${
+        `${this.orgBasePath}/browser-profiles/profile/browser/${
           data.browserid
         }?name=${window.encodeURIComponent(
           "My Profile"
@@ -158,7 +158,7 @@ export class NewBrowserProfileDialog extends LiteElement {
     };
 
     return this.apiFetch(
-      `/orgs/${this.orgId}/profiles/browser`,
+      `${this.orgBasePath}/profiles/browser`,
       this.authState!,
       {
         method: "POST",

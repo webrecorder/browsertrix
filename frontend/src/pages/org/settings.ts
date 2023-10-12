@@ -123,7 +123,7 @@ export class OrgSettings extends LiteElement {
             () => html`
               <h3>${msg("Active Members")}</h3>
               <sl-button
-                href=${`/orgs/${this.orgId}/settings/members?invite`}
+                href=${`${this.orgBasePath}/settings/members?invite`}
                 variant="primary"
                 size="small"
                 @click=${this.navLink}
@@ -157,7 +157,7 @@ export class OrgSettings extends LiteElement {
     return html`
       <a
         slot="nav"
-        href=${`/orgs/${this.orgId}/${path}`}
+        href=${`${this.orgBasePath}/${path}`}
         class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
           ? "text-blue-600 bg-blue-50 shadow-sm"
           : "text-neutral-600 hover:bg-neutral-50"}"
@@ -363,7 +363,7 @@ export class OrgSettings extends LiteElement {
   }
 
   private hideInviteDialog() {
-    this.navTo(`/orgs/${this.orgId}/settings/members`);
+    this.navTo(`${this.orgBasePath}/settings/members`);
   }
 
   private renderInviteForm() {

@@ -70,7 +70,7 @@ export class Dashboard extends LiteElement {
           ${this.org?.name}
         </h1>
         <sl-icon-button
-          href=${`/orgs/${this.orgId}/settings`}
+          href=${`${this.orgBasePath}/settings`}
           class="text-lg"
           name="gear"
           label="Edit org settings"
