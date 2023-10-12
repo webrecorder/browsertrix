@@ -1,0 +1,23 @@
+---
+all:
+  children:
+    "deploy microk8s":
+      vars:
+        browsertrix_mongo_password: "CHANGE ME"
+        browsertrix_superuser_password: "CHANGE ME"
+
+        host_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+        domain_name: "{{inventory_hostname }}"
+        signing_subdomain: "{{ signing_subdomain }}"
+        signing_authtoken: "{{ 99999999 }}"
+        enable_signing: true
+        your_user: sysadmin
+        ansible_user: sysadmin
+        cert_email: infra@example.org
+#        crawler_session_size_limit_bytes: 50000000000
+
+        crawler_extra_args: "--screenshot view,thumbnail,fullPage"
+
+        microk8s_dns_servers:
+          - 1.1.1.1
+          - 1.0.0.1
