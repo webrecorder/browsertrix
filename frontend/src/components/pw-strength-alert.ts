@@ -148,7 +148,7 @@ export class PasswordStrengthAlert extends LitElement {
             () => html`
               <p class="text">
                 ${msg(
-                  "Tip: To generate very strong passwords, install a built-in password manager."
+                  "Tip: To generate very strong passwords, consider using a password manager."
                 )}
               </p>
             `

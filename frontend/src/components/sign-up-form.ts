@@ -123,7 +123,7 @@ export class SignUpForm extends LiteElement {
           </btrix-input>
           <p class="mt-2 text-gray-500">
             ${msg(
-              str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`
+              str`Choose a strong password between ${PASSWORD_MINLENGTH}–${PASSWORD_MAXLENGTH} characters.`
             )}
           </p>
           ${when(this.pwStrengthResults, this.renderPasswordStrength)}
