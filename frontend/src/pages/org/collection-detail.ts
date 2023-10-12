@@ -111,14 +111,19 @@ export class CollectionDetail extends LiteElement {
             html`<sl-skeleton class="w-96"></sl-skeleton>`}
           </h1>
         </div>
-        <sl-button
-          variant="primary"
-          size="small"
-          @click=${() => (this.showShareInfo = true)}
-        >
-          <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
-          Share
-        </sl-button>
+        ${when(
+          this.isCrawler || (!this.isCrawler && this.collection?.isPublic),
+          () => html`
+            <sl-button
+              variant="primary"
+              size="small"
+              @click=${() => (this.showShareInfo = true)}
+            >
+              <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+              Share
+            </sl-button>
+          `
+        )}
         ${when(this.isCrawler, this.renderActions)}
       </header>
       <div class="border rounded-lg py-2 px-4 mb-3">
@@ -180,20 +185,29 @@ export class CollectionDetail extends LiteElement {
         @sl-request-close=${() => (this.showShareInfo = false)}
         style="--width: 32rem;"
       >
-        ${this.collection?.isPublic
-          ? ""
-          : html`<p class="mb-3">
-              ${msg(
-                "Make this collection shareable to enable a public viewing link."
-              )}
-            </p>`}
-        <div class="mb-5">
-          <sl-switch
-            ?checked=${this.collection?.isPublic}
-            @sl-change=${(e: CustomEvent) =>
-              this.onTogglePublic((e.target as SlCheckbox).checked)}
-            >${msg("Collection is Shareable")}</sl-switch
-          >
+        ${
+          this.collection?.isPublic
+            ? ""
+            : html`<p class="mb-3">
+                ${msg(
+                  "Make this collection shareable to enable a public viewing link."
+                )}
+              </p>`
+        }
+        ${when(
+          this.isCrawler,
+          () =>
+            html`
+              <div class="mb-5">
+                <sl-switch
+                  ?checked=${this.collection?.isPublic}
+                  @sl-change=${(e: CustomEvent) =>
+                    this.onTogglePublic((e.target as SlCheckbox).checked)}
+                  >${msg("Collection is Shareable")}</sl-switch
+                >
+              </div>
+            `
+        )}
         </div>
         ${when(this.collection?.isPublic, this.renderShareInfo)}
         <div slot="footer" class="flex justify-end">
