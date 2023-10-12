@@ -103,7 +103,7 @@ class UploadOps(BaseCrawlOps):
             print("Stream Upload Failed", flush=True)
             raise HTTPException(status_code=400, detail="upload_failed")
 
-        files = [file_prep.get_crawl_file()]
+        files = [file_prep.get_crawl_file(org.storage)]
 
         if prev_upload:
             try:
@@ -142,7 +142,7 @@ class UploadOps(BaseCrawlOps):
             await self.storage_ops.do_upload_single(
                 org, file_reader.file_prep.upload_name, file_reader
             )
-            files.append(file_reader.file_prep.get_crawl_file())
+            files.append(file_reader.file_prep.get_crawl_file(org.storage))
 
         return await self._create_upload(
             files, name, description, collections, tags, id_, org, user
@@ -226,13 +226,13 @@ class FilePreparer:
         self.upload_size += len(chunk)
         self.upload_hasher.update(chunk)
 
-    def get_crawl_file(self, def_storage_name="default"):
+    def get_crawl_file(self, storage_name):
         """get crawl file"""
         return CrawlFile(
             filename=self.upload_name,
             hash=self.upload_hasher.hexdigest(),
             size=self.upload_size,
-            def_storage_name=def_storage_name,
+            def_storage_name=storage_name,
         )
 
     def prepare_filename(self, filename):

@@ -28,8 +28,7 @@ from .models import (
     CrawlFileOut,
     Organization,
     StorageRef,
-    DefaultStorage,
-    CustomStorage,
+    StorageRefOut,
     S3Storage,
     S3StorageIn,
     OrgStorageRefsIn,
@@ -62,6 +61,7 @@ class StorageOps:
 
         for storage in storage_list:
             name = storage.get("name")
+            name = slug_from_name(name)
             type_ = storage.get("type", "s3")
             if type_ == "s3":
                 self.storages[name] = self._create_s3_storage(storage)
@@ -96,11 +96,19 @@ class StorageOps:
         """assert the specified storage exists"""
         return name in self.storages
 
+    def check_all_org_storages(self, org: Organization):
+        if not org.storage.is_custom() and not self.has_storage(org.storage)
+            raise TypeError(f"Missing default storage: {org.storage} primary storage for {org.slug}")
+
+        for replica in org.storageReplicas:
+            if not replica.is_custom() and replica == name:
+                raise TypeError(f"Missing default org storage: {org.storage} replica storage for {org.slug}")
+
     async def add_custom_storage(
         self, storagein: S3StorageIn, org: Organization
     ) -> dict:
         """Add new custom storage"""
-        name = slug_from_name(storagein.name)
+        name = "!" + slug_from_name(storagein.name)
 
         if name in org.customStorages:
             raise HTTPException(status_code=400, detail="storage_already_exists")
@@ -132,11 +140,11 @@ class StorageOps:
         self, name: str, org: Organization
     ) -> dict[str, bool]:
         """remove custom storage"""
-        if org.storage.type == "custom" and org.storage.name == name:
+        if org.storage.is_custom() and org.storage == name:
             raise HTTPException(status_code=400, detail="storage_in_use")
 
         for replica in org.storageReplicas:
-            if replica.type == "custom" and replica.name == name:
+            if replica.is_custom() and replica == name:
                 raise HTTPException(status_code=400, detail="storage_in_use")
 
         # pylint: disable=fixme
@@ -173,13 +181,13 @@ class StorageOps:
 
         return {"updated": True}
 
-    def get_available_storages(self, org: Organization) -> List[StorageRef]:
+    def get_available_storages(self, org: Organization) -> List[StorageRefOut]:
         """return a list of available default + custom storages"""
-        refs: List[StorageRef] = []
+        refs: List[StorageRefOut] = []
         for name in self.storages:
-            refs.append(DefaultStorage(name=name))
+            refs.append(StorageRefOut(name=name, custom=False))
         for name in org.customStorages:
-            refs.append(CustomStorage(name=name))
+            refs.append(StorageRefOut(name=name, custom=True))
         return refs
 
     @asynccontextmanager
@@ -255,10 +263,10 @@ class StorageOps:
 
     def get_org_storage_by_ref(self, org: Organization, ref: StorageRef) -> S3Storage:
         """Get a storage object from StorageRef"""
-        if ref.type == "default":
-            s3storage = self.storages.get(ref.name)
-        elif ref.type == "custom":
-            s3storage = org.customStorages.get(ref.name)
+        if ref.is_custom():
+            s3storage = org.customStorages.get(ref)
+        else:
+            s3storage = self.storages.get(ref)
 
         if not s3storage:
             raise TypeError("No Default Storage Found, Invalid Storage Type")

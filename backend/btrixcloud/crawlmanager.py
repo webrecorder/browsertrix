@@ -142,7 +142,7 @@ class CrawlManager(K8sAPI):
     async def get_valid_storage_refs(self, storage, oid):
         """return storage name and path, also validate that
         storage secret exists"""
-        if storage.type == "default":
+        if not storage.is_custom():
             storage_name = f"storage-{storage.name}"
             storage_path = str(oid)
         else:
@@ -169,7 +169,7 @@ class CrawlManager(K8sAPI):
             raise Exception(f"Storage {storage_name} not found")
 
     async def _get_custom_storage_name(self, name, oid):
-        return f"cs-{oid[:12]}-{name}"
+        return f"cs-{oid[:12]}-{name[1:]}"
 
     async def remove_org_storage(self, name, oid):
         """Delete custom org storage secret"""
