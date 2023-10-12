@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from .basecrawls import SUCCESSFUL_STATES, RUNNING_STATES, STARTING_STATES
 from .models import (
     Organization,
-    DefaultStorage,
+    StorageRef,
     OrgQuotas,
     OrgMetrics,
     OrgWebhookUrls,
@@ -94,7 +94,7 @@ class OrgOps:
             name=org_name,
             slug=slug_from_name(org_name),
             users={str(user.id): UserRole.OWNER},
-            storage=DefaultStorage(name=storage_name),
+            storage=StorageRef(name=storage_name),
         )
 
         print(f"Creating new org {org_name} with storage {storage_name}", flush=True)
@@ -173,7 +173,7 @@ class OrgOps:
             name=DEFAULT_ORG,
             slug=slug_from_name(DEFAULT_ORG),
             users={},
-            storage=DefaultStorage(name=storage_name),
+            storage=StorageRef(name=storage_name),
             default=True,
         )
         print(
@@ -181,6 +181,12 @@ class OrgOps:
             flush=True,
         )
         await self.add_org(org)
+
+    async def check_all_storages(self, storage_ops):
+        """ensure all org default storages are valid"""
+        async for org_data in self.orgs.find({}):
+            org = Organization.from_dict(org_data)
+            storage_ops.check_all_org_storages(org)
 
     async def update(self, org: Organization):
         """Update existing org"""
@@ -498,7 +504,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
             name=new_org.name,
             slug=slug,
             users={},
-            storage=DefaultStorage(name=new_org.storageName),
+            storage=StorageRef(name=new_org.storageName),
         )
         if not await ops.add_org(org):
             return {"added": False, "error": "already_exists"}

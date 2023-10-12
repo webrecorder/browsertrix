@@ -106,7 +106,7 @@ class K8sAPI:
         data = self.templates.env.get_template("crawl_job.yaml").render(params)
         return crawl_id, data
 
-    async def new_crawl_job(self, *args, **kwargs):
+    async def new_crawl_job(self, *args, **kwargs) -> str:
         """load and init crawl job via k8s api"""
         crawl_id, data = self.new_crawl_job_yaml(*args, **kwargs)
 
@@ -193,7 +193,7 @@ class K8sAPI:
             name=f"profilejob-{browserid}",
         )
 
-    async def _patch_job(self, crawl_id, body, pluraltype="crawljobs"):
+    async def _patch_job(self, crawl_id, body, pluraltype="crawljobs") -> dict:
         content_type = self.api_client.default_headers.get("Content-Type")
 
         try:

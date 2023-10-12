@@ -5,10 +5,15 @@ import asyncio
 import secrets
 import json
 
+from typing import Optional
 from datetime import timedelta
 
 from .k8sapi import K8sAPI
 from .utils import dt_now, to_k8s_date
+
+from .models import StorageRef, CrawlConfig, UpdateCrawlConfig
+
+from kubernetes_asyncio.client import V1ConfigMap
 
 
 # ============================================================================
@@ -25,11 +30,11 @@ class CrawlManager(K8sAPI):
         self,
         userid: str,
         oid: str,
-        url,
-        storage,
-        baseprofile="",
-        profile_filename="",
-    ):
+        url: str,
+        storage: StorageRef,
+        baseprofile: str = "",
+        profile_filename: str = "",
+    ) -> str:
         """run browser for profile creation"""
 
         storage_name, storage_path = await self.get_valid_storage_refs(storage, oid)
@@ -58,16 +63,16 @@ class CrawlManager(K8sAPI):
 
     async def add_crawl_config(
         self,
-        crawlconfig,
-        storage,
-        run_now,
-        out_filename,
-        profile_filename,
-    ):
+        crawlconfig: CrawlConfig,
+        storage: StorageRef,
+        run_now: bool,
+        out_filename: str,
+        profile_filename: str,
+    ) -> Optional[str]:
         """add new crawl, store crawl config in configmap"""
 
         storage_name, storage_path = await self.get_valid_storage_refs(
-            crawlconfig.oid, storage
+            storage, str(crawlconfig.oid)
         )
 
         # Create Config Map
@@ -93,11 +98,11 @@ class CrawlManager(K8sAPI):
                 crawlconfig, str(crawlconfig.modifiedBy)
             )
 
-        await self._update_scheduled_job(crawlconfig, crawlconfig.schedule)
+        await self._update_scheduled_job(crawlconfig)
 
         return crawl_id
 
-    async def create_crawl_job(self, crawlconfig, userid: str):
+    async def create_crawl_job(self, crawlconfig: CrawlConfig, userid: str) -> str:
         """create new crawl job from config"""
         cid = str(crawlconfig.id)
 
@@ -111,7 +116,9 @@ class CrawlManager(K8sAPI):
             manual=True,
         )
 
-    async def update_crawl_config(self, crawlconfig, update, profile_filename=None):
+    async def update_crawl_config(
+        self, crawlconfig: CrawlConfig, update: UpdateCrawlConfig, profile_filename=None
+    ) -> bool:
         """Update the schedule or scale for existing crawl config"""
 
         has_sched_update = update.schedule is not None
@@ -121,7 +128,8 @@ class CrawlManager(K8sAPI):
         has_config_update = update.config is not None
 
         if has_sched_update:
-            await self._update_scheduled_job(crawlconfig, update.schedule)
+            # crawlconfig here has already been updated
+            await self._update_scheduled_job(crawlconfig)
 
         if (
             has_scale_update
@@ -139,10 +147,12 @@ class CrawlManager(K8sAPI):
 
         return True
 
-    async def get_valid_storage_refs(self, storage, oid):
+    async def get_valid_storage_refs(
+        self, storage: StorageRef, oid: str
+    ) -> tuple[str, str]:
         """return storage name and path, also validate that
         storage secret exists"""
-        if not storage.is_custom():
+        if not storage.custom:
             storage_name = f"storage-{storage.name}"
             storage_path = str(oid)
         else:
@@ -153,7 +163,7 @@ class CrawlManager(K8sAPI):
 
         return storage_name, storage_path
 
-    async def has_storage(self, storage_name):
+    async def has_storage(self, storage_name) -> bool:
         """Check if storage is valid by trying to get the storage secret
         Will throw if not valid, otherwise return True"""
         try:
@@ -168,10 +178,10 @@ class CrawlManager(K8sAPI):
             # pylint: disable=broad-exception-raised,raise-missing-from
             raise Exception(f"Storage {storage_name} not found")
 
-    async def _get_custom_storage_name(self, name, oid):
-        return f"cs-{oid[:12]}-{name[1:]}"
+    def _get_custom_storage_name(self, name: str, oid: str) -> str:
+        return f"cs-{oid[:12]}-{name}"
 
-    async def remove_org_storage(self, name, oid):
+    async def remove_org_storage(self, name: str, oid: str) -> bool:
         """Delete custom org storage secret"""
         org_storage_name = self._get_custom_storage_name(name, oid)
         try:
@@ -184,7 +194,7 @@ class CrawlManager(K8sAPI):
         except:
             return False
 
-    async def add_org_storage(self, name, oid, storage):
+    async def add_org_storage(self, name, oid, storage) -> None:
         """Add custom org storage secret"""
         labels = {"btrix.org": oid}
 
@@ -214,7 +224,7 @@ class CrawlManager(K8sAPI):
                 name=org_storage_name, namespace=self.namespace, body=crawl_secret
             )
 
-    async def get_profile_browser_metadata(self, browserid):
+    async def get_profile_browser_metadata(self, browserid: str) -> dict[str, str]:
         """get browser profile labels"""
         try:
             browser = await self.get_profile_browser(browserid)
@@ -225,29 +235,29 @@ class CrawlManager(K8sAPI):
 
         return browser["metadata"]["labels"]
 
-    async def get_configmap(self, cid):
+    async def get_configmap(self, cid: str) -> V1ConfigMap:
         """get configmap by id"""
         return await self.core_api.read_namespaced_config_map(
             name=f"crawl-config-{cid}", namespace=self.namespace
         )
 
-    async def ping_profile_browser(self, browserid):
+    async def ping_profile_browser(self, browserid: str) -> None:
         """return ping profile browser"""
         expire_at = dt_now() + timedelta(seconds=30)
         await self._patch_job(
             browserid, {"expireTime": to_k8s_date(expire_at)}, "profilejobs"
         )
 
-    async def rollover_restart_crawl(self, crawl_id):
+    async def rollover_restart_crawl(self, crawl_id: str) -> dict:
         """Rolling restart of crawl by updating restartTime field"""
         update = to_k8s_date(dt_now())
         return await self._patch_job(crawl_id, {"restartTime": update})
 
-    async def scale_crawl(self, crawl_id, scale=1):
+    async def scale_crawl(self, crawl_id: str, scale: int = 1) -> dict:
         """Set the crawl scale (job parallelism) on the specified job"""
         return await self._patch_job(crawl_id, {"scale": scale})
 
-    async def shutdown_crawl(self, crawl_id, graceful=True):
+    async def shutdown_crawl(self, crawl_id: str, graceful=True) -> dict:
         """Request a crawl cancelation or stop by calling an API
         on the job pod/container, returning the result"""
         if graceful:
@@ -256,17 +266,17 @@ class CrawlManager(K8sAPI):
 
         return await self.delete_crawl_job(crawl_id)
 
-    async def delete_crawl_configs_for_org(self, org):
+    async def delete_crawl_configs_for_org(self, org: str) -> None:
         """Delete all crawl configs for given org"""
-        return await self._delete_crawl_configs(f"btrix.org={org}")
+        await self._delete_crawl_configs(f"btrix.org={org}")
 
-    async def delete_crawl_config_by_id(self, cid):
+    async def delete_crawl_config_by_id(self, cid: str) -> None:
         """Delete all crawl configs by id"""
-        return await self._delete_crawl_configs(f"btrix.crawlconfig={cid}")
+        await self._delete_crawl_configs(f"btrix.crawlconfig={cid}")
 
     # ========================================================================
     # Internal Methods
-    async def _create_config_map(self, crawlconfig, **data):
+    async def _create_config_map(self, crawlconfig: CrawlConfig, **data) -> None:
         """Create Config Map based on CrawlConfig"""
         data["crawl-config.json"] = json.dumps(crawlconfig.get_raw_config())
 
@@ -284,11 +294,11 @@ class CrawlManager(K8sAPI):
             data=data,
         )
 
-        return await self.core_api.create_namespaced_config_map(
+        await self.core_api.create_namespaced_config_map(
             namespace=self.namespace, body=config_map
         )
 
-    async def _delete_crawl_configs(self, label):
+    async def _delete_crawl_configs(self, label) -> None:
         """Delete Crawl Cron Job and all dependent resources, including configmap and secrets"""
 
         await self.batch_api.delete_collection_namespaced_cron_job(
@@ -301,7 +311,7 @@ class CrawlManager(K8sAPI):
             label_selector=label,
         )
 
-    async def _update_scheduled_job(self, crawlconfig, schedule):
+    async def _update_scheduled_job(self, crawlconfig: CrawlConfig) -> Optional[str]:
         """create or remove cron job based on crawlconfig schedule"""
         cid = str(crawlconfig.id)
 
@@ -322,7 +332,7 @@ class CrawlManager(K8sAPI):
                 await self.batch_api.delete_namespaced_cron_job(
                     name=cron_job.metadata.name, namespace=self.namespace
                 )
-            return
+            return None
 
         # if cron job exists, just patch schedule
         if cron_job:
@@ -334,12 +344,12 @@ class CrawlManager(K8sAPI):
                     namespace=self.namespace,
                     body=cron_job,
                 )
-            return
+            return None
 
         params = {
             "id": cron_job_id,
             "cid": str(crawlconfig.id),
-            "schedule": schedule,
+            "schedule": crawlconfig.schedule,
         }
 
         data = self.templates.env.get_template("crawl_cron_job.yaml").render(params)
@@ -350,12 +360,12 @@ class CrawlManager(K8sAPI):
 
     async def _update_config_map(
         self,
-        crawlconfig,
-        update,
-        profile_filename=None,
-        update_config=False,
-    ):
-        config_map = await self.get_configmap(crawlconfig.id)
+        crawlconfig: CrawlConfig,
+        update: UpdateCrawlConfig,
+        profile_filename: Optional[str] = None,
+        update_config: bool = False,
+    ) -> None:
+        config_map = await self.get_configmap(str(crawlconfig.id))
 
         if update.scale is not None:
             config_map.data["INITIAL_SCALE"] = str(update.scale)

@@ -2,7 +2,6 @@
 Migration 0020 - Organization Slug
 """
 from btrixcloud.migrations import BaseMigration
-from btrixcloud.utils import slug_from_name
 
 
 MIGRATION_VERSION = "0020"
@@ -23,25 +22,23 @@ class Migration(BaseMigration):
         """
         # pylint: disable=duplicate-code
         mdb_orgs = self.mdb["organizations"]
-        async for org in mdb_orgs.find({}}):
+        async for org in mdb_orgs.find({"storage.custom": None}):
             oid = org["_id"]
             storage = org["storage"]
 
-            if not isinstance(storage, dict):
-                continue
-
             if storage.get("type") == "default":
-                storage_ref = storage.get("name")
+                update_dict = {
+                    "storage": {"name": storage.get("name"), "custom": False}
+                }
 
-            elif storage.get("type") 
+            elif storage.get("type") == "s3":
+                update_dict = {
+                    "storage": {"name": storage.get("name"), "custom": True},
+                    "customStorage": {"custom": storage},
+                }
 
-
-
-            slug = slug_from_name(org["name"])
             try:
-                await mdb_orgs.find_one_and_update(
-                    {"_id": oid}, {"$set": {"slug": slug}}
-                )
+                await mdb_orgs.find_one_and_update({"_id": oid}, {"$set": update_dict})
             # pylint: disable=broad-exception-caught
             except Exception as err:
-                print(f"Error adding slug to org {oid}: {err}", flush=True)
+                print(f"Error updating storage for {oid}: {err}", flush=True)

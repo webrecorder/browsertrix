@@ -158,6 +158,7 @@ def main():
                 crawl_config_ops,
                 coll_ops,
                 invites,
+                storage_ops,
                 db_inited,
             )
         )

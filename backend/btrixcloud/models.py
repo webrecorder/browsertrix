@@ -623,26 +623,11 @@ class CreateOrg(RenameOrg):
 
 
 # ============================================================================
-class StorageRef(str):
+class StorageRef(BaseModel):
     """Reference to actual storage"""
 
-    def is_custom(self):
-        return self.startswith("!")
-
-
-# ============================================================================
-class DefaultStorage(StorageRef):
-    def __init__(self, name: str):
-        if name.startswith("!"):
-            raise TypeError("invalid default storage name")
-
-        super(str, name)
-
-
-# ============================================================================
-class StorageRefOut(BaseModel):
     name: str
-    custom: bool
+    custom: bool = False
 
 
 # ============================================================================
