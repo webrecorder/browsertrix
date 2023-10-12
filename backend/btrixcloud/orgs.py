@@ -184,9 +184,31 @@ class OrgOps:
 
     async def check_all_storages(self, storage_ops):
         """ensure all org default storages are valid"""
-        async for org_data in self.orgs.find({}):
+        storage_names = list(storage_ops.storages.keys())
+        errors = 0
+
+        async for org_data in self.orgs.find(
+            {"storage.custom": False, "storage.name": {"$nin": storage_names}}
+        ):
             org = Organization.from_dict(org_data)
-            storage_ops.check_all_org_storages(org)
+            print(f"Org {org.slug} uses unknown primary storage {org.storage.name}")
+            errors += 1
+
+        async for org_data in self.orgs.find(
+            {
+                "storageReplicas.custom": False,
+                "storageReplicas.name": {"$nin": storage_names},
+            }
+        ):
+            org = Organization.from_dict(org_data)
+            print(f"Org {org.slug} uses an unknown replica storage")
+            errors += 1
+
+        if errors:
+            raise TypeError(
+                f"{errors} orgs use undefined storages, exiting."
+                + " Please check the 'storages' array in your config"
+            )
 
     async def update(self, org: Organization):
         """Update existing org"""

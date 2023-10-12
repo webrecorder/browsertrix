@@ -91,23 +91,6 @@ class StorageOps:
             use_access_for_presign=use_access_for_presign,
         )
 
-    def has_storage(self, name) -> bool:
-        """assert the specified storage exists"""
-        return name in self.storages
-
-    def check_all_org_storages(self, org: Organization):
-        """check if all storages exist"""
-        if not org.storage.custom and not self.has_storage(org.storage.name):
-            raise TypeError(
-                f"Missing default storage: {org.storage} primary storage for {org.slug}"
-            )
-
-        for replica in org.storageReplicas:
-            if not replica.custom and not self.has_storage(replica.name):
-                raise TypeError(
-                    f"Missing default org storage: {org.storage} replica storage for {org.slug}"
-                )
-
     async def add_custom_storage(
         self, storagein: S3StorageIn, org: Organization
     ) -> dict:
