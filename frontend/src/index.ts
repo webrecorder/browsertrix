@@ -43,7 +43,7 @@ type APIUser = {
 };
 
 type UserSettings = {
-  orgId: string;
+  slug: string;
 };
 
 /**
@@ -89,7 +89,7 @@ export class App extends LiteElement {
   // Store selected org ID for when navigating from
   // pages without associated org (e.g. user account)
   @state()
-  private selectedOrgId?: string;
+  private selectedOrgSlug?: string;
 
   async connectedCallback() {
     let authState: AuthState = null;
@@ -100,7 +100,7 @@ export class App extends LiteElement {
     }
     this.syncViewState();
     if (this.viewState.route === "org") {
-      this.selectedOrgId = this.viewState.params.orgId;
+      this.selectedOrgSlug = this.viewState.params.slug;
     }
     if (authState) {
       this.authService.saveLogin(authState);
@@ -119,7 +119,7 @@ export class App extends LiteElement {
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.get("viewState") && this.viewState.route === "org") {
-      this.selectedOrgId = this.viewState.params.orgId;
+      this.selectedOrgSlug = this.viewState.params.slug;
     }
   }
 
@@ -162,20 +162,20 @@ export class App extends LiteElement {
       };
       const settings = this.getPersistedUserSettings(userInfo.id);
       if (settings) {
-        this.selectedOrgId = settings.orgId;
+        this.selectedOrgSlug = settings.slug;
       }
       const orgs = userInfo.orgs;
       this.orgs = orgs;
-      if (orgs.length && !this.userInfo!.isAdmin && !this.selectedOrgId) {
-        const firstOrg = orgs[0].id;
+      if (orgs.length && !this.userInfo!.isAdmin && !this.selectedOrgSlug) {
+        const firstOrg = orgs[0].slug;
         if (orgs.length === 1) {
           // Persist selected org ID since there's no
           // user selection event to persist
           this.persistUserSettings(userInfo.id, {
-            orgId: firstOrg,
+            slug: firstOrg,
           });
         }
-        this.selectedOrgId = firstOrg;
+        this.selectedOrgSlug = firstOrg;
       }
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
@@ -265,8 +265,8 @@ export class App extends LiteElement {
   private renderNavBar() {
     const isAdmin = this.userInfo?.isAdmin;
     let homeHref = "/";
-    if (!isAdmin && this.selectedOrgId) {
-      homeHref = `/orgs/${this.selectedOrgId}`;
+    if (!isAdmin && this.selectedOrgSlug) {
+      homeHref = `/orgs/${this.selectedOrgSlug}`;
     }
 
     return html`
@@ -371,12 +371,12 @@ export class App extends LiteElement {
   private renderOrgs() {
     if (!this.orgs || this.orgs.length < 2 || !this.userInfo) return;
 
-    const selectedOption = this.selectedOrgId
-      ? this.orgs.find(({ id }) => id === this.selectedOrgId)
-      : { id: "", name: msg("All Organizations") };
+    const selectedOption = this.selectedOrgSlug
+      ? this.orgs.find(({ slug }) => slug === this.selectedOrgSlug)
+      : { slug: "", name: msg("All Organizations") };
     if (!selectedOption) {
       console.debug(
-        `Could't find organization with ID ${this.selectedOrgId}`,
+        `Could't find organization with slug ${this.selectedOrgSlug}`,
         this.orgs
       );
       return;
@@ -396,7 +396,7 @@ export class App extends LiteElement {
             if (value) {
               this.navigate(`/orgs/${value}`);
               if (this.userInfo) {
-                this.persistUserSettings(this.userInfo.id, { orgId: value });
+                this.persistUserSettings(this.userInfo.id, { slug: value });
               }
             } else {
               if (this.userInfo) {
@@ -412,7 +412,7 @@ export class App extends LiteElement {
               <sl-menu-item
                 type="checkbox"
                 value=""
-                ?checked=${!selectedOption.id}
+                ?checked=${!selectedOption.slug}
                 >${msg("All Organizations")}</sl-menu-item
               >
               <sl-divider></sl-divider>
@@ -422,8 +422,8 @@ export class App extends LiteElement {
             (org) => html`
               <sl-menu-item
                 type="checkbox"
-                value=${org.id}
-                ?checked=${org.id === selectedOption.id}
+                value=${org.slug}
+                ?checked=${org.slug === selectedOption.slug}
                 >${org.name.slice(0, orgNameLength)}</sl-menu-item
               >
             `
@@ -612,7 +612,7 @@ export class App extends LiteElement {
           @notify="${this.onNotify}"
           .authState=${this.authService.authState}
           .userInfo=${this.userInfo}
-          .orgId=${this.selectedOrgId}
+          slug=${this.selectedOrgSlug}
         ></btrix-home>`;
 
       case "orgs":
@@ -891,7 +891,7 @@ export class App extends LiteElement {
     this.authService.logout();
     this.authService = new AuthService();
     this.userInfo = undefined;
-    this.selectedOrgId = undefined;
+    this.selectedOrgSlug = undefined;
   }
 
   private showDialog(content: DialogContent) {
@@ -973,9 +973,9 @@ export class App extends LiteElement {
   }
 
   private clearSelectedOrg() {
-    this.selectedOrgId = undefined;
+    this.selectedOrgSlug = undefined;
     if (this.userInfo) {
-      this.persistUserSettings(this.userInfo.id, { orgId: "" });
+      this.persistUserSettings(this.userInfo.id, { slug: "" });
     }
   }
 }

@@ -128,19 +128,11 @@ export class Org extends LiteElement {
   }
 
   async willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("userInfo") && this.userInfo) {
-      try {
-        this.org = await this.getOrg(this.orgId);
-        this.checkStorageQuota();
-      } catch {
-        this.org = null;
-
-        this.notify({
-          message: msg("Sorry, couldn't retrieve organization at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
-      }
+    if (
+      (changedProperties.has("userInfo") && this.userInfo) ||
+      (changedProperties.has("slug") && this.slug)
+    ) {
+      this.updateOrg();
     }
     if (changedProperties.has("openDialogName")) {
       // Sync URL to create dialog
@@ -160,6 +152,23 @@ export class Org extends LiteElement {
           this.navTo(`${url.pathname}${url.search}`);
         }
       }
+    }
+  }
+
+  private async updateOrg() {
+    if (!this.userInfo) return;
+    try {
+      this.org = await this.getOrg(this.orgId);
+      this.checkStorageQuota();
+    } catch {
+      // TODO handle 404
+      this.org = null;
+
+      this.notify({
+        message: msg("Sorry, couldn't retrieve organization at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
     }
   }
 
