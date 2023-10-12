@@ -315,7 +315,7 @@ export class Org extends LiteElement {
       <a
         id="${tabName}-tab"
         class="block flex-shrink-0 px-3 hover:bg-neutral-50 rounded-t transition-colors"
-        href=${`/orgs/${this.orgId}${path ? `/${path}` : ""}`}
+        href=${`/orgs/${this.slug}${path ? `/${path}` : ""}`}
         aria-selected=${isActive}
         @click=${this.navLink}
       >

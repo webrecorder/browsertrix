@@ -161,7 +161,7 @@ export class OrgsList extends LiteElement {
   }
 
   private makeOnOrgClick(org: OrgData): Function {
-    const navigate = () => this.navTo(`/orgs/${org.id}`);
+    const navigate = () => this.navTo(`/orgs/${org.slug}`);
 
     if (typeof window.getSelection !== undefined) {
       return () => {
