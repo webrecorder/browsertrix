@@ -184,18 +184,31 @@ class StorageOps:
             resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
             assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
 
-    def get_org_storage(
-        self, org: Organization, storage_name="default", check_name_first=False
+    def get_org_primary_storage(
+        self, org: Organization
+    ) -> S3Storage:
+        """get org primary storage. if using 'default' storage, lookup by name
+        otherwise, use storage object """
+
+        if org.storage.type == "default":
+            s3storage = self.storages.get(storage_name)
+        elif org.storage.type == "custom":
+            s3storage = org.customStorages.get(storage_name)
+
+        if not s3storage:
+            raise TypeError("No Default Storage Found, Invalid Storage Type")
+
+        return s3storage
+
+    def get_org_storage_by_name(
+        self, org: Organization, storage_name: str
     ) -> S3Storage:
         """get storage for org, either looking for default storage name first
         or custom storage from the org. Check default storage first if flag
         set to true"""
 
-        if check_name_first and storage_name:
-            s3storage = self.storages.get(storage_name)
-        elif org.storage.type == "s3":
-            s3storage = org.storage
-        else:
+        s3storage = org.customStorages.get(storage_name)
+        if not:
             s3storage = self.storages.get(storage_name)
 
         if not s3storage:
@@ -204,10 +217,10 @@ class StorageOps:
         return s3storage
 
     async def do_upload_single(
-        self, org: Organization, filename: str, data, storage_name="default"
+        self, org: Organization, filename: str, data,
     ) -> None:
         """do upload to specified key"""
-        s3storage = self.get_org_storage(org, storage_name)
+        s3storage = self.get_org_primary_storage(org)
 
         async with self.get_s3_client(s3storage) as (client, bucket, key):
             key += filename
@@ -215,10 +228,10 @@ class StorageOps:
             await client.put_object(Bucket=bucket, Key=key, Body=data)
 
     def get_sync_client(
-        self, org: Organization, storage_name="default", use_access=False
+        self, org: Organization, use_access=False
     ) -> tuple[S3Client, str, str, str]:
         """get sync client"""
-        s3storage = self.get_org_storage(org, storage_name)
+        s3storage = self.get_org_primary_storage(org)
 
         return self.get_sync_s3_client(s3storage, use_access=use_access)
 
@@ -229,10 +242,9 @@ class StorageOps:
         filename: str,
         file_: AsyncIterator,
         min_size: int,
-        storage_name="default",
     ) -> bool:
         """do upload to specified key using multipart chunking"""
-        s3storage = self.get_org_storage(org, storage_name)
+        s3storage = self.get_org_primary_storage(org)
 
         async def get_next_chunk(file_, min_size) -> bytes:
             total = 0
@@ -316,7 +328,7 @@ class StorageOps:
     ) -> str:
         """generate pre-signed url for crawl file"""
 
-        s3storage = self.get_org_storage(org, crawlfile.def_storage_name, True)
+        s3storage = self.get_org_storage_by_name(org, crawlfile.def_storage_name)
 
         async with self.get_s3_client(s3storage, s3storage.use_access_for_presign) as (
             client,
@@ -348,13 +360,13 @@ class StorageOps:
             org, crawlfile.filename, crawlfile.def_storage_name
         )
 
-    async def delete_file(
-        self, org: Organization, filename: str, def_storage_name="default"
+    async def _delete_file(
+        self, org: Organization, filename: str, def_storage_name: str
     ) -> bool:
         """delete specified file from storage"""
         status_code = None
 
-        s3storage = self.get_org_storage(org, def_storage_name, True)
+        s3storage = self.get_org_storage_by_name(org, def_storage_name)
 
         async with self.get_s3_client(s3storage, s3storage.use_access_for_presign) as (
             client,

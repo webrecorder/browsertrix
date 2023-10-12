@@ -616,12 +616,23 @@ class RenameOrg(BaseModel):
 
 
 # ============================================================================
-class DefaultStorage(BaseModel):
-    """Storage reference"""
-
-    type: Literal["default"] = "default"
+class StorageRef(BaseModel):
+    """ Reference to actual storage """
+    type: str
     name: str
+
+
+# ============================================================================
+class DefaultStorage(StorageRef):
+    """Storage reference"""
+    type: Literal["default"] = "default"
     path: str = ""
+
+
+# ============================================================================
+class CustomStorage(StorageRef):
+    """Custom Storage reference"""
+    type: Literal["custom"] = "custom"
 
 
 # ============================================================================
@@ -669,7 +680,11 @@ class Organization(BaseMongoModel):
 
     users: Dict[str, UserRole]
 
-    storage: Union[S3Storage, DefaultStorage]
+    storage: StorageRef
+
+    storageReplicas: List[StorageRef] = []
+
+    customStorages: Dict[str, S3Storage] = {}
 
     usage: Dict[str, int] = {}
     crawlExecSeconds: Dict[str, int] = {}

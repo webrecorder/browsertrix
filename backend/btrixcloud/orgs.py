@@ -16,8 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from .basecrawls import SUCCESSFUL_STATES, RUNNING_STATES, STARTING_STATES
 from .models import (
     Organization,
-    DefaultStorage,
-    S3Storage,
+    BaseStorage,
     OrgQuotas,
     OrgMetrics,
     OrgWebhookUrls,
@@ -193,9 +192,7 @@ class OrgOps:
             {"_id": org.id}, {"$set": org.to_dict()}, upsert=True
         )
 
-    async def update_storage(
-        self, org: Organization, storage: Union[S3Storage, DefaultStorage]
-    ):
+    async def update_storage(self, org: Organization, storage: BaseStorage):
         """Update storage on an existing organization"""
         return await self.orgs.find_one_and_update(
             {"_id": org.id}, {"$set": {"storage": storage.dict()}}
