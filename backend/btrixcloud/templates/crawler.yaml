@@ -122,7 +122,7 @@ spec:
             name: shared-crawler-config
 
         - secretRef:
-            name: {{ storage_name }}
+            name: {{ storage_secret }}
 
       env:
         - name: CRAWL_ID

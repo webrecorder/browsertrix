@@ -37,7 +37,7 @@ class CrawlManager(K8sAPI):
     ) -> str:
         """run browser for profile creation"""
 
-        storage_name, storage_path = await self.get_valid_storage_refs(storage, oid)
+        storage_secret, storage_path = await self.get_valid_storage_refs(storage, oid)
 
         browserid = f"prf-{secrets.token_hex(5)}"
 
@@ -45,7 +45,7 @@ class CrawlManager(K8sAPI):
             "id": browserid,
             "userid": str(userid),
             "oid": str(oid),
-            "storage_name": storage_name,
+            "storage_secret": storage_secret,
             "storage_path": storage_path or "",
             "base_profile": baseprofile or "",
             "profile_filename": profile_filename or "",
@@ -71,7 +71,7 @@ class CrawlManager(K8sAPI):
     ) -> Optional[str]:
         """add new crawl, store crawl config in configmap"""
 
-        storage_name, storage_path = await self.get_valid_storage_refs(
+        storage_secret, storage_path = await self.get_valid_storage_refs(
             storage, str(crawlconfig.oid)
         )
 
@@ -83,7 +83,8 @@ class CrawlManager(K8sAPI):
             CRAWL_CONFIG_ID=str(crawlconfig.id),
             STORE_PATH=storage_path,
             STORE_FILENAME=out_filename,
-            STORAGE_NAME=storage_name,
+            STORAGE_NAME=storage.name,
+            STORAGE_SECRET=storage_secret,
             PROFILE_FILENAME=profile_filename,
             INITIAL_SCALE=str(crawlconfig.scale),
             CRAWL_TIMEOUT=str(crawlconfig.crawlTimeout or 0),
@@ -153,22 +154,22 @@ class CrawlManager(K8sAPI):
         """return storage name and path, also validate that
         storage secret exists"""
         if not storage.custom:
-            storage_name = f"storage-{storage.name}"
+            storage_secret = f"storage-{storage.name}"
             storage_path = str(oid)
         else:
-            storage_name = self._get_custom_storage_name(storage.name, oid)
+            storage_secret = self._get_custom_storage_secret_name(storage.name, oid)
             storage_path = ""
 
-        await self.has_storage(storage_name)
+        await self.has_storage_secret(storage_secret)
 
-        return storage_name, storage_path
+        return storage_secret, storage_path
 
-    async def has_storage(self, storage_name) -> bool:
+    async def has_storage_secret(self, storage_secret) -> bool:
         """Check if storage is valid by trying to get the storage secret
         Will throw if not valid, otherwise return True"""
         try:
             await self.core_api.read_namespaced_secret(
-                storage_name,
+                storage_secret,
                 namespace=self.namespace,
             )
             return True
@@ -176,17 +177,17 @@ class CrawlManager(K8sAPI):
         # pylint: disable=broad-except
         except Exception:
             # pylint: disable=broad-exception-raised,raise-missing-from
-            raise Exception(f"Storage {storage_name} not found")
+            raise Exception(f"Storage {storage_secret} not found")
 
-    def _get_custom_storage_name(self, name: str, oid: str) -> str:
+    def _get_custom_storage_secret_name(self, name: str, oid: str) -> str:
         return f"cs-{oid[:12]}-{name}"
 
     async def remove_org_storage(self, name: str, oid: str) -> bool:
         """Delete custom org storage secret"""
-        org_storage_name = self._get_custom_storage_name(name, oid)
+        storage_secret = self._get_custom_storage_secret_name(name, oid)
         try:
             await self.core_api.delete_namespaced_secret(
-                org_storage_name,
+                storage_secret,
                 namespace=self.namespace,
             )
             return True
@@ -198,11 +199,11 @@ class CrawlManager(K8sAPI):
         """Add custom org storage secret"""
         labels = {"btrix.org": oid}
 
-        org_storage_name = self._get_custom_storage_name(name, oid)
+        storage_secret = self._get_custom_storage_secret_name(name, oid)
 
         crawl_secret = self.client.V1Secret(
             metadata={
-                "name": org_storage_name,
+                "name": storage_secret,
                 "namespace": self.namespace,
                 "labels": labels,
             },
@@ -221,7 +222,7 @@ class CrawlManager(K8sAPI):
         # pylint: disable=bare-except
         except:
             await self.core_api.patch_namespaced_secret(
-                name=org_storage_name, namespace=self.namespace, body=crawl_secret
+                name=storage_secret, namespace=self.namespace, body=crawl_secret
             )
 
     async def get_profile_browser_metadata(self, browserid: str) -> dict[str, str]:

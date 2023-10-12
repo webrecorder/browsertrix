@@ -299,8 +299,8 @@ class BtrixOperator(K8sAPI):
         params["id"] = browserid
         params["userid"] = spec.get("userid", "")
 
-        params["storage_name"] = spec.get("storageName", "")
         params["storage_path"] = spec.get("storagePath", "")
+        params["storage_secret"] = spec.get("storageSecret", "")
         params["profile_filename"] = spec.get("profileFilename", "")
         params["url"] = spec.get("startUrl", "about:blank")
         params["vnc_password"] = spec.get("vncPassword")
@@ -422,7 +422,13 @@ class BtrixOperator(K8sAPI):
 
         children = self._load_redis(params, status, data.children)
 
-        params["storage_name"] = configmap["STORAGE_NAME"]
+        # backwards compatibility, if secret not set, compute from storage name
+        storage_secret = configmap.get("STORAGE_SECRET")
+        if not storage_secret:
+            storage_secret = "storage-" + configmap["STORAGE_NAME"]
+
+        params["storage_secret"] = storage_secret
+
         params["store_path"] = configmap["STORE_PATH"]
         params["store_filename"] = configmap["STORE_FILENAME"]
         params["profile_filename"] = configmap["PROFILE_FILENAME"]

@@ -256,7 +256,9 @@ class StorageOps:
             s3storage = self.storages.get(ref.name)
 
         if not s3storage:
-            raise TypeError("No Default Storage Found, Invalid Storage Type")
+            raise TypeError(
+                f"No {'custom' if ref.custom else 'default'} storage with name: {ref.name}"
+            )
 
         return s3storage
 
@@ -272,7 +274,7 @@ class StorageOps:
             s3storage = self.storages.get(storage_name)
 
         if not s3storage:
-            raise TypeError("No Default Storage Found, Invalid Storage Type")
+            raise TypeError(f"No default or custom storage with name: {storage_name}")
 
         return s3storage
 
