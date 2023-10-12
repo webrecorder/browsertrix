@@ -1,7 +1,6 @@
 ---
 - hosts: all
   gather_facts: yes
-  connection: local
   become: yes
   vars_files:
     - inventory/microk8s/group_vars/main.yml

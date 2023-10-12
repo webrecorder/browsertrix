@@ -214,7 +214,15 @@
 - name: micork8s deploy | helm | output values yaml
   ansible.builtin.template:
     src: btrix_values.j2
-    dest: ../chart/{{ project_name }}-values.yaml
+    dest: "{{ browsertrix_cloud_home }}/chart/{{ project_name }}-values.yaml"
     mode: u+rw
   tags:
     - helm_upgrade
+
+- name: Debug Print
+  command: cat "{{ browsertrix_cloud_home }}/chart/{{ project_name }}-values.yaml"
+  register: command_output
+
+- name: Debug Template
+  debug:
+    msg: "{{command_output.stdout}}"
