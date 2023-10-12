@@ -624,11 +624,11 @@ export class App extends LiteElement {
         ></btrix-orgs>`;
 
       case "org": {
-        const orgId = this.viewState.params.orgId;
+        const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
         const orgTab =
           window.location.pathname
-            .slice(window.location.pathname.indexOf(orgId) + orgId.length)
+            .slice(window.location.pathname.indexOf(slug) + slug.length)
             .replace(/(^\/|\/$)/, "")
             .split("/")[0] || "home";
         return html`<btrix-org
@@ -643,8 +643,8 @@ export class App extends LiteElement {
           .userInfo=${this.userInfo}
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
-          orgId=${orgId}
-          orgPath=${orgPath.split(orgId)[1]}
+          slug=${slug}
+          orgPath=${orgPath.split(slug)[1]}
           orgTab=${orgTab as OrgTab}
         ></btrix-org>`;
       }

@@ -75,15 +75,15 @@ export class Org extends LiteElement {
   @property({ type: Object })
   viewStateData?: ViewState["data"];
 
+  @property({ type: String })
+  slug!: string;
+
   // Path after `/orgs/:orgId/`
   @property({ type: String })
   orgPath!: string;
 
   @property({ type: Object })
   params!: Params;
-
-  @property({ type: String })
-  orgId!: string;
 
   @property({ type: String })
   orgTab: OrgTab = defaultTab;
@@ -108,7 +108,11 @@ export class Org extends LiteElement {
 
   get userOrg() {
     if (!this.userInfo) return null;
-    return this.userInfo.orgs.find(({ id }) => id === this.orgId)!;
+    return this.userInfo.orgs.find(({ slug }) => slug === this.slug)!;
+  }
+
+  get orgId() {
+    return this.userOrg?.id || "";
   }
 
   get isAdmin() {
@@ -124,7 +128,7 @@ export class Org extends LiteElement {
   }
 
   async willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("orgId") && this.orgId && this.authState) {
+    if (changedProperties.has("userInfo") && this.userInfo) {
       try {
         this.org = await this.getOrg(this.orgId);
         this.checkStorageQuota();
@@ -523,6 +527,7 @@ export class Org extends LiteElement {
   }
 
   private renderOrgSettings() {
+    if (!this.userInfo || !this.org) return;
     const activePanel = this.orgPath.includes("/members")
       ? "members"
       : "information";
