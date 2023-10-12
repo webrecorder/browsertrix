@@ -631,7 +631,7 @@ class StorageRef(BaseModel):
 
 
 # ============================================================================
-class OrgStorageRefsIn(BaseModel):
+class OrgStorageRefs(BaseModel):
     """Input model for setting primary storage + optional replicas"""
 
     storage: StorageRef

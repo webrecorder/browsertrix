@@ -8,12 +8,12 @@ import json
 from typing import Optional
 from datetime import timedelta
 
+from kubernetes_asyncio.client import V1ConfigMap
+
 from .k8sapi import K8sAPI
 from .utils import dt_now, to_k8s_date
 
 from .models import StorageRef, CrawlConfig, UpdateCrawlConfig
-
-from kubernetes_asyncio.client import V1ConfigMap
 
 
 # ============================================================================

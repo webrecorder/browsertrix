@@ -30,7 +30,7 @@ from .models import (
     StorageRef,
     S3Storage,
     S3StorageIn,
-    OrgStorageRefsIn,
+    OrgStorageRefs,
 )
 from .zip import (
     sync_get_zip_file,
@@ -168,7 +168,7 @@ class StorageOps:
 
     async def update_storage_refs(
         self,
-        storage_refs: OrgStorageRefsIn,
+        storage_refs: OrgStorageRefs,
         org: Organization,
     ) -> dict[str, bool]:
         """update storage for org"""
@@ -663,12 +663,20 @@ def init_storages_api(org_ops, crawl_manager):
     # pylint: disable=bare-except, raise-missing-from
     @router.post("/storage", tags=["organizations"])
     async def update_storage_refs(
-        storage: OrgStorageRefsIn,
+        storage: OrgStorageRefs,
         org: Organization = Depends(org_owner_dep),
     ):
         return await storage_ops.update_storage_refs(storage, org)
 
-    @router.get("/storages", tags=["organizations"])
+    # pylint: disable=bare-except, raise-missing-from
+    @router.get("/storage", tags=["organizations"], response_model=OrgStorageRefs)
+    def get_storage_refs(
+        org: Organization = Depends(org_owner_dep),
+    ):
+        """get storage refs for an org"""
+        return OrgStorageRefs(storage=org.storage, storageReplicas=org.storageReplicas)
+
+    @router.get("/allStorages", tags=["organizations"])
     def get_available_storages(org: Organization = Depends(org_owner_dep)):
         return storage_ops.get_available_storages(org)
 
