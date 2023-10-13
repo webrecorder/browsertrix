@@ -699,11 +699,11 @@ class BtrixOperator(K8sAPI):
                 running = cstatus["state"].get("running")
 
                 if running:
-                    self.inc_exec_time(
+                    await self.inc_exec_time(
                         name, status, cancel_time, running.get("startedAt")
                     )
 
-                self.handle_terminated_pod(
+                await self.handle_terminated_pod(
                     name, role, status, cstatus["state"].get("terminated")
                 )
 
@@ -779,7 +779,9 @@ class BtrixOperator(K8sAPI):
 
         if not children[POD] and not children[PVC]:
             # ensure exec time was successfully updated
-            exec_updated = await self.store_exec_time(crawl_id, oid, status.execTime)
+            exec_updated = await self.store_exec_time_in_crawl(
+                crawl_id, oid, status.execTime
+            )
 
             # keep parent until ttl expired, if any
             if status.finished:
@@ -816,7 +818,7 @@ class BtrixOperator(K8sAPI):
     async def sync_crawl_state(self, redis_url, crawl, status, pods, metrics):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
-        crawler_running, redis_running, done = self.sync_pod_status(pods, status)
+        crawler_running, redis_running, done = await self.sync_pod_status(pods, status)
         redis = None
 
         try:
@@ -902,7 +904,7 @@ class BtrixOperator(K8sAPI):
             if redis:
                 await redis.close()
 
-    def sync_pod_status(self, pods, status):
+    async def sync_pod_status(self, pods, status):
         """check status of pods"""
         crawler_running = False
         redis_running = False
@@ -930,7 +932,7 @@ class BtrixOperator(K8sAPI):
                     ):
                         running = True
 
-                    self.handle_terminated_pod(
+                    await self.handle_terminated_pod(
                         name, role, status, cstatus["state"].get("terminated")
                     )
 
@@ -947,7 +949,7 @@ class BtrixOperator(K8sAPI):
 
         return crawler_running, redis_running, done
 
-    def handle_terminated_pod(self, name, role, status, terminated):
+    async def handle_terminated_pod(self, name, role, status, terminated):
         """handle terminated pod state"""
         if not terminated:
             return
@@ -961,7 +963,9 @@ class BtrixOperator(K8sAPI):
 
         pod_status.isNewExit = pod_status.exitTime != exit_time
         if pod_status.isNewExit and role == "crawler":
-            self.inc_exec_time(name, status, exit_time, terminated.get("startedAt"))
+            await self.inc_exec_time(
+                name, status, exit_time, terminated.get("startedAt")
+            )
             pod_status.exitTime = exit_time
 
         # detect reason
@@ -1279,8 +1283,8 @@ class BtrixOperator(K8sAPI):
         # finally, delete job
         await self.delete_crawl_job(crawl_id)
 
-    def inc_exec_time(self, name, status, finished_at, started_at):
-        """increment execTime on pod status"""
+    async def inc_exec_time(self, name, status, finished_at, started_at):
+        """increment execTime on pod status and in org"""
         end_time = (
             from_k8s_date(finished_at)
             if not isinstance(finished_at, datetime)
@@ -1288,17 +1292,16 @@ class BtrixOperator(K8sAPI):
         )
         start_time = from_k8s_date(started_at)
         exec_time = int((end_time - start_time).total_seconds())
+        await self.org_ops.inc_org_time_stats(oid, exec_time, True)
         status.execTime += exec_time
         print(f"{name} exec time: {exec_time}")
         return exec_time
 
-    async def store_exec_time(self, crawl_id, oid, exec_time):
-        """store execTime in crawl (if not already set), and increment org counter"""
+    async def store_exec_time_in_crawl(self, crawl_id, oid, exec_time):
+        """store execTime in crawl (if not already set)"""
         try:
             if await self.crawl_ops.store_exec_time(crawl_id, exec_time):
-                print(f"Exec Time: {exec_time}", flush=True)
-                await self.org_ops.inc_org_time_stats(oid, exec_time, True)
-
+                print(f"Exec Time stored in crawl: {exec_time}", flush=True)
             return True
         # pylint: disable=broad-except
         except Exception as exc:
