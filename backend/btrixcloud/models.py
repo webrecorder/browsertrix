@@ -314,13 +314,18 @@ class StorageRef(BaseModel):
 
 
 # ============================================================================
-class CrawlFile(BaseModel):
-    """file from a crawl"""
+class BaseFile(BaseModel):
+    """Base model for crawl and profile files"""
 
     filename: str
     hash: str
     size: int
     storage: StorageRef
+
+
+# ============================================================================
+class CrawlFile(BaseFile):
+    """file from a crawl"""
 
     presignedUrl: Optional[str]
     expireAt: Optional[datetime]
@@ -869,13 +874,8 @@ class PaginatedResponse(BaseModel):
 
 
 # ============================================================================
-class ProfileFile(BaseModel):
-    """file from a crawl"""
-
-    filename: str
-    hash: str
-    size: int
-    storage: StorageRef
+class ProfileFile(BaseFile):
+    """file for storing profile data"""
 
 
 # ============================================================================
