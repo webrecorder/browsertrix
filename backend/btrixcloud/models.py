@@ -294,7 +294,6 @@ class StorageRef(BaseModel):
         else:
             super().__init__(**kwargs)
 
-
     def __str__(self):
         if not self.custom:
             return self.name

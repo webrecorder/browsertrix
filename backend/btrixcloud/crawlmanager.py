@@ -84,7 +84,7 @@ class CrawlManager(K8sAPI):
             PROFILE_FILENAME=profile_filename,
             INITIAL_SCALE=str(crawlconfig.scale),
             CRAWL_TIMEOUT=str(crawlconfig.crawlTimeout or 0),
-            MAX_CRAWL_SIZE=str(crawlconfig.maxCrawlSize or 0)
+            MAX_CRAWL_SIZE=str(crawlconfig.maxCrawlSize or 0),
         )
 
         crawl_id = None

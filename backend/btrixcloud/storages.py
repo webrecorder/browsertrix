@@ -267,7 +267,7 @@ class StorageOps:
     ) -> str:
         """get relative path for file"""
         storage = self.get_org_storage_by_ref(org, ref)
-        prefix = storage.endpoint_url# + self.get_org_storage_prefix(org)
+        prefix = storage.endpoint_url  # + self.get_org_storage_prefix(org)
         print("prefix", prefix)
         print("file_path", file_path)
         if file_path.startswith(prefix):
