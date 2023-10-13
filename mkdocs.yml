@@ -66,6 +66,7 @@ nav:
       - user-guide/archived-items.md
       - user-guide/collections.md
       - user-guide/org-settings.md
+      - user-guide/user-settings.md
 
 markdown_extensions:
   - toc:
