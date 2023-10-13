@@ -202,7 +202,7 @@ export class OrgSettings extends LiteElement {
             <sl-input
               name="orgSlug"
               size="small"
-              label=${msg("Slug URL")}
+              label=${msg("Org ID")}
               placeholder="my-organization"
               autocomplete="off"
               value=${this.org.slug}
