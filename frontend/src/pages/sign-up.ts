@@ -15,8 +15,8 @@ export class SignUp extends LiteElement {
 
   render() {
     return html`
-      <article class="w-full max-w-sm grid gap-5">
-        <main class="md:bg-white md:shadow-xl md:rounded-lg p-12">
+      <article class="w-full max-w-md grid gap-5">
+        <main class="md:bg-white md:border md:shadow-lg md:rounded-lg p-10">
           ${this.isSignedUpWithoutAuth
             ? html`
                 <div

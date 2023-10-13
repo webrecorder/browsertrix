@@ -23,7 +23,7 @@ export class Input extends LiteElement {
   label?: string;
 
   @property({ type: String })
-  id: string = "";
+  id: string = "customInput";
 
   @property({ type: String })
   name?: string;
@@ -51,7 +51,6 @@ export class Input extends LiteElement {
 
   @state()
   isPasswordVisible: boolean = false;
-
   render() {
     return html`
       <div class="sl-label">

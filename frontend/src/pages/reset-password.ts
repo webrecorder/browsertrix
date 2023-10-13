@@ -1,8 +1,16 @@
 import { state, property } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { str, msg, localized } from "@lit/localize";
+import debounce from "lodash/fp/debounce";
+import { when } from "lit/directives/when.js";
+import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 
 import type { ViewState } from "../utils/APIRouter";
 import LiteElement, { html } from "../utils/LiteElement";
+import PasswordService from "../utils/PasswordService";
+import type { Input as BtrixInput } from "../components/input/input";
+
+const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
+  PasswordService;
 
 @localized()
 export class ResetPassword extends LiteElement {
@@ -10,10 +18,17 @@ export class ResetPassword extends LiteElement {
   viewState!: ViewState;
 
   @state()
+  private pwStrengthResults: null | ZxcvbnResult = null;
+
+  @state()
   private serverError?: string;
 
   @state()
   private isSubmitting: boolean = false;
+
+  protected firstUpdated() {
+    PasswordService.setOptions();
+  }
 
   render() {
     let formError;
@@ -29,22 +44,29 @@ export class ResetPassword extends LiteElement {
     }
 
     return html`
-      <div class="w-full max-w-sm grid gap-5">
-        <div class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
+      <div class="w-full max-w-md grid gap-5">
+        <div class="md:bg-white md:border md:shadow-lg md:rounded-lg md:p-10">
           <form @submit=${this.onSubmit} aria-describedby="formError">
             <div class="mb-5">
               <btrix-input
                 id="password"
                 name="password"
                 type="password"
-                label="${msg("New password")}"
+                label="${msg("Enter new password")}"
                 help-text=${msg("Must be between 8-64 characters")}
                 minlength="8"
                 autocomplete="new-password"
                 passwordToggle
                 required
+                @input=${this.onPasswordInput}
               >
               </btrix-input>
+              <p class="mt-2 text-gray-500">
+                ${msg(
+                  str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`
+                )}
+              </p>
+              ${when(this.pwStrengthResults, this.renderPasswordStrength)}
             </div>
 
             ${formError}
@@ -53,8 +75,10 @@ export class ResetPassword extends LiteElement {
               class="w-full"
               variant="primary"
               ?loading=${this.isSubmitting}
+              ?disabled=${!this.pwStrengthResults ||
+              this.pwStrengthResults.score < PASSWORD_MIN_SCORE}
               type="submit"
-              >${msg("Change password")}</sl-button
+              >${msg("Change Password")}</sl-button
             >
           </form>
         </div>
@@ -70,6 +94,25 @@ export class ResetPassword extends LiteElement {
       </div>
     `;
   }
+
+  private renderPasswordStrength = () => html`
+    <div class="my-3">
+      <btrix-pw-strength-alert
+        .result=${this.pwStrengthResults}
+        min=${PASSWORD_MIN_SCORE}
+      >
+      </btrix-pw-strength-alert>
+    </div>
+  `;
+
+  private onPasswordInput = debounce(150)(async (e: InputEvent) => {
+    const { value } = e.target as BtrixInput;
+    if (!value || value.length < 4) {
+      this.pwStrengthResults = null;
+      return;
+    }
+    this.pwStrengthResults = await PasswordService.checkStrength(value);
+  }) as any;
 
   async onSubmit(event: SubmitEvent) {
     event.preventDefault();

@@ -150,6 +150,9 @@ import("./collections-add").then(({ CollectionsAdd }) => {
 import("./code").then(({ Code }) => {
   customElements.define("btrix-code", Code);
 });
+import("./pw-strength-alert").then(({ PasswordStrengthAlert }) => {
+  customElements.define("btrix-pw-strength-alert", PasswordStrengthAlert);
+});
 import("./search-combobox").then(({ SearchCombobox }) => {
   customElements.define("btrix-search-combobox", SearchCombobox);
 });
