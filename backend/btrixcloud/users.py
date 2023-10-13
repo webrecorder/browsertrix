@@ -229,7 +229,6 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
 
             await self.org_ops.create_new_org_for_user(
                 org_name=org_name,
-                storage_name="default",
                 user=user,
             )
 

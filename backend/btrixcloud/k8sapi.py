@@ -17,7 +17,6 @@ from redis import asyncio as aioredis
 
 from fastapi.templating import Jinja2Templates
 
-from .models import StorageRef
 from .utils import get_templates_dir, dt_now, to_k8s_date
 
 
@@ -152,20 +151,6 @@ class K8sAPI:
         )
         return created
 
-    def get_storage_secret_and_extra_path(
-        self, storage: StorageRef, oid: str
-    ) -> tuple[str, str]:
-        """return storage name and path, also validate that
-        storage secret exists"""
-        if not storage.custom:
-            storage_secret = f"storage-{storage.name}"
-            storage_path = str(oid) + "/"
-        else:
-            storage_secret = self._get_custom_storage_secret_name(storage.name, oid)
-            storage_path = ""
-
-        return storage_secret, storage_path
-
     async def has_storage_secret(self, storage_secret) -> bool:
         """Check if storage is valid by trying to get the storage secret
         Will throw if not valid, otherwise return True"""
@@ -180,9 +165,6 @@ class K8sAPI:
         except Exception:
             # pylint: disable=broad-exception-raised,raise-missing-from
             raise Exception(f"Storage {storage_secret} not found")
-
-    def _get_custom_storage_secret_name(self, name: str, oid: str) -> str:
-        return f"cs-{oid[:12]}-{name}"
 
     async def delete_crawl_job(self, crawl_id):
         """delete custom crawljob object"""

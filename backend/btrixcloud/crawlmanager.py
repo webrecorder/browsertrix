@@ -5,7 +5,7 @@ import asyncio
 import secrets
 import json
 
-from typing import Optional
+from typing import Optional, Dict
 from datetime import timedelta
 
 from kubernetes_asyncio.client import V1ConfigMap
@@ -37,9 +37,8 @@ class CrawlManager(K8sAPI):
     ) -> str:
         """run browser for profile creation"""
 
-        storage_secret, storage_path = self.get_storage_secret_and_extra_path(
-            storage, oid
-        )
+        storage_path = storage.get_storage_extra_path(oid)
+        storage_secret = storage.get_storage_secret_name(oid)
 
         await self.has_storage_secret(storage_secret)
 
@@ -107,9 +106,7 @@ class CrawlManager(K8sAPI):
         """create new crawl job from config"""
         cid = str(crawlconfig.id)
 
-        storage_secret, _ = self.get_storage_secret_and_extra_path(
-            storage, str(crawlconfig.oid)
-        )
+        storage_secret = storage.get_storage_secret_name(str(crawlconfig.oid))
 
         await self.has_storage_secret(storage_secret)
 
@@ -155,9 +152,9 @@ class CrawlManager(K8sAPI):
 
         return True
 
-    async def remove_org_storage(self, name: str, oid: str) -> bool:
+    async def remove_org_storage(self, storage: StorageRef, oid: str) -> bool:
         """Delete custom org storage secret"""
-        storage_secret = self._get_custom_storage_secret_name(name, oid)
+        storage_secret = storage.get_storage_secret_name(oid)
         try:
             await self.core_api.delete_namespaced_secret(
                 storage_secret,
@@ -168,11 +165,13 @@ class CrawlManager(K8sAPI):
         except:
             return False
 
-    async def add_org_storage(self, name, oid, storage) -> None:
+    async def add_org_storage(
+        self, storage: StorageRef, string_data: Dict[str, str], oid: str
+    ) -> None:
         """Add custom org storage secret"""
         labels = {"btrix.org": oid}
 
-        storage_secret = self._get_custom_storage_secret_name(name, oid)
+        storage_secret = storage.get_storage_secret_name(oid)
 
         crawl_secret = self.client.V1Secret(
             metadata={
@@ -180,11 +179,7 @@ class CrawlManager(K8sAPI):
                 "namespace": self.namespace,
                 "labels": labels,
             },
-            string_data={
-                "STORE_ENDPOINT_URL": storage.endpoint_url,
-                "STORE_ACCESS_KEY": storage.access_key,
-                "STORE_SECRET_KEY": storage.secret_key,
-            },
+            string_data=string_data,
         )
 
         try:

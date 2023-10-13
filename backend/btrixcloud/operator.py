@@ -425,9 +425,8 @@ class BtrixOperator(K8sAPI):
 
         children = self._load_redis(params, status, data.children)
 
-        storage_secret, storage_path = self.get_storage_secret_and_extra_path(
-            crawl.storage, str(crawl.oid)
-        )
+        storage_path = crawl.storage.get_storage_extra_path(oid)
+        storage_secret = crawl.storage.get_storage_secret_name(oid)
 
         params["storage_path"] = storage_path
         params["storage_secret"] = storage_secret

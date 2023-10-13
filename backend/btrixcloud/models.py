@@ -299,6 +299,19 @@ class StorageRef(BaseModel):
             return self.name
         return "cs-" + self.name
 
+    def get_storage_secret_name(self, oid: str) -> str:
+        """get k8s secret name for this storage and oid"""
+        if not self.custom:
+            return "storage-" + self.name
+        return f"storage-cs-{self.name}-{oid[:12]}"
+
+    def get_storage_extra_path(self, oid: str) -> str:
+        """return extra path added to the endpoint
+        using oid for default storages, no extra path for custom"""
+        if not self.custom:
+            return oid + "/"
+        return ""
+
 
 # ============================================================================
 class CrawlFile(BaseModel):
@@ -641,7 +654,7 @@ class RenameOrg(BaseModel):
 class CreateOrg(RenameOrg):
     """Create a new org"""
 
-    storage: StorageRef
+    storage: Optional[StorageRef] = None
 
 
 # ============================================================================

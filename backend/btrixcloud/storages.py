@@ -49,9 +49,9 @@ class StorageOps:
 
     default_storages: Dict[str, S3Storage] = {}
 
-    primary: Optional[StorageRef] = None
+    default_primary: Optional[StorageRef] = None
 
-    replicas: List[StorageRef] = []
+    default_replicas: List[StorageRef] = []
 
     def __init__(self, org_ops, crawl_manager) -> None:
         self.org_ops = org_ops
@@ -73,13 +73,29 @@ class StorageOps:
                 raise TypeError("Only s3 storage supported for now")
 
             if storage.get("is_default_primary"):
-                if self.primary:
+                if self.default_primary:
                     raise TypeError("Only one default primary storage can be specified")
 
-                self.primary = StorageRef(name=name)
+                self.default_primary = StorageRef(name=name)
 
             if storage.get("is_default_replica"):
-                self.replicas.append(StorageRef(name=name))
+                self.default_replicas.append(StorageRef(name=name))
+
+        if not self.default_primary:
+            num_storages = len(self.default_storages)
+            if num_storages == 1:
+                self.default_primary = StorageRef(
+                    name=list(self.default_storages.keys())[0]
+                )
+            elif num_storages == 0:
+                raise TypeError("No storages specified in 'storages' key")
+            else:
+                raise TypeError(
+                    "Multiple storages found -- set 'is_default_primary: True'"
+                    "to indicate which storage should be considered default primary"
+                )
+
+        self.org_ops.set_default_primary_storage(self.default_primary)
 
     def _create_s3_storage(self, storage: dict[str, str]) -> S3Storage:
         """create S3Storage object"""
@@ -130,7 +146,17 @@ class StorageOps:
 
         org.customStorages[name] = storage
 
-        await self.crawl_manager.add_org_storage(name, str(org.id), storage)
+        string_data = (
+            {
+                "STORE_ENDPOINT_URL": storage.endpoint_url,
+                "STORE_ACCESS_KEY": storage.access_key,
+                "STORE_SECRET_KEY": storage.secret_key,
+            },
+        )
+
+        await self.crawl_manager.add_org_storage(
+            StorageRef(name=name, custom=True), string_data, str(org.id)
+        )
 
         await self.org_ops.update_custom_storages(org)
 
@@ -150,7 +176,9 @@ class StorageOps:
         # pylint: disable=fixme
         # TODO: also check if any active crawls running with this storage?
 
-        await self.crawl_manager.remove_org_storage(name, str(org.id))
+        await self.crawl_manager.remove_org_storage(
+            StorageRef(name=name, custom=True), str(org.id)
+        )
 
         try:
             del org.customStorages[name]
@@ -255,23 +283,13 @@ class StorageOps:
             resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
             assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
 
-    def get_org_storage_prefix(self, org: Organization) -> str:
-        """get org storage prefix"""
-
-        if org.storage.custom:
-            return ""
-        return str(org.id) + "/"
-
     def get_org_relative_path(
         self, org: Organization, ref: StorageRef, file_path: str
     ) -> str:
         """get relative path for file"""
         storage = self.get_org_storage_by_ref(org, ref)
-        prefix = storage.endpoint_url  # + self.get_org_storage_prefix(org)
-        print("prefix", prefix)
-        print("file_path", file_path)
-        if file_path.startswith(prefix):
-            return file_path[len(prefix) :]
+        if file_path.startswith(storage.endpoint_url):
+            return file_path[len(storage.endpoint_url) :]
 
         return file_path
 

@@ -56,7 +56,13 @@ class OrgOps:
         self.org_owner_dep = None
         self.org_public = None
 
+        self.default_primary = None
+
         self.invites = invites
+
+    def set_default_primary_storage(self, storage: StorageRef):
+        """set default primary storage"""
+        self.default_primary = storage
 
     async def init_index(self):
         """init lookup index"""
@@ -94,7 +100,7 @@ class OrgOps:
             name=org_name,
             slug=slug_from_name(org_name),
             users={str(user.id): UserRole.OWNER},
-            storage=StorageRef(name=storage_name),
+            storage=self.default_primary,
         )
 
         print(f"Creating new org {org_name} with storage {storage_name}", flush=True)
@@ -152,7 +158,7 @@ class OrgOps:
         if res:
             return Organization.from_dict(res)
 
-    async def create_default_org(self, storage_name="default"):
+    async def create_default_org(self):
         """Create default organization if doesn't exist."""
         await self.init_index()
 
@@ -173,11 +179,11 @@ class OrgOps:
             name=DEFAULT_ORG,
             slug=slug_from_name(DEFAULT_ORG),
             users={},
-            storage=StorageRef(name=storage_name),
+            storage=self.default_primary,
             default=True,
         )
         print(
-            f'Creating Default Organization "{DEFAULT_ORG}". Storage: {storage_name}',
+            f'Creating Default Organization "{DEFAULT_ORG}". Storage: {self.default_primary.name}',
             flush=True,
         )
         await self.add_org(org)
@@ -521,7 +527,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         if not slug:
             slug = slug_from_name(new_org.name)
 
-        storage = new_org.storage or StorageRef(name="default")
+        storage = new_org.storage or ops.default_primary
 
         org = Organization(
             id=id_, name=new_org.name, slug=slug, users={}, storage=storage

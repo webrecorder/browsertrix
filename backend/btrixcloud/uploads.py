@@ -84,7 +84,7 @@ class UploadOps(BaseCrawlOps):
 
         id_ = "upload-" + str(uuid.uuid4()) if not replaceId else replaceId
 
-        prefix = self.storage_ops.get_org_storage_prefix(org) + f"uploads/{id_}"
+        prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{id_}"
 
         file_prep = FilePreparer(prefix, filename)
 
@@ -136,7 +136,7 @@ class UploadOps(BaseCrawlOps):
         id_ = uuid.uuid4()
         files = []
 
-        prefix = self.storage_ops.get_org_storage_prefix(org) + f"uploads/{id_}"
+        prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{id_}"
 
         for upload in uploads:
             file_prep = FilePreparer(prefix, upload.filename)
