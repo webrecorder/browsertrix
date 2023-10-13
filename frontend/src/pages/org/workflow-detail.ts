@@ -50,7 +50,7 @@ export class WorkflowDetail extends LiteElement {
   orgStorageQuotaReached = false;
 
   @property({ type: Boolean })
-  orgExecutionMinutesQuotaReached = false;
+  orgExecutionMinutesHardCapReached = false;
 
   @property({ type: String })
   workflowId!: string;
@@ -585,14 +585,14 @@ export class WorkflowDetail extends LiteElement {
               "Org Storage Full or Monthly Execution Minutes Reached"
             )}
             ?disabled=${!this.orgStorageQuotaReached &&
-            !this.orgExecutionMinutesQuotaReached}
+            !this.orgExecutionMinutesHardCapReached}
           >
             <sl-button
               size="small"
               variant="primary"
               class="mr-2"
               ?disabled=${this.orgStorageQuotaReached ||
-              this.orgExecutionMinutesQuotaReached}
+              this.orgExecutionMinutesHardCapReached}
               @click=${() => this.runNow()}
             >
               <sl-icon name="play" slot="prefix"></sl-icon>
@@ -633,7 +633,7 @@ export class WorkflowDetail extends LiteElement {
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--success)"
                 ?disabled=${this.orgStorageQuotaReached ||
-                this.orgExecutionMinutesQuotaReached}
+                this.orgExecutionMinutesHardCapReached}
                 @click=${() => this.runNow()}
               >
                 <sl-icon name="play" slot="prefix"></sl-icon>
@@ -1035,12 +1035,12 @@ export class WorkflowDetail extends LiteElement {
               "Org Storage Full or Monthly Execution Minutes Reached"
             )}
             ?disabled=${!this.orgStorageQuotaReached &&
-            !this.orgExecutionMinutesQuotaReached}
+            !this.orgExecutionMinutesHardCapReached}
           >
             <sl-button
               size="small"
               ?disabled=${this.orgStorageQuotaReached ||
-              this.orgExecutionMinutesQuotaReached}
+              this.orgExecutionMinutesHardCapReached}
               @click=${() => this.runNow()}
             >
               <sl-icon name="play" slot="prefix"></sl-icon>
@@ -1123,13 +1123,13 @@ export class WorkflowDetail extends LiteElement {
               "Org Storage Full or Monthly Execution Minutes Reached"
             )}
             ?disabled=${!this.orgStorageQuotaReached &&
-            !this.orgExecutionMinutesQuotaReached}
+            !this.orgExecutionMinutesHardCapReached}
           >
             <sl-button
               size="small"
               variant="primary"
               ?disabled=${this.orgStorageQuotaReached ||
-              this.orgExecutionMinutesQuotaReached}
+              this.orgExecutionMinutesHardCapReached}
               @click=${() => this.runNow()}
             >
               <sl-icon name="play" slot="prefix"></sl-icon>

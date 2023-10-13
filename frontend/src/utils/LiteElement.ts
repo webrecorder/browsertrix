@@ -184,6 +184,16 @@ export default class LiteElement extends LitElement {
           errorMessage = msg("Storage quota reached");
           break;
         }
+        if (errorDetail === "execution_minutes_hard_cap_reached") {
+          this.dispatchEvent(
+            new CustomEvent("execution-minutes-hard-cap-update", {
+              detail: { reached: true },
+              bubbles: true,
+            })
+          );
+          errorMessage = msg("Monthly execution minutes hard cap reached");
+          break;
+        }
         if (errorDetail === "execution_minutes_quota_reached") {
           this.dispatchEvent(
             new CustomEvent("execution-minutes-quota-update", {

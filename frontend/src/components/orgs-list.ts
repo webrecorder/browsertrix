@@ -64,6 +64,11 @@ export class OrgsList extends LiteElement {
             case "crawlExecMinutesQuota":
               label = msg("Org Monthly Execution Minutes Quota");
               break;
+            case "crawlExecExtraMinutesHardCap":
+              label = msg(
+                "Additional Minutes Over Monthly Execution Quota Before Hard Cap"
+              );
+              break;
             default:
               label = msg("Unlabeled");
           }

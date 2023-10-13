@@ -8,7 +8,7 @@ import urllib.parse
 import uuid
 from datetime import datetime
 
-from typing import Union, Optional
+from typing import Union, Optional, Tuple
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -316,11 +316,17 @@ class OrgOps:
 
         return False
 
-    async def execution_mins_quota_reached(self, oid: uuid.UUID) -> bool:
+    async def execution_mins_quota_reached(self, oid: uuid.UUID) -> Tuple[bool, bool]:
         """Return boolean indicating if execution minutes quota is met or exceeded."""
         quota = await self.get_org_execution_mins_quota(oid)
         if not quota:
-            return False
+            return False, False
+
+        quota_reached = False
+        hard_cap_reached = False
+
+        hard_cap_additional_mins = await self.get_org_execution_mins_hard_cap(oid)
+        hard_cap_quota = quota + hard_cap_additional_mins
 
         org = await self.orgs.find_one({"_id": oid})
         org = Organization.from_dict(org)
@@ -333,9 +339,11 @@ class OrgOps:
         monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
 
         if monthly_exec_minutes >= quota:
-            return True
+            quota_reached = True
+        if monthly_exec_minutes >= hard_cap_quota:
+            hard_cap_reached = True
 
-        return False
+        return quota_reached, hard_cap_reached
 
     async def get_org_storage_quota(self, oid: uuid.UUID) -> int:
         """return max allowed concurrent crawls, if any"""
@@ -351,6 +359,14 @@ class OrgOps:
         if org:
             org = Organization.from_dict(org)
             return org.quotas.crawlExecMinutesQuota
+        return 0
+
+    async def get_org_execution_mins_hard_cap(self, oid: uuid.UUID) -> int:
+        """return additional minutes before exec time hard cap, if any"""
+        org = await self.orgs.find_one({"_id": oid})
+        if org:
+            org = Organization.from_dict(org)
+            return org.quotas.crawlExecExtraMinutesHardCap
         return 0
 
     async def set_origin(self, org: Organization, request: Request):

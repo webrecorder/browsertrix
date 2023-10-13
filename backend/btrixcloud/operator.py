@@ -404,8 +404,11 @@ class BtrixOperator(K8sAPI):
                 )
                 return self._empty_response(status)
 
-        # Cancel crawl if execution minutes quota is reached while running
-        if await self.org_ops.execution_mins_quota_reached(crawl.oid):
+        # Cancel crawl if execution minutes hard cap is reached while running
+        _, exec_mins_hard_cap_reached = await self.org_ops.execution_mins_quota_reached(
+            crawl.oid
+        )
+        if exec_mins_hard_cap_reached:
             await self.cancel_crawl(
                 crawl.id, uuid.UUID(cid), uuid.UUID(oid), status, data.children[POD]
             )

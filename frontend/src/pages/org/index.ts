@@ -104,6 +104,9 @@ export class Org extends LiteElement {
   private showExecutionMinutesQuotaAlert = false;
 
   @state()
+  private orgExecutionMinutesHardCapReached = false;
+
+  @state()
   private openDialogName?: ResourceName;
 
   @state()
@@ -498,14 +501,16 @@ export class Org extends LiteElement {
           .authState=${this.authState!}
           orgId=${this.orgId!}
           ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
-          ?orgExecutionMinutesQuotaReached=${this
-            .orgExecutionMinutesQuotaReached}
+          ?orgExecutionMinutesHardCapReached=${this
+            .orgExecutionMinutesHardCapReached}
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
           @storage-quota-update=${this.onStorageQuotaUpdate}
           @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
+          @execution-minutes-hard-cap-update=${this
+            .onExecutionMinutesHardCapUpdate}
         ></btrix-workflow-detail>
       `;
     }
@@ -523,6 +528,8 @@ export class Org extends LiteElement {
         jobType=${ifDefined(this.params.jobType)}
         @storage-quota-update=${this.onStorageQuotaUpdate}
         @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
+        @execution-minutes-hard-cap-update=${this
+          .onExecutionMinutesHardCapUpdate}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }
@@ -531,11 +538,13 @@ export class Org extends LiteElement {
       .authState=${this.authState!}
       orgId=${this.orgId!}
       ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
-      ?orgExecutionMinutesQuotaReached=${this.orgExecutionMinutesQuotaReached}
+      ?orgExecutionMinutesHardCapReached=${this
+        .orgExecutionMinutesHardCapReached}
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
       @storage-quota-update=${this.onStorageQuotaUpdate}
       @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
+      @execution-minutes-hard-cap-update=${this.onExecutionMinutesHardCapUpdate}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-workflows-list>`;
   }
@@ -686,6 +695,12 @@ export class Org extends LiteElement {
     }
   }
 
+  private async onExecutionMinutesHardCapUpdate(e: CustomEvent) {
+    e.stopPropagation();
+    const { reached } = e.detail;
+    this.orgExecutionMinutesHardCapReached = reached;
+  }
+
   private async onUserRoleChange(e: UserRoleChangeEvent) {
     const { user, newRole } = e.detail;
 
@@ -798,7 +813,7 @@ export class Org extends LiteElement {
     }
   }
 
-  checkExecutionMinutesQuota() {
+  checkExecutionMinutesQuota(hardCap = false) {
     if (
       !this.org ||
       !this.org.quotas.crawlExecMinutesQuota ||
@@ -827,6 +842,37 @@ export class Org extends LiteElement {
 
     if (this.orgExecutionMinutesQuotaReached) {
       this.showExecutionMinutesQuotaAlert = true;
+    }
+  }
+
+  checkExecutionMinutesHardCap() {
+    if (
+      !this.org ||
+      !this.org.quotas.crawlExecMinutesQuota ||
+      this.org.quotas.crawlExecMinutesQuota == 0
+    ) {
+      this.orgExecutionMinutesQuotaReached = false;
+      return;
+    }
+
+    let quota = this.org.quotas.crawlExecMinutesQuota;
+    if (this.org.quotas.crawlExecExtraMinutesHardCap) {
+      quota = quota + this.org.quotas.crawlExecExtraMinutesHardCap;
+    }
+
+    const todaysDate = new Date().toISOString();
+    const monthKey = todaysDate.slice(0, 7);
+
+    const monthlyExecutionSeconds = this.org.crawlExecSeconds[monthKey];
+    if (monthlyExecutionSeconds) {
+      const monthlyExecutionMinutes = Math.floor(monthlyExecutionSeconds / 60);
+      if (monthlyExecutionMinutes >= quota) {
+        this.orgExecutionMinutesHardCapReached = true;
+      } else {
+        this.orgExecutionMinutesHardCapReached = false;
+      }
+    } else {
+      this.orgExecutionMinutesHardCapReached = false;
     }
   }
 }

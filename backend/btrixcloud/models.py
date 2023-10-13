@@ -479,6 +479,7 @@ class CrawlOut(BaseMongoModel):
 
     storageQuotaReached: Optional[bool]
     executionMinutesQuotaReached: Optional[bool]
+    executionMinutesHardCapReached: Optional[bool]
 
 
 # ============================================================================
@@ -689,6 +690,7 @@ class OrgQuotas(BaseModel):
     maxPagesPerCrawl: Optional[int] = 0
     storageQuota: Optional[int] = 0
     crawlExecMinutesQuota: Optional[int] = 0
+    crawlExecExtraMinutesHardCap: Optional[int] = 0
 
 
 # ============================================================================

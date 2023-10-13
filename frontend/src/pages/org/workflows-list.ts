@@ -75,7 +75,7 @@ export class WorkflowsList extends LiteElement {
   orgStorageQuotaReached = false;
 
   @property({ type: Boolean })
-  orgExecutionMinutesQuotaReached = false;
+  orgExecutionMinutesHardCapReached = false;
 
   @property({ type: String })
   userId!: string;
@@ -444,7 +444,7 @@ export class WorkflowsList extends LiteElement {
           <sl-menu-item
             style="--sl-color-neutral-700: var(--success)"
             ?disabled=${this.orgStorageQuotaReached ||
-            this.orgExecutionMinutesQuotaReached}
+            this.orgExecutionMinutesHardCapReached}
             @click=${() => this.runNow(workflow)}
           >
             <sl-icon name="play" slot="prefix"></sl-icon>

@@ -173,17 +173,18 @@ class CrawlConfigOps:
 
         run_now = config.runNow
         storage_quota_reached = await self.org_ops.storage_quota_reached(org.id)
-        exec_mins_quota_reached = await self.org_ops.execution_mins_quota_reached(
-            org.id
-        )
+        (
+            exec_mins_quota_reached,
+            exec_mins_hard_cap_reached,
+        ) = await self.org_ops.execution_mins_quota_reached(org.id)
 
         if storage_quota_reached:
             run_now = False
             print(f"Storage quota exceeded for org {org.id}", flush=True)
 
-        if exec_mins_quota_reached:
+        if exec_mins_hard_cap_reached:
             run_now = False
-            print(f"Execution miutes quota exceeded for org {org.id}", flush=True)
+            print(f"Monthly execution minute hard cap hit for org {org.id}", flush=True)
 
         crawl_id = await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
@@ -201,6 +202,7 @@ class CrawlConfigOps:
             crawl_id,
             storage_quota_reached,
             exec_mins_quota_reached,
+            exec_mins_hard_cap_reached,
         )
 
     async def add_new_crawl(
@@ -759,9 +761,12 @@ class CrawlConfigOps:
         if await self.org_ops.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
-        if await self.org_ops.execution_mins_quota_reached(org.id):
+        _, exec_mins_hard_cap_reached = await self.org_ops.execution_mins_quota_reached(
+            org.id
+        )
+        if exec_mins_hard_cap_reached:
             raise HTTPException(
-                status_code=403, detail="execution_minutes_quota_reached"
+                status_code=403, detail="execution_minutes_hard_cap_reached"
             )
 
         try:
@@ -1003,6 +1008,7 @@ def init_crawl_config_api(
             new_job_name,
             storage_quota_reached,
             execution_mins_quota_reached,
+            execution_mins_hard_cap_reached,
         ) = await ops.add_crawl_config(config, org, user)
         return {
             "added": True,
@@ -1010,6 +1016,7 @@ def init_crawl_config_api(
             "run_now_job": new_job_name,
             "storageQuotaReached": storage_quota_reached,
             "executionMinutesQuotaReached": execution_mins_quota_reached,
+            "executionMinutesHardCapReached": execution_mins_hard_cap_reached,
         }
 
     @router.patch("/{cid}", dependencies=[Depends(org_crawl_dep)])
