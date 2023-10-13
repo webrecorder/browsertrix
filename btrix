@@ -17,10 +17,15 @@
 #   -wait: Wait until pods are ready
 #
 # $ ./btrix reset
-# Uinstall, delete data, then bootstrap
+# Uninstall, delete data, then bootstrap
 # Optional args:
 #   -microk8s: Preface kubectl/helm commands with microk8s
 #   -wait: Wait until pods are ready
+#
+# $ ./btrix down
+# Uninstall and delete data
+# Optional args:
+#   -microk8s: Preface kubectl/helm commands with microk8s
 #
 # $ ./btrix test
 # Run backend tests
@@ -168,6 +173,15 @@ fi
 # nightly: run nightly backend tests
 if [[ $1 = "nightly" ]]; then
     runNightlyTests
+fi
+
+# down: stop and uninstall browsertrix cloud
+if [[ $1 = "down" ]]; then
+    if [[ $2 = "$MICROK8S" ]] ; then
+        resetMicrok8s
+    else
+        reset
+    fi
 fi
 
 echo "Done"
