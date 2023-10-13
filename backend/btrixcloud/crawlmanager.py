@@ -37,7 +37,11 @@ class CrawlManager(K8sAPI):
     ) -> str:
         """run browser for profile creation"""
 
-        storage_secret, storage_path = await self.get_valid_storage_refs(storage, oid)
+        storage_secret, storage_path = self.get_storage_secret_and_extra_path(
+            storage, oid
+        )
+
+        await self.has_storage_secret(storage_secret)
 
         browserid = f"prf-{secrets.token_hex(5)}"
 
@@ -71,46 +75,49 @@ class CrawlManager(K8sAPI):
     ) -> Optional[str]:
         """add new crawl, store crawl config in configmap"""
 
-        storage_secret, storage_path = await self.get_valid_storage_refs(
-            storage, str(crawlconfig.oid)
-        )
-
         # Create Config Map
         await self._create_config_map(
             crawlconfig,
             USER_ID=str(crawlconfig.modifiedBy),
             ORG_ID=str(crawlconfig.oid),
-            CRAWL_CONFIG_ID=str(crawlconfig.id),
-            STORE_PATH=storage_path,
             STORE_FILENAME=out_filename,
-            STORAGE_NAME=storage.name,
-            STORAGE_SECRET=storage_secret,
             PROFILE_FILENAME=profile_filename,
             INITIAL_SCALE=str(crawlconfig.scale),
             CRAWL_TIMEOUT=str(crawlconfig.crawlTimeout or 0),
             MAX_CRAWL_SIZE=str(crawlconfig.maxCrawlSize or 0)
-            # REV=str(crawlconfig.rev),
         )
 
         crawl_id = None
 
         if run_now:
             crawl_id = await self.create_crawl_job(
-                crawlconfig, str(crawlconfig.modifiedBy)
+                crawlconfig, storage, str(crawlconfig.modifiedBy)
             )
 
         await self._update_scheduled_job(crawlconfig)
 
         return crawl_id
 
-    async def create_crawl_job(self, crawlconfig: CrawlConfig, userid: str) -> str:
+    async def create_crawl_job(
+        self,
+        crawlconfig: CrawlConfig,
+        storage: StorageRef,
+        userid: str,
+    ) -> str:
         """create new crawl job from config"""
         cid = str(crawlconfig.id)
+
+        storage_secret, _ = self.get_storage_secret_and_extra_path(
+            storage, str(crawlconfig.oid)
+        )
+
+        await self.has_storage_secret(storage_secret)
 
         return await self.new_crawl_job(
             cid,
             userid,
             crawlconfig.oid,
+            storage,
             crawlconfig.scale,
             crawlconfig.crawlTimeout,
             crawlconfig.maxCrawlSize,
@@ -147,40 +154,6 @@ class CrawlManager(K8sAPI):
             )
 
         return True
-
-    async def get_valid_storage_refs(
-        self, storage: StorageRef, oid: str
-    ) -> tuple[str, str]:
-        """return storage name and path, also validate that
-        storage secret exists"""
-        if not storage.custom:
-            storage_secret = f"storage-{storage.name}"
-            storage_path = str(oid)
-        else:
-            storage_secret = self._get_custom_storage_secret_name(storage.name, oid)
-            storage_path = ""
-
-        await self.has_storage_secret(storage_secret)
-
-        return storage_secret, storage_path
-
-    async def has_storage_secret(self, storage_secret) -> bool:
-        """Check if storage is valid by trying to get the storage secret
-        Will throw if not valid, otherwise return True"""
-        try:
-            await self.core_api.read_namespaced_secret(
-                storage_secret,
-                namespace=self.namespace,
-            )
-            return True
-
-        # pylint: disable=broad-except
-        except Exception:
-            # pylint: disable=broad-exception-raised,raise-missing-from
-            raise Exception(f"Storage {storage_secret} not found")
-
-    def _get_custom_storage_secret_name(self, name: str, oid: str) -> str:
-        return f"cs-{oid[:12]}-{name}"
 
     async def remove_org_storage(self, name: str, oid: str) -> bool:
         """Delete custom org storage secret"""

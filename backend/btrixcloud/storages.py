@@ -47,9 +47,13 @@ CHUNK_SIZE = 1024 * 256
 class StorageOps:
     """All storage handling, download/upload operations"""
 
-    def __init__(self, org_ops, crawl_manager) -> None:
-        self.storages: Dict[str, S3Storage] = {}
+    default_storages: Dict[str, S3Storage] = {}
 
+    primary: Optional[StorageRef] = None
+
+    replicas: List[StorageRef] = []
+
+    def __init__(self, org_ops, crawl_manager) -> None:
         self.org_ops = org_ops
         self.crawl_manager = crawl_manager
 
@@ -63,10 +67,19 @@ class StorageOps:
             name = slug_from_name(name)
             type_ = storage.get("type", "s3")
             if type_ == "s3":
-                self.storages[name] = self._create_s3_storage(storage)
+                self.default_storages[name] = self._create_s3_storage(storage)
             else:
                 # expand when additional storage options are supported
                 raise TypeError("Only s3 storage supported for now")
+
+            if storage.get("is_default_primary"):
+                if self.primary:
+                    raise TypeError("Only one default primary storage can be specified")
+
+                self.primary = StorageRef(name=name)
+
+            if storage.get("is_default_replica"):
+                self.replicas.append(StorageRef(name=name))
 
     def _create_s3_storage(self, storage: dict[str, str]) -> S3Storage:
         """create S3Storage object"""
@@ -171,7 +184,7 @@ class StorageOps:
     def get_available_storages(self, org: Organization) -> List[StorageRef]:
         """return a list of available default + custom storages"""
         refs: List[StorageRef] = []
-        for name in self.storages:
+        for name in self.default_storages:
             refs.append(StorageRef(name=name, custom=False))
         for name in org.customStorages:
             refs.append(StorageRef(name=name, custom=True))
@@ -242,39 +255,46 @@ class StorageOps:
             resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
             assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
 
+    def get_org_storage_prefix(self, org: Organization) -> str:
+        """get org storage prefix"""
+
+        if org.storage.custom:
+            return ""
+        return str(org.id) + "/"
+
+    def get_org_relative_path(
+        self, org: Organization, ref: StorageRef, file_path: str
+    ) -> str:
+        """get relative path for file"""
+        storage = self.get_org_storage_by_ref(org, ref)
+        prefix = storage.endpoint_url# + self.get_org_storage_prefix(org)
+        print("prefix", prefix)
+        print("file_path", file_path)
+        if file_path.startswith(prefix):
+            return file_path[len(prefix) :]
+
+        return file_path
+
     def get_org_primary_storage(self, org: Organization) -> S3Storage:
-        """get org primary storage. if using 'default' storage, lookup by name
-        otherwise, use storage object"""
+        """get org primary storage, from either defaults or org custom storage"""
 
         return self.get_org_storage_by_ref(org, org.storage)
 
     def get_org_storage_by_ref(self, org: Organization, ref: StorageRef) -> S3Storage:
         """Get a storage object from StorageRef"""
-        if ref.custom:
-            s3storage = org.customStorages.get(ref.name)
+        if not ref.custom:
+            s3storage = self.default_storages.get(ref.name)
+        elif not org.storage:
+            raise TypeError(
+                "Referencing custom org storage: {ref.name}, but no custom storage found!"
+            )
         else:
-            s3storage = self.storages.get(ref.name)
+            s3storage = org.customStorages.get(ref.name)
 
         if not s3storage:
             raise TypeError(
                 f"No {'custom' if ref.custom else 'default'} storage with name: {ref.name}"
             )
-
-        return s3storage
-
-    def get_org_storage_by_name(
-        self, org: Organization, storage_name: str
-    ) -> S3Storage:
-        """get storage for org, either looking for default storage name first
-        or custom storage from the org. Check default storage first if flag
-        set to true"""
-
-        s3storage = org.customStorages.get(storage_name)
-        if not s3storage:
-            s3storage = self.storages.get(storage_name)
-
-        if not s3storage:
-            raise TypeError(f"No default or custom storage with name: {storage_name}")
 
         return s3storage
 
@@ -393,7 +413,7 @@ class StorageOps:
     ) -> str:
         """generate pre-signed url for crawl file"""
 
-        s3storage = self.get_org_storage_by_name(org, crawlfile.def_storage_name or "")
+        s3storage = self.get_org_storage_by_ref(org, crawlfile.storage)
 
         async with self.get_s3_client(s3storage, s3storage.use_access_for_presign) as (
             client,
@@ -421,17 +441,15 @@ class StorageOps:
         self, org: Organization, crawlfile: CrawlFile
     ) -> bool:
         """delete crawl file from storage."""
-        return await self._delete_file(
-            org, crawlfile.filename, crawlfile.def_storage_name or ""
-        )
+        return await self._delete_file(org, crawlfile.filename, crawlfile.storage)
 
     async def _delete_file(
-        self, org: Organization, filename: str, def_storage_name: str
+        self, org: Organization, filename: str, storage: StorageRef
     ) -> bool:
         """delete specified file from storage"""
         status_code = None
 
-        s3storage = self.get_org_storage_by_name(org, def_storage_name)
+        s3storage = self.get_org_storage_by_ref(org, storage)
 
         async with self.get_s3_client(s3storage, s3storage.use_access_for_presign) as (
             client,

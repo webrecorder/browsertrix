@@ -24,6 +24,7 @@ from .models import (
     Organization,
     User,
     PaginatedResponse,
+    StorageRef,
 )
 
 
@@ -133,6 +134,7 @@ class ProfileOps:
     async def commit_to_profile(
         self,
         browser_commit: ProfileCreate,
+        storage: StorageRef,
         metadata: dict,
         profileid: Optional[uuid.UUID] = None,
     ):
@@ -160,6 +162,7 @@ class ProfileOps:
             hash=resource["hash"],
             size=file_size,
             filename=resource["path"],
+            storage=storage,
         )
 
         baseid = metadata.get("btrix.baseprofile")
@@ -385,7 +388,7 @@ def init_profiles_api(mdb, crawl_manager, org_ops, storage_ops, user_dep):
     ):
         metadata = await browser_get_metadata(browser_commit.browserid, org)
 
-        return await ops.commit_to_profile(browser_commit, metadata)
+        return await ops.commit_to_profile(browser_commit, org.storage, metadata)
 
     @router.patch("/{profileid}")
     async def commit_browser_to_existing(
@@ -399,7 +402,9 @@ def init_profiles_api(mdb, crawl_manager, org_ops, storage_ops, user_dep):
         else:
             metadata = await browser_get_metadata(browser_commit.browserid, org)
 
-            await ops.commit_to_profile(browser_commit, metadata, profileid)
+            await ops.commit_to_profile(
+                browser_commit, org.storage, metadata, profileid
+            )
 
         return {"updated": True}
 

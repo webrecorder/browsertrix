@@ -749,7 +749,7 @@ class CrawlConfigOps:
 
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
-                crawlconfig, userid=str(user.id)
+                crawlconfig, org.storage, userid=str(user.id)
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
             return crawl_id

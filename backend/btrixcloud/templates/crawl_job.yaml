@@ -22,6 +22,9 @@ spec:
   manual: {{ manual }}
   ttlSecondsAfterFinished: 30
 
+  storageName: "{{ storage_name }}"
+  customStorage: "{{ customStorage }}"
+
   {% if expire_time %}
   expireTime: "{{ expire_time }}"
   {% endif %}

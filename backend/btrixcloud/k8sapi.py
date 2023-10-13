@@ -16,6 +16,8 @@ from kubernetes_asyncio.client.exceptions import ApiException
 from redis import asyncio as aioredis
 
 from fastapi.templating import Jinja2Templates
+
+from .models import StorageRef
 from .utils import get_templates_dir, dt_now, to_k8s_date
 
 
@@ -69,12 +71,13 @@ class K8sAPI:
             redis_url, decode_responses=True, auto_close_connection_pool=True
         )
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-locals
     def new_crawl_job_yaml(
         self,
         cid,
         userid,
         oid,
+        storage,
         scale=1,
         crawl_timeout=0,
         max_crawl_size=0,
@@ -100,6 +103,7 @@ class K8sAPI:
             "scale": scale,
             "expire_time": crawl_expire_time or 0,
             "max_crawl_size": max_crawl_size or 0,
+            "storage_name": str(storage),
             "manual": "1" if manual else "0",
         }
 
@@ -147,6 +151,38 @@ class K8sAPI:
             namespace=namespace or self.namespace,
         )
         return created
+
+    def get_storage_secret_and_extra_path(
+        self, storage: StorageRef, oid: str
+    ) -> tuple[str, str]:
+        """return storage name and path, also validate that
+        storage secret exists"""
+        if not storage.custom:
+            storage_secret = f"storage-{storage.name}"
+            storage_path = str(oid) + "/"
+        else:
+            storage_secret = self._get_custom_storage_secret_name(storage.name, oid)
+            storage_path = ""
+
+        return storage_secret, storage_path
+
+    async def has_storage_secret(self, storage_secret) -> bool:
+        """Check if storage is valid by trying to get the storage secret
+        Will throw if not valid, otherwise return True"""
+        try:
+            await self.core_api.read_namespaced_secret(
+                storage_secret,
+                namespace=self.namespace,
+            )
+            return True
+
+        # pylint: disable=broad-except
+        except Exception:
+            # pylint: disable=broad-exception-raised,raise-missing-from
+            raise Exception(f"Storage {storage_secret} not found")
+
+    def _get_custom_storage_secret_name(self, name: str, oid: str) -> str:
+        return f"cs-{oid[:12]}-{name}"
 
     async def delete_crawl_job(self, crawl_id):
         """delete custom crawljob object"""

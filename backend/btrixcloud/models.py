@@ -279,13 +279,36 @@ class UpdateCrawlConfig(BaseModel):
 
 
 # ============================================================================
+class StorageRef(BaseModel):
+    """Reference to actual storage"""
+
+    name: str
+    custom: Optional[bool]
+
+    def __init__(self, *args, **kwargs):
+        if args:
+            if args[0].startswith("cs-"):
+                super().__init__(name=args[0][2:], custom=True)
+            else:
+                super().__init__(name=args[0], custom=False)
+        else:
+            super().__init__(**kwargs)
+
+
+    def __str__(self):
+        if not self.custom:
+            return self.name
+        return "cs-" + self.name
+
+
+# ============================================================================
 class CrawlFile(BaseModel):
     """file from a crawl"""
 
     filename: str
     hash: str
     size: int
-    def_storage_name: Optional[str]
+    storage: StorageRef
 
     presignedUrl: Optional[str]
     expireAt: Optional[datetime]
@@ -619,15 +642,7 @@ class RenameOrg(BaseModel):
 class CreateOrg(RenameOrg):
     """Create a new org"""
 
-    storageName: str = "default"
-
-
-# ============================================================================
-class StorageRef(BaseModel):
-    """Reference to actual storage"""
-
-    name: str
-    custom: bool = False
+    storage: StorageRef
 
 
 # ============================================================================
@@ -850,7 +865,7 @@ class ProfileFile(BaseModel):
     filename: str
     hash: str
     size: int
-    def_storage_name: Optional[str] = ""
+    storage: StorageRef
 
 
 # ============================================================================

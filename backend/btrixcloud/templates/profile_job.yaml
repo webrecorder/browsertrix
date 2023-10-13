@@ -21,7 +21,6 @@ spec:
   userid: "{{ userid }}"
   oid: "{{ oid }}"
 
-  storageName: "{{ storage_name }}"
   storageSecret: "{{ storage_secret }}"
   storagePath: "{{ storage_path }}"
   startUrl: "{{ url }}"

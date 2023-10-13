@@ -35,7 +35,7 @@ from .basecrawls import (
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
 )
-from .models import CrawlFile, CrawlCompleteIn
+from .models import CrawlFile, CrawlCompleteIn, StorageRef
 
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
@@ -92,8 +92,7 @@ class CrawlSpec(BaseModel):
     cid: uuid.UUID
     oid: uuid.UUID
     scale: int = 1
-    storage_path: str
-    storage_name: str
+    storage: StorageRef
     started: str
     stopping: bool = False
     scheduled: bool = False
@@ -142,9 +141,6 @@ class PodInfo(BaseModel):
 
     newCpu: Optional[int] = None
     newMemory: Optional[int] = None
-
-    # newAllocated: PodResources = PodResources()
-    # force_restart: Optional[bool] = Field(default=False, exclude=True)
 
     def dict(self, *a, **kw):
         res = super().dict(*a, **kw)
@@ -226,7 +222,13 @@ class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
 
     def __init__(
-        self, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
+        self,
+        crawl_config_ops,
+        crawl_ops,
+        org_ops,
+        coll_ops,
+        storage_ops,
+        event_webhook_ops,
     ):
         super().__init__()
 
@@ -235,6 +237,7 @@ class BtrixOperator(K8sAPI):
         self.crawl_ops = crawl_ops
         self.org_ops = org_ops
         self.coll_ops = coll_ops
+        self.storage_ops = storage_ops
         self.event_webhook_ops = event_webhook_ops
 
         self.config_file = "/config/config.yaml"
@@ -302,6 +305,7 @@ class BtrixOperator(K8sAPI):
         params["storage_path"] = spec.get("storagePath", "")
         params["storage_secret"] = spec.get("storageSecret", "")
         params["profile_filename"] = spec.get("profileFilename", "")
+
         params["url"] = spec.get("startUrl", "about:blank")
         params["vnc_password"] = spec.get("vncPassword")
 
@@ -370,8 +374,7 @@ class BtrixOperator(K8sAPI):
             id=crawl_id,
             cid=cid,
             oid=oid,
-            storage_name=configmap["STORAGE_NAME"],
-            storage_path=configmap["STORE_PATH"],
+            storage=StorageRef(spec["storageName"]),
             scale=spec.get("scale", 1),
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
@@ -422,17 +425,17 @@ class BtrixOperator(K8sAPI):
 
         children = self._load_redis(params, status, data.children)
 
-        # backwards compatibility, if secret not set, compute from storage name
-        storage_secret = configmap.get("STORAGE_SECRET")
-        if not storage_secret:
-            storage_secret = "storage-" + configmap["STORAGE_NAME"]
+        storage_secret, storage_path = self.get_storage_secret_and_extra_path(
+            crawl.storage, str(crawl.oid)
+        )
 
+        params["storage_path"] = storage_path
         params["storage_secret"] = storage_secret
-
-        params["store_path"] = configmap["STORE_PATH"]
-        params["store_filename"] = configmap["STORE_FILENAME"]
         params["profile_filename"] = configmap["PROFILE_FILENAME"]
+
+        params["storage_filename"] = configmap["STORE_FILENAME"]
         params["restart_time"] = spec.get("restartTime")
+
         params["redis_url"] = redis_url
 
         if spec.get("restartTime") != status.restartTime:
@@ -1041,19 +1044,21 @@ class BtrixOperator(K8sAPI):
 
         filecomplete = CrawlCompleteIn(**cc_data)
 
-        inx = None
-        filename = None
-        if crawl.storage_path:
-            inx = filecomplete.filename.index(crawl.storage_path)
-            filename = filecomplete.filename[inx:] if inx > 0 else filecomplete.filename
+        org = await self.org_ops.get_org_by_id(crawl.oid)
 
-        def_storage_name = crawl.storage_name if inx else None
+        print(filecomplete)
+
+        filename = self.storage_ops.get_org_relative_path(
+            org, crawl.storage, filecomplete.filename
+        )
+
+        print("rel path", filename)
 
         crawl_file = CrawlFile(
-            def_storage_name=def_storage_name,
-            filename=filename or filecomplete.filename,
+            filename=filename,
             size=filecomplete.size,
             hash=filecomplete.hash,
+            storage=crawl.storage,
         )
 
         await redis.incr("filesAddedSize", filecomplete.size)
@@ -1380,10 +1385,13 @@ class BtrixOperator(K8sAPI):
 
         crawljobs = data.attachments[CJS]
 
+        org = await self.org_ops.get_org_by_id(uuid.UUID(oid))
+
         crawl_id, crawljob = self.new_crawl_job_yaml(
             cid,
             userid=userid,
             oid=oid,
+            storage=org.storage,
             scale=int(configmap.get("INITIAL_SCALE", 1)),
             crawl_timeout=int(configmap.get("CRAWL_TIMEOUT", 0)),
             max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),
@@ -1421,12 +1429,12 @@ class BtrixOperator(K8sAPI):
 
 # ============================================================================
 def init_operator_api(
-    app, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
+    app, crawl_config_ops, crawl_ops, org_ops, coll_ops, storage_ops, event_webhook_ops
 ):
     """regsiters webhook handlers for metacontroller"""
 
     oper = BtrixOperator(
-        crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
+        crawl_config_ops, crawl_ops, org_ops, coll_ops, storage_ops, event_webhook_ops
     )
 
     @app.post("/op/crawls/sync")

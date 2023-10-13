@@ -26,6 +26,7 @@ from .models import (
     Organization,
     PaginatedResponse,
     User,
+    StorageRef,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now
@@ -83,7 +84,8 @@ class UploadOps(BaseCrawlOps):
 
         id_ = "upload-" + str(uuid.uuid4()) if not replaceId else replaceId
 
-        prefix = f"{org.id}/uploads/{id_}/"
+        prefix = self.storage_ops.get_org_storage_prefix(org) + f"uploads/{id_}"
+
         file_prep = FilePreparer(prefix, filename)
 
         async def stream_iter():
@@ -133,7 +135,8 @@ class UploadOps(BaseCrawlOps):
 
         id_ = uuid.uuid4()
         files = []
-        prefix = f"{org.id}/uploads/{id_}/"
+
+        prefix = self.storage_ops.get_org_storage_prefix(org) + f"uploads/{id_}"
 
         for upload in uploads:
             file_prep = FilePreparer(prefix, upload.filename)
@@ -226,13 +229,13 @@ class FilePreparer:
         self.upload_size += len(chunk)
         self.upload_hasher.update(chunk)
 
-    def get_crawl_file(self, storage_name):
+    def get_crawl_file(self, storage: StorageRef):
         """get crawl file"""
         return CrawlFile(
             filename=self.upload_name,
             hash=self.upload_hasher.hexdigest(),
             size=self.upload_size,
-            def_storage_name=storage_name,
+            storage=storage,
         )
 
     def prepare_filename(self, filename):

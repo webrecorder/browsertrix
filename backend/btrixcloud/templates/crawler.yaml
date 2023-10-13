@@ -132,10 +132,10 @@ spec:
           value: "{{ redis_url }}/crawls-done"
 
         - name: STORE_PATH
-          value: "{{ store_path }}"
+          value: "{{ storage_path }}"
 
         - name: STORE_FILENAME
-          value: "{{ store_filename }}"
+          value: "{{ storage_filename }}"
 
         - name: STORE_USER
           value: "{{ userid }}"

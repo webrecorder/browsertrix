@@ -184,7 +184,7 @@ class OrgOps:
 
     async def check_all_storages(self, storage_ops):
         """ensure all org default storages are valid"""
-        storage_names = list(storage_ops.storages.keys())
+        storage_names = list(storage_ops.default_storages.keys())
         errors = 0
 
         async for org_data in self.orgs.find(
@@ -521,12 +521,10 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         if not slug:
             slug = slug_from_name(new_org.name)
 
+        storage = new_org.storage or StorageRef(name="default")
+
         org = Organization(
-            id=id_,
-            name=new_org.name,
-            slug=slug,
-            users={},
-            storage=StorageRef(name=new_org.storageName),
+            id=id_, name=new_org.name, slug=slug, users={}, storage=storage
         )
         if not await ops.add_org(org):
             return {"added": False, "error": "already_exists"}
