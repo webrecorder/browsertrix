@@ -388,18 +388,18 @@ export class ConfigDetails extends LiteElement {
         additionalUrlList?.length
           ? html`
               <ul>
-                ${additionalUrlList.map(
-                  (seed) =>
-                    html`<li>
-                      <a
-                        class="text-primary hover:text-indigo-400"
-                        href="${typeof seed === "string" ? seed : seed.url}"
-                        target="_blank"
-                        rel="noreferrer"
-                        >${typeof seed === "string" ? seed : seed.url}</a
-                      >
-                    </li>`
-                )}
+                ${additionalUrlList.map((seed) => {
+                  const seedUrl = typeof seed === "string" ? seed : seed.url;
+                  return html`<li>
+                    <a
+                      class="text-primary hover:text-indigo-400"
+                      href="${seedUrl}"
+                      target="_blank"
+                      rel="noreferrer"
+                      >${seedUrl}</a
+                    >
+                  </li>`;
+                })}
               </ul>
             `
           : msg("None"),
