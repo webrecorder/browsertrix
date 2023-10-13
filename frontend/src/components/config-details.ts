@@ -303,6 +303,7 @@ export class ConfigDetails extends LiteElement {
                       class="text-primary hover:text-indigo-400"
                       href="${seed.url}"
                       target="_blank"
+                      rel="noreferrer"
                       >${seed.url}</a
                     >
                   </li>
@@ -335,6 +336,7 @@ export class ConfigDetails extends LiteElement {
           class="text-primary hover:text-indigo-400"
           href="${primarySeedUrl}"
           target="_blank"
+          rel="noreferrer"
           >${primarySeedUrl}</a
         >`,
         true
@@ -393,6 +395,7 @@ export class ConfigDetails extends LiteElement {
                         class="text-primary hover:text-indigo-400"
                         href="${typeof seed === "string" ? seed : seed.url}"
                         target="_blank"
+                        rel="noreferrer"
                         >${typeof seed === "string" ? seed : seed.url}</a
                       >
                     </li>`
