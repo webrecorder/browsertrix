@@ -229,7 +229,7 @@ export class OrgSettings extends LiteElement {
               <sl-icon name="info-circle"></sl-icon>
             </div>
             <div class="mt-0.5 text-xs text-neutral-500">
-              ${msg("Org URL namespace in Browsertrix Cloud.")}
+              ${msg("Unique URL for this organization.")}
             </div>
           </div>
         </div>
