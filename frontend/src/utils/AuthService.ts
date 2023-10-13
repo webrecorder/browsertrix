@@ -1,3 +1,4 @@
+import { ROUTES } from "../routes";
 import { APIError } from "./api";
 
 export type Auth = {
@@ -27,6 +28,14 @@ export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
   readonly detail: T;
 }
 
+export interface NeedLoginEvent extends CustomEvent {
+  readonly bubbles: boolean;
+  readonly composed: boolean;
+  readonly detail: {
+    redirectUrl?: string;
+  };
+}
+
 type AuthRequestEventData = {
   name: "requesting_auth";
 };
@@ -51,6 +60,7 @@ export default class AuthService {
   static storageKey = "btrix.auth";
   static unsupportedAuthErrorCode = "UNSUPPORTED_AUTH_TYPE";
   static loggedInEvent = "logged-in";
+  static needLoginEvent = "need-login";
 
   static broadcastChannel = new BroadcastChannel(AuthService.storageKey);
   static storage = {
@@ -83,6 +93,14 @@ export default class AuthService {
 
   static createLoggedInEvent = (detail: LoggedInEventDetail): LoggedInEvent => {
     return new CustomEvent(AuthService.loggedInEvent, { detail });
+  };
+
+  static createNeedLoginEvent = (redirectUrl?: string): NeedLoginEvent => {
+    return new CustomEvent(AuthService.needLoginEvent, {
+      bubbles: true,
+      composed: true,
+      detail: { redirectUrl },
+    });
   };
 
   static async login({
@@ -307,6 +325,14 @@ export default class AuthService {
         }, FRESHNESS_TIMER_INTERVAL);
       } catch (e) {
         console.debug(e);
+
+        this.logout();
+        const { pathname, search, hash } = window.location;
+        const redirectUrl =
+          pathname !== ROUTES.login && pathname !== ROUTES.home
+            ? `${pathname}${search}${hash}`
+            : "";
+        window.dispatchEvent(AuthService.createNeedLoginEvent(redirectUrl));
       }
     }
   }

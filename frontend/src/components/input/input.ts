@@ -23,7 +23,7 @@ export class Input extends LiteElement {
   label?: string;
 
   @property({ type: String })
-  id: string = "";
+  id: string = "customInput";
 
   @property({ type: String })
   name?: string;
@@ -43,12 +43,14 @@ export class Input extends LiteElement {
   @property()
   required?: any;
 
+  @property()
+  minlength?: number;
+
   @property({ type: Boolean })
   passwordToggle?: boolean;
 
   @state()
   isPasswordVisible: boolean = false;
-
   render() {
     return html`
       <div class="sl-label">
@@ -65,6 +67,7 @@ export class Input extends LiteElement {
           autocomplete=${ifDefined(this.autocomplete)}
           placeholder=${ifDefined(this.placeholder)}
           value=${ifDefined(this.value)}
+          minlength=${ifDefined(this.minlength)}
           ?required=${Boolean(this.required)}
           @keydown=${this.handleKeyDown}
         />

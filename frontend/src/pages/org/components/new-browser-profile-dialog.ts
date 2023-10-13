@@ -53,7 +53,7 @@ export class NewBrowserProfileDialog extends LiteElement {
 
             <div class="flex">
               <sl-select
-                class="grow-0 mr-1"
+                class="grow-0 mr-1 max-w-[8rem]"
                 name="urlPrefix"
                 value="https://"
                 hoist

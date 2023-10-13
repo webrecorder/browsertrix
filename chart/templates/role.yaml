@@ -17,17 +17,9 @@ rules:
   resources: ["crawljobs", "profilejobs"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 
----
-kind: Role
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  namespace: {{ .Release.Namespace }}
-  name: cronjob-manage
-rules:
-- apiGroups: ["batch"]
-  resources: ["cronjobs"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
-
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["pods"]
+  verbs: ["list"]
 
 ---
 kind: RoleBinding
@@ -48,24 +40,3 @@ roleRef:
   kind: Role
   name: crawler-run
   apiGroup: rbac.authorization.k8s.io
-
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: cronjob-role
-  namespace: {{ .Release.Namespace }}
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: {{ .Release.Namespace }}
-
-- kind: User
-  name: system:anonymous
-  namespace: {{ .Release.Namespace }}
-
-roleRef:
-  kind: Role
-  name: cronjob-manage
-  apiGroup: rbac.authorization.k8s.io
-

@@ -10,7 +10,6 @@ import contextlib
 
 from pydantic import UUID4
 from fastapi import HTTPException, Depends
-from redis import exceptions
 
 from .models import (
     CrawlFile,
@@ -25,8 +24,7 @@ from .models import (
     User,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
-from .storages import get_presigned_url, delete_crawl_file_object
-from .utils import dt_now, get_redis_crawl_stats
+from .utils import dt_now
 
 
 RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
@@ -47,18 +45,22 @@ ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
 
 
 # ============================================================================
+# pylint: disable=too-many-instance-attributes
 class BaseCrawlOps:
     """operations that apply to all crawls"""
 
     # pylint: disable=duplicate-code, too-many-arguments, too-many-locals
 
-    def __init__(self, mdb, users, orgs, crawl_configs, crawl_manager, colls):
+    def __init__(
+        self, mdb, users, orgs, crawl_configs, crawl_manager, colls, storage_ops
+    ):
         self.crawls = mdb["crawls"]
         self.crawl_configs = crawl_configs
         self.crawl_manager = crawl_manager
         self.user_manager = users
         self.orgs = orgs
         self.colls = colls
+        self.storage_ops = storage_ops
 
         self.presign_duration_seconds = (
             int(os.environ.get("PRESIGN_DURATION_MINUTES", 60)) * 60
@@ -69,6 +71,7 @@ class BaseCrawlOps:
         crawlid: str,
         org: Optional[Organization] = None,
         type_: Optional[str] = None,
+        project: Optional[dict[str, bool]] = None,
     ):
         """Get data for single crawl"""
 
@@ -79,7 +82,7 @@ class BaseCrawlOps:
         if type_:
             query["type"] = type_
 
-        res = await self.crawls.find_one(query)
+        res = await self.crawls.find_one(query, project)
 
         if not res:
             raise HTTPException(status_code=404, detail=f"Crawl not found: {crawlid}")
@@ -212,7 +215,7 @@ class BaseCrawlOps:
         result = None
         try:
             result = await self.crawl_manager.shutdown_crawl(
-                crawl_id, org.id_str, graceful=graceful
+                crawl_id, graceful=graceful
             )
 
             if result.get("success"):
@@ -307,7 +310,7 @@ class BaseCrawlOps:
         size = 0
         for file_ in crawl.files:
             size += file_.size
-            if not await delete_crawl_file_object(org, file_, self.crawl_manager):
+            if not await self.storage_ops.delete_crawl_file_object(org, file_):
                 raise HTTPException(status_code=400, detail="file_deletion_error")
 
         return size
@@ -334,16 +337,6 @@ class BaseCrawlOps:
             crawl.profileName = await self.crawl_configs.profiles.get_profile_name(
                 crawl.profileid, org
             )
-
-        # if running, get stats directly from redis
-        # more responsive, saves db update in operator
-        if crawl.state in RUNNING_STATES:
-            try:
-                async with self.get_redis(crawl.id) as redis:
-                    crawl.stats = await get_redis_crawl_stats(redis, crawl.id)
-            # redis not available, ignore
-            except exceptions.ConnectionError:
-                pass
 
         if (
             files
@@ -372,8 +365,8 @@ class BaseCrawlOps:
 
             if not presigned_url or now >= file_.expireAt:
                 exp = now + delta
-                presigned_url = await get_presigned_url(
-                    org, file_, self.crawl_manager, self.presign_duration_seconds
+                presigned_url = await self.storage_ops.get_presigned_url(
+                    org, file_, self.presign_duration_seconds
                 )
                 updates.append(
                     (
@@ -658,12 +651,14 @@ class BaseCrawlOps:
 
 # ============================================================================
 def init_base_crawls_api(
-    app, mdb, users, crawl_manager, crawl_config_ops, orgs, colls, user_dep
+    app, mdb, users, crawl_manager, crawl_config_ops, orgs, colls, storage_ops, user_dep
 ):
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code, too-many-arguments, too-many-locals
 
-    ops = BaseCrawlOps(mdb, users, orgs, crawl_config_ops, crawl_manager, colls)
+    ops = BaseCrawlOps(
+        mdb, users, orgs, crawl_config_ops, crawl_manager, colls, storage_ops
+    )
 
     org_viewer_dep = orgs.org_viewer_dep
     org_crawl_dep = orgs.org_crawl_dep

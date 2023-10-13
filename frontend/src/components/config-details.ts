@@ -290,6 +290,7 @@ export class ConfigDetails extends LiteElement {
 
   private renderConfirmUrlListSettings = () => {
     const crawlConfig = this.crawlConfig;
+
     return html`
       ${this.renderSetting(
         msg("List of URLs"),
@@ -316,6 +317,10 @@ export class ConfigDetails extends LiteElement {
       ${this.renderSetting(
         msg("Include Any Linked Page"),
         Boolean(crawlConfig?.config.extraHops)
+      )}
+      ${this.renderSetting(
+        msg("Fail Crawl On Failed URL"),
+        Boolean(crawlConfig?.config.failOnFailedSeed)
       )}
     `;
   };

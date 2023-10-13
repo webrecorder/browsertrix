@@ -82,6 +82,7 @@ type FormState = {
   urlList: string;
   includeLinkedPages: boolean;
   useSitemap: boolean;
+  failOnFailedSeed: boolean;
   customIncludeUrlList: string;
   crawlTimeoutMinutes: number;
   behaviorTimeoutSeconds: number | null;
@@ -157,6 +158,7 @@ const getDefaultFormState = (): FormState => ({
   urlList: "",
   includeLinkedPages: false,
   useSitemap: true,
+  failOnFailedSeed: false,
   customIncludeUrlList: "",
   crawlTimeoutMinutes: 0,
   maxCrawlSizeGB: 0,
@@ -199,7 +201,7 @@ function getLocalizedWeekDays() {
 }
 
 function validURL(url: string) {
-  return /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)/.test(
+  return /((((https?):(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)/.test(
     url
   );
 }
@@ -218,6 +220,7 @@ const DEFAULT_BEHAVIORS = [
   "siteSpecific",
 ];
 const BYTES_PER_GB = 1e9;
+const URL_LIST_MAX_URLS = 1000;
 
 @localized()
 export class CrawlConfigEditor extends LiteElement {
@@ -467,6 +470,8 @@ export class CrawlConfigEditor extends LiteElement {
       if (this.initialWorkflow.jobType === "custom") {
         formState.scopeType = seedsConfig.scopeType || "page";
       }
+
+      formState.failOnFailedSeed = seedsConfig.failOnFailedSeed;
     }
 
     if (this.initialWorkflow.schedule) {
@@ -543,6 +548,8 @@ export class CrawlConfigEditor extends LiteElement {
       includeLinkedPages:
         Boolean(primarySeedConfig.extraHops || seedsConfig.extraHops) ?? true,
       useSitemap: defaultFormState.useSitemap,
+      failOnFailedSeed:
+        seedsConfig.failOnFailedSeed ?? defaultFormState.failOnFailedSeed,
       pageLimit:
         this.initialWorkflow.config.limit ?? defaultFormState.pageLimit,
       autoscrollBehavior: this.initialWorkflow.config.behaviors
@@ -904,6 +911,7 @@ export class CrawlConfigEditor extends LiteElement {
       ${this.renderFormCol(html`
         <sl-textarea
           name="urlList"
+          class="textarea-wrap"
           label=${msg("List of URLs")}
           rows="10"
           autocomplete="off"
@@ -912,34 +920,42 @@ export class CrawlConfigEditor extends LiteElement {
           placeholder=${`https://example.com
 https://example.com/path`}
           required
-          @sl-input=${async (e: Event) => {
-            const inputEl = e.target as SlInput;
-            await inputEl.updateComplete;
-            if (
-              !inputEl.checkValidity() &&
-              !urlListToArray(inputEl.value).some((url) => !validURL(url))
-            ) {
-              inputEl.setCustomValidity("");
-              inputEl.helpText = "";
+          @keyup=${async (e: KeyboardEvent) => {
+            if (e.key === "Enter") {
+              const inputEl = e.target as SlInput;
+              await inputEl.updateComplete;
+              if (!inputEl.value) return;
+              const { isValid, helpText } = this.validateUrlList(inputEl.value);
+              inputEl.helpText = helpText;
+              if (isValid) {
+                inputEl.setCustomValidity("");
+              } else {
+                inputEl.setCustomValidity(helpText);
+              }
             }
           }}
-          @sl-blur=${async (e: Event) => {
+          @sl-input=${(e: CustomEvent) => {
             const inputEl = e.target as SlInput;
-            await inputEl.updateComplete;
-            if (
-              inputEl.value &&
-              urlListToArray(inputEl.value).some((url) => !validURL(url))
-            ) {
-              const text = msg("Please fix invalid URL in list.");
-              inputEl.helpText = text;
-              inputEl.setCustomValidity(text);
+            if (!inputEl.value) {
+              inputEl.helpText = msg("At least 1 URL is required.");
+            }
+          }}
+          @sl-change=${async (e: CustomEvent) => {
+            const inputEl = e.target as SlInput;
+            if (!inputEl.value) return;
+            const { isValid, helpText } = this.validateUrlList(inputEl.value);
+            inputEl.helpText = helpText;
+            if (isValid) {
+              inputEl.setCustomValidity("");
+            } else {
+              inputEl.setCustomValidity(helpText);
             }
           }}
         ></sl-textarea>
       `)}
       ${this.renderHelpTextCol(
-        msg(`The crawler will visit and record each URL listed in the order
-        defined here.`)
+        msg(str`The crawler will visit and record each URL listed in the order
+        defined here. You can enter a maximum of ${URL_LIST_MAX_URLS.toLocaleString()} URLs, separated by a new line.`)
       )}
       ${when(
         isCustom,
@@ -992,6 +1008,18 @@ https://example.com/path`}
       ${this.renderHelpTextCol(
         msg(`If checked, the crawler will visit pages one link away from a Crawl
         URL.`),
+        false
+      )}
+      ${this.renderFormCol(html`<sl-checkbox
+        name="failOnFailedSeed"
+        ?checked=${this.formState.failOnFailedSeed}
+      >
+        ${msg("Fail Crawl on Failed URL")}
+      </sl-checkbox>`)}
+      ${this.renderHelpTextCol(
+        msg(
+          `If checked, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled.`
+        ),
         false
       )}
       ${when(
@@ -1099,6 +1127,7 @@ https://example.com/path`}
     }
     const exclusions = trimArray(this.formState.exclusions || []);
     const additionalUrlList = urlListToArray(this.formState.urlList);
+    const maxAdditionalURls = 100;
 
     return html`
       ${this.renderFormCol(html`
@@ -1293,34 +1322,48 @@ https://example.net`}
                 value=${this.formState.urlList}
                 placeholder=${`https://webrecorder.net/blog
 https://archiveweb.page/images/${"logo.svg"}`}
-                @sl-input=${async (e: Event) => {
-                  const inputEl = e.target as SlInput;
-                  await inputEl.updateComplete;
-                  if (
-                    !inputEl.checkValidity() &&
-                    !urlListToArray(inputEl.value).some((url) => !validURL(url))
-                  ) {
-                    inputEl.setCustomValidity("");
-                    inputEl.helpText = "";
+                @keyup=${async (e: KeyboardEvent) => {
+                  if (e.key === "Enter") {
+                    const inputEl = e.target as SlInput;
+                    await inputEl.updateComplete;
+                    if (!inputEl.value) return;
+                    const { isValid, helpText } = this.validateUrlList(
+                      inputEl.value,
+                      maxAdditionalURls
+                    );
+                    inputEl.helpText = helpText;
+                    if (isValid) {
+                      inputEl.setCustomValidity("");
+                    } else {
+                      inputEl.setCustomValidity(helpText);
+                    }
                   }
                 }}
-                @sl-blur=${async (e: Event) => {
+                @sl-input=${(e: CustomEvent) => {
                   const inputEl = e.target as SlInput;
-                  await inputEl.updateComplete;
-                  if (
-                    inputEl.value &&
-                    urlListToArray(inputEl.value).some((url) => !validURL(url))
-                  ) {
-                    const text = msg("Please fix invalid URL in list.");
-                    inputEl.helpText = text;
-                    inputEl.setCustomValidity(text);
+                  if (!inputEl.value) {
+                    inputEl.helpText = msg("At least 1 URL is required.");
+                  }
+                }}
+                @sl-change=${async (e: CustomEvent) => {
+                  const inputEl = e.target as SlInput;
+                  if (!inputEl.value) return;
+                  const { isValid, helpText } = this.validateUrlList(
+                    inputEl.value,
+                    maxAdditionalURls
+                  );
+                  inputEl.helpText = helpText;
+                  if (isValid) {
+                    inputEl.setCustomValidity("");
+                  } else {
+                    inputEl.setCustomValidity(helpText);
                   }
                 }}
               ></sl-textarea>
             `)}
             ${this.renderHelpTextCol(
-              msg(`The crawler will visit and record each URL listed here. Other
-              links on these pages will not be crawled.`)
+              msg(str`The crawler will visit and record each URL listed here. Other
+              links on these pages will not be crawled. You can enter up to ${maxAdditionalURls.toLocaleString()} URLs.`)
             )}
           </div>
         </btrix-details>
@@ -2214,6 +2257,33 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   }
 
+  private validateUrlList(
+    value: string,
+    max = URL_LIST_MAX_URLS
+  ): { isValid: boolean; helpText: string } {
+    const urlList = urlListToArray(value);
+    let isValid = true;
+    let helpText =
+      urlList.length === 1
+        ? msg(str`${urlList.length.toLocaleString()} URL entered`)
+        : msg(str`${urlList.length.toLocaleString()} URLs entered`);
+    if (urlList.length > max) {
+      isValid = false;
+      helpText = msg(
+        str`Please shorten list to ${max.toLocaleString()} or fewer URLs.`
+      );
+    } else {
+      const invalidUrl = urlList.find((url) => !validURL(url));
+      if (invalidUrl) {
+        isValid = false;
+        helpText = msg(
+          str`Please remove or fix the following invalid URL: ${invalidUrl}`
+        );
+      }
+    }
+    return { isValid, helpText };
+  }
+
   private onTagInput = (e: TagInputEvent) => {
     const { value } = e.detail;
     if (!value) return;
@@ -2273,7 +2343,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private parseUrlListConfig(): Pick<
     NewCrawlConfigParams["config"],
-    "seeds" | "scopeType" | "extraHops" | "useSitemap"
+    "seeds" | "scopeType" | "extraHops" | "useSitemap" | "failOnFailedSeed"
   > {
     const config = {
       seeds: urlListToArray(this.formState.urlList).map((seedUrl) => {
@@ -2283,6 +2353,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       scopeType: "page" as FormState["scopeType"],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
       useSitemap: false,
+      failOnFailedSeed: this.formState.failOnFailedSeed,
     };
 
     return config;
@@ -2290,7 +2361,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private parseSeededConfig(): Pick<
     NewCrawlConfigParams["config"],
-    "seeds" | "scopeType" | "useSitemap"
+    "seeds" | "scopeType" | "useSitemap" | "failOnFailedSeed"
   > {
     const primarySeedUrl = this.formState.primarySeedUrl;
     const includeUrlList = this.formState.customIncludeUrlList
@@ -2325,6 +2396,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       seeds: [primarySeed, ...additionalSeedUrlList],
       scopeType: this.formState.scopeType,
       useSitemap: this.formState.useSitemap,
+      failOnFailedSeed: false,
     };
     return config;
   }

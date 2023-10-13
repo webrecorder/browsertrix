@@ -103,6 +103,7 @@ class RawCrawlConfig(BaseModel):
     combineWARC: Optional[bool]
 
     useSitemap: Optional[bool] = False
+    failOnFailedSeed: Optional[bool] = False
 
     logging: Optional[str]
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
@@ -373,6 +374,8 @@ class CrawlOut(BaseMongoModel):
 
     collectionIds: Optional[List[UUID4]] = []
 
+    crawlExecSeconds: int = 0
+
     # automated crawl fields
     config: Optional[RawCrawlConfig]
     cid: Optional[UUID4]
@@ -439,6 +442,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     manual: Optional[bool]
 
     stopping: Optional[bool] = False
+
+    crawlExecSeconds: int = 0
 
 
 # ============================================================================
@@ -607,6 +612,7 @@ class RenameOrg(BaseModel):
     """Request to invite another user"""
 
     name: str
+    slug: Optional[str] = None
 
 
 # ============================================================================
@@ -627,9 +633,9 @@ class S3Storage(BaseModel):
     endpoint_url: str
     access_key: str
     secret_key: str
-    access_endpoint_url: Optional[str]
-    region: Optional[str] = ""
-    use_access_for_presign: Optional[bool] = True
+    access_endpoint_url: str
+    region: str = ""
+    use_access_for_presign: bool = True
 
 
 # ============================================================================
@@ -659,12 +665,14 @@ class Organization(BaseMongoModel):
     id: UUID4
 
     name: str
+    slug: str
 
     users: Dict[str, UserRole]
 
     storage: Union[S3Storage, DefaultStorage]
 
     usage: Dict[str, int] = {}
+    crawlExecSeconds: Dict[str, int] = {}
 
     bytesStored: int = 0
     bytesStoredCrawls: int = 0
@@ -712,6 +720,7 @@ class Organization(BaseMongoModel):
 
         if not self.is_crawler(user):
             exclude.add("usage")
+            exclude.add("crawlExecSeconds")
 
         result = self.to_dict(
             exclude_unset=True,
@@ -744,8 +753,10 @@ class OrgOut(BaseMongoModel):
 
     id: UUID4
     name: str
+    slug: str
     users: Optional[Dict[str, Any]]
     usage: Optional[Dict[str, int]]
+    crawlExecSeconds: Optional[Dict[str, int]]
     default: bool = False
     bytesStored: int
     bytesStoredCrawls: int

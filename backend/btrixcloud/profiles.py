@@ -12,7 +12,6 @@ from fastapi import APIRouter, Depends, Request, HTTPException
 import aiohttp
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .storages import delete_crawl_file_object
 from .models import (
     Profile,
     ProfileWithCrawlConfigs,
@@ -32,14 +31,17 @@ BROWSER_EXPIRE = 300
 
 
 # ============================================================================
+# pylint: disable=too-many-instance-attributes
 class ProfileOps:
     """Profile management"""
 
-    def __init__(self, mdb, orgs, crawl_manager):
+    def __init__(self, mdb, orgs, crawl_manager, storage_ops):
         self.profiles = mdb["profiles"]
         self.orgs = orgs
 
         self.crawl_manager = crawl_manager
+        self.storage_ops = storage_ops
+
         self.browser_fqdn_suffix = os.environ.get("CRAWLER_FQDN_SUFFIX")
 
         self.router = APIRouter(
@@ -309,7 +311,7 @@ class ProfileOps:
 
         # Delete file from storage
         if profile.resource:
-            await delete_crawl_file_object(org, profile.resource, self.crawl_manager)
+            await self.storage_ops.delete_crawl_file_object(org, profile.resource)
             await self.orgs.inc_org_bytes_stored(
                 org.id, -profile.resource.size, "profile"
             )
@@ -349,9 +351,9 @@ class ProfileOps:
 
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
-def init_profiles_api(mdb, crawl_manager, org_ops, user_dep):
+def init_profiles_api(mdb, crawl_manager, org_ops, storage_ops, user_dep):
     """init profile ops system"""
-    ops = ProfileOps(mdb, org_ops, crawl_manager)
+    ops = ProfileOps(mdb, org_ops, crawl_manager, storage_ops)
 
     router = ops.router
 

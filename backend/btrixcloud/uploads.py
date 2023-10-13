@@ -28,7 +28,6 @@ from .models import (
     User,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
-from .storages import do_upload_single, do_upload_multipart
 from .utils import dt_now
 
 
@@ -41,9 +40,19 @@ class UploadOps(BaseCrawlOps):
 
     # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods, too-many-function-args
     def __init__(
-        self, mdb, users, crawl_manager, crawl_configs, orgs, colls, event_webhook_ops
+        self,
+        mdb,
+        users,
+        crawl_manager,
+        crawl_configs,
+        orgs,
+        colls,
+        storage_ops,
+        event_webhook_ops,
     ):
-        super().__init__(mdb, users, orgs, crawl_configs, crawl_manager, colls)
+        super().__init__(
+            mdb, users, orgs, crawl_configs, crawl_manager, colls, storage_ops
+        )
 
         self.event_webhook_ops = event_webhook_ops
 
@@ -85,12 +94,11 @@ class UploadOps(BaseCrawlOps):
 
         print("Stream Upload Start", flush=True)
 
-        if not await do_upload_multipart(
+        if not await self.storage_ops.do_upload_multipart(
             org,
             file_prep.upload_name,
             stream_iter(),
             MIN_UPLOAD_PART_SIZE,
-            self.crawl_manager,
         ):
             print("Stream Upload Failed", flush=True)
             raise HTTPException(status_code=400, detail="upload_failed")
@@ -131,8 +139,8 @@ class UploadOps(BaseCrawlOps):
             file_prep = FilePreparer(prefix, upload.filename)
             file_reader = UploadFileReader(upload, file_prep)
 
-            await do_upload_single(
-                org, file_reader.file_prep.upload_name, file_reader, self.crawl_manager
+            await self.storage_ops.do_upload_single(
+                org, file_reader.file_prep.upload_name, file_reader
             )
             files.append(file_reader.file_prep.get_crawl_file())
 
@@ -262,13 +270,21 @@ def init_uploads_api(
     crawl_configs,
     orgs,
     colls,
+    storage_ops,
     user_dep,
     event_webhook_ops,
 ):
     """uploads api"""
 
     ops = UploadOps(
-        mdb, users, crawl_manager, crawl_configs, orgs, colls, event_webhook_ops
+        mdb,
+        users,
+        crawl_manager,
+        crawl_configs,
+        orgs,
+        colls,
+        storage_ops,
+        event_webhook_ops,
     )
 
     org_viewer_dep = orgs.org_viewer_dep
