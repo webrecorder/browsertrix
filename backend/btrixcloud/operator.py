@@ -302,8 +302,14 @@ class BtrixOperator(K8sAPI):
         params["id"] = browserid
         params["userid"] = spec.get("userid", "")
 
-        params["storage_path"] = spec.get("storagePath", "")
-        params["storage_secret"] = spec.get("storageSecret", "")
+        oid = spec.get("oid")
+        storage = StorageRef(spec.get("storageName"))
+
+        storage_path = storage.get_storage_extra_path(oid)
+        storage_secret = storage.get_storage_secret_name(oid)
+
+        params["storage_path"] = storage_path
+        params["storage_secret"] = storage_secret
         params["profile_filename"] = spec.get("profileFilename", "")
 
         params["url"] = spec.get("startUrl", "about:blank")

@@ -37,7 +37,6 @@ class CrawlManager(K8sAPI):
     ) -> str:
         """run browser for profile creation"""
 
-        storage_path = storage.get_storage_extra_path(oid)
         storage_secret = storage.get_storage_secret_name(oid)
 
         await self.has_storage_secret(storage_secret)
@@ -48,8 +47,7 @@ class CrawlManager(K8sAPI):
             "id": browserid,
             "userid": str(userid),
             "oid": str(oid),
-            "storage_secret": storage_secret,
-            "storage_path": storage_path or "",
+            "storage_name": str(storage),
             "base_profile": baseprofile or "",
             "profile_filename": profile_filename or "",
             "idle_timeout": os.environ.get("IDLE_TIMEOUT", "60"),

@@ -21,8 +21,8 @@ spec:
   userid: "{{ userid }}"
   oid: "{{ oid }}"
 
-  storageSecret: "{{ storage_secret }}"
-  storagePath: "{{ storage_path }}"
+  storageName: "{{ storage_name }}"
+
   startUrl: "{{ url }}"
   profileFilename: "{{ profile_filename }}"
   vncPassword: "{{ vnc_password }}"
