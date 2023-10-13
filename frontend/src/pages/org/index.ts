@@ -314,7 +314,7 @@ export class Org extends LiteElement {
               )}</strong
             ><br />
             ${msg(
-              "To run crawls again before the montly limit resets, contact us to upgrade your plan."
+              "To purchase additional monthly execution minutes, contact us to upgrade your plan."
             )}
           </sl-alert>
         </div>
