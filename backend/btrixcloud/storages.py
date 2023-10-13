@@ -298,6 +298,13 @@ class StorageOps:
 
         return self.get_org_storage_by_ref(org, org.storage)
 
+    def get_org_replicas_storage_refs(self, org: Organization) -> List[StorageRef]:
+        """get org replicas storages, defaulting to default replicas if none found"""
+
+        if org.storageReplicas:
+            return org.storageReplicas
+        return self.default_replicas
+
     def get_org_storage_by_ref(self, org: Organization, ref: StorageRef) -> S3Storage:
         """Get a storage object from StorageRef"""
         if not ref.custom:
