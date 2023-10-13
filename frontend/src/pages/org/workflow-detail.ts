@@ -1610,7 +1610,7 @@ export class WorkflowDetail extends LiteElement {
       if (e.isApiError && e.statusCode === 403) {
         if (e.details === "storage_quota_reached") {
           message = msg("Your org does not have enough storage to run crawls.");
-        } else if (e.details === "execution_minutes_quota_reached") {
+        } else if (e.details === "execution_minutes_hard_cap_reached") {
           message = msg(
             "Your org has used all of its execution minutes for this month."
           );
