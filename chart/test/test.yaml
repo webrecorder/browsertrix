@@ -38,6 +38,7 @@ storages:
     bucket_name: *local_bucket_name
 
     endpoint_url: "http://local-minio.default:9000/"
+    is_default_primary: True
 
   - name: "replica-0"
     access_key: "ADMIN"
