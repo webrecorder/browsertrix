@@ -527,10 +527,8 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         if not slug:
             slug = slug_from_name(new_org.name)
 
-        storage = new_org.storage or ops.default_primary
-
         org = Organization(
-            id=id_, name=new_org.name, slug=slug, users={}, storage=storage
+            id=id_, name=new_org.name, slug=slug, users={}, storage=ops.default_primary
         )
         if not await ops.add_org(org):
             return {"added": False, "error": "already_exists"}

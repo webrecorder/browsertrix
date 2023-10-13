@@ -654,8 +654,6 @@ class RenameOrg(BaseModel):
 class CreateOrg(RenameOrg):
     """Create a new org"""
 
-    storage: Optional[StorageRef] = None
-
 
 # ============================================================================
 class OrgStorageRefs(BaseModel):
