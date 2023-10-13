@@ -505,7 +505,7 @@ export class Org extends LiteElement {
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
           @storage-quota-update=${this.onStorageQuotaUpdate}
-          @execution-mins-update=${this.onExecutionMinutesQuotaUpdate}
+          @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
         ></btrix-workflow-detail>
       `;
     }
@@ -522,7 +522,7 @@ export class Org extends LiteElement {
         .initialSeeds=${seeds}
         jobType=${ifDefined(this.params.jobType)}
         @storage-quota-update=${this.onStorageQuotaUpdate}
-        @execution-mins-update=${this.onExecutionMinutesQuotaUpdate}
+        @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }
@@ -535,7 +535,7 @@ export class Org extends LiteElement {
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
       @storage-quota-update=${this.onStorageQuotaUpdate}
-      @execution-mins-update=${this.onExecutionMinutesQuotaUpdate}
+      @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-workflows-list>`;
   }
@@ -809,14 +809,13 @@ export class Org extends LiteElement {
     }
 
     const todaysDate = new Date().toISOString();
-    const todaysYear = todaysDate.slice(2, 4);
+    const todaysYear = todaysDate.slice(0, 4);
     const todaysMonth = todaysDate.slice(5, 7);
+    const monthKey = `${todaysYear}-${todaysMonth}`;
 
-    const monthlyExecutionSeconds =
-      this.org.crawlExecSeconds[`${todaysYear}${todaysMonth}`];
+    const monthlyExecutionSeconds = this.org.crawlExecSeconds[monthKey];
     if (monthlyExecutionSeconds) {
       const monthlyExecutionMinutes = Math.floor(monthlyExecutionSeconds / 60);
-
       if (monthlyExecutionMinutes >= this.org.quotas.crawlExecMinutesQuota) {
         this.orgExecutionMinutesQuotaReached = true;
       } else {
