@@ -32,14 +32,6 @@ minio_local_bucket_name: &local_bucket_name "btrix-test-data"
 
 
 storages:
-  - name: "default"
-    access_key: "ADMIN"
-    secret_key: "PASSW0RD"
-    bucket_name: *local_bucket_name
-
-    endpoint_url: "http://local-minio.default:9000/"
-    is_default_primary: True
-
   - name: "replica-0"
     access_key: "ADMIN"
     secret_key: "PASSW0RD"
@@ -51,6 +43,14 @@ storages:
     secret_key: "PASSW0RD"
 
     endpoint_url: "http://local-minio.default:9000/btrix-test-data/replica-1/"
+
+  - name: "default"
+    access_key: "ADMIN"
+    secret_key: "PASSW0RD"
+    bucket_name: *local_bucket_name
+
+    endpoint_url: "http://local-minio.default:9000/"
+    is_default_primary: True
 
 
 local_service_port: 30870
