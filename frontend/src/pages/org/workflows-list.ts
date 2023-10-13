@@ -74,6 +74,9 @@ export class WorkflowsList extends LiteElement {
   @property({ type: Boolean })
   orgStorageQuotaReached = false;
 
+  @property({ type: Boolean })
+  orgExecutionMinutesQuotaReached = false;
+
   @property({ type: String })
   userId!: string;
 
@@ -440,7 +443,8 @@ export class WorkflowsList extends LiteElement {
         () => html`
           <sl-menu-item
             style="--sl-color-neutral-700: var(--success)"
-            ?disabled=${this.orgStorageQuotaReached}
+            ?disabled=${this.orgStorageQuotaReached ||
+            this.orgExecutionMinutesQuotaReached}
             @click=${() => this.runNow(workflow)}
           >
             <sl-icon name="play" slot="prefix"></sl-icon>

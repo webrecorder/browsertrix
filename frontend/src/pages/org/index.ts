@@ -98,6 +98,12 @@ export class Org extends LiteElement {
   private showStorageQuotaAlert = false;
 
   @state()
+  private orgExecutionMinutesQuotaReached = false;
+
+  @state()
+  private showExecutionMinutesQuotaAlert = false;
+
+  @state()
   private openDialogName?: ResourceName;
 
   @state()
@@ -163,6 +169,7 @@ export class Org extends LiteElement {
     try {
       this.org = await this.getOrg(this.orgId);
       this.checkStorageQuota();
+      this.checkExecutionMinutesQuota();
     } catch {
       // TODO handle 404
       this.org = null;
@@ -242,7 +249,8 @@ export class Org extends LiteElement {
     }
 
     return html`
-      ${this.renderStorageAlert()} ${this.renderOrgNavBar()}
+      ${this.renderStorageAlert()} ${this.renderExecutionMinutesAlert()}
+      ${this.renderOrgNavBar()}
       <main>
         <div
           class="w-full max-w-screen-lg mx-auto px-3 box-border py-7"
@@ -274,6 +282,36 @@ export class Org extends LiteElement {
             ><br />
             ${msg(
               "To add archived items again, delete unneeded items and unused browser profiles to free up space, or contact us to upgrade your storage plan."
+            )}
+          </sl-alert>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderExecutionMinutesAlert() {
+    return html`
+      <div
+        class="transition-all ${this.showExecutionMinutesQuotaAlert
+          ? "bg-slate-100 border-b py-5"
+          : ""}"
+      >
+        <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
+          <sl-alert
+            variant="warning"
+            closable
+            ?open=${this.showExecutionMinutesQuotaAlert}
+            @sl-after-hide=${() =>
+              (this.showExecutionMinutesQuotaAlert = false)}
+          >
+            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+            <strong
+              >${msg(
+                "Your org has reached its monthly execution minutes limit"
+              )}</strong
+            ><br />
+            ${msg(
+              "To run crawls again before the montly limit resets, contact us to upgrade your plan."
             )}
           </sl-alert>
         </div>
@@ -460,11 +498,14 @@ export class Org extends LiteElement {
           .authState=${this.authState!}
           orgId=${this.orgId!}
           ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
+          ?orgExecutionMinutesQuotaReached=${this
+            .orgExecutionMinutesQuotaReached}
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
           @storage-quota-update=${this.onStorageQuotaUpdate}
+          @execution-mins-update=${this.onExecutionMinutesQuotaUpdate}
         ></btrix-workflow-detail>
       `;
     }
@@ -481,6 +522,7 @@ export class Org extends LiteElement {
         .initialSeeds=${seeds}
         jobType=${ifDefined(this.params.jobType)}
         @storage-quota-update=${this.onStorageQuotaUpdate}
+        @execution-mins-update=${this.onExecutionMinutesQuotaUpdate}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }
@@ -489,9 +531,11 @@ export class Org extends LiteElement {
       .authState=${this.authState!}
       orgId=${this.orgId!}
       ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
+      ?orgExecutionMinutesQuotaReached=${this.orgExecutionMinutesQuotaReached}
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
       @storage-quota-update=${this.onStorageQuotaUpdate}
+      @execution-mins-update=${this.onExecutionMinutesQuotaUpdate}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-workflows-list>`;
   }
@@ -633,6 +677,15 @@ export class Org extends LiteElement {
     }
   }
 
+  private async onExecutionMinutesQuotaUpdate(e: CustomEvent) {
+    e.stopPropagation();
+    const { reached } = e.detail;
+    this.orgExecutionMinutesQuotaReached = reached;
+    if (reached) {
+      this.showExecutionMinutesQuotaAlert = true;
+    }
+  }
+
   private async onUserRoleChange(e: UserRoleChangeEvent) {
     const { user, newRole } = e.detail;
 
@@ -742,6 +795,39 @@ export class Org extends LiteElement {
 
     if (this.orgStorageQuotaReached) {
       this.showStorageQuotaAlert = true;
+    }
+  }
+
+  checkExecutionMinutesQuota() {
+    if (
+      !this.org ||
+      !this.org.quotas.crawlExecMinutesQuota ||
+      this.org.quotas.crawlExecMinutesQuota == 0
+    ) {
+      this.orgExecutionMinutesQuotaReached = false;
+      return;
+    }
+
+    const todaysDate = new Date().toISOString();
+    const todaysYear = todaysDate.slice(2, 4);
+    const todaysMonth = todaysDate.slice(5, 7);
+
+    const monthlyExecutionSeconds =
+      this.org.crawlExecSeconds[`${todaysYear}${todaysMonth}`];
+    if (monthlyExecutionSeconds) {
+      const monthlyExecutionMinutes = Math.floor(monthlyExecutionSeconds / 60);
+
+      if (monthlyExecutionMinutes >= this.org.quotas.crawlExecMinutesQuota) {
+        this.orgExecutionMinutesQuotaReached = true;
+      } else {
+        this.orgExecutionMinutesQuotaReached = false;
+      }
+    } else {
+      this.orgExecutionMinutesQuotaReached = false;
+    }
+
+    if (this.orgExecutionMinutesQuotaReached) {
+      this.showExecutionMinutesQuotaAlert = true;
     }
   }
 }

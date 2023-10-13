@@ -61,6 +61,9 @@ export class OrgsList extends LiteElement {
               label = msg("Org Storage Quota (GB)");
               value = Math.floor(value / 1e9);
               break;
+            case "crawlExecMinutesQuota":
+              label = msg("Org Monthly Execution Minutes Quota");
+              break;
             default:
               label = msg("Unlabeled");
           }

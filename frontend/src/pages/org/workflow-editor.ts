@@ -2160,12 +2160,23 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
       const crawlId = data.run_now_job;
       const storageQuotaReached = data.storageQuotaReached;
+      const executionMinutesQuotaReached = data.executionMinutesQuotaReached;
 
-      if (crawlId && storageQuotaReached) {
+      if (storageQuotaReached) {
         this.notify({
           title: msg("Workflow saved without starting crawl."),
           message: msg(
             "Could not run crawl with new workflow settings due to storage quota."
+          ),
+          variant: "warning",
+          icon: "exclamation-circle",
+          duration: 12000,
+        });
+      } else if (executionMinutesQuotaReached) {
+        this.notify({
+          title: msg("Workflow saved without starting crawl."),
+          message: msg(
+            "Could not run crawl with new workflow settings due to execution minutes quota."
           ),
           variant: "warning",
           icon: "exclamation-circle",

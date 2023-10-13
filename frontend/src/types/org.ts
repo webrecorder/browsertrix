@@ -14,6 +14,7 @@ export type OrgData = {
   slug: string;
   quotas: Record<string, number>;
   bytesStored: number;
+  crawlExecSeconds: Record<string, number>;
   users?: {
     [id: string]: {
       role: (typeof AccessCode)[UserRole];

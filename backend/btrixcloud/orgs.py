@@ -1,6 +1,7 @@
 """
 Organization API handling
 """
+import math
 import os
 import time
 import urllib.parse
@@ -315,12 +316,41 @@ class OrgOps:
 
         return False
 
+    async def execution_mins_quota_reached(self, oid: uuid.UUID):
+        """Return boolean indicating if execution minutes quota is met or exceeded."""
+        quota = await self.get_org_execution_mins_quota(oid)
+        if not quota:
+            return False
+
+        org = await self.orgs.find_one({"_id": oid})
+        org = Organization.from_dict(org)
+
+        yymm = datetime.utcnow().strftime("%Y-%m")
+        try:
+            monthly_exec_seconds = org.crawlExecSeconds[yymm]
+        except KeyError:
+            monthly_exec_seconds = 0
+        monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
+
+        if monthly_exec_minutes >= quota:
+            return True
+
+        return False
+
     async def get_org_storage_quota(self, oid):
         """return max allowed concurrent crawls, if any"""
         org = await self.orgs.find_one({"_id": oid})
         if org:
             org = Organization.from_dict(org)
             return org.quotas.storageQuota
+        return 0
+
+    async def get_org_execution_mins_quota(self, oid):
+        """return max allowed execution mins per month, if any"""
+        org = await self.orgs.find_one({"_id": oid})
+        if org:
+            org = Organization.from_dict(org)
+            return org.quotas.crawlExecMinutesQuota
         return 0
 
     async def set_origin(self, org: Organization, request: Request):
