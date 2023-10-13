@@ -302,7 +302,7 @@ class OrgOps:
         return await self.storage_quota_reached(oid)
 
     # pylint: disable=invalid-name
-    async def storage_quota_reached(self, oid: uuid.UUID):
+    async def storage_quota_reached(self, oid: uuid.UUID) -> bool:
         """Return boolean indicating if storage quota is met or exceeded."""
         quota = await self.get_org_storage_quota(oid)
         if not quota:
@@ -316,7 +316,7 @@ class OrgOps:
 
         return False
 
-    async def execution_mins_quota_reached(self, oid: uuid.UUID):
+    async def execution_mins_quota_reached(self, oid: uuid.UUID) -> bool:
         """Return boolean indicating if execution minutes quota is met or exceeded."""
         quota = await self.get_org_execution_mins_quota(oid)
         if not quota:
@@ -337,7 +337,7 @@ class OrgOps:
 
         return False
 
-    async def get_org_storage_quota(self, oid):
+    async def get_org_storage_quota(self, oid: uuid.UUID) -> int:
         """return max allowed concurrent crawls, if any"""
         org = await self.orgs.find_one({"_id": oid})
         if org:
@@ -345,7 +345,7 @@ class OrgOps:
             return org.quotas.storageQuota
         return 0
 
-    async def get_org_execution_mins_quota(self, oid):
+    async def get_org_execution_mins_quota(self, oid: uuid.UUID) -> int:
         """return max allowed execution mins per month, if any"""
         org = await self.orgs.find_one({"_id": oid})
         if org:
