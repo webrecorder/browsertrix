@@ -34,7 +34,7 @@ class Migration(BaseMigration):
             elif storage.get("type") == "s3":
                 update_dict = {
                     "storage": {"name": storage.get("name"), "custom": True},
-                    "customStorage": {"custom": storage},
+                    "customStorages": {"custom": storage},
                 }
 
             try:

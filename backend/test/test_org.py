@@ -5,6 +5,8 @@ import pytest
 
 from .conftest import API_PREFIX
 
+new_oid = None
+
 
 def test_ensure_only_one_default_org(admin_auth_headers):
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
@@ -81,6 +83,10 @@ def test_create_org(admin_auth_headers):
     assert r.status_code == 200
     data = r.json()
     assert data["added"]
+    assert data["id"]
+
+    global new_oid
+    new_oid = data["id"]
 
     # Verify that org exists.
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
@@ -90,6 +96,37 @@ def test_create_org(admin_auth_headers):
     for org in data["items"]:
         org_names.append(org["name"])
     assert NEW_ORG_NAME in org_names
+
+
+def test_change_org_storage(admin_auth_headers):
+
+    # change to invalid storage
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{new_oid}/storage",
+        headers=admin_auth_headers,
+        json={"storage": {"name": "invalid-storage", "custom": False}}
+    )
+
+    assert r.status_code == 400
+
+    # change to invalid storage
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{new_oid}/storage",
+        headers=admin_auth_headers,
+        json={"storage": {"name": "alt-storage", "custom": True}}
+    )
+
+    assert r.status_code == 400
+
+    # change to valid storage
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{new_oid}/storage",
+        headers=admin_auth_headers,
+        json={"storage": {"name": "alt-storage", "custom": False}}
+    )
+
+    assert r.status_code == 200
+    assert data["updated"]
 
 
 def test_remove_user_from_org(admin_auth_headers, default_org_id):

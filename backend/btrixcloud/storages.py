@@ -197,10 +197,13 @@ class StorageOps:
     ) -> dict[str, bool]:
         """update storage for org"""
 
-        self.get_org_storage_by_ref(org, storage_refs.storage)
+        try:
+            self.get_org_storage_by_ref(org, storage_refs.storage)
 
-        for replica in storage_refs.storageReplicas:
-            self.get_org_storage_by_ref(org, replica)
+            for replica in storage_refs.storageReplicas:
+                self.get_org_storage_by_ref(org, replica)
+        except:
+            raise HTTPException(status_code=400, "invalid_storage_ref")
 
         org.storage = storage_refs.storage
         org.storageReplicas = storage_refs.storageReplicas
