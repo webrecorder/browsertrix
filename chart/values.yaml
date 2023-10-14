@@ -265,6 +265,7 @@ minio_memory: "1024Mi"
 
 storages:
   - name: "default"
+    type: "s3"
     access_key: "ADMIN"
     secret_key: "PASSW0RD"
     bucket_name: *local_bucket_name

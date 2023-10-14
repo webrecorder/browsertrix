@@ -148,6 +148,7 @@ class StorageOps:
 
         string_data = (
             {
+                "TYPE": "s3",
                 "STORE_ENDPOINT_URL": storage.endpoint_url,
                 "STORE_ACCESS_KEY": storage.access_key,
                 "STORE_SECRET_KEY": storage.secret_key,

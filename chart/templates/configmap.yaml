@@ -110,6 +110,7 @@ data:
     crawler_node_type: "{{ .Values.crawler_node_type }}"
     redis_node_type: "{{ .Values.redis_node_type }}"
 
+    signing_secret: {{ .Values.signer.enabled | ternary "signing-secret" "" }}
 
 ---
 apiVersion: v1
