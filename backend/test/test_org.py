@@ -99,12 +99,11 @@ def test_create_org(admin_auth_headers):
 
 
 def test_change_org_storage(admin_auth_headers):
-
     # change to invalid storage
     r = requests.post(
         f"{API_PREFIX}/orgs/{new_oid}/storage",
         headers=admin_auth_headers,
-        json={"storage": {"name": "invalid-storage", "custom": False}}
+        json={"storage": {"name": "invalid-storage", "custom": False}},
     )
 
     assert r.status_code == 400
@@ -113,7 +112,7 @@ def test_change_org_storage(admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/orgs/{new_oid}/storage",
         headers=admin_auth_headers,
-        json={"storage": {"name": "alt-storage", "custom": True}}
+        json={"storage": {"name": "alt-storage", "custom": True}},
     )
 
     assert r.status_code == 400
@@ -122,7 +121,7 @@ def test_change_org_storage(admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/orgs/{new_oid}/storage",
         headers=admin_auth_headers,
-        json={"storage": {"name": "alt-storage", "custom": False}}
+        json={"storage": {"name": "alt-storage", "custom": False}},
     )
 
     assert r.status_code == 200

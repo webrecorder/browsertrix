@@ -15,7 +15,7 @@ operator_resync_seconds: 3
 mongo_auth:
   # specify either username + password (for local mongo)
   username: root
-  password: PASSWORD@
+  #password: PASSWORD@
 
 
 superuser:

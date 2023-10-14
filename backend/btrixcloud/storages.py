@@ -202,8 +202,10 @@ class StorageOps:
 
             for replica in storage_refs.storageReplicas:
                 self.get_org_storage_by_ref(org, replica)
+
+        # pylint: disable=raise-missing-from
         except:
-            raise HTTPException(status_code=400, "invalid_storage_ref")
+            raise HTTPException(status_code=400, detail="invalid_storage_ref")
 
         org.storage = storage_refs.storage
         org.storageReplicas = storage_refs.storageReplicas
