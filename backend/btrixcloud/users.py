@@ -41,7 +41,6 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import is_bool
-from .users_router import get_custom_users_router
 
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
@@ -408,13 +407,18 @@ def init_users_api(app, user_manager):
         tags=["auth"],
     )
 
-    users_router = get_custom_users_router(
-        fastapi_users.get_user_manager,
-        User,
-        UserDB,
-        fastapi_users.authenticator,
-        requires_verification=False,
-    )
+    users_router = fastapi_users.get_users_router()
+
+    new_routes = []
+    for route in users_router.routes:
+        if "PATCH" in route.methods:
+            if route.path in ("/me", "/{id:uuid}"):
+                print("skipping route", route.path)
+                continue
+
+        new_routes.append(route)
+
+    users_router.routes = new_routes
 
     @users_router.get("/me-with-orgs", tags=["users"])
     async def me_with_org_info(user: User = Depends(current_active_user)):
@@ -456,10 +460,10 @@ def init_users_api(app, user_manager):
     ):
         """update password, requires current password"""
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        if not pwd_context.verify(user_update.current, user.hashed_password):
+        if not pwd_context.verify(user_update.password, user.hashed_password):
             raise HTTPException(status_code=400, detail="invalid_current_password")
 
-        update = UserUpdate(email=user_update.email, password=user_update.password)
+        update = UserUpdate(email=user_update.email, password=user_update.newPassword)
         try:
             # pylint: disable=line-too-long
             return await user_manager.update(update, user, safe=True, request=request)  # type: ignore

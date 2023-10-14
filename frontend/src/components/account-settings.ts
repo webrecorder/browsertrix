@@ -353,8 +353,8 @@ export class AccountSettings extends LiteElement {
         method: "PUT",
         body: JSON.stringify({
           email: this.userInfo.email,
-          current: password,
-          password: newPassword,
+          password,
+          newPassword,
         }),
       });
 
