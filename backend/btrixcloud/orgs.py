@@ -196,7 +196,7 @@ class OrgOps:
     async def update_users(self, org: Organization):
         """Update org users"""
         return await self.orgs.find_one_and_update(
-            {"_id": org.id}, {"$set": org.dict(include={"users": 1})}
+            {"_id": org.id}, {"$set": org.dict(include={"users"})}
         )
 
     async def update_slug(self, org: Organization):
