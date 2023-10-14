@@ -199,10 +199,10 @@ class OrgOps:
             {"_id": org.id}, {"$set": org.dict(include={"users"})}
         )
 
-    async def update_slug(self, org: Organization):
+    async def update_slug_and_name(self, org: Organization):
         """Update org slug"""
         return await self.orgs.find_one_and_update(
-            {"_id": org.id}, {"$set": {"slug": org.slug}}
+            {"_id": org.id}, {"$set": {"slug": org.slug, "name": org.name}}
         )
 
     async def update_storage(
@@ -543,7 +543,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
             org.slug = slug_from_name(rename.name)
 
         try:
-            await ops.update_slug(org)
+            await ops.update_slug_and_name(org)
         except DuplicateKeyError:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="duplicate_org_name")
