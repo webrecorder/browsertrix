@@ -922,7 +922,7 @@ def init_crawls_api(
                 resp,
                 media_type="text/jsonl",
                 headers={
-                    "Content-Disposition": f'attachment; filename="{crawl_id}-logs.jsonl"'
+                    "Content-Disposition": f'attachment; filename="{crawl_id}.log"'
                 },
             )
 
