@@ -125,7 +125,7 @@ def test_change_org_storage(admin_auth_headers):
     )
 
     assert r.status_code == 200
-    assert data["updated"]
+    assert r.json()["updated"]
 
 
 def test_remove_user_from_org(admin_auth_headers, default_org_id):
