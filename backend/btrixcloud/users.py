@@ -8,19 +8,32 @@ import asyncio
 
 from typing import Optional, Union
 
-from pydantic import UUID4
+from pydantic import UUID4, EmailStr
 import passlib.pwd
 from passlib.context import CryptContext
 
-from fastapi import Request, Response, HTTPException, Depends, WebSocket, APIRouter
+from fastapi import (
+    Request,
+    Response,
+    HTTPException,
+    Depends,
+    WebSocket,
+    APIRouter,
+    Body,
+)
 from fastapi.security import OAuth2PasswordBearer
 
 from pymongo.errors import DuplicateKeyError
 
 from fastapi_users import FastAPIUsers, BaseUserManager
 from fastapi_users.manager import (
+    UserNotExists,
+    UserInactive,
     UserAlreadyExists,
+    UserAlreadyVerified,
     InvalidPasswordException,
+    InvalidResetPasswordToken,
+    InvalidVerifyToken,
 )
 from fastapi_users.authentication import (
     AuthenticationBackend,
@@ -38,6 +51,7 @@ from .models import (
     UserDB,
     UserRole,
     PaginatedResponse,
+    ErrorCode,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import is_bool
@@ -352,7 +366,7 @@ class BearerOrQueryTransport(BearerTransport):
 
 
 # ============================================================================
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals, raise-missing-from
 def init_users_api(app, user_manager):
     """init fastapi_users"""
     # pylint: disable=invalid-name
@@ -377,54 +391,144 @@ def init_users_api(app, user_manager):
         UserDB,
     )
 
-    auth_router = fastapi_users.get_auth_router(auth_backend)
-
     current_active_user = fastapi_users.current_user(active=True)
 
-    @auth_router.post("/refresh")
+    auth_jwt_router = fastapi_users.get_auth_router(auth_backend)
+
+    @auth_jwt_router.post("/refresh")
     async def refresh_jwt(response: Response, user=Depends(current_active_user)):
         return await auth_backend.login(get_jwt_strategy(), user, response)
 
     app.include_router(
-        auth_router,
+        auth_jwt_router,
         prefix="/auth/jwt",
         tags=["auth"],
     )
 
     app.include_router(
-        fastapi_users.get_register_router(),
-        prefix="/auth",
-        tags=["auth"],
-    )
-    app.include_router(
-        fastapi_users.get_reset_password_router(),
-        prefix="/auth",
-        tags=["auth"],
-    )
-    app.include_router(
-        fastapi_users.get_verify_router(),
+        init_auth_router(user_manager),
         prefix="/auth",
         tags=["auth"],
     )
 
-    # users_router = fastapi_users.get_users_router()
+    app.include_router(
+        init_users_router(current_active_user, user_manager),
+        prefix="/users",
+        tags=["users"],
+    )
+
+    return current_active_user
+
+
+# ============================================================================
+def init_auth_router(user_manager) -> APIRouter:
+    """/auth router"""
+
+    auth_router = APIRouter()
+
+    @auth_router.post("/register", status_code=201)
+    async def register(request: Request, user: UserCreateIn):  # type: ignore
+        try:
+            created_user = await user_manager.create(user, safe=True, request=request)
+        except UserAlreadyExists:
+            raise HTTPException(
+                status_code=400,
+                detail=ErrorCode.REGISTER_USER_ALREADY_EXISTS,
+            )
+        except InvalidPasswordException as e:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "code": ErrorCode.REGISTER_INVALID_PASSWORD,
+                    "reason": e.reason,
+                },
+            )
+
+        return created_user
+
+    @auth_router.post(
+        "/forgot-password",
+        status_code=202,
+    )
+    async def forgot_password(
+        request: Request,
+        email: EmailStr = Body(..., embed=True),
+    ):
+        try:
+            user = await user_manager.get_by_email(email)
+        except UserNotExists:
+            return None
+
+        try:
+            await user_manager.forgot_password(user, request)
+        except UserInactive:
+            pass
+
+        return None
+
+    @auth_router.post(
+        "/reset-password",
+        name="reset:reset_password",
+    )
+    async def reset_password(
+        request: Request,
+        token: str = Body(...),
+        password: str = Body(...),
+    ):
+        try:
+            await user_manager.reset_password(token, password, request)
+        except (InvalidResetPasswordToken, UserNotExists, UserInactive):
+            raise HTTPException(
+                status_code=400,
+                detail=ErrorCode.RESET_PASSWORD_BAD_TOKEN,
+            )
+        except InvalidPasswordException as e:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "code": ErrorCode.RESET_PASSWORD_INVALID_PASSWORD,
+                    "reason": e.reason,
+                },
+            )
+
+    @auth_router.post("/request-verify-token", status_code=202)
+    async def request_verify_token(
+        request: Request,
+        email: EmailStr = Body(..., embed=True),
+    ):
+        try:
+            user = await user_manager.get_by_email(email)
+            await user_manager.request_verify(user, request)
+        except (UserNotExists, UserInactive, UserAlreadyVerified):
+            pass
+
+        return None
+
+    @auth_router.post("/verify")
+    async def verify(
+        request: Request,
+        token: str = Body(..., embed=True),
+    ):
+        try:
+            return await user_manager.verify(token, request)
+        except (InvalidVerifyToken, UserNotExists):
+            raise HTTPException(
+                status_code=400,
+                detail=ErrorCode.VERIFY_USER_BAD_TOKEN,
+            )
+        except UserAlreadyVerified:
+            raise HTTPException(
+                status_code=400,
+                detail=ErrorCode.VERIFY_USER_ALREADY_VERIFIED,
+            )
+
+    return auth_router
+
+
+# ============================================================================
+def init_users_router(current_active_user, user_manager) -> APIRouter:
+    """/users routes"""
     users_router = APIRouter()
-
-    # new_routes = []
-    # for route in users_router.routes:
-    #    skip = False
-    #    if "PATCH" in route.methods and route.path in ("/me", "/{id:uuid}"):
-    #        skip = True
-    #
-    #        if "GET" in route.methods and route.path == "/me":
-    #            skip = True
-    #
-    #       if skip:
-    #          print(f"removing route {route.methods} {route.path}")
-    #     else:
-    #         new_routes.append(route)
-
-    # users_router.routes = new_routes
 
     @users_router.get("/me", tags=["users"])
     async def me_with_org_info(user: User = Depends(current_active_user)):
@@ -505,6 +609,7 @@ def init_users_api(app, user_manager):
         invite = await user_manager.invites.get_valid_invite(uuid.UUID(token), email)
         return await user_manager.format_invite(invite)
 
+    # pylint: disable=invalid-name
     @users_router.get("/invites", tags=["invites"], response_model=PaginatedResponse)
     async def get_pending_invites(
         user: User = Depends(current_active_user),
@@ -519,6 +624,4 @@ def init_users_api(app, user_manager):
         )
         return paginated_format(pending_invites, total, page, pageSize)
 
-    app.include_router(users_router, prefix="/users", tags=["users"])
-
-    return fastapi_users
+    return users_router

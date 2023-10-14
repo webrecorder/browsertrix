@@ -69,9 +69,7 @@ def main():
 
     user_manager = init_user_manager(mdb, email, invites)
 
-    fastapi_users = init_users_api(app, user_manager)
-
-    current_active_user = fastapi_users.current_user(active=True)
+    current_active_user = init_users_api(app, user_manager)
 
     org_ops = init_orgs_api(app, mdb, user_manager, invites, current_active_user)
 
