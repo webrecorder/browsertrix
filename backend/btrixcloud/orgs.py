@@ -166,7 +166,7 @@ class OrgOps:
             else:
                 default_org.name = DEFAULT_ORG
                 default_org.slug = slug_from_name(DEFAULT_ORG)
-                await self.update(default_org)
+                await self.update_full(default_org)
                 print(f'Default organization renamed to "{DEFAULT_ORG}"', flush=True)
             return
 
@@ -187,10 +187,22 @@ class OrgOps:
         )
         await self.add_org(org)
 
-    async def update(self, org: Organization):
+    async def update_full(self, org: Organization):
         """Update existing org"""
-        return await self.orgs.find_one_and_update(
+        await self.orgs.find_one_and_update(
             {"_id": org.id}, {"$set": org.to_dict()}, upsert=True
+        )
+
+    async def update_users(self, org: Organization):
+        """Update org users"""
+        return await self.orgs.find_one_and_update(
+            {"_id": org.id}, {"$set": org.dict(include={"users": 1})}
+        )
+
+    async def update_slug(self, org: Organization):
+        """Update org slug"""
+        return await self.orgs.find_one_and_update(
+            {"_id": org.id}, {"$set": {"slug": org.slug}}
         )
 
     async def update_storage(
@@ -251,7 +263,7 @@ class OrgOps:
     ):
         """Add user to organization with specified role"""
         org.users[str(userid)] = role or UserRole.OWNER
-        await self.update(org)
+        await self.update_users(org)
 
     async def get_org_owners(self, org: Organization):
         """Return list of org's Owner users."""
@@ -531,7 +543,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
             org.slug = slug_from_name(rename.name)
 
         try:
-            await ops.update(org)
+            await ops.update_slug(org)
         except DuplicateKeyError:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="duplicate_org_name")
@@ -654,7 +666,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=404, detail="no_such_org_user")
 
-        await ops.update(org)
+        await ops.update_users(org)
         return {"removed": True}
 
     @router.post("/add-user", tags=["invites"])
