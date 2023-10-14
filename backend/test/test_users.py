@@ -59,14 +59,7 @@ def test_me_id(admin_auth_headers, default_org_id):
         f"{API_PREFIX}/users/{my_id}",
         headers=admin_auth_headers,
     )
-    assert r.status_code == 200
-
-    data = r.json()
-    assert data["email"] == CRAWLER_USERNAME
-    assert data["is_active"]
-    assert data["is_superuser"] is False
-    assert data["is_verified"] is True
-    assert data["name"] == "new-crawler"
+    assert r.status_code == 404
 
 
 def test_add_user_to_org_invalid_password(admin_auth_headers, default_org_id):
@@ -192,7 +185,7 @@ def test_reset_patch_id_endpoint_invalid(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
         json={"email": ADMIN_USERNAME, "password": "newpassword"},
     )
-    assert r.status_code == 405
+    assert r.status_code == 404
 
 
 def test_reset_password_invalid_current(admin_auth_headers):

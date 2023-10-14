@@ -12,7 +12,7 @@ from pydantic import UUID4
 import passlib.pwd
 from passlib.context import CryptContext
 
-from fastapi import Request, Response, HTTPException, Depends, WebSocket
+from fastapi import Request, Response, HTTPException, Depends, WebSocket, APIRouter
 from fastapi.security import OAuth2PasswordBearer
 
 from pymongo.errors import DuplicateKeyError
@@ -313,7 +313,7 @@ class OA2BearerOrQuery(OAuth2PasswordBearer):
 
     async def __call__(
         self, request: Request = None, websocket: WebSocket = None  # type: ignore
-    ) -> Optional[str]:
+    ) -> str:
         param = None
         exc = None
         # use websocket as request if no request
@@ -407,23 +407,24 @@ def init_users_api(app, user_manager):
         tags=["auth"],
     )
 
-    users_router = fastapi_users.get_users_router()
+    # users_router = fastapi_users.get_users_router()
+    users_router = APIRouter()
 
-    new_routes = []
-    for route in users_router.routes:
-        skip = False
-        if "PATCH" in route.methods and route.path in ("/me", "/{id:uuid}"):
-            skip = True
+    # new_routes = []
+    # for route in users_router.routes:
+    #    skip = False
+    #    if "PATCH" in route.methods and route.path in ("/me", "/{id:uuid}"):
+    #        skip = True
+    #
+    #        if "GET" in route.methods and route.path == "/me":
+    #            skip = True
+    #
+    #       if skip:
+    #          print(f"removing route {route.methods} {route.path}")
+    #     else:
+    #         new_routes.append(route)
 
-        if "GET" in route.methods and route.path == "/me":
-            skip = True
-
-        if skip:
-            print(f"removing route {route.methods} {route.path}")
-        else:
-            new_routes.append(route)
-
-    users_router.routes = new_routes
+    # users_router.routes = new_routes
 
     @users_router.get("/me", tags=["users"])
     async def me_with_org_info(user: User = Depends(current_active_user)):
@@ -487,11 +488,6 @@ def init_users_api(app, user_manager):
                 detail="UPDATE_USER_EMAIL_ALREADY_EXISTS",
             )
 
-    @users_router.get("/invite/{token}", tags=["invites"])
-    async def get_invite_info(token: str, email: str):
-        invite = await user_manager.invites.get_valid_invite(uuid.UUID(token), email)
-        return await user_manager.format_invite(invite)
-
     @users_router.get("/me/invite/{token}", tags=["invites"])
     async def get_existing_user_invite_info(
         token: str, user: UserDB = Depends(current_active_user)
@@ -502,6 +498,11 @@ def init_users_api(app, user_manager):
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="Invalid Invite Code")
 
+        return await user_manager.format_invite(invite)
+
+    @users_router.get("/invite/{token}", tags=["invites"])
+    async def get_invite_info(token: str, email: str):
+        invite = await user_manager.invites.get_valid_invite(uuid.UUID(token), email)
         return await user_manager.format_invite(invite)
 
     @users_router.get("/invites", tags=["invites"], response_model=PaginatedResponse)
