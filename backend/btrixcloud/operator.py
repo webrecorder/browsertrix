@@ -1051,13 +1051,9 @@ class BtrixOperator(K8sAPI):
 
         org = await self.org_ops.get_org_by_id(crawl.oid)
 
-        print(filecomplete)
-
         filename = self.storage_ops.get_org_relative_path(
             org, crawl.storage, filecomplete.filename
         )
-
-        print("rel path", filename)
 
         crawl_file = CrawlFile(
             filename=filename,
