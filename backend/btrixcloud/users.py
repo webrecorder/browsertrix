@@ -411,16 +411,21 @@ def init_users_api(app, user_manager):
 
     new_routes = []
     for route in users_router.routes:
-        if "PATCH" in route.methods:
-            if route.path in ("/me", "/{id:uuid}"):
-                print("skipping route", route.path)
-                continue
+        skip = False
+        if "PATCH" in route.methods and route.path in ("/me", "/{id:uuid}"):
+            skip = True
 
-        new_routes.append(route)
+        if "GET" in route.methods and route.path == "/me":
+            skip = True
+
+        if skip:
+            print(f"removing route {route.methods} {route.path}")
+        else:
+            new_routes.append(route)
 
     users_router.routes = new_routes
 
-    @users_router.get("/me-with-orgs", tags=["users"])
+    @users_router.get("/me", tags=["users"])
     async def me_with_org_info(user: User = Depends(current_active_user)):
         """/users/me with orgs user belongs to."""
         user_info = {

@@ -7,6 +7,9 @@ VALID_USER_EMAIL = "validpassword@example.com"
 VALID_USER_PW = "validpassw0rd!"
 
 
+my_id = None
+
+
 def test_create_super_user(admin_auth_headers):
     assert admin_auth_headers
     auth = admin_auth_headers["Authorization"]
@@ -25,7 +28,7 @@ def test_create_non_super_user(viewer_auth_headers):
 
 def test_me_with_orgs(crawler_auth_headers, default_org_id):
     r = requests.get(
-        f"{API_PREFIX}/users/me-with-orgs",
+        f"{API_PREFIX}/users/me",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -41,11 +44,29 @@ def test_me_with_orgs(crawler_auth_headers, default_org_id):
     orgs = data["orgs"]
     assert len(orgs) == 1
 
+    global my_id
+    my_id = data["id"]
+
     default_org = orgs[0]
     assert default_org["id"] == default_org_id
     assert default_org["name"]
     assert default_org["default"]
     assert default_org["role"] == 20
+
+
+def test_me_id(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/users/{my_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["email"] == CRAWLER_USERNAME
+    assert data["is_active"]
+    assert data["is_superuser"] is False
+    assert data["is_verified"] is True
+    assert data["name"] == "new-crawler"
 
 
 def test_add_user_to_org_invalid_password(admin_auth_headers, default_org_id):
@@ -148,7 +169,7 @@ def test_reset_invalid_password(admin_auth_headers):
     r = requests.put(
         f"{API_PREFIX}/users/me/password-change",
         headers=admin_auth_headers,
-        json={"email": ADMIN_USERNAME, "current": "PASSW0RD!", "password": "12345"},
+        json={"email": ADMIN_USERNAME, "password": "PASSW0RD!", "newPassword": "12345"},
     )
     assert r.status_code == 400
     detail = r.json()["detail"]
@@ -156,11 +177,33 @@ def test_reset_invalid_password(admin_auth_headers):
     assert detail["reason"] == "invalid_password_length"
 
 
+def test_reset_patch_me_endpoint_invalid(admin_auth_headers, default_org_id):
+    r = requests.patch(
+        f"{API_PREFIX}/users/me",
+        headers=admin_auth_headers,
+        json={"email": ADMIN_USERNAME, "password": "newpassword"},
+    )
+    assert r.status_code == 405
+
+
+def test_reset_patch_id_endpoint_invalid(admin_auth_headers, default_org_id):
+    r = requests.patch(
+        f"{API_PREFIX}/users/{my_id}",
+        headers=admin_auth_headers,
+        json={"email": ADMIN_USERNAME, "password": "newpassword"},
+    )
+    assert r.status_code == 405
+
+
 def test_reset_password_invalid_current(admin_auth_headers):
     r = requests.put(
         f"{API_PREFIX}/users/me/password-change",
         headers=admin_auth_headers,
-        json={"email": ADMIN_USERNAME, "current": "invalid", "password": "newpassword"},
+        json={
+            "email": ADMIN_USERNAME,
+            "password": "invalid",
+            "newPassword": "newpassword",
+        },
     )
     assert r.status_code == 400
     assert r.json()["detail"] == "invalid_current_password"
@@ -168,6 +211,7 @@ def test_reset_password_invalid_current(admin_auth_headers):
 
 def test_reset_valid_password(admin_auth_headers, default_org_id):
     valid_user_headers = {}
+    count = 0
     while True:
         r = requests.post(
             f"{API_PREFIX}/auth/jwt/login",
@@ -184,14 +228,18 @@ def test_reset_valid_password(admin_auth_headers, default_org_id):
         except:
             print("Waiting for valid user auth headers")
             time.sleep(5)
+            if count > 5:
+                break
+
+            count += 1
 
     r = requests.put(
         f"{API_PREFIX}/users/me/password-change",
         headers=valid_user_headers,
         json={
             "email": VALID_USER_EMAIL,
-            "current": VALID_USER_PW,
-            "password": "new!password",
+            "password": VALID_USER_PW,
+            "newPassword": "new!password",
         },
     )
     assert r.status_code == 200
