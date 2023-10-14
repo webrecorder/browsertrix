@@ -402,6 +402,13 @@ class OrgOps:
         slugs = await self.orgs.distinct("slug", {})
         return {"slugs": slugs}
 
+    async def get_all_org_slugs_with_ids(self):
+        """Return dict with {id: slug} for all orgs."""
+        slug_id_map = {}
+        async for org in self.orgs.find({}):
+            slug_id_map[org["_id"]] = org["slug"]
+        return slug_id_map
+
 
 # ============================================================================
 # pylint: disable=too-many-statements
@@ -671,7 +678,15 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         return await ops.get_org_metrics(org)
 
     @app.get("/orgs/slugs", tags=["organizations"])
-    async def get_all_org_slugs():
+    async def get_all_org_slugs(user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
         return await ops.get_all_org_slugs()
+
+    @app.get("/orgs/slug-lookup", tags=["organizations"])
+    async def get_all_org_slugs_with_ids(user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+        return await ops.get_all_org_slugs_with_ids()
 
     return ops
