@@ -31,7 +31,7 @@ import "./components/new-collection-dialog";
 import "./components/new-workflow-dialog";
 import type {
   Member,
-  OrgNameChangeEvent,
+  OrgInfoChangeEvent,
   UserRoleChangeEvent,
   OrgRemoveMemberEvent,
 } from "./settings";
@@ -104,7 +104,7 @@ export class Org extends LiteElement {
   private org?: OrgData | null;
 
   @state()
-  private isSavingOrgName = false;
+  private isSavingOrgInfo = false;
 
   get userOrg() {
     if (!this.userInfo) return null;
@@ -535,8 +535,8 @@ export class Org extends LiteElement {
       .orgId=${this.orgId}
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
-      ?isSavingOrgName=${this.isSavingOrgName}
-      @org-name-change=${this.onOrgNameChange}
+      ?isSavingOrgName=${this.isSavingOrgInfo}
+      @org-info-change=${this.onOrgInfoChange}
       @org-user-role-change=${this.onUserRoleChange}
       @org-remove-member=${this.onOrgRemoveMember}
     ></btrix-org-settings>`;
@@ -554,18 +554,17 @@ export class Org extends LiteElement {
 
     return data;
   }
-
-  private async onOrgNameChange(e: OrgNameChangeEvent) {
-    this.isSavingOrgName = true;
+  private async onOrgInfoChange(e: OrgInfoChangeEvent) {
+    this.isSavingOrgInfo = true;
 
     try {
       await this.apiFetch(`/orgs/${this.org!.id}/rename`, this.authState!, {
         method: "POST",
-        body: JSON.stringify({ name: e.detail.value }),
+        body: JSON.stringify(e.detail),
       });
 
       this.notify({
-        message: msg("Updated organization name."),
+        message: msg("Updated organization."),
         variant: "success",
         icon: "check2-circle",
       });
@@ -577,13 +576,13 @@ export class Org extends LiteElement {
       this.notify({
         message: e.isApiError
           ? e.message
-          : msg("Sorry, couldn't update organization name at this time."),
+          : msg("Sorry, couldn't update organization at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
     }
 
-    this.isSavingOrgName = false;
+    this.isSavingOrgInfo = false;
   }
 
   private async onOrgRemoveMember(e: OrgRemoveMemberEvent) {
