@@ -4,7 +4,9 @@ import os
 import uuid
 from enum import Enum
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Tuple
+from passlib import pwd
+from passlib.context import CryptContext
 
 from pydantic import BaseModel
 import jwt
@@ -28,6 +30,9 @@ PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
 JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60)) * 60
 
 ALGORITHM = "HS256"
+
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 # ============================================================================
@@ -94,6 +99,28 @@ def create_access_token(user: User):
     expire = datetime.utcnow() + expires_delta
     data = {"sub": str(user.id), "exp": expire}
     return jwt.encode(data, PASSWORD_SECRET, algorithm=ALGORITHM)
+
+
+# ============================================================================
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+# ============================================================================
+def verify_and_update_password(
+    plain_password: str, hashed_password: str
+) -> Tuple[bool, str]:
+    return pwd_context.verify_and_update(plain_password, hashed_password)
+
+
+# ============================================================================
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
+
+
+# ============================================================================
+def generate_password() -> str:
+    return pwd.genword()
 
 
 # ============================================================================

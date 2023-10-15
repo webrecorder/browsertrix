@@ -9,8 +9,6 @@ import asyncio
 from typing import Optional, Union
 
 from pydantic import UUID4, EmailStr
-import passlib.pwd
-from passlib.context import CryptContext
 
 from fastapi import (
     Request,
@@ -19,6 +17,7 @@ from fastapi import (
     APIRouter,
     Body,
 )
+from fastapi.security import OAuth2PasswordRequestForm
 
 from pymongo.errors import DuplicateKeyError
 
@@ -48,7 +47,15 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import is_bool
 
-from .auth import init_jwt_auth, ErrorCode, PASSWORD_SECRET
+from .auth import (
+    init_jwt_auth,
+    ErrorCode,
+    PASSWORD_SECRET,
+    verify_password,
+    verify_and_update_password,
+    get_password_hash,
+    generate_password,
+)
 
 
 # ============================================================================
@@ -121,6 +128,27 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         if not 8 <= pw_length <= 64:
             raise InvalidPasswordException(reason="invalid_password_length")
 
+    async def authenticate(
+        self, credentials: OAuth2PasswordRequestForm
+    ) -> Optional[User]:
+        try:
+            user = await self.get_by_email(credentials.username)
+        except UserNotExists:
+            # Run the hasher to mitigate timing attack
+            # Inspired from Django: https://code.djangoproject.com/ticket/20760
+            get_password_hash(credentials.password)
+            return None
+
+        verified, updated_password_hash = verify_and_update_password(
+            credentials.password, user.hashed_password
+        )
+        if not verified:
+            return None
+        # Update password hash to a more robust one if needed
+        if updated_password_hash is not None:
+            user.hashed_password = updated_password_hash
+            await self.user_db.update(user)
+
     async def get_user_names_by_ids(self, user_ids):
         """return list of user names for given ids"""
         user_ids = [UUID4(id_) for id_ in user_ids]
@@ -146,7 +174,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             return
 
         if not password:
-            password = passlib.pwd.genword()
+            password = generate_password()
 
         curr_superuser_res = await self.get_superuser()
         if curr_superuser_res:
@@ -194,7 +222,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             return
 
         if not password:
-            password = passlib.pwd.genword()
+            password = generate_password()
 
         try:
             user_create = UserCreate(
@@ -486,8 +514,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
         user: UserDB = Depends(current_active_user),
     ):
         """update password, requires current password"""
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        if not pwd_context.verify(user_update.password, user.hashed_password):
+        if not verify_password(user_update.password, user.hashed_password):
             raise HTTPException(status_code=400, detail="invalid_current_password")
 
         update = UserUpdate(email=user_update.email, password=user_update.newPassword)
