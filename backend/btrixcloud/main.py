@@ -74,7 +74,7 @@ def main():
 
     org_ops = init_orgs_api(app, mdb, user_manager, invites, current_active_user)
 
-    event_webhook_ops = init_event_webhooks_api(mdb, org_ops)
+    event_webhook_ops = init_event_webhooks_api(mdb, org_ops, app_root)
 
     user_manager.set_org_ops(org_ops)
 

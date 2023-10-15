@@ -6,7 +6,7 @@ import os
 import uuid
 import asyncio
 
-from typing import Optional, Any, Dict
+from typing import Optional
 
 from pydantic import UUID4, EmailStr
 
@@ -23,7 +23,7 @@ from pymongo.errors import DuplicateKeyError
 
 # from fastapi_users import BaseUserManager
 # from fastapi_users.db import MongoDBUserDatabase
-from .userdb import MongoDBUserDatabase
+# from .userdb import MongoDBUserDatabase
 
 from .auth import (
     UserNotExists,
@@ -63,23 +63,24 @@ from .auth import (
 
 # ============================================================================
 # pylint: disable=too-few-public-methods, raise-missing-from, too-many-public-methods
-class UserDBOps(MongoDBUserDatabase):
-    """User DB Operations wrapper"""
+# class UserDBOps(MongoDBUserDatabase):
+#    """User DB Operations wrapper"""
 
 
 # ============================================================================
 class UserManager:
     """Browsertrix UserManager"""
 
-    user_db_model = UserDB
+    # user_db_model = UserDB
     reset_password_token_secret = PASSWORD_SECRET
     verification_token_secret = PASSWORD_SECRET
 
     reset_password_token_lifetime_minutes: int = 60
     verification_token_lifetime_minutes: int = 60
 
-    def __init__(self, user_db, email, invites):
-        self.user_db = user_db
+    def __init__(self, mdb, email, invites):
+        # self.user_db = user_db
+        self.collection = mdb.get_collection("users")
         self.email = email
         self.invites = invites
         self.org_ops = None
@@ -90,9 +91,11 @@ class UserManager:
         """set org ops"""
         self.org_ops = ops
 
-    async def create(
-        self, user: UserCreate, safe: bool = False, request: Optional[Request] = None
-    ):
+    async def init_index(self):
+        """init lookup index"""
+        await self.collection.create_index("email", unique=True)
+
+    async def create(self, user: UserCreate, request: Optional[Request] = None):
         """override user creation to check if invite token is present"""
         user.name = user.name or user.email
 
@@ -113,7 +116,7 @@ class UserManager:
         # Don't create a new org for registered users.
         user.newOrg = False
 
-        created_user = await self.create_base(user, safe)
+        created_user = await self.create_base(user)
         await self.on_after_register_custom(created_user, user, request)
         return created_user
 
@@ -136,41 +139,50 @@ class UserManager:
         self, credentials: OAuth2PasswordRequestForm
     ) -> Optional[User]:
         """authenticate user via login form"""
-        try:
-            user = await self.get_by_email(credentials.username)
-        except UserNotExists:
+        user = await self.get_by_email(credentials.username)
+        if not user:
             # Run the hasher to mitigate timing attack
             # Inspired from Django: https://code.djangoproject.com/ticket/20760
             get_password_hash(credentials.password)
+            print("no user", flush=True)
             return None
 
         verified, updated_password_hash = verify_and_update_password(
             credentials.password, user.hashed_password
         )
+        print("verified", verified, updated_password_hash)
         if not verified:
             return None
         # Update password hash to a more robust one if needed
         if updated_password_hash is not None:
             user.hashed_password = updated_password_hash
-            await self.user_db.update(user)
+            # await self.user_db.update(user)
+            await self.collection.find_one_and_update(
+                {"_id": user.id}, {"$set": {"hashed_password": user.hashed_password}}
+            )
 
-        return None
+        return user
 
     async def get_user_names_by_ids(self, user_ids):
         """return list of user names for given ids"""
+        print("user_ids", user_ids)
         user_ids = [UUID4(id_) for id_ in user_ids]
-        cursor = self.user_db.collection.find(
-            {"id": {"$in": user_ids}}, projection=["id", "name", "email"]
+        cursor = self.collection.find(
+            {"_id": {"$in": user_ids}}, projection=["_id", "name", "email"]
         )
         return await cursor.to_list(length=1000)
 
     async def get_user_by_id(self, user_id: uuid.UUID):
         """return user from user_id"""
-        return await self.user_db.get(user_id)
+        return self.get(user_id)
 
-    async def get_superuser(self):
+    async def get_superuser(self) -> Optional[UserDB]:
         """return current superuser, if any"""
-        return await self.user_db.collection.find_one({"is_superuser": True})
+        user_data = await self.collection.find_one({"is_superuser": True})
+        if not user_data:
+            return None
+
+        return UserDB.from_dict(user_data)
 
     async def create_super_user(self):
         """Initialize a super user from env vars"""
@@ -183,18 +195,14 @@ class UserManager:
         if not password:
             password = generate_password()
 
-        curr_superuser_res = await self.get_superuser()
-        if curr_superuser_res:
-            user = UserDB(**curr_superuser_res)
-            update = {"password": password}
-            if user.email != email:
-                update["email"] = email
+        superuser = await self.get_superuser()
+        if superuser:
+            if superuser.email != email:
+                await self.update_email(superuser, EmailStr(email))
+                print("Superuser email updated")
 
-            try:
-                await self._update(user, update)
-                print("Superuser updated")
-            except UserAlreadyExists:
-                print(f"User {email} already exists", flush=True)
+            if await self.update_password(superuser, password):
+                print("Superuser password updated")
 
             return
 
@@ -241,7 +249,7 @@ class UserManager:
                 is_verified=True,
             )
             try:
-                created_user = await self.create_base(user_create, safe=False)
+                created_user = await self.create_base(user_create)
                 await self.on_after_register_custom(
                     created_user, user_create, request=None
                 )
@@ -290,7 +298,8 @@ class UserManager:
 
             if not is_verified:
                 # if user has been invited, mark as verified immediately
-                await self._update(user, {"is_verified": True})
+                user.is_verified = True
+                await self.update_verified(user)
 
         else:
             add_to_default_org = True
@@ -359,39 +368,32 @@ class UserManager:
 
         return result
 
-    async def create_base(self, user: UserCreate, safe: bool = False) -> UserDB:
-        """
-        Create a user in database.
+    async def create_base(self, create: UserCreate) -> UserDB:
+        """create new user in db"""
+        await self.validate_password(create.password, create)
 
-        Triggers the on_after_register handler on success.
-
-        :param user: The UserCreate model to create.
-        :param safe: If True, sensitive values like is_superuser or is_verified
-        will be ignored during the creation, defaults to False.
-        :param request: Optional FastAPI request that
-        triggered the operation, defaults to None.
-        :raises UserAlreadyExists: A user already exists with the same e-mail.
-        :return: A new user.
-        """
-        await self.validate_password(user.password, user)
-
-        existing_user = await self.user_db.get_by_email(user.email)
+        existing_user = await self.get_by_email(create.email)
         if existing_user is not None:
             raise UserAlreadyExists()
 
-        hashed_password = get_password_hash(user.password)
-        user_dict = (
-            user.create_update_dict() if safe else user.create_update_dict_superuser()
+        hashed_password = get_password_hash(create.password)
+
+        id_ = uuid.uuid4()
+
+        db_user = UserDB(
+            id=id_,
+            email=create.email,
+            name=create.name,
+            hashed_password=hashed_password,
+            is_superuser=create.is_superuser,
+            is_verified=create.is_verified,
         )
-        db_user = self.user_db_model(**user_dict, hashed_password=hashed_password)
 
-        created_user = await self.user_db.create(db_user)
+        await self.collection.insert_one(db_user.to_dict())
 
-        # await self.on_after_register(created_user, request)
+        return db_user
 
-        return created_user
-
-    async def get(self, id_: UUID4) -> UserDB:
+    async def get(self, _id: UUID4) -> UserDB:
         """
         Get a user by id.
 
@@ -399,14 +401,14 @@ class UserManager:
         :raises UserNotExists: The user does not exist.
         :return: A user.
         """
-        user = await self.user_db.get(id_)
+        user = await self.collection.find_one({"_id": _id})
 
         if user is None:
             raise UserNotExists()
 
-        return user
+        return User.from_dict(user)
 
-    async def get_by_email(self, user_email: str) -> UserDB:
+    async def get_by_email(self, email: str) -> Optional[UserDB]:
         """
         Get a user by e-mail.
 
@@ -414,12 +416,11 @@ class UserManager:
         :raises UserNotExists: The user does not exist.
         :return: A user.
         """
-        user = await self.user_db.get_by_email(user_email)
+        user = await self.collection.find_one({"email": email})
+        if not user:
+            return None
 
-        if user is None:
-            raise UserNotExists()
-
-        return user
+        return UserDB.from_dict(user)
 
     async def verify(self, token: str) -> UserDB:
         """
@@ -447,9 +448,8 @@ class UserManager:
         except KeyError:
             raise InvalidVerifyToken()
 
-        try:
-            user = await self.get_by_email(email)
-        except UserNotExists:
+        user = await self.get_by_email(email)
+        if not user:
             raise InvalidVerifyToken()
 
         try:
@@ -463,11 +463,12 @@ class UserManager:
         if user.is_verified:
             raise UserAlreadyVerified()
 
-        verified_user = await self._update(user, {"is_verified": True})
+        user.is_verified = True
+        await self.update_verified(user)
 
         # await self.on_after_verify(verified_user, request)
 
-        return verified_user
+        return user
 
     async def forgot_password(
         self, user: UserDB, request: Optional[Request] = None
@@ -529,11 +530,9 @@ class UserManager:
         if not user.is_active:
             raise UserInactive()
 
-        updated_user = await self._update(user, {"password": password})
+        await self.update_password(user, password)
 
-        # await self.on_after_reset_password(user, request)
-
-        return updated_user
+        return user
 
     async def delete(self, user: UserDB) -> None:
         """
@@ -541,24 +540,31 @@ class UserManager:
 
         :param user: The user to delete.
         """
-        await self.user_db.delete(user)
+        # await self.user_db.delete(user)
 
-    async def _update(self, user: UserDB, update_dict: Dict[str, Any]) -> UserDB:
-        for field, value in update_dict.items():
-            if field == "email" and value != user.email:
-                try:
-                    await self.get_by_email(value)
-                    raise UserAlreadyExists()
-                except UserNotExists:
-                    user.email = value
-                    user.is_verified = False
-            elif field == "password":
-                await self.validate_password(value, user)
-                hashed_password = get_password_hash(value)
-                user.hashed_password = hashed_password
-            else:
-                setattr(user, field, value)
-        return await self.user_db.update(user)
+    async def update_verified(self, user: UserDB) -> None:
+        """Update verified status for user"""
+        await self.collection.find_one_and_update(
+            {"_id": user.id}, {"$set": {"is_verified": user.is_verified}}
+        )
+
+    async def update_email(self, user: UserDB, email: EmailStr) -> None:
+        """Update email for user"""
+        await self.collection.find_one_and_update(
+            {"_id": user.id}, {"$set": {"email": email}}
+        )
+
+    async def update_password(self, user: UserDB, new_password: str) -> bool:
+        """Update password for user, update and store hashed password"""
+        await self.validate_password(new_password, user)
+        hashed_password = get_password_hash(new_password)
+        if hashed_password == user.hashed_password:
+            return False
+        user.hashed_password = hashed_password
+        await self.collection.find_one_and_update(
+            {"_id": user.id}, {"$set": {"hashed_password": hashed_password}}
+        )
+        return True
 
 
 # ============================================================================
@@ -567,11 +573,11 @@ def init_user_manager(mdb, emailsender, invites):
     Load users table and init /users routes
     """
 
-    user_collection = mdb.get_collection("users")
+    # user_collection = mdb.get_collection("users")
 
-    user_db = UserDBOps(UserDB, user_collection)
+    # user_db = UserDBOps(UserDB, user_collection)
 
-    return UserManager(user_db, emailsender, invites)
+    return UserManager(mdb, emailsender, invites)
 
 
 # ============================================================================
@@ -611,7 +617,7 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
     @auth_router.post("/register", status_code=201)
     async def register(request: Request, user: UserCreate):  # type: ignore
         try:
-            created_user = await user_manager.create(user, safe=True, request=request)
+            created_user = await user_manager.create(user, request=request)
         except UserAlreadyExists:
             raise HTTPException(
                 status_code=400,
@@ -636,9 +642,8 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
         request: Request,
         email: EmailStr = Body(..., embed=True),
     ):
-        try:
-            user = await user_manager.get_by_email(email)
-        except UserNotExists:
+        user = await user_manager.get_by_email(email)
+        if not user:
             return None
 
         try:
@@ -679,6 +684,8 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
     ):
         try:
             user = await user_manager.get_by_email(email)
+            if not user:
+                return None
             await user_manager.request_verify(user, request)
         except (UserNotExists, UserInactive, UserAlreadyVerified):
             pass
@@ -756,7 +763,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
         update = UserUpdate(email=user_update.email, password=user_update.newPassword)
         try:
             # pylint: disable=line-too-long
-            return await user_manager.update(update, user, safe=True, request=request)  # type: ignore
+            return await user_manager.update(update, user, request=request)  # type: ignore
         # pylint: disable=raise-missing-from
         except InvalidPasswordException as e:
             raise HTTPException(

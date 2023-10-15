@@ -71,14 +71,14 @@ class Seed(BaseModel):
     """Crawl seed"""
 
     url: HttpUrl
-    scopeType: Optional[ScopeType]
+    scopeType: Optional[ScopeType] = None
 
-    include: Union[str, List[str], None]
-    exclude: Union[str, List[str], None]
-    sitemap: Union[bool, HttpUrl, None]
-    allowHash: Optional[bool]
-    depth: Optional[int]
-    extraHops: Optional[int]
+    include: Union[str, List[str], None] = None
+    exclude: Union[str, List[str], None] = None
+    sitemap: Union[bool, HttpUrl, None] = None
+    allowHash: Optional[bool] = None
+    depth: Optional[int] = None
+    extraHops: Optional[int] = None
 
 
 # ============================================================================
@@ -103,17 +103,17 @@ class RawCrawlConfig(BaseModel):
     pageLoadTimeout: Optional[int]
     pageExtraDelay: Optional[int] = 0
 
-    workers: Optional[int]
+    workers: Optional[int] = None
 
-    headless: Optional[bool]
+    headless: Optional[bool] = None
 
-    generateWACZ: Optional[bool]
-    combineWARC: Optional[bool]
+    generateWACZ: Optional[bool] = None
+    combineWARC: Optional[bool] = None
 
     useSitemap: Optional[bool] = False
     failOnFailedSeed: Optional[bool] = False
 
-    logging: Optional[str]
+    logging: Optional[str] = None
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
 
 
@@ -141,7 +141,7 @@ class CrawlConfigIn(BaseModel):
     maxCrawlSize: int = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1  # type: ignore
 
-    crawlFilenameTemplate: Optional[str]
+    crawlFilenameTemplate: Optional[str] = None
 
 
 # ============================================================================
@@ -738,6 +738,7 @@ class Organization(BaseMongoModel):
 
         if self.is_owner(user):
             keys = list(result["users"].keys())
+            print(keys)
             user_list = await user_manager.get_user_names_by_ids(keys)
 
             for org_user in user_list:
@@ -770,7 +771,7 @@ class OrgOut(BaseMongoModel):
     bytesStoredCrawls: int
     bytesStoredUploads: int
     bytesStoredProfiles: int
-    origin: Optional[AnyHttpUrl]
+    origin: Optional[AnyHttpUrl] = None
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
     quotas: Optional[OrgQuotas] = OrgQuotas()
@@ -913,22 +914,6 @@ class UserCreateIn(BaseModel):
     newOrg: bool
     newOrgName: Optional[str] = ""
 
-    def create_update_dict(self):
-        """update dict"""
-        return self.dict(
-            exclude_unset=True,
-            exclude={
-                "id",
-                "is_superuser",
-                "is_active",
-                "is_verified",
-            },
-        )
-
-    def create_update_dict_superuser(self):
-        """update superuser dict"""
-        return self.dict(exclude_unset=True, exclude={"id"})
-
 
 # ============================================================================
 class UserCreate(UserCreateIn):
@@ -974,8 +959,8 @@ class UserDB(User):
     hashed_password: str
 
     # pylint: disable=missing-class-docstring, too-few-public-methods
-    class Config:
-        from_attributes = True
+    # class Config:
+    #    from_attributes = True
 
 
 # ============================================================================

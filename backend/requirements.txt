@@ -3,7 +3,8 @@ fastapi==0.103.2
 motor==3.3.1
 passlib
 PyJWT==2.8.0
-pydantic[email]
+pydantic==1.10.13
+email-validator
 #fastapi-users[mongodb]==9.2.2
 loguru
 aiofiles

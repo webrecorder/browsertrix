@@ -198,7 +198,7 @@ def init_jwt_auth(user_manager):
     ):
         user = await user_manager.authenticate(credentials)
 
-        if user is None or not user.is_active:
+        if user is None:
             raise HTTPException(
                 status_code=400,
                 detail=ErrorCode.LOGIN_BAD_CREDENTIALS,
