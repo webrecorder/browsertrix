@@ -548,6 +548,12 @@ class UserManager:
             {"_id": user.id}, {"$set": {"is_verified": user.is_verified}}
         )
 
+    async def update_invites(self, user: UserDB) -> None:
+        """Update verified status for user"""
+        await self.collection.find_one_and_update(
+            {"_id": user.id}, {"$set": user.dict(include={"invites"})}
+        )
+
     async def update_email(self, user: UserDB, email: EmailStr) -> None:
         """Update email for user"""
         await self.collection.find_one_and_update(
