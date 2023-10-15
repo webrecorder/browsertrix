@@ -6,7 +6,7 @@ import os
 import uuid
 import asyncio
 
-from typing import Optional, Union
+from typing import Optional, Any, Dict
 
 from pydantic import UUID4, EmailStr
 
@@ -21,10 +21,11 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from pymongo.errors import DuplicateKeyError
 
-from fastapi_users import BaseUserManager
-from fastapi_users.db import MongoDBUserDatabase
+# from fastapi_users import BaseUserManager
+# from fastapi_users.db import MongoDBUserDatabase
+from .userdb import MongoDBUserDatabase
 
-from fastapi_users.manager import (
+from .auth import (
     UserNotExists,
     UserInactive,
     UserAlreadyExists,
@@ -36,7 +37,7 @@ from fastapi_users.manager import (
 
 from .models import (
     User,
-    UserCreateIn,
+    # UserCreateIn,
     UserCreate,
     UserUpdate,
     UserUpdatePassword,
@@ -55,25 +56,30 @@ from .auth import (
     verify_and_update_password,
     get_password_hash,
     generate_password,
+    generate_jwt,
+    decode_jwt,
 )
 
 
 # ============================================================================
-# pylint: disable=too-few-public-methods
+# pylint: disable=too-few-public-methods, raise-missing-from, too-many-public-methods
 class UserDBOps(MongoDBUserDatabase):
     """User DB Operations wrapper"""
 
 
 # ============================================================================
-class UserManager(BaseUserManager[UserCreate, UserDB]):
+class UserManager:
     """Browsertrix UserManager"""
 
     user_db_model = UserDB
     reset_password_token_secret = PASSWORD_SECRET
     verification_token_secret = PASSWORD_SECRET
 
+    reset_password_token_lifetime_minutes: int = 60
+    verification_token_lifetime_minutes: int = 60
+
     def __init__(self, user_db, email, invites):
-        super().__init__(user_db)
+        self.user_db = user_db
         self.email = email
         self.invites = invites
         self.org_ops = None
@@ -107,13 +113,11 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         # Don't create a new org for registered users.
         user.newOrg = False
 
-        created_user = await super().create(user, safe, request)
+        created_user = await self.create_base(user, safe)
         await self.on_after_register_custom(created_user, user, request)
         return created_user
 
-    async def validate_password(
-        self, password: str, user: Union[UserCreate, UserDB]
-    ) -> None:
+    async def validate_password(self, password: str, _) -> None:
         """
         Validate a password.
 
@@ -131,6 +135,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
     async def authenticate(
         self, credentials: OAuth2PasswordRequestForm
     ) -> Optional[User]:
+        """authenticate user via login form"""
         try:
             user = await self.get_by_email(credentials.username)
         except UserNotExists:
@@ -148,6 +153,8 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
         if updated_password_hash is not None:
             user.hashed_password = updated_password_hash
             await self.user_db.update(user)
+
+        return None
 
     async def get_user_names_by_ids(self, user_ids):
         """return list of user names for given ids"""
@@ -234,9 +241,7 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
                 is_verified=True,
             )
             try:
-                created_user = await super().create(
-                    user_create, safe=False, request=None
-                )
+                created_user = await self.create_base(user_create, safe=False)
                 await self.on_after_register_custom(
                     created_user, user_create, request=None
                 )
@@ -306,6 +311,36 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
             user.email, token, request and request.headers
         )
 
+    async def request_verify(
+        self, user: UserDB, request: Optional[Request] = None
+    ) -> None:
+        """
+        Start a verification request.
+
+        Triggers the on_after_request_verify handler on success.
+
+        :param user: The user to verify.
+        :param request: Optional FastAPI request that
+        triggered the operation, defaults to None.
+        :raises UserInactive: The user is inactive.
+        :raises UserAlreadyVerified: The user is already verified.
+        """
+        if not user.is_active:
+            raise UserInactive()
+        if user.is_verified:
+            raise UserAlreadyVerified()
+
+        token_data = {
+            "user_id": str(user.id),
+            "email": user.email,
+            # "aud": self.verification_token_audience,
+        }
+        token = generate_jwt(
+            token_data,
+            self.verification_token_lifetime_minutes,
+        )
+        await self.on_after_request_verify(user, token, request)
+
     async def on_after_request_verify(
         self, user: UserDB, token: str, request: Optional[Request] = None
     ):
@@ -324,6 +359,207 @@ class UserManager(BaseUserManager[UserCreate, UserDB]):
 
         return result
 
+    async def create_base(self, user: UserCreate, safe: bool = False) -> UserDB:
+        """
+        Create a user in database.
+
+        Triggers the on_after_register handler on success.
+
+        :param user: The UserCreate model to create.
+        :param safe: If True, sensitive values like is_superuser or is_verified
+        will be ignored during the creation, defaults to False.
+        :param request: Optional FastAPI request that
+        triggered the operation, defaults to None.
+        :raises UserAlreadyExists: A user already exists with the same e-mail.
+        :return: A new user.
+        """
+        await self.validate_password(user.password, user)
+
+        existing_user = await self.user_db.get_by_email(user.email)
+        if existing_user is not None:
+            raise UserAlreadyExists()
+
+        hashed_password = get_password_hash(user.password)
+        user_dict = (
+            user.create_update_dict() if safe else user.create_update_dict_superuser()
+        )
+        db_user = self.user_db_model(**user_dict, hashed_password=hashed_password)
+
+        created_user = await self.user_db.create(db_user)
+
+        # await self.on_after_register(created_user, request)
+
+        return created_user
+
+    async def get(self, id_: UUID4) -> UserDB:
+        """
+        Get a user by id.
+
+        :param id: Id. of the user to retrieve.
+        :raises UserNotExists: The user does not exist.
+        :return: A user.
+        """
+        user = await self.user_db.get(id_)
+
+        if user is None:
+            raise UserNotExists()
+
+        return user
+
+    async def get_by_email(self, user_email: str) -> UserDB:
+        """
+        Get a user by e-mail.
+
+        :param user_email: E-mail of the user to retrieve.
+        :raises UserNotExists: The user does not exist.
+        :return: A user.
+        """
+        user = await self.user_db.get_by_email(user_email)
+
+        if user is None:
+            raise UserNotExists()
+
+        return user
+
+    async def verify(self, token: str) -> UserDB:
+        """
+        Validate a verification request.
+
+        Changes the is_verified flag of the user to True.
+
+        Triggers the on_after_verify handler on success.
+
+        :param token: The verification token generated by request_verify.
+        :param request: Optional FastAPI request that
+        triggered the operation, defaults to None.
+        :raises InvalidVerifyToken: The token is invalid or expired.
+        :raises UserAlreadyVerified: The user is already verified.
+        :return: The verified user.
+        """
+        try:
+            data = decode_jwt(token)
+        except:
+            raise InvalidVerifyToken()
+
+        try:
+            user_id = data["user_id"]
+            email = data["email"]
+        except KeyError:
+            raise InvalidVerifyToken()
+
+        try:
+            user = await self.get_by_email(email)
+        except UserNotExists:
+            raise InvalidVerifyToken()
+
+        try:
+            user_uuid = UUID4(user_id)
+        except ValueError:
+            raise InvalidVerifyToken()
+
+        if user_uuid != user.id:
+            raise InvalidVerifyToken()
+
+        if user.is_verified:
+            raise UserAlreadyVerified()
+
+        verified_user = await self._update(user, {"is_verified": True})
+
+        # await self.on_after_verify(verified_user, request)
+
+        return verified_user
+
+    async def forgot_password(
+        self, user: UserDB, request: Optional[Request] = None
+    ) -> None:
+        """
+        Start a forgot password request.
+
+        Triggers the on_after_forgot_password handler on success.
+
+        :param user: The user that forgot its password.
+        :param request: Optional FastAPI request that
+        triggered the operation, defaults to None.
+        :raises UserInactive: The user is inactive.
+        """
+        if not user.is_active:
+            raise UserInactive()
+
+        token_data = {
+            "user_id": str(user.id),
+            # "aud": self.reset_password_token_audience,
+        }
+        token = generate_jwt(
+            token_data,
+            self.reset_password_token_lifetime_minutes,
+        )
+        await self.on_after_forgot_password(user, token, request)
+
+    async def reset_password(self, token: str, password: str) -> UserDB:
+        """
+        Reset the password of a user.
+
+        Triggers the on_after_reset_password handler on success.
+
+        :param token: The token generated by forgot_password.
+        :param password: The new password to set.
+        :param request: Optional FastAPI request that
+        triggered the operation, defaults to None.
+        :raises InvalidResetPasswordToken: The token is invalid or expired.
+        :raises UserInactive: The user is inactive.
+        :raises InvalidPasswordException: The password is invalid.
+        :return: The user with updated password.
+        """
+        try:
+            data = decode_jwt(
+                token,
+            )
+        except:
+            raise InvalidResetPasswordToken()
+
+        user_id = data["user_id"]
+
+        try:
+            user_uuid = UUID4(user_id)
+        except ValueError:
+            raise InvalidResetPasswordToken()
+
+        user = await self.get(user_uuid)
+
+        if not user.is_active:
+            raise UserInactive()
+
+        updated_user = await self._update(user, {"password": password})
+
+        # await self.on_after_reset_password(user, request)
+
+        return updated_user
+
+    async def delete(self, user: UserDB) -> None:
+        """
+        Delete a user.
+
+        :param user: The user to delete.
+        """
+        await self.user_db.delete(user)
+
+    async def _update(self, user: UserDB, update_dict: Dict[str, Any]) -> UserDB:
+        for field, value in update_dict.items():
+            if field == "email" and value != user.email:
+                try:
+                    await self.get_by_email(value)
+                    raise UserAlreadyExists()
+                except UserNotExists:
+                    user.email = value
+                    user.is_verified = False
+            elif field == "password":
+                await self.validate_password(value, user)
+                hashed_password = get_password_hash(value)
+                user.hashed_password = hashed_password
+            else:
+                setattr(user, field, value)
+        return await self.user_db.update(user)
+
 
 # ============================================================================
 def init_user_manager(mdb, emailsender, invites):
@@ -340,7 +576,7 @@ def init_user_manager(mdb, emailsender, invites):
 
 # ============================================================================
 # pylint: disable=too-many-locals, raise-missing-from
-def init_users_api(app, user_manager):
+def init_users_api(app, user_manager: UserManager) -> APIRouter:
     """init fastapi_users"""
 
     auth_jwt_router, current_active_user = init_jwt_auth(user_manager)
@@ -367,13 +603,13 @@ def init_users_api(app, user_manager):
 
 
 # ============================================================================
-def init_auth_router(user_manager) -> APIRouter:
+def init_auth_router(user_manager: UserManager) -> APIRouter:
     """/auth router"""
 
     auth_router = APIRouter()
 
     @auth_router.post("/register", status_code=201)
-    async def register(request: Request, user: UserCreateIn):  # type: ignore
+    async def register(request: Request, user: UserCreate):  # type: ignore
         try:
             created_user = await user_manager.create(user, safe=True, request=request)
         except UserAlreadyExists:
@@ -416,12 +652,12 @@ def init_auth_router(user_manager) -> APIRouter:
         "/reset-password",
     )
     async def reset_password(
-        request: Request,
+        # request: Request,
         token: str = Body(...),
         password: str = Body(...),
     ):
         try:
-            await user_manager.reset_password(token, password, request)
+            await user_manager.reset_password(token, password)
         except (InvalidResetPasswordToken, UserNotExists, UserInactive):
             raise HTTPException(
                 status_code=400,
@@ -451,11 +687,11 @@ def init_auth_router(user_manager) -> APIRouter:
 
     @auth_router.post("/verify")
     async def verify(
-        request: Request,
+        # request: Request,
         token: str = Body(..., embed=True),
     ):
         try:
-            return await user_manager.verify(token, request)
+            return await user_manager.verify(token)
         except (InvalidVerifyToken, UserNotExists):
             raise HTTPException(
                 status_code=400,
@@ -478,7 +714,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
     @users_router.get("/me", tags=["users"])
     async def me_with_org_info(user: User = Depends(current_active_user)):
         """/users/me with orgs user belongs to."""
-        user_info = {
+        user_info: dict = {
             "id": user.id,
             "email": user.email,
             "name": user.name,

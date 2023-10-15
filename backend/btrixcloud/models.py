@@ -8,7 +8,8 @@ import os
 
 from typing import Optional, List, Dict, Union, Literal, Any
 from pydantic import BaseModel, UUID4, conint, Field, HttpUrl, AnyHttpUrl, EmailStr
-from fastapi_users import models as fastapi_users_models
+
+# from fastapi_users import models as fastapi_users_models
 
 from .db import BaseMongoModel
 
@@ -23,12 +24,19 @@ MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
 
 
 # ============================================================================
-class User(fastapi_users_models.BaseUser):
+# class User(fastapi_users_models.BaseUser):
+class User(BaseMongoModel):
     """
     Base User Model
     """
 
+    id: UUID4
+
     name: Optional[str] = ""
+    email: EmailStr
+    is_active: bool = True
+    is_superuser: bool = False
+    is_verified: bool = False
 
 
 # ============================================================================
@@ -889,7 +897,8 @@ class ProfileUpdate(BaseModel):
 
 # ============================================================================
 # use custom model as model.BaseUserCreate includes is_* field
-class UserCreateIn(fastapi_users_models.CreateUpdateDictModel):
+# class UserCreateIn(fastapi_users_models.CreateUpdateDictModel):
+class UserCreateIn(BaseModel):
     """
     User Creation Model exposed to API
     """
@@ -899,28 +908,42 @@ class UserCreateIn(fastapi_users_models.CreateUpdateDictModel):
 
     name: Optional[str] = ""
 
-    inviteToken: Optional[UUID4]
-
-    newOrg: bool
-    newOrgName: Optional[str] = ""
-
-
-# ============================================================================
-class UserCreate(fastapi_users_models.BaseUserCreate):
-    """
-    User Creation Model
-    """
-
-    name: Optional[str] = ""
-
     inviteToken: Optional[UUID4] = None
 
     newOrg: bool
     newOrgName: Optional[str] = ""
 
+    def create_update_dict(self):
+        """update dict"""
+        return self.dict(
+            exclude_unset=True,
+            exclude={
+                "id",
+                "is_superuser",
+                "is_active",
+                "is_verified",
+            },
+        )
+
+    def create_update_dict_superuser(self):
+        """update superuser dict"""
+        return self.dict(exclude_unset=True, exclude={"id"})
+
 
 # ============================================================================
-class UserUpdate(User, fastapi_users_models.CreateUpdateDictModel):
+class UserCreate(UserCreateIn):
+    """
+    User Creation Model
+    """
+
+    is_active: Optional[bool] = True
+    is_superuser: Optional[bool] = False
+    is_verified: Optional[bool] = False
+
+
+# ============================================================================
+# class UserUpdate(User, fastapi_users_models.CreateUpdateDictModel):
+class UserUpdate(BaseModel):
     """
     User Update Model
     """
@@ -941,12 +964,18 @@ class UserUpdatePassword(BaseModel):
 
 
 # ============================================================================
-class UserDB(User, fastapi_users_models.BaseUserDB):
+# class UserDB(User, fastapi_users_models.BaseUserDB):
+class UserDB(User):
     """
     User in DB Model
     """
 
     invites: Dict[str, InvitePending] = {}
+    hashed_password: str
+
+    # pylint: disable=missing-class-docstring, too-few-public-methods
+    class Config:
+        orm_mode = True
 
 
 # ============================================================================

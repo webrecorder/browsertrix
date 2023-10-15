@@ -24,6 +24,36 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from .models import User
 
 
+# pylint: disable=missing-class-docstring, missing-function-docstring
+class UserAlreadyExists(Exception):
+    pass
+
+
+class UserNotExists(Exception):
+    pass
+
+
+class UserInactive(Exception):
+    pass
+
+
+class UserAlreadyVerified(Exception):
+    pass
+
+
+class InvalidVerifyToken(Exception):
+    pass
+
+
+class InvalidResetPasswordToken(Exception):
+    pass
+
+
+class InvalidPasswordException(Exception):
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+
+
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
 
@@ -93,12 +123,23 @@ class OA2BearerOrQuery(OAuth2PasswordBearer):
 
 
 # ============================================================================
+def generate_jwt(data: dict, minutes: int) -> str:
+    expires_delta = timedelta(minutes=minutes)
+    expire = datetime.utcnow() + expires_delta
+    payload = data.copy()
+    payload["exp"] = expire
+    return jwt.encode(payload, PASSWORD_SECRET, algorithm=ALGORITHM)
+
+
+# ============================================================================
+def decode_jwt(token: str) -> dict:
+    return jwt.decode(token, PASSWORD_SECRET, algorithms=[ALGORITHM])
+
+
+# ============================================================================
 def create_access_token(user: User):
     """get jwt token"""
-    expires_delta = timedelta(minutes=JWT_TOKEN_LIFETIME)
-    expire = datetime.utcnow() + expires_delta
-    data = {"sub": str(user.id), "exp": expire}
-    return jwt.encode(data, PASSWORD_SECRET, algorithm=ALGORITHM)
+    return generate_jwt({"sub": str(user.id)}, JWT_TOKEN_LIFETIME)
 
 
 # ============================================================================
@@ -136,7 +177,7 @@ def init_jwt_auth(user_manager):
             headers={"WWW-Authenticate": "Bearer"},
         )
         try:
-            payload = jwt.decode(token, PASSWORD_SECRET, algorithms=[ALGORITHM])
+            payload = decode_jwt(token)
             uid: Optional[str] = payload.get("sub")
             if uid is None:
                 raise credentials_exception
