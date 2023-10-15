@@ -183,7 +183,7 @@ def init_jwt_auth(user_manager):
                 raise credentials_exception
         except Exception:
             raise credentials_exception
-        user = await user_manager.get(uuid.UUID(uid))
+        user = await user_manager.get_by_id(uuid.UUID(uid))
         if user is None:
             raise credentials_exception
         return user

@@ -738,11 +738,10 @@ class Organization(BaseMongoModel):
 
         if self.is_owner(user):
             keys = list(result["users"].keys())
-            print(keys)
             user_list = await user_manager.get_user_names_by_ids(keys)
 
             for org_user in user_list:
-                id_ = str(org_user["id"])
+                id_ = str(org_user["_id"])
                 role = result["users"].get(id_)
                 if not role:
                     continue

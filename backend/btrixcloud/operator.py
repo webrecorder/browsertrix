@@ -1405,7 +1405,7 @@ class BtrixOperator(K8sAPI):
                 return {"attachments": []}
 
             # db create
-            user = await self.user_ops.get_user_by_id(uuid.UUID(userid))
+            user = await self.user_ops.get_by_id(uuid.UUID(userid))
             await self.crawl_config_ops.add_new_crawl(
                 crawl_id, crawlconfig, user, manual=False
             )

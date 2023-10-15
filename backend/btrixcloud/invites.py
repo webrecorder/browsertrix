@@ -148,7 +148,7 @@ class InviteOps:
             inviterEmail=user.email,
         )
 
-        other_user = await user_manager.user_db.get_by_email(invite.email)
+        other_user = await user_manager.get_by_email(invite.email)
 
         if not other_user:
             await self.add_new_user_invite(
@@ -173,7 +173,7 @@ class InviteOps:
         invite_pending.email = None
         other_user.invites[invite_code] = invite_pending
 
-        await user_manager.user_db.update(other_user)
+        await user_manager.update_invites(other_user)
 
         self.email.send_existing_user_invite(
             other_user.email, user.name, org_name, invite_code, headers

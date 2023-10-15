@@ -52,7 +52,7 @@ from .auth import (
     init_jwt_auth,
     ErrorCode,
     PASSWORD_SECRET,
-    verify_password,
+    # verify_password,
     verify_and_update_password,
     get_password_hash,
     generate_password,
@@ -135,6 +135,25 @@ class UserManager:
         if not 8 <= pw_length <= 64:
             raise InvalidPasswordException(reason="invalid_password_length")
 
+    async def check_password(self, user: UserDB, password: str) -> bool:
+        """check if password is valid, also update hashed_password if needed"""
+        verified, updated_password_hash = verify_and_update_password(
+            password, user.hashed_password
+        )
+
+        if not verified:
+            return False
+
+        # Update password hash to a more robust one if needed
+        if updated_password_hash:
+            user.hashed_password = updated_password_hash
+            # await self.user_db.update(user)
+            await self.collection.find_one_and_update(
+                {"_id": user.id}, {"$set": {"hashed_password": user.hashed_password}}
+            )
+
+        return True
+
     async def authenticate(
         self, credentials: OAuth2PasswordRequestForm
     ) -> Optional[User]:
@@ -144,24 +163,9 @@ class UserManager:
             # Run the hasher to mitigate timing attack
             # Inspired from Django: https://code.djangoproject.com/ticket/20760
             get_password_hash(credentials.password)
-            print("no user", flush=True)
             return None
 
-        verified, updated_password_hash = verify_and_update_password(
-            credentials.password, user.hashed_password
-        )
-        print("verified", verified, updated_password_hash)
-        if not verified:
-            return None
-        # Update password hash to a more robust one if needed
-        if updated_password_hash is not None:
-            user.hashed_password = updated_password_hash
-            # await self.user_db.update(user)
-            await self.collection.find_one_and_update(
-                {"_id": user.id}, {"$set": {"hashed_password": user.hashed_password}}
-            )
-
-        return user
+        return user if self.check_password(user, credentials.password) else None
 
     async def get_user_names_by_ids(self, user_ids):
         """return list of user names for given ids"""
@@ -171,10 +175,6 @@ class UserManager:
             {"_id": {"$in": user_ids}}, projection=["_id", "name", "email"]
         )
         return await cursor.to_list(length=1000)
-
-    async def get_user_by_id(self, user_id: uuid.UUID):
-        """return user from user_id"""
-        return self.get(user_id)
 
     async def get_superuser(self) -> Optional[UserDB]:
         """return current superuser, if any"""
@@ -393,7 +393,7 @@ class UserManager:
 
         return db_user
 
-    async def get(self, _id: UUID4) -> UserDB:
+    async def get_by_id(self, _id: UUID4) -> UserDB:
         """
         Get a user by id.
 
@@ -525,7 +525,7 @@ class UserManager:
         except ValueError:
             raise InvalidResetPasswordToken()
 
-        user = await self.get(user_uuid)
+        user = await self.get_by_id(user_uuid)
 
         if not user.is_active:
             raise UserInactive()
@@ -757,7 +757,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
         user: UserDB = Depends(current_active_user),
     ):
         """update password, requires current password"""
-        if not verify_password(user_update.password, user.hashed_password):
+        if not user_manager.check_password(user, user_update.password):
             raise HTTPException(status_code=400, detail="invalid_current_password")
 
         update = UserUpdate(email=user_update.email, password=user_update.newPassword)

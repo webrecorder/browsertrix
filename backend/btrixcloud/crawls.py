@@ -256,7 +256,7 @@ class CrawlOps(BaseCrawlOps):
     ):
         """initialize new crawl"""
         if not username:
-            user = await self.user_manager.get(userid)
+            user = await self.user_manager.get_by_id(userid)
             if user:
                 username = user.name
 
