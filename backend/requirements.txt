@@ -8,7 +8,7 @@ kubernetes-asyncio==25.11.0
 kubernetes
 aiobotocore
 passlib
-jwt
+pyjwt
 redis>=5.0.0
 pyyaml
 jinja2
