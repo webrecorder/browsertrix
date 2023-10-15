@@ -1,7 +1,9 @@
+# mypy: disable-error-code="union-attr"
 """ mongodb wrapper for users from fastapi users """
 
 from typing import Optional, Type
-from motor.motor_asyncio import AsyncIOMotorCollection
+
+# from motor.motor_asyncio import AsyncIOMotorCollection
 from pydantic import UUID4
 
 from .models import UserDB
@@ -17,12 +19,10 @@ class MongoDBUserDatabase:
     :param collection: Collection instance from `motor`.
     """
 
-    collection: AsyncIOMotorCollection
+    collection = None  #: AsyncIOMotorCollection
 
     def __init__(
-        self,
-        user_db_model: Type[UserDB],
-        collection: AsyncIOMotorCollection,
+        self, user_db_model: Type[UserDB], collection  # AsyncIOMotorCollection,
     ):
         self.user_db_model = user_db_model
         self.collection = collection
@@ -61,8 +61,4 @@ class MongoDBUserDatabase:
         if not self.initialized:
             await self.collection.create_index("id", unique=True)
             await self.collection.create_index("email", unique=True)
-            await self.collection.create_index(
-                "email",
-                name="case_insensitive_email_index",
-            )
             self.initialized = True

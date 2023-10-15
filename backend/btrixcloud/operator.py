@@ -4,9 +4,7 @@ import asyncio
 import traceback
 import os
 from pprint import pprint
-from typing import Optional, DefaultDict
-
-from collections import defaultdict
+from typing import Optional, DefaultDict, Annotated
 
 from datetime import datetime
 import json
@@ -208,9 +206,9 @@ class CrawlStatus(BaseModel):
     stopping: bool = False
     initRedis: bool = False
     lastActiveTime: str = ""
-    podStatus: Optional[DefaultDict[str, PodInfo]] = defaultdict(
-        lambda: PodInfo()  # pylint: disable=unnecessary-lambda
-    )
+    podStatus: Optional[
+        DefaultDict[str, Annotated[PodInfo, Field(default_factory=PodInfo)]]
+    ]
     restartTime: Optional[str]
     execTime: int = 0
     canceled: bool = False

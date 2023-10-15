@@ -438,7 +438,7 @@ class CrawlScale(BaseModel):
 class Crawl(BaseCrawl, CrawlConfigCore):
     """Store State of a Crawl (Finished or Running)"""
 
-    type: str = Field("crawl", const=True)
+    type: Literal["crawl"] = "crawl"
 
     cid: UUID4
 
@@ -478,7 +478,7 @@ class CrawlCompleteIn(BaseModel):
 class UploadedCrawl(BaseCrawl):
     """Store State of a Crawl Upload"""
 
-    type: str = Field("upload", const=True)
+    type: Literal["upload"] = "upload"
 
     tags: Optional[List[str]] = []
 
@@ -975,7 +975,7 @@ class UserDB(User):
 
     # pylint: disable=missing-class-docstring, too-few-public-methods
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ============================================================================
@@ -1017,14 +1017,18 @@ class BaseCollectionItemBody(WebhookNotificationBody):
 class CollectionItemAddedBody(BaseCollectionItemBody):
     """Webhook notification POST body for collection additions"""
 
-    event: str = Field(WebhookEventType.ADDED_TO_COLLECTION, const=True)
+    event: Literal[
+        WebhookEventType.ADDED_TO_COLLECTION
+    ] = WebhookEventType.ADDED_TO_COLLECTION
 
 
 # ============================================================================
 class CollectionItemRemovedBody(BaseCollectionItemBody):
     """Webhook notification POST body for collection removals"""
 
-    event: str = Field(WebhookEventType.REMOVED_FROM_COLLECTION, const=True)
+    event: Literal[
+        WebhookEventType.REMOVED_FROM_COLLECTION
+    ] = WebhookEventType.REMOVED_FROM_COLLECTION
 
 
 # ============================================================================
@@ -1039,14 +1043,14 @@ class CrawlStartedBody(BaseArchivedItemBody):
     """Webhook notification POST body for when crawl starts"""
 
     scheduled: bool = False
-    event: str = Field(WebhookEventType.CRAWL_STARTED, const=True)
+    event: Literal[WebhookEventType.CRAWL_STARTED] = WebhookEventType.CRAWL_STARTED
 
 
 # ============================================================================
 class CrawlFinishedBody(BaseArchivedItemBody):
     """Webhook notification POST body for when crawl finishes"""
 
-    event: str = Field(WebhookEventType.CRAWL_FINISHED, const=True)
+    event: Literal[WebhookEventType.CRAWL_FINISHED] = WebhookEventType.CRAWL_FINISHED
     state: str
 
 
@@ -1054,7 +1058,7 @@ class CrawlFinishedBody(BaseArchivedItemBody):
 class UploadFinishedBody(BaseArchivedItemBody):
     """Webhook notification POST body for when upload finishes"""
 
-    event: str = Field(WebhookEventType.UPLOAD_FINISHED, const=True)
+    event: Literal[WebhookEventType.UPLOAD_FINISHED] = WebhookEventType.UPLOAD_FINISHED
     state: str
 
 
