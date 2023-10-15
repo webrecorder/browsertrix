@@ -14,18 +14,17 @@ from passlib.context import CryptContext
 
 from fastapi import (
     Request,
-    Response,
     HTTPException,
     Depends,
-    WebSocket,
     APIRouter,
     Body,
 )
-from fastapi.security import OAuth2PasswordBearer
 
 from pymongo.errors import DuplicateKeyError
 
-from fastapi_users import FastAPIUsers, BaseUserManager
+from fastapi_users import BaseUserManager
+from fastapi_users.db import MongoDBUserDatabase
+
 from fastapi_users.manager import (
     UserNotExists,
     UserInactive,
@@ -35,12 +34,6 @@ from fastapi_users.manager import (
     InvalidResetPasswordToken,
     InvalidVerifyToken,
 )
-from fastapi_users.authentication import (
-    AuthenticationBackend,
-    BearerTransport,
-    JWTStrategy,
-)
-from fastapi_users.db import MongoDBUserDatabase
 
 from .models import (
     User,
@@ -51,15 +44,11 @@ from .models import (
     UserDB,
     UserRole,
     PaginatedResponse,
-    ErrorCode,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import is_bool
 
-# ============================================================================
-PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
-
-JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60)) * 60
+from .auth import init_jwt_auth, ErrorCode, PASSWORD_SECRET
 
 
 # ============================================================================
@@ -322,82 +311,11 @@ def init_user_manager(mdb, emailsender, invites):
 
 
 # ============================================================================
-class OA2BearerOrQuery(OAuth2PasswordBearer):
-    """Override bearer check to also test query"""
-
-    async def __call__(
-        self, request: Request = None, websocket: WebSocket = None  # type: ignore
-    ) -> str:
-        param = None
-        exc = None
-        # use websocket as request if no request
-        request = request or websocket  # type: ignore
-        try:
-            param = await super().__call__(request)  # type: ignore
-            if param:
-                return param
-
-        # pylint: disable=broad-except
-        except Exception as super_exc:
-            exc = super_exc
-
-        if request:
-            param = request.query_params.get("auth_bearer")
-
-        if param:
-            return param
-
-        if exc:
-            raise exc
-
-        raise HTTPException(status_code=404, detail="Not Found")
-
-
-# ============================================================================
-class BearerOrQueryTransport(BearerTransport):
-    """Bearer or Query Transport"""
-
-    scheme: OA2BearerOrQuery
-
-    # pylint: disable=invalid-name
-    def __init__(self, tokenUrl: str):
-        # pylint: disable=super-init-not-called
-        self.scheme = OA2BearerOrQuery(tokenUrl, auto_error=False)
-
-
-# ============================================================================
 # pylint: disable=too-many-locals, raise-missing-from
 def init_users_api(app, user_manager):
     """init fastapi_users"""
-    # pylint: disable=invalid-name
 
-    bearer_transport = BearerOrQueryTransport(tokenUrl="auth/jwt/login")
-
-    def get_jwt_strategy() -> JWTStrategy:
-        return JWTStrategy(secret=PASSWORD_SECRET, lifetime_seconds=JWT_TOKEN_LIFETIME)
-
-    auth_backend = AuthenticationBackend(
-        name="jwt",
-        transport=bearer_transport,
-        get_strategy=get_jwt_strategy,
-    )
-
-    fastapi_users = FastAPIUsers(
-        lambda: user_manager,
-        [auth_backend],
-        User,
-        UserCreateIn,
-        UserUpdate,
-        UserDB,
-    )
-
-    current_active_user = fastapi_users.current_user(active=True)
-
-    auth_jwt_router = fastapi_users.get_auth_router(auth_backend)
-
-    @auth_jwt_router.post("/refresh")
-    async def refresh_jwt(response: Response, user=Depends(current_active_user)):
-        return await auth_backend.login(get_jwt_strategy(), user, response)
+    auth_jwt_router, current_active_user = init_jwt_auth(user_manager)
 
     app.include_router(
         auth_jwt_router,
@@ -468,7 +386,6 @@ def init_auth_router(user_manager) -> APIRouter:
 
     @auth_router.post(
         "/reset-password",
-        name="reset:reset_password",
     )
     async def reset_password(
         request: Request,

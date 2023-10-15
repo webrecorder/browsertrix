@@ -14,7 +14,8 @@ from .db import init_db, await_db_and_migrations, update_and_prepare_db
 
 from .emailsender import EmailSender
 from .invites import init_invites
-from .users import init_users_api, init_user_manager, JWT_TOKEN_LIFETIME
+from .auth import JWT_TOKEN_LIFETIME
+from .users import init_users_api, init_user_manager
 from .orgs import init_orgs_api
 
 from .profiles import init_profiles_api
