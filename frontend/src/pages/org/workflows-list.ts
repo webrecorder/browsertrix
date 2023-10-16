@@ -379,7 +379,7 @@ export class WorkflowsList extends LiteElement {
     const { page, total, pageSize } = this.workflows;
 
     return html`
-      <btrix-workflow-list>
+      <btrix-workflow-list basePath=${this.orgBasePath}>
         ${this.workflows.items.map(this.renderWorkflowItem)}
       </btrix-workflow-list>
       ${when(
@@ -455,7 +455,7 @@ export class WorkflowsList extends LiteElement {
           <sl-menu-item
             @click=${() =>
               this.navTo(
-                `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}#watch`,
+                `${this.orgBasePath}/workflows/crawl/${workflow.id}#watch`,
                 {
                   dialog: "scale",
                 }
@@ -467,7 +467,7 @@ export class WorkflowsList extends LiteElement {
           <sl-menu-item
             @click=${() =>
               this.navTo(
-                `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}#watch`,
+                `${this.orgBasePath}/workflows/crawl/${workflow.id}#watch`,
                 {
                   dialog: "exclusions",
                 }
@@ -482,9 +482,7 @@ export class WorkflowsList extends LiteElement {
       <sl-divider></sl-divider>
       <sl-menu-item
         @click=${() =>
-          this.navTo(
-            `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}?edit`
-          )}
+          this.navTo(`${this.orgBasePath}/workflows/crawl/${workflow.id}?edit`)}
       >
         <sl-icon name="gear" slot="prefix"></sl-icon>
         ${msg("Edit Workflow Settings")}
