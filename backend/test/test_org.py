@@ -435,3 +435,33 @@ def test_get_org_slug_lookup_non_superadmin(crawler_auth_headers):
     r = requests.get(f"{API_PREFIX}/orgs/slug-lookup", headers=crawler_auth_headers)
     assert r.status_code == 403
     assert r.json()["detail"] == "Not Allowed"
+
+
+def test_set_org_execution_time_overage(admin_auth_headers, default_org_id):
+    NEW_VALUE = 30
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    data = r.json()
+    value_before = data.get("crawlExecMinutesAllowedOverage", 0)
+    assert value_before != NEW_VALUE
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/billing",
+        headers=admin_auth_headers,
+        json={"crawlExecMinutesAllowedOverage": NEW_VALUE},
+    )
+    assert r.status_code == 200
+
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    assert r.json()["crawlExecMinutesAllowedOverage"] == NEW_VALUE
+
+
+def test_set_org_execution_time_overage_non_superadmin(
+    crawler_auth_headers, default_org_id
+):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/billing",
+        headers=crawler_auth_headers,
+        json={"crawlExecMinutesAllowedOverage": 60},
+    )
+    assert r.status_code == 403
