@@ -196,7 +196,9 @@ def init_jwt_auth(user_manager):
     async def login(
         credentials: OAuth2PasswordRequestForm = Depends(),
     ):
-        user = await user_manager.authenticate(credentials)
+        user = await user_manager.authenticate(
+            credentials.username, credentials.password
+        )
 
         if user is None:
             raise HTTPException(

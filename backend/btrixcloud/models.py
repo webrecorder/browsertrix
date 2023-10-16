@@ -926,25 +926,14 @@ class UserCreate(UserCreateIn):
 
 
 # ============================================================================
-# class UserUpdate(User, fastapi_users_models.CreateUpdateDictModel):
 class UserUpdate(BaseModel):
-    """
-    User Update Model
-    """
-
-    password: Optional[str]
-    email: EmailStr
-
-
-# ============================================================================
-class UserUpdatePassword(BaseModel):
     """
     Update password model, requires current password to reset
     """
 
+    email: EmailStr
     password: str
     newPassword: str
-    email: EmailStr
 
 
 # ============================================================================

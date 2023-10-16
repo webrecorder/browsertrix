@@ -17,7 +17,6 @@ from fastapi import (
     APIRouter,
     Body,
 )
-from fastapi.security import OAuth2PasswordRequestForm
 
 from pymongo.errors import DuplicateKeyError
 
@@ -37,10 +36,8 @@ from .auth import (
 
 from .models import (
     User,
-    # UserCreateIn,
     UserCreate,
     UserUpdate,
-    UserUpdatePassword,
     UserDB,
     UserRole,
     PaginatedResponse,
@@ -154,18 +151,19 @@ class UserManager:
 
         return True
 
-    async def authenticate(
-        self, credentials: OAuth2PasswordRequestForm
-    ) -> Optional[User]:
+    async def authenticate(self, email: EmailStr, password: str) -> Optional[User]:
         """authenticate user via login form"""
-        user = await self.get_by_email(credentials.username)
+        user = await self.get_by_email(email)
         if not user:
             # Run the hasher to mitigate timing attack
             # Inspired from Django: https://code.djangoproject.com/ticket/20760
-            get_password_hash(credentials.password)
+            get_password_hash(password)
             return None
 
-        return user if self.check_password(user, credentials.password) else None
+        if await self.check_password(user, password):
+            return user
+
+        return None
 
     async def get_user_names_by_ids(self, user_ids):
         """return list of user names for given ids"""
@@ -534,6 +532,17 @@ class UserManager:
 
         return user
 
+    async def change_password(
+        self, user_update: UserUpdate, user: UserDB
+    ) -> dict[str, bool]:
+        """Change password after checking existing password"""
+        if not await self.check_password(user, user_update.password):
+            raise HTTPException(status_code=400, detail="invalid_current_password")
+
+        await self.update_password(user, user_update.newPassword)
+
+        return {"updated": True}
+
     async def delete(self, user: UserDB) -> None:
         """
         Delete a user.
@@ -758,32 +767,11 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
 
     @users_router.put("/me/password-change", tags=["users"])
     async def change_my_password(
-        request: Request,
-        user_update: UserUpdatePassword,
+        user_update: UserUpdate,
         user: UserDB = Depends(current_active_user),
     ):
         """update password, requires current password"""
-        if not user_manager.check_password(user, user_update.password):
-            raise HTTPException(status_code=400, detail="invalid_current_password")
-
-        update = UserUpdate(email=user_update.email, password=user_update.newPassword)
-        try:
-            # pylint: disable=line-too-long
-            return await user_manager.update(update, user, request=request)  # type: ignore
-        # pylint: disable=raise-missing-from
-        except InvalidPasswordException as e:
-            raise HTTPException(
-                status_code=400,
-                detail={
-                    "code": "UPDATE_USER_INVALID_PASSWORD",
-                    "reason": e.reason,
-                },
-            )
-        except UserAlreadyExists:
-            raise HTTPException(
-                status_code=400,
-                detail="UPDATE_USER_EMAIL_ALREADY_EXISTS",
-            )
+        return await user_manager.change_password(user_update, user)
 
     @users_router.get("/me/invite/{token}", tags=["invites"])
     async def get_existing_user_invite_info(
