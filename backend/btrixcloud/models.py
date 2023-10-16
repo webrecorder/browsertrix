@@ -784,9 +784,15 @@ class Organization(BaseMongoModel):
             exclude.add("usage")
             exclude.add("crawlExecSeconds")
 
-        users = {}
+        result = self.to_dict(
+            exclude_unset=True,
+            exclude_none=True,
+            exclude=exclude,
+        )
 
         if self.is_owner(user):
+            result["users"] = {}
+
             keys = list(self.users.keys())
             user_list = await user_manager.get_user_names_by_ids(keys)
 
@@ -796,18 +802,11 @@ class Organization(BaseMongoModel):
                 if not role:
                     continue
 
-                users[id_] = {
+                result["users"][id_] = {
                     "role": role,
                     "name": org_user.get("name", ""),
                     "email": org_user.get("email", ""),
                 }
-
-        result = self.to_dict(
-            exclude_unset=True,
-            exclude_none=True,
-            exclude=exclude,
-        )
-        result["users"] = users
 
         return OrgOut.from_dict(result)
 
