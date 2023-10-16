@@ -97,15 +97,12 @@ export class ResetPassword extends LiteElement {
       case 400:
       case 422:
         const { detail } = await resp.json();
-        if (detail === "RESET_PASSWORD_BAD_TOKEN") {
+        if (detail === "reset_password_bad_token") {
           // TODO password validation details
           this.serverError = msg(
             "Password reset email is not valid. Request a new password reset email"
           );
-        } else if (
-          detail.code &&
-          detail.code === "RESET_PASSWORD_INVALID_PASSWORD"
-        ) {
+        } else if (detail.code && detail.code === "invalid_password") {
           this.serverError = msg(
             "Invalid password. Must be between 8 and 64 characters"
           );

@@ -37,7 +37,6 @@ from .utils import is_bool
 
 from .auth import (
     init_jwt_auth,
-    ErrorCode,
     PASSWORD_SECRET,
     verify_and_update_password,
     get_password_hash,
@@ -59,7 +58,7 @@ class UserManager:
     verification_token_lifetime_minutes: int = 60
 
     def __init__(self, mdb, email, invites):
-        self.collection = mdb.get_collection("users")
+        self.users = mdb.get_collection("users")
         self.email = email
         self.invites = invites
         self.org_ops = None
@@ -72,7 +71,7 @@ class UserManager:
 
     async def init_index(self):
         """init lookup index"""
-        await self.collection.create_index("email", unique=True)
+        await self.users.create_index("email", unique=True)
 
     async def register(
         self, user: UserCreateIn, request: Optional[Request] = None
@@ -136,9 +135,7 @@ class UserManager:
         """
         pw_length = len(password)
         if not 8 <= pw_length <= 64:
-            raise HTTPException(
-                status_code=400, detail=ErrorCode.REGISTER_INVALID_PASSWORD
-            )
+            raise HTTPException(status_code=400, detail="invalid_password")
 
     async def check_password(self, user: User, password: str) -> bool:
         """check if password is valid, also update hashed_password if needed"""
@@ -152,7 +149,7 @@ class UserManager:
         # Update password hash to a more robust one if needed
         if updated_password_hash:
             user.hashed_password = updated_password_hash
-            await self.collection.find_one_and_update(
+            await self.users.find_one_and_update(
                 {"_id": user.id}, {"$set": {"hashed_password": user.hashed_password}}
             )
 
@@ -175,14 +172,14 @@ class UserManager:
     async def get_user_names_by_ids(self, user_ids):
         """return list of user names for given ids"""
         user_ids = [UUID4(id_) for id_ in user_ids]
-        cursor = self.collection.find(
+        cursor = self.users.find(
             {"_id": {"$in": user_ids}}, projection=["_id", "name", "email"]
         )
         return await cursor.to_list(length=1000)
 
     async def get_superuser(self) -> Optional[User]:
         """return current superuser, if any"""
-        user_data = await self.collection.find_one({"is_superuser": True})
+        user_data = await self.users.find_one({"is_superuser": True})
         if not user_data:
             return None
 
@@ -224,7 +221,8 @@ class UserManager:
             )
             print(f"Super user {email} created", flush=True)
             print(res, flush=True)
-        except DuplicateKeyError:
+        except HTTPException as exc:
+            print(exc)
             print(f"User {email} already exists", flush=True)
 
     async def create_non_super_user(
@@ -252,17 +250,16 @@ class UserManager:
             )
 
             await self._create(user_create)
-        except DuplicateKeyError:
+        except HTTPException as exc:
             print(f"User {email} already exists", flush=True)
+            raise exc
 
     async def request_verify(
         self, user: User, request: Optional[Request] = None
     ) -> None:
         """start verifying user, if not already verified"""
         if user.is_verified:
-            raise HTTPException(
-                status_code=400, detail=ErrorCode.VERIFY_USER_ALREADY_VERIFIED
-            )
+            raise HTTPException(status_code=400, detail="verify_user_already_verified")
 
         token_data = {
             "user_id": str(user.id),
@@ -293,12 +290,6 @@ class UserManager:
         """create new user in db"""
         await self.validate_password(create.password)
 
-        existing_user = await self.get_by_email(create.email)
-        if existing_user is not None:
-            raise HTTPException(
-                status_code=400, detail=ErrorCode.REGISTER_USER_ALREADY_EXISTS
-            )
-
         hashed_password = get_password_hash(create.password)
 
         if isinstance(create, UserCreate):
@@ -319,7 +310,10 @@ class UserManager:
             is_verified=is_verified,
         )
 
-        await self.collection.insert_one(user.to_dict())
+        try:
+            await self.users.insert_one(user.to_dict())
+        except DuplicateKeyError:
+            raise HTTPException(status_code=400, detail="user_already_exists")
 
         add_to_default_org = False
 
@@ -367,7 +361,7 @@ class UserManager:
 
     async def get_by_id(self, _id: UUID4) -> Optional[User]:
         """get user by unique id"""
-        user = await self.collection.find_one({"_id": _id})
+        user = await self.users.find_one({"_id": _id})
 
         if not user:
             return None
@@ -376,7 +370,7 @@ class UserManager:
 
     async def get_by_email(self, email: str) -> Optional[User]:
         """get user by email"""
-        user = await self.collection.find_one({"email": email})
+        user = await self.users.find_one({"email": email})
         if not user:
             return None
 
@@ -386,7 +380,7 @@ class UserManager:
         """validate verification request token"""
         exc = HTTPException(
             status_code=400,
-            detail=ErrorCode.VERIFY_USER_BAD_TOKEN,
+            detail="verify_user_bad_token",
         )
 
         try:
@@ -415,7 +409,7 @@ class UserManager:
         if user.is_verified:
             raise HTTPException(
                 status_code=400,
-                detail=ErrorCode.VERIFY_USER_ALREADY_VERIFIED,
+                detail="verify_user_already_verified",
             )
 
         user.is_verified = True
@@ -446,7 +440,7 @@ class UserManager:
         except:
             raise HTTPException(
                 status_code=400,
-                detail=ErrorCode.RESET_PASSWORD_BAD_TOKEN,
+                detail="reset_password_bad_token",
             )
 
         user_id = data["user_id"]
@@ -456,7 +450,7 @@ class UserManager:
         except ValueError:
             raise HTTPException(
                 status_code=400,
-                detail=ErrorCode.RESET_PASSWORD_BAD_TOKEN,
+                detail="reset_password_bad_token",
             )
 
         user = await self.get_by_id(user_uuid)
@@ -483,13 +477,13 @@ class UserManager:
 
     async def update_verified(self, user: User) -> None:
         """Update verified status for user"""
-        await self.collection.find_one_and_update(
+        await self.users.find_one_and_update(
             {"_id": user.id}, {"$set": {"is_verified": user.is_verified}}
         )
 
     async def update_invites(self, user: User) -> None:
         """Update verified status for user"""
-        await self.collection.find_one_and_update(
+        await self.users.find_one_and_update(
             {"_id": user.id}, {"$set": user.dict(include={"invites"})}
         )
 
@@ -502,7 +496,11 @@ class UserManager:
             query["email"] = str(email)
         if name:
             query["name"] = name
-        await self.collection.find_one_and_update({"_id": user.id}, {"$set": query})
+
+        try:
+            await self.users.find_one_and_update({"_id": user.id}, {"$set": query})
+        except DuplicateKeyError:
+            raise HTTPException(status_code=400, detail="user_already_exists")
 
     async def update_password(self, user: User, new_password: str) -> bool:
         """Update password for user, update and store hashed password"""
@@ -511,7 +509,7 @@ class UserManager:
         if hashed_password == user.hashed_password:
             return False
         user.hashed_password = hashed_password
-        await self.collection.find_one_and_update(
+        await self.users.find_one_and_update(
             {"_id": user.id}, {"$set": {"hashed_password": hashed_password}}
         )
         return True
@@ -648,7 +646,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
             invite = user.invites[token]
         except:
             # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=400, detail="Invalid Invite Code")
+            raise HTTPException(status_code=400, detail="invalid_invite_code")
 
         return await user_manager.format_invite(invite)
 
@@ -665,7 +663,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
         page: int = 1,
     ):
         if not user.is_superuser:
-            raise HTTPException(status_code=403, detail="Not Allowed")
+            raise HTTPException(status_code=403, detail="not_allowed")
 
         pending_invites, total = await user_manager.invites.get_pending_invites(
             page_size=pageSize, page=page

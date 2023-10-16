@@ -2,7 +2,6 @@
 
 import os
 import uuid
-from enum import Enum
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
 from passlib import pwd
@@ -32,22 +31,6 @@ JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60)) * 60
 ALGORITHM = "HS256"
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-# ============================================================================
-class ErrorCode(str, Enum):
-    """Auth Error Codes"""
-
-    REGISTER_INVALID_PASSWORD = "REGISTER_INVALID_PASSWORD"
-    REGISTER_USER_ALREADY_EXISTS = "REGISTER_USER_ALREADY_EXISTS"
-    LOGIN_BAD_CREDENTIALS = "LOGIN_BAD_CREDENTIALS"
-    LOGIN_USER_NOT_VERIFIED = "LOGIN_USER_NOT_VERIFIED"
-    RESET_PASSWORD_BAD_TOKEN = "RESET_PASSWORD_BAD_TOKEN"
-    RESET_PASSWORD_INVALID_PASSWORD = "RESET_PASSWORD_INVALID_PASSWORD"
-    VERIFY_USER_BAD_TOKEN = "VERIFY_USER_BAD_TOKEN"
-    VERIFY_USER_ALREADY_VERIFIED = "VERIFY_USER_ALREADY_VERIFIED"
-    UPDATE_USER_EMAIL_ALREADY_EXISTS = "UPDATE_USER_EMAIL_ALREADY_EXISTS"
-    UPDATE_USER_INVALID_PASSWORD = "UPDATE_USER_INVALID_PASSWORD"
 
 
 # ============================================================================
@@ -183,12 +166,12 @@ def init_jwt_auth(user_manager):
         if not user:
             raise HTTPException(
                 status_code=400,
-                detail=ErrorCode.LOGIN_BAD_CREDENTIALS,
+                detail="login_bad_credentials",
             )
         # if requires_verification and not user.is_verified:
         #    raise HTTPException(
         #        status_code=400,
-        #        detail=ErrorCode.LOGIN_USER_NOT_VERIFIED,
+        #        detail="login_user_not_verified",
         #    )
         return get_bearer_response(user)
 
