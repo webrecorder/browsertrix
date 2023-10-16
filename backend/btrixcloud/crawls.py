@@ -530,9 +530,14 @@ class CrawlOps(BaseCrawlOps):
 
     async def store_exec_time(self, crawl_id, exec_time):
         """set exec time, only if not already set"""
-        query = {"_id": crawl_id, "type": "crawl", "execTime": {"$in": [0, None]}}
+        query = {
+            "_id": crawl_id,
+            "type": "crawl",
+            "crawlExecSeconds": {"$in": [0, None]},
+        }
         return await self.crawls.find_one_and_update(
-            query, {"$set": {"execTime": exec_time}}
+            query,
+            {"$set": {"crawlExecSeconds": exec_time}},
         )
 
     async def get_crawl_state(self, crawl_id):

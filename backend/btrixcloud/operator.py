@@ -1316,11 +1316,10 @@ class BtrixOperator(K8sAPI):
         print(f"{name} exec time: {exec_time}")
         return exec_time
 
-    async def store_exec_time_in_crawl(self, crawl_id, exec_time):
+    async def store_exec_time_in_crawl(self, crawl_id: str, exec_time: int):
         """store execTime in crawl (if not already set)"""
         try:
-            if await self.crawl_ops.store_exec_time(crawl_id, exec_time):
-                print(f"Exec Time stored in crawl: {exec_time}", flush=True)
+            await self.crawl_ops.store_exec_time(crawl_id, exec_time)
             return True
         # pylint: disable=broad-except
         except Exception as exc:
