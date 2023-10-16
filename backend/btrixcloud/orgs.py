@@ -22,6 +22,7 @@ from .models import (
     OrgQuotas,
     OrgMetrics,
     OrgWebhookUrls,
+    OrgUpdateExecMinsOverage,
     RenameOrg,
     UpdateRole,
     RemovePendingInvite,
@@ -228,6 +229,15 @@ class OrgOps:
             },
         )
 
+    async def update_execution_mins_overage(
+        self, org: Organization, allowed_overage: int = 0
+    ):
+        """update allowed execution minutes overage"""
+        return await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            {"$set": {"crawlExecMinutesAllowedOverage": allowed_overage}},
+        )
+
     async def update_event_webhook_urls(self, org: Organization, urls: OrgWebhookUrls):
         """Update organization event webhook URLs"""
         return await self.orgs.find_one_and_update(
@@ -366,7 +376,7 @@ class OrgOps:
         org = await self.orgs.find_one({"_id": oid})
         if org:
             org = Organization.from_dict(org)
-            return org.quotas.crawlExecExtraMinutesHardCap
+            return org.crawlExecMinutesAllowedOverage
         return 0
 
     async def set_origin(self, org: Organization, request: Request):
@@ -607,6 +617,18 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         await ops.update_quotas(org, quotas)
+
+        return {"updated": True}
+
+    @router.post("/billing", tags=["organizations"])
+    async def update_org_billing_settings(
+        settings: OrgUpdateExecMinsOverage,
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
+    ):
+        await ops.update_execution_mins_overage(
+            org, settings.crawlExecMinutesAllowedOverage
+        )
 
         return {"updated": True}
 

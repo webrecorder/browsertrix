@@ -14,7 +14,7 @@ import type { CurrentUser } from "../../types/user";
 import type { APIPaginatedList } from "../../types/api";
 import { maxLengthValidator } from "../../utils/form";
 
-type Tab = "information" | "members";
+type Tab = "information" | "members" | "billing";
 type User = {
   email: string;
   role: number;
@@ -78,6 +78,9 @@ export class OrgSettings extends LiteElement {
   @property({ type: Boolean })
   isSavingOrgName = false;
 
+  @property({ type: Boolean })
+  isSavingOrgBilling = false;
+
   @state()
   pendingInvites: Invite[] = [];
 
@@ -94,6 +97,7 @@ export class OrgSettings extends LiteElement {
     return {
       information: msg("General"),
       members: msg("Members"),
+      billing: msg("Billing"),
     };
   }
 
@@ -142,6 +146,7 @@ export class OrgSettings extends LiteElement {
         </header>
         ${this.renderTab("information", "settings")}
         ${this.renderTab("members", "settings/members")}
+        ${this.renderTab("billing", "settings/billing")}
 
         <btrix-tab-panel name="information"
           >${this.renderInformation()}</btrix-tab-panel
@@ -149,10 +154,14 @@ export class OrgSettings extends LiteElement {
         <btrix-tab-panel name="members"
           >${this.renderMembers()}</btrix-tab-panel
         >
+        <btrix-tab-panel name="billing"
+          >${this.renderBilling()}</btrix-tab-panel
+        >
       </btrix-tab-list>`;
   }
 
   private renderTab(name: Tab, path: string) {
+    console.log(`Active panel: ${this.activePanel}`);
     const isActive = name === this.activePanel;
     return html`
       <a
@@ -320,6 +329,44 @@ export class OrgSettings extends LiteElement {
         ${this.isAddMemberFormVisible ? this.renderInviteForm() : ""}
       </btrix-dialog>
     `;
+  }
+
+  private renderBilling() {
+    return html`<div class="rounded border">
+      <form @submit=${this.onOrgBillingSubmit}>
+        <div class="grid grid-cols-5 gap-x-4 p-4">
+          <div class="col-span-5 md:col-span-3">
+            <sl-input
+              type="number"
+              name="execMinutesOverage"
+              size="small"
+              label=${msg("Allowed Execution Minutes Overage")}
+              value=${this.org.crawlExecMinutesAllowedOverage || 0}
+            ></sl-input>
+          </div>
+          <div class="col-span-5 md:col-span-2 flex gap-2 pt-6">
+            <div class="text-base">
+              <sl-icon name="info-circle"></sl-icon>
+            </div>
+            <div class="mt-0.5 text-xs text-neutral-500">
+              ${msg(
+                "Allowed overage minutes beyond monthly execution minutes quota before users are no longer allowed to create new crawls."
+              )}
+            </div>
+          </div>
+        <footer class="border-t flex justify-end px-4 py-3">
+          <sl-button
+            class="inline-control-button"
+            type="submit"
+            size="small"
+            variant="primary"
+            ?disabled=${this.isSavingOrgBilling}
+            ?loading=${this.isSavingOrgBilling}
+            >${msg("Save Changes")}</sl-button
+          >
+        </footer>
+      </form>
+    </div>`;
   }
 
   private renderUserRole({ role }: User) {
@@ -550,6 +597,46 @@ export class OrgSettings extends LiteElement {
     }
 
     this.isSubmittingInvite = false;
+  }
+
+  private async onOrgBillingSubmit(e: SubmitEvent) {
+    e.preventDefault();
+
+    const formEl = e.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
+
+    this.isSavingOrgBilling = true;
+
+    const { execMinutesOverage } = serialize(formEl);
+
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${this.orgId}/billing`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            crawlExecMinutesAllowedOverage: execMinutesOverage,
+          }),
+        }
+      );
+
+      this.notify({
+        message: msg(str`Successfully updated org billing settings.`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: any) {
+      this.notify({
+        message: e.isApiError
+          ? e.message
+          : msg("Sorry, couldn't update org at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSavingOrgBilling = false;
   }
 
   private async removeInvite(invite: Invite) {

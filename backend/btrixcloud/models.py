@@ -660,6 +660,13 @@ class RenameOrg(BaseModel):
 
 
 # ============================================================================
+class OrgUpdateExecMinsOverage(BaseModel):
+    """Update allowed exec mins overage"""
+
+    allowedOverage: int
+
+
+# ============================================================================
 class DefaultStorage(BaseModel):
     """Storage reference"""
 
@@ -690,7 +697,6 @@ class OrgQuotas(BaseModel):
     maxPagesPerCrawl: Optional[int] = 0
     storageQuota: Optional[int] = 0
     crawlExecMinutesQuota: Optional[int] = 0
-    crawlExecExtraMinutesHardCap: Optional[int] = 0
 
 
 # ============================================================================
@@ -749,6 +755,8 @@ class Organization(BaseMongoModel):
     default: bool = False
 
     quotas: Optional[OrgQuotas] = OrgQuotas()
+
+    crawlExecMinutesAllowedOverage: Optional[int] = 0
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 

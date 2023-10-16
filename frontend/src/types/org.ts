@@ -15,6 +15,7 @@ export type OrgData = {
   quotas: Record<string, number>;
   bytesStored: number;
   crawlExecSeconds: Record<string, number>;
+  crawlExecMinutesAllowedOverage: number;
   users?: {
     [id: string]: {
       role: (typeof AccessCode)[UserRole];
