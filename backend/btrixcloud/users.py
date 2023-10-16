@@ -35,12 +35,12 @@ from .auth import (
 )
 
 from .models import (
-    User,
     UserCreate,
     UserUpdateEmailName,
     UserUpdatePassword,
     UserDB,
     UserRole,
+    Organization,
     PaginatedResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
@@ -109,24 +109,18 @@ class UserManager:
         # Don't create a new org for registered users.
         user.newOrg = False
 
-        created_user = await self._create(user)
-        await self.on_after_register_custom(created_user, user, request)
-        return created_user
+        return await self._create(user, request)
 
-    async def validate_password(self, password: str, _) -> None:
+    async def validate_password(self, password: str) -> None:
         """
-        Validate a password.
-
-        Overloaded to set password requirements.
-
-        :param password: The password to validate.
-        :param user: The user associated to this password.
-        :raises InvalidPasswordException: The password is invalid.
-        :return: None if the password is valid.
+        Validate a password. raise HTTPException with status 422
+        if password is invalid
         """
         pw_length = len(password)
         if not 8 <= pw_length <= 64:
-            raise InvalidPasswordException(reason="invalid_password_length")
+            raise HTTPException(
+                status_code=422, detail=ErrorCode.REGISTER_INVALID_PASSWORD
+            )
 
     async def check_password(self, user: UserDB, password: str) -> bool:
         """check if password is valid, also update hashed_password if needed"""
@@ -147,7 +141,7 @@ class UserManager:
 
         return True
 
-    async def authenticate(self, email: EmailStr, password: str) -> Optional[User]:
+    async def authenticate(self, email: EmailStr, password: str) -> Optional[UserDB]:
         """authenticate user via login form"""
         user = await self.get_by_email(email)
         if not user:
@@ -216,9 +210,6 @@ class UserManager:
             print(res, flush=True)
         except (DuplicateKeyError, UserAlreadyExists):
             print(f"User {email} already exists", flush=True)
-        # pylint: disable=raise-missing-from
-        except InvalidPasswordException:
-            raise HTTPException(status_code=422, detail="invalid_password")
 
     async def create_non_super_user(
         self,
@@ -229,7 +220,7 @@ class UserManager:
         """create a regular user with given credentials"""
         if not email:
             print("No user defined", flush=True)
-            return None
+            return
 
         if not password:
             password = generate_password()
@@ -243,67 +234,10 @@ class UserManager:
                 newOrg=False,
                 is_verified=True,
             )
-            try:
-                created_user = await self._create(user_create)
-                await self.on_after_register_custom(
-                    created_user, user_create, request=None
-                )
-            # pylint: disable=raise-missing-from
-            except InvalidPasswordException:
-                raise HTTPException(status_code=422, detail="invalid_password")
 
+            await self._create(user_create)
         except (DuplicateKeyError, UserAlreadyExists):
             print(f"User {email} already exists", flush=True)
-
-    async def on_after_register_custom(
-        self, user: UserDB, user_create: UserCreate, request: Optional[Request]
-    ):
-        """custom post registration callback, also receive the UserCreate object"""
-
-        print(f"User {user.id} has registered.")
-        add_to_default_org = False
-
-        if user_create.newOrg is True:
-            print(f"Creating new organization for {user.id}")
-
-            org_name = (
-                user_create.newOrgName or f"{user.name or user.email}'s Organization"
-            )
-
-            await self.org_ops.create_new_org_for_user(
-                org_name=org_name,
-                storage_name="default",
-                user=user,
-            )
-
-        is_verified = hasattr(user_create, "is_verified") and user_create.is_verified
-
-        if user_create.inviteToken:
-            new_user_invite = None
-            try:
-                new_user_invite = await self.org_ops.handle_new_user_invite(
-                    user_create.inviteToken, user
-                )
-            except HTTPException as exc:
-                print(exc)
-
-            if new_user_invite and not new_user_invite.oid:
-                add_to_default_org = True
-
-            if not is_verified:
-                # if user has been invited, mark as verified immediately
-                user.is_verified = True
-                await self.update_verified(user)
-
-        else:
-            add_to_default_org = True
-            if not is_verified:
-                asyncio.create_task(self.request_verify(user, request))
-
-        if add_to_default_org:
-            default_org = await self.org_ops.get_default_org()
-            if default_org:
-                await self.org_ops.add_user_to_org(default_org, user.id)
 
     async def on_after_forgot_password(
         self, user: UserDB, token: str, request: Optional[Request] = None
@@ -362,30 +296,76 @@ class UserManager:
 
         return result
 
-    async def _create(self, create: UserCreate) -> UserDB:
+    async def _create(
+        self, create: UserCreate, request: Optional[Request] = None
+    ) -> UserDB:
         """create new user in db"""
-        await self.validate_password(create.password, create)
+        await self.validate_password(create.password)
 
         existing_user = await self.get_by_email(create.email)
         if existing_user is not None:
-            raise UserAlreadyExists()
+            raise HTTPException(
+                status_code=400, detail=ErrorCode.REGISTER_USER_ALREADY_EXISTS
+            )
 
         hashed_password = get_password_hash(create.password)
 
         id_ = uuid.uuid4()
 
-        db_user = UserDB(
+        user = UserDB(
             id=id_,
             email=create.email,
             name=create.name,
             hashed_password=hashed_password,
             is_superuser=create.is_superuser,
-            is_verified=create.is_verified,
+            is_verified=create.is_verified or create.inviteToken,
         )
 
-        await self.collection.insert_one(db_user.to_dict())
+        await self.collection.insert_one(user.to_dict())
 
-        return db_user
+        add_to_default_org = False
+
+        if create.inviteToken:
+            new_user_invite = None
+            try:
+                new_user_invite = await self.org_ops.handle_new_user_invite(
+                    create.inviteToken, user
+                )
+            except HTTPException as exc:
+                print(exc)
+
+            if new_user_invite and not new_user_invite.oid:
+                add_to_default_org = True
+
+        else:
+            add_to_default_org = True
+            if not create.is_verified:
+                asyncio.create_task(self.request_verify(user, request))
+
+        # org to auto-add user to, if any
+        auto_add_org: Optional[Organization] = None
+
+        # if add to default, then get default org
+        if add_to_default_org:
+            auto_add_org = await self.org_ops.get_default_org()
+
+        # if creating new org, create here
+        elif create.newOrg is True:
+            print(f"Creating new organization for {user.id}")
+
+            org_name = create.newOrgName or f"{user.name or user.email}'s Organization"
+
+            auto_add_org = await self.org_ops.create_new_org_for_user(
+                org_name=org_name,
+                storage_name="default",
+                user=user,
+            )
+
+        # if org set, add user to org
+        if auto_add_org:
+            await self.org_ops.add_user_to_org(auto_add_org, user.id)
+
+        return user
 
     async def get_by_id(self, _id: UUID4) -> UserDB:
         """
@@ -583,7 +563,7 @@ class UserManager:
 
     async def update_password(self, user: UserDB, new_password: str) -> bool:
         """Update password for user, update and store hashed password"""
-        await self.validate_password(new_password, user)
+        await self.validate_password(new_password)
         hashed_password = get_password_hash(new_password)
         if hashed_password == user.hashed_password:
             return False
@@ -643,21 +623,7 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
 
     @auth_router.post("/register", status_code=201)
     async def register(request: Request, user: UserCreate):  # type: ignore
-        try:
-            return await user_manager.register(user, request=request)
-        except UserAlreadyExists:
-            raise HTTPException(
-                status_code=400,
-                detail=ErrorCode.REGISTER_USER_ALREADY_EXISTS,
-            )
-        except InvalidPasswordException as e:
-            raise HTTPException(
-                status_code=400,
-                detail={
-                    "code": ErrorCode.REGISTER_INVALID_PASSWORD,
-                    "reason": e.reason,
-                },
-            )
+        return await user_manager.register(user, request=request)
 
     @auth_router.post(
         "/forgot-password",
@@ -744,7 +710,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
     users_router = APIRouter()
 
     @users_router.get("/me", tags=["users"])
-    async def me_with_org_info(user: User = Depends(current_active_user)):
+    async def me_with_org_info(user: UserDB = Depends(current_active_user)):
         """/users/me with orgs user belongs to."""
         user_info: dict = {
             "id": user.id,
@@ -811,7 +777,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
     # pylint: disable=invalid-name
     @users_router.get("/invites", tags=["invites"], response_model=PaginatedResponse)
     async def get_pending_invites(
-        user: User = Depends(current_active_user),
+        user: UserDB = Depends(current_active_user),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ):

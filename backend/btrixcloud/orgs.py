@@ -84,7 +84,7 @@ class OrgOps:
         org_name: str,
         storage_name,
         user: User,
-    ):
+    ) -> Organization:
         # pylint: disable=too-many-arguments
         """Create new organization with default storage for new user"""
         id_ = uuid.uuid4()
@@ -102,6 +102,7 @@ class OrgOps:
         storage_info = f"storage {storage_name} / {storage_path}"
         print(f"Creating new org {org_name} with {storage_info}", flush=True)
         await self.add_org(org)
+        return org
 
     async def get_orgs_for_user(
         # pylint: disable=too-many-arguments
