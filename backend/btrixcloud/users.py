@@ -36,9 +36,10 @@ from .auth import (
 
 from .models import (
     UserCreate,
+    UserCreateIn,
     UserUpdateEmailName,
     UserUpdatePassword,
-    UserDB,
+    User,
     UserRole,
     Organization,
     PaginatedResponse,
@@ -61,7 +62,7 @@ from .auth import (
 
 # ============================================================================
 # pylint: disable=too-few-public-methods, raise-missing-from, too-many-public-methods
-# class UserDBOps(MongoDBUserDatabase):
+# class UserOps(MongoDBUserDatabase):
 #    """User DB Operations wrapper"""
 
 
@@ -69,7 +70,7 @@ from .auth import (
 class UserManager:
     """Browsertrix UserManager"""
 
-    # user_db_model = UserDB
+    # user_db_model = User
     reset_password_token_secret = PASSWORD_SECRET
     verification_token_secret = PASSWORD_SECRET
 
@@ -93,7 +94,7 @@ class UserManager:
         """init lookup index"""
         await self.collection.create_index("email", unique=True)
 
-    async def register(self, user: UserCreate, request: Optional[Request] = None):
+    async def register(self, user: UserCreateIn, request: Optional[Request] = None):
         """override user creation to check if invite token is present"""
         user.name = user.name or user.email
 
@@ -122,7 +123,7 @@ class UserManager:
                 status_code=422, detail=ErrorCode.REGISTER_INVALID_PASSWORD
             )
 
-    async def check_password(self, user: UserDB, password: str) -> bool:
+    async def check_password(self, user: User, password: str) -> bool:
         """check if password is valid, also update hashed_password if needed"""
         verified, updated_password_hash = verify_and_update_password(
             password, user.hashed_password
@@ -141,7 +142,7 @@ class UserManager:
 
         return True
 
-    async def authenticate(self, email: EmailStr, password: str) -> Optional[UserDB]:
+    async def authenticate(self, email: EmailStr, password: str) -> Optional[User]:
         """authenticate user via login form"""
         user = await self.get_by_email(email)
         if not user:
@@ -164,13 +165,13 @@ class UserManager:
         )
         return await cursor.to_list(length=1000)
 
-    async def get_superuser(self) -> Optional[UserDB]:
+    async def get_superuser(self) -> Optional[User]:
         """return current superuser, if any"""
         user_data = await self.collection.find_one({"is_superuser": True})
         if not user_data:
             return None
 
-        return UserDB.from_dict(user_data)
+        return User.from_dict(user_data)
 
     async def create_super_user(self) -> None:
         """Initialize a super user from env vars"""
@@ -239,22 +240,11 @@ class UserManager:
         except (DuplicateKeyError, UserAlreadyExists):
             print(f"User {email} already exists", flush=True)
 
-    async def on_after_forgot_password(
-        self, user: UserDB, token: str, request: Optional[Request] = None
-    ):
-        """callback after password forgot"""
-        print(f"User {user.id} has forgot their password. Reset token: {token}")
-        self.email.send_user_forgot_password(
-            user.email, token, request and request.headers
-        )
-
     async def request_verify(
-        self, user: UserDB, request: Optional[Request] = None
+        self, user: User, request: Optional[Request] = None
     ) -> None:
         """
         Start a verification request.
-
-        Triggers the on_after_request_verify handler on success.
 
         :param user: The user to verify.
         :param request: Optional FastAPI request that
@@ -276,12 +266,6 @@ class UserManager:
             token_data,
             self.verification_token_lifetime_minutes,
         )
-        await self.on_after_request_verify(user, token, request)
-
-    async def on_after_request_verify(
-        self, user: UserDB, token: str, request: Optional[Request] = None
-    ):
-        """callback after verification request"""
 
         self.email.send_user_validation(user.email, token, request and request.headers)
 
@@ -297,8 +281,8 @@ class UserManager:
         return result
 
     async def _create(
-        self, create: UserCreate, request: Optional[Request] = None
-    ) -> UserDB:
+        self, create: UserCreateIn, request: Optional[Request] = None
+    ) -> User:
         """create new user in db"""
         await self.validate_password(create.password)
 
@@ -310,15 +294,22 @@ class UserManager:
 
         hashed_password = get_password_hash(create.password)
 
+        if isinstance(create, UserCreate):
+            is_superuser = create.is_superuser
+            is_verified = create.is_verified
+        else:
+            is_superuser = False
+            is_verified = create.inviteToken is not None
+
         id_ = uuid.uuid4()
 
-        user = UserDB(
+        user = User(
             id=id_,
             email=create.email,
             name=create.name,
             hashed_password=hashed_password,
-            is_superuser=create.is_superuser,
-            is_verified=create.is_verified or create.inviteToken,
+            is_superuser=is_superuser,
+            is_verified=is_verified,
         )
 
         await self.collection.insert_one(user.to_dict())
@@ -339,7 +330,7 @@ class UserManager:
 
         else:
             add_to_default_org = True
-            if not create.is_verified:
+            if not is_verified:
                 asyncio.create_task(self.request_verify(user, request))
 
         # org to auto-add user to, if any
@@ -367,7 +358,7 @@ class UserManager:
 
         return user
 
-    async def get_by_id(self, _id: UUID4) -> UserDB:
+    async def get_by_id(self, _id: UUID4) -> User:
         """
         Get a user by id.
 
@@ -380,9 +371,9 @@ class UserManager:
         if user is None:
             raise UserNotExists()
 
-        return UserDB.from_dict(user)
+        return User.from_dict(user)
 
-    async def get_by_email(self, email: str) -> Optional[UserDB]:
+    async def get_by_email(self, email: str) -> Optional[User]:
         """
         Get a user by e-mail.
 
@@ -394,15 +385,13 @@ class UserManager:
         if not user:
             return None
 
-        return UserDB.from_dict(user)
+        return User.from_dict(user)
 
-    async def verify(self, token: str) -> UserDB:
+    async def verify(self, token: str) -> User:
         """
         Validate a verification request.
 
         Changes the is_verified flag of the user to True.
-
-        Triggers the on_after_verify handler on success.
 
         :param token: The verification token generated by request_verify.
         :param request: Optional FastAPI request that
@@ -440,17 +429,13 @@ class UserManager:
         user.is_verified = True
         await self.update_verified(user)
 
-        # await self.on_after_verify(verified_user, request)
-
         return user
 
     async def forgot_password(
-        self, user: UserDB, request: Optional[Request] = None
+        self, user: User, request: Optional[Request] = None
     ) -> None:
         """
         Start a forgot password request.
-
-        Triggers the on_after_forgot_password handler on success.
 
         :param user: The user that forgot its password.
         :param request: Optional FastAPI request that
@@ -468,13 +453,15 @@ class UserManager:
             token_data,
             self.reset_password_token_lifetime_minutes,
         )
-        await self.on_after_forgot_password(user, token, request)
 
-    async def reset_password(self, token: str, password: str) -> UserDB:
+        print(f"User {user.id} has forgot their password. Reset token: {token}")
+        self.email.send_user_forgot_password(
+            user.email, token, request and request.headers
+        )
+
+    async def reset_password(self, token: str, password: str) -> User:
         """
         Reset the password of a user.
-
-        Triggers the on_after_reset_password handler on success.
 
         :param token: The token generated by forgot_password.
         :param password: The new password to set.
@@ -509,7 +496,7 @@ class UserManager:
         return user
 
     async def change_password(
-        self, user_update: UserUpdatePassword, user: UserDB
+        self, user_update: UserUpdatePassword, user: User
     ) -> dict[str, bool]:
         """Change password after checking existing password"""
         if not await self.check_password(user, user_update.password):
@@ -520,7 +507,7 @@ class UserManager:
         return {"updated": True}
 
     async def change_email_name(
-        self, user_update: UserUpdateEmailName, user: UserDB
+        self, user_update: UserUpdateEmailName, user: User
     ) -> dict[str, bool]:
         """Change password after checking existing password"""
         if not user_update.email and not user_update.name:
@@ -530,7 +517,7 @@ class UserManager:
 
         return {"updated": True}
 
-    async def delete(self, user: UserDB) -> None:
+    async def delete(self, user: User) -> None:
         """
         Delete a user.
 
@@ -538,20 +525,20 @@ class UserManager:
         """
         # await self.user_db.delete(user)
 
-    async def update_verified(self, user: UserDB) -> None:
+    async def update_verified(self, user: User) -> None:
         """Update verified status for user"""
         await self.collection.find_one_and_update(
             {"_id": user.id}, {"$set": {"is_verified": user.is_verified}}
         )
 
-    async def update_invites(self, user: UserDB) -> None:
+    async def update_invites(self, user: User) -> None:
         """Update verified status for user"""
         await self.collection.find_one_and_update(
             {"_id": user.id}, {"$set": user.dict(include={"invites"})}
         )
 
     async def update_email_name(
-        self, user: UserDB, email: Optional[EmailStr], name: Optional[str]
+        self, user: User, email: Optional[EmailStr], name: Optional[str]
     ) -> None:
         """Update email for user"""
         query: dict[str, str] = {}
@@ -561,7 +548,7 @@ class UserManager:
             query["name"] = name
         await self.collection.find_one_and_update({"_id": user.id}, {"$set": query})
 
-    async def update_password(self, user: UserDB, new_password: str) -> bool:
+    async def update_password(self, user: User, new_password: str) -> bool:
         """Update password for user, update and store hashed password"""
         await self.validate_password(new_password)
         hashed_password = get_password_hash(new_password)
@@ -582,7 +569,7 @@ def init_user_manager(mdb, emailsender, invites):
 
     # user_collection = mdb.get_collection("users")
 
-    # user_db = UserDBOps(UserDB, user_collection)
+    # user_db = UserOps(User, user_collection)
 
     return UserManager(mdb, emailsender, invites)
 
@@ -622,7 +609,7 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
     auth_router = APIRouter()
 
     @auth_router.post("/register", status_code=201)
-    async def register(request: Request, user: UserCreate):  # type: ignore
+    async def register(request: Request, user: UserCreateIn):  # type: ignore
         return await user_manager.register(user, request=request)
 
     @auth_router.post(
@@ -710,7 +697,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
     users_router = APIRouter()
 
     @users_router.get("/me", tags=["users"])
-    async def me_with_org_info(user: UserDB = Depends(current_active_user)):
+    async def me_with_org_info(user: User = Depends(current_active_user)):
         """/users/me with orgs user belongs to."""
         user_info: dict = {
             "id": user.id,
@@ -744,7 +731,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
     @users_router.put("/me/password-change", tags=["users"])
     async def change_my_password(
         user_update: UserUpdatePassword,
-        user: UserDB = Depends(current_active_user),
+        user: User = Depends(current_active_user),
     ):
         """update password, requires current password"""
         return await user_manager.change_password(user_update, user)
@@ -752,14 +739,14 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
     @users_router.patch("/me", tags=["users"])
     async def change_my_email_name(
         user_update: UserUpdateEmailName,
-        user: UserDB = Depends(current_active_user),
+        user: User = Depends(current_active_user),
     ):
         """update password, requires current password"""
         return await user_manager.change_email_name(user_update, user)
 
     @users_router.get("/me/invite/{token}", tags=["invites"])
     async def get_existing_user_invite_info(
-        token: str, user: UserDB = Depends(current_active_user)
+        token: str, user: User = Depends(current_active_user)
     ):
         try:
             invite = user.invites[token]
@@ -777,7 +764,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
     # pylint: disable=invalid-name
     @users_router.get("/invites", tags=["invites"], response_model=PaginatedResponse)
     async def get_pending_invites(
-        user: UserDB = Depends(current_active_user),
+        user: User = Depends(current_active_user),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ):

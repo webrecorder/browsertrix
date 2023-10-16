@@ -19,12 +19,60 @@ MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
 
 # pylint: disable=invalid-name, too-many-lines
 # ============================================================================
+class UserRole(IntEnum):
+    """User role"""
+
+    VIEWER = 10
+    CRAWLER = 20
+    OWNER = 40
+    SUPERADMIN = 100
+
+
+# ============================================================================
+
+### INVITES ###
+
+
+# ============================================================================
+class InvitePending(BaseMongoModel):
+    """An invite for a new user, with an email and invite token as id"""
+
+    created: datetime
+    inviterEmail: str
+    oid: Optional[UUID4]
+    role: Optional[UserRole] = UserRole.VIEWER
+    email: Optional[str]
+
+
+# ============================================================================
+class InviteRequest(BaseModel):
+    """Request to invite another user"""
+
+    email: str
+
+
+# ============================================================================
+class InviteToOrgRequest(InviteRequest):
+    """Request to invite another user to an organization"""
+
+    role: UserRole
+
+
+# ============================================================================
+class AddToOrgRequest(InviteRequest):
+    """Request to add a new user to an organization directly"""
+
+    role: UserRole
+    password: str
+    name: str
+
+
+# ============================================================================
 
 ### MAIN USER MODEL ###
 
 
 # ============================================================================
-# class User(fastapi_users_models.BaseUser):
 class User(BaseMongoModel):
     """
     Base User Model
@@ -37,6 +85,9 @@ class User(BaseMongoModel):
     is_active: bool = True
     is_superuser: bool = False
     is_verified: bool = False
+
+    invites: Dict[str, InvitePending] = {}
+    hashed_password: str
 
 
 # ============================================================================
@@ -548,55 +599,6 @@ class AddRemoveCrawlList(BaseModel):
 
 # ============================================================================
 
-### INVITES ###
-
-
-# ============================================================================
-class UserRole(IntEnum):
-    """User role"""
-
-    VIEWER = 10
-    CRAWLER = 20
-    OWNER = 40
-    SUPERADMIN = 100
-
-
-# ============================================================================
-class InvitePending(BaseMongoModel):
-    """An invite for a new user, with an email and invite token as id"""
-
-    created: datetime
-    inviterEmail: str
-    oid: Optional[UUID4]
-    role: Optional[UserRole] = UserRole.VIEWER
-    email: Optional[str]
-
-
-# ============================================================================
-class InviteRequest(BaseModel):
-    """Request to invite another user"""
-
-    email: str
-
-
-# ============================================================================
-class InviteToOrgRequest(InviteRequest):
-    """Request to invite another user to an organization"""
-
-    role: UserRole
-
-
-# ============================================================================
-class AddToOrgRequest(InviteRequest):
-    """Request to add a new user to an organization directly"""
-
-    role: UserRole
-    password: str
-    name: str
-
-
-# ============================================================================
-
 ### ORGS ###
 
 
@@ -896,8 +898,6 @@ class ProfileUpdate(BaseModel):
 
 
 # ============================================================================
-# use custom model as model.BaseUserCreate includes is_* field
-# class UserCreateIn(fastapi_users_models.CreateUpdateDictModel):
 class UserCreateIn(BaseModel):
     """
     User Creation Model exposed to API
@@ -944,21 +944,6 @@ class UserUpdatePassword(BaseModel):
     email: EmailStr
     password: str
     newPassword: str
-
-
-# ============================================================================
-# class UserDB(User, fastapi_users_models.BaseUserDB):
-class UserDB(User):
-    """
-    User in DB Model
-    """
-
-    invites: Dict[str, InvitePending] = {}
-    hashed_password: str
-
-    # pylint: disable=missing-class-docstring, too-few-public-methods
-    # class Config:
-    #    from_attributes = True
 
 
 # ============================================================================
