@@ -24,36 +24,6 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from .models import User
 
 
-# pylint: disable=missing-class-docstring, missing-function-docstring
-class UserAlreadyExists(Exception):
-    pass
-
-
-class UserNotExists(Exception):
-    pass
-
-
-class UserInactive(Exception):
-    pass
-
-
-class UserAlreadyVerified(Exception):
-    pass
-
-
-class InvalidVerifyToken(Exception):
-    pass
-
-
-class InvalidResetPasswordToken(Exception):
-    pass
-
-
-class InvalidPasswordException(Exception):
-    def __init__(self, reason: str) -> None:
-        self.reason = reason
-
-
 # ============================================================================
 PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
 
@@ -124,6 +94,7 @@ class OA2BearerOrQuery(OAuth2PasswordBearer):
 
 # ============================================================================
 def generate_jwt(data: dict, minutes: int) -> str:
+    """generate JWT token with expiration time (in minutes)"""
     expires_delta = timedelta(minutes=minutes)
     expire = datetime.utcnow() + expires_delta
     payload = data.copy()
@@ -133,6 +104,7 @@ def generate_jwt(data: dict, minutes: int) -> str:
 
 # ============================================================================
 def decode_jwt(token: str) -> dict:
+    """decode JWT token"""
     return jwt.decode(token, PASSWORD_SECRET, algorithms=[ALGORITHM])
 
 
@@ -144,6 +116,7 @@ def create_access_token(user: User) -> str:
 
 # ============================================================================
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """verify password by hash"""
     return pwd_context.verify(plain_password, hashed_password)
 
 
@@ -151,16 +124,19 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def verify_and_update_password(
     plain_password: str, hashed_password: str
 ) -> Tuple[bool, str]:
+    """verify password and return updated hash, if any"""
     return pwd_context.verify_and_update(plain_password, hashed_password)
 
 
 # ============================================================================
 def get_password_hash(password: str) -> str:
+    """generate hash for password"""
     return pwd_context.hash(password)
 
 
 # ============================================================================
 def generate_password() -> str:
+    """generate new secure password"""
     return pwd.genword()
 
 

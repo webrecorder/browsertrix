@@ -116,8 +116,8 @@ def test_register_user_invalid_password(admin_auth_headers, default_org_id):
     )
     assert r.status_code == 400
     detail = r.json()["detail"]
-    assert detail["code"] == "REGISTER_INVALID_PASSWORD"
-    assert detail["reason"] == "invalid_password_length"
+    # assert detail["code"] == "REGISTER_INVALID_PASSWORD"
+    assert detail == "invalid_password_length"
 
 
 def test_register_user_valid_password(admin_auth_headers, default_org_id):
@@ -166,17 +166,8 @@ def test_reset_invalid_password(admin_auth_headers):
     )
     assert r.status_code == 400
     detail = r.json()["detail"]
-    assert detail["code"] == "UPDATE_USER_INVALID_PASSWORD"
-    assert detail["reason"] == "invalid_password_length"
-
-
-def test_reset_patch_me_endpoint_invalid(admin_auth_headers, default_org_id):
-    r = requests.patch(
-        f"{API_PREFIX}/users/me",
-        headers=admin_auth_headers,
-        json={"email": ADMIN_USERNAME, "password": "newpassword"},
-    )
-    assert r.status_code == 405
+    # assert detail["code"] == "UPDATE_USER_INVALID_PASSWORD"
+    assert detail == "invalid_password_length"
 
 
 def test_reset_patch_id_endpoint_invalid(admin_auth_headers, default_org_id):
@@ -236,4 +227,14 @@ def test_reset_valid_password(admin_auth_headers, default_org_id):
         },
     )
     assert r.status_code == 200
-    assert r.json()["email"] == VALID_USER_EMAIL
+    # assert r.json()["email"] == VALID_USER_EMAIL
+    assert r.json()["updated"] == True
+
+
+def test_patch_me_endpoint(admin_auth_headers, default_org_id):
+    r = requests.patch(
+        f"{API_PREFIX}/users/me",
+        headers=admin_auth_headers,
+        json={"email": "admin2@example.com", "name": "New Admin"},
+    )
+    assert r.status_code == 200
