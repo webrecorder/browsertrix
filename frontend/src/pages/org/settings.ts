@@ -202,7 +202,7 @@ export class OrgSettings extends LiteElement {
             <sl-input
               name="orgSlug"
               size="small"
-              label=${msg("Org ID")}
+              label=${msg("Custom URL Identifier")}
               placeholder="my-organization"
               autocomplete="off"
               value=${this.org.slug}
@@ -210,7 +210,7 @@ export class OrgSettings extends LiteElement {
               maxlength="30"
               required
               help-text=${msg(
-                str`Org URL will be ${window.location.protocol}//${
+                str`Org home page: ${window.location.protocol}//${
                   window.location.hostname
                 }/${
                   this.slugValue ? this.slugify(this.slugValue) : this.org.slug
@@ -220,8 +220,7 @@ export class OrgSettings extends LiteElement {
                 const input = e.target as SlInput;
                 this.slugValue = input.value;
               }}
-            >
-            </sl-input>
+            ></sl-input>
           </div>
 
           <div class="col-span-5 md:col-span-2 flex gap-2 pt-6">
@@ -229,7 +228,9 @@ export class OrgSettings extends LiteElement {
               <sl-icon name="info-circle"></sl-icon>
             </div>
             <div class="mt-0.5 text-xs text-neutral-500">
-              ${msg("Unique URL for this organization.")}
+              ${msg(
+                "Customize your organization's web address for accessing Browsertrix Cloud."
+              )}
             </div>
           </div>
         </div>
