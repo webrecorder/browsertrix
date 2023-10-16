@@ -581,7 +581,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
     users_router = APIRouter()
 
     @users_router.get("/me", tags=["users"])
-    async def me_with_org_info(user: User = Depends(current_active_user)):
+    async def current_user_with_org_info(user: User = Depends(current_active_user)):
         """/users/me with orgs user belongs to."""
         user_info: dict = {
             "id": user.id,
@@ -621,7 +621,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
         return {"updated": True}
 
     @users_router.patch("/me", tags=["users"])
-    async def update_my_email_name(
+    async def update_my_email_and_name(
         user_update: UserUpdateEmailName,
         user: User = Depends(current_active_user),
     ):
