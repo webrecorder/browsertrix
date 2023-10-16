@@ -116,7 +116,6 @@ export class ConfigDetails extends LiteElement {
       <section id="crawler-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
           <h4>${msg("Crawler Settings")}</h4>
-          ${this.renderAnchorLink("crawler-settings")}
         </btrix-section-heading>
         <btrix-desc-list>
           ${when(
@@ -194,7 +193,6 @@ export class ConfigDetails extends LiteElement {
       <section id="browser-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
           <h4>${msg("Browser Settings")}</h4>
-          ${this.renderAnchorLink("browser-settings")}
         </btrix-section-heading>
         <btrix-desc-list>
           ${this.renderSetting(
@@ -226,7 +224,6 @@ export class ConfigDetails extends LiteElement {
       <section id="crawl-scheduling" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
           <h4>${msg("Crawl Scheduling")}</h4>
-          ${this.renderAnchorLink("crawl-scheduling")}
         </btrix-section-heading>
         <btrix-desc-list>
           ${this.renderSetting(
@@ -248,7 +245,6 @@ export class ConfigDetails extends LiteElement {
       <section id="crawl-metadata" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
           <h4>${msg("Crawl Metadata")}</h4>
-          ${this.renderAnchorLink("crawl-metadata")}
         </btrix-section-heading>
         <btrix-desc-list>
           ${this.renderSetting(msg("Name"), crawlConfig?.name)}
@@ -412,19 +408,6 @@ export class ConfigDetails extends LiteElement {
       )}
     `;
   };
-
-  private renderAnchorLink(id: string) {
-    if (!this.anchorLinks) return;
-    const currentUrl = window.location.href;
-    // return html`
-    //   <btrix-copy-button
-    //     style="font-size: 1rem;"
-    //     value=${`${currentUrl.replace(window.location.hash, "")}#${id}`}
-    //     name="link-45deg"
-    //     content=${msg("Copy Link to Section")}
-    //   ></btrix-copy-button>
-    // `;
-  }
 
   private renderSetting(label: string, value: any, breakAll?: boolean) {
     let content = value;
