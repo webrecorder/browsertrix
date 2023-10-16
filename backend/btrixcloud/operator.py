@@ -1008,7 +1008,8 @@ class BtrixOperator(K8sAPI):
         for name, pod in pod_status.items():
             # log only unexpected exits as crashes
             # - 0 is success / intended shutdown
-            # - 11 is interrupt / intended restart
+            # - 11 is default interrupt / intended restart
+            # - 13 is force interrupt / intended restart
             if not pod.isNewExit or pod.exitCode in (0, 11, 13):
                 continue
 
