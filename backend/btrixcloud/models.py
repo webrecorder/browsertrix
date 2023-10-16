@@ -663,7 +663,7 @@ class RenameOrg(BaseModel):
 class OrgUpdateExecMinsOverage(BaseModel):
     """Update allowed exec mins overage"""
 
-    allowedOverage: int
+    crawlExecMinutesAllowedOverage: int
 
 
 # ============================================================================
