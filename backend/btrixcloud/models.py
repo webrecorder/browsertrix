@@ -700,6 +700,27 @@ class OrgWebhookUrls(BaseModel):
 
 
 # ============================================================================
+class OrgOut(BaseMongoModel):
+    """Organization API output model"""
+
+    id: UUID4
+    name: str
+    slug: str
+    users: Optional[Dict[str, Any]]
+    usage: Optional[Dict[str, int]]
+    crawlExecSeconds: Optional[Dict[str, int]]
+    default: bool = False
+    bytesStored: int
+    bytesStoredCrawls: int
+    bytesStoredUploads: int
+    bytesStoredProfiles: int
+    origin: Optional[AnyHttpUrl] = None
+
+    webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
+    quotas: Optional[OrgQuotas] = OrgQuotas()
+
+
+# ============================================================================
 class Organization(BaseMongoModel):
     """Organization Base Model"""
 
@@ -751,7 +772,7 @@ class Organization(BaseMongoModel):
 
         return res >= value
 
-    async def serialize_for_user(self, user: User, user_manager):
+    async def serialize_for_user(self, user: User, user_manager) -> OrgOut:
         """Serialize result based on current user access"""
 
         exclude = {"storage"}
@@ -763,50 +784,32 @@ class Organization(BaseMongoModel):
             exclude.add("usage")
             exclude.add("crawlExecSeconds")
 
-        result = self.to_dict(
-            exclude_unset=True,
-            exclude_none=True,
-            exclude=exclude,
-        )
+        users = {}
 
         if self.is_owner(user):
-            keys = list(result["users"].keys())
+            keys = list(self.users.keys())
             user_list = await user_manager.get_user_names_by_ids(keys)
 
             for org_user in user_list:
-                id_ = str(org_user["_id"])
-                role = result["users"].get(id_)
+                id_ = str(org_user["id"])
+                role = self.users.get(id_)
                 if not role:
                     continue
 
-                result["users"][id_] = {
+                users[id_] = {
                     "role": role,
                     "name": org_user.get("name", ""),
                     "email": org_user.get("email", ""),
                 }
 
+        result = self.to_dict(
+            exclude_unset=True,
+            exclude_none=True,
+            exclude=exclude,
+        )
+        result["users"] = users
+
         return OrgOut.from_dict(result)
-
-
-# ============================================================================
-class OrgOut(BaseMongoModel):
-    """Organization API output model"""
-
-    id: UUID4
-    name: str
-    slug: str
-    users: Optional[Dict[str, Any]]
-    usage: Optional[Dict[str, int]]
-    crawlExecSeconds: Optional[Dict[str, int]]
-    default: bool = False
-    bytesStored: int
-    bytesStoredCrawls: int
-    bytesStoredUploads: int
-    bytesStoredProfiles: int
-    origin: Optional[AnyHttpUrl] = None
-
-    webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
-    quotas: Optional[OrgQuotas] = OrgQuotas()
 
 
 # ============================================================================
