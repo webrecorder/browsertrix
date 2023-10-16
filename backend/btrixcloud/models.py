@@ -75,7 +75,7 @@ class AddToOrgRequest(InviteRequest):
 # ============================================================================
 class User(BaseMongoModel):
     """
-    Base User Model
+    User Model
     """
 
     id: UUID4
@@ -88,6 +88,13 @@ class User(BaseMongoModel):
 
     invites: Dict[str, InvitePending] = {}
     hashed_password: str
+
+    def dict(self, *a, **kw):
+        """ensure invites / hashed_password never serialize, just in case"""
+        exclude = kw.get("exclude", set())
+        exclude.add("invites")
+        exclude.add("hashed_password")
+        return super().dict(*a, **kw)
 
 
 # ============================================================================

@@ -31,7 +31,6 @@ JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60)) * 60
 
 ALGORITHM = "HS256"
 
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -168,7 +167,12 @@ def init_jwt_auth(user_manager):
 
     auth_jwt_router = APIRouter()
 
-    @auth_jwt_router.post("/login")
+    def get_bearer_response(user: User):
+        """get token, return bearer response for user"""
+        token = create_access_token(user)
+        return BearerResponse(access_token=token, token_type="bearer")
+
+    @auth_jwt_router.post("/login", response_model=BearerResponse)
     async def login(
         credentials: OAuth2PasswordRequestForm = Depends(),
     ):
@@ -176,7 +180,7 @@ def init_jwt_auth(user_manager):
             credentials.username, credentials.password
         )
 
-        if user is None:
+        if not user:
             raise HTTPException(
                 status_code=400,
                 detail=ErrorCode.LOGIN_BAD_CREDENTIALS,
@@ -186,13 +190,10 @@ def init_jwt_auth(user_manager):
         #        status_code=400,
         #        detail=ErrorCode.LOGIN_USER_NOT_VERIFIED,
         #    )
-        # return await backend.login(strategy, user, response)
-        token = create_access_token(user)
-        return BearerResponse(access_token=token, token_type="bearer")
+        return get_bearer_response(user)
 
-    @auth_jwt_router.post("/refresh")
+    @auth_jwt_router.post("/refresh", response_model=BearerResponse)
     async def refresh_jwt(user=Depends(current_active_user)):
-        token = create_access_token(user)
-        return BearerResponse(access_token=token, token_type="bearer")
+        return get_bearer_response(user)
 
     return auth_jwt_router, current_active_user

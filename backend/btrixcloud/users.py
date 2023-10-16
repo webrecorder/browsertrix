@@ -429,25 +429,21 @@ class UserManager:
 
     async def change_password(
         self, user_update: UserUpdatePassword, user: User
-    ) -> dict[str, bool]:
+    ) -> None:
         """Change password after checking existing password"""
         if not await self.check_password(user, user_update.password):
             raise HTTPException(status_code=400, detail="invalid_current_password")
 
         await self.update_password(user, user_update.newPassword)
 
-        return {"updated": True}
-
     async def change_email_name(
         self, user_update: UserUpdateEmailName, user: User
-    ) -> dict[str, bool]:
+    ) -> None:
         """Change password after checking existing password"""
         if not user_update.email and not user_update.name:
             raise HTTPException(status_code=400, detail="no_updates_specified")
 
         await self.update_email_name(user, user_update.email, user_update.name)
-
-        return {"updated": True}
 
     async def update_verified(self, user: User) -> None:
         """Update verified status for user"""
@@ -619,17 +615,19 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
     async def update_my_password(
         user_update: UserUpdatePassword,
         user: User = Depends(current_active_user),
-    ) -> bool:
+    ):
         """update password, requires current password"""
-        return await user_manager.change_password(user_update, user)
+        await user_manager.change_password(user_update, user)
+        return {"updated": True}
 
     @users_router.patch("/me", tags=["users"])
     async def update_my_email_name(
         user_update: UserUpdateEmailName,
         user: User = Depends(current_active_user),
-    ) -> dict[str, bool]:
+    ):
         """update password, requires current password"""
-        return await user_manager.change_email_name(user_update, user)
+        await user_manager.change_email_name(user_update, user)
+        return {"updated": True}
 
     @users_router.get("/me/invite/{token}", tags=["invites"])
     async def get_existing_user_invite_info(
