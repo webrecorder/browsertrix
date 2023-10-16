@@ -75,7 +75,7 @@ def test_add_user_to_org_invalid_password(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
     )
     assert r.status_code == 422
-    assert r.json()["detail"] == "invalid_password"
+    assert r.json()["detail"] == "REGISTER_INVALID_PASSWORD"
 
 
 def test_register_user_invalid_password(admin_auth_headers, default_org_id):
