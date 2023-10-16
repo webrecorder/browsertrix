@@ -37,7 +37,11 @@ from .utils import is_bool
 
 from .auth import (
     init_jwt_auth,
-    PASSWORD_SECRET,
+    RESET_AUD,
+    RESET_ALLOW_AUD,
+    VERIFY_AUD,
+    VERIFY_ALLOW_AUD,
+    RESET_VERIFY_TOKEN_LIFETIME_MINUTES,
     verify_and_update_password,
     get_password_hash,
     generate_password,
@@ -50,12 +54,6 @@ from .auth import (
 # pylint: disable=raise-missing-from, too-many-public-methods
 class UserManager:
     """Browsertrix UserManager"""
-
-    reset_password_token_secret = PASSWORD_SECRET
-    verification_token_secret = PASSWORD_SECRET
-
-    reset_password_token_lifetime_minutes: int = 60
-    verification_token_lifetime_minutes: int = 60
 
     def __init__(self, mdb, email, invites):
         self.users = mdb.get_collection("users")
@@ -265,11 +263,11 @@ class UserManager:
         token_data = {
             "user_id": str(user.id),
             "email": user.email,
-            # "aud": self.verification_token_audience,
+            "aud": VERIFY_AUD,
         }
         token = generate_jwt(
             token_data,
-            self.verification_token_lifetime_minutes,
+            RESET_VERIFY_TOKEN_LIFETIME_MINUTES,
         )
 
         self.email.send_user_validation(user.email, token, request and request.headers)
@@ -385,7 +383,7 @@ class UserManager:
         )
 
         try:
-            data = decode_jwt(token)
+            data = decode_jwt(token, audience=VERIFY_ALLOW_AUD)
         except:
             raise exc
 
@@ -422,11 +420,11 @@ class UserManager:
         """start forgot password reset request"""
         token_data = {
             "user_id": str(user.id),
-            # "aud": self.reset_password_token_audience,
+            "aud": RESET_AUD,
         }
         token = generate_jwt(
             token_data,
-            self.reset_password_token_lifetime_minutes,
+            RESET_VERIFY_TOKEN_LIFETIME_MINUTES,
         )
 
         print(f"User {user.id} has forgot their password. Reset token: {token}")
@@ -437,7 +435,7 @@ class UserManager:
     async def reset_password(self, token: str, password: str) -> None:
         """reset password to new password given reset token"""
         try:
-            data = decode_jwt(token)
+            data = decode_jwt(token, audience=RESET_ALLOW_AUD)
         except:
             raise HTTPException(
                 status_code=400,

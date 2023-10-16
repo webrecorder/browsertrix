@@ -3,7 +3,7 @@
 import os
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from passlib import pwd
 from passlib.context import CryptContext
 
@@ -30,7 +30,19 @@ JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60)) * 60
 
 ALGORITHM = "HS256"
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+RESET_VERIFY_TOKEN_LIFETIME_MINUTES = 60
+
+PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Audiences
+AUTH_AUD = "btrix:auth"
+RESET_AUD = "btrix:reset"
+VERIFY_AUD = "btrix:verify"
+
+# include fastapi-users audiences for backwards compatibility
+AUTH_ALLOW_AUD = [AUTH_AUD, "fastapi-users:auth"]
+RESET_ALLOW_AUD = [RESET_AUD, "fastapi-users:reset"]
+VERIFY_ALLOW_AUD = [VERIFY_AUD, "fastapi-users:verify"]
 
 
 # ============================================================================
@@ -85,21 +97,21 @@ def generate_jwt(data: dict, minutes: int) -> str:
 
 
 # ============================================================================
-def decode_jwt(token: str) -> dict:
+def decode_jwt(token: str, audience: Optional[List[str]] = None) -> dict:
     """decode JWT token"""
-    return jwt.decode(token, PASSWORD_SECRET, algorithms=[ALGORITHM])
+    return jwt.decode(token, PASSWORD_SECRET, algorithms=[ALGORITHM], audience=audience)
 
 
 # ============================================================================
 def create_access_token(user: User) -> str:
     """get jwt token"""
-    return generate_jwt({"sub": str(user.id)}, JWT_TOKEN_LIFETIME)
+    return generate_jwt({"sub": str(user.id), "aud": AUTH_AUD}, JWT_TOKEN_LIFETIME)
 
 
 # ============================================================================
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """verify password by hash"""
-    return pwd_context.verify(plain_password, hashed_password)
+    return PWD_CONTEXT.verify(plain_password, hashed_password)
 
 
 # ============================================================================
@@ -107,13 +119,13 @@ def verify_and_update_password(
     plain_password: str, hashed_password: str
 ) -> Tuple[bool, str]:
     """verify password and return updated hash, if any"""
-    return pwd_context.verify_and_update(plain_password, hashed_password)
+    return PWD_CONTEXT.verify_and_update(plain_password, hashed_password)
 
 
 # ============================================================================
 def get_password_hash(password: str) -> str:
     """generate hash for password"""
-    return pwd_context.hash(password)
+    return PWD_CONTEXT.hash(password)
 
 
 # ============================================================================
@@ -131,12 +143,12 @@ def init_jwt_auth(user_manager):
     async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
         credentials_exception = HTTPException(
             status_code=401,
-            detail="Could not validate credentials",
+            detail="invalid_credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
         try:
-            payload = decode_jwt(token)
-            uid: Optional[str] = payload.get("sub")
+            payload = decode_jwt(token, AUTH_ALLOW_AUD)
+            uid: Optional[str] = payload.get("sub") or payload.get("user_id")
             if uid is None:
                 raise credentials_exception
         except Exception:
