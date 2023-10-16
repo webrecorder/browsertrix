@@ -53,6 +53,9 @@ export class Crawls extends LiteElement {
   private crawls?: APIPaginatedList;
 
   @state()
+  private slugLookup: Record<string, string> = {};
+
+  @state()
   private orderBy: {
     field: SortField;
     direction: SortDirection;
@@ -80,6 +83,10 @@ export class Crawls extends LiteElement {
         this.fetchCrawls();
       }
     }
+  }
+
+  firstUpdated() {
+    this.fetchSlugLookup();
   }
 
   disconnectedCallback(): void {
@@ -253,7 +260,7 @@ export class Crawls extends LiteElement {
     if (!this.crawls) return;
 
     return html`
-      <btrix-crawl-list baseUrl=${"/crawls/crawl"} itemType="crawl">
+      <btrix-crawl-list itemType="crawl">
         ${this.crawls.items.map(this.renderCrawlItem)}
       </btrix-crawl-list>
     `;
@@ -281,7 +288,10 @@ export class Crawls extends LiteElement {
 
   private renderCrawlItem = (crawl: Crawl) =>
     html`
-      <btrix-crawl-list-item .crawl=${crawl}>
+      <btrix-crawl-list-item
+        baseUrl="/orgs/${this.slugLookup[crawl.oid]}/items/${crawl.type}"
+        .crawl=${crawl}
+      >
         <sl-menu slot="menu">
           <sl-menu-item
             @click=${() => this.navTo(`/crawls/crawl/${crawl.id}#settings`)}
@@ -297,6 +307,14 @@ export class Crawls extends LiteElement {
       this.crawl = await this.getCrawl();
     } catch (e) {
       console.error(e);
+    }
+  }
+
+  private async fetchSlugLookup() {
+    try {
+      this.slugLookup = await this.getSlugLookup();
+    } catch (e: any) {
+      console.debug(e);
     }
   }
 
@@ -360,6 +378,15 @@ export class Crawls extends LiteElement {
   private async getCrawl(): Promise<Crawl> {
     const data: Crawl = await this.apiFetch(
       `/orgs/all/crawls/${this.crawlId}/replay.json`,
+      this.authState!
+    );
+
+    return data;
+  }
+
+  private async getSlugLookup(): Promise<any> {
+    const data: Crawl = await this.apiFetch(
+      `/orgs/slug-lookup`,
       this.authState!
     );
 
