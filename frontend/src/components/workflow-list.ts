@@ -255,7 +255,7 @@ export class WorkflowListItem extends LitElement {
     return html`<a
       class="item row"
       role="button"
-      href=${`${this.baseUrl}/workflows/crawl/${this.workflow?.id}#${
+      href=${`${this.baseUrl || ""}/workflows/crawl/${this.workflow?.id}#${
         this.workflow?.isCrawlRunning ? "watch" : "crawls"
       }`}
       @click=${async (e: MouseEvent) => {

@@ -814,7 +814,10 @@ export class WorkflowDetail extends LiteElement {
           </div>`
         )}
 
-        <btrix-crawl-list workflowId=${this.workflowId}>
+        <btrix-crawl-list
+          baseUrl="${this.orgBasePath}/items/crawl"
+          workflowId=${this.workflowId}
+        >
           <span slot="idCol">${msg("Start Time")}</span>
           ${when(
             this.crawls,

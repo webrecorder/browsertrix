@@ -616,13 +616,16 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
-  private renderArchivedItem = (wc: Crawl | Upload, idx: number) =>
+  private renderArchivedItem = (item: Crawl | Upload, idx: number) =>
     html`
-      <btrix-crawl-list-item .crawl=${wc}>
+      <btrix-crawl-list-item
+        .crawl=${item}
+        baseUrl="${this.orgBasePath}/items/${item.type}"
+      >
         <sl-menu slot="menu">
           <sl-menu-item
             style="--sl-color-neutral-700: var(--warning)"
-            @click=${() => this.removeArchivedItem(wc.id, idx)}
+            @click=${() => this.removeArchivedItem(item.id, idx)}
           >
             <sl-icon name="folder-minus" slot="prefix"></sl-icon>
             ${msg("Remove from Collection")}
