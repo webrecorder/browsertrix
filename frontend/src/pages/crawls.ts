@@ -109,6 +109,7 @@ export class Crawls extends LiteElement {
       <btrix-workflow-detail
         .authState=${this.authState!}
         orgId=${this.crawl.oid}
+        orgSlug=${this.slugLookup[this.crawl.oid]}
         workflowId=${this.crawl.cid}
         initialActivePanel="watch"
         isCrawler

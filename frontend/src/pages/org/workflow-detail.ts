@@ -46,6 +46,9 @@ export class WorkflowDetail extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
+  @property({ type: String })
+  orgSlug!: string;
+
   @property({ type: Boolean })
   orgStorageQuotaReached = false;
 
@@ -363,7 +366,7 @@ export class WorkflowDetail extends LiteElement {
       <nav class="col-span-1">
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-          href=${`${this.orgBasePath}/workflows${
+          href=${`/orgs/${this.orgSlug}/workflows${
             workflowId ? `/crawl/${workflowId}` : "/crawls"
           }`}
           @click=${this.navLink}
