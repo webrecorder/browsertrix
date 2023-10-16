@@ -624,7 +624,6 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     async def update_org_billing_settings(
         settings: OrgUpdateExecMinsOverage,
         org: Organization = Depends(org_owner_dep),
-        user: User = Depends(user_dep),
     ):
         await ops.update_execution_mins_overage(
             org, settings.crawlExecMinutesAllowedOverage
