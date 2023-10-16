@@ -21,7 +21,7 @@ from fastapi import (
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from .models import User
+from .models import UserDB
 
 
 # pylint: disable=missing-class-docstring, missing-function-docstring
@@ -137,7 +137,7 @@ def decode_jwt(token: str) -> dict:
 
 
 # ============================================================================
-def create_access_token(user: User):
+def create_access_token(user: UserDB) -> str:
     """get jwt token"""
     return generate_jwt({"sub": str(user.id)}, JWT_TOKEN_LIFETIME)
 
@@ -170,7 +170,7 @@ def init_jwt_auth(user_manager):
     """init jwt auth router + current_active_user dependency"""
     oauth2_scheme = OA2BearerOrQuery(tokenUrl="/api/auth/jwt/login", auto_error=False)
 
-    async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+    async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserDB:
         credentials_exception = HTTPException(
             status_code=401,
             detail="Could not validate credentials",

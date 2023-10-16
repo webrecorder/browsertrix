@@ -37,7 +37,8 @@ from .auth import (
 from .models import (
     User,
     UserCreate,
-    UserUpdate,
+    UserUpdateEmailName,
+    UserUpdatePassword,
     UserDB,
     UserRole,
     PaginatedResponse,
@@ -92,28 +93,23 @@ class UserManager:
         """init lookup index"""
         await self.collection.create_index("email", unique=True)
 
-    async def create(self, user: UserCreate, request: Optional[Request] = None):
+    async def register(self, user: UserCreate, request: Optional[Request] = None):
         """override user creation to check if invite token is present"""
         user.name = user.name or user.email
 
         # if open registration not enabled, can only register with an invite
-        if (
-            not self.registration_enabled
-            and not user.inviteToken
-            and not user.is_verified
-            and not user.is_superuser
-        ):
-            raise HTTPException(status_code=400, detail="Invite Token Required")
+        if not self.registration_enabled and not user.inviteToken:
+            raise HTTPException(status_code=400, detail="invite_token_required")
 
         if user.inviteToken and not await self.invites.get_valid_invite(
             user.inviteToken, user.email
         ):
-            raise HTTPException(status_code=400, detail="Invalid Invite Token")
+            raise HTTPException(status_code=400, detail="invite_token_invalid")
 
         # Don't create a new org for registered users.
         user.newOrg = False
 
-        created_user = await self.create_base(user)
+        created_user = await self._create(user)
         await self.on_after_register_custom(created_user, user, request)
         return created_user
 
@@ -182,10 +178,11 @@ class UserManager:
 
         return UserDB.from_dict(user_data)
 
-    async def create_super_user(self):
+    async def create_super_user(self) -> None:
         """Initialize a super user from env vars"""
-        email = os.environ.get("SUPERUSER_EMAIL")
+        email = EmailStr(os.environ.get("SUPERUSER_EMAIL"))
         password = os.environ.get("SUPERUSER_PASSWORD")
+        name = os.environ.get("SUPERUSER_NAME", "admin")
         if not email:
             print("No superuser defined", flush=True)
             return
@@ -196,7 +193,7 @@ class UserManager:
         superuser = await self.get_superuser()
         if superuser:
             if superuser.email != email:
-                await self.update_email(superuser, EmailStr(email))
+                await self.update_email_name(superuser, email, name)
                 print("Superuser email updated")
 
             if await self.update_password(superuser, password):
@@ -205,9 +202,9 @@ class UserManager:
             return
 
         try:
-            res = await self.create(
+            res = await self._create(
                 UserCreate(
-                    name="admin",
+                    name=name,
                     email=email,
                     password=password,
                     is_superuser=True,
@@ -228,11 +225,11 @@ class UserManager:
         email: str,
         password: str,
         name: str = "New user",
-    ):
+    ) -> None:
         """create a regular user with given credentials"""
         if not email:
             print("No user defined", flush=True)
-            return
+            return None
 
         if not password:
             password = generate_password()
@@ -247,11 +244,10 @@ class UserManager:
                 is_verified=True,
             )
             try:
-                created_user = await self.create_base(user_create)
+                created_user = await self._create(user_create)
                 await self.on_after_register_custom(
                     created_user, user_create, request=None
                 )
-                return created_user
             # pylint: disable=raise-missing-from
             except InvalidPasswordException:
                 raise HTTPException(status_code=422, detail="invalid_password")
@@ -366,7 +362,7 @@ class UserManager:
 
         return result
 
-    async def create_base(self, create: UserCreate) -> UserDB:
+    async def _create(self, create: UserCreate) -> UserDB:
         """create new user in db"""
         await self.validate_password(create.password, create)
 
@@ -404,7 +400,7 @@ class UserManager:
         if user is None:
             raise UserNotExists()
 
-        return User.from_dict(user)
+        return UserDB.from_dict(user)
 
     async def get_by_email(self, email: str) -> Optional[UserDB]:
         """
@@ -533,13 +529,24 @@ class UserManager:
         return user
 
     async def change_password(
-        self, user_update: UserUpdate, user: UserDB
+        self, user_update: UserUpdatePassword, user: UserDB
     ) -> dict[str, bool]:
         """Change password after checking existing password"""
         if not await self.check_password(user, user_update.password):
             raise HTTPException(status_code=400, detail="invalid_current_password")
 
         await self.update_password(user, user_update.newPassword)
+
+        return {"updated": True}
+
+    async def change_email_name(
+        self, user_update: UserUpdateEmailName, user: UserDB
+    ) -> dict[str, bool]:
+        """Change password after checking existing password"""
+        if not user_update.email and not user_update.name:
+            raise HTTPException(status_code=400, detail="no_updates_specified")
+
+        await self.update_email_name(user, user_update.email, user_update.name)
 
         return {"updated": True}
 
@@ -563,11 +570,16 @@ class UserManager:
             {"_id": user.id}, {"$set": user.dict(include={"invites"})}
         )
 
-    async def update_email(self, user: UserDB, email: EmailStr) -> None:
+    async def update_email_name(
+        self, user: UserDB, email: Optional[EmailStr], name: Optional[str]
+    ) -> None:
         """Update email for user"""
-        await self.collection.find_one_and_update(
-            {"_id": user.id}, {"$set": {"email": email}}
-        )
+        query: dict[str, str] = {}
+        if email:
+            query["email"] = str(email)
+        if name:
+            query["name"] = name
+        await self.collection.find_one_and_update({"_id": user.id}, {"$set": query})
 
     async def update_password(self, user: UserDB, new_password: str) -> bool:
         """Update password for user, update and store hashed password"""
@@ -632,7 +644,7 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
     @auth_router.post("/register", status_code=201)
     async def register(request: Request, user: UserCreate):  # type: ignore
         try:
-            created_user = await user_manager.create(user, request=request)
+            return await user_manager.register(user, request=request)
         except UserAlreadyExists:
             raise HTTPException(
                 status_code=400,
@@ -646,8 +658,6 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
                     "reason": e.reason,
                 },
             )
-
-        return created_user
 
     @auth_router.post(
         "/forgot-password",
@@ -767,11 +777,19 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
 
     @users_router.put("/me/password-change", tags=["users"])
     async def change_my_password(
-        user_update: UserUpdate,
+        user_update: UserUpdatePassword,
         user: UserDB = Depends(current_active_user),
     ):
         """update password, requires current password"""
         return await user_manager.change_password(user_update, user)
+
+    @users_router.patch("/me", tags=["users"])
+    async def change_my_email_name(
+        user_update: UserUpdateEmailName,
+        user: UserDB = Depends(current_active_user),
+    ):
+        """update password, requires current password"""
+        return await user_manager.change_email_name(user_update, user)
 
     @users_router.get("/me/invite/{token}", tags=["invites"])
     async def get_existing_user_invite_info(

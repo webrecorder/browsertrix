@@ -926,9 +926,19 @@ class UserCreate(UserCreateIn):
 
 
 # ============================================================================
-class UserUpdate(BaseModel):
+class UserUpdateEmailName(BaseModel):
     """
-    Update password model, requires current password to reset
+    Update email and/or name
+    """
+
+    email: Optional[EmailStr] = None
+    name: Optional[str] = None
+
+
+# ============================================================================
+class UserUpdatePassword(BaseModel):
+    """
+    Update password, requires current password to reset
     """
 
     email: EmailStr
