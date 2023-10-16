@@ -52,7 +52,6 @@ from .auth import (
 class UserManager:
     """Browsertrix UserManager"""
 
-    # user_db_model = User
     reset_password_token_secret = PASSWORD_SECRET
     verification_token_secret = PASSWORD_SECRET
 
@@ -60,7 +59,6 @@ class UserManager:
     verification_token_lifetime_minutes: int = 60
 
     def __init__(self, mdb, email, invites):
-        # self.user_db = user_db
         self.collection = mdb.get_collection("users")
         self.email = email
         self.invites = invites
@@ -154,7 +152,6 @@ class UserManager:
         # Update password hash to a more robust one if needed
         if updated_password_hash:
             user.hashed_password = updated_password_hash
-            # await self.user_db.update(user)
             await self.collection.find_one_and_update(
                 {"_id": user.id}, {"$set": {"hashed_password": user.hashed_password}}
             )
@@ -193,7 +190,7 @@ class UserManager:
 
     async def create_super_user(self) -> None:
         """Initialize a super user from env vars"""
-        email = EmailStr(os.environ.get("SUPERUSER_EMAIL"))
+        email = os.environ.get("SUPERUSER_EMAIL")
         password = os.environ.get("SUPERUSER_PASSWORD")
         name = os.environ.get("SUPERUSER_NAME", "admin")
         if not email:
@@ -205,8 +202,8 @@ class UserManager:
 
         superuser = await self.get_superuser()
         if superuser:
-            if superuser.email != email:
-                await self.update_email_name(superuser, email, name)
+            if str(superuser.email) != email:
+                await self.update_email_name(superuser, EmailStr(email), name)
                 print("Superuser email updated")
 
             if await self.update_password(superuser, password):
