@@ -1317,7 +1317,7 @@ class BtrixOperator(K8sAPI):
         return exec_time
 
     async def store_exec_time_in_crawl(self, crawl_id: str, exec_time: int):
-        """store execTime in crawl (if not already set)"""
+        """store crawlExecSeconds in crawl (if not already set)"""
         try:
             await self.crawl_ops.store_exec_time(crawl_id, exec_time)
             return True
