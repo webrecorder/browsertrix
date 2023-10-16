@@ -73,7 +73,7 @@ class AddToOrgRequest(InviteRequest):
 
 
 # ============================================================================
-class User(BaseMongoModel):
+class User(BaseModel):
     """
     User Model
     """

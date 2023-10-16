@@ -71,6 +71,7 @@ class UserManager:
 
     async def init_index(self):
         """init lookup index"""
+        await self.users.create_index("id", unique=True)
         await self.users.create_index("email", unique=True)
 
     async def register(
@@ -150,7 +151,7 @@ class UserManager:
         if updated_password_hash:
             user.hashed_password = updated_password_hash
             await self.users.find_one_and_update(
-                {"_id": user.id}, {"$set": {"hashed_password": user.hashed_password}}
+                {"id": user.id}, {"$set": {"hashed_password": user.hashed_password}}
             )
 
         return True
@@ -173,7 +174,7 @@ class UserManager:
         """return list of user names for given ids"""
         user_ids = [UUID4(id_) for id_ in user_ids]
         cursor = self.users.find(
-            {"_id": {"$in": user_ids}}, projection=["_id", "name", "email"]
+            {"id": {"$in": user_ids}}, projection=["id", "name", "email"]
         )
         return await cursor.to_list(length=1000)
 
@@ -183,7 +184,7 @@ class UserManager:
         if not user_data:
             return None
 
-        return User.from_dict(user_data)
+        return User(**user_data)
 
     async def create_super_user(self) -> None:
         """Initialize a super user from env vars"""
@@ -311,7 +312,7 @@ class UserManager:
         )
 
         try:
-            await self.users.insert_one(user.to_dict())
+            await self.users.insert_one(user.dict())
         except DuplicateKeyError:
             raise HTTPException(status_code=400, detail="user_already_exists")
 
@@ -361,12 +362,12 @@ class UserManager:
 
     async def get_by_id(self, _id: UUID4) -> Optional[User]:
         """get user by unique id"""
-        user = await self.users.find_one({"_id": _id})
+        user = await self.users.find_one({"id": _id})
 
         if not user:
             return None
 
-        return User.from_dict(user)
+        return User(**user)
 
     async def get_by_email(self, email: str) -> Optional[User]:
         """get user by email"""
@@ -374,7 +375,7 @@ class UserManager:
         if not user:
             return None
 
-        return User.from_dict(user)
+        return User(**user)
 
     async def verify(self, token: str) -> None:
         """validate verification request token"""
@@ -478,13 +479,13 @@ class UserManager:
     async def update_verified(self, user: User) -> None:
         """Update verified status for user"""
         await self.users.find_one_and_update(
-            {"_id": user.id}, {"$set": {"is_verified": user.is_verified}}
+            {"id": user.id}, {"$set": {"is_verified": user.is_verified}}
         )
 
     async def update_invites(self, user: User) -> None:
         """Update verified status for user"""
         await self.users.find_one_and_update(
-            {"_id": user.id}, {"$set": user.dict(include={"invites"})}
+            {"id": user.id}, {"$set": user.dict(include={"invites"})}
         )
 
     async def update_email_name(
@@ -498,7 +499,7 @@ class UserManager:
             query["name"] = name
 
         try:
-            await self.users.find_one_and_update({"_id": user.id}, {"$set": query})
+            await self.users.find_one_and_update({"id": user.id}, {"$set": query})
         except DuplicateKeyError:
             raise HTTPException(status_code=400, detail="user_already_exists")
 
@@ -510,7 +511,7 @@ class UserManager:
             return False
         user.hashed_password = hashed_password
         await self.users.find_one_and_update(
-            {"_id": user.id}, {"$set": {"hashed_password": hashed_password}}
+            {"id": user.id}, {"$set": {"hashed_password": hashed_password}}
         )
         return True
 
