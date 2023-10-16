@@ -962,7 +962,6 @@ class BtrixOperator(K8sAPI):
 
         # detect reason
         exit_code = terminated.get("exitCode")
-        pod_status.reason = "done"
 
         if exit_code == 0:
             pod_status.reason = "done"
@@ -970,6 +969,8 @@ class BtrixOperator(K8sAPI):
             pod_status.reason = "oom"
         else:
             pod_status.reason = "interrupt: " + str(exit_code)
+
+        pod_status.exitCode = exit_code
 
     def should_mark_waiting(self, state, started):
         """Should the crawl be marked as waiting for capacity?"""
@@ -1024,8 +1025,9 @@ class BtrixOperator(K8sAPI):
         for name, pod in pod_status.items():
             # log only unexpected exits as crashes
             # - 0 is success / intended shutdown
-            # - 11 is interrupt / intended restart
-            if not pod.isNewExit or pod.exitCode in (0, 11):
+            # - 11 is default interrupt / intended restart
+            # - 13 is force interrupt / intended restart
+            if not pod.isNewExit or pod.exitCode in (0, 11, 13):
                 continue
 
             log = self.get_log_line(
