@@ -82,7 +82,6 @@ class User(BaseMongoModel):
 
     name: Optional[str] = ""
     email: EmailStr
-    is_active: bool = True
     is_superuser: bool = False
     is_verified: bool = False
 
@@ -91,10 +90,35 @@ class User(BaseMongoModel):
 
     def dict(self, *a, **kw):
         """ensure invites / hashed_password never serialize, just in case"""
-        exclude = kw.get("exclude", set())
+        exclude = kw.get("exclude") or set()
         exclude.add("invites")
         exclude.add("hashed_password")
         return super().dict(*a, **kw)
+
+
+# ============================================================================
+class UserOrgInfoOut(BaseModel):
+    """org per user"""
+
+    id: UUID4
+
+    name: str
+    default: bool
+    role: UserRole
+
+
+# ============================================================================
+class UserOut(BaseModel):
+    """Output User model"""
+
+    id: UUID4
+
+    name: Optional[str] = ""
+    email: EmailStr
+    is_superuser: bool = False
+    is_verified: bool = False
+
+    orgs: List[UserOrgInfoOut]
 
 
 # ============================================================================
@@ -927,7 +951,6 @@ class UserCreate(UserCreateIn):
     User Creation Model
     """
 
-    is_active: Optional[bool] = True
     is_superuser: Optional[bool] = False
     is_verified: Optional[bool] = False
 

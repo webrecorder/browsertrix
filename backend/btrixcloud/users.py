@@ -26,6 +26,8 @@ from .models import (
     UserUpdateEmailName,
     UserUpdatePassword,
     User,
+    UserOrgInfoOut,
+    UserOut,
     UserRole,
     Organization,
     PaginatedResponse,
@@ -74,7 +76,9 @@ class UserManager:
         """init lookup index"""
         await self.collection.create_index("email", unique=True)
 
-    async def register(self, user: UserCreateIn, request: Optional[Request] = None):
+    async def register(
+        self, user: UserCreateIn, request: Optional[Request] = None
+    ) -> User:
         """override user creation to check if invite token is present"""
         user.name = user.name or user.email
 
@@ -91,6 +95,41 @@ class UserManager:
         user.newOrg = False
 
         return await self._create(user, request)
+
+    async def get_user_info_with_orgs(self, user: User) -> UserOut:
+        """return User info"""
+        user_orgs, _ = await self.org_ops.get_orgs_for_user(
+            user,
+            # Set high so that we get all orgs even after reducing default page size
+            page_size=1_000,
+            calculate_total=False,
+        )
+
+        if user_orgs:
+            orgs = [
+                UserOrgInfoOut(
+                    id=org.id,
+                    name=org.name,
+                    default=org.default,
+                    role=(
+                        UserRole.SUPERADMIN
+                        if user.is_superuser
+                        else org.users.get(str(user.id))
+                    ),
+                )
+                for org in user_orgs
+            ]
+        else:
+            orgs = []
+
+        return UserOut(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            orgs=orgs,
+            is_superuser=user.is_superuser,
+            is_verified=user.is_verified,
+        )
 
     async def validate_password(self, password: str) -> None:
         """
@@ -524,9 +563,10 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
 
     auth_router = APIRouter()
 
-    @auth_router.post("/register", status_code=201)
-    async def register(request: Request, user: UserCreateIn):  # type: ignore
-        return await user_manager.register(user, request=request)
+    @auth_router.post("/register", status_code=201, response_model=UserOut)
+    async def register(request: Request, create: UserCreateIn):
+        user = await user_manager.register(create, request=request)
+        return await user_manager.get_user_info_with_orgs(user)
 
     @auth_router.post(
         "/forgot-password",
@@ -580,36 +620,10 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
     """/users routes"""
     users_router = APIRouter()
 
-    @users_router.get("/me", tags=["users"])
+    @users_router.get("/me", tags=["users"], response_model=UserOut)
     async def current_user_with_org_info(user: User = Depends(current_active_user)):
         """/users/me with orgs user belongs to."""
-        user_info: dict = {
-            "id": user.id,
-            "email": user.email,
-            "name": user.name,
-            "orgs": [],
-            "is_superuser": user.is_superuser,
-            "is_verified": user.is_verified,
-        }
-        user_orgs, _ = await user_manager.org_ops.get_orgs_for_user(
-            user,
-            # Set high so that we get all orgs even after reducing default page size
-            page_size=1_000,
-            calculate_total=False,
-        )
-        if user_orgs:
-            user_info["orgs"] = [
-                {
-                    "id": org.id,
-                    "name": org.name,
-                    "default": org.default,
-                    "role": UserRole.SUPERADMIN
-                    if user.is_superuser
-                    else org.users.get(str(user.id)),
-                }
-                for org in user_orgs
-            ]
-        return user_info
+        return await user_manager.get_user_info_with_orgs(user)
 
     @users_router.put("/me/password-change", tags=["users"])
     async def update_my_password(

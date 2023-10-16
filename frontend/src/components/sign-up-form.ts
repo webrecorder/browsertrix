@@ -166,7 +166,7 @@ export class SignUpForm extends LiteElement {
       case 201:
         const data = await resp.json();
 
-        if (data.is_active) {
+        if (data.id) {
           shouldLogIn = true;
         }
 
