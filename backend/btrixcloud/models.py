@@ -729,6 +729,7 @@ class OrgOut(BaseMongoModel):
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
     quotas: Optional[OrgQuotas] = OrgQuotas()
+    crawlExecMinutesAllowedOverage: int = 0
 
 
 # ============================================================================

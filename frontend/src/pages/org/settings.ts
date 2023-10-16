@@ -161,7 +161,6 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderTab(name: Tab, path: string) {
-    console.log(`Active panel: ${this.activePanel}`);
     const isActive = name === this.activePanel;
     return html`
       <a
