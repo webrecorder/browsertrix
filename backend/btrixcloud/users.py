@@ -138,7 +138,6 @@ class UserManager:
 
     async def get_user_names_by_ids(self, user_ids):
         """return list of user names for given ids"""
-        print("user_ids", user_ids)
         user_ids = [UUID4(id_) for id_ in user_ids]
         cursor = self.collection.find(
             {"_id": {"$in": user_ids}}, projection=["_id", "name", "email"]
@@ -620,7 +619,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
     async def update_my_password(
         user_update: UserUpdatePassword,
         user: User = Depends(current_active_user),
-    ):
+    ) -> bool:
         """update password, requires current password"""
         return await user_manager.change_password(user_update, user)
 
@@ -628,9 +627,9 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
     async def update_my_email_name(
         user_update: UserUpdateEmailName,
         user: User = Depends(current_active_user),
-    ):
+    ) -> dict[str, bool]:
         """update password, requires current password"""
-        return await user_manager.change_email_name(user, user_update)
+        return await user_manager.change_email_name(user_update, user)
 
     @users_router.get("/me/invite/{token}", tags=["invites"])
     async def get_existing_user_invite_info(
