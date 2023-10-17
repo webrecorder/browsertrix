@@ -1,4 +1,4 @@
-apiVersion: btrix.cloud/v1
+apiVersion: batch/v1
 kind: Job
 metadata:
   name: "{{ id }}"
@@ -8,12 +8,12 @@ metadata:
 
 spec:
   ttlSecondsAfterFinished: 300
-  id: "{{ id }}"
-  oid: "{{ oid }}"
-  primary_file_path: "{{ primary_file_path }}"
-  primary_storage_name: "{{ primary_storage_name }}"
-  replica_file_path: "{{ replica_file_path }}"
-  replica_storage_name: "{{ replica_storage_name }}"
+  #id: "{{ id }}"
+  #oid: "{{ oid }}"
+  #primary_file_path: "{{ primary_file_path }}"
+  #primary_secret_name: "{{ primary_secret_name }}"
+  #replica_file_path: "{{ replica_file_path }}"
+  #replica_secret_name: "{{ replica_secret_name }}"
 
   template:
     spec:
@@ -28,31 +28,51 @@ spec:
             values: [0]
       containers:
       - name: rclone
-        image: rclone:latest
+        image: rclone/rclone:latest
         env:
         - name: RCLONE_CONFIG_PRIMARY_TYPE
           value: "s3"
+
         - name: RCLONE_CONFIG_PRIMARY_ACCESS_KEY_ID
           valueFrom:
-            storages:
-              name: "{{ primary_storage_name }}"
-              key: access_key
-        - name: RLCONE_CONFIG_PRIMARY_SECRET_ACCESS_KEY
+            secretKeyRef:
+              name: "{{ primary_secret_name }}"
+              key: STORE_ACCESS_KEY
+
+        - name: RCLONE_CONFIG_PRIMARY_SECRET_ACCESS_KEY
           valueFrom:
-            storages:
-              name: "{{ primary_storage_name }}"
-              key: secret_key
+            secretKeyRef:
+              name: "{{ primary_secret_name }}"
+              key: STORE_SECRET_KEY
+
+        - name: RCLONE_CONFIG_PRIMARY_ENDPOINT
+          value: "{{ primary_endpoint }}"
+          #valueFrom:
+          #  secretKeyRef:
+          #    name: "{{ primary_secret_name }}"
+          #    key: STORE_ENDPOINT_URL
+ 
         - name: RCLONE_CONFIG_REPLICA_TYPE
           value: "s3"
+
         - name: RCLONE_CONFIG_REPLICA_ACCESS_KEY_ID
           valueFrom:
-            storages:
-              name: "{{ replica_storage_name }}"
-              key: access_key
+            secretKeyRef:
+              name: "{{ replica_secret_name }}"
+              key: STORE_ACCESS_KEY
+
         - name: RCLONE_CONFIG_REPLICA_SECRET_ACCESS_KEY
           valueFrom:
-              storages:
-                name: "{{ replica_storage_name }}"
-                key: secret_key
-        command: ["rclone", "copyto", "--checksum", "{{ primary_file_path }}", "{{ replica_file_path }}"]
+            secretKeyRef:
+              name: "{{ replica_secret_name }}"
+              key: STORE_SECRET_KEY
+
+        - name: RCLONE_CONFIG_REPLICA_ENDPOINT
+          value: "{{ replica_endpoint }}"
+          #valueFrom:
+          #  secretKeyRef:
+          #    name: "{{ replica_secret_name }}"
+          #    key: STORE_ENDPOINT_URL
+
+        command: ["rclone", "-vv", "copyto", "--checksum", "primary:{{ primary_file_path }}", "replica:{{ replica_file_path }}"]
       

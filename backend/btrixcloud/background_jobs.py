@@ -5,7 +5,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from .storages import StorageOps
+from .crawlmanager import CrawlManager
+
 from .models import (
+    BaseFile,
     Organization,
     ReplicateJob,
     BackgroundJobOut,
@@ -17,7 +21,6 @@ from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
-    from .crawlmanager import CrawlManager
 else:
     OrgOps = CrawlManager = object
 
@@ -28,14 +31,16 @@ class BackgroundJobOps:
 
     org_ops: OrgOps
     crawl_manager: CrawlManager
+    storage_ops: StorageOps
 
     # pylint: disable=too-many-locals, too-many-arguments, invalid-name
 
-    def __init__(self, mdb, org_ops, crawl_manager):
+    def __init__(self, mdb, org_ops, crawl_manager, storage_ops):
         self.jobs = mdb["jobs"]
 
         self.org_ops = org_ops
         self.crawl_manager = crawl_manager
+        self.storage_ops = storage_ops
 
         self.router = APIRouter(
             prefix="/jobs",
@@ -43,40 +48,59 @@ class BackgroundJobOps:
             responses={404: {"description": "Not found"}},
         )
 
-    async def create_replica_job(
-        self, oid: UUID, file_path: str
-    ) -> Dict[str, Union[str, bool]]:
-        """Create k8s background job to replicate a file to another storage location.
+    def strip_bucket(self, endpoint_url: str) -> str:
+        """strip the last path segment (bucket) and return rest of endpoint"""
+        inx = endpoint_url.rfind("/", 0, -1) + 1
+        return endpoint_url[0:inx], endpoint_url[inx:]
 
-        TODO:
-        - Remove false early exit
-        - Support additional replica and primary locations beyond hardcoded defaults
-        - Return without starting job if no relica locations are configured
-        """
-        print("Replication not yet supported", flush=True)
-        # pylint: disable=unreachable
-        return {}
+    async def create_replicate_job(self, oid: uuid.UUID, file: BaseFile) -> Dict:
+        """Create k8s background job to replicate a file to another storage location."""
 
-        primary_storage_name = "default"
-        replica_storage_name = "backup"
+        org = await self.org_ops.get_org_by_id(oid)
 
-        job_id = await self.crawl_manager.run_replicate_job(
-            oid,
-            primary_storage_name=f"storage-{primary_storage_name}",
-            replica_storage_name=f"storage-{replica_storage_name}",
-            primary_file_path=f"primary:{file_path}",
-            replica_file_path=f"replica:{file_path}",
+        primary_storage = self.storage_ops.get_org_storage_by_ref(org, file.storage)
+        primary_endpoint, bucket_suffix = self.strip_bucket(
+            primary_storage.endpoint_url
         )
-        replication_job = ReplicateJob(
-            id=job_id, started=datetime.now(), file_path=file_path
-        )
-        await self.jobs.find_one_and_update(
-            {"_id": job_id}, {"$set": replication_job.to_dict()}, upsert=True
-        )
-        return {
-            "added": True,
-            "id": job_id,
-        }
+
+        replica_refs = self.storage_ops.get_org_replicas_storage_refs(org)
+
+        primary_file_path = bucket_suffix + file.filename
+
+        ids = []
+
+        for replica_ref in replica_refs:
+            replica_storage = self.storage_ops.get_org_storage_by_ref(org, replica_ref)
+            replica_endpoint, bucket_suffix = self.strip_bucket(
+                replica_storage.endpoint_url
+            )
+            replica_file_path = bucket_suffix + file.filename
+
+            print(f"primary: {file.storage.get_storage_secret_name(str(oid))}")
+            print(f"  endpoint: {primary_endpoint}")
+            print(f"  path: {primary_file_path}")
+            print(f"replica: {replica_ref.get_storage_secret_name(str(oid))}")
+            print(f"  endpoint: {replica_endpoint}")
+            print(f"  path: {replica_file_path}")
+
+            job_id = await self.crawl_manager.run_replicate_job(
+                oid,
+                primary_secret_name=file.storage.get_storage_secret_name(str(oid)),
+                replica_secret_name=replica_ref.get_storage_secret_name(str(oid)),
+                primary_file_path=primary_file_path,
+                replica_file_path=replica_file_path,
+                primary_endpoint=primary_endpoint,
+                replica_endpoint=replica_endpoint,
+            )
+            replication_job = ReplicateJob(
+                id=job_id, started=datetime.now(), file_path=file.filename
+            )
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": replication_job.to_dict()}, upsert=True
+            )
+            ids.append(job_id)
+
+        return {"added": True, "ids": ids}
 
     async def create_delete_replica_job(
         self, oid: UUID, file_path: str
@@ -216,11 +240,11 @@ class BackgroundJobOps:
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
-def init_background_jobs_api(mdb, org_ops, crawl_manager):
+def init_background_jobs_api(mdb, org_ops, crawl_manager, storage_ops):
     """init background jobs system"""
     # pylint: disable=invalid-name
 
-    ops = BackgroundJobOps(mdb, org_ops, crawl_manager)
+    ops = BackgroundJobOps(mdb, org_ops, crawl_manager, storage_ops)
 
     router = ops.router
 

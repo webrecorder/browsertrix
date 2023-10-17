@@ -205,7 +205,7 @@ class ProfileOps:
             {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
         )
 
-        await self.background_job_ops.create_replica_job(oid, profile_file.filename)
+        await self.background_job_ops.create_replicate_job(oid, profile_file)
 
         quota_reached = await self.orgs.inc_org_bytes_stored(oid, file_size, "profile")
 

@@ -270,6 +270,7 @@ class BtrixOperator(K8sAPI):
         storage_ops,
         event_webhook_ops,
         background_job_ops,
+        event_webhook_ops,
     ):
         super().__init__()
 
@@ -278,8 +279,8 @@ class BtrixOperator(K8sAPI):
         self.org_ops = org_ops
         self.coll_ops = coll_ops
         self.storage_ops = storage_ops
-        self.event_webhook_ops = event_webhook_ops
         self.background_job_ops = background_job_ops
+        self.event_webhook_ops = event_webhook_ops
 
         self.user_ops = crawl_config_ops.user_manager
 
@@ -1243,7 +1244,11 @@ class BtrixOperator(K8sAPI):
         await redis.incr("filesAddedSize", filecomplete.size)
 
         await self.crawl_ops.add_crawl_file(crawl.id, crawl_file, filecomplete.size)
-        await self.background_job_ops.create_replica_job(crawl.oid, crawl_file.filename)
+
+        try:
+            await self.background_job_ops.create_replicate_job(crawl.oid, crawl_file)
+        except Exception as exc:
+            print(exc)
 
         return True
 
@@ -1654,6 +1659,7 @@ def init_operator_api(
     storage_ops,
     event_webhook_ops,
     background_job_ops,
+    event_webhook_ops,
 ):
     """regsiters webhook handlers for metacontroller"""
 
@@ -1665,6 +1671,7 @@ def init_operator_api(
         storage_ops,
         event_webhook_ops,
         background_job_ops,
+        event_webhook_ops,
     )
 
     @app.post("/op/crawls/sync")
