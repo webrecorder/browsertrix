@@ -101,6 +101,7 @@ describe("browsertrix-app", () => {
           name: "test org",
           role: 10,
           email: "test@org.org",
+          slug: "test-org",
         },
       ],
     });

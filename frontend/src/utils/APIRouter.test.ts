@@ -12,7 +12,7 @@ describe("APIRouter", () => {
 
       expect(viewState.route).to.equal("org");
       expect(viewState.params).to.deep.equal({
-        orgId: "_fake_org_id_",
+        slug: "_fake_org_id_",
       });
     });
 
