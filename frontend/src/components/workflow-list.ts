@@ -308,7 +308,7 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender((workflow) => {
             if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
               return html`<sl-format-date
-                  date=${workflow.lastRun.toString()}
+                  date="${workflow.lastRun.toString()}Z"
                   month="2-digit"
                   day="2-digit"
                   year="2-digit"
