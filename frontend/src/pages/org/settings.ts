@@ -349,7 +349,7 @@ export class OrgSettings extends LiteElement {
             </div>
             <div class="mt-0.5 text-xs text-neutral-500">
               ${msg(
-                "Allowed overage minutes beyond monthly execution minutes quota before users are no longer allowed to create new crawls."
+                "Allowed overage minutes beyond the organization's monthly quota. Once reached, crawl workflows will not run."
               )}
             </div>
           </div>

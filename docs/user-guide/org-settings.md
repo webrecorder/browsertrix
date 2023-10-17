@@ -27,4 +27,4 @@ Sent invites can be invalidated by pressing the trash button in the relevant _Pe
 
 ## Billing
 
-This page lets organization admins set an additional number of allowed overage minutes over the monthly execution minutes quota for their organization. If set, this serves as a hard cap after which all running crawls will be stopped. When set at the default of 0, crawls will be stopped as soon as the quota is reached.
+This page lets organization admins set an additional number of allowed overage minutes when the organization's monthly execution minutes quota has been reached. If set, this serves as a hard cap after which all running crawls will be stopped. When set at the default of 0, crawls will be stopped as soon as the monthly quota is reached.
