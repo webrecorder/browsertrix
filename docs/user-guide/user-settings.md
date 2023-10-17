@@ -10,4 +10,4 @@ This is the email that you use to login. It is also what we'll use to contact yo
 
 ## Password
 
-This is the password that you use to login. Your current password is required to set a new one. Passwords must meet a minimum security check. For more information on how we derive password security levels, see [zxcvbn](https://zxcvbn-ts.github.io/zxcvbn/guide/).
+This is the password that you use to login. Passwords must meet a minimum security check. For more information on how we derive password security levels, see [zxcvbn](https://zxcvbn-ts.github.io/zxcvbn/guide/).
