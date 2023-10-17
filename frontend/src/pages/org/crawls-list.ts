@@ -445,7 +445,7 @@ export class CrawlsList extends LiteElement {
   private renderArchivedItem = (item: Crawl) =>
     html`
       <btrix-crawl-list-item
-        baseUrl="${this.orgBasePath}/items/${item.type}"
+        orgSlug=${this.appState.orgSlug || ""}
         .crawl=${item}
       >
         <sl-menu slot="menu">

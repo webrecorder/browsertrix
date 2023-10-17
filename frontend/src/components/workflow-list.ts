@@ -208,7 +208,7 @@ export class WorkflowListItem extends LitElement {
   ];
 
   @property({ type: String })
-  baseUrl!: string;
+  orgSlug!: string;
 
   @property({ type: Object })
   workflow?: ListWorkflow;
@@ -255,7 +255,7 @@ export class WorkflowListItem extends LitElement {
     return html`<a
       class="item row"
       role="button"
-      href=${`${this.baseUrl || ""}/workflows/crawl/${this.workflow?.id}#${
+      href=${`/orgs/${this.orgSlug}/workflows/crawl/${this.workflow?.id}#${
         this.workflow?.isCrawlRunning ? "watch" : "crawls"
       }`}
       @click=${async (e: MouseEvent) => {
@@ -567,9 +567,6 @@ export class WorkflowList extends LitElement {
     `,
   ];
 
-  @property({ type: String })
-  baseUrl!: string;
-
   @queryAssignedElements({ selector: "btrix-workflow-list-item" })
   listItems!: Array<HTMLElement>;
 
@@ -590,9 +587,6 @@ export class WorkflowList extends LitElement {
 
   private handleSlotchange() {
     this.listItems.map((el) => {
-      if (!el.attributes.getNamedItem("baseUrl")) {
-        el.setAttribute("baseUrl", this.baseUrl);
-      }
       if (!el.attributes.getNamedItem("role")) {
         el.setAttribute("role", "listitem");
       }

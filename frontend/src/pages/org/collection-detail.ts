@@ -619,8 +619,8 @@ export class CollectionDetail extends LiteElement {
   private renderArchivedItem = (item: Crawl | Upload, idx: number) =>
     html`
       <btrix-crawl-list-item
+        orgSlug=${this.appState.orgSlug || ""}
         .crawl=${item}
-        baseUrl="${this.orgBasePath}/items/${item.type}"
       >
         <sl-menu slot="menu">
           <sl-menu-item

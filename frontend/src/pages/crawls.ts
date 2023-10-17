@@ -14,7 +14,6 @@ import type { Crawl, CrawlState } from "../types/crawler";
 import type { APIPaginationQuery, APIPaginatedList } from "../types/api";
 import "./org/workflow-detail";
 import "./org/crawls-list";
-import { PropertyValueMap } from "lit";
 
 type SortField = "started" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
@@ -72,9 +71,12 @@ export class Crawls extends LiteElement {
   // Use to cancel requests
   private getCrawlsController: AbortController | null = null;
 
-  protected willUpdate(changedProperties: Map<string, any>) {
+  protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("crawlId") && this.crawlId) {
-      this.fetchWorkflowId();
+      // Redirect to org crawl page
+      await this.fetchWorkflowId();
+      const slug = this.slugLookup[this.crawl!.oid];
+      this.navTo(`/orgs/${slug}/items/crawl/${this.crawlId}`);
     } else {
       if (
         changedProperties.has("filterBy") ||
@@ -98,23 +100,11 @@ export class Crawls extends LiteElement {
     return html` <div
       class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border"
     >
-      ${this.crawlId ? this.renderDetail() : this.renderCrawls()}
+      ${this.crawlId
+        ? // Render loading indicator while preparing to redirect
+          this.renderLoading()
+        : this.renderCrawls()}
     </div>`;
-  }
-
-  private renderDetail() {
-    if (!this.crawl) return;
-
-    return html`
-      <btrix-workflow-detail
-        .authState=${this.authState!}
-        orgId=${this.crawl.oid}
-        orgSlug=${this.slugLookup[this.crawl.oid]}
-        workflowId=${this.crawl.cid}
-        initialActivePanel="watch"
-        isCrawler
-      ></btrix-workflow-detail>
-    `;
   }
 
   private renderCrawls() {
@@ -167,15 +157,17 @@ export class Crawls extends LiteElement {
               )}
             `;
           },
-          () => html`
-            <div class="w-full flex items-center justify-center my-12 text-2xl">
-              <sl-spinner></sl-spinner>
-            </div>
-          `
+          this.renderLoading
         )}
       </main>
     `;
   }
+
+  private renderLoading = () => html`
+    <div class="w-full flex items-center justify-center my-12 text-2xl">
+      <sl-spinner></sl-spinner>
+    </div>
+  `;
 
   private renderControls() {
     const viewPlaceholder = msg("Any Active Status");
@@ -290,7 +282,7 @@ export class Crawls extends LiteElement {
   private renderCrawlItem = (crawl: Crawl) =>
     html`
       <btrix-crawl-list-item
-        baseUrl="/orgs/${this.slugLookup[crawl.oid]}/items/${crawl.type}"
+        orgSlug=${this.slugLookup[crawl.oid]}
         .crawl=${crawl}
       >
         <sl-menu slot="menu">
@@ -386,10 +378,7 @@ export class Crawls extends LiteElement {
   }
 
   private async getSlugLookup(): Promise<any> {
-    const data: Crawl = await this.apiFetch(
-      `/orgs/slug-lookup`,
-      this.authState!
-    );
+    const data = await this.apiFetch(`/orgs/slug-lookup`, this.authState!);
 
     return data;
   }

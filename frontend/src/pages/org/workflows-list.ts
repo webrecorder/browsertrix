@@ -377,9 +377,8 @@ export class WorkflowsList extends LiteElement {
   private renderWorkflowList() {
     if (!this.workflows) return;
     const { page, total, pageSize } = this.workflows;
-
     return html`
-      <btrix-workflow-list basePath=${this.orgBasePath}>
+      <btrix-workflow-list>
         ${this.workflows.items.map(this.renderWorkflowItem)}
       </btrix-workflow-list>
       ${when(
@@ -408,7 +407,10 @@ export class WorkflowsList extends LiteElement {
 
   private renderWorkflowItem = (workflow: ListWorkflow) =>
     html`
-      <btrix-workflow-list-item .workflow=${workflow}>
+      <btrix-workflow-list-item
+        orgSlug=${this.appState.orgSlug || ""}
+        .workflow=${workflow}
+      >
         <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
       </btrix-workflow-list-item>
     `;

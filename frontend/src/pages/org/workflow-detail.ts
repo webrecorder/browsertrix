@@ -46,9 +46,6 @@ export class WorkflowDetail extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
-  @property({ type: String })
-  orgSlug!: string;
-
   @property({ type: Boolean })
   orgStorageQuotaReached = false;
 
@@ -366,7 +363,7 @@ export class WorkflowDetail extends LiteElement {
       <nav class="col-span-1">
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-          href=${`/orgs/${this.orgSlug}/workflows${
+          href=${`${this.orgBasePath}/workflows${
             workflowId ? `/crawl/${workflowId}` : "/crawls"
           }`}
           @click=${this.navLink}
@@ -817,17 +814,17 @@ export class WorkflowDetail extends LiteElement {
           </div>`
         )}
 
-        <btrix-crawl-list
-          baseUrl="${this.orgBasePath}/items/crawl"
-          workflowId=${this.workflowId}
-        >
+        <btrix-crawl-list workflowId=${this.workflowId}>
           <span slot="idCol">${msg("Start Time")}</span>
           ${when(
             this.crawls,
             () =>
               this.crawls!.items.map(
                 (crawl: Crawl) => html`
-                  <btrix-crawl-list-item .crawl=${crawl}>
+                  <btrix-crawl-list-item
+                    orgSlug=${this.appState.orgSlug || ""}
+                    .crawl=${crawl}
+                  >
                     <sl-format-date
                       slot="id"
                       date=${`${crawl.started}Z`}
