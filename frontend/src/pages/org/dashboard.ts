@@ -4,6 +4,7 @@ import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
+import humanizeDuration from "pretty-ms";
 
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { AuthState } from "../../utils/AuthService";
@@ -224,6 +225,7 @@ export class Dashboard extends LiteElement {
             `
           )}
         </div>
+        <section class="mt-10">${this.renderUsageHistory()}</section>
       </main> `;
   }
 
@@ -390,6 +392,43 @@ export class Dashboard extends LiteElement {
               </div>
             `
         )}
+      </div>
+    `;
+  }
+
+  readonly usageTableCols = [
+    msg("Month"),
+    msg("Execution Time"),
+    msg("Total Crawl Time"),
+  ];
+
+  private renderUsageHistory() {
+    if (!this.org) return;
+    const rows = Object.entries(this.org.usage || {})
+      // Sort latest
+      .reverse()
+      .map(([mY, crawlTime]) => [
+        html`
+          <sl-format-date
+            date="${mY}-01T00:00:00.000Z"
+            time-zone="utc"
+            month="long"
+            year="numeric"
+          >
+          </sl-format-date>
+        `,
+        humanizeDuration((this.org!.crawlExecSeconds?.[mY] || 0) * 1000),
+        humanizeDuration((crawlTime || 0) * 1000),
+      ]);
+    return html`
+      <h2 class="text-lg font-semibold leading-none mb-6">
+        ${msg("Usage History")}
+      </h2>
+      <div class="border rounded overflow-hidden">
+        <btrix-data-table
+          .columns=${this.usageTableCols}
+          .rows=${rows}
+        ></btrix-data-table>
       </div>
     `;
   }
