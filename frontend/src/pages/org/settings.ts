@@ -356,6 +356,7 @@ export class OrgSettings extends LiteElement {
               )}
             </div>
           </div>
+        </div>
         <footer class="border-t flex justify-end px-4 py-3">
           <sl-button
             class="inline-control-button"
