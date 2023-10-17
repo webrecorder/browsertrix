@@ -337,11 +337,14 @@ export class OrgSettings extends LiteElement {
           <div class="col-span-5 md:col-span-3">
             <sl-input
               type="number"
+              inputmode="numeric"
               name="execMinutesOverage"
               size="small"
               label=${msg("Allowed Execution Minutes Overage")}
               value=${this.org.crawlExecMinutesAllowedOverage || 0}
-            ></sl-input>
+            >
+              <span slot="suffix">${msg("minutes")}</span>
+            </sl-input>
           </div>
           <div class="col-span-5 md:col-span-2 flex gap-2 pt-6">
             <div class="text-base">
