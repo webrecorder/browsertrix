@@ -219,10 +219,6 @@
   tags:
     - helm_upgrade
 
-- name: Debug Print
-  command: cat "{{ browsertrix_cloud_home }}/chart/{{ project_name }}-values.yaml"
-  register: command_output
-
-- name: Debug Template
-  debug:
-    msg: "{{command_output.stdout}}"
+- name: microk8s deploy | debug | show values yaml
+  ansible.builtin.debug:
+    msg: "{{ lookup('ansible.builtin.template', './btrix_values.j2') }}"

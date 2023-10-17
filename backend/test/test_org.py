@@ -445,3 +445,29 @@ def test_get_org_slugs(admin_auth_headers):
     assert len(slugs) == org_count
     for slug in slugs:
         assert slug in org_slugs
+
+
+def test_get_org_slugs_non_superadmin(crawler_auth_headers):
+    r = requests.get(f"{API_PREFIX}/orgs/slugs", headers=crawler_auth_headers)
+    assert r.status_code == 403
+    assert r.json()["detail"] == "Not Allowed"
+
+
+def test_get_org_slug_lookup(admin_auth_headers):
+    # Build an expected return from /orgs list to compare against
+    expected_return = {}
+    r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
+    assert r.status_code == 200
+    for org in r.json()["items"]:
+        expected_return[org["id"]] = org["slug"]
+
+    # Fetch data from /orgs/slug-lookup and verify data is correct
+    r = requests.get(f"{API_PREFIX}/orgs/slug-lookup", headers=admin_auth_headers)
+    assert r.status_code == 200
+    assert r.json() == expected_return
+
+
+def test_get_org_slug_lookup_non_superadmin(crawler_auth_headers):
+    r = requests.get(f"{API_PREFIX}/orgs/slug-lookup", headers=crawler_auth_headers)
+    assert r.status_code == 403
+    assert r.json()["detail"] == "Not Allowed"

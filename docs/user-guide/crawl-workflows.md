@@ -22,6 +22,12 @@ If the crawl queue is filled with URLs that should not be crawled, use the _Edit
 
 Exclusions added while crawling are applied to the same exclusion table saved in the workflow's settings and will be used the next time the crawl workflow is run unless they are manually removed.
 
+### Changing the Amount of Crawler Instances
+
+Like exclusions, the [crawler instance](../workflow-setup/#crawler-instances) scale can also be adjusted while crawling. On the Watch Crawl page, press the _Edit Crawler Instances_ button, and set the desired value.
+
+Unlike exclusions, this change will not be applied to future workflow runs.
+
 ## Ending a Crawl
 
 If a crawl workflow is not crawling websites as intended it may be preferable to end crawling operations and update the crawl workflow's settings before trying again. There are two operations to end crawls, available both on the workflow's details page, or as part of the actions menu in the workflow list.

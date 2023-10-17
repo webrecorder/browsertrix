@@ -214,10 +214,11 @@ class EventWebhookOps:
                     crawl_ids=[crawl_id], coll_id=coll_id, org=org
                 )
 
-    async def create_crawl_finished_notification(self, crawl_id: str, state: str):
+    async def create_crawl_finished_notification(
+        self, crawl_id: str, oid: uuid.UUID, state: str
+    ) -> None:
         """Create webhook notification for finished crawl."""
-        crawl_res = await self.crawls.find_one({"_id": crawl_id})
-        org = await self.org_ops.get_org_by_id(crawl_res["oid"])
+        org = await self.org_ops.get_org_by_id(oid)
 
         if not org.webhookUrls or not org.webhookUrls.crawlFinished:
             return
@@ -233,10 +234,11 @@ class EventWebhookOps:
             ),
         )
 
-    async def create_upload_finished_notification(self, crawl_id: str):
+    async def create_upload_finished_notification(
+        self, crawl_id: str, oid: uuid.UUID
+    ) -> None:
         """Create webhook notification for finished upload."""
-        crawl_res = await self.crawls.find_one({"_id": crawl_id})
-        org = await self.org_ops.get_org_by_id(crawl_res["oid"])
+        org = await self.org_ops.get_org_by_id(oid)
 
         if not org.webhookUrls or not org.webhookUrls.uploadFinished:
             return
@@ -252,7 +254,7 @@ class EventWebhookOps:
 
     async def create_crawl_started_notification(
         self, crawl_id: str, oid: uuid.UUID, scheduled: bool = False
-    ):
+    ) -> None:
         """Create webhook notification for started crawl."""
         org = await self.org_ops.get_org_by_id(oid)
 
@@ -318,7 +320,7 @@ class EventWebhookOps:
         crawl_ids: List[str],
         coll_id: uuid.UUID,
         org: Organization,
-    ):
+    ) -> None:
         """Create webhook notification for item added to collection"""
         if not org.webhookUrls or not org.webhookUrls.addedToCollection:
             return
@@ -339,7 +341,7 @@ class EventWebhookOps:
         crawl_ids: List[str],
         coll_id: uuid.UUID,
         org: Organization,
-    ):
+    ) -> None:
         """Create webhook notification for item removed from collection"""
         if not org.webhookUrls or not org.webhookUrls.removedFromCollection:
             return
