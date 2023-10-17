@@ -322,6 +322,8 @@ class BaseFile(BaseModel):
     size: int
     storage: StorageRef
 
+    replicas: Optional[List[StorageRef]] = None
+
 
 # ============================================================================
 class CrawlFile(BaseFile):
@@ -680,6 +682,7 @@ class S3StorageIn(BaseModel):
     access_key: str
     secret_key: str
     endpoint_url: str
+    bucket: str
     access_endpoint_url: Optional[str]
     region: str = ""
 
@@ -691,6 +694,7 @@ class S3Storage(BaseModel):
     type: Literal["s3"] = "s3"
 
     endpoint_url: str
+    endpoint_no_bucket_url: str
     access_key: str
     secret_key: str
     access_endpoint_url: str

@@ -101,6 +101,7 @@ class StorageOps:
         """create S3Storage object"""
         endpoint_url = storage["endpoint_url"]
         bucket_name = storage.get("bucket_name")
+        endpoint_no_bucket_url = endpoint_url
         if bucket_name:
             endpoint_url += bucket_name + "/"
 
@@ -116,6 +117,7 @@ class StorageOps:
             secret_key=storage["secret_key"],
             region=storage.get("region", ""),
             endpoint_url=endpoint_url,
+            endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=access_endpoint_url,
             use_access_for_presign=use_access_for_presign,
         )
@@ -129,8 +131,18 @@ class StorageOps:
         if name in org.customStorages:
             raise HTTPException(status_code=400, detail="storage_already_exists")
 
+        bucket_name = storagein.bucket
+        endpoint_url = storagein.endpoint_url
+        endpoint_no_bucket_url = endpoint_url
+        if bucket_name:
+            endpoint_url += bucket_name + "/"
+
         storage = S3Storage(
-            **storagein.dict(),
+            access_key=storagein.access_key,
+            secret_key=storagein.secret_key,
+            region=storagein.region,
+            endpoint_url=endpoint_url,
+            endpoint_no_bucket_url=endpoint_no_bucket_url,
             access_endpoint_url=storagein.access_endpoint_url or storagein.endpoint_url,
             use_access_for_presign=True,
         )
@@ -150,6 +162,7 @@ class StorageOps:
             {
                 "TYPE": "s3",
                 "STORE_ENDPOINT_URL": storage.endpoint_url,
+                "STORE_ENDPOINT_NO_BUCKET_URL": storage.endpoint_no_bucket_url,
                 "STORE_ACCESS_KEY": storage.access_key,
                 "STORE_SECRET_KEY": storage.secret_key,
             },
