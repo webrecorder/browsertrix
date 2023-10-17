@@ -72,6 +72,7 @@ describe("browsertrix-app", () => {
           {
             id: "test_org_id",
             name: "test org",
+            slug: "test-org",
             role: 10,
             email: "test@org.org",
           },
@@ -88,7 +89,7 @@ describe("browsertrix-app", () => {
     });
     const el = (await fixture("<browsertrix-app></browsertrix-app>")) as App;
 
-    expect(el.userInfo).to.eql({
+    expect(el.appState.userInfo).to.eql({
       id: "test_id",
       email: "test-user@example.com",
       name: "Test User",
