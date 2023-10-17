@@ -9,7 +9,7 @@ import "broadcastchannel-polyfill";
 import "tailwindcss/tailwind.css";
 
 import "./utils/polyfills";
-import appState, { use } from "./utils/state";
+import appState, { use, AppStateService } from "./utils/state";
 import type { OrgTab } from "./pages/org";
 import type { NotifyEvent, NavigateEvent } from "./utils/LiteElement";
 import LiteElement, { html } from "./utils/LiteElement";
@@ -93,7 +93,7 @@ export class App extends LiteElement {
     }
     this.syncViewState();
     if (this.viewState.route === "org") {
-      this.appState.orgSlug = this.viewState.params.slug || null;
+      AppStateService.updateOrgSlug(this.viewState.params.slug || null);
     }
     if (authState) {
       this.authService.saveLogin(authState);
@@ -112,7 +112,7 @@ export class App extends LiteElement {
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.get("viewState") && this.viewState.route === "org") {
-      this.appState.orgSlug = this.viewState.params.slug || null;
+      AppStateService.updateOrgSlug(this.viewState.params.slug || null);
     }
   }
 
@@ -145,17 +145,17 @@ export class App extends LiteElement {
   private async updateUserInfo() {
     try {
       const userInfo = await this.getUserInfo();
-      this.appState.userInfo = {
+      AppStateService.updateUserInfo({
         id: userInfo.id,
         email: userInfo.email,
         name: userInfo.name,
         isVerified: userInfo.is_verified,
         isAdmin: userInfo.is_superuser,
         orgs: userInfo.orgs,
-      };
+      });
       const settings = this.getPersistedUserSettings(userInfo.id);
       if (settings) {
-        this.appState.orgSlug = settings.slug || null;
+        AppStateService.updateOrgSlug(settings.slug || null);
       }
       const orgs = userInfo.orgs;
       if (
@@ -171,7 +171,7 @@ export class App extends LiteElement {
             slug: firstOrg,
           });
         }
-        this.appState.orgSlug = firstOrg;
+        AppStateService.updateOrgSlug(firstOrg);
       }
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
@@ -844,11 +844,10 @@ export class App extends LiteElement {
   }
 
   onUserInfoChange(event: CustomEvent<Partial<CurrentUser>>) {
-    // @ts-ignore
-    this.appState.userInfo = {
+    AppStateService.updateUserInfo({
       ...this.appState.userInfo,
       ...event.detail,
-    };
+    } as CurrentUser);
   }
 
   /**
@@ -897,7 +896,7 @@ export class App extends LiteElement {
   private clearUser() {
     this.authService.logout();
     this.authService = new AuthService();
-    this.appState.reset();
+    AppStateService.reset();
   }
 
   private showDialog(content: DialogContent) {
@@ -979,7 +978,7 @@ export class App extends LiteElement {
   }
 
   private clearSelectedOrg() {
-    this.appState.orgSlug = null;
+    AppStateService.updateOrgSlug(null);
     if (this.appState.userInfo) {
       this.persistUserSettings(this.appState.userInfo.id, { slug: "" });
     }

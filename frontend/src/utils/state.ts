@@ -1,19 +1,22 @@
 /**
  * Store and access application-wide state
  */
-import { state, use } from "lit-shared-state";
+import { use, locked } from "lit-shared-state";
 
 import type { CurrentUser } from "../types/user";
 
 export { use };
+
+// Prevent state updates from any component
+const { state, unlock } = locked();
 
 // Keyed by org ID
 type SlugLookup = Record<string, string>;
 
 @state()
 class AppState {
-  orgSlug: string | null = null;
   userInfo: CurrentUser | null = null;
+  orgSlug: string | null = null;
 
   get slugLookup(): SlugLookup | null {
     if (this.userInfo) {
@@ -29,13 +32,27 @@ class AppState {
 
     return null;
   }
-
-  reset() {
-    this.orgSlug = null;
-    this.userInfo = null;
-  }
 }
 
 const appState = new AppState();
 
 export default appState;
+
+export class AppStateService {
+  static updateUserInfo = (userInfo: AppState["userInfo"]) => {
+    unlock(() => {
+      appState.userInfo = userInfo;
+    });
+  };
+  static updateOrgSlug = (orgSlug: AppState["orgSlug"]) => {
+    unlock(() => {
+      appState.orgSlug = orgSlug;
+    });
+  };
+  static reset = () => {
+    unlock(() => {
+      appState.userInfo = null;
+      appState.orgSlug = null;
+    });
+  };
+}
