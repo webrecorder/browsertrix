@@ -128,9 +128,6 @@ export class Org extends LiteElement {
   }
 
   async willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("appState")) {
-      console.log("apps tate changed", this.appState);
-    }
     if (
       (changedProperties.has("userInfo") && this.userInfo) ||
       (changedProperties.has("slug") && this.slug)
@@ -159,7 +156,7 @@ export class Org extends LiteElement {
   }
 
   private async updateOrg() {
-    if (!this.userInfo) return;
+    if (!this.userInfo || !this.orgId) return;
     try {
       this.org = await this.getOrg(this.orgId);
       this.checkStorageQuota();
@@ -586,9 +583,13 @@ export class Org extends LiteElement {
         icon: "check2-circle",
       });
 
-      this.dispatchEvent(
+      await this.dispatchEvent(
         new CustomEvent("update-user-info", { bubbles: true })
       );
+      const newSlug = e.detail.slug;
+      if (newSlug) {
+        this.navTo(`/orgs/${newSlug}${this.orgPath}`);
+      }
     } catch (e: any) {
       this.notify({
         message: e.isApiError
