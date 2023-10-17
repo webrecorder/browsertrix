@@ -447,7 +447,7 @@ export class WorkflowDetail extends LiteElement {
           label="Edit workflow settings"
           @click=${() =>
             this.navTo(
-              `/orgs/${this.workflow?.oid}/workflows/crawl/${this.workflow?.id}?edit`
+              `/orgs/${this.appState.orgSlug}/workflows/crawl/${this.workflow?.id}?edit`
             )}
         >
         </sl-icon-button>`;
@@ -653,7 +653,7 @@ export class WorkflowDetail extends LiteElement {
           <sl-menu-item
             @click=${() =>
               this.navTo(
-                `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}?edit`
+                `/orgs/${this.appState.orgSlug}/workflows/crawl/${workflow.id}?edit`
               )}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
