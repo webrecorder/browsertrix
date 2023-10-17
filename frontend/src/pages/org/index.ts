@@ -812,7 +812,7 @@ export class Org extends LiteElement {
     }
   }
 
-  checkExecutionMinutesQuota(hardCap = false) {
+  checkExecutionMinutesQuota() {
     if (
       !this.org ||
       !this.org.quotas.crawlExecMinutesQuota ||
@@ -822,56 +822,32 @@ export class Org extends LiteElement {
       return;
     }
 
-    const todaysDate = new Date().toISOString();
-    const todaysYear = todaysDate.slice(0, 4);
-    const todaysMonth = todaysDate.slice(5, 7);
-    const monthKey = `${todaysYear}-${todaysMonth}`;
-
+    const monthKey = new Date().toISOString().slice(0, 7);
     const monthlyExecutionSeconds = this.org.crawlExecSeconds[monthKey];
+    const quota = this.org.quotas.crawlExecMinutesQuota;
+    const hardCap = quota + (this.org.crawlExecMinutesAllowedOverage || 0);
+
     if (monthlyExecutionSeconds) {
       const monthlyExecutionMinutes = Math.floor(monthlyExecutionSeconds / 60);
-      if (monthlyExecutionMinutes >= this.org.quotas.crawlExecMinutesQuota) {
+
+      if (monthlyExecutionMinutes >= quota) {
         this.orgExecutionMinutesQuotaReached = true;
       } else {
         this.orgExecutionMinutesQuotaReached = false;
       }
-    } else {
-      this.orgExecutionMinutesQuotaReached = false;
-    }
 
-    if (this.orgExecutionMinutesQuotaReached) {
-      this.showExecutionMinutesQuotaAlert = true;
-    }
-  }
-
-  checkExecutionMinutesHardCap() {
-    if (
-      !this.org ||
-      !this.org.quotas.crawlExecMinutesQuota ||
-      this.org.quotas.crawlExecMinutesQuota == 0
-    ) {
-      this.orgExecutionMinutesQuotaReached = false;
-      return;
-    }
-
-    let quota = this.org.quotas.crawlExecMinutesQuota;
-    if (this.org.quotas.crawlExecExtraMinutesHardCap) {
-      quota = quota + this.org.quotas.crawlExecExtraMinutesHardCap;
-    }
-
-    const todaysDate = new Date().toISOString();
-    const monthKey = todaysDate.slice(0, 7);
-
-    const monthlyExecutionSeconds = this.org.crawlExecSeconds[monthKey];
-    if (monthlyExecutionSeconds) {
-      const monthlyExecutionMinutes = Math.floor(monthlyExecutionSeconds / 60);
-      if (monthlyExecutionMinutes >= quota) {
+      if (monthlyExecutionMinutes >= hardCap) {
         this.orgExecutionMinutesHardCapReached = true;
       } else {
         this.orgExecutionMinutesHardCapReached = false;
       }
     } else {
+      this.orgExecutionMinutesQuotaReached = false;
       this.orgExecutionMinutesHardCapReached = false;
+    }
+
+    if (this.orgExecutionMinutesQuotaReached) {
+      this.showExecutionMinutesQuotaAlert = true;
     }
   }
 }
