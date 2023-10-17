@@ -408,13 +408,13 @@ class BtrixOperator(K8sAPI):
                 )
                 return self._empty_response(status)
 
+        # Gracefully stop crawl when execution minutes hard cap is reached to
+        # ensure that the user still gets their data from the crawl
         _, exec_mins_hard_cap_reached = await self.org_ops.execution_mins_quota_reached(
             crawl.oid, status.runningExecTime
         )
         if exec_mins_hard_cap_reached:
-            await self.cancel_crawl(
-                crawl.id, uuid.UUID(cid), uuid.UUID(oid), status, data.children[POD]
-            )
+            crawl.stopping = True
 
         # Reset runningExecTime to recalculate below for next sync
         status.runningExecTime = 0
