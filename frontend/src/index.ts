@@ -43,10 +43,6 @@ type APIUser = {
   orgs: UserOrg[];
 };
 
-type UserSettings = {
-  slug: string;
-};
-
 /**
  * @event navigate
  * @event notify
@@ -58,8 +54,6 @@ type UserSettings = {
  */
 @localized()
 export class App extends LiteElement {
-  static storageKey = "btrix.app";
-
   @property({ type: String })
   version?: string;
 
@@ -153,10 +147,6 @@ export class App extends LiteElement {
         isAdmin: userInfo.is_superuser,
         orgs: userInfo.orgs,
       });
-      const settings = this.getPersistedUserSettings(userInfo.id);
-      if (settings) {
-        AppStateService.updateOrgSlug(settings.slug || null);
-      }
       const orgs = userInfo.orgs;
       if (
         orgs.length &&
@@ -164,13 +154,6 @@ export class App extends LiteElement {
         !this.appState.orgSlug
       ) {
         const firstOrg = orgs[0].slug;
-        if (orgs.length === 1) {
-          // Persist selected org ID since there's no
-          // user selection event to persist
-          this.persistUserSettings(userInfo.id, {
-            slug: firstOrg,
-          });
-        }
         AppStateService.updateOrgSlug(firstOrg);
       }
     } catch (err: any) {
@@ -392,11 +375,6 @@ export class App extends LiteElement {
             const { value } = e.detail.item;
             if (value) {
               this.navigate(`/orgs/${value}`);
-              if (this.appState.userInfo) {
-                this.persistUserSettings(this.appState.userInfo.id, {
-                  slug: value,
-                });
-              }
             } else {
               if (this.appState.userInfo) {
                 this.clearSelectedOrg();
@@ -785,9 +763,6 @@ export class App extends LiteElement {
     const detail = event.detail || {};
     const redirect = detail.redirect !== false;
 
-    if (this.appState.userInfo) {
-      this.unpersistUserSettings(this.appState.userInfo.id);
-    }
     this.clearUser();
 
     if (redirect) {
@@ -958,30 +933,8 @@ export class App extends LiteElement {
     );
   }
 
-  private getPersistedUserSettings(userId: string): UserSettings | null {
-    const value = window.localStorage.getItem(`${App.storageKey}.${userId}`);
-    if (value) {
-      return JSON.parse(value);
-    }
-    return null;
-  }
-
-  private persistUserSettings(userId: string, settings: UserSettings) {
-    window.localStorage.setItem(
-      `${App.storageKey}.${userId}`,
-      JSON.stringify(settings)
-    );
-  }
-
-  private unpersistUserSettings(userId: string) {
-    window.localStorage.removeItem(`${App.storageKey}.${userId}`);
-  }
-
   private clearSelectedOrg() {
     AppStateService.updateOrgSlug(null);
-    if (this.appState.userInfo) {
-      this.persistUserSettings(this.appState.userInfo.id, { slug: "" });
-    }
   }
 }
 

@@ -1,9 +1,10 @@
 /**
  * Store and access application-wide state
  */
-import { use, locked } from "lit-shared-state";
+import { use, locked, options } from "lit-shared-state";
 
 import type { CurrentUser } from "../types/user";
+import { persist } from "./persist";
 
 export { use };
 
@@ -16,8 +17,12 @@ type SlugLookup = Record<string, string>;
 @state()
 class AppState {
   userInfo: CurrentUser | null = null;
+
+  @options(persist(window.localStorage))
   orgSlug: string | null = null;
 
+  // Slug lookup for non-superadmins
+  // Superadmins have access to the `GET orgs/slug-lookup` endpoint
   get slugLookup(): SlugLookup | null {
     if (this.userInfo) {
       const slugLookup = this.userInfo.orgs.reduce(
