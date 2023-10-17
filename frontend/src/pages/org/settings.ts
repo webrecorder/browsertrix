@@ -174,6 +174,27 @@ export class OrgSettings extends LiteElement {
       <form @submit=${this.onOrgInfoSubmit}>
         <div class="grid grid-cols-5 gap-x-4 p-4">
           <div class="col-span-5 md:col-span-3">
+            <span class="text-xs">${msg("Org ID")}</span>
+            <div
+              class="flex items-center justify-between border rounded text-neutral-500 mt-1 mb-4 px-2"
+            >
+              ${this.org.id}
+              <btrix-copy-button
+                .getValue=${() => this.org.id}
+              ></btrix-copy-button>
+            </div>
+          </div>
+          <div class="col-span-5 md:col-span-2 flex gap-2 pt-6">
+            <div class="text-base">
+              <sl-icon name="info-circle"></sl-icon>
+            </div>
+            <div class="mt-0.5 text-xs text-neutral-400">
+              ${msg(
+                "Use this ID to reference this org in the Browsertrix API."
+              )}
+            </div>
+          </div>
+          <div class="col-span-5 md:col-span-3">
             <sl-input
               class="with-max-help-text"
               name="orgName"
