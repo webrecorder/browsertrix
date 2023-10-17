@@ -219,6 +219,10 @@ class CrawlStatus(BaseModel):
     execTime: int = 0
     canceled: bool = False
 
+    # Track estimated exec time as crawlers are running to cancel
+    # the crawl quickly if execution minutes hard cap is reached
+    runningExecTime: int = 0
+
     # don't include in status, use by metacontroller
     resync_after: Optional[int] = None
 
@@ -313,7 +317,7 @@ class BtrixOperator(K8sAPI):
 
         return {"status": {}, "children": children}
 
-    # pylint: disable=too-many-return-statements
+    # pylint: disable=too-many-return-statements, invalid-name
     async def sync_crawls(self, data: MCSyncData):
         """sync crawls"""
 
@@ -404,14 +408,16 @@ class BtrixOperator(K8sAPI):
                 )
                 return self._empty_response(status)
 
-        # Cancel crawl if execution minutes hard cap is reached while running
         _, exec_mins_hard_cap_reached = await self.org_ops.execution_mins_quota_reached(
-            crawl.oid
+            crawl.oid, status.runningExecTime
         )
         if exec_mins_hard_cap_reached:
             await self.cancel_crawl(
                 crawl.id, uuid.UUID(cid), uuid.UUID(oid), status, data.children[POD]
             )
+
+        # Reset runningExecTime to recalculate below for next sync
+        status.runningExecTime = 0
 
         if status.state in ("starting", "waiting_org_limit"):
             if not await self.can_start_new(crawl, data, status):
@@ -955,6 +961,9 @@ class BtrixOperator(K8sAPI):
                         name, oid, role, status, cstatus["state"].get("terminated")
                     )
 
+                    if role == "crawler":
+                        self.increment_running_exec_time(cstatus["state"], status)
+
                 if role == "crawler":
                     crawler_running = crawler_running or running
                     done = done and phase == "Succeeded"
@@ -967,6 +976,14 @@ class BtrixOperator(K8sAPI):
             print(exc)
 
         return crawler_running, redis_running, done
+
+    def increment_running_exec_time(self, container_state, status):
+        """Increment runningExecTime in crawl status for running crawler pod"""
+        running = container_state.get("running")
+        if running:
+            start_time = from_k8s_date(running.get("startedAt"))
+            running_exec_time = int((datetime.now() - start_time).total_seconds())
+            status.runningExecTime += running_exec_time
 
     async def handle_terminated_pod(self, name, oid, role, status, terminated):
         """handle terminated pod state"""

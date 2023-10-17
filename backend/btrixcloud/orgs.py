@@ -326,8 +326,20 @@ class OrgOps:
 
         return False
 
-    async def execution_mins_quota_reached(self, oid: uuid.UUID) -> Tuple[bool, bool]:
-        """Return boolean indicating if execution minutes quota is met or exceeded."""
+    async def get_this_month_crawl_exec_seconds(self, oid: uuid.UUID) -> int:
+        """Return crawlExecSeconds for current month"""
+        org = await self.orgs.find_one({"_id": oid})
+        org = Organization.from_dict(org)
+        yymm = datetime.utcnow().strftime("%Y-%m")
+        try:
+            return org.crawlExecSeconds[yymm]
+        except KeyError:
+            return 0
+
+    async def execution_mins_quota_reached(
+        self, oid: uuid.UUID, running_exec_seconds: int = 0
+    ) -> Tuple[bool, bool]:
+        """Return bools for if execution minutes quota and hard cap are reached."""
         quota = await self.get_org_execution_mins_quota(oid)
         if not quota:
             return False, False
@@ -338,14 +350,8 @@ class OrgOps:
         hard_cap_additional_mins = await self.get_org_execution_mins_hard_cap(oid)
         hard_cap_quota = quota + hard_cap_additional_mins
 
-        org = await self.orgs.find_one({"_id": oid})
-        org = Organization.from_dict(org)
-
-        yymm = datetime.utcnow().strftime("%Y-%m")
-        try:
-            monthly_exec_seconds = org.crawlExecSeconds[yymm]
-        except KeyError:
-            monthly_exec_seconds = 0
+        monthly_exec_seconds = await self.get_this_month_crawl_exec_seconds(oid)
+        monthly_exec_seconds = monthly_exec_seconds + running_exec_seconds
         monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
 
         if monthly_exec_minutes >= quota:
