@@ -106,7 +106,7 @@ class InviteOps:
 
     async def accept_user_invite(self, user, invite_token: str, user_manager):
         """remove invite from user, if valid token, throw if not"""
-        invite = user.invites.pop(invite_token)
+        invite = user.invites.pop(invite_token, "")
         if not invite:
             raise HTTPException(status_code=400, detail="Invalid Invite Code")
 
