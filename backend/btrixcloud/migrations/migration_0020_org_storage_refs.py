@@ -20,7 +20,7 @@ class Migration(BaseMigration):
         - If default storage, convert to string
         - If custom storage, add storage, convert to new name
         """
-        # pylint: disable=duplicate-code
+        # pylint: disable=duplicate-code, broad-exception-caught
         mdb_orgs = self.mdb["organizations"]
         async for org in mdb_orgs.find({"storage.custom": None}):
             oid = org["_id"]
@@ -39,6 +39,22 @@ class Migration(BaseMigration):
 
             try:
                 await mdb_orgs.find_one_and_update({"_id": oid}, {"$set": update_dict})
-            # pylint: disable=broad-exception-caught
             except Exception as err:
                 print(f"Error updating storage for {oid}: {err}", flush=True)
+
+        # CrawlFile Migrations
+        mdb_crawls = self.mdb["crawls"]
+        async for crawl in mdb_crawls.find({"files.def_storage_name": {"$ne": None}}):
+            crawl_id = crawl["_id"]
+            for file_ in crawl["files"]:
+                storage_name = file_.pop("def_storage_name")
+                file_["storage"] = {"name": storage_name, "custom": False}
+            try:
+                await mdb_crawls.find_one_and_update(
+                    {"_id": crawl_id}, {"$set": {"files": crawl["files"]}}
+                )
+            except Exception as err:
+                print(
+                    f"Error updating crawl file storage for crawl {crawl_id}: {err}",
+                    flush=True,
+                )
