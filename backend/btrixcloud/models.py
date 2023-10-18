@@ -103,6 +103,7 @@ class UserOrgInfoOut(BaseModel):
     id: UUID4
 
     name: str
+    slug: str
     default: bool
     role: UserRole
 
