@@ -123,7 +123,7 @@ export class OrgSettings extends LiteElement {
             () => html`
               <h3>${msg("Active Members")}</h3>
               <sl-button
-                href=${`/orgs/${this.orgId}/settings/members?invite`}
+                href=${`${this.orgBasePath}/settings/members?invite`}
                 variant="primary"
                 size="small"
                 @click=${this.navLink}
@@ -157,7 +157,7 @@ export class OrgSettings extends LiteElement {
     return html`
       <a
         slot="nav"
-        href=${`/orgs/${this.orgId}/${path}`}
+        href=${`${this.orgBasePath}/${path}`}
         class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
           ? "text-blue-600 bg-blue-50 shadow-sm"
           : "text-neutral-600 hover:bg-neutral-50"}"
@@ -230,6 +230,27 @@ export class OrgSettings extends LiteElement {
             <div class="mt-0.5 text-xs text-neutral-500">
               ${msg(
                 "Customize your organization's web address for accessing Browsertrix Cloud."
+              )}
+            </div>
+          </div>
+          <div class="col-span-5 md:col-span-3 mt-6">
+            <span class="text-xs">${msg("Org ID")}</span>
+            <div
+              class="flex items-center justify-between border rounded text-neutral-500 mt-1 mb-4 px-2"
+            >
+              ${this.org.id}
+              <btrix-copy-button
+                .getValue=${() => this.org.id}
+              ></btrix-copy-button>
+            </div>
+          </div>
+          <div class="col-span-5 md:col-span-2 flex gap-2 pt-6 mt-6">
+            <div class="text-base">
+              <sl-icon name="info-circle"></sl-icon>
+            </div>
+            <div class="mt-0.5 text-xs text-neutral-400">
+              ${msg(
+                "Use this ID to reference this org in the Browsertrix API."
               )}
             </div>
           </div>
@@ -363,7 +384,7 @@ export class OrgSettings extends LiteElement {
   }
 
   private hideInviteDialog() {
-    this.navTo(`/orgs/${this.orgId}/settings/members`);
+    this.navTo(`${this.orgBasePath}/settings/members`);
   }
 
   private renderInviteForm() {

@@ -46,12 +46,12 @@ export class Verify extends LiteElement {
         return this.onVerificationComplete(data);
       case 400:
         const { detail } = data;
-        if (detail === "VERIFY_USER_BAD_TOKEN") {
+        if (detail === "verify_user_bad_token") {
           this.serverError = msg("This verification email is not valid.");
           break;
         }
 
-        if (detail === "VERIFY_USER_ALREADY_VERIFIED") {
+        if (detail === "verify_user_already_verified") {
           return this.onVerificationComplete(data);
         }
       default:

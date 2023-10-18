@@ -215,7 +215,7 @@ export class SignUpForm extends LiteElement {
       case 201:
         const data = await resp.json();
 
-        if (data.is_active) {
+        if (data.id) {
           shouldLogIn = true;
         }
 
@@ -223,9 +223,9 @@ export class SignUpForm extends LiteElement {
       case 400:
       case 422:
         const { detail } = await resp.json();
-        if (detail === "REGISTER_USER_ALREADY_EXISTS") {
+        if (detail === "user_already_exists") {
           shouldLogIn = true;
-        } else if (detail.code && detail.code === "REGISTER_INVALID_PASSWORD") {
+        } else if (detail.code && detail.code === "invalid_password") {
           this.serverError = msg(
             "Invalid password. Must be between 8 and 64 characters"
           );

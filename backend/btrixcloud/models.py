@@ -8,7 +8,8 @@ import os
 
 from typing import Optional, List, Dict, Union, Literal, Any
 from pydantic import BaseModel, UUID4, conint, Field, HttpUrl, AnyHttpUrl, EmailStr
-from fastapi_users import models as fastapi_users_models
+
+# from fastapi_users import models as fastapi_users_models
 
 from .db import BaseMongoModel
 
@@ -18,17 +19,107 @@ MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
 
 # pylint: disable=invalid-name, too-many-lines
 # ============================================================================
+class UserRole(IntEnum):
+    """User role"""
+
+    VIEWER = 10
+    CRAWLER = 20
+    OWNER = 40
+    SUPERADMIN = 100
+
+
+# ============================================================================
+
+### INVITES ###
+
+
+# ============================================================================
+class InvitePending(BaseMongoModel):
+    """An invite for a new user, with an email and invite token as id"""
+
+    created: datetime
+    inviterEmail: str
+    oid: Optional[UUID4]
+    role: Optional[UserRole] = UserRole.VIEWER
+    email: Optional[str]
+
+
+# ============================================================================
+class InviteRequest(BaseModel):
+    """Request to invite another user"""
+
+    email: str
+
+
+# ============================================================================
+class InviteToOrgRequest(InviteRequest):
+    """Request to invite another user to an organization"""
+
+    role: UserRole
+
+
+# ============================================================================
+class AddToOrgRequest(InviteRequest):
+    """Request to add a new user to an organization directly"""
+
+    role: UserRole
+    password: str
+    name: str
+
+
+# ============================================================================
 
 ### MAIN USER MODEL ###
 
 
 # ============================================================================
-class User(fastapi_users_models.BaseUser):
+class User(BaseModel):
     """
-    Base User Model
+    User Model
     """
 
+    id: UUID4
+
     name: Optional[str] = ""
+    email: EmailStr
+    is_superuser: bool = False
+    is_verified: bool = False
+
+    invites: Dict[str, InvitePending] = {}
+    hashed_password: str
+
+    def dict(self, *a, **kw):
+        """ensure invites / hashed_password never serialize, just in case"""
+        exclude = kw.get("exclude") or set()
+        exclude.add("invites")
+        exclude.add("hashed_password")
+        return super().dict(*a, **kw)
+
+
+# ============================================================================
+class UserOrgInfoOut(BaseModel):
+    """org per user"""
+
+    id: UUID4
+
+    name: str
+    slug: str
+    default: bool
+    role: UserRole
+
+
+# ============================================================================
+class UserOut(BaseModel):
+    """Output User model"""
+
+    id: UUID4
+
+    name: Optional[str] = ""
+    email: EmailStr
+    is_superuser: bool = False
+    is_verified: bool = False
+
+    orgs: List[UserOrgInfoOut]
 
 
 # ============================================================================
@@ -63,14 +154,14 @@ class Seed(BaseModel):
     """Crawl seed"""
 
     url: HttpUrl
-    scopeType: Optional[ScopeType]
+    scopeType: Optional[ScopeType] = None
 
-    include: Union[str, List[str], None]
-    exclude: Union[str, List[str], None]
-    sitemap: Union[bool, HttpUrl, None]
-    allowHash: Optional[bool]
-    depth: Optional[int]
-    extraHops: Optional[int]
+    include: Union[str, List[str], None] = None
+    exclude: Union[str, List[str], None] = None
+    sitemap: Union[bool, HttpUrl, None] = None
+    allowHash: Optional[bool] = None
+    depth: Optional[int] = None
+    extraHops: Optional[int] = None
 
 
 # ============================================================================
@@ -95,17 +186,17 @@ class RawCrawlConfig(BaseModel):
     pageLoadTimeout: Optional[int]
     pageExtraDelay: Optional[int] = 0
 
-    workers: Optional[int]
+    workers: Optional[int] = None
 
-    headless: Optional[bool]
+    headless: Optional[bool] = None
 
-    generateWACZ: Optional[bool]
-    combineWARC: Optional[bool]
+    generateWACZ: Optional[bool] = None
+    combineWARC: Optional[bool] = None
 
     useSitemap: Optional[bool] = False
     failOnFailedSeed: Optional[bool] = False
 
-    logging: Optional[str]
+    logging: Optional[str] = None
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
 
 
@@ -133,7 +224,7 @@ class CrawlConfigIn(BaseModel):
     maxCrawlSize: int = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1  # type: ignore
 
-    crawlFilenameTemplate: Optional[str]
+    crawlFilenameTemplate: Optional[str] = None
 
 
 # ============================================================================
@@ -430,7 +521,7 @@ class CrawlScale(BaseModel):
 class Crawl(BaseCrawl, CrawlConfigCore):
     """Store State of a Crawl (Finished or Running)"""
 
-    type: str = Field("crawl", const=True)
+    type: Literal["crawl"] = "crawl"
 
     cid: UUID4
 
@@ -470,7 +561,7 @@ class CrawlCompleteIn(BaseModel):
 class UploadedCrawl(BaseCrawl):
     """Store State of a Crawl Upload"""
 
-    type: str = Field("upload", const=True)
+    type: Literal["upload"] = "upload"
 
     tags: Optional[List[str]] = []
 
@@ -536,55 +627,6 @@ class AddRemoveCrawlList(BaseModel):
     """Collections to add or remove from collection"""
 
     crawlIds: Optional[List[str]] = []
-
-
-# ============================================================================
-
-### INVITES ###
-
-
-# ============================================================================
-class UserRole(IntEnum):
-    """User role"""
-
-    VIEWER = 10
-    CRAWLER = 20
-    OWNER = 40
-    SUPERADMIN = 100
-
-
-# ============================================================================
-class InvitePending(BaseMongoModel):
-    """An invite for a new user, with an email and invite token as id"""
-
-    created: datetime
-    inviterEmail: str
-    oid: Optional[UUID4]
-    role: Optional[UserRole] = UserRole.VIEWER
-    email: Optional[str]
-
-
-# ============================================================================
-class InviteRequest(BaseModel):
-    """Request to invite another user"""
-
-    email: str
-
-
-# ============================================================================
-class InviteToOrgRequest(InviteRequest):
-    """Request to invite another user to an organization"""
-
-    role: UserRole
-
-
-# ============================================================================
-class AddToOrgRequest(InviteRequest):
-    """Request to add a new user to an organization directly"""
-
-    role: UserRole
-    password: str
-    name: str
 
 
 # ============================================================================
@@ -659,6 +701,27 @@ class OrgWebhookUrls(BaseModel):
 
 
 # ============================================================================
+class OrgOut(BaseMongoModel):
+    """Organization API output model"""
+
+    id: UUID4
+    name: str
+    slug: str
+    users: Optional[Dict[str, Any]]
+    usage: Optional[Dict[str, int]]
+    crawlExecSeconds: Optional[Dict[str, int]]
+    default: bool = False
+    bytesStored: int
+    bytesStoredCrawls: int
+    bytesStoredUploads: int
+    bytesStoredProfiles: int
+    origin: Optional[AnyHttpUrl] = None
+
+    webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
+    quotas: Optional[OrgQuotas] = OrgQuotas()
+
+
+# ============================================================================
 class Organization(BaseMongoModel):
     """Organization Base Model"""
 
@@ -710,7 +773,7 @@ class Organization(BaseMongoModel):
 
         return res >= value
 
-    async def serialize_for_user(self, user: User, user_manager):
+    async def serialize_for_user(self, user: User, user_manager) -> OrgOut:
         """Serialize result based on current user access"""
 
         exclude = {"storage"}
@@ -729,12 +792,14 @@ class Organization(BaseMongoModel):
         )
 
         if self.is_owner(user):
-            keys = list(result["users"].keys())
+            result["users"] = {}
+
+            keys = list(self.users.keys())
             user_list = await user_manager.get_user_names_by_ids(keys)
 
             for org_user in user_list:
                 id_ = str(org_user["id"])
-                role = result["users"].get(id_)
+                role = self.users.get(id_)
                 if not role:
                     continue
 
@@ -745,27 +810,6 @@ class Organization(BaseMongoModel):
                 }
 
         return OrgOut.from_dict(result)
-
-
-# ============================================================================
-class OrgOut(BaseMongoModel):
-    """Organization API output model"""
-
-    id: UUID4
-    name: str
-    slug: str
-    users: Optional[Dict[str, Any]]
-    usage: Optional[Dict[str, int]]
-    crawlExecSeconds: Optional[Dict[str, int]]
-    default: bool = False
-    bytesStored: int
-    bytesStoredCrawls: int
-    bytesStoredUploads: int
-    bytesStoredProfiles: int
-    origin: Optional[AnyHttpUrl]
-
-    webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
-    quotas: Optional[OrgQuotas] = OrgQuotas()
 
 
 # ============================================================================
@@ -888,28 +932,13 @@ class ProfileUpdate(BaseModel):
 
 
 # ============================================================================
-# use custom model as model.BaseUserCreate includes is_* field
-class UserCreateIn(fastapi_users_models.CreateUpdateDictModel):
+class UserCreateIn(BaseModel):
     """
     User Creation Model exposed to API
     """
 
     email: EmailStr
     password: str
-
-    name: Optional[str] = ""
-
-    inviteToken: Optional[UUID4]
-
-    newOrg: bool
-    newOrgName: Optional[str] = ""
-
-
-# ============================================================================
-class UserCreate(fastapi_users_models.BaseUserCreate):
-    """
-    User Creation Model
-    """
 
     name: Optional[str] = ""
 
@@ -920,22 +949,34 @@ class UserCreate(fastapi_users_models.BaseUserCreate):
 
 
 # ============================================================================
-class UserUpdate(User, fastapi_users_models.CreateUpdateDictModel):
+class UserCreate(UserCreateIn):
     """
-    User Update Model
+    User Creation Model
     """
 
-    password: Optional[str]
-    email: EmailStr
+    is_superuser: Optional[bool] = False
+    is_verified: Optional[bool] = False
 
 
 # ============================================================================
-class UserDB(User, fastapi_users_models.BaseUserDB):
+class UserUpdateEmailName(BaseModel):
     """
-    User in DB Model
+    Update email and/or name
     """
 
-    invites: Dict[str, InvitePending] = {}
+    email: Optional[EmailStr] = None
+    name: Optional[str] = None
+
+
+# ============================================================================
+class UserUpdatePassword(BaseModel):
+    """
+    Update password, requires current password to reset
+    """
+
+    email: EmailStr
+    password: str
+    newPassword: str
 
 
 # ============================================================================
@@ -977,14 +1018,18 @@ class BaseCollectionItemBody(WebhookNotificationBody):
 class CollectionItemAddedBody(BaseCollectionItemBody):
     """Webhook notification POST body for collection additions"""
 
-    event: str = Field(WebhookEventType.ADDED_TO_COLLECTION, const=True)
+    event: Literal[
+        WebhookEventType.ADDED_TO_COLLECTION
+    ] = WebhookEventType.ADDED_TO_COLLECTION
 
 
 # ============================================================================
 class CollectionItemRemovedBody(BaseCollectionItemBody):
     """Webhook notification POST body for collection removals"""
 
-    event: str = Field(WebhookEventType.REMOVED_FROM_COLLECTION, const=True)
+    event: Literal[
+        WebhookEventType.REMOVED_FROM_COLLECTION
+    ] = WebhookEventType.REMOVED_FROM_COLLECTION
 
 
 # ============================================================================
@@ -999,14 +1044,14 @@ class CrawlStartedBody(BaseArchivedItemBody):
     """Webhook notification POST body for when crawl starts"""
 
     scheduled: bool = False
-    event: str = Field(WebhookEventType.CRAWL_STARTED, const=True)
+    event: Literal[WebhookEventType.CRAWL_STARTED] = WebhookEventType.CRAWL_STARTED
 
 
 # ============================================================================
 class CrawlFinishedBody(BaseArchivedItemBody):
     """Webhook notification POST body for when crawl finishes"""
 
-    event: str = Field(WebhookEventType.CRAWL_FINISHED, const=True)
+    event: Literal[WebhookEventType.CRAWL_FINISHED] = WebhookEventType.CRAWL_FINISHED
     state: str
 
 
@@ -1014,7 +1059,7 @@ class CrawlFinishedBody(BaseArchivedItemBody):
 class UploadFinishedBody(BaseArchivedItemBody):
     """Webhook notification POST body for when upload finishes"""
 
-    event: str = Field(WebhookEventType.UPLOAD_FINISHED, const=True)
+    event: Literal[WebhookEventType.UPLOAD_FINISHED] = WebhookEventType.UPLOAD_FINISHED
     state: str
 
 
