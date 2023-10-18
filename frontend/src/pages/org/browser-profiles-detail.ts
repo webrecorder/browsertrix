@@ -66,7 +66,7 @@ export class BrowserProfilesDetail extends LiteElement {
     return html`<div class="mb-7">
         <a
           class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
-          href=${`/orgs/${this.orgId}/browser-profiles`}
+          href=${`${this.orgBasePath}/browser-profiles`}
           @click=${this.navLink}
         >
           <sl-icon
@@ -428,7 +428,7 @@ export class BrowserProfilesDetail extends LiteElement {
       });
 
       this.navTo(
-        `/orgs/${this.orgId}/browser-profiles/profile/browser/${
+        `${this.orgBasePath}/browser-profiles/profile/browser/${
           data.browserid
         }?name=${window.encodeURIComponent(
           this.profile.name
@@ -474,7 +474,7 @@ export class BrowserProfilesDetail extends LiteElement {
           duration: 15000,
         });
       } else {
-        this.navTo(`/orgs/${this.orgId}/browser-profiles`);
+        this.navTo(`${this.orgBasePath}/browser-profiles`);
 
         this.notify({
           message: msg(html`Deleted <strong>${profileName}</strong>.`),

@@ -3,11 +3,13 @@ import { render } from "lit";
 import { property, state, query } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized } from "@lit/localize";
+import { ifDefined } from "lit/directives/if-defined.js";
 import type { SlDialog } from "@shoelace-style/shoelace";
 import "broadcastchannel-polyfill";
 import "tailwindcss/tailwind.css";
 
 import "./utils/polyfills";
+import appState, { use, AppStateService } from "./utils/state";
 import type { OrgTab } from "./pages/org";
 import type { NotifyEvent, NavigateEvent } from "./utils/LiteElement";
 import LiteElement, { html } from "./utils/LiteElement";
@@ -17,7 +19,6 @@ import type { LoggedInEvent, NeedLoginEvent } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser, UserOrg } from "./types/user";
 import type { AuthStorageEventData } from "./utils/AuthService";
-import type { OrgData } from "./utils/orgs";
 import theme from "./theme";
 import { ROUTES } from "./routes";
 import "./shoelace";
@@ -42,10 +43,6 @@ type APIUser = {
   orgs: UserOrg[];
 };
 
-type UserSettings = {
-  orgId: string;
-};
-
 /**
  * @event navigate
  * @event notify
@@ -57,16 +54,14 @@ type UserSettings = {
  */
 @localized()
 export class App extends LiteElement {
-  static storageKey = "btrix.app";
-
   @property({ type: String })
   version?: string;
 
   private router: APIRouter = new APIRouter(ROUTES);
   authService: AuthService = new AuthService();
 
-  @state()
-  userInfo?: CurrentUser;
+  @use()
+  appState = appState;
 
   @state()
   private viewState!: ViewState;
@@ -83,14 +78,6 @@ export class App extends LiteElement {
   @state()
   private isRegistrationEnabled?: boolean;
 
-  @state()
-  private orgs?: OrgData[];
-
-  // Store selected org ID for when navigating from
-  // pages without associated org (e.g. user account)
-  @state()
-  private selectedOrgId?: string;
-
   async connectedCallback() {
     let authState: AuthState = null;
     try {
@@ -100,7 +87,7 @@ export class App extends LiteElement {
     }
     this.syncViewState();
     if (this.viewState.route === "org") {
-      this.selectedOrgId = this.viewState.params.orgId;
+      AppStateService.updateOrgSlug(this.viewState.params.slug || null);
     }
     if (authState) {
       this.authService.saveLogin(authState);
@@ -119,7 +106,7 @@ export class App extends LiteElement {
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.get("viewState") && this.viewState.route === "org") {
-      this.selectedOrgId = this.viewState.params.orgId;
+      AppStateService.updateOrgSlug(this.viewState.params.slug || null);
     }
   }
 
@@ -152,30 +139,22 @@ export class App extends LiteElement {
   private async updateUserInfo() {
     try {
       const userInfo = await this.getUserInfo();
-      this.userInfo = {
+      AppStateService.updateUserInfo({
         id: userInfo.id,
         email: userInfo.email,
         name: userInfo.name,
         isVerified: userInfo.is_verified,
         isAdmin: userInfo.is_superuser,
         orgs: userInfo.orgs,
-      };
-      const settings = this.getPersistedUserSettings(userInfo.id);
-      if (settings) {
-        this.selectedOrgId = settings.orgId;
-      }
+      });
       const orgs = userInfo.orgs;
-      this.orgs = orgs;
-      if (orgs.length && !this.userInfo!.isAdmin && !this.selectedOrgId) {
-        const firstOrg = orgs[0].id;
-        if (orgs.length === 1) {
-          // Persist selected org ID since there's no
-          // user selection event to persist
-          this.persistUserSettings(userInfo.id, {
-            orgId: firstOrg,
-          });
-        }
-        this.selectedOrgId = firstOrg;
+      if (
+        orgs.length &&
+        !this.appState.userInfo!.isAdmin &&
+        !this.appState.orgSlug
+      ) {
+        const firstOrg = orgs[0].slug;
+        AppStateService.updateOrgSlug(firstOrg);
       }
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
@@ -263,10 +242,10 @@ export class App extends LiteElement {
   }
 
   private renderNavBar() {
-    const isAdmin = this.userInfo?.isAdmin;
+    const isAdmin = this.appState.userInfo?.isAdmin;
     let homeHref = "/";
-    if (!isAdmin && this.selectedOrgId) {
-      homeHref = `/orgs/${this.selectedOrgId}`;
+    if (!isAdmin && this.appState.orgSlug) {
+      homeHref = `/orgs/${this.appState.orgSlug}`;
     }
 
     return html`
@@ -334,7 +313,7 @@ export class App extends LiteElement {
                         <sl-icon slot="prefix" name="gear"></sl-icon>
                         ${msg("Account Settings")}
                       </sl-menu-item>
-                      ${this.userInfo?.isAdmin
+                      ${this.appState.userInfo?.isAdmin
                         ? html` <sl-menu-item
                             @click=${() => this.navigate(ROUTES.usersInvite)}
                           >
@@ -369,15 +348,16 @@ export class App extends LiteElement {
   }
 
   private renderOrgs() {
-    if (!this.orgs || this.orgs.length < 2 || !this.userInfo) return;
+    const orgs = this.appState.userInfo?.orgs;
+    if (!orgs || orgs.length < 2 || !this.appState.userInfo) return;
 
-    const selectedOption = this.selectedOrgId
-      ? this.orgs.find(({ id }) => id === this.selectedOrgId)
-      : { id: "", name: msg("All Organizations") };
+    const selectedOption = this.appState.orgSlug
+      ? orgs.find(({ slug }) => slug === this.appState.orgSlug)
+      : { slug: "", name: msg("All Organizations") };
     if (!selectedOption) {
       console.debug(
-        `Could't find organization with ID ${this.selectedOrgId}`,
-        this.orgs
+        `Could't find organization with slug ${this.appState.orgSlug}`,
+        orgs
       );
       return;
     }
@@ -395,11 +375,8 @@ export class App extends LiteElement {
             const { value } = e.detail.item;
             if (value) {
               this.navigate(`/orgs/${value}`);
-              if (this.userInfo) {
-                this.persistUserSettings(this.userInfo.id, { orgId: value });
-              }
             } else {
-              if (this.userInfo) {
+              if (this.appState.userInfo) {
                 this.clearSelectedOrg();
               }
               this.navigate(`/`);
@@ -407,23 +384,23 @@ export class App extends LiteElement {
           }}
         >
           ${when(
-            this.userInfo.isAdmin,
+            this.appState.userInfo.isAdmin,
             () => html`
               <sl-menu-item
                 type="checkbox"
                 value=""
-                ?checked=${!selectedOption.id}
+                ?checked=${!selectedOption.slug}
                 >${msg("All Organizations")}</sl-menu-item
               >
               <sl-divider></sl-divider>
             `
           )}
-          ${this.orgs.map(
+          ${this.appState.userInfo?.orgs.map(
             (org) => html`
               <sl-menu-item
                 type="checkbox"
-                value=${org.id}
-                ?checked=${org.id === selectedOption.id}
+                value=${org.slug}
+                ?checked=${org.slug === selectedOption.slug}
                 >${org.name.slice(0, orgNameLength)}</sl-menu-item
               >
             `
@@ -434,37 +411,40 @@ export class App extends LiteElement {
   }
 
   private renderMenuUserInfo() {
-    if (!this.userInfo) return;
-    if (this.userInfo.isAdmin) {
+    if (!this.appState.userInfo) return;
+    if (this.appState.userInfo.isAdmin) {
       return html`
         <div class="mb-2">
           <sl-tag class="uppercase" variant="primary" size="small"
             >${msg("admin")}</sl-tag
           >
         </div>
-        <div class="font-medium text-neutral-700">${this.userInfo?.name}</div>
+        <div class="font-medium text-neutral-700">
+          ${this.appState.userInfo?.name}
+        </div>
         <div class="text-xs text-neutral-500 whitespace-nowrap">
-          ${this.userInfo?.email}
+          ${this.appState.userInfo?.email}
         </div>
       `;
     }
 
-    if (this.orgs?.length === 1) {
+    const orgs = this.appState.userInfo?.orgs;
+    if (orgs?.length === 1) {
       return html`
-        <div class="font-medium text-neutral-700 my-1">
-          ${this.orgs![0].name}
-        </div>
-        <div class="text-neutral-500">${this.userInfo?.name}</div>
+        <div class="font-medium text-neutral-700 my-1">${orgs[0].name}</div>
+        <div class="text-neutral-500">${this.appState.userInfo?.name}</div>
         <div class="text-xs text-neutral-500 whitespace-nowrap">
-          ${this.userInfo?.email}
+          ${this.appState.userInfo?.email}
         </div>
       `;
     }
 
     return html`
-      <div class="font-medium text-neutral-700">${this.userInfo?.name}</div>
+      <div class="font-medium text-neutral-700">
+        ${this.appState.userInfo?.name}
+      </div>
       <div class="text-xs text-neutral-500 whitespace-nowrap">
-        ${this.userInfo?.email}
+        ${this.appState.userInfo?.email}
       </div>
     `;
   }
@@ -611,8 +591,8 @@ export class App extends LiteElement {
           }}
           @notify="${this.onNotify}"
           .authState=${this.authService.authState}
-          .userInfo=${this.userInfo}
-          .orgId=${this.selectedOrgId}
+          .userInfo=${ifDefined(this.appState.userInfo || undefined)}
+          slug=${ifDefined(this.appState.orgSlug || undefined)}
         ></btrix-home>`;
 
       case "orgs":
@@ -620,15 +600,15 @@ export class App extends LiteElement {
           class="w-full md:bg-neutral-50"
           @navigate="${this.onNavigateTo}"
           .authState="${this.authService.authState}"
-          .userInfo="${this.userInfo}"
+          .userInfo="${this.appState.userInfo}"
         ></btrix-orgs>`;
 
       case "org": {
-        const orgId = this.viewState.params.orgId;
+        const slug = this.viewState.params.slug;
         const orgPath = this.viewState.pathname;
         const orgTab =
           window.location.pathname
-            .slice(window.location.pathname.indexOf(orgId) + orgId.length)
+            .slice(window.location.pathname.indexOf(slug) + slug.length)
             .replace(/(^\/|\/$)/, "")
             .split("/")[0] || "home";
         return html`<btrix-org
@@ -640,11 +620,11 @@ export class App extends LiteElement {
           }}
           @notify="${this.onNotify}"
           .authState=${this.authService.authState}
-          .userInfo=${this.userInfo}
+          .userInfo=${this.appState.userInfo}
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
-          orgId=${orgId}
-          orgPath=${orgPath.split(orgId)[1]}
+          slug=${slug}
+          orgPath=${orgPath.split(slug)[1]}
           orgTab=${orgTab as OrgTab}
         ></btrix-org>`;
       }
@@ -660,18 +640,18 @@ export class App extends LiteElement {
           }}
           @notify="${this.onNotify}"
           .authState="${this.authService.authState}"
-          .userInfo="${this.userInfo}"
+          .userInfo="${this.appState.userInfo}"
         ></btrix-account-settings>`;
 
       case "usersInvite": {
-        if (this.userInfo) {
-          if (this.userInfo.isAdmin) {
+        if (this.appState.userInfo) {
+          if (this.appState.userInfo.isAdmin) {
             return html`<btrix-users-invite
               class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
               @navigate="${this.onNavigateTo}"
               @logged-in=${this.onLoggedIn}
               .authState="${this.authService.authState}"
-              .userInfo="${this.userInfo}"
+              .userInfo="${this.appState.userInfo}"
             ></btrix-users-invite>`;
           } else {
             return this.renderNotFoundPage();
@@ -683,8 +663,8 @@ export class App extends LiteElement {
 
       case "crawls":
       case "crawl": {
-        if (this.userInfo) {
-          if (this.userInfo.isAdmin) {
+        if (this.appState.userInfo) {
+          if (this.appState.userInfo.isAdmin) {
             return html`<btrix-crawls
               class="w-full"
               @navigate=${this.onNavigateTo}
@@ -702,8 +682,13 @@ export class App extends LiteElement {
 
       case "awpUploadRedirect": {
         const { orgId, uploadId } = this.viewState.params;
-        this.navigate(`/orgs/${orgId}/items/upload/${uploadId}`);
-        return;
+        if (this.appState.slugLookup) {
+          const slug = this.appState.slugLookup[orgId];
+          if (slug) {
+            this.navigate(`/orgs/${slug}/items/upload/${uploadId}`);
+            return;
+          }
+        }
       }
 
       default:
@@ -778,9 +763,6 @@ export class App extends LiteElement {
     const detail = event.detail || {};
     const redirect = detail.redirect !== false;
 
-    if (this.userInfo) {
-      this.unpersistUserSettings(this.userInfo.id);
-    }
     this.clearUser();
 
     if (redirect) {
@@ -837,11 +819,10 @@ export class App extends LiteElement {
   }
 
   onUserInfoChange(event: CustomEvent<Partial<CurrentUser>>) {
-    // @ts-ignore
-    this.userInfo = {
-      ...this.userInfo,
+    AppStateService.updateUserInfo({
+      ...this.appState.userInfo,
       ...event.detail,
-    };
+    } as CurrentUser);
   }
 
   /**
@@ -890,8 +871,7 @@ export class App extends LiteElement {
   private clearUser() {
     this.authService.logout();
     this.authService = new AuthService();
-    this.userInfo = undefined;
-    this.selectedOrgId = undefined;
+    AppStateService.reset();
   }
 
   private showDialog(content: DialogContent) {
@@ -953,30 +933,8 @@ export class App extends LiteElement {
     );
   }
 
-  private getPersistedUserSettings(userId: string): UserSettings | null {
-    const value = window.localStorage.getItem(`${App.storageKey}.${userId}`);
-    if (value) {
-      return JSON.parse(value);
-    }
-    return null;
-  }
-
-  private persistUserSettings(userId: string, settings: UserSettings) {
-    window.localStorage.setItem(
-      `${App.storageKey}.${userId}`,
-      JSON.stringify(settings)
-    );
-  }
-
-  private unpersistUserSettings(userId: string) {
-    window.localStorage.removeItem(`${App.storageKey}.${userId}`);
-  }
-
   private clearSelectedOrg() {
-    this.selectedOrgId = undefined;
-    if (this.userInfo) {
-      this.persistUserSettings(this.userInfo.id, { orgId: "" });
-    }
+    AppStateService.updateOrgSlug(null);
   }
 }
 

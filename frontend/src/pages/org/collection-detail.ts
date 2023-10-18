@@ -310,7 +310,7 @@ export class CollectionDetail extends LiteElement {
     <nav class="mb-7">
       <a
         class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-        href=${`/orgs/${this.orgId}/collections`}
+        href=${`${this.orgBasePath}/collections`}
         @click=${this.navLink}
       >
         <sl-icon name="arrow-left" class="inline-block align-middle"></sl-icon>
@@ -331,7 +331,7 @@ export class CollectionDetail extends LiteElement {
               variant=${isSelected ? "primary" : "neutral"}
               ?raised=${isSelected}
               aria-selected="${isSelected}"
-              href=${`/orgs/${this.orgId}/collections/view/${this.collectionId}/${tabName}`}
+              href=${`${this.orgBasePath}/collections/view/${this.collectionId}/${tabName}`}
               @click=${this.navLink}
             >
               <sl-icon
@@ -358,7 +358,7 @@ export class CollectionDetail extends LiteElement {
           <sl-menu-item
             @click=${() =>
               this.navTo(
-                `/orgs/${this.orgId}/collections/edit/${this.collectionId}`
+                `${this.orgBasePath}/collections/edit/${this.collectionId}`
               )}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
@@ -483,7 +483,7 @@ export class CollectionDetail extends LiteElement {
                 <sl-icon-button
                   class="text-base"
                   name="pencil"
-                  href=${`/orgs/${this.orgId}/collections/edit/${this.collectionId}#metadata`}
+                  href=${`${this.orgBasePath}/collections/edit/${this.collectionId}#metadata`}
                   @click=${this.navLink}
                   label=${msg("Edit description")}
                 ></sl-icon-button>
@@ -616,13 +616,16 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
-  private renderArchivedItem = (wc: Crawl | Upload, idx: number) =>
+  private renderArchivedItem = (item: Crawl | Upload, idx: number) =>
     html`
-      <btrix-crawl-list-item .crawl=${wc}>
+      <btrix-crawl-list-item
+        orgSlug=${this.appState.orgSlug || ""}
+        .crawl=${item}
+      >
         <sl-menu slot="menu">
           <sl-menu-item
             style="--sl-color-neutral-700: var(--warning)"
-            @click=${() => this.removeArchivedItem(wc.id, idx)}
+            @click=${() => this.removeArchivedItem(item.id, idx)}
           >
             <sl-icon name="folder-minus" slot="prefix"></sl-icon>
             ${msg("Remove from Collection")}
@@ -715,7 +718,7 @@ export class CollectionDetail extends LiteElement {
         }
       );
 
-      this.navTo(`/orgs/${this.orgId}/collections`);
+      this.navTo(`${this.orgBasePath}/collections`);
 
       this.notify({
         message: msg(html`Deleted <strong>${name}</strong> Collection.`),

@@ -1001,7 +1001,7 @@ export class CollectionEditor extends LiteElement {
             this.isCrawler,
             () => html`
               <sl-button
-                href=${`/orgs/${this.orgId}/workflows?new&jobType=`}
+                href=${`${this.orgBasePath}/workflows?new&jobType=`}
                 variant="primary"
                 @click=${this.navLink}
               >

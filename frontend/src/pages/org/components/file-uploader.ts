@@ -451,7 +451,7 @@ export class FileUploader extends LiteElement {
             <strong>${name}</strong>.<br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${this.orgId}/items/upload/${data.id}"
+              href="${this.orgBasePath}/items/upload/${data.id}"
               @click="${this.navLink.bind(this)}"
               >View Archive</a
             > `),
