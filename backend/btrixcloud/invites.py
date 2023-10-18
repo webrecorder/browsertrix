@@ -104,12 +104,14 @@ class InviteOps:
         # invites as well.
         return await self.invites.delete_many(query)
 
-    def accept_user_invite(self, user, invite_token: str):
+    async def accept_user_invite(self, user, invite_token: str, user_manager):
         """remove invite from user, if valid token, throw if not"""
         invite = user.invites.pop(invite_token, "")
         if not invite:
             raise HTTPException(status_code=400, detail="Invalid Invite Code")
 
+        # update user with removed invite
+        await user_manager.update_invites(user)
         return invite
 
     # pylint: disable=too-many-arguments
@@ -148,7 +150,7 @@ class InviteOps:
             inviterEmail=user.email,
         )
 
-        other_user = await user_manager.user_db.get_by_email(invite.email)
+        other_user = await user_manager.get_by_email(invite.email)
 
         if not other_user:
             await self.add_new_user_invite(
@@ -173,7 +175,7 @@ class InviteOps:
         invite_pending.email = None
         other_user.invites[invite_code] = invite_pending
 
-        await user_manager.user_db.update(other_user)
+        await user_manager.update_invites(other_user)
 
         self.email.send_existing_user_invite(
             other_user.email, user.name, org_name, invite_code, headers

@@ -359,7 +359,7 @@ class EventWebhookOps:
 
 
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
-def init_event_webhooks_api(mdb, org_ops):
+def init_event_webhooks_api(mdb, org_ops, app):
     """init event webhooks system"""
     # pylint: disable=invalid-name
 
@@ -406,41 +406,35 @@ def init_event_webhooks_api(mdb, org_ops):
         asyncio.create_task(ops.send_notification(org, notification))
         return {"success": True}
 
-    # TODO: Add webhooks to OpenAPI documentation when we've updated FastAPI
-    # (requires FastAPI >= 0.99.0)
-
-    # @app.webhooks.post("archived-item-created")
-    # def archived_item_created(
-    #    body: ArchivedItemCreatedBody,
-    #    org: Organization = Depends(org_owner_dep)
-    # ):
-    #     """
-    #     When a new archived item is created, we will send a POST request with
-    #     the id for the item and download links for the item.
-    #     """
-
-    # @app.webhooks.post("added-to-collection")
-    # def added_to_collection(
-    #    body: CollectionItemAddedRemovedBody,
-    #    org: Organization = Depends(org_owner_dep)
-    # ):
-    #     """
-    #     When archived items are added to a collection, we will send a POST
-    #     request with the ids of the archived item(s) and collection and a
-    #     download link for the collection.
-    #     """
-
-    # @app.webhooks.post("removed-from-collection")
-    # def removed_from_collection(
-    #    body: CollectionItemAddedRemovedBody,
-    #    org: Organization = Depends(org_owner_dep)
-    # ):
-    #     """
-    #     When an archived items are removed from a collection, we will send a POST
-    #     request with the ids of the archived item(s) and collection and a
-    #     download link for the collection.
-    #     """
+    init_openapi_webhooks(app)
 
     org_ops.router.include_router(router)
 
     return ops
+
+
+def init_openapi_webhooks(app):
+    """add webhooks declarations for openapi"""
+
+    # pylint: disable=unused-argument
+    @app.webhooks.post(WebhookEventType.CRAWL_STARTED)
+    def crawl_started(body: CrawlStartedBody):
+        """Sent when a crawl is started"""
+
+    @app.webhooks.post(WebhookEventType.CRAWL_FINISHED)
+    def crawl_finished(body: CrawlFinishedBody):
+        """Sent when a crawl if finished"""
+
+    @app.webhooks.post(WebhookEventType.UPLOAD_FINISHED)
+    def upload_finished(body: UploadFinishedBody):
+        """Sent when an upload has finished"""
+
+    @app.webhooks.post(WebhookEventType.ADDED_TO_COLLECTION)
+    def added_to_collection(body: CollectionItemAddedBody):
+        """Sent when an archived item (crawl or upload)
+        is added to a collection"""
+
+    @app.webhooks.post(WebhookEventType.REMOVED_FROM_COLLECTION)
+    def remove_from_collection(body: CrawlStartedBody):
+        """Sent when an archived item (crawl or upload)
+        is removed from a collection"""
