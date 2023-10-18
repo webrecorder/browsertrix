@@ -16,7 +16,7 @@ def test_login_invalid():
     data = r.json()
 
     assert r.status_code == 400
-    assert data["detail"] == "LOGIN_BAD_CREDENTIALS"
+    assert data["detail"] == "login_bad_credentials"
 
 
 def test_login():

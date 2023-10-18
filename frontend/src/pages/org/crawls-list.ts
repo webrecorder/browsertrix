@@ -221,7 +221,7 @@ export class CrawlsList extends LiteElement {
                 variant=${isSelected ? "primary" : "neutral"}
                 ?raised=${isSelected}
                 aria-selected="${isSelected}"
-                href=${`/orgs/${this.orgId}/items${
+                href=${`${this.orgBasePath}/items${
                   itemType ? `/${itemType}` : ""
                 }`}
                 @click=${this.navLink}
@@ -426,10 +426,7 @@ export class CrawlsList extends LiteElement {
     if (!this.archivedItems) return;
 
     return html`
-      <btrix-crawl-list
-        baseUrl=""
-        itemType=${ifDefined(this.itemType || undefined)}
-      >
+      <btrix-crawl-list itemType=${ifDefined(this.itemType || undefined)}>
         ${this.archivedItems.items.map(this.renderArchivedItem)}
       </btrix-crawl-list>
 
@@ -447,7 +444,10 @@ export class CrawlsList extends LiteElement {
 
   private renderArchivedItem = (item: Crawl) =>
     html`
-      <btrix-crawl-list-item .crawl=${item}>
+      <btrix-crawl-list-item
+        orgSlug=${this.appState.orgSlug || ""}
+        .crawl=${item}
+      >
         <sl-menu slot="menu">
           ${when(
             this.isCrawler,

@@ -211,6 +211,10 @@ class CrawlStatus(BaseModel):
     podStatus: Optional[DefaultDict[str, PodInfo]] = defaultdict(
         lambda: PodInfo()  # pylint: disable=unnecessary-lambda
     )
+    # placeholder for pydantic 2.0 -- will require this version
+    # podStatus: Optional[
+    #    DefaultDict[str, Annotated[PodInfo, Field(default_factory=PodInfo)]]
+    # ]
     restartTime: Optional[str]
     execTime: int = 0
     canceled: bool = False
@@ -362,7 +366,9 @@ class BtrixOperator(K8sAPI):
         # pylint: disable=bare-except, broad-except
         except:
             # fail crawl if config somehow missing, shouldn't generally happen
-            await self.fail_crawl(crawl_id, uuid.UUID(cid), status, pods)
+            await self.fail_crawl(
+                crawl_id, uuid.UUID(cid), uuid.UUID(oid), status, pods
+            )
 
             return self._empty_response(status)
 
@@ -661,7 +667,14 @@ class BtrixOperator(K8sAPI):
         )
         return False
 
-    async def cancel_crawl(self, crawl_id, cid, oid, status, pods):
+    async def cancel_crawl(
+        self,
+        crawl_id: str,
+        cid: uuid.UUID,
+        oid: uuid.UUID,
+        status: CrawlStatus,
+        pods: dict,
+    ) -> bool:
         """Mark crawl as canceled"""
         if not await self.mark_finished(crawl_id, cid, oid, status, "canceled"):
             return False
@@ -698,12 +711,20 @@ class BtrixOperator(K8sAPI):
 
         return status.canceled
 
-    async def fail_crawl(self, crawl_id, cid, status, pods, stats=None):
+    async def fail_crawl(
+        self,
+        crawl_id: str,
+        cid: uuid.UUID,
+        oid: uuid.UUID,
+        status: CrawlStatus,
+        pods: dict,
+        stats=None,
+    ) -> bool:
         """Mark crawl as failed, log crawl state and print crawl logs, if possible"""
         prev_state = status.state
 
         if not await self.mark_finished(
-            crawl_id, cid, None, status, "failed", stats=stats
+            crawl_id, cid, oid, status, "failed", stats=stats
         ):
             return False
 
@@ -945,7 +966,6 @@ class BtrixOperator(K8sAPI):
 
         # detect reason
         exit_code = terminated.get("exitCode")
-        pod_status.reason = "done"
 
         if exit_code == 0:
             pod_status.reason = "done"
@@ -953,6 +973,8 @@ class BtrixOperator(K8sAPI):
             pod_status.reason = "oom"
         else:
             pod_status.reason = "interrupt: " + str(exit_code)
+
+        pod_status.exitCode = exit_code
 
     def should_mark_waiting(self, state, started):
         """Should the crawl be marked as waiting for capacity?"""
@@ -1007,8 +1029,9 @@ class BtrixOperator(K8sAPI):
         for name, pod in pod_status.items():
             # log only unexpected exits as crashes
             # - 0 is success / intended shutdown
-            # - 11 is interrupt / intended restart
-            if not pod.isNewExit or pod.exitCode in (0, 11):
+            # - 11 is default interrupt / intended restart
+            # - 13 is force interrupt / intended restart
+            if not pod.isNewExit or pod.exitCode in (0, 11, 13):
                 continue
 
             log = self.get_log_line(
@@ -1138,7 +1161,9 @@ class BtrixOperator(K8sAPI):
             # check if one-page crawls actually succeeded
             # if only one page found, and no files, assume failed
             if status.pagesFound == 1 and not status.filesAdded:
-                await self.fail_crawl(crawl.id, crawl.cid, status, pods, stats)
+                await self.fail_crawl(
+                    crawl.id, crawl.cid, crawl.oid, status, pods, stats
+                )
                 return status
 
             completed = status.pagesDone and status.pagesDone >= status.pagesFound
@@ -1157,7 +1182,9 @@ class BtrixOperator(K8sAPI):
                     crawl.id, crawl.cid, crawl.oid, status, "canceled", crawl, stats
                 )
             else:
-                await self.fail_crawl(crawl.id, crawl.cid, status, pods, stats)
+                await self.fail_crawl(
+                    crawl.id, crawl.cid, crawl.oid, status, pods, stats
+                )
 
         # check for other statuses
         else:
@@ -1181,8 +1208,15 @@ class BtrixOperator(K8sAPI):
 
     # pylint: disable=too-many-arguments
     async def mark_finished(
-        self, crawl_id, cid, oid, status, state, crawl=None, stats=None
-    ):
+        self,
+        crawl_id: str,
+        cid: uuid.UUID,
+        oid: uuid.UUID,
+        status: CrawlStatus,
+        state: str,
+        crawl=None,
+        stats=None,
+    ) -> bool:
         """mark crawl as finished, set finished timestamp and final state"""
 
         finished = dt_now()
@@ -1192,9 +1226,9 @@ class BtrixOperator(K8sAPI):
             kwargs["stats"] = stats
 
         if state in SUCCESSFUL_STATES:
-            allowed_from = RUNNING_STATES
+            allowed_from = list(RUNNING_STATES)
         else:
-            allowed_from = RUNNING_AND_STARTING_STATES
+            allowed_from = list(RUNNING_AND_STARTING_STATES)
 
         # if set_state returns false, already set to same status, return
         if not await self.set_state(
@@ -1221,8 +1255,13 @@ class BtrixOperator(K8sAPI):
 
     # pylint: disable=too-many-arguments
     async def do_crawl_finished_tasks(
-        self, crawl_id, cid, oid, files_added_size, state
-    ):
+        self,
+        crawl_id: str,
+        cid: uuid.UUID,
+        oid: uuid.UUID,
+        files_added_size: int,
+        state: str,
+    ) -> None:
         """Run tasks after crawl completes in asyncio.task coroutine."""
         await self.crawl_config_ops.stats_recompute_last(cid, files_added_size, 1)
 
@@ -1230,7 +1269,9 @@ class BtrixOperator(K8sAPI):
             await self.org_ops.inc_org_bytes_stored(oid, files_added_size, "crawl")
             await self.coll_ops.add_successful_crawl_to_collections(crawl_id, cid)
 
-        await self.event_webhook_ops.create_crawl_finished_notification(crawl_id, state)
+        await self.event_webhook_ops.create_crawl_finished_notification(
+            crawl_id, oid, state
+        )
 
         # add crawl errors to db
         await self.add_crawl_errors_to_db(crawl_id)
@@ -1402,7 +1443,7 @@ class BtrixOperator(K8sAPI):
                 return {"attachments": []}
 
             # db create
-            user = await self.user_ops.get_user_by_id(uuid.UUID(userid))
+            user = await self.user_ops.get_by_id(uuid.UUID(userid))
             await self.crawl_config_ops.add_new_crawl(
                 crawl_id, crawlconfig, user, manual=False
             )

@@ -19,7 +19,7 @@ export class Home extends LiteElement {
   userInfo?: CurrentUser;
 
   @property({ type: String })
-  orgId?: string;
+  slug?: string;
 
   @state()
   private isInviteComplete?: boolean;
@@ -47,8 +47,8 @@ export class Home extends LiteElement {
   }
 
   willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("orgId") && this.orgId) {
-      this.navTo(`/orgs/${this.orgId}`);
+    if (changedProperties.has("slug") && this.slug) {
+      this.navTo(`/orgs/${this.slug}`);
     } else if (changedProperties.has("authState") && this.authState) {
       this.fetchOrgs();
     }

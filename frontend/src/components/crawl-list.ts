@@ -179,11 +179,11 @@ export class CrawlListItem extends LitElement {
     `,
   ];
 
+  @property({ type: String })
+  orgSlug!: string;
+
   @property({ type: Object })
   crawl?: Crawl;
-
-  @property({ type: String })
-  baseUrl?: string;
 
   @property({ type: String })
   collectionId?: string;
@@ -227,7 +227,6 @@ export class CrawlListItem extends LitElement {
   }
 
   renderRow() {
-    const typePath = this.crawl?.type === "upload" ? "upload" : "crawl";
     const search =
       this.collectionId || this.workflowId
         ? `?${queryString.stringify(
@@ -241,8 +240,8 @@ export class CrawlListItem extends LitElement {
     return html`<a
       class="item row"
       role="button"
-      href="${this.baseUrl ||
-      `/orgs/${this.crawl?.oid}/items/${typePath}`}/${this.crawl?.id}${search}"
+      href="/orgs/${this.orgSlug}/items/${this.crawl?.type}/${this.crawl
+        ?.id}${search}"
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;
@@ -518,9 +517,6 @@ export class CrawlList extends LitElement {
     `,
   ];
 
-  @property({ type: String, noAccessor: true })
-  baseUrl?: string;
-
   @property({ type: String })
   collectionId?: string;
 
@@ -562,7 +558,6 @@ export class CrawlList extends LitElement {
 
     this.listItems.forEach((el) => {
       assignProp(el, { name: "role", value: "listitem" });
-      assignProp(el, { name: "baseUrl", value: this.baseUrl || "" });
       assignProp(el, { name: "collectionId", value: this.collectionId || "" });
       assignProp(el, { name: "workflowId", value: this.workflowId || "" });
     });

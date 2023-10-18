@@ -14,7 +14,8 @@ from .db import init_db, await_db_and_migrations, update_and_prepare_db
 
 from .emailsender import EmailSender
 from .invites import init_invites
-from .users import init_users_api, init_user_manager, JWT_TOKEN_LIFETIME
+from .auth import JWT_TOKEN_LIFETIME
+from .users import init_users_api, init_user_manager
 from .orgs import init_orgs_api
 
 from .profiles import init_profiles_api
@@ -69,13 +70,11 @@ def main():
 
     user_manager = init_user_manager(mdb, email, invites)
 
-    fastapi_users = init_users_api(app, user_manager)
-
-    current_active_user = fastapi_users.current_user(active=True)
+    current_active_user = init_users_api(app, user_manager)
 
     org_ops = init_orgs_api(app, mdb, user_manager, invites, current_active_user)
 
-    event_webhook_ops = init_event_webhooks_api(mdb, org_ops)
+    event_webhook_ops = init_event_webhooks_api(mdb, org_ops, app_root)
 
     user_manager.set_org_ops(org_ops)
 

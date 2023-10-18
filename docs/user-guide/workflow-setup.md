@@ -62,7 +62,7 @@ You must specify the protocol (likely `http://` or `https://`) as a part of the 
 :   This scope will crawl all pages on the domain and any subdomains found. If `example.com` is set as the _Crawl Start URL_, both pages on `example.com` and `subdomain.example.com` will be crawled.
 
 `Custom Page Prefix`
-:   This scope will crawl all pages that begin with the _Crawl Start URL_ as well as pages from any URL that begin with the URLs listed in `Extra URLs in Scope`
+:   This scope will crawl all pages that begin with the _Crawl Start URL_ as well as pages from any URL that begin with the URLs listed in `Extra URL Prefixes in Scope`
 
 ### Max Depth
 
@@ -70,7 +70,7 @@ You must specify the protocol (likely `http://` or `https://`) as a part of the 
 
 Only shown with a _Start URL Scope_ of `Pages on This Domain` and above, the _Max Depth_ setting instructs the crawler to stop visiting new links past a specified depth.
 
-### Extra URLs in Scope
+### Extra URL Prefixes in Scope
 
 `Seeded Crawl`{ .badge-orange }
 

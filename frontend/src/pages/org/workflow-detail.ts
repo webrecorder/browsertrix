@@ -363,7 +363,7 @@ export class WorkflowDetail extends LiteElement {
       <nav class="col-span-1">
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-          href=${`/orgs/${this.orgId}/workflows${
+          href=${`${this.orgBasePath}/workflows${
             workflowId ? `/crawl/${workflowId}` : "/crawls"
           }`}
           @click=${this.navLink}
@@ -447,7 +447,7 @@ export class WorkflowDetail extends LiteElement {
           label="Edit workflow settings"
           @click=${() =>
             this.navTo(
-              `/orgs/${this.workflow?.oid}/workflows/crawl/${this.workflow?.id}?edit`
+              `/orgs/${this.appState.orgSlug}/workflows/crawl/${this.workflow?.id}?edit`
             )}
         >
         </sl-icon-button>`;
@@ -535,7 +535,7 @@ export class WorkflowDetail extends LiteElement {
           .authState=${this.authState}
           @reset=${(e: Event) =>
             this.navTo(
-              `/orgs/${this.orgId}/workflows/crawl/${this.workflow!.id}`
+              `${this.orgBasePath}/workflows/crawl/${this.workflow!.id}`
             )}
         ></btrix-workflow-editor>
       `,
@@ -653,7 +653,7 @@ export class WorkflowDetail extends LiteElement {
           <sl-menu-item
             @click=${() =>
               this.navTo(
-                `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}?edit`
+                `/orgs/${this.appState.orgSlug}/workflows/crawl/${workflow.id}?edit`
               )}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
@@ -821,7 +821,10 @@ export class WorkflowDetail extends LiteElement {
             () =>
               this.crawls!.items.map(
                 (crawl: Crawl) => html`
-                  <btrix-crawl-list-item .crawl=${crawl}>
+                  <btrix-crawl-list-item
+                    orgSlug=${this.appState.orgSlug || ""}
+                    .crawl=${crawl}
+                  >
                     <sl-format-date
                       slot="id"
                       date=${`${crawl.started}Z`}
@@ -1002,7 +1005,7 @@ export class WorkflowDetail extends LiteElement {
             () => html`
               <sl-button
                 class="mr-2"
-                href=${`/orgs/${this.orgId}/items/crawl/${
+                href=${`${this.orgBasePath}/items/crawl/${
                   this.workflow!.lastCrawlId
                 }?workflowId=${this.workflowId}#replay`}
                 variant="primary"
@@ -1213,15 +1216,15 @@ export class WorkflowDetail extends LiteElement {
     const scaleOptions = [
       {
         value: 1,
-        label: "1",
+        label: "1×",
       },
       {
         value: 2,
-        label: "2",
+        label: "2×",
       },
       {
         value: 3,
-        label: "3",
+        label: "3×",
       },
     ];
 
@@ -1428,7 +1431,7 @@ export class WorkflowDetail extends LiteElement {
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/workflows?new&jobType=${workflowParams.jobType}`,
+      `${this.orgBasePath}/workflows?new&jobType=${workflowParams.jobType}`,
       {
         workflow: workflowParams,
         seeds: this.seeds?.items,
@@ -1487,7 +1490,7 @@ export class WorkflowDetail extends LiteElement {
         }
       );
 
-      this.navTo(`/orgs/${this.orgId}/workflows/crawls`);
+      this.navTo(`${this.orgBasePath}/workflows/crawls`);
 
       this.notify({
         message: isDeactivating

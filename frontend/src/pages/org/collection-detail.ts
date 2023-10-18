@@ -111,14 +111,19 @@ export class CollectionDetail extends LiteElement {
             html`<sl-skeleton class="w-96"></sl-skeleton>`}
           </h1>
         </div>
-        <sl-button
-          variant="primary"
-          size="small"
-          @click=${() => (this.showShareInfo = true)}
-        >
-          <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
-          Share
-        </sl-button>
+        ${when(
+          this.isCrawler || (!this.isCrawler && this.collection?.isPublic),
+          () => html`
+            <sl-button
+              variant="primary"
+              size="small"
+              @click=${() => (this.showShareInfo = true)}
+            >
+              <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+              Share
+            </sl-button>
+          `
+        )}
         ${when(this.isCrawler, this.renderActions)}
       </header>
       <div class="border rounded-lg py-2 px-4 mb-3">
@@ -180,20 +185,29 @@ export class CollectionDetail extends LiteElement {
         @sl-request-close=${() => (this.showShareInfo = false)}
         style="--width: 32rem;"
       >
-        ${this.collection?.isPublic
-          ? ""
-          : html`<p class="mb-3">
-              ${msg(
-                "Make this collection shareable to enable a public viewing link."
-              )}
-            </p>`}
-        <div class="mb-5">
-          <sl-switch
-            ?checked=${this.collection?.isPublic}
-            @sl-change=${(e: CustomEvent) =>
-              this.onTogglePublic((e.target as SlCheckbox).checked)}
-            >${msg("Collection is Shareable")}</sl-switch
-          >
+        ${
+          this.collection?.isPublic
+            ? ""
+            : html`<p class="mb-3">
+                ${msg(
+                  "Make this collection shareable to enable a public viewing link."
+                )}
+              </p>`
+        }
+        ${when(
+          this.isCrawler,
+          () =>
+            html`
+              <div class="mb-5">
+                <sl-switch
+                  ?checked=${this.collection?.isPublic}
+                  @sl-change=${(e: CustomEvent) =>
+                    this.onTogglePublic((e.target as SlCheckbox).checked)}
+                  >${msg("Collection is Shareable")}</sl-switch
+                >
+              </div>
+            `
+        )}
         </div>
         ${when(this.collection?.isPublic, this.renderShareInfo)}
         <div slot="footer" class="flex justify-end">
@@ -296,7 +310,7 @@ export class CollectionDetail extends LiteElement {
     <nav class="mb-7">
       <a
         class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-        href=${`/orgs/${this.orgId}/collections`}
+        href=${`${this.orgBasePath}/collections`}
         @click=${this.navLink}
       >
         <sl-icon name="arrow-left" class="inline-block align-middle"></sl-icon>
@@ -317,7 +331,7 @@ export class CollectionDetail extends LiteElement {
               variant=${isSelected ? "primary" : "neutral"}
               ?raised=${isSelected}
               aria-selected="${isSelected}"
-              href=${`/orgs/${this.orgId}/collections/view/${this.collectionId}/${tabName}`}
+              href=${`${this.orgBasePath}/collections/view/${this.collectionId}/${tabName}`}
               @click=${this.navLink}
             >
               <sl-icon
@@ -344,7 +358,7 @@ export class CollectionDetail extends LiteElement {
           <sl-menu-item
             @click=${() =>
               this.navTo(
-                `/orgs/${this.orgId}/collections/edit/${this.collectionId}`
+                `${this.orgBasePath}/collections/edit/${this.collectionId}`
               )}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
@@ -469,7 +483,7 @@ export class CollectionDetail extends LiteElement {
                 <sl-icon-button
                   class="text-base"
                   name="pencil"
-                  href=${`/orgs/${this.orgId}/collections/edit/${this.collectionId}#metadata`}
+                  href=${`${this.orgBasePath}/collections/edit/${this.collectionId}#metadata`}
                   @click=${this.navLink}
                   label=${msg("Edit description")}
                 ></sl-icon-button>
@@ -602,13 +616,16 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
-  private renderArchivedItem = (wc: Crawl | Upload, idx: number) =>
+  private renderArchivedItem = (item: Crawl | Upload, idx: number) =>
     html`
-      <btrix-crawl-list-item .crawl=${wc}>
+      <btrix-crawl-list-item
+        orgSlug=${this.appState.orgSlug || ""}
+        .crawl=${item}
+      >
         <sl-menu slot="menu">
           <sl-menu-item
             style="--sl-color-neutral-700: var(--warning)"
-            @click=${() => this.removeArchivedItem(wc.id, idx)}
+            @click=${() => this.removeArchivedItem(item.id, idx)}
           >
             <sl-icon name="folder-minus" slot="prefix"></sl-icon>
             ${msg("Remove from Collection")}
@@ -701,7 +718,7 @@ export class CollectionDetail extends LiteElement {
         }
       );
 
-      this.navTo(`/orgs/${this.orgId}/collections`);
+      this.navTo(`${this.orgBasePath}/collections`);
 
       this.notify({
         message: msg(html`Deleted <strong>${name}</strong> Collection.`),

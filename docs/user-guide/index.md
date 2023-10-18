@@ -10,9 +10,6 @@ If you have been sent an [invite](org-settings#members), enter a password and na
 
 If the server has enabled signups and you have been given a registration link, enter your email address, password, and name to create a new account. Your account will be added to the server's default organization.
 
-!!! note 
-    Names chosen on signup cannot be changed later.
-
 ---
 
 ## Start Crawling!

@@ -57,6 +57,7 @@ export class Dashboard extends LiteElement {
   }
 
   render() {
+    const hasQuota = Boolean(this.metrics?.storageQuotaBytes);
     const quotaReached =
       this.metrics &&
       this.metrics.storageQuotaBytes > 0 &&
@@ -69,7 +70,7 @@ export class Dashboard extends LiteElement {
           ${this.org?.name}
         </h1>
         <sl-icon-button
-          href=${`/orgs/${this.orgId}/settings`}
+          href=${`${this.orgBasePath}/settings`}
           class="text-lg"
           name="gear"
           label="Edit org settings"
@@ -120,6 +121,11 @@ export class Dashboard extends LiteElement {
               <dl>
                 ${this.renderStat({
                   value: metrics.crawlCount,
+                  secondaryValue: hasQuota
+                    ? ""
+                    : html`<sl-format-bytes
+                        value=${metrics.storageUsedCrawls}
+                      ></sl-format-bytes>`,
                   singleLabel: msg("Crawl"),
                   pluralLabel: msg("Crawls"),
                   iconProps: {
@@ -129,12 +135,22 @@ export class Dashboard extends LiteElement {
                 })}
                 ${this.renderStat({
                   value: metrics.uploadCount,
+                  secondaryValue: hasQuota
+                    ? ""
+                    : html`<sl-format-bytes
+                        value=${metrics.storageUsedUploads}
+                      ></sl-format-bytes>`,
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
                   iconProps: { name: "upload", color: this.colors.uploads },
                 })}
                 ${this.renderStat({
                   value: metrics.profileCount,
+                  secondaryValue: hasQuota
+                    ? ""
+                    : html`<sl-format-bytes
+                        value=${metrics.storageUsedProfiles}
+                      ></sl-format-bytes>`,
                   singleLabel: msg("Browser Profile"),
                   pluralLabel: msg("Browser Profiles"),
                   iconProps: {
@@ -147,6 +163,11 @@ export class Dashboard extends LiteElement {
                 ></sl-divider>
                 ${this.renderStat({
                   value: metrics.archivedItemCount,
+                  secondaryValue: hasQuota
+                    ? ""
+                    : html`<sl-format-bytes
+                        value=${metrics.storageUsedBytes}
+                      ></sl-format-bytes>`,
                   singleLabel: msg("Archived Item"),
                   pluralLabel: msg("Archived Items"),
                   iconProps: { name: "file-zip-fill" },
@@ -246,58 +267,54 @@ export class Dashboard extends LiteElement {
                   ></sl-format-bytes>
                   ${msg("Available")}
                 `
-              : html`
-                  <sl-format-bytes
-                    value=${metrics.storageUsedBytes}
-                  ></sl-format-bytes>
-                  ${msg("of Data Stored")}
-                `
+              : ""
         )}
       </div>
-      <div class="mb-2">
-        <btrix-meter
-          value=${metrics.storageUsedBytes}
-          max=${ifDefined(metrics.storageQuotaBytes || undefined)}
-          valueText=${msg("gigabyte")}
-        >
-          ${when(metrics.storageUsedCrawls, () =>
-            renderBar(
-              metrics.storageUsedCrawls,
-              msg("Crawls"),
-              this.colors.crawls
-            )
-          )}
-          ${when(metrics.storageUsedUploads, () =>
-            renderBar(
-              metrics.storageUsedUploads,
-              msg("Uploads"),
-              this.colors.uploads
-            )
-          )}
-          ${when(metrics.storageUsedProfiles, () =>
-            renderBar(
-              metrics.storageUsedProfiles,
-              msg("Profiles"),
-              this.colors.browserProfiles
-            )
-          )}
-          <div slot="available" class="flex-1">
-            <sl-tooltip>
-              <div slot="content">
-                <div>${msg("Available")}</div>
-                <div class="text-xs opacity-80">
-                  ${this.renderPercentage(
-                    (metrics.storageQuotaBytes - metrics.storageUsedBytes) /
-                      metrics.storageQuotaBytes
-                  )}
-                </div>
+      ${when(
+        hasQuota,
+        () => html`
+          <div class="mb-2">
+            <btrix-meter
+              value=${metrics.storageUsedBytes}
+              max=${ifDefined(metrics.storageQuotaBytes || undefined)}
+              valueText=${msg("gigabyte")}
+            >
+              ${when(metrics.storageUsedCrawls, () =>
+                renderBar(
+                  metrics.storageUsedCrawls,
+                  msg("Crawls"),
+                  this.colors.crawls
+                )
+              )}
+              ${when(metrics.storageUsedUploads, () =>
+                renderBar(
+                  metrics.storageUsedUploads,
+                  msg("Uploads"),
+                  this.colors.uploads
+                )
+              )}
+              ${when(metrics.storageUsedProfiles, () =>
+                renderBar(
+                  metrics.storageUsedProfiles,
+                  msg("Profiles"),
+                  this.colors.browserProfiles
+                )
+              )}
+              <div slot="available" class="flex-1">
+                <sl-tooltip>
+                  <div slot="content">
+                    <div>${msg("Available")}</div>
+                    <div class="text-xs opacity-80">
+                      ${this.renderPercentage(
+                        (metrics.storageQuotaBytes - metrics.storageUsedBytes) /
+                          metrics.storageQuotaBytes
+                      )}
+                    </div>
+                  </div>
+                  <div class="w-full h-full"></div>
+                </sl-tooltip>
               </div>
-              <div class="w-full h-full"></div>
-            </sl-tooltip>
-          </div>
-          ${when(
-            hasQuota,
-            () => html`<sl-format-bytes
+              <sl-format-bytes
                 slot="valueLabel"
                 value=${metrics.storageUsedBytes}
                 display="narrow"
@@ -306,10 +323,11 @@ export class Dashboard extends LiteElement {
                 slot="maxLabel"
                 value=${metrics.storageQuotaBytes}
                 display="narrow"
-              ></sl-format-bytes>`
-          )}
-        </btrix-meter>
-      </div>
+              ></sl-format-bytes>
+            </btrix-meter>
+          </div>
+        `
+      )}
     `;
   }
 
@@ -340,26 +358,38 @@ export class Dashboard extends LiteElement {
 
   private renderStat(stat: {
     value: number | string | TemplateResult;
+    secondaryValue?: number | string | TemplateResult;
     singleLabel: string;
     pluralLabel: string;
     iconProps: { name: string; library?: string; color?: string };
   }) {
     const { value, iconProps } = stat;
     return html`
-      <div class="flex items-center mb-2 last:mb-0">
-        <sl-icon
-          class="text-base text-neutral-500 mr-2"
-          name=${iconProps.name}
-          library=${ifDefined(iconProps.library)}
-          style="color:var(--sl-color-${iconProps.color ||
-          this.colors.default}-500)"
-        ></sl-icon>
-        <dt class="order-last">
-          ${value === 1 ? stat.singleLabel : stat.pluralLabel}
-        </dt>
-        <dd class="mr-1">
-          ${typeof value === "number" ? value.toLocaleString() : value}
-        </dd>
+      <div class="flex items-center justify-between mb-2 last:mb-0">
+        <div class="flex items-center">
+          <sl-icon
+            class="text-base text-neutral-500 mr-2"
+            name=${iconProps.name}
+            library=${ifDefined(iconProps.library)}
+            style="color:var(--sl-color-${iconProps.color ||
+            this.colors.default}-500)"
+          ></sl-icon>
+          <dt class="order-last">
+            ${value === 1 ? stat.singleLabel : stat.pluralLabel}
+          </dt>
+          <dd class="mr-1">
+            ${typeof value === "number" ? value.toLocaleString() : value}
+          </dd>
+        </div>
+        ${when(
+          stat.secondaryValue,
+          () =>
+            html`
+              <div class="text-xs text-neutral-500 font-monostyle">
+                ${stat.secondaryValue}
+              </div>
+            `
+        )}
       </div>
     `;
   }

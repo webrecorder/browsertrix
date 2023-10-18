@@ -256,7 +256,7 @@ class CrawlOps(BaseCrawlOps):
     ):
         """initialize new crawl"""
         if not username:
-            user = await self.user_manager.get(userid)
+            user = await self.user_manager.get_by_id(userid)
             if user:
                 username = user.name
 
@@ -918,7 +918,13 @@ def init_crawls_api(
             resp = await storage_ops.sync_stream_wacz_logs(
                 org, wacz_files, log_levels, contexts
             )
-            return StreamingResponse(resp)
+            return StreamingResponse(
+                resp,
+                media_type="text/jsonl",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{crawl_id}.log"'
+                },
+            )
 
         raise HTTPException(status_code=400, detail="crawl_not_finished")
 

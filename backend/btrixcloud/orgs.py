@@ -84,7 +84,7 @@ class OrgOps:
         org_name: str,
         storage_name,
         user: User,
-    ):
+    ) -> Organization:
         # pylint: disable=too-many-arguments
         """Create new organization with default storage for new user"""
         id_ = uuid.uuid4()
@@ -102,6 +102,7 @@ class OrgOps:
         storage_info = f"storage {storage_name} / {storage_path}"
         print(f"Creating new org {org_name} with {storage_info}", flush=True)
         await self.add_org(org)
+        return org
 
     async def get_orgs_for_user(
         # pylint: disable=too-many-arguments
@@ -166,7 +167,7 @@ class OrgOps:
             else:
                 default_org.name = DEFAULT_ORG
                 default_org.slug = slug_from_name(DEFAULT_ORG)
-                await self.update(default_org)
+                await self.update_full(default_org)
                 print(f'Default organization renamed to "{DEFAULT_ORG}"', flush=True)
             return
 
@@ -187,10 +188,22 @@ class OrgOps:
         )
         await self.add_org(org)
 
-    async def update(self, org: Organization):
+    async def update_full(self, org: Organization):
         """Update existing org"""
-        return await self.orgs.find_one_and_update(
+        await self.orgs.find_one_and_update(
             {"_id": org.id}, {"$set": org.to_dict()}, upsert=True
+        )
+
+    async def update_users(self, org: Organization):
+        """Update org users"""
+        return await self.orgs.find_one_and_update(
+            {"_id": org.id}, {"$set": org.dict(include={"users"})}
+        )
+
+    async def update_slug_and_name(self, org: Organization):
+        """Update org slug"""
+        return await self.orgs.find_one_and_update(
+            {"_id": org.id}, {"$set": {"slug": org.slug, "name": org.name}}
         )
 
     async def update_storage(
@@ -251,7 +264,7 @@ class OrgOps:
     ):
         """Add user to organization with specified role"""
         org.users[str(userid)] = role or UserRole.OWNER
-        await self.update(org)
+        await self.update_users(org)
 
     async def get_org_owners(self, org: Organization):
         """Return list of org's Owner users."""
@@ -402,6 +415,13 @@ class OrgOps:
         slugs = await self.orgs.distinct("slug", {})
         return {"slugs": slugs}
 
+    async def get_all_org_slugs_with_ids(self):
+        """Return dict with {id: slug} for all orgs."""
+        slug_id_map = {}
+        async for org in self.orgs.find({}):
+            slug_id_map[org["_id"]] = org["slug"]
+        return slug_id_map
+
 
 # ============================================================================
 # pylint: disable=too-many-statements
@@ -524,7 +544,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
             org.slug = slug_from_name(rename.name)
 
         try:
-            await ops.update(org)
+            await ops.update_slug_and_name(org)
         except DuplicateKeyError:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="duplicate_org_name")
@@ -564,7 +584,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
-        other_user = await user_manager.user_db.get_by_email(update.email)
+        other_user = await user_manager.get_by_email(update.email)
         if not other_user:
             raise HTTPException(
                 status_code=400, detail="No user found for specified e-mail"
@@ -598,10 +618,9 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
     @app.post("/orgs/invite-accept/{token}", tags=["invites"])
     async def accept_invite(token: str, user: User = Depends(user_dep)):
-        invite = invites.accept_user_invite(user, token)
+        invite = await invites.accept_user_invite(user, token, user_manager)
 
         await ops.add_user_by_invite(invite, user)
-        await user_manager.user_db.update(user)
         return {"added": True}
 
     @router.get("/invites", tags=["invites"])
@@ -633,7 +652,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     async def remove_user_from_org(
         remove: RemoveFromOrg, org: Organization = Depends(org_owner_dep)
     ):
-        other_user = await user_manager.user_db.get_by_email(remove.email)
+        other_user = await user_manager.get_by_email(remove.email)
 
         if org.is_owner(other_user):
             org_owners = await ops.get_org_owners(org)
@@ -647,7 +666,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=404, detail="no_such_org_user")
 
-        await ops.update(org)
+        await ops.update_users(org)
         return {"removed": True}
 
     @router.post("/add-user", tags=["invites"])
@@ -671,7 +690,15 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         return await ops.get_org_metrics(org)
 
     @app.get("/orgs/slugs", tags=["organizations"])
-    async def get_all_org_slugs():
+    async def get_all_org_slugs(user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
         return await ops.get_all_org_slugs()
+
+    @app.get("/orgs/slug-lookup", tags=["organizations"])
+    async def get_all_org_slugs_with_ids(user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+        return await ops.get_all_org_slugs_with_ids()
 
     return ops

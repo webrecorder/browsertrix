@@ -31,7 +31,7 @@ import "./components/new-collection-dialog";
 import "./components/new-workflow-dialog";
 import type {
   Member,
-  OrgNameChangeEvent,
+  OrgInfoChangeEvent,
   UserRoleChangeEvent,
   OrgRemoveMemberEvent,
 } from "./settings";
@@ -63,6 +63,9 @@ type Params = {
 };
 const defaultTab = "home";
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 @needLogin
 @localized()
 export class Org extends LiteElement {
@@ -75,15 +78,15 @@ export class Org extends LiteElement {
   @property({ type: Object })
   viewStateData?: ViewState["data"];
 
+  @property({ type: String })
+  slug!: string;
+
   // Path after `/orgs/:orgId/`
   @property({ type: String })
   orgPath!: string;
 
   @property({ type: Object })
   params!: Params;
-
-  @property({ type: String })
-  orgId!: string;
 
   @property({ type: String })
   orgTab: OrgTab = defaultTab;
@@ -104,11 +107,15 @@ export class Org extends LiteElement {
   private org?: OrgData | null;
 
   @state()
-  private isSavingOrgName = false;
+  private isSavingOrgInfo = false;
 
   get userOrg() {
     if (!this.userInfo) return null;
-    return this.userInfo.orgs.find(({ id }) => id === this.orgId)!;
+    return this.userInfo.orgs.find(({ slug }) => slug === this.slug)!;
+  }
+
+  get orgId() {
+    return this.userOrg?.id || "";
   }
 
   get isAdmin() {
@@ -124,19 +131,11 @@ export class Org extends LiteElement {
   }
 
   async willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("orgId") && this.orgId && this.authState) {
-      try {
-        this.org = await this.getOrg(this.orgId);
-        this.checkStorageQuota();
-      } catch {
-        this.org = null;
-
-        this.notify({
-          message: msg("Sorry, couldn't retrieve organization at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
-      }
+    if (
+      (changedProperties.has("userInfo") && this.userInfo) ||
+      (changedProperties.has("slug") && this.slug)
+    ) {
+      this.updateOrg();
     }
     if (changedProperties.has("openDialogName")) {
       // Sync URL to create dialog
@@ -159,7 +158,38 @@ export class Org extends LiteElement {
     }
   }
 
-  firstUpdated() {
+  private async updateOrg() {
+    if (!this.userInfo || !this.orgId) return;
+    try {
+      this.org = await this.getOrg(this.orgId);
+      this.checkStorageQuota();
+    } catch {
+      // TODO handle 404
+      this.org = null;
+
+      this.notify({
+        message: msg("Sorry, couldn't retrieve organization at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  async firstUpdated() {
+    // if slug is actually an orgId (UUID), attempt to lookup the slug
+    // and redirect to the slug url
+    if (UUID_REGEX.test(this.slug)) {
+      const org = await this.getOrg(this.slug);
+      const actualSlug = org && org.slug;
+      if (actualSlug) {
+        this.navTo(
+          window.location.href
+            .slice(window.location.origin.length)
+            .replace(this.slug, actualSlug)
+        );
+        return;
+      }
+    }
     // Sync URL to create dialog
     const url = new URL(window.location.href);
     const dialogName = url.searchParams.get("new");
@@ -311,7 +341,7 @@ export class Org extends LiteElement {
       <a
         id="${tabName}-tab"
         class="block flex-shrink-0 px-3 hover:bg-neutral-50 rounded-t transition-colors"
-        href=${`/orgs/${this.orgId}${path ? `/${path}` : ""}`}
+        href=${`${this.orgBasePath}${path ? `/${path}` : ""}`}
         aria-selected=${isActive}
         @click=${this.navLink}
       >
@@ -351,7 +381,7 @@ export class Org extends LiteElement {
           @request-close=${() => (this.openDialogName = undefined)}
           @uploaded=${() => {
             if (this.orgTab === "home") {
-              this.navTo(`/orgs/${this.orgId}/items/upload`);
+              this.navTo(`${this.orgBasePath}/items/upload`);
             }
           }}
         ></btrix-file-uploader>
@@ -366,7 +396,7 @@ export class Org extends LiteElement {
           ?open=${this.openDialogName === "workflow"}
           @select-job-type=${(e: SelectJobTypeEvent) => {
             this.openDialogName = undefined;
-            this.navTo(`/orgs/${this.orgId}/workflows?new&jobType=${e.detail}`);
+            this.navTo(`${this.orgBasePath}/workflows?new&jobType=${e.detail}`);
           }}
         >
         </btrix-new-workflow-dialog>
@@ -523,6 +553,7 @@ export class Org extends LiteElement {
   }
 
   private renderOrgSettings() {
+    if (!this.userInfo || !this.org) return;
     const activePanel = this.orgPath.includes("/members")
       ? "members"
       : "information";
@@ -535,8 +566,8 @@ export class Org extends LiteElement {
       .orgId=${this.orgId}
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
-      ?isSavingOrgName=${this.isSavingOrgName}
-      @org-name-change=${this.onOrgNameChange}
+      ?isSavingOrgName=${this.isSavingOrgInfo}
+      @org-info-change=${this.onOrgInfoChange}
       @org-user-role-change=${this.onUserRoleChange}
       @org-remove-member=${this.onOrgRemoveMember}
     ></btrix-org-settings>`;
@@ -554,36 +585,39 @@ export class Org extends LiteElement {
 
     return data;
   }
-
-  private async onOrgNameChange(e: OrgNameChangeEvent) {
-    this.isSavingOrgName = true;
+  private async onOrgInfoChange(e: OrgInfoChangeEvent) {
+    this.isSavingOrgInfo = true;
 
     try {
       await this.apiFetch(`/orgs/${this.org!.id}/rename`, this.authState!, {
         method: "POST",
-        body: JSON.stringify({ name: e.detail.value }),
+        body: JSON.stringify(e.detail),
       });
 
       this.notify({
-        message: msg("Updated organization name."),
+        message: msg("Updated organization."),
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.dispatchEvent(
+      await this.dispatchEvent(
         new CustomEvent("update-user-info", { bubbles: true })
       );
+      const newSlug = e.detail.slug;
+      if (newSlug) {
+        this.navTo(`/orgs/${newSlug}${this.orgPath}`);
+      }
     } catch (e: any) {
       this.notify({
         message: e.isApiError
           ? e.message
-          : msg("Sorry, couldn't update organization name at this time."),
+          : msg("Sorry, couldn't update organization at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
     }
 
-    this.isSavingOrgName = false;
+    this.isSavingOrgInfo = false;
   }
 
   private async onOrgRemoveMember(e: OrgRemoveMemberEvent) {
