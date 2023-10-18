@@ -90,7 +90,7 @@ class OrgOps:
         org_name: str,
         storage_name,
         user: User,
-    ):
+    ) -> Organization:
         # pylint: disable=too-many-arguments
         """Create new organization with default storage for new user"""
         id_ = uuid.uuid4()
@@ -105,6 +105,7 @@ class OrgOps:
 
         print(f"Creating new org {org_name} with storage {storage_name}", flush=True)
         await self.add_org(org)
+        return org
 
     async def get_orgs_for_user(
         # pylint: disable=too-many-arguments
@@ -612,7 +613,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
-        other_user = await user_manager.user_db.get_by_email(update.email)
+        other_user = await user_manager.get_by_email(update.email)
         if not other_user:
             raise HTTPException(
                 status_code=400, detail="No user found for specified e-mail"
@@ -646,10 +647,9 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
     @app.post("/orgs/invite-accept/{token}", tags=["invites"])
     async def accept_invite(token: str, user: User = Depends(user_dep)):
-        invite = invites.accept_user_invite(user, token)
+        invite = await invites.accept_user_invite(user, token, user_manager)
 
         await ops.add_user_by_invite(invite, user)
-        await user_manager.user_db.update(user)
         return {"added": True}
 
     @router.get("/invites", tags=["invites"])
@@ -681,7 +681,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     async def remove_user_from_org(
         remove: RemoveFromOrg, org: Organization = Depends(org_owner_dep)
     ):
-        other_user = await user_manager.user_db.get_by_email(remove.email)
+        other_user = await user_manager.get_by_email(remove.email)
 
         if org.is_owner(other_user):
             org_owners = await ops.get_org_owners(org)

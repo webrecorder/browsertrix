@@ -96,7 +96,7 @@ export class CrawlDetail extends LiteElement {
     } else if (this.crawl?.type === "crawl") {
       path = "items/crawl";
     }
-    return `/orgs/${this.orgId}/${path}`;
+    return `${this.orgBasePath}/${path}`;
   }
 
   // TODO localize
@@ -748,7 +748,7 @@ ${this.crawl?.description}
                         html`<li class="mt-1">
                           <a
                             class="text-primary hover:text-indigo-400"
-                            href=${`/orgs/${this.orgId}/collections/view/${id}`}
+                            href=${`${this.orgBasePath}/collections/view/${id}`}
                             @click=${this.navLink}
                             >${name}</a
                           >

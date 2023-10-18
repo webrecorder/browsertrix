@@ -4533,6 +4533,11 @@ lit-html@^2.0.0, lit-html@^2.7.0:
   dependencies:
     "@types/trusted-types" "^2.0.2"
 
+lit-shared-state@^0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/lit-shared-state/-/lit-shared-state-0.2.1.tgz#967884e08974f96646e11fd0b4edbd4112e11c0f"
+  integrity sha512-4KnwRCVTqMWxVxO5u50+Q+RZJWAbCo34w5MxRh1GwbpW8sO7rupnNVYwqtp3WTmXN5Pdp2ZuaRWpPu/shfIauA==
+
 lit@2.7.5, lit@^2.0.0, lit@^2.3.0, lit@^2.7.0, lit@^2.7.5:
   version "2.7.5"
   resolved "https://registry.yarnpkg.com/lit/-/lit-2.7.5.tgz#60bc82990cfad169d42cd786999356dcf79b035f"

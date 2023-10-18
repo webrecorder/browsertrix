@@ -377,7 +377,6 @@ export class WorkflowsList extends LiteElement {
   private renderWorkflowList() {
     if (!this.workflows) return;
     const { page, total, pageSize } = this.workflows;
-
     return html`
       <btrix-workflow-list>
         ${this.workflows.items.map(this.renderWorkflowItem)}
@@ -408,7 +407,10 @@ export class WorkflowsList extends LiteElement {
 
   private renderWorkflowItem = (workflow: ListWorkflow) =>
     html`
-      <btrix-workflow-list-item .workflow=${workflow}>
+      <btrix-workflow-list-item
+        orgSlug=${this.appState.orgSlug || ""}
+        .workflow=${workflow}
+      >
         <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
       </btrix-workflow-list-item>
     `;
@@ -455,7 +457,7 @@ export class WorkflowsList extends LiteElement {
           <sl-menu-item
             @click=${() =>
               this.navTo(
-                `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}#watch`,
+                `${this.orgBasePath}/workflows/crawl/${workflow.id}#watch`,
                 {
                   dialog: "scale",
                 }
@@ -467,7 +469,7 @@ export class WorkflowsList extends LiteElement {
           <sl-menu-item
             @click=${() =>
               this.navTo(
-                `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}#watch`,
+                `${this.orgBasePath}/workflows/crawl/${workflow.id}#watch`,
                 {
                   dialog: "exclusions",
                 }
@@ -482,9 +484,7 @@ export class WorkflowsList extends LiteElement {
       <sl-divider></sl-divider>
       <sl-menu-item
         @click=${() =>
-          this.navTo(
-            `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}?edit`
-          )}
+          this.navTo(`${this.orgBasePath}/workflows/crawl/${workflow.id}?edit`)}
       >
         <sl-icon name="gear" slot="prefix"></sl-icon>
         ${msg("Edit Workflow Settings")}
@@ -641,7 +641,7 @@ export class WorkflowsList extends LiteElement {
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/workflows?new&jobType=${workflowParams.jobType}`,
+      `${this.orgBasePath}/workflows?new&jobType=${workflowParams.jobType}`,
       {
         workflow: workflowParams,
         seeds: seeds.items,
@@ -780,7 +780,7 @@ export class WorkflowsList extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${this.orgId}/workflows/crawl/${workflow.id}#watch"
+              href="${this.orgBasePath}/workflows/crawl/${workflow.id}#watch"
               @click=${this.navLink.bind(this)}
               >Watch crawl</a
             >`

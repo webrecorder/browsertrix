@@ -95,7 +95,7 @@ export class BrowserProfilesList extends LiteElement {
     return html`
       <a
         class="block p-1 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
-        href=${`/orgs/${this.orgId}/browser-profiles/profile/${data.id}`}
+        href=${`${this.orgBasePath}/browser-profiles/profile/${data.id}`}
         @click=${this.navLink}
         title=${data.name}
       >
@@ -183,7 +183,7 @@ export class BrowserProfilesList extends LiteElement {
       });
 
       this.navTo(
-        `/orgs/${this.orgId}/browser-profiles/profile/browser/${
+        `${this.orgBasePath}/browser-profiles/profile/browser/${
           data.browserid
         }?name=${window.encodeURIComponent(
           profile.name

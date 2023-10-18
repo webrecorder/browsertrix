@@ -207,6 +207,10 @@ class CrawlStatus(BaseModel):
     podStatus: Optional[DefaultDict[str, PodInfo]] = defaultdict(
         lambda: PodInfo()  # pylint: disable=unnecessary-lambda
     )
+    # placeholder for pydantic 2.0 -- will require this version
+    # podStatus: Optional[
+    #    DefaultDict[str, Annotated[PodInfo, Field(default_factory=PodInfo)]]
+    # ]
     restartTime: Optional[str]
     execTime: int = 0
     canceled: bool = False
@@ -1454,7 +1458,7 @@ class BtrixOperator(K8sAPI):
                 return {"attachments": []}
 
             # db create
-            user = await self.user_ops.get_user_by_id(uuid.UUID(userid))
+            user = await self.user_ops.get_by_id(uuid.UUID(userid))
             await self.crawl_config_ops.add_new_crawl(
                 crawl_id, crawlconfig, user, manual=False
             )
