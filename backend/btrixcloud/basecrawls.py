@@ -387,6 +387,7 @@ class BaseCrawlOps:
                     hash=file_.hash,
                     size=file_.size,
                     crawlId=crawl_id,
+                    numReplicas=len(file_.replicas) if file_.replicas else 0,
                 )
             )
 

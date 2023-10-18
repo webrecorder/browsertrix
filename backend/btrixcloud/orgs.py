@@ -88,7 +88,6 @@ class OrgOps:
     async def create_new_org_for_user(
         self,
         org_name: str,
-        storage_name,
         user: User,
     ) -> Organization:
         # pylint: disable=too-many-arguments
@@ -103,7 +102,10 @@ class OrgOps:
             storage=self.default_primary,
         )
 
-        print(f"Creating new org {org_name} with storage {storage_name}", flush=True)
+        print(
+            f"Creating new org {org_name} with storage {self.default_primary.name}",
+            flush=True,
+        )
         await self.add_org(org)
         return org
 

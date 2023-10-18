@@ -433,6 +433,7 @@ class CrawlFileOut(BaseModel):
     hash: str
     size: int
     crawlId: Optional[str]
+    numReplicas: int = 0
 
 
 # ============================================================================
