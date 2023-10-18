@@ -37,7 +37,7 @@ cd browsertrix-cloud/ansible
 
 4. Run the playbook:
 ```zsh
-ansible-playbook -i inventory/hosts playbooks/install_microk8s.yml -e host_ip="1.2.3.4" -e domain_name="yourdomain.com" -e your_user="your_vps_admin_user"
+ansible-playbook -i inventory/hosts install_microk8s.yml -e host_ip="1.2.3.4" -e domain_name="yourdomain.com" -e your_user="your_vps_admin_user"
 ```
 
 #### Upgrading
@@ -46,5 +46,5 @@ ansible-playbook -i inventory/hosts playbooks/install_microk8s.yml -e host_ip="1
 
 2. Run the playbook:
 ```zsh
-ansible-playbook -i inventory/hosts playbooks/install_microk8s.yml -e host_ip="1.2.3.4" -e domain_name="yourdomain.com" -t helm_upgrade
+ansible-playbook -i inventory/hosts install_microk8s.yml -e host_ip="1.2.3.4" -e domain_name="yourdomain.com" -t helm_upgrade
 ```

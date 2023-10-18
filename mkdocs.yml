@@ -57,13 +57,16 @@ nav:
       - develop/frontend-dev.md
       - develop/docs.md
   - User Guide:
+      - user-guide/overview.md
       - user-guide/index.md
       - Crawling:
         - user-guide/crawl-workflows.md
         - user-guide/workflow-setup.md
         - user-guide/browser-profiles.md
+      - user-guide/archived-items.md
       - user-guide/collections.md
       - user-guide/org-settings.md
+      - user-guide/user-settings.md
 
 markdown_extensions:
   - toc:

@@ -207,6 +207,9 @@ export class WorkflowListItem extends LitElement {
     `,
   ];
 
+  @property({ type: String })
+  orgSlug!: string;
+
   @property({ type: Object })
   workflow?: ListWorkflow;
 
@@ -252,9 +255,9 @@ export class WorkflowListItem extends LitElement {
     return html`<a
       class="item row"
       role="button"
-      href=${`/orgs/${this.workflow?.oid}/workflows/crawl/${
-        this.workflow?.id
-      }#${this.workflow?.isCrawlRunning ? "watch" : "crawls"}`}
+      href=${`/orgs/${this.orgSlug}/workflows/crawl/${this.workflow?.id}#${
+        this.workflow?.isCrawlRunning ? "watch" : "crawls"
+      }`}
       @click=${async (e: MouseEvent) => {
         e.preventDefault();
         await this.updateComplete;
@@ -308,7 +311,7 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender((workflow) => {
             if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
               return html`<sl-format-date
-                  date=${workflow.lastRun.toString()}
+                  date="${workflow.lastRun.toString()}Z"
                   month="2-digit"
                   day="2-digit"
                   year="2-digit"

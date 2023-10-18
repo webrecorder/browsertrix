@@ -11,6 +11,7 @@ export const AccessCode: Record<UserRole, number> = {
 export type OrgData = {
   id: string;
   name: string;
+  slug: string;
   quotas: Record<string, number>;
   bytesStored: number;
   users?: {

@@ -106,6 +106,7 @@ class UserManager:
                 UserOrgInfoOut(
                     id=org.id,
                     name=org.name,
+                    slug=org.slug,
                     default=org.default,
                     role=(
                         UserRole.SUPERADMIN

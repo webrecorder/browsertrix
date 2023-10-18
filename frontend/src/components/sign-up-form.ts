@@ -1,9 +1,17 @@
 import { state, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { msg, localized } from "@lit/localize";
+import { msg, str, localized } from "@lit/localize";
+import debounce from "lodash/fp/debounce";
+import { when } from "lit/directives/when.js";
+import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 
 import LiteElement, { html } from "../utils/LiteElement";
 import AuthService from "../utils/AuthService";
+import PasswordService from "../utils/PasswordService";
+import type { Input as BtrixInput } from "./input/input";
+
+const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
+  PasswordService;
 
 /**
  * @event submit
@@ -31,6 +39,13 @@ export class SignUpForm extends LiteElement {
 
   @state()
   private isSubmitting: boolean = false;
+
+  @state()
+  private pwStrengthResults: null | ZxcvbnResult = null;
+
+  protected firstUpdated() {
+    PasswordService.setOptions();
+  }
 
   render() {
     let serverError;
@@ -74,20 +89,23 @@ export class SignUpForm extends LiteElement {
                 </btrix-input>
               `}
         </div>
-        <div class="mb-5">
+        <div class="mb-5 list-">
           <btrix-input
             id="name"
             name="name"
             label=${msg("Your name")}
             placeholder=${msg("Lisa Simpson", {
-              desc: "Example user's name",
+              desc: "Example user’s name",
             })}
             autocomplete="nickname"
             minlength="2"
+            required
           >
           </btrix-input>
-          <p class="mt-2 text-sm text-gray-500">
-            ${msg("Your name will be visible to organization collaborators.")}
+          <p class="mt-2 text-gray-500">
+            ${msg(
+              "Your full name, nickname, or another name that org collaborators can see."
+            )}
           </p>
         </div>
         <div class="mb-5">
@@ -96,15 +114,19 @@ export class SignUpForm extends LiteElement {
             name="password"
             type="password"
             label="${msg("Password")}"
-            minlength="8"
+            minlength=${PASSWORD_MINLENGTH}
             autocomplete="new-password"
             passwordToggle
             required
+            @input=${this.onPasswordInput}
           >
           </btrix-input>
-          <p class="mt-2 text-sm text-gray-500">
-            ${msg("Choose a strong password between 8-64 characters.")}
+          <p class="mt-2 text-gray-500">
+            ${msg(
+              str`Choose a strong password between ${PASSWORD_MINLENGTH}–${PASSWORD_MAXLENGTH} characters.`
+            )}
           </p>
+          ${when(this.pwStrengthResults, this.renderPasswordStrength)}
         </div>
 
         ${serverError}
@@ -113,6 +135,8 @@ export class SignUpForm extends LiteElement {
           class="w-full"
           variant="primary"
           ?loading=${this.isSubmitting}
+          ?disabled=${!this.pwStrengthResults ||
+          this.pwStrengthResults.score < PASSWORD_MIN_SCORE}
           type="submit"
           >${msg("Sign up")}</sl-button
         >
@@ -120,8 +144,33 @@ export class SignUpForm extends LiteElement {
     `;
   }
 
+  private renderPasswordStrength = () => html`
+    <div class="my-3">
+      <btrix-pw-strength-alert
+        .result=${this.pwStrengthResults}
+        min=${PASSWORD_MIN_SCORE}
+      >
+      </btrix-pw-strength-alert>
+    </div>
+  `;
+
+  private onPasswordInput = debounce(150)(async (e: InputEvent) => {
+    const { value } = e.target as BtrixInput;
+    if (!value || value.length < 4) {
+      this.pwStrengthResults = null;
+      return;
+    }
+    const userInputs: string[] = [];
+    if (this.email) {
+      userInputs.push(this.email);
+    }
+    this.pwStrengthResults = await PasswordService.checkStrength(
+      value,
+      userInputs
+    );
+  }) as any;
+
   private async onSubmit(event: SubmitEvent) {
-    const form = event.target as HTMLFormElement;
     event.preventDefault();
     event.stopPropagation();
     this.dispatchEvent(new CustomEvent("submit"));
@@ -129,7 +178,7 @@ export class SignUpForm extends LiteElement {
     this.serverError = undefined;
     this.isSubmitting = true;
 
-    const formData = new FormData(form);
+    const formData = new FormData(event.target as HTMLFormElement);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const name = formData.get("name") as string;

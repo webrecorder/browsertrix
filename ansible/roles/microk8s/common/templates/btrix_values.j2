@@ -1,0 +1,30 @@
+default_org: {{ browsertrix_default_org | default('My Organization') }}
+
+crawler_extra_args: "{{ crawler_extra_args | default('') }}"
+
+superuser:
+  email: {{ browsertrix_superuser_email | default('admin@example.com') }}
+  password: {{ browsertrix_superuser_password | default('PASSW0RD!') }}
+
+mongo_auth:
+  username: {{ browsertrix_mongo_username | default('root') }}
+  password: {{ browsertrix_mongo_password | default('PASSWORD!') }}
+
+ingress:
+  host: "{{ domain }}"
+  cert_email: "{{ cert_email }}"
+  tls: true
+
+# optional second-host for signing archives
+{% if signing_domain %}
+signer:
+  enabled: true
+  host: {{ signing_domain }}
+  cert_email: {{ cert_email }}
+  image_pull_policy: "IfNotPresent"
+  auth_token: {{ signing_authtoken }}
+{% endif %}
+
+# required for microk8s
+ingress_class: "public"
+

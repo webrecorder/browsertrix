@@ -11,7 +11,7 @@ export const ROUTES = {
   accountSettings: "/account/settings",
   orgs: "/orgs",
   org: [
-    "/orgs/:orgId",
+    "/orgs/:slug",
     // Org sections:
     "(/workflows(/crawls)(/crawl/:workflowId))",
     "(/items(/:itemType(/:itemId)))",

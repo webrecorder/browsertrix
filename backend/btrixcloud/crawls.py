@@ -916,9 +916,15 @@ def init_crawls_api(
         if crawl.finished:
             wacz_files = await ops.get_wacz_files(crawl_id, org)
             resp = await storage_ops.sync_stream_wacz_logs(
-                org, wacz_files, log_levels, contexts, crawl_manager
+                org, wacz_files, log_levels, contexts
             )
-            return StreamingResponse(resp)
+            return StreamingResponse(
+                resp,
+                media_type="text/jsonl",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{crawl_id}.log"'
+                },
+            )
 
         raise HTTPException(status_code=400, detail="crawl_not_finished")
 

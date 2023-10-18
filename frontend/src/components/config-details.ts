@@ -188,7 +188,10 @@ export class ConfigDetails extends LiteElement {
             msg("Crawl Size Limit"),
             renderSize(crawlConfig?.maxCrawlSize)
           )}
-          ${this.renderSetting(msg("Crawler Instances"), crawlConfig?.scale)}
+          ${this.renderSetting(
+            msg("Crawler Instances"),
+            crawlConfig?.scale ? `${crawlConfig.scale}×` : ""
+          )}
         </btrix-desc-list>
       </section>
       <section id="browser-settings" class="mb-8">
@@ -330,7 +333,7 @@ export class ConfigDetails extends LiteElement {
         ]
       )}
       ${this.renderSetting(
-        msg("Extra URLs in Scope"),
+        msg("Extra URL Prefixes in Scope"),
         includeUrlList?.length
           ? html`
               <ul>

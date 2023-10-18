@@ -493,7 +493,7 @@ export class CollectionsList extends LiteElement {
           </div>
           <div class="col-span-1 truncate font-semibold">
             <a
-              href=${`/orgs/${this.orgId}/collections/view/${col.id}`}
+              href=${`${this.orgBasePath}/collections/view/${col.id}`}
               class="block text-primary hover:text-indigo-500"
               @click=${this.navLink}
             >
@@ -552,7 +552,7 @@ export class CollectionsList extends LiteElement {
         <sl-menu>
           <sl-menu-item
             @click=${() =>
-              this.navTo(`/orgs/${this.orgId}/collections/edit/${col.id}`)}
+              this.navTo(`${this.orgBasePath}/collections/edit/${col.id}`)}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
             ${msg("Edit Collection")}

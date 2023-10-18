@@ -56,26 +56,29 @@ export class Join extends LiteElement {
     return html`
       <article class="w-full p-5 flex flex-col md:flex-row justify-center">
         <div class="max-w-sm md:mt-12 md:mr-12">
-          <div class="mb-3 text-sm text-gray-400">
-            ${msg("Invited by ")}
-            ${this.inviteInfo.inviterName ||
-            this.inviteInfo.inviterEmail ||
-            placeholder}
+          <div class="mb-3 text-gray-500">
+            ${msg(
+              str`Invited by ${
+                this.inviteInfo.inviterName ||
+                this.inviteInfo.inviterEmail ||
+                placeholder
+              }`
+            )}
           </div>
           <p class="text-xl md:text-2xl font-semibold mb-5">
             ${msg(
-              html`You've been invited to join
+              html`You’ve been invited to join
                 <span class="text-primary break-words"
                   >${hasInviteInfo
                     ? this.inviteInfo.orgName || msg("Browsertrix Cloud")
                     : placeholder}</span
-                >`
+                >.`
             )}
           </p>
         </div>
 
         <main
-          class="max-w-md md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12"
+          class="max-w-md md:bg-white md:border md:shadow-lg md:rounded-lg md:p-10"
         >
           <btrix-sign-up-form
             email=${this.email!}
