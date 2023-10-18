@@ -58,3 +58,22 @@ class Migration(BaseMigration):
                     f"Error updating crawl file storage for crawl {crawl_id}: {err}",
                     flush=True,
                 )
+
+        # ProfileFile Migrations
+        mdb_profiles = self.mdb["profiles"]
+        async for profile in mdb_profiles.find(
+            {"resources.def_storage_name": {"$ne": None}}
+        ):
+            profile_id = profile["_id"]
+            for file_ in profile["resources"]:
+                storage_name = file_.pop("def_storage_name")
+                file_["storage"] = {"name": storage_name, "custom": False}
+            try:
+                await mdb_profiles.find_one_and_update(
+                    {"_id": profile_id}, {"$set": {"resources": profile["resources"]}}
+                )
+            except Exception as err:
+                print(
+                    f"Error updating profile storage for profile {profile['name']}: {err}",
+                    flush=True,
+                )
