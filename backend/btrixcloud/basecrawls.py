@@ -116,8 +116,8 @@ class BaseCrawlOps:
                     res.get("collectionIds")
                 )
 
-        del res["files"]
-        del res["errors"]
+        res.pop("files", None)
+        res.pop("errors", None)
 
         crawl = cls_type.from_dict(res)
 
