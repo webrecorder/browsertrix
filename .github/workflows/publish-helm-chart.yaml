@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - 1.7.1-release
 
 jobs:
   package_chart:
