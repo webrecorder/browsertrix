@@ -63,6 +63,9 @@ type Params = {
 };
 const defaultTab = "home";
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 @needLogin
 @localized()
 export class Org extends LiteElement {
@@ -172,7 +175,21 @@ export class Org extends LiteElement {
     }
   }
 
-  firstUpdated() {
+  async firstUpdated() {
+    // if slug is actually an orgId (UUID), attempt to lookup the slug
+    // and redirect to the slug url
+    if (UUID_REGEX.test(this.slug)) {
+      const org = await this.getOrg(this.slug);
+      const actualSlug = org && org.slug;
+      if (actualSlug) {
+        this.navTo(
+          window.location.href
+            .slice(window.location.origin.length)
+            .replace(this.slug, actualSlug)
+        );
+        return;
+      }
+    }
     // Sync URL to create dialog
     const url = new URL(window.location.href);
     const dialogName = url.searchParams.get("new");
