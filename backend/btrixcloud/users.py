@@ -57,6 +57,8 @@ class UserManager:
 
     def __init__(self, mdb, email, invites):
         self.users = mdb.get_collection("users")
+        self.crawl_configs_mdb = mdb.get_collection("crawl_configs")
+        self.crawls_mdb = mdb.get_collection("crawls")
         self.email = email
         self.invites = invites
         self.org_ops = None
@@ -475,6 +477,17 @@ class UserManager:
             raise HTTPException(status_code=400, detail="no_updates_specified")
 
         await self.update_email_name(user, user_update.email, user_update.name)
+
+        # If name changed, update any references in crawls and workflows
+        if user_update.name:
+            await self.crawls_mdb.update_many(
+                {"userid": user.id}, {"$set": {"userName": user_update.name}}
+            )
+            for workflow_field in ["createdBy", "modifiedBy", "lastStartedBy"]:
+                await self.crawl_configs_mdb.update_many(
+                    {workflow_field: user.id},
+                    {"$set": {f"{workflow_field}Name": user_update.name}},
+                )
 
     async def update_verified(self, user: User) -> None:
         """Update verified status for user"""
