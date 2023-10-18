@@ -104,12 +104,14 @@ class InviteOps:
         # invites as well.
         return await self.invites.delete_many(query)
 
-    def accept_user_invite(self, user, invite_token: str):
+    async def accept_user_invite(self, user, invite_token: str, user_manager):
         """remove invite from user, if valid token, throw if not"""
-        invite = user.invites.pop(invite_token, "")
+        invite = user.invites.pop(invite_token)
         if not invite:
             raise HTTPException(status_code=400, detail="Invalid Invite Code")
 
+        # update user with removed invite
+        await user_manager.update_invites(user)
         return invite
 
     # pylint: disable=too-many-arguments

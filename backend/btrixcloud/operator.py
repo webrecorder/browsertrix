@@ -211,6 +211,7 @@ class CrawlStatus(BaseModel):
     podStatus: Optional[DefaultDict[str, PodInfo]] = defaultdict(
         lambda: PodInfo()  # pylint: disable=unnecessary-lambda
     )
+    # placeholder for pydantic 2.0 -- will require this version
     # podStatus: Optional[
     #    DefaultDict[str, Annotated[PodInfo, Field(default_factory=PodInfo)]]
     # ]

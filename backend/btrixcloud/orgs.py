@@ -599,10 +599,9 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
     @app.post("/orgs/invite-accept/{token}", tags=["invites"])
     async def accept_invite(token: str, user: User = Depends(user_dep)):
-        invite = invites.accept_user_invite(user, token)
+        invite = await invites.accept_user_invite(user, token, user_manager)
 
         await ops.add_user_by_invite(invite, user)
-        # await user_manager.update(user)
         return {"added": True}
 
     @router.get("/invites", tags=["invites"])

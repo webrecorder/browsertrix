@@ -202,7 +202,8 @@ class UserManager:
                 await self.update_email_name(superuser, EmailStr(email), name)
                 print("Superuser email updated")
 
-            if await self.update_password(superuser, password):
+            if not await self.check_password(superuser, password):
+                await self._update_password(superuser, password)
                 print("Superuser password updated")
 
             return
@@ -454,7 +455,7 @@ class UserManager:
 
         user = await self.get_by_id(user_uuid)
         if user:
-            await self.update_password(user, password)
+            await self._update_password(user, password)
 
     async def change_password(
         self, user_update: UserUpdatePassword, user: User
@@ -463,12 +464,12 @@ class UserManager:
         if not await self.check_password(user, user_update.password):
             raise HTTPException(status_code=400, detail="invalid_current_password")
 
-        await self.update_password(user, user_update.newPassword)
+        await self._update_password(user, user_update.newPassword)
 
     async def change_email_name(
         self, user_update: UserUpdateEmailName, user: User
     ) -> None:
-        """Change password after checking existing password"""
+        """Change email and/or name, if specified, throw if neither is specified"""
         if not user_update.email and not user_update.name:
             raise HTTPException(status_code=400, detail="no_updates_specified")
 
@@ -481,7 +482,7 @@ class UserManager:
         )
 
     async def update_invites(self, user: User) -> None:
-        """Update verified status for user"""
+        """Update invites list for user"""
         await self.users.find_one_and_update(
             {"id": user.id}, {"$set": user.dict(include={"invites"})}
         )
@@ -501,17 +502,19 @@ class UserManager:
         except DuplicateKeyError:
             raise HTTPException(status_code=400, detail="user_already_exists")
 
-    async def update_password(self, user: User, new_password: str) -> bool:
-        """Update password for user, update and store hashed password"""
+    async def _update_password(self, user: User, new_password: str) -> None:
+        """Update hashed_password for user, overwriting previous password hash
+
+        Internal method, use change_password() for password verification first
+        """
         await self.validate_password(new_password)
         hashed_password = get_password_hash(new_password)
         if hashed_password == user.hashed_password:
-            return False
+            return
         user.hashed_password = hashed_password
         await self.users.find_one_and_update(
             {"id": user.id}, {"$set": {"hashed_password": hashed_password}}
         )
-        return True
 
 
 # ============================================================================
