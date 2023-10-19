@@ -446,7 +446,7 @@ def test_set_org_execution_time_overage(admin_auth_headers, default_org_id):
     assert value_before != NEW_VALUE
 
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/billing",
+        f"{API_PREFIX}/orgs/{default_org_id}/limits",
         headers=admin_auth_headers,
         json={"crawlExecMinutesAllowedOverage": NEW_VALUE},
     )
@@ -460,7 +460,7 @@ def test_set_org_execution_time_overage_non_superadmin(
     crawler_auth_headers, default_org_id
 ):
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/billing",
+        f"{API_PREFIX}/orgs/{default_org_id}/limits",
         headers=crawler_auth_headers,
         json={"crawlExecMinutesAllowedOverage": 60},
     )
