@@ -51,7 +51,7 @@ from .auth import (
 
 
 # ============================================================================
-# pylint: disable=raise-missing-from, too-many-public-methods
+# pylint: disable=raise-missing-from, too-many-public-methods, too-many-instance-attributes
 class UserManager:
     """Browsertrix UserManager"""
 
@@ -65,9 +65,12 @@ class UserManager:
 
         self.registration_enabled = is_bool(os.environ.get("REGISTRATION_ENABLED"))
 
-    def set_org_ops(self, ops):
+    # pylint: disable=attribute-defined-outside-init
+    def set_ops(self, org_ops, crawl_config_ops, base_crawl_ops):
         """set org ops"""
-        self.org_ops = ops
+        self.org_ops = org_ops
+        self.crawl_config_ops = crawl_config_ops
+        self.base_crawl_ops = base_crawl_ops
 
     async def init_index(self):
         """init lookup index"""
@@ -478,16 +481,9 @@ class UserManager:
 
         await self.update_email_name(user, user_update.email, user_update.name)
 
-        # If name changed, update any references in crawls and workflows
         if user_update.name:
-            await self.crawls_mdb.update_many(
-                {"userid": user.id}, {"$set": {"userName": user_update.name}}
-            )
-            for workflow_field in ["createdBy", "modifiedBy", "lastStartedBy"]:
-                await self.crawl_configs_mdb.update_many(
-                    {workflow_field: user.id},
-                    {"$set": {f"{workflow_field}Name": user_update.name}},
-                )
+            await self.base_crawl_ops.update_usernames(user.id, user_update.name)
+            await self.crawl_config_ops.update_usernames(user.id, user_update.name)
 
     async def update_verified(self, user: User) -> None:
         """Update verified status for user"""

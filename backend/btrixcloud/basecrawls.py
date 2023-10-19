@@ -206,6 +206,12 @@ class BaseCrawlOps:
             {"$set": data},
         )
 
+    async def update_usernames(self, userid: uuid.UUID, updated_name: str) -> None:
+        """Update username references matching userid"""
+        await self.crawls.update_many(
+            {"userid": userid}, {"$set": {"userName": updated_name}}
+        )
+
     async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
         """stop or cancel specified crawl"""
         crawl = await self.get_crawl_raw(crawl_id, org)
@@ -764,3 +770,5 @@ def init_base_crawls_api(
         org: Organization = Depends(org_crawl_dep),
     ):
         return await ops.delete_crawls_all_types(delete_list, org, user)
+
+    return ops
