@@ -385,6 +385,7 @@ class BaseCrawlOps:
                     name=file_.filename,
                     path=presigned_url or "",
                     hash=file_.hash,
+                    crc32=file_.crc32,
                     size=file_.size,
                     crawlId=crawl_id,
                     numReplicas=len(file_.replicas) if file_.replicas else 0,

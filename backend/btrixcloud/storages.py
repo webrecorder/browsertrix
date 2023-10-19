@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 
 import asyncio
 import heapq
+import zlib
 import json
 import itertools
 import os
@@ -628,7 +629,7 @@ class StorageOps:
             "profile": "multi-wacz-package",
             "resources": [file_.dict() for file_ in all_files],
         }
-        datapackage_str = json.dumps(datapackage).encode("utf-8")
+        datapackage_bytes = json.dumps(datapackage).encode("utf-8")
 
         def get_file(name) -> Iterator[bytes]:
             response = client.get_object(Bucket=bucket, Key=key + name)
@@ -642,7 +643,7 @@ class StorageOps:
                     file_.name,
                     modified_at,
                     perms,
-                    NO_COMPRESSION_64,
+                    NO_COMPRESSION_64(file_.size, file_.crc32),
                     get_file(file_.name),
                 )
 
@@ -650,8 +651,10 @@ class StorageOps:
                 "datapackage.json",
                 modified_at,
                 perms,
-                NO_COMPRESSION_64,
-                (datapackage_str,),
+                NO_COMPRESSION_64(
+                    len(datapackage_bytes), zlib.crc32(datapackage_bytes)
+                ),
+                (datapackage_bytes,),
             )
 
         return stream_zip(member_files(), chunk_size=CHUNK_SIZE)

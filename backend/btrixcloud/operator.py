@@ -1082,9 +1082,9 @@ class BtrixOperator(K8sAPI):
             filename=filename,
             size=filecomplete.size,
             hash=filecomplete.hash,
+            crc32=filecomplete.crc32,
             storage=crawl.storage,
         )
-
         await redis.incr("filesAddedSize", filecomplete.size)
 
         await self.crawl_ops.add_crawl_file(crawl.id, crawl_file, filecomplete.size)
