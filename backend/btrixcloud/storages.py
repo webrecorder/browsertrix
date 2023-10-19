@@ -708,7 +708,6 @@ def init_storages_api(org_ops, crawl_manager):
     ):
         return await storage_ops.remove_custom_storage(name, org)
 
-    # pylint: disable=bare-except, raise-missing-from
     @router.post("/storage", tags=["organizations"])
     async def update_storage_refs(
         storage: OrgStorageRefs,
@@ -716,7 +715,6 @@ def init_storages_api(org_ops, crawl_manager):
     ):
         return await storage_ops.update_storage_refs(storage, org)
 
-    # pylint: disable=bare-except, raise-missing-from
     @router.get("/storage", tags=["organizations"], response_model=OrgStorageRefs)
     def get_storage_refs(
         org: Organization = Depends(org_owner_dep),
