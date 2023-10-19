@@ -53,8 +53,6 @@ class ProfileOps:
 
         self.crawlconfigs = None
 
-        self.shared_profile_storage = os.environ.get("SHARED_PROFILE_STORAGE")
-
     def set_crawlconfigs(self, crawlconfigs):
         """set crawlconfigs ops"""
         self.crawlconfigs = crawlconfigs
@@ -63,10 +61,6 @@ class ProfileOps:
         self, org: Organization, user: User, profile_launch: ProfileLaunchBrowserIn
     ):
         """Create new profile"""
-        # if self.shared_profile_storage:
-        #    storage_name = self.shared_profile_storage
-        #    storage_path = ""
-        # else:
         prev_profile = ""
         if profile_launch.profileId:
             prev_profile = await self.get_profile_storage_path(
