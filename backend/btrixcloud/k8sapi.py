@@ -15,6 +15,7 @@ from kubernetes_asyncio.client.exceptions import ApiException
 
 from redis import asyncio as aioredis
 
+from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
 
 from .utils import get_templates_dir, dt_now, to_k8s_date
@@ -164,7 +165,9 @@ class K8sAPI:
         # pylint: disable=broad-except
         except Exception:
             # pylint: disable=broad-exception-raised,raise-missing-from
-            raise Exception(f"Storage {storage_secret} not found")
+            raise HTTPException(
+                status_code=400, detail="invalid_config_missing_storage_secret"
+            )
 
     async def delete_crawl_job(self, crawl_id):
         """delete custom crawljob object"""
