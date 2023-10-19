@@ -308,6 +308,33 @@ def test_lock_out_user_after_failed_logins():
     assert r.status_code == 200
 
 
+def test_lock_out_unregistered_user_after_failed_logins():
+    unregistered_email = "notregistered@example.com"
+    # Almost lock out email by making 4 consecutive failed login attempts
+    for _ in range(4):
+        requests.post(
+            f"{API_PREFIX}/auth/jwt/login",
+            data={
+                "username": unregistered_email,
+                "password": "incorrect",
+                "grant_type": "password",
+            },
+        )
+        time.sleep(1)
+
+    # Ensure we get a 429 response on the 5th failed attempt
+    r = requests.post(
+        f"{API_PREFIX}/auth/jwt/login",
+        data={
+            "username": unregistered_email,
+            "password": "incorrect",
+            "grant_type": "password",
+        },
+    )
+    assert r.status_code == 429
+    assert r.json()["detail"] == "too_many_login_attempts"
+
+
 def test_patch_me_endpoint(admin_auth_headers, default_org_id):
     r = requests.patch(
         f"{API_PREFIX}/users/me",
