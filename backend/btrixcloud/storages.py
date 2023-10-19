@@ -45,6 +45,7 @@ CHUNK_SIZE = 1024 * 256
 
 
 # ============================================================================
+# pylint: disable=broad-except,raise-missing-from
 class StorageOps:
     """All storage handling, download/upload operations"""
 
@@ -150,7 +151,6 @@ class StorageOps:
 
         try:
             await self.verify_storage_upload(storage, ".btrix-upload-verify")
-        # pylint: disable=raise-missing-from
         except:
             raise HTTPException(
                 status_code=400,
@@ -197,7 +197,6 @@ class StorageOps:
 
         try:
             del org.customStorages[name]
-        # pylint: disable=broad-except,raise-missing-from
         except:
             raise HTTPException(status_code=400, detail="no_such_storage")
 
@@ -218,7 +217,6 @@ class StorageOps:
             for replica in storage_refs.storageReplicas:
                 self.get_org_storage_by_ref(org, replica)
 
-        # pylint: disable=raise-missing-from
         except:
             raise HTTPException(status_code=400, detail="invalid_storage_ref")
 
