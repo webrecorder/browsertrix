@@ -330,7 +330,7 @@ class StorageOps:
             s3storage = self.default_storages.get(ref.name)
         elif not org.storage:
             raise KeyError(
-                "Referencing custom org storage: {ref.name}, but no custom storage found!"
+                f"Referencing custom org storage: {ref.name}, but no custom storage found!"
             )
         else:
             s3storage = org.customStorages.get(ref.name)
