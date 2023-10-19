@@ -434,6 +434,11 @@ class UserManager:
             user.email, token, request and request.headers
         )
 
+        # Lock user until password is reset
+        await self.users.find_one_and_update(
+            {"id": user.id}, {"$set": {"locked": True}}
+        )
+
     async def reset_password(self, token: str, password: str) -> None:
         """reset password to new password given reset token"""
         try:
@@ -507,6 +512,8 @@ class UserManager:
         """Update hashed_password for user, overwriting previous password hash
 
         Internal method, use change_password() for password verification first
+
+        Method also ensures user is not locked after password change
         """
         await self.validate_password(new_password)
         hashed_password = get_password_hash(new_password)
@@ -514,8 +521,27 @@ class UserManager:
             return
         user.hashed_password = hashed_password
         await self.users.find_one_and_update(
-            {"id": user.id}, {"$set": {"hashed_password": hashed_password}}
+            {"id": user.id},
+            {"$set": {"hashed_password": hashed_password, "locked": False}},
         )
+
+    async def set_failed_logins(self, user: User, count: int) -> None:
+        """Set consecutive failed login attempts for user"""
+        await self.users.find_one_and_update(
+            {"id": user.id}, {"$set": {"failed_logins": count}}
+        )
+
+    async def inc_failed_logins(self, user: User) -> None:
+        """Inc consecutive failed login attempts for user by 1"""
+        count = await self.get_failed_logins_count(user)
+        await self.set_failed_logins(user, count + 1)
+
+    async def get_failed_logins_count(self, user: User) -> int:
+        """Get failed login attempts for user, falling back to 0"""
+        latest_user = await self.get_by_id(user.id)
+        if latest_user:
+            return latest_user.failed_logins or 0
+        return 0
 
 
 # ============================================================================

@@ -44,6 +44,8 @@ AUTH_ALLOW_AUD = [AUTH_AUD, "fastapi-users:auth"]
 RESET_ALLOW_AUD = [RESET_AUD, "fastapi-users:reset"]
 VERIFY_ALLOW_AUD = [VERIFY_AUD, "fastapi-users:verify"]
 
+MAX_FAILED_LOGINS = 5
+
 
 # ============================================================================
 class BearerResponse(BaseModel):
@@ -171,10 +173,52 @@ def init_jwt_auth(user_manager):
     async def login(
         credentials: OAuth2PasswordRequestForm = Depends(),
     ):
+        """Prevent brute force password attacks.
+
+        After 5 or more consecutive failed login attempts for the same user,
+        lock the user account and send an email to reset their password.
+        On successful login when user is not already locked, reset count to 0.
+        """
         user = await user_manager.authenticate(
             credentials.username, credentials.password
         )
 
+        attempted_user = await user_manager.get_by_email(credentials.username)
+        if attempted_user is None:
+            raise HTTPException(
+                status_code=400,
+                detail="login_bad_credentials",
+            )
+
+        login_email = attempted_user.email
+
+        if user is None:
+            print(f"Failed login attempt for {login_email}", flush=True)
+            await user_manager.inc_failed_logins(attempted_user)
+
+        failed_count = await user_manager.get_failed_logins_count(attempted_user)
+        if failed_count > 0:
+            print(
+                f"Consecutive failed login count for {login_email}: {failed_count}",
+                flush=True,
+            )
+        if failed_count >= MAX_FAILED_LOGINS:
+            # Locks user from successful login until password reset
+            await user_manager.forgot_password(attempted_user)
+            print(
+                f"Password reset email sent after too many attempts for {login_email}",
+                flush=True,
+            )
+            await user_manager.set_failed_logins(attempted_user, 0)
+            raise HTTPException(
+                status_code=429,
+                detail="too_many_login_attempts",
+            )
+
+        # If user is locked, aways return 429 to prevent someone from continuing
+        # to get feedback on whether login credentials are invalid
+        if attempted_user.locked:
+            raise HTTPException(status_code=429, detail="too_many_login_attempts")
         if not user:
             raise HTTPException(
                 status_code=400,
@@ -185,6 +229,8 @@ def init_jwt_auth(user_manager):
         #        status_code=400,
         #        detail="login_user_not_verified",
         #    )
+
+        await user_manager.set_failed_logins(attempted_user, 0)
         return get_bearer_response(user)
 
     @auth_jwt_router.post("/refresh", response_model=BearerResponse)

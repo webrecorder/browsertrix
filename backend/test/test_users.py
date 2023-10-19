@@ -5,9 +5,12 @@ from .conftest import API_PREFIX, CRAWLER_USERNAME, ADMIN_PW, ADMIN_USERNAME
 
 VALID_USER_EMAIL = "validpassword@example.com"
 VALID_USER_PW = "validpassw0rd!"
+VALID_USER_PW_RESET = "new!password"
+VALID_USER_PW_RESET_AGAIN = "new!password1"
 
 
 my_id = None
+valid_user_headers = None
 
 
 def test_create_super_user(admin_auth_headers):
@@ -193,7 +196,6 @@ def test_reset_password_invalid_current(admin_auth_headers):
 
 
 def test_reset_valid_password(admin_auth_headers, default_org_id):
-    valid_user_headers = {}
     count = 0
     while True:
         r = requests.post(
@@ -206,6 +208,7 @@ def test_reset_valid_password(admin_auth_headers, default_org_id):
         )
         data = r.json()
         try:
+            global valid_user_headers
             valid_user_headers = {"Authorization": f"Bearer {data['access_token']}"}
             break
         except:
@@ -222,12 +225,87 @@ def test_reset_valid_password(admin_auth_headers, default_org_id):
         json={
             "email": VALID_USER_EMAIL,
             "password": VALID_USER_PW,
-            "newPassword": "new!password",
+            "newPassword": VALID_USER_PW_RESET,
         },
     )
     assert r.status_code == 200
     # assert r.json()["email"] == VALID_USER_EMAIL
     assert r.json()["updated"] == True
+
+
+def test_lock_out_user_after_failed_logins():
+    # Almost lock out user by making 4 consecutive failed login attempts
+    for _ in range(4):
+        requests.post(
+            f"{API_PREFIX}/auth/jwt/login",
+            data={
+                "username": VALID_USER_EMAIL,
+                "password": "incorrect",
+                "grant_type": "password",
+            },
+        )
+        time.sleep(1)
+
+    # Ensure we get a 429 response on the 5th failed attempt
+    r = requests.post(
+        f"{API_PREFIX}/auth/jwt/login",
+        data={
+            "username": VALID_USER_EMAIL,
+            "password": "incorrect",
+            "grant_type": "password",
+        },
+    )
+    assert r.status_code == 429
+    assert r.json()["detail"] == "too_many_login_attempts"
+
+    # Try again with correct password and ensure we still can't log in
+    r = requests.post(
+        f"{API_PREFIX}/auth/jwt/login",
+        data={
+            "username": VALID_USER_EMAIL,
+            "password": VALID_USER_PW_RESET,
+            "grant_type": "password",
+        },
+    )
+    assert r.status_code in (400, 429)
+
+    # Reset password
+    r = requests.put(
+        f"{API_PREFIX}/users/me/password-change",
+        headers=valid_user_headers,
+        json={
+            "email": VALID_USER_EMAIL,
+            "password": VALID_USER_PW_RESET,
+            "newPassword": VALID_USER_PW_RESET_AGAIN,
+        },
+    )
+    assert r.status_code == 200
+
+    time.sleep(5)
+
+    # Try once more again with invalid password and ensure we no longer get a
+    # 429 response since password reset unlocked user
+    r = requests.post(
+        f"{API_PREFIX}/auth/jwt/login",
+        data={
+            "username": VALID_USER_EMAIL,
+            "password": "incorrect",
+            "grant_type": "password",
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "login_bad_credentials"
+
+    # Try again with correct reset password and this time it should work
+    r = requests.post(
+        f"{API_PREFIX}/auth/jwt/login",
+        data={
+            "username": VALID_USER_EMAIL,
+            "password": VALID_USER_PW_RESET_AGAIN,
+            "grant_type": "password",
+        },
+    )
+    assert r.status_code == 200
 
 
 def test_patch_me_endpoint(admin_auth_headers, default_org_id):
