@@ -461,7 +461,7 @@ class CrawlOut(BaseMongoModel):
 
     tags: Optional[List[str]] = []
 
-    errors: Optional[List[str]]
+    errors: Optional[List[str]] = []
 
     collectionIds: Optional[List[UUID4]] = []
 

@@ -26,7 +26,7 @@ jobs:
             -p "30870:30870@agent:0:direct"
             --agents 1
             --no-lb
-            --k3s-arg "--disable=traefik,servicelb@server:*"
+            --k3s-arg "--disable=traefik,servicelb,metrics-server@server:*"
 
       - name: Checkout
         uses: actions/checkout@v3
@@ -63,6 +63,8 @@ jobs:
 
       - name: Install Kubectl
         uses: azure/setup-kubectl@v3
+        with:
+            version: v1.28.2
 
       - name: Install Helm
         uses: azure/setup-helm@v3
