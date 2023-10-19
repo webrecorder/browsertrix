@@ -9,6 +9,7 @@ from typing import Optional, Dict
 from datetime import timedelta
 
 from kubernetes_asyncio.client import V1ConfigMap
+from fastapi import HTTPException
 
 from .k8sapi import K8sAPI
 from .utils import dt_now, to_k8s_date
@@ -153,6 +154,14 @@ class CrawlManager(K8sAPI):
     async def remove_org_storage(self, storage: StorageRef, oid: str) -> bool:
         """Delete custom org storage secret"""
         storage_secret = storage.get_storage_secret_name(oid)
+        storage_label = f"btrix.storage={storage_secret}"
+
+        if await self.has_custom_jobs_with_label("crawljobs", storage_label):
+            raise HTTPException(status_code=400, detail="storage_in_use")
+
+        if await self.has_custom_jobs_with_label("profilejobs", storage_label):
+            raise HTTPException(status_code=400, detail="storage_in_use")
+
         try:
             await self.core_api.delete_namespaced_secret(
                 storage_secret,

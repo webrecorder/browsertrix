@@ -255,7 +255,7 @@ class K8sAPI:
             except:
                 print("Logs Not Found")
 
-    async def is_pod_metrics_available(self):
+    async def is_pod_metrics_available(self) -> bool:
         """return true/false if metrics server api is available by
         attempting list operation. if operation succeeds, then
         metrics are available, otherwise not available
@@ -272,4 +272,21 @@ class K8sAPI:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             print(exc)
+            return False
+
+    async def has_custom_jobs_with_label(self, plural, label) -> bool:
+        """return true/false if any crawljobs or profilejobs
+        match given label"""
+        try:
+            await self.custom_api.list_namespaced_custom_object(
+                group="btrix.cloud",
+                version="v1",
+                namespace=self.namespace,
+                plural=plural,
+                label_selector=label,
+                limit=1,
+            )
+            return True
+        # pylint: disable=broad-exception-caught
+        except Exception:
             return False

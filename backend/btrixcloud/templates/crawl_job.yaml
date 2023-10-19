@@ -5,8 +5,9 @@ metadata:
   labels:
     crawl: "{{ id }}"
     role: "job"
-    oid: "{{ oid }}"
-    userid: "{{ userid }}"
+    btrix.org: "{{ oid }}"
+    btrix.user: "{{ userid }}"
+    btrix.storage: "{{ storage_name }}"
 
 spec:
   selector:

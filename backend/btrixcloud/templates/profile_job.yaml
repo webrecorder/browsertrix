@@ -5,12 +5,12 @@ metadata:
   labels:
     browser: "{{ id }}"
     role: "job"
-    btrix.profile: "1"
     btrix.org: {{ oid }}
     btrix.user: {{ userid }}
     {%- if base_profile %}
     btrix.baseprofile: "{{ base_profile }}"
     {%- endif %}
+    btrix.storage: "{{ storage_name }}"
 
 spec:
   selector:

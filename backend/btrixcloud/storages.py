@@ -188,9 +188,6 @@ class StorageOps:
             if replica.custom and replica.name == name:
                 raise HTTPException(status_code=400, detail="storage_in_use")
 
-        # pylint: disable=fixme
-        # TODO: also check if any active crawls running with this storage?
-
         await self.crawl_manager.remove_org_storage(
             StorageRef(name=name, custom=True), str(org.id)
         )
