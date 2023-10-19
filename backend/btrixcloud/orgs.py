@@ -191,8 +191,11 @@ class OrgOps:
         )
         await self.add_org(org)
 
-    async def check_all_storages(self, storage_ops):
-        """ensure all org default storages are valid"""
+    async def check_all_org_default_storages(self, storage_ops):
+        """ensure all default storages references by this org actually exist
+
+        designed to help prevent removal of a 'storage' entry if
+        an org is still referencing that storage"""
         storage_names = list(storage_ops.default_storages.keys())
         errors = 0
 
