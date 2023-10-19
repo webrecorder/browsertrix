@@ -18,6 +18,7 @@ from fastapi import (
     Body,
 )
 
+from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
 from .models import (
@@ -31,6 +32,7 @@ from .models import (
     UserRole,
     Organization,
     PaginatedResponse,
+    FailedLogin,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import is_bool
@@ -57,6 +59,7 @@ class UserManager:
 
     def __init__(self, mdb, email, invites):
         self.users = mdb.get_collection("users")
+        self.failed_logins = mdb.get_collection("logins")
         self.email = email
         self.invites = invites
         self.org_ops = None
@@ -71,6 +74,8 @@ class UserManager:
         """init lookup index"""
         await self.users.create_index("id", unique=True)
         await self.users.create_index("email", unique=True)
+        # Expire failed logins object after one hour
+        await self.failed_logins.create_index("created", expireAfterSeconds=3600)
 
     async def register(
         self, user: UserCreateIn, request: Optional[Request] = None
@@ -519,26 +524,32 @@ class UserManager:
             {"id": user.id},
             {"$set": {"hashed_password": hashed_password}},
         )
-        await self.reset_failed_logins(user)
+        await self.reset_failed_logins(user.email)
 
-    async def reset_failed_logins(self, user: User) -> None:
-        """Reset consecutive failed login attempts for user to 0"""
-        await self.users.find_one_and_update(
-            {"id": user.id}, {"$set": {"failed_logins": 0}}
+    async def reset_failed_logins(self, email: str) -> None:
+        """Reset consecutive failed login attempts by deleting FailedLogin object"""
+        await self.failed_logins.delete_one({"email": email})
+
+    async def inc_failed_logins(self, email: str) -> None:
+        """Inc consecutive failed login attempts for user by 1
+
+        If a FailedLogin object doesn't already exist, create it
+        """
+        res = await self.failed_logins.find_one_and_update(
+            {"email": email},
+            {"$inc": {"count": 1}},
+            return_document=ReturnDocument.AFTER,
         )
+        if not res:
+            failed_login = FailedLogin(id=uuid.uuid4(), email=email)
+            await self.failed_logins.insert_one(failed_login.to_dict())
 
-    async def inc_failed_logins(self, user: User) -> None:
-        """Inc consecutive failed login attempts for user by 1"""
-        await self.users.find_one_and_update(
-            {"id": user.id}, {"$inc": {"failed_logins": 1}}
-        )
-
-    async def get_failed_logins_count(self, user: User) -> int:
+    async def get_failed_logins_count(self, email: str) -> int:
         """Get failed login attempts for user, falling back to 0"""
-        latest_user = await self.get_by_id(user.id)
-        if latest_user:
-            return latest_user.failed_logins or 0
-        return 0
+        failed_login = await self.failed_logins.find_one({"email": email})
+        if not failed_login:
+            return 0
+        return failed_login.get("count", 0)
 
 
 # ============================================================================

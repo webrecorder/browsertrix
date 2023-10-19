@@ -88,17 +88,28 @@ class User(BaseModel):
     invites: Dict[str, InvitePending] = {}
     hashed_password: str
 
-    # Consecutive failed logins, reset to 0 on successful login.
-    # On failed_logins >= 5, user is unable to log in until they
-    # reset their password.
-    failed_logins: Optional[int] = 0
-
     def dict(self, *a, **kw):
         """ensure invites / hashed_password never serialize, just in case"""
         exclude = kw.get("exclude") or set()
         exclude.add("invites")
         exclude.add("hashed_password")
         return super().dict(*a, **kw)
+
+
+# ============================================================================
+class FailedLogin(BaseMongoModel):
+    """
+    Failed login model
+    """
+
+    created: datetime = datetime.now()
+    email: str
+
+    # Consecutive failed logins, reset to 0 on successful login or after
+    # password is reset. On failed_logins >= 5 within the hour before this
+    # object is deleted, the user is unable to log in until they reset their
+    # password.
+    count: int = 1
 
 
 # ============================================================================
