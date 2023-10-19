@@ -10,7 +10,7 @@ and managing all aspects of crawling process. This system provides the orchestra
 while the actual crawling is performed using
 [Browsertrix Crawler](https://github.com/webrecorder/browsertrix-crawler) containers, which are launched for each crawl.
 
-See [Features](https://browsertrix.cloud/features) for a high-level list of planned features.
+See [Browsertrix Cloud](https://browsertrix.com) for a feature overview and information about Browsertrix Cloud Hosting.
 
 ## Documentation
 
