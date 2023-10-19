@@ -89,7 +89,7 @@ class User(BaseModel):
 
     id: UUID4
 
-    name: Optional[str] = ""
+    name: str = ""
     email: EmailStr
     is_superuser: bool = False
     is_verified: bool = False
@@ -139,12 +139,34 @@ class UserOut(BaseModel):
 
     id: UUID4
 
-    name: Optional[str] = ""
+    name: str = ""
     email: EmailStr
     is_superuser: bool = False
     is_verified: bool = False
 
     orgs: List[UserOrgInfoOut]
+
+
+# ============================================================================
+
+### CRAWL STATES
+
+# ============================================================================
+RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
+
+STARTING_STATES = ("starting", "waiting_capacity", "waiting_org_limit")
+
+FAILED_STATES = ("canceled", "failed", "skipped_quota_reached")
+
+SUCCESSFUL_STATES = ("complete", "partial_complete")
+
+RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
+
+RUNNING_AND_STARTING_ONLY = ("starting", *RUNNING_STATES)
+
+NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
+
+ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
 
 
 # ============================================================================
@@ -238,7 +260,7 @@ class CrawlConfigIn(BaseModel):
     """CrawlConfig input model, submitted via API"""
 
     schedule: Optional[str] = ""
-    runNow: Optional[bool] = False
+    runNow: bool = False
 
     config: RawCrawlConfig
 
@@ -549,7 +571,7 @@ class CrawlOut(BaseMongoModel):
 
     # automated crawl fields
     config: Optional[RawCrawlConfig]
-    cid: Optional[UUID4]
+    cid: UUID4
     firstSeed: Optional[str]
     seedCount: Optional[int]
     profileName: Optional[str]
@@ -692,7 +714,7 @@ class CollIn(BaseModel):
 class CollOut(Collection):
     """Collection output model with annotations."""
 
-    resources: Optional[List[CrawlFileOut]] = []
+    resources: List[CrawlFileOut] = []
 
 
 # ============================================================================
@@ -708,7 +730,7 @@ class UpdateColl(BaseModel):
 class AddRemoveCrawlList(BaseModel):
     """Collections to add or remove from collection"""
 
-    crawlIds: Optional[List[str]] = []
+    crawlIds: List[str] = []
 
 
 # ============================================================================
@@ -1005,7 +1027,7 @@ class UrlIn(BaseModel):
 class ProfileLaunchBrowserIn(UrlIn):
     """Request to launch new browser for creating profile"""
 
-    profileId: Optional[UUID4]
+    profileId: Optional[UUID4] = None
 
 
 # ============================================================================

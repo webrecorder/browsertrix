@@ -27,6 +27,11 @@ from .models import (
     StorageRef,
 )
 
+# typing
+from .orgs import OrgOps
+from .crawlmanager import CrawlManager
+from .storages import StorageOps
+
 
 BROWSER_EXPIRE = 300
 
@@ -35,6 +40,10 @@ BROWSER_EXPIRE = 300
 # pylint: disable=too-many-instance-attributes
 class ProfileOps:
     """Profile management"""
+
+    orgs: OrgOps
+    crawl_manager: CrawlManager
+    storage_ops: StorageOps
 
     def __init__(self, mdb, orgs, crawl_manager, storage_ops):
         self.profiles = mdb["profiles"]
@@ -62,6 +71,7 @@ class ProfileOps:
     ):
         """Create new profile"""
         prev_profile = ""
+        prev_profile_id = ""
         if profile_launch.profileId:
             prev_profile = await self.get_profile_storage_path(
                 profile_launch.profileId, org
@@ -70,12 +80,14 @@ class ProfileOps:
             if not prev_profile:
                 raise HTTPException(status_code=400, detail="invalid_base_profile")
 
+            prev_profile_id = str(profile_launch.profileId)
+
         browserid = await self.crawl_manager.run_profile_browser(
             str(user.id),
             str(org.id),
             url=profile_launch.url,
             storage=org.storage,
-            baseprofile=profile_launch.profileId,
+            baseprofile=prev_profile_id,
             profile_filename=prev_profile,
         )
 

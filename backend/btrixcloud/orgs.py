@@ -14,8 +14,10 @@ from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from .basecrawls import SUCCESSFUL_STATES, RUNNING_STATES, STARTING_STATES
 from .models import (
+    SUCCESSFUL_STATES,
+    RUNNING_STATES,
+    STARTING_STATES,
     Organization,
     StorageRef,
     OrgQuotas,
@@ -36,6 +38,9 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import slug_from_name
 
+# for typing
+from .invites import InviteOps
+
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 
@@ -44,6 +49,9 @@ DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 # pylint: disable=too-many-public-methods, too-many-instance-attributes
 class OrgOps:
     """Organization API operations"""
+
+    invites: InviteOps
+    default_primary: StorageRef
 
     def __init__(self, mdb, invites):
         self.orgs = mdb["organizations"]
@@ -192,7 +200,7 @@ class OrgOps:
         )
         await self.add_org(org)
 
-    async def check_all_org_default_storages(self, storage_ops):
+    async def check_all_org_default_storages(self, storage_ops) -> None:
         """ensure all default storages references by this org actually exist
 
         designed to help prevent removal of a 'storage' entry if
@@ -277,7 +285,9 @@ class OrgOps:
 
     async def handle_new_user_invite(self, invite_token: str, user: User):
         """Handle invite from a new user"""
-        new_user_invite = await self.invites.get_valid_invite(invite_token, user.email)
+        new_user_invite = await self.invites.get_valid_invite(
+            uuid.UUID(invite_token), user.email
+        )
         await self.add_user_by_invite(new_user_invite, user)
         await self.invites.remove_invite(invite_token)
         return new_user_invite

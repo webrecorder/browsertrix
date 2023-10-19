@@ -40,23 +40,6 @@ class UploadOps(BaseCrawlOps):
     """upload ops"""
 
     # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods, too-many-function-args
-    def __init__(
-        self,
-        mdb,
-        users,
-        crawl_manager,
-        crawl_configs,
-        orgs,
-        colls,
-        storage_ops,
-        event_webhook_ops,
-    ):
-        super().__init__(
-            mdb, users, orgs, crawl_configs, crawl_manager, colls, storage_ops
-        )
-
-        self.event_webhook_ops = event_webhook_ops
-
     # pylint: disable=too-many-arguments, too-many-locals, duplicate-code, invalid-name
     async def upload_stream(
         self,
@@ -291,9 +274,9 @@ def init_uploads_api(
     ops = UploadOps(
         mdb,
         users,
+        orgs,
         crawl_manager,
         crawl_configs,
-        orgs,
         colls,
         storage_ops,
         event_webhook_ops,

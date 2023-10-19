@@ -41,6 +41,10 @@ from .zip import (
 from .utils import is_bool, slug_from_name
 
 
+# for typing
+from .orgs import OrgOps
+from .crawlmanager import CrawlManager
+
 CHUNK_SIZE = 1024 * 256
 
 
@@ -54,6 +58,9 @@ class StorageOps:
     default_primary: Optional[StorageRef] = None
 
     default_replicas: List[StorageRef] = []
+
+    org_ops: OrgOps
+    crawl_manager: CrawlManager
 
     def __init__(self, org_ops, crawl_manager) -> None:
         self.org_ops = org_ops
@@ -159,15 +166,13 @@ class StorageOps:
 
         org.customStorages[name] = storage
 
-        string_data = (
-            {
-                "TYPE": "s3",
-                "STORE_ENDPOINT_URL": storage.endpoint_url,
-                "STORE_ENDPOINT_NO_BUCKET_URL": storage.endpoint_no_bucket_url,
-                "STORE_ACCESS_KEY": storage.access_key,
-                "STORE_SECRET_KEY": storage.secret_key,
-            },
-        )
+        string_data = {
+            "TYPE": "s3",
+            "STORE_ENDPOINT_URL": storage.endpoint_url,
+            "STORE_ENDPOINT_NO_BUCKET_URL": storage.endpoint_no_bucket_url,
+            "STORE_ACCESS_KEY": storage.access_key,
+            "STORE_SECRET_KEY": storage.secret_key,
+        }
 
         await self.crawl_manager.add_org_storage(
             StorageRef(name=name, custom=True), string_data, str(org.id)

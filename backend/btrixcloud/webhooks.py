@@ -23,12 +23,17 @@ from .models import (
     Organization,
 )
 
+# typing
+from .orgs import OrgOps
+
 
 # ============================================================================
 class EventWebhookOps:
     """Event webhook notification management"""
 
     # pylint: disable=invalid-name, too-many-arguments, too-many-locals
+
+    org_ops: OrgOps
 
     def __init__(self, mdb, org_ops):
         self.webhooks = mdb["webhooks"]

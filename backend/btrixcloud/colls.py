@@ -11,7 +11,6 @@ import pymongo
 from fastapi import Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
 
-from .basecrawls import SUCCESSFUL_STATES
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
     Collection,
@@ -23,7 +22,13 @@ from .models import (
     CrawlOutWithResources,
     Organization,
     PaginatedResponse,
+    SUCCESSFUL_STATES,
 )
+
+# typing
+from .orgs import OrgOps
+from .storages import StorageOps
+from .webhooks import EventWebhookOps
 
 
 # ============================================================================
@@ -31,6 +36,10 @@ class CollectionOps:
     """ops for working with named collections of crawls"""
 
     # pylint: disable=too-many-arguments
+
+    orgs: OrgOps
+    storage_ops: StorageOps
+    event_webhook_ops: EventWebhookOps
 
     def __init__(self, mdb, storage_ops, orgs, event_webhook_ops):
         self.collections = mdb["collections"]
@@ -115,7 +124,7 @@ class CollectionOps:
 
     async def add_crawls_to_collection(
         self, coll_id: uuid.UUID, crawl_ids: List[str], org: Organization
-    ):
+    ) -> CollOut:
         """Add crawls to collection"""
         await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
 
@@ -140,7 +149,7 @@ class CollectionOps:
 
     async def remove_crawls_from_collection(
         self, coll_id: uuid.UUID, crawl_ids: List[str], org: Organization
-    ):
+    ) -> CollOut:
         """Remove crawls from collection"""
         await self.crawl_ops.remove_from_collection(crawl_ids, coll_id)
         modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
@@ -164,7 +173,7 @@ class CollectionOps:
 
     async def get_collection(
         self, coll_id: uuid.UUID, org: Organization, resources=False, public_only=False
-    ):
+    ) -> CollOut:
         """Get collection by id"""
         query: dict[str, object] = {"_id": coll_id}
         if public_only:
@@ -172,7 +181,7 @@ class CollectionOps:
 
         result = await self.collections.find_one(query)
         if not result:
-            return None
+            raise HTTPException(status_code=404, detail="collection_not_found")
 
         if resources:
             result["resources"] = await self.get_collection_crawl_resources(
@@ -409,10 +418,10 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     async def get_collection_all(org: Organization = Depends(org_viewer_dep)):
         results = {}
         try:
-            all_collections, _ = colls.list_collections(org.id, page_size=10_000)
+            all_collections, _ = await colls.list_collections(org.id, page_size=10_000)
             for collection in all_collections:
                 results[collection.name] = await colls.get_collection_crawl_resources(
-                    org.id, str(collection.id)
+                    collection.id, org
                 )
         except Exception as exc:
             # pylint: disable=raise-missing-from
@@ -435,21 +444,14 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     )
     async def get_collection(
         coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
-    ):
-        coll = await colls.get_collection(coll_id, org)
-        if not coll:
-            raise HTTPException(status_code=404, detail="collection_not_found")
-        return coll
+    ) -> CollOut:
+        return await colls.get_collection(coll_id, org)
 
     @app.get("/orgs/{oid}/collections/{coll_id}/replay.json", tags=["collections"])
     async def get_collection_replay(
         coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
-    ):
-        coll = await colls.get_collection(coll_id, org, resources=True)
-        if not coll:
-            raise HTTPException(status_code=404, detail="collection_not_found")
-
-        return coll
+    ) -> CollOut:
+        return await colls.get_collection(coll_id, org, resources=True)
 
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/public/replay.json", tags=["collections"]
@@ -458,13 +460,10 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
         response: Response,
         coll_id: uuid.UUID,
         org: Organization = Depends(org_public),
-    ):
+    ) -> CollOut:
         coll = await colls.get_collection(
             coll_id, org, resources=True, public_only=True
         )
-        if not coll:
-            raise HTTPException(status_code=404, detail="collection_not_found")
-
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Headers"] = "*"
         return coll
@@ -495,7 +494,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
         crawlList: AddRemoveCrawlList,
         coll_id: uuid.UUID,
         org: Organization = Depends(org_crawl_dep),
-    ):
+    ) -> CollOut:
         return await colls.add_crawls_to_collection(coll_id, crawlList.crawlIds, org)
 
     @app.post(
@@ -507,7 +506,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
         crawlList: AddRemoveCrawlList,
         coll_id: uuid.UUID,
         org: Organization = Depends(org_crawl_dep),
-    ):
+    ) -> CollOut:
         return await colls.remove_crawls_from_collection(
             coll_id, crawlList.crawlIds, org
         )

@@ -30,8 +30,9 @@ from .models import (
     Organization,
     User,
     PaginatedResponse,
+    RUNNING_AND_STARTING_STATES,
+    ALL_CRAWL_STATES,
 )
-from .basecrawls import RUNNING_AND_STARTING_STATES, ALL_CRAWL_STATES
 
 
 # ============================================================================
@@ -39,25 +40,9 @@ class CrawlOps(BaseCrawlOps):
     """Crawl Ops"""
 
     # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
-    def __init__(
-        self,
-        mdb,
-        users,
-        crawl_manager,
-        crawl_configs,
-        orgs,
-        colls,
-        storage_ops,
-        event_webhook_ops,
-    ):
-        super().__init__(
-            mdb, users, orgs, crawl_configs, crawl_manager, colls, storage_ops
-        )
-        self.crawls = self.crawls
-        self.crawl_configs = crawl_configs
-        self.user_manager = users
-        self.event_webhook_ops = event_webhook_ops
 
+    def __init__(self, *args):
+        super().__init__(*args)
         self.crawl_configs.set_crawl_ops(self)
         self.colls.set_crawl_ops(self)
         self.event_webhook_ops.set_crawl_ops(self)

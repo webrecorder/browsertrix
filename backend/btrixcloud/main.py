@@ -113,6 +113,7 @@ def main():
         org_ops,
         coll_ops,
         storage_ops,
+        event_webhook_ops,
         current_active_user,
     )
 

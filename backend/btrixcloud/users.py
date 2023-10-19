@@ -50,11 +50,18 @@ from .auth import (
     decode_jwt,
 )
 
+# for typing
+from .invites import InviteOps
+from .emailsender import EmailSender
+
 
 # ============================================================================
 # pylint: disable=raise-missing-from, too-many-public-methods, too-many-instance-attributes
 class UserManager:
     """Browsertrix UserManager"""
+
+    invites: InviteOps
+    email: EmailSender
 
     def __init__(self, mdb, email, invites):
         self.users = mdb.get_collection("users")

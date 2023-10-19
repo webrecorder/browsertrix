@@ -28,14 +28,26 @@ from .utils import (
 )
 from .k8sapi import K8sAPI
 
-from .basecrawls import (
+from .models import (
     NON_RUNNING_STATES,
     RUNNING_STATES,
     RUNNING_AND_STARTING_ONLY,
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
+    CrawlFile,
+    CrawlCompleteIn,
+    StorageRef,
 )
-from .models import CrawlFile, CrawlCompleteIn, StorageRef
+
+# typing
+from .crawlconfigs import CrawlConfigOps
+from .crawls import CrawlOps
+from .orgs import OrgOps
+from .colls import CollectionOps
+from .storages import StorageOps
+from .webhooks import EventWebhookOps
+from .users import UserManager
+
 
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
@@ -236,6 +248,14 @@ class CrawlStatus(BaseModel):
 class BtrixOperator(K8sAPI):
     """BtrixOperator Handler"""
 
+    crawl_config_ops: CrawlConfigOps
+    crawl_ops: CrawlOps
+    orgs_ops: OrgOps
+    coll_ops: CollectionOps
+    storage_ops: StorageOps
+    event_webhook_ops: EventWebhookOps
+    user_ops: UserManager
+
     def __init__(
         self,
         crawl_config_ops,
@@ -248,12 +268,13 @@ class BtrixOperator(K8sAPI):
         super().__init__()
 
         self.crawl_config_ops = crawl_config_ops
-        self.user_ops = crawl_config_ops.user_manager
         self.crawl_ops = crawl_ops
         self.org_ops = org_ops
         self.coll_ops = coll_ops
         self.storage_ops = storage_ops
         self.event_webhook_ops = event_webhook_ops
+
+        self.user_ops = crawl_config_ops.user_manager
 
         self.config_file = "/config/config.yaml"
 
@@ -1562,12 +1583,16 @@ class BtrixOperator(K8sAPI):
             )
             if not crawlconfig:
                 print(
-                    f"warn: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
+                    f"error: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
                 )
                 return {"attachments": []}
 
             # db create
             user = await self.user_ops.get_by_id(uuid.UUID(userid))
+            if not user:
+                print(f"error: missing user for id {userid}")
+                return {"attachments": []}
+
             await self.crawl_config_ops.add_new_crawl(
                 crawl_id, crawlconfig, user, manual=False
             )

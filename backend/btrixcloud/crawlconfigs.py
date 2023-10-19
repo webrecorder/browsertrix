@@ -28,9 +28,15 @@ from .models import (
     Organization,
     User,
     PaginatedResponse,
+    FAILED_STATES,
 )
-from .basecrawls import FAILED_STATES
 from .utils import dt_now
+
+# for typing
+from .orgs import OrgOps
+from .crawlmanager import CrawlManager
+from .users import UserManager
+from .profiles import ProfileOps
 
 
 ALLOWED_SORT_KEYS = (
@@ -49,6 +55,11 @@ class CrawlConfigOps:
     """Crawl Config Operations"""
 
     # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
+
+    user_manager: UserManager
+    org_ops: OrgOps
+    crawl_manager: CrawlManager
+    profiles: ProfileOps
 
     def __init__(
         self,
@@ -676,7 +687,7 @@ class CrawlConfigOps:
             status = "deactivated"
 
         # delete from crawl manager, but not from db
-        await self.crawl_manager.delete_crawl_config_by_id(crawlconfig.id)
+        await self.crawl_manager.delete_crawl_config_by_id(str(crawlconfig.id))
 
         return status
 

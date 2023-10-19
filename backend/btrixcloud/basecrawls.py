@@ -21,26 +21,20 @@ from .models import (
     Organization,
     PaginatedResponse,
     User,
+    RUNNING_AND_STARTING_STATES,
+    SUCCESSFUL_STATES,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now
 
-
-RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
-
-STARTING_STATES = ("starting", "waiting_capacity", "waiting_org_limit")
-
-FAILED_STATES = ("canceled", "failed", "skipped_quota_reached")
-
-SUCCESSFUL_STATES = ("complete", "partial_complete")
-
-RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
-
-RUNNING_AND_STARTING_ONLY = ("starting", *RUNNING_STATES)
-
-NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
-
-ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
+# typing
+from .crawlconfigs import CrawlConfigOps
+from .crawlmanager import CrawlManager
+from .users import UserManager
+from .orgs import OrgOps
+from .colls import CollectionOps
+from .storages import StorageOps
+from .webhooks import EventWebhookOps
 
 
 # Presign duration must be less than 604800 seconds (one week),
@@ -56,16 +50,33 @@ class BaseCrawlOps:
 
     # pylint: disable=duplicate-code, too-many-arguments, too-many-locals
 
+    crawl_configs: CrawlConfigOps
+    crawl_manager: CrawlManager
+    user_manager: UserManager
+    orgs: OrgOps
+    colls: CollectionOps
+    storage_ops: StorageOps
+    event_webhook_ops: EventWebhookOps
+
     def __init__(
-        self, mdb, users, orgs, crawl_configs, crawl_manager, colls, storage_ops
+        self,
+        mdb,
+        users,
+        orgs,
+        crawl_manager,
+        crawl_configs,
+        colls,
+        storage_ops,
+        event_webhook_ops,
     ):
         self.crawls = mdb["crawls"]
-        self.crawl_configs = crawl_configs
         self.crawl_manager = crawl_manager
+        self.crawl_configs = crawl_configs
         self.user_manager = users
         self.orgs = orgs
         self.colls = colls
         self.storage_ops = storage_ops
+        self.event_webhook_ops = event_webhook_ops
 
         presign_duration_minutes = int(
             os.environ.get("PRESIGN_DURATION_MINUTES") or PRESIGN_MINUTES_DEFAULT
@@ -665,13 +676,29 @@ class BaseCrawlOps:
 
 # ============================================================================
 def init_base_crawls_api(
-    app, mdb, users, crawl_manager, crawl_config_ops, orgs, colls, storage_ops, user_dep
+    app,
+    mdb,
+    users,
+    crawl_manager,
+    crawl_config_ops,
+    orgs,
+    colls,
+    storage_ops,
+    event_webhook_ops,
+    user_dep,
 ):
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code, too-many-arguments, too-many-locals
 
     ops = BaseCrawlOps(
-        mdb, users, orgs, crawl_config_ops, crawl_manager, colls, storage_ops
+        mdb,
+        users,
+        orgs,
+        crawl_config_ops,
+        crawl_manager,
+        colls,
+        storage_ops,
+        event_webhook_ops,
     )
 
     org_viewer_dep = orgs.org_viewer_dep
