@@ -75,7 +75,7 @@ def test_crawl_stopped_when_quota_reached(org_with_quotas, admin_auth_headers):
 def test_crawl_stopped_when_card_cap_reached(org_with_quotas, admin_auth_headers):
     # Set allowed overage on org
     r = requests.post(
-        f"{API_PREFIX}/orgs/{org_with_quotas}/billing",
+        f"{API_PREFIX}/orgs/{org_with_quotas}/limits",
         headers=admin_auth_headers,
         json={"crawlExecMinutesAllowedOverage": EXEC_MINS_ALLOWED_OVERAGE},
     )
