@@ -209,7 +209,7 @@ def init_jwt_auth(user_manager):
                 f"Password reset email sent after too many attempts for {login_email}",
                 flush=True,
             )
-            await user_manager.set_failed_logins(attempted_user, 0)
+            await user_manager.reset_failed_logins(attempted_user)
             raise HTTPException(
                 status_code=429,
                 detail="too_many_login_attempts",
@@ -230,7 +230,7 @@ def init_jwt_auth(user_manager):
         #        detail="login_user_not_verified",
         #    )
 
-        await user_manager.set_failed_logins(attempted_user, 0)
+        await user_manager.reset_failed_logins(attempted_user)
         return get_bearer_response(user)
 
     @auth_jwt_router.post("/refresh", response_model=BearerResponse)

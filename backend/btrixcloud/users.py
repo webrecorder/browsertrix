@@ -525,16 +525,17 @@ class UserManager:
             {"$set": {"hashed_password": hashed_password, "locked": False}},
         )
 
-    async def set_failed_logins(self, user: User, count: int) -> None:
-        """Set consecutive failed login attempts for user"""
+    async def reset_failed_logins(self, user: User) -> None:
+        """Reset consecutive failed login attempts for user to 0"""
         await self.users.find_one_and_update(
-            {"id": user.id}, {"$set": {"failed_logins": count}}
+            {"id": user.id}, {"$set": {"failed_logins": 0}}
         )
 
     async def inc_failed_logins(self, user: User) -> None:
         """Inc consecutive failed login attempts for user by 1"""
-        count = await self.get_failed_logins_count(user)
-        await self.set_failed_logins(user, count + 1)
+        await self.users.find_one_and_update(
+            {"id": user.id}, {"$inc": {"failed_logins": 1}}
+        )
 
     async def get_failed_logins_count(self, user: User) -> int:
         """Get failed login attempts for user, falling back to 0"""
