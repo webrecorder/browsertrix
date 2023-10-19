@@ -14,7 +14,7 @@ import type { CurrentUser } from "../../types/user";
 import type { APIPaginatedList } from "../../types/api";
 import { maxLengthValidator } from "../../utils/form";
 
-type Tab = "information" | "members" | "billing";
+type Tab = "information" | "members" | "limits";
 type User = {
   email: string;
   role: number;
@@ -79,7 +79,7 @@ export class OrgSettings extends LiteElement {
   isSavingOrgName = false;
 
   @property({ type: Boolean })
-  isSavingOrgBilling = false;
+  isSavingOrgLimits = false;
 
   @state()
   pendingInvites: Invite[] = [];
@@ -97,7 +97,7 @@ export class OrgSettings extends LiteElement {
     return {
       information: msg("General"),
       members: msg("Members"),
-      billing: msg("Billing"),
+      limits: msg("Limits"),
     };
   }
 
@@ -146,7 +146,7 @@ export class OrgSettings extends LiteElement {
         </header>
         ${this.renderTab("information", "settings")}
         ${this.renderTab("members", "settings/members")}
-        ${this.renderTab("billing", "settings/billing")}
+        ${this.renderTab("limits", "settings/limits")}
 
         <btrix-tab-panel name="information"
           >${this.renderInformation()}</btrix-tab-panel
@@ -154,9 +154,7 @@ export class OrgSettings extends LiteElement {
         <btrix-tab-panel name="members"
           >${this.renderMembers()}</btrix-tab-panel
         >
-        <btrix-tab-panel name="billing"
-          >${this.renderBilling()}</btrix-tab-panel
-        >
+        <btrix-tab-panel name="limits">${this.renderLimits()}</btrix-tab-panel>
       </btrix-tab-list>`;
   }
 
@@ -330,9 +328,9 @@ export class OrgSettings extends LiteElement {
     `;
   }
 
-  private renderBilling() {
+  private renderLimits() {
     return html`<div class="rounded border">
-      <form @submit=${this.onOrgBillingSubmit}>
+      <form @submit=${this.onOrgLimitsSubmit}>
         <div class="grid grid-cols-5 gap-x-4 p-4">
           <div class="col-span-5 md:col-span-3">
             <sl-input
@@ -363,8 +361,8 @@ export class OrgSettings extends LiteElement {
             type="submit"
             size="small"
             variant="primary"
-            ?disabled=${this.isSavingOrgBilling}
-            ?loading=${this.isSavingOrgBilling}
+            ?disabled=${this.isSavingOrgLimits}
+            ?loading=${this.isSavingOrgLimits}
             >${msg("Save Changes")}</sl-button
           >
         </footer>
@@ -602,19 +600,19 @@ export class OrgSettings extends LiteElement {
     this.isSubmittingInvite = false;
   }
 
-  private async onOrgBillingSubmit(e: SubmitEvent) {
+  private async onOrgLimitsSubmit(e: SubmitEvent) {
     e.preventDefault();
 
     const formEl = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(formEl))) return;
 
-    this.isSavingOrgBilling = true;
+    this.isSavingOrgLimits = true;
 
     const { execMinutesOverage } = serialize(formEl);
 
     try {
       const data = await this.apiFetch(
-        `/orgs/${this.orgId}/billing`,
+        `/orgs/${this.orgId}/limits`,
         this.authState!,
         {
           method: "POST",
@@ -625,7 +623,7 @@ export class OrgSettings extends LiteElement {
       );
 
       this.notify({
-        message: msg(str`Successfully updated org billing settings.`),
+        message: msg(str`Successfully updated org limits settings.`),
         variant: "success",
         icon: "check2-circle",
       });
@@ -639,7 +637,7 @@ export class OrgSettings extends LiteElement {
       });
     }
 
-    this.isSavingOrgBilling = false;
+    this.isSavingOrgLimits = false;
   }
 
   private async removeInvite(invite: Invite) {

@@ -626,8 +626,8 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
         return {"updated": True}
 
-    @router.post("/billing", tags=["organizations"])
-    async def update_org_billing_settings(
+    @router.post("/limits", tags=["organizations"])
+    async def update_org_limits_settings(
         settings: OrgUpdateExecMinsOverage,
         org: Organization = Depends(org_owner_dep),
     ):
