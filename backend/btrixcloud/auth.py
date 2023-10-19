@@ -215,10 +215,6 @@ def init_jwt_auth(user_manager):
                 detail="too_many_login_attempts",
             )
 
-        # If user is locked, aways return 429 to prevent someone from continuing
-        # to get feedback on whether login credentials are invalid
-        if attempted_user.locked:
-            raise HTTPException(status_code=429, detail="too_many_login_attempts")
         if not user:
             raise HTTPException(
                 status_code=400,

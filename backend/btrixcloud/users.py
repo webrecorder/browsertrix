@@ -434,11 +434,6 @@ class UserManager:
             user.email, token, request and request.headers
         )
 
-        # Lock user until password is reset
-        await self.users.find_one_and_update(
-            {"id": user.id}, {"$set": {"locked": True}}
-        )
-
     async def reset_password(self, token: str, password: str) -> None:
         """reset password to new password given reset token"""
         try:
@@ -522,8 +517,9 @@ class UserManager:
         user.hashed_password = hashed_password
         await self.users.find_one_and_update(
             {"id": user.id},
-            {"$set": {"hashed_password": hashed_password, "locked": False}},
+            {"$set": {"hashed_password": hashed_password}},
         )
+        await self.reset_failed_logins(user)
 
     async def reset_failed_logins(self, user: User) -> None:
         """Reset consecutive failed login attempts for user to 0"""

@@ -89,12 +89,9 @@ class User(BaseModel):
     hashed_password: str
 
     # Consecutive failed logins, reset to 0 on successful login.
+    # On failed_logins >= 5, user is unable to log in until they
+    # reset their password.
     failed_logins: Optional[int] = 0
-
-    # If user is logged, they are unable to log in until they reset their
-    # password from the /forgot-password email or /users/me/password-change.
-    # This is to prevent brute force cracking of passwords via /login.
-    locked: Optional[bool] = False
 
     def dict(self, *a, **kw):
         """ensure invites / hashed_password never serialize, just in case"""
