@@ -79,7 +79,7 @@ class UserManager:
         await self.users.create_index("id", unique=True)
         await self.users.create_index("email", unique=True)
         # Expire failed logins object after one hour
-        await self.failed_logins.create_index("created", expireAfterSeconds=3600)
+        await self.failed_logins.create_index("attempted", expireAfterSeconds=3600)
 
     async def register(
         self, user: UserCreateIn, request: Optional[Request] = None
@@ -548,7 +548,8 @@ class UserManager:
         await self.failed_logins.find_one_and_update(
             {"email": email},
             {
-                "$setOnInsert": failed_login.to_dict(exclude={"count"}),
+                "$setOnInsert": failed_login.to_dict(exclude={"count", "attempted"}),
+                "$set": {"attempted": failed_login.dict(include={"attempted"})},
                 "$inc": {"count": 1},
             },
             upsert=True,

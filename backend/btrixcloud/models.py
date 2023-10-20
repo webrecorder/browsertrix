@@ -102,7 +102,7 @@ class FailedLogin(BaseMongoModel):
     Failed login model
     """
 
-    created: datetime = datetime.now()
+    attempted: datetime = datetime.now()
     email: str
 
     # Consecutive failed logins, reset to 0 on successful login or after
