@@ -51,21 +51,26 @@ from .auth import (
 
 
 # ============================================================================
-# pylint: disable=raise-missing-from, too-many-public-methods
+# pylint: disable=raise-missing-from, too-many-public-methods, too-many-instance-attributes
 class UserManager:
     """Browsertrix UserManager"""
 
     def __init__(self, mdb, email, invites):
         self.users = mdb.get_collection("users")
+        self.crawl_config_ops = None
+        self.base_crawl_ops = None
         self.email = email
         self.invites = invites
         self.org_ops = None
 
         self.registration_enabled = is_bool(os.environ.get("REGISTRATION_ENABLED"))
 
-    def set_org_ops(self, ops):
+    # pylint: disable=attribute-defined-outside-init
+    def set_ops(self, org_ops, crawl_config_ops, base_crawl_ops):
         """set org ops"""
-        self.org_ops = ops
+        self.org_ops = org_ops
+        self.crawl_config_ops = crawl_config_ops
+        self.base_crawl_ops = base_crawl_ops
 
     async def init_index(self):
         """init lookup index"""
@@ -475,6 +480,10 @@ class UserManager:
             raise HTTPException(status_code=400, detail="no_updates_specified")
 
         await self.update_email_name(user, user_update.email, user_update.name)
+
+        if user_update.name:
+            await self.base_crawl_ops.update_usernames(user.id, user_update.name)
+            await self.crawl_config_ops.update_usernames(user.id, user_update.name)
 
     async def update_verified(self, user: User) -> None:
         """Update verified status for user"""

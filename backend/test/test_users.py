@@ -1,7 +1,13 @@
 import requests
 import time
 
-from .conftest import API_PREFIX, CRAWLER_USERNAME, ADMIN_PW, ADMIN_USERNAME
+from .conftest import (
+    API_PREFIX,
+    CRAWLER_USERNAME,
+    ADMIN_PW,
+    ADMIN_USERNAME,
+    FINISHED_STATES,
+)
 
 VALID_USER_EMAIL = "validpassword@example.com"
 VALID_USER_PW = "validpassw0rd!"
@@ -230,13 +236,66 @@ def test_reset_valid_password(admin_auth_headers, default_org_id):
     assert r.json()["updated"] == True
 
 
-def test_patch_me_endpoint(admin_auth_headers, default_org_id):
+def test_patch_me_endpoint(admin_auth_headers, default_org_id, admin_userid):
+    # Start a new crawl
+    crawl_data = {
+        "runNow": True,
+        "name": "name change test crawl",
+        "config": {
+            "seeds": [{"url": "https://specs.webrecorder.net/", "depth": 1}],
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+    crawl_id = data["run_now_job"]
+
+    # Wait for it to complete
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data["state"] in FINISHED_STATES:
+            break
+        time.sleep(5)
+
+    # Change user name and email
+    new_name = "New Admin"
     r = requests.patch(
         f"{API_PREFIX}/users/me",
         headers=admin_auth_headers,
-        json={"email": "admin2@example.com", "name": "New Admin"},
+        json={"email": "admin2@example.com", "name": new_name},
     )
     assert r.status_code == 200
+
+    # Verify that name was updated in workflows and crawls
+    for workflow_field in ["createdBy", "modifiedBy", "lastStartedBy"]:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs?{workflow_field}={admin_userid}",
+            headers=admin_auth_headers,
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["total"] > 0
+        for workflow in data["items"]:
+            if workflow[workflow_field] == admin_userid:
+                assert workflow[f"{workflow_field}Name"] == new_name
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?userid={admin_userid}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] > 0
+    for item in data["items"]:
+        if item["userid"] == admin_userid:
+            assert item["userName"] == new_name
 
 
 def test_patch_me_invalid_email_in_use(admin_auth_headers, default_org_id):

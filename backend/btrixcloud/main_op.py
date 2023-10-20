@@ -41,8 +41,6 @@ def main():
 
     event_webhook_ops = EventWebhookOps(mdb, org_ops)
 
-    user_manager.set_org_ops(org_ops)
-
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
         print(
@@ -65,6 +63,8 @@ def main():
         crawl_manager,
         profile_ops,
     )
+
+    user_manager.set_ops(org_ops, crawl_config_ops, None)
 
     coll_ops = CollectionOps(mdb, crawl_manager, org_ops, event_webhook_ops)
 
