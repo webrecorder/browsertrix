@@ -97,6 +97,22 @@ class User(BaseModel):
 
 
 # ============================================================================
+class FailedLogin(BaseMongoModel):
+    """
+    Failed login model
+    """
+
+    attempted: datetime = datetime.now()
+    email: str
+
+    # Consecutive failed logins, reset to 0 on successful login or after
+    # password is reset. On failed_logins >= 5 within the hour before this
+    # object is deleted, the user is unable to log in until they reset their
+    # password.
+    count: int = 1
+
+
+# ============================================================================
 class UserOrgInfoOut(BaseModel):
     """org per user"""
 
