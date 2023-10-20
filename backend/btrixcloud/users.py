@@ -57,8 +57,8 @@ class UserManager:
 
     def __init__(self, mdb, email, invites):
         self.users = mdb.get_collection("users")
-        self.crawl_configs_mdb = mdb.get_collection("crawl_configs")
-        self.crawls_mdb = mdb.get_collection("crawls")
+        self.crawl_config_ops = None
+        self.base_crawl_ops = None
         self.email = email
         self.invites = invites
         self.org_ops = None
