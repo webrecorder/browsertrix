@@ -116,8 +116,8 @@ class BaseCrawlOps:
                     res.get("collectionIds")
                 )
 
-        del res["files"]
-        del res["errors"]
+        res.pop("files", None)
+        res.pop("errors", None)
 
         crawl = cls_type.from_dict(res)
 
@@ -204,6 +204,12 @@ class BaseCrawlOps:
                 "state": {"$in": RUNNING_AND_STARTING_STATES},
             },
             {"$set": data},
+        )
+
+    async def update_usernames(self, userid: uuid.UUID, updated_name: str) -> None:
+        """Update username references matching userid"""
+        await self.crawls.update_many(
+            {"userid": userid}, {"$set": {"userName": updated_name}}
         )
 
     async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
@@ -764,3 +770,5 @@ def init_base_crawls_api(
         org: Organization = Depends(org_crawl_dep),
     ):
         return await ops.delete_crawls_all_types(delete_list, org, user)
+
+    return ops
