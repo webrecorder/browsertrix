@@ -18,7 +18,6 @@ from fastapi import (
     Body,
 )
 
-from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
 from .models import (
@@ -544,14 +543,16 @@ class UserManager:
 
         If a FailedLogin object doesn't already exist, create it
         """
-        res = await self.failed_logins.find_one_and_update(
+        failed_login = FailedLogin(id=uuid.uuid4(), email=email)
+
+        await self.failed_logins.find_one_and_update(
             {"email": email},
-            {"$inc": {"count": 1}},
-            return_document=ReturnDocument.AFTER,
+            {
+                "$setOnInsert": failed_login.to_dict(exclude={"count"}),
+                "$inc": {"count": 1},
+            },
+            upsert=True,
         )
-        if not res:
-            failed_login = FailedLogin(id=uuid.uuid4(), email=email)
-            await self.failed_logins.insert_one(failed_login.to_dict())
 
     async def get_failed_logins_count(self, email: str) -> int:
         """Get failed login attempts for user, falling back to 0"""

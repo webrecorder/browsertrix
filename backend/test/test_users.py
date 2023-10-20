@@ -240,8 +240,8 @@ def test_reset_valid_password(admin_auth_headers, default_org_id):
 
 
 def test_lock_out_user_after_failed_logins():
-    # Almost lock out user by making 4 consecutive failed login attempts
-    for _ in range(4):
+    # Almost lock out user by making 5 consecutive failed login attempts
+    for _ in range(5):
         requests.post(
             f"{API_PREFIX}/auth/jwt/login",
             data={
@@ -316,8 +316,8 @@ def test_lock_out_user_after_failed_logins():
 
 def test_lock_out_unregistered_user_after_failed_logins():
     unregistered_email = "notregistered@example.com"
-    # Almost lock out email by making 4 consecutive failed login attempts
-    for _ in range(4):
+    # Almost lock out email by making 5 consecutive failed login attempts
+    for _ in range(5):
         requests.post(
             f"{API_PREFIX}/auth/jwt/login",
             data={
