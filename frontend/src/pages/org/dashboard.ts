@@ -179,6 +179,7 @@ export class Dashboard extends LiteElement {
           ${this.renderCard(
             msg("Crawling"),
             (metrics) => html`
+              ${this.renderCrawlingMeter(metrics)}
               <dl>
                 ${this.renderStat({
                   value:
@@ -329,6 +330,102 @@ export class Dashboard extends LiteElement {
                 value=${metrics.storageQuotaBytes}
                 display="narrow"
               ></sl-format-bytes>
+            </btrix-meter>
+          </div>
+        `
+      )}
+    `;
+  }
+
+  private renderCrawlingMeter(metrics: Metrics) {
+    const quotaSeconds = this.org!.quotas.crawlExecMinutesQuota * 60;
+    const now = new Date();
+    const usageSeconds =
+      this.org!.crawlExecSeconds[
+        `${now.getFullYear()}-${now.getUTCMonth() + 1}`
+      ] || 0;
+    const hasQuota = Boolean(quotaSeconds);
+    const isReached = hasQuota && usageSeconds >= quotaSeconds;
+
+    const renderBar = (value: number, label: string, color: string) => html`
+      <btrix-meter-bar
+        value=${(value / usageSeconds) * 100}
+        style="--background-color:var(--sl-color-${color}-400)"
+      >
+        <div class="text-center">
+          <div>${label}</div>
+          <div class="text-xs opacity-80">
+            <sl-format-bytes value=${value} display="narrow"></sl-format-bytes>
+            | ${this.renderPercentage(value / usageSeconds)}
+          </div>
+        </div>
+      </btrix-meter-bar>
+    `;
+    return html`
+      <div class="font-semibold mb-1">
+        ${when(
+          isReached,
+          () => html`
+            <div class="flex gap-2 items-center">
+              <sl-icon
+                class="text-danger"
+                name="exclamation-triangle"
+              ></sl-icon>
+              <span>${msg("Execution Time Quota Reached")}</span>
+            </div>
+          `,
+          () =>
+            hasQuota
+              ? html`
+                  <span class="inline-flex items-center">
+                    ${humanizeDuration((quotaSeconds - usageSeconds) * 1000)}
+                    ${msg("of Running Time Available")}
+                    <sl-tooltip
+                      content=${msg(
+                        "Total running time of all crawler instances"
+                      )}
+                    >
+                      <sl-icon
+                        name="info-circle"
+                        class="ml-1 text-neutral-500"
+                      ></sl-icon
+                    ></sl-tooltip>
+                  </span>
+                `
+              : ""
+        )}
+      </div>
+      ${when(
+        hasQuota,
+        () => html`
+          <div class="mb-2">
+            <btrix-meter
+              value=${usageSeconds}
+              max=${ifDefined(quotaSeconds || undefined)}
+              valueText=${msg("time")}
+            >
+              ${when(usageSeconds, () =>
+                renderBar(usageSeconds, msg("Run Time"), this.colors.crawls)
+              )}
+              <div slot="available" class="flex-1">
+                <sl-tooltip>
+                  <div slot="content">
+                    <div>${msg("Available")}</div>
+                    <div class="text-xs opacity-80">
+                      ${this.renderPercentage(
+                        (quotaSeconds - usageSeconds) / quotaSeconds
+                      )}
+                    </div>
+                  </div>
+                  <div class="w-full h-full"></div>
+                </sl-tooltip>
+              </div>
+              <span slot="valueLabel">
+                ${humanizeDuration(usageSeconds * 1000)}
+              </span>
+              <span slot="maxLabel">
+                ${humanizeDuration(quotaSeconds * 1000)}
+              </span>
             </btrix-meter>
           </div>
         `
