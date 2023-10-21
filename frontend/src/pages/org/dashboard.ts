@@ -342,17 +342,16 @@ export class Dashboard extends LiteElement {
     renderFooter?: (metric: Metrics) => TemplateResult
   ) {
     return html`
-      <section
-        class="flex-1 flex flex-col border rounded p-4 transition-opacity delay-75 ${this
-          .metrics
-          ? "opacity-100"
-          : "opacity-0"}"
-      >
+      <section class="flex-1 flex flex-col border rounded p-4">
         <h2 class="text-lg font-semibold leading-none border-b pb-3 mb-3">
           ${title}
         </h2>
         <div class="flex-1">
-          ${when(this.metrics, () => renderContent(this.metrics!))}
+          ${when(
+            this.metrics,
+            () => renderContent(this.metrics!),
+            this.renderCardSkeleton
+          )}
         </div>
         ${when(renderFooter && this.metrics, () =>
           renderFooter!(this.metrics!)
@@ -398,6 +397,14 @@ export class Dashboard extends LiteElement {
       </div>
     `;
   }
+
+  private renderCardSkeleton = () =>
+    html`
+      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+    `;
 
   readonly usageTableCols = [
     msg("Month"),
