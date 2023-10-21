@@ -181,7 +181,10 @@ export class Dashboard extends LiteElement {
             (metrics) => html`
               <dl>
                 ${this.renderStat({
-                  value: metrics.workflowsRunningCount,
+                  value:
+                    metrics.workflowsRunningCount && metrics.maxConcurrentCrawls
+                      ? `${metrics.workflowsRunningCount} / ${metrics.maxConcurrentCrawls}`
+                      : metrics.workflowsRunningCount,
                   singleLabel: msg("Crawl Running"),
                   pluralLabel: msg("Crawls Running"),
                   iconProps: {
