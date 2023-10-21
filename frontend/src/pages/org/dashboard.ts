@@ -434,19 +434,22 @@ export class Dashboard extends LiteElement {
     const rows = Object.entries(this.org.usage || {})
       // Sort latest
       .reverse()
-      .map(([mY, crawlTime]) => [
-        html`
-          <sl-format-date
-            date="${mY}-01T00:00:00.000Z"
-            time-zone="utc"
-            month="long"
-            year="numeric"
-          >
-          </sl-format-date>
-        `,
-        humanizeDuration((this.org!.crawlExecSeconds?.[mY] || 0) * 1000),
-        humanizeDuration((crawlTime || 0) * 1000),
-      ]);
+      .map(([mY, crawlTime]) => {
+        const value = this.org!.crawlExecSeconds?.[mY];
+        return [
+          html`
+            <sl-format-date
+              date="${mY}-01T00:00:00.000Z"
+              time-zone="utc"
+              month="long"
+              year="numeric"
+            >
+            </sl-format-date>
+          `,
+          value ? humanizeDuration(value * 1000) : "--",
+          humanizeDuration((crawlTime || 0) * 1000),
+        ];
+      });
     return html`
       <h2 class="text-lg font-semibold leading-none mb-6">
         ${msg("Usage History")}
