@@ -49,6 +49,7 @@ export class Dashboard extends LiteElement {
     crawls: "green",
     uploads: "sky",
     browserProfiles: "indigo",
+    runningTime: "blue",
   };
 
   willUpdate(changedProperties: PropertyValues<this>) {
@@ -371,7 +372,7 @@ export class Dashboard extends LiteElement {
                 class="text-danger"
                 name="exclamation-triangle"
               ></sl-icon>
-              <span>${msg("Execution Time Quota Reached")}</span>
+              <span>${msg("Time Quota Reached")}</span>
             </div>
           `,
           () =>
@@ -379,12 +380,8 @@ export class Dashboard extends LiteElement {
               ? html`
                   <span class="inline-flex items-center">
                     ${humanizeDuration((quotaSeconds - usageSeconds) * 1000)}
-                    ${msg("of Running Time Available")}
-                    <sl-tooltip
-                      content=${msg(
-                        "Total running time of all crawler instances"
-                      )}
-                    >
+                    ${msg("Available")}
+                    <sl-tooltip content=${msg("Total running time available")}>
                       <sl-icon
                         name="info-circle"
                         class="ml-1 text-neutral-500"
@@ -405,7 +402,11 @@ export class Dashboard extends LiteElement {
               valueText=${msg("time")}
             >
               ${when(usageSeconds, () =>
-                renderBar(usageSeconds, msg("Run Time"), this.colors.crawls)
+                renderBar(
+                  usageSeconds,
+                  msg("Running Time"),
+                  isReached ? "warning" : this.colors.runningTime
+                )
               )}
               <div slot="available" class="flex-1">
                 <sl-tooltip>
