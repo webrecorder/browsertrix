@@ -406,10 +406,27 @@ export class Dashboard extends LiteElement {
       <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
     `;
 
+  // TODO fix style when data-table is converted to slots
   readonly usageTableCols = [
     msg("Month"),
-    msg("Execution Time"),
-    msg("Total Crawl Time"),
+    html`
+      ${msg("Running Time")}
+      <sl-tooltip>
+        <div slot="content" style="text-transform: initial">
+          ${msg("Total running time of all crawler instances")}
+        </div>
+        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+      </sl-tooltip>
+    `,
+    html`
+      ${msg("Total Crawl Duration")}
+      <sl-tooltip>
+        <div slot="content" style="text-transform: initial">
+          ${msg("Total time elapsed between when crawl starts and ends")}
+        </div>
+        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+      </sl-tooltip>
+    `,
   ];
 
   private renderUsageHistory() {
