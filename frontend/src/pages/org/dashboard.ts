@@ -4,6 +4,7 @@ import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
+import humanizeDuration from "pretty-ms";
 
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { AuthState } from "../../utils/AuthService";
@@ -180,7 +181,10 @@ export class Dashboard extends LiteElement {
             (metrics) => html`
               <dl>
                 ${this.renderStat({
-                  value: metrics.workflowsRunningCount,
+                  value:
+                    metrics.workflowsRunningCount && metrics.maxConcurrentCrawls
+                      ? `${metrics.workflowsRunningCount} / ${metrics.maxConcurrentCrawls}`
+                      : metrics.workflowsRunningCount,
                   singleLabel: msg("Crawl Running"),
                   pluralLabel: msg("Crawls Running"),
                   iconProps: {
@@ -224,6 +228,7 @@ export class Dashboard extends LiteElement {
             `
           )}
         </div>
+        <section class="mt-10">${this.renderUsageHistory()}</section>
       </main> `;
   }
 
@@ -337,17 +342,16 @@ export class Dashboard extends LiteElement {
     renderFooter?: (metric: Metrics) => TemplateResult
   ) {
     return html`
-      <section
-        class="flex-1 flex flex-col border rounded p-4 transition-opacity delay-75 ${this
-          .metrics
-          ? "opacity-100"
-          : "opacity-0"}"
-      >
+      <section class="flex-1 flex flex-col border rounded p-4">
         <h2 class="text-lg font-semibold leading-none border-b pb-3 mb-3">
           ${title}
         </h2>
         <div class="flex-1">
-          ${when(this.metrics, () => renderContent(this.metrics!))}
+          ${when(
+            this.metrics,
+            () => renderContent(this.metrics!),
+            this.renderCardSkeleton
+          )}
         </div>
         ${when(renderFooter && this.metrics, () =>
           renderFooter!(this.metrics!)
@@ -390,6 +394,71 @@ export class Dashboard extends LiteElement {
               </div>
             `
         )}
+      </div>
+    `;
+  }
+
+  private renderCardSkeleton = () =>
+    html`
+      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+    `;
+
+  // TODO fix style when data-table is converted to slots
+  readonly usageTableCols = [
+    msg("Month"),
+    html`
+      ${msg("Execution Time")}
+      <sl-tooltip>
+        <div slot="content" style="text-transform: initial">
+          ${msg("Total running time of all crawler instances")}
+        </div>
+        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+      </sl-tooltip>
+    `,
+    html`
+      ${msg("Total Crawl Duration")}
+      <sl-tooltip>
+        <div slot="content" style="text-transform: initial">
+          ${msg("Total time elapsed between when crawl starts and ends")}
+        </div>
+        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+      </sl-tooltip>
+    `,
+  ];
+
+  private renderUsageHistory() {
+    if (!this.org) return;
+    const rows = Object.entries(this.org.usage || {})
+      // Sort latest
+      .reverse()
+      .map(([mY, crawlTime]) => {
+        const value = this.org!.crawlExecSeconds?.[mY];
+        return [
+          html`
+            <sl-format-date
+              date="${mY}-01T00:00:00.000Z"
+              time-zone="utc"
+              month="long"
+              year="numeric"
+            >
+            </sl-format-date>
+          `,
+          value ? humanizeDuration(value * 1000) : "--",
+          humanizeDuration((crawlTime || 0) * 1000),
+        ];
+      });
+    return html`
+      <h2 class="text-lg font-semibold leading-none mb-6">
+        ${msg("Usage History")}
+      </h2>
+      <div class="border rounded overflow-hidden">
+        <btrix-data-table
+          .columns=${this.usageTableCols}
+          .rows=${rows}
+        ></btrix-data-table>
       </div>
     `;
   }
