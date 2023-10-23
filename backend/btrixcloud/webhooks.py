@@ -3,12 +3,11 @@
 import asyncio
 from datetime import datetime
 from typing import List, Union, Optional
-import uuid
+from uuid import UUID, uuid4
 
 import aiohttp
 import backoff
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import UUID4
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
@@ -114,7 +113,7 @@ class EventWebhookOps:
 
         return notifications, total
 
-    async def get_notification(self, org: Organization, notificationid: uuid.UUID):
+    async def get_notification(self, org: Organization, notificationid: UUID):
         """Get webhook notification by id and org"""
         query = {"_id": notificationid, "oid": org.id}
 
@@ -192,7 +191,7 @@ class EventWebhookOps:
         body.resources = crawl.resources
 
         notification = WebhookNotification(
-            id=uuid.uuid4(),
+            id=uuid4(),
             event=event,
             oid=org.id,
             body=body,
@@ -210,7 +209,7 @@ class EventWebhookOps:
                 )
 
     async def create_crawl_finished_notification(
-        self, crawl_id: str, oid: uuid.UUID, state: str
+        self, crawl_id: str, oid: UUID, state: str
     ) -> None:
         """Create webhook notification for finished crawl."""
         org = await self.org_ops.get_org_by_id(oid)
@@ -230,7 +229,7 @@ class EventWebhookOps:
         )
 
     async def create_upload_finished_notification(
-        self, crawl_id: str, oid: uuid.UUID
+        self, crawl_id: str, oid: UUID
     ) -> None:
         """Create webhook notification for finished upload."""
         org = await self.org_ops.get_org_by_id(oid)
@@ -248,7 +247,7 @@ class EventWebhookOps:
         )
 
     async def create_crawl_started_notification(
-        self, crawl_id: str, oid: uuid.UUID, scheduled: bool = False
+        self, crawl_id: str, oid: UUID, scheduled: bool = False
     ) -> None:
         """Create webhook notification for started crawl."""
         org = await self.org_ops.get_org_by_id(oid)
@@ -267,7 +266,7 @@ class EventWebhookOps:
             return
 
         notification = WebhookNotification(
-            id=uuid.uuid4(),
+            id=uuid4(),
             event=WebhookEventType.CRAWL_STARTED,
             oid=oid,
             body=CrawlStartedBody(
@@ -284,7 +283,7 @@ class EventWebhookOps:
 
     async def _create_collection_items_modified_notification(
         self,
-        coll_id: uuid.UUID,
+        coll_id: UUID,
         org: Organization,
         event: str,
         body: Union[CollectionItemAddedBody, CollectionItemRemovedBody],
@@ -299,7 +298,7 @@ class EventWebhookOps:
         body.downloadUrls = [coll_download_url]
 
         notification = WebhookNotification(
-            id=uuid.uuid4(),
+            id=uuid4(),
             event=event,
             oid=org.id,
             body=body,
@@ -313,7 +312,7 @@ class EventWebhookOps:
     async def create_added_to_collection_notification(
         self,
         crawl_ids: List[str],
-        coll_id: uuid.UUID,
+        coll_id: UUID,
         org: Organization,
     ) -> None:
         """Create webhook notification for item added to collection"""
@@ -334,7 +333,7 @@ class EventWebhookOps:
     async def create_removed_from_collection_notification(
         self,
         crawl_ids: List[str],
-        coll_id: uuid.UUID,
+        coll_id: UUID,
         org: Organization,
     ) -> None:
         """Create webhook notification for item removed from collection"""
@@ -387,14 +386,14 @@ def init_event_webhooks_api(mdb, org_ops, app):
 
     @router.get("/{notificationid}", response_model=WebhookNotification)
     async def get_notification(
-        notificationid: UUID4,
+        notificationid: UUID,
         org: Organization = Depends(org_owner_dep),
     ):
         return await ops.get_notification(org, notificationid)
 
     @router.get("/{notificationid}/retry")
     async def retry_notification(
-        notificationid: UUID4,
+        notificationid: UUID,
         org: Organization = Depends(org_owner_dep),
     ):
         notification = await ops.get_notification(org, notificationid)

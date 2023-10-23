@@ -1,7 +1,7 @@
 """ auth functions for login """
 
 import os
-import uuid
+from uuid import UUID, uuid4
 import asyncio
 from datetime import datetime, timedelta
 from typing import Optional, Tuple, List
@@ -25,7 +25,7 @@ from .models import User
 
 
 # ============================================================================
-PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid.uuid4().hex)
+PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid4().hex)
 
 JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60)) * 60
 
@@ -147,7 +147,7 @@ def init_jwt_auth(user_manager):
         try:
             payload = decode_jwt(token, AUTH_ALLOW_AUD)
             uid: Optional[str] = payload.get("sub") or payload.get("user_id")
-            user = await user_manager.get_by_id(uuid.UUID(uid))
+            user = await user_manager.get_by_id(UUID(uid))
             assert user
             return user
         except:

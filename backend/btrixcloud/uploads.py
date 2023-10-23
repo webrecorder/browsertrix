@@ -5,13 +5,13 @@ import hashlib
 import os
 import base64
 from urllib.parse import unquote
+from uuid import UUID
 
 import asyncio
 from io import BufferedReader
 from typing import Optional, List, Any
 from fastapi import Depends, UploadFile, File
 from fastapi import HTTPException
-from pydantic import UUID4
 from starlette.requests import Request
 from pathvalidate import sanitize_filename
 
@@ -165,11 +165,11 @@ class UploadOps(BaseCrawlOps):
         now = dt_now()
         file_size = sum(file_.size or 0 for file_ in files)
 
-        collection_uuids: List[uuid.UUID] = []
+        collection_uuids: List[UUID] = []
         if collections:
             try:
                 for coll in collections:
-                    collection_uuids.append(uuid.UUID(coll))
+                    collection_uuids.append(UUID(coll))
             # pylint: disable=raise-missing-from
             except:
                 raise HTTPException(status_code=400, detail="invalid_collection_id")
@@ -366,10 +366,10 @@ def init_uploads_api(
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         state: Optional[str] = None,
-        userid: Optional[UUID4] = None,
+        userid: Optional[UUID] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        collectionId: Optional[UUID4] = None,
+        collectionId: Optional[UUID] = None,
         sortBy: Optional[str] = "finished",
         sortDirection: Optional[int] = -1,
     ):

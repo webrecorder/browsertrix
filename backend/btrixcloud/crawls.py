@@ -2,16 +2,15 @@
 # pylint: disable=too-many-lines
 
 import asyncio
-import uuid
 import json
 import re
 import urllib.parse
+from uuid import UUID
 
 from typing import Optional, List
 
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import UUID4
 from redis import asyncio as exceptions
 import pymongo
 
@@ -91,15 +90,15 @@ class CrawlOps(BaseCrawlOps):
     async def list_crawls(
         self,
         org: Optional[Organization] = None,
-        cid: Optional[uuid.UUID] = None,
-        userid: Optional[uuid.UUID] = None,
+        cid: Optional[UUID] = None,
+        userid: Optional[UUID] = None,
         crawl_id: str = "",
         running_only=False,
         state: Optional[List[str]] = None,
         first_seed: str = "",
         name: str = "",
         description: str = "",
-        collection_id: Optional[uuid.UUID] = None,
+        collection_id: Optional[UUID] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: str = "",
@@ -249,7 +248,7 @@ class CrawlOps(BaseCrawlOps):
         self,
         crawl_id: str,
         crawlconfig: CrawlConfig,
-        userid: uuid.UUID,
+        userid: UUID,
         started: str,
         manual: bool,
         username: str = "",
@@ -634,13 +633,13 @@ def init_crawls_api(
         user: User = Depends(user_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        userid: Optional[UUID4] = None,
-        cid: Optional[UUID4] = None,
+        userid: Optional[UUID] = None,
+        cid: Optional[UUID] = None,
         state: Optional[str] = None,
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        collectionId: Optional[UUID4] = None,
+        collectionId: Optional[UUID] = None,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
         runningOnly: Optional[bool] = True,
@@ -683,13 +682,13 @@ def init_crawls_api(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        userid: Optional[UUID4] = None,
-        cid: Optional[UUID4] = None,
+        userid: Optional[UUID] = None,
+        cid: Optional[UUID] = None,
         state: Optional[str] = None,
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        collectionId: Optional[UUID4] = None,
+        collectionId: Optional[UUID] = None,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
     ):
