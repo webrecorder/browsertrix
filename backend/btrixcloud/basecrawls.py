@@ -1,6 +1,5 @@
 """ base crawl type """
 
-import asyncio
 import uuid
 import os
 from datetime import timedelta
@@ -44,6 +43,12 @@ NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
 ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
 
 
+# Presign duration must be less than 604800 seconds (one week),
+# so set this one minute short of a week.
+PRESIGN_MINUTES_DEFAULT = 10079
+MAX_PRESIGN_SECONDS = 604799
+
+
 # ============================================================================
 # pylint: disable=too-many-instance-attributes
 class BaseCrawlOps:
@@ -62,8 +67,12 @@ class BaseCrawlOps:
         self.colls = colls
         self.storage_ops = storage_ops
 
-        self.presign_duration_seconds = (
-            int(os.environ.get("PRESIGN_DURATION_MINUTES", 60)) * 60
+        presign_duration_seconds = (
+            int(os.environ.get("PRESIGN_DURATION_MINUTES", PRESIGN_MINUTES_DEFAULT))
+            * 60
+        )
+        self.presign_duration_seconds = min(
+            presign_duration_seconds, MAX_PRESIGN_SECONDS
         )
 
     async def get_crawl_raw(
@@ -362,7 +371,6 @@ class BaseCrawlOps:
 
         delta = timedelta(seconds=self.presign_duration_seconds)
 
-        updates = []
         out_files = []
 
         for file_ in files:
@@ -374,17 +382,20 @@ class BaseCrawlOps:
                 presigned_url = await self.storage_ops.get_presigned_url(
                     org, file_, self.presign_duration_seconds
                 )
-                updates.append(
-                    (
-                        {"files.filename": file_.filename},
-                        {
-                            "$set": {
-                                "files.$.presignedUrl": presigned_url,
-                                "files.$.expireAt": exp,
-                            }
-                        },
-                    )
+                await self.crawls.find_one_and_update(
+                    {"files.filename": file_.filename},
+                    {
+                        "$set": {
+                            "files.$.presignedUrl": presigned_url,
+                            "files.$.expireAt": exp,
+                        }
+                    },
                 )
+                file_.expireAt = exp
+
+            expire_at_str = ""
+            if file_.expireAt:
+                expire_at_str = file_.expireAt.isoformat()
 
             out_files.append(
                 CrawlFileOut(
@@ -393,19 +404,11 @@ class BaseCrawlOps:
                     hash=file_.hash,
                     size=file_.size,
                     crawlId=crawl_id,
+                    expireAt=expire_at_str,
                 )
             )
 
-        if updates:
-            asyncio.create_task(self._update_presigned(updates))
-
-        # print("presigned", out_files)
-
         return out_files
-
-    async def _update_presigned(self, updates):
-        for update in updates:
-            await self.crawls.find_one_and_update(*update)
 
     @contextlib.asynccontextmanager
     async def get_redis(self, crawl_id):

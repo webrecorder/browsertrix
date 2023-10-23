@@ -189,12 +189,7 @@ class EventWebhookOps:
             print(f"Crawl {crawl_id} not found, skipping event webhook", flush=True)
             return
 
-        download_urls = []
-        for resource in crawl.resources:
-            download_url = f"{org.origin}{resource.path}"
-            download_urls.append(download_url)
-
-        body.downloadUrls = download_urls
+        body.resources = crawl.resources
 
         notification = WebhookNotification(
             id=uuid.uuid4(),

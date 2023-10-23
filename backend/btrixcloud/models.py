@@ -406,7 +406,9 @@ class CrawlFileOut(BaseModel):
     path: str
     hash: str
     size: int
+
     crawlId: Optional[str]
+    expireAt: Optional[str]
 
 
 # ============================================================================
@@ -1053,6 +1055,7 @@ class BaseArchivedItemBody(WebhookNotificationBody):
     """Webhook notification POST body for when archived item is started or finished"""
 
     itemId: str
+    resources: Optional[List[CrawlFileOut]] = None
 
 
 # ============================================================================
