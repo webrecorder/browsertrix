@@ -263,7 +263,7 @@ class OrgOps:
         self, org: Organization, userid: uuid.UUID, role: Optional[UserRole] = None
     ):
         """Add user to organization with specified role"""
-        org.users[str(userid)] = role or UserRole.OWNER
+        org.users[userid] = role or UserRole.OWNER
         await self.update_users(org)
 
     async def get_org_owners(self, org: Organization):
@@ -659,7 +659,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
                     status_code=400, detail="Can't remove only owner from org"
                 )
         try:
-            del org.users[str(other_user.id)]
+            del org.users[other_user.id]
         except KeyError:
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=404, detail="no_such_org_user")
