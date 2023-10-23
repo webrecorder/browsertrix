@@ -178,10 +178,11 @@ class UserManager:
 
         return None
 
-    async def get_user_names_by_ids(self, user_ids: List[uuid.UUID]) -> dict[str, str]:
+    async def get_user_names_by_ids(self, user_ids: List[str]) -> dict[str, str]:
         """return list of user names for given ids"""
+        user_uuid_ids = [uuid.UUID(id_) for id_ in user_ids]
         cursor = self.users.find(
-            {"id": {"$in": user_ids}}, projection=["id", "name", "email"]
+            {"id": {"$in": user_uuid_ids}}, projection=["id", "name", "email"]
         )
         return await cursor.to_list(length=1000)
 

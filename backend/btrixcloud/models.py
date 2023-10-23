@@ -746,7 +746,7 @@ class Organization(BaseMongoModel):
     name: str
     slug: str
 
-    users: Dict[UUID4, UserRole]
+    users: Dict[str, UserRole]
 
     storage: Union[S3Storage, DefaultStorage]
 
@@ -810,11 +810,11 @@ class Organization(BaseMongoModel):
         if self.is_owner(user):
             result["users"] = {}
 
-            keys: List[UUID4] = list(self.users.keys())
+            keys = list(self.users.keys())
             user_list = await user_manager.get_user_names_by_ids(keys)
 
             for org_user in user_list:
-                id_ = org_user["id"]
+                id_ = str(org_user["id"])
                 role = self.users.get(id_)
                 if not role:
                     continue
