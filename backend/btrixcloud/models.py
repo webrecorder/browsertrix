@@ -231,7 +231,7 @@ class CrawlConfigIn(BaseModel):
 
     jobType: Optional[JobType] = JobType.CUSTOM
 
-    profileid: Optional[str]
+    profileid: Optional[UUID4]
 
     autoAddCollections: Optional[List[UUID4]] = []
     tags: Optional[List[str]] = []
@@ -372,7 +372,7 @@ class UpdateCrawlConfig(BaseModel):
 
     # crawl data: revision tracked
     schedule: Optional[str] = None
-    profileid: Optional[str] = None
+    profileid: Optional[UUID4] = None
     crawlTimeout: Optional[int] = None
     maxCrawlSize: Optional[int] = None
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = None  # type: ignore
