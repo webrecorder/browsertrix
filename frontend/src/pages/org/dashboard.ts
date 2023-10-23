@@ -410,7 +410,7 @@ export class Dashboard extends LiteElement {
   readonly usageTableCols = [
     msg("Month"),
     html`
-      ${msg("Running Time")}
+      ${msg("Execution Time")}
       <sl-tooltip>
         <div slot="content" style="text-transform: initial">
           ${msg("Total running time of all crawler instances")}
