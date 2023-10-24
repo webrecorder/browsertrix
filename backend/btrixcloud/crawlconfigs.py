@@ -23,6 +23,7 @@ from .models import (
     CrawlConfig,
     CrawlConfigOut,
     CrawlConfigIdNameOut,
+    EmptyStr,
     UpdateCrawlConfig,
     Organization,
     User,
@@ -116,12 +117,12 @@ class CrawlConfigOps:
         return self._file_rx.sub("-", string.lower())
 
     async def _lookup_profile(
-        self, profileid: Optional[uuid.UUID], org: Organization
+        self, profileid: Union[uuid.UUID, EmptyStr, None], org: Organization
     ) -> tuple[Optional[uuid.UUID], Optional[str]]:
         if profileid is None:
             return None, None
 
-        if profileid == "":
+        if isinstance(profileid, EmptyStr) or profileid == "":
             return None, ""
 
         profile_filename = await self.profiles.get_profile_storage_path(profileid, org)
@@ -184,7 +185,7 @@ class CrawlConfigOps:
             storage=org.storage,
             run_now=run_now,
             out_filename=out_filename,
-            profile_filename=profile_filename,
+            profile_filename=profile_filename or "",
         )
 
         if crawl_id and run_now:

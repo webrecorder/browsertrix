@@ -7,7 +7,16 @@ from enum import Enum, IntEnum
 import os
 
 from typing import Optional, List, Dict, Union, Literal, Any
-from pydantic import BaseModel, UUID4, conint, Field, HttpUrl, AnyHttpUrl, EmailStr
+from pydantic import (
+    BaseModel,
+    UUID4,
+    conint,
+    Field,
+    HttpUrl,
+    AnyHttpUrl,
+    EmailStr,
+    ConstrainedStr,
+)
 
 # from fastapi_users import models as fastapi_users_models
 
@@ -166,6 +175,14 @@ class ScopeType(str, Enum):
 
 
 # ============================================================================
+class EmptyStr(ConstrainedStr):
+    """empty string only"""
+
+    min_length = 0
+    max_length = 0
+
+
+# ============================================================================
 class Seed(BaseModel):
     """Crawl seed"""
 
@@ -231,7 +248,7 @@ class CrawlConfigIn(BaseModel):
 
     jobType: Optional[JobType] = JobType.CUSTOM
 
-    profileid: Optional[UUID4]
+    profileid: Union[UUID4, EmptyStr, None]
 
     autoAddCollections: Optional[List[UUID4]] = []
     tags: Optional[List[str]] = []
@@ -372,7 +389,7 @@ class UpdateCrawlConfig(BaseModel):
 
     # crawl data: revision tracked
     schedule: Optional[str] = None
-    profileid: Optional[UUID4] = None
+    profileid: Union[UUID4, EmptyStr, None] = None
     crawlTimeout: Optional[int] = None
     maxCrawlSize: Optional[int] = None
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = None  # type: ignore

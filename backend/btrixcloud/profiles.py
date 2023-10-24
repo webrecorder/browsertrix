@@ -161,7 +161,8 @@ class ProfileOps:
 
         await self.crawl_manager.delete_profile_browser(browser_commit.browserid)
 
-        file_size = resource["bytes"]
+        # backwards compatibility
+        file_size = resource.get("size") or resource.get("bytes")
 
         profile_file = ProfileFile(
             hash=resource["hash"],

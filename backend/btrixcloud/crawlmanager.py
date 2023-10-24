@@ -141,7 +141,7 @@ class CrawlManager(K8sAPI):
             has_scale_update
             or has_config_update
             or has_timeout_update
-            or profile_filename
+            or profile_filename is not None
             or has_max_crawl_size_update
         ):
             await self._update_config_map(
