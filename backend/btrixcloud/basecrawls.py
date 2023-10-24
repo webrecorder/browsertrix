@@ -45,8 +45,8 @@ ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
 
 # Presign duration must be less than 604800 seconds (one week),
 # so set this one minute short of a week.
-PRESIGN_MINUTES_DEFAULT = 10079
-MAX_PRESIGN_SECONDS = 604799
+PRESIGN_MINUTES_MAX = 10079
+PRESIGN_MINUTES_DEFAULT = PRESIGN_MINUTES_MAX
 
 
 # ============================================================================
@@ -67,12 +67,12 @@ class BaseCrawlOps:
         self.colls = colls
         self.storage_ops = storage_ops
 
-        presign_duration_seconds = (
-            int(os.environ.get("PRESIGN_DURATION_MINUTES", PRESIGN_MINUTES_DEFAULT))
-            * 60
+        presign_duration_minutes = int(
+            os.environ.get("PRESIGN_DURATION_MINUTES", PRESIGN_MINUTES_DEFAULT)
         )
-        self.presign_duration_seconds = min(
-            presign_duration_seconds, MAX_PRESIGN_SECONDS
+
+        self.presign_duration_seconds = (
+            min(presign_duration_minutes, PRESIGN_MINUTES_MAX) * 60
         )
 
     async def get_crawl_raw(
