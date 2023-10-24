@@ -2,6 +2,7 @@
 
 import os
 import uuid
+import asyncio
 from datetime import datetime, timedelta
 from typing import Optional, Tuple, List
 from passlib import pwd
@@ -43,6 +44,8 @@ VERIFY_AUD = "btrix:verify"
 AUTH_ALLOW_AUD = [AUTH_AUD, "fastapi-users:auth"]
 RESET_ALLOW_AUD = [RESET_AUD, "fastapi-users:reset"]
 VERIFY_ALLOW_AUD = [VERIFY_AUD, "fastapi-users:verify"]
+
+MAX_FAILED_LOGINS = 5
 
 
 # ============================================================================
@@ -170,21 +173,63 @@ def init_jwt_auth(user_manager):
     @auth_jwt_router.post("/login", response_model=BearerResponse)
     async def login(
         credentials: OAuth2PasswordRequestForm = Depends(),
-    ):
-        user = await user_manager.authenticate(
-            credentials.username, credentials.password
-        )
+    ) -> BearerResponse:
+        """Prevent brute force password attacks.
+
+        After 5 or more consecutive failed login attempts for the same user,
+        lock the user account and send an email to reset their password.
+        On successful login when user is not already locked, reset count to 0.
+        """
+        login_email = credentials.username
+
+        failed_count = await user_manager.get_failed_logins_count(login_email)
+
+        if failed_count > 0:
+            print(
+                f"Consecutive failed login count for {login_email}: {failed_count}",
+                flush=True,
+            )
+
+        # first, check if failed count exceeds max failed logins
+        # if so, don't try logging in
+        if failed_count >= MAX_FAILED_LOGINS:
+            # only send reset email on first failure to avoid spamming user
+            if failed_count == MAX_FAILED_LOGINS:
+                # do this async to avoid hinting at any delay if user exists
+                async def send_reset_if_needed():
+                    attempted_user = await user_manager.get_by_email(login_email)
+                    if attempted_user:
+                        await user_manager.forgot_password(attempted_user)
+                        print(
+                            f"Password reset email sent after too many attempts for {login_email}",
+                            flush=True,
+                        )
+
+                asyncio.create_task(send_reset_if_needed())
+
+            # any further attempt is a failure, increment to track further attempts
+            # and avoid sending email again
+            await user_manager.inc_failed_logins(login_email)
+
+            raise HTTPException(
+                status_code=429,
+                detail="too_many_login_attempts",
+            )
+
+        # attempt login
+        user = await user_manager.authenticate(login_email, credentials.password)
 
         if not user:
+            print(f"Failed login attempt for {login_email}", flush=True)
+            await user_manager.inc_failed_logins(login_email)
+
             raise HTTPException(
                 status_code=400,
                 detail="login_bad_credentials",
             )
-        # if requires_verification and not user.is_verified:
-        #    raise HTTPException(
-        #        status_code=400,
-        #        detail="login_user_not_verified",
-        #    )
+
+        # successfully logged in, reset failed logins, return user
+        await user_manager.reset_failed_logins(login_email)
         return get_bearer_response(user)
 
     @auth_jwt_router.post("/refresh", response_model=BearerResponse)

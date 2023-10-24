@@ -97,6 +97,22 @@ class User(BaseModel):
 
 
 # ============================================================================
+class FailedLogin(BaseMongoModel):
+    """
+    Failed login model
+    """
+
+    attempted: datetime = datetime.now()
+    email: str
+
+    # Consecutive failed logins, reset to 0 on successful login or after
+    # password is reset. On failed_logins >= 5 within the hour before this
+    # object is deleted, the user is unable to log in until they reset their
+    # password.
+    count: int = 1
+
+
+# ============================================================================
 class UserOrgInfoOut(BaseModel):
     """org per user"""
 
@@ -390,7 +406,9 @@ class CrawlFileOut(BaseModel):
     path: str
     hash: str
     size: int
+
     crawlId: Optional[str]
+    expireAt: Optional[str]
 
 
 # ============================================================================
@@ -461,7 +479,7 @@ class CrawlOut(BaseMongoModel):
 
     tags: Optional[List[str]] = []
 
-    errors: Optional[List[str]]
+    errors: Optional[List[str]] = []
 
     collectionIds: Optional[List[UUID4]] = []
 
@@ -1050,6 +1068,7 @@ class BaseArchivedItemBody(WebhookNotificationBody):
     """Webhook notification POST body for when archived item is started or finished"""
 
     itemId: str
+    resources: Optional[List[CrawlFileOut]] = None
 
 
 # ============================================================================

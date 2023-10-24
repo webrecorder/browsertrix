@@ -354,6 +354,14 @@ class CrawlConfigOps:
             ret["started"] = crawl_id
         return ret
 
+    async def update_usernames(self, userid: uuid.UUID, updated_name: str) -> None:
+        """Update username references matching userid"""
+        for workflow_field in ["createdBy", "modifiedBy", "lastStartedBy"]:
+            await self.crawl_configs.update_many(
+                {workflow_field: userid},
+                {"$set": {f"{workflow_field}Name": updated_name}},
+            )
+
     async def get_crawl_configs(
         self,
         org: Organization,

@@ -1,6 +1,5 @@
 """ base crawl type """
 
-import asyncio
 import uuid
 import os
 from datetime import timedelta
@@ -44,6 +43,12 @@ NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
 ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
 
 
+# Presign duration must be less than 604800 seconds (one week),
+# so set this one minute short of a week.
+PRESIGN_MINUTES_MAX = 10079
+PRESIGN_MINUTES_DEFAULT = PRESIGN_MINUTES_MAX
+
+
 # ============================================================================
 # pylint: disable=too-many-instance-attributes
 class BaseCrawlOps:
@@ -62,8 +67,12 @@ class BaseCrawlOps:
         self.colls = colls
         self.storage_ops = storage_ops
 
+        presign_duration_minutes = int(
+            os.environ.get("PRESIGN_DURATION_MINUTES") or PRESIGN_MINUTES_DEFAULT
+        )
+
         self.presign_duration_seconds = (
-            int(os.environ.get("PRESIGN_DURATION_MINUTES", 60)) * 60
+            min(presign_duration_minutes, PRESIGN_MINUTES_MAX) * 60
         )
 
     async def get_crawl_raw(
@@ -116,8 +125,8 @@ class BaseCrawlOps:
                     res.get("collectionIds")
                 )
 
-        del res["files"]
-        del res["errors"]
+        res.pop("files", None)
+        res.pop("errors", None)
 
         crawl = cls_type.from_dict(res)
 
@@ -208,6 +217,12 @@ class BaseCrawlOps:
                 "state": {"$in": RUNNING_AND_STARTING_STATES},
             },
             {"$set": data},
+        )
+
+    async def update_usernames(self, userid: uuid.UUID, updated_name: str) -> None:
+        """Update username references matching userid"""
+        await self.crawls.update_many(
+            {"userid": userid}, {"$set": {"userName": updated_name}}
         )
 
     async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
@@ -360,7 +375,6 @@ class BaseCrawlOps:
 
         delta = timedelta(seconds=self.presign_duration_seconds)
 
-        updates = []
         out_files = []
 
         for file_ in files:
@@ -372,17 +386,20 @@ class BaseCrawlOps:
                 presigned_url = await self.storage_ops.get_presigned_url(
                     org, file_, self.presign_duration_seconds
                 )
-                updates.append(
-                    (
-                        {"files.filename": file_.filename},
-                        {
-                            "$set": {
-                                "files.$.presignedUrl": presigned_url,
-                                "files.$.expireAt": exp,
-                            }
-                        },
-                    )
+                await self.crawls.find_one_and_update(
+                    {"files.filename": file_.filename},
+                    {
+                        "$set": {
+                            "files.$.presignedUrl": presigned_url,
+                            "files.$.expireAt": exp,
+                        }
+                    },
                 )
+                file_.expireAt = exp
+
+            expire_at_str = ""
+            if file_.expireAt:
+                expire_at_str = file_.expireAt.isoformat()
 
             out_files.append(
                 CrawlFileOut(
@@ -391,19 +408,11 @@ class BaseCrawlOps:
                     hash=file_.hash,
                     size=file_.size,
                     crawlId=crawl_id,
+                    expireAt=expire_at_str,
                 )
             )
 
-        if updates:
-            asyncio.create_task(self._update_presigned(updates))
-
-        # print("presigned", out_files)
-
         return out_files
-
-    async def _update_presigned(self, updates):
-        for update in updates:
-            await self.crawls.find_one_and_update(*update)
 
     @contextlib.asynccontextmanager
     async def get_redis(self, crawl_id):
@@ -768,3 +777,5 @@ def init_base_crawls_api(
         org: Organization = Depends(org_crawl_dep),
     ):
         return await ops.delete_crawls_all_types(delete_list, org, user)
+
+    return ops

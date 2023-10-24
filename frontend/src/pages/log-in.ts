@@ -371,11 +371,16 @@ export class LogInPage extends LiteElement {
       // will result in a route change
     } catch (e: any) {
       if (e.isApiError) {
-        // TODO check error details
+        let message = msg("Sorry, invalid username or password");
+        if (e.message == "Too Many Requests") {
+          message = msg(
+            "Sorry, too many failed login attempts. A reset password link has been sent to your email."
+          );
+        }
         this.formStateService.send({
           type: "ERROR",
           detail: {
-            serverError: msg("Sorry, invalid username or password"),
+            serverError: message,
           },
         });
       } else {

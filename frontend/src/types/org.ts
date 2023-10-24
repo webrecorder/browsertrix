@@ -14,7 +14,14 @@ export type OrgData = {
   slug: string;
   quotas: Record<string, number>;
   bytesStored: number;
-  crawlExecSeconds: Record<string, number>;
+  usage: {
+    // Keyed by {4-digit year}-{2-digit month}
+    [key: string]: number;
+  } | null;
+  crawlExecSeconds: {
+    // Keyed by {4-digit year}-{2-digit month}
+    [key: string]: number;
+  } | null;
   crawlExecMinutesAllowedOverage: number;
   users?: {
     [id: string]: {
