@@ -68,7 +68,7 @@ class BaseCrawlOps:
         self.storage_ops = storage_ops
 
         presign_duration_minutes = int(
-            os.environ.get("PRESIGN_DURATION_MINUTES", PRESIGN_MINUTES_DEFAULT)
+            os.environ.get("PRESIGN_DURATION_MINUTES") or PRESIGN_MINUTES_DEFAULT
         )
 
         self.presign_duration_seconds = (
