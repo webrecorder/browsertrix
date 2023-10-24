@@ -419,10 +419,10 @@ export class Dashboard extends LiteElement {
       </sl-tooltip>
     `,
     html`
-      ${msg("Total Crawl Duration")}
+      ${msg("Elapsed Time")}
       <sl-tooltip>
         <div slot="content" style="text-transform: initial">
-          ${msg("Total time elapsed between when crawl starts and ends")}
+          ${msg("Total time elapsed between when crawls started and ended")}
         </div>
         <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
       </sl-tooltip>
@@ -451,15 +451,15 @@ export class Dashboard extends LiteElement {
         ];
       });
     return html`
-      <h2 class="text-lg font-semibold leading-none mb-6">
-        ${msg("Usage History")}
-      </h2>
-      <div class="border rounded overflow-hidden">
-        <btrix-data-table
-          .columns=${this.usageTableCols}
-          .rows=${rows}
-        ></btrix-data-table>
-      </div>
+      <btrix-details>
+        <span slot="title">${msg("Usage History")}</span>
+        <div class="border rounded overflow-hidden">
+          <btrix-data-table
+            .columns=${this.usageTableCols}
+            .rows=${rows}
+          ></btrix-data-table>
+        </div>
+      </btrix-details>
     `;
   }
 
