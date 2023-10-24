@@ -815,6 +815,7 @@ export class Org extends LiteElement {
   checkExecutionMinutesQuota() {
     if (
       !this.org ||
+      !this.org.crawlExecSeconds ||
       !this.org.quotas.crawlExecMinutesQuota ||
       this.org.quotas.crawlExecMinutesQuota == 0
     ) {
