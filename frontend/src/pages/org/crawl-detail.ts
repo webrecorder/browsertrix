@@ -628,7 +628,7 @@ export class CrawlDetail extends LiteElement {
                       ></sl-format-date>`
                     : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 </btrix-desc-list-item>
-                <btrix-desc-list-item label=${msg("Duration")}>
+                <btrix-desc-list-item label=${msg("Elapsed Time")}>
                   ${this.crawl!.finished
                     ? html`${RelativeDuration.humanize(
                         new Date(`${this.crawl!.finished}Z`).valueOf() -
