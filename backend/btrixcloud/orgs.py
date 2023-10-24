@@ -336,9 +336,7 @@ class OrgOps:
         except KeyError:
             return 0
 
-    async def execution_mins_quota_reached(
-        self, oid: uuid.UUID, running_exec_seconds: int = 0
-    ) -> Tuple[bool, bool]:
+    async def execution_mins_quota_reached(self, oid: uuid.UUID) -> Tuple[bool, bool]:
         """Return bools for if execution minutes quota and hard cap are reached."""
         quota = await self.get_org_execution_mins_quota(oid)
         if not quota:
@@ -351,7 +349,6 @@ class OrgOps:
         hard_cap_quota = quota + hard_cap_additional_mins
 
         monthly_exec_seconds = await self.get_this_month_crawl_exec_seconds(oid)
-        monthly_exec_seconds = monthly_exec_seconds + running_exec_seconds
         monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
 
         if monthly_exec_minutes >= quota:
