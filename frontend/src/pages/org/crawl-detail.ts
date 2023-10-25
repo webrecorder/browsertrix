@@ -468,9 +468,7 @@ export class CrawlDetail extends LiteElement {
               <sl-menu-item
                 @click=${() =>
                   this.navTo(
-                    `/orgs/${this.crawl!.oid}/workflows/crawl/${
-                      this.crawl!.cid
-                    }`
+                    `${this.orgBasePath}/workflows/crawl/${this.crawl!.cid}`
                   )}
               >
                 <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
