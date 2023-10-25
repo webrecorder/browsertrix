@@ -345,7 +345,7 @@ class StorageOps:
     ) -> bool:
         """delete crawl file from storage."""
         return await self.delete_file(
-            org, crawlfile.filename, crawlfile.def_storage_name
+            org, crawlfile.filename, crawlfile.def_storage_name or "default"
         )
 
     async def delete_file(
