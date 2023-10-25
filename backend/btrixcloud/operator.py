@@ -846,7 +846,6 @@ class BtrixOperator(K8sAPI):
         crawler_running, redis_running, done = self.sync_pod_status(pods, status)
         redis = None
 
-        # self.add_all_crawls_exec_time(crawl.id, status, all_crawls)
 
         try:
             if redis_running:
