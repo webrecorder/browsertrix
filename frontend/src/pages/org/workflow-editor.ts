@@ -745,7 +745,7 @@ export class CrawlConfigEditor extends LiteElement {
     if (this.configId) {
       return html`
         <footer
-          class="px-6 py-4 flex gap-2 items-center justify-end border rounded-b-lg sticky bottom-0 bg-white"
+          class="px-6 py-4 flex gap-2 items-center justify-end border rounded-b-lg sticky bottom-0 bg-white z-50"
         >
           <div class="mr-auto">${this.renderRunNowToggle()}</div>
           <aside class="text-xs text-neutral-500">
@@ -767,7 +767,7 @@ export class CrawlConfigEditor extends LiteElement {
     if (!this.configId) {
       return html`
         <footer
-          class="px-6 py-4 flex gap-2 items-center justify-end border sticky bottom-0 bg-white rounded-b-lg"
+          class="px-6 py-4 flex gap-2 items-center justify-end border sticky bottom-0 bg-white rounded-b-lg z-50"
         >
           ${this.renderSteppedFooterButtons({ isFirst, isLast })}
         </footer>
