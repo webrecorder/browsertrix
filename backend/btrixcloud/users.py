@@ -31,6 +31,7 @@ from .models import (
     UserRole,
     Organization,
     PaginatedResponse,
+    FailedLogin,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import is_bool
@@ -51,26 +52,34 @@ from .auth import (
 
 
 # ============================================================================
-# pylint: disable=raise-missing-from, too-many-public-methods
+# pylint: disable=raise-missing-from, too-many-public-methods, too-many-instance-attributes
 class UserManager:
     """Browsertrix UserManager"""
 
     def __init__(self, mdb, email, invites):
         self.users = mdb.get_collection("users")
+        self.failed_logins = mdb.get_collection("logins")
+        self.crawl_config_ops = None
+        self.base_crawl_ops = None
         self.email = email
         self.invites = invites
         self.org_ops = None
 
         self.registration_enabled = is_bool(os.environ.get("REGISTRATION_ENABLED"))
 
-    def set_org_ops(self, ops):
+    # pylint: disable=attribute-defined-outside-init
+    def set_ops(self, org_ops, crawl_config_ops, base_crawl_ops):
         """set org ops"""
-        self.org_ops = ops
+        self.org_ops = org_ops
+        self.crawl_config_ops = crawl_config_ops
+        self.base_crawl_ops = base_crawl_ops
 
     async def init_index(self):
         """init lookup index"""
         await self.users.create_index("id", unique=True)
         await self.users.create_index("email", unique=True)
+        # Expire failed logins object after one hour
+        await self.failed_logins.create_index("attempted", expireAfterSeconds=3600)
 
     async def register(
         self, user: UserCreateIn, request: Optional[Request] = None
@@ -475,6 +484,10 @@ class UserManager:
 
         await self.update_email_name(user, user_update.email, user_update.name)
 
+        if user_update.name:
+            await self.base_crawl_ops.update_usernames(user.id, user_update.name)
+            await self.crawl_config_ops.update_usernames(user.id, user_update.name)
+
     async def update_verified(self, user: User) -> None:
         """Update verified status for user"""
         await self.users.find_one_and_update(
@@ -506,6 +519,8 @@ class UserManager:
         """Update hashed_password for user, overwriting previous password hash
 
         Internal method, use change_password() for password verification first
+
+        Method also ensures user is not locked after password change
         """
         await self.validate_password(new_password)
         hashed_password = get_password_hash(new_password)
@@ -513,8 +528,38 @@ class UserManager:
             return
         user.hashed_password = hashed_password
         await self.users.find_one_and_update(
-            {"id": user.id}, {"$set": {"hashed_password": hashed_password}}
+            {"id": user.id},
+            {"$set": {"hashed_password": hashed_password}},
         )
+        await self.reset_failed_logins(user.email)
+
+    async def reset_failed_logins(self, email: str) -> None:
+        """Reset consecutive failed login attempts by deleting FailedLogin object"""
+        await self.failed_logins.delete_one({"email": email})
+
+    async def inc_failed_logins(self, email: str) -> None:
+        """Inc consecutive failed login attempts for user by 1
+
+        If a FailedLogin object doesn't already exist, create it
+        """
+        failed_login = FailedLogin(id=uuid.uuid4(), email=email)
+
+        await self.failed_logins.find_one_and_update(
+            {"email": email},
+            {
+                "$setOnInsert": failed_login.to_dict(exclude={"count", "attempted"}),
+                "$set": {"attempted": failed_login.dict(include={"attempted"})},
+                "$inc": {"count": 1},
+            },
+            upsert=True,
+        )
+
+    async def get_failed_logins_count(self, email: str) -> int:
+        """Get failed login attempts for user, falling back to 0"""
+        failed_login = await self.failed_logins.find_one({"email": email})
+        if not failed_login:
+            return 0
+        return failed_login.get("count", 0)
 
 
 # ============================================================================

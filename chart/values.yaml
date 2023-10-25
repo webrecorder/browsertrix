@@ -273,6 +273,12 @@ storages:
     endpoint_url: "http://local-minio.default:9000/"
 
 
+# optional: duration in minutes for WACZ download links to be valid
+# used by webhooks and replay
+# max value = 10079 (one week minus one minute)
+# storage_presign_duration_minutes: 10079
+
+
 # Email Options
 # =========================================
 email:
