@@ -6,9 +6,9 @@ import os
 import uuid
 import asyncio
 
-from typing import Optional
+from typing import Optional, List
 
-from pydantic import UUID4, EmailStr
+from pydantic import EmailStr
 
 from fastapi import (
     Request,
@@ -178,11 +178,11 @@ class UserManager:
 
         return None
 
-    async def get_user_names_by_ids(self, user_ids):
+    async def get_user_names_by_ids(self, user_ids: List[str]) -> dict[str, str]:
         """return list of user names for given ids"""
-        user_ids = [UUID4(id_) for id_ in user_ids]
+        user_uuid_ids = [uuid.UUID(id_) for id_ in user_ids]
         cursor = self.users.find(
-            {"id": {"$in": user_ids}}, projection=["id", "name", "email"]
+            {"id": {"$in": user_uuid_ids}}, projection=["id", "name", "email"]
         )
         return await cursor.to_list(length=1000)
 
@@ -369,7 +369,7 @@ class UserManager:
 
         return user
 
-    async def get_by_id(self, _id: UUID4) -> Optional[User]:
+    async def get_by_id(self, _id: uuid.UUID) -> Optional[User]:
         """get user by unique id"""
         user = await self.users.find_one({"id": _id})
 
@@ -409,7 +409,7 @@ class UserManager:
             raise exc
 
         try:
-            user_uuid = UUID4(user_id)
+            user_uuid = uuid.UUID(user_id)
         except ValueError:
             raise exc
 
@@ -456,7 +456,7 @@ class UserManager:
         user_id = data["user_id"]
 
         try:
-            user_uuid = UUID4(user_id)
+            user_uuid = uuid.UUID(user_id)
         except ValueError:
             raise HTTPException(
                 status_code=400,
@@ -699,8 +699,8 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
         return await user_manager.format_invite(invite)
 
     @users_router.get("/invite/{token}", tags=["invites"])
-    async def get_invite_info(token: str, email: str):
-        invite = await user_manager.invites.get_valid_invite(uuid.UUID(token), email)
+    async def get_invite_info(token: uuid.UUID, email: str):
+        invite = await user_manager.invites.get_valid_invite(token, email)
         return await user_manager.format_invite(invite)
 
     # pylint: disable=invalid-name

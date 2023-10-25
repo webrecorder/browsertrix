@@ -23,6 +23,7 @@ from .models import (
     CrawlConfig,
     CrawlConfigOut,
     CrawlConfigIdNameOut,
+    EmptyStr,
     UpdateCrawlConfig,
     Organization,
     User,
@@ -115,14 +116,15 @@ class CrawlConfigOps:
         """sanitize string for use in wacz filename"""
         return self._file_rx.sub("-", string.lower())
 
-    async def _lookup_profile(self, profileid, org):
+    async def _lookup_profile(
+        self, profileid: Union[uuid.UUID, EmptyStr, None], org: Organization
+    ) -> tuple[Optional[uuid.UUID], Optional[str]]:
         if profileid is None:
             return None, None
 
-        if profileid == "":
+        if isinstance(profileid, EmptyStr) or profileid == "":
             return None, ""
 
-        profileid = uuid.UUID(profileid)
         profile_filename = await self.profiles.get_profile_storage_path(profileid, org)
         if not profile_filename:
             raise HTTPException(status_code=400, detail="invalid_profile_id")
@@ -135,7 +137,7 @@ class CrawlConfigOps:
         config: CrawlConfigIn,
         org: Organization,
         user: User,
-    ):
+    ) -> tuple[str, str, bool]:
         """Add new crawl config"""
         data = config.dict()
         data["oid"] = org.id
@@ -183,7 +185,7 @@ class CrawlConfigOps:
             storage=org.storage,
             run_now=run_now,
             out_filename=out_filename,
-            profile_filename=profile_filename,
+            profile_filename=profile_filename or "",
         )
 
         if crawl_id and run_now:
@@ -227,7 +229,7 @@ class CrawlConfigOps:
 
     async def update_crawl_config(
         self, cid: uuid.UUID, org: Organization, user: User, update: UpdateCrawlConfig
-    ):
+    ) -> dict[str, bool]:
         # pylint: disable=too-many-locals
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
 
@@ -336,7 +338,7 @@ class CrawlConfigOps:
             "metadata_changed": metadata_changed,
         }
         if run_now:
-            crawl_id = await self.run_now(str(cid), org, user)
+            crawl_id = await self.run_now(cid, org, user)
             ret["started"] = crawl_id
         return ret
 
@@ -728,9 +730,9 @@ class CrawlConfigOps:
             "workflowIds": workflow_ids,
         }
 
-    async def run_now(self, cid: str, org: Organization, user: User):
+    async def run_now(self, cid: uuid.UUID, org: Organization, user: User):
         """run specified crawlconfig now"""
-        crawlconfig = await self.get_crawl_config(uuid.UUID(cid), org.id)
+        crawlconfig = await self.get_crawl_config(cid, org.id)
 
         if not crawlconfig:
             raise HTTPException(
@@ -957,29 +959,29 @@ def init_crawl_config_api(
 
     @router.get("/{cid}/seeds", response_model=PaginatedResponse)
     async def get_crawl_config_seeds(
-        cid: str,
+        cid: uuid.UUID,
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ):
-        seeds, total = await ops.get_seeds(uuid.UUID(cid), org.id, pageSize, page)
+        seeds, total = await ops.get_seeds(cid, org.id, pageSize, page)
         return paginated_format(seeds, total, page, pageSize)
 
     @router.get("/{cid}", response_model=CrawlConfigOut)
     async def get_crawl_config_out(
-        cid: str, org: Organization = Depends(org_viewer_dep)
+        cid: uuid.UUID, org: Organization = Depends(org_viewer_dep)
     ):
-        return await ops.get_crawl_config_out(uuid.UUID(cid), org)
+        return await ops.get_crawl_config_out(cid, org)
 
     @router.get(
         "/{cid}/revs",
         dependencies=[Depends(org_viewer_dep)],
     )
     async def get_crawl_config_revisions(
-        cid: str, pageSize: int = DEFAULT_PAGE_SIZE, page: int = 1
+        cid: uuid.UUID, pageSize: int = DEFAULT_PAGE_SIZE, page: int = 1
     ):
         revisions, total = await ops.get_crawl_config_revs(
-            uuid.UUID(cid), page_size=pageSize, page=page
+            cid, page_size=pageSize, page=page
         )
         return paginated_format(revisions, total, page, pageSize)
 
@@ -1000,24 +1002,24 @@ def init_crawl_config_api(
     @router.patch("/{cid}", dependencies=[Depends(org_crawl_dep)])
     async def update_crawl_config(
         update: UpdateCrawlConfig,
-        cid: str,
+        cid: uuid.UUID,
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        return await ops.update_crawl_config(uuid.UUID(cid), org, user, update)
+        return await ops.update_crawl_config(cid, org, user, update)
 
     @router.post("/{cid}/run")
     async def run_now(
-        cid: str,
+        cid: uuid.UUID,
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
-    ):
+    ) -> dict[str, str]:
         crawl_id = await ops.run_now(cid, org, user)
         return {"started": crawl_id}
 
     @router.delete("/{cid}")
-    async def make_inactive(cid: str, org: Organization = Depends(org_crawl_dep)):
-        crawlconfig = await ops.get_crawl_config(uuid.UUID(cid), org.id)
+    async def make_inactive(cid: uuid.UUID, org: Organization = Depends(org_crawl_dep)):
+        crawlconfig = await ops.get_crawl_config(cid, org.id)
 
         if not crawlconfig:
             raise HTTPException(

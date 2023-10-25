@@ -8,7 +8,7 @@ from urllib.parse import unquote
 
 import asyncio
 from io import BufferedReader
-from typing import Optional, List
+from typing import Optional, List, Any
 from fastapi import Depends, UploadFile, File
 from fastapi import HTTPException
 from pydantic import UUID4
@@ -63,12 +63,12 @@ class UploadOps(BaseCrawlOps):
         filename: str,
         name: Optional[str],
         description: Optional[str],
-        collections: Optional[List[UUID4]],
+        collections: Optional[List[str]],
         tags: Optional[List[str]],
         org: Organization,
         user: User,
         replaceId: Optional[str],
-    ):
+    ) -> dict[str, Any]:
         """Upload streaming file, length unknown"""
         if await self.orgs.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
@@ -122,11 +122,11 @@ class UploadOps(BaseCrawlOps):
         uploads: List[UploadFile],
         name: Optional[str],
         description: Optional[str],
-        collections: Optional[List[UUID4]],
+        collections: Optional[List[str]],
         tags: Optional[List[str]],
         org: Organization,
         user: User,
-    ):
+    ) -> dict[str, Any]:
         """handle uploading content to uploads subdir + request subdir"""
         if await self.orgs.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
@@ -145,22 +145,31 @@ class UploadOps(BaseCrawlOps):
             files.append(file_reader.file_prep.get_crawl_file())
 
         return await self._create_upload(
-            files, name, description, collections, tags, id_, org, user
+            files, name, description, collections, tags, str(id_), org, user
         )
 
     async def _create_upload(
-        self, files, name, description, collections, tags, id_, org, user
-    ):
+        self,
+        files: List[UploadFile],
+        name: Optional[str],
+        description: Optional[str],
+        collections: Optional[List[str]],
+        tags: Optional[List[str]],
+        crawl_id: str,
+        org: Organization,
+        user: User,
+    ) -> dict[str, Any]:
         now = dt_now()
-        # ts_now = now.strftime("%Y%m%d%H%M%S")
-        # crawl_id = f"upload-{ts_now}-{str(id_)[:12]}"
-        crawl_id = str(id_)
+        file_size = sum(file_.size or 0 for file_ in files)
 
-        file_size = sum(file_.size for file_ in files)
-
-        collection_uuids = []
-        for coll in collections:
-            collection_uuids.append(uuid.UUID(coll))
+        collection_uuids: List[uuid.UUID] = []
+        if collections:
+            try:
+                for coll in collections:
+                    collection_uuids.append(uuid.UUID(coll))
+            # pylint: disable=raise-missing-from
+            except:
+                raise HTTPException(status_code=400, detail="invalid_collection_id")
 
         uploaded = UploadedCrawl(
             id=crawl_id,
@@ -299,7 +308,7 @@ def init_uploads_api(
         tags: Optional[str] = "",
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
-    ):
+    ) -> dict[str, Any]:
         name = unquote(name)
         description = unquote(description)
         colls_list = []
@@ -325,7 +334,7 @@ def init_uploads_api(
         replaceId: Optional[str] = "",
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
-    ):
+    ) -> dict[str, Any]:
         name = unquote(name)
         description = unquote(description)
         colls_list = []

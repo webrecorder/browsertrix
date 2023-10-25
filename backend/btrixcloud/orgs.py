@@ -431,12 +431,10 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
     ops = OrgOps(mdb, invites)
 
-    async def org_dep(oid: str, user: User = Depends(user_dep)):
-        org = await ops.get_org_for_user_by_id(uuid.UUID(oid), user)
+    async def org_dep(oid: uuid.UUID, user: User = Depends(user_dep)):
+        org = await ops.get_org_for_user_by_id(oid, user)
         if not org:
-            raise HTTPException(
-                status_code=404, detail=f"Organization '{oid}' not found"
-            )
+            raise HTTPException(status_code=404, detail="org_not_found")
         if not org.is_viewer(user):
             raise HTTPException(
                 status_code=403,
@@ -466,8 +464,8 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
         return org
 
-    async def org_public(oid: str):
-        org = await ops.get_org_by_id(uuid.UUID(oid))
+    async def org_public(oid: uuid.UUID):
+        org = await ops.get_org_by_id(oid)
         if not org:
             raise HTTPException(status_code=404, detail="org_not_found")
 
@@ -651,7 +649,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     @router.post("/remove", tags=["invites"])
     async def remove_user_from_org(
         remove: RemoveFromOrg, org: Organization = Depends(org_owner_dep)
-    ):
+    ) -> dict[str, bool]:
         other_user = await user_manager.get_by_email(remove.email)
 
         if org.is_owner(other_user):
