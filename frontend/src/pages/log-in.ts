@@ -372,7 +372,7 @@ export class LogInPage extends LiteElement {
     } catch (e: any) {
       if (e.isApiError) {
         let message = msg("Sorry, invalid username or password");
-        if (e.status === 429) {
+        if (e.statusCode === 429) {
           message = msg(
             "Sorry, too many failed login attempts. A reset password link has been sent to your email."
           );
