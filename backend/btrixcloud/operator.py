@@ -55,7 +55,7 @@ REDIS_TTL = 60
 STARTING_TIME_SECS = 60
 
 # how often to update execution time seconds
-EXEC_TIME_UPDATE_SECS = 300
+EXEC_TIME_UPDATE_SECS = 60
 
 
 # ============================================================================
@@ -845,7 +845,6 @@ class BtrixOperator(K8sAPI):
         # check if at least one crawler pod started running
         crawler_running, redis_running, done = self.sync_pod_status(pods, status)
         redis = None
-
 
         try:
             if redis_running:
