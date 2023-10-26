@@ -339,7 +339,7 @@ export class Dashboard extends LiteElement {
   }
 
   private renderCrawlingMeter(metrics: Metrics) {
-    const quotaSeconds = this.org!.quotas.crawlExecMinutesQuota * 60;
+    const quotaSeconds = this.org!.quotas.crawlExecMinutesQuota * 60 || 0;
     const now = new Date();
     const usageSeconds =
       this.org!.crawlExecSeconds[
