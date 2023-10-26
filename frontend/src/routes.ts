@@ -17,7 +17,7 @@ export const ROUTES = {
     "(/items(/:itemType(/:itemId)))",
     "(/collections(/new)(/view/:collectionId(/:collectionTab))(/edit/:collectionId))",
     "(/browser-profiles(/profile(/browser/:browserId)(/:browserProfileId)))",
-    "(/settings(/:settingsTab))",
+    "(/settings(/members))",
   ].join(""),
   users: "/users",
   usersInvite: "/users/invite",

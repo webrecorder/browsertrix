@@ -75,7 +75,7 @@ export class WorkflowsList extends LiteElement {
   orgStorageQuotaReached = false;
 
   @property({ type: Boolean })
-  orgExecutionMinutesHardCapReached = false;
+  orgExecutionMinutesQuotaReached = false;
 
   @property({ type: String })
   userId!: string;
@@ -444,7 +444,7 @@ export class WorkflowsList extends LiteElement {
           <sl-menu-item
             style="--sl-color-neutral-700: var(--success)"
             ?disabled=${this.orgStorageQuotaReached ||
-            this.orgExecutionMinutesHardCapReached}
+            this.orgExecutionMinutesQuotaReached}
             @click=${() => this.runNow(workflow)}
           >
             <sl-icon name="play" slot="prefix"></sl-icon>
@@ -802,7 +802,7 @@ export class WorkflowsList extends LiteElement {
       if (e.isApiError && e.statusCode === 403) {
         if (e.details === "storage_quota_reached") {
           message = msg("Your org does not have enough storage to run crawls.");
-        } else if (e.details === "execution_minutes_hard_cap_reached") {
+        } else if (e.details === "exec_minutes_quota_reached") {
           message = msg(
             "Your org has used all of its execution minutes for this month."
           );

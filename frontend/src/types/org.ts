@@ -22,7 +22,8 @@ export type OrgData = {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
   } | null;
-  crawlExecMinutesAllowedOverage: number;
+  storageQuotaReached?: boolean;
+  execMinutesQuotaReached?: boolean;
   users?: {
     [id: string]: {
       role: (typeof AccessCode)[UserRole];

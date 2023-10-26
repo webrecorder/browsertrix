@@ -8,7 +8,7 @@ import urllib.parse
 import uuid
 from datetime import datetime
 
-from typing import Union, Optional, Tuple
+from typing import Union, Optional
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -22,7 +22,6 @@ from .models import (
     OrgQuotas,
     OrgMetrics,
     OrgWebhookUrls,
-    OrgUpdateExecMinsOverage,
     RenameOrg,
     UpdateRole,
     RemovePendingInvite,
@@ -229,15 +228,6 @@ class OrgOps:
             },
         )
 
-    async def update_execution_mins_overage(
-        self, org: Organization, allowed_overage: int = 0
-    ):
-        """update allowed execution minutes overage"""
-        return await self.orgs.find_one_and_update(
-            {"_id": org.id},
-            {"$set": {"crawlExecMinutesAllowedOverage": allowed_overage}},
-        )
-
     async def update_event_webhook_urls(self, org: Organization, urls: OrgWebhookUrls):
         """Update organization event webhook URLs"""
         return await self.orgs.find_one_and_update(
@@ -336,27 +326,22 @@ class OrgOps:
         except KeyError:
             return 0
 
-    async def execution_mins_quota_reached(self, oid: uuid.UUID) -> Tuple[bool, bool]:
-        """Return bools for if execution minutes quota and hard cap are reached."""
-        quota = await self.get_org_execution_mins_quota(oid)
-        if not quota:
-            return False, False
+    async def exec_mins_quota_reached(self, oid: uuid.UUID) -> bool:
+        """Return bools for if execution minutes quota"""
+        quota = await self.get_org_exec_mins_monthly_quota(oid)
 
         quota_reached = False
-        hard_cap_reached = False
 
-        hard_cap_additional_mins = await self.get_org_execution_mins_hard_cap(oid)
-        hard_cap_quota = quota + hard_cap_additional_mins
+        if quota:
+            monthly_exec_seconds = await self.get_this_month_crawl_exec_seconds(oid)
+            monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
 
-        monthly_exec_seconds = await self.get_this_month_crawl_exec_seconds(oid)
-        monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
+            if monthly_exec_minutes >= quota:
+                quota_reached = True
 
-        if monthly_exec_minutes >= quota:
-            quota_reached = True
-        if monthly_exec_minutes >= hard_cap_quota:
-            hard_cap_reached = True
+        # add additional quotas here
 
-        return quota_reached, hard_cap_reached
+        return quota_reached
 
     async def get_org_storage_quota(self, oid: uuid.UUID) -> int:
         """return max allowed concurrent crawls, if any"""
@@ -366,20 +351,12 @@ class OrgOps:
             return org.quotas.storageQuota
         return 0
 
-    async def get_org_execution_mins_quota(self, oid: uuid.UUID) -> int:
+    async def get_org_exec_mins_monthly_quota(self, oid: uuid.UUID) -> int:
         """return max allowed execution mins per month, if any"""
         org = await self.orgs.find_one({"_id": oid})
         if org:
             org = Organization.from_dict(org)
-            return org.quotas.crawlExecMinutesQuota
-        return 0
-
-    async def get_org_execution_mins_hard_cap(self, oid: uuid.UUID) -> int:
-        """return additional minutes before exec time hard cap, if any"""
-        org = await self.orgs.find_one({"_id": oid})
-        if org:
-            org = Organization.from_dict(org)
-            return org.crawlExecMinutesAllowedOverage
+            return org.quotas.maxCrawlMinutesPerMonth
         return 0
 
     async def set_origin(self, org: Organization, request: Request):
@@ -589,7 +566,10 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     async def get_org(
         org: Organization = Depends(org_dep), user: User = Depends(user_dep)
     ):
-        return await org.serialize_for_user(user, user_manager)
+        org_out = await org.serialize_for_user(user, user_manager)
+        org_out.storageQuotaReached = await ops.storage_quota_reached(org.id)
+        org_out.execMinutesQuotaReached = await ops.exec_mins_quota_reached(org.id)
+        return org_out
 
     @router.post("/rename", tags=["organizations"])
     async def rename_org(
@@ -620,17 +600,6 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         await ops.update_quotas(org, quotas)
-
-        return {"updated": True}
-
-    @router.post("/limits", tags=["organizations"])
-    async def update_org_limits_settings(
-        settings: OrgUpdateExecMinsOverage,
-        org: Organization = Depends(org_owner_dep),
-    ):
-        await ops.update_execution_mins_overage(
-            org, settings.crawlExecMinutesAllowedOverage
-        )
 
         return {"updated": True}
 
