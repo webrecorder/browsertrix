@@ -359,6 +359,10 @@ export class Dashboard extends LiteElement {
     const hasQuota = Boolean(quotaSeconds);
     const isReached = hasQuota && usageSeconds >= quotaSeconds;
 
+    if (isReached) {
+      usageSeconds = quotaSeconds;
+    }
+
     const renderBar = (value: number, label: string, color: string) => html`
       <btrix-meter-bar
         value=${(value / usageSeconds) * 100}
@@ -392,14 +396,6 @@ export class Dashboard extends LiteElement {
                   <span class="inline-flex items-center">
                     ${humanizeDuration((quotaSeconds - usageSeconds) * 1000)}
                     ${msg("Available")}
-                    <sl-tooltip
-                      content=${msg("Total monthly execution time available")}
-                    >
-                      <sl-icon
-                        name="info-circle"
-                        class="ml-1 text-neutral-500"
-                      ></sl-icon
-                    ></sl-tooltip>
                   </span>
                 `
               : ""
@@ -410,7 +406,7 @@ export class Dashboard extends LiteElement {
         () => html`
           <div class="mb-2">
             <btrix-meter
-              value=${usageSeconds}
+              value=${isReached ? quotaSeconds : usageSeconds}
               max=${ifDefined(quotaSeconds || undefined)}
               valueText=${msg("time")}
             >
