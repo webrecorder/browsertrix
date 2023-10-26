@@ -456,7 +456,7 @@ export class CrawlsList extends LiteElement {
               <sl-menu-item
                 @click=${() =>
                   this.navTo(
-                    `/orgs/${item.oid}/crawls/${
+                    `${this.orgBasePath}/items/${
                       item.type === "upload" ? "upload" : "crawl"
                     }/${item.id}`
                   )}
@@ -493,7 +493,7 @@ export class CrawlsList extends LiteElement {
         () => html`
           <sl-menu-item
             @click=${() =>
-              this.navTo(`/orgs/${item.oid}/workflows/crawl/${item.cid}`)}
+              this.navTo(`${this.orgBasePath}/workflows/crawl/${item.cid}`)}
           >
             <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
             ${msg("Go to Workflow")}

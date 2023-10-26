@@ -144,22 +144,18 @@ def init_jwt_auth(user_manager):
     oauth2_scheme = OA2BearerOrQuery(tokenUrl="/api/auth/jwt/login", auto_error=False)
 
     async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
-        credentials_exception = HTTPException(
-            status_code=401,
-            detail="invalid_credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
         try:
             payload = decode_jwt(token, AUTH_ALLOW_AUD)
             uid: Optional[str] = payload.get("sub") or payload.get("user_id")
-            if uid is None:
-                raise credentials_exception
-        except Exception:
-            raise credentials_exception
-        user = await user_manager.get_by_id(uuid.UUID(uid))
-        if user is None:
-            raise credentials_exception
-        return user
+            user = await user_manager.get_by_id(uuid.UUID(uid))
+            assert user
+            return user
+        except:
+            raise HTTPException(
+                status_code=401,
+                detail="invalid_credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
     current_active_user = get_current_user
 
