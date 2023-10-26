@@ -18,7 +18,7 @@ def test_set_execution_mins_quota(org_with_quotas, admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/orgs/{org_with_quotas}/quotas",
         headers=admin_auth_headers,
-        json={"crawlExecMinutesQuota": EXEC_MINS_QUOTA},
+        json={"maxCrawlMinutesPerMonth": EXEC_MINS_QUOTA},
     )
     data = r.json()
     assert data.get("updated") == True
@@ -69,72 +69,7 @@ def test_crawl_stopped_when_quota_reached(org_with_quotas, admin_auth_headers):
         headers=admin_auth_headers,
     )
     assert r.status_code == 403
-    assert r.json()["detail"] == "execution_minutes_hard_cap_reached"
-
-
-def test_crawl_stopped_when_card_cap_reached(org_with_quotas, admin_auth_headers):
-    # Set allowed overage on org
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{org_with_quotas}/limits",
-        headers=admin_auth_headers,
-        json={"crawlExecMinutesAllowedOverage": EXEC_MINS_ALLOWED_OVERAGE},
-    )
-    assert r.status_code == 200
-
-    time.sleep(10)
-
-    # Run new crawl from config
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{org_with_quotas}/crawlconfigs/{config_id}/run",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    crawl_id = r.json()["started"]
-    assert crawl_id
-
-    time.sleep(1)
-
-    while get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers) in (
-        "starting",
-        "waiting_capacity",
-    ):
-        time.sleep(2)
-
-    while get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers) in (
-        "running",
-        "generate-wacz",
-        "uploading-wacz",
-        "pending-wait",
-    ):
-        time.sleep(2)
-
-    # Ensure that crawl was stopped when hard cap reached
-    assert (
-        get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers)
-        == "partial_complete"
-    )
-
-    time.sleep(5)
-
-    # Ensure crawl execution seconds went over hard cap (stopping takes a while)
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{org_with_quotas}",
-        headers=admin_auth_headers,
-    )
-    data = r.json()
-    execution_seconds = data["crawlExecSeconds"]
-    yymm = datetime.utcnow().strftime("%Y-%m")
-    assert math.floor(execution_seconds[yymm] / 60) >= EXEC_MINS_HARD_CAP
-
-    time.sleep(5)
-
-    # Ensure we can't start another crawl when over the hard cap
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{org_with_quotas}/crawlconfigs/{config_id}/run",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 403
-    assert r.json()["detail"] == "execution_minutes_hard_cap_reached"
+    assert r.json()["detail"] == "exec_minutes_quota_reached"
 
 
 def run_crawl(org_id, headers):

@@ -1269,11 +1269,7 @@ class BtrixOperator(K8sAPI):
 
         # check exec time quotas and stop if reached limit
         if not status.stopping:
-            (
-                _,
-                exec_mins_hard_cap_reached,
-            ) = await self.org_ops.execution_mins_quota_reached(crawl.oid)
-            if exec_mins_hard_cap_reached:
+            if await self.org_ops.exec_mins_quota_reached(crawl.oid):
                 status.stopping = True
 
         # mark crawl as stopping

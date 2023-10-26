@@ -496,8 +496,7 @@ class CrawlOut(BaseMongoModel):
     cid_rev: Optional[int]
 
     storageQuotaReached: Optional[bool]
-    executionMinutesQuotaReached: Optional[bool]
-    executionMinutesHardCapReached: Optional[bool]
+    execMinutesQuotaReached: Optional[bool]
 
 
 # ============================================================================
@@ -678,13 +677,6 @@ class RenameOrg(BaseModel):
 
 
 # ============================================================================
-class OrgUpdateExecMinsOverage(BaseModel):
-    """Update allowed exec mins overage"""
-
-    crawlExecMinutesAllowedOverage: int
-
-
-# ============================================================================
 class DefaultStorage(BaseModel):
     """Storage reference"""
 
@@ -714,7 +706,7 @@ class OrgQuotas(BaseModel):
     maxConcurrentCrawls: Optional[int] = 0
     maxPagesPerCrawl: Optional[int] = 0
     storageQuota: Optional[int] = 0
-    crawlExecMinutesQuota: Optional[int] = 0
+    maxCrawlMinutesPerMonth: Optional[int] = 0
 
 
 # ============================================================================
@@ -747,7 +739,9 @@ class OrgOut(BaseMongoModel):
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
     quotas: Optional[OrgQuotas] = OrgQuotas()
-    crawlExecMinutesAllowedOverage: int = 0
+
+    storageQuotaReached: Optional[bool]
+    execMinutesQuotaReached: Optional[bool]
 
 
 # ============================================================================
@@ -774,8 +768,6 @@ class Organization(BaseMongoModel):
     default: bool = False
 
     quotas: Optional[OrgQuotas] = OrgQuotas()
-
-    crawlExecMinutesAllowedOverage: Optional[int] = 0
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 

@@ -59,7 +59,6 @@ type Params = {
   collectionTab?: string;
   itemType?: Crawl["type"];
   jobType?: JobType;
-  settingsTab?: string;
   new?: ResourceName;
 };
 const defaultTab = "home";
@@ -103,9 +102,6 @@ export class Org extends LiteElement {
 
   @state()
   private showExecutionMinutesQuotaAlert = false;
-
-  @state()
-  private orgExecutionMinutesHardCapReached = false;
 
   @state()
   private openDialogName?: ResourceName;
@@ -502,16 +498,14 @@ export class Org extends LiteElement {
           .authState=${this.authState!}
           orgId=${this.orgId!}
           ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
-          ?orgExecutionMinutesHardCapReached=${this
-            .orgExecutionMinutesHardCapReached}
+          ?orgExecutionMinutesQuotaReached=${this
+            .orgExecutionMinutesQuotaReached}
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
           @storage-quota-update=${this.onStorageQuotaUpdate}
           @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
-          @execution-minutes-hard-cap-update=${this
-            .onExecutionMinutesHardCapUpdate}
         ></btrix-workflow-detail>
       `;
     }
@@ -529,8 +523,6 @@ export class Org extends LiteElement {
         jobType=${ifDefined(this.params.jobType)}
         @storage-quota-update=${this.onStorageQuotaUpdate}
         @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
-        @execution-minutes-hard-cap-update=${this
-          .onExecutionMinutesHardCapUpdate}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }
@@ -539,13 +531,11 @@ export class Org extends LiteElement {
       .authState=${this.authState!}
       orgId=${this.orgId!}
       ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
-      ?orgExecutionMinutesHardCapReached=${this
-        .orgExecutionMinutesHardCapReached}
+      ?orgExecutionMinutesQuotaReached=${this.orgExecutionMinutesQuotaReached}
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
       @storage-quota-update=${this.onStorageQuotaUpdate}
       @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
-      @execution-minutes-hard-cap-update=${this.onExecutionMinutesHardCapUpdate}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-workflows-list>`;
   }
@@ -608,7 +598,7 @@ export class Org extends LiteElement {
 
   private renderOrgSettings() {
     if (!this.userInfo || !this.org) return;
-    const activePanel = this.params.settingsTab || "information";
+    const activePanel = "information";
     const isAddingMember = this.params.hasOwnProperty("invite");
 
     return html`<btrix-org-settings
@@ -692,12 +682,6 @@ export class Org extends LiteElement {
     if (reached) {
       this.showExecutionMinutesQuotaAlert = true;
     }
-  }
-
-  private async onExecutionMinutesHardCapUpdate(e: CustomEvent) {
-    e.stopPropagation();
-    const { reached } = e.detail;
-    this.orgExecutionMinutesHardCapReached = reached;
   }
 
   private async onUserRoleChange(e: UserRoleChangeEvent) {
@@ -792,63 +776,12 @@ export class Org extends LiteElement {
   }
 
   checkStorageQuota() {
-    if (
-      !this.org ||
-      !this.org.quotas.storageQuota ||
-      this.org.quotas.storageQuota == 0
-    ) {
-      this.orgStorageQuotaReached = false;
-      return;
-    }
-
-    if (this.org.bytesStored > this.org.quotas.storageQuota) {
-      this.orgStorageQuotaReached = true;
-    } else {
-      this.orgStorageQuotaReached = false;
-    }
-
-    if (this.orgStorageQuotaReached) {
-      this.showStorageQuotaAlert = true;
-    }
+    this.orgStorageQuotaReached = !!this.org?.storageQuotaReached;
+    this.showStorageQuotaAlert = true;
   }
 
   checkExecutionMinutesQuota() {
-    if (
-      !this.org ||
-      !this.org.crawlExecSeconds ||
-      !this.org.quotas.crawlExecMinutesQuota ||
-      this.org.quotas.crawlExecMinutesQuota == 0
-    ) {
-      this.orgExecutionMinutesQuotaReached = false;
-      return;
-    }
-
-    const monthKey = new Date().toISOString().slice(0, 7);
-    const monthlyExecutionSeconds = this.org.crawlExecSeconds[monthKey];
-    const quota = this.org.quotas.crawlExecMinutesQuota;
-    const hardCap = quota + (this.org.crawlExecMinutesAllowedOverage || 0);
-
-    if (monthlyExecutionSeconds) {
-      const monthlyExecutionMinutes = Math.floor(monthlyExecutionSeconds / 60);
-
-      if (monthlyExecutionMinutes >= quota) {
-        this.orgExecutionMinutesQuotaReached = true;
-      } else {
-        this.orgExecutionMinutesQuotaReached = false;
-      }
-
-      if (monthlyExecutionMinutes >= hardCap) {
-        this.orgExecutionMinutesHardCapReached = true;
-      } else {
-        this.orgExecutionMinutesHardCapReached = false;
-      }
-    } else {
-      this.orgExecutionMinutesQuotaReached = false;
-      this.orgExecutionMinutesHardCapReached = false;
-    }
-
-    if (this.orgExecutionMinutesQuotaReached) {
-      this.showExecutionMinutesQuotaAlert = true;
-    }
+    this.orgExecutionMinutesQuotaReached = !!this.org?.execMinutesQuotaReached;
+    this.showExecutionMinutesQuotaAlert = true;
   }
 }
