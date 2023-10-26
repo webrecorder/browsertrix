@@ -415,6 +415,8 @@ export class Dashboard extends LiteElement {
                   <div slot="content">
                     <div>${msg("Monthly Execution Time Available")}</div>
                     <div class="text-xs opacity-80">
+                      ${humanizeDuration((quotaSeconds - usageSeconds) * 1000)}
+                      |
                       ${this.renderPercentage(
                         (quotaSeconds - usageSeconds) / quotaSeconds
                       )}
