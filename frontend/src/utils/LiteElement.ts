@@ -184,7 +184,7 @@ export default class LiteElement extends LitElement {
           errorMessage = msg("Storage quota reached");
           break;
         }
-        if (errorDetail === "execution_minutes_quota_reached") {
+        if (errorDetail === "exec_minutes_quota_reached") {
           this.dispatchEvent(
             new CustomEvent("execution-minutes-quota-update", {
               detail: { reached: true },
