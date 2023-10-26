@@ -343,11 +343,19 @@ export class Dashboard extends LiteElement {
     if (this.org!.quotas && this.org!.quotas.maxExecMinutesPerMonth) {
       quotaSeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
     }
+
+    let usageSeconds = 0;
     const now = new Date();
-    const usageSeconds =
-      this.org!.crawlExecSeconds[
-        `${now.getFullYear()}-${now.getUTCMonth() + 1}`
-      ] || 0;
+    if (this.org!.crawlExecSeconds) {
+      const actualUsage =
+        this.org!.crawlExecSeconds[
+          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
+        ];
+      if (actualUsage) {
+        usageSeconds = actualUsage;
+      }
+    }
+
     const hasQuota = Boolean(quotaSeconds);
     const isReached = hasQuota && usageSeconds >= quotaSeconds;
 
