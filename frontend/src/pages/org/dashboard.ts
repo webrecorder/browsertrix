@@ -356,8 +356,8 @@ export class Dashboard extends LiteElement {
         <div class="text-center">
           <div>${label}</div>
           <div class="text-xs opacity-80">
-            <sl-format-bytes value=${value} display="narrow"></sl-format-bytes>
-            | ${this.renderPercentage(value / usageSeconds)}
+            ${humanizeDuration(value * 1000)} |
+            ${this.renderPercentage(value / quotaSeconds)}
           </div>
         </div>
       </btrix-meter-bar>
@@ -381,7 +381,9 @@ export class Dashboard extends LiteElement {
                   <span class="inline-flex items-center">
                     ${humanizeDuration((quotaSeconds - usageSeconds) * 1000)}
                     ${msg("Available")}
-                    <sl-tooltip content=${msg("Total execution time available")}>
+                    <sl-tooltip
+                      content=${msg("Total monthly execution time available")}
+                    >
                       <sl-icon
                         name="info-circle"
                         class="ml-1 text-neutral-500"
@@ -404,14 +406,14 @@ export class Dashboard extends LiteElement {
               ${when(usageSeconds, () =>
                 renderBar(
                   usageSeconds,
-                  msg("Execution Time"),
+                  msg("Monthly Execution Time Used"),
                   isReached ? "warning" : this.colors.runningTime
                 )
               )}
               <div slot="available" class="flex-1">
                 <sl-tooltip>
                   <div slot="content">
-                    <div>${msg("Available")}</div>
+                    <div>${msg("Monthly Execution Time Available")}</div>
                     <div class="text-xs opacity-80">
                       ${this.renderPercentage(
                         (quotaSeconds - usageSeconds) / quotaSeconds
