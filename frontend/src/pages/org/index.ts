@@ -59,6 +59,7 @@ type Params = {
   collectionTab?: string;
   itemType?: Crawl["type"];
   jobType?: JobType;
+  settingsTab?: string;
   new?: ResourceName;
 };
 const defaultTab = "home";
@@ -598,7 +599,7 @@ export class Org extends LiteElement {
 
   private renderOrgSettings() {
     if (!this.userInfo || !this.org) return;
-    const activePanel = "information";
+    const activePanel = this.params.settingsTab || "information";
     const isAddingMember = this.params.hasOwnProperty("invite");
 
     return html`<btrix-org-settings
