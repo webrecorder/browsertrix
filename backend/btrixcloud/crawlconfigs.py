@@ -3,7 +3,7 @@ Crawl Config API handling
 """
 # pylint: disable=too-many-lines
 
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Tuple
 
 import uuid
 import asyncio
@@ -135,7 +135,7 @@ class CrawlConfigOps:
         config: CrawlConfigIn,
         org: Organization,
         user: User,
-    ):
+    ) -> Tuple[str, str, bool, bool]:
         """Add new crawl config"""
         data = config.dict()
         data["oid"] = org.id
@@ -195,8 +195,8 @@ class CrawlConfigOps:
             await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
 
         return (
-            result.inserted_id,
-            crawl_id,
+            result.inserted_id or "",
+            crawl_id or "",
             storage_quota_reached,
             exec_mins_quota_reached,
         )
