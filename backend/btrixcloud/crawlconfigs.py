@@ -346,6 +346,8 @@ class CrawlConfigOps:
             "updated": True,
             "settings_changed": changed,
             "metadata_changed": metadata_changed,
+            "storageQuotaReached": await this.org_ops.storage_quota_reached(org.id),
+            "execMinutesQuotaReached": await this.org_ops.exec_mins_quota_reached(org.id),
         }
         if run_now:
             crawl_id = await self.run_now(cid, org, user)

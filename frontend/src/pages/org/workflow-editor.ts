@@ -2169,9 +2169,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
             body: JSON.stringify(config),
           }));
 
-      const crawlId = data.run_now_job;
+      const crawlId = data.run_now_job || data.started || null;
       const storageQuotaReached = data.storageQuotaReached;
-      const executionMinutesQuotaReached = data.executionMinutesQuotaReached;
+      const executionMinutesQuotaReached = data.execMinutesQuotaReached;
 
       if (storageQuotaReached) {
         this.notify({
@@ -2210,7 +2210,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
       this.navTo(
         `${this.orgBasePath}/workflows/crawl/${this.configId || data.id}${
-          crawlId && !storageQuotaReached ? "#watch" : ""
+          crawlId && !storageQuotaReached && !executionMinutesQuotaReached
+            ? "#watch"
+            : ""
         }`
       );
     } catch (e: any) {
