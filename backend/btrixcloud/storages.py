@@ -693,6 +693,21 @@ def init_storages_api(org_ops, crawl_manager):
     router = org_ops.router
     org_owner_dep = org_ops.org_owner_dep
 
+    @router.get("/storage", tags=["organizations"], response_model=OrgStorageRefs)
+    def get_storage_refs(
+        org: Organization = Depends(org_owner_dep),
+    ):
+        """get storage refs for an org"""
+        return OrgStorageRefs(storage=org.storage, storageReplicas=org.storageReplicas)
+
+    @router.get("/allStorages", tags=["organizations"])
+    def get_available_storages(org: Organization = Depends(org_owner_dep)):
+        return storage_ops.get_available_storages(org)
+
+    # pylint: disable=unreachable, fixme
+    # todo: enable when ready to support custom storage
+    return storage_ops
+
     @router.post("/customStorage", tags=["organizations"])
     async def add_custom_storage(
         storage: S3StorageIn, org: Organization = Depends(org_owner_dep)
@@ -711,16 +726,5 @@ def init_storages_api(org_ops, crawl_manager):
         org: Organization = Depends(org_owner_dep),
     ):
         return await storage_ops.update_storage_refs(storage, org)
-
-    @router.get("/storage", tags=["organizations"], response_model=OrgStorageRefs)
-    def get_storage_refs(
-        org: Organization = Depends(org_owner_dep),
-    ):
-        """get storage refs for an org"""
-        return OrgStorageRefs(storage=org.storage, storageReplicas=org.storageReplicas)
-
-    @router.get("/allStorages", tags=["organizations"])
-    def get_available_storages(org: Organization = Depends(org_owner_dep)):
-        return storage_ops.get_available_storages(org)
 
     return storage_ops
