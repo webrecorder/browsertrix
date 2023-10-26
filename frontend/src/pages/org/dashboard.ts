@@ -49,6 +49,7 @@ export class Dashboard extends LiteElement {
     crawls: "green",
     uploads: "sky",
     browserProfiles: "indigo",
+    runningTime: "blue",
   };
 
   willUpdate(changedProperties: PropertyValues<this>) {
@@ -179,6 +180,7 @@ export class Dashboard extends LiteElement {
           ${this.renderCard(
             msg("Crawling"),
             (metrics) => html`
+              ${this.renderCrawlingMeter(metrics)}
               <dl>
                 ${this.renderStat({
                   value:
@@ -329,6 +331,117 @@ export class Dashboard extends LiteElement {
                 value=${metrics.storageQuotaBytes}
                 display="narrow"
               ></sl-format-bytes>
+            </btrix-meter>
+          </div>
+        `
+      )}
+    `;
+  }
+
+  private renderCrawlingMeter(metrics: Metrics) {
+    let quotaSeconds = 0;
+    if (this.org!.quotas && this.org!.quotas.maxExecMinutesPerMonth) {
+      quotaSeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
+    }
+
+    let usageSeconds = 0;
+    const now = new Date();
+    if (this.org!.crawlExecSeconds) {
+      const actualUsage =
+        this.org!.crawlExecSeconds[
+          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
+        ];
+      if (actualUsage) {
+        usageSeconds = actualUsage;
+      }
+    }
+
+    const hasQuota = Boolean(quotaSeconds);
+    const isReached = hasQuota && usageSeconds >= quotaSeconds;
+
+    const renderBar = (value: number, label: string, color: string) => html`
+      <btrix-meter-bar
+        value=${(value / usageSeconds) * 100}
+        style="--background-color:var(--sl-color-${color}-400)"
+      >
+        <div class="text-center">
+          <div>${label}</div>
+          <div class="text-xs opacity-80">
+            ${humanizeDuration(value * 1000)} |
+            ${this.renderPercentage(value / quotaSeconds)}
+          </div>
+        </div>
+      </btrix-meter-bar>
+    `;
+    return html`
+      <div class="font-semibold mb-1">
+        ${when(
+          isReached,
+          () => html`
+            <div class="flex gap-2 items-center">
+              <sl-icon
+                class="text-danger"
+                name="exclamation-triangle"
+              ></sl-icon>
+              <span>${msg("Monthly Execution Minutes Quota Reached")}</span>
+            </div>
+          `,
+          () =>
+            hasQuota
+              ? html`
+                  <span class="inline-flex items-center">
+                    ${humanizeDuration((quotaSeconds - usageSeconds) * 1000)}
+                    ${msg("Available")}
+                    <sl-tooltip
+                      content=${msg("Total monthly execution time available")}
+                    >
+                      <sl-icon
+                        name="info-circle"
+                        class="ml-1 text-neutral-500"
+                      ></sl-icon
+                    ></sl-tooltip>
+                  </span>
+                `
+              : ""
+        )}
+      </div>
+      ${when(
+        hasQuota,
+        () => html`
+          <div class="mb-2">
+            <btrix-meter
+              value=${usageSeconds}
+              max=${ifDefined(quotaSeconds || undefined)}
+              valueText=${msg("time")}
+            >
+              ${when(usageSeconds, () =>
+                renderBar(
+                  usageSeconds,
+                  msg("Monthly Execution Time Used"),
+                  isReached ? "warning" : this.colors.runningTime
+                )
+              )}
+              <div slot="available" class="flex-1">
+                <sl-tooltip>
+                  <div slot="content">
+                    <div>${msg("Monthly Execution Time Available")}</div>
+                    <div class="text-xs opacity-80">
+                      ${humanizeDuration((quotaSeconds - usageSeconds) * 1000)}
+                      |
+                      ${this.renderPercentage(
+                        (quotaSeconds - usageSeconds) / quotaSeconds
+                      )}
+                    </div>
+                  </div>
+                  <div class="w-full h-full"></div>
+                </sl-tooltip>
+              </div>
+              <span slot="valueLabel">
+                ${humanizeDuration(usageSeconds * 1000)}
+              </span>
+              <span slot="maxLabel">
+                ${humanizeDuration(quotaSeconds * 1000)}
+              </span>
             </btrix-meter>
           </div>
         `
