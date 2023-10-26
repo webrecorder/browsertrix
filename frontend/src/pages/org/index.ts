@@ -777,11 +777,11 @@ export class Org extends LiteElement {
 
   checkStorageQuota() {
     this.orgStorageQuotaReached = !!this.org?.storageQuotaReached;
-    this.showStorageQuotaAlert = true;
+    this.showStorageQuotaAlert = this.orgStorageQuotaReached;
   }
 
   checkExecutionMinutesQuota() {
     this.orgExecutionMinutesQuotaReached = !!this.org?.execMinutesQuotaReached;
-    this.showExecutionMinutesQuotaAlert = true;
+    this.showExecutionMinutesQuotaAlert = this.orgExecutionMinutesQuotaReached;
   }
 }

@@ -330,13 +330,14 @@ class OrgOps:
         """Return bools for if execution minutes quota"""
         quota = await self.get_org_exec_mins_monthly_quota(oid)
 
-        monthly_exec_seconds = await self.get_this_month_crawl_exec_seconds(oid)
-        monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
-
         quota_reached = False
 
-        if monthly_exec_minutes >= quota:
-            quota_reached = True
+        if quota:
+            monthly_exec_seconds = await self.get_this_month_crawl_exec_seconds(oid)
+            monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
+
+            if monthly_exec_minutes >= quota:
+                quota_reached = True
 
         # add additional quotas here
 
