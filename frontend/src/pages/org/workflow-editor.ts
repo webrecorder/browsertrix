@@ -2173,40 +2173,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const storageQuotaReached = data.storageQuotaReached;
       const executionMinutesQuotaReached = data.execMinutesQuotaReached;
 
-      if (storageQuotaReached) {
-        this.notify({
-          title: msg("Workflow saved without starting crawl."),
-          message: msg(
-            "Could not run crawl with new workflow settings due to storage quota."
-          ),
-          variant: "warning",
-          icon: "exclamation-circle",
-          duration: 12000,
-        });
-      } else if (executionMinutesQuotaReached) {
-        this.notify({
-          title: msg("Workflow saved without starting crawl."),
-          message: msg(
-            "Could not run crawl with new workflow settings due to execution minutes quota."
-          ),
-          variant: "warning",
-          icon: "exclamation-circle",
-          duration: 12000,
-        });
-      } else {
-        let message = msg("Workflow created.");
-        if (crawlId) {
-          message = msg("Crawl started with new workflow settings.");
-        } else if (this.configId) {
-          message = msg("Workflow updated.");
-        }
-
-        this.notify({
-          message,
-          variant: "success",
-          icon: "check2-circle",
-        });
+      let message = msg("Workflow created.");
+      if (crawlId) {
+        message = msg("Crawl started with new workflow settings.");
+      } else if (this.configId) {
+        message = msg("Workflow updated.");
       }
+
+      this.notify({
+        message,
+        variant: "success",
+        icon: "check2-circle",
+      });
 
       this.navTo(
         `${this.orgBasePath}/workflows/crawl/${this.configId || data.id}${
