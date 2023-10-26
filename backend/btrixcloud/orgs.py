@@ -356,7 +356,7 @@ class OrgOps:
         org = await self.orgs.find_one({"_id": oid})
         if org:
             org = Organization.from_dict(org)
-            return org.quotas.maxCrawlMinutesPerMonth
+            return org.quotas.maxExecMinutesPerMonth
         return 0
 
     async def set_origin(self, org: Organization, request: Request):

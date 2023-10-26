@@ -18,7 +18,7 @@ def test_set_execution_mins_quota(org_with_quotas, admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/orgs/{org_with_quotas}/quotas",
         headers=admin_auth_headers,
-        json={"maxCrawlMinutesPerMonth": EXEC_MINS_QUOTA},
+        json={"maxExecMinutesPerMonth": EXEC_MINS_QUOTA},
     )
     data = r.json()
     assert data.get("updated") == True

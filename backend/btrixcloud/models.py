@@ -706,7 +706,7 @@ class OrgQuotas(BaseModel):
     maxConcurrentCrawls: Optional[int] = 0
     maxPagesPerCrawl: Optional[int] = 0
     storageQuota: Optional[int] = 0
-    maxCrawlMinutesPerMonth: Optional[int] = 0
+    maxExecMinutesPerMonth: Optional[int] = 0
 
 
 # ============================================================================
