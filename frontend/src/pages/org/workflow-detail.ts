@@ -536,6 +536,9 @@ export class WorkflowDetail extends LiteElement {
           configId=${this.workflow!.id}
           orgId=${this.orgId}
           .authState=${this.authState}
+          ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
+          ?orgExecutionMinutesQuotaReached=${this
+            .orgExecutionMinutesQuotaReached}
           @reset=${(e: Event) =>
             this.navTo(
               `${this.orgBasePath}/workflows/crawl/${this.workflow!.id}`

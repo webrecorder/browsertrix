@@ -522,6 +522,8 @@ export class Org extends LiteElement {
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
         jobType=${ifDefined(this.params.jobType)}
+        ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
+        ?orgExecutionMinutesQuotaReached=${this.orgExecutionMinutesQuotaReached}
         @storage-quota-update=${this.onStorageQuotaUpdate}
         @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
         @select-new-dialog=${this.onSelectNewDialog}

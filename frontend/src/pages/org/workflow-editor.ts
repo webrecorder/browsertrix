@@ -242,6 +242,12 @@ export class CrawlConfigEditor extends LiteElement {
   @property({ type: Array })
   initialSeeds?: Seed[];
 
+  @property({ type: Boolean })
+  orgStorageQuotaReached = false;
+
+  @property({ type: Boolean })
+  orgExecutionMinutesQuotaReached = false;
+
   @state()
   private tagOptions: string[] = [];
 
@@ -535,7 +541,10 @@ export class CrawlConfigEditor extends LiteElement {
       lang: this.initialWorkflow.config.lang,
       scheduleType: defaultFormState.scheduleType,
       scheduleFrequency: defaultFormState.scheduleFrequency,
-      runNow: defaultFormState.runNow,
+      runNow:
+        this.orgStorageQuotaReached || this.orgExecutionMinutesQuotaReached
+          ? false
+          : defaultFormState.runNow,
       tags: this.initialWorkflow.tags,
       autoAddCollections: this.initialWorkflow.autoAddCollections,
       jobName: this.initialWorkflow.name || defaultFormState.jobName,
@@ -864,6 +873,8 @@ export class CrawlConfigEditor extends LiteElement {
       <sl-switch
         class="mr-1"
         ?checked=${this.formState.runNow}
+        ?disabled=${this.orgStorageQuotaReached ||
+        this.orgExecutionMinutesQuotaReached}
         @sl-change=${(e: SlChangeEvent) => {
           this.updateFormState(
             {
