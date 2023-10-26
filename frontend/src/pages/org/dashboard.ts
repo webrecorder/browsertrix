@@ -372,7 +372,7 @@ export class Dashboard extends LiteElement {
                 class="text-danger"
                 name="exclamation-triangle"
               ></sl-icon>
-              <span>${msg("Time Quota Reached")}</span>
+              <span>${msg("Monthly Execution Minutes Quota Reached")}</span>
             </div>
           `,
           () =>
@@ -381,7 +381,7 @@ export class Dashboard extends LiteElement {
                   <span class="inline-flex items-center">
                     ${humanizeDuration((quotaSeconds - usageSeconds) * 1000)}
                     ${msg("Available")}
-                    <sl-tooltip content=${msg("Total running time available")}>
+                    <sl-tooltip content=${msg("Total execution time available")}>
                       <sl-icon
                         name="info-circle"
                         class="ml-1 text-neutral-500"
@@ -404,7 +404,7 @@ export class Dashboard extends LiteElement {
               ${when(usageSeconds, () =>
                 renderBar(
                   usageSeconds,
-                  msg("Running Time"),
+                  msg("Execution Time"),
                   isReached ? "warning" : this.colors.runningTime
                 )
               )}
