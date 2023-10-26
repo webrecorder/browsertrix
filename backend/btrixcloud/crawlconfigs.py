@@ -137,7 +137,7 @@ class CrawlConfigOps:
         config: CrawlConfigIn,
         org: Organization,
         user: User,
-    ) -> Tuple[str, str, bool, bool]:
+    ) -> Tuple[str, Optional[str], bool, bool]:
         """Add new crawl config"""
         data = config.dict()
         data["oid"] = org.id
@@ -197,8 +197,8 @@ class CrawlConfigOps:
             await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
 
         return (
-            result.inserted_id or "",
-            crawl_id or "",
+            result.inserted_id,
+            crawl_id or None,
             storage_quota_reached,
             exec_mins_quota_reached,
         )
