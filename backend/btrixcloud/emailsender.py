@@ -43,7 +43,7 @@ class EmailSender:
                 server.ehlo()
                 server.starttls(context=context)
             server.ehlo()
-            if self.password is not None:
+            if self.password:
                 server.login(self.sender, self.password)
             server.send_message(msg)
             # server.sendmail(self.sender, receiver, message)
