@@ -513,6 +513,7 @@ class CrawlOut(BaseMongoModel):
     cid_rev: Optional[int]
 
     storageQuotaReached: Optional[bool]
+    execMinutesQuotaReached: Optional[bool]
 
 
 # ============================================================================
@@ -722,6 +723,7 @@ class OrgQuotas(BaseModel):
     maxConcurrentCrawls: Optional[int] = 0
     maxPagesPerCrawl: Optional[int] = 0
     storageQuota: Optional[int] = 0
+    maxExecMinutesPerMonth: Optional[int] = 0
 
 
 # ============================================================================
@@ -754,6 +756,9 @@ class OrgOut(BaseMongoModel):
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
     quotas: Optional[OrgQuotas] = OrgQuotas()
+
+    storageQuotaReached: Optional[bool]
+    execMinutesQuotaReached: Optional[bool]
 
 
 # ============================================================================

@@ -139,10 +139,19 @@ export default class LiteElement extends LitElement {
     if (resp.ok) {
       const body = await resp.json();
       const storageQuotaReached = body.storageQuotaReached;
+      const executionMinutesQuotaReached = body.executionMinutesQuotaReached;
       if (typeof storageQuotaReached === "boolean") {
         this.dispatchEvent(
           new CustomEvent("storage-quota-update", {
             detail: { reached: storageQuotaReached },
+            bubbles: true,
+          })
+        );
+      }
+      if (typeof executionMinutesQuotaReached === "boolean") {
+        this.dispatchEvent(
+          new CustomEvent("execution-minutes-quota-update", {
+            detail: { reached: executionMinutesQuotaReached },
             bubbles: true,
           })
         );
@@ -173,6 +182,16 @@ export default class LiteElement extends LitElement {
             })
           );
           errorMessage = msg("Storage quota reached");
+          break;
+        }
+        if (errorDetail === "exec_minutes_quota_reached") {
+          this.dispatchEvent(
+            new CustomEvent("execution-minutes-quota-update", {
+              detail: { reached: true },
+              bubbles: true,
+            })
+          );
+          errorMessage = msg("Monthly execution minutes quota reached");
           break;
         }
       }

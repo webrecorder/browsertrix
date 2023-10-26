@@ -3,7 +3,7 @@ Crawl Config API handling
 """
 # pylint: disable=too-many-lines
 
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Tuple
 
 import uuid
 import asyncio
@@ -137,7 +137,7 @@ class CrawlConfigOps:
         config: CrawlConfigIn,
         org: Organization,
         user: User,
-    ) -> tuple[str, str, bool]:
+    ) -> Tuple[str, Optional[str], bool, bool]:
         """Add new crawl config"""
         data = config.dict()
         data["oid"] = org.id
@@ -174,11 +174,16 @@ class CrawlConfigOps:
         )
 
         run_now = config.runNow
-        quota_reached = await self.org_ops.storage_quota_reached(org.id)
+        storage_quota_reached = await self.org_ops.storage_quota_reached(org.id)
+        exec_mins_quota_reached = await self.org_ops.exec_mins_quota_reached(org.id)
 
-        if quota_reached:
+        if storage_quota_reached:
             run_now = False
             print(f"Storage quota exceeded for org {org.id}", flush=True)
+
+        if exec_mins_quota_reached:
+            run_now = False
+            print(f"Execution minutes quota exceeded for org {org.id}", flush=True)
 
         crawl_id = await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
@@ -191,7 +196,12 @@ class CrawlConfigOps:
         if crawl_id and run_now:
             await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
 
-        return result.inserted_id, crawl_id, quota_reached
+        return (
+            result.inserted_id,
+            crawl_id or None,
+            storage_quota_reached,
+            exec_mins_quota_reached,
+        )
 
     async def add_new_crawl(
         self, crawl_id: str, crawlconfig: CrawlConfig, user: User, manual: bool
@@ -336,6 +346,10 @@ class CrawlConfigOps:
             "updated": True,
             "settings_changed": changed,
             "metadata_changed": metadata_changed,
+            "storageQuotaReached": await self.org_ops.storage_quota_reached(org.id),
+            "execMinutesQuotaReached": await self.org_ops.exec_mins_quota_reached(
+                org.id
+            ),
         }
         if run_now:
             crawl_id = await self.run_now(cid, org, user)
@@ -757,6 +771,9 @@ class CrawlConfigOps:
         if await self.org_ops.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
+        if await self.org_ops.exec_mins_quota_reached(org.id):
+            raise HTTPException(status_code=403, detail="exec_minutes_quota_reached")
+
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
                 crawlconfig, userid=str(user.id)
@@ -991,12 +1008,18 @@ def init_crawl_config_api(
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        cid, new_job_name, quota_reached = await ops.add_crawl_config(config, org, user)
+        (
+            cid,
+            new_job_name,
+            storage_quota_reached,
+            exec_mins_quota_reached,
+        ) = await ops.add_crawl_config(config, org, user)
         return {
             "added": True,
             "id": str(cid),
             "run_now_job": new_job_name,
-            "storageQuotaReached": quota_reached,
+            "storageQuotaReached": storage_quota_reached,
+            "execMinutesQuotaReached": exec_mins_quota_reached,
         }
 
     @router.patch("/{cid}", dependencies=[Depends(org_crawl_dep)])

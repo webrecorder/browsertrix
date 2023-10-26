@@ -242,6 +242,12 @@ export class CrawlConfigEditor extends LiteElement {
   @property({ type: Array })
   initialSeeds?: Seed[];
 
+  @property({ type: Boolean })
+  orgStorageQuotaReached = false;
+
+  @property({ type: Boolean })
+  orgExecutionMinutesQuotaReached = false;
+
   @state()
   private tagOptions: string[] = [];
 
@@ -535,7 +541,10 @@ export class CrawlConfigEditor extends LiteElement {
       lang: this.initialWorkflow.config.lang,
       scheduleType: defaultFormState.scheduleType,
       scheduleFrequency: defaultFormState.scheduleFrequency,
-      runNow: defaultFormState.runNow,
+      runNow:
+        this.orgStorageQuotaReached || this.orgExecutionMinutesQuotaReached
+          ? false
+          : defaultFormState.runNow,
       tags: this.initialWorkflow.tags,
       autoAddCollections: this.initialWorkflow.autoAddCollections,
       jobName: this.initialWorkflow.name || defaultFormState.jobName,
@@ -864,6 +873,8 @@ export class CrawlConfigEditor extends LiteElement {
       <sl-switch
         class="mr-1"
         ?checked=${this.formState.runNow}
+        ?disabled=${this.orgStorageQuotaReached ||
+        this.orgExecutionMinutesQuotaReached}
         @sl-change=${(e: SlChangeEvent) => {
           this.updateFormState(
             {
@@ -2158,37 +2169,28 @@ https://archiveweb.page/images/${"logo.svg"}`}
             body: JSON.stringify(config),
           }));
 
-      const crawlId = data.run_now_job;
+      const crawlId = data.run_now_job || data.started || null;
       const storageQuotaReached = data.storageQuotaReached;
+      const executionMinutesQuotaReached = data.execMinutesQuotaReached;
 
-      if (crawlId && storageQuotaReached) {
-        this.notify({
-          title: msg("Workflow saved without starting crawl."),
-          message: msg(
-            "Could not run crawl with new workflow settings due to storage quota."
-          ),
-          variant: "warning",
-          icon: "exclamation-circle",
-          duration: 12000,
-        });
-      } else {
-        let message = msg("Workflow created.");
-        if (crawlId) {
-          message = msg("Crawl started with new workflow settings.");
-        } else if (this.configId) {
-          message = msg("Workflow updated.");
-        }
-
-        this.notify({
-          message,
-          variant: "success",
-          icon: "check2-circle",
-        });
+      let message = msg("Workflow created.");
+      if (crawlId) {
+        message = msg("Crawl started with new workflow settings.");
+      } else if (this.configId) {
+        message = msg("Workflow updated.");
       }
+
+      this.notify({
+        message,
+        variant: "success",
+        icon: "check2-circle",
+      });
 
       this.navTo(
         `${this.orgBasePath}/workflows/crawl/${this.configId || data.id}${
-          crawlId && !storageQuotaReached ? "#watch" : ""
+          crawlId && !storageQuotaReached && !executionMinutesQuotaReached
+            ? "#watch"
+            : ""
         }`
       );
     } catch (e: any) {

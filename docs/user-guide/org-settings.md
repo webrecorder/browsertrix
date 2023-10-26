@@ -24,3 +24,7 @@ Sent invites can be invalidated by pressing the trash button in the relevant _Pe
 
 `Admin`
 :   Users with the administrator role have full access to the organization, including its settings page.
+
+## Limits
+
+This page lets organization admins set an additional number of allowed overage minutes when the organization's monthly execution minutes quota has been reached. If set, this serves as a hard cap after which all running crawls will be stopped. When set at the default of 0, crawls will be stopped as soon as the monthly quota is reached.

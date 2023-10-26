@@ -1,6 +1,7 @@
 """
 Organization API handling
 """
+import math
 import os
 import time
 import urllib.parse
@@ -301,7 +302,7 @@ class OrgOps:
         return await self.storage_quota_reached(oid)
 
     # pylint: disable=invalid-name
-    async def storage_quota_reached(self, oid: uuid.UUID):
+    async def storage_quota_reached(self, oid: uuid.UUID) -> bool:
         """Return boolean indicating if storage quota is met or exceeded."""
         quota = await self.get_org_storage_quota(oid)
         if not quota:
@@ -315,12 +316,47 @@ class OrgOps:
 
         return False
 
-    async def get_org_storage_quota(self, oid):
+    async def get_this_month_crawl_exec_seconds(self, oid: uuid.UUID) -> int:
+        """Return crawlExecSeconds for current month"""
+        org = await self.orgs.find_one({"_id": oid})
+        org = Organization.from_dict(org)
+        yymm = datetime.utcnow().strftime("%Y-%m")
+        try:
+            return org.crawlExecSeconds[yymm]
+        except KeyError:
+            return 0
+
+    async def exec_mins_quota_reached(self, oid: uuid.UUID) -> bool:
+        """Return bools for if execution minutes quota"""
+        quota = await self.get_org_exec_mins_monthly_quota(oid)
+
+        quota_reached = False
+
+        if quota:
+            monthly_exec_seconds = await self.get_this_month_crawl_exec_seconds(oid)
+            monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
+
+            if monthly_exec_minutes >= quota:
+                quota_reached = True
+
+        # add additional quotas here
+
+        return quota_reached
+
+    async def get_org_storage_quota(self, oid: uuid.UUID) -> int:
         """return max allowed concurrent crawls, if any"""
         org = await self.orgs.find_one({"_id": oid})
         if org:
             org = Organization.from_dict(org)
             return org.quotas.storageQuota
+        return 0
+
+    async def get_org_exec_mins_monthly_quota(self, oid: uuid.UUID) -> int:
+        """return max allowed execution mins per month, if any"""
+        org = await self.orgs.find_one({"_id": oid})
+        if org:
+            org = Organization.from_dict(org)
+            return org.quotas.maxExecMinutesPerMonth
         return 0
 
     async def set_origin(self, org: Organization, request: Request):
@@ -528,7 +564,10 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     async def get_org(
         org: Organization = Depends(org_dep), user: User = Depends(user_dep)
     ):
-        return await org.serialize_for_user(user, user_manager)
+        org_out = await org.serialize_for_user(user, user_manager)
+        org_out.storageQuotaReached = await ops.storage_quota_reached(org.id)
+        org_out.execMinutesQuotaReached = await ops.exec_mins_quota_reached(org.id)
+        return org_out
 
     @router.post("/rename", tags=["organizations"])
     async def rename_org(

@@ -49,6 +49,9 @@ export class WorkflowDetail extends LiteElement {
   @property({ type: Boolean })
   orgStorageQuotaReached = false;
 
+  @property({ type: Boolean })
+  orgExecutionMinutesQuotaReached = false;
+
   @property({ type: String })
   workflowId!: string;
 
@@ -533,6 +536,9 @@ export class WorkflowDetail extends LiteElement {
           configId=${this.workflow!.id}
           orgId=${this.orgId}
           .authState=${this.authState}
+          ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
+          ?orgExecutionMinutesQuotaReached=${this
+            .orgExecutionMinutesQuotaReached}
           @reset=${(e: Event) =>
             this.navTo(
               `${this.orgBasePath}/workflows/crawl/${this.workflow!.id}`
@@ -578,14 +584,18 @@ export class WorkflowDetail extends LiteElement {
         `,
         () => html`
           <sl-tooltip
-            content=${msg("Org Storage Full")}
-            ?disabled=${!this.orgStorageQuotaReached}
+            content=${msg(
+              "Org Storage Full or Monthly Execution Minutes Reached"
+            )}
+            ?disabled=${!this.orgStorageQuotaReached &&
+            !this.orgExecutionMinutesQuotaReached}
           >
             <sl-button
               size="small"
               variant="primary"
               class="mr-2"
-              ?disabled=${this.orgStorageQuotaReached}
+              ?disabled=${this.orgStorageQuotaReached ||
+              this.orgExecutionMinutesQuotaReached}
               @click=${() => this.runNow()}
             >
               <sl-icon name="play" slot="prefix"></sl-icon>
@@ -625,7 +635,8 @@ export class WorkflowDetail extends LiteElement {
             () => html`
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--success)"
-                ?disabled=${this.orgStorageQuotaReached}
+                ?disabled=${this.orgStorageQuotaReached ||
+                this.orgExecutionMinutesQuotaReached}
                 @click=${() => this.runNow()}
               >
                 <sl-icon name="play" slot="prefix"></sl-icon>
@@ -1023,12 +1034,16 @@ export class WorkflowDetail extends LiteElement {
           )}
 
           <sl-tooltip
-            content=${msg("Org Storage Full")}
-            ?disabled=${!this.orgStorageQuotaReached}
+            content=${msg(
+              "Org Storage Full or Monthly Execution Minutes Reached"
+            )}
+            ?disabled=${!this.orgStorageQuotaReached &&
+            !this.orgExecutionMinutesQuotaReached}
           >
             <sl-button
               size="small"
-              ?disabled=${this.orgStorageQuotaReached}
+              ?disabled=${this.orgStorageQuotaReached ||
+              this.orgExecutionMinutesQuotaReached}
               @click=${() => this.runNow()}
             >
               <sl-icon name="play" slot="prefix"></sl-icon>
@@ -1107,13 +1122,17 @@ export class WorkflowDetail extends LiteElement {
         </p>
         <div class="mt-4">
           <sl-tooltip
-            content=${msg("Org Storage Full")}
-            ?disabled=${!this.orgStorageQuotaReached}
+            content=${msg(
+              "Org Storage Full or Monthly Execution Minutes Reached"
+            )}
+            ?disabled=${!this.orgStorageQuotaReached &&
+            !this.orgExecutionMinutesQuotaReached}
           >
             <sl-button
               size="small"
               variant="primary"
-              ?disabled=${this.orgStorageQuotaReached}
+              ?disabled=${this.orgStorageQuotaReached ||
+              this.orgExecutionMinutesQuotaReached}
               @click=${() => this.runNow()}
             >
               <sl-icon name="play" slot="prefix"></sl-icon>
@@ -1594,6 +1613,10 @@ export class WorkflowDetail extends LiteElement {
       if (e.isApiError && e.statusCode === 403) {
         if (e.details === "storage_quota_reached") {
           message = msg("Your org does not have enough storage to run crawls.");
+        } else if (e.details === "exec_minutes_quota_reached") {
+          message = msg(
+            "Your org has used all of its execution minutes for this month."
+          );
         } else {
           message = msg("You do not have permission to run crawls.");
         }

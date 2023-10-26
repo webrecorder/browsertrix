@@ -54,6 +54,9 @@ REDIS_TTL = 60
 # time in seconds before a crawl is deemed 'waiting' instead of 'starting'
 STARTING_TIME_SECS = 60
 
+# how often to update execution time seconds
+EXEC_TIME_UPDATE_SECS = 60
+
 
 # ============================================================================
 class MCBaseRequest(BaseModel):
@@ -216,11 +219,19 @@ class CrawlStatus(BaseModel):
     #    DefaultDict[str, Annotated[PodInfo, Field(default_factory=PodInfo)]]
     # ]
     restartTime: Optional[str]
-    execTime: int = 0
     canceled: bool = False
 
+    # Execution Time -- updated on pod exits and at regular interval
+    crawlExecTime: int = 0
+
+    # last exec time update
+    lastUpdatedTime: str = ""
+
+    # any pods exited
+    anyCrawlPodNewExit: Optional[bool] = Field(default=False, exclude=True)
+
     # don't include in status, use by metacontroller
-    resync_after: Optional[int] = None
+    resync_after: Optional[int] = Field(default=None, exclude=True)
 
 
 # ============================================================================
@@ -254,6 +265,10 @@ class BtrixOperator(K8sAPI):
 
         self._has_pod_metrics = False
         self.compute_crawler_resources()
+
+        # to avoid background tasks being garbage collected
+        # see: https://stackoverflow.com/a/74059981
+        self.bg_tasks = set()
 
     def compute_crawler_resources(self):
         """compute memory / cpu resources for crawlers"""
@@ -295,7 +310,7 @@ class BtrixOperator(K8sAPI):
         browserid = spec.get("id")
 
         if dt_now() >= expire_time:
-            asyncio.create_task(self.delete_profile_browser(browserid))
+            self.run_task(self.delete_profile_browser(browserid))
             return {"status": {}, "children": []}
 
         params = {}
@@ -313,7 +328,7 @@ class BtrixOperator(K8sAPI):
 
         return {"status": {}, "children": children}
 
-    # pylint: disable=too-many-return-statements
+    # pylint: disable=too-many-return-statements, invalid-name
     async def sync_crawls(self, data: MCSyncData):
         """sync crawls"""
 
@@ -347,7 +362,12 @@ class BtrixOperator(K8sAPI):
                     raise HTTPException(status_code=400, detail="out_of_sync_status")
 
             return await self.finalize_response(
-                crawl_id, uuid.UUID(oid), status, spec, data.children, params
+                crawl_id,
+                uuid.UUID(oid),
+                status,
+                spec,
+                data.children,
+                params,
             )
 
         # just in case, finished but not deleted, can only get here if
@@ -356,9 +376,14 @@ class BtrixOperator(K8sAPI):
             print(
                 f"warn crawl {crawl_id} finished but not deleted, post-finish taking too long?"
             )
-            asyncio.create_task(self.delete_crawl_job(crawl_id))
+            self.run_task(self.delete_crawl_job(crawl_id))
             return await self.finalize_response(
-                crawl_id, uuid.UUID(oid), status, spec, data.children, params
+                crawl_id,
+                uuid.UUID(oid),
+                status,
+                spec,
+                data.children,
+                params,
             )
 
         try:
@@ -413,7 +438,11 @@ class BtrixOperator(K8sAPI):
                 self.sync_resources(status, pod_name, pod, data.children)
 
             status = await self.sync_crawl_state(
-                redis_url, crawl, status, pods, data.related.get(METRICS, {})
+                redis_url,
+                crawl,
+                status,
+                pods,
+                data.related.get(METRICS, {}),
             )
 
             # auto sizing handled here
@@ -421,10 +450,21 @@ class BtrixOperator(K8sAPI):
 
             if status.finished:
                 return await self.finalize_response(
-                    crawl_id, uuid.UUID(oid), status, spec, data.children, params
+                    crawl_id,
+                    uuid.UUID(oid),
+                    status,
+                    spec,
+                    data.children,
+                    params,
                 )
+
+            await self.increment_pod_exec_time(
+                pods, status, crawl.id, crawl.oid, EXEC_TIME_UPDATE_SECS
+            )
+
         else:
             status.scale = crawl.scale
+            status.lastUpdatedTime = to_k8s_date(dt_now())
 
         children = self._load_redis(params, status, data.children)
 
@@ -447,7 +487,7 @@ class BtrixOperator(K8sAPI):
             children.extend(self._load_crawler(params, i, status, data.children))
 
         return {
-            "status": status.dict(exclude_none=True, exclude={"resync_after": True}),
+            "status": status.dict(exclude_none=True),
             "children": children,
             "resyncAfterSeconds": status.resync_after,
         }
@@ -682,8 +722,6 @@ class BtrixOperator(K8sAPI):
         await self.mark_for_cancelation(crawl_id)
 
         if not status.canceled:
-            cancel_time = datetime.utcnow()
-
             for name, pod in pods.items():
                 pstatus = pod["status"]
                 role = pod["metadata"]["labels"]["role"]
@@ -695,13 +733,6 @@ class BtrixOperator(K8sAPI):
                     continue
 
                 cstatus = pstatus["containerStatuses"][0]
-
-                running = cstatus["state"].get("running")
-
-                if running:
-                    self.inc_exec_time(
-                        name, status, cancel_time, running.get("startedAt")
-                    )
 
                 self.handle_terminated_pod(
                     name, role, status, cstatus["state"].get("terminated")
@@ -737,14 +768,14 @@ class BtrixOperator(K8sAPI):
             print(f"============== POD STATUS: {name} ==============")
             pprint(pods[name]["status"])
 
-        asyncio.create_task(self.print_pod_logs(pod_names, self.log_failed_crawl_lines))
+        self.run_task(self.print_pod_logs(pod_names, self.log_failed_crawl_lines))
 
         return True
 
     def _empty_response(self, status):
         """done response for removing crawl"""
         return {
-            "status": status.dict(exclude_none=True, exclude={"resync_after": True}),
+            "status": status.dict(exclude_none=True),
             "children": [],
         }
 
@@ -764,23 +795,19 @@ class BtrixOperator(K8sAPI):
 
         finalized = False
 
-        exec_updated = False
-
         pods = children[POD]
 
         if redis_pod in pods:
             # if has other pods, keep redis pod until they are removed
             if len(pods) > 1:
                 new_children = self._load_redis(params, status, children)
+                await self.increment_pod_exec_time(pods, status, crawl_id, oid)
 
         # keep pvs until pods are removed
         if new_children:
             new_children.extend(list(children[PVC].values()))
 
         if not children[POD] and not children[PVC]:
-            # ensure exec time was successfully updated
-            exec_updated = await self.store_exec_time(crawl_id, oid, status.execTime)
-
             # keep parent until ttl expired, if any
             if status.finished:
                 ttl = spec.get("ttlSecondsAfterFinished", DEFAULT_TTL)
@@ -792,9 +819,9 @@ class BtrixOperator(K8sAPI):
                 finalized = True
 
         return {
-            "status": status.dict(exclude_none=True, exclude={"resync_after": True}),
+            "status": status.dict(exclude_none=True),
             "children": new_children,
-            "finalized": finalized and exec_updated,
+            "finalized": finalized,
         }
 
     async def _get_redis(self, redis_url):
@@ -825,7 +852,9 @@ class BtrixOperator(K8sAPI):
 
             await self.add_used_stats(crawl.id, status.podStatus, redis, metrics)
 
-            await self.log_crashes(crawl.id, status.podStatus, redis)
+            # skip if no newly exited pods
+            if status.anyCrawlPodNewExit:
+                await self.log_crashes(crawl.id, status.podStatus, redis)
 
             if not crawler_running:
                 if self.should_mark_waiting(status.state, crawl.started):
@@ -867,7 +896,7 @@ class BtrixOperator(K8sAPI):
                     crawl.id,
                     allowed_from=["starting", "waiting_capacity"],
                 ):
-                    asyncio.create_task(
+                    self.run_task(
                         self.event_webhook_ops.create_crawl_started_notification(
                             crawl.id, crawl.oid, scheduled=crawl.scheduled
                         )
@@ -907,6 +936,7 @@ class BtrixOperator(K8sAPI):
         crawler_running = False
         redis_running = False
         done = True
+
         try:
             for name, pod in pods.items():
                 running = False
@@ -961,8 +991,8 @@ class BtrixOperator(K8sAPI):
 
         pod_status.isNewExit = pod_status.exitTime != exit_time
         if pod_status.isNewExit and role == "crawler":
-            self.inc_exec_time(name, status, exit_time, terminated.get("startedAt"))
             pod_status.exitTime = exit_time
+            status.anyCrawlPodNewExit = True
 
         # detect reason
         exit_code = terminated.get("exitCode")
@@ -976,6 +1006,105 @@ class BtrixOperator(K8sAPI):
 
         pod_status.exitCode = exit_code
 
+    async def increment_pod_exec_time(
+        self,
+        pods: dict[str, dict],
+        status: CrawlStatus,
+        crawl_id: str,
+        oid: uuid.UUID,
+        min_duration=0,
+    ) -> None:
+        """inc exec time tracking"""
+        now = dt_now()
+
+        if not status.lastUpdatedTime:
+            status.lastUpdatedTime = to_k8s_date(now)
+            return
+
+        update_start_time = from_k8s_date(status.lastUpdatedTime)
+
+        reason = None
+        update_duration = (now - update_start_time).total_seconds()
+
+        if status.anyCrawlPodNewExit:
+            reason = "new pod exit"
+
+        elif status.canceled:
+            reason = "crawl canceled"
+
+        elif now.month != update_start_time.month:
+            reason = "month change"
+
+        elif update_duration >= min_duration:
+            reason = "duration reached" if min_duration else "finalizing"
+
+        if not reason:
+            return
+
+        exec_time = 0
+        print(
+            f"Exec Time Update: {reason}: {now} - {update_start_time} = {update_duration}"
+        )
+
+        for name, pod in pods.items():
+            pstatus = pod["status"]
+            role = pod["metadata"]["labels"]["role"]
+
+            if role != "crawler":
+                continue
+
+            if "containerStatuses" not in pstatus:
+                continue
+
+            cstate = pstatus["containerStatuses"][0]["state"]
+
+            end_time = None
+            start_time = None
+            pod_state = ""
+
+            if "running" in cstate:
+                pod_state = "running"
+                state = cstate["running"]
+                start_time = from_k8s_date(state.get("startedAt"))
+                if update_start_time and update_start_time > start_time:
+                    start_time = update_start_time
+
+                end_time = now
+            elif "terminated" in cstate:
+                pod_state = "terminated"
+                state = cstate["terminated"]
+                start_time = from_k8s_date(state.get("startedAt"))
+                end_time = from_k8s_date(state.get("finishedAt"))
+                if update_start_time and update_start_time > start_time:
+                    start_time = update_start_time
+
+                # already counted
+                if update_start_time and end_time < update_start_time:
+                    print(
+                        f"  - {name}: {pod_state}: skipping already counted, "
+                        + f"{end_time} < {start_time}"
+                    )
+                    continue
+
+            if end_time and start_time:
+                duration = int((end_time - start_time).total_seconds())
+                print(
+                    f"  - {name}: {pod_state}: {end_time} - {start_time} = {duration}"
+                )
+                exec_time += duration
+
+        if exec_time:
+            await self.crawl_ops.inc_crawl_exec_time(crawl_id, exec_time)
+            await self.org_ops.inc_org_time_stats(oid, exec_time, True)
+            status.crawlExecTime += exec_time
+
+        print(
+            f"  Exec Time Total: {status.crawlExecTime}, Incremented By: {exec_time}",
+            flush=True,
+        )
+
+        status.lastUpdatedTime = to_k8s_date(now)
+
     def should_mark_waiting(self, state, started):
         """Should the crawl be marked as waiting for capacity?"""
         if state in RUNNING_STATES:
@@ -983,7 +1112,7 @@ class BtrixOperator(K8sAPI):
 
         if state == "starting":
             started = from_k8s_date(started)
-            return (datetime.utcnow() - started).total_seconds() > STARTING_TIME_SECS
+            return (dt_now() - started).total_seconds() > STARTING_TIME_SECS
 
         return False
 
@@ -1045,7 +1174,7 @@ class BtrixOperator(K8sAPI):
     def get_log_line(self, message, details):
         """get crawler error line for logging"""
         err = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": dt_now().isoformat(),
             "logLevel": "error",
             "context": "k8s",
             "message": message,
@@ -1088,7 +1217,7 @@ class BtrixOperator(K8sAPI):
             return True
 
         # check crawl expiry
-        if crawl.expire_time and datetime.utcnow() > crawl.expire_time:
+        if crawl.expire_time and dt_now() > crawl.expire_time:
             print(f"Graceful Stop: Job duration expired at {crawl.expire_time}")
             return True
 
@@ -1138,6 +1267,12 @@ class BtrixOperator(K8sAPI):
 
         status.stopping = self.is_crawl_stopping(crawl, status.size)
 
+        # check exec time quotas and stop if reached limit
+        if not status.stopping:
+            if await self.org_ops.exec_mins_quota_reached(crawl.oid):
+                status.stopping = True
+
+        # mark crawl as stopping
         if status.stopping:
             await redis.set(f"{crawl.id}:stopping", "1")
             # backwards compatibility with older crawler
@@ -1245,7 +1380,7 @@ class BtrixOperator(K8sAPI):
         if crawl and state in SUCCESSFUL_STATES:
             await self.inc_crawl_complete_stats(crawl, finished)
 
-        asyncio.create_task(
+        self.run_task(
             self.do_crawl_finished_tasks(
                 crawl_id, cid, oid, status.filesAddedSize, state
             )
@@ -1278,32 +1413,6 @@ class BtrixOperator(K8sAPI):
 
         # finally, delete job
         await self.delete_crawl_job(crawl_id)
-
-    def inc_exec_time(self, name, status, finished_at, started_at):
-        """increment execTime on pod status"""
-        end_time = (
-            from_k8s_date(finished_at)
-            if not isinstance(finished_at, datetime)
-            else finished_at
-        )
-        start_time = from_k8s_date(started_at)
-        exec_time = int((end_time - start_time).total_seconds())
-        status.execTime += exec_time
-        print(f"{name} exec time: {exec_time}")
-        return exec_time
-
-    async def store_exec_time(self, crawl_id, oid, exec_time):
-        """store execTime in crawl (if not already set), and increment org counter"""
-        try:
-            if await self.crawl_ops.store_exec_time(crawl_id, exec_time):
-                print(f"Exec Time: {exec_time}", flush=True)
-                await self.org_ops.inc_org_time_stats(oid, exec_time, True)
-
-            return True
-        # pylint: disable=broad-except
-        except Exception as exc:
-            print(exc, flush=True)
-            return False
 
     async def inc_crawl_complete_stats(self, crawl, finished):
         """Increment Crawl Stats"""
@@ -1452,6 +1561,12 @@ class BtrixOperator(K8sAPI):
         return {
             "attachments": attachments,
         }
+
+    def run_task(self, func):
+        """add bg tasks to set to avoid premature garbage collection"""
+        task = asyncio.create_task(func)
+        self.bg_tasks.add(task)
+        task.add_done_callback(self.bg_tasks.discard)
 
 
 # ============================================================================

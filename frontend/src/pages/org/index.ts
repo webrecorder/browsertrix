@@ -59,6 +59,7 @@ type Params = {
   collectionTab?: string;
   itemType?: Crawl["type"];
   jobType?: JobType;
+  settingsTab?: string;
   new?: ResourceName;
 };
 const defaultTab = "home";
@@ -96,6 +97,12 @@ export class Org extends LiteElement {
 
   @state()
   private showStorageQuotaAlert = false;
+
+  @state()
+  private orgExecutionMinutesQuotaReached = false;
+
+  @state()
+  private showExecutionMinutesQuotaAlert = false;
 
   @state()
   private openDialogName?: ResourceName;
@@ -163,6 +170,7 @@ export class Org extends LiteElement {
     try {
       this.org = await this.getOrg(this.orgId);
       this.checkStorageQuota();
+      this.checkExecutionMinutesQuota();
     } catch {
       // TODO handle 404
       this.org = null;
@@ -242,7 +250,8 @@ export class Org extends LiteElement {
     }
 
     return html`
-      ${this.renderStorageAlert()} ${this.renderOrgNavBar()}
+      ${this.renderStorageAlert()} ${this.renderExecutionMinutesAlert()}
+      ${this.renderOrgNavBar()}
       <main>
         <div
           class="w-full max-w-screen-lg mx-auto px-3 box-border py-7"
@@ -274,6 +283,36 @@ export class Org extends LiteElement {
             ><br />
             ${msg(
               "To add archived items again, delete unneeded items and unused browser profiles to free up space, or contact us to upgrade your storage plan."
+            )}
+          </sl-alert>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderExecutionMinutesAlert() {
+    return html`
+      <div
+        class="transition-all ${this.showExecutionMinutesQuotaAlert
+          ? "bg-slate-100 border-b py-5"
+          : ""}"
+      >
+        <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
+          <sl-alert
+            variant="warning"
+            closable
+            ?open=${this.showExecutionMinutesQuotaAlert}
+            @sl-after-hide=${() =>
+              (this.showExecutionMinutesQuotaAlert = false)}
+          >
+            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+            <strong
+              >${msg(
+                "Your org has reached its monthly execution minutes limit"
+              )}</strong
+            ><br />
+            ${msg(
+              "To purchase additional monthly execution minutes, contact us to upgrade your plan."
             )}
           </sl-alert>
         </div>
@@ -460,11 +499,14 @@ export class Org extends LiteElement {
           .authState=${this.authState!}
           orgId=${this.orgId!}
           ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
+          ?orgExecutionMinutesQuotaReached=${this
+            .orgExecutionMinutesQuotaReached}
           workflowId=${workflowId}
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
           @storage-quota-update=${this.onStorageQuotaUpdate}
+          @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
         ></btrix-workflow-detail>
       `;
     }
@@ -480,7 +522,10 @@ export class Org extends LiteElement {
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
         jobType=${ifDefined(this.params.jobType)}
+        ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
+        ?orgExecutionMinutesQuotaReached=${this.orgExecutionMinutesQuotaReached}
         @storage-quota-update=${this.onStorageQuotaUpdate}
+        @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }
@@ -489,9 +534,11 @@ export class Org extends LiteElement {
       .authState=${this.authState!}
       orgId=${this.orgId!}
       ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
+      ?orgExecutionMinutesQuotaReached=${this.orgExecutionMinutesQuotaReached}
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
       @storage-quota-update=${this.onStorageQuotaUpdate}
+      @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-workflows-list>`;
   }
@@ -554,9 +601,7 @@ export class Org extends LiteElement {
 
   private renderOrgSettings() {
     if (!this.userInfo || !this.org) return;
-    const activePanel = this.orgPath.includes("/members")
-      ? "members"
-      : "information";
+    const activePanel = this.params.settingsTab || "information";
     const isAddingMember = this.params.hasOwnProperty("invite");
 
     return html`<btrix-org-settings
@@ -630,6 +675,15 @@ export class Org extends LiteElement {
     this.orgStorageQuotaReached = reached;
     if (reached) {
       this.showStorageQuotaAlert = true;
+    }
+  }
+
+  private async onExecutionMinutesQuotaUpdate(e: CustomEvent) {
+    e.stopPropagation();
+    const { reached } = e.detail;
+    this.orgExecutionMinutesQuotaReached = reached;
+    if (reached) {
+      this.showExecutionMinutesQuotaAlert = true;
     }
   }
 
@@ -725,23 +779,12 @@ export class Org extends LiteElement {
   }
 
   checkStorageQuota() {
-    if (
-      !this.org ||
-      !this.org.quotas.storageQuota ||
-      this.org.quotas.storageQuota == 0
-    ) {
-      this.orgStorageQuotaReached = false;
-      return;
-    }
+    this.orgStorageQuotaReached = !!this.org?.storageQuotaReached;
+    this.showStorageQuotaAlert = this.orgStorageQuotaReached;
+  }
 
-    if (this.org.bytesStored > this.org.quotas.storageQuota) {
-      this.orgStorageQuotaReached = true;
-    } else {
-      this.orgStorageQuotaReached = false;
-    }
-
-    if (this.orgStorageQuotaReached) {
-      this.showStorageQuotaAlert = true;
-    }
+  checkExecutionMinutesQuota() {
+    this.orgExecutionMinutesQuotaReached = !!this.org?.execMinutesQuotaReached;
+    this.showExecutionMinutesQuotaAlert = this.orgExecutionMinutesQuotaReached;
   }
 }

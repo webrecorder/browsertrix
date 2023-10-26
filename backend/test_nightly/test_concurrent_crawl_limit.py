@@ -2,6 +2,7 @@ import requests
 import time
 
 from .conftest import API_PREFIX
+from .utils import get_crawl_status
 
 crawl_id_a = None
 crawl_id_b = None
@@ -103,12 +104,3 @@ def run_crawl(org_id, headers):
     data = r.json()
 
     return data["run_now_job"]
-
-
-def get_crawl_status(org_id, crawl_id, headers):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{org_id}/crawls/{crawl_id}/replay.json",
-        headers=headers,
-    )
-    data = r.json()
-    return data["state"]
