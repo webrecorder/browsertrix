@@ -20,7 +20,7 @@ class Migration(BaseMigration):
         - If default storage, convert to string
         - If custom storage, add storage, convert to new name
         """
-        # pylint: disable=duplicate-code, broad-exception-caught
+        # pylint: disable=duplicate-code, broad-exception-caught, too-many-locals
         mdb_orgs = self.mdb["organizations"]
         default_name = "default"
         async for org in mdb_orgs.find({"storage.custom": None}):
