@@ -34,10 +34,11 @@ if TYPE_CHECKING:
     from .colls import CollectionOps
     from .storages import StorageOps
     from .webhooks import EventWebhookOps
+    from .background_jobs import BackgroundJobOps
+
 else:
     CrawlConfigOps = UserManager = OrgOps = CollectionOps = object
-    CrawlManager = StorageOps = EventWebhookOps = object
-
+    CrawlManager = StorageOps = EventWebhookOps = BackgroundJobOps = object
 
 # Presign duration must be less than 604800 seconds (one week),
 # so set this one minute short of a week.
@@ -70,7 +71,7 @@ class BaseCrawlOps:
         colls: CollectionOps,
         storage_ops: StorageOps,
         event_webhook_ops: EventWebhookOps,
-        background_job_ops: BackgroundJobs
+        background_job_ops: BackgroundJobOps,
     ):
         self.crawls = mdb["crawls"]
         self.crawl_manager = crawl_manager
@@ -80,7 +81,7 @@ class BaseCrawlOps:
         self.colls = colls
         self.storage_ops = storage_ops
         self.event_webhook_ops = event_webhook_ops
-        self.background_job_ops = background_jobs
+        self.background_job_ops = background_job_ops
 
         presign_duration_minutes = int(
             os.environ.get("PRESIGN_DURATION_MINUTES") or PRESIGN_MINUTES_DEFAULT

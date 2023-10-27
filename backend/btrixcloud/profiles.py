@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from .crawlmanager import CrawlManager
     from .storages import StorageOps
     from .crawlconfigs import CrawlConfigOps
-    from .backgroundjobs import BackgroundJobOps
+    from .background_jobs import BackgroundJobOps
 else:
     OrgOps = CrawlManager = StorageOps = CrawlConfigOps = BackgroundJobOps = object
 

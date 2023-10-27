@@ -37,8 +37,9 @@ from .models import (
     CrawlFile,
     CrawlCompleteIn,
     StorageRef,
-    UpdateBackgroundJob
+    UpdateBackgroundJob,
 )
+
 if TYPE_CHECKING:
     from .crawlconfigs import CrawlConfigOps
     from .crawls import CrawlOps
@@ -47,9 +48,10 @@ if TYPE_CHECKING:
     from .storages import StorageOps
     from .webhooks import EventWebhookOps
     from .users import UserManager
+    from .background_jobs import BackgroundJobOps
 else:
     CrawlConfigOps = CrawlOps = OrgOps = CollectionOps = object
-    StorageOps = EventWebhookOps = UserManager = object
+    StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = object
 
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
@@ -257,6 +259,7 @@ class BtrixOperator(K8sAPI):
     storage_ops: StorageOps
     event_webhook_ops: EventWebhookOps
     user_ops: UserManager
+    background_job_ops: BackgroundJobOps
 
     def __init__(
         self,
@@ -1605,7 +1608,6 @@ class BtrixOperator(K8sAPI):
             "attachments": attachments,
         }
 
-<<<<<<< HEAD
     async def sync_background_job(self, data: MCDecoratorSyncData):
         """create background job"""
 
@@ -1628,7 +1630,7 @@ class BtrixOperator(K8sAPI):
                 finished = from_k8s_date(condition.get("last_transition_time"))
                 await self.background_job_ops.update_background_job(
                     job_id,
-                    uuid.UUID(oid),
+                    UUID(oid),
                     UpdateBackgroundJob(success=success, finished=finished),
                 )
                 break

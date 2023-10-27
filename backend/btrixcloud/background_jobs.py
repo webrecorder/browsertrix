@@ -1,7 +1,7 @@
 """k8s background jobs"""
 from datetime import datetime
-from typing import Optional, Tuple, Union, List, Dict
-import uuid
+from typing import Optional, Tuple, Union, List, Dict, TYPE_CHECKING
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -15,10 +15,19 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
+if TYPE_CHECKING:
+    from .orgs import OrgOps
+    from .crawlmanager import CrawlManager
+else:
+    OrgOps = CrawlManager = object
+
 
 # ============================================================================
 class BackgroundJobOps:
     """k8s background job management"""
+
+    org_ops: OrgOps
+    crawl_manager: CrawlManager
 
     # pylint: disable=too-many-locals, too-many-arguments, invalid-name
 
@@ -34,8 +43,8 @@ class BackgroundJobOps:
             responses={404: {"description": "Not found"}},
         )
 
-    async def create_replicate_job(
-        self, oid: uuid.UUID, file_path: str
+    async def create_replica_job(
+        self, oid: UUID, file_path: str
     ) -> Dict[str, Union[str, bool]]:
         """Create k8s background job to replicate a file to another storage location.
 
@@ -44,8 +53,9 @@ class BackgroundJobOps:
         - Support additional replica and primary locations beyond hardcoded defaults
         - Return without starting job if no relica locations are configured
         """
-        print(f"Replication not yet supported", flush=True)
-        return
+        print("Replication not yet supported", flush=True)
+        # pylint: disable=unreachable
+        return {}
 
         primary_storage_name = "default"
         replica_storage_name = "backup"
@@ -69,7 +79,7 @@ class BackgroundJobOps:
         }
 
     async def create_delete_replica_job(
-        self, oid: uuid.UUID, file_path: str
+        self, oid: UUID, file_path: str
     ) -> Dict[str, Union[str, bool]]:
         """Create k8s background job to delete a file from a replication bucket.
 
@@ -78,8 +88,9 @@ class BackgroundJobOps:
         - Support additional replica and primary locations beyond hardcoded defaults
         - Return without starting job if no replica locations are configured
         """
-        print(f"Replication not yet supported", flush=True)
-        return
+        print("Replication not yet supported", flush=True)
+        # pylint: disable=unreachable
+        return {}
 
         replica_storage_name = "backup"
 
@@ -115,7 +126,7 @@ class BackgroundJobOps:
     async def update_background_job(
         self,
         job_id: str,
-        oid: uuid.UUID,
+        oid: UUID,
         update: UpdateBackgroundJob,
         type_: Optional[str] = None,
     ) -> Dict[str, bool]:

@@ -1221,7 +1221,7 @@ class WebhookNotification(BaseMongoModel):
 class BackgroundJob(BaseMongoModel):
     """Model for tracking background jobs"""
 
-    oid: UUID4
+    oid: UUID
     success: bool = False
     started: datetime
     finished: Optional[datetime] = None
