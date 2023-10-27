@@ -6,7 +6,7 @@ import os
 from uuid import UUID, uuid4
 import asyncio
 
-from typing import Optional, List, Any
+from typing import Optional, List, TYPE_CHECKING, cast
 
 from pydantic import EmailStr
 
@@ -50,9 +50,14 @@ from .auth import (
     decode_jwt,
 )
 
-# for typing
-from .invites import InviteOps
-from .emailsender import EmailSender
+if TYPE_CHECKING:
+    from .invites import InviteOps
+    from .emailsender import EmailSender
+    from .orgs import OrgOps
+    from .basecrawls import BaseCrawlOps
+    from .crawlconfigs import CrawlConfigOps
+
+    # pylint: disable=used-before-assignment
 
 
 # ============================================================================
@@ -63,18 +68,19 @@ class UserManager:
     invites: InviteOps
     email: EmailSender
 
-    org_ops: Any
-    base_crawl_ops: Any
-    crawl_config_ops: Any
+    org_ops: OrgOps
+    base_crawl_ops: BaseCrawlOps
+    crawl_config_ops: CrawlConfigOps
 
     def __init__(self, mdb, email, invites):
         self.users = mdb.get_collection("users")
         self.failed_logins = mdb.get_collection("logins")
-        self.crawl_config_ops = None
-        self.base_crawl_ops = None
         self.email = email
         self.invites = invites
-        self.org_ops = None
+
+        self.org_ops = cast(OrgOps, None)
+        self.crawl_config_ops = cast(CrawlConfigOps, None)
+        self.base_crawl_ops = cast(BaseCrawlOps, None)
 
         self.registration_enabled = is_bool(os.environ.get("REGISTRATION_ENABLED"))
 

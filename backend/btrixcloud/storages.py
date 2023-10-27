@@ -1,7 +1,15 @@
 """
 Storage API
 """
-from typing import Optional, Iterator, Iterable, List, Dict, AsyncIterator
+from typing import (
+    Optional,
+    Iterator,
+    Iterable,
+    List,
+    Dict,
+    AsyncIterator,
+    TYPE_CHECKING,
+)
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
 
@@ -41,9 +49,11 @@ from .zip import (
 from .utils import is_bool, slug_from_name
 
 
-# for typing
-from .orgs import OrgOps
-from .crawlmanager import CrawlManager
+if TYPE_CHECKING:
+    from .orgs import OrgOps
+    from .crawlmanager import CrawlManager
+
+    # pylint: disable=used-before-assignment
 
 CHUNK_SIZE = 1024 * 256
 

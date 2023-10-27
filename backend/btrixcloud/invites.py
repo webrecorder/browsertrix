@@ -91,7 +91,7 @@ class InviteOps:
 
         return new_user_invite
 
-    async def remove_invite(self, invite_token: str):
+    async def remove_invite(self, invite_token: UUID):
         """remove invite from invite list"""
         await self.invites.delete_one({"_id": invite_token})
 

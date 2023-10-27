@@ -4,7 +4,7 @@ import asyncio
 import traceback
 import os
 from pprint import pprint
-from typing import Optional, DefaultDict
+from typing import Optional, DefaultDict, TYPE_CHECKING
 
 from collections import defaultdict
 
@@ -39,14 +39,16 @@ from .models import (
     StorageRef,
 )
 
-# typing
-from .crawlconfigs import CrawlConfigOps
-from .crawls import CrawlOps
-from .orgs import OrgOps
-from .colls import CollectionOps
-from .storages import StorageOps
-from .webhooks import EventWebhookOps
-from .users import UserManager
+if TYPE_CHECKING:
+    from .crawlconfigs import CrawlConfigOps
+    from .crawls import CrawlOps
+    from .orgs import OrgOps
+    from .colls import CollectionOps
+    from .storages import StorageOps
+    from .webhooks import EventWebhookOps
+    from .users import UserManager
+
+    # pylint: disable=used-before-assignment
 
 
 CMAP = "ConfigMap.v1"

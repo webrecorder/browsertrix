@@ -4,7 +4,7 @@ Collections API
 from collections import Counter
 from datetime import datetime
 from uuid import UUID, uuid4
-from typing import Optional, List, Any
+from typing import Optional, List, TYPE_CHECKING, cast
 
 import asyncio
 import pymongo
@@ -25,10 +25,13 @@ from .models import (
     SUCCESSFUL_STATES,
 )
 
-# typing
-from .orgs import OrgOps
-from .storages import StorageOps
-from .webhooks import EventWebhookOps
+if TYPE_CHECKING:
+    from .orgs import OrgOps
+    from .storages import StorageOps
+    from .webhooks import EventWebhookOps
+    from .crawls import CrawlOps
+
+    # pylint: disable=used-before-assignment
 
 
 # ============================================================================
@@ -40,13 +43,13 @@ class CollectionOps:
     orgs: OrgOps
     storage_ops: StorageOps
     event_webhook_ops: EventWebhookOps
-    crawl_ops: Any
+    crawl_ops: CrawlOps
 
     def __init__(self, mdb, storage_ops, orgs, event_webhook_ops):
         self.collections = mdb["collections"]
         self.crawls = mdb["crawls"]
         self.crawl_configs = mdb["crawl_configs"]
-        self.crawl_ops = None
+        self.crawl_ops = cast(CrawlOps, None)
 
         self.orgs = orgs
         self.storage_ops = storage_ops
@@ -265,7 +268,7 @@ class CollectionOps:
 
         crawls, _ = await self.crawl_ops.list_all_base_crawls(
             collection_id=coll_id,
-            states=SUCCESSFUL_STATES,
+            states=list(SUCCESSFUL_STATES),
             page_size=10_000,
             cls_type=CrawlOutWithResources,
         )

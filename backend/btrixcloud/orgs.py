@@ -8,7 +8,7 @@ import urllib.parse
 from uuid import UUID, uuid4
 from datetime import datetime
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -38,8 +38,10 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import slug_from_name
 
-# for typing
-from .invites import InviteOps
+if TYPE_CHECKING:
+    from .invites import InviteOps
+
+    # pylint: disable=used-before-assignment
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
@@ -285,11 +287,9 @@ class OrgOps:
             return_document=ReturnDocument.AFTER,
         )
 
-    async def handle_new_user_invite(self, invite_token: str, user: User):
+    async def handle_new_user_invite(self, invite_token: UUID, user: User):
         """Handle invite from a new user"""
-        new_user_invite = await self.invites.get_valid_invite(
-            UUID(invite_token), user.email
-        )
+        new_user_invite = await self.invites.get_valid_invite(invite_token, user.email)
         await self.add_user_by_invite(new_user_invite, user)
         await self.invites.remove_invite(invite_token)
         return new_user_invite

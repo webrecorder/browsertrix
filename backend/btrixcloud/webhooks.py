@@ -2,7 +2,7 @@
 
 import asyncio
 from datetime import datetime
-from typing import List, Union, Optional, Any
+from typing import List, Union, Optional, TYPE_CHECKING, cast
 from uuid import UUID, uuid4
 
 import aiohttp
@@ -22,8 +22,11 @@ from .models import (
     Organization,
 )
 
-# typing
-from .orgs import OrgOps
+if TYPE_CHECKING:
+    from .orgs import OrgOps
+    from .crawls import CrawlOps
+
+    # pylint: disable=used-before-assignment
 
 
 # ============================================================================
@@ -33,7 +36,7 @@ class EventWebhookOps:
     # pylint: disable=invalid-name, too-many-arguments, too-many-locals
 
     org_ops: OrgOps
-    crawl_ops: Any
+    crawl_ops: CrawlOps
 
     def __init__(self, mdb, org_ops):
         self.webhooks = mdb["webhooks"]
@@ -41,7 +44,7 @@ class EventWebhookOps:
         self.crawls = mdb["crawls"]
 
         self.org_ops = org_ops
-        self.crawl_ops = None
+        self.crawl_ops = cast(CrawlOps, None)
 
         self.origin = None
 

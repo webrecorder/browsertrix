@@ -571,7 +571,7 @@ class CrawlOut(BaseMongoModel):
 
     # automated crawl fields
     config: Optional[RawCrawlConfig]
-    cid: UUID
+    cid: Optional[UUID]
     firstSeed: Optional[str]
     seedCount: Optional[int]
     profileName: Optional[str]

@@ -3,7 +3,7 @@ Crawl Config API handling
 """
 # pylint: disable=too-many-lines
 
-from typing import List, Union, Optional, Tuple, Any
+from typing import List, Union, Optional, Tuple, TYPE_CHECKING, cast
 
 import asyncio
 import re
@@ -31,11 +31,15 @@ from .models import (
 )
 from .utils import dt_now
 
-# for typing
-from .orgs import OrgOps
-from .crawlmanager import CrawlManager
-from .users import UserManager
-from .profiles import ProfileOps
+if TYPE_CHECKING:
+    from .orgs import OrgOps
+    from .crawlmanager import CrawlManager
+    from .users import UserManager
+    from .profiles import ProfileOps
+    from .crawls import CrawlOps
+    from .colls import CollectionOps
+
+    # pylint: disable=used-before-assignment
 
 
 ALLOWED_SORT_KEYS = (
@@ -59,7 +63,8 @@ class CrawlConfigOps:
     org_ops: OrgOps
     crawl_manager: CrawlManager
     profiles: ProfileOps
-    crawl_ops: Any
+    crawl_ops: CrawlOps
+    coll_ops: CollectionOps
 
     def __init__(
         self,
@@ -79,7 +84,9 @@ class CrawlConfigOps:
         self.crawl_manager = crawl_manager
         self.profiles = profiles
         self.profiles.set_crawlconfigs(self)
-        self.crawl_ops = None
+        self.crawl_ops = cast(CrawlOps, None)
+        self.coll_ops = cast(CollectionOps, None)
+
         self.default_filename_template = os.environ["DEFAULT_CRAWL_FILENAME_TEMPLATE"]
 
         self.router = APIRouter(
@@ -88,7 +95,6 @@ class CrawlConfigOps:
             responses={404: {"description": "Not found"}},
         )
 
-        self.coll_ops = None
         self._file_rx = re.compile("\\W+")
 
     def set_crawl_ops(self, ops):

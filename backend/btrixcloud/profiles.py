@@ -1,6 +1,6 @@
 """ Profile Management """
 
-from typing import Optional, Union, Any
+from typing import Optional, Union, TYPE_CHECKING, Any, cast
 from datetime import datetime
 from uuid import UUID, uuid4
 import os
@@ -26,10 +26,13 @@ from .models import (
     StorageRef,
 )
 
-# typing
-from .orgs import OrgOps
-from .crawlmanager import CrawlManager
-from .storages import StorageOps
+if TYPE_CHECKING:
+    from .orgs import OrgOps
+    from .crawlmanager import CrawlManager
+    from .storages import StorageOps
+    from .crawlconfigs import CrawlConfigOps
+
+    # pylint: disable=used-before-assignment
 
 
 BROWSER_EXPIRE = 300
@@ -44,7 +47,7 @@ class ProfileOps:
     crawl_manager: CrawlManager
     storage_ops: StorageOps
 
-    crawlconfigs: Any
+    crawlconfigs: CrawlConfigOps
 
     def __init__(self, mdb, orgs, crawl_manager, storage_ops):
         self.profiles = mdb["profiles"]
@@ -61,7 +64,7 @@ class ProfileOps:
             responses={404: {"description": "Not found"}},
         )
 
-        self.crawlconfigs = None
+        self.crawlconfigs = cast(CrawlConfigOps, None)
 
     def set_crawlconfigs(self, crawlconfigs):
         """set crawlconfigs ops"""

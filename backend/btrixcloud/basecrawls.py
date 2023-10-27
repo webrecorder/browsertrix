@@ -2,7 +2,7 @@
 
 import os
 from datetime import timedelta
-from typing import Optional, List, Union, Type
+from typing import Optional, List, Union, Type, TYPE_CHECKING
 from uuid import UUID
 import urllib.parse
 import contextlib
@@ -26,14 +26,16 @@ from .models import (
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now
 
-# typing
-from .crawlconfigs import CrawlConfigOps
-from .crawlmanager import CrawlManager
-from .users import UserManager
-from .orgs import OrgOps
-from .colls import CollectionOps
-from .storages import StorageOps
-from .webhooks import EventWebhookOps
+if TYPE_CHECKING:
+    from .crawlconfigs import CrawlConfigOps
+    from .crawlmanager import CrawlManager
+    from .users import UserManager
+    from .orgs import OrgOps
+    from .colls import CollectionOps
+    from .storages import StorageOps
+    from .webhooks import EventWebhookOps
+
+    # pylint: disable=used-before-assignment
 
 
 # Presign duration must be less than 604800 seconds (one week),
@@ -352,9 +354,11 @@ class BaseCrawlOps:
     ):
         """Resolve running crawl data"""
         # pylint: disable=too-many-branches
-        config = await self.crawl_configs.get_crawl_config(
-            crawl.cid, org.id if org else None, active_only=False
-        )
+        config = None
+        if crawl.cid:
+            config = await self.crawl_configs.get_crawl_config(
+                crawl.cid, org.id if org else None, active_only=False
+            )
         if config and config.config.seeds:
             if add_first_seed:
                 first_seed = config.config.seeds[0]
@@ -454,7 +458,7 @@ class BaseCrawlOps:
                 {"$push": {"collectionIds": collection_id}},
             )
 
-    async def remove_from_collection(self, crawl_ids: List[UUID], collection_id: UUID):
+    async def remove_from_collection(self, crawl_ids: List[str], collection_id: UUID):
         """Remove crawls from collection."""
         for crawl_id in crawl_ids:
             await self.crawls.find_one_and_update(
