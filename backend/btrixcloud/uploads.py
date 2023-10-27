@@ -353,8 +353,8 @@ def init_uploads_api(
         name: Optional[str] = None,
         description: Optional[str] = None,
         collectionId: Optional[UUID] = None,
-        sortBy: Optional[str] = "finished",
-        sortDirection: Optional[int] = -1,
+        sortBy: str = "finished",
+        sortDirection: int = -1,
     ):
         states = state.split(",") if state else None
 

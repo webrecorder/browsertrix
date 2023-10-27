@@ -476,7 +476,7 @@ class BaseCrawlOps:
         userid: Optional[UUID] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        collection_id: Optional[str] = None,
+        collection_id: Optional[UUID] = None,
         states: Optional[List[str]] = None,
         first_seed: Optional[str] = None,
         type_: Optional[str] = None,
@@ -719,7 +719,7 @@ def init_base_crawls_api(
         crawlType: Optional[str] = None,
         cid: Optional[UUID] = None,
         sortBy: Optional[str] = "finished",
-        sortDirection: Optional[int] = -1,
+        sortDirection: int = -1,
     ):
         states = state.split(",") if state else None
 

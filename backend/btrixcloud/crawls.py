@@ -80,13 +80,13 @@ class CrawlOps(BaseCrawlOps):
         crawl_id: str = "",
         running_only=False,
         state: Optional[List[str]] = None,
-        first_seed: str = "",
-        name: str = "",
-        description: str = "",
+        first_seed: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
         collection_id: Optional[UUID] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sort_by: str = "",
+        sort_by: Optional[str] = None,
         sort_direction: int = -1,
         resources: bool = False,
     ):
@@ -626,7 +626,7 @@ def init_crawls_api(
         description: Optional[str] = None,
         collectionId: Optional[UUID] = None,
         sortBy: Optional[str] = None,
-        sortDirection: Optional[int] = -1,
+        sortDirection: int = -1,
         runningOnly: Optional[bool] = True,
     ):
         if not user.is_superuser:
@@ -675,7 +675,7 @@ def init_crawls_api(
         description: Optional[str] = None,
         collectionId: Optional[UUID] = None,
         sortBy: Optional[str] = None,
-        sortDirection: Optional[int] = -1,
+        sortDirection: int = -1,
     ):
         # pylint: disable=duplicate-code
         states = []
