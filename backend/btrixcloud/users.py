@@ -78,6 +78,15 @@ class UserManager:
         """init lookup index"""
         await self.users.create_index("id", unique=True)
         await self.users.create_index("email", unique=True)
+
+        _email_collation = Collation("en", strength=2)
+        await self.collection.create_index(
+            "email",
+            name="case_insensitive_email_index",
+            collation=_email_collation,
+        )
+
+
         # Expire failed logins object after one hour
         await self.failed_logins.create_index("attempted", expireAfterSeconds=3600)
 
