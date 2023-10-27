@@ -98,7 +98,8 @@ def test_create_org(admin_auth_headers):
     assert NEW_ORG_NAME in org_names
 
 
-def test_change_org_storage(admin_auth_headers):
+# disable until storage customization is enabled
+def _test_change_org_storage(admin_auth_headers):
     # change to invalid storage
     r = requests.post(
         f"{API_PREFIX}/orgs/{new_oid}/storage",
