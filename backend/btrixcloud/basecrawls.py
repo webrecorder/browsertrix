@@ -1,13 +1,12 @@
 """ base crawl type """
 
-import uuid
 import os
 from datetime import timedelta
 from typing import Optional, List, Union, Type
+from uuid import UUID
 import urllib.parse
 import contextlib
 
-from pydantic import UUID4
 from fastapi import HTTPException, Depends
 
 from .models import (
@@ -164,7 +163,7 @@ class BaseCrawlOps:
         return res
 
     async def _update_crawl_collections(
-        self, crawl_id: str, org: Organization, collection_ids: List[UUID4]
+        self, crawl_id: str, org: Organization, collection_ids: List[UUID]
     ):
         """Update crawl collections to match updated list."""
         crawl = await self.get_crawl(crawl_id, org, cls_type=CrawlOut)
@@ -229,7 +228,7 @@ class BaseCrawlOps:
             {"$set": data},
         )
 
-    async def update_usernames(self, userid: uuid.UUID, updated_name: str) -> None:
+    async def update_usernames(self, userid: UUID, updated_name: str) -> None:
         """Update username references matching userid"""
         await self.crawls.update_many(
             {"userid": userid}, {"$set": {"userName": updated_name}}
@@ -439,7 +438,7 @@ class BaseCrawlOps:
             await redis.close()
 
     async def add_to_collection(
-        self, crawl_ids: List[str], collection_id: uuid.UUID, org: Organization
+        self, crawl_ids: List[str], collection_id: UUID, org: Organization
     ):
         """Add crawls to collection."""
         for crawl_id in crawl_ids:
@@ -455,9 +454,7 @@ class BaseCrawlOps:
                 {"$push": {"collectionIds": collection_id}},
             )
 
-    async def remove_from_collection(
-        self, crawl_ids: List[uuid.UUID], collection_id: uuid.UUID
-    ):
+    async def remove_from_collection(self, crawl_ids: List[UUID], collection_id: UUID):
         """Remove crawls from collection."""
         for crawl_id in crawl_ids:
             await self.crawls.find_one_and_update(
@@ -465,7 +462,7 @@ class BaseCrawlOps:
                 {"$pull": {"collectionIds": collection_id}},
             )
 
-    async def remove_collection_from_all_crawls(self, collection_id: uuid.UUID):
+    async def remove_collection_from_all_crawls(self, collection_id: UUID):
         """Remove collection id from all crawls it's currently in."""
         await self.crawls.update_many(
             {"collectionIds": collection_id},
@@ -476,14 +473,14 @@ class BaseCrawlOps:
     async def list_all_base_crawls(
         self,
         org: Optional[Organization] = None,
-        userid: Optional[uuid.UUID] = None,
+        userid: Optional[UUID] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         collection_id: Optional[str] = None,
         states: Optional[List[str]] = None,
         first_seed: Optional[str] = None,
         type_: Optional[str] = None,
-        cid: Optional[UUID4] = None,
+        cid: Optional[UUID] = None,
         cls_type: Type[Union[CrawlOut, CrawlOutWithResources]] = CrawlOut,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -713,14 +710,14 @@ def init_base_crawls_api(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        userid: Optional[UUID4] = None,
+        userid: Optional[UUID] = None,
         name: Optional[str] = None,
         state: Optional[str] = None,
         firstSeed: Optional[str] = None,
         description: Optional[str] = None,
-        collectionId: Optional[UUID4] = None,
+        collectionId: Optional[UUID] = None,
         crawlType: Optional[str] = None,
-        cid: Optional[UUID4] = None,
+        cid: Optional[UUID] = None,
         sortBy: Optional[str] = "finished",
         sortDirection: Optional[int] = -1,
     ):

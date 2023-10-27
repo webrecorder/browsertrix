@@ -5,11 +5,12 @@ import importlib.util
 import os
 import urllib
 import asyncio
+from uuid import UUID
 
 from typing import Optional, Union
 
 import motor.motor_asyncio
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel
 from pymongo.errors import InvalidName
 
 from .migrations import BaseMigration
@@ -198,7 +199,7 @@ async def create_indexes(
 class BaseMongoModel(BaseModel):
     """Base pydantic model that is also a mongo doc"""
 
-    id: Optional[Union[UUID4, str]]
+    id: Optional[Union[UUID, str]]
 
     @property
     def id_str(self):

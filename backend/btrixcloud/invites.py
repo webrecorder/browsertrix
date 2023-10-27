@@ -5,7 +5,7 @@ from typing import Optional
 import os
 import urllib.parse
 import time
-import uuid
+from uuid import UUID, uuid4
 
 from pymongo.errors import AutoReconnect
 from fastapi import HTTPException
@@ -78,7 +78,7 @@ class InviteOps:
             headers,
         )
 
-    async def get_valid_invite(self, invite_token: uuid.UUID, email):
+    async def get_valid_invite(self, invite_token: UUID, email):
         """Retrieve a valid invite data from db, or throw if invalid"""
         invite_data = await self.invites.find_one({"_id": invite_token})
         if not invite_data:
@@ -95,7 +95,7 @@ class InviteOps:
         """remove invite from invite list"""
         await self.invites.delete_one({"_id": invite_token})
 
-    async def remove_invite_by_email(self, email: str, oid: Optional[uuid.UUID] = None):
+    async def remove_invite_by_email(self, email: str, oid: Optional[UUID] = None):
         """remove invite from invite list by email"""
         query: dict[str, object] = {"email": email}
         if oid:
@@ -130,7 +130,7 @@ class InviteOps:
 
         :returns: is_new_user (bool), invite token (str)
         """
-        invite_code = uuid.uuid4().hex
+        invite_code = uuid4().hex
 
         if org:
             oid = org.id

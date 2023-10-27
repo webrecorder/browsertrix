@@ -3,7 +3,7 @@ Collections API
 """
 from collections import Counter
 from datetime import datetime
-import uuid
+from uuid import UUID, uuid4
 from typing import Optional, List
 
 import asyncio
@@ -65,10 +65,10 @@ class CollectionOps:
             [("oid", pymongo.ASCENDING), ("description", pymongo.ASCENDING)]
         )
 
-    async def add_collection(self, oid: uuid.UUID, coll_in: CollIn):
+    async def add_collection(self, oid: UUID, coll_in: CollIn):
         """Add new collection"""
         crawl_ids = coll_in.crawlIds if coll_in.crawlIds else []
-        coll_id = uuid.uuid4()
+        coll_id = uuid4()
         modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
         coll = Collection(
@@ -97,7 +97,7 @@ class CollectionOps:
             raise HTTPException(status_code=400, detail="collection_name_taken")
 
     async def update_collection(
-        self, coll_id: uuid.UUID, org: Organization, update: UpdateColl
+        self, coll_id: UUID, org: Organization, update: UpdateColl
     ):
         """Update collection"""
         query = update.dict(exclude_unset=True)
@@ -123,7 +123,7 @@ class CollectionOps:
         return {"updated": True}
 
     async def add_crawls_to_collection(
-        self, coll_id: uuid.UUID, crawl_ids: List[str], org: Organization
+        self, coll_id: UUID, crawl_ids: List[str], org: Organization
     ) -> CollOut:
         """Add crawls to collection"""
         await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
@@ -148,7 +148,7 @@ class CollectionOps:
         return await self.get_collection(coll_id, org)
 
     async def remove_crawls_from_collection(
-        self, coll_id: uuid.UUID, crawl_ids: List[str], org: Organization
+        self, coll_id: UUID, crawl_ids: List[str], org: Organization
     ) -> CollOut:
         """Remove crawls from collection"""
         await self.crawl_ops.remove_from_collection(crawl_ids, coll_id)
@@ -172,7 +172,7 @@ class CollectionOps:
         return await self.get_collection(coll_id, org)
 
     async def get_collection(
-        self, coll_id: uuid.UUID, org: Organization, resources=False, public_only=False
+        self, coll_id: UUID, org: Organization, resources=False, public_only=False
     ) -> CollOut:
         """Get collection by id"""
         query: dict[str, object] = {"_id": coll_id}
@@ -191,7 +191,7 @@ class CollectionOps:
 
     async def list_collections(
         self,
-        oid: uuid.UUID,
+        oid: UUID,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: Optional[str] = None,
@@ -254,9 +254,7 @@ class CollectionOps:
 
         return collections, total
 
-    async def get_collection_crawl_resources(
-        self, coll_id: uuid.UUID, org: Organization
-    ):
+    async def get_collection_crawl_resources(self, coll_id: UUID, org: Organization):
         """Return pre-signed resources for all collection crawl files."""
         coll = await self.get_collection(coll_id, org)
         if not coll:
@@ -277,7 +275,7 @@ class CollectionOps:
 
         return all_files
 
-    async def get_collection_names(self, uuids: List[uuid.UUID]):
+    async def get_collection_names(self, uuids: List[UUID]):
         """return object of {_id, names} given list of collection ids"""
         cursor = self.collections.find(
             {"_id": {"$in": uuids}}, projection=["_id", "name"]
@@ -295,7 +293,7 @@ class CollectionOps:
         names = [name for name in names if name]
         return {"names": names}
 
-    async def delete_collection(self, coll_id: uuid.UUID, org: Organization):
+    async def delete_collection(self, coll_id: UUID, org: Organization):
         """Delete collection and remove from associated crawls."""
         await self.crawl_ops.remove_collection_from_all_crawls(coll_id)
 
@@ -305,7 +303,7 @@ class CollectionOps:
 
         return {"success": True}
 
-    async def download_collection(self, coll_id: uuid.UUID, org: Organization):
+    async def download_collection(self, coll_id: UUID, org: Organization):
         """Download all WACZs in collection as streaming nested WACZ"""
         coll = await self.get_collection(coll_id, org, resources=True)
 
@@ -316,7 +314,7 @@ class CollectionOps:
             resp, headers=headers, media_type="application/wacz+zip"
         )
 
-    async def update_collection_counts_and_tags(self, collection_id: uuid.UUID):
+    async def update_collection_counts_and_tags(self, collection_id: UUID):
         """Set current crawl info in config when crawl begins"""
         crawl_count = 0
         page_count = 0
@@ -356,7 +354,7 @@ class CollectionOps:
         for collection_id in crawl_coll_ids:
             await self.update_collection_counts_and_tags(collection_id)
 
-    async def add_successful_crawl_to_collections(self, crawl_id: str, cid: uuid.UUID):
+    async def add_successful_crawl_to_collections(self, crawl_id: str, cid: UUID):
         """Add successful crawl to its auto-add collections."""
         workflow = await self.crawl_configs.find_one({"_id": cid})
         auto_add_collections = workflow.get("autoAddCollections")
@@ -443,13 +441,13 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
         response_model=CollOut,
     )
     async def get_collection(
-        coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
+        coll_id: UUID, org: Organization = Depends(org_viewer_dep)
     ) -> CollOut:
         return await colls.get_collection(coll_id, org)
 
     @app.get("/orgs/{oid}/collections/{coll_id}/replay.json", tags=["collections"])
     async def get_collection_replay(
-        coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
+        coll_id: UUID, org: Organization = Depends(org_viewer_dep)
     ) -> CollOut:
         return await colls.get_collection(coll_id, org, resources=True)
 
@@ -458,7 +456,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     )
     async def get_collection_public_replay(
         response: Response,
-        coll_id: uuid.UUID,
+        coll_id: UUID,
         org: Organization = Depends(org_public),
     ) -> CollOut:
         coll = await colls.get_collection(
@@ -479,7 +477,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
 
     @app.patch("/orgs/{oid}/collections/{coll_id}", tags=["collections"])
     async def update_collection(
-        coll_id: uuid.UUID,
+        coll_id: UUID,
         update: UpdateColl,
         org: Organization = Depends(org_crawl_dep),
     ):
@@ -492,7 +490,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     )
     async def add_crawl_to_collection(
         crawlList: AddRemoveCrawlList,
-        coll_id: uuid.UUID,
+        coll_id: UUID,
         org: Organization = Depends(org_crawl_dep),
     ) -> CollOut:
         return await colls.add_crawls_to_collection(coll_id, crawlList.crawlIds, org)
@@ -504,7 +502,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     )
     async def remove_crawl_from_collection(
         crawlList: AddRemoveCrawlList,
-        coll_id: uuid.UUID,
+        coll_id: UUID,
         org: Organization = Depends(org_crawl_dep),
     ) -> CollOut:
         return await colls.remove_crawls_from_collection(
@@ -516,13 +514,13 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
         tags=["collections"],
     )
     async def delete_collection(
-        coll_id: uuid.UUID, org: Organization = Depends(org_crawl_dep)
+        coll_id: UUID, org: Organization = Depends(org_crawl_dep)
     ):
         return await colls.delete_collection(coll_id, org)
 
     @app.get("/orgs/{oid}/collections/{coll_id}/download", tags=["collections"])
     async def download_collection(
-        coll_id: uuid.UUID, org: Organization = Depends(org_viewer_dep)
+        coll_id: UUID, org: Organization = Depends(org_viewer_dep)
     ):
         return await colls.download_collection(coll_id, org)
 

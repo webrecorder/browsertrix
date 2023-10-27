@@ -4,12 +4,12 @@ Crawl-related models and types
 
 from datetime import datetime
 from enum import Enum, IntEnum
+from uuid import UUID
 import os
 
 from typing import Optional, List, Dict, Union, Literal, Any
 from pydantic import (
     BaseModel,
-    UUID4,
     conint,
     Field,
     HttpUrl,
@@ -48,7 +48,7 @@ class InvitePending(BaseMongoModel):
 
     created: datetime
     inviterEmail: str
-    oid: Optional[UUID4]
+    oid: Optional[UUID]
     role: Optional[UserRole] = UserRole.VIEWER
     email: Optional[str]
 
@@ -87,7 +87,7 @@ class User(BaseModel):
     User Model
     """
 
-    id: UUID4
+    id: UUID
 
     name: str = ""
     email: EmailStr
@@ -125,7 +125,7 @@ class FailedLogin(BaseMongoModel):
 class UserOrgInfoOut(BaseModel):
     """org per user"""
 
-    id: UUID4
+    id: UUID
 
     name: str
     slug: str
@@ -137,7 +137,7 @@ class UserOrgInfoOut(BaseModel):
 class UserOut(BaseModel):
     """Output User model"""
 
-    id: UUID4
+    id: UUID
 
     name: str = ""
     email: EmailStr
@@ -270,9 +270,9 @@ class CrawlConfigIn(BaseModel):
 
     jobType: Optional[JobType] = JobType.CUSTOM
 
-    profileid: Union[UUID4, EmptyStr, None]
+    profileid: Union[UUID, EmptyStr, None]
 
-    autoAddCollections: Optional[List[UUID4]] = []
+    autoAddCollections: Optional[List[UUID]] = []
     tags: Optional[List[str]] = []
 
     crawlTimeout: int = 0
@@ -286,20 +286,20 @@ class CrawlConfigIn(BaseModel):
 class ConfigRevision(BaseMongoModel):
     """Crawl Config Revision"""
 
-    cid: UUID4
+    cid: UUID
 
     schedule: Optional[str] = ""
 
     config: RawCrawlConfig
 
-    profileid: Optional[UUID4]
+    profileid: Optional[UUID]
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1  # type: ignore
 
     modified: datetime
-    modifiedBy: Optional[UUID4]
+    modifiedBy: Optional[UUID]
 
     rev: int = 0
 
@@ -319,9 +319,9 @@ class CrawlConfigCore(BaseMongoModel):
     maxCrawlSize: Optional[int] = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1  # type: ignore
 
-    oid: UUID4
+    oid: UUID
 
-    profileid: Optional[UUID4]
+    profileid: Optional[UUID]
 
 
 # ============================================================================
@@ -332,12 +332,12 @@ class CrawlConfigAdditional(BaseModel):
     description: Optional[str]
 
     created: datetime
-    createdBy: Optional[UUID4]
+    createdBy: Optional[UUID]
 
     modified: Optional[datetime]
-    modifiedBy: Optional[UUID4]
+    modifiedBy: Optional[UUID]
 
-    autoAddCollections: Optional[List[UUID4]] = []
+    autoAddCollections: Optional[List[UUID]] = []
 
     inactive: Optional[bool] = False
 
@@ -351,7 +351,7 @@ class CrawlConfigAdditional(BaseModel):
 
     lastCrawlId: Optional[str]
     lastCrawlStartTime: Optional[datetime]
-    lastStartedBy: Optional[UUID4]
+    lastStartedBy: Optional[UUID]
     lastCrawlTime: Optional[datetime]
     lastCrawlState: Optional[str]
     lastCrawlSize: Optional[int]
@@ -365,7 +365,7 @@ class CrawlConfigAdditional(BaseModel):
 class CrawlConfig(CrawlConfigCore, CrawlConfigAdditional):
     """Schedulable config"""
 
-    id: UUID4
+    id: UUID
 
     config: RawCrawlConfig
     createdByName: Optional[str]
@@ -406,12 +406,12 @@ class UpdateCrawlConfig(BaseModel):
     name: Optional[str] = None
     tags: Optional[List[str]] = None
     description: Optional[str] = None
-    autoAddCollections: Optional[List[UUID4]] = None
+    autoAddCollections: Optional[List[UUID]] = None
     runNow: bool = False
 
     # crawl data: revision tracked
     schedule: Optional[str] = None
-    profileid: Union[UUID4, EmptyStr, None] = None
+    profileid: Union[UUID, EmptyStr, None] = None
     crawlTimeout: Optional[int] = None
     maxCrawlSize: Optional[int] = None
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = None  # type: ignore
@@ -501,9 +501,9 @@ class BaseCrawl(BaseMongoModel):
 
     id: str
 
-    userid: UUID4
+    userid: UUID
     userName: Optional[str]
-    oid: UUID4
+    oid: UUID
 
     started: datetime
     finished: Optional[datetime] = None
@@ -520,7 +520,7 @@ class BaseCrawl(BaseMongoModel):
 
     errors: Optional[List[str]] = []
 
-    collectionIds: Optional[List[UUID4]] = []
+    collectionIds: Optional[List[UUID]] = []
 
     fileSize: int = 0
     fileCount: int = 0
@@ -530,7 +530,7 @@ class BaseCrawl(BaseMongoModel):
 class CollIdName(BaseModel):
     """Collection id and name object"""
 
-    id: UUID4
+    id: UUID
     name: str
 
 
@@ -544,9 +544,9 @@ class CrawlOut(BaseMongoModel):
 
     id: str
 
-    userid: UUID4
+    userid: UUID
     userName: Optional[str]
-    oid: UUID4
+    oid: UUID
 
     name: Optional[str]
     description: Optional[str]
@@ -565,13 +565,13 @@ class CrawlOut(BaseMongoModel):
 
     errors: Optional[List[str]] = []
 
-    collectionIds: Optional[List[UUID4]] = []
+    collectionIds: Optional[List[UUID]] = []
 
     crawlExecSeconds: int = 0
 
     # automated crawl fields
     config: Optional[RawCrawlConfig]
-    cid: UUID4
+    cid: UUID
     firstSeed: Optional[str]
     seedCount: Optional[int]
     profileName: Optional[str]
@@ -598,7 +598,7 @@ class UpdateCrawl(BaseModel):
     name: Optional[str]
     description: Optional[str]
     tags: Optional[List[str]]
-    collectionIds: Optional[List[UUID4]]
+    collectionIds: Optional[List[UUID]]
 
 
 # ============================================================================
@@ -626,7 +626,7 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     type: Literal["crawl"] = "crawl"
 
-    cid: UUID4
+    cid: UUID
 
     config: RawCrawlConfig
 
@@ -685,7 +685,7 @@ class Collection(BaseMongoModel):
     """Org collection structure"""
 
     name: str = Field(..., min_length=1)
-    oid: UUID4
+    oid: UUID
     description: Optional[str]
     modified: Optional[datetime]
 
@@ -831,7 +831,7 @@ class OrgWebhookUrls(BaseModel):
 class OrgOut(BaseMongoModel):
     """Organization API output model"""
 
-    id: UUID4
+    id: UUID
     name: str
     slug: str
     users: Optional[Dict[str, Any]]
@@ -855,7 +855,7 @@ class OrgOut(BaseMongoModel):
 class Organization(BaseMongoModel):
     """Organization Base Model"""
 
-    id: UUID4
+    id: UUID
 
     name: str
     slug: str
@@ -999,14 +999,14 @@ class Profile(BaseMongoModel):
     name: str
     description: Optional[str] = ""
 
-    userid: UUID4
-    oid: UUID4
+    userid: UUID
+    oid: UUID
 
     origins: List[str]
     resource: Optional[ProfileFile]
 
     created: Optional[datetime]
-    baseid: Optional[UUID4] = None
+    baseid: Optional[UUID] = None
 
 
 # ============================================================================
@@ -1027,7 +1027,7 @@ class UrlIn(BaseModel):
 class ProfileLaunchBrowserIn(UrlIn):
     """Request to launch new browser for creating profile"""
 
-    profileId: Optional[UUID4] = None
+    profileId: Optional[UUID] = None
 
 
 # ============================================================================
@@ -1071,7 +1071,7 @@ class UserCreateIn(BaseModel):
 
     name: Optional[str] = ""
 
-    inviteToken: Optional[UUID4] = None
+    inviteToken: Optional[UUID] = None
 
     newOrg: bool
     newOrgName: Optional[str] = ""
@@ -1198,7 +1198,7 @@ class WebhookNotification(BaseMongoModel):
     """Base POST body model for webhook notifications"""
 
     event: WebhookEventType
-    oid: UUID4
+    oid: UUID
     body: Union[
         CrawlStartedBody,
         CrawlFinishedBody,

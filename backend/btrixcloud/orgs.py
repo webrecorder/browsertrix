@@ -5,7 +5,7 @@ import math
 import os
 import time
 import urllib.parse
-import uuid
+from uuid import UUID, uuid4
 from datetime import datetime
 
 from typing import Optional
@@ -101,7 +101,7 @@ class OrgOps:
     ) -> Organization:
         # pylint: disable=too-many-arguments
         """Create new organization with default storage for new user"""
-        id_ = uuid.uuid4()
+        id_ = uuid4()
 
         org = Organization(
             id=id_,
@@ -148,7 +148,7 @@ class OrgOps:
         return orgs, total
 
     async def get_org_for_user_by_id(
-        self, oid: uuid.UUID, user: User, role: UserRole = UserRole.VIEWER
+        self, oid: UUID, user: User, role: UserRole = UserRole.VIEWER
     ):
         """Get an org for user by unique id"""
         query: dict[str, object]
@@ -159,7 +159,7 @@ class OrgOps:
         res = await self.orgs.find_one(query)
         return Organization.from_dict(res)
 
-    async def get_org_by_id(self, oid: uuid.UUID):
+    async def get_org_by_id(self, oid: UUID):
         """Get an org by id"""
         res = await self.orgs.find_one({"_id": oid})
         return Organization.from_dict(res)
@@ -185,7 +185,7 @@ class OrgOps:
                 print(f'Default organization renamed to "{DEFAULT_ORG}"', flush=True)
             return
 
-        id_ = uuid.uuid4()
+        id_ = uuid4()
         org = Organization(
             id=id_,
             name=DEFAULT_ORG,
@@ -310,7 +310,7 @@ class OrgOps:
         return True
 
     async def add_user_to_org(
-        self, org: Organization, userid: uuid.UUID, role: Optional[UserRole] = None
+        self, org: Organization, userid: UUID, role: Optional[UserRole] = None
     ):
         """Add user to organization with specified role"""
         org.users[str(userid)] = role or UserRole.OWNER
@@ -324,7 +324,7 @@ class OrgOps:
                 org_owners.append(key)
         return org_owners
 
-    async def get_max_pages_per_crawl(self, oid: uuid.UUID):
+    async def get_max_pages_per_crawl(self, oid: UUID):
         """Return org-specific max pages per crawl setting or 0."""
         org = await self.orgs.find_one({"_id": oid})
         if org:
@@ -332,7 +332,7 @@ class OrgOps:
             return org.quotas.maxPagesPerCrawl
         return 0
 
-    async def inc_org_bytes_stored(self, oid: uuid.UUID, size: int, type_="crawl"):
+    async def inc_org_bytes_stored(self, oid: UUID, size: int, type_="crawl"):
         """Increase org bytesStored count (pass negative value to subtract)."""
         if type_ == "crawl":
             await self.orgs.find_one_and_update(
@@ -351,7 +351,7 @@ class OrgOps:
         return await self.storage_quota_reached(oid)
 
     # pylint: disable=invalid-name
-    async def storage_quota_reached(self, oid: uuid.UUID) -> bool:
+    async def storage_quota_reached(self, oid: UUID) -> bool:
         """Return boolean indicating if storage quota is met or exceeded."""
         quota = await self.get_org_storage_quota(oid)
         if not quota:
@@ -365,7 +365,7 @@ class OrgOps:
 
         return False
 
-    async def get_this_month_crawl_exec_seconds(self, oid: uuid.UUID) -> int:
+    async def get_this_month_crawl_exec_seconds(self, oid: UUID) -> int:
         """Return crawlExecSeconds for current month"""
         org = await self.orgs.find_one({"_id": oid})
         org = Organization.from_dict(org)
@@ -375,7 +375,7 @@ class OrgOps:
         except KeyError:
             return 0
 
-    async def exec_mins_quota_reached(self, oid: uuid.UUID) -> bool:
+    async def exec_mins_quota_reached(self, oid: UUID) -> bool:
         """Return bools for if execution minutes quota"""
         quota = await self.get_org_exec_mins_monthly_quota(oid)
 
@@ -392,7 +392,7 @@ class OrgOps:
 
         return quota_reached
 
-    async def get_org_storage_quota(self, oid: uuid.UUID) -> int:
+    async def get_org_storage_quota(self, oid: UUID) -> int:
         """return max allowed concurrent crawls, if any"""
         org = await self.orgs.find_one({"_id": oid})
         if org:
@@ -400,7 +400,7 @@ class OrgOps:
             return org.quotas.storageQuota
         return 0
 
-    async def get_org_exec_mins_monthly_quota(self, oid: uuid.UUID) -> int:
+    async def get_org_exec_mins_monthly_quota(self, oid: UUID) -> int:
         """return max allowed execution mins per month, if any"""
         org = await self.orgs.find_one({"_id": oid})
         if org:
@@ -516,7 +516,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
     ops = OrgOps(mdb, invites)
 
-    async def org_dep(oid: uuid.UUID, user: User = Depends(user_dep)):
+    async def org_dep(oid: UUID, user: User = Depends(user_dep)):
         org = await ops.get_org_for_user_by_id(oid, user)
         if not org:
             raise HTTPException(status_code=404, detail="org_not_found")
@@ -549,7 +549,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
         return org
 
-    async def org_public(oid: uuid.UUID):
+    async def org_public(oid: UUID):
         org = await ops.get_org_by_id(oid)
         if not org:
             raise HTTPException(status_code=404, detail="org_not_found")
@@ -590,7 +590,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        id_ = uuid.uuid4()
+        id_ = uuid4()
 
         slug = new_org.slug
         if not slug:

@@ -3,7 +3,7 @@ FastAPI user handling (via fastapi-users)
 """
 
 import os
-import uuid
+from uuid import UUID, uuid4
 import asyncio
 
 from typing import Optional, List
@@ -187,7 +187,7 @@ class UserManager:
 
     async def get_user_names_by_ids(self, user_ids: List[str]) -> dict[str, str]:
         """return list of user names for given ids"""
-        user_uuid_ids = [uuid.UUID(id_) for id_ in user_ids]
+        user_uuid_ids = [UUID(id_) for id_ in user_ids]
         cursor = self.users.find(
             {"id": {"$in": user_uuid_ids}}, projection=["id", "name", "email"]
         )
@@ -316,7 +316,7 @@ class UserManager:
             is_superuser = False
             is_verified = create.inviteToken is not None
 
-        id_ = uuid.uuid4()
+        id_ = uuid4()
 
         user = User(
             id=id_,
@@ -375,7 +375,7 @@ class UserManager:
 
         return user
 
-    async def get_by_id(self, _id: uuid.UUID) -> Optional[User]:
+    async def get_by_id(self, _id: UUID) -> Optional[User]:
         """get user by unique id"""
         user = await self.users.find_one({"id": _id})
 
@@ -415,7 +415,7 @@ class UserManager:
             raise exc
 
         try:
-            user_uuid = uuid.UUID(user_id)
+            user_uuid = UUID(user_id)
         except ValueError:
             raise exc
 
@@ -462,7 +462,7 @@ class UserManager:
         user_id = data["user_id"]
 
         try:
-            user_uuid = uuid.UUID(user_id)
+            user_uuid = UUID(user_id)
         except ValueError:
             raise HTTPException(
                 status_code=400,
@@ -549,7 +549,7 @@ class UserManager:
 
         If a FailedLogin object doesn't already exist, create it
         """
-        failed_login = FailedLogin(id=uuid.uuid4(), email=email)
+        failed_login = FailedLogin(id=uuid4(), email=email)
 
         await self.failed_logins.find_one_and_update(
             {"email": email},
@@ -705,7 +705,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
         return await user_manager.format_invite(invite)
 
     @users_router.get("/invite/{token}", tags=["invites"])
-    async def get_invite_info(token: uuid.UUID, email: str):
+    async def get_invite_info(token: UUID, email: str):
         invite = await user_manager.invites.get_valid_invite(token, email)
         return await user_manager.format_invite(invite)
 
