@@ -3,7 +3,7 @@ Crawl Config API handling
 """
 # pylint: disable=too-many-lines
 
-from typing import List, Union, Optional, Tuple
+from typing import List, Union, Optional, Tuple, Any
 
 import asyncio
 import re
@@ -59,6 +59,7 @@ class CrawlConfigOps:
     org_ops: OrgOps
     crawl_manager: CrawlManager
     profiles: ProfileOps
+    crawl_ops: Any
 
     def __init__(
         self,

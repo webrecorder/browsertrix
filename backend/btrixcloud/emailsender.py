@@ -3,6 +3,7 @@
 import os
 import smtplib
 import ssl
+from typing import Optional
 
 from email.message import EmailMessage
 from .utils import is_bool
@@ -12,9 +13,16 @@ from .utils import is_bool
 class EmailSender:
     """SMTP Email Sender"""
 
+    sender: str
+    password: str
+    reply_to: str
+    smtp_server: Optional[str]
+    smtp_port: int
+    smtp_use_tls: bool
+
     def __init__(self):
-        self.sender = os.environ.get("EMAIL_SENDER")
-        self.password = os.environ.get("EMAIL_PASSWORD")
+        self.sender = os.environ.get("EMAIL_SENDER") or "Browsertrix admin"
+        self.password = os.environ.get("EMAIL_PASSWORD") or ""
         self.reply_to = os.environ.get("EMAIL_REPLY_TO") or self.sender
         self.smtp_server = os.environ.get("EMAIL_SMTP_HOST")
         self.smtp_port = int(os.environ.get("EMAIL_SMTP_PORT", 587))
@@ -22,7 +30,7 @@ class EmailSender:
 
         self.default_origin = os.environ.get("APP_ORIGIN")
 
-    def _send_encrypted(self, receiver, subject, message):
+    def _send_encrypted(self, receiver, subject, message) -> None:
         """Send Encrypted SMTP Message"""
         print(message, flush=True)
 

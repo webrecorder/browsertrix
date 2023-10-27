@@ -1,6 +1,6 @@
 """ Profile Management """
 
-from typing import Optional
+from typing import Optional, Union, Any
 from datetime import datetime
 from uuid import UUID, uuid4
 import os
@@ -43,6 +43,8 @@ class ProfileOps:
     orgs: OrgOps
     crawl_manager: CrawlManager
     storage_ops: StorageOps
+
+    crawlconfigs: Any
 
     def __init__(self, mdb, orgs, crawl_manager, storage_ops):
         self.profiles = mdb["profiles"]
@@ -138,11 +140,11 @@ class ProfileOps:
 
     async def commit_to_profile(
         self,
-        browser_commit: ProfileCreate,
+        browser_commit: Union[ProfileCreate, ProfileUpdate],
         storage: StorageRef,
         metadata: dict,
         profileid: Optional[UUID] = None,
-    ):
+    ) -> dict[str, Any]:
         """commit profile and shutdown profile browser"""
         if not profileid:
             profileid = uuid4()

@@ -2,7 +2,7 @@
 
 import asyncio
 from datetime import datetime
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Any
 from uuid import UUID, uuid4
 
 import aiohttp
@@ -33,6 +33,7 @@ class EventWebhookOps:
     # pylint: disable=invalid-name, too-many-arguments, too-many-locals
 
     org_ops: OrgOps
+    crawl_ops: Any
 
     def __init__(self, mdb, org_ops):
         self.webhooks = mdb["webhooks"]

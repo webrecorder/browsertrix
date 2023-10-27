@@ -51,7 +51,7 @@ class OrgOps:
     """Organization API operations"""
 
     invites: InviteOps
-    default_primary: StorageRef
+    default_primary: Optional[StorageRef]
 
     def __init__(self, mdb, invites):
         self.orgs = mdb["organizations"]
@@ -110,9 +110,10 @@ class OrgOps:
             users={str(user.id): UserRole.OWNER},
             storage=self.default_primary,
         )
+        primary_name = self.default_primary and self.default_primary.name
 
         print(
-            f"Creating new org {org_name} with storage {self.default_primary.name}",
+            f"Creating new org {org_name} with storage {primary_name}",
             flush=True,
         )
         await self.add_org(org)
@@ -194,8 +195,9 @@ class OrgOps:
             storage=self.default_primary,
             default=True,
         )
+        primary_name = self.default_primary and self.default_primary.name
         print(
-            f'Creating Default Organization "{DEFAULT_ORG}". Storage: {self.default_primary.name}',
+            f'Creating Default Organization "{DEFAULT_ORG}". Storage: {primary_name}',
             flush=True,
         )
         await self.add_org(org)

@@ -1316,7 +1316,7 @@ class BtrixOperator(K8sAPI):
             )
 
         # check if done / failed
-        status_count : dict[str, int] = {}
+        status_count: dict[str, int] = {}
         for i in range(crawl.scale):
             res = results.get(f"crawl-{crawl.id}-{i}")
             if res:

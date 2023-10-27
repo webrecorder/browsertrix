@@ -133,6 +133,7 @@ async def run_db_migrations(mdb, user_manager):
                 f".migrations.{migration_name}", module_path
             )
             assert spec
+            assert spec.loader
             migration_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(migration_module)
             migration = migration_module.Migration(mdb)

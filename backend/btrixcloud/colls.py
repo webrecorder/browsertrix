@@ -4,7 +4,7 @@ Collections API
 from collections import Counter
 from datetime import datetime
 from uuid import UUID, uuid4
-from typing import Optional, List
+from typing import Optional, List, Any
 
 import asyncio
 import pymongo
@@ -40,6 +40,7 @@ class CollectionOps:
     orgs: OrgOps
     storage_ops: StorageOps
     event_webhook_ops: EventWebhookOps
+    crawl_ops: Any
 
     def __init__(self, mdb, storage_ops, orgs, event_webhook_ops):
         self.collections = mdb["collections"]

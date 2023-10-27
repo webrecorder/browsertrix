@@ -6,7 +6,7 @@ import os
 from uuid import UUID, uuid4
 import asyncio
 
-from typing import Optional, List
+from typing import Optional, List, Any
 
 from pydantic import EmailStr
 
@@ -62,6 +62,10 @@ class UserManager:
 
     invites: InviteOps
     email: EmailSender
+
+    org_ops: Any
+    base_crawl_ops: Any
+    crawl_config_ops: Any
 
     def __init__(self, mdb, email, invites):
         self.users = mdb.get_collection("users")
@@ -293,6 +297,9 @@ class UserManager:
     async def format_invite(self, invite):
         """format an InvitePending to return via api, resolve name of inviter"""
         inviter = await self.get_by_email(invite.inviterEmail)
+        if not inviter:
+            raise HTTPException(status_code=400, detail="invalid_invite_code")
+
         result = invite.serialize()
         result["inviterName"] = inviter.name
         if invite.oid:
