@@ -8,7 +8,7 @@ import urllib.parse
 import uuid
 from datetime import datetime
 
-from typing import Union, Optional
+from typing import Optional
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -17,11 +17,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from .basecrawls import SUCCESSFUL_STATES, RUNNING_STATES, STARTING_STATES
 from .models import (
     Organization,
-    DefaultStorage,
-    S3Storage,
+    StorageRef,
     OrgQuotas,
     OrgMetrics,
     OrgWebhookUrls,
+    CreateOrg,
     RenameOrg,
     UpdateRole,
     RemovePendingInvite,
@@ -57,7 +57,13 @@ class OrgOps:
         self.org_owner_dep = None
         self.org_public = None
 
+        self.default_primary = None
+
         self.invites = invites
+
+    def set_default_primary_storage(self, storage: StorageRef):
+        """set default primary storage"""
+        self.default_primary = storage
 
     async def init_index(self):
         """init lookup index"""
@@ -83,25 +89,24 @@ class OrgOps:
     async def create_new_org_for_user(
         self,
         org_name: str,
-        storage_name,
         user: User,
     ) -> Organization:
         # pylint: disable=too-many-arguments
         """Create new organization with default storage for new user"""
         id_ = uuid.uuid4()
 
-        storage_path = str(id_) + "/"
-
         org = Organization(
             id=id_,
             name=org_name,
             slug=slug_from_name(org_name),
             users={str(user.id): UserRole.OWNER},
-            storage=DefaultStorage(name=storage_name, path=storage_path),
+            storage=self.default_primary,
         )
 
-        storage_info = f"storage {storage_name} / {storage_path}"
-        print(f"Creating new org {org_name} with {storage_info}", flush=True)
+        print(
+            f"Creating new org {org_name} with storage {self.default_primary.name}",
+            flush=True,
+        )
         await self.add_org(org)
         return org
 
@@ -157,7 +162,7 @@ class OrgOps:
         if res:
             return Organization.from_dict(res)
 
-    async def create_default_org(self, storage_name="default"):
+    async def create_default_org(self):
         """Create default organization if doesn't exist."""
         await self.init_index()
 
@@ -173,21 +178,50 @@ class OrgOps:
             return
 
         id_ = uuid.uuid4()
-        storage_path = str(id_) + "/"
         org = Organization(
             id=id_,
             name=DEFAULT_ORG,
             slug=slug_from_name(DEFAULT_ORG),
             users={},
-            storage=DefaultStorage(name=storage_name, path=storage_path),
+            storage=self.default_primary,
             default=True,
         )
-        storage_info = f"Storage: {storage_name} / {storage_path}"
         print(
-            f'Creating Default Organization "{DEFAULT_ORG}". Storage: {storage_info}',
+            f'Creating Default Organization "{DEFAULT_ORG}". Storage: {self.default_primary.name}',
             flush=True,
         )
         await self.add_org(org)
+
+    async def check_all_org_default_storages(self, storage_ops):
+        """ensure all default storages references by this org actually exist
+
+        designed to help prevent removal of a 'storage' entry if
+        an org is still referencing that storage"""
+        storage_names = list(storage_ops.default_storages.keys())
+        errors = 0
+
+        async for org_data in self.orgs.find(
+            {"storage.custom": False, "storage.name": {"$nin": storage_names}}
+        ):
+            org = Organization.from_dict(org_data)
+            print(f"Org {org.slug} uses unknown primary storage {org.storage.name}")
+            errors += 1
+
+        async for org_data in self.orgs.find(
+            {
+                "storageReplicas.custom": False,
+                "storageReplicas.name": {"$nin": storage_names},
+            }
+        ):
+            org = Organization.from_dict(org_data)
+            print(f"Org {org.slug} uses an unknown replica storage")
+            errors += 1
+
+        if errors:
+            raise TypeError(
+                f"{errors} orgs use undefined storages, exiting."
+                + " Please check the 'storages' array in your config"
+            )
 
     async def update_full(self, org: Organization):
         """Update existing org"""
@@ -207,13 +241,18 @@ class OrgOps:
             {"_id": org.id}, {"$set": {"slug": org.slug, "name": org.name}}
         )
 
-    async def update_storage(
-        self, org: Organization, storage: Union[S3Storage, DefaultStorage]
-    ):
+    async def update_storage_refs(self, org: Organization):
+        """Update storage + replicas for given org"""
+        set_dict = org.dict(include={"storage": True, "storageReplicas": True})
+
+        return await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
+
+    async def update_custom_storages(self, org: Organization):
         """Update storage on an existing organization"""
-        return await self.orgs.find_one_and_update(
-            {"_id": org.id}, {"$set": {"storage": storage.dict()}}
-        )
+
+        set_dict = org.dict(include={"customStorages": True})
+
+        return await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
 
     async def update_quotas(self, org: Organization, quotas: OrgQuotas):
         """update organization quotas"""
@@ -535,25 +574,20 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
     @app.post("/orgs/create", tags=["organizations"])
     async def create_org(
-        new_org: RenameOrg,
+        new_org: CreateOrg,
         user: User = Depends(user_dep),
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         id_ = uuid.uuid4()
-        storage_path = str(id_) + "/"
 
         slug = new_org.slug
         if not slug:
             slug = slug_from_name(new_org.name)
 
         org = Organization(
-            id=id_,
-            name=new_org.name,
-            slug=slug,
-            users={},
-            storage=DefaultStorage(name="default", path=storage_path),
+            id=id_, name=new_org.name, slug=slug, users={}, storage=ops.default_primary
         )
         if not await ops.add_org(org):
             return {"added": False, "error": "already_exists"}

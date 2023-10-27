@@ -5,8 +5,9 @@ metadata:
   labels:
     crawl: "{{ id }}"
     role: "job"
-    oid: "{{ oid }}"
-    userid: "{{ userid }}"
+    btrix.org: "{{ oid }}"
+    btrix.user: "{{ userid }}"
+    btrix.storage: "{{ storage_name }}"
 
 spec:
   selector:
@@ -21,6 +22,8 @@ spec:
   maxCrawlSize: {{ max_crawl_size }}
   manual: {{ manual }}
   ttlSecondsAfterFinished: 30
+
+  storageName: "{{ storage_name }}"
 
   {% if expire_time %}
   expireTime: "{{ expire_time }}"

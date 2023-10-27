@@ -51,7 +51,7 @@ def main():
 
     crawl_manager = CrawlManager()
 
-    storage_ops = init_storages_api(org_ops, crawl_manager, None)
+    storage_ops = init_storages_api(org_ops, crawl_manager)
 
     profile_ops = ProfileOps(mdb, org_ops, crawl_manager, storage_ops)
 
@@ -80,7 +80,13 @@ def main():
     )
 
     return init_operator_api(
-        app_root, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
+        app_root,
+        crawl_config_ops,
+        crawl_ops,
+        org_ops,
+        coll_ops,
+        storage_ops,
+        event_webhook_ops,
     )
 
 

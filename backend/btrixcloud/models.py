@@ -403,16 +403,59 @@ class UpdateCrawlConfig(BaseModel):
 
 
 # ============================================================================
-class CrawlFile(BaseModel):
-    """file from a crawl"""
+class StorageRef(BaseModel):
+    """Reference to actual storage"""
+
+    name: str
+    custom: Optional[bool]
+
+    def __init__(self, *args, **kwargs):
+        if args:
+            if args[0].startswith("cs-"):
+                super().__init__(name=args[0][2:], custom=True)
+            else:
+                super().__init__(name=args[0], custom=False)
+        else:
+            super().__init__(**kwargs)
+
+    def __str__(self):
+        if not self.custom:
+            return self.name
+        return "cs-" + self.name
+
+    def get_storage_secret_name(self, oid: str) -> str:
+        """get k8s secret name for this storage and oid"""
+        if not self.custom:
+            return "storage-" + self.name
+        return f"storage-cs-{self.name}-{oid[:12]}"
+
+    def get_storage_extra_path(self, oid: str) -> str:
+        """return extra path added to the endpoint
+        using oid for default storages, no extra path for custom"""
+        if not self.custom:
+            return oid + "/"
+        return ""
+
+
+# ============================================================================
+class BaseFile(BaseModel):
+    """Base model for crawl and profile files"""
 
     filename: str
     hash: str
     size: int
-    def_storage_name: Optional[str]
+    storage: StorageRef
+
+    replicas: Optional[List[StorageRef]] = None
+
+
+# ============================================================================
+class CrawlFile(BaseFile):
+    """file from a crawl"""
 
     presignedUrl: Optional[str]
     expireAt: Optional[datetime]
+    crc32: int = 0
 
 
 # ============================================================================
@@ -422,9 +465,11 @@ class CrawlFileOut(BaseModel):
     name: str
     path: str
     hash: str
+    crc32: int = 0
     size: int
 
     crawlId: Optional[str]
+    numReplicas: int = 0
     expireAt: Optional[str]
 
 
@@ -584,6 +629,7 @@ class CrawlCompleteIn(BaseModel):
     filename: str
     size: int
     hash: str
+    crc32: int = 0
 
     completed: Optional[bool] = True
 
@@ -687,19 +733,40 @@ class RemovePendingInvite(InviteRequest):
 
 # ============================================================================
 class RenameOrg(BaseModel):
-    """Request to invite another user"""
+    """Rename an existing org"""
 
     name: str
     slug: Optional[str] = None
 
 
 # ============================================================================
-class DefaultStorage(BaseModel):
-    """Storage reference"""
+class CreateOrg(RenameOrg):
+    """Create a new org"""
 
-    type: Literal["default"] = "default"
+
+# ============================================================================
+class OrgStorageRefs(BaseModel):
+    """Input model for setting primary storage + optional replicas"""
+
+    storage: StorageRef
+
+    storageReplicas: List[StorageRef] = []
+
+
+# ============================================================================
+class S3StorageIn(BaseModel):
+    """Custom S3 Storage input model"""
+
+    type: Literal["s3"] = "s3"
+
     name: str
-    path: str = ""
+
+    access_key: str
+    secret_key: str
+    endpoint_url: str
+    bucket: str
+    access_endpoint_url: Optional[str]
+    region: str = ""
 
 
 # ============================================================================
@@ -709,6 +776,7 @@ class S3Storage(BaseModel):
     type: Literal["s3"] = "s3"
 
     endpoint_url: str
+    endpoint_no_bucket_url: str
     access_key: str
     secret_key: str
     access_endpoint_url: str
@@ -772,7 +840,11 @@ class Organization(BaseMongoModel):
 
     users: Dict[str, UserRole]
 
-    storage: Union[S3Storage, DefaultStorage]
+    storage: StorageRef
+
+    storageReplicas: List[StorageRef] = []
+
+    customStorages: Dict[str, S3Storage] = {}
 
     usage: Dict[str, int] = {}
     crawlExecSeconds: Dict[str, int] = {}
@@ -894,13 +966,8 @@ class PaginatedResponse(BaseModel):
 
 
 # ============================================================================
-class ProfileFile(BaseModel):
-    """file from a crawl"""
-
-    filename: str
-    hash: str
-    size: int
-    def_storage_name: Optional[str] = ""
+class ProfileFile(BaseFile):
+    """file for storing profile data"""
 
 
 # ============================================================================

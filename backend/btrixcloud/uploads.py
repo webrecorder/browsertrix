@@ -26,6 +26,7 @@ from .models import (
     Organization,
     PaginatedResponse,
     User,
+    StorageRef,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now
@@ -83,7 +84,8 @@ class UploadOps(BaseCrawlOps):
 
         id_ = "upload-" + str(uuid.uuid4()) if not replaceId else replaceId
 
-        prefix = f"{org.id}/uploads/{id_}/"
+        prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{id_}"
+
         file_prep = FilePreparer(prefix, filename)
 
         async def stream_iter():
@@ -103,7 +105,7 @@ class UploadOps(BaseCrawlOps):
             print("Stream Upload Failed", flush=True)
             raise HTTPException(status_code=400, detail="upload_failed")
 
-        files = [file_prep.get_crawl_file()]
+        files = [file_prep.get_crawl_file(org.storage)]
 
         if prev_upload:
             try:
@@ -133,7 +135,8 @@ class UploadOps(BaseCrawlOps):
 
         id_ = uuid.uuid4()
         files = []
-        prefix = f"{org.id}/uploads/{id_}/"
+
+        prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{id_}"
 
         for upload in uploads:
             file_prep = FilePreparer(prefix, upload.filename)
@@ -142,7 +145,7 @@ class UploadOps(BaseCrawlOps):
             await self.storage_ops.do_upload_single(
                 org, file_reader.file_prep.upload_name, file_reader
             )
-            files.append(file_reader.file_prep.get_crawl_file())
+            files.append(file_reader.file_prep.get_crawl_file(org.storage))
 
         return await self._create_upload(
             files, name, description, collections, tags, str(id_), org, user
@@ -235,13 +238,13 @@ class FilePreparer:
         self.upload_size += len(chunk)
         self.upload_hasher.update(chunk)
 
-    def get_crawl_file(self, def_storage_name="default"):
+    def get_crawl_file(self, storage: StorageRef):
         """get crawl file"""
         return CrawlFile(
             filename=self.upload_name,
             hash=self.upload_hasher.hexdigest(),
             size=self.upload_size,
-            def_storage_name=def_storage_name,
+            storage=storage,
         )
 
     def prepare_filename(self, filename):

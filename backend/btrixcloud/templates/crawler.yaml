@@ -122,7 +122,12 @@ spec:
             name: shared-crawler-config
 
         - secretRef:
-            name: storage-{{ storage_name }}
+            name: {{ storage_secret }}
+
+      {% if signing_secret %}
+        - secretRef:
+            name: {{ signing_secret }}
+      {% endif %}
 
       env:
         - name: CRAWL_ID
@@ -132,10 +137,10 @@ spec:
           value: "{{ redis_url }}/crawls-done"
 
         - name: STORE_PATH
-          value: "{{ store_path }}"
+          value: "{{ storage_path }}"
 
         - name: STORE_FILENAME
-          value: "{{ store_filename }}"
+          value: "{{ storage_filename }}"
 
         - name: STORE_USER
           value: "{{ userid }}"

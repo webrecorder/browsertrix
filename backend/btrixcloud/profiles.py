@@ -24,6 +24,7 @@ from .models import (
     Organization,
     User,
     PaginatedResponse,
+    StorageRef,
 )
 
 
@@ -52,8 +53,6 @@ class ProfileOps:
 
         self.crawlconfigs = None
 
-        self.shared_profile_storage = os.environ.get("SHARED_PROFILE_STORAGE")
-
     def set_crawlconfigs(self, crawlconfigs):
         """set crawlconfigs ops"""
         self.crawlconfigs = crawlconfigs
@@ -62,33 +61,22 @@ class ProfileOps:
         self, org: Organization, user: User, profile_launch: ProfileLaunchBrowserIn
     ):
         """Create new profile"""
-        if self.shared_profile_storage:
-            storage_name = self.shared_profile_storage
-            storage = None
-        elif org.storage and org.storage.type == "default":
-            storage_name = None
-            storage = org.storage
-        else:
-            storage_name = str(org.id)
-            storage = None
-
-        profile_path = ""
+        prev_profile = ""
         if profile_launch.profileId:
-            profile_path = await self.get_profile_storage_path(
+            prev_profile = await self.get_profile_storage_path(
                 profile_launch.profileId, org
             )
 
-            if not profile_path:
+            if not prev_profile:
                 raise HTTPException(status_code=400, detail="invalid_base_profile")
 
         browserid = await self.crawl_manager.run_profile_browser(
             str(user.id),
             str(org.id),
             url=profile_launch.url,
-            storage=storage,
-            storage_name=storage_name,
+            storage=org.storage,
             baseprofile=profile_launch.profileId,
-            profile_path=profile_path,
+            profile_filename=prev_profile,
         )
 
         if not browserid:
@@ -140,6 +128,7 @@ class ProfileOps:
     async def commit_to_profile(
         self,
         browser_commit: ProfileCreate,
+        storage: StorageRef,
         metadata: dict,
         profileid: Optional[uuid.UUID] = None,
     ):
@@ -168,6 +157,7 @@ class ProfileOps:
             hash=resource["hash"],
             size=file_size,
             filename=resource["path"],
+            storage=storage,
         )
 
         baseid = metadata.get("btrix.baseprofile")
@@ -393,7 +383,7 @@ def init_profiles_api(mdb, crawl_manager, org_ops, storage_ops, user_dep):
     ):
         metadata = await browser_get_metadata(browser_commit.browserid, org)
 
-        return await ops.commit_to_profile(browser_commit, metadata)
+        return await ops.commit_to_profile(browser_commit, org.storage, metadata)
 
     @router.patch("/{profileid}")
     async def commit_browser_to_existing(
@@ -407,7 +397,9 @@ def init_profiles_api(mdb, crawl_manager, org_ops, storage_ops, user_dep):
         else:
             metadata = await browser_get_metadata(browser_commit.browserid, org)
 
-            await ops.commit_to_profile(browser_commit, metadata, profileid)
+            await ops.commit_to_profile(
+                browser_commit, org.storage, metadata, profileid
+            )
 
         return {"updated": True}
 
