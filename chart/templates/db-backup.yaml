@@ -9,6 +9,7 @@ spec:
   successfulJobsHistoryLimit: 1
   jobTemplate:
     spec:
+      activeDeadlineSeconds: 60
       template:
         spec:
           restartPolicy: Never
@@ -37,11 +38,11 @@ spec:
                 - name: backups
                   mountPath: /backups
 
-              {{- with (index .Values.storages 0) }}
+              {{- with .Values.backups }}
               command:
                 - /bin/sh
                 - -c
-                - mc alias set BACKUP {{ .endpoint_url }} {{ .access_key }} {{ .secret_key }}; mc cp /db-backups/backup.archive BACKUP/{{ .bucket_name }}/backups/mongodb-$(date +%Y-%m-%d).archive
+                - set -e; mc alias set BACKUP {{ .endpoint_url }} {{ .access_key }} {{ .secret_key }}; mc cp /backups/backup.archive BACKUP/mongodb-$(date +%Y-%m-%d).archive
 
               {{- end }}
           volumes:
