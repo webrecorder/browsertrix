@@ -25,6 +25,7 @@ from .uploads import init_uploads_api
 from .crawlconfigs import init_crawl_config_api
 from .colls import init_collections_api
 from .crawls import init_crawls_api
+from .basecrawls import init_base_crawls_api
 from .webhooks import init_event_webhooks_api
 
 from .crawlmanager import CrawlManager
@@ -116,11 +117,13 @@ def main():
         event_webhook_ops,
     )
 
+    base_crawl_ops = init_base_crawls_api(*base_crawl_init)
+
     crawls = init_crawls_api(*base_crawl_init)
 
     init_uploads_api(*base_crawl_init)
 
-    user_manager.set_ops(org_ops, crawl_config_ops, crawls)
+    user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
 
     crawl_config_ops.set_coll_ops(coll_ops)
 
