@@ -47,15 +47,20 @@ class Migration(BaseMigration):
         mdb_crawls = self.mdb["crawls"]
         async for crawl in mdb_crawls.find({}):
             crawl_id = crawl["_id"]
+            crawl_files = []
             for file_ in crawl["files"]:
                 if file_.get("storage"):
+                    crawl_files.append(file_)
                     continue
 
-                storage_name = file_.pop("def_storage_name", default_name)
+                storage_name = file_.pop("def_storage_name", None)
+                if not storage_name:
+                    storage_name = default_name
                 file_["storage"] = {"name": storage_name, "custom": False}
+                crawl_files.append(file_)
             try:
                 await mdb_crawls.find_one_and_update(
-                    {"_id": crawl_id}, {"$set": {"files": crawl["files"]}}
+                    {"_id": crawl_id}, {"$set": {"files": crawl_files}}
                 )
             except Exception as err:
                 print(
@@ -74,7 +79,9 @@ class Migration(BaseMigration):
             if file_.get("storage"):
                 continue
 
-            storage_name = file_.pop("def_storage_name", default_name)
+            storage_name = file_.pop("def_storage_name", None)
+            if not storage_name:
+                storage_name = default_name
             file_["storage"] = {"name": storage_name, "custom": False}
             try:
                 await mdb_profiles.find_one_and_update(
