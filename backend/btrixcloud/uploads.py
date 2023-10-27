@@ -257,33 +257,13 @@ class UploadFileReader(BufferedReader):
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name
-def init_uploads_api(
-    app,
-    mdb,
-    users,
-    crawl_manager,
-    crawl_configs,
-    orgs,
-    colls,
-    storage_ops,
-    user_dep,
-    event_webhook_ops,
-):
+def init_uploads_api(app, user_dep, *args):
     """uploads api"""
 
-    ops = UploadOps(
-        mdb,
-        users,
-        orgs,
-        crawl_manager,
-        crawl_configs,
-        colls,
-        storage_ops,
-        event_webhook_ops,
-    )
+    ops = UploadOps(*args)
 
-    org_viewer_dep = orgs.org_viewer_dep
-    org_crawl_dep = orgs.org_crawl_dep
+    org_viewer_dep = ops.orgs.org_viewer_dep
+    org_crawl_dep = ops.orgs.org_crawl_dep
 
     @app.put("/orgs/{oid}/uploads/formdata", tags=["uploads"])
     async def upload_formdata(

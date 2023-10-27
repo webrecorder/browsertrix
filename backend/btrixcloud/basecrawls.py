@@ -60,13 +60,13 @@ class BaseCrawlOps:
     def __init__(
         self,
         mdb,
-        users,
-        orgs,
-        crawl_manager,
-        crawl_configs,
-        colls,
-        storage_ops,
-        event_webhook_ops,
+        users: UserManager,
+        orgs: OrgOps,
+        crawl_manager: CrawlManager,
+        crawl_configs: CrawlConfigOps,
+        colls: CollectionOps,
+        storage_ops: StorageOps,
+        event_webhook_ops: EventWebhookOps,
     ):
         self.crawls = mdb["crawls"]
         self.crawl_manager = crawl_manager
@@ -672,34 +672,14 @@ class BaseCrawlOps:
 
 
 # ============================================================================
-def init_base_crawls_api(
-    app,
-    mdb,
-    users,
-    crawl_manager,
-    crawl_config_ops,
-    orgs,
-    colls,
-    storage_ops,
-    event_webhook_ops,
-    user_dep,
-):
+def init_base_crawls_api(app, user_dep, *args):
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code, too-many-arguments, too-many-locals
 
-    ops = BaseCrawlOps(
-        mdb,
-        users,
-        orgs,
-        crawl_config_ops,
-        crawl_manager,
-        colls,
-        storage_ops,
-        event_webhook_ops,
-    )
+    ops = BaseCrawlOps(*args)
 
-    org_viewer_dep = orgs.org_viewer_dep
-    org_crawl_dep = orgs.org_crawl_dep
+    org_viewer_dep = ops.orgs.org_viewer_dep
+    org_crawl_dep = ops.orgs.org_crawl_dep
 
     @app.get(
         "/orgs/{oid}/all-crawls",

@@ -584,34 +584,14 @@ async def recompute_crawl_file_count_and_size(crawls, crawl_id):
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
-def init_crawls_api(
-    app,
-    mdb,
-    users,
-    crawl_manager,
-    crawl_config_ops,
-    orgs,
-    colls,
-    storage_ops,
-    user_dep,
-    event_webhook_ops,
-):
+def init_crawls_api(app, user_dep, *args):
     """API for crawl management, including crawl done callback"""
     # pylint: disable=invalid-name, duplicate-code
 
-    ops = CrawlOps(
-        mdb,
-        users,
-        crawl_manager,
-        crawl_config_ops,
-        orgs,
-        colls,
-        storage_ops,
-        event_webhook_ops,
-    )
+    ops = CrawlOps(*args)
 
-    org_viewer_dep = orgs.org_viewer_dep
-    org_crawl_dep = orgs.org_crawl_dep
+    org_viewer_dep = ops.orgs.org_viewer_dep
+    org_crawl_dep = ops.orgs.org_crawl_dep
 
     @app.get("/orgs/all/crawls", tags=["crawls"])
     async def list_crawls_admin(
@@ -796,7 +776,7 @@ def init_crawls_api(
     ):
         await ops.update_crawl_scale(crawl_id, org, scale, user)
 
-        result = await crawl_manager.scale_crawl(crawl_id, scale.scale)
+        result = await ops.crawl_manager.scale_crawl(crawl_id, scale.scale)
         if not result or not result.get("success"):
             raise HTTPException(
                 status_code=400, detail=result.get("error") or "unknown"
@@ -899,7 +879,7 @@ def init_crawls_api(
         # If crawl is finished, stream logs from WACZ files
         if crawl.finished:
             wacz_files = await ops.get_wacz_files(crawl_id, org)
-            resp = await storage_ops.sync_stream_wacz_logs(
+            resp = await ops.storage_ops.sync_stream_wacz_logs(
                 org, wacz_files, log_levels, contexts
             )
             return StreamingResponse(
