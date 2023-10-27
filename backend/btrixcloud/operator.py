@@ -167,26 +167,26 @@ class PodInfo(BaseModel):
         res["percent"] = percent
         return res
 
-    def get_percent_memory(self):
+    def get_percent_memory(self) -> float:
         """compute percent memory used"""
         return (
-            float(self.used.memory) / float(self.allocated.memory)
+            float(self.used.memory or 0) / float(self.allocated.memory)
             if self.allocated.memory
             else 0
         )
 
-    def get_percent_cpu(self):
+    def get_percent_cpu(self) -> float:
         """compute percent cpu used"""
         return (
-            float(self.used.cpu) / float(self.allocated.cpu)
+            float(self.used.cpu or 0) / float(self.allocated.cpu)
             if self.allocated.cpu
             else 0
         )
 
-    def get_percent_storage(self):
+    def get_percent_storage(self) -> float:
         """compute percent storage used"""
         return (
-            float(self.used.storage) / float(self.allocated.storage)
+            float(self.used.storage or 0) / float(self.allocated.storage)
             if self.allocated.storage
             else 0
         )
@@ -1274,7 +1274,7 @@ class BtrixOperator(K8sAPI):
         stats = {"found": pages_found, "done": pages_done, "size": archive_size}
         return stats, sizes
 
-    async def update_crawl_state(self, redis, crawl, status, pods, done):
+    async def update_crawl_state(self, redis, crawl, status, pods, done) -> CrawlStatus:
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
         stats, sizes = await self.get_redis_crawl_stats(redis, crawl.id)
@@ -1316,7 +1316,7 @@ class BtrixOperator(K8sAPI):
             )
 
         # check if done / failed
-        status_count = {}
+        status_count : dict[str, int] = {}
         for i in range(crawl.scale):
             res = results.get(f"crawl-{crawl.id}-{i}")
             if res:
