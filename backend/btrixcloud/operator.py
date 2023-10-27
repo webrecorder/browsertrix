@@ -122,18 +122,18 @@ class CrawlSpec(BaseModel):
 class PodResourcePercentage(BaseModel):
     """Resource usage percentage ratios"""
 
-    memory: Optional[float] = 0
-    cpu: Optional[float] = 0
-    storage: Optional[float] = 0
+    memory: float = 0
+    cpu: float = 0
+    storage: float = 0
 
 
 # ============================================================================
 class PodResources(BaseModel):
     """Pod Resources"""
 
-    memory: Optional[int] = 0
-    cpu: Optional[float] = 0
-    storage: Optional[int] = 0
+    memory: int = 0
+    cpu: float = 0
+    storage: int = 0
 
     def __init__(self, *a, **kw):
         if "memory" in kw:
@@ -173,7 +173,7 @@ class PodInfo(BaseModel):
     def get_percent_memory(self) -> float:
         """compute percent memory used"""
         return (
-            float(self.used.memory or 0) / float(self.allocated.memory)
+            float(self.used.memory) / float(self.allocated.memory)
             if self.allocated.memory
             else 0
         )
@@ -181,7 +181,7 @@ class PodInfo(BaseModel):
     def get_percent_cpu(self) -> float:
         """compute percent cpu used"""
         return (
-            float(self.used.cpu or 0) / float(self.allocated.cpu)
+            float(self.used.cpu) / float(self.allocated.cpu)
             if self.allocated.cpu
             else 0
         )
@@ -189,7 +189,7 @@ class PodInfo(BaseModel):
     def get_percent_storage(self) -> float:
         """compute percent storage used"""
         return (
-            float(self.used.storage or 0) / float(self.allocated.storage)
+            float(self.used.storage) / float(self.allocated.storage)
             if self.allocated.storage
             else 0
         )
