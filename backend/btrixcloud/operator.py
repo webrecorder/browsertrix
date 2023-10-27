@@ -258,8 +258,9 @@ class BtrixOperator(K8sAPI):
     coll_ops: CollectionOps
     storage_ops: StorageOps
     event_webhook_ops: EventWebhookOps
-    user_ops: UserManager
     background_job_ops: BackgroundJobOps
+
+    user_ops: UserManager
 
     def __init__(
         self,
@@ -270,7 +271,6 @@ class BtrixOperator(K8sAPI):
         storage_ops,
         event_webhook_ops,
         background_job_ops,
-        event_webhook_ops,
     ):
         super().__init__()
 
@@ -1247,6 +1247,7 @@ class BtrixOperator(K8sAPI):
 
         try:
             await self.background_job_ops.create_replicate_job(crawl.oid, crawl_file)
+        # pylint: disable=broad-except
         except Exception as exc:
             print(exc)
 
@@ -1650,29 +1651,10 @@ class BtrixOperator(K8sAPI):
 
 
 # ============================================================================
-def init_operator_api(
-    app,
-    crawl_config_ops,
-    crawl_ops,
-    org_ops,
-    coll_ops,
-    storage_ops,
-    event_webhook_ops,
-    background_job_ops,
-    event_webhook_ops,
-):
+def init_operator_api(app, *args):
     """regsiters webhook handlers for metacontroller"""
 
-    oper = BtrixOperator(
-        crawl_config_ops,
-        crawl_ops,
-        org_ops,
-        coll_ops,
-        storage_ops,
-        event_webhook_ops,
-        background_job_ops,
-        event_webhook_ops,
-    )
+    oper = BtrixOperator(*args)
 
     @app.post("/op/crawls/sync")
     async def mc_sync_crawls(data: MCSyncData):

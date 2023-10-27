@@ -48,12 +48,12 @@ class BackgroundJobOps:
             responses={404: {"description": "Not found"}},
         )
 
-    def strip_bucket(self, endpoint_url: str) -> str:
+    def strip_bucket(self, endpoint_url: str) -> tuple[str, str]:
         """strip the last path segment (bucket) and return rest of endpoint"""
         inx = endpoint_url.rfind("/", 0, -1) + 1
         return endpoint_url[0:inx], endpoint_url[inx:]
 
-    async def create_replicate_job(self, oid: uuid.UUID, file: BaseFile) -> Dict:
+    async def create_replicate_job(self, oid: UUID, file: BaseFile) -> Dict:
         """Create k8s background job to replicate a file to another storage location."""
 
         org = await self.org_ops.get_org_by_id(oid)

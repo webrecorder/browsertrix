@@ -92,8 +92,8 @@ def main():
         org_ops,
         coll_ops,
         storage_ops,
-        background_job_ops,
         event_webhook_ops,
+        background_job_ops,
     )
 
 

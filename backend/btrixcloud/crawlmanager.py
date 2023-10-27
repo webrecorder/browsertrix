@@ -4,7 +4,7 @@ import os
 import asyncio
 import secrets
 import json
-import uuid
+from uuid import UUID
 
 from typing import Optional, Dict
 from datetime import timedelta
@@ -66,7 +66,7 @@ class CrawlManager(K8sAPI):
 
     async def run_replicate_job(
         self,
-        oid: uuid.UUID,
+        oid: UUID,
         primary_secret_name: str,
         replica_secret_name: str,
         primary_file_path: str,
@@ -97,7 +97,7 @@ class CrawlManager(K8sAPI):
 
     async def run_delete_replica_job(
         self,
-        oid: uuid.UUID,
+        oid: UUID,
         replica_file_path: str,
     ):
         """run job to delete replicated file"""
