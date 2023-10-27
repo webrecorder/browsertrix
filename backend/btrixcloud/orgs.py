@@ -286,7 +286,7 @@ class OrgOps:
     async def handle_new_user_invite(self, invite_token: str, user: User):
         """Handle invite from a new user"""
         new_user_invite = await self.invites.get_valid_invite(
-            uuid.UUID(invite_token), user.email
+            UUID(invite_token), user.email
         )
         await self.add_user_by_invite(new_user_invite, user)
         await self.invites.remove_invite(invite_token)
