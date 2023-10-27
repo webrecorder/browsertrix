@@ -4,6 +4,8 @@ import time
 from .conftest import (
     API_PREFIX,
     CRAWLER_USERNAME,
+    CRAWLER_USERNAME_LOWERCASE,
+    CRAWLER_PW,
     ADMIN_PW,
     ADMIN_USERNAME,
     FINISHED_STATES,
@@ -13,7 +15,6 @@ VALID_USER_EMAIL = "validpassword@example.com"
 VALID_USER_PW = "validpassw0rd!"
 VALID_USER_PW_RESET = "new!password"
 VALID_USER_PW_RESET_AGAIN = "new!password1"
-
 
 my_id = None
 valid_user_headers = None
@@ -69,6 +70,20 @@ def test_me_id(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
     )
     assert r.status_code == 404
+
+
+def test_login_case_insensitive_email():
+    r = requests.post(
+        f"{API_PREFIX}/auth/jwt/login",
+        data={
+            "username": CRAWLER_USERNAME_LOWERCASE,
+            "password": CRAWLER_PW,
+            "grant_type": "password",
+        },
+    )
+    data = r.json()
+    assert r.status_code == 200
+    assert data["access_token"]
 
 
 def test_add_user_to_org_invalid_password(admin_auth_headers, default_org_id):
