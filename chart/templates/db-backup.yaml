@@ -1,10 +1,20 @@
+{{ $backup := false }}
+{{- range $storage := .Values.storages -}}
+  {{- if $storage.is_db_backup -}}
+    {{- $backup = $storage }}
+
+  {{- end }}
+{{- end}}
+
+{{- if $backup -}}
+---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: mongodb-backup
   namespace: {{ .Release.Namespace }}
 spec:
-  schedule: "*/1 * * * *"
+  schedule: "26 12 * * *"
   failedJobsHistoryLimit: 2
   successfulJobsHistoryLimit: 1
   jobTemplate:
@@ -14,7 +24,7 @@ spec:
         spec:
           restartPolicy: Never
           initContainers:
-            - name: mongodump
+            - name: dump
               image: {{ .Values.mongo_image }}
               imagePullPolicy: {{ .Values.mongo_pull_policy }}
               volumeMounts:
@@ -31,22 +41,38 @@ spec:
                 - --archive=/backups/backup.archive
 
           containers:
-            - name: minioupload
+            - name: upload
               image: {{ .Values.minio_mc_image }}
               imagePullPolicy: {{ .Values.minio_pull_policy }}
               volumeMounts:
                 - name: backups
                   mountPath: /backups
 
-              {{- with .Values.backups }}
               command:
-                - /bin/sh
+                - /bin/bash
                 - -c
-                - set -e; mc alias set BACKUP {{ .endpoint_url }} {{ .access_key }} {{ .secret_key }}; mc cp /backups/backup.archive BACKUP/mongodb-$(date +%Y-%m-%d).archive
+            {{- if $backup.bucket_name }}
+                - |
+                  mc alias set BACKUP {{ $backup.endpoint_url }} {{ $backup.access_key }} {{ $backup.secret_key }} || exit 1;
+                  mc cp /backups/backup.archive BACKUP/{{ $backup.bucket_name }}/db-backup/mongodb-$(date +%Y-%m-%d).archive || exit 2
+            
+            {{- else }}
+                - |
+                  do_upload() {
+                    [[ "$1" =~ (https?://[^/]+/)([^/]+)/(.*)[/]$ ]];
+                    origin=${BASH_REMATCH[1]};
+                    bucket=${BASH_REMATCH[2]};
+                    path=${BASH_REMATCH[3]}; 
+                    
+                    mc alias set BACKUP $origin {{ $backup.access_key }} {{ $backup.secret_key }} || exit 1;
+                    mc cp /backups/backup.archive BACKUP/$bucket/$path/db-backup/mongodb-$(date +%Y-%m-%d).archive || exit 2;
+                  };
+                  do_upload "{{ $backup.endpoint_url }}";
+                  exit $?
+            {{- end }}
 
-              {{- end }}
           volumes:
             - name: backups
               emptyDir: {}
 
-   
+   {{- end }}
