@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mongodb-backup
+  namespace: {{ .Release.Namespace }}
+spec:
+  schedule: "*/1 * * * *"
+  failedJobsHistoryLimit: 2
+  successfulJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          initContainers:
+            - name: mongodump
+              image: {{ .Values.mongo_image }}
+              imagePullPolicy: {{ .Values.mongo_pull_policy }}
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+
+              command:
+                - mongodump
+                {{- if .Values.mongo_auth.db_url }}
+                - --uri={{ .Values.mongo_auth.db_url }}
+                {{- else }}
+                - --uri=mongodb://{{ .Values.mongo_auth.username }}:{{ .Values.mongo_auth.password }}@{{ .Values.mongo_host }}:27017/browsertrixcloud?tls=false&authSource=admin
+                {{- end }}
+                - --archive=/backups/backup.archive
+
+          containers:
+            - name: minioupload
+              image: {{ .Values.minio_mc_image }}
+              imagePullPolicy: {{ .Values.minio_pull_policy }}
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+
+              {{- with (index .Values.storages 0) }}
+              command:
+                - /bin/sh
+                - -c
+                - mc alias set BACKUP {{ .endpoint_url }} {{ .access_key }} {{ .secret_key }}; mc cp /db-backups/backup.archive BACKUP/{{ .bucket_name }}/backups/mongodb-$(date +%Y-%m-%d).archive
+
+              {{- end }}
+          volumes:
+            - name: backups
+              emptyDir: {}
+
+   
