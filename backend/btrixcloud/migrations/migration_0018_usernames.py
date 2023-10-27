@@ -36,7 +36,7 @@ class Migration(BaseMigration):
             if crawl.get("userName"):
                 continue
             try:
-                user = await user_manager.get(crawl["userid"])
+                user = await user_manager.get_by_id(crawl["userid"])
                 await mdb_crawls.find_one_and_update(
                     {"_id": crawl_id},
                     {"$set": {"userName": user.name}},
@@ -56,17 +56,17 @@ class Migration(BaseMigration):
                 modified_by_name = ""
                 last_started_by_name = ""
 
-                created_user = await user_manager.get(config["createdBy"])
+                created_user = await user_manager.get_by_id(config["createdBy"])
                 if created_user:
                     created_by_name = created_user.name
 
-                modified_user = await user_manager.get(config["modifiedBy"])
+                modified_user = await user_manager.get_by_id(config["modifiedBy"])
                 if modified_user:
                     modified_by_name = modified_user.name
 
                 last_started_by = config.get("lastStartedBy")
                 if last_started_by:
-                    last_started_user = await user_manager.get(last_started_by)
+                    last_started_user = await user_manager.get_by_id(last_started_by)
                     if last_started_user:
                         last_started_by_name = last_started_user.name
 

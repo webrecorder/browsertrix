@@ -5,17 +5,18 @@ import importlib.util
 import os
 import urllib
 import asyncio
+from uuid import UUID
 
 from typing import Optional, Union
 
 import motor.motor_asyncio
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel
 from pymongo.errors import InvalidName
 
 from .migrations import BaseMigration
 
 
-CURR_DB_VERSION = "0019"
+CURR_DB_VERSION = "0020"
 
 
 # ============================================================================
@@ -77,6 +78,7 @@ async def update_and_prepare_db(
     crawl_config_ops,
     coll_ops,
     invite_ops,
+    storage_ops,
     db_inited,
 ):
     """Prepare database for application.
@@ -91,9 +93,12 @@ async def update_and_prepare_db(
     print("Database setup started", flush=True)
     if await run_db_migrations(mdb, user_manager):
         await drop_indexes(mdb)
-    await create_indexes(org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_ops)
+    await create_indexes(
+        org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_ops, user_manager
+    )
     await user_manager.create_super_user()
     await org_ops.create_default_org()
+    await org_ops.check_all_org_default_storages(storage_ops)
     db_inited["inited"] = True
     print("Database updated and ready", flush=True)
 
@@ -128,6 +133,7 @@ async def run_db_migrations(mdb, user_manager):
                 f".migrations.{migration_name}", module_path
             )
             assert spec
+            assert spec.loader
             migration_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(migration_module)
             migration = migration_module.Migration(mdb)
@@ -176,7 +182,10 @@ async def drop_indexes(mdb):
 
 
 # ============================================================================
-async def create_indexes(org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_ops):
+# pylint: disable=too-many-arguments
+async def create_indexes(
+    org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_ops, user_manager
+):
     """Create database indexes."""
     print("Creating database indexes", flush=True)
     await org_ops.init_index()
@@ -184,13 +193,14 @@ async def create_indexes(org_ops, crawl_ops, crawl_config_ops, coll_ops, invite_
     await crawl_config_ops.init_index()
     await coll_ops.init_index()
     await invite_ops.init_index()
+    await user_manager.init_index()
 
 
 # ============================================================================
 class BaseMongoModel(BaseModel):
     """Base pydantic model that is also a mongo doc"""
 
-    id: Optional[Union[UUID4, str]]
+    id: Optional[Union[UUID, str]]
 
     @property
     def id_str(self):

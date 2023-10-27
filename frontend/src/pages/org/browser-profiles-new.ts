@@ -60,8 +60,8 @@ export class BrowserProfilesNew extends LiteElement {
         <a
           class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
           href=${this.params.profileId
-            ? `/orgs/${this.orgId}/browser-profiles/profile/${this.params.profileId}`
-            : `/orgs/${this.orgId}/browser-profiles`}
+            ? `${this.orgBasePath}/browser-profiles/profile/${this.params.profileId}`
+            : `${this.orgBasePath}/browser-profiles`}
           @click=${this.navLink}
         >
           <sl-icon
@@ -210,7 +210,7 @@ export class BrowserProfilesNew extends LiteElement {
         icon: "check2-circle",
       });
 
-      this.navTo(`/orgs/${this.orgId}/browser-profiles/profile/${data.id}`);
+      this.navTo(`${this.orgBasePath}/browser-profiles/profile/${data.id}`);
     } catch (e: any) {
       this.isSubmitting = false;
 

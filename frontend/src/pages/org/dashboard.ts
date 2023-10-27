@@ -4,6 +4,7 @@ import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
+import humanizeDuration from "pretty-ms";
 
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { AuthState } from "../../utils/AuthService";
@@ -48,6 +49,7 @@ export class Dashboard extends LiteElement {
     crawls: "green",
     uploads: "sky",
     browserProfiles: "indigo",
+    runningTime: "blue",
   };
 
   willUpdate(changedProperties: PropertyValues<this>) {
@@ -70,7 +72,7 @@ export class Dashboard extends LiteElement {
           ${this.org?.name}
         </h1>
         <sl-icon-button
-          href=${`/orgs/${this.orgId}/settings`}
+          href=${`${this.orgBasePath}/settings`}
           class="text-lg"
           name="gear"
           label="Edit org settings"
@@ -178,9 +180,13 @@ export class Dashboard extends LiteElement {
           ${this.renderCard(
             msg("Crawling"),
             (metrics) => html`
+              ${this.renderCrawlingMeter(metrics)}
               <dl>
                 ${this.renderStat({
-                  value: metrics.workflowsRunningCount,
+                  value:
+                    metrics.workflowsRunningCount && metrics.maxConcurrentCrawls
+                      ? `${metrics.workflowsRunningCount} / ${metrics.maxConcurrentCrawls}`
+                      : metrics.workflowsRunningCount,
                   singleLabel: msg("Crawl Running"),
                   pluralLabel: msg("Crawls Running"),
                   iconProps: {
@@ -224,6 +230,7 @@ export class Dashboard extends LiteElement {
             `
           )}
         </div>
+        <section class="mt-10">${this.renderUsageHistory()}</section>
       </main> `;
   }
 
@@ -331,23 +338,129 @@ export class Dashboard extends LiteElement {
     `;
   }
 
+  private renderCrawlingMeter(metrics: Metrics) {
+    let quotaSeconds = 0;
+    if (this.org!.quotas && this.org!.quotas.maxExecMinutesPerMonth) {
+      quotaSeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
+    }
+
+    let usageSeconds = 0;
+    const now = new Date();
+    if (this.org!.crawlExecSeconds) {
+      const actualUsage =
+        this.org!.crawlExecSeconds[
+          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
+        ];
+      if (actualUsage) {
+        usageSeconds = actualUsage;
+      }
+    }
+
+    const hasQuota = Boolean(quotaSeconds);
+    const isReached = hasQuota && usageSeconds >= quotaSeconds;
+
+    if (isReached) {
+      usageSeconds = quotaSeconds;
+    }
+
+    const renderBar = (value: number, label: string, color: string) => html`
+      <btrix-meter-bar
+        value=${(value / usageSeconds) * 100}
+        style="--background-color:var(--sl-color-${color}-400)"
+      >
+        <div class="text-center">
+          <div>${label}</div>
+          <div class="text-xs opacity-80">
+            ${humanizeDuration(value * 1000)} |
+            ${this.renderPercentage(value / quotaSeconds)}
+          </div>
+        </div>
+      </btrix-meter-bar>
+    `;
+    return html`
+      <div class="font-semibold mb-1">
+        ${when(
+          isReached,
+          () => html`
+            <div class="flex gap-2 items-center">
+              <sl-icon
+                class="text-danger"
+                name="exclamation-triangle"
+              ></sl-icon>
+              <span>${msg("Monthly Execution Minutes Quota Reached")}</span>
+            </div>
+          `,
+          () =>
+            hasQuota
+              ? html`
+                  <span class="inline-flex items-center">
+                    ${humanizeDuration((quotaSeconds - usageSeconds) * 1000)}
+                    ${msg("Available")}
+                  </span>
+                `
+              : ""
+        )}
+      </div>
+      ${when(
+        hasQuota,
+        () => html`
+          <div class="mb-2">
+            <btrix-meter
+              value=${isReached ? quotaSeconds : usageSeconds}
+              max=${ifDefined(quotaSeconds || undefined)}
+              valueText=${msg("time")}
+            >
+              ${when(usageSeconds, () =>
+                renderBar(
+                  usageSeconds,
+                  msg("Monthly Execution Time Used"),
+                  isReached ? "warning" : this.colors.runningTime
+                )
+              )}
+              <div slot="available" class="flex-1">
+                <sl-tooltip>
+                  <div slot="content">
+                    <div>${msg("Monthly Execution Time Available")}</div>
+                    <div class="text-xs opacity-80">
+                      ${humanizeDuration((quotaSeconds - usageSeconds) * 1000)}
+                      |
+                      ${this.renderPercentage(
+                        (quotaSeconds - usageSeconds) / quotaSeconds
+                      )}
+                    </div>
+                  </div>
+                  <div class="w-full h-full"></div>
+                </sl-tooltip>
+              </div>
+              <span slot="valueLabel">
+                ${humanizeDuration(usageSeconds * 1000)}
+              </span>
+              <span slot="maxLabel">
+                ${humanizeDuration(quotaSeconds * 1000)}
+              </span>
+            </btrix-meter>
+          </div>
+        `
+      )}
+    `;
+  }
+
   private renderCard(
     title: string,
     renderContent: (metric: Metrics) => TemplateResult,
     renderFooter?: (metric: Metrics) => TemplateResult
   ) {
     return html`
-      <section
-        class="flex-1 flex flex-col border rounded p-4 transition-opacity delay-75 ${this
-          .metrics
-          ? "opacity-100"
-          : "opacity-0"}"
-      >
+      <section class="flex-1 flex flex-col border rounded p-4">
         <h2 class="text-lg font-semibold leading-none border-b pb-3 mb-3">
           ${title}
         </h2>
         <div class="flex-1">
-          ${when(this.metrics, () => renderContent(this.metrics!))}
+          ${when(
+            this.metrics,
+            () => renderContent(this.metrics!),
+            this.renderCardSkeleton
+          )}
         </div>
         ${when(renderFooter && this.metrics, () =>
           renderFooter!(this.metrics!)
@@ -391,6 +504,71 @@ export class Dashboard extends LiteElement {
             `
         )}
       </div>
+    `;
+  }
+
+  private renderCardSkeleton = () =>
+    html`
+      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+    `;
+
+  // TODO fix style when data-table is converted to slots
+  readonly usageTableCols = [
+    msg("Month"),
+    html`
+      ${msg("Execution Time")}
+      <sl-tooltip>
+        <div slot="content" style="text-transform: initial">
+          ${msg("Total running time of all crawler instances")}
+        </div>
+        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+      </sl-tooltip>
+    `,
+    html`
+      ${msg("Elapsed Time")}
+      <sl-tooltip>
+        <div slot="content" style="text-transform: initial">
+          ${msg("Total time elapsed between when crawls started and ended")}
+        </div>
+        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+      </sl-tooltip>
+    `,
+  ];
+
+  private renderUsageHistory() {
+    if (!this.org) return;
+    const rows = Object.entries(this.org.usage || {})
+      // Sort latest
+      .reverse()
+      .map(([mY, crawlTime]) => {
+        const value = this.org!.crawlExecSeconds?.[mY];
+        return [
+          html`
+            <sl-format-date
+              date="${mY}-01T00:00:00.000Z"
+              time-zone="utc"
+              month="long"
+              year="numeric"
+            >
+            </sl-format-date>
+          `,
+          value ? humanizeDuration(value * 1000) : "--",
+          humanizeDuration((crawlTime || 0) * 1000),
+        ];
+      });
+    return html`
+      <btrix-details>
+        <span slot="title">${msg("Usage History")}</span>
+        <div class="border rounded overflow-hidden">
+          <btrix-data-table
+            .columns=${this.usageTableCols}
+            .rows=${rows}
+          ></btrix-data-table>
+        </div>
+      </btrix-details>
     `;
   }
 

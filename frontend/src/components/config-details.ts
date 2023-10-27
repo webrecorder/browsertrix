@@ -116,7 +116,6 @@ export class ConfigDetails extends LiteElement {
       <section id="crawler-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
           <h4>${msg("Crawler Settings")}</h4>
-          ${this.renderAnchorLink("crawler-settings")}
         </btrix-section-heading>
         <btrix-desc-list>
           ${when(
@@ -197,7 +196,6 @@ export class ConfigDetails extends LiteElement {
       <section id="browser-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
           <h4>${msg("Browser Settings")}</h4>
-          ${this.renderAnchorLink("browser-settings")}
         </btrix-section-heading>
         <btrix-desc-list>
           ${this.renderSetting(
@@ -229,7 +227,6 @@ export class ConfigDetails extends LiteElement {
       <section id="crawl-scheduling" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
           <h4>${msg("Crawl Scheduling")}</h4>
-          ${this.renderAnchorLink("crawl-scheduling")}
         </btrix-section-heading>
         <btrix-desc-list>
           ${this.renderSetting(
@@ -251,7 +248,6 @@ export class ConfigDetails extends LiteElement {
       <section id="crawl-metadata" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
           <h4>${msg("Crawl Metadata")}</h4>
-          ${this.renderAnchorLink("crawl-metadata")}
         </btrix-section-heading>
         <btrix-desc-list>
           ${this.renderSetting(msg("Name"), crawlConfig?.name)}
@@ -298,8 +294,21 @@ export class ConfigDetails extends LiteElement {
       ${this.renderSetting(
         msg("List of URLs"),
         html`
-          <ul class="whitespace-nowrap overflow-x-auto overflow-y-hidden">
-            ${this.seeds?.map((seed: Seed) => html`<li>${seed.url}</li>`)}
+          <ul>
+            ${this.seeds?.map(
+              (seed: Seed) =>
+                html`
+                  <li>
+                    <a
+                      class="text-primary hover:text-indigo-400"
+                      href="${seed.url}"
+                      target="_blank"
+                      rel="noreferrer"
+                      >${seed.url}</a
+                    >
+                  </li>
+                `
+            )}
           </ul>
         `,
         true
@@ -325,7 +334,17 @@ export class ConfigDetails extends LiteElement {
     const includeUrlList =
       primarySeedConfig.include || seedsConfig.include || [];
     return html`
-      ${this.renderSetting(msg("Primary Seed URL"), primarySeedUrl, true)}
+      ${this.renderSetting(
+        msg("Primary Seed URL"),
+        html`<a
+          class="text-primary hover:text-indigo-400"
+          href="${primarySeedUrl}"
+          target="_blank"
+          rel="noreferrer"
+          >${primarySeedUrl}</a
+        >`,
+        true
+      )}
       ${this.renderSetting(
         msg("Crawl Scope"),
         this.scopeTypeLabels[
@@ -372,11 +391,19 @@ export class ConfigDetails extends LiteElement {
         msg("List of Additional URLs"),
         additionalUrlList?.length
           ? html`
-              <ul class="whitespace-nowrap overflow-x-auto overflow-y-hidden">
-                ${additionalUrlList.map(
-                  (seed) =>
-                    html`<li>${typeof seed === "string" ? seed : seed.url}</li>`
-                )}
+              <ul>
+                ${additionalUrlList.map((seed) => {
+                  const seedUrl = typeof seed === "string" ? seed : seed.url;
+                  return html`<li>
+                    <a
+                      class="text-primary hover:text-indigo-400"
+                      href="${seedUrl}"
+                      target="_blank"
+                      rel="noreferrer"
+                      >${seedUrl}</a
+                    >
+                  </li>`;
+                })}
               </ul>
             `
           : msg("None"),
@@ -384,19 +411,6 @@ export class ConfigDetails extends LiteElement {
       )}
     `;
   };
-
-  private renderAnchorLink(id: string) {
-    if (!this.anchorLinks) return;
-    const currentUrl = window.location.href;
-    return html`
-      <btrix-copy-button
-        style="font-size: 1rem;"
-        value=${`${currentUrl.replace(window.location.hash, "")}#${id}`}
-        name="link-45deg"
-        content=${msg("Copy Link to Section")}
-      ></btrix-copy-button>
-    `;
-  }
 
   private renderSetting(label: string, value: any, breakAll?: boolean) {
     let content = value;

@@ -62,7 +62,7 @@ export class CollectionEdit extends LiteElement {
     <nav class="mb-5">
       <a
         class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-        href=${`/orgs/${this.orgId}/collections/view/${this.collectionId}`}
+        href=${`${this.orgBasePath}/collections/view/${this.collectionId}`}
         @click=${this.navLink}
       >
         <sl-icon name="arrow-left" class="inline-block align-middle"></sl-icon>

@@ -39,4 +39,4 @@ jobs:
       - name: Type Check
         run: |
           cd backend/
-          mypy --install-types --non-interactive btrixcloud/
+          mypy --install-types --non-interactive --check-untyped-defs btrixcloud/

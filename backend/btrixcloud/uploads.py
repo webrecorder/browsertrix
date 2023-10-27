@@ -5,13 +5,13 @@ import hashlib
 import os
 import base64
 from urllib.parse import unquote
+from uuid import UUID
 
 import asyncio
 from io import BufferedReader
-from typing import Optional, List
+from typing import Optional, List, Any
 from fastapi import Depends, UploadFile, File
 from fastapi import HTTPException
-from pydantic import UUID4
 from starlette.requests import Request
 from pathvalidate import sanitize_filename
 
@@ -26,6 +26,7 @@ from .models import (
     Organization,
     PaginatedResponse,
     User,
+    StorageRef,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now
@@ -38,32 +39,7 @@ MIN_UPLOAD_PART_SIZE = 10000000
 class UploadOps(BaseCrawlOps):
     """upload ops"""
 
-    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods, too-many-function-args, duplicate-code
-    def __init__(
-        self,
-        mdb,
-        users,
-        crawl_manager,
-        crawl_configs,
-        orgs,
-        colls,
-        storage_ops,
-        background_job_ops,
-        event_webhook_ops,
-    ):
-        super().__init__(
-            mdb,
-            users,
-            orgs,
-            crawl_configs,
-            crawl_manager,
-            colls,
-            storage_ops,
-            background_job_ops,
-        )
-
-        self.event_webhook_ops = event_webhook_ops
-
+    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods, too-many-function-args
     # pylint: disable=too-many-arguments, too-many-locals, duplicate-code, invalid-name
     async def upload_stream(
         self,
@@ -71,12 +47,12 @@ class UploadOps(BaseCrawlOps):
         filename: str,
         name: Optional[str],
         description: Optional[str],
-        collections: Optional[List[UUID4]],
+        collections: Optional[List[str]],
         tags: Optional[List[str]],
         org: Organization,
         user: User,
         replaceId: Optional[str],
-    ):
+    ) -> dict[str, Any]:
         """Upload streaming file, length unknown"""
         if await self.orgs.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
@@ -91,7 +67,8 @@ class UploadOps(BaseCrawlOps):
 
         id_ = "upload-" + str(uuid.uuid4()) if not replaceId else replaceId
 
-        prefix = f"{org.id}/uploads/{id_}/"
+        prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{id_}"
+
         file_prep = FilePreparer(prefix, filename)
 
         async def stream_iter():
@@ -111,7 +88,7 @@ class UploadOps(BaseCrawlOps):
             print("Stream Upload Failed", flush=True)
             raise HTTPException(status_code=400, detail="upload_failed")
 
-        files = [file_prep.get_crawl_file()]
+        files = [file_prep.get_crawl_file(org.storage)]
 
         if prev_upload:
             try:
@@ -130,18 +107,19 @@ class UploadOps(BaseCrawlOps):
         uploads: List[UploadFile],
         name: Optional[str],
         description: Optional[str],
-        collections: Optional[List[UUID4]],
+        collections: Optional[List[str]],
         tags: Optional[List[str]],
         org: Organization,
         user: User,
-    ):
+    ) -> dict[str, Any]:
         """handle uploading content to uploads subdir + request subdir"""
         if await self.orgs.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
         id_ = uuid.uuid4()
         files = []
-        prefix = f"{org.id}/uploads/{id_}/"
+
+        prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{id_}"
 
         for upload in uploads:
             file_prep = FilePreparer(prefix, upload.filename)
@@ -150,25 +128,34 @@ class UploadOps(BaseCrawlOps):
             await self.storage_ops.do_upload_single(
                 org, file_reader.file_prep.upload_name, file_reader
             )
-            files.append(file_reader.file_prep.get_crawl_file())
+            files.append(file_reader.file_prep.get_crawl_file(org.storage))
 
         return await self._create_upload(
-            files, name, description, collections, tags, id_, org, user
+            files, name, description, collections, tags, str(id_), org, user
         )
 
     async def _create_upload(
-        self, files, name, description, collections, tags, id_, org, user
-    ):
+        self,
+        files: List[UploadFile],
+        name: Optional[str],
+        description: Optional[str],
+        collections: Optional[List[str]],
+        tags: Optional[List[str]],
+        crawl_id: str,
+        org: Organization,
+        user: User,
+    ) -> dict[str, Any]:
         now = dt_now()
-        # ts_now = now.strftime("%Y%m%d%H%M%S")
-        # crawl_id = f"upload-{ts_now}-{str(id_)[:12]}"
-        crawl_id = str(id_)
+        file_size = sum(file_.size or 0 for file_ in files)
 
-        file_size = sum(file_.size for file_ in files)
-
-        collection_uuids = []
-        for coll in collections:
-            collection_uuids.append(uuid.UUID(coll))
+        collection_uuids: List[UUID] = []
+        if collections:
+            try:
+                for coll in collections:
+                    collection_uuids.append(UUID(coll))
+            # pylint: disable=raise-missing-from
+            except:
+                raise HTTPException(status_code=400, detail="invalid_collection_id")
 
         uploaded = UploadedCrawl(
             id=crawl_id,
@@ -194,7 +181,7 @@ class UploadOps(BaseCrawlOps):
         )
 
         asyncio.create_task(
-            self.event_webhook_ops.create_upload_finished_notification(crawl_id)
+            self.event_webhook_ops.create_upload_finished_notification(crawl_id, org.id)
         )
 
         quota_reached = await self.orgs.inc_org_bytes_stored(
@@ -237,13 +224,13 @@ class FilePreparer:
         self.upload_size += len(chunk)
         self.upload_hasher.update(chunk)
 
-    def get_crawl_file(self, def_storage_name="default"):
+    def get_crawl_file(self, storage: StorageRef):
         """get crawl file"""
         return CrawlFile(
             filename=self.upload_name,
             hash=self.upload_hasher.hexdigest(),
             size=self.upload_size,
-            def_storage_name=def_storage_name,
+            storage=storage,
         )
 
     def prepare_filename(self, filename):
@@ -272,36 +259,14 @@ class UploadFileReader(BufferedReader):
 
 
 # ============================================================================
-# pylint: disable=too-many-arguments, too-many-locals, invalid-name, duplicate-code
-def init_uploads_api(
-    app,
-    mdb,
-    users,
-    crawl_manager,
-    crawl_configs,
-    orgs,
-    colls,
-    storage_ops,
-    background_jobs,
-    user_dep,
-    event_webhook_ops,
-):
+# pylint: disable=too-many-arguments, too-many-locals, invalid-name
+def init_uploads_api(app, user_dep, *args):
     """uploads api"""
 
-    ops = UploadOps(
-        mdb,
-        users,
-        crawl_manager,
-        crawl_configs,
-        orgs,
-        colls,
-        storage_ops,
-        background_jobs,
-        event_webhook_ops,
-    )
+    ops = UploadOps(*args)
 
-    org_viewer_dep = orgs.org_viewer_dep
-    org_crawl_dep = orgs.org_crawl_dep
+    org_viewer_dep = ops.orgs.org_viewer_dep
+    org_crawl_dep = ops.orgs.org_crawl_dep
 
     @app.put("/orgs/{oid}/uploads/formdata", tags=["uploads"])
     async def upload_formdata(
@@ -312,7 +277,7 @@ def init_uploads_api(
         tags: Optional[str] = "",
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
-    ):
+    ) -> dict[str, Any]:
         name = unquote(name)
         description = unquote(description)
         colls_list = []
@@ -338,7 +303,7 @@ def init_uploads_api(
         replaceId: Optional[str] = "",
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
-    ):
+    ) -> dict[str, Any]:
         name = unquote(name)
         description = unquote(description)
         colls_list = []
@@ -367,12 +332,12 @@ def init_uploads_api(
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         state: Optional[str] = None,
-        userid: Optional[UUID4] = None,
+        userid: Optional[UUID] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        collectionId: Optional[UUID4] = None,
-        sortBy: Optional[str] = "finished",
-        sortDirection: Optional[int] = -1,
+        collectionId: Optional[UUID] = None,
+        sortBy: str = "finished",
+        sortDirection: int = -1,
     ):
         states = state.split(",") if state else None
 

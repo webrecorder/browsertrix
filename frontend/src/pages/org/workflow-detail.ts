@@ -49,6 +49,9 @@ export class WorkflowDetail extends LiteElement {
   @property({ type: Boolean })
   orgStorageQuotaReached = false;
 
+  @property({ type: Boolean })
+  orgExecutionMinutesQuotaReached = false;
+
   @property({ type: String })
   workflowId!: string;
 
@@ -363,7 +366,7 @@ export class WorkflowDetail extends LiteElement {
       <nav class="col-span-1">
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-          href=${`/orgs/${this.orgId}/workflows${
+          href=${`${this.orgBasePath}/workflows${
             workflowId ? `/crawl/${workflowId}` : "/crawls"
           }`}
           @click=${this.navLink}
@@ -447,7 +450,7 @@ export class WorkflowDetail extends LiteElement {
           label="Edit workflow settings"
           @click=${() =>
             this.navTo(
-              `/orgs/${this.workflow?.oid}/workflows/crawl/${this.workflow?.id}?edit`
+              `/orgs/${this.appState.orgSlug}/workflows/crawl/${this.workflow?.id}?edit`
             )}
         >
         </sl-icon-button>`;
@@ -533,9 +536,12 @@ export class WorkflowDetail extends LiteElement {
           configId=${this.workflow!.id}
           orgId=${this.orgId}
           .authState=${this.authState}
+          ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
+          ?orgExecutionMinutesQuotaReached=${this
+            .orgExecutionMinutesQuotaReached}
           @reset=${(e: Event) =>
             this.navTo(
-              `/orgs/${this.orgId}/workflows/crawl/${this.workflow!.id}`
+              `${this.orgBasePath}/workflows/crawl/${this.workflow!.id}`
             )}
         ></btrix-workflow-editor>
       `,
@@ -578,14 +584,18 @@ export class WorkflowDetail extends LiteElement {
         `,
         () => html`
           <sl-tooltip
-            content=${msg("Org Storage Full")}
-            ?disabled=${!this.orgStorageQuotaReached}
+            content=${msg(
+              "Org Storage Full or Monthly Execution Minutes Reached"
+            )}
+            ?disabled=${!this.orgStorageQuotaReached &&
+            !this.orgExecutionMinutesQuotaReached}
           >
             <sl-button
               size="small"
               variant="primary"
               class="mr-2"
-              ?disabled=${this.orgStorageQuotaReached}
+              ?disabled=${this.orgStorageQuotaReached ||
+              this.orgExecutionMinutesQuotaReached}
               @click=${() => this.runNow()}
             >
               <sl-icon name="play" slot="prefix"></sl-icon>
@@ -625,7 +635,8 @@ export class WorkflowDetail extends LiteElement {
             () => html`
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--success)"
-                ?disabled=${this.orgStorageQuotaReached}
+                ?disabled=${this.orgStorageQuotaReached ||
+                this.orgExecutionMinutesQuotaReached}
                 @click=${() => this.runNow()}
               >
                 <sl-icon name="play" slot="prefix"></sl-icon>
@@ -653,7 +664,7 @@ export class WorkflowDetail extends LiteElement {
           <sl-menu-item
             @click=${() =>
               this.navTo(
-                `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}?edit`
+                `/orgs/${this.appState.orgSlug}/workflows/crawl/${workflow.id}?edit`
               )}
           >
             <sl-icon name="gear" slot="prefix"></sl-icon>
@@ -821,7 +832,10 @@ export class WorkflowDetail extends LiteElement {
             () =>
               this.crawls!.items.map(
                 (crawl: Crawl) => html`
-                  <btrix-crawl-list-item .crawl=${crawl}>
+                  <btrix-crawl-list-item
+                    orgSlug=${this.appState.orgSlug || ""}
+                    .crawl=${crawl}
+                  >
                     <sl-format-date
                       slot="id"
                       date=${`${crawl.started}Z`}
@@ -1002,7 +1016,7 @@ export class WorkflowDetail extends LiteElement {
             () => html`
               <sl-button
                 class="mr-2"
-                href=${`/orgs/${this.orgId}/items/crawl/${
+                href=${`${this.orgBasePath}/items/crawl/${
                   this.workflow!.lastCrawlId
                 }?workflowId=${this.workflowId}#replay`}
                 variant="primary"
@@ -1020,12 +1034,16 @@ export class WorkflowDetail extends LiteElement {
           )}
 
           <sl-tooltip
-            content=${msg("Org Storage Full")}
-            ?disabled=${!this.orgStorageQuotaReached}
+            content=${msg(
+              "Org Storage Full or Monthly Execution Minutes Reached"
+            )}
+            ?disabled=${!this.orgStorageQuotaReached &&
+            !this.orgExecutionMinutesQuotaReached}
           >
             <sl-button
               size="small"
-              ?disabled=${this.orgStorageQuotaReached}
+              ?disabled=${this.orgStorageQuotaReached ||
+              this.orgExecutionMinutesQuotaReached}
               @click=${() => this.runNow()}
             >
               <sl-icon name="play" slot="prefix"></sl-icon>
@@ -1104,13 +1122,17 @@ export class WorkflowDetail extends LiteElement {
         </p>
         <div class="mt-4">
           <sl-tooltip
-            content=${msg("Org Storage Full")}
-            ?disabled=${!this.orgStorageQuotaReached}
+            content=${msg(
+              "Org Storage Full or Monthly Execution Minutes Reached"
+            )}
+            ?disabled=${!this.orgStorageQuotaReached &&
+            !this.orgExecutionMinutesQuotaReached}
           >
             <sl-button
               size="small"
               variant="primary"
-              ?disabled=${this.orgStorageQuotaReached}
+              ?disabled=${this.orgStorageQuotaReached ||
+              this.orgExecutionMinutesQuotaReached}
               @click=${() => this.runNow()}
             >
               <sl-icon name="play" slot="prefix"></sl-icon>
@@ -1428,7 +1450,7 @@ export class WorkflowDetail extends LiteElement {
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/workflows?new&jobType=${workflowParams.jobType}`,
+      `${this.orgBasePath}/workflows?new&jobType=${workflowParams.jobType}`,
       {
         workflow: workflowParams,
         seeds: this.seeds?.items,
@@ -1487,7 +1509,7 @@ export class WorkflowDetail extends LiteElement {
         }
       );
 
-      this.navTo(`/orgs/${this.orgId}/workflows/crawls`);
+      this.navTo(`${this.orgBasePath}/workflows/crawls`);
 
       this.notify({
         message: isDeactivating
@@ -1591,6 +1613,10 @@ export class WorkflowDetail extends LiteElement {
       if (e.isApiError && e.statusCode === 403) {
         if (e.details === "storage_quota_reached") {
           message = msg("Your org does not have enough storage to run crawls.");
+        } else if (e.details === "exec_minutes_quota_reached") {
+          message = msg(
+            "Your org has used all of its execution minutes for this month."
+          );
         } else {
           message = msg("You do not have permission to run crawls.");
         }

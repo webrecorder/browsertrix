@@ -61,6 +61,9 @@ export class OrgsList extends LiteElement {
               label = msg("Org Storage Quota (GB)");
               value = Math.floor(value / 1e9);
               break;
+            case "maxExecMinutesPerMonth":
+              label = msg("Max Execution Minutes Per Month");
+              break;
             default:
               label = msg("Unlabeled");
           }
@@ -161,7 +164,7 @@ export class OrgsList extends LiteElement {
   }
 
   private makeOnOrgClick(org: OrgData): Function {
-    const navigate = () => this.navTo(`/orgs/${org.id}`);
+    const navigate = () => this.navTo(`/orgs/${org.slug}`);
 
     if (typeof window.getSelection !== undefined) {
       return () => {

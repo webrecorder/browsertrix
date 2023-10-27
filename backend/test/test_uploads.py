@@ -178,7 +178,7 @@ def test_get_upload_replay_json(
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
     assert data["resources"][0]["hash"]
-    assert data["errors"] == None
+    assert data["errors"] == []
     assert "files" not in data
 
 
@@ -201,7 +201,7 @@ def test_get_upload_replay_json_admin(
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
     assert data["resources"][0]["hash"]
-    assert data["errors"] == None
+    assert data["errors"] == []
     assert "files" not in data
 
 
@@ -748,7 +748,7 @@ def test_get_upload_replay_json_from_all_crawls(admin_auth_headers, default_org_
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
     assert data["resources"][0]["hash"]
-    assert data["errors"] == None
+    assert data["errors"] == []
     assert "files" not in data
 
 
@@ -769,7 +769,7 @@ def test_get_upload_replay_json_admin_from_all_crawls(
     assert data["resources"][0]["path"]
     assert data["resources"][0]["size"]
     assert data["resources"][0]["hash"]
-    assert data["errors"] == None
+    assert data["errors"] == []
     assert "files" not in data
 
 

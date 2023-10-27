@@ -93,7 +93,7 @@ default_org: "My Organization"
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.7.0-beta.3"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.8.0-beta.0"
 backend_pull_policy: "Always"
 
 backend_password_secret: "PASSWORD!"
@@ -124,7 +124,7 @@ profile_browser_idle_seconds: 60
 
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.7.0-beta.3"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.8.0-beta.0"
 frontend_pull_policy: "Always"
 
 frontend_cpu: "10m"
@@ -265,15 +265,18 @@ minio_memory: "1024Mi"
 
 storages:
   - name: "default"
+    type: "s3"
     access_key: "ADMIN"
     secret_key: "PASSW0RD"
     bucket_name: *local_bucket_name
 
     endpoint_url: "http://local-minio.default:9000/"
 
-# optional: if above includes a separate storage for profiles, specify here to store profiles separately from wacz files
-# may be useful if, for example, the wacz files are public, while profiles should not be
-# shared_storage_profile:
+
+# optional: duration in minutes for WACZ download links to be valid
+# used by webhooks and replay
+# max value = 10079 (one week minus one minute)
+# storage_presign_duration_minutes: 10079
 
 
 # Email Options

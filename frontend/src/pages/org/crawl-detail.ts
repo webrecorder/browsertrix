@@ -4,6 +4,7 @@ import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { classMap } from "lit/directives/class-map.js";
 import { msg, localized, str } from "@lit/localize";
+import humanizeDuration from "pretty-ms";
 
 import type { PageChangeEvent } from "../../components/pagination";
 import { RelativeDuration } from "../../components/relative-duration";
@@ -96,7 +97,7 @@ export class CrawlDetail extends LiteElement {
     } else if (this.crawl?.type === "crawl") {
       path = "items/crawl";
     }
-    return `/orgs/${this.orgId}/${path}`;
+    return `${this.orgBasePath}/${path}`;
   }
 
   // TODO localize
@@ -468,9 +469,7 @@ export class CrawlDetail extends LiteElement {
               <sl-menu-item
                 @click=${() =>
                   this.navTo(
-                    `/orgs/${this.crawl!.oid}/workflows/crawl/${
-                      this.crawl!.cid
-                    }`
+                    `${this.orgBasePath}/workflows/crawl/${this.crawl!.cid}`
                   )}
               >
                 <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
@@ -628,7 +627,7 @@ export class CrawlDetail extends LiteElement {
                       ></sl-format-date>`
                     : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 </btrix-desc-list-item>
-                <btrix-desc-list-item label=${msg("Duration")}>
+                <btrix-desc-list-item label=${msg("Elapsed Time")}>
                   ${this.crawl!.finished
                     ? html`${RelativeDuration.humanize(
                         new Date(`${this.crawl!.finished}Z`).valueOf() -
@@ -643,6 +642,15 @@ export class CrawlDetail extends LiteElement {
                           ></btrix-relative-duration>
                         </span>
                       `}
+                </btrix-desc-list-item>
+                <btrix-desc-list-item label=${msg("Execution Time")}>
+                  ${this.crawl!.finished
+                    ? html`<span
+                        >${humanizeDuration(
+                          this.crawl!.crawlExecSeconds * 1000
+                        )}</span
+                      >`
+                    : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Initiator")}>
                   ${this.crawl!.manual
@@ -748,7 +756,7 @@ ${this.crawl?.description}
                         html`<li class="mt-1">
                           <a
                             class="text-primary hover:text-indigo-400"
-                            href=${`/orgs/${this.orgId}/collections/view/${id}`}
+                            href=${`${this.orgBasePath}/collections/view/${id}`}
                             @click=${this.navLink}
                             >${name}</a
                           >

@@ -14,6 +14,16 @@ export type OrgData = {
   slug: string;
   quotas: Record<string, number>;
   bytesStored: number;
+  usage: {
+    // Keyed by {4-digit year}-{2-digit month}
+    [key: string]: number;
+  } | null;
+  crawlExecSeconds: {
+    // Keyed by {4-digit year}-{2-digit month}
+    [key: string]: number;
+  } | null;
+  storageQuotaReached?: boolean;
+  execMinutesQuotaReached?: boolean;
   users?: {
     [id: string]: {
       role: (typeof AccessCode)[UserRole];

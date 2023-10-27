@@ -2,16 +2,15 @@
 # pylint: disable=too-many-lines
 
 import asyncio
-import uuid
 import json
 import re
 import urllib.parse
+from uuid import UUID
 
 from typing import Optional, List
 
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import UUID4
 from redis import asyncio as exceptions
 import pymongo
 
@@ -30,42 +29,19 @@ from .models import (
     Organization,
     User,
     PaginatedResponse,
+    RUNNING_AND_STARTING_STATES,
+    ALL_CRAWL_STATES,
 )
-from .basecrawls import RUNNING_AND_STARTING_STATES, ALL_CRAWL_STATES
 
 
 # ============================================================================
 class CrawlOps(BaseCrawlOps):
     """Crawl Ops"""
 
-    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods, duplicate-code
-    def __init__(
-        self,
-        mdb,
-        users,
-        crawl_manager,
-        crawl_configs,
-        orgs,
-        colls,
-        storage_ops,
-        background_jobs,
-        event_webhook_ops,
-    ):
-        super().__init__(
-            mdb,
-            users,
-            orgs,
-            crawl_configs,
-            crawl_manager,
-            colls,
-            storage_ops,
-            background_jobs,
-        )
-        self.crawls = self.crawls
-        self.crawl_configs = crawl_configs
-        self.user_manager = users
-        self.event_webhook_ops = event_webhook_ops
+    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
 
+    def __init__(self, *args):
+        super().__init__(*args)
         self.crawl_configs.set_crawl_ops(self)
         self.colls.set_crawl_ops(self)
         self.event_webhook_ops.set_crawl_ops(self)
@@ -99,18 +75,18 @@ class CrawlOps(BaseCrawlOps):
     async def list_crawls(
         self,
         org: Optional[Organization] = None,
-        cid: Optional[uuid.UUID] = None,
-        userid: Optional[uuid.UUID] = None,
+        cid: Optional[UUID] = None,
+        userid: Optional[UUID] = None,
         crawl_id: str = "",
         running_only=False,
         state: Optional[List[str]] = None,
-        first_seed: str = "",
-        name: str = "",
-        description: str = "",
-        collection_id: Optional[uuid.UUID] = None,
+        first_seed: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        collection_id: Optional[UUID] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sort_by: str = "",
+        sort_by: Optional[str] = None,
         sort_direction: int = -1,
         resources: bool = False,
     ):
@@ -133,7 +109,7 @@ class CrawlOps(BaseCrawlOps):
             query["userid"] = userid
 
         if running_only:
-            query["state"] = {"$in": list(RUNNING_AND_STARTING_STATES)}
+            query["state"] = {"$in": RUNNING_AND_STARTING_STATES}
 
         # Override running_only if state list is explicitly passed
         if state:
@@ -257,14 +233,14 @@ class CrawlOps(BaseCrawlOps):
         self,
         crawl_id: str,
         crawlconfig: CrawlConfig,
-        userid: uuid.UUID,
+        userid: UUID,
         started: str,
         manual: bool,
         username: str = "",
     ):
         """initialize new crawl"""
         if not username:
-            user = await self.user_manager.get(userid)
+            user = await self.user_manager.get_by_id(userid)
             if user:
                 username = user.name
 
@@ -527,7 +503,7 @@ class CrawlOps(BaseCrawlOps):
         kwargs["state"] = state
         query = {"_id": crawl_id, "type": "crawl"}
         if allowed_from:
-            query["state"] = {"$in": list(allowed_from)}
+            query["state"] = {"$in": allowed_from}
 
         return await self.crawls.find_one_and_update(query, {"$set": kwargs})
 
@@ -536,11 +512,11 @@ class CrawlOps(BaseCrawlOps):
         query = {"_id": crawl_id, "type": "crawl", "state": "running"}
         return await self.crawls.find_one_and_update(query, {"$set": {"stats": stats}})
 
-    async def store_exec_time(self, crawl_id, exec_time):
-        """set exec time, only if not already set"""
-        query = {"_id": crawl_id, "type": "crawl", "execTime": {"$in": [0, None]}}
+    async def inc_crawl_exec_time(self, crawl_id, exec_time):
+        """increment exec time"""
         return await self.crawls.find_one_and_update(
-            query, {"$set": {"execTime": exec_time}}
+            {"_id": crawl_id, "type": "crawl"},
+            {"$inc": {"crawlExecSeconds": exec_time}},
         )
 
     async def get_crawl_state(self, crawl_id):
@@ -608,51 +584,29 @@ async def recompute_crawl_file_count_and_size(crawls, crawl_id):
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
-def init_crawls_api(
-    app,
-    mdb,
-    users,
-    crawl_manager,
-    crawl_config_ops,
-    orgs,
-    colls,
-    storage_ops,
-    background_jobs,
-    user_dep,
-    event_webhook_ops,
-):
+def init_crawls_api(app, user_dep, *args):
     """API for crawl management, including crawl done callback"""
     # pylint: disable=invalid-name, duplicate-code
 
-    ops = CrawlOps(
-        mdb,
-        users,
-        crawl_manager,
-        crawl_config_ops,
-        orgs,
-        colls,
-        storage_ops,
-        background_jobs,
-        event_webhook_ops,
-    )
+    ops = CrawlOps(*args)
 
-    org_viewer_dep = orgs.org_viewer_dep
-    org_crawl_dep = orgs.org_crawl_dep
+    org_viewer_dep = ops.orgs.org_viewer_dep
+    org_crawl_dep = ops.orgs.org_crawl_dep
 
     @app.get("/orgs/all/crawls", tags=["crawls"])
     async def list_crawls_admin(
         user: User = Depends(user_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        userid: Optional[UUID4] = None,
-        cid: Optional[UUID4] = None,
+        userid: Optional[UUID] = None,
+        cid: Optional[UUID] = None,
         state: Optional[str] = None,
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        collectionId: Optional[UUID4] = None,
+        collectionId: Optional[UUID] = None,
         sortBy: Optional[str] = None,
-        sortDirection: Optional[int] = -1,
+        sortDirection: int = -1,
         runningOnly: Optional[bool] = True,
     ):
         if not user.is_superuser:
@@ -693,15 +647,15 @@ def init_crawls_api(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        userid: Optional[UUID4] = None,
-        cid: Optional[UUID4] = None,
+        userid: Optional[UUID] = None,
+        cid: Optional[UUID] = None,
         state: Optional[str] = None,
         firstSeed: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        collectionId: Optional[UUID4] = None,
+        collectionId: Optional[UUID] = None,
         sortBy: Optional[str] = None,
-        sortDirection: Optional[int] = -1,
+        sortDirection: int = -1,
     ):
         # pylint: disable=duplicate-code
         states = []
@@ -822,7 +776,7 @@ def init_crawls_api(
     ):
         await ops.update_crawl_scale(crawl_id, org, scale, user)
 
-        result = await crawl_manager.scale_crawl(crawl_id, scale.scale)
+        result = await ops.crawl_manager.scale_crawl(crawl_id, scale.scale)
         if not result or not result.get("success"):
             raise HTTPException(
                 status_code=400, detail=result.get("error") or "unknown"
@@ -925,7 +879,7 @@ def init_crawls_api(
         # If crawl is finished, stream logs from WACZ files
         if crawl.finished:
             wacz_files = await ops.get_wacz_files(crawl_id, org)
-            resp = await storage_ops.sync_stream_wacz_logs(
+            resp = await ops.storage_ops.sync_stream_wacz_logs(
                 org, wacz_files, log_levels, contexts
             )
             return StreamingResponse(
