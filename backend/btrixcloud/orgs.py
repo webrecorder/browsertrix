@@ -469,10 +469,10 @@ class OrgOps:
 
         profile_count = await self.profiles_db.count_documents({"oid": org.id})
         workflows_running_count = await self.crawls_db.count_documents(
-            {"oid": org.id, "state": {"$in": list(RUNNING_STATES)}}
+            {"oid": org.id, "state": {"$in": RUNNING_STATES}}
         )
         workflows_queued_count = await self.crawls_db.count_documents(
-            {"oid": org.id, "state": {"$in": list(STARTING_STATES)}}
+            {"oid": org.id, "state": {"$in": STARTING_STATES}}
         )
         collections_count = await self.colls_db.count_documents({"oid": org.id})
         public_collections_count = await self.colls_db.count_documents(

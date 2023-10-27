@@ -152,21 +152,21 @@ class UserOut(BaseModel):
 ### CRAWL STATES
 
 # ============================================================================
-RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
+RUNNING_STATES = ["running", "pending-wait", "generate-wacz", "uploading-wacz"]
 
-STARTING_STATES = ("starting", "waiting_capacity", "waiting_org_limit")
+STARTING_STATES = ["starting", "waiting_capacity", "waiting_org_limit"]
 
-FAILED_STATES = ("canceled", "failed", "skipped_quota_reached")
+FAILED_STATES = ["canceled", "failed", "skipped_quota_reached"]
 
-SUCCESSFUL_STATES = ("complete", "partial_complete")
+SUCCESSFUL_STATES = ["complete", "partial_complete"]
 
-RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
+RUNNING_AND_STARTING_STATES = [*STARTING_STATES, *RUNNING_STATES]
 
-RUNNING_AND_STARTING_ONLY = ("starting", *RUNNING_STATES)
+RUNNING_AND_STARTING_ONLY = ["starting", *RUNNING_STATES]
 
-NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
+NON_RUNNING_STATES = [*FAILED_STATES, *SUCCESSFUL_STATES]
 
-ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
+ALL_CRAWL_STATES = [*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES]
 
 
 # ============================================================================

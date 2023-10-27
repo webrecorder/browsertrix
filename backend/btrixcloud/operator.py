@@ -1395,9 +1395,9 @@ class BtrixOperator(K8sAPI):
             kwargs["stats"] = stats
 
         if state in SUCCESSFUL_STATES:
-            allowed_from = list(RUNNING_STATES)
+            allowed_from = RUNNING_STATES
         else:
-            allowed_from = list(RUNNING_AND_STARTING_STATES)
+            allowed_from = RUNNING_AND_STARTING_STATES
 
         # if set_state returns false, already set to same status, return
         if not await self.set_state(

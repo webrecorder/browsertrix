@@ -109,7 +109,7 @@ class CrawlOps(BaseCrawlOps):
             query["userid"] = userid
 
         if running_only:
-            query["state"] = {"$in": list(RUNNING_AND_STARTING_STATES)}
+            query["state"] = {"$in": RUNNING_AND_STARTING_STATES}
 
         # Override running_only if state list is explicitly passed
         if state:
@@ -503,7 +503,7 @@ class CrawlOps(BaseCrawlOps):
         kwargs["state"] = state
         query = {"_id": crawl_id, "type": "crawl"}
         if allowed_from:
-            query["state"] = {"$in": list(allowed_from)}
+            query["state"] = {"$in": allowed_from}
 
         return await self.crawls.find_one_and_update(query, {"$set": kwargs})
 
