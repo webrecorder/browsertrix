@@ -25,8 +25,8 @@ from .models import (
 if TYPE_CHECKING:
     from .orgs import OrgOps
     from .crawls import CrawlOps
-
-    # pylint: disable=used-before-assignment
+else:
+    OrgOps = CrawlOps = object
 
 
 # ============================================================================

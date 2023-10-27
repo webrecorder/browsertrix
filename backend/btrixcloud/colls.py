@@ -30,8 +30,8 @@ if TYPE_CHECKING:
     from .storages import StorageOps
     from .webhooks import EventWebhookOps
     from .crawls import CrawlOps
-
-    # pylint: disable=used-before-assignment
+else:
+    OrgOps = StorageOps = EventWebhookOps = CrawlOps = object
 
 
 # ============================================================================

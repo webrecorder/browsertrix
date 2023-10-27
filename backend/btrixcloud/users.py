@@ -56,8 +56,8 @@ if TYPE_CHECKING:
     from .orgs import OrgOps
     from .basecrawls import BaseCrawlOps
     from .crawlconfigs import CrawlConfigOps
-
-    # pylint: disable=used-before-assignment
+else:
+    InviteOps = EmailSender = OrgOps = BaseCrawlOps = CrawlConfigOps = object
 
 
 # ============================================================================

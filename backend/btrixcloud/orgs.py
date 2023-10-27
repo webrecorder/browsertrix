@@ -40,8 +40,8 @@ from .utils import slug_from_name
 
 if TYPE_CHECKING:
     from .invites import InviteOps
-
-    # pylint: disable=used-before-assignment
+else:
+    InviteOps = object
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")

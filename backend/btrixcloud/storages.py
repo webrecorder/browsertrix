@@ -52,8 +52,8 @@ from .utils import is_bool, slug_from_name
 if TYPE_CHECKING:
     from .orgs import OrgOps
     from .crawlmanager import CrawlManager
-
-    # pylint: disable=used-before-assignment
+else:
+    OrgOps = CrawlManager = object
 
 CHUNK_SIZE = 1024 * 256
 

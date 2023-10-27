@@ -38,8 +38,8 @@ if TYPE_CHECKING:
     from .profiles import ProfileOps
     from .crawls import CrawlOps
     from .colls import CollectionOps
-
-    # pylint: disable=used-before-assignment
+else:
+    OrgOps = CrawlManager = UserManager = ProfileOps = CrawlOps = CollectionOps = object
 
 
 ALLOWED_SORT_KEYS = (

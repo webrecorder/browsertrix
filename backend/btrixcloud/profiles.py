@@ -31,8 +31,8 @@ if TYPE_CHECKING:
     from .crawlmanager import CrawlManager
     from .storages import StorageOps
     from .crawlconfigs import CrawlConfigOps
-
-    # pylint: disable=used-before-assignment
+else:
+    OrgOps = CrawlManager = StorageOps = CrawlConfigOps = object
 
 
 BROWSER_EXPIRE = 300

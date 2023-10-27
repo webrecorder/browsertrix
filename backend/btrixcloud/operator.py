@@ -47,8 +47,9 @@ if TYPE_CHECKING:
     from .storages import StorageOps
     from .webhooks import EventWebhookOps
     from .users import UserManager
-
-    # pylint: disable=used-before-assignment
+else:
+    CrawlConfigOps = CrawlOps = OrgOps = CollectionOps = object
+    StorageOps = EventWebhookOps = UserManager = object
 
 
 CMAP = "ConfigMap.v1"

@@ -34,8 +34,9 @@ if TYPE_CHECKING:
     from .colls import CollectionOps
     from .storages import StorageOps
     from .webhooks import EventWebhookOps
-
-    # pylint: disable=used-before-assignment
+else:
+    CrawlConfigOps = UserManager = OrgOps = CollectionOps = object
+    CrawlManager = StorageOps = EventWebhookOps = object
 
 
 # Presign duration must be less than 604800 seconds (one week),
