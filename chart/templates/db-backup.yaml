@@ -1,7 +1,8 @@
-{{- if .Values.db_backup.storage -}}
+{{- if (.Values.db_backup).storage -}}
 
 {{ $backup := print "storage-" .Values.db_backup.storage }}
 
+# find matching storage in storages list
 {{ $found := false }}
 {{- range $storage := .Values.storages -}}
   {{- if eq $storage.name $.Values.db_backup.storage -}}
@@ -9,6 +10,7 @@
   {{- end }}
 {{- end}}
 
+# error here if backup storage doesn't match one of the specified storages
 {{- if not $found }}
 {{ fail (print "Backup storage '" .Values.db_backup.storage "' not found, check the value of 'db_backups.storage' and 'storages' to ensure this is a valid storage name")}}
 {{- end }}
@@ -25,7 +27,7 @@ spec:
   successfulJobsHistoryLimit: 1
   jobTemplate:
     spec:
-      activeDeadlineSeconds: 60
+      activeDeadlineSeconds: 600
       template:
         spec:
           restartPolicy: Never
