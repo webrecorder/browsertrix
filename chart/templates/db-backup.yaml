@@ -1,7 +1,7 @@
 {{ $backup := false }}
 {{- range $storage := .Values.storages -}}
   {{- if $storage.is_db_backup -}}
-    {{- $backup = $storage }}
+    {{- $backup = print "storage-" $storage.name }}
 
   {{- end }}
 {{- end}}
@@ -12,9 +12,9 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: mongodb-backup
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ $.Values.crawler_namespace }}
 spec:
-  schedule: "26 12 * * *"
+  schedule: "* * * * *"
   failedJobsHistoryLimit: 2
   successfulJobsHistoryLimit: 1
   jobTemplate:
@@ -32,13 +32,16 @@ spec:
                   mountPath: /backups
 
               command:
-                - mongodump
-                {{- if .Values.mongo_auth.db_url }}
-                - --uri={{ .Values.mongo_auth.db_url }}
-                {{- else }}
-                - --uri=mongodb://{{ .Values.mongo_auth.username }}:{{ .Values.mongo_auth.password }}@{{ .Values.mongo_host }}:27017/browsertrixcloud?tls=false&authSource=admin
-                {{- end }}
-                - --archive=/backups/backup.archive
+                - /bin/bash
+                - -c
+                - mongodump --uri=$MONGO_DB_URL --archive=/backups/backup.archive
+
+              env:
+                - name: MONGO_DB_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: mongo-auth
+                      key: MONGO_DB_URL
 
           containers:
             - name: upload
@@ -51,25 +54,37 @@ spec:
               command:
                 - /bin/bash
                 - -c
-            {{- if $backup.bucket_name }}
                 - |
-                  mc alias set BACKUP {{ $backup.endpoint_url }} {{ $backup.access_key }} {{ $backup.secret_key }} || exit 1;
-                  mc cp /backups/backup.archive BACKUP/{{ $backup.bucket_name }}/db-backup/mongodb-$(date +%Y-%m-%d).archive || exit 2
-            
-            {{- else }}
-                - |
-                  do_upload() {
-                    [[ "$1" =~ (https?://[^/]+/)([^/]+)/(.*)[/]$ ]];
-                    origin=${BASH_REMATCH[1]};
-                    bucket=${BASH_REMATCH[2]};
-                    path=${BASH_REMATCH[3]}; 
-                    
-                    mc alias set BACKUP $origin {{ $backup.access_key }} {{ $backup.secret_key }} || exit 1;
-                    mc cp /backups/backup.archive BACKUP/$bucket/$path/db-backup/mongodb-$(date +%Y-%m-%d).archive || exit 2;
-                  };
-                  do_upload "{{ $backup.endpoint_url }}";
-                  exit $?
-            {{- end }}
+                  [[ "$ENDPOINT_URL" =~ (https?://[^/]+/)([^/]+)/(.*)$ ]];
+                  origin=${BASH_REMATCH[1]};
+                  bucket=${BASH_REMATCH[2]};
+                  path=${BASH_REMATCH[3]};
+                  
+                  echo "endpoint: $ENDPOINT_URL"
+                  echo "origin: $origin"
+                  echo "bucket: $bucket"
+                  echo "path: ${path}db-backup/"
+                  
+                  mc alias set BACKUP $origin $ACCESS_KEY $SECRET_KEY || exit 1;
+                  mc cp /backups/backup.archive BACKUP/${bucket}/${path}db-backup/mongodb-$(date +%Y-%m-%d).archive || exit 2;
+              env:
+                - name: ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $backup }}
+                      key: STORE_ACCESS_KEY
+
+                - name: SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $backup }}
+                      key: STORE_SECRET_KEY
+
+                - name: ENDPOINT_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $backup }}
+                      key: STORE_ENDPOINT_URL
 
           volumes:
             - name: backups
