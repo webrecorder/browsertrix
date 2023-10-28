@@ -17,7 +17,7 @@ stringData:
 {{- if .Values.mongo_auth.db_url }}
   MONGO_DB_URL: "{{ .Values.mongo_auth.db_url }}"
 {{- else }}
-  MONGO_DB_URL: "mongodb://{{ .Values.mongo_auth.username }}:{{ .Values.mongo_auth.password }}@{{ .Values.mongo_host }}:27017/browsertrixcloud?tls=false&authSource=admin"
+  MONGO_DB_URL: "mongodb://{{ urlquery .Values.mongo_auth.username }}:{{ urlquery .Values.mongo_auth.password }}@{{ .Values.mongo_host }}:27017/browsertrixcloud?tls=false&authSource=admin"
 {{- end }}
 
 ---
@@ -35,7 +35,7 @@ stringData:
 {{- if .Values.mongo_auth.db_url }}
   MONGO_DB_URL: "{{ .Values.mongo_auth.db_url }}"
 {{- else }}
-  MONGO_DB_URL: "mongodb://{{ .Values.mongo_auth.username }}:{{ .Values.mongo_auth.password }}@{{ .Values.mongo_host }}:27017/browsertrixcloud?tls=false&authSource=admin"
+  MONGO_DB_URL: "mongodb://{{ urlquery .Values.mongo_auth.username }}:{{ urlquery .Values.mongo_auth.password }}@{{ .Values.mongo_host }}:27017/browsertrixcloud?tls=false&authSource=admin"
 {{- end }}
 
 
