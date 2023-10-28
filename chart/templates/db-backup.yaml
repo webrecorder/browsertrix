@@ -1,12 +1,18 @@
-{{ $backup := false }}
-{{- range $storage := .Values.storages -}}
-  {{- if $storage.is_db_backup -}}
-    {{- $backup = print "storage-" $storage.name }}
+{{- if .Values.db_backup.storage -}}
 
+{{ $backup := print "storage-" .Values.db_backup.storage }}
+
+{{ $found := false }}
+{{- range $storage := .Values.storages -}}
+  {{- if eq $storage.name $.Values.db_backup.storage -}}
+    {{- $found = true }}
   {{- end }}
 {{- end}}
 
-{{- if $backup -}}
+{{- if not $found }}
+{{ fail (print "Backup storage '" .Values.db_backup.storage "' not found, check the value of 'db_backups.storage' and 'storages' to ensure this is a valid storage name")}}
+{{- end }}
+
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -14,7 +20,7 @@ metadata:
   name: mongodb-backup
   namespace: {{ $.Values.crawler_namespace }}
 spec:
-  schedule: "* * * * *"
+  schedule: "{{ .Values.db_backup.schedule | default "26 0 * * *" }}"
   failedJobsHistoryLimit: 2
   successfulJobsHistoryLimit: 1
   jobTemplate:
@@ -59,14 +65,14 @@ spec:
                   origin=${BASH_REMATCH[1]};
                   bucket=${BASH_REMATCH[2]};
                   path=${BASH_REMATCH[3]};
-                  
+
                   echo "endpoint: $ENDPOINT_URL"
                   echo "origin: $origin"
                   echo "bucket: $bucket"
-                  echo "path: ${path}db-backup/"
+                  echo "path: ${path}${DB_PATH}/"
                   
                   mc alias set BACKUP $origin $ACCESS_KEY $SECRET_KEY || exit 1;
-                  mc cp /backups/backup.archive BACKUP/${bucket}/${path}db-backup/mongodb-$(date +%Y-%m-%d).archive || exit 2;
+                  mc cp /backups/backup.archive BACKUP/${bucket}/${path}${DB_PATH}/mongodb-$(date +%Y-%m-%dT%H-%M-%S).archive || exit 2;
               env:
                 - name: ACCESS_KEY
                   valueFrom:
@@ -85,6 +91,9 @@ spec:
                     secretKeyRef:
                       name: {{ $backup }}
                       key: STORE_ENDPOINT_URL
+
+                - name: DB_PATH
+                  value: {{ .Values.db_backup.path | default "db-backup" }}
 
           volumes:
             - name: backups

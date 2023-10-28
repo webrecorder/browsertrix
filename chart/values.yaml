@@ -272,9 +272,13 @@ storages:
 
     endpoint_url: "http://local-minio.default:9000/"
 
-    # if set to true, mongodb dump backups will be created in this storage
-    # daily under /db-backups
-    is_db_backup: true
+
+# if storage is set, mongodb backups will be created in this storage
+# daily under /db-backups
+db_backup:
+  storage: "default"
+  #schedule: "26 0 * * *"
+  #path: "db-backup"
 
 
 # optional: duration in minutes for WACZ download links to be valid
