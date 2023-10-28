@@ -276,7 +276,7 @@ storages:
 # if storage is set, mongodb backups will be created in this storage
 # daily under /db-backups
 db_backup:
-  storage: "default"
+  #storage: "default"
   #schedule: "26 0 * * *"
   #path: "db-backup"
 
