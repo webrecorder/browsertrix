@@ -1630,17 +1630,8 @@ class BtrixOperator(K8sAPI):
         completion_time = status.get("completionTime")
 
         finalized = True
-        finished = None
 
-        if completion_time:
-            finished = from_k8s_date(completion_time)
-
-        if not success:
-            # number of failures exceeds backoffLimit, then log this as failure
-            # if int(status.get("failed", 0)) >= int(data.object["spec"]["backoffLimit"]):
-            print(f"replicate job failed: {job_id}", flush=True)
-            if not finished:
-                finished = dt_now()
+        finished = from_k8s_date(completion_time) if completion_time else dt_now()
 
         try:
             await self.background_job_ops.update_replicate_job(
