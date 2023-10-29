@@ -1629,7 +1629,7 @@ class BtrixOperator(K8sAPI):
         success = status.get("succeeded") == 1
         completion_time = status.get("completionTime")
 
-        finalized = False
+        finalized = True
         finished = None
 
         if completion_time:
@@ -1637,23 +1637,22 @@ class BtrixOperator(K8sAPI):
 
         if not success:
             # number of failures exceeds backoffLimit, then log this as failure
-            if int(status.get("failed")) >= int(data.object["spec"]["backoffLimit"]):
-                print(f"replicate job failed: {job_id}", flush=True)
+            # if int(status.get("failed", 0)) >= int(data.object["spec"]["backoffLimit"]):
+            print(f"replicate job failed: {job_id}", flush=True)
+            if not finished:
                 finished = dt_now()
 
-        if finished:
-            try:
-                await self.background_job_ops.update_replicate_job(
-                    job_id, UUID(oid), success=success, finished=finished
-                )
-                finalized = True
-                print(
-                    f"replicate job completed: {job_id} success: {success}", flush=True
-                )
+        try:
+            await self.background_job_ops.update_replicate_job(
+                job_id, UUID(oid), success=success, finished=finished
+            )
+            print(f"replicate job completed: {job_id} success: {success}", flush=True)
 
-            # pylint: disable=broad-except
-            except Exception as exc:
-                print("Update Replica Error", exc, flush=True)
+        # pylint: disable=broad-except
+        except Exception as exc:
+            # unable to update db, don't finalize job deletion yet
+            finalized = False
+            print("Update Replica Error", exc, flush=True)
 
         return {"attachments": [], "finalized": finalized}
 

@@ -110,7 +110,7 @@ spec:
           memory: {{ memory }}
 
       readinessProbe:
-        initialDelaySeconds: 10
+        initialDelaySeconds: 0
         timeoutSeconds: 5
         exec:
           command:
@@ -119,7 +119,7 @@ spec:
             - "res=$(redis-cli ping); [[ $res = 'PONG' ]]"
 
       livenessProbe:
-        initialDelaySeconds: 10
+        initialDelaySeconds: 0
         timeoutSeconds: 5
         exec:
           command:

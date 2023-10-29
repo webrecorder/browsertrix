@@ -12,6 +12,7 @@ spec:
   template:
     spec:
       restartPolicy: Never
+      priorityClassName: bg-jobs
       podFailurePolicy:
         rules:
         - action: FailJob
@@ -68,4 +69,11 @@ spec:
           #    key: STORE_ENDPOINT_URL
 
         command: ["rclone", "-vv", "copyto", "--checksum", "primary:{{ primary_file_path }}", "replica:{{ replica_file_path }}"]
-      
+
+        resources:
+          limits:
+            memory: "50Mi"
+
+          requests:
+            memory: "50Mi"
+            cpu: "20m"
