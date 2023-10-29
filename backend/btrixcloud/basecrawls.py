@@ -20,6 +20,7 @@ from .models import (
     Organization,
     PaginatedResponse,
     User,
+    StorageRef,
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
 )
@@ -238,6 +239,19 @@ class BaseCrawlOps:
         """Update username references matching userid"""
         await self.crawls.update_many(
             {"userid": userid}, {"$set": {"userName": updated_name}}
+        )
+
+    async def add_crawl_file_replica(
+        self, crawl_id: str, filename: str, ref: StorageRef
+    ) -> dict[str, object]:
+        """Add replica StorageRef to existing CrawlFile"""
+        return await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "files.filename": filename},
+            {
+                "$addToSet": {
+                    "files.$.replicas": {"name": ref.name, "custom": ref.custom}
+                }
+            },
         )
 
     async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):

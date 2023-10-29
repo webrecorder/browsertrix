@@ -66,12 +66,12 @@ class CrawlManager(K8sAPI):
 
     async def run_replicate_job(
         self,
-        oid: UUID,
-        primary_secret_name: str,
-        replica_secret_name: str,
+        oid: str,
+        primary_storage: StorageRef,
         primary_file_path: str,
-        replica_file_path: str,
         primary_endpoint: str,
+        replica_storage: StorageRef,
+        replica_file_path: str,
         replica_endpoint: str,
     ):
         """run job to replicate file from primary storage to replica storage"""
@@ -80,12 +80,12 @@ class CrawlManager(K8sAPI):
 
         params = {
             "id": job_id,
-            "oid": str(oid),
-            "primary_secret_name": primary_secret_name,
-            "replica_secret_name": replica_secret_name,
+            "oid": oid,
+            "primary_secret_name": primary_storage.get_storage_secret_name(oid),
             "primary_file_path": primary_file_path,
-            "replica_file_path": replica_file_path,
             "primary_endpoint": primary_endpoint,
+            "replica_secret_name": replica_storage.get_storage_secret_name(oid),
+            "replica_file_path": replica_file_path,
             "replica_endpoint": replica_endpoint,
         }
 

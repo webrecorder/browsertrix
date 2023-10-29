@@ -7,17 +7,10 @@ metadata:
     btrix.org: {{ oid }}
 
 spec:
-  ttlSecondsAfterFinished: 300
-  #id: "{{ id }}"
-  #oid: "{{ oid }}"
-  #primary_file_path: "{{ primary_file_path }}"
-  #primary_secret_name: "{{ primary_secret_name }}"
-  #replica_file_path: "{{ replica_file_path }}"
-  #replica_secret_name: "{{ replica_secret_name }}"
-
+  ttlSecondsAfterFinished: 0
+  backoffLimit: 3
   template:
     spec:
-      backoffLimit: 5
       restartPolicy: Never
       podFailurePolicy:
         rules:

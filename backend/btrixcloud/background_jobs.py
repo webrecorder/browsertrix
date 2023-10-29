@@ -1,6 +1,6 @@
 """k8s background jobs"""
 from datetime import datetime
-from typing import Optional, Tuple, Union, List, Dict, TYPE_CHECKING
+from typing import Optional, Tuple, Union, List, Dict, TYPE_CHECKING, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -14,15 +14,16 @@ from .models import (
     ReplicateJob,
     BackgroundJobOut,
     DeleteReplicaJob,
-    UpdateBackgroundJob,
     PaginatedResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
+    from .basecrawls import BaseCrawlOps
+    from .profiles import ProfileOps
 else:
-    OrgOps = CrawlManager = object
+    OrgOps = CrawlManager = BaseCrawlOps = ProfileOps = object
 
 
 # ============================================================================
@@ -33,6 +34,9 @@ class BackgroundJobOps:
     crawl_manager: CrawlManager
     storage_ops: StorageOps
 
+    base_crawl_ops: BaseCrawlOps
+    profile_ops: ProfileOps
+
     # pylint: disable=too-many-locals, too-many-arguments, invalid-name
 
     def __init__(self, mdb, org_ops, crawl_manager, storage_ops):
@@ -42,18 +46,28 @@ class BackgroundJobOps:
         self.crawl_manager = crawl_manager
         self.storage_ops = storage_ops
 
+        self.base_crawl_ops = cast(BaseCrawlOps, None)
+        self.profile_ops = cast(ProfileOps, None)
+
         self.router = APIRouter(
             prefix="/jobs",
             tags=["jobs"],
             responses={404: {"description": "Not found"}},
         )
 
+    def set_ops(self, base_crawl_ops: BaseCrawlOps, profile_ops: ProfileOps) -> None:
+        """basecrawlops and profileops for updating files"""
+        self.base_crawl_ops = base_crawl_ops
+        self.profile_ops = profile_ops
+
     def strip_bucket(self, endpoint_url: str) -> tuple[str, str]:
         """strip the last path segment (bucket) and return rest of endpoint"""
         inx = endpoint_url.rfind("/", 0, -1) + 1
         return endpoint_url[0:inx], endpoint_url[inx:]
 
-    async def create_replicate_job(self, oid: UUID, file: BaseFile) -> Dict:
+    async def create_replicate_job(
+        self, oid: UUID, file: BaseFile, object_id: str, object_type: str
+    ) -> Dict:
         """Create k8s background job to replicate a file to another storage location."""
 
         org = await self.org_ops.get_org_by_id(oid)
@@ -84,16 +98,23 @@ class BackgroundJobOps:
             print(f"  path: {replica_file_path}")
 
             job_id = await self.crawl_manager.run_replicate_job(
-                oid,
-                primary_secret_name=file.storage.get_storage_secret_name(str(oid)),
-                replica_secret_name=replica_ref.get_storage_secret_name(str(oid)),
+                str(oid),
+                primary_storage=file.storage,
                 primary_file_path=primary_file_path,
-                replica_file_path=replica_file_path,
                 primary_endpoint=primary_endpoint,
+                replica_storage=replica_ref,
+                replica_file_path=replica_file_path,
                 replica_endpoint=replica_endpoint,
             )
             replication_job = ReplicateJob(
-                id=job_id, started=datetime.now(), file_path=file.filename
+                id=job_id,
+                oid=oid,
+                started=datetime.now(),
+                file_path=file.filename,
+                object_type=object_type,
+                object_id=object_id,
+                primary=file.storage,
+                replica_storage=replica_ref,
             )
             await self.jobs.find_one_and_update(
                 {"_id": job_id}, {"$set": replication_job.to_dict()}, upsert=True
@@ -101,6 +122,39 @@ class BackgroundJobOps:
             ids.append(job_id)
 
         return {"added": True, "ids": ids}
+
+    async def update_replicate_job(
+        self,
+        job_id: str,
+        oid: UUID,
+        success: bool,
+        finished: datetime,
+    ) -> None:
+        """Update replicate job, filling in
+        replica info on corresponding files"""
+
+        job = await self.get_replica_background_job(job_id, oid)
+        # return if already finished
+        if job.finished:
+            return
+
+        if success:
+            res = None
+            if job.object_type in ("crawl", "upload"):
+                res = await self.base_crawl_ops.add_crawl_file_replica(
+                    job.object_id, job.file_path, job.replica_storage
+                )
+            elif job.object_type == "profile":
+                res = await self.profile_ops.add_profile_file_replica(
+                    UUID(job.object_id), job.file_path, job.replica_storage
+                )
+            if not res:
+                raise HTTPException(status_code=404, detail="missing_file_for_replica")
+
+        await self.jobs.find_one_and_update(
+            {"_id": job_id, "oid": oid},
+            {"$set": {"success": success, "finished": finished}},
+        )
 
     async def create_delete_replica_job(
         self, oid: UUID, file_path: str
@@ -134,6 +188,20 @@ class BackgroundJobOps:
             "id": job_id,
         }
 
+    async def get_replica_background_job(
+        self, job_id: str, oid: Optional[UUID]
+    ) -> ReplicateJob:
+        """get replicate job, if exists"""
+        query: dict[str, object] = {"_id": job_id, "type": "replicate"}
+        if oid:
+            query["oid"] = oid
+
+        res = await self.jobs.find_one(query)
+        if not res:
+            raise HTTPException(status_code=404, detail="replicate_job_not_found")
+
+        return ReplicateJob.from_dict(res)
+
     async def get_background_job(
         self, job_id: str, org: Optional[Organization] = None
     ) -> BackgroundJobOut:
@@ -146,32 +214,6 @@ class BackgroundJobOps:
             raise HTTPException(status_code=404, detail="job_not_found")
 
         return BackgroundJobOut.from_dict(res)
-
-    async def update_background_job(
-        self,
-        job_id: str,
-        oid: UUID,
-        update: UpdateBackgroundJob,
-        type_: Optional[str] = None,
-    ) -> Dict[str, bool]:
-        """Update background job after job completes"""
-        update_values = update.dict(exclude_unset=True)
-        if len(update_values) == 0:
-            raise HTTPException(status_code=400, detail="no_update_data")
-
-        query = {"_id": job_id, "oid": oid}
-        if type_:
-            query["type"] = type_
-
-        result = await self.jobs.find_one_and_update(
-            query,
-            {"$set": update_values},
-        )
-
-        if not result:
-            raise HTTPException(status_code=404, detail="job_not_found")
-
-        return {"updated": True}
 
     async def list_background_jobs(
         self,

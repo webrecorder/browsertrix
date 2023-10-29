@@ -136,6 +136,8 @@ def main():
 
     user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
 
+    background_job_ops.set_ops(base_crawl_ops, profiles)
+
     crawl_config_ops.set_coll_ops(coll_ops)
 
     # run only in first worker

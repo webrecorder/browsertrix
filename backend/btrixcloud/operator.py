@@ -37,7 +37,6 @@ from .models import (
     CrawlFile,
     CrawlCompleteIn,
     StorageRef,
-    UpdateBackgroundJob,
 )
 
 if TYPE_CHECKING:
@@ -1246,10 +1245,12 @@ class BtrixOperator(K8sAPI):
         await self.crawl_ops.add_crawl_file(crawl.id, crawl_file, filecomplete.size)
 
         try:
-            await self.background_job_ops.create_replicate_job(crawl.oid, crawl_file)
+            await self.background_job_ops.create_replicate_job(
+                crawl.oid, crawl_file, crawl.id, "crawl"
+            )
         # pylint: disable=broad-except
         except Exception as exc:
-            print(exc)
+            print("Replicate Exception", exc, flush=True)
 
         return True
 
@@ -1614,8 +1615,8 @@ class BtrixOperator(K8sAPI):
             "attachments": attachments,
         }
 
-    async def sync_background_job(self, data: MCDecoratorSyncData):
-        """create background job"""
+    async def finalize_background_job(self, data: MCDecoratorSyncData):
+        """handle finished background job"""
 
         metadata = data.object["metadata"]
         labels = metadata.get("labels", {})
@@ -1625,23 +1626,36 @@ class BtrixOperator(K8sAPI):
         job_id = name
 
         status = data.object["status"]
-        conditions = status.get("conditions", [])
-        for condition in conditions:
-            # If job has completed or failed, update job in db
-            # Thre may be further optimization we can do here
-            if condition.get("type") in ("Complete", "Failed"):
-                success = False
-                if condition.get("type") == "Complete":
-                    success = True
-                finished = from_k8s_date(condition.get("last_transition_time"))
-                await self.background_job_ops.update_background_job(
-                    job_id,
-                    UUID(oid),
-                    UpdateBackgroundJob(success=success, finished=finished),
-                )
-                break
+        success = status.get("succeeded") == 1
+        completion_time = status.get("completionTime")
 
-        return {"attachments": {}}
+        finalized = False
+        finished = None
+
+        if completion_time:
+            finished = from_k8s_date(completion_time)
+
+        if not success:
+            # number of failures exceeds backoffLimit, then log this as failure
+            if int(status.get("failed")) >= int(data.object["spec"]["backoffLimit"]):
+                print(f"replicate job failed: {job_id}", flush=True)
+                finished = dt_now()
+
+        if finished:
+            try:
+                await self.background_job_ops.update_replicate_job(
+                    job_id, UUID(oid), success=success, finished=finished
+                )
+                finalized = True
+                print(
+                    f"replicate job completed: {job_id} success: {success}", flush=True
+                )
+
+            # pylint: disable=broad-except
+            except Exception as exc:
+                print("Update Replica Error", exc, flush=True)
+
+        return {"attachments": [], "finalized": finalized}
 
     def run_task(self, func):
         """add bg tasks to set to avoid premature garbage collection"""
@@ -1681,11 +1695,14 @@ def init_operator_api(app, *args):
     async def mc_cronjob_related(data: MCBaseRequest):
         return oper.get_cronjob_crawl_related(data)
 
-    # pylint: disable=fixme
-    # TODO: Switch to /finalize after tested and working with /sync
+    # nop, but needed for metacontroller
     @app.post("/op/backgroundjob/sync")
-    async def mc_sync_background_jobs(data: MCDecoratorSyncData):
-        return await oper.sync_background_job(data)
+    async def mc_sync_background_jobs():
+        return {"attachments": []}
+
+    @app.post("/op/backgroundjob/finalize")
+    async def mc_finalize_background_jobs(data: MCDecoratorSyncData):
+        return await oper.finalize_background_job(data)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz():

@@ -205,7 +205,9 @@ class ProfileOps:
             {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
         )
 
-        await self.background_job_ops.create_replicate_job(oid, profile_file)
+        await self.background_job_ops.create_replicate_job(
+            oid, profile_file, str(profileid), "profile"
+        )
 
         quota_reached = await self.orgs.inc_org_bytes_stored(oid, file_size, "profile")
 
@@ -361,6 +363,15 @@ class ProfileOps:
             raise HTTPException(status_code=200, detail="waiting_for_browser")
 
         return json
+
+    async def add_profile_file_replica(
+        self, profileid: UUID, filename: str, ref: StorageRef
+    ) -> dict[str, object]:
+        """Add replica StorageRef to existing ProfileFile"""
+        return await self.profiles.find_one_and_update(
+            {"_id": profileid, "resource.filename": filename},
+            {"$push": {"resource.replicas": {"name": ref.name, "custom": ref.custom}}},
+        )
 
 
 # ============================================================================

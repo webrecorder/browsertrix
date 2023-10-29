@@ -128,3 +128,10 @@ spec:
           name: {{ .Values.name }}-backend
           port: {{ .Values.opPort }}
         path: /op/backgroundjob/sync
+    finalize:
+      webhook:
+        service:
+          namespace: {{ .Release.Namespace }}
+          name: {{ .Values.name }}-backend
+          port: {{ .Values.opPort }}
+        path: /op/backgroundjob/finalize

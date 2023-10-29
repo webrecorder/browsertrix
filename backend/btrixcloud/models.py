@@ -468,7 +468,7 @@ class BaseFile(BaseModel):
     size: int
     storage: StorageRef
 
-    replicas: Optional[List[StorageRef]] = None
+    replicas: Optional[List[StorageRef]] = []
 
 
 # ============================================================================
@@ -1221,6 +1221,7 @@ class WebhookNotification(BaseMongoModel):
 class BackgroundJob(BaseMongoModel):
     """Model for tracking background jobs"""
 
+    id: str
     oid: UUID
     success: bool = False
     started: datetime
@@ -1228,23 +1229,18 @@ class BackgroundJob(BaseMongoModel):
 
 
 # ============================================================================
-class UpdateBackgroundJob(BaseModel):
-    """Model for updating background job after job completes"""
-
-    success: Optional[bool] = None
-    finished: Optional[datetime] = None
-
-
-# ============================================================================
-class ReplicateJob(BaseMongoModel):
+class ReplicateJob(BackgroundJob):
     """Model for tracking replication jobs"""
 
     type: str = Field("replicate", const=True)
     file_path: str
+    object_type: str
+    object_id: str
+    replica_storage: StorageRef
 
 
 # ============================================================================
-class DeleteReplicaJob(BaseMongoModel):
+class DeleteReplicaJob(BackgroundJob):
     """Model for tracking replication jobs"""
 
     type: str = Field("delete_replica", const=True)
