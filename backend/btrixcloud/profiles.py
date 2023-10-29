@@ -205,7 +205,7 @@ class ProfileOps:
             {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
         )
 
-        await self.background_job_ops.create_replicate_job(
+        await self.background_job_ops.create_replica_jobs(
             oid, profile_file, str(profileid), "profile"
         )
 
@@ -332,8 +332,8 @@ class ProfileOps:
         if not res or res.deleted_count != 1:
             raise HTTPException(status_code=404, detail="profile_not_found")
 
-        await self.background_job_ops.create_delete_replica_job(
-            org.id, profile.resource.filename
+        await self.background_job_ops.create_delete_replica_jobs(
+            org, profile.resource, profile.id, "profile"
         )
 
         quota_reached = await self.orgs.storage_quota_reached(org.id)

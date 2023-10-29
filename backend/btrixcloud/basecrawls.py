@@ -360,8 +360,8 @@ class BaseCrawlOps:
             size += file_.size
             if not await self.storage_ops.delete_crawl_file_object(org, file_):
                 raise HTTPException(status_code=400, detail="file_deletion_error")
-            await self.background_job_ops.create_delete_replica_job(
-                org.id, file_.filename
+            await self.background_job_ops.create_delete_replica_jobs(
+                org, file_, crawl.id, crawl.type
             )
 
         return size

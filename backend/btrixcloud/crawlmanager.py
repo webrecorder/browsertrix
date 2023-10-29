@@ -4,7 +4,6 @@ import os
 import asyncio
 import secrets
 import json
-from uuid import UUID
 
 from typing import Optional, Dict
 from datetime import timedelta
@@ -15,7 +14,7 @@ from fastapi import HTTPException
 from .k8sapi import K8sAPI
 from .utils import dt_now, to_k8s_date
 
-from .models import StorageRef, CrawlConfig, UpdateCrawlConfig
+from .models import StorageRef, CrawlConfig, UpdateCrawlConfig, BgJobType
 
 
 # ============================================================================
@@ -64,53 +63,37 @@ class CrawlManager(K8sAPI):
 
         return browserid
 
-    async def run_replicate_job(
+    async def run_replica_job(
         self,
         oid: str,
-        primary_storage: StorageRef,
-        primary_file_path: str,
-        primary_endpoint: str,
+        job_type: str,
         replica_storage: StorageRef,
         replica_file_path: str,
         replica_endpoint: str,
+        primary_storage: Optional[StorageRef] = None,
+        primary_file_path: Optional[str] = None,
+        primary_endpoint: Optional[str] = None,
     ):
         """run job to replicate file from primary storage to replica storage"""
 
-        job_id = f"replicatejob-{secrets.token_hex(5)}"
+        job_id = f"{job_type}-{secrets.token_hex(5)}"
 
         params = {
             "id": job_id,
             "oid": oid,
-            "primary_secret_name": primary_storage.get_storage_secret_name(oid),
-            "primary_file_path": primary_file_path,
-            "primary_endpoint": primary_endpoint,
+            "job_type": job_type,
             "replica_secret_name": replica_storage.get_storage_secret_name(oid),
             "replica_file_path": replica_file_path,
             "replica_endpoint": replica_endpoint,
+            "primary_secret_name": primary_storage.get_storage_secret_name(oid)
+            if primary_storage
+            else None,
+            "primary_file_path": primary_file_path if primary_file_path else None,
+            "primary_endpoint": primary_endpoint if primary_endpoint else None,
+            "BgJobType": BgJobType,
         }
 
-        data = self.templates.env.get_template("replicate_job.yaml").render(params)
-
-        await self.create_from_yaml(data)
-
-        return job_id
-
-    async def run_delete_replica_job(
-        self,
-        oid: UUID,
-        replica_file_path: str,
-    ):
-        """run job to delete replicated file"""
-
-        job_id = f"deletereplicajob-{secrets.token_hex(5)}"
-
-        params = {
-            "id": job_id,
-            "oid": str(oid),
-            "replica_file_path": replica_file_path,
-        }
-
-        data = self.templates.env.get_template("delete_replica_job.yaml").render(params)
+        data = self.templates.env.get_template("replica_job.yaml").render(params)
 
         await self.create_from_yaml(data)
 

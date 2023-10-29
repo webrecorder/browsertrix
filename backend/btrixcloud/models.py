@@ -501,6 +501,8 @@ class BaseCrawl(BaseMongoModel):
 
     id: str
 
+    type: str
+
     userid: UUID
     userName: Optional[str]
     oid: UUID
@@ -1217,11 +1219,19 @@ class WebhookNotification(BaseMongoModel):
 ### BACKGROUND JOBS ###
 
 
+class BgJobType(str, Enum):
+    """Background Job Types"""
+
+    CREATE_REPLICA = "create-replica"
+    DELETE_REPLICA = "delete-replica"
+
+
 # ============================================================================
 class BackgroundJob(BaseMongoModel):
     """Model for tracking background jobs"""
 
     id: str
+    type: BgJobType
     oid: UUID
     success: bool = False
     started: datetime
@@ -1229,10 +1239,10 @@ class BackgroundJob(BaseMongoModel):
 
 
 # ============================================================================
-class ReplicateJob(BackgroundJob):
-    """Model for tracking replication jobs"""
+class CreateReplicaJob(BackgroundJob):
+    """Model for tracking create of replica jobs"""
 
-    type: str = Field("replicate", const=True)
+    type: Literal[BgJobType.CREATE_REPLICA] = BgJobType.CREATE_REPLICA
     file_path: str
     object_type: str
     object_id: str
@@ -1241,15 +1251,10 @@ class ReplicateJob(BackgroundJob):
 
 # ============================================================================
 class DeleteReplicaJob(BackgroundJob):
-    """Model for tracking replication jobs"""
+    """Model for tracking deletion of replica jobs"""
 
-    type: str = Field("delete_replica", const=True)
+    type: Literal[BgJobType.DELETE_REPLICA] = BgJobType.DELETE_REPLICA
     file_path: str
-
-
-# ============================================================================
-class BackgroundJobOut(BackgroundJob):
-    """Model for tracking background jobs"""
-
-    type: str
-    file_path: str
+    object_type: str
+    object_id: str
+    replica_storage: StorageRef

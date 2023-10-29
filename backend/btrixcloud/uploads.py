@@ -190,7 +190,7 @@ class UploadOps(BaseCrawlOps):
 
         if uploaded.files:
             for file in uploaded.files:
-                await self.background_job_ops.create_replicate_job(
+                await self.background_job_ops.create_replica_jobs(
                     org.id, file, crawl_id, "upload"
                 )
 

@@ -4,6 +4,7 @@ metadata:
   name: "{{ id }}"
   labels:
     role: "background-job"
+    job_type: {{ job_type }}
     btrix.org: {{ oid }}
 
 spec:
@@ -24,6 +25,8 @@ spec:
       - name: rclone
         image: rclone/rclone:latest
         env:
+
+{% if job_type == BgJobType.CREATE_REPLICA %}
         - name: RCLONE_CONFIG_PRIMARY_TYPE
           value: "s3"
 
@@ -45,7 +48,8 @@ spec:
           #  secretKeyRef:
           #    name: "{{ primary_secret_name }}"
           #    key: STORE_ENDPOINT_URL
- 
+{% endif %}
+
         - name: RCLONE_CONFIG_REPLICA_TYPE
           value: "s3"
 
@@ -68,8 +72,11 @@ spec:
           #    name: "{{ replica_secret_name }}"
           #    key: STORE_ENDPOINT_URL
 
+{% if job_type == BgJobType.CREATE_REPLICA %}
         command: ["rclone", "-vv", "copyto", "--checksum", "primary:{{ primary_file_path }}", "replica:{{ replica_file_path }}"]
-
+{% elif job_type == BgJobType.DELETE_REPLICA %}
+        command: ["rclone", "-vv", "delete", "replica:{{ replica_file_path }}"]
+{% endif %}
         resources:
           limits:
             memory: "50Mi"

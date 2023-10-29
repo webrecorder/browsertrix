@@ -1245,7 +1245,7 @@ class BtrixOperator(K8sAPI):
         await self.crawl_ops.add_crawl_file(crawl.id, crawl_file, filecomplete.size)
 
         try:
-            await self.background_job_ops.create_replicate_job(
+            await self.background_job_ops.create_replica_jobs(
                 crawl.oid, crawl_file, crawl.id, "crawl"
             )
         # pylint: disable=broad-except
@@ -1615,15 +1615,14 @@ class BtrixOperator(K8sAPI):
             "attachments": attachments,
         }
 
-    async def finalize_background_job(self, data: MCDecoratorSyncData):
+    async def finalize_background_job(self, data: MCDecoratorSyncData) -> dict:
         """handle finished background job"""
 
         metadata = data.object["metadata"]
-        labels = metadata.get("labels", {})
-        oid = labels.get("btrix.org")
-
-        name = metadata.get("name")
-        job_id = name
+        labels: dict[str, str] = metadata.get("labels", {})
+        oid: str = labels.get("btrix.org") or ""
+        job_type: str = labels.get("job_type") or ""
+        job_id: str = metadata.get("name")
 
         status = data.object["status"]
         success = status.get("succeeded") == 1
@@ -1634,16 +1633,20 @@ class BtrixOperator(K8sAPI):
         finished = from_k8s_date(completion_time) if completion_time else dt_now()
 
         try:
-            await self.background_job_ops.update_replicate_job(
-                job_id, UUID(oid), success=success, finished=finished
+            await self.background_job_ops.job_finished(
+                job_id, job_type, UUID(oid), success=success, finished=finished
             )
-            print(f"replicate job completed: {job_id} success: {success}", flush=True)
+            print(
+                f"{job_type} background job completed: success: {success}, {job_id}",
+                flush=True,
+            )
 
         # pylint: disable=broad-except
-        except Exception as exc:
+        except Exception:
             # unable to update db, don't finalize job deletion yet
             finalized = False
-            print("Update Replica Error", exc, flush=True)
+            print("Update Background Job Error", flush=True)
+            traceback.print_exc()
 
         return {"attachments": [], "finalized": finalized}
 
