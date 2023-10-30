@@ -153,6 +153,29 @@ spec:
       name: minio-console
 {{- end }}
 
+{{- if .Values.minio_local_access_port }}
+---
+apiVersion: v1
+kind: Service
+
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: local-minio-access
+  labels:
+    app: local-minio-access
+
+spec:
+  type: NodePort
+  selector:
+    app: local-minio
+
+  ports:
+    - protocol: TCP
+      port: 9000
+      nodePort: {{ .Values.minio_local_access_port }}
+      name: minio-access
+{{- end }}
+
 {{- end }}
 
 

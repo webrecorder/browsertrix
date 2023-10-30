@@ -4,7 +4,7 @@ import time
 from urllib.parse import urljoin
 
 from .conftest import API_PREFIX
-from .utils import read_in_chunks
+from .utils import read_in_chunks, verify_replica_file_identical_to_original
 
 upload_id = None
 upload_id_2 = None
@@ -248,6 +248,15 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
     for file_ in files:
         assert file_["numReplicas"] == 1
 
+    # Verify replica is stored
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
+        headers=admin_auth_headers
+    )
+    assert r.status_code == 200
+    job = r.json()
+    assert verify_replica_file_identical_to_original(job["file_path"])
+
 
 def test_replace_upload(admin_auth_headers, default_org_id, uploads_collection_id):
     actual_id = do_upload_replace(
@@ -406,6 +415,15 @@ def test_ensure_deleted(admin_auth_headers, default_org_id):
 
         assert job["success"]
         break
+
+    # Verify replica is no longer stored
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
+        headers=admin_auth_headers
+    )
+    assert r.status_code == 200
+    job = r.json()
+    assert verify_replica_file_identical_to_original(job["file_path"]) is False
 
 
 def test_replace_upload_non_existent(
