@@ -219,7 +219,7 @@ class BackgroundJobOps:
         if not res:
             raise HTTPException(status_code=404, detail="job_not_found")
 
-        return res
+        BackgroundJob.from_dict(res)
 
     async def list_background_jobs(
         self,
