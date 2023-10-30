@@ -97,22 +97,6 @@ def test_create_org(admin_auth_headers):
         org_names.append(org["name"])
     assert NEW_ORG_NAME in org_names
 
-
-def test_ensure_default_org_storage_replica_storage(admin_auth_headers, default_org_id):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/storage",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["storage"]["name"] == "default"
-    assert not data["storage"]["custom"]
-    replicas = data["storageReplicas"]
-    assert len(replicas) == 1
-    replica = replicas[0]
-    assert replica["name"] == "replica-0"
-    assert replica["custom"] is False
-
 # disable until storage customization is enabled
 def _test_change_org_storage(admin_auth_headers):
     # change to invalid storage

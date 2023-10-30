@@ -212,11 +212,10 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     data = r.json()
-    for file_ in data.get("resources", []):
-        replicas = file_.get("replicas", [])
-        assert replicas
-        assert len(replicas) == 1
-        assert replicas[0]["name"] == "replica-0"
+    files = data.get("resources")
+    assert files
+    for file_ in files:
+        assert file_["numReplicas"] == 1
 
 
 def test_replace_upload(admin_auth_headers, default_org_id, uploads_collection_id):
