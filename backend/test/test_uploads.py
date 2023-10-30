@@ -205,6 +205,21 @@ def test_get_upload_replay_json_admin(
     assert "files" not in data
 
 
+def test_upload_file_replicated(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    file_ = data["resource"]
+    assert file_
+    replicas = file_.get("replicas", [])
+    assert replicas
+    assert len(replicas) == 1
+    assert replica[0]["name"] == "replica-0"
+
+
 def test_replace_upload(admin_auth_headers, default_org_id, uploads_collection_id):
     actual_id = do_upload_replace(
         admin_auth_headers, default_org_id, upload_id, uploads_collection_id

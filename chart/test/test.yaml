@@ -44,6 +44,7 @@ storages:
     secret_key: "PASSW0RD"
 
     endpoint_url: "http://local-minio.default:9000/btrix-test-data/replica-0/"
+    is_default_replica: True
 
   - name: "replica-1"
     access_key: "ADMIN"
