@@ -207,11 +207,11 @@ def test_get_upload_replay_json_admin(
 
 
 def test_upload_file_replicated(admin_auth_headers, default_org_id):
-    time.sleep(5)
+    time.sleep(20)
 
     # Verify replication job was successful
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1",
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=create=replica",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -378,11 +378,11 @@ def test_ensure_deleted(admin_auth_headers, default_org_id):
         if res["id"] == upload_id:
             assert False
 
-    time.sleep(5)
+    time.sleep(20)
 
     # Verify delete replica job was successful
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1",
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=delete=replica",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200

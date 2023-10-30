@@ -86,11 +86,11 @@ def test_crawl_info(admin_auth_headers, default_org_id, admin_crawl_id):
 
 
 def test_crawl_files_replicated(admin_auth_headers, default_org_id, admin_crawl_id):
-    time.sleep(5)
+    time.sleep(20)
 
     # Verify replication job was successful
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1",
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=create-replica",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -413,11 +413,11 @@ def test_delete_crawls_org_owner(
     )
     assert r.status_code == 404
 
-    time.sleep(5)
+    time.sleep(20)
 
     # Verify delete replica job was successful
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1",
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=delete-replica",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
