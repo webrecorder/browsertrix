@@ -54,7 +54,7 @@ storages:
     secret_key: "PASSW0RD"
     bucket_name: "replica-0"
 
-    endpoint_url: "http://local-minio.default:9000/btrix-test-data/replica-0/"
+    endpoint_url: "http://local-minio.default:9000/"
     is_default_replica: True
 
   # - name: "replica-1"
