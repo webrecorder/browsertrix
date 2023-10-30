@@ -106,7 +106,7 @@ def test_ensure_default_org_storage_replica_storage(admin_auth_headers, default_
     assert r.status_code == 200
     data = r.json()
     assert data["storage"]["name"] == "default"
-    assert data["storage"]["custom"] is False
+    assert not data["storage"]["custom"]
     replicas = data["storageReplicas"]
     assert len(replicas) == 1
     replica = replicas[0]
