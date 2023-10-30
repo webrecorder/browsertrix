@@ -1,5 +1,6 @@
 import requests
 import os
+import time
 from urllib.parse import urljoin
 
 from .conftest import API_PREFIX
@@ -206,6 +207,20 @@ def test_get_upload_replay_json_admin(
 
 
 def test_upload_file_replicated(admin_auth_headers, default_org_id):
+    time.sleep(20)
+
+    # Verify replication job was successful
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    latest_job = r.json()["items"][0]
+    assert latest_job["type"] == "create-replica"
+    assert latest_job["finished"]
+    assert latest_job["success"]
+
+    # Verify file updated 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/replay.json",
         headers=admin_auth_headers,
@@ -346,6 +361,19 @@ def test_ensure_deleted(admin_auth_headers, default_org_id):
     for res in results["items"]:
         if res["id"] == upload_id:
             assert False
+
+    time.sleep(20)
+
+    # Verify replica deletion job was successful
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    latest_job = r.json()["items"][0]
+    assert latest_job["type"] == "delete-replica"
+    assert latest_job["success"]
+
 
 
 def test_replace_upload_non_existent(
