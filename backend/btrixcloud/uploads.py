@@ -5,13 +5,13 @@ import hashlib
 import os
 import base64
 from urllib.parse import unquote
+from uuid import UUID
 
 import asyncio
 from io import BufferedReader
 from typing import Optional, List, Any
 from fastapi import Depends, UploadFile, File
 from fastapi import HTTPException
-from pydantic import UUID4
 from starlette.requests import Request
 from pathvalidate import sanitize_filename
 
@@ -40,23 +40,6 @@ class UploadOps(BaseCrawlOps):
     """upload ops"""
 
     # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods, too-many-function-args
-    def __init__(
-        self,
-        mdb,
-        users,
-        crawl_manager,
-        crawl_configs,
-        orgs,
-        colls,
-        storage_ops,
-        event_webhook_ops,
-    ):
-        super().__init__(
-            mdb, users, orgs, crawl_configs, crawl_manager, colls, storage_ops
-        )
-
-        self.event_webhook_ops = event_webhook_ops
-
     # pylint: disable=too-many-arguments, too-many-locals, duplicate-code, invalid-name
     async def upload_stream(
         self,
@@ -165,11 +148,11 @@ class UploadOps(BaseCrawlOps):
         now = dt_now()
         file_size = sum(file_.size or 0 for file_ in files)
 
-        collection_uuids: List[uuid.UUID] = []
+        collection_uuids: List[UUID] = []
         if collections:
             try:
                 for coll in collections:
-                    collection_uuids.append(uuid.UUID(coll))
+                    collection_uuids.append(UUID(coll))
             # pylint: disable=raise-missing-from
             except:
                 raise HTTPException(status_code=400, detail="invalid_collection_id")
@@ -274,33 +257,13 @@ class UploadFileReader(BufferedReader):
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name
-def init_uploads_api(
-    app,
-    mdb,
-    users,
-    crawl_manager,
-    crawl_configs,
-    orgs,
-    colls,
-    storage_ops,
-    user_dep,
-    event_webhook_ops,
-):
+def init_uploads_api(app, user_dep, *args):
     """uploads api"""
 
-    ops = UploadOps(
-        mdb,
-        users,
-        crawl_manager,
-        crawl_configs,
-        orgs,
-        colls,
-        storage_ops,
-        event_webhook_ops,
-    )
+    ops = UploadOps(*args)
 
-    org_viewer_dep = orgs.org_viewer_dep
-    org_crawl_dep = orgs.org_crawl_dep
+    org_viewer_dep = ops.orgs.org_viewer_dep
+    org_crawl_dep = ops.orgs.org_crawl_dep
 
     @app.put("/orgs/{oid}/uploads/formdata", tags=["uploads"])
     async def upload_formdata(
@@ -366,12 +329,12 @@ def init_uploads_api(
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         state: Optional[str] = None,
-        userid: Optional[UUID4] = None,
+        userid: Optional[UUID] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        collectionId: Optional[UUID4] = None,
-        sortBy: Optional[str] = "finished",
-        sortDirection: Optional[int] = -1,
+        collectionId: Optional[UUID] = None,
+        sortBy: str = "finished",
+        sortDirection: int = -1,
     ):
         states = state.split(",") if state else None
 

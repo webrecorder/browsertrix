@@ -104,45 +104,26 @@ def main():
 
     coll_ops = init_collections_api(app, mdb, org_ops, storage_ops, event_webhook_ops)
 
-    base_crawl_ops = init_base_crawls_api(
+    base_crawl_init = (
         app,
+        current_active_user,
         mdb,
         user_manager,
+        org_ops,
         crawl_manager,
         crawl_config_ops,
-        org_ops,
         coll_ops,
         storage_ops,
-        current_active_user,
+        event_webhook_ops,
     )
+
+    base_crawl_ops = init_base_crawls_api(*base_crawl_init)
+
+    crawls = init_crawls_api(*base_crawl_init)
+
+    init_uploads_api(*base_crawl_init)
 
     user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
-
-    crawls = init_crawls_api(
-        app,
-        mdb,
-        user_manager,
-        crawl_manager,
-        crawl_config_ops,
-        org_ops,
-        coll_ops,
-        storage_ops,
-        current_active_user,
-        event_webhook_ops,
-    )
-
-    init_uploads_api(
-        app,
-        mdb,
-        user_manager,
-        crawl_manager,
-        crawl_config_ops,
-        org_ops,
-        coll_ops,
-        storage_ops,
-        current_active_user,
-        event_webhook_ops,
-    )
 
     crawl_config_ops.set_coll_ops(coll_ops)
 

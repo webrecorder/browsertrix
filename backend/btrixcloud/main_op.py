@@ -71,9 +71,9 @@ def main():
     crawl_ops = CrawlOps(
         mdb,
         user_manager,
+        org_ops,
         crawl_manager,
         crawl_config_ops,
-        org_ops,
         coll_ops,
         storage_ops,
         event_webhook_ops,

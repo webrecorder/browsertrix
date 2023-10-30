@@ -5,17 +5,19 @@ import math
 import os
 import time
 import urllib.parse
-import uuid
+from uuid import UUID, uuid4
 from datetime import datetime
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from .basecrawls import SUCCESSFUL_STATES, RUNNING_STATES, STARTING_STATES
 from .models import (
+    SUCCESSFUL_STATES,
+    RUNNING_STATES,
+    STARTING_STATES,
     Organization,
     StorageRef,
     OrgQuotas,
@@ -36,6 +38,11 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import slug_from_name
 
+if TYPE_CHECKING:
+    from .invites import InviteOps
+else:
+    InviteOps = object
+
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 
@@ -44,6 +51,9 @@ DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 # pylint: disable=too-many-public-methods, too-many-instance-attributes
 class OrgOps:
     """Organization API operations"""
+
+    invites: InviteOps
+    default_primary: Optional[StorageRef]
 
     def __init__(self, mdb, invites):
         self.orgs = mdb["organizations"]
@@ -93,7 +103,7 @@ class OrgOps:
     ) -> Organization:
         # pylint: disable=too-many-arguments
         """Create new organization with default storage for new user"""
-        id_ = uuid.uuid4()
+        id_ = uuid4()
 
         org = Organization(
             id=id_,
@@ -102,9 +112,10 @@ class OrgOps:
             users={str(user.id): UserRole.OWNER},
             storage=self.default_primary,
         )
+        primary_name = self.default_primary and self.default_primary.name
 
         print(
-            f"Creating new org {org_name} with storage {self.default_primary.name}",
+            f"Creating new org {org_name} with storage {primary_name}",
             flush=True,
         )
         await self.add_org(org)
@@ -140,7 +151,7 @@ class OrgOps:
         return orgs, total
 
     async def get_org_for_user_by_id(
-        self, oid: uuid.UUID, user: User, role: UserRole = UserRole.VIEWER
+        self, oid: UUID, user: User, role: UserRole = UserRole.VIEWER
     ):
         """Get an org for user by unique id"""
         query: dict[str, object]
@@ -151,7 +162,7 @@ class OrgOps:
         res = await self.orgs.find_one(query)
         return Organization.from_dict(res)
 
-    async def get_org_by_id(self, oid: uuid.UUID):
+    async def get_org_by_id(self, oid: UUID):
         """Get an org by id"""
         res = await self.orgs.find_one({"_id": oid})
         return Organization.from_dict(res)
@@ -177,7 +188,7 @@ class OrgOps:
                 print(f'Default organization renamed to "{DEFAULT_ORG}"', flush=True)
             return
 
-        id_ = uuid.uuid4()
+        id_ = uuid4()
         org = Organization(
             id=id_,
             name=DEFAULT_ORG,
@@ -186,13 +197,14 @@ class OrgOps:
             storage=self.default_primary,
             default=True,
         )
+        primary_name = self.default_primary and self.default_primary.name
         print(
-            f'Creating Default Organization "{DEFAULT_ORG}". Storage: {self.default_primary.name}',
+            f'Creating Default Organization "{DEFAULT_ORG}". Storage: {primary_name}',
             flush=True,
         )
         await self.add_org(org)
 
-    async def check_all_org_default_storages(self, storage_ops):
+    async def check_all_org_default_storages(self, storage_ops) -> None:
         """ensure all default storages references by this org actually exist
 
         designed to help prevent removal of a 'storage' entry if
@@ -275,7 +287,7 @@ class OrgOps:
             return_document=ReturnDocument.AFTER,
         )
 
-    async def handle_new_user_invite(self, invite_token: str, user: User):
+    async def handle_new_user_invite(self, invite_token: UUID, user: User):
         """Handle invite from a new user"""
         new_user_invite = await self.invites.get_valid_invite(invite_token, user.email)
         await self.add_user_by_invite(new_user_invite, user)
@@ -300,7 +312,7 @@ class OrgOps:
         return True
 
     async def add_user_to_org(
-        self, org: Organization, userid: uuid.UUID, role: Optional[UserRole] = None
+        self, org: Organization, userid: UUID, role: Optional[UserRole] = None
     ):
         """Add user to organization with specified role"""
         org.users[str(userid)] = role or UserRole.OWNER
@@ -314,7 +326,7 @@ class OrgOps:
                 org_owners.append(key)
         return org_owners
 
-    async def get_max_pages_per_crawl(self, oid: uuid.UUID):
+    async def get_max_pages_per_crawl(self, oid: UUID):
         """Return org-specific max pages per crawl setting or 0."""
         org = await self.orgs.find_one({"_id": oid})
         if org:
@@ -322,7 +334,7 @@ class OrgOps:
             return org.quotas.maxPagesPerCrawl
         return 0
 
-    async def inc_org_bytes_stored(self, oid: uuid.UUID, size: int, type_="crawl"):
+    async def inc_org_bytes_stored(self, oid: UUID, size: int, type_="crawl"):
         """Increase org bytesStored count (pass negative value to subtract)."""
         if type_ == "crawl":
             await self.orgs.find_one_and_update(
@@ -341,7 +353,7 @@ class OrgOps:
         return await self.storage_quota_reached(oid)
 
     # pylint: disable=invalid-name
-    async def storage_quota_reached(self, oid: uuid.UUID) -> bool:
+    async def storage_quota_reached(self, oid: UUID) -> bool:
         """Return boolean indicating if storage quota is met or exceeded."""
         quota = await self.get_org_storage_quota(oid)
         if not quota:
@@ -355,7 +367,7 @@ class OrgOps:
 
         return False
 
-    async def get_this_month_crawl_exec_seconds(self, oid: uuid.UUID) -> int:
+    async def get_this_month_crawl_exec_seconds(self, oid: UUID) -> int:
         """Return crawlExecSeconds for current month"""
         org = await self.orgs.find_one({"_id": oid})
         org = Organization.from_dict(org)
@@ -365,7 +377,7 @@ class OrgOps:
         except KeyError:
             return 0
 
-    async def exec_mins_quota_reached(self, oid: uuid.UUID) -> bool:
+    async def exec_mins_quota_reached(self, oid: UUID) -> bool:
         """Return bools for if execution minutes quota"""
         quota = await self.get_org_exec_mins_monthly_quota(oid)
 
@@ -382,7 +394,7 @@ class OrgOps:
 
         return quota_reached
 
-    async def get_org_storage_quota(self, oid: uuid.UUID) -> int:
+    async def get_org_storage_quota(self, oid: UUID) -> int:
         """return max allowed concurrent crawls, if any"""
         org = await self.orgs.find_one({"_id": oid})
         if org:
@@ -390,7 +402,7 @@ class OrgOps:
             return org.quotas.storageQuota
         return 0
 
-    async def get_org_exec_mins_monthly_quota(self, oid: uuid.UUID) -> int:
+    async def get_org_exec_mins_monthly_quota(self, oid: UUID) -> int:
         """return max allowed execution mins per month, if any"""
         org = await self.orgs.find_one({"_id": oid})
         if org:
@@ -457,10 +469,10 @@ class OrgOps:
 
         profile_count = await self.profiles_db.count_documents({"oid": org.id})
         workflows_running_count = await self.crawls_db.count_documents(
-            {"oid": org.id, "state": {"$in": list(RUNNING_STATES)}}
+            {"oid": org.id, "state": {"$in": RUNNING_STATES}}
         )
         workflows_queued_count = await self.crawls_db.count_documents(
-            {"oid": org.id, "state": {"$in": list(STARTING_STATES)}}
+            {"oid": org.id, "state": {"$in": STARTING_STATES}}
         )
         collections_count = await self.colls_db.count_documents({"oid": org.id})
         public_collections_count = await self.colls_db.count_documents(
@@ -506,7 +518,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
     ops = OrgOps(mdb, invites)
 
-    async def org_dep(oid: uuid.UUID, user: User = Depends(user_dep)):
+    async def org_dep(oid: UUID, user: User = Depends(user_dep)):
         org = await ops.get_org_for_user_by_id(oid, user)
         if not org:
             raise HTTPException(status_code=404, detail="org_not_found")
@@ -539,7 +551,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
         return org
 
-    async def org_public(oid: uuid.UUID):
+    async def org_public(oid: UUID):
         org = await ops.get_org_by_id(oid)
         if not org:
             raise HTTPException(status_code=404, detail="org_not_found")
@@ -580,7 +592,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        id_ = uuid.uuid4()
+        id_ = uuid4()
 
         slug = new_org.slug
         if not slug:

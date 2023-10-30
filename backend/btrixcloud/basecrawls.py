@@ -1,13 +1,12 @@
 """ base crawl type """
 
-import uuid
 import os
 from datetime import timedelta
-from typing import Optional, List, Union, Type
+from typing import Optional, List, Union, Type, TYPE_CHECKING
+from uuid import UUID
 import urllib.parse
 import contextlib
 
-from pydantic import UUID4
 from fastapi import HTTPException, Depends
 
 from .models import (
@@ -21,26 +20,23 @@ from .models import (
     Organization,
     PaginatedResponse,
     User,
+    RUNNING_AND_STARTING_STATES,
+    SUCCESSFUL_STATES,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now
 
-
-RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
-
-STARTING_STATES = ("starting", "waiting_capacity", "waiting_org_limit")
-
-FAILED_STATES = ("canceled", "failed", "skipped_quota_reached")
-
-SUCCESSFUL_STATES = ("complete", "partial_complete")
-
-RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
-
-RUNNING_AND_STARTING_ONLY = ("starting", *RUNNING_STATES)
-
-NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
-
-ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
+if TYPE_CHECKING:
+    from .crawlconfigs import CrawlConfigOps
+    from .crawlmanager import CrawlManager
+    from .users import UserManager
+    from .orgs import OrgOps
+    from .colls import CollectionOps
+    from .storages import StorageOps
+    from .webhooks import EventWebhookOps
+else:
+    CrawlConfigOps = UserManager = OrgOps = CollectionOps = object
+    CrawlManager = StorageOps = EventWebhookOps = object
 
 
 # Presign duration must be less than 604800 seconds (one week),
@@ -56,16 +52,33 @@ class BaseCrawlOps:
 
     # pylint: disable=duplicate-code, too-many-arguments, too-many-locals
 
+    crawl_configs: CrawlConfigOps
+    crawl_manager: CrawlManager
+    user_manager: UserManager
+    orgs: OrgOps
+    colls: CollectionOps
+    storage_ops: StorageOps
+    event_webhook_ops: EventWebhookOps
+
     def __init__(
-        self, mdb, users, orgs, crawl_configs, crawl_manager, colls, storage_ops
+        self,
+        mdb,
+        users: UserManager,
+        orgs: OrgOps,
+        crawl_manager: CrawlManager,
+        crawl_configs: CrawlConfigOps,
+        colls: CollectionOps,
+        storage_ops: StorageOps,
+        event_webhook_ops: EventWebhookOps,
     ):
         self.crawls = mdb["crawls"]
-        self.crawl_configs = crawl_configs
         self.crawl_manager = crawl_manager
+        self.crawl_configs = crawl_configs
         self.user_manager = users
         self.orgs = orgs
         self.colls = colls
         self.storage_ops = storage_ops
+        self.event_webhook_ops = event_webhook_ops
 
         presign_duration_minutes = int(
             os.environ.get("PRESIGN_DURATION_MINUTES") or PRESIGN_MINUTES_DEFAULT
@@ -153,7 +166,7 @@ class BaseCrawlOps:
         return res
 
     async def _update_crawl_collections(
-        self, crawl_id: str, org: Organization, collection_ids: List[UUID4]
+        self, crawl_id: str, org: Organization, collection_ids: List[UUID]
     ):
         """Update crawl collections to match updated list."""
         crawl = await self.get_crawl(crawl_id, org, cls_type=CrawlOut)
@@ -218,7 +231,7 @@ class BaseCrawlOps:
             {"$set": data},
         )
 
-    async def update_usernames(self, userid: uuid.UUID, updated_name: str) -> None:
+    async def update_usernames(self, userid: UUID, updated_name: str) -> None:
         """Update username references matching userid"""
         await self.crawls.update_many(
             {"userid": userid}, {"$set": {"userName": updated_name}}
@@ -342,9 +355,11 @@ class BaseCrawlOps:
     ):
         """Resolve running crawl data"""
         # pylint: disable=too-many-branches
-        config = await self.crawl_configs.get_crawl_config(
-            crawl.cid, org.id if org else None, active_only=False
-        )
+        config = None
+        if crawl.cid:
+            config = await self.crawl_configs.get_crawl_config(
+                crawl.cid, org.id if org else None, active_only=False
+            )
         if config and config.config.seeds:
             if add_first_seed:
                 first_seed = config.config.seeds[0]
@@ -428,7 +443,7 @@ class BaseCrawlOps:
             await redis.close()
 
     async def add_to_collection(
-        self, crawl_ids: List[str], collection_id: uuid.UUID, org: Organization
+        self, crawl_ids: List[str], collection_id: UUID, org: Organization
     ):
         """Add crawls to collection."""
         for crawl_id in crawl_ids:
@@ -444,9 +459,7 @@ class BaseCrawlOps:
                 {"$push": {"collectionIds": collection_id}},
             )
 
-    async def remove_from_collection(
-        self, crawl_ids: List[uuid.UUID], collection_id: uuid.UUID
-    ):
+    async def remove_from_collection(self, crawl_ids: List[str], collection_id: UUID):
         """Remove crawls from collection."""
         for crawl_id in crawl_ids:
             await self.crawls.find_one_and_update(
@@ -454,7 +467,7 @@ class BaseCrawlOps:
                 {"$pull": {"collectionIds": collection_id}},
             )
 
-    async def remove_collection_from_all_crawls(self, collection_id: uuid.UUID):
+    async def remove_collection_from_all_crawls(self, collection_id: UUID):
         """Remove collection id from all crawls it's currently in."""
         await self.crawls.update_many(
             {"collectionIds": collection_id},
@@ -465,14 +478,14 @@ class BaseCrawlOps:
     async def list_all_base_crawls(
         self,
         org: Optional[Organization] = None,
-        userid: Optional[uuid.UUID] = None,
+        userid: Optional[UUID] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        collection_id: Optional[str] = None,
+        collection_id: Optional[UUID] = None,
         states: Optional[List[str]] = None,
         first_seed: Optional[str] = None,
         type_: Optional[str] = None,
-        cid: Optional[UUID4] = None,
+        cid: Optional[UUID] = None,
         cls_type: Type[Union[CrawlOut, CrawlOutWithResources]] = CrawlOut,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -664,18 +677,14 @@ class BaseCrawlOps:
 
 
 # ============================================================================
-def init_base_crawls_api(
-    app, mdb, users, crawl_manager, crawl_config_ops, orgs, colls, storage_ops, user_dep
-):
+def init_base_crawls_api(app, user_dep, *args):
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code, too-many-arguments, too-many-locals
 
-    ops = BaseCrawlOps(
-        mdb, users, orgs, crawl_config_ops, crawl_manager, colls, storage_ops
-    )
+    ops = BaseCrawlOps(*args)
 
-    org_viewer_dep = orgs.org_viewer_dep
-    org_crawl_dep = orgs.org_crawl_dep
+    org_viewer_dep = ops.orgs.org_viewer_dep
+    org_crawl_dep = ops.orgs.org_crawl_dep
 
     @app.get(
         "/orgs/{oid}/all-crawls",
@@ -686,16 +695,16 @@ def init_base_crawls_api(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        userid: Optional[UUID4] = None,
+        userid: Optional[UUID] = None,
         name: Optional[str] = None,
         state: Optional[str] = None,
         firstSeed: Optional[str] = None,
         description: Optional[str] = None,
-        collectionId: Optional[UUID4] = None,
+        collectionId: Optional[UUID] = None,
         crawlType: Optional[str] = None,
-        cid: Optional[UUID4] = None,
+        cid: Optional[UUID] = None,
         sortBy: Optional[str] = "finished",
-        sortDirection: Optional[int] = -1,
+        sortDirection: int = -1,
     ):
         states = state.split(",") if state else None
 

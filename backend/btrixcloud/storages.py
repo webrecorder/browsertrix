@@ -1,7 +1,15 @@
 """
 Storage API
 """
-from typing import Optional, Iterator, Iterable, List, Dict, AsyncIterator
+from typing import (
+    Optional,
+    Iterator,
+    Iterable,
+    List,
+    Dict,
+    AsyncIterator,
+    TYPE_CHECKING,
+)
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
 
@@ -41,6 +49,12 @@ from .zip import (
 from .utils import is_bool, slug_from_name
 
 
+if TYPE_CHECKING:
+    from .orgs import OrgOps
+    from .crawlmanager import CrawlManager
+else:
+    OrgOps = CrawlManager = object
+
 CHUNK_SIZE = 1024 * 256
 
 
@@ -54,6 +68,9 @@ class StorageOps:
     default_primary: Optional[StorageRef] = None
 
     default_replicas: List[StorageRef] = []
+
+    org_ops: OrgOps
+    crawl_manager: CrawlManager
 
     def __init__(self, org_ops, crawl_manager) -> None:
         self.org_ops = org_ops
@@ -159,15 +176,13 @@ class StorageOps:
 
         org.customStorages[name] = storage
 
-        string_data = (
-            {
-                "TYPE": "s3",
-                "STORE_ENDPOINT_URL": storage.endpoint_url,
-                "STORE_ENDPOINT_NO_BUCKET_URL": storage.endpoint_no_bucket_url,
-                "STORE_ACCESS_KEY": storage.access_key,
-                "STORE_SECRET_KEY": storage.secret_key,
-            },
-        )
+        string_data = {
+            "TYPE": "s3",
+            "STORE_ENDPOINT_URL": storage.endpoint_url,
+            "STORE_ENDPOINT_NO_BUCKET_URL": storage.endpoint_no_bucket_url,
+            "STORE_ACCESS_KEY": storage.access_key,
+            "STORE_SECRET_KEY": storage.secret_key,
+        }
 
         await self.crawl_manager.add_org_storage(
             StorageRef(name=name, custom=True), string_data, str(org.id)

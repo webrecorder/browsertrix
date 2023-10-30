@@ -5,11 +5,12 @@ import importlib.util
 import os
 import urllib
 import asyncio
+from uuid import UUID
 
 from typing import Optional, Union
 
 import motor.motor_asyncio
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel
 from pymongo.errors import InvalidName
 
 from .migrations import BaseMigration
@@ -132,6 +133,7 @@ async def run_db_migrations(mdb, user_manager):
                 f".migrations.{migration_name}", module_path
             )
             assert spec
+            assert spec.loader
             migration_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(migration_module)
             migration = migration_module.Migration(mdb)
@@ -198,7 +200,7 @@ async def create_indexes(
 class BaseMongoModel(BaseModel):
     """Base pydantic model that is also a mongo doc"""
 
-    id: Optional[Union[UUID4, str]]
+    id: Optional[Union[UUID, str]]
 
     @property
     def id_str(self):

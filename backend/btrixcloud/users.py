@@ -3,10 +3,10 @@ FastAPI user handling (via fastapi-users)
 """
 
 import os
-import uuid
+from uuid import UUID, uuid4
 import asyncio
 
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING, cast
 
 from pydantic import EmailStr
 
@@ -51,20 +51,37 @@ from .auth import (
     decode_jwt,
 )
 
+if TYPE_CHECKING:
+    from .invites import InviteOps
+    from .emailsender import EmailSender
+    from .orgs import OrgOps
+    from .basecrawls import BaseCrawlOps
+    from .crawlconfigs import CrawlConfigOps
+else:
+    InviteOps = EmailSender = OrgOps = BaseCrawlOps = CrawlConfigOps = object
+
 
 # ============================================================================
 # pylint: disable=raise-missing-from, too-many-public-methods, too-many-instance-attributes
 class UserManager:
     """Browsertrix UserManager"""
 
+    invites: InviteOps
+    email: EmailSender
+
+    org_ops: OrgOps
+    base_crawl_ops: BaseCrawlOps
+    crawl_config_ops: CrawlConfigOps
+
     def __init__(self, mdb, email, invites):
         self.users = mdb.get_collection("users")
         self.failed_logins = mdb.get_collection("logins")
-        self.crawl_config_ops = None
-        self.base_crawl_ops = None
         self.email = email
         self.invites = invites
-        self.org_ops = None
+
+        self.org_ops = cast(OrgOps, None)
+        self.crawl_config_ops = cast(CrawlConfigOps, None)
+        self.base_crawl_ops = cast(BaseCrawlOps, None)
 
         self.email_collation = Collation("en", strength=2)
 
@@ -190,7 +207,7 @@ class UserManager:
 
     async def get_user_names_by_ids(self, user_ids: List[str]) -> dict[str, str]:
         """return list of user names for given ids"""
-        user_uuid_ids = [uuid.UUID(id_) for id_ in user_ids]
+        user_uuid_ids = [UUID(id_) for id_ in user_ids]
         cursor = self.users.find(
             {"id": {"$in": user_uuid_ids}}, projection=["id", "name", "email"]
         )
@@ -296,6 +313,9 @@ class UserManager:
     async def format_invite(self, invite):
         """format an InvitePending to return via api, resolve name of inviter"""
         inviter = await self.get_by_email(invite.inviterEmail)
+        if not inviter:
+            raise HTTPException(status_code=400, detail="invalid_invite_code")
+
         result = invite.serialize()
         result["inviterName"] = inviter.name
         if invite.oid:
@@ -319,7 +339,7 @@ class UserManager:
             is_superuser = False
             is_verified = create.inviteToken is not None
 
-        id_ = uuid.uuid4()
+        id_ = uuid4()
 
         user = User(
             id=id_,
@@ -378,7 +398,7 @@ class UserManager:
 
         return user
 
-    async def get_by_id(self, _id: uuid.UUID) -> Optional[User]:
+    async def get_by_id(self, _id: UUID) -> Optional[User]:
         """get user by unique id"""
         user = await self.users.find_one({"id": _id})
 
@@ -420,7 +440,7 @@ class UserManager:
             raise exc
 
         try:
-            user_uuid = uuid.UUID(user_id)
+            user_uuid = UUID(user_id)
         except ValueError:
             raise exc
 
@@ -467,7 +487,7 @@ class UserManager:
         user_id = data["user_id"]
 
         try:
-            user_uuid = uuid.UUID(user_id)
+            user_uuid = UUID(user_id)
         except ValueError:
             raise HTTPException(
                 status_code=400,
@@ -556,7 +576,7 @@ class UserManager:
 
         If a FailedLogin object doesn't already exist, create it
         """
-        failed_login = FailedLogin(id=uuid.uuid4(), email=email)
+        failed_login = FailedLogin(id=uuid4(), email=email)
 
         await self.failed_logins.find_one_and_update(
             {"email": email},
@@ -715,7 +735,7 @@ def init_users_router(current_active_user, user_manager) -> APIRouter:
         return await user_manager.format_invite(invite)
 
     @users_router.get("/invite/{token}", tags=["invites"])
-    async def get_invite_info(token: uuid.UUID, email: str):
+    async def get_invite_info(token: UUID, email: str):
         invite = await user_manager.invites.get_valid_invite(token, email)
         return await user_manager.format_invite(invite)
 
