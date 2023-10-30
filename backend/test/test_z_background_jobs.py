@@ -12,7 +12,7 @@ job_id = None
 
 def test_background_jobs_list(admin_auth_headers, default_org_id):
 	r = requests.get(
-		f"{API_PREFIX}/jobs/",
+		f"{API_PREFIX}/orgs/{default_org_id}/jobs/",
 		headers=admin_auth_headers
 	)
 	assert r.status_code == 200
@@ -43,7 +43,7 @@ def test_background_jobs_list(admin_auth_headers, default_org_id):
 )
 def test_background_jobs_list_filter_by_type(admin_auth_headers, default_org_id, job_type):
 	r = requests.get(
-		f"{API_PREFIX}/jobs/?jobType={job_type}",
+		f"{API_PREFIX}/orgs/{default_org_id}/jobs/?jobType={job_type}",
 		headers=admin_auth_headers
 	)
 	assert r.status_code == 200
@@ -66,7 +66,7 @@ def test_background_jobs_list_filter_by_type(admin_auth_headers, default_org_id,
 )
 def test_background_jobs_list_filter_by_success(admin_auth_headers, default_org_id, success):
 	r = requests.get(
-		f"{API_PREFIX}/jobs/?success={success}",
+		f"{API_PREFIX}/orgs/{default_org_id}/jobs/?success={success}",
 		headers=admin_auth_headers
 	)
 	assert r.status_code == 200
@@ -82,7 +82,7 @@ def test_background_jobs_list_filter_by_success(admin_auth_headers, default_org_
 
 def test_get_background_job(admin_auth_headers, default_org_id):
 	r = requests.get(
-		f"{API_PREFIX}/jobs/{job_id}",
+		f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
 		headers=admin_auth_headers
 	)
 	assert r.status_code == 200

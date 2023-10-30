@@ -44,7 +44,7 @@ def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
 
 def verify_replica_file_identical_to_original(file_path: str):
     file_path_minus_bucket = file_path.split("/")[1]
-    primary_file_hash = download_file_and_return_hash("default", file_path_minus_bucket)
+    primary_file_hash = download_file_and_return_hash("btrix-test-data", file_path_minus_bucket)
     replica_file_hash = download_file_and_return_hash("replica-0", file_path_minus_bucket)
     return primary_file_hath == replica_file_hash
 
