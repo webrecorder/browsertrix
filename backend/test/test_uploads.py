@@ -382,7 +382,7 @@ def test_ensure_deleted(admin_auth_headers, default_org_id):
 
     # Verify delete replica job was successful
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=delete=replica",
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=delete-replica",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
