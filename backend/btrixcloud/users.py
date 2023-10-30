@@ -19,6 +19,7 @@ from fastapi import (
 )
 
 from pymongo.errors import DuplicateKeyError
+from pymongo.collation import Collation
 
 from .models import (
     UserCreate,
@@ -82,6 +83,8 @@ class UserManager:
         self.crawl_config_ops = cast(CrawlConfigOps, None)
         self.base_crawl_ops = cast(BaseCrawlOps, None)
 
+        self.email_collation = Collation("en", strength=2)
+
         self.registration_enabled = is_bool(os.environ.get("REGISTRATION_ENABLED"))
 
     # pylint: disable=attribute-defined-outside-init
@@ -95,6 +98,13 @@ class UserManager:
         """init lookup index"""
         await self.users.create_index("id", unique=True)
         await self.users.create_index("email", unique=True)
+
+        await self.users.create_index(
+            "email",
+            name="case_insensitive_email_index",
+            collation=self.email_collation,
+        )
+
         # Expire failed logins object after one hour
         await self.failed_logins.create_index("attempted", expireAfterSeconds=3600)
 
@@ -399,7 +409,9 @@ class UserManager:
 
     async def get_by_email(self, email: str) -> Optional[User]:
         """get user by email"""
-        user = await self.users.find_one({"email": email})
+        user = await self.users.find_one(
+            {"email": email}, collation=self.email_collation
+        )
         if not user:
             return None
 
@@ -555,7 +567,9 @@ class UserManager:
 
     async def reset_failed_logins(self, email: str) -> None:
         """Reset consecutive failed login attempts by deleting FailedLogin object"""
-        await self.failed_logins.delete_one({"email": email})
+        await self.failed_logins.delete_one(
+            {"email": email}, collation=self.email_collation
+        )
 
     async def inc_failed_logins(self, email: str) -> None:
         """Inc consecutive failed login attempts for user by 1
@@ -572,11 +586,14 @@ class UserManager:
                 "$inc": {"count": 1},
             },
             upsert=True,
+            collation=self.email_collation,
         )
 
     async def get_failed_logins_count(self, email: str) -> int:
         """Get failed login attempts for user, falling back to 0"""
-        failed_login = await self.failed_logins.find_one({"email": email})
+        failed_login = await self.failed_logins.find_one(
+            {"email": email}, collation=self.email_collation
+        )
         if not failed_login:
             return 0
         return failed_login.get("count", 0)

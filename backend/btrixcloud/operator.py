@@ -258,7 +258,6 @@ class BtrixOperator(K8sAPI):
     storage_ops: StorageOps
     event_webhook_ops: EventWebhookOps
     background_job_ops: BackgroundJobOps
-
     user_ops: UserManager
 
     def __init__(
@@ -695,7 +694,7 @@ class BtrixOperator(K8sAPI):
             {
                 "apiVersion": BTRIX_API,
                 "resource": "crawljobs",
-                "labelSelector": {"matchLabels": {"oid": oid}},
+                "labelSelector": {"matchLabels": {"btrix.org": oid}},
             },
         ]
 

@@ -61,6 +61,7 @@ class BaseCrawlOps:
     colls: CollectionOps
     storage_ops: StorageOps
     event_webhook_ops: EventWebhookOps
+    background_job_ops: BackgroundJobOps
 
     def __init__(
         self,

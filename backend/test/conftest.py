@@ -15,7 +15,8 @@ ADMIN_PW = "PASSW0RD!"
 VIEWER_USERNAME = "viewer@example.com"
 VIEWER_PW = "viewerPASSW0RD!"
 
-CRAWLER_USERNAME = "crawler@example.com"
+CRAWLER_USERNAME = "CraWleR@example.com"
+CRAWLER_USERNAME_LOWERCASE = "crawler@example.com"
 CRAWLER_PW = "crawlerPASSWORD!"
 
 _admin_config_id = None
