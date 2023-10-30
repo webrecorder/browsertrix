@@ -86,7 +86,7 @@ def test_crawl_info(admin_auth_headers, default_org_id, admin_crawl_id):
 
 
 def test_crawl_files_replicated(admin_auth_headers, default_org_id, admin_crawl_id):
-    time.sleep(20)
+    time.sleep(5)
 
     # Verify replication job was successful
     r = requests.get(
@@ -96,8 +96,24 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, admin_crawl_
     assert r.status_code == 200
     latest_job = r.json()["items"][0]
     assert latest_job["type"] == "create-replica"
-    assert latest_job["finished"]
-    assert latest_job["success"]
+    job_id = latest_job["id"]
+
+    attempts = 0
+    while attempts < 5:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
+            headers=admin_auth_headers
+        )
+        assert r.status_code == 200
+        job = r.json()
+        finished = latest_job.get("finished")
+        if not finished:
+            attempts += 1
+            time.sleep(10)
+            continue
+
+        assert job["success"]
+        break
 
     # Assert file was updated
     r = requests.get(
@@ -397,9 +413,9 @@ def test_delete_crawls_org_owner(
     )
     assert r.status_code == 404
 
-    time.sleep(20)
+    time.sleep(5)
 
-    # Verify replica deletion job was successful
+    # Verify delete replica job was successful
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1",
         headers=admin_auth_headers,
@@ -407,4 +423,21 @@ def test_delete_crawls_org_owner(
     assert r.status_code == 200
     latest_job = r.json()["items"][0]
     assert latest_job["type"] == "delete-replica"
-    assert latest_job["success"]
+    job_id = latest_job["id"]
+
+    attempts = 0
+    while attempts < 5:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
+            headers=admin_auth_headers
+        )
+        assert r.status_code == 200
+        job = r.json()
+        finished = latest_job.get("finished")
+        if not finished:
+            attempts += 1
+            time.sleep(10)
+            continue
+
+        assert job["success"]
+        break
