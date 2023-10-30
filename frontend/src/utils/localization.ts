@@ -15,6 +15,11 @@ export const setLocaleFromUrl = async () => {
   await setLocale(locale);
 };
 
+export const setLocaleFromLocalStorage = async () => {
+  const locale = window.localStorage.getItem("locale");
+  await setLocale(locale || sourceLocale);
+};
+
 /**
  * Get time zone short name from locales
  * @param locales List of locale codes. Omit for browser default

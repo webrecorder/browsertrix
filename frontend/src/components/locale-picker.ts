@@ -2,7 +2,11 @@ import { LitElement, html } from "lit";
 import { state } from "lit/decorators.js";
 
 import { allLocales } from "../__generated__/locale-codes";
-import { getLocale, setLocaleFromUrl } from "../utils/localization";
+import {
+  getLocale,
+  setLocaleFromUrl,
+  setLocaleFromLocalStorage,
+} from "../utils/localization";
 import { localized } from "@lit/localize";
 
 type LocaleCode = (typeof allLocales)[number];
@@ -64,10 +68,12 @@ export class LocalePicker extends LitElement {
     const newLocale = event.detail.item.value as LocaleCode;
 
     if (newLocale !== getLocale()) {
-      const url = new URL(window.location.href);
-      url.searchParams.set("locale", newLocale);
-      window.history.pushState(null, "", url.toString());
-      setLocaleFromUrl();
+      window.localStorage.setItem("locale", newLocale);
+      await setLocaleFromLocalStorage();
+      //const url = new URL(window.location.href);
+      //url.searchParams.set("locale", newLocale);
+      //window.history.pushState(null, "", url.toString());
+      //setLocaleFromUrl();
     }
   }
 }

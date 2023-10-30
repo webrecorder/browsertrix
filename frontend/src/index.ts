@@ -27,6 +27,7 @@ import "./pages";
 import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
+import { setLocaleFromLocalStorage } from "./utils/localization";
 
 type DialogContent = {
   label?: TemplateResult | string;
@@ -111,6 +112,8 @@ export class App extends LiteElement {
   }
 
   private syncViewState() {
+    setLocaleFromLocalStorage();
+
     if (
       this.authService.authState &&
       (window.location.pathname === "/log-in" ||
@@ -454,10 +457,9 @@ export class App extends LiteElement {
       <footer
         class="w-full max-w-screen-lg mx-auto p-3 box-border flex flex-col gap-4 md:flex-row justify-between"
       >
-        <!-- <div> -->
-        <!-- TODO re-enable when translations are added -->
-        <!-- <btrix-locale-picker></btrix-locale-picker> -->
-        <!-- </div> -->
+        <div>
+          <btrix-locale-picker></btrix-locale-picker>
+        </div>
         <div class="flex items-center justify-center">
           <a
             class="text-neutral-400 flex items-center gap-2 hover:text-primary"
