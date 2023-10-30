@@ -218,8 +218,7 @@ class BackgroundJobOps:
         res = await self.jobs.find_one(query)
         if not res:
             raise HTTPException(status_code=404, detail="job_not_found")
-
-        return BackgroundJob.from_dict(res)
+        return res
 
     async def list_background_jobs(
         self,
@@ -305,7 +304,8 @@ def init_background_jobs_api(mdb, org_ops, crawl_manager, storage_ops):
         org: Organization = Depends(org_crawl_dep),
     ):
         """Retrieve information for background job"""
-        return await ops.get_background_job(job_id, org.id)
+        res = await ops.get_background_job(job_id, org.id)
+        return BackgroundJob.from_dict(res)
 
     @router.get("", tags=["backgroundjobs"], response_model=PaginatedResponse)
     async def list_background_jobs(
