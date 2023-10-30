@@ -89,8 +89,12 @@ def test_get_background_job(admin_auth_headers, default_org_id):
 	data = r.json()
 
 	assert data["id"]
-	assert data["type"]
-	assert data["oid"]
+	assert data["type"] in ("create-replica", "delete-replica")
+	assert data["oid"] == default_org_id
 	assert data["success"] in (True, False)
 	assert data["started"]
 	assert data["finished"]
+	assert data["file_path"]
+	assert data["object_type"]
+	assert data["object_id"]
+	assert data["replica_storage"]
