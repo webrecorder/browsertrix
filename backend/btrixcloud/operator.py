@@ -669,7 +669,7 @@ class BtrixOperator(K8sAPI):
             {
                 "apiVersion": BTRIX_API,
                 "resource": "crawljobs",
-                "labelSelector": {"matchLabels": {"oid": oid}},
+                "labelSelector": {"matchLabels": {"btrix.org": oid}},
             },
         ]
 
