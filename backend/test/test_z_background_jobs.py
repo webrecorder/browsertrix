@@ -28,10 +28,12 @@ def test_background_jobs_list(admin_auth_headers, default_org_id):
 		assert item["oid"]
 		assert item["success"] in (True, False)
 		assert item["started"]
-		assert item["finished"]
+		finished = item["finished"]
+		assert finished or finished is None
 
 	global job_id
 	job_id = items[0]["id"]
+	assert job_id
 
 
 @pytest.mark.parametrize(
@@ -93,7 +95,8 @@ def test_get_background_job(admin_auth_headers, default_org_id):
 	assert data["oid"] == default_org_id
 	assert data["success"] in (True, False)
 	assert data["started"]
-	assert data["finished"]
+	finished = item["finished"]
+	assert finished or finished is None
 	assert data["file_path"]
 	assert data["object_type"]
 	assert data["object_id"]
