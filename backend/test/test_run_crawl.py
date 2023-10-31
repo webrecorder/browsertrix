@@ -451,6 +451,8 @@ def test_delete_crawls_org_owner(
         assert job["success"]
         break
 
+    time.sleep(10)
+
     # Verify replica is no longer stored
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}", headers=admin_auth_headers
