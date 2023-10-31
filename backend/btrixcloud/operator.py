@@ -1242,8 +1242,6 @@ class BtrixOperator(K8sAPI):
             storage=crawl.storage,
         )
 
-        print(f"Crawl file: {crawl_file.to_dict()}", flush=True)
-
         await redis.incr("filesAddedSize", filecomplete.size)
 
         await self.crawl_ops.add_crawl_file(crawl.id, crawl_file, filecomplete.size)
