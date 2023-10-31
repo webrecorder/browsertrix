@@ -79,7 +79,7 @@ class BackgroundJobOps:
                 UUID(job.object_id), job.file_path, job.replica_storage
             )
         if not res:
-            raise HTTPException(status_code=404, detail="missing_file_for_replica")
+            print(f"File deleted before replication job started, ignoring", flush=True)
 
     async def create_replica_jobs(
         self, oid: UUID, file: BaseFile, object_id: str, object_type: str

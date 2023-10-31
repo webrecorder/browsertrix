@@ -4,7 +4,11 @@ import time
 from urllib.parse import urljoin
 
 from .conftest import API_PREFIX
-from .utils import read_in_chunks, verify_file_replicated, verify_file_and_replica_deleted
+from .utils import (
+    read_in_chunks,
+    verify_file_replicated,
+    verify_file_and_replica_deleted,
+)
 
 upload_id = None
 upload_id_2 = None
