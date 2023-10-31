@@ -9,7 +9,7 @@ on:
       - 'chart/**'
 
 env:
-  HOST_URL_FROM_K8S: http://10.0.1.1:18080
+  HOST_URL_FROM_K8S: http://10.0.1.1
 
 jobs:
   btrix-microk8s-test:
