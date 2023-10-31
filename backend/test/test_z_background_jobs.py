@@ -95,7 +95,7 @@ def test_get_background_job(admin_auth_headers, default_org_id):
 	assert data["oid"] == default_org_id
 	assert data["success"] in (True, False)
 	assert data["started"]
-	finished = item["finished"]
+	finished = data["finished"]
 	assert finished or finished is None
 	assert data["file_path"]
 	assert data["object_type"]
