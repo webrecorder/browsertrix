@@ -43,7 +43,7 @@ def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
         return None
 
 
-def verify_file_replicated(file_path: str) -> bool:
+def verify_file_replicated(file_path: str):
     file_path_minus_bucket = file_path.split("/")[1]
     primary_file_hash = download_file_and_return_hash(
         "btrix-test-data", file_path_minus_bucket
@@ -53,7 +53,7 @@ def verify_file_replicated(file_path: str) -> bool:
     )
     assert primary_file_hash == replica_file_hash
 
-def verify_file_and_replica_deleted(file_path: str) -> None:
+def verify_file_and_replica_deleted(file_path: str):
     file_path_minus_bucket = file_path.split("/")[1]
     assert download_file_and_return_hash(
         "btrix-test-data", file_path_minus_bucket
