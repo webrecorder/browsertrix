@@ -305,9 +305,9 @@ def init_background_jobs_api(mdb, org_ops, crawl_manager, storage_ops):
     ):
         """Retrieve information for background job"""
         res = await ops.get_background_job(job_id, org.id)
-        if res["type"] == BgJobType.CREATE_REPLICA.value:
+        if res["type"] == "create-replica":
             return CreateReplicaJob.from_dict(res)
-        if res["type"] == BgJobType.DELETE_REPLICA.value:
+        if res["type"] == "delete-replica":
             return DeleteReplicaJob.from_dict(res)
         return BackgroundJob.from_dict(res)
 
