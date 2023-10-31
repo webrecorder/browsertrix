@@ -51,4 +51,4 @@ def verify_replica_file_identical_to_original(file_path: str):
     replica_file_hash = download_file_and_return_hash(
         "replica-0", file_path_minus_bucket
     )
-    return primary_file_hath == replica_file_hash
+    return primary_file_hash == replica_file_hash
