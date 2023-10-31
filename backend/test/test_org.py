@@ -97,6 +97,7 @@ def test_create_org(admin_auth_headers):
         org_names.append(org["name"])
     assert NEW_ORG_NAME in org_names
 
+
 # disable until storage customization is enabled
 def _test_change_org_storage(admin_auth_headers):
     # change to invalid storage

@@ -16,6 +16,7 @@ from .models import (
     CreateReplicaJob,
     DeleteReplicaJob,
     PaginatedResponse,
+    AnyJob,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
@@ -193,32 +194,36 @@ class BackgroundJobOps:
         """Update job as finished, including
         job-specific task handling"""
 
-        job_data = await self.get_background_job(job_id, oid)
-        # return if already finished
-        if job_data.get("finished"):
+        job = await self.get_background_job(job_id, oid)
+        if job.finished:
             return
 
-        if job_data.get("type") != job_type:
+        if job.type != job_type:
             raise HTTPException(status_code=400, detail="invalid_job_type")
 
         if success:
             if job_type == BgJobType.CREATE_REPLICA:
-                await self.handle_replica_job_finished(
-                    CreateReplicaJob.from_dict(job_data)
-                )
+                await self.handle_replica_job_finished(cast(CreateReplicaJob, job))
 
         await self.jobs.find_one_and_update(
             {"_id": job_id, "oid": oid},
             {"$set": {"success": success, "finished": finished}},
         )
 
-    async def get_background_job(self, job_id: str, oid: UUID) -> Dict[str, object]:
+    async def get_background_job(self, job_id: str, oid: UUID) -> BackgroundJob:
         """Get background job"""
         query: dict[str, object] = {"_id": job_id, "oid": oid}
         res = await self.jobs.find_one(query)
         if not res:
             raise HTTPException(status_code=404, detail="job_not_found")
-        return res
+
+        if res["type"] == BgJobType.CREATE_REPLICA:
+            return CreateReplicaJob.from_dict(res)
+
+        if res["type"] == BgJobType.DELETE_REPLICA:
+            return DeleteReplicaJob.from_dict(res)
+
+        return BackgroundJob.from_dict(res)
 
     async def list_background_jobs(
         self,
@@ -298,18 +303,17 @@ def init_background_jobs_api(mdb, org_ops, crawl_manager, storage_ops):
     # org_owner_dep = org_ops.org_owner_dep
     org_crawl_dep = org_ops.org_crawl_dep
 
-    @router.get("/{job_id}", tags=["backgroundjobs"], response_model=BackgroundJob)
+    @router.get(
+        "/{job_id}",
+        tags=["backgroundjobs"],
+        response_model=AnyJob,
+    )
     async def get_background_job(
         job_id: str,
         org: Organization = Depends(org_crawl_dep),
     ):
         """Retrieve information for background job"""
-        res = await ops.get_background_job(job_id, org.id)
-        if res["type"] == "create-replica":
-            return CreateReplicaJob.from_dict(res)
-        if res["type"] == "delete-replica":
-            return DeleteReplicaJob.from_dict(res)
-        return BackgroundJob.from_dict(res)
+        return await ops.get_background_job(job_id, org.id)
 
     @router.get("", tags=["backgroundjobs"], response_model=PaginatedResponse)
     async def list_background_jobs(

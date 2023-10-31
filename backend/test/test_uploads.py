@@ -223,7 +223,7 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
     while attempts < 5:
         r = requests.get(
             f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
-            headers=admin_auth_headers
+            headers=admin_auth_headers,
         )
         assert r.status_code == 200
         job = r.json()
@@ -236,7 +236,7 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
         assert job["success"]
         break
 
-    # Verify file updated 
+    # Verify file updated
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/replay.json",
         headers=admin_auth_headers,
@@ -250,8 +250,7 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
 
     # Verify replica is stored
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
-        headers=admin_auth_headers
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}", headers=admin_auth_headers
     )
     assert r.status_code == 200
     job = r.json()
@@ -403,7 +402,7 @@ def test_ensure_deleted(admin_auth_headers, default_org_id):
     while attempts < 5:
         r = requests.get(
             f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
-            headers=admin_auth_headers
+            headers=admin_auth_headers,
         )
         assert r.status_code == 200
         job = r.json()
@@ -418,8 +417,7 @@ def test_ensure_deleted(admin_auth_headers, default_org_id):
 
     # Verify replica is no longer stored
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
-        headers=admin_auth_headers
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}", headers=admin_auth_headers
     )
     assert r.status_code == 200
     job = r.json()

@@ -1258,3 +1258,10 @@ class DeleteReplicaJob(BackgroundJob):
     object_type: str
     object_id: str
     replica_storage: StorageRef
+
+
+# ============================================================================
+class AnyJob(BaseModel):
+    """Union of all job types, for response model"""
+
+    __root__: Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob]

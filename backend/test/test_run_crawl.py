@@ -103,7 +103,7 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, admin_crawl_
     while attempts < 5:
         r = requests.get(
             f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
-            headers=admin_auth_headers
+            headers=admin_auth_headers,
         )
         assert r.status_code == 200
         job = r.json()
@@ -130,8 +130,7 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, admin_crawl_
 
     # Verify replica is stored
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
-        headers=admin_auth_headers
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}", headers=admin_auth_headers
     )
     assert r.status_code == 200
     job = r.json()
@@ -439,7 +438,7 @@ def test_delete_crawls_org_owner(
     while attempts < 5:
         r = requests.get(
             f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
-            headers=admin_auth_headers
+            headers=admin_auth_headers,
         )
         assert r.status_code == 200
         job = r.json()
@@ -454,8 +453,7 @@ def test_delete_crawls_org_owner(
 
     # Verify replica is no longer stored
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
-        headers=admin_auth_headers
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}", headers=admin_auth_headers
     )
     assert r.status_code == 200
     job = r.json()
