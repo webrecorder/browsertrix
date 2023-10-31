@@ -448,28 +448,11 @@ export class CrawlsList extends LiteElement {
         orgSlug=${this.appState.orgSlug || ""}
         .crawl=${item}
       >
-        <sl-menu slot="menu">
-          ${when(
-            this.isCrawler,
-            this.crawlerMenuItemsRenderer(item),
-            () => html`
-              <sl-menu-item
-                @click=${() =>
-                  this.navTo(
-                    `${this.orgBasePath}/items/${
-                      item.type === "upload" ? "upload" : "crawl"
-                    }/${item.id}`
-                  )}
-              >
-                ${msg("View Crawl Details")}
-              </sl-menu-item>
-            `
-          )}
-        </sl-menu>
+        <sl-menu slot="menu"> ${this.crawlerMenuItemsRenderer(item)} </sl-menu>
       </btrix-crawl-list-item>
     `;
 
-  private crawlerMenuItemsRenderer = (item: Crawl) => () =>
+  private crawlerMenuItemsRenderer = (item: Crawl) =>
     // HACK shoelace doesn't current have a way to override non-hover
     // color without resetting the --sl-color-neutral-700 variable
     html`
