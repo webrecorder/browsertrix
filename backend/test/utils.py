@@ -27,8 +27,9 @@ def hash_file(file_path: str) -> str:
 
 
 def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
-    host_from_k8s = os.environ.get("HOST_URL_FROM_K8S", "http://host.docker.internal")
-    endpoint_url = f"{host_from_k8s}:30090/"
+    # host_from_k8s = os.environ.get("HOST_URL_FROM_K8S", "http://host.docker.internal")
+    # endpoint_url = f"{host_from_k8s}:30090/"
+    endpoint_url = f"http://127.0.0.1:30090/"
     client = boto3.client(
         "s3",
         region_name="",
@@ -49,7 +50,9 @@ def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
 
 def verify_file_replicated(file_path: str):
     primary_file_hash = download_file_and_return_hash("btrix-test-data", file_path)
-    replica_file_hash = download_file_and_return_hash("replica-0", file_path.replace("btrix-test-data/", ""))
+    replica_file_hash = download_file_and_return_hash(
+        "replica-0", file_path.replace("btrix-test-data/", "")
+    )
     print(f"Primary file hash: {primary_file_hash}", flush=True)
     assert primary_file_hash
     print(f"Replica file hash: {replica_file_hash}", flush=True)

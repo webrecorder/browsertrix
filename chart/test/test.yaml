@@ -22,7 +22,7 @@ crawler_extra_memory_per_browser: 256Mi
 mongo_auth:
   # specify either username + password (for local mongo)
   username: root
-  password: PASSWORD@
+  #password: PASSWORD@
 
 
 superuser:
