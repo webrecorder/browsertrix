@@ -51,6 +51,8 @@ def verify_file_replicated(file_path: str):
     replica_file_hash = download_file_and_return_hash(
         "replica-0", file_path_minus_bucket
     )
+    assert primary_file_hash
+    assert replica_file_hash
     assert primary_file_hash == replica_file_hash
 
 
