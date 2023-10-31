@@ -35,6 +35,7 @@ import type {
 import type { Collection } from "../../types/collection";
 import type { Crawl, CrawlState, Upload, Workflow } from "../../types/crawler";
 import type { PageChangeEvent } from "../../components/pagination";
+import { finishedCrawlStates } from "../../utils/crawler";
 
 const TABS = ["crawls", "uploads", "metadata"] as const;
 type Tab = (typeof TABS)[number];
@@ -68,11 +69,6 @@ const sortableFields: Record<
     defaultDirection: "asc",
   },
 };
-const finishedCrawlStates: CrawlState[] = [
-  "complete",
-  "partial_complete",
-  "timed_out",
-];
 const WORKFLOW_CRAWL_LIMIT = 100;
 const WORKFLOW_PAGE_SIZE = 10;
 const CRAWL_PAGE_SIZE = 5;

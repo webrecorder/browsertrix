@@ -12,7 +12,11 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
-import { isActive, activeCrawlStates } from "../../utils/crawler";
+import {
+  isActive,
+  activeCrawlStates,
+  finishedCrawlStates,
+} from "../../utils/crawler";
 
 type Crawls = APIPaginatedList & {
   items: Crawl[];
@@ -38,11 +42,6 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
 };
-const finishedCrawlStates: CrawlState[] = [
-  "complete",
-  "partial_complete",
-  "timed_out",
-];
 
 /**
  * Usage:

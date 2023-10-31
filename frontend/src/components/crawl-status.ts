@@ -160,7 +160,7 @@ export class CrawlStatus extends LitElement {
         break;
       }
 
-      case "complete": {
+      case "complete":
         icon = html`<sl-icon
           name=${isUpload ? "upload" : "check-circle"}
           slot="prefix"
@@ -168,7 +168,42 @@ export class CrawlStatus extends LitElement {
         ></sl-icon>`;
         label = isUpload ? msg("Uploaded") : msg("Complete");
         break;
-      }
+
+      case "complete:user-stop":
+        icon = html`<sl-icon
+          name=${isUpload ? "upload" : "check-circle"}
+          slot="prefix"
+          style="color: var(--success)"
+        ></sl-icon>`;
+        label = isUpload ? msg("Uploaded") : msg("Complete: Stopped");
+        break;
+
+      case "complete:page-limit":
+        icon = html`<sl-icon
+          name=${isUpload ? "upload" : "check-circle"}
+          slot="prefix"
+          style="color: var(--success)"
+        ></sl-icon>`;
+        label = isUpload ? msg("Uploaded") : msg("Complete: Page Limit");
+        break;
+
+      case "complete:size-limit":
+        icon = html`<sl-icon
+          name=${isUpload ? "upload" : "check-circle"}
+          slot="prefix"
+          style="color: var(--success)"
+        ></sl-icon>`;
+        label = isUpload ? msg("Uploaded") : msg("Complete: Size Limit");
+        break;
+
+      case "complete:time-limit":
+        icon = html`<sl-icon
+          name=${isUpload ? "upload" : "check-circle"}
+          slot="prefix"
+          style="color: var(--success)"
+        ></sl-icon>`;
+        label = isUpload ? msg("Uploaded") : msg("Complete: Time Limit");
+        break;
 
       case "failed": {
         icon = html`<sl-icon
@@ -186,7 +221,7 @@ export class CrawlStatus extends LitElement {
           slot="prefix"
           style="color: var(--danger)"
         ></sl-icon>`;
-        label = msg("Skipped (Quota Reached)");
+        label = msg("Skipped (Storage Quota Reached)");
         break;
       }
 
@@ -200,13 +235,13 @@ export class CrawlStatus extends LitElement {
         break;
       }
 
-      case "timed_out": {
+      case "complete:exec-time-quota": {
         icon = html`<sl-icon
-          name="exclamation-circle"
+          name="dash-circle"
           slot="prefix"
           style="color: var(--warning)"
         ></sl-icon>`;
-        label = msg("Timed Out");
+        label = msg("Complete: Time Quota Reached");
         break;
       }
 
