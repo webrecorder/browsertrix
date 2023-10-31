@@ -258,6 +258,7 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     job = r.json()
+    print(job["file_path"])
     verify_file_replicated(job["file_path"])
 
 
