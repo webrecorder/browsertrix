@@ -34,15 +34,15 @@ def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
         aws_access_key_id="ADMIN",
         aws_secret_access_key="PASSW0RD!",
     )
-    try:
-        temp = tempfile.NamedTemporaryFile(delete=False)
-        client.download_file(bucket_name, file_path, temp.name)
-        file_hash = hash_file(temp.name)
-        temp.close()
-        return file_hash
-    # pylint: disable=broad-except
-    except Exception:
-        return None
+    temp = tempfile.NamedTemporaryFile(delete=False)
+    print(f"temp.name: {temp.name}", flush=True)
+    client.download_file(bucket_name, file_path, temp.name)
+    file_stat = os.stat(temp.name)
+    print("stat:", flush=True)
+    print(file_stat, flush=True)
+    file_hash = hash_file(temp.name)
+    temp.close()
+    return file_hash
 
 
 def verify_file_replicated(file_path: str):
