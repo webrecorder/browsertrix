@@ -846,17 +846,15 @@ export class WorkflowDetail extends LiteElement {
                   ></sl-format-date>
                   ${when(
                     this.isCrawler,
-                    () => html`
-                      <sl-menu slot="menu">
-                        <sl-menu-item
-                          style="--sl-color-neutral-700: var(--danger)"
-                          @click=${() => this.deleteCrawl(crawl)}
-                        >
-                          <sl-icon name="trash3" slot="prefix"></sl-icon>
-                          ${msg("Delete Crawl")}
-                        </sl-menu-item>
-                      </sl-menu>
-                    </btrix-crawl-list-item>`
+                    () => html` <sl-menu slot="menu">
+                      <sl-menu-item
+                        style="--sl-color-neutral-700: var(--danger)"
+                        @click=${() => this.deleteCrawl(crawl)}
+                      >
+                        <sl-icon name="trash3" slot="prefix"></sl-icon>
+                        ${msg("Delete Crawl")}
+                      </sl-menu-item>
+                    </sl-menu>`
                   )}</btrix-crawl-list-item
                 >`
               ),
