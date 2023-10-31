@@ -16,32 +16,20 @@ def read_in_chunks(fh, blocksize=1024):
         yield data
 
 
-def hash_file(file_path: str) -> str:
-    h = hashlib.sha256()
-    with open(file_path, "rb") as file_:
-        chunk = 0
-        while chunk != b"":
-            chunk = file_.read(1024)
-            h.update(chunk)
-    return h.hexdigest()
-
-
 def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
-    # host_from_k8s = os.environ.get("HOST_URL_FROM_K8S", "http://host.docker.internal")
-    # endpoint_url = f"{host_from_k8s}:30090/"
     endpoint_url = f"http://127.0.0.1:30090/"
     client = boto3.client(
         "s3",
         region_name="",
         endpoint_url=endpoint_url,
         aws_access_key_id="ADMIN",
-        aws_secret_access_key="PASSW0RD!",
+        aws_secret_access_key="PASSW0RD",
     )
-    temp = tempfile.NamedTemporaryFile(delete=False)
-    client.download_file(bucket_name, file_path, temp.name)
-    file_hash = hash_file(temp.name)
-    temp.close()
-    return file_hash
+    response = client.get_object(Bucket=bucket_name, Key=file_path)
+    h = hashlib.sha256()
+    for chunk in response["Body"].iter_chunks():
+        h.update(chunk)
+    return h.hexdigest()
 
 
 def verify_file_replicated(file_path: str):

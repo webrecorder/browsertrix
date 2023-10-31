@@ -406,8 +406,11 @@ def uploads_collection_id(crawler_auth_headers, default_org_id):
         headers=crawler_auth_headers,
         json={"name": "Upload test collection"},
     )
+    data = r.json()
+    if r.status_code == 400 and data["detail"] == "collection_name_taken":
+        return data["id"]
     assert r.status_code == 200
-    return r.json()["id"]
+    return data["id"]
 
 
 @pytest.fixture(scope="session")
