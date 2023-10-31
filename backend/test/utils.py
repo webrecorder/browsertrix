@@ -35,8 +35,11 @@ def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
         aws_secret_access_key="PASSW0RD!",
     )
     try:
-        with tempfile.NamedTemporaryFile() as temp:
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as temp:
             client.download_file(bucket_name, file_path, temp.name)
+            print("Stat for downloaded file {temp.name}", flush=True)
+            file_status = os.stat(temp.name)
+            print(file_status, print=True)
             return hash_file(temp.name)
     # pylint: disable=broad-except
     except Exception:
