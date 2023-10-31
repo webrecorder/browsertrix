@@ -47,8 +47,9 @@ if TYPE_CHECKING:
     from .webhooks import EventWebhookOps
     from .users import UserManager
     from .background_jobs import BackgroundJobOps
+    from redis.asyncio.client import Redis
 else:
-    CrawlConfigOps = CrawlOps = OrgOps = CollectionOps = object
+    CrawlConfigOps = CrawlOps = OrgOps = CollectionOps = Redis = object
     StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = object
 
 CMAP = "ConfigMap.v1"
@@ -574,7 +575,14 @@ class BtrixOperator(K8sAPI):
         return self.load_from_yaml("crawler.yaml", params)
 
     # pylint: disable=too-many-arguments
-    async def _resolve_scale(self, crawl_id, desired_scale, redis, status, pods):
+    async def _resolve_scale(
+        self,
+        crawl_id: str,
+        desired_scale: int,
+        redis: Redis,
+        status: CrawlStatus,
+        pods: dict[str, dict],
+    ):
         """Resolve scale
         If desired_scale >= actual scale, just set (also limit by number of pages
         found).
@@ -604,9 +612,9 @@ class BtrixOperator(K8sAPI):
                 print(f"Attempting scaling down of pod {i}")
                 await redis.hset(f"{crawl_id}:stopone", name, "1")
 
-            if pod["status"].get("phase") == "Succeeded" and new_scale == i + 1:
-                new_scale = i
-                print(f"Scaled down pod index {i}, scale to {new_scale}")
+                if pod["status"].get("phase") == "Succeeded" and new_scale == i + 1:
+                    new_scale = i
+                    print(f"Scaled down pod index {i}, scale to {new_scale}")
 
         if new_scale < actual_scale:
             for i in range(new_scale, actual_scale):
@@ -871,7 +879,7 @@ class BtrixOperator(K8sAPI):
             "finalized": finalized,
         }
 
-    async def _get_redis(self, redis_url):
+    async def _get_redis(self, redis_url: str) -> Optional[Redis]:
         """init redis, ensure connectivity"""
         redis = None
         try:
@@ -887,7 +895,14 @@ class BtrixOperator(K8sAPI):
 
             return None
 
-    async def sync_crawl_state(self, redis_url, crawl, status, pods, metrics):
+    async def sync_crawl_state(
+        self,
+        redis_url: str,
+        crawl: CrawlSpec,
+        status: CrawlStatus,
+        pods: dict[str, dict],
+        metrics: Optional[dict],
+    ):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
         crawler_running, redis_running, done = self.sync_pod_status(pods, status)
@@ -978,7 +993,7 @@ class BtrixOperator(K8sAPI):
             if redis:
                 await redis.close()
 
-    def sync_pod_status(self, pods, status):
+    def sync_pod_status(self, pods: dict[str, dict], status: CrawlStatus):
         """check status of pods"""
         crawler_running = False
         redis_running = False
@@ -1308,7 +1323,7 @@ class BtrixOperator(K8sAPI):
             status.stopReason = "page-limit"
             return
 
-    async def get_redis_crawl_stats(self, redis, crawl_id):
+    async def get_redis_crawl_stats(self, redis: Redis, crawl_id: str):
         """get page stats"""
         try:
             # crawler >0.9.0, done key is a value
@@ -1324,7 +1339,14 @@ class BtrixOperator(K8sAPI):
         stats = {"found": pages_found, "done": pages_done, "size": archive_size}
         return stats, sizes
 
-    async def update_crawl_state(self, redis, crawl, status, pods, done) -> CrawlStatus:
+    async def update_crawl_state(
+        self,
+        redis: Redis,
+        crawl: CrawlSpec,
+        status: CrawlStatus,
+        pods: dict[str, dict],
+        done: bool,
+    ) -> CrawlStatus:
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
         stats, sizes = await self.get_redis_crawl_stats(redis, crawl.id)
@@ -1342,7 +1364,7 @@ class BtrixOperator(K8sAPI):
 
         for key, value in sizes.items():
             value = int(value)
-            if value > 0:
+            if value > 0 and status.podStatus:
                 pod_info = status.podStatus[key]
                 pod_info.used.storage = value
 
@@ -1380,8 +1402,8 @@ class BtrixOperator(K8sAPI):
             # completed = status.pagesDone and status.pagesDone >= status.pagesFound
 
             # state = "complete" if completed else "partial_complete"
-            if status.reason:
-                state = "complete:" + status.reason
+            if status.stopReason:
+                state = "complete:" + status.stopReason
             else:
                 state = "complete"
 
