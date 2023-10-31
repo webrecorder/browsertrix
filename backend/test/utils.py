@@ -26,7 +26,8 @@ def hash_file(file_path: str) -> str:
 
 
 def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
-    endpoint_url = "http://local-minio.default:30090/"
+    host_from_k8s = os.environ.get("HOST_URL_FROM_K8S", "http://host.docker.internal")
+    endpoint_url = f"{host_from_k8s}:30090/"
     client = boto3.client(
         "s3",
         region_name="",

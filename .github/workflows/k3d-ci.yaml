@@ -12,7 +12,7 @@ on:
       - 'chart/**'
 
 env:
-  ECHO_SERVER_HOST_URL: http://host.k3d.internal:18080
+  HOST_URL_FROM_K8S: http://host.k3d.internal
 
 jobs:
   btrix-k3d-test:
