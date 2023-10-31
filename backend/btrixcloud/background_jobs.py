@@ -131,7 +131,9 @@ class BackgroundJobOps:
                 primary=file.storage,
                 replica_storage=replica_ref,
             )
-            print(f"File path written into replication_job: {file.filename}", flush=True)
+            print(
+                f"File path written into replication_job: {file.filename}", flush=True
+            )
             await self.jobs.find_one_and_update(
                 {"_id": job_id}, {"$set": replication_job.to_dict()}, upsert=True
             )

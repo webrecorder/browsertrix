@@ -41,9 +41,7 @@ def verify_file_replicated(file_path: str):
     print(f"Verifying file {file_path} in bucket btrix-test-data", flush=True)
     primary_file_hash = download_file_and_return_hash("btrix-test-data", file_path)
     print(f"Verifying file {file_path} in bucket replica-0", flush=True)
-    replica_file_hash = download_file_and_return_hash(
-        "replica-0", file_path
-    )
+    replica_file_hash = download_file_and_return_hash("replica-0", file_path)
     print(f"Primary file hash: {primary_file_hash}", flush=True)
     assert primary_file_hash
     print(f"Replica file hash: {replica_file_hash}", flush=True)
