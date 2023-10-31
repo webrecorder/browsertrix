@@ -7,7 +7,7 @@ import re
 
 from .conftest import API_PREFIX, HOST_PREFIX
 from .test_collections import UPDATED_NAME as COLLECTION_NAME
-from .utils import verify_replica_file_identical_to_original
+from .utils import verify_file_replicated, verify_file_and_replica_deleted
 
 wacz_path = None
 wacz_size = None
@@ -134,7 +134,7 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, admin_crawl_
     )
     assert r.status_code == 200
     job = r.json()
-    assert verify_replica_file_identical_to_original(job["file_path"])
+    verify_file_replicated(job["file_path"])
 
 
 def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_crawl_id):
@@ -459,4 +459,4 @@ def test_delete_crawls_org_owner(
     )
     assert r.status_code == 200
     job = r.json()
-    assert verify_replica_file_identical_to_original(job["file_path"]) is False
+    verify_file_and_replica_deleted(job["file_path"])
