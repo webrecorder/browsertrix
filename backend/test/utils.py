@@ -34,13 +34,11 @@ def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
         aws_access_key_id="ADMIN",
         aws_secret_access_key="PASSW0RD!",
     )
-    with tempfile.NamedTemporaryFile(delete_on_close=False) as temp:
-        print(f"temp.name: {temp.name}", flush=True)
-        client.download_file(bucket_name, file_path, temp.name)
-        print("Stat for downloaded file {temp.name}", flush=True)
-        file_status = os.stat(temp.name)
-        print(file_status, print=True)
-        return hash_file(temp.name)
+    temp = tempfile.NamedTemporaryFile(delete=False):
+    client.download_file(bucket_name, file_path, temp.name)
+    file_hash = hash_file(temp.name)
+    temp.close()
+    return file_hash
 
 
 def verify_file_replicated(file_path: str):
