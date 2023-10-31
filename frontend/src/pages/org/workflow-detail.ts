@@ -443,7 +443,7 @@ export class WorkflowDetail extends LiteElement {
         )}
       </h3>`;
     }
-    if (this.activePanel === "settings") {
+    if (this.activePanel === "settings" && this.isCrawler == true) {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-icon-button
           name="gear"
@@ -455,7 +455,7 @@ export class WorkflowDetail extends LiteElement {
         >
         </sl-icon-button>`;
     }
-    if (this.activePanel === "watch") {
+    if (this.activePanel === "watch" && this.isCrawler == true) {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-button
           size="small"
@@ -1032,24 +1032,26 @@ export class WorkflowDetail extends LiteElement {
               >
             `
           )}
-
-          <sl-tooltip
-            content=${msg(
-              "Org Storage Full or Monthly Execution Minutes Reached"
-            )}
-            ?disabled=${!this.orgStorageQuotaReached &&
-            !this.orgExecutionMinutesQuotaReached}
-          >
-            <sl-button
-              size="small"
-              ?disabled=${this.orgStorageQuotaReached ||
-              this.orgExecutionMinutesQuotaReached}
-              @click=${() => this.runNow()}
+          ${when(
+            this.isCrawler,
+            () => html` <sl-tooltip
+              content=${msg(
+                "Org Storage Full or Monthly Execution Minutes Reached"
+              )}
+              ?disabled=${!this.orgStorageQuotaReached &&
+              !this.orgExecutionMinutesQuotaReached}
             >
-              <sl-icon name="play" slot="prefix"></sl-icon>
-              ${msg("Run Crawl")}
-            </sl-button>
-          </sl-tooltip>
+              <sl-button
+                size="small"
+                ?disabled=${this.orgStorageQuotaReached ||
+                this.orgExecutionMinutesQuotaReached}
+                @click=${() => this.runNow()}
+              >
+                <sl-icon name="play" slot="prefix"></sl-icon>
+                ${msg("Run Crawl")}
+              </sl-button>
+            </sl-tooltip>`
+          )}
         </div>
       </section>
     `;
