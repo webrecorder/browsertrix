@@ -23,7 +23,7 @@ jobs:
         with:
           cluster-name: btrix-1
           args: >-
-            -p "30870:30870@agent:0:direct"
+            -p "30000-32767:30000-32767@agent:0:direct"
             --agents 1
             --no-lb
             --k3s-arg "--disable=traefik,servicelb,metrics-server@server:*"
