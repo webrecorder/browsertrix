@@ -36,8 +36,8 @@ def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
     )
     try:
         with tempfile.NamedTemporaryFile() as temp:
-            client.download_file(bucket_name, file_path, temp)
-            return hash_file(temp)
+            client.download_file(bucket_name, file_path, temp.name)
+            return hash_file(temp.name)
     # pylint: disable=broad-except
     except Exception:
         return None
