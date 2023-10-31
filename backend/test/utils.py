@@ -3,7 +3,7 @@ import hashlib
 import os
 import tempfile
 
-from botocore.exceptions import NoSuchKey
+import botocore.exceptions
 import boto3
 import pytest
 
@@ -47,7 +47,7 @@ def verify_file_replicated(file_path: str):
 
 
 def verify_file_and_replica_deleted(file_path: str):
-    with pytest.raises(NoSuchKey):
+    with pytest.raises(botocore.exceptions.NoSuchKey):
         download_file_and_return_hash("btrix-test-data", file_path)
-    with pytest.raises(NoSuchKey):
+    with pytest.raises(botocore.exceptions.NoSuchKey):
         download_file_and_return_hash("replica-0", file_path)
