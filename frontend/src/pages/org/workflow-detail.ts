@@ -831,31 +831,34 @@ export class WorkflowDetail extends LiteElement {
             this.crawls,
             () =>
               this.crawls!.items.map(
-                (crawl: Crawl) => html`
-                  <btrix-crawl-list-item
-                    orgSlug=${this.appState.orgSlug || ""}
-                    .crawl=${crawl}
-                  >
-                    <sl-format-date
-                      slot="id"
-                      date=${`${crawl.started}Z`}
-                      month="2-digit"
-                      day="2-digit"
-                      year="2-digit"
-                      hour="2-digit"
-                      minute="2-digit"
-                    ></sl-format-date>
-                    <sl-menu slot="menu">
-                      <sl-menu-item
-                        style="--sl-color-neutral-700: var(--danger)"
-                        @click=${() => this.deleteCrawl(crawl)}
-                      >
-                        <sl-icon name="trash3" slot="prefix"></sl-icon>
-                        ${msg("Delete Crawl")}
-                      </sl-menu-item>
-                    </sl-menu>
-                  </btrix-crawl-list-item>
-                `
+                (crawl: Crawl) => html` <btrix-crawl-list-item
+                  orgSlug=${this.appState.orgSlug || ""}
+                  .crawl=${crawl}
+                >
+                  <sl-format-date
+                    slot="id"
+                    date=${`${crawl.started}Z`}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="2-digit"
+                    minute="2-digit"
+                  ></sl-format-date>
+                  ${when(
+                    this.isCrawler,
+                    () => html`
+                      <sl-menu slot="menu">
+                        <sl-menu-item
+                          style="--sl-color-neutral-700: var(--danger)"
+                          @click=${() => this.deleteCrawl(crawl)}
+                        >
+                          <sl-icon name="trash3" slot="prefix"></sl-icon>
+                          ${msg("Delete Crawl")}
+                        </sl-menu-item>
+                      </sl-menu>
+                    </btrix-crawl-list-item>`
+                  )}</btrix-crawl-list-item
+                >`
               ),
             () => html`<div
               class="w-full flex items-center justify-center my-24 text-3xl"
