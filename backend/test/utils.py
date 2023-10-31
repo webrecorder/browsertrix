@@ -34,7 +34,7 @@ def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
         aws_access_key_id="ADMIN",
         aws_secret_access_key="PASSW0RD!",
     )
-    with tempfile.NamedTemporaryFile(delete_on_close) as temp:
+    with tempfile.NamedTemporaryFile(delete_on_close=False) as temp:
         print(f"temp.name: {temp.name}", flush=True)
         client.download_file(bucket_name, file_path, temp.name)
         print("Stat for downloaded file {temp.name}", flush=True)
