@@ -54,9 +54,7 @@ def test_background_jobs_list_filter_by_type(
         assert item["type"] == job_type
 
 
-def test_background_jobs_list_filter_by_success(
-    admin_auth_headers, default_org_id
-):
+def test_background_jobs_list_filter_by_success(admin_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/jobs/?success=True",
         headers=admin_auth_headers,
