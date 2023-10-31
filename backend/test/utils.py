@@ -3,7 +3,9 @@ import hashlib
 import os
 import tempfile
 
+from botocore.exceptions import NoSuchKey
 import boto3
+import pytest
 
 
 def read_in_chunks(fh, blocksize=1024):
@@ -45,5 +47,7 @@ def verify_file_replicated(file_path: str):
 
 
 def verify_file_and_replica_deleted(file_path: str):
-    assert download_file_and_return_hash("btrix-test-data", file_path) is None
-    assert download_file_and_return_hash("replica-0", file_path) is None
+    with pytest.raises(NoSuchKey):
+        download_file_and_return_hash("btrix-test-data", file_path)
+    with pytest.raises(NoSuchKey):
+        download_file_and_return_hash("replica-0", file_path)
