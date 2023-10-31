@@ -1,5 +1,6 @@
 """Test utilities."""
 import hashlib
+import os
 import tempfile
 
 import boto3
