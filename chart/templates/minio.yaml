@@ -122,12 +122,18 @@ metadata:
     app: local-minio
 
 spec:
+  {{- if .Values.minio_local_access_port }}
+  type: NodePort
+  {{- end }}
   selector:
     app: local-minio
 
   ports:
     - protocol: TCP
       port: 9000
+      {{- if .Values.minio_local_access_port }}
+      nodePort: {{ .Values.minio_local_access_port }}
+      {{- end }}
       name: minio
 
 {{- if .Values.minio_local_console_port }}
@@ -151,29 +157,6 @@ spec:
       port: 9001
       nodePort: {{ .Values.minio_local_console_port }}
       name: minio-console
-{{- end }}
-
-{{- if .Values.minio_local_access_port }}
----
-apiVersion: v1
-kind: Service
-
-metadata:
-  namespace: {{ .Release.Namespace }}
-  name: local-minio-access
-  labels:
-    app: local-minio-access
-
-spec:
-  type: NodePort
-  selector:
-    app: local-minio
-
-  ports:
-    - protocol: TCP
-      port: 9000
-      nodePort: {{ .Values.minio_local_access_port }}
-      name: minio-access
 {{- end }}
 
 {{- end }}
