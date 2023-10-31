@@ -106,7 +106,7 @@ def test_start_crawl_and_stop_immediately(
         time.sleep(5)
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
 
-    assert data["state"] in ("canceled", "partial_complete")
+    assert data["state"] in ("canceled", "complete:user-stop")
     assert data["stopping"] == True
 
 
@@ -172,7 +172,7 @@ def test_stop_crawl_partial(
         time.sleep(5)
         data = get_crawl(default_org_id, crawler_auth_headers, crawl_id)
 
-    assert data["state"] in ("partial_complete", "complete")
+    assert data["state"] == "complete:user-stop"
     assert data["stopping"] == True
 
     assert len(data["resources"]) == 1

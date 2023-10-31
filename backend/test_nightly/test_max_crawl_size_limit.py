@@ -30,4 +30,4 @@ def test_max_crawl_size(admin_auth_headers, default_org_id, max_crawl_size_crawl
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["state"] == "partial_complete"
+    assert data["state"] == "complete:size-limit"

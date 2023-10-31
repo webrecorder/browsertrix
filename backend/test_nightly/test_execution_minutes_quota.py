@@ -47,7 +47,7 @@ def test_crawl_stopped_when_quota_reached(org_with_quotas, admin_auth_headers):
     # Ensure that crawl was stopped by quota
     assert (
         get_crawl_status(org_with_quotas, crawl_id, admin_auth_headers)
-        == "partial_complete"
+        == "complete:exec-time-quota"
     )
 
     time.sleep(5)

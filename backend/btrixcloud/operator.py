@@ -219,6 +219,7 @@ class CrawlStatus(BaseModel):
     filesAddedSize: int = 0
     finished: Optional[str] = None
     stopping: bool = False
+    stopReason: Optional[str] = None
     initRedis: bool = False
     lastActiveTime: str = ""
     podStatus: Optional[DefaultDict[str, PodInfo]] = defaultdict(
@@ -294,6 +295,8 @@ class BtrixOperator(K8sAPI):
         self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
         self.log_failed_crawl_lines = int(os.environ.get("LOG_FAILED_CRAWL_LINES") or 0)
+
+        self.max_pages_per_crawl = int(os.environ.get("MAX_PAGES_PER_CRAWL", 0))
 
         with open(self.config_file, encoding="utf-8") as fh_config:
             self.shared_params = yaml.safe_load(fh_config)
@@ -1262,13 +1265,15 @@ class BtrixOperator(K8sAPI):
 
         return True
 
-    def is_crawl_stopping(self, crawl: CrawlSpec, status: CrawlStatus) -> bool:
-        """return true if crawl should begin graceful stopping phase"""
+    async def is_crawl_stopping(self, crawl: CrawlSpec, status: CrawlStatus) -> None:
+        """check if crawl is stopping and set reason"""
 
         # if user requested stop, then enter stopping phase
         if crawl.stopping:
             print("Graceful Stop: User requested stop")
-            return True
+            status.stopping = True
+            status.stopReason = "user-stop"
+            return
 
         # check timeout if timeout time exceeds elapsed time
         if crawl.timeout:
@@ -1280,13 +1285,28 @@ class BtrixOperator(K8sAPI):
                 print(
                     f"Graceful Stop: Crawl running time exceeded {crawl.timeout} second timeout"
                 )
-                return True
+                status.stopping = True
+                status.stopReason = "time-limit"
+                return
 
+        # crawl size limit
         if crawl.max_crawl_size and status.size > crawl.max_crawl_size:
             print(f"Graceful Stop: Maximum crawl size {crawl.max_crawl_size} hit")
-            return True
+            status.stopping = True
+            status.stopReason = "size-limit"
+            return
 
-        return False
+        # check exec time quotas and stop if reached limit
+        if await self.org_ops.exec_mins_quota_reached(crawl.oid):
+            status.stopping = True
+            status.stopReason = "exec-time-quota"
+            return
+
+        if self.max_pages_per_crawl and status.pagesFound >= self.max_pages_per_crawl:
+            # will stop on its own
+            status.stopping = False
+            status.stopReason = "page-limit"
+            return
 
     async def get_redis_crawl_stats(self, redis, crawl_id):
         """get page stats"""
@@ -1326,12 +1346,7 @@ class BtrixOperator(K8sAPI):
                 pod_info = status.podStatus[key]
                 pod_info.used.storage = value
 
-        status.stopping = self.is_crawl_stopping(crawl, status)
-
-        # check exec time quotas and stop if reached limit
-        if not status.stopping:
-            if await self.org_ops.exec_mins_quota_reached(crawl.oid):
-                status.stopping = True
+        await self.is_crawl_stopping(crawl, status)
 
         # mark crawl as stopping
         if status.stopping:
@@ -1362,9 +1377,13 @@ class BtrixOperator(K8sAPI):
                 )
                 return status
 
-            completed = status.pagesDone and status.pagesDone >= status.pagesFound
+            # completed = status.pagesDone and status.pagesDone >= status.pagesFound
 
-            state = "complete" if completed else "partial_complete"
+            # state = "complete" if completed else "partial_complete"
+            if status.reason:
+                state = "complete:" + status.reason
+            else:
+                state = "complete"
 
             await self.mark_finished(
                 crawl.id, crawl.cid, crawl.oid, status, state, crawl, stats
