@@ -1,5 +1,6 @@
 """Test utilities."""
 import hashlib
+import os
 import tempfile
 
 import boto3
@@ -35,7 +36,7 @@ def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
         aws_secret_access_key="PASSW0RD!",
     )
     temp = tempfile.NamedTemporaryFile(delete=False)
-    print(f"temp.name: {temp.name}", flush=True)
+    print(f"temp.name: {temp.name}")
     client.download_file(bucket_name, file_path, temp.name)
     file_stat = os.stat(temp.name)
     print("stat:", flush=True)
