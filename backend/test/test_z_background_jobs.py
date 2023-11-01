@@ -31,7 +31,7 @@ def test_background_jobs_list(admin_auth_headers, default_org_id):
         assert finished or finished is None
 
     global job_id
-    job_id = [item for item in items if item["finished"] and item["successs"]][0]["id"]
+    job_id = [item for item in items if item["finished"] and item["success"]][0]["id"]
     assert job_id
 
 
