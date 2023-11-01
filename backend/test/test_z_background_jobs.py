@@ -77,8 +77,8 @@ def test_background_jobs_no_failures(admin_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 0
     assert data["items"] == []
+    assert data["total"] == 0
 
 
 def test_get_background_job(admin_auth_headers, default_org_id):
