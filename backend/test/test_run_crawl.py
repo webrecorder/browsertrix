@@ -133,12 +133,10 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, admin_crawl_
         f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}", headers=admin_auth_headers
     )
     assert r.status_code == 200
-    job = r.json()
+    data = r.json()
 
-    time.sleep(60)
-
-    print(f'Path passed into verify_file_replicated: {job["file_path"]}', flush=True)
-    verify_file_replicated(job["file_path"])
+    print(f'Path passed into verify_file_replicated: {data["file_path"]}', flush=True)
+    verify_file_replicated(data["file_path"])
 
 
 def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_crawl_id):
