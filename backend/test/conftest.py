@@ -27,7 +27,19 @@ _all_crawls_delete_config_id = None
 
 NON_DEFAULT_ORG_NAME = "Non-default org"
 
-FINISHED_STATES = ("complete", "partial_complete", "canceled", "failed")
+FAILED_STATES = ["canceled", "failed", "skipped_quota_reached"]
+
+SUCCESSFUL_STATES = [
+    "complete",
+    "complete:time-limit",
+    "complete:size-limit",
+    "complete:page-limit",
+    "complete:user-stop",
+    "complete:time-quota",
+]
+
+FINISHED_STATES = [*FAILED_STATES, *SUCCESSFUL_STATES]
+
 
 curr_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 

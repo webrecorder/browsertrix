@@ -160,12 +160,11 @@ FAILED_STATES = ["canceled", "failed", "skipped_quota_reached"]
 
 SUCCESSFUL_STATES = [
     "complete",
-    "partial_complete",
-    "complete:user-stop",
     "complete:time-limit",
     "complete:size-limit",
     "complete:page-limit",
-    "complete:exec-time-quota",
+    "complete:user-stop",
+    "complete:time-quota",
 ]
 
 RUNNING_AND_STARTING_STATES = [*STARTING_STATES, *RUNNING_STATES]

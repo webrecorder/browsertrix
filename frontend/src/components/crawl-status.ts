@@ -216,7 +216,7 @@ export class CrawlStatus extends LitElement {
         label = msg("Partial Complete");
         break;
 
-      case "stopped":
+      case "complete:user-stop":
         icon = html`<sl-icon
           name=${isUpload ? "upload" : "check-circle"}
           slot="prefix"
@@ -225,7 +225,7 @@ export class CrawlStatus extends LitElement {
         label = isUpload ? msg("Uploaded") : msg("Stopped");
         break;
 
-      case "stopped:time-quota":
+      case "complete:time-quota":
         icon = html`<sl-icon
           name="dash-circle"
           slot="prefix"

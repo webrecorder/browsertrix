@@ -124,8 +124,8 @@ export type CrawlState =
   | "complete:time-limit"
   | "complete:size-limit"
   | "complete:page-limit"
-  | "stopped"
-  | "stopped:time-quota";
+  | "complete:user-stop"
+  | "complete:time-quota";
 
 export type Crawl = CrawlConfig & {
   id: string;
