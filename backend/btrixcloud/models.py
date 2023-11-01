@@ -1233,7 +1233,7 @@ class BackgroundJob(BaseMongoModel):
     id: str
     type: BgJobType
     oid: UUID
-    success: bool = False
+    success: Optional[bool] = None
     started: datetime
     finished: Optional[datetime] = None
 
