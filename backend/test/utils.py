@@ -37,7 +37,8 @@ def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
 
 
 def verify_file_replicated(file_path: str):
-    file_path = file_path.replace("btrix-test-data/", "")
+    assert "btrix-test-data/" not in file_path
+    assert "replica-0/" not in file_path
     print(f"Verifying file {file_path} in bucket btrix-test-data", flush=True)
     primary_file_hash = download_file_and_return_hash("btrix-test-data", file_path)
     print(f"Verifying file {file_path} in bucket replica-0", flush=True)
@@ -50,6 +51,8 @@ def verify_file_replicated(file_path: str):
 
 
 def verify_file_and_replica_deleted(file_path: str):
+    assert "btrix-test-data/" not in file_path
+    assert "replica-0/" not in file_path
     with pytest.raises(Exception):
         download_file_and_return_hash("btrix-test-data", file_path)
     with pytest.raises(Exception):

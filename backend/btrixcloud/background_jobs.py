@@ -172,7 +172,7 @@ class BackgroundJobOps:
                 id=job_id,
                 oid=oid,
                 started=datetime.now(),
-                file_path=replica_file_path,
+                file_path=file.filename,
                 object_id=object_id,
                 object_type=object_type,
                 replica_storage=replica_ref,
@@ -220,13 +220,17 @@ class BackgroundJobOps:
         if not res:
             raise HTTPException(status_code=404, detail="job_not_found")
 
-        if res["type"] == BgJobType.CREATE_REPLICA:
-            return CreateReplicaJob.from_dict(res)
+        return self._get_job_by_type_from_data(res)
 
-        if res["type"] == BgJobType.DELETE_REPLICA:
-            return DeleteReplicaJob.from_dict(res)
+    def _get_job_by_type_from_data(self, data: dict[str, object]):
+        """convert dict to propert background job type"""
+        if data["type"] == BgJobType.CREATE_REPLICA:
+            return CreateReplicaJob.from_dict(data)
 
-        return BackgroundJob.from_dict(res)
+        if data["type"] == BgJobType.DELETE_REPLICA:
+            return DeleteReplicaJob.from_dict(data)
+
+        return BackgroundJob.from_dict(data)
 
     async def list_background_jobs(
         self,
@@ -288,7 +292,7 @@ class BackgroundJobOps:
         except (IndexError, ValueError):
             total = 0
 
-        jobs = [BackgroundJob.from_dict(res) for res in items]
+        jobs = [self._get_job_by_type_from_data(data) for data in items]
 
         return jobs, total
 

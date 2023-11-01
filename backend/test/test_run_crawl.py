@@ -91,7 +91,7 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, admin_crawl_
 
     # Verify replication job was successful
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=create-replica",
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=1&jobType=create-replica",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
