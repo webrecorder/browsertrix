@@ -70,6 +70,17 @@ def test_background_jobs_list_filter_by_success(admin_auth_headers, default_org_
         assert item["success"]
 
 
+def test_background_jobs_no_failures(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs/?success=False",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 0
+    assert data["items"] == []
+
+
 def test_get_background_job(admin_auth_headers, default_org_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}", headers=admin_auth_headers
