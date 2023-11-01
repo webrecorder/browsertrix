@@ -73,7 +73,7 @@ export class CrawlStatus extends LitElement {
     let label = "";
 
     switch (state) {
-      case "starting": {
+      case "starting":
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -83,10 +83,9 @@ export class CrawlStatus extends LitElement {
         ></sl-icon>`;
         label = msg("Starting");
         break;
-      }
 
       case "waiting_capacity":
-      case "waiting_org_limit": {
+      case "waiting_org_limit":
         icon = html`<sl-icon
           name="hourglass-split"
           class="animatePulse"
@@ -98,9 +97,8 @@ export class CrawlStatus extends LitElement {
             ? msg("Waiting (At Capacity)")
             : msg("Waiting (Crawl Limit)");
         break;
-      }
 
-      case "running": {
+      case "running":
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -110,9 +108,8 @@ export class CrawlStatus extends LitElement {
         ></sl-icon>`;
         label = msg("Running");
         break;
-      }
 
-      case "stopping": {
+      case "stopping":
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -122,9 +119,8 @@ export class CrawlStatus extends LitElement {
         ></sl-icon>`;
         label = msg("Stopping");
         break;
-      }
 
-      case "pending-wait": {
+      case "pending-wait":
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -134,9 +130,8 @@ export class CrawlStatus extends LitElement {
         ></sl-icon>`;
         label = msg("Finishing Crawl");
         break;
-      }
 
-      case "generate-wacz": {
+      case "generate-wacz":
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -146,9 +141,8 @@ export class CrawlStatus extends LitElement {
         ></sl-icon>`;
         label = msg("Generating WACZ");
         break;
-      }
 
-      case "uploading-wacz": {
+      case "uploading-wacz":
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -158,7 +152,6 @@ export class CrawlStatus extends LitElement {
         ></sl-icon>`;
         label = msg("Uploading WACZ");
         break;
-      }
 
       case "complete":
         icon = html`<sl-icon
@@ -167,15 +160,6 @@ export class CrawlStatus extends LitElement {
           style="color: var(--success)"
         ></sl-icon>`;
         label = isUpload ? msg("Uploaded") : msg("Complete");
-        break;
-
-      case "complete:user-stop":
-        icon = html`<sl-icon
-          name=${isUpload ? "upload" : "check-circle"}
-          slot="prefix"
-          style="color: var(--success)"
-        ></sl-icon>`;
-        label = isUpload ? msg("Uploaded") : msg("Complete: Stopped");
         break;
 
       case "complete:page-limit":
@@ -205,7 +189,7 @@ export class CrawlStatus extends LitElement {
         label = isUpload ? msg("Uploaded") : msg("Complete: Time Limit");
         break;
 
-      case "failed": {
+      case "failed":
         icon = html`<sl-icon
           name=${isUpload ? "upload" : "exclamation-triangle"}
           slot="prefix"
@@ -213,9 +197,8 @@ export class CrawlStatus extends LitElement {
         ></sl-icon>`;
         label = msg("Failed");
         break;
-      }
 
-      case "skipped_quota_reached": {
+      case "skipped_quota_reached":
         icon = html`<sl-icon
           name="exclamation-triangle"
           slot="prefix"
@@ -223,9 +206,8 @@ export class CrawlStatus extends LitElement {
         ></sl-icon>`;
         label = msg("Skipped (Storage Quota Reached)");
         break;
-      }
 
-      case "partial_complete": {
+      case "partial_complete":
         icon = html`<sl-icon
           name="dash-circle"
           slot="prefix"
@@ -233,19 +215,26 @@ export class CrawlStatus extends LitElement {
         ></sl-icon>`;
         label = msg("Partial Complete");
         break;
-      }
 
-      case "complete:exec-time-quota": {
+      case "stopped":
+        icon = html`<sl-icon
+          name=${isUpload ? "upload" : "check-circle"}
+          slot="prefix"
+          style="color: var(--success)"
+        ></sl-icon>`;
+        label = isUpload ? msg("Uploaded") : msg("Stopped");
+        break;
+
+      case "stopped:time-quota":
         icon = html`<sl-icon
           name="dash-circle"
           slot="prefix"
           style="color: var(--warning)"
         ></sl-icon>`;
-        label = msg("Complete: Time Quota Reached");
+        label = msg("Stopped: Time Quota Reached");
         break;
-      }
 
-      case "canceled": {
+      case "canceled":
         icon = html`<sl-icon
           name="x-octagon"
           slot="prefix"
@@ -253,15 +242,13 @@ export class CrawlStatus extends LitElement {
         ></sl-icon>`;
         label = msg("Canceled");
         break;
-      }
 
-      default: {
+      default:
         if (typeof state === "string" && (state as string).length) {
           // Handle unknown status
           label = startCase(state);
         }
         break;
-      }
     }
     return { icon, label };
   }
