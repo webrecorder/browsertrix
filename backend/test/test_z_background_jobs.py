@@ -25,13 +25,13 @@ def test_background_jobs_list(admin_auth_headers, default_org_id):
         assert item["id"]
         assert item["type"]
         assert item["oid"]
-        assert item["success"] in (True, False)
+        assert item["success"] in (True, False, None)
         assert item["started"]
         finished = item["finished"]
         assert finished or finished is None
 
     global job_id
-    job_id = items[0]["id"]
+    job_id = [item for item in items if item["finished"] and item["successs"]][0]["id"]
     assert job_id
 
 
@@ -91,10 +91,9 @@ def test_get_background_job(admin_auth_headers, default_org_id):
     assert data["id"]
     assert data["type"] in ("create-replica", "delete-replica")
     assert data["oid"] == default_org_id
-    assert data["success"] in (True, False)
+    assert data["success"]
     assert data["started"]
-    finished = data["finished"]
-    assert finished or finished is None
+    assert data["finished"]
     assert data["file_path"]
     assert data["object_type"]
     assert data["object_id"]

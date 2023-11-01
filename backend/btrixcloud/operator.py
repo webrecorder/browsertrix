@@ -1226,15 +1226,11 @@ class BtrixOperator(K8sAPI):
 
         filecomplete = CrawlCompleteIn(**cc_data)
 
-        print(f"CrawlCompleteIn filename: {filecomplete.filename}", flush=True)
-
         org = await self.org_ops.get_org_by_id(crawl.oid)
 
         filename = self.storage_ops.get_org_relative_path(
             org, crawl.storage, filecomplete.filename
         )
-
-        print(f"Crawl file filename: {filename}", flush=True)
 
         crawl_file = CrawlFile(
             filename=filename,
