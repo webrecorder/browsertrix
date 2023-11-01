@@ -134,9 +134,10 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, admin_crawl_
     )
     assert r.status_code == 200
     job = r.json()
-    print(f'Path passed into verify_file_replicated: {job["file_path"]}', flush=True)
 
-    time.sleep(10)
+    time.sleep(60)
+
+    print(f'Path passed into verify_file_replicated: {job["file_path"]}', flush=True)
     verify_file_replicated(job["file_path"])
 
 
