@@ -74,6 +74,9 @@ export class WorkflowsList extends LiteElement {
   @property({ type: Boolean })
   orgStorageQuotaReached = false;
 
+  @property({ type: Boolean })
+  orgExecutionMinutesQuotaReached = false;
+
   @property({ type: String })
   userId!: string;
 
@@ -377,7 +380,6 @@ export class WorkflowsList extends LiteElement {
   private renderWorkflowList() {
     if (!this.workflows) return;
     const { page, total, pageSize } = this.workflows;
-
     return html`
       <btrix-workflow-list>
         ${this.workflows.items.map(this.renderWorkflowItem)}
@@ -408,7 +410,10 @@ export class WorkflowsList extends LiteElement {
 
   private renderWorkflowItem = (workflow: ListWorkflow) =>
     html`
-      <btrix-workflow-list-item .workflow=${workflow}>
+      <btrix-workflow-list-item
+        orgSlug=${this.appState.orgSlug || ""}
+        .workflow=${workflow}
+      >
         <sl-menu slot="menu">${this.renderMenuItems(workflow)}</sl-menu>
       </btrix-workflow-list-item>
     `;
@@ -438,7 +443,8 @@ export class WorkflowsList extends LiteElement {
         () => html`
           <sl-menu-item
             style="--sl-color-neutral-700: var(--success)"
-            ?disabled=${this.orgStorageQuotaReached}
+            ?disabled=${this.orgStorageQuotaReached ||
+            this.orgExecutionMinutesQuotaReached}
             @click=${() => this.runNow(workflow)}
           >
             <sl-icon name="play" slot="prefix"></sl-icon>
@@ -455,7 +461,7 @@ export class WorkflowsList extends LiteElement {
           <sl-menu-item
             @click=${() =>
               this.navTo(
-                `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}#watch`,
+                `${this.orgBasePath}/workflows/crawl/${workflow.id}#watch`,
                 {
                   dialog: "scale",
                 }
@@ -467,7 +473,7 @@ export class WorkflowsList extends LiteElement {
           <sl-menu-item
             @click=${() =>
               this.navTo(
-                `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}#watch`,
+                `${this.orgBasePath}/workflows/crawl/${workflow.id}#watch`,
                 {
                   dialog: "exclusions",
                 }
@@ -482,9 +488,7 @@ export class WorkflowsList extends LiteElement {
       <sl-divider></sl-divider>
       <sl-menu-item
         @click=${() =>
-          this.navTo(
-            `/orgs/${workflow.oid}/workflows/crawl/${workflow.id}?edit`
-          )}
+          this.navTo(`${this.orgBasePath}/workflows/crawl/${workflow.id}?edit`)}
       >
         <sl-icon name="gear" slot="prefix"></sl-icon>
         ${msg("Edit Workflow Settings")}
@@ -641,7 +645,7 @@ export class WorkflowsList extends LiteElement {
     };
 
     this.navTo(
-      `/orgs/${this.orgId}/workflows?new&jobType=${workflowParams.jobType}`,
+      `${this.orgBasePath}/workflows?new&jobType=${workflowParams.jobType}`,
       {
         workflow: workflowParams,
         seeds: seeds.items,
@@ -780,7 +784,7 @@ export class WorkflowsList extends LiteElement {
             <br />
             <a
               class="underline hover:no-underline"
-              href="/orgs/${this.orgId}/workflows/crawl/${workflow.id}#watch"
+              href="${this.orgBasePath}/workflows/crawl/${workflow.id}#watch"
               @click=${this.navLink.bind(this)}
               >Watch crawl</a
             >`
@@ -798,6 +802,10 @@ export class WorkflowsList extends LiteElement {
       if (e.isApiError && e.statusCode === 403) {
         if (e.details === "storage_quota_reached") {
           message = msg("Your org does not have enough storage to run crawls.");
+        } else if (e.details === "exec_minutes_quota_reached") {
+          message = msg(
+            "Your org has used all of its execution minutes for this month."
+          );
         } else {
           message = msg("You do not have permission to run crawls.");
         }

@@ -2,9 +2,10 @@ import { LitElement, html } from "lit";
 import type { TemplateResult } from "lit";
 import { msg } from "@lit/localize";
 
-import type { Auth } from "../utils/AuthService";
-import AuthService from "../utils/AuthService";
+import type { Auth } from "./AuthService";
+import AuthService from "./AuthService";
 import { APIError } from "./api";
+import appState, { use } from "./state";
 
 export interface NavigateEvent extends CustomEvent {
   detail: {
@@ -46,6 +47,17 @@ export interface NotifyEvent extends CustomEvent {
 export { html };
 
 export default class LiteElement extends LitElement {
+  @use()
+  appState = appState;
+
+  protected get orgBasePath() {
+    const slug = this.appState.orgSlug;
+    if (slug) {
+      return `/orgs/${slug}`;
+    }
+    return "/";
+  }
+
   createRenderRoot() {
     return this;
   }
@@ -127,10 +139,19 @@ export default class LiteElement extends LitElement {
     if (resp.ok) {
       const body = await resp.json();
       const storageQuotaReached = body.storageQuotaReached;
+      const executionMinutesQuotaReached = body.executionMinutesQuotaReached;
       if (typeof storageQuotaReached === "boolean") {
         this.dispatchEvent(
           new CustomEvent("storage-quota-update", {
             detail: { reached: storageQuotaReached },
+            bubbles: true,
+          })
+        );
+      }
+      if (typeof executionMinutesQuotaReached === "boolean") {
+        this.dispatchEvent(
+          new CustomEvent("execution-minutes-quota-update", {
+            detail: { reached: executionMinutesQuotaReached },
             bubbles: true,
           })
         );
@@ -161,6 +182,16 @@ export default class LiteElement extends LitElement {
             })
           );
           errorMessage = msg("Storage quota reached");
+          break;
+        }
+        if (errorDetail === "exec_minutes_quota_reached") {
+          this.dispatchEvent(
+            new CustomEvent("execution-minutes-quota-update", {
+              detail: { reached: true },
+              bubbles: true,
+            })
+          );
+          errorMessage = msg("Monthly execution minutes quota reached");
           break;
         }
       }

@@ -20,6 +20,7 @@ from .crawls import CrawlOps
 from .profiles import ProfileOps
 from .storages import init_storages_api
 from .webhooks import EventWebhookOps
+from .background_jobs import BackgroundJobOps
 
 app_root = FastAPI()
 
@@ -41,8 +42,6 @@ def main():
 
     event_webhook_ops = EventWebhookOps(mdb, org_ops)
 
-    user_manager.set_org_ops(org_ops)
-
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
         print(
@@ -53,9 +52,13 @@ def main():
 
     crawl_manager = CrawlManager()
 
-    storage_ops = init_storages_api(org_ops, crawl_manager, None)
+    storage_ops = init_storages_api(org_ops, crawl_manager)
 
-    profile_ops = ProfileOps(mdb, org_ops, crawl_manager, storage_ops)
+    background_job_ops = BackgroundJobOps(mdb, org_ops, crawl_manager, storage_ops)
+
+    profile_ops = ProfileOps(
+        mdb, org_ops, crawl_manager, storage_ops, background_job_ops
+    )
 
     crawl_config_ops = CrawlConfigOps(
         dbclient,
@@ -66,21 +69,33 @@ def main():
         profile_ops,
     )
 
+    user_manager.set_ops(org_ops, crawl_config_ops, None)
+
     coll_ops = CollectionOps(mdb, crawl_manager, org_ops, event_webhook_ops)
 
     crawl_ops = CrawlOps(
         mdb,
         user_manager,
+        org_ops,
         crawl_manager,
         crawl_config_ops,
+        coll_ops,
+        storage_ops,
+        event_webhook_ops,
+        background_job_ops,
+    )
+
+    background_job_ops.set_ops(crawl_ops, profile_ops)
+
+    return init_operator_api(
+        app_root,
+        crawl_config_ops,
+        crawl_ops,
         org_ops,
         coll_ops,
         storage_ops,
         event_webhook_ops,
-    )
-
-    return init_operator_api(
-        app_root, crawl_config_ops, crawl_ops, org_ops, coll_ops, event_webhook_ops
+        background_job_ops,
     )
 
 

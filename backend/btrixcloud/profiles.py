@@ -1,13 +1,12 @@
 """ Profile Management """
 
-from typing import Optional
+from typing import Optional, Union, TYPE_CHECKING, Any, cast
 from datetime import datetime
-import uuid
+from uuid import UUID, uuid4
 import os
 
 from urllib.parse import urlencode
 
-from pydantic import UUID4
 from fastapi import APIRouter, Depends, Request, HTTPException
 import aiohttp
 
@@ -24,20 +23,38 @@ from .models import (
     Organization,
     User,
     PaginatedResponse,
+    StorageRef,
 )
+
+if TYPE_CHECKING:
+    from .orgs import OrgOps
+    from .crawlmanager import CrawlManager
+    from .storages import StorageOps
+    from .crawlconfigs import CrawlConfigOps
+    from .background_jobs import BackgroundJobOps
+else:
+    OrgOps = CrawlManager = StorageOps = CrawlConfigOps = BackgroundJobOps = object
 
 
 BROWSER_EXPIRE = 300
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes, too-many-arguments
 class ProfileOps:
     """Profile management"""
 
-    def __init__(self, mdb, orgs, crawl_manager, storage_ops):
+    orgs: OrgOps
+    crawl_manager: CrawlManager
+    storage_ops: StorageOps
+
+    crawlconfigs: CrawlConfigOps
+    background_job_ops: BackgroundJobOps
+
+    def __init__(self, mdb, orgs, crawl_manager, storage_ops, background_job_ops):
         self.profiles = mdb["profiles"]
         self.orgs = orgs
+        self.background_job_ops = background_job_ops
 
         self.crawl_manager = crawl_manager
         self.storage_ops = storage_ops
@@ -50,9 +67,7 @@ class ProfileOps:
             responses={404: {"description": "Not found"}},
         )
 
-        self.crawlconfigs = None
-
-        self.shared_profile_storage = os.environ.get("SHARED_PROFILE_STORAGE")
+        self.crawlconfigs = cast(CrawlConfigOps, None)
 
     def set_crawlconfigs(self, crawlconfigs):
         """set crawlconfigs ops"""
@@ -62,33 +77,25 @@ class ProfileOps:
         self, org: Organization, user: User, profile_launch: ProfileLaunchBrowserIn
     ):
         """Create new profile"""
-        if self.shared_profile_storage:
-            storage_name = self.shared_profile_storage
-            storage = None
-        elif org.storage and org.storage.type == "default":
-            storage_name = None
-            storage = org.storage
-        else:
-            storage_name = str(org.id)
-            storage = None
-
-        profile_path = ""
+        prev_profile = ""
+        prev_profile_id = ""
         if profile_launch.profileId:
-            profile_path = await self.get_profile_storage_path(
+            prev_profile = await self.get_profile_storage_path(
                 profile_launch.profileId, org
             )
 
-            if not profile_path:
+            if not prev_profile:
                 raise HTTPException(status_code=400, detail="invalid_base_profile")
+
+            prev_profile_id = str(profile_launch.profileId)
 
         browserid = await self.crawl_manager.run_profile_browser(
             str(user.id),
             str(org.id),
             url=profile_launch.url,
-            storage=storage,
-            storage_name=storage_name,
-            baseprofile=profile_launch.profileId,
-            profile_path=profile_path,
+            storage=org.storage,
+            baseprofile=prev_profile_id,
+            profile_filename=prev_profile,
         )
 
         if not browserid:
@@ -139,13 +146,14 @@ class ProfileOps:
 
     async def commit_to_profile(
         self,
-        browser_commit: ProfileCreate,
+        browser_commit: Union[ProfileCreate, ProfileUpdate],
+        storage: StorageRef,
         metadata: dict,
-        profileid: Optional[uuid.UUID] = None,
-    ):
+        profileid: Optional[UUID] = None,
+    ) -> dict[str, Any]:
         """commit profile and shutdown profile browser"""
         if not profileid:
-            profileid = uuid.uuid4()
+            profileid = uuid4()
 
         filename_data = {"filename": f"profile-{profileid}.tar.gz"}
 
@@ -161,20 +169,22 @@ class ProfileOps:
 
         await self.crawl_manager.delete_profile_browser(browser_commit.browserid)
 
-        file_size = resource["bytes"]
+        # backwards compatibility
+        file_size = resource.get("size") or resource.get("bytes")
 
         profile_file = ProfileFile(
             hash=resource["hash"],
             size=file_size,
             filename=resource["path"],
+            storage=storage,
         )
 
         baseid = metadata.get("btrix.baseprofile")
         if baseid:
             print("baseid", baseid)
-            baseid = uuid.UUID(baseid)
+            baseid = UUID(baseid)
 
-        oid = uuid.UUID(metadata.get("btrix.org"))
+        oid = UUID(metadata.get("btrix.org"))
 
         if await self.orgs.storage_quota_reached(oid):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
@@ -186,13 +196,17 @@ class ProfileOps:
             created=datetime.utcnow().replace(microsecond=0, tzinfo=None),
             origins=json["origins"],
             resource=profile_file,
-            userid=uuid.UUID(metadata.get("btrix.user")),
+            userid=UUID(metadata.get("btrix.user")),
             oid=oid,
             baseid=baseid,
         )
 
         await self.profiles.find_one_and_update(
             {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
+        )
+
+        await self.background_job_ops.create_replica_jobs(
+            oid, profile_file, str(profileid), "profile"
         )
 
         quota_reached = await self.orgs.inc_org_bytes_stored(oid, file_size, "profile")
@@ -203,7 +217,7 @@ class ProfileOps:
             "storageQuotaReached": quota_reached,
         }
 
-    async def update_profile_metadata(self, profileid: UUID4, update: ProfileUpdate):
+    async def update_profile_metadata(self, profileid: UUID, update: ProfileUpdate):
         """Update name and description metadata only on existing profile"""
         query = {"name": update.name}
         if update.description is not None:
@@ -219,7 +233,7 @@ class ProfileOps:
     async def list_profiles(
         self,
         org: Organization,
-        userid: Optional[UUID4] = None,
+        userid: Optional[UUID] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ):
@@ -240,9 +254,7 @@ class ProfileOps:
 
         return profiles, total
 
-    async def get_profile(
-        self, profileid: uuid.UUID, org: Optional[Organization] = None
-    ):
+    async def get_profile(self, profileid: UUID, org: Optional[Organization] = None):
         """get profile by id and org"""
         query: dict[str, object] = {"_id": profileid}
         if org:
@@ -255,7 +267,7 @@ class ProfileOps:
         return Profile.from_dict(res)
 
     async def get_profile_with_configs(
-        self, profileid: uuid.UUID, org: Optional[Organization] = None
+        self, profileid: UUID, org: Optional[Organization] = None
     ):
         """get profile for api output, with crawlconfigs"""
 
@@ -266,7 +278,7 @@ class ProfileOps:
         return ProfileWithCrawlConfigs(crawlconfigs=crawlconfigs, **profile.dict())
 
     async def get_profile_storage_path(
-        self, profileid: uuid.UUID, org: Optional[Organization] = None
+        self, profileid: UUID, org: Optional[Organization] = None
     ):
         """return profile path filename (relative path) for given profile id and org"""
         try:
@@ -277,7 +289,7 @@ class ProfileOps:
             return None
 
     async def get_profile_name(
-        self, profileid: uuid.UUID, org: Optional[Organization] = None
+        self, profileid: UUID, org: Optional[Organization] = None
     ):
         """return profile for given profile id and org"""
         try:
@@ -288,7 +300,7 @@ class ProfileOps:
             return None
 
     async def get_crawl_configs_for_profile(
-        self, profileid: uuid.UUID, org: Optional[Organization] = None
+        self, profileid: UUID, org: Optional[Organization] = None
     ):
         """Get list of crawl config id, names for that use a particular profile"""
 
@@ -298,7 +310,7 @@ class ProfileOps:
 
         return crawlconfig_names
 
-    async def delete_profile(self, profileid: uuid.UUID, org: Organization):
+    async def delete_profile(self, profileid: UUID, org: Organization):
         """delete profile, if not used in active crawlconfig"""
         profile = await self.get_profile_with_configs(profileid, org)
 
@@ -319,6 +331,10 @@ class ProfileOps:
         res = await self.profiles.delete_one(query)
         if not res or res.deleted_count != 1:
             raise HTTPException(status_code=404, detail="profile_not_found")
+
+        await self.background_job_ops.create_delete_replica_jobs(
+            org, profile.resource, profile.id, "profile"
+        )
 
         quota_reached = await self.orgs.storage_quota_reached(org.id)
 
@@ -348,12 +364,23 @@ class ProfileOps:
 
         return json
 
+    async def add_profile_file_replica(
+        self, profileid: UUID, filename: str, ref: StorageRef
+    ) -> dict[str, object]:
+        """Add replica StorageRef to existing ProfileFile"""
+        return await self.profiles.find_one_and_update(
+            {"_id": profileid, "resource.filename": filename},
+            {"$push": {"resource.replicas": {"name": ref.name, "custom": ref.custom}}},
+        )
+
 
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
-def init_profiles_api(mdb, crawl_manager, org_ops, storage_ops, user_dep):
+def init_profiles_api(
+    mdb, org_ops, crawl_manager, storage_ops, background_job_ops, user_dep
+):
     """init profile ops system"""
-    ops = ProfileOps(mdb, org_ops, crawl_manager, storage_ops)
+    ops = ProfileOps(mdb, org_ops, crawl_manager, storage_ops, background_job_ops)
 
     router = ops.router
 
@@ -376,7 +403,7 @@ def init_profiles_api(mdb, crawl_manager, org_ops, storage_ops, user_dep):
     @router.get("", response_model=PaginatedResponse)
     async def list_profiles(
         org: Organization = Depends(org_crawl_dep),
-        userid: Optional[UUID4] = None,
+        userid: Optional[UUID] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
     ):
@@ -392,12 +419,12 @@ def init_profiles_api(mdb, crawl_manager, org_ops, storage_ops, user_dep):
     ):
         metadata = await browser_get_metadata(browser_commit.browserid, org)
 
-        return await ops.commit_to_profile(browser_commit, metadata)
+        return await ops.commit_to_profile(browser_commit, org.storage, metadata)
 
     @router.patch("/{profileid}")
     async def commit_browser_to_existing(
         browser_commit: ProfileUpdate,
-        profileid: UUID4,
+        profileid: UUID,
         org: Organization = Depends(org_crawl_dep),
     ):
         if not browser_commit.browserid:
@@ -406,20 +433,22 @@ def init_profiles_api(mdb, crawl_manager, org_ops, storage_ops, user_dep):
         else:
             metadata = await browser_get_metadata(browser_commit.browserid, org)
 
-            await ops.commit_to_profile(browser_commit, metadata, profileid)
+            await ops.commit_to_profile(
+                browser_commit, org.storage, metadata, profileid
+            )
 
         return {"updated": True}
 
     @router.get("/{profileid}", response_model=ProfileWithCrawlConfigs)
     async def get_profile(
-        profileid: UUID4,
+        profileid: UUID,
         org: Organization = Depends(org_crawl_dep),
     ):
         return await ops.get_profile_with_configs(profileid, org)
 
     @router.delete("/{profileid}")
     async def delete_profile(
-        profileid: UUID4,
+        profileid: UUID,
         org: Organization = Depends(org_crawl_dep),
     ):
         return await ops.delete_profile(profileid, org)

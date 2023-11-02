@@ -14,7 +14,8 @@ from .db import init_db, await_db_and_migrations, update_and_prepare_db
 
 from .emailsender import EmailSender
 from .invites import init_invites
-from .users import init_users_api, init_user_manager, JWT_TOKEN_LIFETIME
+from .auth import JWT_TOKEN_LIFETIME
+from .users import init_users_api, init_user_manager
 from .orgs import init_orgs_api
 
 from .profiles import init_profiles_api
@@ -26,6 +27,7 @@ from .colls import init_collections_api
 from .crawls import init_crawls_api
 from .basecrawls import init_base_crawls_api
 from .webhooks import init_event_webhooks_api
+from .background_jobs import init_background_jobs_api
 
 from .crawlmanager import CrawlManager
 from .utils import run_once_lock, register_exit_handler, is_bool
@@ -69,15 +71,11 @@ def main():
 
     user_manager = init_user_manager(mdb, email, invites)
 
-    fastapi_users = init_users_api(app, user_manager)
-
-    current_active_user = fastapi_users.current_user(active=True)
+    current_active_user = init_users_api(app, user_manager)
 
     org_ops = init_orgs_api(app, mdb, user_manager, invites, current_active_user)
 
-    event_webhook_ops = init_event_webhooks_api(mdb, org_ops)
-
-    user_manager.set_org_ops(org_ops)
+    event_webhook_ops = init_event_webhooks_api(mdb, org_ops, app_root)
 
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
@@ -89,10 +87,19 @@ def main():
 
     crawl_manager = CrawlManager()
 
-    storage_ops = init_storages_api(org_ops, crawl_manager, current_active_user)
+    storage_ops = init_storages_api(org_ops, crawl_manager)
+
+    background_job_ops = init_background_jobs_api(
+        mdb, org_ops, crawl_manager, storage_ops
+    )
 
     profiles = init_profiles_api(
-        mdb, crawl_manager, org_ops, storage_ops, current_active_user
+        mdb,
+        org_ops,
+        crawl_manager,
+        storage_ops,
+        background_job_ops,
+        current_active_user,
     )
 
     crawl_config_ops = init_crawl_config_api(
@@ -107,43 +114,29 @@ def main():
 
     coll_ops = init_collections_api(app, mdb, org_ops, storage_ops, event_webhook_ops)
 
-    init_base_crawls_api(
+    base_crawl_init = (
         app,
+        current_active_user,
         mdb,
         user_manager,
+        org_ops,
         crawl_manager,
         crawl_config_ops,
-        org_ops,
         coll_ops,
         storage_ops,
-        current_active_user,
+        event_webhook_ops,
+        background_job_ops,
     )
 
-    crawls = init_crawls_api(
-        app,
-        mdb,
-        user_manager,
-        crawl_manager,
-        crawl_config_ops,
-        org_ops,
-        coll_ops,
-        storage_ops,
-        current_active_user,
-        event_webhook_ops,
-    )
+    base_crawl_ops = init_base_crawls_api(*base_crawl_init)
 
-    init_uploads_api(
-        app,
-        mdb,
-        user_manager,
-        crawl_manager,
-        crawl_config_ops,
-        org_ops,
-        coll_ops,
-        storage_ops,
-        current_active_user,
-        event_webhook_ops,
-    )
+    crawls = init_crawls_api(*base_crawl_init)
+
+    init_uploads_api(*base_crawl_init)
+
+    user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
+
+    background_job_ops.set_ops(base_crawl_ops, profiles)
 
     crawl_config_ops.set_coll_ops(coll_ops)
 
@@ -158,6 +151,7 @@ def main():
                 crawl_config_ops,
                 coll_ops,
                 invites,
+                storage_ops,
                 db_inited,
             )
         )

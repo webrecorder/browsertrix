@@ -27,3 +27,7 @@ Press the _Finish Browsing_ button to save the browser profile with a _Name_ and
 Sometimes websites will log users out or expire cookies after a period of time. In these cases, when crawling the browser profile can still be loaded but may not behave as it did when it was initially set up.
 
 To update the profile, go to the profile's details page and press the _Edit Browser Profile_ button to load and interact with the sites that need to be re-configured. When finished, press the _Save Browser Profile_ button to return to the profile's details page.
+
+### Editing Browser Profile Metadata
+
+To edit a browser profile's name and description, select _Edit Name and Description_ from the actions menu on the profile's details page.

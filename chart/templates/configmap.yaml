@@ -36,7 +36,7 @@ data:
 
   RERUN_FROM_MIGRATION: "{{ .Values.rerun_from_migration }}"
 
-  PRESIGN_DURATION_MINUTES: "{{ .Values.storage_presign_duration_minutes | default 60 }}"
+  PRESIGN_DURATION_MINUTES: "{{ .Values.storage_presign_duration_minutes }}"
 
   FAST_RETRY_SECS: "{{ .Values.operator_fast_resync_secs | default 3 }}"
 
@@ -110,6 +110,7 @@ data:
     crawler_node_type: "{{ .Values.crawler_node_type }}"
     redis_node_type: "{{ .Values.redis_node_type }}"
 
+    signing_secret: {{ .Values.signer.enabled | ternary "signing-secret" "" }}
 
 ---
 apiVersion: v1

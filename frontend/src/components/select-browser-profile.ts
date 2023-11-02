@@ -107,7 +107,7 @@ export class SelectBrowserProfile extends LiteElement {
             >`
           : ""}
         <a
-          href=${`/orgs/${this.orgId}/browser-profiles/profile/${this.selectedProfile.id}`}
+          href=${`${this.orgBasePath}/browser-profiles/profile/${this.selectedProfile.id}`}
           class="font-medium text-primary hover:text-indigo-500"
           target="_blank"
         >
@@ -130,7 +130,7 @@ export class SelectBrowserProfile extends LiteElement {
           >${msg("No additional browser profiles found.")}</span
         >
         <a
-          href=${`/orgs/${this.orgId}/browser-profiles?new`}
+          href=${`${this.orgBasePath}/browser-profiles?new`}
           class="font-medium text-primary hover:text-indigo-500"
           target="_blank"
           @click=${(e: any) => {

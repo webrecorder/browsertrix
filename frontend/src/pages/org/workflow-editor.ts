@@ -242,6 +242,12 @@ export class CrawlConfigEditor extends LiteElement {
   @property({ type: Array })
   initialSeeds?: Seed[];
 
+  @property({ type: Boolean })
+  orgStorageQuotaReached = false;
+
+  @property({ type: Boolean })
+  orgExecutionMinutesQuotaReached = false;
+
   @state()
   private tagOptions: string[] = [];
 
@@ -308,9 +314,9 @@ export class CrawlConfigEditor extends LiteElement {
     FormState["scheduleType"],
     string
   > = {
-    date: msg("Run on a Specific Date & Time"),
-    cron: msg("Run on a Recurring Basis"),
-    none: msg("No Schedule"),
+    date: msg("Run on a specific date & time"),
+    cron: msg("Run on a recurring basis"),
+    none: msg("No schedule"),
   };
 
   private readonly scheduleFrequencyLabels: Record<
@@ -535,7 +541,10 @@ export class CrawlConfigEditor extends LiteElement {
       lang: this.initialWorkflow.config.lang,
       scheduleType: defaultFormState.scheduleType,
       scheduleFrequency: defaultFormState.scheduleFrequency,
-      runNow: defaultFormState.runNow,
+      runNow:
+        this.orgStorageQuotaReached || this.orgExecutionMinutesQuotaReached
+          ? false
+          : defaultFormState.runNow,
       tags: this.initialWorkflow.tags,
       autoAddCollections: this.initialWorkflow.autoAddCollections,
       jobName: this.initialWorkflow.name || defaultFormState.jobName,
@@ -728,10 +737,7 @@ export class CrawlConfigEditor extends LiteElement {
     return html`
       <div class="flex flex-col h-full min-h-[21rem]">
         <div
-          class="flex-1 p-6 grid grid-cols-5 gap-4 border rounded-lg ${!this
-            .configId && !isLast
-            ? "border-b-0 rounded-b-none"
-            : "mb-4"}"
+          class="flex-1 p-6 grid grid-cols-5 gap-4 border rounded-lg border-b-0 rounded-b-none"
         >
           ${content}
           ${when(this.serverError, () =>
@@ -748,7 +754,7 @@ export class CrawlConfigEditor extends LiteElement {
     if (this.configId) {
       return html`
         <footer
-          class="px-6 py-4 flex gap-2 items-center justify-end border rounded-lg"
+          class="px-6 py-4 flex gap-2 items-center justify-end border rounded-b-lg sticky bottom-0 bg-white z-50"
         >
           <div class="mr-auto">${this.renderRunNowToggle()}</div>
           <aside class="text-xs text-neutral-500">
@@ -770,9 +776,7 @@ export class CrawlConfigEditor extends LiteElement {
     if (!this.configId) {
       return html`
         <footer
-          class="px-6 py-4 flex gap-2 items-center justify-end border ${isLast
-            ? "rounded-lg"
-            : "rounded-b-lg"}"
+          class="px-6 py-4 flex gap-2 items-center justify-end border sticky bottom-0 bg-white rounded-b-lg z-50"
         >
           ${this.renderSteppedFooterButtons({ isFirst, isLast })}
         </footer>
@@ -869,6 +873,8 @@ export class CrawlConfigEditor extends LiteElement {
       <sl-switch
         class="mr-1"
         ?checked=${this.formState.runNow}
+        ?disabled=${this.orgStorageQuotaReached ||
+        this.orgExecutionMinutesQuotaReached}
         @sl-change=${(e: SlChangeEvent) => {
           this.updateFormState(
             {
@@ -1118,7 +1124,7 @@ https://example.com/path`}
               >${exampleDomain}${examplePathname}</span
             >
             or any URL that begins with those specified in
-            <em>Extra URLs in Scope</em>`
+            <em>Extra URL Prefixes in Scope</em>`
         );
         break;
       default:
@@ -1224,7 +1230,7 @@ https://example.com/path`}
           ${this.renderFormCol(html`
             <sl-textarea
               name="customIncludeUrlList"
-              label=${msg("Extra URLs in Scope")}
+              label=${msg("Extra URL Prefixes in Scope")}
               rows="3"
               autocomplete="off"
               inputmode="url"
@@ -1245,7 +1251,7 @@ https://example.net`}
           name="includeLinkedPages"
           ?checked=${this.formState.includeLinkedPages}
         >
-          ${msg("Include Any Linked Page (“one hop out”)")}
+          ${msg("Include any linked page (“one hop out”)")}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(
@@ -1255,7 +1261,7 @@ https://example.net`}
       )}
       ${this.renderFormCol(html`
         <sl-checkbox name="useSitemap" ?checked=${this.formState.useSitemap}>
-          ${msg("Check For Sitemap")}
+          ${msg("Check for sitemap")}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(
@@ -1487,9 +1493,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
               scale: +(e.target as SlCheckbox).value,
             })}
         >
-          <sl-radio-button value="1" size="small">1</sl-radio-button>
-          <sl-radio-button value="2" size="small">2</sl-radio-button>
-          <sl-radio-button value="3" size="small">3</sl-radio-button>
+          <sl-radio-button value="1" size="small">1×</sl-radio-button>
+          <sl-radio-button value="2" size="small">2×</sl-radio-button>
+          <sl-radio-button value="3" size="small">3×</sl-radio-button>
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
@@ -1545,7 +1551,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         name="autoscrollBehavior"
         ?checked=${this.formState.autoscrollBehavior}
       >
-        ${msg("Auto-Scroll Behavior")}
+        ${msg("Auto-scroll behavior")}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
         msg(
@@ -1593,7 +1599,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <sl-checkbox name="blockAds" ?checked=${this.formState.blockAds}>
-          ${msg("Block Ads by Domain")}
+          ${msg("Block ads by domain")}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(
@@ -2163,37 +2169,28 @@ https://archiveweb.page/images/${"logo.svg"}`}
             body: JSON.stringify(config),
           }));
 
-      const crawlId = data.run_now_job;
+      const crawlId = data.run_now_job || data.started || null;
       const storageQuotaReached = data.storageQuotaReached;
+      const executionMinutesQuotaReached = data.execMinutesQuotaReached;
 
-      if (crawlId && storageQuotaReached) {
-        this.notify({
-          title: msg("Workflow saved without starting crawl."),
-          message: msg(
-            "Could not run crawl with new workflow settings due to storage quota."
-          ),
-          variant: "warning",
-          icon: "exclamation-circle",
-          duration: 12000,
-        });
-      } else {
-        let message = msg("Workflow created.");
-        if (crawlId) {
-          message = msg("Crawl started with new workflow settings.");
-        } else if (this.configId) {
-          message = msg("Workflow updated.");
-        }
-
-        this.notify({
-          message,
-          variant: "success",
-          icon: "check2-circle",
-        });
+      let message = msg("Workflow created.");
+      if (crawlId) {
+        message = msg("Crawl started with new workflow settings.");
+      } else if (this.configId) {
+        message = msg("Workflow updated.");
       }
 
+      this.notify({
+        message,
+        variant: "success",
+        icon: "check2-circle",
+      });
+
       this.navTo(
-        `/orgs/${this.orgId}/workflows/crawl/${this.configId || data.id}${
-          crawlId && !storageQuotaReached ? "#watch" : ""
+        `${this.orgBasePath}/workflows/crawl/${this.configId || data.id}${
+          crawlId && !storageQuotaReached && !executionMinutesQuotaReached
+            ? "#watch"
+            : ""
         }`
       );
     } catch (e: any) {

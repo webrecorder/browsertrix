@@ -138,7 +138,7 @@ def test_crawls_exclude_errors(admin_auth_headers, default_org_id, admin_crawl_i
     )
     assert r.status_code == 200
     data = r.json()
-    assert "errors" not in data or data.get("errors") is None
+    assert data.get("errors") == []
 
     # replay.json endpoint
     r = requests.get(
@@ -147,7 +147,7 @@ def test_crawls_exclude_errors(admin_auth_headers, default_org_id, admin_crawl_i
     )
     assert r.status_code == 200
     data = r.json()
-    assert "errors" not in data or data.get("errors") is None
+    assert data.get("errors") == []
 
     # List endpoint
     r = requests.get(
@@ -157,7 +157,7 @@ def test_crawls_exclude_errors(admin_auth_headers, default_org_id, admin_crawl_i
     assert r.status_code == 200
     crawls = r.json()["items"]
     for crawl in crawls:
-        assert "errors" not in crawl or crawl.get("errors") is None
+        assert data.get("errors") == []
 
 
 def test_crawls_exclude_full_seeds(admin_auth_headers, default_org_id, admin_crawl_id):

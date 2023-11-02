@@ -15,7 +15,9 @@ from kubernetes_asyncio.client.exceptions import ApiException
 
 from redis import asyncio as aioredis
 
+from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
+
 from .utils import get_templates_dir, dt_now, to_k8s_date
 
 
@@ -69,12 +71,13 @@ class K8sAPI:
             redis_url, decode_responses=True, auto_close_connection_pool=True
         )
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-locals
     def new_crawl_job_yaml(
         self,
         cid,
         userid,
         oid,
+        storage,
         scale=1,
         crawl_timeout=0,
         max_crawl_size=0,
@@ -100,13 +103,14 @@ class K8sAPI:
             "scale": scale,
             "expire_time": crawl_expire_time or 0,
             "max_crawl_size": max_crawl_size or 0,
+            "storage_name": str(storage),
             "manual": "1" if manual else "0",
         }
 
         data = self.templates.env.get_template("crawl_job.yaml").render(params)
         return crawl_id, data
 
-    async def new_crawl_job(self, *args, **kwargs):
+    async def new_crawl_job(self, *args, **kwargs) -> str:
         """load and init crawl job via k8s api"""
         crawl_id, data = self.new_crawl_job_yaml(*args, **kwargs)
 
@@ -147,6 +151,23 @@ class K8sAPI:
             namespace=namespace or self.namespace,
         )
         return created
+
+    async def has_storage_secret(self, storage_secret) -> bool:
+        """Check if storage is valid by trying to get the storage secret
+        Will throw if not valid, otherwise return True"""
+        try:
+            await self.core_api.read_namespaced_secret(
+                storage_secret,
+                namespace=self.namespace,
+            )
+            return True
+
+        # pylint: disable=broad-except
+        except Exception:
+            # pylint: disable=broad-exception-raised,raise-missing-from
+            raise HTTPException(
+                status_code=400, detail="invalid_config_missing_storage_secret"
+            )
 
     async def delete_crawl_job(self, crawl_id):
         """delete custom crawljob object"""
@@ -193,7 +214,7 @@ class K8sAPI:
             name=f"profilejob-{browserid}",
         )
 
-    async def _patch_job(self, crawl_id, body, pluraltype="crawljobs"):
+    async def _patch_job(self, crawl_id, body, pluraltype="crawljobs") -> dict:
         content_type = self.api_client.default_headers.get("Content-Type")
 
         try:
@@ -234,7 +255,7 @@ class K8sAPI:
             except:
                 print("Logs Not Found")
 
-    async def is_pod_metrics_available(self):
+    async def is_pod_metrics_available(self) -> bool:
         """return true/false if metrics server api is available by
         attempting list operation. if operation succeeds, then
         metrics are available, otherwise not available
@@ -251,4 +272,21 @@ class K8sAPI:
         # pylint: disable=broad-exception-caught
         except Exception as exc:
             print(exc)
+            return False
+
+    async def has_custom_jobs_with_label(self, plural, label) -> bool:
+        """return true/false if any crawljobs or profilejobs
+        match given label"""
+        try:
+            await self.custom_api.list_namespaced_custom_object(
+                group="btrix.cloud",
+                version="v1",
+                namespace=self.namespace,
+                plural=plural,
+                label_selector=label,
+                limit=1,
+            )
+            return True
+        # pylint: disable=broad-exception-caught
+        except Exception:
             return False

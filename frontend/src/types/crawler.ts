@@ -135,6 +135,7 @@ export type Crawl = CrawlConfig & {
   collectionIds: string[];
   collections: { id: string; name: string }[];
   type?: "crawl" | "upload" | null;
+  crawlExecSeconds: number;
 };
 
 export type Upload = Omit<
@@ -146,6 +147,7 @@ export type Upload = Omit<
   | "stopping"
   | "firstSeed"
   | "seedCount"
+  | "crawlExecSeconds"
 > & {
   type: "upload";
 };

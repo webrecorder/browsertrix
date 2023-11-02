@@ -2,13 +2,12 @@
 
 import asyncio
 from datetime import datetime
-from typing import List, Union, Optional
-import uuid
+from typing import List, Union, Optional, TYPE_CHECKING, cast
+from uuid import UUID, uuid4
 
 import aiohttp
 import backoff
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import UUID4
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .models import (
@@ -23,6 +22,12 @@ from .models import (
     Organization,
 )
 
+if TYPE_CHECKING:
+    from .orgs import OrgOps
+    from .crawls import CrawlOps
+else:
+    OrgOps = CrawlOps = object
+
 
 # ============================================================================
 class EventWebhookOps:
@@ -30,13 +35,16 @@ class EventWebhookOps:
 
     # pylint: disable=invalid-name, too-many-arguments, too-many-locals
 
+    org_ops: OrgOps
+    crawl_ops: CrawlOps
+
     def __init__(self, mdb, org_ops):
         self.webhooks = mdb["webhooks"]
         self.colls = mdb["collections"]
         self.crawls = mdb["crawls"]
 
         self.org_ops = org_ops
-        self.crawl_ops = None
+        self.crawl_ops = cast(CrawlOps, None)
 
         self.origin = None
 
@@ -114,7 +122,7 @@ class EventWebhookOps:
 
         return notifications, total
 
-    async def get_notification(self, org: Organization, notificationid: uuid.UUID):
+    async def get_notification(self, org: Organization, notificationid: UUID):
         """Get webhook notification by id and org"""
         query = {"_id": notificationid, "oid": org.id}
 
@@ -189,15 +197,10 @@ class EventWebhookOps:
             print(f"Crawl {crawl_id} not found, skipping event webhook", flush=True)
             return
 
-        download_urls = []
-        for resource in crawl.resources:
-            download_url = f"{org.origin}{resource.path}"
-            download_urls.append(download_url)
-
-        body.downloadUrls = download_urls
+        body.resources = crawl.resources
 
         notification = WebhookNotification(
-            id=uuid.uuid4(),
+            id=uuid4(),
             event=event,
             oid=org.id,
             body=body,
@@ -214,10 +217,11 @@ class EventWebhookOps:
                     crawl_ids=[crawl_id], coll_id=coll_id, org=org
                 )
 
-    async def create_crawl_finished_notification(self, crawl_id: str, state: str):
+    async def create_crawl_finished_notification(
+        self, crawl_id: str, oid: UUID, state: str
+    ) -> None:
         """Create webhook notification for finished crawl."""
-        crawl_res = await self.crawls.find_one({"_id": crawl_id})
-        org = await self.org_ops.get_org_by_id(crawl_res["oid"])
+        org = await self.org_ops.get_org_by_id(oid)
 
         if not org.webhookUrls or not org.webhookUrls.crawlFinished:
             return
@@ -233,10 +237,11 @@ class EventWebhookOps:
             ),
         )
 
-    async def create_upload_finished_notification(self, crawl_id: str):
+    async def create_upload_finished_notification(
+        self, crawl_id: str, oid: UUID
+    ) -> None:
         """Create webhook notification for finished upload."""
-        crawl_res = await self.crawls.find_one({"_id": crawl_id})
-        org = await self.org_ops.get_org_by_id(crawl_res["oid"])
+        org = await self.org_ops.get_org_by_id(oid)
 
         if not org.webhookUrls or not org.webhookUrls.uploadFinished:
             return
@@ -251,8 +256,8 @@ class EventWebhookOps:
         )
 
     async def create_crawl_started_notification(
-        self, crawl_id: str, oid: uuid.UUID, scheduled: bool = False
-    ):
+        self, crawl_id: str, oid: UUID, scheduled: bool = False
+    ) -> None:
         """Create webhook notification for started crawl."""
         org = await self.org_ops.get_org_by_id(oid)
 
@@ -270,7 +275,7 @@ class EventWebhookOps:
             return
 
         notification = WebhookNotification(
-            id=uuid.uuid4(),
+            id=uuid4(),
             event=WebhookEventType.CRAWL_STARTED,
             oid=oid,
             body=CrawlStartedBody(
@@ -287,7 +292,7 @@ class EventWebhookOps:
 
     async def _create_collection_items_modified_notification(
         self,
-        coll_id: uuid.UUID,
+        coll_id: UUID,
         org: Organization,
         event: str,
         body: Union[CollectionItemAddedBody, CollectionItemRemovedBody],
@@ -302,7 +307,7 @@ class EventWebhookOps:
         body.downloadUrls = [coll_download_url]
 
         notification = WebhookNotification(
-            id=uuid.uuid4(),
+            id=uuid4(),
             event=event,
             oid=org.id,
             body=body,
@@ -316,9 +321,9 @@ class EventWebhookOps:
     async def create_added_to_collection_notification(
         self,
         crawl_ids: List[str],
-        coll_id: uuid.UUID,
+        coll_id: UUID,
         org: Organization,
-    ):
+    ) -> None:
         """Create webhook notification for item added to collection"""
         if not org.webhookUrls or not org.webhookUrls.addedToCollection:
             return
@@ -337,9 +342,9 @@ class EventWebhookOps:
     async def create_removed_from_collection_notification(
         self,
         crawl_ids: List[str],
-        coll_id: uuid.UUID,
+        coll_id: UUID,
         org: Organization,
-    ):
+    ) -> None:
         """Create webhook notification for item removed from collection"""
         if not org.webhookUrls or not org.webhookUrls.removedFromCollection:
             return
@@ -357,7 +362,7 @@ class EventWebhookOps:
 
 
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
-def init_event_webhooks_api(mdb, org_ops):
+def init_event_webhooks_api(mdb, org_ops, app):
     """init event webhooks system"""
     # pylint: disable=invalid-name
 
@@ -390,55 +395,49 @@ def init_event_webhooks_api(mdb, org_ops):
 
     @router.get("/{notificationid}", response_model=WebhookNotification)
     async def get_notification(
-        notificationid: UUID4,
+        notificationid: UUID,
         org: Organization = Depends(org_owner_dep),
     ):
         return await ops.get_notification(org, notificationid)
 
     @router.get("/{notificationid}/retry")
     async def retry_notification(
-        notificationid: UUID4,
+        notificationid: UUID,
         org: Organization = Depends(org_owner_dep),
     ):
         notification = await ops.get_notification(org, notificationid)
         asyncio.create_task(ops.send_notification(org, notification))
         return {"success": True}
 
-    # TODO: Add webhooks to OpenAPI documentation when we've updated FastAPI
-    # (requires FastAPI >= 0.99.0)
-
-    # @app.webhooks.post("archived-item-created")
-    # def archived_item_created(
-    #    body: ArchivedItemCreatedBody,
-    #    org: Organization = Depends(org_owner_dep)
-    # ):
-    #     """
-    #     When a new archived item is created, we will send a POST request with
-    #     the id for the item and download links for the item.
-    #     """
-
-    # @app.webhooks.post("added-to-collection")
-    # def added_to_collection(
-    #    body: CollectionItemAddedRemovedBody,
-    #    org: Organization = Depends(org_owner_dep)
-    # ):
-    #     """
-    #     When archived items are added to a collection, we will send a POST
-    #     request with the ids of the archived item(s) and collection and a
-    #     download link for the collection.
-    #     """
-
-    # @app.webhooks.post("removed-from-collection")
-    # def removed_from_collection(
-    #    body: CollectionItemAddedRemovedBody,
-    #    org: Organization = Depends(org_owner_dep)
-    # ):
-    #     """
-    #     When an archived items are removed from a collection, we will send a POST
-    #     request with the ids of the archived item(s) and collection and a
-    #     download link for the collection.
-    #     """
+    init_openapi_webhooks(app)
 
     org_ops.router.include_router(router)
 
     return ops
+
+
+def init_openapi_webhooks(app):
+    """add webhooks declarations for openapi"""
+
+    # pylint: disable=unused-argument
+    @app.webhooks.post(WebhookEventType.CRAWL_STARTED)
+    def crawl_started(body: CrawlStartedBody):
+        """Sent when a crawl is started"""
+
+    @app.webhooks.post(WebhookEventType.CRAWL_FINISHED)
+    def crawl_finished(body: CrawlFinishedBody):
+        """Sent when a crawl if finished"""
+
+    @app.webhooks.post(WebhookEventType.UPLOAD_FINISHED)
+    def upload_finished(body: UploadFinishedBody):
+        """Sent when an upload has finished"""
+
+    @app.webhooks.post(WebhookEventType.ADDED_TO_COLLECTION)
+    def added_to_collection(body: CollectionItemAddedBody):
+        """Sent when an archived item (crawl or upload)
+        is added to a collection"""
+
+    @app.webhooks.post(WebhookEventType.REMOVED_FROM_COLLECTION)
+    def remove_from_collection(body: CrawlStartedBody):
+        """Sent when an archived item (crawl or upload)
+        is removed from a collection"""

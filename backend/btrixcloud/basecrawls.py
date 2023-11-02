@@ -1,14 +1,12 @@
 """ base crawl type """
 
-import asyncio
-import uuid
 import os
 from datetime import timedelta
-from typing import Optional, List, Union, Type
+from typing import Optional, List, Union, Type, TYPE_CHECKING
+from uuid import UUID
 import urllib.parse
 import contextlib
 
-from pydantic import UUID4
 from fastapi import HTTPException, Depends
 
 from .models import (
@@ -22,26 +20,31 @@ from .models import (
     Organization,
     PaginatedResponse,
     User,
+    StorageRef,
+    RUNNING_AND_STARTING_STATES,
+    SUCCESSFUL_STATES,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now
 
+if TYPE_CHECKING:
+    from .crawlconfigs import CrawlConfigOps
+    from .crawlmanager import CrawlManager
+    from .users import UserManager
+    from .orgs import OrgOps
+    from .colls import CollectionOps
+    from .storages import StorageOps
+    from .webhooks import EventWebhookOps
+    from .background_jobs import BackgroundJobOps
 
-RUNNING_STATES = ("running", "pending-wait", "generate-wacz", "uploading-wacz")
+else:
+    CrawlConfigOps = UserManager = OrgOps = CollectionOps = object
+    CrawlManager = StorageOps = EventWebhookOps = BackgroundJobOps = object
 
-STARTING_STATES = ("starting", "waiting_capacity", "waiting_org_limit")
-
-FAILED_STATES = ("canceled", "failed", "skipped_quota_reached")
-
-SUCCESSFUL_STATES = ("complete", "partial_complete")
-
-RUNNING_AND_STARTING_STATES = (*STARTING_STATES, *RUNNING_STATES)
-
-RUNNING_AND_STARTING_ONLY = ("starting", *RUNNING_STATES)
-
-NON_RUNNING_STATES = (*FAILED_STATES, *SUCCESSFUL_STATES)
-
-ALL_CRAWL_STATES = (*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES)
+# Presign duration must be less than 604800 seconds (one week),
+# so set this one minute short of a week.
+PRESIGN_MINUTES_MAX = 10079
+PRESIGN_MINUTES_DEFAULT = PRESIGN_MINUTES_MAX
 
 
 # ============================================================================
@@ -51,19 +54,43 @@ class BaseCrawlOps:
 
     # pylint: disable=duplicate-code, too-many-arguments, too-many-locals
 
+    crawl_configs: CrawlConfigOps
+    crawl_manager: CrawlManager
+    user_manager: UserManager
+    orgs: OrgOps
+    colls: CollectionOps
+    storage_ops: StorageOps
+    event_webhook_ops: EventWebhookOps
+    background_job_ops: BackgroundJobOps
+
     def __init__(
-        self, mdb, users, orgs, crawl_configs, crawl_manager, colls, storage_ops
+        self,
+        mdb,
+        users: UserManager,
+        orgs: OrgOps,
+        crawl_manager: CrawlManager,
+        crawl_configs: CrawlConfigOps,
+        colls: CollectionOps,
+        storage_ops: StorageOps,
+        event_webhook_ops: EventWebhookOps,
+        background_job_ops: BackgroundJobOps,
     ):
         self.crawls = mdb["crawls"]
-        self.crawl_configs = crawl_configs
         self.crawl_manager = crawl_manager
+        self.crawl_configs = crawl_configs
         self.user_manager = users
         self.orgs = orgs
         self.colls = colls
         self.storage_ops = storage_ops
+        self.event_webhook_ops = event_webhook_ops
+        self.background_job_ops = background_job_ops
+
+        presign_duration_minutes = int(
+            os.environ.get("PRESIGN_DURATION_MINUTES") or PRESIGN_MINUTES_DEFAULT
+        )
 
         self.presign_duration_seconds = (
-            int(os.environ.get("PRESIGN_DURATION_MINUTES", 60)) * 60
+            min(presign_duration_minutes, PRESIGN_MINUTES_MAX) * 60
         )
 
     async def get_crawl_raw(
@@ -116,8 +143,8 @@ class BaseCrawlOps:
                     res.get("collectionIds")
                 )
 
-        del res["files"]
-        del res["errors"]
+        res.pop("files", None)
+        res.pop("errors", None)
 
         crawl = cls_type.from_dict(res)
 
@@ -127,6 +154,9 @@ class BaseCrawlOps:
                 crawl.config.seeds = None
 
         crawl.storageQuotaReached = await self.orgs.storage_quota_reached(crawl.oid)
+        crawl.execMinutesQuotaReached = await self.orgs.exec_mins_quota_reached(
+            crawl.oid
+        )
 
         return crawl
 
@@ -141,7 +171,7 @@ class BaseCrawlOps:
         return res
 
     async def _update_crawl_collections(
-        self, crawl_id: str, org: Organization, collection_ids: List[UUID4]
+        self, crawl_id: str, org: Organization, collection_ids: List[UUID]
     ):
         """Update crawl collections to match updated list."""
         crawl = await self.get_crawl(crawl_id, org, cls_type=CrawlOut)
@@ -204,6 +234,25 @@ class BaseCrawlOps:
                 "state": {"$in": RUNNING_AND_STARTING_STATES},
             },
             {"$set": data},
+        )
+
+    async def update_usernames(self, userid: UUID, updated_name: str) -> None:
+        """Update username references matching userid"""
+        await self.crawls.update_many(
+            {"userid": userid}, {"$set": {"userName": updated_name}}
+        )
+
+    async def add_crawl_file_replica(
+        self, crawl_id: str, filename: str, ref: StorageRef
+    ) -> dict[str, object]:
+        """Add replica StorageRef to existing CrawlFile"""
+        return await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "files.filename": filename},
+            {
+                "$addToSet": {
+                    "files.$.replicas": {"name": ref.name, "custom": ref.custom}
+                }
+            },
         )
 
     async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
@@ -312,6 +361,9 @@ class BaseCrawlOps:
             size += file_.size
             if not await self.storage_ops.delete_crawl_file_object(org, file_):
                 raise HTTPException(status_code=400, detail="file_deletion_error")
+            await self.background_job_ops.create_delete_replica_jobs(
+                org, file_, crawl.id, crawl.type
+            )
 
         return size
 
@@ -324,9 +376,11 @@ class BaseCrawlOps:
     ):
         """Resolve running crawl data"""
         # pylint: disable=too-many-branches
-        config = await self.crawl_configs.get_crawl_config(
-            crawl.cid, org.id if org else None, active_only=False
-        )
+        config = None
+        if crawl.cid:
+            config = await self.crawl_configs.get_crawl_config(
+                crawl.cid, org.id if org else None, active_only=False
+            )
         if config and config.config.seeds:
             if add_first_seed:
                 first_seed = config.config.seeds[0]
@@ -356,7 +410,6 @@ class BaseCrawlOps:
 
         delta = timedelta(seconds=self.presign_duration_seconds)
 
-        updates = []
         out_files = []
 
         for file_ in files:
@@ -368,38 +421,35 @@ class BaseCrawlOps:
                 presigned_url = await self.storage_ops.get_presigned_url(
                     org, file_, self.presign_duration_seconds
                 )
-                updates.append(
-                    (
-                        {"files.filename": file_.filename},
-                        {
-                            "$set": {
-                                "files.$.presignedUrl": presigned_url,
-                                "files.$.expireAt": exp,
-                            }
-                        },
-                    )
+                await self.crawls.find_one_and_update(
+                    {"files.filename": file_.filename},
+                    {
+                        "$set": {
+                            "files.$.presignedUrl": presigned_url,
+                            "files.$.expireAt": exp,
+                        }
+                    },
                 )
+                file_.expireAt = exp
+
+            expire_at_str = ""
+            if file_.expireAt:
+                expire_at_str = file_.expireAt.isoformat()
 
             out_files.append(
                 CrawlFileOut(
                     name=file_.filename,
                     path=presigned_url or "",
                     hash=file_.hash,
+                    crc32=file_.crc32,
                     size=file_.size,
                     crawlId=crawl_id,
+                    numReplicas=len(file_.replicas) if file_.replicas else 0,
+                    expireAt=expire_at_str,
                 )
             )
 
-        if updates:
-            asyncio.create_task(self._update_presigned(updates))
-
-        # print("presigned", out_files)
-
         return out_files
-
-    async def _update_presigned(self, updates):
-        for update in updates:
-            await self.crawls.find_one_and_update(*update)
 
     @contextlib.asynccontextmanager
     async def get_redis(self, crawl_id):
@@ -414,7 +464,7 @@ class BaseCrawlOps:
             await redis.close()
 
     async def add_to_collection(
-        self, crawl_ids: List[str], collection_id: uuid.UUID, org: Organization
+        self, crawl_ids: List[str], collection_id: UUID, org: Organization
     ):
         """Add crawls to collection."""
         for crawl_id in crawl_ids:
@@ -430,9 +480,7 @@ class BaseCrawlOps:
                 {"$push": {"collectionIds": collection_id}},
             )
 
-    async def remove_from_collection(
-        self, crawl_ids: List[uuid.UUID], collection_id: uuid.UUID
-    ):
+    async def remove_from_collection(self, crawl_ids: List[str], collection_id: UUID):
         """Remove crawls from collection."""
         for crawl_id in crawl_ids:
             await self.crawls.find_one_and_update(
@@ -440,7 +488,7 @@ class BaseCrawlOps:
                 {"$pull": {"collectionIds": collection_id}},
             )
 
-    async def remove_collection_from_all_crawls(self, collection_id: uuid.UUID):
+    async def remove_collection_from_all_crawls(self, collection_id: UUID):
         """Remove collection id from all crawls it's currently in."""
         await self.crawls.update_many(
             {"collectionIds": collection_id},
@@ -451,14 +499,14 @@ class BaseCrawlOps:
     async def list_all_base_crawls(
         self,
         org: Optional[Organization] = None,
-        userid: Optional[uuid.UUID] = None,
+        userid: Optional[UUID] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        collection_id: Optional[str] = None,
+        collection_id: Optional[UUID] = None,
         states: Optional[List[str]] = None,
         first_seed: Optional[str] = None,
         type_: Optional[str] = None,
-        cid: Optional[UUID4] = None,
+        cid: Optional[UUID] = None,
         cls_type: Type[Union[CrawlOut, CrawlOutWithResources]] = CrawlOut,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -650,18 +698,14 @@ class BaseCrawlOps:
 
 
 # ============================================================================
-def init_base_crawls_api(
-    app, mdb, users, crawl_manager, crawl_config_ops, orgs, colls, storage_ops, user_dep
-):
+def init_base_crawls_api(app, user_dep, *args):
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code, too-many-arguments, too-many-locals
 
-    ops = BaseCrawlOps(
-        mdb, users, orgs, crawl_config_ops, crawl_manager, colls, storage_ops
-    )
+    ops = BaseCrawlOps(*args)
 
-    org_viewer_dep = orgs.org_viewer_dep
-    org_crawl_dep = orgs.org_crawl_dep
+    org_viewer_dep = ops.orgs.org_viewer_dep
+    org_crawl_dep = ops.orgs.org_crawl_dep
 
     @app.get(
         "/orgs/{oid}/all-crawls",
@@ -672,16 +716,16 @@ def init_base_crawls_api(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        userid: Optional[UUID4] = None,
+        userid: Optional[UUID] = None,
         name: Optional[str] = None,
         state: Optional[str] = None,
         firstSeed: Optional[str] = None,
         description: Optional[str] = None,
-        collectionId: Optional[UUID4] = None,
+        collectionId: Optional[UUID] = None,
         crawlType: Optional[str] = None,
-        cid: Optional[UUID4] = None,
+        cid: Optional[UUID] = None,
         sortBy: Optional[str] = "finished",
-        sortDirection: Optional[int] = -1,
+        sortDirection: int = -1,
     ):
         states = state.split(",") if state else None
 
@@ -764,3 +808,5 @@ def init_base_crawls_api(
         org: Organization = Depends(org_crawl_dep),
     ):
         return await ops.delete_crawls_all_types(delete_list, org, user)
+
+    return ops

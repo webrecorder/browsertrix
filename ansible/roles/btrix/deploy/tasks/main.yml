@@ -1,0 +1,8 @@
+---
+- name: deploy btrix
+  ansible.builtin.command: helm upgrade --install -f {{ browsertrix_cloud_home | default('..') }}/chart/values.yaml -f {{ browsertrix_cloud_home | default('..') }}/chart/{{ project_name }}-values.yaml btrix {{ browsertrix_cloud_home | default('..') }}/chart/
+  register: helm_result
+  changed_when: helm_result.rc == 0
+  environment:
+    KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+  tags: helm_upgrade

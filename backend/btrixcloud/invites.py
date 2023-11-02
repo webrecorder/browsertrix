@@ -5,7 +5,7 @@ from typing import Optional
 import os
 import urllib.parse
 import time
-import uuid
+from uuid import UUID, uuid4
 
 from pymongo.errors import AutoReconnect
 from fastapi import HTTPException
@@ -78,7 +78,7 @@ class InviteOps:
             headers,
         )
 
-    async def get_valid_invite(self, invite_token: uuid.UUID, email):
+    async def get_valid_invite(self, invite_token: UUID, email):
         """Retrieve a valid invite data from db, or throw if invalid"""
         invite_data = await self.invites.find_one({"_id": invite_token})
         if not invite_data:
@@ -91,11 +91,11 @@ class InviteOps:
 
         return new_user_invite
 
-    async def remove_invite(self, invite_token: str):
+    async def remove_invite(self, invite_token: UUID):
         """remove invite from invite list"""
         await self.invites.delete_one({"_id": invite_token})
 
-    async def remove_invite_by_email(self, email: str, oid: Optional[uuid.UUID] = None):
+    async def remove_invite_by_email(self, email: str, oid: Optional[UUID] = None):
         """remove invite from invite list by email"""
         query: dict[str, object] = {"email": email}
         if oid:
@@ -104,12 +104,14 @@ class InviteOps:
         # invites as well.
         return await self.invites.delete_many(query)
 
-    def accept_user_invite(self, user, invite_token: str):
+    async def accept_user_invite(self, user, invite_token: str, user_manager):
         """remove invite from user, if valid token, throw if not"""
         invite = user.invites.pop(invite_token, "")
         if not invite:
             raise HTTPException(status_code=400, detail="Invalid Invite Code")
 
+        # update user with removed invite
+        await user_manager.update_invites(user)
         return invite
 
     # pylint: disable=too-many-arguments
@@ -128,7 +130,7 @@ class InviteOps:
 
         :returns: is_new_user (bool), invite token (str)
         """
-        invite_code = uuid.uuid4().hex
+        invite_code = uuid4().hex
 
         if org:
             oid = org.id
@@ -148,7 +150,7 @@ class InviteOps:
             inviterEmail=user.email,
         )
 
-        other_user = await user_manager.user_db.get_by_email(invite.email)
+        other_user = await user_manager.get_by_email(invite.email)
 
         if not other_user:
             await self.add_new_user_invite(
@@ -173,7 +175,7 @@ class InviteOps:
         invite_pending.email = None
         other_user.invites[invite_code] = invite_pending
 
-        await user_manager.user_db.update(other_user)
+        await user_manager.update_invites(other_user)
 
         self.email.send_existing_user_invite(
             other_user.email, user.name, org_name, invite_code, headers

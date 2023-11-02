@@ -1,0 +1,86 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ id }}"
+  labels:
+    role: "background-job"
+    job_type: {{ job_type }}
+    btrix.org: {{ oid }}
+
+spec:
+  ttlSecondsAfterFinished: 0
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      priorityClassName: bg-jobs
+      podFailurePolicy:
+        rules:
+        - action: FailJob
+          onExitCodes:
+            containerName: rclone
+            operator: NotIn
+            values: [0]
+      containers:
+      - name: rclone
+        image: rclone/rclone:latest
+        env:
+
+{% if job_type == BgJobType.CREATE_REPLICA %}
+        - name: RCLONE_CONFIG_PRIMARY_TYPE
+          value: "s3"
+
+        - name: RCLONE_CONFIG_PRIMARY_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: "{{ primary_secret_name }}"
+              key: STORE_ACCESS_KEY
+
+        - name: RCLONE_CONFIG_PRIMARY_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: "{{ primary_secret_name }}"
+              key: STORE_SECRET_KEY
+
+        - name: RCLONE_CONFIG_PRIMARY_ENDPOINT
+          value: "{{ primary_endpoint }}"
+          #valueFrom:
+          #  secretKeyRef:
+          #    name: "{{ primary_secret_name }}"
+          #    key: STORE_ENDPOINT_URL
+{% endif %}
+
+        - name: RCLONE_CONFIG_REPLICA_TYPE
+          value: "s3"
+
+        - name: RCLONE_CONFIG_REPLICA_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: "{{ replica_secret_name }}"
+              key: STORE_ACCESS_KEY
+
+        - name: RCLONE_CONFIG_REPLICA_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: "{{ replica_secret_name }}"
+              key: STORE_SECRET_KEY
+
+        - name: RCLONE_CONFIG_REPLICA_ENDPOINT
+          value: "{{ replica_endpoint }}"
+          #valueFrom:
+          #  secretKeyRef:
+          #    name: "{{ replica_secret_name }}"
+          #    key: STORE_ENDPOINT_URL
+
+{% if job_type == BgJobType.CREATE_REPLICA %}
+        command: ["rclone", "-vv", "copyto", "--checksum", "primary:{{ primary_file_path }}", "replica:{{ replica_file_path }}"]
+{% elif job_type == BgJobType.DELETE_REPLICA %}
+        command: ["rclone", "-vv", "delete", "replica:{{ replica_file_path }}"]
+{% endif %}
+        resources:
+          limits:
+            memory: "100Mi"
+
+          requests:
+            memory: "100Mi"
+            cpu: "50m"

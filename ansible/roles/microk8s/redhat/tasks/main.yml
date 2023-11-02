@@ -1,0 +1,134 @@
+---
+# ===========================================
+# Install pre-requisites (RedHat)
+#
+- name: microk8s | enable epel-release (RedHat)
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - git
+    - epel-release
+    - python3
+    - python3-pip
+    - python3-firewall
+  become: true
+  when:
+    - ansible_os_family == "RedHat"
+  tags:
+    - microk8s
+    - microk8s.dependencies
+    - microk8s.dependencies.apt
+
+- name: microk8s | set permissive selinux (RedHat)
+  ansible.builtin.command: /usr/sbin/setenforce 0
+  when:
+    - ansible_os_family == "RedHat"
+  become: true
+
+- name: microk8s | allow permissive to persist (RedHat)
+  ansible.posix.selinux:
+    policy: targeted
+    state: permissive
+  when:
+    - ansible_os_family == "RedHat"
+  become: true
+
+- name: microk8s | open microk8s web service
+  ansible.posix.firewalld:
+    service: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop:
+    - https
+    - http
+  when:
+    - ansible_os_family == "RedHat"
+
+- name: microk8s | open microk8s firewall ports
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop:
+    - 10250/tcp
+    - 10255/tcp
+    - 10257/tcp
+    - 10259/tcp
+    - 12379/tcp
+    - 16443/tcp
+    - 19001/tcp
+    - 25000/tcp
+    - 4789/udp
+  when:
+    - ansible_os_family == "RedHat"
+
+- name: microk8s | ensure dependencies are installed (RedHat)
+  ansible.builtin.dnf:
+    name:
+      - snapd
+      - fuse
+      - udev
+    state: present
+    update_cache: true
+  when:
+    - ansible_os_family == "RedHat"
+  tags:
+    - microk8s
+    - microk8s.dependencies
+    - microk8s.dependencies.apt
+
+- name: microk8s | start and enable services
+  ansible.builtin.service:
+    name: "{{ microk8s_service }}"
+    state: started
+    enabled: true
+  loop:
+    - snapd
+  loop_control:
+    loop_var: microk8s_service
+    label: "{{ microk8s_service }}"
+  tags:
+    - microk8s
+    - microk8s.dependencies
+    - microk8s.dependencies.services
+
+- name: microk8s | create symlinks (RedHat)
+  ansible.builtin.file:
+    src: /var/lib/snapd/snap
+    dest: /snap
+    state: link
+  when:
+    - ansible_os_family == "RedHat"
+  tags:
+    - microk8s
+    - microk8s.dependencies
+    - microk8s.dependencies.services
+
+- name: microk8s | create new snap file (RedHat)
+  ansible.builtin.file:
+    path: /etc/profile.d/snap.sh
+    state: touch
+  when:
+    - ansible_os_family == "RedHat"
+
+- name: microk8s | create new path (RedHat)
+  ansible.builtin.set_fact:
+    snap_path: "export PATH=$PATH:/var/lib/snapd/snap/bin"
+  when:
+    - ansible_os_family == "RedHat"
+
+- name: microk8s | create config for file (RedHat)
+  ansible.builtin.copy:
+    content: "{{ snap_path }}"
+    dest: /etc/profile.d/snap.sh
+  when:
+    - ansible_os_family == "RedHat"
+
+- name: microk8s | source environment (RedHat)
+  ansible.builtin.shell: source /etc/profile.d/snap.sh
+  when:
+    - ansible_os_family == "RedHat"
+

@@ -62,15 +62,30 @@ export class Tag extends SLTag {
       .tag__remove {
         color: var(--sl-color-blue-600);
         border-radius: 100%;
+        margin-left: 0.25rem;
+        padding: 0.125rem;
       }
 
       .tag__remove:hover {
-        background-color: var(--sl-color-blue-600);
+        background-color: var(--sl-color-blue-500);
         color: var(--sl-color-neutral-0);
+      }
+
+      :focus .tag__remove:hover {
+        color: var(--sl-color-blue-500);
+        background-color: var(--sl-color-neutral-0);
       }
 
       .tag--small {
         font-size: var(--sl-font-size-x-small);
+      }
+
+      .tag--medium {
+        padding: 0 0.5rem;
+      }
+
+      .tag--medium:is(.tag--removable) {
+        padding: 0 0.125rem 0 0.5rem;
       }
     `,
   ];

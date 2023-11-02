@@ -51,7 +51,7 @@ export class CollectionsNew extends LiteElement {
     <nav class="mb-7">
       <a
         class="text-gray-600 hover:text-gray-800 text-sm font-medium"
-        href=${`/orgs/${this.orgId}/collections`}
+        href=${`${this.orgBasePath}/collections`}
         @click=${this.navLink}
       >
         <sl-icon name="arrow-left" class="inline-block align-middle"></sl-icon>
@@ -87,7 +87,7 @@ export class CollectionsNew extends LiteElement {
         icon: "check2-circle",
       });
 
-      this.navTo(`/orgs/${this.orgId}/collections/view/${data.id}`);
+      this.navTo(`${this.orgBasePath}/collections/view/${data.id}`);
     } catch (e: any) {
       if (e?.isApiError) {
         this.serverError = e?.message as string;

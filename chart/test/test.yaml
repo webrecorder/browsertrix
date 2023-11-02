@@ -5,12 +5,19 @@
 backend_image: docker.io/webrecorder/browsertrix-backend:latest
 frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
 
+crawler_image: docker.io/webrecorder/browsertrix-crawler:0.12.0
+
 backend_pull_policy: "Never"
 frontend_pull_policy: "Never"
 
 default_crawl_filename_template: "@ts-testing-@hostsuffix.wacz"
 
 operator_resync_seconds: 3
+
+# for testing only
+crawler_extra_cpu_per_browser: 300m
+
+crawler_extra_memory_per_browser: 256Mi
 
 mongo_auth:
   # specify either username + password (for local mongo)
@@ -26,8 +33,6 @@ superuser:
   # change or remove this
   password: PASSW0RD!
 
-
-local_service_port: 30870
 
 # test max pages per crawl global limit
 max_pages_per_crawl: 4

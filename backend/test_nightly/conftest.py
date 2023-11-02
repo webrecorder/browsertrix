@@ -211,7 +211,7 @@ def timeout_crawl(admin_auth_headers, default_org_id):
     crawl_data = {
         "runNow": True,
         "name": "Crawl with crawl timeout",
-        "crawlTimeout": 30,
+        "crawlTimeout": 15,
         "config": {
             "seeds": [{"url": "https://webrecorder.net/"}],
             "scopeType": "domain",

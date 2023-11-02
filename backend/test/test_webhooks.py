@@ -81,14 +81,17 @@ def test_get_webhook_event(admin_auth_headers, default_org_id):
     assert event
 
     if event in ("crawlFinished", "uploadFinished"):
-        assert len(body["downloadUrls"]) >= 1
+        assert len(body["resources"]) >= 1
+        assert len(body.get("downloadUrls", [])) == 0
         assert body["itemId"]
 
     elif event in ("crawlStarted"):
-        assert len(body["downloadUrls"]) == 0
+        assert len(body.get("resources", [])) == 0
+        assert len(body.get("downloadUrls", [])) == 0
         assert body["itemId"]
 
     elif event in ("addedToCollection", "removedFromCollection"):
+        assert len(body.get("resources", [])) == 0
         assert len(body["downloadUrls"]) == 1
         assert body["collectionId"]
         assert len(body["itemIds"]) >= 1
@@ -246,28 +249,33 @@ def test_webhooks_sent(
             assert post["itemId"]
             assert post["scheduled"] in (True, False)
             assert post.get("downloadUrls") is None
+            assert post.get("resources") is None
 
         elif event == "crawlFinished":
             crawl_finished_count += 1
             assert post["itemId"]
             assert post["state"]
-            assert post["downloadUrls"]
+            assert post["resources"]
+            assert post.get("downloadUrls") is None
 
         elif event == "uploadFinished":
             upload_finished_count += 1
             assert post["itemId"]
             assert post["state"]
-            assert post["downloadUrls"]
+            assert post["resources"]
+            assert post.get("downloadUrls") is None
 
         elif event == "addedToCollection":
             added_to_collection_count += 1
             assert post["downloadUrls"] and len(post["downloadUrls"]) == 1
+            assert post.get("resources") is None
             assert post["itemIds"]
             assert post["collectionId"]
 
         elif event == "removedFromCollection":
             removed_from_collection_count += 1
             assert post["downloadUrls"] and len(post["downloadUrls"]) == 1
+            assert post.get("resources") is None
             assert post["itemIds"]
             assert post["collectionId"]
 

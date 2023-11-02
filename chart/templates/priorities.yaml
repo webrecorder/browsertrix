@@ -10,3 +10,15 @@ globalDefault: false
 description: "Priority for crawl instance #{{ . }}"
 
 {{- end }}
+
+# Lower Priority for Background Jobs
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: bg-jobs
+value: -100
+globalDefault: false
+description: "Priority for background jobs"
+
+

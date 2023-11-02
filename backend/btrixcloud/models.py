@@ -4,11 +4,21 @@ Crawl-related models and types
 
 from datetime import datetime
 from enum import Enum, IntEnum
+from uuid import UUID
 import os
 
 from typing import Optional, List, Dict, Union, Literal, Any
-from pydantic import BaseModel, UUID4, conint, Field, HttpUrl, AnyHttpUrl, EmailStr
-from fastapi_users import models as fastapi_users_models
+from pydantic import (
+    BaseModel,
+    conint,
+    Field,
+    HttpUrl,
+    AnyHttpUrl,
+    EmailStr,
+    ConstrainedStr,
+)
+
+# from fastapi_users import models as fastapi_users_models
 
 from .db import BaseMongoModel
 
@@ -18,17 +28,145 @@ MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
 
 # pylint: disable=invalid-name, too-many-lines
 # ============================================================================
+class UserRole(IntEnum):
+    """User role"""
+
+    VIEWER = 10
+    CRAWLER = 20
+    OWNER = 40
+    SUPERADMIN = 100
+
+
+# ============================================================================
+
+### INVITES ###
+
+
+# ============================================================================
+class InvitePending(BaseMongoModel):
+    """An invite for a new user, with an email and invite token as id"""
+
+    created: datetime
+    inviterEmail: str
+    oid: Optional[UUID]
+    role: Optional[UserRole] = UserRole.VIEWER
+    email: Optional[str]
+
+
+# ============================================================================
+class InviteRequest(BaseModel):
+    """Request to invite another user"""
+
+    email: str
+
+
+# ============================================================================
+class InviteToOrgRequest(InviteRequest):
+    """Request to invite another user to an organization"""
+
+    role: UserRole
+
+
+# ============================================================================
+class AddToOrgRequest(InviteRequest):
+    """Request to add a new user to an organization directly"""
+
+    role: UserRole
+    password: str
+    name: str
+
+
+# ============================================================================
 
 ### MAIN USER MODEL ###
 
 
 # ============================================================================
-class User(fastapi_users_models.BaseUser):
+class User(BaseModel):
     """
-    Base User Model
+    User Model
     """
 
-    name: Optional[str] = ""
+    id: UUID
+
+    name: str = ""
+    email: EmailStr
+    is_superuser: bool = False
+    is_verified: bool = False
+
+    invites: Dict[str, InvitePending] = {}
+    hashed_password: str
+
+    def dict(self, *a, **kw):
+        """ensure invites / hashed_password never serialize, just in case"""
+        exclude = kw.get("exclude") or set()
+        exclude.add("invites")
+        exclude.add("hashed_password")
+        return super().dict(*a, **kw)
+
+
+# ============================================================================
+class FailedLogin(BaseMongoModel):
+    """
+    Failed login model
+    """
+
+    attempted: datetime = datetime.now()
+    email: str
+
+    # Consecutive failed logins, reset to 0 on successful login or after
+    # password is reset. On failed_logins >= 5 within the hour before this
+    # object is deleted, the user is unable to log in until they reset their
+    # password.
+    count: int = 1
+
+
+# ============================================================================
+class UserOrgInfoOut(BaseModel):
+    """org per user"""
+
+    id: UUID
+
+    name: str
+    slug: str
+    default: bool
+    role: UserRole
+
+
+# ============================================================================
+class UserOut(BaseModel):
+    """Output User model"""
+
+    id: UUID
+
+    name: str = ""
+    email: EmailStr
+    is_superuser: bool = False
+    is_verified: bool = False
+
+    orgs: List[UserOrgInfoOut]
+
+
+# ============================================================================
+
+### CRAWL STATES
+
+# ============================================================================
+RUNNING_STATES = ["running", "pending-wait", "generate-wacz", "uploading-wacz"]
+
+STARTING_STATES = ["starting", "waiting_capacity", "waiting_org_limit"]
+
+FAILED_STATES = ["canceled", "failed", "skipped_quota_reached"]
+
+SUCCESSFUL_STATES = ["complete", "partial_complete"]
+
+RUNNING_AND_STARTING_STATES = [*STARTING_STATES, *RUNNING_STATES]
+
+RUNNING_AND_STARTING_ONLY = ["starting", *RUNNING_STATES]
+
+NON_RUNNING_STATES = [*FAILED_STATES, *SUCCESSFUL_STATES]
+
+ALL_CRAWL_STATES = [*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES]
 
 
 # ============================================================================
@@ -59,18 +197,26 @@ class ScopeType(str, Enum):
 
 
 # ============================================================================
+class EmptyStr(ConstrainedStr):
+    """empty string only"""
+
+    min_length = 0
+    max_length = 0
+
+
+# ============================================================================
 class Seed(BaseModel):
     """Crawl seed"""
 
     url: HttpUrl
-    scopeType: Optional[ScopeType]
+    scopeType: Optional[ScopeType] = None
 
-    include: Union[str, List[str], None]
-    exclude: Union[str, List[str], None]
-    sitemap: Union[bool, HttpUrl, None]
-    allowHash: Optional[bool]
-    depth: Optional[int]
-    extraHops: Optional[int]
+    include: Union[str, List[str], None] = None
+    exclude: Union[str, List[str], None] = None
+    sitemap: Union[bool, HttpUrl, None] = None
+    allowHash: Optional[bool] = None
+    depth: Optional[int] = None
+    extraHops: Optional[int] = None
 
 
 # ============================================================================
@@ -95,17 +241,17 @@ class RawCrawlConfig(BaseModel):
     pageLoadTimeout: Optional[int]
     pageExtraDelay: Optional[int] = 0
 
-    workers: Optional[int]
+    workers: Optional[int] = None
 
-    headless: Optional[bool]
+    headless: Optional[bool] = None
 
-    generateWACZ: Optional[bool]
-    combineWARC: Optional[bool]
+    generateWACZ: Optional[bool] = None
+    combineWARC: Optional[bool] = None
 
     useSitemap: Optional[bool] = False
     failOnFailedSeed: Optional[bool] = False
 
-    logging: Optional[str]
+    logging: Optional[str] = None
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
 
 
@@ -114,7 +260,7 @@ class CrawlConfigIn(BaseModel):
     """CrawlConfig input model, submitted via API"""
 
     schedule: Optional[str] = ""
-    runNow: Optional[bool] = False
+    runNow: bool = False
 
     config: RawCrawlConfig
 
@@ -124,36 +270,36 @@ class CrawlConfigIn(BaseModel):
 
     jobType: Optional[JobType] = JobType.CUSTOM
 
-    profileid: Optional[str]
+    profileid: Union[UUID, EmptyStr, None]
 
-    autoAddCollections: Optional[List[UUID4]] = []
+    autoAddCollections: Optional[List[UUID]] = []
     tags: Optional[List[str]] = []
 
     crawlTimeout: int = 0
     maxCrawlSize: int = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1  # type: ignore
 
-    crawlFilenameTemplate: Optional[str]
+    crawlFilenameTemplate: Optional[str] = None
 
 
 # ============================================================================
 class ConfigRevision(BaseMongoModel):
     """Crawl Config Revision"""
 
-    cid: UUID4
+    cid: UUID
 
     schedule: Optional[str] = ""
 
     config: RawCrawlConfig
 
-    profileid: Optional[UUID4]
+    profileid: Optional[UUID]
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1  # type: ignore
 
     modified: datetime
-    modifiedBy: Optional[UUID4]
+    modifiedBy: Optional[UUID]
 
     rev: int = 0
 
@@ -173,9 +319,9 @@ class CrawlConfigCore(BaseMongoModel):
     maxCrawlSize: Optional[int] = 0
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = 1  # type: ignore
 
-    oid: UUID4
+    oid: UUID
 
-    profileid: Optional[UUID4]
+    profileid: Optional[UUID]
 
 
 # ============================================================================
@@ -186,12 +332,12 @@ class CrawlConfigAdditional(BaseModel):
     description: Optional[str]
 
     created: datetime
-    createdBy: Optional[UUID4]
+    createdBy: Optional[UUID]
 
     modified: Optional[datetime]
-    modifiedBy: Optional[UUID4]
+    modifiedBy: Optional[UUID]
 
-    autoAddCollections: Optional[List[UUID4]] = []
+    autoAddCollections: Optional[List[UUID]] = []
 
     inactive: Optional[bool] = False
 
@@ -205,7 +351,7 @@ class CrawlConfigAdditional(BaseModel):
 
     lastCrawlId: Optional[str]
     lastCrawlStartTime: Optional[datetime]
-    lastStartedBy: Optional[UUID4]
+    lastStartedBy: Optional[UUID]
     lastCrawlTime: Optional[datetime]
     lastCrawlState: Optional[str]
     lastCrawlSize: Optional[int]
@@ -219,7 +365,7 @@ class CrawlConfigAdditional(BaseModel):
 class CrawlConfig(CrawlConfigCore, CrawlConfigAdditional):
     """Schedulable config"""
 
-    id: UUID4
+    id: UUID
 
     config: RawCrawlConfig
     createdByName: Optional[str]
@@ -260,12 +406,12 @@ class UpdateCrawlConfig(BaseModel):
     name: Optional[str] = None
     tags: Optional[List[str]] = None
     description: Optional[str] = None
-    autoAddCollections: Optional[List[UUID4]] = None
+    autoAddCollections: Optional[List[UUID]] = None
     runNow: bool = False
 
     # crawl data: revision tracked
     schedule: Optional[str] = None
-    profileid: Optional[str] = None
+    profileid: Union[UUID, EmptyStr, None] = None
     crawlTimeout: Optional[int] = None
     maxCrawlSize: Optional[int] = None
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = None  # type: ignore
@@ -279,16 +425,59 @@ class UpdateCrawlConfig(BaseModel):
 
 
 # ============================================================================
-class CrawlFile(BaseModel):
-    """file from a crawl"""
+class StorageRef(BaseModel):
+    """Reference to actual storage"""
+
+    name: str
+    custom: Optional[bool]
+
+    def __init__(self, *args, **kwargs):
+        if args:
+            if args[0].startswith("cs-"):
+                super().__init__(name=args[0][2:], custom=True)
+            else:
+                super().__init__(name=args[0], custom=False)
+        else:
+            super().__init__(**kwargs)
+
+    def __str__(self):
+        if not self.custom:
+            return self.name
+        return "cs-" + self.name
+
+    def get_storage_secret_name(self, oid: str) -> str:
+        """get k8s secret name for this storage and oid"""
+        if not self.custom:
+            return "storage-" + self.name
+        return f"storage-cs-{self.name}-{oid[:12]}"
+
+    def get_storage_extra_path(self, oid: str) -> str:
+        """return extra path added to the endpoint
+        using oid for default storages, no extra path for custom"""
+        if not self.custom:
+            return oid + "/"
+        return ""
+
+
+# ============================================================================
+class BaseFile(BaseModel):
+    """Base model for crawl and profile files"""
 
     filename: str
     hash: str
     size: int
-    def_storage_name: Optional[str]
+    storage: StorageRef
+
+    replicas: Optional[List[StorageRef]] = []
+
+
+# ============================================================================
+class CrawlFile(BaseFile):
+    """file from a crawl"""
 
     presignedUrl: Optional[str]
     expireAt: Optional[datetime]
+    crc32: int = 0
 
 
 # ============================================================================
@@ -298,8 +487,12 @@ class CrawlFileOut(BaseModel):
     name: str
     path: str
     hash: str
+    crc32: int = 0
     size: int
+
     crawlId: Optional[str]
+    numReplicas: int = 0
+    expireAt: Optional[str]
 
 
 # ============================================================================
@@ -308,9 +501,11 @@ class BaseCrawl(BaseMongoModel):
 
     id: str
 
-    userid: UUID4
+    type: str
+
+    userid: UUID
     userName: Optional[str]
-    oid: UUID4
+    oid: UUID
 
     started: datetime
     finished: Optional[datetime] = None
@@ -327,7 +522,7 @@ class BaseCrawl(BaseMongoModel):
 
     errors: Optional[List[str]] = []
 
-    collectionIds: Optional[List[UUID4]] = []
+    collectionIds: Optional[List[UUID]] = []
 
     fileSize: int = 0
     fileCount: int = 0
@@ -337,7 +532,7 @@ class BaseCrawl(BaseMongoModel):
 class CollIdName(BaseModel):
     """Collection id and name object"""
 
-    id: UUID4
+    id: UUID
     name: str
 
 
@@ -351,9 +546,9 @@ class CrawlOut(BaseMongoModel):
 
     id: str
 
-    userid: UUID4
+    userid: UUID
     userName: Optional[str]
-    oid: UUID4
+    oid: UUID
 
     name: Optional[str]
     description: Optional[str]
@@ -370,15 +565,15 @@ class CrawlOut(BaseMongoModel):
 
     tags: Optional[List[str]] = []
 
-    errors: Optional[List[str]]
+    errors: Optional[List[str]] = []
 
-    collectionIds: Optional[List[UUID4]] = []
+    collectionIds: Optional[List[UUID]] = []
 
     crawlExecSeconds: int = 0
 
     # automated crawl fields
     config: Optional[RawCrawlConfig]
-    cid: Optional[UUID4]
+    cid: Optional[UUID]
     firstSeed: Optional[str]
     seedCount: Optional[int]
     profileName: Optional[str]
@@ -387,6 +582,7 @@ class CrawlOut(BaseMongoModel):
     cid_rev: Optional[int]
 
     storageQuotaReached: Optional[bool]
+    execMinutesQuotaReached: Optional[bool]
 
 
 # ============================================================================
@@ -404,7 +600,7 @@ class UpdateCrawl(BaseModel):
     name: Optional[str]
     description: Optional[str]
     tags: Optional[List[str]]
-    collectionIds: Optional[List[UUID4]]
+    collectionIds: Optional[List[UUID]]
 
 
 # ============================================================================
@@ -430,9 +626,9 @@ class CrawlScale(BaseModel):
 class Crawl(BaseCrawl, CrawlConfigCore):
     """Store State of a Crawl (Finished or Running)"""
 
-    type: str = Field("crawl", const=True)
+    type: Literal["crawl"] = "crawl"
 
-    cid: UUID4
+    cid: UUID
 
     config: RawCrawlConfig
 
@@ -457,6 +653,7 @@ class CrawlCompleteIn(BaseModel):
     filename: str
     size: int
     hash: str
+    crc32: int = 0
 
     completed: Optional[bool] = True
 
@@ -470,7 +667,7 @@ class CrawlCompleteIn(BaseModel):
 class UploadedCrawl(BaseCrawl):
     """Store State of a Crawl Upload"""
 
-    type: str = Field("upload", const=True)
+    type: Literal["upload"] = "upload"
 
     tags: Optional[List[str]] = []
 
@@ -490,7 +687,7 @@ class Collection(BaseMongoModel):
     """Org collection structure"""
 
     name: str = Field(..., min_length=1)
-    oid: UUID4
+    oid: UUID
     description: Optional[str]
     modified: Optional[datetime]
 
@@ -519,7 +716,7 @@ class CollIn(BaseModel):
 class CollOut(Collection):
     """Collection output model with annotations."""
 
-    resources: Optional[List[CrawlFileOut]] = []
+    resources: List[CrawlFileOut] = []
 
 
 # ============================================================================
@@ -535,56 +732,7 @@ class UpdateColl(BaseModel):
 class AddRemoveCrawlList(BaseModel):
     """Collections to add or remove from collection"""
 
-    crawlIds: Optional[List[str]] = []
-
-
-# ============================================================================
-
-### INVITES ###
-
-
-# ============================================================================
-class UserRole(IntEnum):
-    """User role"""
-
-    VIEWER = 10
-    CRAWLER = 20
-    OWNER = 40
-    SUPERADMIN = 100
-
-
-# ============================================================================
-class InvitePending(BaseMongoModel):
-    """An invite for a new user, with an email and invite token as id"""
-
-    created: datetime
-    inviterEmail: str
-    oid: Optional[UUID4]
-    role: Optional[UserRole] = UserRole.VIEWER
-    email: Optional[str]
-
-
-# ============================================================================
-class InviteRequest(BaseModel):
-    """Request to invite another user"""
-
-    email: str
-
-
-# ============================================================================
-class InviteToOrgRequest(InviteRequest):
-    """Request to invite another user to an organization"""
-
-    role: UserRole
-
-
-# ============================================================================
-class AddToOrgRequest(InviteRequest):
-    """Request to add a new user to an organization directly"""
-
-    role: UserRole
-    password: str
-    name: str
+    crawlIds: List[str] = []
 
 
 # ============================================================================
@@ -609,19 +757,40 @@ class RemovePendingInvite(InviteRequest):
 
 # ============================================================================
 class RenameOrg(BaseModel):
-    """Request to invite another user"""
+    """Rename an existing org"""
 
     name: str
     slug: Optional[str] = None
 
 
 # ============================================================================
-class DefaultStorage(BaseModel):
-    """Storage reference"""
+class CreateOrg(RenameOrg):
+    """Create a new org"""
 
-    type: Literal["default"] = "default"
+
+# ============================================================================
+class OrgStorageRefs(BaseModel):
+    """Input model for setting primary storage + optional replicas"""
+
+    storage: StorageRef
+
+    storageReplicas: List[StorageRef] = []
+
+
+# ============================================================================
+class S3StorageIn(BaseModel):
+    """Custom S3 Storage input model"""
+
+    type: Literal["s3"] = "s3"
+
     name: str
-    path: str = ""
+
+    access_key: str
+    secret_key: str
+    endpoint_url: str
+    bucket: str
+    access_endpoint_url: Optional[str]
+    region: str = ""
 
 
 # ============================================================================
@@ -631,11 +800,12 @@ class S3Storage(BaseModel):
     type: Literal["s3"] = "s3"
 
     endpoint_url: str
+    endpoint_no_bucket_url: str
     access_key: str
     secret_key: str
-    access_endpoint_url: Optional[str]
-    region: Optional[str] = ""
-    use_access_for_presign: Optional[bool] = True
+    access_endpoint_url: str
+    region: str = ""
+    use_access_for_presign: bool = True
 
 
 # ============================================================================
@@ -645,6 +815,7 @@ class OrgQuotas(BaseModel):
     maxConcurrentCrawls: Optional[int] = 0
     maxPagesPerCrawl: Optional[int] = 0
     storageQuota: Optional[int] = 0
+    maxExecMinutesPerMonth: Optional[int] = 0
 
 
 # ============================================================================
@@ -659,17 +830,45 @@ class OrgWebhookUrls(BaseModel):
 
 
 # ============================================================================
+class OrgOut(BaseMongoModel):
+    """Organization API output model"""
+
+    id: UUID
+    name: str
+    slug: str
+    users: Optional[Dict[str, Any]]
+    usage: Optional[Dict[str, int]]
+    crawlExecSeconds: Optional[Dict[str, int]]
+    default: bool = False
+    bytesStored: int
+    bytesStoredCrawls: int
+    bytesStoredUploads: int
+    bytesStoredProfiles: int
+    origin: Optional[AnyHttpUrl] = None
+
+    webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
+    quotas: Optional[OrgQuotas] = OrgQuotas()
+
+    storageQuotaReached: Optional[bool]
+    execMinutesQuotaReached: Optional[bool]
+
+
+# ============================================================================
 class Organization(BaseMongoModel):
     """Organization Base Model"""
 
-    id: UUID4
+    id: UUID
 
     name: str
     slug: str
 
     users: Dict[str, UserRole]
 
-    storage: Union[S3Storage, DefaultStorage]
+    storage: StorageRef
+
+    storageReplicas: List[StorageRef] = []
+
+    customStorages: Dict[str, S3Storage] = {}
 
     usage: Dict[str, int] = {}
     crawlExecSeconds: Dict[str, int] = {}
@@ -710,7 +909,7 @@ class Organization(BaseMongoModel):
 
         return res >= value
 
-    async def serialize_for_user(self, user: User, user_manager):
+    async def serialize_for_user(self, user: User, user_manager) -> OrgOut:
         """Serialize result based on current user access"""
 
         exclude = {"storage"}
@@ -729,12 +928,14 @@ class Organization(BaseMongoModel):
         )
 
         if self.is_owner(user):
-            keys = list(result["users"].keys())
+            result["users"] = {}
+
+            keys = list(self.users.keys())
             user_list = await user_manager.get_user_names_by_ids(keys)
 
             for org_user in user_list:
                 id_ = str(org_user["id"])
-                role = result["users"].get(id_)
+                role = self.users.get(id_)
                 if not role:
                     continue
 
@@ -745,27 +946,6 @@ class Organization(BaseMongoModel):
                 }
 
         return OrgOut.from_dict(result)
-
-
-# ============================================================================
-class OrgOut(BaseMongoModel):
-    """Organization API output model"""
-
-    id: UUID4
-    name: str
-    slug: str
-    users: Optional[Dict[str, Any]]
-    usage: Optional[Dict[str, int]]
-    crawlExecSeconds: Optional[Dict[str, int]]
-    default: bool = False
-    bytesStored: int
-    bytesStoredCrawls: int
-    bytesStoredUploads: int
-    bytesStoredProfiles: int
-    origin: Optional[AnyHttpUrl]
-
-    webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
-    quotas: Optional[OrgQuotas] = OrgQuotas()
 
 
 # ============================================================================
@@ -810,13 +990,8 @@ class PaginatedResponse(BaseModel):
 
 
 # ============================================================================
-class ProfileFile(BaseModel):
-    """file from a crawl"""
-
-    filename: str
-    hash: str
-    size: int
-    def_storage_name: Optional[str] = ""
+class ProfileFile(BaseFile):
+    """file for storing profile data"""
 
 
 # ============================================================================
@@ -826,14 +1001,14 @@ class Profile(BaseMongoModel):
     name: str
     description: Optional[str] = ""
 
-    userid: UUID4
-    oid: UUID4
+    userid: UUID
+    oid: UUID
 
     origins: List[str]
     resource: Optional[ProfileFile]
 
     created: Optional[datetime]
-    baseid: Optional[UUID4] = None
+    baseid: Optional[UUID] = None
 
 
 # ============================================================================
@@ -854,7 +1029,7 @@ class UrlIn(BaseModel):
 class ProfileLaunchBrowserIn(UrlIn):
     """Request to launch new browser for creating profile"""
 
-    profileId: Optional[UUID4]
+    profileId: Optional[UUID] = None
 
 
 # ============================================================================
@@ -888,8 +1063,7 @@ class ProfileUpdate(BaseModel):
 
 
 # ============================================================================
-# use custom model as model.BaseUserCreate includes is_* field
-class UserCreateIn(fastapi_users_models.CreateUpdateDictModel):
+class UserCreateIn(BaseModel):
     """
     User Creation Model exposed to API
     """
@@ -899,43 +1073,41 @@ class UserCreateIn(fastapi_users_models.CreateUpdateDictModel):
 
     name: Optional[str] = ""
 
-    inviteToken: Optional[UUID4]
+    inviteToken: Optional[UUID] = None
 
     newOrg: bool
     newOrgName: Optional[str] = ""
 
 
 # ============================================================================
-class UserCreate(fastapi_users_models.BaseUserCreate):
+class UserCreate(UserCreateIn):
     """
     User Creation Model
     """
 
-    name: Optional[str] = ""
-
-    inviteToken: Optional[UUID4] = None
-
-    newOrg: bool
-    newOrgName: Optional[str] = ""
+    is_superuser: Optional[bool] = False
+    is_verified: Optional[bool] = False
 
 
 # ============================================================================
-class UserUpdate(User, fastapi_users_models.CreateUpdateDictModel):
+class UserUpdateEmailName(BaseModel):
     """
-    User Update Model
+    Update email and/or name
     """
 
-    password: Optional[str]
+    email: Optional[EmailStr] = None
+    name: Optional[str] = None
+
+
+# ============================================================================
+class UserUpdatePassword(BaseModel):
+    """
+    Update password, requires current password to reset
+    """
+
     email: EmailStr
-
-
-# ============================================================================
-class UserDB(User, fastapi_users_models.BaseUserDB):
-    """
-    User in DB Model
-    """
-
-    invites: Dict[str, InvitePending] = {}
+    password: str
+    newPassword: str
 
 
 # ============================================================================
@@ -977,14 +1149,18 @@ class BaseCollectionItemBody(WebhookNotificationBody):
 class CollectionItemAddedBody(BaseCollectionItemBody):
     """Webhook notification POST body for collection additions"""
 
-    event: str = Field(WebhookEventType.ADDED_TO_COLLECTION, const=True)
+    event: Literal[
+        WebhookEventType.ADDED_TO_COLLECTION
+    ] = WebhookEventType.ADDED_TO_COLLECTION
 
 
 # ============================================================================
 class CollectionItemRemovedBody(BaseCollectionItemBody):
     """Webhook notification POST body for collection removals"""
 
-    event: str = Field(WebhookEventType.REMOVED_FROM_COLLECTION, const=True)
+    event: Literal[
+        WebhookEventType.REMOVED_FROM_COLLECTION
+    ] = WebhookEventType.REMOVED_FROM_COLLECTION
 
 
 # ============================================================================
@@ -992,6 +1168,7 @@ class BaseArchivedItemBody(WebhookNotificationBody):
     """Webhook notification POST body for when archived item is started or finished"""
 
     itemId: str
+    resources: Optional[List[CrawlFileOut]] = None
 
 
 # ============================================================================
@@ -999,14 +1176,14 @@ class CrawlStartedBody(BaseArchivedItemBody):
     """Webhook notification POST body for when crawl starts"""
 
     scheduled: bool = False
-    event: str = Field(WebhookEventType.CRAWL_STARTED, const=True)
+    event: Literal[WebhookEventType.CRAWL_STARTED] = WebhookEventType.CRAWL_STARTED
 
 
 # ============================================================================
 class CrawlFinishedBody(BaseArchivedItemBody):
     """Webhook notification POST body for when crawl finishes"""
 
-    event: str = Field(WebhookEventType.CRAWL_FINISHED, const=True)
+    event: Literal[WebhookEventType.CRAWL_FINISHED] = WebhookEventType.CRAWL_FINISHED
     state: str
 
 
@@ -1014,7 +1191,7 @@ class CrawlFinishedBody(BaseArchivedItemBody):
 class UploadFinishedBody(BaseArchivedItemBody):
     """Webhook notification POST body for when upload finishes"""
 
-    event: str = Field(WebhookEventType.UPLOAD_FINISHED, const=True)
+    event: Literal[WebhookEventType.UPLOAD_FINISHED] = WebhookEventType.UPLOAD_FINISHED
     state: str
 
 
@@ -1023,7 +1200,7 @@ class WebhookNotification(BaseMongoModel):
     """Base POST body model for webhook notifications"""
 
     event: WebhookEventType
-    oid: UUID4
+    oid: UUID
     body: Union[
         CrawlStartedBody,
         CrawlFinishedBody,
@@ -1035,3 +1212,56 @@ class WebhookNotification(BaseMongoModel):
     attempts: int = 0
     created: datetime
     lastAttempted: Optional[datetime] = None
+
+
+# ============================================================================
+
+### BACKGROUND JOBS ###
+
+
+class BgJobType(str, Enum):
+    """Background Job Types"""
+
+    CREATE_REPLICA = "create-replica"
+    DELETE_REPLICA = "delete-replica"
+
+
+# ============================================================================
+class BackgroundJob(BaseMongoModel):
+    """Model for tracking background jobs"""
+
+    id: str
+    type: BgJobType
+    oid: UUID
+    success: Optional[bool] = None
+    started: datetime
+    finished: Optional[datetime] = None
+
+
+# ============================================================================
+class CreateReplicaJob(BackgroundJob):
+    """Model for tracking create of replica jobs"""
+
+    type: Literal[BgJobType.CREATE_REPLICA] = BgJobType.CREATE_REPLICA
+    file_path: str
+    object_type: str
+    object_id: str
+    replica_storage: StorageRef
+
+
+# ============================================================================
+class DeleteReplicaJob(BackgroundJob):
+    """Model for tracking deletion of replica jobs"""
+
+    type: Literal[BgJobType.DELETE_REPLICA] = BgJobType.DELETE_REPLICA
+    file_path: str
+    object_type: str
+    object_id: str
+    replica_storage: StorageRef
+
+
+# ============================================================================
+class AnyJob(BaseModel):
+    """Union of all job types, for response model"""
+
+    __root__: Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob]

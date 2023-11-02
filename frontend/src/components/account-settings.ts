@@ -1,13 +1,21 @@
 import { LitElement } from "lit";
-import { state, query, property } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
-import { createMachine, interpret, assign } from "@xstate/fsm";
+import { state, queryAsync, property } from "lit/decorators.js";
+import { msg, str, localized } from "@lit/localize";
+import debounce from "lodash/fp/debounce";
+import { when } from "lit/directives/when.js";
+import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import type { SlInput } from "@shoelace-style/shoelace";
+import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 
 import type { CurrentUser } from "../types/user";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
 import type { AuthState, Auth } from "../utils/AuthService";
 import AuthService from "../utils/AuthService";
+import PasswordService from "../utils/PasswordService";
+
+const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
+  PasswordService;
 
 @localized()
 class RequestVerify extends LitElement {
@@ -20,6 +28,13 @@ class RequestVerify extends LitElement {
   @state()
   private requestSuccess: boolean = false;
 
+  willUpdate(changedProperties: Map<string, any>) {
+    if (changedProperties.has("email")) {
+      this.isRequesting = false;
+      this.requestSuccess = false;
+    }
+  }
+
   createRenderRoot() {
     return this;
   }
@@ -27,7 +42,7 @@ class RequestVerify extends LitElement {
   render() {
     if (this.requestSuccess) {
       return html`
-        <div class="text-sm text-gray-400 inline-flex items-center">
+        <div class="text-sm text-gray-500 inline-flex items-center">
           <sl-icon class="mr-1" name="check-lg"></sl-icon> ${msg("Sent", {
             desc: "Status message after sending verification email",
           })}
@@ -37,7 +52,7 @@ class RequestVerify extends LitElement {
 
     return html`
       <span
-        class="text-sm text-blue-400 hover:text-blue-500"
+        class="text-sm text-primary hover:text-indigo-400"
         role="button"
         ?disabled=${this.isRequesting}
         @click=${this.requestVerification}
@@ -74,100 +89,9 @@ class RequestVerify extends LitElement {
 }
 customElements.define("btrix-request-verify", RequestVerify);
 
-type FormContext = {
-  successMessage?: string;
-  serverError?: string;
-  fieldErrors: { [fieldName: string]: string };
-};
-type FormSuccessEvent = {
-  type: "SUCCESS";
-  detail: {
-    successMessage?: FormContext["successMessage"];
-  };
-};
-type FormErrorEvent = {
-  type: "ERROR";
-  detail: {
-    serverError?: FormContext["serverError"];
-    fieldErrors?: FormContext["fieldErrors"];
-  };
-};
-type FormEvent =
-  | { type: "EDIT" }
-  | { type: "CANCEL" }
-  | { type: "SUBMIT" }
-  | FormSuccessEvent
-  | FormErrorEvent;
-
-type FormTypestate =
-  | {
-      value: "readOnly";
-      context: FormContext;
-    }
-  | {
-      value: "editingForm";
-      context: FormContext;
-    }
-  | {
-      value: "submittingForm";
-      context: FormContext;
-    };
-
-const initialContext = {
-  fieldErrors: {},
-};
-
-const machine = createMachine<FormContext, FormEvent, FormTypestate>(
-  {
-    id: "changePasswordForm",
-    initial: "readOnly",
-    context: initialContext,
-    states: {
-      ["readOnly"]: {
-        on: {
-          EDIT: {
-            target: "editingForm",
-            actions: "reset",
-          },
-        },
-      },
-      ["editingForm"]: {
-        on: { CANCEL: "readOnly", SUBMIT: "submittingForm" },
-      },
-      ["submittingForm"]: {
-        on: {
-          SUCCESS: {
-            target: "readOnly",
-            actions: "setSuccessMessage",
-          },
-          ERROR: {
-            target: "editingForm",
-            actions: "setError",
-          },
-        },
-      },
-    },
-  },
-  {
-    actions: {
-      reset: assign(() => initialContext),
-      setSuccessMessage: assign((context, event) => ({
-        ...context,
-        ...(event as FormSuccessEvent).detail,
-      })),
-      setError: assign((context, event) => ({
-        ...context,
-        ...(event as FormErrorEvent).detail,
-      })),
-    },
-  }
-);
-
 @needLogin
 @localized()
 export class AccountSettings extends LiteElement {
-  private formStateService = interpret(machine);
-
   @property({ type: Object })
   authState?: AuthState;
 
@@ -175,230 +99,337 @@ export class AccountSettings extends LiteElement {
   userInfo?: CurrentUser;
 
   @state()
-  private formState = machine.initialState;
+  sectionSubmitting: null | "name" | "email" | "password" = null;
 
-  firstUpdated() {
-    // Enable state machine
-    this.formStateService.subscribe((state) => {
-      this.formState = state;
-    });
+  @state()
+  private isChangingPassword = false;
 
-    this.formStateService.start();
+  @state()
+  private pwStrengthResults: null | ZxcvbnResult = null;
+
+  @queryAsync('sl-input[name="password"]')
+  private passwordInput?: Promise<SlInput | null>;
+
+  async updated(changedProperties: Map<string, any>) {
+    if (
+      changedProperties.has("isChangingPassword") &&
+      this.isChangingPassword
+    ) {
+      (await this.passwordInput)?.focus();
+    }
   }
 
-  disconnectedCallback() {
-    this.formStateService.stop();
-    super.disconnectedCallback();
+  protected firstUpdated() {
+    PasswordService.setOptions();
   }
 
   render() {
-    const showForm =
-      this.formState.value === "editingForm" ||
-      this.formState.value === "submittingForm";
-    let successMessage;
-    let verificationMessage;
-
-    if (this.formState.context.successMessage) {
-      successMessage = html`
-        <div>
-          <btrix-alert variant="success"
-            >${this.formState.context.successMessage}</btrix-alert
-          >
-        </div>
-      `;
-    }
-
-    if (this.userInfo) {
-      if (this.userInfo.isVerified) {
-        verificationMessage = html`
-          <sl-tag variant="success" size="small"
-            >${msg("verified", {
-              desc: "Status text when user email is verified",
-            })}</sl-tag
-          >
-        `;
-      } else {
-        verificationMessage = html`
-          <sl-tag class="mr-2" variant="warning" size="small"
-            >${msg("unverified", {
-              desc: "Status text when user email is not yet verified",
-            })}</sl-tag
-          >
-
-          <btrix-request-verify
-            email=${this.userInfo.email}
-          ></btrix-request-verify>
-        `;
-      }
-    }
-
-    return html`<div class="grid gap-4">
-      <h1 class="text-xl font-semibold">${msg("Account Settings")}</h1>
-
-      ${successMessage}
-
-      <section class="p-4 md:p-8 border rounded-lg grid gap-6">
-        <div>
-          <div class="mb-1 text-gray-500">${msg("Name")}</div>
-          <div class="inline-flex items-center">
-            <span class="mr-3">${this.userInfo?.name}</span>
+    if (!this.userInfo) return;
+    return html`
+      <div class="max-w-screen-sm mx-auto">
+        <h1 class="text-xl font-semibold leading-8 mb-7">
+          ${msg("Account Settings")}
+        </h1>
+        <form class="border rounded mb-5" @submit=${this.onSubmitName}>
+          <div class="p-4">
+            <h2 class="text-lg font-semibold leading-none mb-4">
+              ${msg("Display Name")}
+            </h2>
+            <p class="mb-2">
+              ${msg(
+                "Enter your full name, or another name to display in the orgs you belong to."
+              )}
+            </p>
+            <sl-input
+              name="displayName"
+              value=${this.userInfo.name}
+              maxlength="40"
+              minlength="2"
+              required
+              aria-label=${msg("Display name")}
+            ></sl-input>
           </div>
-        </div>
-
-        <div>
-          <div class="mb-1 text-gray-500">${msg("Email")}</div>
-          <div class="inline-flex items-center">
-            <span class="mr-3">${this.userInfo?.email}</span>
-            ${verificationMessage}
+          <footer class="flex items-center justify-end border-t px-4 py-3">
+            <sl-button
+              type="submit"
+              size="small"
+              variant="primary"
+              ?loading=${this.sectionSubmitting === "name"}
+              >${msg("Save")}</sl-button
+            >
+          </footer>
+        </form>
+        <form class="border rounded mb-5" @submit=${this.onSubmitEmail}>
+          <div class="p-4">
+            <h2 class="text-lg font-semibold leading-none mb-4">
+              ${msg("Email")}
+            </h2>
+            <p class="mb-2">${msg("Update the email you use to log in.")}</p>
+            <sl-input
+              name="email"
+              value=${this.userInfo.email}
+              type="email"
+              aria-label=${msg("Email")}
+            >
+              <div slot="suffix">
+                <sl-tooltip
+                  content=${this.userInfo.isVerified
+                    ? msg("Verified")
+                    : msg("Needs verification")}
+                  hoist
+                >
+                  ${this.userInfo.isVerified
+                    ? html`<sl-icon
+                        class="text-success"
+                        name="check-lg"
+                      ></sl-icon>`
+                    : html`<sl-icon
+                        class="text-warning"
+                        name="exclamation-circle"
+                      ></sl-icon>`}
+                </sl-tooltip>
+              </div>
+            </sl-input>
           </div>
-        </div>
+          <footer class="flex items-center justify-end border-t px-4 py-3">
+            ${this.userInfo && !this.userInfo.isVerified
+              ? html`
+                  <btrix-request-verify
+                    class="mr-auto"
+                    email=${this.userInfo.email}
+                  ></btrix-request-verify>
+                `
+              : ""}
+            <sl-button
+              type="submit"
+              size="small"
+              variant="primary"
+              ?loading=${this.sectionSubmitting === "email"}
+              >${msg("Save")}</sl-button
+            >
+          </footer>
+        </form>
+        <section class="border rounded mb-5">
+          ${when(
+            this.isChangingPassword,
+            () => html`
+              <form @submit=${this.onSubmitPassword}>
+                <div class="p-4">
+                  <h2 class="text-lg font-semibold leading-none mb-4">
+                    ${msg("Password")}
+                  </h2>
+                  <sl-input
+                    class="mb-3"
+                    name="password"
+                    label=${msg("Enter your current password")}
+                    type="password"
+                    autocomplete="current-password"
+                    password-toggle
+                    required
+                  ></sl-input>
+                  <sl-input
+                    name="newPassword"
+                    label=${msg("New password")}
+                    type="password"
+                    autocomplete="new-password"
+                    password-toggle
+                    minlength="8"
+                    required
+                    @input=${this.onPasswordInput}
+                  ></sl-input>
 
-        ${showForm
-          ? this.renderChangePasswordForm()
-          : html`
-              <div>
+                  ${when(this.pwStrengthResults, this.renderPasswordStrength)}
+                </div>
+                <footer
+                  class="flex items-center justify-end border-t px-4 py-3"
+                >
+                  <p class="mr-auto text-gray-500">
+                    ${msg(
+                      str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`
+                    )}
+                  </p>
+                  <sl-button
+                    type="submit"
+                    size="small"
+                    variant="primary"
+                    ?loading=${this.sectionSubmitting === "password"}
+                    ?disabled=${!this.pwStrengthResults ||
+                    this.pwStrengthResults.score < PASSWORD_MIN_SCORE}
+                    >${msg("Save")}</sl-button
+                  >
+                </footer>
+              </form>
+            `,
+            () => html`
+              <div class="px-4 py-3 flex items-center justify-between">
+                <h2 class="text-lg font-semibold leading-none">
+                  ${msg("Password")}
+                </h2>
                 <sl-button
-                  variant="primary"
-                  outline
-                  @click=${() => this.formStateService.send("EDIT")}
-                  >${msg("Change password")}</sl-button
+                  size="small"
+                  @click=${() => (this.isChangingPassword = true)}
+                  >${msg("Change Password")}</sl-button
                 >
               </div>
-            `}
-      </section>
-    </div>`;
+            `
+          )}
+        </section>
+      </div>
+    `;
   }
 
-  renderChangePasswordForm() {
-    const passwordFieldError = this.formState.context.fieldErrors.password;
-    let formError;
+  private renderPasswordStrength = () => html`
+    <div class="mt-4">
+      <btrix-pw-strength-alert
+        .result=${this.pwStrengthResults}
+        min=${PASSWORD_MIN_SCORE}
+      >
+      </btrix-pw-strength-alert>
+    </div>
+  `;
 
-    if (this.formState.context.serverError) {
-      formError = html`
-        <div class="mb-5">
-          <btrix-alert id="formError" variant="danger"
-            >${this.formState.context.serverError}</btrix-alert
-          >
-        </div>
-      `;
+  private onPasswordInput = debounce(150)(async (e: InputEvent) => {
+    const { value } = e.target as SlInput;
+    if (!value || value.length < 4) {
+      this.pwStrengthResults = null;
+      return;
     }
-
-    return html` <div class="max-w-sm">
-      <h3 class="font-semibold mb-3">${msg("Change password")}</h3>
-      <form @submit=${this.onSubmit} aria-describedby="formError">
-        <div class="mb-5">
-          <sl-input
-            id="password"
-            class="${passwordFieldError ? "text-danger" : ""}"
-            name="password"
-            type="password"
-            label="${msg("Current password")}"
-            aria-describedby="passwordError"
-            autocomplete="current-password"
-            password-toggle
-            required
-          >
-          </sl-input>
-          ${passwordFieldError
-            ? html`<div id="passwordError" class="text-danger" role="alert">
-                ${passwordFieldError}
-              </div>`
-            : ""}
-        </div>
-        <div class="mb-5">
-          <sl-input
-            id="newPassword"
-            name="newPassword"
-            type="password"
-            label="${msg("New password")}"
-            help-text=${msg("Must be between 8-64 characters")}
-            minlength="8"
-            autocomplete="new-password"
-            password-toggle
-            required
-          >
-          </sl-input>
-        </div>
-
-        ${formError}
-
-        <div>
-          <sl-button
-            variant="primary"
-            ?loading=${this.formState.value === "submittingForm"}
-            type="submit"
-            >${msg("Update password")}</sl-button
-          >
-          <sl-button
-            variant="text"
-            @click=${() => this.formStateService.send("CANCEL")}
-            >${msg("Cancel")}</sl-button
-          >
-        </div>
-      </form>
-    </div>`;
-  }
-
-  async onSubmit(event: any) {
-    event.preventDefault();
-    if (!this.authState) return;
-
-    this.formStateService.send("SUBMIT");
-
-    const formData = new FormData(event.target);
-    let nextAuthState: Auth | null = null;
-
-    try {
-      nextAuthState = await AuthService.login({
-        email: this.authState.username,
-        password: formData.get("password") as string,
-      });
-    } catch (e: any) {
-      console.debug(e);
+    const userInputs: string[] = [];
+    if (this.userInfo) {
+      userInputs.push(this.userInfo.name, this.userInfo.email);
     }
+    this.pwStrengthResults = await PasswordService.checkStrength(
+      value,
+      userInputs
+    );
+  }) as any;
 
-    if (!nextAuthState) {
-      this.formStateService.send({
-        type: "ERROR",
-        detail: {
-          fieldErrors: {
-            password: msg("Wrong password"),
-          },
-        },
-      });
+  private async onSubmitName(e: SubmitEvent) {
+    if (!this.userInfo || !this.authState) return;
+    const form = e.target as HTMLFormElement;
+    const input = form.querySelector("sl-input") as SlInput;
+    if (!input.checkValidity()) {
+      return;
+    }
+    e.preventDefault();
+    const newName = (serialize(form).displayName as string).trim();
+    if (newName === this.userInfo.name) {
       return;
     }
 
-    const params = {
-      password: formData.get("newPassword"),
-      email: this.userInfo?.email,
-    };
+    this.sectionSubmitting = "name";
 
     try {
-      await this.apiFetch("/users/me", nextAuthState, {
+      await this.apiFetch(`/users/me`, this.authState, {
         method: "PATCH",
-        body: JSON.stringify(params),
+        body: JSON.stringify({
+          email: this.userInfo.email,
+          name: newName,
+        }),
       });
 
-      this.formStateService.send({
-        type: "SUCCESS",
-        detail: {
-          successMessage: "Successfully updated password",
-        },
+      this.dispatchEvent(new CustomEvent("update-user-info"));
+      this.notify({
+        message: msg("Your name has been updated."),
+        variant: "success",
+        icon: "check2-circle",
       });
-
-      this.dispatchEvent(AuthService.createLoggedInEvent(nextAuthState));
     } catch (e) {
-      console.error(e);
-
-      this.formStateService.send({
-        type: "ERROR",
-        detail: {
-          serverError: msg(
-            "Something went wrong changing password. Verify that new password meets requirements (8-64 characters)."
-          ),
-        },
+      this.notify({
+        message: msg("Sorry, couldn't update name at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
       });
     }
+
+    this.sectionSubmitting = null;
+  }
+
+  private async onSubmitEmail(e: SubmitEvent) {
+    if (!this.userInfo || !this.authState) return;
+    const form = e.target as HTMLFormElement;
+    const input = form.querySelector("sl-input") as SlInput;
+    if (!input.checkValidity()) {
+      return;
+    }
+    e.preventDefault();
+    const newEmail = (serialize(form).email as string).trim();
+    if (newEmail === this.userInfo.email) {
+      return;
+    }
+
+    this.sectionSubmitting = "email";
+
+    try {
+      await this.apiFetch(`/users/me`, this.authState, {
+        method: "PATCH",
+        body: JSON.stringify({
+          email: newEmail,
+        }),
+      });
+
+      this.dispatchEvent(new CustomEvent("update-user-info"));
+      this.notify({
+        message: msg("Your email has been updated."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e) {
+      this.notify({
+        message: msg("Sorry, couldn't update email at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.sectionSubmitting = null;
+  }
+
+  private async onSubmitPassword(e: SubmitEvent) {
+    if (!this.userInfo || !this.authState) return;
+    const form = e.target as HTMLFormElement;
+    const inputs = Array.from(form.querySelectorAll("sl-input")) as SlInput[];
+    if (inputs.some((input) => !input.checkValidity())) {
+      return;
+    }
+    e.preventDefault();
+    const { password, newPassword } = serialize(form);
+
+    this.sectionSubmitting = "password";
+
+    try {
+      await this.apiFetch("/users/me/password-change", this.authState, {
+        method: "PUT",
+        body: JSON.stringify({
+          email: this.userInfo.email,
+          password,
+          newPassword,
+        }),
+      });
+
+      this.isChangingPassword = false;
+      this.dispatchEvent(new CustomEvent("update-user-info"));
+      this.notify({
+        message: msg("Your password has been updated."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: any) {
+      if (e.isApiError && e.details === "invalid_current_password") {
+        this.notify({
+          message: msg("Please correct your current password and try again."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      } else {
+        this.notify({
+          message: msg("Sorry, couldn't update password at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
+    }
+
+    this.sectionSubmitting = null;
   }
 }
