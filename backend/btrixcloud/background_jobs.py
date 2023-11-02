@@ -104,22 +104,25 @@ class BackgroundJobOps:
             )
             replica_file_path = bucket_suffix + file.filename
 
-            print(f"primary: {file.storage.get_storage_secret_name(str(oid))}")
-            print(f"  endpoint: {primary_endpoint}")
-            print(f"  path: {primary_file_path}")
-            print(f"replica: {replica_ref.get_storage_secret_name(str(oid))}")
-            print(f"  endpoint: {replica_endpoint}")
-            print(f"  path: {replica_file_path}")
+            # print(f"primary: {file.storage.get_storage_secret_name(str(oid))}")
+            # print(f"  endpoint: {primary_endpoint}")
+            # print(f"  path: {primary_file_path}")
+            # print(f"replica: {replica_ref.get_storage_secret_name(str(oid))}")
+            # print(f"  endpoint: {replica_endpoint}")
+            # print(f"  path: {replica_file_path}")
+
+            job_type = BgJobType.CREATE_REPLICA.value
 
             job_id = await self.crawl_manager.run_replica_job(
-                str(oid),
-                job_type=BgJobType.CREATE_REPLICA.value,
+                oid=str(oid),
+                job_type=job_type,
                 primary_storage=file.storage,
                 primary_file_path=primary_file_path,
                 primary_endpoint=primary_endpoint,
                 replica_storage=replica_ref,
                 replica_file_path=replica_file_path,
                 replica_endpoint=replica_endpoint,
+                job_id=f"{job_type}-{object_id}",
             )
             replication_job = CreateReplicaJob(
                 id=job_id,
@@ -131,9 +134,9 @@ class BackgroundJobOps:
                 primary=file.storage,
                 replica_storage=replica_ref,
             )
-            print(
-                f"File path written into replication_job: {file.filename}", flush=True
-            )
+            # print(
+            #    f"File path written into replication_job: {file.filename}", flush=True
+            # )
             await self.jobs.find_one_and_update(
                 {"_id": job_id}, {"$set": replication_job.to_dict()}, upsert=True
             )
@@ -156,16 +159,19 @@ class BackgroundJobOps:
             )
             replica_file_path = bucket_suffix + file.filename
 
-            print(f"replica: {replica_ref.get_storage_secret_name(oid)}")
-            print(f"  endpoint: {replica_endpoint}")
-            print(f"  path: {replica_file_path}")
+            # print(f"replica: {replica_ref.get_storage_secret_name(oid)}")
+            # print(f"  endpoint: {replica_endpoint}")
+            # print(f"  path: {replica_file_path}")
+
+            job_type = BgJobType.DELETE_REPLICA.value
 
             job_id = await self.crawl_manager.run_replica_job(
                 oid=oid,
-                job_type=BgJobType.DELETE_REPLICA.value,
+                job_type=job_type,
                 replica_storage=replica_ref,
                 replica_file_path=replica_file_path,
                 replica_endpoint=replica_endpoint,
+                job_id=f"{job_type}-{object_id}",
             )
 
             delete_replica_job = DeleteReplicaJob(

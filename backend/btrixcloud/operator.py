@@ -1636,10 +1636,10 @@ class BtrixOperator(K8sAPI):
             await self.background_job_ops.job_finished(
                 job_id, job_type, UUID(oid), success=success, finished=finished
             )
-            print(
-                f"{job_type} background job completed: success: {success}, {job_id}",
-                flush=True,
-            )
+            # print(
+            #    f"{job_type} background job completed: success: {success}, {job_id}",
+            #    flush=True,
+            # )
 
         # pylint: disable=broad-except
         except Exception:

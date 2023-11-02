@@ -5,7 +5,7 @@
 backend_image: docker.io/webrecorder/browsertrix-backend:latest
 frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
 
-crawler_image: docker.io/webrecorder/browsertrix-crawler:0.12.0-beta.1
+crawler_image: docker.io/webrecorder/browsertrix-crawler:0.12.0-beta.2
 
 backend_pull_policy: "Never"
 frontend_pull_policy: "Never"
@@ -22,7 +22,7 @@ crawler_extra_memory_per_browser: 256Mi
 mongo_auth:
   # specify either username + password (for local mongo)
   username: root
-  #password: PASSWORD@
+  password: PASSWORD@
 
 
 superuser:
@@ -38,7 +38,7 @@ superuser:
 minio_local_bucket_name: &local_bucket_name "btrix-test-data"
 
 # enable to allow access to minio directly
-minio_local_access_port: 30090
+# minio_local_access_port: 30090
 
 storages:
   - name: "default"
