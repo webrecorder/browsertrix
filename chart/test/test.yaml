@@ -38,7 +38,7 @@ superuser:
 minio_local_bucket_name: &local_bucket_name "btrix-test-data"
 
 # enable to allow access to minio directly
-# minio_local_access_port: 30090
+minio_local_access_port: 30090
 
 storages:
   - name: "default"
