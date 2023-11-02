@@ -5,7 +5,7 @@
 backend_image: docker.io/webrecorder/browsertrix-backend:latest
 frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
 
-crawler_image: docker.io/webrecorder/browsertrix-crawler:0.12.0-beta.1
+crawler_image: docker.io/webrecorder/browsertrix-crawler:0.12.0
 
 backend_pull_policy: "Never"
 frontend_pull_policy: "Never"
