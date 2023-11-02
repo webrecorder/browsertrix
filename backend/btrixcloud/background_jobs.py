@@ -122,7 +122,7 @@ class BackgroundJobOps:
                 replica_storage=replica_ref,
                 replica_file_path=replica_file_path,
                 replica_endpoint=replica_endpoint,
-                job_id=f"{job_type}-{object_id}",
+                job_id_prefix=f"{job_type}-{object_id}",
             )
             replication_job = CreateReplicaJob(
                 id=job_id,
@@ -171,7 +171,7 @@ class BackgroundJobOps:
                 replica_storage=replica_ref,
                 replica_file_path=replica_file_path,
                 replica_endpoint=replica_endpoint,
-                job_id=f"{job_type}-{object_id}",
+                job_id_prefix=f"{job_type}-{object_id}",
             )
 
             delete_replica_job = DeleteReplicaJob(

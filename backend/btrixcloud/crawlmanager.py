@@ -73,15 +73,15 @@ class CrawlManager(K8sAPI):
         primary_storage: Optional[StorageRef] = None,
         primary_file_path: Optional[str] = None,
         primary_endpoint: Optional[str] = None,
-        job_id: Optional[str] = None,
+        job_id_prefix: Optional[str] = None,
     ):
         """run job to replicate file from primary storage to replica storage"""
 
-        if not job_id:
-            job_id = f"{job_type}-{secrets.token_hex(5)}"
+        if not job_id_prefix:
+            job_id_prefix = job_type
 
         # ensure name is <=63 characters
-        job_id = job_id[:63]
+        job_id = f"{job_id_prefix[:52]}-{secrets.token_hex(5)}"
 
         params = {
             "id": job_id,
