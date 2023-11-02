@@ -2,12 +2,11 @@ name: Cluster Run (MicroK8s)
 
 on:
   push:
-    branches:
-      - main
-      - issue-1252-background-jobs-latest
-    paths:
-      - 'backend/**'
-      - 'chart/**'
+    #branches:
+    #  - main
+    #paths:
+    #  - 'backend/**'
+    #  - 'chart/**'
 
 env:
   HOST_URL_FROM_K8S: http://10.0.1.1
