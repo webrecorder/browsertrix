@@ -5,7 +5,7 @@
 backend_image: docker.io/webrecorder/browsertrix-backend:latest
 frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
 
-crawler_image: docker.io/webrecorder/browsertrix-crawler:0.12.0-beta.2
+crawler_image: docker.io/webrecorder/browsertrix-crawler:0.12.0-beta.1
 
 backend_pull_policy: "Never"
 frontend_pull_policy: "Never"
@@ -33,49 +33,6 @@ superuser:
   # change or remove this
   password: PASSW0RD!
 
-
-# additional storages
-minio_local_bucket_name: &local_bucket_name "btrix-test-data"
-
-# enable to allow access to minio directly
-minio_local_access_port: 30090
-
-storages:
-  - name: "default"
-    type: "s3"
-    access_key: "ADMIN"
-    secret_key: "PASSW0RD"
-    bucket_name: *local_bucket_name
-
-    endpoint_url: "http://local-minio.default:9000/"
-    is_default_primary: True
-
-  - name: "replica-0"
-    type: "s3"
-    access_key: "ADMIN"
-    secret_key: "PASSW0RD"
-    bucket_name: "replica-0"
-
-    endpoint_url: "http://local-minio.default:9000/"
-    is_default_replica: True
-
-  # - name: "replica-1"
-  #   type: "s3"
-  #   access_key: "ADMIN"
-  #   secret_key: "PASSW0RD"
-  #   bucket_name: "replica-1"
-
-  #   endpoint_url: "http://local-minio.default:9000/btrix-test-data/replica-1/"
-
-  # - name: "alt-storage"
-  #   type: "s3"
-  #   access_key: "ADMIN"
-  #   secret_key: "PASSW0RD"
-
-  #   endpoint_url: "http://local-minio.default:9000/alt-storage/"
-
-
-local_service_port: 30870
 
 # test max pages per crawl global limit
 max_pages_per_crawl: 4

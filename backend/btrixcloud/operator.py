@@ -1643,8 +1643,6 @@ class BtrixOperator(K8sAPI):
 
         # pylint: disable=broad-except
         except Exception:
-            # unable to update db, don't finalize job deletion yet
-            finalized = False
             print("Update Background Job Error", flush=True)
             traceback.print_exc()
 

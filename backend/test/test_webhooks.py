@@ -16,8 +16,9 @@ ECHO_SERVER_URL = "http://localhost:18080"
 # Pull address to echo server running on host from CI env var.
 # If not set, default to host.docker.internal (for local testing with
 # Docker Desktop).
-HOST_FROM_K8s = os.environ.get("HOST_URL_FROM_K8S", "http://host.docker.internal")
-ECHO_SERVER_URL_FROM_K8S = f"{HOST_FROM_K8s}:18080"
+ECHO_SERVER_URL_FROM_K8S = os.environ.get(
+    "ECHO_SERVER_HOST_URL", "http://host.docker.internal:18080"
+)
 
 
 def test_list_webhook_events(admin_auth_headers, default_org_id):

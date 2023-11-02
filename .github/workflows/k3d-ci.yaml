@@ -12,7 +12,7 @@ on:
       - 'chart/**'
 
 env:
-  HOST_URL_FROM_K8S: http://host.k3d.internal
+  ECHO_SERVER_HOST_URL: http://host.k3d.internal:18080
 
 jobs:
   btrix-k3d-test:
@@ -24,7 +24,6 @@ jobs:
           cluster-name: btrix-1
           args: >-
             -p "30870:30870@agent:0:direct"
-            -p "30090:30090@agent:0:direct"
             --agents 1
             --no-lb
             --k3s-arg "--disable=traefik,servicelb,metrics-server@server:*"
@@ -86,9 +85,6 @@ jobs:
 
       - name: Wait for all pods to be ready
         run: kubectl wait --for=condition=ready pod --all --timeout=240s
-
-      - name: Create Extra Test Buckets
-        run:  kubectl exec -i deployment/local-minio -c minio mkdir /data/replica-0
 
       - name: Run Tests
         run: pytest -s -vv ./backend/test/test_*.py

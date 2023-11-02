@@ -7,7 +7,6 @@ import re
 
 from .conftest import API_PREFIX, HOST_PREFIX
 from .test_collections import UPDATED_NAME as COLLECTION_NAME
-from .utils import verify_file_replicated, verify_file_and_replica_deleted
 
 wacz_path = None
 wacz_size = None
@@ -84,57 +83,6 @@ def test_crawl_info(admin_auth_headers, default_org_id, admin_crawl_id):
     assert data["fileSize"] == wacz_size
     assert data["fileCount"] == 1
     assert data["userName"]
-
-
-def test_crawl_files_replicated(admin_auth_headers, default_org_id, admin_crawl_id):
-    time.sleep(20)
-
-    # Verify replication job was successful
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=1&jobType=create-replica",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    latest_job = r.json()["items"][0]
-    assert latest_job["type"] == "create-replica"
-    job_id = latest_job["id"]
-
-    attempts = 0
-    while attempts < 5:
-        r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
-            headers=admin_auth_headers,
-        )
-        assert r.status_code == 200
-        job = r.json()
-        finished = latest_job.get("finished")
-        if not finished:
-            attempts += 1
-            time.sleep(10)
-            continue
-
-        assert job["success"]
-        break
-
-    # Assert file was updated
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    files = data.get("resources")
-    assert files
-    for file_ in files:
-        assert file_["numReplicas"] == 1
-
-    # Verify replica is stored
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}", headers=admin_auth_headers
-    )
-    assert r.status_code == 200
-    data = r.json()
-    verify_file_replicated(data["file_path"])
 
 
 def test_crawls_include_seed_info(admin_auth_headers, default_org_id, admin_crawl_id):
@@ -421,42 +369,3 @@ def test_delete_crawls_org_owner(
         headers=admin_auth_headers,
     )
     assert r.status_code == 404
-
-    time.sleep(20)
-
-    # Verify delete replica job was successful
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=delete-replica",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    latest_job = r.json()["items"][0]
-    assert latest_job["type"] == "delete-replica"
-    job_id = latest_job["id"]
-
-    attempts = 0
-    while attempts < 5:
-        r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
-            headers=admin_auth_headers,
-        )
-        assert r.status_code == 200
-        job = r.json()
-        finished = latest_job.get("finished")
-        if not finished:
-            attempts += 1
-            time.sleep(10)
-            continue
-
-        assert job["success"]
-        break
-
-    time.sleep(10)
-
-    # Verify replica is no longer stored
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}", headers=admin_auth_headers
-    )
-    assert r.status_code == 200
-    job = r.json()
-    verify_file_and_replica_deleted(job["file_path"])
