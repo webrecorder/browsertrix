@@ -246,6 +246,9 @@ grace_period: 1000
 # set to true to use a local minio image
 minio_local: true
 
+# enable to allow access to minio console via specified port
+# minio_local_console_port: 30091
+
 minio_scheme: "http"
 minio_host: "local-minio.default:9000"
 

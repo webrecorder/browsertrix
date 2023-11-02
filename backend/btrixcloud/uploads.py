@@ -117,7 +117,7 @@ class UploadOps(BaseCrawlOps):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
         id_ = uuid.uuid4()
-        files = []
+        files: List[CrawlFile] = []
 
         prefix = org.storage.get_storage_extra_path(str(org.id)) + f"uploads/{id_}"
 
@@ -136,7 +136,7 @@ class UploadOps(BaseCrawlOps):
 
     async def _create_upload(
         self,
-        files: List[UploadFile],
+        files: List[CrawlFile],
         name: Optional[str],
         description: Optional[str],
         collections: Optional[List[str]],
@@ -187,6 +187,12 @@ class UploadOps(BaseCrawlOps):
         quota_reached = await self.orgs.inc_org_bytes_stored(
             org.id, file_size, "upload"
         )
+
+        if uploaded.files:
+            for file in uploaded.files:
+                await self.background_job_ops.create_replica_jobs(
+                    org.id, file, crawl_id, "upload"
+                )
 
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 
@@ -244,7 +250,7 @@ class FilePreparer:
 class UploadFileReader(BufferedReader):
     """Compute digest on file upload"""
 
-    def __init__(self, upload, file_prep):
+    def __init__(self, upload, file_prep: FilePreparer):
         super().__init__(upload.file._file)
         self.file_prep = file_prep
 

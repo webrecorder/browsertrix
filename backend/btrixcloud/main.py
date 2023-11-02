@@ -27,6 +27,7 @@ from .colls import init_collections_api
 from .crawls import init_crawls_api
 from .basecrawls import init_base_crawls_api
 from .webhooks import init_event_webhooks_api
+from .background_jobs import init_background_jobs_api
 
 from .crawlmanager import CrawlManager
 from .utils import run_once_lock, register_exit_handler, is_bool
@@ -88,8 +89,17 @@ def main():
 
     storage_ops = init_storages_api(org_ops, crawl_manager)
 
+    background_job_ops = init_background_jobs_api(
+        mdb, org_ops, crawl_manager, storage_ops
+    )
+
     profiles = init_profiles_api(
-        mdb, crawl_manager, org_ops, storage_ops, current_active_user
+        mdb,
+        org_ops,
+        crawl_manager,
+        storage_ops,
+        background_job_ops,
+        current_active_user,
     )
 
     crawl_config_ops = init_crawl_config_api(
@@ -115,6 +125,7 @@ def main():
         coll_ops,
         storage_ops,
         event_webhook_ops,
+        background_job_ops,
     )
 
     base_crawl_ops = init_base_crawls_api(*base_crawl_init)
@@ -124,6 +135,8 @@ def main():
     init_uploads_api(*base_crawl_init)
 
     user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
+
+    background_job_ops.set_ops(base_crawl_ops, profiles)
 
     crawl_config_ops.set_coll_ops(coll_ops)
 

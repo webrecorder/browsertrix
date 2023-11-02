@@ -1,0 +1,33 @@
+# additional settings for nightly tests
+
+invite_expire_seconds: 10
+
+max_pages_per_crawl: 15
+
+
+# enable to allow access to minio directly
+minio_local_access_port: 30090
+
+minio_local_bucket_name: &local_bucket_name "btrix-test-data"
+
+
+storages:
+  - name: "default"
+    type: "s3"
+    access_key: "ADMIN"
+    secret_key: "PASSW0RD"
+    bucket_name: *local_bucket_name
+
+    endpoint_url: "http://local-minio.default:9000/"
+    is_default_primary: True
+
+  - name: "replica-0"
+    type: "s3"
+    access_key: "ADMIN"
+    secret_key: "PASSW0RD"
+    bucket_name: "replica-0"
+
+    endpoint_url: "http://local-minio.default:9000/"
+    is_default_replica: True
+
+

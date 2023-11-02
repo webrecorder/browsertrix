@@ -14,7 +14,7 @@ from fastapi import HTTPException
 from .k8sapi import K8sAPI
 from .utils import dt_now, to_k8s_date
 
-from .models import StorageRef, CrawlConfig, UpdateCrawlConfig
+from .models import StorageRef, CrawlConfig, UpdateCrawlConfig, BgJobType
 
 
 # ============================================================================
@@ -62,6 +62,47 @@ class CrawlManager(K8sAPI):
         await self.create_from_yaml(data)
 
         return browserid
+
+    async def run_replica_job(
+        self,
+        oid: str,
+        job_type: str,
+        replica_storage: StorageRef,
+        replica_file_path: str,
+        replica_endpoint: str,
+        primary_storage: Optional[StorageRef] = None,
+        primary_file_path: Optional[str] = None,
+        primary_endpoint: Optional[str] = None,
+        job_id_prefix: Optional[str] = None,
+    ):
+        """run job to replicate file from primary storage to replica storage"""
+
+        if not job_id_prefix:
+            job_id_prefix = job_type
+
+        # ensure name is <=63 characters
+        job_id = f"{job_id_prefix[:52]}-{secrets.token_hex(5)}"
+
+        params = {
+            "id": job_id,
+            "oid": oid,
+            "job_type": job_type,
+            "replica_secret_name": replica_storage.get_storage_secret_name(oid),
+            "replica_file_path": replica_file_path,
+            "replica_endpoint": replica_endpoint,
+            "primary_secret_name": primary_storage.get_storage_secret_name(oid)
+            if primary_storage
+            else None,
+            "primary_file_path": primary_file_path if primary_file_path else None,
+            "primary_endpoint": primary_endpoint if primary_endpoint else None,
+            "BgJobType": BgJobType,
+        }
+
+        data = self.templates.env.get_template("replica_job.yaml").render(params)
+
+        await self.create_from_yaml(data)
+
+        return job_id
 
     async def add_crawl_config(
         self,

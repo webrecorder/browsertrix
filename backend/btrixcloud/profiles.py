@@ -31,15 +31,16 @@ if TYPE_CHECKING:
     from .crawlmanager import CrawlManager
     from .storages import StorageOps
     from .crawlconfigs import CrawlConfigOps
+    from .background_jobs import BackgroundJobOps
 else:
-    OrgOps = CrawlManager = StorageOps = CrawlConfigOps = object
+    OrgOps = CrawlManager = StorageOps = CrawlConfigOps = BackgroundJobOps = object
 
 
 BROWSER_EXPIRE = 300
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes, too-many-arguments
 class ProfileOps:
     """Profile management"""
 
@@ -48,10 +49,12 @@ class ProfileOps:
     storage_ops: StorageOps
 
     crawlconfigs: CrawlConfigOps
+    background_job_ops: BackgroundJobOps
 
-    def __init__(self, mdb, orgs, crawl_manager, storage_ops):
+    def __init__(self, mdb, orgs, crawl_manager, storage_ops, background_job_ops):
         self.profiles = mdb["profiles"]
         self.orgs = orgs
+        self.background_job_ops = background_job_ops
 
         self.crawl_manager = crawl_manager
         self.storage_ops = storage_ops
@@ -202,6 +205,10 @@ class ProfileOps:
             {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
         )
 
+        await self.background_job_ops.create_replica_jobs(
+            oid, profile_file, str(profileid), "profile"
+        )
+
         quota_reached = await self.orgs.inc_org_bytes_stored(oid, file_size, "profile")
 
         return {
@@ -325,6 +332,10 @@ class ProfileOps:
         if not res or res.deleted_count != 1:
             raise HTTPException(status_code=404, detail="profile_not_found")
 
+        await self.background_job_ops.create_delete_replica_jobs(
+            org, profile.resource, profile.id, "profile"
+        )
+
         quota_reached = await self.orgs.storage_quota_reached(org.id)
 
         return {"success": True, "storageQuotaReached": quota_reached}
@@ -353,12 +364,23 @@ class ProfileOps:
 
         return json
 
+    async def add_profile_file_replica(
+        self, profileid: UUID, filename: str, ref: StorageRef
+    ) -> dict[str, object]:
+        """Add replica StorageRef to existing ProfileFile"""
+        return await self.profiles.find_one_and_update(
+            {"_id": profileid, "resource.filename": filename},
+            {"$push": {"resource.replicas": {"name": ref.name, "custom": ref.custom}}},
+        )
+
 
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
-def init_profiles_api(mdb, crawl_manager, org_ops, storage_ops, user_dep):
+def init_profiles_api(
+    mdb, org_ops, crawl_manager, storage_ops, background_job_ops, user_dep
+):
     """init profile ops system"""
-    ops = ProfileOps(mdb, org_ops, crawl_manager, storage_ops)
+    ops = ProfileOps(mdb, org_ops, crawl_manager, storage_ops, background_job_ops)
 
     router = ops.router
 

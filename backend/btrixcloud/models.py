@@ -468,7 +468,7 @@ class BaseFile(BaseModel):
     size: int
     storage: StorageRef
 
-    replicas: Optional[List[StorageRef]] = None
+    replicas: Optional[List[StorageRef]] = []
 
 
 # ============================================================================
@@ -500,6 +500,8 @@ class BaseCrawl(BaseMongoModel):
     """Base Crawl object (representing crawls, uploads and manual sessions)"""
 
     id: str
+
+    type: str
 
     userid: UUID
     userName: Optional[str]
@@ -1210,3 +1212,56 @@ class WebhookNotification(BaseMongoModel):
     attempts: int = 0
     created: datetime
     lastAttempted: Optional[datetime] = None
+
+
+# ============================================================================
+
+### BACKGROUND JOBS ###
+
+
+class BgJobType(str, Enum):
+    """Background Job Types"""
+
+    CREATE_REPLICA = "create-replica"
+    DELETE_REPLICA = "delete-replica"
+
+
+# ============================================================================
+class BackgroundJob(BaseMongoModel):
+    """Model for tracking background jobs"""
+
+    id: str
+    type: BgJobType
+    oid: UUID
+    success: Optional[bool] = None
+    started: datetime
+    finished: Optional[datetime] = None
+
+
+# ============================================================================
+class CreateReplicaJob(BackgroundJob):
+    """Model for tracking create of replica jobs"""
+
+    type: Literal[BgJobType.CREATE_REPLICA] = BgJobType.CREATE_REPLICA
+    file_path: str
+    object_type: str
+    object_id: str
+    replica_storage: StorageRef
+
+
+# ============================================================================
+class DeleteReplicaJob(BackgroundJob):
+    """Model for tracking deletion of replica jobs"""
+
+    type: Literal[BgJobType.DELETE_REPLICA] = BgJobType.DELETE_REPLICA
+    file_path: str
+    object_type: str
+    object_id: str
+    replica_storage: StorageRef
+
+
+# ============================================================================
+class AnyJob(BaseModel):
+    """Union of all job types, for response model"""
+
+    __root__: Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob]

@@ -47,10 +47,10 @@ if TYPE_CHECKING:
     from .storages import StorageOps
     from .webhooks import EventWebhookOps
     from .users import UserManager
+    from .background_jobs import BackgroundJobOps
 else:
     CrawlConfigOps = CrawlOps = OrgOps = CollectionOps = object
-    StorageOps = EventWebhookOps = UserManager = object
-
+    StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = object
 
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
@@ -257,6 +257,7 @@ class BtrixOperator(K8sAPI):
     coll_ops: CollectionOps
     storage_ops: StorageOps
     event_webhook_ops: EventWebhookOps
+    background_job_ops: BackgroundJobOps
     user_ops: UserManager
 
     def __init__(
@@ -267,6 +268,7 @@ class BtrixOperator(K8sAPI):
         coll_ops,
         storage_ops,
         event_webhook_ops,
+        background_job_ops,
     ):
         super().__init__()
 
@@ -275,6 +277,7 @@ class BtrixOperator(K8sAPI):
         self.org_ops = org_ops
         self.coll_ops = coll_ops
         self.storage_ops = storage_ops
+        self.background_job_ops = background_job_ops
         self.event_webhook_ops = event_webhook_ops
 
         self.user_ops = crawl_config_ops.user_manager
@@ -1236,9 +1239,18 @@ class BtrixOperator(K8sAPI):
             crc32=filecomplete.crc32,
             storage=crawl.storage,
         )
+
         await redis.incr("filesAddedSize", filecomplete.size)
 
         await self.crawl_ops.add_crawl_file(crawl.id, crawl_file, filecomplete.size)
+
+        try:
+            await self.background_job_ops.create_replica_jobs(
+                crawl.oid, crawl_file, crawl.id, "crawl"
+            )
+        # pylint: disable=broad-except
+        except Exception as exc:
+            print("Replicate Exception", exc, flush=True)
 
         return True
 
@@ -1603,6 +1615,39 @@ class BtrixOperator(K8sAPI):
             "attachments": attachments,
         }
 
+    async def finalize_background_job(self, data: MCDecoratorSyncData) -> dict:
+        """handle finished background job"""
+
+        metadata = data.object["metadata"]
+        labels: dict[str, str] = metadata.get("labels", {})
+        oid: str = labels.get("btrix.org") or ""
+        job_type: str = labels.get("job_type") or ""
+        job_id: str = metadata.get("name")
+
+        status = data.object["status"]
+        success = status.get("succeeded") == 1
+        completion_time = status.get("completionTime")
+
+        finalized = True
+
+        finished = from_k8s_date(completion_time) if completion_time else dt_now()
+
+        try:
+            await self.background_job_ops.job_finished(
+                job_id, job_type, UUID(oid), success=success, finished=finished
+            )
+            # print(
+            #    f"{job_type} background job completed: success: {success}, {job_id}",
+            #    flush=True,
+            # )
+
+        # pylint: disable=broad-except
+        except Exception:
+            print("Update Background Job Error", flush=True)
+            traceback.print_exc()
+
+        return {"attachments": [], "finalized": finalized}
+
     def run_task(self, func):
         """add bg tasks to set to avoid premature garbage collection"""
         task = asyncio.create_task(func)
@@ -1611,14 +1656,10 @@ class BtrixOperator(K8sAPI):
 
 
 # ============================================================================
-def init_operator_api(
-    app, crawl_config_ops, crawl_ops, org_ops, coll_ops, storage_ops, event_webhook_ops
-):
+def init_operator_api(app, *args):
     """regsiters webhook handlers for metacontroller"""
 
-    oper = BtrixOperator(
-        crawl_config_ops, crawl_ops, org_ops, coll_ops, storage_ops, event_webhook_ops
-    )
+    oper = BtrixOperator(*args)
 
     @app.post("/op/crawls/sync")
     async def mc_sync_crawls(data: MCSyncData):
@@ -1644,6 +1685,15 @@ def init_operator_api(
     @app.post("/op/cronjob/customize")
     async def mc_cronjob_related(data: MCBaseRequest):
         return oper.get_cronjob_crawl_related(data)
+
+    # nop, but needed for metacontroller
+    @app.post("/op/backgroundjob/sync")
+    async def mc_sync_background_jobs():
+        return {"attachments": []}
+
+    @app.post("/op/backgroundjob/finalize")
+    async def mc_finalize_background_jobs(data: MCDecoratorSyncData):
+        return await oper.finalize_background_job(data)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz():

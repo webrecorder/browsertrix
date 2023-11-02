@@ -20,6 +20,7 @@ from .models import (
     Organization,
     PaginatedResponse,
     User,
+    StorageRef,
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
 )
@@ -34,10 +35,11 @@ if TYPE_CHECKING:
     from .colls import CollectionOps
     from .storages import StorageOps
     from .webhooks import EventWebhookOps
+    from .background_jobs import BackgroundJobOps
+
 else:
     CrawlConfigOps = UserManager = OrgOps = CollectionOps = object
-    CrawlManager = StorageOps = EventWebhookOps = object
-
+    CrawlManager = StorageOps = EventWebhookOps = BackgroundJobOps = object
 
 # Presign duration must be less than 604800 seconds (one week),
 # so set this one minute short of a week.
@@ -59,6 +61,7 @@ class BaseCrawlOps:
     colls: CollectionOps
     storage_ops: StorageOps
     event_webhook_ops: EventWebhookOps
+    background_job_ops: BackgroundJobOps
 
     def __init__(
         self,
@@ -70,6 +73,7 @@ class BaseCrawlOps:
         colls: CollectionOps,
         storage_ops: StorageOps,
         event_webhook_ops: EventWebhookOps,
+        background_job_ops: BackgroundJobOps,
     ):
         self.crawls = mdb["crawls"]
         self.crawl_manager = crawl_manager
@@ -79,6 +83,7 @@ class BaseCrawlOps:
         self.colls = colls
         self.storage_ops = storage_ops
         self.event_webhook_ops = event_webhook_ops
+        self.background_job_ops = background_job_ops
 
         presign_duration_minutes = int(
             os.environ.get("PRESIGN_DURATION_MINUTES") or PRESIGN_MINUTES_DEFAULT
@@ -237,6 +242,19 @@ class BaseCrawlOps:
             {"userid": userid}, {"$set": {"userName": updated_name}}
         )
 
+    async def add_crawl_file_replica(
+        self, crawl_id: str, filename: str, ref: StorageRef
+    ) -> dict[str, object]:
+        """Add replica StorageRef to existing CrawlFile"""
+        return await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "files.filename": filename},
+            {
+                "$addToSet": {
+                    "files.$.replicas": {"name": ref.name, "custom": ref.custom}
+                }
+            },
+        )
+
     async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
         """stop or cancel specified crawl"""
         crawl = await self.get_crawl_raw(crawl_id, org)
@@ -343,6 +361,9 @@ class BaseCrawlOps:
             size += file_.size
             if not await self.storage_ops.delete_crawl_file_object(org, file_):
                 raise HTTPException(status_code=400, detail="file_deletion_error")
+            await self.background_job_ops.create_delete_replica_jobs(
+                org, file_, crawl.id, crawl.type
+            )
 
         return size
 
