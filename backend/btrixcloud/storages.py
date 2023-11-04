@@ -78,7 +78,7 @@ class StorageOps:
 
         self.is_local_minio = is_bool(os.environ.get("IS_LOCAL_MINIO"))
 
-        with open("/tmp/storages/storages.json", encoding="utf-8") as fh:
+        with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
 
         for storage in storage_list:
