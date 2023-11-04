@@ -12,6 +12,7 @@ from .utils import (
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
+
 def test_upload_stream(admin_auth_headers, default_org_id):
     with open(os.path.join(curr_dir, "..", "test", "data", "example.wacz"), "rb") as fh:
         r = requests.put(

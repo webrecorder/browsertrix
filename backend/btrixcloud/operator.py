@@ -8,7 +8,6 @@ from typing import Optional, DefaultDict, TYPE_CHECKING
 
 from collections import defaultdict
 
-from datetime import datetime
 import json
 from uuid import UUID
 from fastapi import HTTPException
@@ -114,8 +113,8 @@ class CrawlSpec(BaseModel):
     started: str
     stopping: bool = False
     scheduled: bool = False
-    expire_time: Optional[datetime] = None
-    max_crawl_size: Optional[int] = None
+    timeout: int = 0
+    max_crawl_size: int = 0
 
 
 # ============================================================================
@@ -232,8 +231,14 @@ class CrawlStatus(BaseModel):
     restartTime: Optional[str]
     canceled: bool = False
 
-    # Execution Time -- updated on pod exits and at regular interval
+    # updated on pod exits and at regular interval
+    # Crawl Execution Time -- time crawl all pods have been running
+    # used to track resource usage
     crawlExecTime: int = 0
+
+    # Elapsed Exec Time -- time crawl has been running in at least one pod
+    # used for crawl timeouts
+    elapsedExecTime: int = 0
 
     # last exec time update
     lastUpdatedTime: str = ""
@@ -440,7 +445,7 @@ class BtrixOperator(K8sAPI):
             scale=spec.get("scale", 1),
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
-            expire_time=from_k8s_date(spec.get("expireTime")),
+            timeout=spec.get("timeout") or 0,
             max_crawl_size=int(spec.get("maxCrawlSize") or 0),
             scheduled=spec.get("manual") != "1",
         )
@@ -1081,6 +1086,7 @@ class BtrixOperator(K8sAPI):
             return
 
         exec_time = 0
+        max_duration = 0
         print(
             f"Exec Time Update: {reason}: {now} - {update_start_time} = {update_duration}"
         )
@@ -1131,11 +1137,13 @@ class BtrixOperator(K8sAPI):
                     f"  - {name}: {pod_state}: {end_time} - {start_time} = {duration}"
                 )
                 exec_time += duration
+                max_duration = max(duration, max_duration)
 
         if exec_time:
             await self.crawl_ops.inc_crawl_exec_time(crawl_id, exec_time)
             await self.org_ops.inc_org_time_stats(oid, exec_time, True)
             status.crawlExecTime += exec_time
+            status.elapsedExecTime += max_duration
 
         print(
             f"  Exec Time Total: {status.crawlExecTime}, Incremented By: {exec_time}",
@@ -1254,7 +1262,7 @@ class BtrixOperator(K8sAPI):
 
         return True
 
-    def is_crawl_stopping(self, crawl, size):
+    def is_crawl_stopping(self, crawl: CrawlSpec, status: CrawlStatus) -> bool:
         """return true if crawl should begin graceful stopping phase"""
 
         # if user requested stop, then enter stopping phase
@@ -1262,12 +1270,19 @@ class BtrixOperator(K8sAPI):
             print("Graceful Stop: User requested stop")
             return True
 
-        # check crawl expiry
-        if crawl.expire_time and dt_now() > crawl.expire_time:
-            print(f"Graceful Stop: Job duration expired at {crawl.expire_time}")
-            return True
+        # check timeout if timeout time exceeds elapsed time
+        if crawl.timeout:
+            elapsed = (
+                status.elapsedExecTime
+                + (dt_now() - from_k8s_date(status.lastUpdatedTime)).total_seconds()
+            )
+            if elapsed > crawl.timeout:
+                print(
+                    f"Graceful Stop: Crawl running time exceeded {crawl.timeout} second timeout"
+                )
+                return True
 
-        if crawl.max_crawl_size and size > crawl.max_crawl_size:
+        if crawl.max_crawl_size and status.size > crawl.max_crawl_size:
             print(f"Graceful Stop: Maximum crawl size {crawl.max_crawl_size} hit")
             return True
 
@@ -1311,7 +1326,7 @@ class BtrixOperator(K8sAPI):
                 pod_info = status.podStatus[key]
                 pod_info.used.storage = value
 
-        status.stopping = self.is_crawl_stopping(crawl, status.size)
+        status.stopping = self.is_crawl_stopping(crawl, status)
 
         # check exec time quotas and stop if reached limit
         if not status.stopping:
