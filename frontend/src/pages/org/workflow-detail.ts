@@ -174,8 +174,12 @@ export class WorkflowDetail extends LiteElement {
       this.fetchWorkflow();
       this.fetchSeeds();
     }
-    if (changedProperties.has("isEditing") && this.isEditing) {
-      this.stopPoll();
+    if (changedProperties.has("isEditing")) {
+      if (this.isEditing) {
+        this.stopPoll();
+      } else {
+        this.getActivePanelFromHash();
+      }
     }
     if (
       !this.isEditing &&
