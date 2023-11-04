@@ -12,7 +12,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
     nginx.ingress.kubernetes.io/proxy-buffering: "off"
     {{- if .Values.ingress.tls }}
-    cert-manager.io/cluster-issuer: {{ .Values.cluster-issuer | default "cert-main" }}
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.custom-cluster-issuer | default "cert-main" }}
     {{- end }}
     nginx.ingress.kubernetes.io/upstream-vhost: "{{ .Values.ingress.host }}"
     nginx.ingress.kubernetes.io/configuration-snippet: |
@@ -78,7 +78,7 @@ spec:
 
 
 {{ if .Values.ingress.tls }}
-{{ if not .Values.cluster-issuer }}
+{{ if not .Values.ingress.custom-cluster-issuer }}
 ---
 
 apiVersion: cert-manager.io/v1
