@@ -5,6 +5,7 @@ import throttle from "lodash/fp/throttle";
 
 import LiteElement, { html } from "../utils/LiteElement";
 import type { AuthState } from "../utils/AuthService";
+import { PropertyValueMap } from "lit";
 
 type Pages = string[];
 type ResponseData = {
@@ -46,6 +47,12 @@ export class CrawlQueue extends LiteElement {
   /** `new RegExp` constructor string */
   regex: string = "";
 
+  @property({ type: Array })
+  private exclusions = [];
+
+  @state()
+  private exclusionsRx: RegExp[] = [];
+
   @state()
   private queue?: ResponseData;
 
@@ -60,6 +67,16 @@ export class CrawlQueue extends LiteElement {
   disconnectedCallback() {
     window.clearInterval(this.timerId);
     super.disconnectedCallback();
+  }
+
+  protected updated(
+    changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
+  ): void {
+    if (changedProperties.has("exclusions")) {
+      this.exclusionsRx = this.exclusions
+        ? this.exclusions.map((x) => new RegExp(x))
+        : [];
+    }
   }
 
   willUpdate(changedProperties: Map<string, any>) {
@@ -104,6 +121,7 @@ export class CrawlQueue extends LiteElement {
       <btrix-numbered-list class="text-xs break-all" aria-live="polite">
         ${this.queue.results.map((url, idx) => {
           const isMatch = this.queue!.matched.some((v) => v === url);
+          const isExcluded = !isMatch && this.isExcluded(url);
           return html`
             <btrix-numbered-list-item>
               <span class="${isMatch ? "text-red-600" : ""}" slot="marker"
@@ -112,6 +130,8 @@ export class CrawlQueue extends LiteElement {
               <a
                 class="${isMatch
                   ? "text-red-500 hover:text-red-400"
+                  : isExcluded
+                  ? "text-gray-500 hover:text-gray-400 line-through"
                   : "text-blue-500 hover:text-blue-400"}"
                 href=${url}
                 target="_blank"
@@ -202,6 +222,16 @@ export class CrawlQueue extends LiteElement {
         });
       }
     }
+  }
+
+  isExcluded(url: string) {
+    for (const rx of this.exclusionsRx) {
+      if (rx.test(url)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private async getQueue(): Promise<ResponseData> {

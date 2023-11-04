@@ -24,6 +24,7 @@ import { APIPaginatedList } from "../../types/api";
 import { inactiveCrawlStates, isActive } from "../../utils/crawler";
 import { SlSelect } from "@shoelace-style/shoelace";
 import type { PageChangeEvent } from "../../components/pagination";
+import { ExclusionEditor } from "../../components/exclusion-editor";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];
@@ -1219,9 +1220,7 @@ export class WorkflowDetail extends LiteElement {
             ></btrix-exclusion-editor>`
           : ""}
         <div slot="footer">
-          <sl-button
-            size="small"
-            @click=${() => (this.openDialogName = undefined)}
+          <sl-button size="small" @click=${this.onCloseExclusions}
             >${msg("Done Editing")}</sl-button
           >
         </div>
@@ -1353,6 +1352,14 @@ export class WorkflowDetail extends LiteElement {
       this.authState!
     );
     return data;
+  }
+
+  private async onCloseExclusions(e: Event) {
+    const editor = this.querySelector("btrix-exclusion-editor");
+    if (editor && editor instanceof ExclusionEditor) {
+      await editor.onClose();
+    }
+    this.openDialogName = undefined;
   }
 
   private async fetchSeeds(): Promise<void> {
