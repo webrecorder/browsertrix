@@ -114,6 +114,8 @@ data:
 
     signing_secret: {{ and .Values.signer.enabled (not (empty .Values.signer.auth_token)) | ternary "signing-secret" "" }}
 
+    proxy_secret: "{{ .Values.proxy_secret }}"
+
 ---
 apiVersion: v1
 kind: ConfigMap

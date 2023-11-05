@@ -49,7 +49,8 @@ spec:
 
   restartPolicy: OnFailure
 
-  terminationGracePeriodSeconds: {{ termination_grace_secs }}
+  #terminationGracePeriodSeconds: {{ termination_grace_secs }}
+  terminationGracePeriodSeconds: 0
   volumes:
     - name: crawl-config
       configMap:
@@ -58,6 +59,13 @@ spec:
     - name: crawl-data
       persistentVolumeClaim:
         claimName: {{ name }}
+
+  {% if proxy_secret %}
+    - name: ssh-key
+      secret:
+        secretName: {{ proxy_secret }}
+        defaultMode: 256
+  {% endif %}
 
   affinity:
     nodeAffinity:
@@ -117,6 +125,11 @@ spec:
         - name: crawl-data
           mountPath: /crawls
 
+        - name: ssh-key
+          mountPath: /keys/private_key
+          subPath: private_key
+          readOnly: True
+
       envFrom:
         - configMapRef:
             name: shared-crawler-config
@@ -154,6 +167,15 @@ spec:
       {% endif %}
     {% endif %}
 
+  {% if proxy_secret %}
+        - name: PROXY_SSH
+          valueFrom:
+            secretKeyRef:
+              name: "{{ proxy_secret }}"
+              key: ssh_string
+
+  {% endif %}
+
       resources:
         limits:
           memory: "{{ memory }}"
@@ -172,5 +194,29 @@ spec:
         periodSeconds: 120
         failureThreshold: 3
       {% endif %}
+
+  {% if proxy_secret_2 %}
+    - name: proxy
+      image: webrecorder/ssh
+      imagePullPolicy: Never
+      command:
+        - bash
+        - -c
+        - "trap exit 1 SIGTERM; ssh -D 0.0.0.0:1337 ${ssh_string} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i /keys/private_key -N"
+
+      volumeMounts:
+        - name: ssh-key
+          mountPath: /keys/private_key
+          subPath: private_key
+          readOnly: True
+
+      env:
+        - name: ssh_string
+          valueFrom:
+            secretKeyRef:
+              name: "{{ proxy_secret }}"
+              key: ssh_string
+
+  {% endif %}
 
 {% endif %}
