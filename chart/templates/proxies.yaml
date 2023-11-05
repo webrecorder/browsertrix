@@ -1,0 +1,19 @@
+{{- range $proxy := .Values.proxies }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: proxy-{{ $proxy.name }}
+  namespace: {{ $.Values.crawler_namespace }}
+  labels:
+    role: proxy-secret
+
+type: Opaque
+stringData:
+  ssh_string: {{ $proxy.ssh_string }}
+
+data:
+  private_key: |-
+{{ $.Files.Get $proxy.ssh_key_file | b64enc | indent 3 }}
+
+{{- end }}
