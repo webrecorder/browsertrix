@@ -41,6 +41,10 @@ spec:
           secret:
             secretName: storages
 
+        - name: app-templates
+          configMap:
+            name: app-templates
+
       containers:
         - name: api
           image: {{ .Values.backend_image }}
@@ -60,6 +64,9 @@ spec:
           volumeMounts:
             - name: storages
               mountPath: /tmp/storages/
+
+            - name: app-templates
+              mountPath: /app/btrixcloud/templates/
 
           resources:
             limits:
@@ -128,6 +135,9 @@ spec:
 
             - name: storages
               mountPath: /tmp/storages/
+
+            - name: app-templates
+              mountPath: /app/btrixcloud/templates/
 
           resources:
             limits:
