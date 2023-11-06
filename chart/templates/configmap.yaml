@@ -128,11 +128,8 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: nginx-config
+  name: app-templates
   namespace: {{ .Release.Namespace }}
 
 data:
-{{ (.Files.Glob "*.conf").AsConfig | indent 2 }}
-
-#{{ (.Files.Glob "frontend/*.*").AsConfig | indent 2 }}
-
+{{ (.Files.Glob "app-templates/*.yaml").AsConfig | indent 2 }}

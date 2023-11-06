@@ -135,6 +135,7 @@ export class ExclusionEditor extends LiteElement {
       crawlId=${this.crawlId!}
       .authState=${this.authState}
       regex=${this.regex}
+      .exclusions=${(this.config && this.config.exclude) || []}
       matchedTotal=${this.matchedURLs?.length || 0}
     ></btrix-crawl-queue>`;
   }
@@ -224,10 +225,21 @@ export class ExclusionEditor extends LiteElement {
     return data;
   }
 
-  private async handleAddRegex(e: ExclusionAddEvent) {
+  async handleAddRegex(e?: ExclusionAddEvent) {
     this.isSubmitting = true;
 
-    const { regex, onSuccess } = e.detail;
+    let regex = null;
+    let onSuccess = null;
+
+    if (e) {
+      ({ regex, onSuccess } = e.detail);
+    } else {
+      // if not provided, use current regex, if set
+      if (!this.regex) {
+        return;
+      }
+      regex = this.regex;
+    }
 
     try {
       const params = new URLSearchParams({ regex });
@@ -250,7 +262,9 @@ export class ExclusionEditor extends LiteElement {
         this.matchedURLs = null;
         await this.updateComplete;
 
-        onSuccess();
+        if (onSuccess) {
+          onSuccess();
+        }
         this.dispatchEvent(new CustomEvent("on-success"));
       } else {
         throw data;
@@ -270,5 +284,11 @@ export class ExclusionEditor extends LiteElement {
     }
 
     this.isSubmitting = false;
+  }
+
+  async onClose() {
+    if (this.regex && this.isActiveCrawl) {
+      await this.handleAddRegex();
+    }
   }
 }
