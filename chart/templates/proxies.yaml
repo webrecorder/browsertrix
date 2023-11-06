@@ -11,9 +11,6 @@ metadata:
 type: Opaque
 stringData:
   ssh_string: {{ $proxy.ssh_string }}
-
-data:
-  private_key: |-
-{{ $.Files.Get $proxy.ssh_key_file | b64enc | indent 3 }}
+  ssh_password: {{ $proxy.ssh_password }}
 
 {{- end }}
