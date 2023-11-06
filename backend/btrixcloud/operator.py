@@ -238,7 +238,7 @@ class CrawlStatus(BaseModel):
 
     # Elapsed Exec Time -- time crawl has been running in at least one pod
     # used for crawl timeouts
-    elapsedExecTime: int = 0
+    elapsedCrawlTime: int = 0
 
     # last exec time update
     lastUpdatedTime: str = ""
@@ -1143,7 +1143,7 @@ class BtrixOperator(K8sAPI):
             await self.crawl_ops.inc_crawl_exec_time(crawl_id, exec_time)
             await self.org_ops.inc_org_time_stats(oid, exec_time, True)
             status.crawlExecTime += exec_time
-            status.elapsedExecTime += max_duration
+            status.elapsedCrawlTime += max_duration
 
         print(
             f"  Exec Time Total: {status.crawlExecTime}, Incremented By: {exec_time}",
@@ -1273,7 +1273,7 @@ class BtrixOperator(K8sAPI):
         # check timeout if timeout time exceeds elapsed time
         if crawl.timeout:
             elapsed = (
-                status.elapsedExecTime
+                status.elapsedCrawlTime
                 + (dt_now() - from_k8s_date(status.lastUpdatedTime)).total_seconds()
             )
             if elapsed > crawl.timeout:
