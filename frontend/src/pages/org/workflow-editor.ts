@@ -181,7 +181,7 @@ const getDefaultFormState = (): FormState => ({
     minute: 0,
     period: "AM",
   },
-  runNow: false,
+  runNow: true,
   jobName: "",
   browserProfile: null,
   tags: [],
