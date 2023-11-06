@@ -232,8 +232,8 @@ class CrawlStatus(BaseModel):
     canceled: bool = False
 
     # updated on pod exits and at regular interval
-    # Crawl Execution Time -- time crawl all pods have been running
-    # used to track resource usage
+    # Crawl Execution Time -- time all crawler pods have been running
+    # used to track resource usage and enforce execution minutes limit
     crawlExecTime: int = 0
 
     # Elapsed Exec Time -- time crawl has been running in at least one pod
