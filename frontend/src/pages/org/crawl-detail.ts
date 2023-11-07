@@ -157,10 +157,7 @@ export class CrawlDetail extends LiteElement {
         });
         break;
       case "files":
-        sectionContent = this.renderPanel(
-          msg("Download Files"),
-          this.renderFiles()
-        );
+        sectionContent = this.renderPanel(msg("Files"), this.renderFiles());
         break;
       case "logs":
         sectionContent = this.renderPanel(
@@ -788,6 +785,17 @@ ${this.crawl?.description}
                         name="file-earmark-zip-fill"
                         class="h-4 pr-2 shrink-0 text-neutral-600"
                       ></sl-icon>
+                      <a
+                        class="text-primary hover:underline truncate mr-2"
+                        href=${file.path}
+                        download
+                        title=${file.name}
+                        >${file.name.slice(file.name.lastIndexOf("/") + 1)}
+                      </a>
+                    </div>
+                    <div
+                      class="whitespace-nowrap text-sm font-mono text-neutral-400 flex items-end"
+                    >
                       ${when(
                         file.numReplicas > 0,
                         () => html` <sl-tooltip
@@ -799,17 +807,6 @@ ${this.crawl?.description}
                           ></sl-icon>
                         </sl-tooltip>`
                       )}
-                      <a
-                        class="text-primary hover:underline truncate mr-2"
-                        href=${file.path}
-                        download
-                        title=${file.name}
-                        >${file.name.slice(file.name.lastIndexOf("/") + 1)}
-                      </a>
-                    </div>
-                    <div
-                      class="whitespace-nowrap text-sm font-mono text-neutral-400"
-                    >
                       <sl-format-bytes value=${file.size}></sl-format-bytes>
                     </div>
                   </li>
