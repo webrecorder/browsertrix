@@ -900,7 +900,7 @@ def init_crawls_api(app, user_dep, *args):
         crawl_id: str,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
     ):
         crawl_raw = await ops.get_crawl_raw(crawl_id, org)
         crawl = Crawl.from_dict(crawl_raw)
