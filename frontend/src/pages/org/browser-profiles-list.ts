@@ -1,5 +1,6 @@
 import { state, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import { when } from "lit/directives/when.js";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -101,7 +102,18 @@ export class BrowserProfilesList extends LiteElement {
       >
         <div class="grid grid-cols-8 gap-3 md:gap-5" role="row">
           <div class="col-span-8 md:col-span-3 p-2" role="cell">
-            <div class="font-medium mb-1">${data.name}</div>
+            <div class="font-medium mb-1">
+              ${data.name}
+              ${when(
+                data.resource && data.resource.replicas.length > 0,
+                () => html` <sl-tooltip content=${msg("Profile replicated")}>
+                  <sl-icon
+                    name="cloud-check"
+                    class="pl-1 shrink-0 text-success"
+                  ></sl-icon>
+                </sl-tooltip>`
+              )}
+            </div>
             <div class="text-sm truncate" title=${data.description}>
               ${data.description}
             </div>
