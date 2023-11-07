@@ -115,6 +115,7 @@ class CrawlManager(K8sAPI):
         run_now: bool,
         out_filename: str,
         profile_filename: str,
+        proxyid: Optional[str],
     ) -> Optional[str]:
         """add new crawl, store crawl config in configmap"""
 
@@ -128,6 +129,7 @@ class CrawlManager(K8sAPI):
             INITIAL_SCALE=str(crawlconfig.scale),
             CRAWL_TIMEOUT=str(crawlconfig.crawlTimeout or 0),
             MAX_CRAWL_SIZE=str(crawlconfig.maxCrawlSize or 0),
+            PROXY_SECRET=f"proxy-{proxyid}" if proxyid else "",
         )
 
         crawl_id = None
@@ -385,6 +387,7 @@ class CrawlManager(K8sAPI):
         update: UpdateCrawlConfig,
         profile_filename: Optional[str] = None,
         update_config: bool = False,
+        proxyid: Optional[str] = None,
     ) -> None:
         config_map = await self.get_configmap(str(crawlconfig.id))
 
@@ -402,6 +405,9 @@ class CrawlManager(K8sAPI):
 
         if profile_filename is not None:
             config_map.data["PROFILE_FILENAME"] = profile_filename
+
+        if proxyid is not None:
+            config_map.data["PROXY_SECRET"] = f"proxy-{proxyid}" if proxyid else ""
 
         if update_config:
             config_map.data["crawl-config.json"] = json.dumps(

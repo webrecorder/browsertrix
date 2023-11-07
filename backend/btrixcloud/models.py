@@ -272,6 +272,8 @@ class CrawlConfigIn(BaseModel):
 
     profileid: Union[UUID, EmptyStr, None]
 
+    proxyid: Optional[str]
+
     autoAddCollections: Optional[List[UUID]] = []
     tags: Optional[List[str]] = []
 
@@ -293,6 +295,8 @@ class ConfigRevision(BaseMongoModel):
     config: RawCrawlConfig
 
     profileid: Optional[UUID]
+
+    proxyid: Optional[str]
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
@@ -322,6 +326,8 @@ class CrawlConfigCore(BaseMongoModel):
     oid: UUID
 
     profileid: Optional[UUID]
+
+    proxyid: Optional[str]
 
 
 # ============================================================================
@@ -985,6 +991,18 @@ class PaginatedResponse(BaseModel):
     total: int
     page: int
     pageSize: int
+
+
+# ============================================================================
+
+### PROXIES ###
+
+
+# ============================================================================
+class Proxy(BaseModel):
+    id: str
+    name: str
+    description: Optional[str] = ""
 
 
 # ============================================================================

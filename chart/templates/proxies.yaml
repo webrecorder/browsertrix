@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: proxy-{{ $proxy.name }}
+  name: proxy-{{ $proxy.id }}
   namespace: {{ $.Values.crawler_namespace }}
   labels:
     role: proxy-secret

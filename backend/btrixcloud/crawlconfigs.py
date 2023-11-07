@@ -208,6 +208,7 @@ class CrawlConfigOps:
             run_now=run_now,
             out_filename=out_filename,
             profile_filename=profile_filename or "",
+            proxyid=config.proxyid,
         )
 
         if crawl_id and run_now:

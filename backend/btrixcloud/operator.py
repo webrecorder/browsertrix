@@ -514,6 +514,8 @@ class BtrixOperator(K8sAPI):
         params["storage_secret"] = storage_secret
         params["profile_filename"] = configmap["PROFILE_FILENAME"]
 
+        params["proxy_secret"] = configmap.get("PROXY_SECRET", "")
+
         params["storage_filename"] = configmap["STORE_FILENAME"]
         params["restart_time"] = spec.get("restartTime")
 
