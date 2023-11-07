@@ -2,8 +2,6 @@
 import os
 import traceback
 
-from datetime import timedelta
-
 import yaml
 
 from kubernetes_asyncio import client, config
@@ -18,7 +16,7 @@ from redis import asyncio as aioredis
 from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
 
-from .utils import get_templates_dir, dt_now, to_k8s_date
+from .utils import get_templates_dir, dt_now
 
 
 # ============================================================================
@@ -85,11 +83,6 @@ class K8sAPI:
         crawl_id=None,
     ):
         """load job template from yaml"""
-        if crawl_timeout:
-            crawl_expire_time = to_k8s_date(dt_now() + timedelta(seconds=crawl_timeout))
-        else:
-            crawl_expire_time = ""
-
         if not crawl_id:
             ts_now = dt_now().strftime("%Y%m%d%H%M%S")
             prefix = "manual" if manual else "sched"
@@ -101,7 +94,7 @@ class K8sAPI:
             "oid": oid,
             "userid": userid,
             "scale": scale,
-            "expire_time": crawl_expire_time or 0,
+            "timeout": crawl_timeout,
             "max_crawl_size": max_crawl_size or 0,
             "storage_name": str(storage),
             "manual": "1" if manual else "0",
