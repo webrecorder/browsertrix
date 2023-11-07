@@ -102,7 +102,7 @@ export class BrowserProfilesList extends LiteElement {
       >
         <div class="grid grid-cols-8 gap-3 md:gap-5" role="row">
           <div class="col-span-8 md:col-span-3 p-2" role="cell">
-            <div class="font-medium flex items-end">
+            <div class="font-medium text-sm">
               <span>${data.name}</span>
               ${when(
                 data.resource && data.resource.replicas.length > 0,
