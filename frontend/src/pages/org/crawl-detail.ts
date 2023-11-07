@@ -788,6 +788,17 @@ ${this.crawl?.description}
                         name="file-earmark-zip-fill"
                         class="h-4 pr-2 shrink-0 text-neutral-600"
                       ></sl-icon>
+                      ${when(
+                        file.numReplicas > 0,
+                        () => html`
+                          <sl-tooltip content=${msg("File replicated")}>
+                            <sl-icon
+                              name="cloud-check"
+                              class="h-4 pr-2 shrink-0 text-success"
+                            ></sl-icon>
+                          </sl-tooltip>
+                        `
+                      )}
                       <a
                         class="text-primary hover:underline truncate mr-2"
                         href=${file.path}

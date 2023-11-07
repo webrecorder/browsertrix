@@ -124,7 +124,13 @@ export type Crawl = CrawlConfig & {
   state: CrawlState;
   scale: number;
   stats: { done: string; found: string; size: string } | null;
-  resources?: { name: string; path: string; hash: string; size: number }[];
+  resources?: {
+    name: string;
+    path: string;
+    hash: string;
+    size: number;
+    numReplicas: number;
+  }[];
   fileCount?: number;
   fileSize?: number;
   completions?: number;
