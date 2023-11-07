@@ -794,7 +794,7 @@ ${this.crawl?.description}
                       </a>
                     </div>
                     <div
-                      class="whitespace-nowrap text-sm font-mono text-neutral-400 flex items-end"
+                      class="whitespace-nowrap text-sm font-mono text-neutral-400"
                     >
                       ${when(
                         file.numReplicas > 0,
