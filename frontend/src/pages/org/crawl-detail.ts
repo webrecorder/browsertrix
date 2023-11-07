@@ -803,7 +803,7 @@ ${this.crawl?.description}
                         >
                           <sl-icon
                             name="cloud-check"
-                            class="h-4 mr-2 shrink-0 text-success"
+                            class="w-4 h-4 mr-2 align-text-bottom shrink-0 text-success"
                           ></sl-icon>
                         </sl-tooltip>`
                       )}
