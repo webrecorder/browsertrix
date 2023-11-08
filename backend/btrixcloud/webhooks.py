@@ -400,7 +400,7 @@ def init_event_webhooks_api(mdb, org_ops, app):
     ):
         return await ops.get_notification(org, notificationid)
 
-    @router.get("/{notificationid}/retry")
+    @router.post("/{notificationid}/retry")
     async def retry_notification(
         notificationid: UUID,
         org: Organization = Depends(org_owner_dep),

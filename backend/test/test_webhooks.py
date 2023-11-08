@@ -99,7 +99,7 @@ def test_get_webhook_event(admin_auth_headers, default_org_id):
 
 def test_retry_webhook_event(admin_auth_headers, default_org_id):
     # Expect to fail because we haven't set up URLs that accept webhooks
-    r = requests.get(
+    r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/webhooks/{_webhook_event_id}/retry",
         headers=admin_auth_headers,
     )
