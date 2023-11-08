@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import Optional, Tuple, Union, List, Dict, TYPE_CHECKING, cast
 from uuid import UUID
 
+from urllib.parse import urlsplit
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from .storages import StorageOps
@@ -63,9 +65,9 @@ class BackgroundJobOps:
         self.profile_ops = profile_ops
 
     def strip_bucket(self, endpoint_url: str) -> tuple[str, str]:
-        """strip the last path segment (bucket) and return rest of endpoint"""
-        inx = endpoint_url.rfind("/", 0, -1) + 1
-        return endpoint_url[0:inx], endpoint_url[inx:]
+        """split the endpoint_url into the origin and return rest of endpoint as bucket path"""
+        parts = urlsplit(endpoint_url)
+        return parts.scheme + "://" + parts.netloc + "/", parts.path[1:]
 
     async def handle_replica_job_finished(self, job: CreateReplicaJob) -> None:
         """Update replicas in corresponding file objects, based on type"""

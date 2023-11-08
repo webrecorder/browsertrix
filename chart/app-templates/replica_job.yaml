@@ -42,12 +42,21 @@ spec:
               name: "{{ primary_secret_name }}"
               key: STORE_SECRET_KEY
 
+        - name: RCLONE_CONFIG_PRIMARY_REGION
+          valueFrom:
+            secretKeyRef:
+              name: "{{ primary_secret_name }}"
+              key: STORE_REGION
+
+        - name: RCLONE_CONFIG_PRIMARY_PROVIDER
+          valueFrom:
+            secretKeyRef:
+              name: "{{ primary_secret_name }}"
+              key: STORE_S3_PROVIDER
+
         - name: RCLONE_CONFIG_PRIMARY_ENDPOINT
           value: "{{ primary_endpoint }}"
-          #valueFrom:
-          #  secretKeyRef:
-          #    name: "{{ primary_secret_name }}"
-          #    key: STORE_ENDPOINT_URL
+
 {% endif %}
 
         - name: RCLONE_CONFIG_REPLICA_TYPE
@@ -65,12 +74,20 @@ spec:
               name: "{{ replica_secret_name }}"
               key: STORE_SECRET_KEY
 
+        - name: RCLONE_CONFIG_REPLICA_REGION
+          valueFrom:
+            secretKeyRef:
+              name: "{{ replica_secret_name }}"
+              key: STORE_REGION
+
+        - name: RCLONE_CONFIG_REPLICA_PROVIDER
+          valueFrom:
+            secretKeyRef:
+              name: "{{ replica_secret_name }}"
+              key: STORE_S3_PROVIDER
+
         - name: RCLONE_CONFIG_REPLICA_ENDPOINT
           value: "{{ replica_endpoint }}"
-          #valueFrom:
-          #  secretKeyRef:
-          #    name: "{{ replica_secret_name }}"
-          #    key: STORE_ENDPOINT_URL
 
 {% if job_type == BgJobType.CREATE_REPLICA %}
         command: ["rclone", "-vv", "copyto", "--checksum", "primary:{{ primary_file_path }}", "replica:{{ replica_file_path }}"]
