@@ -329,6 +329,24 @@ class BackgroundJobOps:
 
         return jobs, total
 
+    async def get_replica_job_file(
+        self, job: Union[CreateReplicaJob, DeleteReplicaJob], org: Organization
+    ) -> BaseFile:
+        """Return file from replica job"""
+        try:
+            if job.object_type == "profile":
+                profile = await self.profile_ops.get_profile(UUID(job.object_id), org)
+                return BaseFile(**profile.resource.dict())
+
+            item_res = await self.base_crawl_ops.get_crawl_raw(job.object_id, org)
+            matching_file = [
+                f for f in item_res.get("files", []) if f["filename"] == job.file_path
+            ][0]
+            return BaseFile(**matching_file)
+        # pylint: disable=broad-exception-caught, raise-missing-from
+        except Exception:
+            raise HTTPException(status_code=404, detail="file_not_found")
+
     async def retry_background_job(
         self, job_id: str, org: Organization
     ) -> Dict[str, Union[bool, Optional[str]]]:
@@ -342,23 +360,7 @@ class BackgroundJobOps:
 
         new_job_id = None
 
-        if job.object_type == "profile":
-            profile = await self.profile_ops.get_profile(UUID(job.object_id), org)
-            if not profile:
-                raise HTTPException(status_code=404, detail="profile_not_found")
-            file = profile.resource or None
-        else:
-            item_res = await self.base_crawl_ops.get_crawl_raw(job.object_id, org)
-            if not item_res:
-                raise HTTPException(status_code=404, detail="item_not_found")
-            matching_files = [
-                f for f in item_res.get("files", []) if f["filename"] == job.file_path
-            ]
-            file = matching_files[0] if matching_files else None
-
-        if not file:
-            raise HTTPException(status_code=404, detail="file_not_found")
-        file = BaseFile(**file)
+        file = await self.get_replica_job_file(job, org)
 
         if job.type == BgJobType.CREATE_REPLICA:
             primary_storage = self.storage_ops.get_org_storage_by_ref(org, file.storage)
