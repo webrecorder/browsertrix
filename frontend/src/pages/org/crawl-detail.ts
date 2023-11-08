@@ -802,7 +802,7 @@ ${this.crawl?.description}
                           content=${msg("File replicated")}
                         >
                           <sl-icon
-                            name="cloud-check"
+                            name="clouds"
                             class="w-4 h-4 mr-2 align-text-bottom shrink-0 text-success"
                           ></sl-icon>
                         </sl-tooltip>`
