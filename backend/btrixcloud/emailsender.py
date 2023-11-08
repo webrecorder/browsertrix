@@ -8,7 +8,7 @@ from typing import Optional, Union
 
 from email.message import EmailMessage
 
-from .models import BackgroundJob, CreateReplicaJob, DeleteReplicaJob
+from .models import BackgroundJob, CreateReplicaJob, DeleteReplicaJob, Organization
 from .utils import is_bool
 
 
@@ -144,6 +144,7 @@ to create a new password
     def send_background_job_failed(
         self,
         job: Union[BackgroundJob, CreateReplicaJob, DeleteReplicaJob],
+        org: Organization,
         finished: datetime,
         receiver_email: str,
     ):
@@ -152,16 +153,16 @@ to create a new password
 Failed Background Job
 ---------------------
 
+Organization: {org.name} ({job.oid})
 Job type: {job.type}
 
 Job ID: {job.id}
-Org ID: {job.oid}
 Started: {job.started.isoformat(sep=" ", timespec="seconds")}Z
 Finished: {finished.isoformat(sep=" ", timespec="seconds")}Z
         """
 
         if type(job) in (CreateReplicaJob, DeleteReplicaJob):
-            message += f"""
+            message += f"""\n
 Object type: {job.object_type}
 Object ID: {job.object_id}
 File path: {job.file_path}

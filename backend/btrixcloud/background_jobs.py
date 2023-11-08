@@ -223,7 +223,8 @@ class BackgroundJobOps:
                 flush=True,
             )
             superuser = await self.user_manager.get_superuser()
-            self.email.send_background_job_failed(job, finished, superuser.email)
+            org = await self.org_ops.get_org_by_id(job.oid)
+            self.email.send_background_job_failed(job, org, finished, superuser.email)
 
         await self.jobs.find_one_and_update(
             {"_id": job_id, "oid": oid},
