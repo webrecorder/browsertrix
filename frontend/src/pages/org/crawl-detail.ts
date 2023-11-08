@@ -157,10 +157,7 @@ export class CrawlDetail extends LiteElement {
         });
         break;
       case "files":
-        sectionContent = this.renderPanel(
-          msg("Download Files"),
-          this.renderFiles()
-        );
+        sectionContent = this.renderPanel(msg("Files"), this.renderFiles());
         break;
       case "logs":
         sectionContent = this.renderPanel(
@@ -799,6 +796,15 @@ ${this.crawl?.description}
                     <div
                       class="whitespace-nowrap text-sm font-mono text-neutral-400"
                     >
+                      ${when(
+                        file.numReplicas > 0,
+                        () => html` <sl-tooltip content=${msg("Backed up")}>
+                          <sl-icon
+                            name="clouds"
+                            class="w-4 h-4 mr-2 align-text-bottom shrink-0 text-success"
+                          ></sl-icon>
+                        </sl-tooltip>`
+                      )}
                       <sl-format-bytes value=${file.size}></sl-format-bytes>
                     </div>
                   </li>

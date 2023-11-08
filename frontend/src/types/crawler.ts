@@ -83,6 +83,11 @@ export type Workflow = CrawlConfig & {
 
 export type ListWorkflow = Omit<Workflow, "config">;
 
+export type ProfileReplica = {
+  name: string;
+  custom?: boolean;
+};
+
 export type Profile = {
   id: string;
   name: string;
@@ -93,6 +98,13 @@ export type Profile = {
   baseProfileName: string;
   oid: string;
   crawlconfigs: { id: string; name: string }[];
+  resource?: {
+    name: string;
+    path: string;
+    hash: string;
+    size: number;
+    replicas: ProfileReplica[];
+  };
 };
 
 export type CrawlState =
@@ -124,7 +136,13 @@ export type Crawl = CrawlConfig & {
   state: CrawlState;
   scale: number;
   stats: { done: string; found: string; size: string } | null;
-  resources?: { name: string; path: string; hash: string; size: number }[];
+  resources?: {
+    name: string;
+    path: string;
+    hash: string;
+    size: number;
+    numReplicas: number;
+  }[];
   fileCount?: number;
   fileSize?: number;
   completions?: number;
