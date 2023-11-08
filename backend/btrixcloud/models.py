@@ -1237,6 +1237,8 @@ class BackgroundJob(BaseMongoModel):
     started: datetime
     finished: Optional[datetime] = None
 
+    previous_job_id: Optional[str] = None
+
 
 # ============================================================================
 class CreateReplicaJob(BackgroundJob):

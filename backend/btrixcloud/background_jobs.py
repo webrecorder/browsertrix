@@ -17,6 +17,7 @@ from .models import (
     DeleteReplicaJob,
     PaginatedResponse,
     AnyJob,
+    StorageRef,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
@@ -83,9 +84,8 @@ class BackgroundJobOps:
 
     async def create_replica_jobs(
         self, oid: UUID, file: BaseFile, object_id: str, object_type: str
-    ) -> Dict:
-        """Create k8s background job to replicate a file to another storage location."""
-
+    ) -> Dict[str, Union[bool, List[str]]]:
+        """Create k8s background job to replicate a file to all replica storage locations."""
         org = await self.org_ops.get_org_by_id(oid)
 
         primary_storage = self.storage_ops.get_org_storage_by_ref(org, file.storage)
@@ -98,99 +98,138 @@ class BackgroundJobOps:
         ids = []
 
         for replica_ref in self.storage_ops.get_org_replicas_storage_refs(org):
-            replica_storage = self.storage_ops.get_org_storage_by_ref(org, replica_ref)
-            replica_endpoint, bucket_suffix = self.strip_bucket(
-                replica_storage.endpoint_url
-            )
-            replica_file_path = bucket_suffix + file.filename
-
-            # print(f"primary: {file.storage.get_storage_secret_name(str(oid))}")
-            # print(f"  endpoint: {primary_endpoint}")
-            # print(f"  path: {primary_file_path}")
-            # print(f"replica: {replica_ref.get_storage_secret_name(str(oid))}")
-            # print(f"  endpoint: {replica_endpoint}")
-            # print(f"  path: {replica_file_path}")
-
-            job_type = BgJobType.CREATE_REPLICA.value
-
-            job_id = await self.crawl_manager.run_replica_job(
-                oid=str(oid),
-                job_type=job_type,
-                primary_storage=file.storage,
-                primary_file_path=primary_file_path,
-                primary_endpoint=primary_endpoint,
-                replica_storage=replica_ref,
-                replica_file_path=replica_file_path,
-                replica_endpoint=replica_endpoint,
-                job_id_prefix=f"{job_type}-{object_id}",
-            )
-            replication_job = CreateReplicaJob(
-                id=job_id,
-                oid=oid,
-                started=datetime.now(),
-                file_path=file.filename,
-                object_type=object_type,
-                object_id=object_id,
-                primary=file.storage,
-                replica_storage=replica_ref,
-            )
-            # print(
-            #    f"File path written into replication_job: {file.filename}", flush=True
-            # )
-            await self.jobs.find_one_and_update(
-                {"_id": job_id}, {"$set": replication_job.to_dict()}, upsert=True
+            job_id = await self.create_replica_job(
+                org,
+                file,
+                object_id,
+                object_type,
+                replica_ref,
+                primary_file_path,
+                primary_endpoint,
             )
             ids.append(job_id)
 
         return {"added": True, "ids": ids}
+
+    async def create_replica_job(
+        self,
+        org: Organization,
+        file: BaseFile,
+        object_id: str,
+        object_type: str,
+        replica_ref: StorageRef,
+        primary_file_path: str,
+        primary_endpoint: str,
+        previous_job_id: Optional[str] = None,
+    ) -> str:
+        """Create k8s background job to replicate a file to a specific replica storage location."""
+        replica_storage = self.storage_ops.get_org_storage_by_ref(org, replica_ref)
+        replica_endpoint, bucket_suffix = self.strip_bucket(
+            replica_storage.endpoint_url
+        )
+        replica_file_path = bucket_suffix + file.filename
+
+        # print(f"primary: {file.storage.get_storage_secret_name(str(oid))}")
+        # print(f"  endpoint: {primary_endpoint}")
+        # print(f"  path: {primary_file_path}")
+        # print(f"replica: {replica_ref.get_storage_secret_name(str(oid))}")
+        # print(f"  endpoint: {replica_endpoint}")
+        # print(f"  path: {replica_file_path}")
+
+        job_type = BgJobType.CREATE_REPLICA.value
+
+        job_id = await self.crawl_manager.run_replica_job(
+            oid=str(org.id),
+            job_type=job_type,
+            primary_storage=file.storage,
+            primary_file_path=primary_file_path,
+            primary_endpoint=primary_endpoint,
+            replica_storage=replica_ref,
+            replica_file_path=replica_file_path,
+            replica_endpoint=replica_endpoint,
+            job_id_prefix=f"{job_type}-{object_id}",
+        )
+        replication_job = CreateReplicaJob(
+            id=job_id,
+            oid=org.id,
+            started=datetime.now(),
+            file_path=file.filename,
+            object_type=object_type,
+            object_id=object_id,
+            primary=file.storage,
+            replica_storage=replica_ref,
+            previous_job_id=previous_job_id,
+        )
+        # print(
+        #    f"File path written into replication_job: {file.filename}", flush=True
+        # )
+        await self.jobs.find_one_and_update(
+            {"_id": job_id}, {"$set": replication_job.to_dict()}, upsert=True
+        )
+
+        return job_id
 
     async def create_delete_replica_jobs(
         self, org: Organization, file: BaseFile, object_id: str, object_type: str
     ) -> Dict[str, Union[bool, List[str]]]:
         """Create a job to delete each replica for the given file"""
-
         ids = []
-        oid = str(org.id)
 
         for replica_ref in file.replicas or []:
-            replica_storage = self.storage_ops.get_org_storage_by_ref(org, replica_ref)
-            replica_endpoint, bucket_suffix = self.strip_bucket(
-                replica_storage.endpoint_url
+            job_id = await self.create_delete_replica_job(
+                org, file, object_id, object_type, replica_ref
             )
-            replica_file_path = bucket_suffix + file.filename
-
-            # print(f"replica: {replica_ref.get_storage_secret_name(oid)}")
-            # print(f"  endpoint: {replica_endpoint}")
-            # print(f"  path: {replica_file_path}")
-
-            job_type = BgJobType.DELETE_REPLICA.value
-
-            job_id = await self.crawl_manager.run_replica_job(
-                oid=oid,
-                job_type=job_type,
-                replica_storage=replica_ref,
-                replica_file_path=replica_file_path,
-                replica_endpoint=replica_endpoint,
-                job_id_prefix=f"{job_type}-{object_id}",
-            )
-
-            delete_replica_job = DeleteReplicaJob(
-                id=job_id,
-                oid=oid,
-                started=datetime.now(),
-                file_path=file.filename,
-                object_id=object_id,
-                object_type=object_type,
-                replica_storage=replica_ref,
-            )
-
-            await self.jobs.find_one_and_update(
-                {"_id": job_id}, {"$set": delete_replica_job.to_dict()}, upsert=True
-            )
-
             ids.append(job_id)
 
         return {"added": True, "ids": ids}
+
+    async def create_delete_replica_job(
+        self,
+        org: Organization,
+        file: BaseFile,
+        object_id: str,
+        object_type: str,
+        replica_ref: StorageRef,
+        previous_job_id: Optional[str] = None,
+    ) -> str:
+        """Create a job to delete one replica of a given file"""
+        replica_storage = self.storage_ops.get_org_storage_by_ref(org, replica_ref)
+        replica_endpoint, bucket_suffix = self.strip_bucket(
+            replica_storage.endpoint_url
+        )
+        replica_file_path = bucket_suffix + file.filename
+
+        # print(f"replica: {replica_ref.get_storage_secret_name(oid)}")
+        # print(f"  endpoint: {replica_endpoint}")
+        # print(f"  path: {replica_file_path}")
+
+        job_type = BgJobType.DELETE_REPLICA.value
+
+        job_id = await self.crawl_manager.run_replica_job(
+            oid=str(org.id),
+            job_type=job_type,
+            replica_storage=replica_ref,
+            replica_file_path=replica_file_path,
+            replica_endpoint=replica_endpoint,
+            job_id_prefix=f"{job_type}-{object_id}",
+        )
+
+        delete_replica_job = DeleteReplicaJob(
+            id=job_id,
+            oid=org.id,
+            started=datetime.now(),
+            file_path=file.filename,
+            object_id=object_id,
+            object_type=object_type,
+            replica_storage=replica_ref,
+            previous_job_id=previous_job_id,
+        )
+
+        await self.jobs.find_one_and_update(
+            {"_id": job_id}, {"$set": delete_replica_job.to_dict()}, upsert=True
+        )
+
+        return job_id
 
     async def job_finished(
         self,
@@ -219,7 +258,9 @@ class BackgroundJobOps:
             {"$set": {"success": success, "finished": finished}},
         )
 
-    async def get_background_job(self, job_id: str, oid: UUID) -> BackgroundJob:
+    async def get_background_job(
+        self, job_id: str, oid: UUID
+    ) -> Union[CreateReplicaJob, DeleteReplicaJob]:
         """Get background job"""
         query: dict[str, object] = {"_id": job_id, "oid": oid}
         res = await self.jobs.find_one(query)
@@ -233,10 +274,9 @@ class BackgroundJobOps:
         if data["type"] == BgJobType.CREATE_REPLICA:
             return CreateReplicaJob.from_dict(data)
 
-        if data["type"] == BgJobType.DELETE_REPLICA:
-            return DeleteReplicaJob.from_dict(data)
+        return DeleteReplicaJob.from_dict(data)
 
-        return BackgroundJob.from_dict(data)
+        # return BackgroundJob.from_dict(data)
 
     async def list_background_jobs(
         self,
@@ -302,6 +342,64 @@ class BackgroundJobOps:
 
         return jobs, total
 
+    async def retry_background_job(
+        self, job_id: str, org: Organization
+    ) -> Dict[str, Union[bool, Optional[str]]]:
+        """Retry background job and return new job id"""
+        job = await self.get_background_job(job_id, org.id)
+        if not job:
+            raise HTTPException(status_code=404, detail="job_not_found")
+
+        if job.success:
+            raise HTTPException(status_code=400, detail="job_already_succeeded")
+
+        new_job_id = None
+
+        if job.object_type == "profile":
+            profile = await self.profile_ops.get_profile(UUID(job.object_id), org)
+            if not profile:
+                raise HTTPException(status_code=404, detail="profile_not_found")
+            file = profile.resource or None
+        else:
+            item_res = await self.base_crawl_ops.get_crawl_raw(job.object_id, org)
+            matching_files = [
+                f for f in item_res.get("files", []) if f["filename"] == job.file_path
+            ]
+            file = matching_files[0] if matching_files else None
+
+        if not file:
+            raise HTTPException(status_code=404, detail="file_not_found")
+        file = BaseFile(**file)
+
+        if job.type == BgJobType.CREATE_REPLICA:
+            primary_storage = self.storage_ops.get_org_storage_by_ref(org, file.storage)
+            primary_endpoint, bucket_suffix = self.strip_bucket(
+                primary_storage.endpoint_url
+            )
+            primary_file_path = bucket_suffix + file.filename
+            new_job_id = await self.create_replica_job(
+                org,
+                file,
+                job.object_id,
+                job.object_type,
+                job.replica_storage,
+                primary_file_path,
+                primary_endpoint,
+                job_id,
+            )
+
+        if job.type == BgJobType.DELETE_REPLICA:
+            new_job_id = await self.create_delete_replica_job(
+                org,
+                file,
+                job.object_id,
+                job.object_type,
+                job.replica_storage,
+                job_id,
+            )
+
+        return {"success": True, "new_job_id": new_job_id}
+
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
@@ -327,6 +425,17 @@ def init_background_jobs_api(mdb, org_ops, crawl_manager, storage_ops):
     ):
         """Retrieve information for background job"""
         return await ops.get_background_job(job_id, org.id)
+
+    @router.post(
+        "/{job_id}/retry",
+        tags=["backgroundjobs"],
+    )
+    async def retry_background_job(
+        job_id: str,
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        """Retry background job"""
+        return await ops.retry_background_job(job_id, org)
 
     @router.get("", tags=["backgroundjobs"], response_model=PaginatedResponse)
     async def list_background_jobs(
