@@ -18,6 +18,7 @@ from .colls import CollectionOps
 from .crawlconfigs import CrawlConfigOps
 from .crawls import CrawlOps
 from .profiles import ProfileOps
+from .proxies import ProxyOps
 from .storages import init_storages_api
 from .webhooks import EventWebhookOps
 from .background_jobs import BackgroundJobOps
@@ -62,13 +63,10 @@ def main():
         mdb, org_ops, crawl_manager, storage_ops, background_job_ops
     )
 
+    proxies = ProxyOps()
+
     crawl_config_ops = CrawlConfigOps(
-        dbclient,
-        mdb,
-        user_manager,
-        org_ops,
-        crawl_manager,
-        profile_ops,
+        dbclient, mdb, user_manager, org_ops, crawl_manager, profile_ops, proxies
     )
 
     user_manager.set_ops(org_ops, crawl_config_ops, None)

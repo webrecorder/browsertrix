@@ -41,6 +41,7 @@ export type WorkflowParams = {
   schedule: string;
   scale: number;
   profileid: string | null;
+  proxyid: string | null;
   config: SeedConfig;
   tags: string[];
   crawlTimeout: number | null;
@@ -105,6 +106,12 @@ export type Profile = {
     size: number;
     replicas: ProfileReplica[];
   };
+};
+
+export type Proxy = {
+  id: string;
+  name: string;
+  description: string;
 };
 
 export type CrawlState =

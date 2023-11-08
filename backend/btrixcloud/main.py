@@ -19,6 +19,7 @@ from .users import init_users_api, init_user_manager
 from .orgs import init_orgs_api
 
 from .profiles import init_profiles_api
+from .proxies import init_proxies_api
 
 from .storages import init_storages_api
 from .uploads import init_uploads_api
@@ -102,14 +103,17 @@ def main():
         current_active_user,
     )
 
+    proxies = init_proxies_api(org_ops)
+
     crawl_config_ops = init_crawl_config_api(
+        current_active_user,
         dbclient,
         mdb,
-        current_active_user,
         user_manager,
         org_ops,
         crawl_manager,
         profiles,
+        proxies,
     )
 
     coll_ops = init_collections_api(app, mdb, org_ops, storage_ops, event_webhook_ops)

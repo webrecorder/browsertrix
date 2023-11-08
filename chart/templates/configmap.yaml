@@ -48,6 +48,8 @@ data:
 
   STORAGES_JSON: "/ops-configs/storages.json"
 
+  PROXIES_JSON: "/ops-configs/proxies.json"
+
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -113,8 +115,6 @@ data:
     redis_node_type: "{{ .Values.redis_node_type }}"
 
     signing_secret: {{ and .Values.signer.enabled (not (empty .Values.signer.auth_token)) | ternary "signing-secret" "" }}
-
-    proxy_secret: "{{ .Values.proxy_secret }}"
 
 ---
 apiVersion: v1

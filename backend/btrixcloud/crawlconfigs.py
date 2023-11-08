@@ -74,6 +74,7 @@ class CrawlConfigOps:
         org_ops,
         crawl_manager,
         profiles,
+        proxies,
     ):
         self.dbclient = dbclient
         self.crawls = mdb["crawls"]
@@ -86,6 +87,7 @@ class CrawlConfigOps:
         self.profiles.set_crawlconfigs(self)
         self.crawl_ops = cast(CrawlOps, None)
         self.coll_ops = cast(CollectionOps, None)
+        self.proxies = proxies
 
         self.default_filename_template = os.environ["DEFAULT_CRAWL_FILENAME_TEMPLATE"]
 
@@ -202,6 +204,9 @@ class CrawlConfigOps:
             run_now = False
             print(f"Execution minutes quota exceeded for org {org.id}", flush=True)
 
+        if config.proxyid and not self.proxies.has_proxy(config.proxyid):
+            raise HTTPException(status_code=400, detail="unknown_proxy")
+
         crawl_id = await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
             storage=org.storage,
@@ -283,6 +288,8 @@ class CrawlConfigOps:
             self.check_attr_changed(orig_crawl_config, update, "schedule")
         )
         changed = changed or self.check_attr_changed(orig_crawl_config, update, "scale")
+
+        changed = changed or self.check_attr_changed(orig_crawl_config, update, "proxyid")
 
         changed = changed or (
             update.profileid is not None
@@ -919,24 +926,16 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
 
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments
-def init_crawl_config_api(
-    dbclient,
-    mdb,
-    user_dep,
-    user_manager,
-    org_ops,
-    crawl_manager,
-    profiles,
-):
+def init_crawl_config_api(user_dep, *args):
     """Init /crawlconfigs api routes"""
     # pylint: disable=invalid-name
 
-    ops = CrawlConfigOps(dbclient, mdb, user_manager, org_ops, crawl_manager, profiles)
+    ops = CrawlConfigOps(*args)
 
     router = ops.router
 
-    org_crawl_dep = org_ops.org_crawl_dep
-    org_viewer_dep = org_ops.org_viewer_dep
+    org_crawl_dep = ops.org_ops.org_crawl_dep
+    org_viewer_dep = ops.org_ops.org_viewer_dep
 
     @router.get("", response_model=PaginatedResponse)
     async def get_crawl_configs(
@@ -1067,6 +1066,7 @@ def init_crawl_config_api(
 
         return await ops.do_make_inactive(crawlconfig)
 
-    org_ops.router.include_router(router)
+    if ops.org_ops.router:
+        ops.org_ops.router.include_router(router)
 
     return ops

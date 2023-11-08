@@ -14,6 +14,7 @@ const defaultValue = {
   name: "",
   description: null,
   profileid: null,
+  proxyid: null,
   schedule: "",
   config: {
     seeds: [],

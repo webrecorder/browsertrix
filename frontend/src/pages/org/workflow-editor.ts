@@ -108,6 +108,7 @@ type FormState = {
   runNow: boolean;
   jobName: WorkflowParams["name"];
   browserProfile: Profile | null;
+  proxyid: string | null;
   tags: Tags;
   autoAddCollections: string[];
   description: WorkflowParams["description"];
@@ -184,6 +185,7 @@ const getDefaultFormState = (): FormState => ({
   runNow: true,
   jobName: "",
   browserProfile: null,
+  proxyid: null,
   tags: [],
   autoAddCollections: [],
   description: null,
@@ -552,6 +554,7 @@ export class CrawlConfigEditor extends LiteElement {
       browserProfile: this.initialWorkflow.profileid
         ? ({ id: this.initialWorkflow.profileid } as Profile)
         : defaultFormState.browserProfile,
+      proxyid: this.initialWorkflow.proxyid || defaultFormState.proxyid,
       scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
       exclusions: seedsConfig.exclude,
       includeLinkedPages:
@@ -1598,6 +1601,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
         accounts.`)
       )}
       ${this.renderFormCol(html`
+        <btrix-select-proxy
+          orgId=${this.orgId}
+          .proxyid=${this.formState.proxyid}
+          .authState=${this.authState}
+          @on-change=${(e: any) =>
+            this.updateFormState({
+              proxyid: e.detail.value,
+            })}
+        ></btrix-select-proxy>
+      `)}
+      ${this.renderHelpTextCol(msg(`Choose a proxy to crawl through.`))}
+      ${this.renderFormCol(html`
         <sl-checkbox name="blockAds" ?checked=${this.formState.blockAds}>
           ${msg("Block ads by domain")}
         </sl-checkbox>
@@ -2310,6 +2325,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       description: this.formState.description,
       scale: this.formState.scale,
       profileid: this.formState.browserProfile?.id || "",
+      proxyid: this.formState.proxyid || "",
       runNow: this.formState.runNow,
       schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
       crawlTimeout: this.formState.crawlTimeoutMinutes * 60,

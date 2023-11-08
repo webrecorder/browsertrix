@@ -272,7 +272,7 @@ class CrawlConfigIn(BaseModel):
 
     profileid: Union[UUID, EmptyStr, None]
 
-    proxyid: Optional[str]
+    proxyid: Optional[str] = None
 
     autoAddCollections: Optional[List[UUID]] = []
     tags: Optional[List[str]] = []
@@ -296,7 +296,7 @@ class ConfigRevision(BaseMongoModel):
 
     profileid: Optional[UUID]
 
-    proxyid: Optional[str]
+    proxyid: Optional[str] = None
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
@@ -327,7 +327,7 @@ class CrawlConfigCore(BaseMongoModel):
 
     profileid: Optional[UUID]
 
-    proxyid: Optional[str]
+    proxyid: Optional[str] = None
 
 
 # ============================================================================
@@ -418,6 +418,7 @@ class UpdateCrawlConfig(BaseModel):
     # crawl data: revision tracked
     schedule: Optional[str] = None
     profileid: Union[UUID, EmptyStr, None] = None
+    proxyid: Optional[str] = None
     crawlTimeout: Optional[int] = None
     maxCrawlSize: Optional[int] = None
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = None  # type: ignore
@@ -1000,6 +1001,8 @@ class PaginatedResponse(BaseModel):
 
 # ============================================================================
 class Proxy(BaseModel):
+    """Base proxy config, actual data stored in secrets"""
+
     id: str
     name: str
     description: Optional[str] = ""
