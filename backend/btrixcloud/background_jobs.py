@@ -349,6 +349,8 @@ class BackgroundJobOps:
             file = profile.resource or None
         else:
             item_res = await self.base_crawl_ops.get_crawl_raw(job.object_id, org)
+            if not item_res:
+                raise HTTPException(status_code=404, detail="item_not_found")
             matching_files = [
                 f for f in item_res.get("files", []) if f["filename"] == job.file_path
             ]
