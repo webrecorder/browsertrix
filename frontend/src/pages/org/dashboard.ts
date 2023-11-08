@@ -356,12 +356,28 @@ export class Dashboard extends LiteElement {
 
   private renderCrawlingMeter(_metrics: Metrics) {
     let quotaSeconds = 0;
+
     if (this.org!.quotas && this.org!.quotas.maxExecMinutesPerMonth) {
       quotaSeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
     }
 
-    let usageSeconds = 0;
+    let quotaSecondsAllTypes = quotaSeconds;
+
+    let quotaSecondsExtra = 0;
+    if (this.org!.extraExecSecondsAvailable) {
+      quotaSecondsExtra = this.org!.extraExecSecondsAvailable;
+      quotaSecondsAllTypes += this.org!.extraExecSecondsAvailable;
+    }
+
+    let quotaSecondsGifted = 0;
+    if (this.org!.giftedExecSecondsAvailable) {
+      quotaSecondsGifted = this.org!.giftedExecSecondsAvailable;
+      quotaSecondsAllTypes += this.org!.giftedExecSecondsAvailable;
+    }
+
     const now = new Date();
+
+    let usageSeconds = 0;
     if (this.org!.crawlExecSeconds) {
       const actualUsage =
         this.org!.crawlExecSeconds[
@@ -372,11 +388,43 @@ export class Dashboard extends LiteElement {
       }
     }
 
-    const hasQuota = Boolean(quotaSeconds);
-    const isReached = hasQuota && usageSeconds >= quotaSeconds;
+    let usageSecondsAllTypes = usageSeconds;
 
+    let usageSecondsExtra = 0;
+    if (this.org!.extraExecSeconds) {
+      usageSecondsExtra =
+        this.org!.extraExecSeconds[
+          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
+        ];
+    }
+    if (usageSecondsExtra) {
+      usageSecondsAllTypes += usageSecondsExtra;
+      // Quota for extra = this month's usage + remaining available
+      quotaSecondsAllTypes += usageSecondsExtra;
+      quotaSecondsExtra += usageSecondsExtra;
+    }
+
+    let usageSecondsGifted = 0;
+    if (this.org!.giftedExecSeconds) {
+      usageSecondsGifted =
+        this.org!.giftedExecSeconds[
+          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
+        ];
+    }
+    if (usageSecondsGifted) {
+      usageSecondsAllTypes += usageSecondsGifted;
+      // Quota for gifted = this month's usage + remaining available
+      quotaSecondsAllTypes += usageSecondsGifted;
+      quotaSecondsGifted += usageSecondsGifted;
+    }
+
+    const hasQuota = Boolean(quotaSecondsAllTypes);
+    const isReached = hasQuota && usageSecondsAllTypes >= quotaSecondsAllTypes;
+
+    const maxTotalTime = quotaSeconds + quotaSecondsExtra + quotaSecondsGifted;
     if (isReached) {
-      usageSeconds = quotaSeconds;
+      usageSecondsAllTypes = maxTotalTime;
+      quotaSecondsAllTypes = maxTotalTime;
     }
 
     const renderBar = (
@@ -386,14 +434,13 @@ export class Dashboard extends LiteElement {
       color: string
     ) => html`
       <btrix-meter-bar
-        value=${(value / usageSeconds) * 100}
-        style="--background-color:var(--sl-color-${color}-400)"
+        value=${(value / quotaSecondsAllTypes) * 100}
+        style="--background-color:var(--sl-color-${color})"
       >
         <div class="text-center">
           <div>${label}</div>
           <div class="text-xs opacity-80">
-            ${humanizeExecutionSeconds(value)} |
-            ${this.renderPercentage(value / quotaSeconds)}
+            ${humanizeExecutionSeconds(value, "short")}
           </div>
         </div>
       </btrix-meter-bar>
@@ -408,14 +455,14 @@ export class Dashboard extends LiteElement {
                 class="text-danger"
                 name="exclamation-triangle"
               ></sl-icon>
-              <span>${msg("Monthly Execution Minutes Quota Reached")}</span>
+              <span>${msg("Execution Minutes Quota Reached")}</span>
             </div>
           `,
           () =>
             hasQuota
               ? html`
                   <span class="inline-flex items-center">
-                    ${humanizeExecutionSeconds(quotaSeconds - usageSeconds)}
+                    ${humanizeExecutionSeconds((quotaSecondsAllTypes - usageSecondsAllTypes), "short"}
                     ${msg("Available")}
                   </span>
                 `
@@ -427,15 +474,54 @@ export class Dashboard extends LiteElement {
         () => html`
           <div class="mb-2">
             <btrix-meter
-              value=${isReached ? quotaSeconds : usageSeconds}
-              max=${ifDefined(quotaSeconds || undefined)}
+              value=${quotaSecondsAllTypes}
+              max=${quotaSecondsAllTypes}
               valueText=${msg("time")}
             >
               ${when(usageSeconds, () =>
                 renderBar(
-                  usageSeconds,
-                  msg("Monthly Execution Time Used"),
-                  isReached ? "warning" : this.colors.runningTime
+                  usageSeconds > quotaSeconds ? quotaSeconds : usageSeconds,
+                  msg("Monthly Execution Time"),
+                  "green-400"
+                )
+              )}
+              ${when(usageSecondsGifted, () =>
+                renderBar(
+                  usageSecondsGifted > quotaSecondsGifted
+                    ? quotaSecondsGifted
+                    : usageSecondsGifted,
+                  msg("Gifted Execution Time"),
+                  "blue-400"
+                )
+              )}
+              ${when(usageSecondsExtra, () =>
+                renderBar(
+                  usageSecondsExtra > quotaSecondsExtra
+                    ? quotaSecondsExtra
+                    : usageSecondsExtra,
+                  msg("Extra Execution Time"),
+                  "red-400"
+                )
+              )}
+              ${when(quotaSeconds && usageSeconds < quotaSeconds, () =>
+                renderBar(
+                  quotaSeconds - usageSeconds,
+                  msg("Monthly Execution Time Available"),
+                  "green-100"
+                )
+              )}
+              ${when(this.org!.giftedExecSecondsAvailable, () =>
+                renderBar(
+                  this.org!.giftedExecSecondsAvailable,
+                  msg("Gifted Execution Time Available"),
+                  "blue-100"
+                )
+              )}
+              ${when(this.org!.extraExecSecondsAvailable, () =>
+                renderBar(
+                  this.org!.extraExecSecondsAvailable,
+                  msg("Extra Execution Time Available"),
+                  "red-100"
                 )
               )}
               <div slot="available" class="flex-1">
@@ -453,10 +539,10 @@ export class Dashboard extends LiteElement {
                 </sl-tooltip>
               </div>
               <span slot="valueLabel">
-                ${humanizeExecutionSeconds(usageSeconds, "short")}
+                ${humanizeExecutionSeconds(usageSecondsAllTypes, "short")}
               </span>
               <span slot="maxLabel">
-                ${humanizeExecutionSeconds(quotaSeconds, "short")}
+                ${humanizeExecutionSeconds(quotaSecondsAllTypes, "short")}
               </span>
             </btrix-meter>
           </div>
@@ -539,7 +625,16 @@ export class Dashboard extends LiteElement {
   readonly usageTableCols = [
     msg("Month"),
     html`
-      ${msg("Execution Time")}
+      ${msg("Elapsed Time")}
+      <sl-tooltip>
+        <div slot="content" style="text-transform: initial">
+          ${msg("Total time elapsed between when crawls started and ended")}
+        </div>
+        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+      </sl-tooltip>
+    `,
+    html`
+      ${msg("Total Execution Time")}
       <sl-tooltip>
         <div slot="content" style="text-transform: initial">
           ${msg("Total running time of all crawler instances")}
@@ -548,10 +643,28 @@ export class Dashboard extends LiteElement {
       </sl-tooltip>
     `,
     html`
-      ${msg("Elapsed Time")}
+      ${msg("Execution: Monthly")}
       <sl-tooltip>
         <div slot="content" style="text-transform: initial">
-          ${msg("Total time elapsed between when crawls started and ended")}
+          ${msg("Monthly execution time used on crawls this month")}
+        </div>
+        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+      </sl-tooltip>
+    `,
+    html`
+      ${msg("Execution: Extra")}
+      <sl-tooltip>
+        <div slot="content" style="text-transform: initial">
+          ${msg("Billable rollover execution time used on crawls this month")}
+        </div>
+        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+      </sl-tooltip>
+    `,
+    html`
+      ${msg("Execution: Gifted")}
+      <sl-tooltip>
+        <div slot="content" style="text-transform: initial">
+          ${msg("Gifted execution time used on crawls this month")}
         </div>
         <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
       </sl-tooltip>
@@ -564,7 +677,35 @@ export class Dashboard extends LiteElement {
       // Sort latest
       .reverse()
       .map(([mY, crawlTime]) => {
-        const value = this.org!.crawlExecSeconds?.[mY];
+        let value = this.org!.crawlExecSeconds?.[mY] || 0;
+        let maxMonthlySeconds = 0;
+        if (this.org!.quotas.maxExecMinutesPerMonth) {
+          maxMonthlySeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
+        }
+        if (value > maxMonthlySeconds) {
+          value = maxMonthlySeconds;
+        }
+
+        let extraSecondsUsed = this.org!.extraExecSeconds?.[mY] || 0;
+        let maxExtraSeconds = 0;
+        if (this.org!.quotas.extraExecMinutes) {
+          maxExtraSeconds = this.org!.quotas.extraExecMinutes * 60;
+        }
+        if (extraSecondsUsed > maxExtraSeconds) {
+          extraSecondsUsed = maxExtraSeconds;
+        }
+
+        let giftedSecondsUsed = this.org!.giftedExecSeconds?.[mY] || 0;
+        let maxGiftedSeconds = 0;
+        if (this.org!.quotas.giftedExecMinutes) {
+          maxGiftedSeconds = this.org!.quotas.giftedExecMinutes * 60;
+        }
+        if (giftedSecondsUsed > maxGiftedSeconds) {
+          giftedSecondsUsed = maxGiftedSeconds;
+        }
+
+        const totalTimeSeconds = value + extraSecondsUsed + giftedSecondsUsed;
+
         return [
           html`
             <sl-format-date
@@ -575,8 +716,22 @@ export class Dashboard extends LiteElement {
             >
             </sl-format-date>
           `,
+<<<<<<< HEAD
           value ? humanizeExecutionSeconds(value) : "--",
           humanizeSeconds(crawlTime || 0),
+=======
+          humanizeMilliseconds((crawlTime || 0) * 1000),
+          totalTimeSeconds
+            ? humanizeMilliseconds(totalTimeSeconds * 1000)
+            : "--",
+          value ? humanizeMilliseconds(value * 1000) : "--",
+          extraSecondsUsed
+            ? humanizeMilliseconds(extraSecondsUsed * 1000)
+            : "--",
+          giftedSecondsUsed
+            ? humanizeMilliseconds(giftedSecondsUsed * 1000)
+            : "--",
+>>>>>>> 7bd5ab86 (Implement extra and gifted execution minutes)
         ];
       });
     return html`

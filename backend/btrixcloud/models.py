@@ -817,6 +817,16 @@ class OrgQuotas(BaseModel):
     maxPagesPerCrawl: Optional[int] = 0
     storageQuota: Optional[int] = 0
     maxExecMinutesPerMonth: Optional[int] = 0
+    extraExecMinutes: Optional[int] = 0
+    giftedExecMinutes: Optional[int] = 0
+
+
+# ============================================================================
+class OrgQuotaUpdate(BaseModel):
+    """Organization quota update (to track changes over time)"""
+
+    modified: datetime
+    update: OrgQuotas
 
 
 # ============================================================================
@@ -852,9 +862,16 @@ class OrgOut(BaseMongoModel):
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
     quotas: Optional[OrgQuotas] = OrgQuotas()
+    quotaUpdates: Optional[List[OrgQuotaUpdate]] = []
 
     storageQuotaReached: Optional[bool]
     execMinutesQuotaReached: Optional[bool]
+
+    extraExecSeconds: Dict[str, int] = {}
+    giftedExecSeconds: Dict[str, int] = {}
+
+    extraExecSecondsAvailable: int = 0
+    giftedExecSecondsAvailable: int = 0
 
 
 # ============================================================================
@@ -876,6 +893,8 @@ class Organization(BaseMongoModel):
 
     usage: Dict[str, int] = {}
     crawlExecSeconds: Dict[str, int] = {}
+    extraExecSeconds: Dict[str, int] = {}
+    giftedExecSeconds: Dict[str, int] = {}
 
     bytesStored: int = 0
     bytesStoredCrawls: int = 0
@@ -885,10 +904,15 @@ class Organization(BaseMongoModel):
     default: bool = False
 
     quotas: Optional[OrgQuotas] = OrgQuotas()
+    quotaUpdates: Optional[List[OrgQuotaUpdate]] = []
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 
     origin: Optional[AnyHttpUrl] = None
+
+    # TODO: Add migration so that we are sure this is not None
+    extraExecSecondsAvailable: int = 0
+    giftedExecSecondsAvailable: int = 0
 
     def is_owner(self, user):
         """Check if user is owner"""
