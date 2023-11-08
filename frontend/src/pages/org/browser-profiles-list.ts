@@ -106,7 +106,7 @@ export class BrowserProfilesList extends LiteElement {
               <span>${data.name}</span>
               ${when(
                 data.resource && data.resource.replicas.length > 0,
-                () => html` <sl-tooltip content=${msg("Profile replicated")}>
+                () => html` <sl-tooltip content=${msg("Backed up")}>
                   <sl-icon
                     name="clouds"
                     class="w-4 h-4 ml-2 align-text-bottom text-success"

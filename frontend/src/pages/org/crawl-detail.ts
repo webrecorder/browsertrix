@@ -798,9 +798,7 @@ ${this.crawl?.description}
                     >
                       ${when(
                         file.numReplicas > 0,
-                        () => html` <sl-tooltip
-                          content=${msg("File replicated")}
-                        >
+                        () => html` <sl-tooltip content=${msg("Backed up")}>
                           <sl-icon
                             name="clouds"
                             class="w-4 h-4 mr-2 align-text-bottom shrink-0 text-success"
