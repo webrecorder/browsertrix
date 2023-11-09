@@ -7,6 +7,7 @@ from uuid import UUID
 import urllib.parse
 import contextlib
 
+import asyncio
 from fastapi import HTTPException, Depends
 
 from .models import (
@@ -345,6 +346,10 @@ class BaseCrawlOps:
                     cids_to_update[cid] = {}
                     cids_to_update[cid]["inc"] = 1
                     cids_to_update[cid]["size"] = crawl_size
+
+            asyncio.create_task(
+                self.event_webhook_ops.create_crawl_deleted_notification(crawl_id, org)
+            )
 
         query = {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id, "type": type_}
         res = await self.crawls.delete_many(query)
