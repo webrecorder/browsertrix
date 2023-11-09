@@ -90,7 +90,7 @@ def main():
     storage_ops = init_storages_api(org_ops, crawl_manager)
 
     background_job_ops = init_background_jobs_api(
-        mdb, org_ops, crawl_manager, storage_ops
+        mdb, email, user_manager, org_ops, crawl_manager, storage_ops
     )
 
     profiles = init_profiles_api(

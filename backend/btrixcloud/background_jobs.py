@@ -1,4 +1,5 @@
 """k8s background jobs"""
+import asyncio
 from datetime import datetime
 from typing import Optional, Tuple, Union, List, Dict, TYPE_CHECKING, cast
 from uuid import UUID
@@ -31,6 +32,7 @@ else:
 
 
 # ============================================================================
+# pylint: disable=too-many-instance-attributes
 class BackgroundJobOps:
     """k8s background job management"""
 
@@ -43,8 +45,11 @@ class BackgroundJobOps:
 
     # pylint: disable=too-many-locals, too-many-arguments, invalid-name
 
-    def __init__(self, mdb, org_ops, crawl_manager, storage_ops):
+    def __init__(self, mdb, email, user_manager, org_ops, crawl_manager, storage_ops):
         self.jobs = mdb["jobs"]
+
+        self.email = email
+        self.user_manager = user_manager
 
         self.org_ops = org_ops
         self.crawl_manager = crawl_manager
@@ -215,6 +220,21 @@ class BackgroundJobOps:
         if success:
             if job_type == BgJobType.CREATE_REPLICA:
                 await self.handle_replica_job_finished(cast(CreateReplicaJob, job))
+        else:
+            print(
+                f"Background job {job.id} failed, sending email to superuser",
+                flush=True,
+            )
+            superuser = await self.user_manager.get_superuser()
+            org = await self.org_ops.get_org_by_id(job.oid)
+            await asyncio.get_event_loop().run_in_executor(
+                None,
+                self.email.send_background_job_failed,
+                job,
+                org,
+                finished,
+                superuser.email,
+            )
 
         await self.jobs.find_one_and_update(
             {"_id": job_id, "oid": oid},
@@ -307,11 +327,15 @@ class BackgroundJobOps:
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
-def init_background_jobs_api(mdb, org_ops, crawl_manager, storage_ops):
+def init_background_jobs_api(
+    mdb, email, user_manager, org_ops, crawl_manager, storage_ops
+):
     """init background jobs system"""
     # pylint: disable=invalid-name
 
-    ops = BackgroundJobOps(mdb, org_ops, crawl_manager, storage_ops)
+    ops = BackgroundJobOps(
+        mdb, email, user_manager, org_ops, crawl_manager, storage_ops
+    )
 
     router = ops.router
 

@@ -1,11 +1,14 @@
 """ Basic Email Sending Support"""
 
+from datetime import datetime
 import os
 import smtplib
 import ssl
-from typing import Optional
+from typing import Optional, Union
 
 from email.message import EmailMessage
+
+from .models import CreateReplicaJob, DeleteReplicaJob, Organization
 from .utils import is_bool
 
 
@@ -137,3 +140,30 @@ to create a new password
         """
 
         self._send_encrypted(receiver_email, "Password Reset", message)
+
+    def send_background_job_failed(
+        self,
+        job: Union[CreateReplicaJob, DeleteReplicaJob],
+        org: Organization,
+        finished: datetime,
+        receiver_email: str,
+    ):
+        """Send background job failed email to superuser"""
+        message = f"""
+Failed Background Job
+---------------------
+
+Organization: {org.name} ({job.oid})
+Job type: {job.type}
+
+Job ID: {job.id}
+Started: {job.started.isoformat(sep=" ", timespec="seconds")}Z
+Finished: {finished.isoformat(sep=" ", timespec="seconds")}Z
+
+Object type: {job.object_type}
+Object ID: {job.object_id}
+File path: {job.file_path}
+Replica storage name: {job.replica_storage.name}
+        """
+
+        self._send_encrypted(receiver_email, "Failed Background Job", message)

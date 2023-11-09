@@ -54,7 +54,9 @@ def main():
 
     storage_ops = init_storages_api(org_ops, crawl_manager)
 
-    background_job_ops = BackgroundJobOps(mdb, org_ops, crawl_manager, storage_ops)
+    background_job_ops = BackgroundJobOps(
+        mdb, email, user_manager, org_ops, crawl_manager, storage_ops
+    )
 
     profile_ops = ProfileOps(
         mdb, org_ops, crawl_manager, storage_ops, background_job_ops
