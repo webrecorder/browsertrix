@@ -155,7 +155,7 @@ class ProfileOps:
         if not profileid:
             profileid = uuid4()
 
-        filename_data = {"filename": f"profile-{profileid}.tar.gz"}
+        filename_data = {"filename": f"profiles/profile-{profileid}.tar.gz"}
 
         json = await self._send_browser_req(
             browser_commit.browserid, "/createProfileJS", "POST", json=filename_data
