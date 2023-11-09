@@ -1119,8 +1119,6 @@ class UserUpdatePassword(BaseModel):
 class WebhookNotificationBody(BaseModel):
     """Base POST body model for webhook notifications"""
 
-    downloadUrls: Optional[List] = None
-
     # Store as str, not UUID, to make JSON-serializable
     orgId: str
 
@@ -1143,6 +1141,7 @@ class BaseCollectionItemBody(WebhookNotificationBody):
 
     collectionId: str
     itemIds: List[str]
+    downloadUrl: str
 
 
 # ============================================================================

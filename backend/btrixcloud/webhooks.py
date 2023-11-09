@@ -304,7 +304,7 @@ class EventWebhookOps:
                 f"{org.origin}/api/orgs/{org.id}/collections/{coll_id}/download"
             )
 
-        body.downloadUrls = [coll_download_url]
+        body.downloadUrl = coll_download_url
 
         notification = WebhookNotification(
             id=uuid4(),
