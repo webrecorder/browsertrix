@@ -37,9 +37,9 @@ spec:
               - key: config.yaml
                 path: config.yaml
 
-        - name: storages
+        - name: ops-configs
           secret:
-            secretName: storages
+            secretName: ops-configs
 
         - name: app-templates
           configMap:
@@ -51,9 +51,9 @@ spec:
           imagePullPolicy: {{ .Values.backend_pull_policy }}
           envFrom:
             - configMapRef:
-                name: {{ .Values.name }}-env-config
+                name: backend-env-config
             - secretRef:
-                name: auth-secrets
+                name: backend-auth
             - secretRef:
                 name: mongo-auth
 
@@ -62,8 +62,8 @@ spec:
               value: "{{ .Values.backend_workers | default 4 }}"
 
           volumeMounts:
-            - name: storages
-              mountPath: /tmp/storages/
+            - name: ops-configs
+              mountPath: /ops-configs/
 
             - name: app-templates
               mountPath: /app/btrixcloud/templates/
@@ -119,9 +119,9 @@ spec:
 
           envFrom:
             - configMapRef:
-                name: {{ .Values.name }}-env-config
+                name: backend-env-config
             - secretRef:
-                name: auth-secrets
+                name: backend-auth
             - secretRef:
                 name: mongo-auth
 
@@ -133,8 +133,8 @@ spec:
             - name: config-volume
               mountPath: /config
 
-            - name: storages
-              mountPath: /tmp/storages/
+            - name: ops-configs
+              mountPath: /ops-configs/
 
             - name: app-templates
               mountPath: /app/btrixcloud/templates/

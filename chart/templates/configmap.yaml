@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.name }}-env-config
+  name: backend-env-config
   namespace: {{ .Release.Namespace }}
 
 data:
@@ -45,6 +45,8 @@ data:
   LOG_FAILED_CRAWL_LINES: "{{ .Values.log_failed_crawl_lines | default 0 }}"
 
   IS_LOCAL_MINIO: "{{ .Values.minio_local }}"
+
+  STORAGES_JSON: "/ops-configs/storages.json"
 
 ---
 apiVersion: v1
@@ -110,7 +112,7 @@ data:
     crawler_node_type: "{{ .Values.crawler_node_type }}"
     redis_node_type: "{{ .Values.redis_node_type }}"
 
-    signing_secret: {{ .Values.signer.enabled | ternary "signing-secret" "" }}
+    signing_secret: {{ and .Values.signer.enabled (not (empty .Values.signer.auth_token)) | ternary "signing-secret" "" }}
 
 ---
 apiVersion: v1

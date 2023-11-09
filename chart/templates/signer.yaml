@@ -1,5 +1,21 @@
 {{- if .Values.signer.enabled }}
 
+{{ $signer_port := default "5053" .Values.signer.port }}
+
+{{- if .Values.signer.auth_token }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: signing-secret
+  namespace: {{ .Values.crawler_namespace }}
+
+type: Opaque
+stringData:
+  WACZ_SIGN_URL: "http://auth-signer.{{ .Release.Namespace }}:{{ $signer_port }}/sign"
+  WACZ_SIGN_TOKEN: "{{ .Values.signer.auth_token }}"
+{{- end }}
+
 ---
 apiVersion: v1
 kind: Secret
@@ -95,7 +111,7 @@ spec:
         - name: signer
           image: {{ .Values.signer.image }}
           imagePullPolicy: {{ .Values.signer.image_pull_policy }}
-          command: ["uvicorn", "authsign.main:app", "--port", "5053", "--host", "0.0.0.0", "--log-config", "/app/log.json"]
+          command: ["uvicorn", "authsign.main:app", "--port", "{{ $signer_port }}", "--host", "0.0.0.0", "--log-config", "/app/log.json"]
           env:
             - name: CONFIG
               value: "/app-config/config.yaml"
@@ -141,7 +157,7 @@ spec:
       name: signer-cert
 
     - protocol: TCP
-      port: 5053
+      port: {{ $signer_port }}
       name: signer-api
 
 

@@ -8,7 +8,7 @@ metadata:
 
 spec:
   concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 2
+  successfulJobsHistoryLimit: 0
   failedJobsHistoryLimit: 2
 
   schedule: "{{ schedule }}"
