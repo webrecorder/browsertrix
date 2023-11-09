@@ -120,7 +120,7 @@ class BackgroundJobOps:
         replica_ref: StorageRef,
         primary_file_path: str,
         primary_endpoint: str,
-        previous_job_id: Optional[str] = None,
+        existing_job_id: Optional[str] = None,
     ) -> str:
         """Create k8s background job to replicate a file to a specific replica storage location."""
         replica_storage = self.storage_ops.get_org_storage_by_ref(org, replica_ref)
@@ -131,34 +131,48 @@ class BackgroundJobOps:
 
         job_type = BgJobType.CREATE_REPLICA.value
 
-        job_id = await self.crawl_manager.run_replica_job(
-            oid=str(org.id),
-            job_type=job_type,
-            primary_storage=file.storage,
-            primary_file_path=primary_file_path,
-            primary_endpoint=primary_endpoint,
-            replica_storage=replica_ref,
-            replica_file_path=replica_file_path,
-            replica_endpoint=replica_endpoint,
-            job_id_prefix=f"{job_type}-{object_id}",
-        )
-        replication_job = CreateReplicaJob(
-            id=job_id,
-            oid=org.id,
-            started=datetime.now(),
-            file_path=file.filename,
-            object_type=object_type,
-            object_id=object_id,
-            primary=file.storage,
-            replica_storage=replica_ref,
-            previous_job_id=previous_job_id,
-        )
+        try:
+            job_id = await self.crawl_manager.run_replica_job(
+                oid=str(org.id),
+                job_type=job_type,
+                primary_storage=file.storage,
+                primary_file_path=primary_file_path,
+                primary_endpoint=primary_endpoint,
+                replica_storage=replica_ref,
+                replica_file_path=replica_file_path,
+                replica_endpoint=replica_endpoint,
+                job_id_prefix=f"{job_type}-{object_id}",
+                existing_job_id=existing_job_id,
+            )
+            if existing_job_id:
+                replication_job = await self.get_background_job(existing_job_id, org.id)
+                if replication_job.previousAttempts:
+                    replication_job.previousAttempts.append(replication_job.to_dict())
+                else:
+                    replication_job.previousAttempts = [replication_job.to_dict()]
+                replication_job.started = datetime.now()
+                replication_job.finished = None
+                replication_job.success = None
+            else:
+                replication_job = CreateReplicaJob(
+                    id=job_id,
+                    oid=org.id,
+                    started=datetime.now(),
+                    file_path=file.filename,
+                    object_type=object_type,
+                    object_id=object_id,
+                    primary=file.storage,
+                    replica_storage=replica_ref,
+                )
 
-        await self.jobs.find_one_and_update(
-            {"_id": job_id}, {"$set": replication_job.to_dict()}, upsert=True
-        )
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": replication_job.to_dict()}, upsert=True
+            )
 
-        return job_id
+            return job_id
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
 
     async def create_delete_replica_jobs(
         self, org: Organization, file: BaseFile, object_id: str, object_type: str
@@ -181,7 +195,7 @@ class BackgroundJobOps:
         object_id: str,
         object_type: str,
         replica_ref: StorageRef,
-        previous_job_id: Optional[str] = None,
+        existing_job_id: Optional[str] = None,
     ) -> str:
         """Create a job to delete one replica of a given file"""
         replica_storage = self.storage_ops.get_org_storage_by_ref(org, replica_ref)
@@ -192,31 +206,52 @@ class BackgroundJobOps:
 
         job_type = BgJobType.DELETE_REPLICA.value
 
-        job_id = await self.crawl_manager.run_replica_job(
-            oid=str(org.id),
-            job_type=job_type,
-            replica_storage=replica_ref,
-            replica_file_path=replica_file_path,
-            replica_endpoint=replica_endpoint,
-            job_id_prefix=f"{job_type}-{object_id}",
-        )
+        try:
+            job_id = await self.crawl_manager.run_replica_job(
+                oid=str(org.id),
+                job_type=job_type,
+                replica_storage=replica_ref,
+                replica_file_path=replica_file_path,
+                replica_endpoint=replica_endpoint,
+                job_id_prefix=f"{job_type}-{object_id}",
+                existing_job_id=existing_job_id,
+            )
 
-        delete_replica_job = DeleteReplicaJob(
-            id=job_id,
-            oid=org.id,
-            started=datetime.now(),
-            file_path=file.filename,
-            object_id=object_id,
-            object_type=object_type,
-            replica_storage=replica_ref,
-            previous_job_id=previous_job_id,
-        )
+            if existing_job_id:
+                delete_replica_job = await self.get_background_job(
+                    existing_job_id, org.id
+                )
+                if delete_replica_job.previousAttempts:
+                    delete_replica_job.previousAttempts.append(
+                        delete_replica_job.to_dict()
+                    )
+                else:
+                    delete_replica_job.previousAttempts = [delete_replica_job.to_dict()]
+                delete_replica_job.started = datetime.now()
+                delete_replica_job.finished = None
+                delete_replica_job.success = None
+            else:
+                delete_replica_job = DeleteReplicaJob(
+                    id=job_id,
+                    oid=org.id,
+                    started=datetime.now(),
+                    file_path=file.filename,
+                    object_id=object_id,
+                    object_type=object_type,
+                    replica_storage=replica_ref,
+                )
 
-        await self.jobs.find_one_and_update(
-            {"_id": job_id}, {"$set": delete_replica_job.to_dict()}, upsert=True
-        )
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": delete_replica_job.to_dict()}, upsert=True
+            )
 
-        return job_id
+            return job_id
+
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(
+                status_code=400, detail=f"Error starting background job: {exc}"
+            )
 
     async def job_finished(
         self,
@@ -355,6 +390,9 @@ class BackgroundJobOps:
         if not job:
             raise HTTPException(status_code=404, detail="job_not_found")
 
+        if not job.finished:
+            raise HTTPException(status_code=400, detail="job_not_finished")
+
         if job.success:
             raise HTTPException(status_code=400, detail="job_already_succeeded")
 
@@ -368,7 +406,7 @@ class BackgroundJobOps:
                 primary_storage.endpoint_url
             )
             primary_file_path = bucket_suffix + file.filename
-            new_job_id = await self.create_replica_job(
+            await self.create_replica_job(
                 org,
                 file,
                 job.object_id,
@@ -376,20 +414,20 @@ class BackgroundJobOps:
                 job.replica_storage,
                 primary_file_path,
                 primary_endpoint,
-                job_id,
+                existing_job_id=job_id,
             )
 
         if job.type == BgJobType.DELETE_REPLICA:
-            new_job_id = await self.create_delete_replica_job(
+            await self.create_delete_replica_job(
                 org,
                 file,
                 job.object_id,
                 job.object_type,
                 job.replica_storage,
-                job_id,
+                existing_job_id=job_id,
             )
 
-        return {"success": True, "new_job_id": new_job_id}
+        return {"success": True}
 
 
 # ============================================================================
