@@ -1184,7 +1184,14 @@ class BaseArchivedItemBody(WebhookNotificationBody):
     """Webhook notification POST body for when archived item is started or finished"""
 
     itemId: str
-    resources: Optional[List[CrawlFileOut]] = None
+
+
+# ============================================================================
+class BaseArchivedItemFinishedBody(BaseArchivedItemBody):
+    """Webhook notification POST body for when archived item is finished"""
+
+    resources: List[CrawlFileOut]
+    state: str
 
 
 # ============================================================================
@@ -1196,11 +1203,10 @@ class CrawlStartedBody(BaseArchivedItemBody):
 
 
 # ============================================================================
-class CrawlFinishedBody(BaseArchivedItemBody):
+class CrawlFinishedBody(BaseArchivedItemFinishedBody):
     """Webhook notification POST body for when crawl finishes"""
 
     event: Literal[WebhookEventType.CRAWL_FINISHED] = WebhookEventType.CRAWL_FINISHED
-    state: str
 
 
 # ============================================================================
@@ -1211,7 +1217,7 @@ class CrawlDeletedBody(BaseArchivedItemBody):
 
 
 # ============================================================================
-class UploadFinishedBody(BaseArchivedItemBody):
+class UploadFinishedBody(BaseArchivedItemFinishedBody):
     """Webhook notification POST body for when upload finishes"""
 
     event: Literal[WebhookEventType.UPLOAD_FINISHED] = WebhookEventType.UPLOAD_FINISHED

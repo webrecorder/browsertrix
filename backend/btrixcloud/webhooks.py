@@ -256,6 +256,7 @@ class EventWebhookOps:
                 itemId=crawl_id,
                 orgId=str(org.id),
                 state=state,
+                resources=[],
             ),
         )
 
@@ -289,7 +290,7 @@ class EventWebhookOps:
             org,
             event=WebhookEventType.UPLOAD_FINISHED,
             body=UploadFinishedBody(
-                itemId=crawl_id, orgId=str(org.id), state="complete"
+                itemId=crawl_id, orgId=str(org.id), state="complete", resources=[]
             ),
         )
 
