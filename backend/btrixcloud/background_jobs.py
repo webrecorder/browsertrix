@@ -149,7 +149,6 @@ class BackgroundJobOps:
                 previous_attempt = {
                     "started": replication_job.started,
                     "finished": replication_job.finished,
-                    "success": replication_job.success,
                 }
                 if replication_job.previousAttempts:
                     replication_job.previousAttempts.append(previous_attempt)
@@ -229,7 +228,6 @@ class BackgroundJobOps:
                 previous_attempt = {
                     "started": delete_replica_job.started,
                     "finished": delete_replica_job.finished,
-                    "success": delete_replica_job.success,
                 }
                 if delete_replica_job.previousAttempts:
                     delete_replica_job.previousAttempts.append(previous_attempt)
