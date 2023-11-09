@@ -146,10 +146,15 @@ class BackgroundJobOps:
             )
             if existing_job_id:
                 replication_job = await self.get_background_job(existing_job_id, org.id)
+                previous_attempt = {
+                    "started": replication_job.started,
+                    "finished": replication_job.finished,
+                    "success": replication_job.success,
+                }
                 if replication_job.previousAttempts:
-                    replication_job.previousAttempts.append(replication_job.to_dict())
+                    replication_job.previousAttempts.append(previous_attempt)
                 else:
-                    replication_job.previousAttempts = [replication_job.to_dict()]
+                    replication_job.previousAttempts = [previous_attempt]
                 replication_job.started = datetime.now()
                 replication_job.finished = None
                 replication_job.success = None
@@ -221,12 +226,15 @@ class BackgroundJobOps:
                 delete_replica_job = await self.get_background_job(
                     existing_job_id, org.id
                 )
+                previous_attempt = {
+                    "started": delete_replica_job.started,
+                    "finished": delete_replica_job.finished,
+                    "success": delete_replica_job.success,
+                }
                 if delete_replica_job.previousAttempts:
-                    delete_replica_job.previousAttempts.append(
-                        delete_replica_job.to_dict()
-                    )
+                    delete_replica_job.previousAttempts.append(previous_attempt)
                 else:
-                    delete_replica_job.previousAttempts = [delete_replica_job.to_dict()]
+                    delete_replica_job.previousAttempts = [previous_attempt]
                 delete_replica_job.started = datetime.now()
                 delete_replica_job.finished = None
                 delete_replica_job.success = None
