@@ -1,4 +1,5 @@
 """k8s background jobs"""
+import asyncio
 from datetime import datetime
 from typing import Optional, Tuple, Union, List, Dict, TYPE_CHECKING, cast
 from uuid import UUID
@@ -224,7 +225,14 @@ class BackgroundJobOps:
             )
             superuser = await self.user_manager.get_superuser()
             org = await self.org_ops.get_org_by_id(job.oid)
-            self.email.send_background_job_failed(job, org, finished, superuser.email)
+            await asyncio.get_event_loop().run_in_executor(
+                None,
+                self.email.send_background_job_failed,
+                job,
+                org,
+                finished,
+                superuser.email,
+            )
 
         await self.jobs.find_one_and_update(
             {"_id": job_id, "oid": oid},
