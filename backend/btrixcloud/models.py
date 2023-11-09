@@ -1208,7 +1208,6 @@ class CrawlDeletedBody(BaseArchivedItemBody):
     """Webhook notification POST body for when crawl is deleted"""
 
     event: Literal[WebhookEventType.CRAWL_DELETED] = WebhookEventType.CRAWL_DELETED
-    state: str
 
 
 # ============================================================================

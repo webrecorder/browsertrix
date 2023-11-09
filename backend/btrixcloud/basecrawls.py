@@ -347,9 +347,18 @@ class BaseCrawlOps:
                     cids_to_update[cid]["inc"] = 1
                     cids_to_update[cid]["size"] = crawl_size
 
-            asyncio.create_task(
-                self.event_webhook_ops.create_crawl_deleted_notification(crawl_id, org)
-            )
+            if type_ == "crawl":
+                asyncio.create_task(
+                    self.event_webhook_ops.create_crawl_deleted_notification(
+                        crawl_id, org
+                    )
+                )
+            if type_ == "upload":
+                asyncio.create_task(
+                    self.event_webhook_ops.create_upload_deleted_notification(
+                        crawl_id, org
+                    )
+                )
 
         query = {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id, "type": type_}
         res = await self.crawls.delete_many(query)

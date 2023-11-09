@@ -259,10 +259,10 @@ class EventWebhookOps:
             ),
         )
 
-    async def create_crawl_deleted_notification(self, crawl_id: str, oid: UUID) -> None:
+    async def create_crawl_deleted_notification(
+        self, crawl_id: str, org: Organization
+    ) -> None:
         """Create webhook notification for deleted crawl."""
-        org = await self.org_ops.get_org_by_id(oid)
-
         if not org.webhookUrls or not org.webhookUrls.crawlDeleted:
             return
 
@@ -294,11 +294,9 @@ class EventWebhookOps:
         )
 
     async def create_upload_deleted_notification(
-        self, crawl_id: str, oid: UUID
+        self, crawl_id: str, org: Organization
     ) -> None:
         """Create webhook notification for deleted upload."""
-        org = await self.org_ops.get_org_by_id(oid)
-
         if not org.webhookUrls or not org.webhookUrls.uploadDeleted:
             return
 
@@ -387,6 +385,7 @@ class EventWebhookOps:
             event=WebhookEventType.ADDED_TO_COLLECTION,
             body=CollectionItemAddedBody(
                 itemIds=crawl_ids,
+                downloadUrl="",
                 collectionId=str(coll_id),
                 orgId=str(org.id),
             ),
@@ -408,6 +407,7 @@ class EventWebhookOps:
             event=WebhookEventType.REMOVED_FROM_COLLECTION,
             body=CollectionItemRemovedBody(
                 itemIds=crawl_ids,
+                downloadUrl="",
                 collectionId=str(coll_id),
                 orgId=str(org.id),
             ),
@@ -425,7 +425,7 @@ class EventWebhookOps:
         await self._create_deleted_notification(
             org,
             event=WebhookEventType.REMOVED_FROM_COLLECTION,
-            body=CollectionItemRemovedBody(
+            body=CollectionDeletedBody(
                 collectionId=str(coll_id),
                 orgId=str(org.id),
             ),
