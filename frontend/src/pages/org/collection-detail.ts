@@ -221,7 +221,8 @@ export class CollectionDetail extends LiteElement {
 
   private renderShareInfo = () => {
     const replaySrc = this.getPublicReplayURL();
-    const publicReplayUrl = `https://replayweb.page?source=${replaySrc}`;
+    const encodedReplaySrc = encodeURIComponent(replaySrc);
+    const publicReplayUrl = `https://replayweb.page?source=${encodedReplaySrc}`;
     const embedCode = `<replay-web-page source="${replaySrc}"></replay-web-page>`;
     const importCode = `importScripts("https://replayweb.page/sw.js");`;
 
