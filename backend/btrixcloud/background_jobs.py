@@ -404,8 +404,6 @@ class BackgroundJobOps:
         if job.success:
             raise HTTPException(status_code=400, detail="job_already_succeeded")
 
-        new_job_id = None
-
         file = await self.get_replica_job_file(job, org)
 
         if job.type == BgJobType.CREATE_REPLICA:
