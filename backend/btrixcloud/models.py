@@ -824,9 +824,12 @@ class OrgWebhookUrls(BaseModel):
 
     crawlStarted: Optional[AnyHttpUrl] = None
     crawlFinished: Optional[AnyHttpUrl] = None
+    crawlDeleted: Optional[AnyHttpUrl] = None
     uploadFinished: Optional[AnyHttpUrl] = None
+    uploadDeleted: Optional[AnyHttpUrl] = None
     addedToCollection: Optional[AnyHttpUrl] = None
     removedFromCollection: Optional[AnyHttpUrl] = None
+    collectionDeleted: Optional[AnyHttpUrl] = None
 
 
 # ============================================================================
@@ -1129,10 +1132,14 @@ class WebhookEventType(str, Enum):
 
     CRAWL_STARTED = "crawlStarted"
     CRAWL_FINISHED = "crawlFinished"
+    CRAWL_DELETED = "crawlDeleted"
+
     UPLOAD_FINISHED = "uploadFinished"
+    UPLOAD_DELETED = "uploadDeleted"
 
     ADDED_TO_COLLECTION = "addedToCollection"
     REMOVED_FROM_COLLECTION = "removedFromCollection"
+    COLLECTION_DELETED = "collectionDeleted"
 
 
 # ============================================================================
@@ -1163,6 +1170,16 @@ class CollectionItemRemovedBody(BaseCollectionItemBody):
 
 
 # ============================================================================
+class CollectionDeletedBody(WebhookNotificationBody):
+    """Webhook notification base POST body for collection changes"""
+
+    event: Literal[
+        WebhookEventType.COLLECTION_DELETED
+    ] = WebhookEventType.COLLECTION_DELETED
+    collectionId: str
+
+
+# ============================================================================
 class BaseArchivedItemBody(WebhookNotificationBody):
     """Webhook notification POST body for when archived item is started or finished"""
 
@@ -1187,11 +1204,25 @@ class CrawlFinishedBody(BaseArchivedItemBody):
 
 
 # ============================================================================
+class CrawlDeletedBody(BaseArchivedItemBody):
+    """Webhook notification POST body for when crawl is deleted"""
+
+    event: Literal[WebhookEventType.CRAWL_DELETED] = WebhookEventType.CRAWL_DELETED
+    state: str
+
+
+# ============================================================================
 class UploadFinishedBody(BaseArchivedItemBody):
     """Webhook notification POST body for when upload finishes"""
 
     event: Literal[WebhookEventType.UPLOAD_FINISHED] = WebhookEventType.UPLOAD_FINISHED
-    state: str
+
+
+# ============================================================================
+class UploadDeletedBody(BaseArchivedItemBody):
+    """Webhook notification POST body for when upload finishes"""
+
+    event: Literal[WebhookEventType.UPLOAD_DELETED] = WebhookEventType.UPLOAD_DELETED
 
 
 # ============================================================================
@@ -1203,9 +1234,12 @@ class WebhookNotification(BaseMongoModel):
     body: Union[
         CrawlStartedBody,
         CrawlFinishedBody,
+        CrawlDeletedBody,
         UploadFinishedBody,
+        UploadDeletedBody,
         CollectionItemAddedBody,
         CollectionItemRemovedBody,
+        CollectionDeletedBody,
     ]
     success: bool = False
     attempts: int = 0
