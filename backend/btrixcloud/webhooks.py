@@ -497,11 +497,19 @@ def init_openapi_webhooks(app):
 
     @app.webhooks.post(WebhookEventType.CRAWL_FINISHED)
     def crawl_finished(body: CrawlFinishedBody):
-        """Sent when a crawl if finished"""
+        """Sent when a crawl has finished"""
+
+    @app.webhooks.post(WebhookEventType.CRAWL_DELETED)
+    def crawl_deleted(body: CrawlDeletedBody):
+        """Sent when a crawl is deleted"""
 
     @app.webhooks.post(WebhookEventType.UPLOAD_FINISHED)
     def upload_finished(body: UploadFinishedBody):
         """Sent when an upload has finished"""
+
+    @app.webhooks.post(WebhookEventType.UPLOAD_DELETED)
+    def upload_deleted(body: UploadDeletedBody):
+        """Sent when an upload is deleted"""
 
     @app.webhooks.post(WebhookEventType.ADDED_TO_COLLECTION)
     def added_to_collection(body: CollectionItemAddedBody):
@@ -509,6 +517,10 @@ def init_openapi_webhooks(app):
         is added to a collection"""
 
     @app.webhooks.post(WebhookEventType.REMOVED_FROM_COLLECTION)
-    def remove_from_collection(body: CrawlStartedBody):
+    def remove_from_collection(body: CollectionItemRemovedBody):
         """Sent when an archived item (crawl or upload)
         is removed from a collection"""
+
+    @app.webhooks.post(WebhookEventType.COLLECTION_DELETED)
+    def collection_deleted(body: CollectionDeletedBody):
+        """Sent when a collection is deleted"""
