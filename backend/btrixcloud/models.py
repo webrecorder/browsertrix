@@ -1237,6 +1237,8 @@ class BackgroundJob(BaseMongoModel):
     started: datetime
     finished: Optional[datetime] = None
 
+    previousAttempts: Optional[List[Dict[str, Optional[datetime]]]] = None
+
 
 # ============================================================================
 class CreateReplicaJob(BackgroundJob):
