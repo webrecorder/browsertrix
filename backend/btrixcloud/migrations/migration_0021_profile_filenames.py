@@ -59,7 +59,7 @@ class Migration(BaseMigration):
                 continue
 
             print(
-                f"Updating CronJob for Crawl Config {config.id}: profile_filename: {resource.filename}"
+                f"Updating Crawl Config {config.id}: profile_filename: {resource.filename}"
             )
             try:
                 await crawl_manager.update_crawl_config(
