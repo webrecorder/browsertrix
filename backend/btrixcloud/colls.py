@@ -305,6 +305,10 @@ class CollectionOps:
         if result.deleted_count < 1:
             raise HTTPException(status_code=404, detail="collection_not_found")
 
+        asyncio.create_task(
+            self.event_webhook_ops.create_collection_deleted_notification(coll_id, org)
+        )
+
         return {"success": True}
 
     async def download_collection(self, coll_id: UUID, org: Organization):

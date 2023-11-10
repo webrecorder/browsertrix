@@ -15,9 +15,12 @@ from .models import (
     WebhookNotification,
     CrawlStartedBody,
     CrawlFinishedBody,
+    CrawlDeletedBody,
     UploadFinishedBody,
+    UploadDeletedBody,
     CollectionItemAddedBody,
     CollectionItemRemovedBody,
+    CollectionDeletedBody,
     PaginatedResponse,
     Organization,
 )
@@ -217,6 +220,25 @@ class EventWebhookOps:
                     crawl_ids=[crawl_id], coll_id=coll_id, org=org
                 )
 
+    async def _create_deleted_notification(
+        self,
+        org: Organization,
+        event: str,
+        body: Union[CrawlDeletedBody, UploadDeletedBody, CollectionDeletedBody],
+    ):
+        """Create webhook notification for deleted crawl/upload/collection."""
+        notification = WebhookNotification(
+            id=uuid4(),
+            event=event,
+            oid=org.id,
+            body=body,
+            created=datetime.utcnow(),
+        )
+
+        await self.webhooks.insert_one(notification.to_dict())
+
+        await self.send_notification(org, notification)
+
     async def create_crawl_finished_notification(
         self, crawl_id: str, oid: UUID, state: str
     ) -> None:
@@ -234,6 +256,23 @@ class EventWebhookOps:
                 itemId=crawl_id,
                 orgId=str(org.id),
                 state=state,
+                resources=[],
+            ),
+        )
+
+    async def create_crawl_deleted_notification(
+        self, crawl_id: str, org: Organization
+    ) -> None:
+        """Create webhook notification for deleted crawl."""
+        if not org.webhookUrls or not org.webhookUrls.crawlDeleted:
+            return
+
+        await self._create_deleted_notification(
+            org,
+            event=WebhookEventType.CRAWL_DELETED,
+            body=CrawlDeletedBody(
+                itemId=crawl_id,
+                orgId=str(org.id),
             ),
         )
 
@@ -251,8 +290,21 @@ class EventWebhookOps:
             org,
             event=WebhookEventType.UPLOAD_FINISHED,
             body=UploadFinishedBody(
-                itemId=crawl_id, orgId=str(org.id), state="complete"
+                itemId=crawl_id, orgId=str(org.id), state="complete", resources=[]
             ),
+        )
+
+    async def create_upload_deleted_notification(
+        self, crawl_id: str, org: Organization
+    ) -> None:
+        """Create webhook notification for deleted upload."""
+        if not org.webhookUrls or not org.webhookUrls.uploadDeleted:
+            return
+
+        await self._create_deleted_notification(
+            org,
+            event=WebhookEventType.UPLOAD_DELETED,
+            body=UploadDeletedBody(itemId=crawl_id, orgId=str(org.id)),
         )
 
     async def create_crawl_started_notification(
@@ -304,7 +356,7 @@ class EventWebhookOps:
                 f"{org.origin}/api/orgs/{org.id}/collections/{coll_id}/download"
             )
 
-        body.downloadUrls = [coll_download_url]
+        body.downloadUrl = coll_download_url
 
         notification = WebhookNotification(
             id=uuid4(),
@@ -334,6 +386,7 @@ class EventWebhookOps:
             event=WebhookEventType.ADDED_TO_COLLECTION,
             body=CollectionItemAddedBody(
                 itemIds=crawl_ids,
+                downloadUrl="",
                 collectionId=str(coll_id),
                 orgId=str(org.id),
             ),
@@ -355,6 +408,25 @@ class EventWebhookOps:
             event=WebhookEventType.REMOVED_FROM_COLLECTION,
             body=CollectionItemRemovedBody(
                 itemIds=crawl_ids,
+                downloadUrl="",
+                collectionId=str(coll_id),
+                orgId=str(org.id),
+            ),
+        )
+
+    async def create_collection_deleted_notification(
+        self,
+        coll_id: UUID,
+        org: Organization,
+    ) -> None:
+        """Create webhook notification for item removed from collection"""
+        if not org.webhookUrls or not org.webhookUrls.collectionDeleted:
+            return
+
+        await self._create_deleted_notification(
+            org,
+            event=WebhookEventType.REMOVED_FROM_COLLECTION,
+            body=CollectionDeletedBody(
                 collectionId=str(coll_id),
                 orgId=str(org.id),
             ),
@@ -426,11 +498,19 @@ def init_openapi_webhooks(app):
 
     @app.webhooks.post(WebhookEventType.CRAWL_FINISHED)
     def crawl_finished(body: CrawlFinishedBody):
-        """Sent when a crawl if finished"""
+        """Sent when a crawl has finished"""
+
+    @app.webhooks.post(WebhookEventType.CRAWL_DELETED)
+    def crawl_deleted(body: CrawlDeletedBody):
+        """Sent when a crawl is deleted"""
 
     @app.webhooks.post(WebhookEventType.UPLOAD_FINISHED)
     def upload_finished(body: UploadFinishedBody):
         """Sent when an upload has finished"""
+
+    @app.webhooks.post(WebhookEventType.UPLOAD_DELETED)
+    def upload_deleted(body: UploadDeletedBody):
+        """Sent when an upload is deleted"""
 
     @app.webhooks.post(WebhookEventType.ADDED_TO_COLLECTION)
     def added_to_collection(body: CollectionItemAddedBody):
@@ -438,6 +518,10 @@ def init_openapi_webhooks(app):
         is added to a collection"""
 
     @app.webhooks.post(WebhookEventType.REMOVED_FROM_COLLECTION)
-    def remove_from_collection(body: CrawlStartedBody):
+    def remove_from_collection(body: CollectionItemRemovedBody):
         """Sent when an archived item (crawl or upload)
         is removed from a collection"""
+
+    @app.webhooks.post(WebhookEventType.COLLECTION_DELETED)
+    def collection_deleted(body: CollectionDeletedBody):
+        """Sent when a collection is deleted"""

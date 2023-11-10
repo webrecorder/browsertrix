@@ -32,9 +32,12 @@ def test_list_webhook_events(admin_auth_headers, default_org_id):
     urls = data["webhookUrls"]
     assert urls["crawlStarted"]
     assert urls["crawlFinished"]
+    assert urls["crawlDeleted"]
     assert urls["uploadFinished"]
+    assert urls["uploadDeleted"]
     assert urls["addedToCollection"]
     assert urls["removedFromCollection"]
+    assert urls["collectionDeleted"]
 
     # Verify list endpoint works as expected
     r = requests.get(
@@ -82,17 +85,15 @@ def test_get_webhook_event(admin_auth_headers, default_org_id):
 
     if event in ("crawlFinished", "uploadFinished"):
         assert len(body["resources"]) >= 1
-        assert len(body.get("downloadUrls", [])) == 0
         assert body["itemId"]
 
     elif event in ("crawlStarted"):
         assert len(body.get("resources", [])) == 0
-        assert len(body.get("downloadUrls", [])) == 0
         assert body["itemId"]
 
     elif event in ("addedToCollection", "removedFromCollection"):
         assert len(body.get("resources", [])) == 0
-        assert len(body["downloadUrls"]) == 1
+        assert body["downloadUrl"]
         assert body["collectionId"]
         assert len(body["itemIds"]) >= 1
 
@@ -139,9 +140,12 @@ def test_webhooks_sent(
         json={
             "crawlStarted": ECHO_SERVER_URL_FROM_K8S,
             "crawlFinished": ECHO_SERVER_URL_FROM_K8S,
+            "crawlDeleted": ECHO_SERVER_URL_FROM_K8S,
             "uploadFinished": ECHO_SERVER_URL_FROM_K8S,
+            "uploadDeleted": ECHO_SERVER_URL_FROM_K8S,
             "addedToCollection": ECHO_SERVER_URL_FROM_K8S,
             "removedFromCollection": ECHO_SERVER_URL_FROM_K8S,
+            "collectionDeleted": ECHO_SERVER_URL_FROM_K8S,
         },
     )
     assert r.status_code == 200
@@ -214,15 +218,42 @@ def test_webhooks_sent(
     data = r.json()
     assert data["id"]
 
-    # Re-add upload to collection
+    # Delete upload
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{webhooks_coll_id}/add",
-        json={"crawlIds": [webhooks_upload_id]},
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
+        json={"crawl_ids": [webhooks_upload_id]},
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["deleted"]
+
+    # Remove crawls from collection
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{webhooks_coll_id}/remove",
+        json={"crawlIds": [webhooks_crawl_id, all_crawls_crawl_id]},
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
     assert data["id"]
+
+    # Delete crawl
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
+        json={"crawl_ids": [webhooks_crawl_id]},
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["deleted"]
+
+    # Delete collection
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{webhooks_coll_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
 
     # Wait to ensure async notifications are all sent
     time.sleep(30)
@@ -235,9 +266,12 @@ def test_webhooks_sent(
 
     crawl_started_count = 0
     crawl_finished_count = 0
+    crawl_deleted_count = 0
     upload_finished_count = 0
+    upload_deleted_count = 0
     added_to_collection_count = 0
     removed_from_collection_count = 0
+    collection_deleted_count = 0
 
     for post in data["post_bodies"]:
         assert post["orgId"]
@@ -248,7 +282,6 @@ def test_webhooks_sent(
             crawl_started_count += 1
             assert post["itemId"]
             assert post["scheduled"] in (True, False)
-            assert post.get("downloadUrls") is None
             assert post.get("resources") is None
 
         elif event == "crawlFinished":
@@ -256,7 +289,10 @@ def test_webhooks_sent(
             assert post["itemId"]
             assert post["state"]
             assert post["resources"]
-            assert post.get("downloadUrls") is None
+
+        elif event == "crawlDeleted":
+            crawl_deleted_count += 1
+            assert post["itemId"]
 
         elif event == "uploadFinished":
             upload_finished_count += 1
@@ -265,26 +301,37 @@ def test_webhooks_sent(
             assert post["resources"]
             assert post.get("downloadUrls") is None
 
+        elif event == "uploadDeleted":
+            upload_deleted_count += 1
+            assert post["itemId"]
+
         elif event == "addedToCollection":
             added_to_collection_count += 1
-            assert post["downloadUrls"] and len(post["downloadUrls"]) == 1
+            assert post["downloadUrl"]
             assert post.get("resources") is None
             assert post["itemIds"]
             assert post["collectionId"]
 
         elif event == "removedFromCollection":
             removed_from_collection_count += 1
-            assert post["downloadUrls"] and len(post["downloadUrls"]) == 1
+            assert post["downloadUrl"]
             assert post.get("resources") is None
             assert post["itemIds"]
+            assert post["collectionId"]
+
+        elif event == "collectionDeleted":
+            collection_deleted_count += 1
             assert post["collectionId"]
 
     # Allow for some variability here due to timing of crawls
     assert crawl_started_count >= 1
     assert crawl_finished_count >= 1
+    assert crawl_deleted_count == 1
     assert upload_finished_count == 1
-    assert added_to_collection_count >= 3
-    assert removed_from_collection_count == 1
+    assert upload_deleted_count == 1
+    assert added_to_collection_count >= 2
+    assert removed_from_collection_count == 2
+    assert collection_deleted_count == 1
 
     # Check that we've had expected number of successful webhook notifications
     r = requests.get(
