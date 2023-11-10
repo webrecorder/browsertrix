@@ -1,8 +1,9 @@
 """
 Migration 0021 - Profile filenames
 """
-from btrixcloud.migrations import BaseMigration
 from btrixcloud.crawlmanager import CrawlManager
+from btrixcloud.migrations import BaseMigration
+from btrixcloud.models import CrawlConfig, Profile
 
 
 MIGRATION_VERSION = "0021"
@@ -54,16 +55,18 @@ class Migration(BaseMigration):
             if not profile_res:
                 continue
 
-            resource = profile_res.get("resource")
-            if not resource:
+            profile = Profile.from_dict(profile_res)
+
+            if not profile.resource:
                 continue
 
+            updated_filename = profile.resource.filename
             print(
-                f"Updating Crawl Config {config.id}: profile_filename: {resource.filename}"
+                f"Updating Crawl Config {config.id}: profile_filename: {updated_filename}"
             )
             try:
                 await crawl_manager.update_crawl_config(
-                    config, UpdateCrawlConfig(), profile_filename=resource.filename
+                    config, UpdateCrawlConfig(), profile_filename=updated_filename
                 )
             # pylint: disable=broad-except
             except Exception as exc:
