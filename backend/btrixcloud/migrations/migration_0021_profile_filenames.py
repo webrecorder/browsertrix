@@ -3,7 +3,7 @@ Migration 0021 - Profile filenames
 """
 from btrixcloud.crawlmanager import CrawlManager
 from btrixcloud.migrations import BaseMigration
-from btrixcloud.models import CrawlConfig, Profile
+from btrixcloud.models import CrawlConfig, Profile, UpdateCrawlConfig
 
 
 MIGRATION_VERSION = "0021"
@@ -23,6 +23,8 @@ class Migration(BaseMigration):
         update configmaps.
         """
         mdb_profiles = self.mdb["profiles"]
+        mdb_crawl_configs = self.mdb["crawl_configs"]
+
         async for profile in mdb_profiles.find({}):
             profile_id = profile["_id"]
             file_ = profile.get("resource")
@@ -48,7 +50,7 @@ class Migration(BaseMigration):
         # Update profile filenames in configmaps
         crawl_manager = CrawlManager()
         match_query = {"profileid": {"$nin": ["", None]}}
-        async for config_dict in crawl_configs.find(match_query):
+        async for config_dict in mdb_crawl_configs.find(match_query):
             config = CrawlConfig.from_dict(config_dict)
 
             profile_res = await mdb_profiles.find_one({"_id": config.profileid})
