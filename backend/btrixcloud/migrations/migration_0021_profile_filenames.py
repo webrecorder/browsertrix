@@ -25,25 +25,21 @@ class Migration(BaseMigration):
         mdb_profiles = self.mdb["profiles"]
         mdb_crawl_configs = self.mdb["crawl_configs"]
 
-        async for profile in mdb_profiles.find({}):
-            profile_id = profile["_id"]
-            file_ = profile.get("resource")
-            if not file_:
+        async for profile_res in mdb_profiles.find({}):
+            profile = Profile.from_dict(profile_res)
+            if not profile.resource:
                 continue
 
-            filename = file_.get("filename")
-            if not filename:
-                continue
-
+            filename = profile.resource.filename
             if not filename.startswith("profiles/"):
                 try:
                     await mdb_profiles.find_one_and_update(
-                        {"_id": profile_id},
+                        {"_id": profile.id},
                         {"$set": {"resource.filename": f"profiles/{filename}"}},
                     )
                 except Exception as err:
                     print(
-                        f"Error updating filename for profile {profile['name']}: {err}",
+                        f"Error updating filename for profile {profile.name}: {err}",
                         flush=True,
                     )
 
@@ -58,7 +54,6 @@ class Migration(BaseMigration):
                 continue
 
             profile = Profile.from_dict(profile_res)
-
             if not profile.resource:
                 continue
 
