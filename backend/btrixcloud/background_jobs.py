@@ -449,7 +449,6 @@ def init_background_jobs_api(mdb, org_ops, crawl_manager, storage_ops):
 
     @router.get(
         "/{job_id}",
-        tags=["backgroundjobs"],
         response_model=AnyJob,
     )
     async def get_background_job(
@@ -461,7 +460,6 @@ def init_background_jobs_api(mdb, org_ops, crawl_manager, storage_ops):
 
     @router.post(
         "/{job_id}/retry",
-        tags=["backgroundjobs"],
     )
     async def retry_background_job(
         job_id: str,
@@ -470,7 +468,7 @@ def init_background_jobs_api(mdb, org_ops, crawl_manager, storage_ops):
         """Retry background job"""
         return await ops.retry_background_job(job_id, org)
 
-    @router.get("", tags=["backgroundjobs"], response_model=PaginatedResponse)
+    @router.get("", response_model=PaginatedResponse)
     async def list_background_jobs(
         org: Organization = Depends(org_crawl_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
