@@ -1,7 +1,7 @@
 import requests
 import time
 
-from .conftest import API_PREFIX
+from .conftest import API_PREFIX, SUCCESSFUL_STATES
 
 
 def test_workflow_crawl_auto_added_to_collection(
@@ -50,7 +50,7 @@ def test_workflow_crawl_auto_added_subsequent_runs(
             headers=crawler_auth_headers,
         )
         data = r.json()
-        if data["state"] == "complete":
+        if data["state"] in SUCCESSFUL_STATES:
             break
         time.sleep(5)
 

@@ -2,7 +2,7 @@ import time
 
 import requests
 
-from .conftest import API_PREFIX
+from .conftest import API_PREFIX, SUCCESSFUL_STATES
 
 
 cid = None
@@ -361,7 +361,7 @@ def test_incremental_workflow_total_size_and_last_crawl_stats(
             headers=crawler_auth_headers,
         )
         data = r.json()
-        if data["state"] == "complete":
+        if data["state"] in SUCCESSFUL_STATES:
             break
         time.sleep(5)
 

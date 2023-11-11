@@ -4,7 +4,7 @@ import time
 
 import requests
 
-from .conftest import API_PREFIX
+from .conftest import API_PREFIX, SUCCESSFUL_STATES
 from .utils import read_in_chunks
 
 _webhook_event_id = None
@@ -191,7 +191,7 @@ def test_webhooks_sent(
             headers=admin_auth_headers,
         )
         data = r.json()
-        if data["state"] == "complete":
+        if data["state"] in SUCCESSFUL_STATES:
             break
         time.sleep(5)
 
