@@ -192,6 +192,7 @@ def test_webhooks_sent(
         )
         data = r.json()
         if data["state"] in SUCCESSFUL_STATES:
+            print(data["state"], flush=True)
             break
         time.sleep(5)
 

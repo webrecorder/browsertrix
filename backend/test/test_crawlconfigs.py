@@ -362,6 +362,7 @@ def test_incremental_workflow_total_size_and_last_crawl_stats(
         )
         data = r.json()
         if data["state"] in SUCCESSFUL_STATES:
+            print(data["state"], flush=True)
             break
         time.sleep(5)
 

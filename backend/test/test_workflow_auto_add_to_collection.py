@@ -51,6 +51,7 @@ def test_workflow_crawl_auto_added_subsequent_runs(
         )
         data = r.json()
         if data["state"] in SUCCESSFUL_STATES:
+            print(data["state"], flush=True)
             break
         time.sleep(5)
 

@@ -55,7 +55,7 @@ def test_wait_for_complete(admin_auth_headers, default_org_id, admin_crawl_id):
         headers=admin_auth_headers,
     )
     data = r.json()
-    assert data["state"] == "complete"
+    assert data["state"] == "complete:page-limit"
 
     assert len(data["resources"]) == 1
     assert data["resources"][0]["path"]
