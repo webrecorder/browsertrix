@@ -2,7 +2,7 @@
 
 invite_expire_seconds: 10
 
-max_pages_per_crawl: 200
+max_pages_per_crawl: 300
 
 
 # enable to allow access to minio directly
