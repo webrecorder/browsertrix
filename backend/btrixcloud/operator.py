@@ -1323,9 +1323,6 @@ class BtrixOperator(K8sAPI):
         if await self.org_ops.exec_mins_quota_reached(crawl.oid):
             return "exec-time-quota"
 
-        if self.max_pages_per_crawl and status.pagesFound >= self.max_pages_per_crawl:
-            return "page-limit"
-
         return None
 
     async def get_redis_crawl_stats(self, redis: Redis, crawl_id: str):
@@ -1411,6 +1408,12 @@ class BtrixOperator(K8sAPI):
             # state = "complete" if completed else "partial_complete"
             if status.stopReason:
                 state = "complete:" + status.stopReason
+            elif (
+                self.max_pages_per_crawl
+                and status.pagesFound >= self.max_pages_per_crawl
+            ):
+                # didn't stop early, but likely stopped due to page limit
+                state = "complete:page-limit"
             else:
                 state = "complete"
 

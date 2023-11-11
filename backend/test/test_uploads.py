@@ -512,7 +512,11 @@ def test_get_all_crawls_by_state(admin_auth_headers, default_org_id, admin_crawl
     assert data["total"] >= 5
     items = data["items"]
     for item in items:
-        assert item["state"] in ("complete", "complete:user-stop", "complete:page-limit")
+        assert item["state"] in (
+            "complete",
+            "complete:user-stop",
+            "complete:page-limit",
+        )
 
 
 def test_get_all_crawls_by_collection_id(
