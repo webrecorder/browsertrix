@@ -450,6 +450,12 @@ class BtrixOperator(K8sAPI):
             scheduled=spec.get("manual") != "1",
         )
 
+        # shouldn't get here, crawl should already be finalizing when canceled
+        # just in case, handle canceled-but-not-finalizing here
+        if status.state == "canceled":
+            await self.delete_crawl_job(crawl.id)
+            return {"status": status.dict(exclude_none=True), "children": []}
+
         # first, check storage quota, and fail immediately if quota reached
         if status.state in ("starting", "skipped_quota_reached"):
             # only check on very first run, before any pods/pvcs created
@@ -601,9 +607,16 @@ class BtrixOperator(K8sAPI):
                 print(f"Attempting scaling down of pod {i}")
                 await redis.hset(f"{crawl_id}:stopone", name, "1")
 
-            if pod["status"].get("phase") == "Succeeded" and new_scale == i + 1:
-                new_scale = i
-                print(f"Scaled down pod index {i}, scale to {new_scale}")
+            # check if this pod can be scaled down
+            if new_scale == i + 1:
+                # if status key doesn't exist, this pod never actually ran, so just scale down
+                if not await redis.hexists(f"{crawl_id}:status", name):
+                    new_scale = i
+                    print(f"Scaled down pod index {i + 1} -> {i}, no previous pod")
+
+                elif pod["status"].get("phase") == "Succeeded":
+                    new_scale = i
+                    print(f"Scaled down pod index {i + 1} -> {i}, pod completed")
 
         if new_scale < actual_scale:
             for i in range(new_scale, actual_scale):
