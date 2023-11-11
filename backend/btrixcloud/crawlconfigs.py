@@ -289,7 +289,9 @@ class CrawlConfigOps:
         )
         changed = changed or self.check_attr_changed(orig_crawl_config, update, "scale")
 
-        changed = changed or self.check_attr_changed(orig_crawl_config, update, "proxyid")
+        changed = changed or self.check_attr_changed(
+            orig_crawl_config, update, "proxyid"
+        )
 
         changed = changed or (
             update.profileid is not None

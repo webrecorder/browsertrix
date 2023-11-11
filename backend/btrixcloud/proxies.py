@@ -4,7 +4,7 @@ import os
 
 from fastapi import Depends
 
-from .models import Proxy, Organization
+from .models import Proxy
 from .orgs import OrgOps
 
 
@@ -40,7 +40,7 @@ def init_proxies_api(org_ops: OrgOps):
     org_crawl_dep = org_ops.org_crawl_dep
 
     @router.get("/proxies", tags=["proxies"])
-    def get_proxies():
+    def get_proxies(_=Depends(org_crawl_dep)):
         return list(ops.proxies.values())
 
     return ops
