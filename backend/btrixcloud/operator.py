@@ -1457,12 +1457,10 @@ class BtrixOperator(K8sAPI):
 
         return status
 
-    def get_page_limit(self, configmap):
+    def get_page_limit(self, configmap: dict[str, str]) -> int:
         """compute page limit based on crawl page limit and max page limit"""
         try:
-            page_limit = (
-                json.loads(configmap.get("crawl-config.json")).get("limit") or 0
-            )
+            page_limit = json.loads(configmap["crawl-config.json"]).get("limit") or 0
         # pylint: disable=bare-except
         except:
             page_limit = 0
