@@ -120,12 +120,8 @@ export type CrawlState =
   | "failed"
   | "skipped_quota_reached"
   | "canceled"
-  | "partial_complete"
-  | "complete:time-limit"
-  | "complete:size-limit"
-  | "complete:page-limit"
-  | "complete:user-stop"
-  | "complete:time-quota";
+  | "stopped_by_user"
+  | "stopped_quota_reached";
 
 export type Crawl = CrawlConfig & {
   id: string;

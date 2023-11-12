@@ -162,33 +162,6 @@ export class CrawlStatus extends LitElement {
         label = isUpload ? msg("Uploaded") : msg("Complete");
         break;
 
-      case "complete:page-limit":
-        icon = html`<sl-icon
-          name=${isUpload ? "upload" : "check-circle"}
-          slot="prefix"
-          style="color: var(--success)"
-        ></sl-icon>`;
-        label = isUpload ? msg("Uploaded") : msg("Complete: Page Limit");
-        break;
-
-      case "complete:size-limit":
-        icon = html`<sl-icon
-          name=${isUpload ? "upload" : "check-circle"}
-          slot="prefix"
-          style="color: var(--success)"
-        ></sl-icon>`;
-        label = isUpload ? msg("Uploaded") : msg("Complete: Size Limit");
-        break;
-
-      case "complete:time-limit":
-        icon = html`<sl-icon
-          name=${isUpload ? "upload" : "check-circle"}
-          slot="prefix"
-          style="color: var(--success)"
-        ></sl-icon>`;
-        label = isUpload ? msg("Uploaded") : msg("Complete: Time Limit");
-        break;
-
       case "failed":
         icon = html`<sl-icon
           name=${isUpload ? "upload" : "exclamation-triangle"}
@@ -207,7 +180,7 @@ export class CrawlStatus extends LitElement {
         label = msg("Skipped (Storage Quota Reached)");
         break;
 
-      case "partial_complete":
+      case "stopped_by_user":
         icon = html`<sl-icon
           name="dash-circle"
           slot="prefix"
@@ -216,16 +189,7 @@ export class CrawlStatus extends LitElement {
         label = msg("Partial Complete");
         break;
 
-      case "complete:user-stop":
-        icon = html`<sl-icon
-          name=${isUpload ? "upload" : "check-circle"}
-          slot="prefix"
-          style="color: var(--success)"
-        ></sl-icon>`;
-        label = isUpload ? msg("Uploaded") : msg("Stopped");
-        break;
-
-      case "complete:time-quota":
+      case "stopped_quota_reached":
         icon = html`<sl-icon
           name="dash-circle"
           slot="prefix"

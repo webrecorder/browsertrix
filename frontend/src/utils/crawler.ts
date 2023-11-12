@@ -12,11 +12,8 @@ export const activeCrawlStates: CrawlState[] = [
 
 export const finishedCrawlStates: CrawlState[] = [
   "complete",
-  "complete:time-limit",
-  "complete:size-limit",
-  "complete:page-limit",
-  "complete:user-stop",
-  "complete:time-quota",
+  "stopped_by_user",
+  "stopped_quota_reached",
 ];
 
 export const inactiveCrawlStates: CrawlState[] = [
