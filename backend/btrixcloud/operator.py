@@ -1415,7 +1415,7 @@ class BtrixOperator(K8sAPI):
                 state = "complete:" + status.stopReason
             else:
                 limit = self.get_page_limit(configmap)
-                if status.pagesFound >= limit:
+                if limit and status.pagesFound >= limit:
                     # didn't stop early, but likely stopped due to page limit
                     state = "complete:page-limit"
                 else:
