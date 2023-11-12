@@ -186,7 +186,7 @@ export class CrawlStatus extends LitElement {
           slot="prefix"
           style="color: var(--warning)"
         ></sl-icon>`;
-        label = msg("Partial Complete");
+        label = msg("Stopped");
         break;
 
       case "stopped_quota_reached":
