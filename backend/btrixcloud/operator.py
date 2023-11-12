@@ -297,8 +297,6 @@ class BtrixOperator(K8sAPI):
 
         self.log_failed_crawl_lines = int(os.environ.get("LOG_FAILED_CRAWL_LINES") or 0)
 
-        self.max_pages_per_crawl = int(os.environ.get("MAX_PAGES_PER_CRAWL", 0))
-
         with open(self.config_file, encoding="utf-8") as fh_config:
             self.shared_params = yaml.safe_load(fh_config)
 
@@ -491,7 +489,6 @@ class BtrixOperator(K8sAPI):
                 crawl,
                 status,
                 pods,
-                configmap,
                 data.related.get(METRICS, {}),
             )
 
@@ -915,7 +912,6 @@ class BtrixOperator(K8sAPI):
         crawl: CrawlSpec,
         status: CrawlStatus,
         pods: dict[str, dict],
-        configmap: dict[str, str],
         metrics: Optional[dict],
     ):
         """sync crawl state for running crawl"""
@@ -996,9 +992,7 @@ class BtrixOperator(K8sAPI):
             status.filesAddedSize = int(await redis.get("filesAddedSize") or 0)
 
             # update stats and get status
-            return await self.update_crawl_state(
-                redis, crawl, status, pods, configmap, done
-            )
+            return await self.update_crawl_state(redis, crawl, status, pods, done)
 
         # pylint: disable=broad-except
         except Exception as exc:
@@ -1304,7 +1298,7 @@ class BtrixOperator(K8sAPI):
         # if user requested stop, then enter stopping phase
         if crawl.stopping:
             print("Graceful Stop: User requested stop")
-            return "user-stop"
+            return "stopped_by_user"
 
         # check timeout if timeout time exceeds elapsed time
         if crawl.timeout:
@@ -1325,7 +1319,7 @@ class BtrixOperator(K8sAPI):
 
         # check exec time quotas and stop if reached limit
         if await self.org_ops.exec_mins_quota_reached(crawl.oid):
-            return "exec-time-quota"
+            return "stopped_quota_reached"
 
         return None
 
@@ -1351,7 +1345,6 @@ class BtrixOperator(K8sAPI):
         crawl: CrawlSpec,
         status: CrawlStatus,
         pods: dict[str, dict],
-        configmap: dict[str, str],
         done: bool,
     ) -> CrawlStatus:
         """update crawl state and check if crawl is now done"""
@@ -1411,15 +1404,10 @@ class BtrixOperator(K8sAPI):
             # completed = status.pagesDone and status.pagesDone >= status.pagesFound
 
             # state = "complete" if completed else "partial_complete"
-            if status.stopReason:
-                state = "complete:" + status.stopReason
+            if status.stopReason in ("stopped_by_user", "stopped_quota_reached"):
+                state = status.stopReason
             else:
-                limit = self.get_page_limit(configmap)
-                if limit and status.pagesFound >= limit:
-                    # didn't stop early, but likely stopped due to page limit
-                    state = "complete:page-limit"
-                else:
-                    state = "complete"
+                state = "complete"
 
             await self.mark_finished(
                 crawl.id, crawl.cid, crawl.oid, status, state, crawl, stats
@@ -1456,22 +1444,6 @@ class BtrixOperator(K8sAPI):
                 )
 
         return status
-
-    def get_page_limit(self, configmap: dict[str, str]) -> int:
-        """compute page limit based on crawl page limit and max page limit"""
-        try:
-            page_limit = json.loads(configmap["crawl-config.json"]).get("limit") or 0
-        # pylint: disable=bare-except
-        except:
-            page_limit = 0
-
-        limit = (
-            min(self.max_pages_per_crawl, page_limit)
-            if self.max_pages_per_crawl and page_limit
-            else self.max_pages_per_crawl or page_limit
-        )
-
-        return limit
 
     # pylint: disable=too-many-arguments
     async def mark_finished(
