@@ -25,7 +25,7 @@ def test_crawl_timeout(admin_auth_headers, default_org_id, timeout_crawl):
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["state"] == "complete:time-limit"
+    assert data["state"] == "complete"
 
 
 def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_crawl):

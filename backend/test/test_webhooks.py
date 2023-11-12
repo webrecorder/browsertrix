@@ -191,7 +191,7 @@ def test_webhooks_sent(
             headers=admin_auth_headers,
         )
         data = r.json()
-        if data["state"] == "complete:page-limit":
+        if data["state"] == "complete":
             break
         time.sleep(5)
 

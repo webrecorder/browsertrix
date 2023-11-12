@@ -29,14 +29,7 @@ NON_DEFAULT_ORG_NAME = "Non-default org"
 
 FAILED_STATES = ["canceled", "failed", "skipped_quota_reached"]
 
-SUCCESSFUL_STATES = [
-    "complete",
-    "complete:time-limit",
-    "complete:size-limit",
-    "complete:page-limit",
-    "complete:user-stop",
-    "complete:time-quota",
-]
+SUCCESSFUL_STATES = ["complete", "stopped_by_user", "stopped_quota_reached"]
 
 FINISHED_STATES = [*FAILED_STATES, *SUCCESSFUL_STATES]
 

@@ -361,7 +361,7 @@ def test_incremental_workflow_total_size_and_last_crawl_stats(
             headers=crawler_auth_headers,
         )
         data = r.json()
-        if data["state"] == "complete:page-limit":
+        if data["state"] == "complete":
             break
         time.sleep(5)
 

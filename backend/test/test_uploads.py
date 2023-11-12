@@ -504,7 +504,7 @@ def test_get_all_crawls_by_cid(
 def test_get_all_crawls_by_state(admin_auth_headers, default_org_id, admin_crawl_id):
     """Test filtering /all-crawls by cid"""
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?state=complete,complete:user-stop,complete:page-limit",
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?state=complete,stopped_by_user",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -514,8 +514,7 @@ def test_get_all_crawls_by_state(admin_auth_headers, default_org_id, admin_crawl
     for item in items:
         assert item["state"] in (
             "complete",
-            "complete:user-stop",
-            "complete:page-limit",
+            "stopped_by_user",
         )
 
 
