@@ -60,19 +60,27 @@ export class Dashboard extends LiteElement {
   }
 
   private humanizeExecutionSeconds = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
+    const minutes = Math.ceil(seconds / 60);
 
     const locale = getLocale();
-    const numberFormatter = new Intl.NumberFormat(locale, {});
+    const compactFormatter = new Intl.NumberFormat(locale, {
+      notation: "compact",
+      style: "unit",
+      unit: "minute",
+      unitDisplay: "long",
+    });
 
-    return msg(
-      str`${numberFormatter.format(minutes)} minutes (${humanizeDuration(
-        seconds * 1000
-      )})`,
-      {
-        desc: "Execution seconds display, showing an amount of time in minutes as well as, within parentheses, hours, minutes, and seconds.",
-      }
-    );
+    const fullFormatter = new Intl.NumberFormat(locale, {
+      style: "unit",
+      unit: "minute",
+      unitDisplay: "long",
+      maximumFractionDigits: 0,
+    });
+
+    return html`<span title="${fullFormatter.format(minutes)}">
+        ${compactFormatter.format(minutes)}</span
+      >
+      (${humanizeDuration(seconds * 1000)})`;
   };
 
   render() {

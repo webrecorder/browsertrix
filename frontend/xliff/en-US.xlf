@@ -2458,10 +2458,6 @@
 <trans-unit id="sa1bc28260e4221a8">
   <source>Please log in to continue.</source>
 </trans-unit>
-<trans-unit id="sb63223f6d06f51d9">
-  <source><x id="0" equiv-text="${numberFormatter.format(minutes)}"/> minutes (<x id="1" equiv-text="${humanizeDuration(seconds * 1000)}"/>)</source>
-  <note from="lit-localize">Execution seconds display, showing an amount of time in minutes as well as, within parentheses, hours, minutes, and seconds.</note>
-</trans-unit>
 </body>
 </file>
 </xliff>

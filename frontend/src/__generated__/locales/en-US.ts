@@ -595,7 +595,6 @@
 's53846234c681dace': `Sorry, couldn't invite user at this time.`,
 's63ca31a1df9116e2': str`Successfully removed ${0} from ${1}.`,
 's667558910cf30318': str`Sorry, couldn't remove ${0} at this time.`,
-'sb63223f6d06f51d9': str`${0} minutes (${1})`,
 'sd7cb8be58c9b3603': `Create New...`,
 's91c206764e342fbd': `Crawl Workflow`,
 's96668830629e0dfc': `Upload`,
