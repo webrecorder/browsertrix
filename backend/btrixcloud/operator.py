@@ -1401,7 +1401,6 @@ class BtrixOperator(K8sAPI):
                 )
                 return status
 
-
             if status.stopReason in ("stopped_by_user", "stopped_quota_reached"):
                 state = status.stopReason
             else:
