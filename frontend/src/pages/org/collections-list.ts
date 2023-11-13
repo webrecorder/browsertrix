@@ -382,13 +382,7 @@ export class CollectionsList extends LiteElement {
           <div
             class="hidden md:grid md:grid-cols-[2rem_1fr_repeat(3,12ch)_18ch_2.5rem] gap-3"
           >
-            <div class="col-span-1 pl-3 text-center">
-              <sl-icon
-                class="block text-[15px]"
-                name="eye"
-                label=${msg("Collection share access")}
-              ></sl-icon>
-            </div>
+            <div class="col-span-1"></div>
             <div class="col-span-1 text-xs">${msg("Name")}</div>
             <div class="col-span-1 text-xs">${msg("Archived Items")}</div>
             <div class="col-span-1 text-xs">${msg("Total Size")}</div>
