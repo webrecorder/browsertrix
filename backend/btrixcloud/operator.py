@@ -1401,7 +1401,6 @@ class BtrixOperator(K8sAPI):
                 )
                 return status
 
-            # completed = status.pagesDone and status.pagesDone >= status.pagesFound
 
             # state = "complete" if completed else "partial_complete"
             if status.stopReason in ("stopped_by_user", "stopped_quota_reached"):
