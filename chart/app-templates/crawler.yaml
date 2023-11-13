@@ -60,24 +60,28 @@ spec:
         claimName: {{ name }}
 
   affinity:
+{% if crawler_node_type %}
     nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 1
-          preference:
-            matchExpressions:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
             - key: nodeType
               operator: In
               values:
                 - "{{ crawler_node_type }}"
+{% endif %}
 
     podAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 2
+        - weight: 10
           podAffinityTerm:
-            topologyKey: "failure-domain.beta.kubernetes.io/zone"
+            topologyKey: "kubernetes.io/hostname"
             labelSelector:
-              matchLabels:
-                crawl: {{ id }}
+              matchExpressions:
+              - key: crawl
+                operator: In
+                values:
+                - {{ id }}
 
   tolerations:
     - key: nodeType

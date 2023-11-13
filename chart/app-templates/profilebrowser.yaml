@@ -18,16 +18,17 @@ spec:
 
   restartPolicy: OnFailure
 
+{% if crawler_node_type %}
   affinity:
     nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 1
-          preference:
-            matchExpressions:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
             - key: nodeType
               operator: In
               values:
                 - "{{ crawler_node_type }}"
+{% endif %}
 
   tolerations:
     - key: nodeType
@@ -74,3 +75,11 @@ spec:
         - name: CHROME_FLAGS
           value: "--proxy-server=socks5://{{ crawler_socks_proxy_host }}:{{ crawler_socks_proxy_port | default('9050') }}"
       {% endif %}
+
+      resources:
+        limits:
+          memory: "{{ crawler_memory }}"
+
+        requests:
+          cpu: "{{ crawler_cpu }}"
+          memory: "{{ crawler_memory }}"
