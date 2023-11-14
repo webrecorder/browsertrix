@@ -7,12 +7,13 @@ import ssl
 from typing import Optional, Union
 
 from email.message import EmailMessage
+from fastapi.templating import Jinja2Templates
 
 from .models import CreateReplicaJob, DeleteReplicaJob, Organization
 from .utils import is_bool
 
 
-# pylint: disable=too-few-public-methods
+# pylint: disable=too-few-public-methods, too-many-instance-attributes
 class EmailSender:
     """SMTP Email Sender"""
 
@@ -27,14 +28,29 @@ class EmailSender:
         self.sender = os.environ.get("EMAIL_SENDER") or "Browsertrix admin"
         self.password = os.environ.get("EMAIL_PASSWORD") or ""
         self.reply_to = os.environ.get("EMAIL_REPLY_TO") or self.sender
+        self.support_email = os.environ.get("EMAIL_SUPPORT_EMAIL") or self.reply_to
         self.smtp_server = os.environ.get("EMAIL_SMTP_HOST")
         self.smtp_port = int(os.environ.get("EMAIL_SMTP_PORT", 587))
         self.smtp_use_tls = is_bool(os.environ.get("EMAIL_SMTP_USE_TLS"))
 
         self.default_origin = os.environ.get("APP_ORIGIN")
 
-    def _send_encrypted(self, receiver, subject, message) -> None:
-        """Send Encrypted SMTP Message"""
+        self.templates = Jinja2Templates(
+            directory=os.path.join(os.path.dirname(__file__), "email-templates")
+        )
+
+    def _send_encrypted(self, receiver: str, name: str, **kwargs) -> None:
+        """Send Encrypted SMTP Message using given template name"""
+
+        full = self.templates.env.get_template(name).render(kwargs)
+        if full.startswith("Subject:"):
+            subject, message = full.split("\n", 1)
+            subject = subject.split(":", 1)[1].strip()
+            message = message.strip("\n")
+        else:
+            subject = ""
+            message = full
+
         print(message, flush=True)
 
         if not self.smtp_server:
@@ -76,18 +92,7 @@ class EmailSender:
 
         origin = self.get_origin(headers)
 
-        message = f"""
-Please verify your registration for Browsertrix Cloud for {receiver_email}
-
-You can verify by clicking here: {origin}/verify?token={token}
-
-The verification token is: {token}"""
-
-        self._send_encrypted(
-            receiver_email,
-            "Welcome to Browsertrix Cloud, Verify your Registration",
-            message,
-        )
+        self._send_encrypted(receiver_email, "validate", origin=origin, token=token)
 
     # pylint: disable=too-many-arguments
     def send_new_user_invite(
@@ -97,17 +102,14 @@ The verification token is: {token}"""
 
         origin = self.get_origin(headers)
 
-        message = f"""
-You are invited by {sender} to join their organization, "{org_name}" on Browsertrix Cloud!
-
-You can join by clicking here: {origin}/join/{token}?email={receiver_email}
-
-The invite token is: {token}"""
-
         self._send_encrypted(
             receiver_email,
-            f'You\'ve been invited to join "{org_name}" on Browsertrix Cloud',
-            message,
+            "invite",
+            origin=origin,
+            token=token,
+            sender=sender,
+            org_name=org_name,
+            support_email=self.support_email
         )
 
     # pylint: disable=too-many-arguments
@@ -117,29 +119,22 @@ The invite token is: {token}"""
         """Send email to invite new user"""
         origin = self.get_origin(headers)
 
-        message = f"""
-You are invited by {sender} to join their organization, "{org_name}" on Browsertrix Cloud!
-
-You can join by clicking here: {origin}/invite/accept/{token}?email={receiver_email}
-
-The invite token is: {token}"""
-
         self._send_encrypted(
             receiver_email,
-            f'You\'ve been invited to join "{org_name}" on Browsertrix Cloud',
-            message,
+            "invite_existing",
+            origin=origin,
+            token=token,
+            sender=sender,
+            org_name=org_name,
         )
 
     def send_user_forgot_password(self, receiver_email, token, headers=None):
         """Send password reset email with token"""
         origin = self.get_origin(headers)
 
-        message = f"""
-We received your password reset request. Please click here: {origin}/reset-password?token={token}
-to create a new password
-        """
-
-        self._send_encrypted(receiver_email, "Password Reset", message)
+        self._send_encrypted(
+            receiver_email, "password_reset", origin=origin, token=token
+        )
 
     def send_background_job_failed(
         self,
@@ -149,21 +144,6 @@ to create a new password
         receiver_email: str,
     ):
         """Send background job failed email to superuser"""
-        message = f"""
-Failed Background Job
----------------------
-
-Organization: {org.name} ({job.oid})
-Job type: {job.type}
-
-Job ID: {job.id}
-Started: {job.started.isoformat(sep=" ", timespec="seconds")}Z
-Finished: {finished.isoformat(sep=" ", timespec="seconds")}Z
-
-Object type: {job.object_type}
-Object ID: {job.object_id}
-File path: {job.file_path}
-Replica storage name: {job.replica_storage.name}
-        """
-
-        self._send_encrypted(receiver_email, "Failed Background Job", message)
+        self._send_encrypted(
+            receiver_email, "failed_bg_job", job=job, org=org, finished=finished
+        )

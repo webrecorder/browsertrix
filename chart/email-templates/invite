@@ -1,0 +1,27 @@
+Subject: Welcome to Browsertrix Cloud!
+
+Hello!
+
+Welcome to Browsertrix Cloud!
+
+{% if sender %}
+You have been invited by {{ sender }} to join their organization, "{{ org_name }}" on Browsertrix Cloud!
+
+You can join by clicking here: {{ origin }}/invite/accept/{{ token }}?email={{ receiver_email }}
+{% else %}
+
+You can join by clicking here: {{ origin }}/join/{{ token }}?email={{ receiver_email }}
+{% endif %}
+
+When you first access your account, you’ll be directed to your Dashboard. It contains information you may want to view frequently including: Storage Usage, Crawling Info,  Collections, and Monthly Usage History.
+
+For more info, check out the <a href="https://docs.browsertrix.cloud/user-guide/">Browsertrix Cloud User Guide</a>
+
+
+If you ever need to reset your password, go here: <a href="{{ origin }}/log-in/forgot-password">Reset my password please!</a>
+
+
+We want you to get the most from your Browsertrix Cloud experience. Let us know if you need any questions or feedback.
+You can connect with our team at {{ email }}.
+
+Webrecorder Team

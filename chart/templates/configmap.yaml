@@ -48,6 +48,8 @@ data:
 
   STORAGES_JSON: "/ops-configs/storages.json"
 
+  SUPPORT_EMAIL: "{{ .Values.email.support_email }}"
+
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -135,3 +137,13 @@ metadata:
 
 data:
 {{ (.Files.Glob "app-templates/*.yaml").AsConfig | indent 2 }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: email-templates
+  namespace: {{ .Release.Namespace }}
+
+data:
+{{ (.Files.Glob "email-templates/*").AsConfig | indent 2 }}

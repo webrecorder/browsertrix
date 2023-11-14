@@ -11,7 +11,8 @@ from pymongo.errors import AutoReconnect
 from fastapi import HTTPException
 
 from .pagination import DEFAULT_PAGE_SIZE
-from .models import UserRole, InvitePending, InviteRequest
+from .models import UserRole, InvitePending, InviteRequest, User
+from .users import UserManager
 from .utils import is_bool
 
 
@@ -118,8 +119,8 @@ class InviteOps:
     async def invite_user(
         self,
         invite: InviteRequest,
-        user,
-        user_manager,
+        user: User,
+        user_manager: UserManager,
         org=None,
         allow_existing=False,
         headers: Optional[dict] = None,
@@ -147,7 +148,7 @@ class InviteOps:
             role=invite.role if hasattr(invite, "role") else None,
             # URL decode email address just in case
             email=urllib.parse.unquote(invite.email),
-            inviterEmail=user.email,
+            inviterEmail=user.email if not user.is_superuser else None,
         )
 
         other_user = await user_manager.get_by_email(invite.email)
