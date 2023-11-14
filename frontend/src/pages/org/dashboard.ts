@@ -401,7 +401,7 @@ export class Dashboard extends LiteElement {
         <div class="text-center">
           <div>${label}</div>
           <div class="text-xs opacity-80">
-            ${this.humanizeExecutionSeconds(value)} |
+            ${humanizeDuration(value * 1000)} |
             ${this.renderPercentage(value / quotaSeconds)}
           </div>
         </div>
@@ -590,7 +590,7 @@ export class Dashboard extends LiteElement {
             </sl-format-date>
           `,
           value ? this.humanizeExecutionSeconds(value) : "--",
-          this.humanizeExecutionSeconds(crawlTime || 0),
+          humanizeDuration(crawlTime * 1000 || 0),
         ];
       });
     return html`
