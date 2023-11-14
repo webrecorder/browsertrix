@@ -1009,7 +1009,7 @@ https://example.com/path`}
         name="includeLinkedPages"
         ?checked=${this.formState.includeLinkedPages}
       >
-        ${msg("Include Any Linked Page")}
+        ${msg("Include any linked page")}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
         msg(`If checked, the crawler will visit pages one link away from a Crawl
@@ -1020,7 +1020,7 @@ https://example.com/path`}
         name="failOnFailedSeed"
         ?checked=${this.formState.failOnFailedSeed}
       >
-        ${msg("Fail Crawl on Failed URL")}
+        ${msg("Fail crawl on failed URL")}
       </sl-checkbox>`)}
       ${this.renderHelpTextCol(
         msg(
