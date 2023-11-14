@@ -23,6 +23,8 @@ class EmailSender:
     smtp_server: Optional[str]
     smtp_port: int
     smtp_use_tls: bool
+    support_email: str
+    templates: Jinja2Templates
 
     def __init__(self):
         self.sender = os.environ.get("EMAIL_SENDER") or "Browsertrix admin"
@@ -109,7 +111,7 @@ class EmailSender:
             token=token,
             sender=sender,
             org_name=org_name,
-            support_email=self.support_email
+            support_email=self.support_email,
         )
 
     # pylint: disable=too-many-arguments
