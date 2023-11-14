@@ -148,7 +148,8 @@ class InviteOps:
             role=invite.role if hasattr(invite, "role") else None,
             # URL decode email address just in case
             email=urllib.parse.unquote(invite.email),
-            inviterEmail=user.email if not user.is_superuser else None,
+            # inviterEmail=user.email if not user.is_superuser else None,
+            inviterEmail=user.email,
         )
 
         other_user = await user_manager.get_by_email(invite.email)

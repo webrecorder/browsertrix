@@ -7,6 +7,9 @@ import ssl
 from typing import Optional, Union
 
 from email.message import EmailMessage
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
 
 from .models import CreateReplicaJob, DeleteReplicaJob, Organization
@@ -45,26 +48,35 @@ class EmailSender:
         """Send Encrypted SMTP Message using given template name"""
 
         full = self.templates.env.get_template(name).render(kwargs)
-        if full.startswith("Subject:"):
-            subject, message = full.split("\n", 1)
-            subject = subject.split(":", 1)[1].strip()
-            message = message.strip("\n")
+        parts = full.split("~~~")
+        if len(parts) == 3:
+            subject, html, text = parts
+        elif len(parts) == 2:
+            subject, text = parts
+            html = None
         else:
-            subject = ""
-            message = full
+            raise HTTPException(status_code=500, detail="invalid_email_template")
 
-        print(message, flush=True)
+        print(full, flush=True)
 
         if not self.smtp_server:
             print("Email: No SMTP Server, not sending", flush=True)
             return
 
-        msg = EmailMessage()
+        msg: Union[EmailMessage, MIMEMultipart]
+
+        if html:
+            msg = MIMEMultipart("alternative")
+            msg.attach(MIMEText(text.strip(), "plain"))
+            msg.attach(MIMEText(html.strip(), "html"))
+        else:
+            msg = EmailMessage()
+            msg.set_content(text.strip())
+
         msg["Subject"] = subject
         msg["From"] = self.reply_to
         msg["To"] = receiver
         msg["Reply-To"] = msg["From"]
-        msg.set_content(message)
 
         context = ssl.create_default_context()
         with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
@@ -104,11 +116,13 @@ class EmailSender:
 
         origin = self.get_origin(headers)
 
+        invite_url = f"{origin}/join/{token}?email={receiver_email}"
+
         self._send_encrypted(
             receiver_email,
             "invite",
-            origin=origin,
-            token=token,
+            invite_url=invite_url,
+            is_new=True,
             sender=sender,
             org_name=org_name,
             support_email=self.support_email,
@@ -121,11 +135,13 @@ class EmailSender:
         """Send email to invite new user"""
         origin = self.get_origin(headers)
 
+        invite_url = f"{origin}/invite/accept/{token}?email={receiver_email}"
+
         self._send_encrypted(
             receiver_email,
-            "invite_existing",
-            origin=origin,
-            token=token,
+            "invite",
+            invite_url=invite_url,
+            is_new=False,
             sender=sender,
             org_name=org_name,
         )

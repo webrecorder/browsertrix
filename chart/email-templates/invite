@@ -1,5 +1,36 @@
-Subject: Welcome to Browsertrix Cloud!
+Welcome to Browsertrix Cloud!
+~~~
+<html>
+<body>
+<p>Hello!</p>
 
+<p>Welcome to Browsertrix Cloud!</p>
+
+{% if sender %}
+<p>You have been invited by {{ sender }} to join "{{ org_name }}" on Browsertrix Cloud!
+</p>
+{% endif %}
+
+{% if is_new %}
+<p style="font-weight: bold; padding: 12px; background-color: lightgrey"><a href="{{ invite_url }}">Click here to sign up for an account!</a></p>
+{% else %}
+<p style="font-weight: bold; padding: 12px; background-color: lightgrey"><a href="{{ invite_url }}">Click here to accept this invite.</a></p>
+{% endif %}
+
+<p>When you first access your account, you’ll be directed to your Dashboard. It contains information you may want to view frequently including: Storage Usage, Crawling Info,  Collections, and Monthly Usage History.</p>
+
+
+<p>For more info, check out the <b><a href="https://docs.browsertrix.cloud/user-guide/">Browsertrix Cloud User Guide</a></b></p>
+
+
+<p>
+We want you to get the most from your Browsertrix Cloud experience. Let us know if you need any questions or feedback.
+You can connect with our team at <a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
+
+<p><i>The Webrecorder Team</i></p>
+</body>
+</html>
+~~~
 Hello!
 
 Welcome to Browsertrix Cloud!
@@ -7,21 +38,21 @@ Welcome to Browsertrix Cloud!
 {% if sender %}
 You have been invited by {{ sender }} to join their organization, "{{ org_name }}" on Browsertrix Cloud!
 
-You can join by clicking here: {{ origin }}/invite/accept/{{ token }}?email={{ receiver_email }}
 {% else %}
 
-You can join by clicking here: {{ origin }}/join/{{ token }}?email={{ receiver_email }}
+You can join by clicking here: {{ invite_url }}
 {% endif %}
 
 When you first access your account, you’ll be directed to your Dashboard. It contains information you may want to view frequently including: Storage Usage, Crawling Info,  Collections, and Monthly Usage History.
 
-For more info, check out the <a href="https://docs.browsertrix.cloud/user-guide/">Browsertrix Cloud User Guide</a>
+For more info, check out Browsertrix Cloud User Guide at: https://docs.browsertrix.cloud/user-guide/
 
 
-If you ever need to reset your password, go here: <a href="{{ origin }}/log-in/forgot-password">Reset my password please!</a>
+If you ever need to reset your password, go here: {{ origin }}/log-in/forgot-password
 
 
 We want you to get the most from your Browsertrix Cloud experience. Let us know if you need any questions or feedback.
-You can connect with our team at {{ email }}.
+You can connect with our team at {{ support_email }}.
 
-Webrecorder Team
+
+
