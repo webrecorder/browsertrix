@@ -177,7 +177,7 @@ export class CrawlStatus extends LitElement {
           slot="prefix"
           style="color: var(--danger)"
         ></sl-icon>`;
-        label = msg("Skipped (Storage Quota Reached)");
+        label = msg("Skipped: Storage Quota Reached");
         break;
 
       case "stopped_by_user":
