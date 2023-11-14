@@ -71,13 +71,7 @@ class InviteOps:
 
         await self.invites.insert_one(new_user_invite.to_dict())
 
-        self.email.send_new_user_invite(
-            new_user_invite.email,
-            new_user_invite.inviterEmail,
-            org_name,
-            new_user_invite.id,
-            headers,
-        )
+        self.email.send_new_user_invite(new_user_invite, org_name, headers)
 
     async def get_valid_invite(self, invite_token: UUID, email):
         """Retrieve a valid invite data from db, or throw if invalid"""
@@ -148,8 +142,8 @@ class InviteOps:
             role=invite.role if hasattr(invite, "role") else None,
             # URL decode email address just in case
             email=urllib.parse.unquote(invite.email),
-            # inviterEmail=user.email if not user.is_superuser else None,
             inviterEmail=user.email,
+            fromSuperuser=user.is_superuser,
         )
 
         other_user = await user_manager.get_by_email(invite.email)

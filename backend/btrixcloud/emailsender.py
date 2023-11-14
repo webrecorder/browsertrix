@@ -12,7 +12,7 @@ from email.mime.multipart import MIMEMultipart
 from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
 
-from .models import CreateReplicaJob, DeleteReplicaJob, Organization
+from .models import CreateReplicaJob, DeleteReplicaJob, Organization, InvitePending
 from .utils import is_bool
 
 
@@ -33,7 +33,7 @@ class EmailSender:
         self.sender = os.environ.get("EMAIL_SENDER") or "Browsertrix admin"
         self.password = os.environ.get("EMAIL_PASSWORD") or ""
         self.reply_to = os.environ.get("EMAIL_REPLY_TO") or self.sender
-        self.support_email = os.environ.get("EMAIL_SUPPORT_EMAIL") or self.reply_to
+        self.support_email = os.environ.get("EMAIL_SUPPORT") or self.reply_to
         self.smtp_server = os.environ.get("EMAIL_SMTP_HOST")
         self.smtp_port = int(os.environ.get("EMAIL_SMTP_PORT", 587))
         self.smtp_use_tls = is_bool(os.environ.get("EMAIL_SMTP_USE_TLS"))
@@ -73,7 +73,7 @@ class EmailSender:
             msg = EmailMessage()
             msg.set_content(text.strip())
 
-        msg["Subject"] = subject
+        msg["Subject"] = subject.strip()
         msg["From"] = self.reply_to
         msg["To"] = receiver
         msg["Reply-To"] = msg["From"]
@@ -109,21 +109,21 @@ class EmailSender:
         self._send_encrypted(receiver_email, "validate", origin=origin, token=token)
 
     # pylint: disable=too-many-arguments
-    def send_new_user_invite(
-        self, receiver_email, sender, org_name, token, headers=None
-    ):
+    def send_new_user_invite(self, invite: InvitePending, org_name: str, headers=None):
         """Send email to invite new user"""
 
         origin = self.get_origin(headers)
 
-        invite_url = f"{origin}/join/{token}?email={receiver_email}"
+        receiver_email = invite.email or ""
+
+        invite_url = f"{origin}/join/{invite.id}?email={receiver_email}"
 
         self._send_encrypted(
             receiver_email,
             "invite",
             invite_url=invite_url,
             is_new=True,
-            sender=sender,
+            sender=invite.inviterEmail if not invite.fromSuperuser else "",
             org_name=org_name,
             support_email=self.support_email,
         )
@@ -151,7 +151,11 @@ class EmailSender:
         origin = self.get_origin(headers)
 
         self._send_encrypted(
-            receiver_email, "password_reset", origin=origin, token=token
+            receiver_email,
+            "password_reset",
+            origin=origin,
+            token=token,
+            support_email=self.support_email,
         )
 
     def send_background_job_failed(

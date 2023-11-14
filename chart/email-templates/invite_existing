@@ -1,7 +1,0 @@
-You've been invited to join "{{ org_name }}" on Browsertrix Cloud
-~~~
-You are invited by {{ sender }} to join their organization, "{{ org_name }}" on Browsertrix Cloud!
-
-You can join by clicking here: {{ origin }}/invite/accept/{{ token }}?email={receiver_email}
-
-The invite token is: {{ token }}

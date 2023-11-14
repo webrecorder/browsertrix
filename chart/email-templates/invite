@@ -12,20 +12,26 @@ Welcome to Browsertrix Cloud!
 {% endif %}
 
 {% if is_new %}
-<p style="font-weight: bold; padding: 12px; background-color: lightgrey"><a href="{{ invite_url }}">Click here to sign up for an account!</a></p>
+<p>You can now set up your account using the link below.</p>
+
+<p style="font-weight: bold; padding: 12px; background-color: lightgrey"><a href="{{ invite_url }}">Click here to create an account.</a></p>
 {% else %}
 <p style="font-weight: bold; padding: 12px; background-color: lightgrey"><a href="{{ invite_url }}">Click here to accept this invite.</a></p>
 {% endif %}
 
-<p>When you first access your account, you’ll be directed to your Dashboard. It contains information you may want to view frequently including: Storage Usage, Crawling Info,  Collections, and Monthly Usage History.</p>
+<p>When you first access your account, you’ll be directed to your Dashboard. It contains information you may want to view frequently including: Storage Usage, Crawling Info,  Collections, and Monthly Usage History. From there, you can click <i>+ Create New</i> to create your first Crawl Workflow!
 
 
 <p>For more info, check out the <b><a href="https://docs.browsertrix.cloud/user-guide/">Browsertrix Cloud User Guide</a></b></p>
 
 
 <p>
-We want you to get the most from your Browsertrix Cloud experience. Let us know if you need any questions or feedback.
+We want you to get the most from your Browsertrix Cloud experience!
+</p>
+
+<p>Let us know if you need any questions or feedback.</p>
 You can connect with our team at <a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
+</p>
 
 <p><i>The Webrecorder Team</i></p>
 </body>

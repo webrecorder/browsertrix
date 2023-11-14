@@ -47,7 +47,8 @@ class InvitePending(BaseMongoModel):
     """An invite for a new user, with an email and invite token as id"""
 
     created: datetime
-    inviterEmail: Optional[str]
+    inviterEmail: str
+    fromSuperuser: Optional[bool]
     oid: Optional[UUID]
     role: Optional[UserRole] = UserRole.VIEWER
     email: Optional[str]
