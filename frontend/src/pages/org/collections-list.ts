@@ -382,8 +382,7 @@ export class CollectionsList extends LiteElement {
           <div
             class="hidden md:grid md:grid-cols-[2rem_1fr_repeat(3,12ch)_18ch_2.5rem] gap-3"
           >
-            <div class="col-span-1"></div>
-            <div class="col-span-1 text-xs">${msg("Name")}</div>
+            <div class="col-span-2 text-xs pl-12">${msg("Name")}</div>
             <div class="col-span-1 text-xs">${msg("Archived Items")}</div>
             <div class="col-span-1 text-xs">${msg("Total Size")}</div>
             <div class="col-span-1 text-xs">${msg("Total Pages")}</div>
