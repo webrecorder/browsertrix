@@ -4,7 +4,7 @@ import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
-import humanizeDuration from "pretty-ms";
+import humanizeMilliseconds from "pretty-ms";
 
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { AuthState } from "../../utils/AuthService";
@@ -80,7 +80,7 @@ export class Dashboard extends LiteElement {
     return html`<span title="${fullFormatter.format(minutes)}">
         ${compactFormatter.format(minutes)}</span
       >
-      (${humanizeDuration(seconds * 1000)})`;
+      (${humanizeMilliseconds(seconds * 1000)})`;
   };
 
   render() {
@@ -401,7 +401,7 @@ export class Dashboard extends LiteElement {
         <div class="text-center">
           <div>${label}</div>
           <div class="text-xs opacity-80">
-            ${humanizeDuration(value * 1000)} |
+            ${humanizeMilliseconds(value * 1000)} |
             ${this.renderPercentage(value / quotaSeconds)}
           </div>
         </div>
@@ -590,7 +590,7 @@ export class Dashboard extends LiteElement {
             </sl-format-date>
           `,
           value ? this.humanizeExecutionSeconds(value) : "--",
-          humanizeDuration(crawlTime * 1000 || 0),
+          humanizeMilliseconds(crawlTime * 1000 || 0),
         ];
       });
     return html`
