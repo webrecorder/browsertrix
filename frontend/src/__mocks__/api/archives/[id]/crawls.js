@@ -72,7 +72,7 @@ export default {
       manual: false,
       started: "2022-01-18T03:03:00",
       finished: "2022-01-18T03:03:19",
-      state: "partial_complete",
+      state: "stopped_by_user",
       scale: 1,
       completions: 0,
       stats: null,

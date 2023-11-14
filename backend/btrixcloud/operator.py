@@ -47,8 +47,9 @@ if TYPE_CHECKING:
     from .webhooks import EventWebhookOps
     from .users import UserManager
     from .background_jobs import BackgroundJobOps
+    from redis.asyncio.client import Redis
 else:
-    CrawlConfigOps = CrawlOps = OrgOps = CollectionOps = object
+    CrawlConfigOps = CrawlOps = OrgOps = CollectionOps = Redis = object
     StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = object
 
 CMAP = "ConfigMap.v1"
@@ -219,6 +220,7 @@ class CrawlStatus(BaseModel):
     filesAddedSize: int = 0
     finished: Optional[str] = None
     stopping: bool = False
+    stopReason: Optional[str] = None
     initRedis: bool = False
     lastActiveTime: str = ""
     podStatus: Optional[DefaultDict[str, PodInfo]] = defaultdict(
@@ -450,6 +452,12 @@ class BtrixOperator(K8sAPI):
             scheduled=spec.get("manual") != "1",
         )
 
+        # shouldn't get here, crawl should already be finalizing when canceled
+        # just in case, handle canceled-but-not-finalizing here
+        if status.state == "canceled":
+            await self.delete_crawl_job(crawl.id)
+            return {"status": status.dict(exclude_none=True), "children": []}
+
         # first, check storage quota, and fail immediately if quota reached
         if status.state in ("starting", "skipped_quota_reached"):
             # only check on very first run, before any pods/pvcs created
@@ -571,7 +579,14 @@ class BtrixOperator(K8sAPI):
         return self.load_from_yaml("crawler.yaml", params)
 
     # pylint: disable=too-many-arguments
-    async def _resolve_scale(self, crawl_id, desired_scale, redis, status, pods):
+    async def _resolve_scale(
+        self,
+        crawl_id: str,
+        desired_scale: int,
+        redis: Redis,
+        status: CrawlStatus,
+        pods: dict[str, dict],
+    ):
         """Resolve scale
         If desired_scale >= actual scale, just set (also limit by number of pages
         found).
@@ -601,9 +616,16 @@ class BtrixOperator(K8sAPI):
                 print(f"Attempting scaling down of pod {i}")
                 await redis.hset(f"{crawl_id}:stopone", name, "1")
 
-            if pod["status"].get("phase") == "Succeeded" and new_scale == i + 1:
-                new_scale = i
-                print(f"Scaled down pod index {i}, scale to {new_scale}")
+            # check if this pod can be scaled down
+            if new_scale == i + 1:
+                # if status key doesn't exist, this pod never actually ran, so just scale down
+                if not await redis.hexists(f"{crawl_id}:status", name):
+                    new_scale = i
+                    print(f"Scaled down pod index {i + 1} -> {i}, no previous pod")
+
+                elif pod and pod["status"].get("phase") == "Succeeded":
+                    new_scale = i
+                    print(f"Scaled down pod index {i + 1} -> {i}, pod completed")
 
         if new_scale < actual_scale:
             for i in range(new_scale, actual_scale):
@@ -638,9 +660,9 @@ class BtrixOperator(K8sAPI):
         from starting to running:
          - starting -> running
 
-        from running to complete or partial_complete:
+        from running to complete or complete[:stopReason]:
+         - running -> complete[:stopReason]
          - running -> complete
-         - running -> partial_complete
 
         from starting or running to waiting for capacity (pods pending) and back:
          - starting -> waiting_capacity
@@ -648,8 +670,8 @@ class BtrixOperator(K8sAPI):
          - waiting_capacity -> running
 
         from any state to canceled or failed:
-         - not complete or partial_complete -> canceled
-         - not complete or partial_complete -> failed
+         - not complete[:stopReason] -> canceled
+         - not complete[:stopReason] -> failed
         """
         if not allowed_from or status.state in allowed_from:
             res = await self.crawl_ops.update_crawl_state_if_allowed(
@@ -868,7 +890,7 @@ class BtrixOperator(K8sAPI):
             "finalized": finalized,
         }
 
-    async def _get_redis(self, redis_url):
+    async def _get_redis(self, redis_url: str) -> Optional[Redis]:
         """init redis, ensure connectivity"""
         redis = None
         try:
@@ -884,7 +906,14 @@ class BtrixOperator(K8sAPI):
 
             return None
 
-    async def sync_crawl_state(self, redis_url, crawl, status, pods, metrics):
+    async def sync_crawl_state(
+        self,
+        redis_url: str,
+        crawl: CrawlSpec,
+        status: CrawlStatus,
+        pods: dict[str, dict],
+        metrics: Optional[dict],
+    ):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
         crawler_running, redis_running, done = self.sync_pod_status(pods, status)
@@ -975,7 +1004,7 @@ class BtrixOperator(K8sAPI):
             if redis:
                 await redis.close()
 
-    def sync_pod_status(self, pods, status):
+    def sync_pod_status(self, pods: dict[str, dict], status: CrawlStatus):
         """check status of pods"""
         crawler_running = False
         redis_running = False
@@ -1262,13 +1291,14 @@ class BtrixOperator(K8sAPI):
 
         return True
 
-    def is_crawl_stopping(self, crawl: CrawlSpec, status: CrawlStatus) -> bool:
-        """return true if crawl should begin graceful stopping phase"""
-
+    async def is_crawl_stopping(
+        self, crawl: CrawlSpec, status: CrawlStatus
+    ) -> Optional[str]:
+        """check if crawl is stopping and set reason"""
         # if user requested stop, then enter stopping phase
         if crawl.stopping:
             print("Graceful Stop: User requested stop")
-            return True
+            return "stopped_by_user"
 
         # check timeout if timeout time exceeds elapsed time
         if crawl.timeout:
@@ -1280,15 +1310,20 @@ class BtrixOperator(K8sAPI):
                 print(
                     f"Graceful Stop: Crawl running time exceeded {crawl.timeout} second timeout"
                 )
-                return True
+                return "time-limit"
 
+        # crawl size limit
         if crawl.max_crawl_size and status.size > crawl.max_crawl_size:
             print(f"Graceful Stop: Maximum crawl size {crawl.max_crawl_size} hit")
-            return True
+            return "size-limit"
 
-        return False
+        # check exec time quotas and stop if reached limit
+        if await self.org_ops.exec_mins_quota_reached(crawl.oid):
+            return "stopped_quota_reached"
 
-    async def get_redis_crawl_stats(self, redis, crawl_id):
+        return None
+
+    async def get_redis_crawl_stats(self, redis: Redis, crawl_id: str):
         """get page stats"""
         try:
             # crawler >0.9.0, done key is a value
@@ -1304,7 +1339,14 @@ class BtrixOperator(K8sAPI):
         stats = {"found": pages_found, "done": pages_done, "size": archive_size}
         return stats, sizes
 
-    async def update_crawl_state(self, redis, crawl, status, pods, done) -> CrawlStatus:
+    async def update_crawl_state(
+        self,
+        redis: Redis,
+        crawl: CrawlSpec,
+        status: CrawlStatus,
+        pods: dict[str, dict],
+        done: bool,
+    ) -> CrawlStatus:
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
         stats, sizes = await self.get_redis_crawl_stats(redis, crawl.id)
@@ -1322,16 +1364,13 @@ class BtrixOperator(K8sAPI):
 
         for key, value in sizes.items():
             value = int(value)
-            if value > 0:
+            if value > 0 and status.podStatus:
                 pod_info = status.podStatus[key]
                 pod_info.used.storage = value
 
-        status.stopping = self.is_crawl_stopping(crawl, status)
-
-        # check exec time quotas and stop if reached limit
-        if not status.stopping:
-            if await self.org_ops.exec_mins_quota_reached(crawl.oid):
-                status.stopping = True
+        if not status.stopReason:
+            status.stopReason = await self.is_crawl_stopping(crawl, status)
+            status.stopping = status.stopReason is not None
 
         # mark crawl as stopping
         if status.stopping:
@@ -1362,9 +1401,10 @@ class BtrixOperator(K8sAPI):
                 )
                 return status
 
-            completed = status.pagesDone and status.pagesDone >= status.pagesFound
-
-            state = "complete" if completed else "partial_complete"
+            if status.stopReason in ("stopped_by_user", "stopped_quota_reached"):
+                state = status.stopReason
+            else:
+                state = "complete"
 
             await self.mark_finished(
                 crawl.id, crawl.cid, crawl.oid, status, state, crawl, stats

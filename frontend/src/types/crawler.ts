@@ -115,13 +115,13 @@ export type CrawlState =
   | "generate-wacz"
   | "uploading-wacz"
   | "pending-wait"
+  | "stopping"
   | "complete"
   | "failed"
   | "skipped_quota_reached"
-  | "partial_complete"
-  | "timed_out"
-  | "stopping"
-  | "canceled";
+  | "canceled"
+  | "stopped_by_user"
+  | "stopped_quota_reached";
 
 export type Crawl = CrawlConfig & {
   id: string;

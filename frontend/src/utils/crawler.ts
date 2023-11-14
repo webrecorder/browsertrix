@@ -9,12 +9,17 @@ export const activeCrawlStates: CrawlState[] = [
   "pending-wait",
   "stopping",
 ];
-export const inactiveCrawlStates: CrawlState[] = [
+
+export const finishedCrawlStates: CrawlState[] = [
   "complete",
+  "stopped_by_user",
+  "stopped_quota_reached",
+];
+
+export const inactiveCrawlStates: CrawlState[] = [
+  ...finishedCrawlStates,
   "canceled",
-  "partial_complete",
   "skipped_quota_reached",
-  "timed_out",
   "failed",
 ];
 
