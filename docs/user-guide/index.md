@@ -1,6 +1,6 @@
 # Browsertrix User Guide
 
-Welcome to the Browsertrix user guide! While our aim with our software is to create interfaces so intuitive no additional explination is needed, sometimes the complexities of web archiving require a little more expansion. If there's something that you found especially confusing or frustrating and — after searching for it here — no satisfactory answer was given, we'd like to know about it, [please get in touch](docs-feedback@webrecorder.net)!
+Welcome to the Browsertrix user guide! While our aim with our software is to create interfaces so intuitive no additional explination is needed, sometimes the complexities of web archiving require a little more expansion. If there's something that you found especially confusing or frustrating and — after searching for it here — if no satisfactory answer was given, we'd like to know about it, [please get in touch](docs-feedback@webrecorder.net)!
 
 ## Getting Started
 
