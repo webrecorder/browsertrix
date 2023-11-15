@@ -207,6 +207,9 @@ export class CrawlListItem extends LitElement {
   @state()
   private dropdownIsOpen?: boolean;
 
+  @state()
+  private hasMenuItems?: boolean;
+
   // TODO localize
   private numberFormatter = new Intl.NumberFormat(undefined, {
     notation: "compact",
@@ -378,6 +381,7 @@ export class CrawlListItem extends LitElement {
     >
       <slot
         name="menu"
+        @slotchange=${() => (this.hasMenuItems = this.menuArr.length > 0)}
         @sl-select=${() => (this.dropdownIsOpen = false)}
       ></slot>
     </div> `;
@@ -413,37 +417,39 @@ export class CrawlListItem extends LitElement {
   }
 
   private renderActions() {
-    if (this.menuArr.length > 0) {
-      return html` <div class="col action">
-        <sl-icon-button
-          class="dropdownTrigger"
-          label=${msg("Actions")}
-          name="three-dots-vertical"
-          @click=${(e: MouseEvent) => {
-            // Prevent anchor link default behavior
-            e.preventDefault();
-            // Stop prop to anchor link
-            e.stopPropagation();
-            this.dropdownIsOpen = !this.dropdownIsOpen;
-          }}
-          @focusout=${(e: FocusEvent) => {
-            const relatedTarget = e.relatedTarget as HTMLElement;
-            if (relatedTarget) {
-              if (this.menuArr[0]?.contains(relatedTarget)) {
-                // Keep dropdown open if moving to menu selection
-                return;
-              }
-              if (this.row?.isEqualNode(relatedTarget)) {
-                // Handle with click event
-                return;
-              }
-            }
-            this.dropdownIsOpen = false;
-          }}
-        >
-        </sl-icon-button>
-      </div>`;
+    if (!this.hasMenuItems) {
+      return;
     }
+
+    return html` <div class="col action">
+      <sl-icon-button
+        class="dropdownTrigger"
+        label=${msg("Actions")}
+        name="three-dots-vertical"
+        @click=${(e: MouseEvent) => {
+          // Prevent anchor link default behavior
+          e.preventDefault();
+          // Stop prop to anchor link
+          e.stopPropagation();
+          this.dropdownIsOpen = !this.dropdownIsOpen;
+        }}
+        @focusout=${(e: FocusEvent) => {
+          const relatedTarget = e.relatedTarget as HTMLElement;
+          if (relatedTarget) {
+            if (this.menuArr[0]?.contains(relatedTarget)) {
+              // Keep dropdown open if moving to menu selection
+              return;
+            }
+            if (this.row?.isEqualNode(relatedTarget)) {
+              // Handle with click event
+              return;
+            }
+          }
+          this.dropdownIsOpen = false;
+        }}
+      >
+      </sl-icon-button>
+    </div>`;
   }
 
   private repositionDropdown() {
