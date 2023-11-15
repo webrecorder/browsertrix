@@ -462,7 +462,12 @@ export class Dashboard extends LiteElement {
             hasQuota
               ? html`
                   <span class="inline-flex items-center">
-                    ${humanizeExecutionSeconds((quotaSecondsAllTypes - usageSecondsAllTypes), "short"}
+                    ${humanizeExecutionSeconds(
+                      (quotaSecondsAllTypes - usageSecondsAllTypes),
+                      "short",
+                      false,
+                      true
+                    }
                     ${msg("Available")}
                   </span>
                 `
@@ -474,7 +479,10 @@ export class Dashboard extends LiteElement {
         () => html`
           <div class="mb-2">
             <btrix-meter
-              value=${quotaSecondsAllTypes}
+              value=${this.org!.giftedExecSecondsAvailable ||
+              this.org!.extraExecSecondsAvailable
+                ? quotaSecondsAllTypes
+                : usageSeconds}
               max=${quotaSecondsAllTypes}
               valueText=${msg("time")}
             >
@@ -503,12 +511,17 @@ export class Dashboard extends LiteElement {
                   "red-400"
                 )
               )}
-              ${when(quotaSeconds && usageSeconds < quotaSeconds, () =>
-                renderBar(
-                  quotaSeconds - usageSeconds,
-                  msg("Monthly Execution Time Available"),
-                  "green-100"
-                )
+              ${when(
+                (this.org!.giftedExecSecondsAvailable ||
+                  this.org!.extraExecSecondsAvailable) &&
+                  quotaSeconds &&
+                  usageSeconds < quotaSeconds,
+                () =>
+                  renderBar(
+                    quotaSeconds - usageSeconds,
+                    msg("Monthly Execution Time Available"),
+                    "green-100"
+                  )
               )}
               ${when(this.org!.giftedExecSecondsAvailable, () =>
                 renderBar(
@@ -716,22 +729,17 @@ export class Dashboard extends LiteElement {
             >
             </sl-format-date>
           `,
-<<<<<<< HEAD
-          value ? humanizeExecutionSeconds(value) : "--",
-          humanizeSeconds(crawlTime || 0),
-=======
-          humanizeMilliseconds((crawlTime || 0) * 1000),
+          humanizeSeconds((crawlTime || 0)),
           totalTimeSeconds
-            ? humanizeMilliseconds(totalTimeSeconds * 1000)
+            ? humanizeSeconds(totalTimeSeconds)
             : "--",
-          value ? humanizeMilliseconds(value * 1000) : "--",
+          value ? humanizeSeconds(value) : "--",
           extraSecondsUsed
-            ? humanizeMilliseconds(extraSecondsUsed * 1000)
+            ? humanizeSeconds(extraSecondsUsed)
             : "--",
           giftedSecondsUsed
-            ? humanizeMilliseconds(giftedSecondsUsed * 1000)
+            ? humanizeSeconds(giftedSecondsUsed)
             : "--",
->>>>>>> 7bd5ab86 (Implement extra and gifted execution minutes)
         ];
       });
     return html`

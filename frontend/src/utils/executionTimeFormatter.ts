@@ -68,10 +68,16 @@ export function humanizeSeconds(
 export const humanizeExecutionSeconds = (
   seconds: number,
   style: "short" | "full" = "full",
-  displaySeconds = false
+  displaySeconds = false,
+  roundDown = false
 ) => {
   const locale = getLocale();
-  const minutes = Math.ceil(seconds / 60);
+  let minutes = 0;
+  if (roundDown) {
+    minutes = Math.floor(seconds / 60);
+  } else {
+    minutes = Math.ceil(seconds / 60);
+  }
 
   const compactMinuteFormatter = new Intl.NumberFormat(locale, {
     notation: "compact",

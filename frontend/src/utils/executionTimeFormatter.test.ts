@@ -73,4 +73,15 @@ describe("humanizeExecutionSeconds", () => {
     expect(el.textContent?.trim()).to.equal("59 minutes");
     expect(parentNode.innerText).to.equal("59 minutes");
   });
+  it("rounds minutes down when set", async () => {
+    const parentNode = document.createElement("div");
+    const el = await fixture(humanizeExecutionSeconds(90, "full", false, true), {
+      parentNode,
+    });
+    expect(el.getAttribute("title")).to.equal(
+      "1 minute\u00a0(1m)"
+    );
+    expect(el.textContent?.trim()).to.equal("1 minute");
+    expect(parentNode.innerText).to.equal("1 minute");
+  })
 });
