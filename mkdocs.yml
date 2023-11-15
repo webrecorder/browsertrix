@@ -57,8 +57,8 @@ nav:
       - develop/frontend-dev.md
       - develop/docs.md
   - User Guide:
-      - user-guide/overview.md
       - user-guide/index.md
+      - user-guide/overview.md
       - Crawling:
         - user-guide/crawl-workflows.md
         - user-guide/workflow-setup.md
