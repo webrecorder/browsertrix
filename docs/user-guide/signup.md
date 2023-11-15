@@ -6,4 +6,4 @@ If you have been sent an [invite](../org-settings/#members), enter a name and pa
 
 ## Open Registration
 
-If the server has enabled signups and you have been given a registration link, enter your email address, password, and name to create a new account. Your account will be added to the server's default organization.
+If the server has enabled signups and you have been given a registration link, enter your email address, name, and password to create a new account. Your account will be added to the server's default organization.
