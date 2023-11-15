@@ -59,11 +59,11 @@ nav:
   - User Guide:
       - user-guide/index.md
       - user-guide/signup.md
-      - user-guide/overview.md
       - Crawling:
         - user-guide/crawl-workflows.md
         - user-guide/workflow-setup.md
         - user-guide/browser-profiles.md
+      - user-guide/overview.md
       - user-guide/archived-items.md
       - user-guide/collections.md
       - user-guide/org-settings.md
