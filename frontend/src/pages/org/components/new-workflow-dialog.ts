@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
 import seededCrawlSvg from "../../../assets/images/new-crawl-config_Seeded-Crawl.svg";
@@ -11,6 +11,7 @@ export type SelectJobTypeEvent = CustomEvent<"url-list" | "seed-crawl">;
  * @event select-job-type SelectJobTypeEvent
  */
 @localized()
+@customElement("btrix-new-workflow-dialog")
 export class NewWorkflowDialog extends LitElement {
   static styles = css`
     .title,
@@ -127,4 +128,3 @@ export class NewWorkflowDialog extends LitElement {
     `;
   }
 }
-customElements.define("btrix-new-workflow-dialog", NewWorkflowDialog);

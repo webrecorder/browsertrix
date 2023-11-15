@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
 import type { CollectionSubmitEvent } from "./collection-editor";
@@ -8,6 +8,7 @@ import type { Collection } from "../../types/collection";
 import "./collection-editor";
 
 @localized()
+@customElement("btrix-collections-new")
 export class CollectionsNew extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -105,4 +106,3 @@ export class CollectionsNew extends LiteElement {
     this.isSubmitting = false;
   }
 }
-customElements.define("btrix-collections-new", CollectionsNew);

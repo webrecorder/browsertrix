@@ -10,7 +10,13 @@ import type {
   SlSwitch,
   SlTextarea,
 } from "@shoelace-style/shoelace";
-import { state, property, query, queryAsync } from "lit/decorators.js";
+import {
+  state,
+  property,
+  query,
+  queryAsync,
+  customElement,
+} from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -223,6 +229,7 @@ const BYTES_PER_GB = 1e9;
 const URL_LIST_MAX_URLS = 1000;
 
 @localized()
+@customElement("btrix-workflow-editor")
 export class CrawlConfigEditor extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -2470,5 +2477,3 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   }
 }
-
-customElements.define("btrix-workflow-editor", CrawlConfigEditor);

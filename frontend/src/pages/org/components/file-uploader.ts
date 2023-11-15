@@ -1,4 +1,4 @@
-import { state, property, queryAsync } from "lit/decorators.js";
+import { state, property, queryAsync, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
@@ -51,6 +51,7 @@ const ABORT_REASON_QUOTA_REACHED = "storage_quota_reached";
  * @event uploaded
  */
 @localized()
+@customElement("btrix-file-uploader")
 export class FileUploader extends LiteElement {
   @property({ type: String })
   orgId!: string;
@@ -537,4 +538,3 @@ export class FileUploader extends LiteElement {
     return !formEl.querySelector("[data-invalid]");
   }
 }
-customElements.define("btrix-file-uploader", FileUploader);

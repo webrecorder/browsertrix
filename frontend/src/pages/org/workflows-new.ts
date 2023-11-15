@@ -1,5 +1,5 @@
 import type { TemplateResult, LitElement, PropertyValues } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import { mergeDeep } from "immutable";
@@ -40,6 +40,7 @@ const defaultValue = {
  * ```
  */
 @localized()
+@customElement("btrix-workflows-new")
 export class WorkflowsNew extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -146,5 +147,3 @@ export class WorkflowsNew extends LiteElement {
     </btrix-alert>
   `;
 }
-
-customElements.define("btrix-workflows-new", WorkflowsNew);

@@ -1,4 +1,4 @@
-import { state, property, queryAsync } from "lit/decorators.js";
+import { state, property, queryAsync, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
@@ -9,6 +9,7 @@ import LiteElement, { html } from "../../../utils/LiteElement";
 import type { Dialog } from "../../../components/dialog";
 
 @localized()
+@customElement("btrix-new-collection-dialog")
 export class NewCollectionDialog extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -174,4 +175,3 @@ export class NewCollectionDialog extends LiteElement {
     e.stopPropagation();
   }
 }
-customElements.define("btrix-new-collection-dialog", NewCollectionDialog);

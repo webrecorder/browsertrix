@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
@@ -18,6 +18,7 @@ import { Profile } from "./types";
  * ```
  */
 @localized()
+@customElement("btrix-browser-profiles-detail")
 export class BrowserProfilesDetail extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -665,5 +666,3 @@ export class BrowserProfilesDetail extends LiteElement {
     e.stopPropagation();
   }
 }
-
-customElements.define("btrix-browser-profiles-detail", BrowserProfilesDetail);

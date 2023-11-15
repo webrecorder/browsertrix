@@ -1,5 +1,5 @@
 import type { TemplateResult } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { classMap } from "lit/directives/class-map.js";
@@ -38,6 +38,7 @@ const POLL_INTERVAL_SECONDS = 10;
  * ```
  */
 @localized()
+@customElement("btrix-crawl-detail")
 export class CrawlDetail extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
@@ -1091,5 +1092,3 @@ ${this.crawl?.description}
     }
   }
 }
-
-customElements.define("btrix-crawl-detail", CrawlDetail);
