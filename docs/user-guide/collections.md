@@ -2,7 +2,7 @@
 
 Collections are the primary way of organizing and combining archived items into groups for presentation.
 
-!!! tip "Tip — Combining items from multiple sources"
+!!! tip "Tip: Combining items from multiple sources"
     If the crawler has not captured every resource or interaction on a webpage, the [ArchiveWeb.page browser extension](https://archiveweb.page/) can be used to manually capture missing content and upload it directly to your org.
 
     After adding the crawl and the upload to a collection, the content from both will become available in the replay viewer.
