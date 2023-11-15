@@ -497,6 +497,9 @@ class OrgOps:
             {"_id": oid}, {"$inc": {f"{key}.{yymm}": duration}}
         )
 
+        if not is_exec_time:
+            return
+
         org = await self.get_org_by_id(oid)
         monthly_base_quota_passed = await self.exec_mins_quota_reached(
             oid, include_extra=False
@@ -504,6 +507,10 @@ class OrgOps:
 
         # If we're still within our monthly base quota, nothing to do
         if not monthly_base_quota_passed:
+            return
+
+        # If there's no extra or gifted time available, nothing to do
+        if not org.giftedExecSecondsAvailable and not org.extraExecSecondsAvailable:
             return
 
         # If we've surpassed monthly base quota, use gifted and extra exec minutes
@@ -515,7 +522,7 @@ class OrgOps:
         current_monthly_exec_secs = await self.get_this_month_crawl_exec_seconds(oid)
         secs_over_quota = current_monthly_exec_secs - monthly_quota_secs
 
-        gifted_secs_available = org.giftedExecSecondsAvailable or 0
+        gifted_secs_available = org.giftedExecSecondsAvailable
         if gifted_secs_available:
             if secs_over_quota <= gifted_secs_available:
                 return await self.orgs.find_one_and_update(
@@ -524,18 +531,23 @@ class OrgOps:
                         "$inc": {
                             f"giftedExecSeconds.{yymm}": secs_over_quota,
                             "giftedExecSecondsAvailable": -secs_over_quota,
+                            # Reset crawlExecSecs back to quota since we're
+                            # applying the excess to gifted
+                            f"crawlExecSeconds.{yymm}": -secs_over_quota,
                         }
                     },
                 )
 
-            # If seconds over quota is higher than gifted minutes, use all of the
-            # gifted minutes and then move on to extra minutes
+            # If seconds over quota is higher than gifted minutes available,
+            # use all of the gifted minutes and then move on to extra minutes
             await self.orgs.find_one_and_update(
                 {"_id": oid},
                 {
                     "$inc": {
                         f"giftedExecSeconds.{yymm}": gifted_secs_available,
                         "giftedExecSecondsAvailable": -gifted_secs_available,
+                        # Reduce crawlExecSecs by amount we're adding to gifted
+                        f"crawlExecSeconds.{yymm}": -gifted_secs_available,
                     }
                 },
             )
@@ -554,6 +566,9 @@ class OrgOps:
                         "extraExecSecondsAvailable": -min(
                             secs_still_over_quota, extra_secs_available
                         ),
+                        # Reduce crawlExecSecs by remaining overage since we're
+                        # applying the remainder to extra
+                        f"crawlExecSeconds.{yymm}": -secs_still_over_quota,
                     }
                 },
             )
