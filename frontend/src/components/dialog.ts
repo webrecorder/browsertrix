@@ -1,7 +1,7 @@
 import { css } from "lit";
 import SLDialog from "@shoelace-style/shoelace/dist/components/dialog/dialog.js";
 import dialogStyles from "@shoelace-style/shoelace/dist/components/dialog/dialog.styles.js";
-import { customElement } from "lit/decorators";
+import { customElement } from "lit/decorators.js";
 
 /**
  * Customized <sl-dialog>
