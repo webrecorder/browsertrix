@@ -12,7 +12,7 @@ For all organizations the storage panel displays the total number of archived it
 
 ## Crawling
 
-For orgnaizations with a set execution minute limit, the crawling panel displays a graph of how much execution time has been used and how much is currently remaining. Monthly execution time limits reset on the first of each month at 12:00 AM GMT
+For orgnaizations with a set execution minute limit, the crawling panel displays a graph of how much execution time has been used and how much is currently remaining. Monthly execution time limits reset on the first of each month at 12:00 AM GMT.
 
 The crawling panel also lists the number of currently running and waiting crawls as well as the number of total pages captured.
 
