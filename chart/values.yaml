@@ -293,6 +293,7 @@ email:
   password: password
   reply_to_email: example@example.com
   use_tls: True
+  support_email: support@example.com
 
 
 # Deployment options
