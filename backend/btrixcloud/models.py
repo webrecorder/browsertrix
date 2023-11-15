@@ -910,7 +910,6 @@ class Organization(BaseMongoModel):
 
     origin: Optional[AnyHttpUrl] = None
 
-    # TODO: Add migration so that we are sure this is not None
     extraExecSecondsAvailable: int = 0
     giftedExecSecondsAvailable: int = 0
 
