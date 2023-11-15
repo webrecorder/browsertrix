@@ -388,6 +388,10 @@ export class Dashboard extends LiteElement {
       }
     }
 
+    if (usageSeconds > quotaSeconds) {
+      usageSeconds = quotaSeconds;
+    }
+
     let usageSecondsAllTypes = usageSeconds;
 
     let usageSecondsExtra = 0;
@@ -396,6 +400,11 @@ export class Dashboard extends LiteElement {
         this.org!.extraExecSeconds[
           `${now.getFullYear()}-${now.getUTCMonth() + 1}`
         ];
+    }
+    const maxExecSecsExtra = this.org!.quotas.extraExecMinutes * 60;
+    // Cap usage at quota for display purposes
+    if (usageSecondsExtra > maxExecSecsExtra) {
+      usageSecondsExtra = maxExecSecsExtra;
     }
     if (usageSecondsExtra) {
       usageSecondsAllTypes += usageSecondsExtra;
@@ -410,6 +419,11 @@ export class Dashboard extends LiteElement {
         this.org!.giftedExecSeconds[
           `${now.getFullYear()}-${now.getUTCMonth() + 1}`
         ];
+    }
+    const maxExecSecsGifted = this.org!.quotas.giftedExecMinutes * 60;
+    // Cap usage at quota for display purposes
+    if (usageSecondsGifted > maxExecSecsGifted) {
+      usageSecondsGifted = maxExecSecsGifted;
     }
     if (usageSecondsGifted) {
       usageSecondsAllTypes += usageSecondsGifted;
@@ -463,7 +477,10 @@ export class Dashboard extends LiteElement {
               ? html`
                   <span class="inline-flex items-center">
                     ${humanizeExecutionSeconds(
-                      (quotaSecondsAllTypes - usageSecondsAllTypes),
+                      (quotaSeconds -
+                        usageSeconds +
+                        this.org!.extraExecSecondsAvailable +
+                        this.org!.giftedExecSecondsAvailable),
                       "short",
                       false,
                       true
@@ -480,7 +497,8 @@ export class Dashboard extends LiteElement {
           <div class="mb-2">
             <btrix-meter
               value=${this.org!.giftedExecSecondsAvailable ||
-              this.org!.extraExecSecondsAvailable
+              this.org!.extraExecSecondsAvailable ||
+              isReached
                 ? quotaSecondsAllTypes
                 : usageSeconds}
               max=${quotaSecondsAllTypes}
