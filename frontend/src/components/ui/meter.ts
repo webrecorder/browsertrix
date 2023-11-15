@@ -24,7 +24,6 @@ export class MeterBar extends LitElement {
       height: 1rem;
       background-color: var(--background-color, var(--sl-color-blue-500));
       min-width: 4px;
-      border-right: var(--border-right, 0);
     }
   `;
 
