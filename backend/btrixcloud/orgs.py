@@ -270,15 +270,23 @@ class OrgOps:
     async def update_quotas(self, org: Organization, quotas: OrgQuotas):
         """update organization quotas"""
 
-        previous_extra_mins = org.quotas.extraExecMinutes or 0
-        previous_gifted_mins = org.quotas.giftedExecMinutes or 0
+        previous_extra_mins = (
+            org.quotas.extraExecMinutes
+            if (org.quotas and org.quotas.extraExecMinutes)
+            else 0
+        )
+        previous_gifted_mins = (
+            org.quotas.giftedExecMinutes
+            if (org.quotas and org.quotas.giftedExecMinutes)
+            else 0
+        )
 
         update = quotas.dict(
             exclude_unset=True, exclude_defaults=True, exclude_none=True
         )
 
         quota_updates = []
-        for prev_update in org.quotaUpdates:
+        for prev_update in org.quotaUpdates or []:
             quota_updates.append(prev_update.dict())
         quota_updates.append(
             OrgQuotaUpdate(update=update, modified=datetime.now()).dict()
