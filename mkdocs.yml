@@ -58,6 +58,7 @@ nav:
       - develop/docs.md
   - User Guide:
       - user-guide/index.md
+      - user-guide/signup.md
       - user-guide/overview.md
       - Crawling:
         - user-guide/crawl-workflows.md
