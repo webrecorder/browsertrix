@@ -1,4 +1,4 @@
-import { property, state } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
 import type { ExclusionRemoveEvent } from "./queue-exclusion-table";
@@ -34,6 +34,7 @@ type ResponseData = {
  * @event on-success On successful edit
  */
 @localized()
+@customElement("btrix-exclusion-editor")
 export class ExclusionEditor extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;

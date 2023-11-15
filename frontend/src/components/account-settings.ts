@@ -1,5 +1,5 @@
 import { LitElement } from "lit";
-import { state, queryAsync, property } from "lit/decorators.js";
+import { state, queryAsync, property, customElement } from "lit/decorators.js";
 import { msg, str, localized } from "@lit/localize";
 import debounce from "lodash/fp/debounce";
 import { when } from "lit/directives/when.js";
@@ -91,6 +91,7 @@ customElements.define("btrix-request-verify", RequestVerify);
 
 @needLogin
 @localized()
+@customElement("btrix-account-settings")
 export class AccountSettings extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;

@@ -1,5 +1,5 @@
 import { LitElement, html, css, TemplateResult } from "lit";
-import { property } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 
 type CellContent = string | TemplateResult;
 
@@ -19,6 +19,7 @@ type CellContent = string | TemplateResult;
  * </btrix-data-table>
  * ```
  */
+@customElement("btrix-data-table")
 export class DataTable extends LitElement {
   static styles = css`
     :host {

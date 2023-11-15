@@ -13,6 +13,7 @@
  */
 import { LitElement, html, css } from "lit";
 import {
+  customElement,
   property,
   query,
   queryAssignedElements,
@@ -72,6 +73,7 @@ const hostVars = css`
 `;
 
 @localized()
+@customElement("btrix-crawl-list-item")
 export class CrawlListItem extends LitElement {
   static styles = [
     truncate,
@@ -458,6 +460,7 @@ export class CrawlListItem extends LitElement {
 }
 
 @localized()
+@customElement("btrix-crawl-list")
 export class CrawlList extends LitElement {
   static styles = [
     srOnly,

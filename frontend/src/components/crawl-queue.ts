@@ -1,4 +1,4 @@
-import { property, state } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import throttle from "lodash/fp/throttle";
@@ -30,6 +30,7 @@ const POLL_INTERVAL_SECONDS = 5;
  * ```
  */
 @localized()
+@customElement("btrix-crawl-queue")
 export class CrawlQueue extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
