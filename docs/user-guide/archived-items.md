@@ -1,6 +1,6 @@
 # Archived Items
 
-Archived Items consist of one or more WACZ files created by a Crawl Workflow, or uploaded to Browsertrix. They can be individually replayed, or combind with other Archived Items in a a [Collection](collections.md).  The Archived Items page lists all items in the organization.
+Archived Items consist of one or more WACZ files created by a Crawl Workflow, or uploaded to Browsertrix. They can be individually replayed, or combined with other Archived Items in a a [Collection](collections.md).  The Archived Items page lists all items in the organization.
 
 ## Uploading Web Archives
 
@@ -24,11 +24,11 @@ For more details on navigating web archives within ReplayWeb.page, see the [Repl
 
 ### Files
 
-The Fies tab lists the individually downloadable WACZ files that make up the Archived Item as well as their file sizes.
+The Files tab lists the individually downloadable WACZ files that make up the Archived Item as well as their file sizes.
 
 ### Error Logs
 
-The Error Logs tab displays a list of errors encountered durring crawling. Clicking an errors in the list will reveal additional information.
+The Error Logs tab displays a list of errors encountered during crawling. Clicking an errors in the list will reveal additional information.
 
 All log entries with that were recorded in the creation of the Archived Item can be downloaded in JSONL format by pressing the _Download Logs_ button.
 
