@@ -1,4 +1,4 @@
-# Overview
+# Org Overview
 
 The overview page delivers key statistics about the organization's resource usage. It also lets users create crawl workflows, uploaded archived items, collections, and browser profiles through the _Create New ..._ button.
 
@@ -12,7 +12,9 @@ For all organizations the storage panel displays the total number of archived it
 
 ## Crawling
 
-The crawling panel lists the amount of currently running and waiting crawls as well as the number of total pages captured.
+For organizations with a set execution minute limit, the crawling panel displays a graph of how much execution time has been used and how much is currently remaining. Monthly execution time limits reset on the first of each month at 12:00 AM GMT.
+
+The crawling panel also lists the number of currently running and waiting crawls, as well as the total number of pages captured.
 
 ## Collections
 
