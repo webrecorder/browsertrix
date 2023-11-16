@@ -26,4 +26,4 @@ After running your first crawl, check out the following to learn more about Brow
 
 ### Have more questions?
 
-While our aim is to create intuitive interfaces, sometimes the complexities of web archiving require a little more explanation. If there's something that you found especially confusing or frustrating [please get in touch](docs-feedback@webrecorder.net)!
+While our aim is to create intuitive interfaces, sometimes the complexities of web archiving require a little more explanation. If there's something that you found especially confusing or frustrating [please get in touch](mailto:docs-feedback@webrecorder.net)!
