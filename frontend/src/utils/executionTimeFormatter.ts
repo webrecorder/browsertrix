@@ -1,6 +1,16 @@
 import { html, nothing } from "lit";
 import { getLocale } from "./localization";
 
+/**
+ * Returns either `nothing`, or hours-minutes-seconds wrapped in parens.
+ * Biases towards minutes:
+ * - When the time is exactly on an hour boundary, just shows hours
+ *   - e.g. `3h`
+ * - When the time isn't on an hour boundary but is on a minute broundary, just shows hours (if applicable) and minutes
+ *   - e.g. `3h 2m` or `32m`
+ * - When the time is less than a minute, shows minutes and seconds
+ *   - e.g. `0m 43s`
+ */
 export function formatHours(seconds: number, locale?: string) {
   const billableMinutes = Math.ceil(seconds / 60);
   const hours = Math.floor(seconds / 3600);
@@ -39,6 +49,14 @@ export function formatHours(seconds: number, locale?: string) {
     .join(" ")})`;
 }
 
+/**
+ * Formats execution seconds, either just as minutes (when `style` is `"short"`), or as minutes and hours-minutes-seconds (when `style` is undefined or `"full"`)
+ * @example humanizeExecutionSeconds(1_234_567_890)
+ * // <span title="20,576,132 minutes">21M minutes</span> (342,935h 31m 30s)
+ *
+ * @example humanizeExecutionSeconds(1_234_567_890, "short")
+ * // <span title="20,576,132 minutes (342,935h 31m 30s)">21M minutes</span>
+ */
 export const humanizeExecutionSeconds = (
   seconds: number,
   style: "short" | "full" = "full"

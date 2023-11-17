@@ -44,7 +44,7 @@ describe("formatHours", () => {
 describe("humanizeExecutionSeconds", () => {
   it("formats a given time in billable minutes", async () => {
     const parentNode = document.createElement("div");
-    const el = await fixture(humanizeExecutionSeconds(1234567890), {
+    const el = await fixture(humanizeExecutionSeconds(1_234_567_890), {
       parentNode,
     });
     expect(el.getAttribute("title")).to.equal("20,576,132 minutes");
@@ -56,7 +56,7 @@ describe("humanizeExecutionSeconds", () => {
 
   it("shows a short version when set", async () => {
     const parentNode = document.createElement("div");
-    const el = await fixture(humanizeExecutionSeconds(1234567890, "short"), {
+    const el = await fixture(humanizeExecutionSeconds(1_234_567_890, "short"), {
       parentNode,
     });
     expect(el.getAttribute("title")).to.equal(
