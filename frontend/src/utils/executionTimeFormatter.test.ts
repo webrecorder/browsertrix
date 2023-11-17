@@ -1,4 +1,3 @@
-import { nothing } from "lit";
 import {
   humanizeSeconds,
   humanizeExecutionSeconds,
@@ -8,9 +7,6 @@ import { expect, fixture } from "@open-wc/testing";
 describe("formatHours", () => {
   it("returns a time in hours, minutes, and seconds when given a time over an hour", () => {
     expect(humanizeSeconds(12_345, "en-US")).to.equal("3h 25m 45s");
-  });
-  it("returns nothing when given a time that is exactly in minutes and nothing else", () => {
-    expect(humanizeSeconds(3_540, "en-US")).to.equal(nothing);
   });
   it("returns 0m and seconds when given a time under a minute", () => {
     expect(humanizeSeconds(24, "en-US")).to.equal("0m 24s");
@@ -23,7 +19,7 @@ describe("formatHours", () => {
     expect(humanizeSeconds(44_442_000, "en-US")).to.equal("12,345h");
   });
   it("returns nothing when given 0 seconds", () => {
-    expect(humanizeSeconds(0, "en-US")).to.equal(nothing);
+    expect(humanizeSeconds(0, "en-US")).to.equal("0s");
   });
   it("handles different locales correctly", () => {
     expect(humanizeSeconds(44_442_000_000, "en-IN")).to.equal("1,23,45,000h");
@@ -32,6 +28,14 @@ describe("formatHours", () => {
       "12.345.000 Std."
     );
     expect(humanizeSeconds(44_442_000_000, "ar-EG")).to.equal("١٢٬٣٤٥٬٠٠٠ س");
+  });
+  it("formats zero time as expected", () => {
+    expect(humanizeSeconds(0, "en-US")).to.equal("0s");
+  });
+  it("formats negative time as expected", () => {
+    expect(() => humanizeSeconds(-100, "en-US")).to.throw(
+      "humanizeSeconds in unimplemented for negative times"
+    );
   });
 });
 
@@ -58,5 +62,14 @@ describe("humanizeExecutionSeconds", () => {
     );
     expect(el.textContent?.trim()).to.equal("21M minutes");
     expect(parentNode.innerText).to.equal("21M minutes");
+  });
+  it("skips the details when given a time less than an hour that is exactly in minutes", async () => {
+    const parentNode = document.createElement("div");
+    const el = await fixture(humanizeExecutionSeconds(3_540), {
+      parentNode,
+    });
+    expect(el.getAttribute("title")).to.equal("59 minutes");
+    expect(el.textContent?.trim()).to.equal("59 minutes");
+    expect(parentNode.innerText).to.equal("59 minutes");
   });
 });

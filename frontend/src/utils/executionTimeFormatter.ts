@@ -12,15 +12,13 @@ import { getLocale } from "./localization";
  *   - e.g. `0m 43s`
  */
 export function humanizeSeconds(seconds: number, locale?: string) {
-  const billableMinutes = Math.ceil(seconds / 60);
+  if (seconds < 0) {
+    throw new Error("humanizeSeconds in unimplemented for negative times");
+  }
   const hours = Math.floor(seconds / 3600);
   seconds -= hours * 3600;
   const minutes = Math.floor(seconds / 60);
   seconds -= minutes * 60;
-
-  if (minutes === billableMinutes) {
-    return nothing;
-  }
 
   const hourFormatter = new Intl.NumberFormat(locale, {
     style: "unit",
@@ -43,7 +41,8 @@ export function humanizeSeconds(seconds: number, locale?: string) {
   return [
     hours !== 0 && hourFormatter.format(hours),
     (minutes !== 0 || seconds !== 0) && minuteFormatter.format(minutes),
-    seconds !== 0 && secondFormatter.format(seconds),
+    (seconds !== 0 || (hours === 0 && minutes === 0)) &&
+      secondFormatter.format(seconds),
   ]
     .filter(Boolean)
     .join(" ");
@@ -79,7 +78,12 @@ export const humanizeExecutionSeconds = (
   });
 
   const details = humanizeSeconds(seconds);
-  const formattedDetails = details === nothing ? nothing : `\u00a0(${details})`;
+
+  // if the time is less than an hour and lines up exactly on the minute, don't render the details.
+  const formattedDetails =
+    minutes === Math.floor(seconds / 60) && seconds < 3600
+      ? nothing
+      : `\u00a0(${details})`;
 
   switch (style) {
     case "full":
