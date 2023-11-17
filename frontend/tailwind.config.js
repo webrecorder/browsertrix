@@ -86,6 +86,9 @@ function makeTheme() {
       // Override default of:
       // => @media (min-width: 1024px) { ... }
     },
+    gridTemplateColumns: {
+      medium: "repeat(auto-fill, minmax(350px, 1fr))",
+    },
   };
 }
 

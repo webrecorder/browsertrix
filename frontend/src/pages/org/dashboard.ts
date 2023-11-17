@@ -154,7 +154,7 @@ export class Dashboard extends LiteElement {
         )}
       </header>
       <main>
-        <div class="flex flex-col md:flex-row gap-6">
+        <div class="grid grid-cols-medium md:flex-row gap-6">
           ${this.renderCard(
             msg("Storage"),
             (metrics) => html`
@@ -311,7 +311,7 @@ export class Dashboard extends LiteElement {
       ${when(
         hasQuota,
         () => html`
-          <div class="mb-2">
+          <div class="mb-4">
             <btrix-meter
               value=${metrics.storageUsedBytes}
               max=${ifDefined(metrics.storageQuotaBytes || undefined)}
@@ -442,7 +442,7 @@ export class Dashboard extends LiteElement {
       ${when(
         hasQuota,
         () => html`
-          <div class="mb-2">
+          <div class="mb-4">
             <btrix-meter
               value=${isReached ? quotaSeconds : usageSeconds}
               max=${ifDefined(quotaSeconds || undefined)}
@@ -491,7 +491,7 @@ export class Dashboard extends LiteElement {
     renderFooter?: (metric: Metrics) => TemplateResult
   ) {
     return html`
-      <section class="flex-1 flex flex-col border rounded p-4">
+      <section class="flex flex-col border rounded p-4">
         <h2 class="text-lg font-semibold leading-none border-b pb-3 mb-3">
           ${title}
         </h2>
