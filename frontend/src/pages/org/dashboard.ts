@@ -162,11 +162,9 @@ export class Dashboard extends LiteElement {
               <dl>
                 ${this.renderStat({
                   value: metrics.crawlCount,
-                  secondaryValue: hasQuota
-                    ? ""
-                    : html`<sl-format-bytes
-                        value=${metrics.storageUsedCrawls}
-                      ></sl-format-bytes>`,
+                  secondaryValue: html`<sl-format-bytes
+                    value=${metrics.storageUsedCrawls}
+                  ></sl-format-bytes>`,
                   singleLabel: msg("Crawl"),
                   pluralLabel: msg("Crawls"),
                   iconProps: {
@@ -176,22 +174,18 @@ export class Dashboard extends LiteElement {
                 })}
                 ${this.renderStat({
                   value: metrics.uploadCount,
-                  secondaryValue: hasQuota
-                    ? ""
-                    : html`<sl-format-bytes
-                        value=${metrics.storageUsedUploads}
-                      ></sl-format-bytes>`,
+                  secondaryValue: html`<sl-format-bytes
+                    value=${metrics.storageUsedUploads}
+                  ></sl-format-bytes>`,
                   singleLabel: msg("Upload"),
                   pluralLabel: msg("Uploads"),
                   iconProps: { name: "upload", color: this.colors.uploads },
                 })}
                 ${this.renderStat({
                   value: metrics.profileCount,
-                  secondaryValue: hasQuota
-                    ? ""
-                    : html`<sl-format-bytes
-                        value=${metrics.storageUsedProfiles}
-                      ></sl-format-bytes>`,
+                  secondaryValue: html`<sl-format-bytes
+                    value=${metrics.storageUsedProfiles}
+                  ></sl-format-bytes>`,
                   singleLabel: msg("Browser Profile"),
                   pluralLabel: msg("Browser Profiles"),
                   iconProps: {
@@ -204,11 +198,9 @@ export class Dashboard extends LiteElement {
                 ></sl-divider>
                 ${this.renderStat({
                   value: metrics.archivedItemCount,
-                  secondaryValue: hasQuota
-                    ? ""
-                    : html`<sl-format-bytes
-                        value=${metrics.storageUsedBytes}
-                      ></sl-format-bytes>`,
+                  secondaryValue: html`<sl-format-bytes
+                    value=${metrics.storageUsedBytes}
+                  ></sl-format-bytes>`,
                   singleLabel: msg("Archived Item"),
                   pluralLabel: msg("Archived Items"),
                   iconProps: { name: "file-zip-fill" },
@@ -526,31 +518,27 @@ export class Dashboard extends LiteElement {
   }) {
     const { value, iconProps } = stat;
     return html`
-      <div class="flex items-center justify-between mb-2 last:mb-0">
-        <div class="flex items-center">
-          <sl-icon
-            class="text-base text-neutral-500 mr-2"
-            name=${iconProps.name}
-            library=${ifDefined(iconProps.library)}
-            style="color:var(--sl-color-${iconProps.color ||
-            this.colors.default}-500)"
-          ></sl-icon>
-          <dt class="order-last">
-            ${value === 1 ? stat.singleLabel : stat.pluralLabel}
-          </dt>
-          <dd class="mr-1">
-            ${typeof value === "number" ? value.toLocaleString() : value}
-          </dd>
+      <div class="flex items-start mb-2 last:mb-0">
+        <sl-icon
+          class="text-base text-neutral-500 mr-2 relative [top:0.125em]"
+          name=${iconProps.name}
+          library=${ifDefined(iconProps.library)}
+          style="color:var(--sl-color-${iconProps.color ||
+          this.colors.default}-500)"
+        ></sl-icon>
+        <div class="inline-block">
+          ${typeof value === "number" ? value.toLocaleString() : value}
+          ${value === 1 ? stat.singleLabel : stat.pluralLabel}
+          ${when(
+            stat.secondaryValue,
+            () =>
+              html`
+                <div class="text-xs text-neutral-500 font-monostyle">
+                  ${stat.secondaryValue}
+                </div>
+              `
+          )}
         </div>
-        ${when(
-          stat.secondaryValue,
-          () =>
-            html`
-              <div class="text-xs text-neutral-500 font-monostyle">
-                ${stat.secondaryValue}
-              </div>
-            `
-        )}
       </div>
     `;
   }
