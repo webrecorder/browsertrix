@@ -11,7 +11,7 @@ import { getLocale } from "./localization";
  * - When the time is less than a minute, shows minutes and seconds
  *   - e.g. `0m 43s`
  */
-export function formatHours(seconds: number, locale?: string) {
+export function humanizeSeconds(seconds: number, locale?: string) {
   const billableMinutes = Math.ceil(seconds / 60);
   const hours = Math.floor(seconds / 3600);
   seconds -= hours * 3600;
@@ -40,13 +40,13 @@ export function formatHours(seconds: number, locale?: string) {
     unitDisplay: "narrow",
   });
 
-  return `\u00a0(${[
+  return [
     hours !== 0 && hourFormatter.format(hours),
     (minutes !== 0 || seconds !== 0) && minuteFormatter.format(minutes),
     seconds !== 0 && secondFormatter.format(seconds),
   ]
     .filter(Boolean)
-    .join(" ")})`;
+    .join(" ");
 }
 
 /**
@@ -78,14 +78,17 @@ export const humanizeExecutionSeconds = (
     maximumFractionDigits: 0,
   });
 
+  const details = humanizeSeconds(seconds);
+  const formattedDetails = details === nothing ? nothing : `\u00a0(${details})`;
+
   switch (style) {
     case "full":
       return html`<span title="${longMinuteFormatter.format(minutes)}">
           ${compactMinuteFormatter.format(minutes)}</span
-        >${formatHours(seconds)}`;
+        >${formattedDetails}`;
     case "short":
       return html`<span
-        title="${longMinuteFormatter.format(minutes)}${formatHours(seconds)}"
+        title="${longMinuteFormatter.format(minutes)}${formattedDetails}"
         >${compactMinuteFormatter.format(minutes)}</span
       >`;
   }

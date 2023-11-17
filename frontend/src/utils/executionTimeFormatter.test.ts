@@ -1,43 +1,37 @@
 import { nothing } from "lit";
 import {
-  formatHours,
+  humanizeSeconds,
   humanizeExecutionSeconds,
 } from "./executionTimeFormatter";
 import { expect, fixture } from "@open-wc/testing";
 
 describe("formatHours", () => {
   it("returns a time in hours, minutes, and seconds when given a time over an hour", () => {
-    expect(formatHours(12_345, "en-US")).to.equal("\u00a0(3h 25m 45s)");
+    expect(humanizeSeconds(12_345, "en-US")).to.equal("3h 25m 45s");
   });
   it("returns nothing when given a time that is exactly in minutes and nothing else", () => {
-    expect(formatHours(3_540, "en-US")).to.equal(nothing);
+    expect(humanizeSeconds(3_540, "en-US")).to.equal(nothing);
   });
   it("returns 0m and seconds when given a time under a minute", () => {
-    expect(formatHours(24, "en-US")).to.equal("\u00a0(0m 24s)");
+    expect(humanizeSeconds(24, "en-US")).to.equal("0m 24s");
   });
   it("returns minutes and seconds when given a time under an hour", () => {
-    expect(formatHours(1_234, "en-US")).to.equal("\u00a0(20m 34s)");
+    expect(humanizeSeconds(1_234, "en-US")).to.equal("20m 34s");
   });
   it("returns just hours when given a time exactly in hours", () => {
-    expect(formatHours(3_600, "en-US")).to.equal("\u00a0(1h)");
-    expect(formatHours(44_442_000, "en-US")).to.equal("\u00a0(12,345h)");
+    expect(humanizeSeconds(3_600, "en-US")).to.equal("1h");
+    expect(humanizeSeconds(44_442_000, "en-US")).to.equal("12,345h");
   });
   it("returns nothing when given 0 seconds", () => {
-    expect(formatHours(0, "en-US")).to.equal(nothing);
+    expect(humanizeSeconds(0, "en-US")).to.equal(nothing);
   });
   it("handles different locales correctly", () => {
-    expect(formatHours(44_442_000_000, "en-IN")).to.equal(
-      "\u00a0(1,23,45,000h)"
+    expect(humanizeSeconds(44_442_000_000, "en-IN")).to.equal("1,23,45,000h");
+    expect(humanizeSeconds(44_442_000_000, "pt-BR")).to.equal("12.345.000 h");
+    expect(humanizeSeconds(44_442_000_000, "de-DE")).to.equal(
+      "12.345.000 Std."
     );
-    expect(formatHours(44_442_000_000, "pt-BR")).to.equal(
-      "\u00a0(12.345.000 h)"
-    );
-    expect(formatHours(44_442_000_000, "de-DE")).to.equal(
-      "\u00a0(12.345.000 Std.)"
-    );
-    expect(formatHours(44_442_000_000, "ar-EG")).to.equal(
-      "\u00a0(١٢٬٣٤٥٬٠٠٠ س)"
-    );
+    expect(humanizeSeconds(44_442_000_000, "ar-EG")).to.equal("١٢٬٣٤٥٬٠٠٠ س");
   });
 });
 
