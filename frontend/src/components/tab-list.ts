@@ -137,7 +137,6 @@ export class TabList extends LitElement {
         grid-template-areas:
           ". header"
           "menu main";
-        grid-template-columns: auto ${SCREEN_LG}px;
       }
     }
 
