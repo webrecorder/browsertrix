@@ -441,7 +441,7 @@ export class Dashboard extends LiteElement {
                     ${this.humanizeExecutionSeconds(
                       quotaSeconds - usageSeconds
                     )}
-                    ${msg("Available")}
+                    ${msg("Remaining")}
                   </span>
                 `
               : ""
@@ -466,7 +466,7 @@ export class Dashboard extends LiteElement {
               <div slot="available" class="flex-1">
                 <sl-tooltip>
                   <div slot="content">
-                    <div>${msg("Monthly Execution Time Available")}</div>
+                    <div>${msg("Monthly Execution Time Remaining")}</div>
                     <div class="text-xs opacity-80">
                       ${this.humanizeExecutionSeconds(
                         quotaSeconds - usageSeconds
