@@ -455,6 +455,8 @@ export class Org extends LiteElement {
         .authState=${this.authState!}
         orgId=${this.orgId}
         .org=${this.org || null}
+        ?isCrawler=${this.isCrawler}
+        ?isAdmin=${this.isAdmin}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-dashboard>
     `;

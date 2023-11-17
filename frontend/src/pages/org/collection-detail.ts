@@ -623,15 +623,19 @@ export class CollectionDetail extends LiteElement {
         orgSlug=${this.appState.orgSlug || ""}
         .crawl=${item}
       >
-        <sl-menu slot="menu">
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--warning)"
-            @click=${() => this.removeArchivedItem(item.id, idx)}
-          >
-            <sl-icon name="folder-minus" slot="prefix"></sl-icon>
-            ${msg("Remove from Collection")}
-          </sl-menu-item>
-        </sl-menu>
+        ${when(
+          this.isCrawler,
+          () =>
+            html` <sl-menu slot="menu">
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--warning)"
+                @click=${() => this.removeArchivedItem(item.id, idx)}
+              >
+                <sl-icon name="folder-minus" slot="prefix"></sl-icon>
+                ${msg("Remove from Collection")}
+              </sl-menu-item>
+            </sl-menu>`
+        )}
       </btrix-crawl-list-item>
     `;
 

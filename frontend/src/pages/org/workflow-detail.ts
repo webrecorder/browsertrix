@@ -448,7 +448,7 @@ export class WorkflowDetail extends LiteElement {
         )}
       </h3>`;
     }
-    if (this.activePanel === "settings") {
+    if (this.activePanel === "settings" && this.isCrawler == true) {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-icon-button
           name="gear"
@@ -460,7 +460,7 @@ export class WorkflowDetail extends LiteElement {
         >
         </sl-icon-button>`;
     }
-    if (this.activePanel === "watch") {
+    if (this.activePanel === "watch" && this.isCrawler == true) {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-button
           size="small"
@@ -836,21 +836,22 @@ export class WorkflowDetail extends LiteElement {
             this.crawls,
             () =>
               this.crawls!.items.map(
-                (crawl: Crawl) => html`
-                  <btrix-crawl-list-item
-                    orgSlug=${this.appState.orgSlug || ""}
-                    .crawl=${crawl}
-                  >
-                    <sl-format-date
-                      slot="id"
-                      date=${`${crawl.started}Z`}
-                      month="2-digit"
-                      day="2-digit"
-                      year="2-digit"
-                      hour="2-digit"
-                      minute="2-digit"
-                    ></sl-format-date>
-                    <sl-menu slot="menu">
+                (crawl: Crawl) => html` <btrix-crawl-list-item
+                  orgSlug=${this.appState.orgSlug || ""}
+                  .crawl=${crawl}
+                >
+                  <sl-format-date
+                    slot="id"
+                    date=${`${crawl.started}Z`}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="2-digit"
+                    minute="2-digit"
+                  ></sl-format-date>
+                  ${when(
+                    this.isCrawler,
+                    () => html` <sl-menu slot="menu">
                       <sl-menu-item
                         style="--sl-color-neutral-700: var(--danger)"
                         @click=${() => this.deleteCrawl(crawl)}
@@ -858,9 +859,9 @@ export class WorkflowDetail extends LiteElement {
                         <sl-icon name="trash3" slot="prefix"></sl-icon>
                         ${msg("Delete Crawl")}
                       </sl-menu-item>
-                    </sl-menu>
-                  </btrix-crawl-list-item>
-                `
+                    </sl-menu>`
+                  )}</btrix-crawl-list-item
+                >`
               ),
             () => html`<div
               class="w-full flex items-center justify-center my-24 text-3xl"
@@ -1037,24 +1038,26 @@ export class WorkflowDetail extends LiteElement {
               >
             `
           )}
-
-          <sl-tooltip
-            content=${msg(
-              "Org Storage Full or Monthly Execution Minutes Reached"
-            )}
-            ?disabled=${!this.orgStorageQuotaReached &&
-            !this.orgExecutionMinutesQuotaReached}
-          >
-            <sl-button
-              size="small"
-              ?disabled=${this.orgStorageQuotaReached ||
-              this.orgExecutionMinutesQuotaReached}
-              @click=${() => this.runNow()}
+          ${when(
+            this.isCrawler,
+            () => html` <sl-tooltip
+              content=${msg(
+                "Org Storage Full or Monthly Execution Minutes Reached"
+              )}
+              ?disabled=${!this.orgStorageQuotaReached &&
+              !this.orgExecutionMinutesQuotaReached}
             >
-              <sl-icon name="play" slot="prefix"></sl-icon>
-              ${msg("Run Crawl")}
-            </sl-button>
-          </sl-tooltip>
+              <sl-button
+                size="small"
+                ?disabled=${this.orgStorageQuotaReached ||
+                this.orgExecutionMinutesQuotaReached}
+                @click=${() => this.runNow()}
+              >
+                <sl-icon name="play" slot="prefix"></sl-icon>
+                ${msg("Run Crawl")}
+              </sl-button>
+            </sl-tooltip>`
+          )}
         </div>
       </section>
     `;
