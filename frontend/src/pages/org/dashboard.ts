@@ -4,13 +4,15 @@ import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
-import humanizeMilliseconds from "pretty-ms";
 
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { AuthState } from "../../utils/AuthService";
 import type { OrgData } from "../../utils/orgs";
 import type { SelectNewDialogEvent } from "./index";
-import { humanizeExecutionSeconds } from "../../utils/executionTimeFormatter";
+import {
+  humanizeExecutionSeconds,
+  humanizeSeconds,
+} from "../../utils/executionTimeFormatter";
 
 type Metrics = {
   storageUsedBytes: number;
@@ -561,7 +563,7 @@ export class Dashboard extends LiteElement {
             </sl-format-date>
           `,
           value ? humanizeExecutionSeconds(value) : "--",
-          humanizeMilliseconds(crawlTime * 1000 || 0),
+          humanizeSeconds(crawlTime || 0),
         ];
       });
     return html`
