@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 
@@ -18,6 +18,7 @@ import type { SelectNewDialogEvent } from "./index";
  * ```
  */
 @localized()
+@customElement("btrix-browser-profiles-list")
 export class BrowserProfilesList extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -297,5 +298,3 @@ export class BrowserProfilesList extends LiteElement {
     return data.items;
   }
 }
-
-customElements.define("btrix-browser-profiles-list", BrowserProfilesList);

@@ -15,9 +15,10 @@
  * ```
  */
 import { LitElement, html, css } from "lit";
-import { property } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 
+@customElement("btrix-desc-list-item")
 export class DescListItem extends LitElement {
   static styles = css`
     :host {
@@ -65,6 +66,7 @@ export class DescListItem extends LitElement {
   }
 }
 
+@customElement("btrix-desc-list")
 export class DescList extends LitElement {
   static styles = css`
     dl {

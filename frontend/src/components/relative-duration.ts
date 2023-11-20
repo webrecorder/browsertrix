@@ -1,5 +1,5 @@
 import { LitElement } from "lit";
-import { property, state } from "lit/decorators.js";
+import { property, state, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import humanizeDuration from "pretty-ms";
 
@@ -18,6 +18,7 @@ export type HumanizeOptions = {
  * ```
  */
 @localized()
+@customElement("btrix-relative-duration")
 export class RelativeDuration extends LitElement {
   @property({ type: String })
   value?: string; // `new Date` compatible date format

@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
@@ -51,6 +51,7 @@ const sortableFields: Record<
 const MIN_SEARCH_LENGTH = 2;
 
 @localized()
+@customElement("btrix-collections-list")
 export class CollectionsList extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -751,4 +752,3 @@ export class CollectionsList extends LiteElement {
     return data;
   }
 }
-customElements.define("btrix-collections-list", CollectionsList);

@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
 import { createWysimark } from "@wysimark/standalone";
 
@@ -14,6 +14,7 @@ export type MarkdownChangeEvent = CustomEvent<{
  *
  * @event on-change MarkdownChangeEvent
  */
+@customElement("btrix-markdown-editor")
 export class MarkdownEditor extends LitElement {
   @property({ type: String })
   initialValue = "";

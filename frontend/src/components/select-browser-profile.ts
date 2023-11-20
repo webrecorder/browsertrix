@@ -1,5 +1,5 @@
 import { html } from "lit";
-import { property, state } from "lit/decorators.js";
+import { property, state, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import orderBy from "lodash/fp/orderBy";
 
@@ -22,6 +22,7 @@ import type { APIPaginatedList } from "../types/api";
  *
  * @event on-change
  */
+@customElement("btrix-select-browser-profile")
 @localized()
 export class SelectBrowserProfile extends LiteElement {
   @property({ type: Object })

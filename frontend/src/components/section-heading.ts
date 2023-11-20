@@ -1,4 +1,5 @@
 import { LitElement, html, css } from "lit";
+import { customElement } from "lit/decorators.js";
 
 /**
  * Styled section heading
@@ -8,6 +9,7 @@ import { LitElement, html, css } from "lit";
  * <btrix-section-heading>Text</btrix-section-heading>
  * ```
  */
+@customElement("btrix-section-heading")
 export class SectionHeading extends LitElement {
   static styles = css`
     .heading {

@@ -2,7 +2,7 @@
 /* eslint-disable lit/no-invalid-html */
 import { LitElement, css } from "lit";
 import { html, literal } from "lit/static-html.js";
-import { property } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
@@ -14,6 +14,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
  * <btrix-button>Click me</btrix-button>
  * ```
  */
+@customElement("btrix-button")
 export class Button extends LitElement {
   @property({ type: String })
   type: "submit" | "button" = "button";

@@ -3,11 +3,12 @@ import {
   property,
   query,
   queryAssignedElements,
-  state,
+  customElement,
 } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import debounce from "lodash/fp/debounce";
 
+@customElement("btrix-meter-bar")
 export class MeterBar extends LitElement {
   /* Percentage of value / max */
   @property({ type: Number })
@@ -45,6 +46,7 @@ export class MeterBar extends LitElement {
  * <btrix-meter max="50" value="40" low="10"></btrix-meter>
  * ```
  */
+@customElement("btrix-meter")
 export class Meter extends LitElement {
   @property({ type: Number })
   min = 0;

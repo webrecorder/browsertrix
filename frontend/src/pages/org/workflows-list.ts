@@ -1,5 +1,5 @@
 import type { HTMLTemplateResult, PropertyValueMap } from "lit";
-import { state, property, query } from "lit/decorators.js";
+import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -59,6 +59,7 @@ const sortableFields: Record<
  * ```
  */
 @localized()
+@customElement("btrix-workflows-list")
 export class WorkflowsList extends LiteElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
@@ -855,5 +856,3 @@ export class WorkflowsList extends LiteElement {
     return data;
   }
 }
-
-customElements.define("btrix-workflows-list", WorkflowsList);

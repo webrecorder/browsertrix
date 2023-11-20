@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
@@ -25,6 +25,7 @@ const TABS = ["replay", "items"] as const;
 export type Tab = (typeof TABS)[number];
 
 @localized()
+@customElement("btrix-collection-detail")
 export class CollectionDetail extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -856,4 +857,3 @@ export class CollectionDetail extends LiteElement {
     }
   }
 }
-customElements.define("btrix-collection-detail", CollectionDetail);

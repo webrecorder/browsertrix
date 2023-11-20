@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
@@ -56,6 +56,7 @@ export type OrgRemoveMemberEvent = CustomEvent<{
  * org-remove-member
  */
 @localized()
+@customElement("btrix-org-settings")
 export class OrgSettings extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
@@ -589,5 +590,3 @@ export class OrgSettings extends LiteElement {
     }
   }
 }
-
-customElements.define("btrix-org-settings", OrgSettings);

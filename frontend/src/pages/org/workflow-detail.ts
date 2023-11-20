@@ -1,5 +1,5 @@
 import type { HTMLTemplateResult, TemplateResult } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { until } from "lit/directives/until.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -40,6 +40,7 @@ const LOGS_PAGE_SIZE = 50;
  * ```
  */
 @localized()
+@customElement("btrix-workflow-detail")
 export class WorkflowDetail extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -1722,5 +1723,3 @@ export class WorkflowDetail extends LiteElement {
     return data;
   }
 }
-
-customElements.define("btrix-workflow-detail", WorkflowDetail);

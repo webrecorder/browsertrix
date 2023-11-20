@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { property } from "lit/decorators.js";
+import { property, customElement } from "lit/decorators.js";
 
 /**
  * Alert used inline, e.g. for form server errors
@@ -10,6 +10,7 @@ import { property } from "lit/decorators.js";
  * <btrix-alert id="error_message>${errorMessage}</btrix-alert>
  * ```
  */
+@customElement("btrix-alert")
 export class Alert extends LitElement {
   @property({ type: String })
   variant: "success" | "warning" | "danger" | "info" = "info";

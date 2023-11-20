@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { property } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 
 /**
  * Show numeric value in a label
@@ -9,6 +9,7 @@ import { property } from "lit/decorators.js";
  * <btrix-badge aria-describedby="text">10</btrix-badge>
  * ```
  */
+@customElement("btrix-badge")
 export class Badge extends LitElement {
   @property({ type: String })
   variant: "success" | "warning" | "danger" | "neutral" = "neutral";

@@ -17,6 +17,7 @@ import {
   query,
   queryAssignedElements,
   state,
+  customElement,
 } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
@@ -69,6 +70,7 @@ const hostVars = css`
   }
 `;
 
+@customElement("btrix-workflow-list-item")
 @localized()
 export class WorkflowListItem extends LitElement {
   static styles = [
@@ -523,6 +525,7 @@ export class WorkflowListItem extends LitElement {
 }
 
 @localized()
+@customElement("btrix-workflow-list")
 export class WorkflowList extends LitElement {
   static styles = [
     srOnly,

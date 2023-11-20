@@ -1,5 +1,5 @@
 import { LitElement, html, css, unsafeCSS } from "lit";
-import { property } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import caretDownFillSvg from "../assets/images/caret-down-fill.svg";
 import caretRightFillSvg from "../assets/images/caret-right-fill.svg";
 
@@ -17,6 +17,7 @@ import caretRightFillSvg from "../assets/images/caret-right-fill.svg";
  *
  * @event on-toggle { open: boolean; }
  */
+@customElement("btrix-details")
 export class Details extends LitElement {
   @property({ type: Boolean })
   open? = false;

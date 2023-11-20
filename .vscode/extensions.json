@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "runem.lit-plugin",
+    "bradlc.vscode-tailwindcss",
+    "redhat.vscode-yaml"
+  ]
+}

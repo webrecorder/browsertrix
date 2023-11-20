@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { property } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import hljs from "highlight.js/lib/core";
 import javascript from "highlight.js/lib/languages/javascript";
@@ -8,6 +8,7 @@ import xml from "highlight.js/lib/languages/xml";
 /**
  * Syntax highlighting for javascript and HTML (XML)
  */
+@customElement("btrix-code")
 export class Code extends LitElement {
   static styles = [
     css`

@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { property, state } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 
@@ -15,6 +15,7 @@ type CrawlLog = {
 };
 
 @localized()
+@customElement("btrix-crawl-logs")
 export class CrawlLogs extends LitElement {
   static styles = [
     truncate,

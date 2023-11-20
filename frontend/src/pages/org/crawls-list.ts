@@ -1,4 +1,4 @@
-import { state, property, query } from "lit/decorators.js";
+import { state, property, query, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
@@ -50,6 +50,7 @@ const sortableFields: Record<
  * ```
  */
 @localized()
+@customElement("btrix-crawls-list")
 export class CrawlsList extends LiteElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
@@ -730,5 +731,3 @@ export class CrawlsList extends LiteElement {
     return data;
   }
 }
-
-customElements.define("btrix-crawls-list", CrawlsList);

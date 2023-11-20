@@ -1,10 +1,11 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
 import { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
 
 @localized()
+@customElement("btrix-verify")
 export class Verify extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;

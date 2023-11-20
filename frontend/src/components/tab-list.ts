@@ -1,5 +1,5 @@
 import { LitElement, html, css, CSSResultGroup } from "lit";
-import { property, queryAsync } from "lit/decorators.js";
+import { property, queryAsync, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 const DEFAULT_PANEL_ID = "default-panel";
@@ -22,6 +22,7 @@ const SCREEN_LG = 896;
  * ```
  */
 
+@customElement("btrix-tab-panel")
 export class TabPanel extends LitElement {
   static styles = css`
     :host {
@@ -60,6 +61,7 @@ export class TabPanel extends LitElement {
   }
 }
 
+@customElement("btrix-tab")
 export class Tab extends LitElement {
   // ID of panel the tab labels/controls
   @property({ type: String })
@@ -113,6 +115,7 @@ export class Tab extends LitElement {
 type TabElement = Tab & HTMLElement;
 type TabPanelElement = TabPanel & HTMLElement;
 
+@customElement("btrix-tab-list")
 export class TabList extends LitElement {
   static styles = css`
     :host {

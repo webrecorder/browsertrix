@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { createMachine, interpret, assign } from "@xstate/fsm";
 
@@ -141,6 +141,7 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
 );
 
 @localized()
+@customElement("btrix-log-in")
 export class LogInPage extends LiteElement {
   @property({ type: Object })
   viewState!: ViewState;

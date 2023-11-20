@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import { property, state } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
 /**
@@ -17,6 +17,7 @@ import { msg, localized } from "@lit/localize";
  * @event on-copied
  */
 @localized()
+@customElement("btrix-copy-button")
 export class CopyButton extends LitElement {
   @property({ type: String })
   value?: string;

@@ -1,5 +1,5 @@
 import { LitElement } from "lit";
-import { state, queryAsync, property } from "lit/decorators.js";
+import { state, queryAsync, property, customElement } from "lit/decorators.js";
 import { msg, str, localized } from "@lit/localize";
 import debounce from "lodash/fp/debounce";
 import { when } from "lit/directives/when.js";
@@ -18,6 +18,7 @@ const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
 
 @localized()
+@customElement("btrix-request-verify")
 class RequestVerify extends LitElement {
   @property({ type: String })
   email!: string;
@@ -87,10 +88,10 @@ class RequestVerify extends LitElement {
     this.isRequesting = false;
   }
 }
-customElements.define("btrix-request-verify", RequestVerify);
 
 @needLogin
 @localized()
+@customElement("btrix-account-settings")
 export class AccountSettings extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;

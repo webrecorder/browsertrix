@@ -1,5 +1,5 @@
 import type { PropertyValues, TemplateResult } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
@@ -32,6 +32,7 @@ type Metrics = {
 const BYTES_PER_GB = 1e9;
 
 @localized()
+@customElement("btrix-dashboard")
 export class Dashboard extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -642,4 +643,3 @@ export class Dashboard extends LiteElement {
     }
   }
 }
-customElements.define("btrix-dashboard", Dashboard);
