@@ -38,10 +38,25 @@ const rowCss = css`
     display: grid;
     grid-template-columns: 1fr;
   }
+  .col:not(:first-of-type) {
+    margin-left: 28px;
+  }
 
   @media only screen and (min-width: ${mediumBreakpointCss}) {
     .row {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, 1fr) 3rem;
+    }
+    .col {
+      grid-column: span 1 / span 1;
+    }
+    .action {
+      grid-area: 1 / 3 / span 3;
+    }
+    .col:first-of-type {
+      grid-column: span 2;
+    }
+    .col:nth-of-type(2n + 2) {
+      margin-left: 28px;
     }
   }
   @media only screen and (min-width: ${largeBreakpointCss}) {
@@ -49,10 +64,15 @@ const rowCss = css`
       grid-template-columns: 1fr 15rem 10rem 7rem 3rem;
       grid-gap: var(--sl-spacing-x-large);
     }
-  }
-
-  .col {
-    grid-column: span 1 / span 1;
+    .action {
+      grid-area: unset;
+    }
+    .col:first-of-type {
+      grid-column: unset;
+    }
+    .col:nth-of-type(2n + 2) {
+      margin-left: unset;
+    }
   }
 `;
 const columnCss = css`
