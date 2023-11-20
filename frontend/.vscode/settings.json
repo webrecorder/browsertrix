@@ -1,8 +1,0 @@
-{
-  "search.exclude": {
-    "**/__generated__": true,
-    "**/xliff": true
-  },
-  "lit-plugin.strict": true,
-  "lit-plugin.rules.no-missing-import": "off"
-}
