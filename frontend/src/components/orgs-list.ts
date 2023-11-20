@@ -8,8 +8,8 @@ import LiteElement, { html } from "../utils/LiteElement";
 import { isAdmin } from "../utils/orgs";
 import { SlInput } from "@shoelace-style/shoelace";
 
-@customElement("btrix-orgs-list")
 @localized()
+@customElement("btrix-orgs-list")
 export class OrgsList extends LiteElement {
   @property({ type: Object })
   userInfo?: CurrentUser;

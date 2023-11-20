@@ -23,8 +23,8 @@ const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];
  *
  * @event load Event on iframe load, with src URL
  */
-@customElement("btrix-profile-browser")
 @localized()
+@customElement("btrix-profile-browser")
 export class ProfileBrowser extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;

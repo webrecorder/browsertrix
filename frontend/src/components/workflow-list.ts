@@ -524,8 +524,8 @@ export class WorkflowListItem extends LitElement {
   }
 }
 
-@customElement("btrix-workflow-list")
 @localized()
+@customElement("btrix-workflow-list")
 export class WorkflowList extends LitElement {
   static styles = [
     srOnly,

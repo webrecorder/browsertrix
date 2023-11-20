@@ -23,8 +23,8 @@ export type TimeInputChangeEvent = CustomEvent<{
  * @events
  * time-change TimeInputChangeEvent
  */
-@customElement("btrix-time-input")
 @localized()
+@customElement("btrix-time-input")
 export class TimeInput extends LitElement {
   static styles = css`
     fieldset {

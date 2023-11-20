@@ -10,8 +10,8 @@ type LocaleNames = {
   [L in LocaleCode]: string;
 };
 
-@customElement("btrix-locale-picker")
 @localized()
+@customElement("btrix-locale-picker")
 export class LocalePicker extends LitElement {
   @state()
   private localeNames: LocaleNames = {} as LocaleNames;

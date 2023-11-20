@@ -11,8 +11,8 @@ const sortByName = sortBy("name");
 /**
  * @event success
  */
-@customElement("btrix-invite-form")
 @localized()
+@customElement("btrix-invite-form")
 export class InviteForm extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;

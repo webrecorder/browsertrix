@@ -17,8 +17,8 @@ export type HumanizeOptions = {
  * <btrix-relative-duration value=${value}></btrix-relative-duration>
  * ```
  */
-@customElement("btrix-relative-duration")
 @localized()
+@customElement("btrix-relative-duration")
 export class RelativeDuration extends LitElement {
   @property({ type: String })
   value?: string; // `new Date` compatible date format
