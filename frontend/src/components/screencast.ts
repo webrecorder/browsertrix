@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { msg, localized, str } from "@lit/localize";
-import { property, state } from "lit/decorators.js";
+import { property, state, customElement } from "lit/decorators.js";
 
 type Message = {
   id: number; // page ID
@@ -34,6 +34,7 @@ type CloseMessage = Message & {
  * ></btrix-screencast>
  * ```
  */
+@customElement("btrix-screencast")
 @localized()
 export class Screencast extends LitElement {
   static baseUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}:${

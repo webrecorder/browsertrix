@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import { state } from "lit/decorators.js";
+import { state, customElement } from "lit/decorators.js";
 
 import { allLocales } from "../__generated__/locale-codes";
 import { getLocale, setLocaleFromUrl } from "../utils/localization";
@@ -10,6 +10,7 @@ type LocaleNames = {
   [L in LocaleCode]: string;
 };
 
+@customElement("btrix-locale-picker")
 @localized()
 export class LocalePicker extends LitElement {
   @state()

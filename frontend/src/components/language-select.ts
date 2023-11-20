@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { localized, msg } from "@lit/localize";
 import sortBy from "lodash/fp/sortBy";
@@ -28,6 +28,7 @@ const languages = sortBy("name")(
  *
  * @event on-change
  */
+@customElement("btrix-language-select")
 @localized()
 export class LanguageSelect extends LitElement {
   static styles = css`

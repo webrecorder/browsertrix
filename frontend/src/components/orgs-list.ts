@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
 import type { CurrentUser, UserOrg } from "../types/user";
@@ -8,6 +8,7 @@ import LiteElement, { html } from "../utils/LiteElement";
 import { isAdmin } from "../utils/orgs";
 import { SlInput } from "@shoelace-style/shoelace";
 
+@customElement("btrix-orgs-list")
 @localized()
 export class OrgsList extends LiteElement {
   @property({ type: Object })

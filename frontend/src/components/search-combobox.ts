@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import { property, state, query } from "lit/decorators.js";
+import { property, state, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
@@ -27,6 +27,7 @@ const MAX_SEARCH_RESULTS = 10;
  * @event on-select
  * @event on-clear
  */
+@customElement("btrix-search-combobox")
 @localized()
 export class SearchCombobox extends LitElement {
   @property({ type: Array })

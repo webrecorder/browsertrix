@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { state, property, query } from "lit/decorators.js";
+import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import type {
   SlInput,
@@ -35,6 +35,7 @@ export type TagInputEvent = CustomEvent<{
  * @events tag-input
  * @events tags-change
  */
+@customElement("btrix-tag-input")
 @localized()
 export class TagInput extends LitElement {
   static styles = [

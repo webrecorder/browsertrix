@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { property, state } from "lit/decorators.js";
+import { property, state, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -25,6 +25,7 @@ export type PageChangeEvent = CustomEvent<{
  *
  * @event page-change { page: number; pages: number; }
  */
+@customElement("btrix-pagination")
 @localized()
 export class Pagination extends LitElement {
   static styles = [

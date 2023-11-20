@@ -11,9 +11,14 @@
  * ```
  */
 import { LitElement, html, css } from "lit";
-import { property, queryAssignedElements } from "lit/decorators.js";
+import {
+  property,
+  queryAssignedElements,
+  customElement,
+} from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 
+@customElement("btrix-numbered-list-item")
 export class NumberedListItem extends LitElement {
   @property({ type: Boolean })
   isFirst: boolean = false;
@@ -104,6 +109,7 @@ export class NumberedListItem extends LitElement {
   }
 }
 
+@customElement("btrix-numbered-list-header")
 export class NumberedListHeader extends LitElement {
   static styles = css`
     :host,
@@ -127,6 +133,7 @@ export class NumberedListHeader extends LitElement {
   }
 }
 
+@customElement("btrix-numbered-list")
 export class NumberedList extends LitElement {
   static styles = css`
     :host {

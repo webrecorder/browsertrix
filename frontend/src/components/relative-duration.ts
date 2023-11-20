@@ -1,5 +1,5 @@
 import { LitElement } from "lit";
-import { property, state } from "lit/decorators.js";
+import { property, state, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import humanizeDuration from "pretty-ms";
 
@@ -17,6 +17,7 @@ export type HumanizeOptions = {
  * <btrix-relative-duration value=${value}></btrix-relative-duration>
  * ```
  */
+@customElement("btrix-relative-duration")
 @localized()
 export class RelativeDuration extends LitElement {
   @property({ type: String })

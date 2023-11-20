@@ -1,5 +1,5 @@
 import { html } from "lit";
-import { property, state } from "lit/decorators.js";
+import { property, state, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg } from "@lit/localize";
 
@@ -18,6 +18,7 @@ import "./input.css";
  * <btrix-input label="Email" name="email"></btrix-input>
  * ```
  */
+@customElement("btrix-input")
 export class Input extends LiteElement {
   @property()
   label?: string;

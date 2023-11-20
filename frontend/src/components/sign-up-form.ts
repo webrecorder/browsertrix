@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, str, localized } from "@lit/localize";
 import debounce from "lodash/fp/debounce";
@@ -20,6 +20,7 @@ const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
  * @event authenticated
  * @event unauthenticated
  */
+@customElement("btrix-sign-up-form")
 @localized()
 export class SignUpForm extends LiteElement {
   /** Optonal read-only email, e.g. for invitations */

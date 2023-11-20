@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import sortBy from "lodash/fp/sortBy";
 
@@ -11,6 +11,7 @@ const sortByName = sortBy("name");
 /**
  * @event success
  */
+@customElement("btrix-invite-form")
 @localized()
 export class InviteForm extends LiteElement {
   @property({ type: Object })
