@@ -18,6 +18,7 @@ const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
 
 @localized()
+@customElement("btrix-request-verify")
 class RequestVerify extends LitElement {
   @property({ type: String })
   email!: string;
@@ -87,7 +88,6 @@ class RequestVerify extends LitElement {
     this.isRequesting = false;
   }
 }
-customElements.define("btrix-request-verify", RequestVerify);
 
 @needLogin
 @localized()

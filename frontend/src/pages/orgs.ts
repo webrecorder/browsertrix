@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
 import type { AuthState } from "../utils/AuthService";
@@ -10,6 +10,7 @@ import type { APIPaginatedList } from "../types/api";
 
 @needLogin
 @localized()
+@customElement("btrix-orgs")
 export class Orgs extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;

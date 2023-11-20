@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { ifDefined } from "lit/directives/if-defined.js";
 
@@ -9,6 +9,7 @@ import { CurrentUser } from "../types/user";
 
 @needLogin
 @localized()
+@customElement("btrix-users-invite")
 export class UsersInvite extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
