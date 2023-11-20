@@ -36,9 +36,14 @@ const largeBreakpointCss = css`60rem`;
 const rowCss = css`
   .row {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 3rem;
+    padding: 8px 0;
+    gap: 4px 0;
   }
-  .col:not(:first-of-type) {
+  .action {
+    grid-area: 1 / 2 / span 4;
+  }
+  .col:nth-of-type(n + 2):not(.action) {
     margin-left: 28px;
   }
 
@@ -55,7 +60,10 @@ const rowCss = css`
     .col:first-of-type {
       grid-column: span 2;
     }
-    .col:nth-of-type(2n + 2) {
+    .col:nth-of-type(n + 2):not(.action) {
+      margin-left: unset;
+    }
+    .col:nth-of-type(2n + 2):not(.action) {
       margin-left: 28px;
     }
   }
@@ -70,7 +78,7 @@ const rowCss = css`
     .col:first-of-type {
       grid-column: unset;
     }
-    .col:nth-of-type(2n + 2) {
+    .col:nth-of-type(2n + 2):not(.action) {
       margin-left: unset;
     }
   }
@@ -110,11 +118,12 @@ export class CrawlListItem extends LitElement {
         color: var(--sl-color-neutral-700);
         cursor: pointer;
         overflow: hidden;
+        padding: 8px 0;
       }
 
       @media only screen and (min-width: ${largeBreakpointCss}) {
         .item {
-          height: 2.5rem;
+          padding: 4px 0;
         }
       }
 
@@ -127,16 +136,29 @@ export class CrawlListItem extends LitElement {
       .col {
         display: flex;
         align-items: center;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+      .col:first-of-type,
+      .col:last-of-type {
         transition-property: margin;
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         transition-duration: 150ms;
-        overflow: hidden;
-        white-space: nowrap;
       }
 
       .detail {
         font-size: var(--sl-font-size-medium);
         text-overflow: ellipsis;
+      }
+
+      .text-xs {
+        font-size: var(--sl-font-size-x-small);
+      }
+
+      @media (min-width: ${largeBreakpointCss}) {
+        .lg\\:text-m {
+          font-size: var(--sl-font-size-medium);
+        }
       }
 
       .desc {
@@ -193,10 +215,20 @@ export class CrawlListItem extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
+        margin: -4px 0;
+        padding: 4px 0;
       }
 
       .action sl-icon-button {
         font-size: 1rem;
+        width: 100%;
+        height: 100%;
+      }
+      .action sl-icon-button::part(base) {
+        width: 100%;
+        height: 100%;
+        justify-content: center;
+        align-items: center;
       }
     `,
   ];
@@ -376,7 +408,7 @@ export class CrawlListItem extends LitElement {
         })}
       </div>
       <div class="col">
-        <div class="detail truncate">
+        <div class="detail truncate text-xs lg:text-m">
           ${this.safeRender(
             (crawl) => html`<span class="userName">${crawl.userName}</span>`
           )}
