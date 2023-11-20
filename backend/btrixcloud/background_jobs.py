@@ -413,7 +413,7 @@ class BackgroundJobOps:
     async def retry_background_job(
         self, job_id: str, org: Organization
     ) -> Dict[str, Union[bool, Optional[str]]]:
-        """Retry background job and return new job id"""
+        """Retry background job"""
         job = await self.get_background_job(job_id, org.id)
         if not job:
             raise HTTPException(status_code=404, detail="job_not_found")
@@ -455,6 +455,21 @@ class BackgroundJobOps:
 
         return {"success": True}
 
+    async def retry_failed_background_jobs(
+        self, org: Organization
+    ) -> Dict[str, Union[bool, Optional[str]]]:
+        """Retry all failed background jobs
+
+        Keep track of tasks in set to prevent them from being garbage collected
+        See: https://stackoverflow.com/a/74059981
+        """
+        bg_tasks = set()
+        async for job in self.jobs.find({"success": False}):
+            task = asyncio.create_task(self.retry_background_job(job["_id"], org))
+            bg_tasks.add(task)
+            task.add_done_callback(bg_tasks.discard)
+        return {"success": True}
+
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
@@ -493,6 +508,15 @@ def init_background_jobs_api(
     ):
         """Retry background job"""
         return await ops.retry_background_job(job_id, org)
+
+    @router.post(
+        "/retryFailed",
+    )
+    async def retry_failed_background_jobs(
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        """Retry failed background jobs"""
+        return await ops.retry_failed_background_jobs(org)
 
     @router.get("", response_model=PaginatedResponse)
     async def list_background_jobs(
