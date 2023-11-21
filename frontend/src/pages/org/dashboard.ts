@@ -4,13 +4,15 @@ import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
-import humanizeMilliseconds from "pretty-ms";
 
 import LiteElement, { html } from "../../utils/LiteElement";
 import type { AuthState } from "../../utils/AuthService";
 import type { OrgData } from "../../utils/orgs";
 import type { SelectNewDialogEvent } from "./index";
-import { getLocale } from "../../utils/localization";
+import {
+  humanizeExecutionSeconds,
+  humanizeSeconds,
+} from "../../utils/executionTimeFormatter";
 
 type Metrics = {
   storageUsedBytes: number;
@@ -65,30 +67,6 @@ export class Dashboard extends LiteElement {
       this.fetchMetrics();
     }
   }
-
-  private humanizeExecutionSeconds = (seconds: number) => {
-    const minutes = Math.ceil(seconds / 60);
-
-    const locale = getLocale();
-    const compactFormatter = new Intl.NumberFormat(locale, {
-      notation: "compact",
-      style: "unit",
-      unit: "minute",
-      unitDisplay: "long",
-    });
-
-    const fullFormatter = new Intl.NumberFormat(locale, {
-      style: "unit",
-      unit: "minute",
-      unitDisplay: "long",
-      maximumFractionDigits: 0,
-    });
-
-    return html`<span title="${fullFormatter.format(minutes)}">
-        ${compactFormatter.format(minutes)}</span
-      >
-      (${humanizeMilliseconds(seconds * 1000)})`;
-  };
 
   render() {
     const hasQuota = Boolean(this.metrics?.storageQuotaBytes);
@@ -347,7 +325,7 @@ export class Dashboard extends LiteElement {
                 )
               )}
               <div slot="available" class="flex-1">
-                <sl-tooltip>
+                <sl-tooltip class="text-center">
                   <div slot="content">
                     <div>${msg("Available")}</div>
                     <div class="text-xs opacity-80">
@@ -415,7 +393,7 @@ export class Dashboard extends LiteElement {
         <div class="text-center">
           <div>${label}</div>
           <div class="text-xs opacity-80">
-            ${humanizeMilliseconds(value * 1000)} |
+            ${humanizeExecutionSeconds(value)} |
             ${this.renderPercentage(value / quotaSeconds)}
           </div>
         </div>
@@ -438,9 +416,7 @@ export class Dashboard extends LiteElement {
             hasQuota
               ? html`
                   <span class="inline-flex items-center">
-                    ${this.humanizeExecutionSeconds(
-                      quotaSeconds - usageSeconds
-                    )}
+                    ${humanizeExecutionSeconds(quotaSeconds - usageSeconds)}
                     ${msg("Available")}
                   </span>
                 `
@@ -464,14 +440,11 @@ export class Dashboard extends LiteElement {
                 )
               )}
               <div slot="available" class="flex-1">
-                <sl-tooltip>
+                <sl-tooltip class="text-center">
                   <div slot="content">
                     <div>${msg("Monthly Execution Time Available")}</div>
                     <div class="text-xs opacity-80">
-                      ${this.humanizeExecutionSeconds(
-                        quotaSeconds - usageSeconds
-                      )}
-                      |
+                      ${humanizeExecutionSeconds(quotaSeconds - usageSeconds)} |
                       ${this.renderPercentage(
                         (quotaSeconds - usageSeconds) / quotaSeconds
                       )}
@@ -481,10 +454,10 @@ export class Dashboard extends LiteElement {
                 </sl-tooltip>
               </div>
               <span slot="valueLabel">
-                ${this.humanizeExecutionSeconds(usageSeconds)}
+                ${humanizeExecutionSeconds(usageSeconds, "short")}
               </span>
               <span slot="maxLabel">
-                ${this.humanizeExecutionSeconds(quotaSeconds)}
+                ${humanizeExecutionSeconds(quotaSeconds, "short")}
               </span>
             </btrix-meter>
           </div>
@@ -603,8 +576,8 @@ export class Dashboard extends LiteElement {
             >
             </sl-format-date>
           `,
-          value ? this.humanizeExecutionSeconds(value) : "--",
-          humanizeMilliseconds(crawlTime * 1000 || 0),
+          value ? humanizeExecutionSeconds(value) : "--",
+          humanizeSeconds(crawlTime || 0),
         ];
       });
     return html`

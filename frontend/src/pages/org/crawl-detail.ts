@@ -4,7 +4,6 @@ import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { classMap } from "lit/directives/class-map.js";
 import { msg, localized, str } from "@lit/localize";
-import humanizeDuration from "pretty-ms";
 
 import type { PageChangeEvent } from "../../components/pagination";
 import { RelativeDuration } from "../../components/relative-duration";
@@ -14,6 +13,7 @@ import { isActive } from "../../utils/crawler";
 import { CopyButton } from "../../components/copy-button";
 import type { Crawl, Seed } from "./types";
 import { APIPaginatedList } from "../../types/api";
+import { humanizeExecutionSeconds } from "../../utils/executionTimeFormatter";
 
 const SECTIONS = [
   "overview",
@@ -644,7 +644,7 @@ export class CrawlDetail extends LiteElement {
                 <btrix-desc-list-item label=${msg("Execution Time")}>
                   ${this.crawl!.finished
                     ? html`<span
-                        >${humanizeDuration(
+                        >${humanizeExecutionSeconds(
                           this.crawl!.crawlExecSeconds * 1000
                         )}</span
                       >`
