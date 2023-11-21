@@ -374,10 +374,7 @@ export class WorkflowDetail extends LiteElement {
         ?open=${this.openDialogName === "delete"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${this.showDialog}
-        @sl-after-hide=${() => {
-          this.isDialogVisible = false;
-          this.crawlToDelete = null;
-        }}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
         ${msg(
           "All files and logs associated with this crawl will also be deleted, and the crawl will be removed from any Collection it is a part of."
@@ -393,10 +390,10 @@ export class WorkflowDetail extends LiteElement {
             size="small"
             variant="danger"
             @click=${async () => {
+              this.openDialogName = undefined;
               if (this.crawlToDelete) {
                 await this.deleteCrawl(this.crawlToDelete);
               }
-              this.openDialogName = undefined;
             }}
             >${msg("Delete Crawl")}</sl-button
           >
@@ -1711,6 +1708,10 @@ export class WorkflowDetail extends LiteElement {
       });
       this.fetchCrawls();
     } catch (e: any) {
+      if (this.crawlToDelete) {
+        this.confirmDeleteCrawl(this.crawlToDelete);
+      }
+
       let message = msg(
         str`Sorry, couldn't delete archived item at this time.`
       );
