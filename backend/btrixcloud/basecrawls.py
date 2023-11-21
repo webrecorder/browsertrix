@@ -435,7 +435,7 @@ class BaseCrawlOps:
         qa_run_id: Optional[str] = None,
         update_presigned_url: bool = False,
     ) -> List[CrawlFileOut]:
-        """Resolve presigned URLs"""
+        """Regenerate presigned URLs for files as necessary"""
         if not files:
             print("no files")
             return []
