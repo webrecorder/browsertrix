@@ -227,10 +227,7 @@ export class CrawlListItem extends LitElement {
       class="item row"
       role="button"
       @click=${async (e: MouseEvent) => {
-        if (
-          e.target === this.dropdownTrigger &&
-          !this.dropdownTrigger.disabled
-        ) {
+        if (e.target === this.dropdownTrigger && this.hasMenuItems) {
           return;
         }
         e.preventDefault();
@@ -394,6 +391,11 @@ export class CrawlListItem extends LitElement {
         <slot
           name="menu"
           @slotchange=${() => (this.hasMenuItems = this.menuArr.length > 0)}
+          @click=${(e: MouseEvent) => {
+            // Prevent navigation to detail view
+            e.preventDefault();
+            e.stopPropagation();
+          }}
         ></slot>
       </sl-dropdown>
     </div>`;
