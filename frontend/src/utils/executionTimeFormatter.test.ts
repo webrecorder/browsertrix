@@ -5,21 +5,21 @@ import {
 import { expect, fixture } from "@open-wc/testing";
 
 describe("formatHours", () => {
-  it("returns a time in hours, minutes, and seconds when given a time over an hour", () => {
-    expect(humanizeSeconds(12_345, "en-US")).to.equal("3h 25m 45s");
+  it("returns a time in hours and minutes when given a time over an hour", () => {
+    expect(humanizeSeconds(12_345, "en-US")).to.equal("3h 26m");
   });
-  it("returns 0m and seconds when given a time under a minute", () => {
-    expect(humanizeSeconds(24, "en-US")).to.equal("0m 24s");
+  it("returns 1m when given a time under a minute", () => {
+    expect(humanizeSeconds(24, "en-US")).to.equal("1m");
   });
-  it("returns minutes and seconds when given a time under an hour", () => {
-    expect(humanizeSeconds(1_234, "en-US")).to.equal("20m 34s");
+  it("returns 0m and seconds when given a time under a minute with seconds on", () => {
+    expect(humanizeSeconds(24, "en-US", true)).to.equal("0m 24s");
+  });
+  it("returns minutes when given a time under an hour", () => {
+    expect(humanizeSeconds(1_234, "en-US")).to.equal("21m");
   });
   it("returns just hours when given a time exactly in hours", () => {
     expect(humanizeSeconds(3_600, "en-US")).to.equal("1h");
     expect(humanizeSeconds(44_442_000, "en-US")).to.equal("12,345h");
-  });
-  it("returns nothing when given 0 seconds", () => {
-    expect(humanizeSeconds(0, "en-US")).to.equal("0s");
   });
   it("handles different locales correctly", () => {
     expect(humanizeSeconds(44_442_000_000, "en-IN")).to.equal("1,23,45,000h");
@@ -30,7 +30,10 @@ describe("formatHours", () => {
     expect(humanizeSeconds(44_442_000_000, "ar-EG")).to.equal("١٢٬٣٤٥٬٠٠٠ س");
   });
   it("formats zero time as expected", () => {
-    expect(humanizeSeconds(0, "en-US")).to.equal("0s");
+    expect(humanizeSeconds(0, "en-US")).to.equal("0m");
+  });
+  it("formats zero time as expected", () => {
+    expect(humanizeSeconds(0, "en-US", true)).to.equal("0s");
   });
   it("formats negative time as expected", () => {
     expect(() => humanizeSeconds(-100, "en-US")).to.throw(
@@ -47,9 +50,7 @@ describe("humanizeExecutionSeconds", () => {
     });
     expect(el.getAttribute("title")).to.equal("20,576,132 minutes");
     expect(el.textContent?.trim()).to.equal("21M minutes");
-    expect(parentNode.innerText).to.equal(
-      "21M minutes\u00a0(342,935h 31m 30s)"
-    );
+    expect(parentNode.innerText).to.equal("21M minutes\u00a0(342,935h 32m)");
   });
 
   it("shows a short version when set", async () => {
@@ -58,7 +59,7 @@ describe("humanizeExecutionSeconds", () => {
       parentNode,
     });
     expect(el.getAttribute("title")).to.equal(
-      "20,576,132 minutes\u00a0(342,935h 31m 30s)"
+      "20,576,132 minutes\u00a0(342,935h 32m)"
     );
     expect(el.textContent?.trim()).to.equal("21M minutes");
     expect(parentNode.innerText).to.equal("21M minutes");

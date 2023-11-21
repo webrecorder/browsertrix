@@ -11,13 +11,20 @@ import { getLocale } from "./localization";
  * - When the time is less than a minute, shows minutes and seconds
  *   - e.g. `0m 43s`
  */
-export function humanizeSeconds(seconds: number, locale?: string) {
+export function humanizeSeconds(
+  seconds: number,
+  locale?: string,
+  displaySeconds = false
+) {
   if (seconds < 0) {
     throw new Error("humanizeSeconds in unimplemented for negative times");
   }
   const hours = Math.floor(seconds / 3600);
   seconds -= hours * 3600;
-  const minutes = Math.floor(seconds / 60);
+  // If displaying seconds, round minutes down, otherwise round up
+  const minutes = displaySeconds
+    ? Math.floor(seconds / 60)
+    : Math.ceil(seconds / 60);
   seconds -= minutes * 60;
 
   const hourFormatter = new Intl.NumberFormat(locale, {
@@ -40,8 +47,10 @@ export function humanizeSeconds(seconds: number, locale?: string) {
 
   return [
     hours !== 0 && hourFormatter.format(hours),
-    (minutes !== 0 || seconds !== 0) && minuteFormatter.format(minutes),
-    (seconds !== 0 || (hours === 0 && minutes === 0)) &&
+    (minutes !== 0 || seconds !== 0 || (!displaySeconds && hours === 0)) &&
+      minuteFormatter.format(minutes),
+    displaySeconds &&
+      (seconds !== 0 || (hours === 0 && minutes === 0)) &&
       secondFormatter.format(seconds),
   ]
     .filter(Boolean)
@@ -58,7 +67,8 @@ export function humanizeSeconds(seconds: number, locale?: string) {
  */
 export const humanizeExecutionSeconds = (
   seconds: number,
-  style: "short" | "full" = "full"
+  style: "short" | "full" = "full",
+  displaySeconds = false
 ) => {
   const locale = getLocale();
   const minutes = Math.ceil(seconds / 60);
@@ -77,7 +87,7 @@ export const humanizeExecutionSeconds = (
     maximumFractionDigits: 0,
   });
 
-  const details = humanizeSeconds(seconds);
+  const details = humanizeSeconds(seconds, locale, displaySeconds);
 
   // if the time is less than an hour and lines up exactly on the minute, don't render the details.
   const formattedDetails =
