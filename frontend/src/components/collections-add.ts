@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
@@ -39,6 +39,7 @@ export type CollectionsChangeEvent = CustomEvent<{
  * @events collections-change
  */
 @localized()
+@customElement("btrix-collections-add")
 export class CollectionsAdd extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;

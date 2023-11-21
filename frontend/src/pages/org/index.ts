@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -69,6 +69,7 @@ const UUID_REGEX =
 
 @needLogin
 @localized()
+@customElement("btrix-org")
 export class Org extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
@@ -455,6 +456,8 @@ export class Org extends LiteElement {
         .authState=${this.authState!}
         orgId=${this.orgId}
         .org=${this.org || null}
+        ?isCrawler=${this.isCrawler}
+        ?isAdmin=${this.isAdmin}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-dashboard>
     `;

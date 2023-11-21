@@ -1,5 +1,5 @@
 import { css, html } from "lit";
-import { state, property, query } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import SLTag from "@shoelace-style/shoelace/dist/components/tag/tag.js";
 import tagStyles from "@shoelace-style/shoelace/dist/components/tag/tag.styles.js";
@@ -12,6 +12,7 @@ import tagStyles from "@shoelace-style/shoelace/dist/components/tag/tag.styles.j
  * <btrix-tag>Content</btrix-tag>
  * ```
  */
+@customElement("btrix-tag")
 export class Tag extends SLTag {
   static shadowRootOptions = {
     ...SLTag.shadowRootOptions,

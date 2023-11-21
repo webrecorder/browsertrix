@@ -48,6 +48,7 @@ class InvitePending(BaseMongoModel):
 
     created: datetime
     inviterEmail: str
+    fromSuperuser: Optional[bool]
     oid: Optional[UUID]
     role: Optional[UserRole] = UserRole.VIEWER
     email: Optional[str]

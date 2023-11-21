@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { str, msg, localized } from "@lit/localize";
 import debounce from "lodash/fp/debounce";
 import { when } from "lit/directives/when.js";
@@ -13,6 +13,7 @@ const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
 
 @localized()
+@customElement("btrix-reset-password")
 export class ResetPassword extends LiteElement {
   @property({ type: Object })
   viewState!: ViewState;

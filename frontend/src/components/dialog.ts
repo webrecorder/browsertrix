@@ -1,12 +1,14 @@
 import { css } from "lit";
 import SLDialog from "@shoelace-style/shoelace/dist/components/dialog/dialog.js";
 import dialogStyles from "@shoelace-style/shoelace/dist/components/dialog/dialog.styles.js";
+import { customElement } from "lit/decorators.js";
 
 /**
  * Customized <sl-dialog>
  *
  * Usage: see https://shoelace.style/components/dialog
  */
+@customElement("btrix-dialog")
 export class Dialog extends SLDialog {
   static styles = css`
     ${dialogStyles} .dialog__panel {

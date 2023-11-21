@@ -1,5 +1,5 @@
 import type { HTMLTemplateResult, PropertyValueMap } from "lit";
-import { state, property, query } from "lit/decorators.js";
+import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -59,6 +59,7 @@ const sortableFields: Record<
  * ```
  */
 @localized()
+@customElement("btrix-workflows-list")
 export class WorkflowsList extends LiteElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
@@ -421,7 +422,7 @@ export class WorkflowsList extends LiteElement {
   private renderMenuItems(workflow: ListWorkflow) {
     return html`
       ${when(
-        workflow.isCrawlRunning,
+        workflow.isCrawlRunning && this.isCrawler,
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
@@ -439,7 +440,10 @@ export class WorkflowsList extends LiteElement {
             <sl-icon name="x-octagon" slot="prefix"></sl-icon>
             ${msg("Cancel & Discard Crawl")}
           </sl-menu-item>
-        `,
+        `
+      )}
+      ${when(
+        this.isCrawler && !workflow.isCrawlRunning,
         () => html`
           <sl-menu-item
             style="--sl-color-neutral-700: var(--success)"
@@ -453,7 +457,7 @@ export class WorkflowsList extends LiteElement {
         `
       )}
       ${when(
-        workflow.isCrawlRunning,
+        workflow.isCrawlRunning && this.isCrawler,
         // HACK shoelace doesn't current have a way to override non-hover
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
@@ -485,14 +489,19 @@ export class WorkflowsList extends LiteElement {
           <sl-divider></sl-divider>
         `
       )}
-      <sl-divider></sl-divider>
-      <sl-menu-item
-        @click=${() =>
-          this.navTo(`${this.orgBasePath}/workflows/crawl/${workflow.id}?edit`)}
-      >
-        <sl-icon name="gear" slot="prefix"></sl-icon>
-        ${msg("Edit Workflow Settings")}
-      </sl-menu-item>
+      ${when(
+        this.isCrawler,
+        () => html` <sl-divider></sl-divider>
+          <sl-menu-item
+            @click=${() =>
+              this.navTo(
+                `${this.orgBasePath}/workflows/crawl/${workflow.id}?edit`
+              )}
+          >
+            <sl-icon name="gear" slot="prefix"></sl-icon>
+            ${msg("Edit Workflow Settings")}
+          </sl-menu-item>`
+      )}
       <sl-menu-item
         @click=${() => CopyButton.copyToClipboard(workflow.tags.join(", "))}
         ?disabled=${!workflow.tags.length}
@@ -500,28 +509,15 @@ export class WorkflowsList extends LiteElement {
         <sl-icon name="tags" slot="prefix"></sl-icon>
         ${msg("Copy Tags")}
       </sl-menu-item>
-      <sl-menu-item @click=${() => this.duplicateConfig(workflow)}>
-        <sl-icon name="files" slot="prefix"></sl-icon>
-        ${msg("Duplicate Workflow")}
-      </sl-menu-item>
-      ${when(workflow.isCrawlRunning, () => {
-        const shouldDeactivate = workflow.crawlCount && !workflow.inactive;
-        return html`
-          <sl-divider></sl-divider>
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
-            @click=${() =>
-              shouldDeactivate
-                ? this.deactivate(workflow)
-                : this.delete(workflow)}
-          >
-            <sl-icon name="trash3" slot="prefix"></sl-icon>
-            ${shouldDeactivate
-              ? msg("Deactivate Workflow")
-              : msg("Delete Workflow")}
-          </sl-menu-item>
-        `;
-      })}
+      ${when(
+        this.isCrawler,
+        () => html` <sl-menu-item
+          @click=${() => this.duplicateConfig(workflow)}
+        >
+          <sl-icon name="files" slot="prefix"></sl-icon>
+          ${msg("Duplicate Workflow")}
+        </sl-menu-item>`
+      )}
     `;
   }
 
@@ -860,5 +856,3 @@ export class WorkflowsList extends LiteElement {
     return data;
   }
 }
-
-customElements.define("btrix-workflows-list", WorkflowsList);

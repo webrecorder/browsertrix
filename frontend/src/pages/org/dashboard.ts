@@ -1,5 +1,5 @@
 import type { PropertyValues, TemplateResult } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
@@ -34,9 +34,16 @@ type Metrics = {
 const BYTES_PER_GB = 1e9;
 
 @localized()
+@customElement("btrix-dashboard")
 export class Dashboard extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
+
+  @property({ type: Boolean })
+  isCrawler?: boolean;
+
+  @property({ type: Boolean })
+  isAdmin?: boolean;
 
   @property({ type: String })
   orgId!: string;
@@ -74,48 +81,55 @@ export class Dashboard extends LiteElement {
         <h1 class="min-w-0 text-xl font-semibold leading-8 mr-auto">
           ${this.org?.name}
         </h1>
-        <sl-icon-button
-          href=${`${this.orgBasePath}/settings`}
-          class="text-lg"
-          name="gear"
-          label="Edit org settings"
-          @click=${this.navLink}
-        ></sl-icon-button>
-        <sl-dropdown
-          distance="4"
-          placement="bottom-end"
-          @sl-select=${(e: SlSelectEvent) => {
-            this.dispatchEvent(
-              <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
-                detail: e.detail.item.value,
-              })
-            );
-          }}
-        >
-          <sl-button slot="trigger" size="small" caret>
-            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-            ${msg("Create New...")}
-          </sl-button>
-          <sl-menu>
-            <sl-menu-item value="workflow"
-              >${msg("Crawl Workflow")}</sl-menu-item
-            >
-            <sl-menu-item
-              value="upload"
-              ?disabled=${!this.metrics || quotaReached}
-              >${msg("Upload")}</sl-menu-item
-            >
-            <sl-menu-item value="collection">
-              ${msg("Collection")}
-            </sl-menu-item>
-            <sl-menu-item
-              value="browser-profile"
-              ?disabled=${!this.metrics || quotaReached}
-            >
-              ${msg("Browser Profile")}
-            </sl-menu-item>
-          </sl-menu>
-        </sl-dropdown>
+        ${when(
+          this.isAdmin,
+          () =>
+            html` <sl-icon-button
+              href=${`${this.orgBasePath}/settings`}
+              class="text-lg"
+              name="gear"
+              label="Edit org settings"
+              @click=${this.navLink}
+            ></sl-icon-button>`
+        )}
+        ${when(
+          this.isCrawler,
+          () => html` <sl-dropdown
+            distance="4"
+            placement="bottom-end"
+            @sl-select=${(e: SlSelectEvent) => {
+              this.dispatchEvent(
+                <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                  detail: e.detail.item.value,
+                })
+              );
+            }}
+          >
+            <sl-button slot="trigger" size="small" caret>
+              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+              ${msg("Create New...")}
+            </sl-button>
+            <sl-menu>
+              <sl-menu-item value="workflow"
+                >${msg("Crawl Workflow")}</sl-menu-item
+              >
+              <sl-menu-item
+                value="upload"
+                ?disabled=${!this.metrics || quotaReached}
+                >${msg("Upload")}</sl-menu-item
+              >
+              <sl-menu-item value="collection">
+                ${msg("Collection")}
+              </sl-menu-item>
+              <sl-menu-item
+                value="browser-profile"
+                ?disabled=${!this.metrics || quotaReached}
+              >
+                ${msg("Browser Profile")}
+              </sl-menu-item>
+            </sl-menu>
+          </sl-dropdown>`
+        )}
       </header>
       <main>
         <div class="flex flex-col md:flex-row gap-6">
@@ -602,4 +616,3 @@ export class Dashboard extends LiteElement {
     }
   }
 }
-customElements.define("btrix-dashboard", Dashboard);

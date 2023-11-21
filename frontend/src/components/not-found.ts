@@ -1,6 +1,8 @@
 import { LitElement, html } from "lit";
+import { customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
+@customElement("btrix-not-found")
 @localized()
 export class NotFound extends LitElement {
   createRenderRoot() {

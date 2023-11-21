@@ -1,5 +1,5 @@
 import type { TemplateResult } from "lit";
-import { state, property, query } from "lit/decorators.js";
+import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
@@ -93,6 +93,7 @@ type FormValues = {
  * @event on-submit
  */
 @localized()
+@customElement("btrix-collection-editor")
 export class CollectionEditor extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -1557,4 +1558,3 @@ export class CollectionEditor extends LiteElement {
     }
   }
 }
-customElements.define("btrix-collection-editor", CollectionEditor);

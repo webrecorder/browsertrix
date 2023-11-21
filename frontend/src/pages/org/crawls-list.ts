@@ -1,4 +1,4 @@
-import { state, property, query } from "lit/decorators.js";
+import { state, property, query, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
@@ -50,6 +50,7 @@ const sortableFields: Record<
  * ```
  */
 @localized()
+@customElement("btrix-crawls-list")
 export class CrawlsList extends LiteElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
@@ -447,28 +448,11 @@ export class CrawlsList extends LiteElement {
         orgSlug=${this.appState.orgSlug || ""}
         .crawl=${item}
       >
-        <sl-menu slot="menu">
-          ${when(
-            this.isCrawler,
-            this.crawlerMenuItemsRenderer(item),
-            () => html`
-              <sl-menu-item
-                @click=${() =>
-                  this.navTo(
-                    `${this.orgBasePath}/items/${
-                      item.type === "upload" ? "upload" : "crawl"
-                    }/${item.id}`
-                  )}
-              >
-                ${msg("View Crawl Details")}
-              </sl-menu-item>
-            `
-          )}
-        </sl-menu>
+        <sl-menu slot="menu"> ${this.crawlerMenuItemsRenderer(item)} </sl-menu>
       </btrix-crawl-list-item>
     `;
 
-  private crawlerMenuItemsRenderer = (item: Crawl) => () =>
+  private crawlerMenuItemsRenderer = (item: Crawl) =>
     // HACK shoelace doesn't current have a way to override non-hover
     // color without resetting the --sl-color-neutral-700 variable
     html`
@@ -747,5 +731,3 @@ export class CrawlsList extends LiteElement {
     return data;
   }
 }
-
-customElements.define("btrix-crawls-list", CrawlsList);

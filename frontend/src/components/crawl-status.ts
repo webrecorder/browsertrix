@@ -1,5 +1,9 @@
 import { LitElement, html, css, TemplateResult } from "lit";
-import { property, queryAssignedElements } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  queryAssignedElements,
+} from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import startCase from "lodash/fp/startCase";
@@ -8,6 +12,7 @@ import type { CrawlState } from "../types/crawler";
 import { animatePulse } from "../utils/css";
 
 @localized()
+@customElement("btrix-crawl-status")
 export class CrawlStatus extends LitElement {
   @property({ type: String })
   state?: CrawlState;

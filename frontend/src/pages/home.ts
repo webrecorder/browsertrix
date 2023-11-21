@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
@@ -11,6 +11,7 @@ import type { APIPaginatedList } from "../types/api";
 import { maxLengthValidator } from "../utils/form";
 
 @localized()
+@customElement("btrix-home")
 export class Home extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;

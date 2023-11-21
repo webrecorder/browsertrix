@@ -1,4 +1,4 @@
-import { property, state, query } from "lit/decorators.js";
+import { property, state, query, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import {
   parse as yamlToJson,
@@ -21,6 +21,7 @@ import LiteElement, { html } from "../utils/LiteElement";
  * @event on-change
  */
 @localized()
+@customElement("btrix-config-editor")
 export class ConfigEditor extends LiteElement {
   @property({ type: String })
   value = "";

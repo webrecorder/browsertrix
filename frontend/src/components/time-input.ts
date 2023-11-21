@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 
@@ -24,6 +24,7 @@ export type TimeInputChangeEvent = CustomEvent<{
  * time-change TimeInputChangeEvent
  */
 @localized()
+@customElement("btrix-time-input")
 export class TimeInput extends LitElement {
   static styles = css`
     fieldset {

@@ -1,5 +1,6 @@
 import { LitElement, html, css } from "lit";
 import {
+  customElement,
   property,
   query,
   queryAssignedElements,
@@ -15,6 +16,7 @@ export type FileRemoveEvent = CustomEvent<{
 /**
  * @event on-remove FileRemoveEvent
  */
+@customElement("btrix-file-list-item")
 export class FileListItem extends LitElement {
   static styles = [
     truncate,
@@ -119,6 +121,7 @@ export class FileListItem extends LitElement {
   };
 }
 
+@customElement("btrix-file-list")
 export class FileList extends LitElement {
   static styles = [
     css`

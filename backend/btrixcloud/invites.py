@@ -11,7 +11,8 @@ from pymongo.errors import AutoReconnect
 from fastapi import HTTPException
 
 from .pagination import DEFAULT_PAGE_SIZE
-from .models import UserRole, InvitePending, InviteRequest
+from .models import UserRole, InvitePending, InviteRequest, User
+from .users import UserManager
 from .utils import is_bool
 
 
@@ -70,13 +71,7 @@ class InviteOps:
 
         await self.invites.insert_one(new_user_invite.to_dict())
 
-        self.email.send_new_user_invite(
-            new_user_invite.email,
-            new_user_invite.inviterEmail,
-            org_name,
-            new_user_invite.id,
-            headers,
-        )
+        self.email.send_new_user_invite(new_user_invite, org_name, headers)
 
     async def get_valid_invite(self, invite_token: UUID, email):
         """Retrieve a valid invite data from db, or throw if invalid"""
@@ -118,8 +113,8 @@ class InviteOps:
     async def invite_user(
         self,
         invite: InviteRequest,
-        user,
-        user_manager,
+        user: User,
+        user_manager: UserManager,
         org=None,
         allow_existing=False,
         headers: Optional[dict] = None,
@@ -148,6 +143,7 @@ class InviteOps:
             # URL decode email address just in case
             email=urllib.parse.unquote(invite.email),
             inviterEmail=user.email,
+            fromSuperuser=user.is_superuser,
         )
 
         other_user = await user_manager.get_by_email(invite.email)

@@ -1,4 +1,4 @@
-import { state, property, queryAsync } from "lit/decorators.js";
+import { state, property, queryAsync, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 
@@ -7,6 +7,7 @@ import LiteElement, { html } from "../../../utils/LiteElement";
 import type { Dialog } from "../../../components/dialog";
 
 @localized()
+@customElement("btrix-new-browser-profile-dialog")
 export class NewBrowserProfileDialog extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -176,7 +177,3 @@ export class NewBrowserProfileDialog extends LiteElement {
     e.stopPropagation();
   }
 }
-customElements.define(
-  "btrix-new-browser-profile-dialog",
-  NewBrowserProfileDialog
-);

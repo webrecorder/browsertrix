@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { msg, localized } from "@lit/localize";
-import { property } from "lit/decorators.js";
+import { property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 
@@ -12,6 +12,7 @@ import type { ZxcvbnResult } from "@zxcvbn-ts/core";
  * <btrix-pw-strength-alert .result=${this.zxcvbnResult}></btrix-pw-strength-alert>
  * ```
  */
+@customElement("btrix-pw-strength-alert")
 @localized()
 export class PasswordStrengthAlert extends LitElement {
   @property({ type: String })

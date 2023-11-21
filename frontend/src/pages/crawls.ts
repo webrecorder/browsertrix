@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
@@ -38,6 +38,7 @@ const ABORT_REASON_THROTTLE = "throttled";
 
 @needLogin
 @localized()
+@customElement("btrix-crawls")
 export class Crawls extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;

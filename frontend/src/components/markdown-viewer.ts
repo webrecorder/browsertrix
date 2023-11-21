@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import { micromark } from "micromark";
 
@@ -8,6 +8,7 @@ import { typography } from "../utils/css";
 /**
  * View rendered markdown
  */
+@customElement("btrix-markdown-viewer")
 export class MarkdownViewer extends LitElement {
   static styles = [
     typography,

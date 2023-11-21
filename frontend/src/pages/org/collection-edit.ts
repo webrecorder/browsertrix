@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import difference from "lodash/fp/difference";
@@ -10,6 +10,7 @@ import type { Collection } from "../../types/collection";
 import "./collection-editor";
 
 @localized()
+@customElement("btrix-collection-edit")
 export class CollectionEdit extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -202,4 +203,3 @@ export class CollectionEdit extends LiteElement {
     return data;
   }
 }
-customElements.define("btrix-collection-edit", CollectionEdit);

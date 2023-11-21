@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, str, localized } from "@lit/localize";
 
 import LiteElement, { html } from "../utils/LiteElement";
@@ -6,6 +6,7 @@ import type { AuthState } from "../utils/AuthService";
 import { ROUTES } from "../routes";
 
 @localized()
+@customElement("btrix-accept-invite")
 export class AcceptInvite extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;

@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import debounce from "lodash/fp/debounce";
 
@@ -37,6 +37,7 @@ const MIN_LENGTH = 2;
  * @event on-add ExclusionAddEvent
  */
 @localized()
+@customElement("btrix-queue-exclusion-form")
 export class QueueExclusionForm extends LiteElement {
   @property({ type: Boolean })
   isSubmitting = false;

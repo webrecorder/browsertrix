@@ -1,5 +1,4 @@
-// import { LitElement, html } from "lit";
-import { property, state, query } from "lit/decorators.js";
+import { property, state, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "../utils/AuthService";
@@ -25,6 +24,7 @@ const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];
  * @event load Event on iframe load, with src URL
  */
 @localized()
+@customElement("btrix-profile-browser")
 export class ProfileBrowser extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;

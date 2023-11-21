@@ -1,6 +1,6 @@
 import type { TemplateResult } from "lit";
 import { render } from "lit";
-import { property, state, query } from "lit/decorators.js";
+import { property, state, query, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized } from "@lit/localize";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -53,6 +53,7 @@ type APIUser = {
  * @event update-user-info
  */
 @localized()
+@customElement("browsertrix-app")
 export class App extends LiteElement {
   @property({ type: String })
   version?: string;
@@ -937,5 +938,3 @@ export class App extends LiteElement {
     AppStateService.updateOrgSlug(null);
   }
 }
-
-customElements.define("browsertrix-app", App);

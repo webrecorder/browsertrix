@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
@@ -25,6 +25,7 @@ const TABS = ["replay", "items"] as const;
 export type Tab = (typeof TABS)[number];
 
 @localized()
+@customElement("btrix-collection-detail")
 export class CollectionDetail extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -623,15 +624,19 @@ export class CollectionDetail extends LiteElement {
         orgSlug=${this.appState.orgSlug || ""}
         .crawl=${item}
       >
-        <sl-menu slot="menu">
-          <sl-menu-item
-            style="--sl-color-neutral-700: var(--warning)"
-            @click=${() => this.removeArchivedItem(item.id, idx)}
-          >
-            <sl-icon name="folder-minus" slot="prefix"></sl-icon>
-            ${msg("Remove from Collection")}
-          </sl-menu-item>
-        </sl-menu>
+        ${when(
+          this.isCrawler,
+          () =>
+            html` <sl-menu slot="menu">
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--warning)"
+                @click=${() => this.removeArchivedItem(item.id, idx)}
+              >
+                <sl-icon name="folder-minus" slot="prefix"></sl-icon>
+                ${msg("Remove from Collection")}
+              </sl-menu-item>
+            </sl-menu>`
+        )}
       </btrix-crawl-list-item>
     `;
 
@@ -852,4 +857,3 @@ export class CollectionDetail extends LiteElement {
     }
   }
 }
-customElements.define("btrix-collection-detail", CollectionDetail);

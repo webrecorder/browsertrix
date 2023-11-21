@@ -1,5 +1,5 @@
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import RegexColorize from "regex-colorize";
@@ -22,6 +22,7 @@ import { RelativeDuration } from "./relative-duration";
  * ```
  */
 @localized()
+@customElement("btrix-config-details")
 export class ConfigDetails extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;

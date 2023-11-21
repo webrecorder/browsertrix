@@ -4,6 +4,7 @@ import {
   property,
   query,
   queryAssignedElements,
+  customElement,
 } from "lit/decorators.js";
 import {
   SlInput,
@@ -24,6 +25,7 @@ import { dropdown } from "../utils/css";
  *
  * @event request-close
  */
+@customElement("btrix-combobox")
 export class Combobox extends LitElement {
   static styles = [
     dropdown,

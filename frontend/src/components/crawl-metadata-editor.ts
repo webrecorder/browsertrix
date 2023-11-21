@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
@@ -25,6 +25,7 @@ import type { Crawl } from "../types/crawler";
  * @event updated
  */
 @localized()
+@customElement("btrix-crawl-metadata-editor")
 export class CrawlMetadataEditor extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;

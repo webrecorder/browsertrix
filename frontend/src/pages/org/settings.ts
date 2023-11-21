@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
@@ -56,6 +56,7 @@ export type OrgRemoveMemberEvent = CustomEvent<{
  * org-remove-member
  */
 @localized()
+@customElement("btrix-org-settings")
 export class OrgSettings extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
@@ -212,7 +213,7 @@ export class OrgSettings extends LiteElement {
               help-text=${msg(
                 str`Org home page: ${window.location.protocol}//${
                   window.location.hostname
-                }/${
+                }/orgs/${
                   this.slugValue ? this.slugify(this.slugValue) : this.org.slug
                 }`
               )}
@@ -248,7 +249,7 @@ export class OrgSettings extends LiteElement {
             <div class="text-base">
               <sl-icon name="info-circle"></sl-icon>
             </div>
-            <div class="mt-0.5 text-xs text-neutral-400">
+            <div class="mt-0.5 text-xs text-neutral-500">
               ${msg(
                 "Use this ID to reference this org in the Browsertrix API."
               )}
@@ -589,5 +590,3 @@ export class OrgSettings extends LiteElement {
     }
   }
 }
-
-customElements.define("btrix-org-settings", OrgSettings);

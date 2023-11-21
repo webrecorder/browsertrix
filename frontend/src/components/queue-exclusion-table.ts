@@ -1,4 +1,4 @@
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
@@ -41,6 +41,7 @@ function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
  * @event on-change ExclusionChangeEvent
  * @event on-remove ExclusionRemoveEvent
  */
+@customElement("btrix-queue-exclusion-table")
 @localized()
 export class QueueExclusionTable extends LiteElement {
   @property({ type: Array })

@@ -1,6 +1,7 @@
 import { SlCheckbox } from "@shoelace-style/shoelace";
 import { LitElement, html, css } from "lit";
 import {
+  customElement,
   property,
   query,
   queryAssignedElements,
@@ -21,6 +22,7 @@ const hostVars = css`
 /**
  * @event on-change CheckboxChangeEvent
  */
+@customElement("btrix-checkbox-list-item")
 export class CheckboxListItem extends LitElement {
   static styles = [
     hostVars,
@@ -129,6 +131,7 @@ export class CheckboxListItem extends LitElement {
   }
 }
 
+@customElement("btrix-checkbox-group-list")
 export class CheckboxGroupList extends LitElement {
   static styles = [
     hostVars,
@@ -173,6 +176,7 @@ export class CheckboxGroupList extends LitElement {
   }
 }
 
+@customElement("btrix-checkbox-list")
 export class CheckboxList extends LitElement {
   static styles = [
     hostVars,
