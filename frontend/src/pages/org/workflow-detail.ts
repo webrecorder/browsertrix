@@ -379,7 +379,7 @@ export class WorkflowDetail extends LiteElement {
           this.crawlToDelete = null;
         }}
       >
-        ${msg("Are you sure you want to permanently delete this crawl?")}
+        ${msg("Are you sure you want to delete this crawl?")}
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
@@ -1697,6 +1697,7 @@ export class WorkflowDetail extends LiteElement {
           }),
         }
       );
+      this.crawlToDelete = null;
       this.crawls = {
         ...this.crawls!,
         items: this.crawls!.items.filter((c) => c.id !== crawl.id),

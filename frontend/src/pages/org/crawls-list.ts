@@ -10,7 +10,7 @@ import { CrawlStatus } from "../../components/crawl-status";
 import type { PageChangeEvent } from "../../components/pagination";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
+import type { Crawl, CrawlState, Workflow, Upload } from "./types";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
 import {
   isActive,
@@ -97,10 +97,16 @@ export class CrawlsList extends LiteElement {
   private filterBy: Partial<Record<keyof Crawl, any>> = {};
 
   @state()
-  private itemToEdit: Crawl | null = null;
+  private itemToEdit: Crawl | Upload | null = null;
 
   @state()
   private isEditingItem = false;
+
+  @state()
+  private itemToDelete: Crawl | Upload | null = null;
+
+  @state()
+  private isDeletingItem = false;
 
   @state()
   private isUploadingArchive = false;
@@ -439,6 +445,48 @@ export class CrawlsList extends LiteElement {
           /* TODO fetch current page or single crawl */ this.fetchArchivedItems
         }
       ></btrix-crawl-metadata-editor>
+      <btrix-dialog
+        label=${msg("Delete Archived Item?")}
+        ?open=${this.itemToDelete !== null}
+        @sl-after-hide=${() => (this.itemToDelete = null)}
+      >
+        ${when(
+          this.itemToDelete?.name,
+          () => html`
+            ${msg(
+              str`Are you sure you want to delete “${this.itemToDelete?.name}”?`
+            )}
+          `,
+          () => html`
+            ${msg(
+              str`Are you sure you want to delete this ${
+                this.itemToDelete?.type === "upload"
+                  ? msg("upload")
+                  : msg("crawl")
+              }?`
+            )}
+          `
+        )}
+        <div slot="footer" class="flex justify-between">
+          <sl-button size="small" autofocus>${msg("Cancel")}</sl-button>
+          <sl-button
+            size="small"
+            variant="primary"
+            @click=${async () => {
+              if (this.itemToDelete) {
+                await this.deleteItem(this.itemToDelete);
+              }
+            }}
+            >${msg(
+              str`Delete ${
+                this.itemToDelete?.type === "upload"
+                  ? msg("Upload")
+                  : msg("Crawl")
+              }`
+            )}</sl-button
+          >
+        </div>
+      </btrix-dialog>
     `;
   }
 
@@ -504,7 +552,7 @@ export class CrawlsList extends LiteElement {
           <sl-divider></sl-divider>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => this.deleteItem(item)}
+            @click=${() => (this.itemToDelete = item)}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${msg("Delete Item")}
@@ -658,13 +706,7 @@ export class CrawlsList extends LiteElement {
     }
   }
 
-  private async deleteItem(item: Crawl) {
-    if (
-      !window.confirm(msg(str`Are you sure you want to delete ${item.name}?`))
-    ) {
-      return;
-    }
-
+  private async deleteItem(item: Crawl | Upload) {
     let apiPath;
 
     switch (this.itemType) {
@@ -691,6 +733,7 @@ export class CrawlsList extends LiteElement {
         }
       );
       const { items, ...crawlsData } = this.archivedItems!;
+      this.itemToDelete = null;
       this.archivedItems = {
         ...crawlsData,
         items: items.filter((c) => c.id !== item.id),
