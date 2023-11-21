@@ -64,7 +64,7 @@ export class WorkflowDetail extends LiteElement {
   isCrawler!: boolean;
 
   @property({ type: String })
-  openDialogName?: "scale" | "exclusions" | "cancel" | "stop";
+  openDialogName?: "scale" | "exclusions" | "cancel" | "stop" | "delete";
 
   @property({ type: String })
   initialActivePanel?: Tab;
@@ -106,6 +106,9 @@ export class WorkflowDetail extends LiteElement {
 
   @state()
   private isCancelingOrStoppingCrawl: boolean = false;
+
+  @state()
+  private crawlToDelete?: Crawl;
 
   @state()
   private filterBy: Partial<Record<keyof Crawl, any>> = {};
@@ -321,8 +324,9 @@ export class WorkflowDetail extends LiteElement {
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
+            autofocus
             @click=${() => (this.openDialogName = undefined)}
-            >Keep Crawling</sl-button
+            >${msg("Keep Crawling")}</sl-button
           >
           <sl-button
             size="small"
@@ -332,7 +336,7 @@ export class WorkflowDetail extends LiteElement {
               await this.stop();
               this.openDialogName = undefined;
             }}
-            >Stop Crawling</sl-button
+            >${msg("Stop Crawling")}</sl-button
           >
         </div>
       </btrix-dialog>
@@ -349,8 +353,9 @@ export class WorkflowDetail extends LiteElement {
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
+            autofocus
             @click=${() => (this.openDialogName = undefined)}
-            >Keep Crawling</sl-button
+            >${msg("Keep Crawling")}</sl-button
           >
           <sl-button
             size="small"
@@ -360,7 +365,36 @@ export class WorkflowDetail extends LiteElement {
               await this.cancel();
               this.openDialogName = undefined;
             }}
-            >Cancel & Discard Crawl</sl-button
+            >${msg("Cancel & Discard Crawl")}</sl-button
+          >
+        </div>
+      </btrix-dialog>
+      <btrix-dialog
+        label=${msg("Delete Crawl?")}
+        ?open=${this.openDialogName === "delete"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${this.showDialog}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${msg("Are you sure you want to permanently delete this crawl?")}
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            autofocus
+            @click=${() => (this.openDialogName = undefined)}
+            >${msg("Cancel")}</sl-button
+          >
+          <sl-button
+            size="small"
+            variant="primary"
+            @click=${async () => {
+              if (this.crawlToDelete) {
+                await this.deleteCrawl(this.crawlToDelete);
+              }
+
+              this.openDialogName = undefined;
+            }}
+            >${msg("Delete Crawl")}</sl-button
           >
         </div>
       </btrix-dialog>
@@ -855,7 +889,7 @@ export class WorkflowDetail extends LiteElement {
                     () => html` <sl-menu slot="menu">
                       <sl-menu-item
                         style="--sl-color-neutral-700: var(--danger)"
-                        @click=${() => this.deleteCrawl(crawl)}
+                        @click=${() => this.confirmDeleteCrawl(crawl)}
                       >
                         <sl-icon name="trash3" slot="prefix"></sl-icon>
                         ${msg("Delete Crawl")}
@@ -1643,6 +1677,11 @@ export class WorkflowDetail extends LiteElement {
       });
     }
   }
+
+  private confirmDeleteCrawl = (crawl: Crawl) => {
+    this.crawlToDelete = crawl;
+    this.openDialogName = "delete";
+  };
 
   private async deleteCrawl(crawl: Crawl) {
     try {
