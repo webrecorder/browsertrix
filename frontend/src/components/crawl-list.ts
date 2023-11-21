@@ -27,7 +27,7 @@ import queryString from "query-string";
 import type { Button } from "./button";
 import { RelativeDuration } from "./relative-duration";
 import type { Crawl } from "../types/crawler";
-import { srOnly, truncate, dropdown } from "../utils/css";
+import { srOnly, truncate } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 import { isActive } from "../utils/crawler";
 
@@ -77,7 +77,6 @@ const hostVars = css`
 export class CrawlListItem extends LitElement {
   static styles = [
     truncate,
-    dropdown,
     rowCss,
     columnCss,
     hostVars,
