@@ -108,7 +108,7 @@ export class WorkflowDetail extends LiteElement {
   private isCancelingOrStoppingCrawl: boolean = false;
 
   @state()
-  private crawlToDelete?: Crawl;
+  private crawlToDelete: Crawl | null = null;
 
   @state()
   private filterBy: Partial<Record<keyof Crawl, any>> = {};
@@ -374,7 +374,10 @@ export class WorkflowDetail extends LiteElement {
         ?open=${this.openDialogName === "delete"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${this.showDialog}
-        @sl-after-hide=${() => (this.isDialogVisible = false)}
+        @sl-after-hide=${() => {
+          this.isDialogVisible = false;
+          this.crawlToDelete = null;
+        }}
       >
         ${msg("Are you sure you want to permanently delete this crawl?")}
         <div slot="footer" class="flex justify-between">
@@ -391,7 +394,6 @@ export class WorkflowDetail extends LiteElement {
               if (this.crawlToDelete) {
                 await this.deleteCrawl(this.crawlToDelete);
               }
-
               this.openDialogName = undefined;
             }}
             >${msg("Delete Crawl")}</sl-button
