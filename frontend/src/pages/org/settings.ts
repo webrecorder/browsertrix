@@ -213,7 +213,7 @@ export class OrgSettings extends LiteElement {
               help-text=${msg(
                 str`Org home page: ${window.location.protocol}//${
                   window.location.hostname
-                }/${
+                }/orgs/${
                   this.slugValue ? this.slugify(this.slugValue) : this.org.slug
                 }`
               )}
