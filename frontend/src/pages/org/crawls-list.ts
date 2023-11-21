@@ -447,8 +447,8 @@ export class CrawlsList extends LiteElement {
       ></btrix-crawl-metadata-editor>
       <btrix-dialog
         label=${msg("Delete Archived Item?")}
-        ?open=${this.itemToDelete !== null}
-        @sl-after-hide=${() => (this.itemToDelete = null)}
+        ?open=${this.isDeletingItem}
+        @sl-after-hide=${() => (this.isDeletingItem = false)}
       >
         ${msg("This item will be removed from any Collection it is a part of.")}
         ${when(this.itemToDelete?.type === "crawl", () =>
@@ -462,6 +462,7 @@ export class CrawlsList extends LiteElement {
             size="small"
             variant="danger"
             @click=${async () => {
+              this.isDeletingItem = false;
               if (this.itemToDelete) {
                 await this.deleteItem(this.itemToDelete);
               }
@@ -541,7 +542,7 @@ export class CrawlsList extends LiteElement {
           <sl-divider></sl-divider>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => (this.itemToDelete = item)}
+            @click=${() => this.confirmDeleteItem(item)}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${msg("Delete Item")}
@@ -695,6 +696,11 @@ export class CrawlsList extends LiteElement {
     }
   }
 
+  private confirmDeleteItem = (item: Crawl | Upload) => {
+    this.itemToDelete = item;
+    this.isDeletingItem = true;
+  };
+
   private async deleteItem(item: Crawl | Upload) {
     let apiPath;
 
@@ -734,6 +740,9 @@ export class CrawlsList extends LiteElement {
       });
       this.fetchArchivedItems();
     } catch (e: any) {
+      if (this.itemToDelete) {
+        this.confirmDeleteItem(this.itemToDelete);
+      }
       let message = msg(
         str`Sorry, couldn't delete archived item at this time.`
       );
