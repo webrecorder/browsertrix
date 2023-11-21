@@ -21,7 +21,7 @@ import {
 } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
-import type { SlMenu } from "@shoelace-style/shoelace";
+import type { SlIconButton, SlMenu } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
 import type { Button } from "./button";
@@ -98,12 +98,6 @@ export class CrawlListItem extends LitElement {
         }
       }
 
-      .dropdown {
-        contain: content;
-        position: absolute;
-        z-index: 99;
-      }
-
       .col {
         display: flex;
         align-items: center;
@@ -175,8 +169,12 @@ export class CrawlListItem extends LitElement {
         justify-content: center;
       }
 
-      .action sl-icon-button {
+      .dropdownTrigger {
         font-size: 1rem;
+      }
+
+      .dropdownTrigger[disabled] {
+        visibility: hidden;
       }
     `,
   ];
@@ -201,13 +199,10 @@ export class CrawlListItem extends LitElement {
   dropdown!: HTMLElement;
 
   @query(".dropdownTrigger")
-  dropdownTrigger!: Button;
+  dropdownTrigger!: SlIconButton;
 
   @queryAssignedElements({ selector: "sl-menu", slot: "menu" })
   private menuArr!: Array<SlMenu>;
-
-  @state()
-  private dropdownIsOpen?: boolean;
 
   @state()
   private hasMenuItems?: boolean;
@@ -217,18 +212,8 @@ export class CrawlListItem extends LitElement {
     notation: "compact",
   });
 
-  willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("dropdownIsOpen")) {
-      if (this.dropdownIsOpen) {
-        this.openDropdown();
-      } else {
-        this.closeDropdown();
-      }
-    }
-  }
-
   render() {
-    return html`${this.renderRow()}${this.renderDropdown()}`;
+    return this.renderRow();
   }
 
   renderRow() {
@@ -242,15 +227,19 @@ export class CrawlListItem extends LitElement {
             { skipEmptyString: true }
           )}`
         : "";
-    return html`<a
+    return html`<div
       class="item row"
       role="button"
-      href="/orgs/${this.orgSlug}/items/${this.crawl?.type}/${this.crawl
-        ?.id}${search}"
       @click=${async (e: MouseEvent) => {
+        if (
+          e.target === this.dropdownTrigger &&
+          !this.dropdownTrigger.disabled
+        ) {
+          return;
+        }
         e.preventDefault();
         await this.updateComplete;
-        const href = (e.currentTarget as HTMLAnchorElement).href;
+        const href = `/orgs/${this.orgSlug}/items/${this.crawl?.type}/${this.crawl?.id}${search}`;
         // TODO consolidate with LiteElement navTo
         const evt: NavigateEvent = new CustomEvent("navigate", {
           detail: { url: href },
@@ -363,30 +352,7 @@ export class CrawlListItem extends LitElement {
         </div>
       </div>
       ${this.renderActions()}
-    </a>`;
-  }
-
-  private renderDropdown() {
-    return html`<div
-      class="dropdown hidden"
-      aria-hidden=${!this.dropdownIsOpen}
-      @animationend=${(e: AnimationEvent) => {
-        const el = e.target as HTMLDivElement;
-        if (e.animationName === "dropdownShow") {
-          el.classList.remove("animateShow");
-        }
-        if (e.animationName === "dropdownHide") {
-          el.classList.add("hidden");
-          el.classList.remove("animateHide");
-        }
-      }}
-    >
-      <slot
-        name="menu"
-        @slotchange=${() => (this.hasMenuItems = this.menuArr.length > 0)}
-        @sl-select=${() => (this.dropdownIsOpen = false)}
-      ></slot>
-    </div> `;
+    </div>`;
   }
 
   private safeRender(render: (crawl: Crawl) => any) {
@@ -419,55 +385,22 @@ export class CrawlListItem extends LitElement {
   }
 
   private renderActions() {
-    if (!this.hasMenuItems) {
-      return;
-    }
-
     return html` <div class="col action">
-      <sl-icon-button
-        class="dropdownTrigger"
-        label=${msg("Actions")}
-        name="three-dots-vertical"
-        @click=${(e: MouseEvent) => {
-          // Prevent anchor link default behavior
-          e.preventDefault();
-          // Stop prop to anchor link
-          e.stopPropagation();
-          this.dropdownIsOpen = !this.dropdownIsOpen;
-        }}
-        @focusout=${(e: FocusEvent) => {
-          const relatedTarget = e.relatedTarget as HTMLElement;
-          if (relatedTarget) {
-            if (this.menuArr[0]?.contains(relatedTarget)) {
-              // Keep dropdown open if moving to menu selection
-              return;
-            }
-            if (this.row?.isEqualNode(relatedTarget)) {
-              // Handle with click event
-              return;
-            }
-          }
-          this.dropdownIsOpen = false;
-        }}
-      >
-      </sl-icon-button>
+      <sl-dropdown ?disabled=${!this.hasMenuItems}>
+        <sl-icon-button
+          slot="trigger"
+          class="dropdownTrigger"
+          label=${msg("Actions")}
+          name="three-dots-vertical"
+          ?disabled=${!this.hasMenuItems}
+        >
+        </sl-icon-button>
+        <slot
+          name="menu"
+          @slotchange=${() => (this.hasMenuItems = this.menuArr.length > 0)}
+        ></slot>
+      </sl-dropdown>
     </div>`;
-  }
-
-  private repositionDropdown() {
-    const { x, y } = this.dropdownTrigger.getBoundingClientRect();
-    this.dropdown.style.left = `${x + window.scrollX}px`;
-    this.dropdown.style.top = `${y + window.scrollY - 8}px`;
-  }
-
-  private openDropdown() {
-    this.repositionDropdown();
-    this.dropdown.classList.add("animateShow");
-    this.dropdown.classList.remove("hidden");
-  }
-
-  private closeDropdown() {
-    this.dropdown.classList.add("animateHide");
   }
 }
 
