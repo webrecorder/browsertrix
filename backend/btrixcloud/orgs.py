@@ -55,9 +55,10 @@ from .utils import slug_from_name, validate_slug
 
 if TYPE_CHECKING:
     from .invites import InviteOps
+    from .basecrawls import BaseCrawlOps
     from .users import UserManager
 else:
-    InviteOps = UserManager = object
+    InviteOps = BaseCrawlOps = UserManager = object
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
@@ -69,6 +70,7 @@ class OrgOps:
     """Organization API operations"""
 
     invites: InviteOps
+    base_crawl_ops: BaseCrawlOps
     default_primary: Optional[StorageRef]
 
     def __init__(self, mdb, invites, user_manager):
@@ -91,6 +93,10 @@ class OrgOps:
 
         self.invites = invites
         self.user_manager = user_manager
+
+    def set_base_crawl_ops(self, base_crawl_ops: BaseCrawlOps) -> None:
+        """Set base crawl ops"""
+        self.base_crawl_ops = base_crawl_ops
 
     def set_default_primary_storage(self, storage: StorageRef):
         """set default primary storage"""
@@ -891,6 +897,11 @@ class OrgOps:
                     file_.storage = new_storage_ref
 
             await self.crawls_db.insert_one(item_obj.to_dict())
+
+            # Regenerate presigned URLs
+            await self.base_crawl_ops._resolve_signed_urls(
+                item_obj.files, org, update_presigned_url=True, crawl_id=item_id
+            )
 
         for collection in org_data.collections:
             await self.colls_db.insert_one(Collection.from_dict(collection).to_dict())
