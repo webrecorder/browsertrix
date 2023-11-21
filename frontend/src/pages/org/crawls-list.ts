@@ -450,22 +450,11 @@ export class CrawlsList extends LiteElement {
         ?open=${this.itemToDelete !== null}
         @sl-after-hide=${() => (this.itemToDelete = null)}
       >
-        ${when(
-          this.itemToDelete?.name,
-          () => html`
-            ${msg(
-              str`Are you sure you want to delete “${this.itemToDelete?.name}”?`
-            )}
-          `,
-          () => html`
-            ${msg(
-              str`Are you sure you want to delete this ${
-                this.itemToDelete?.type === "upload"
-                  ? msg("upload")
-                  : msg("crawl")
-              }?`
-            )}
-          `
+        ${msg("This item will be removed from any Collection it is a part of.")}
+        ${when(this.itemToDelete?.type === "crawl", () =>
+          msg(
+            "All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow."
+          )
         )}
         <div slot="footer" class="flex justify-between">
           <sl-button size="small" autofocus>${msg("Cancel")}</sl-button>

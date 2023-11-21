@@ -23,14 +23,19 @@ export class Dialog extends SlDialog {
       }
 
       .dialog__title {
-        padding-top: var(--sl-spacing-small);
+        padding-top: calc(var(--sl-spacing-small) + 0.2rem);
         padding-bottom: var(--sl-spacing-small);
-        font-size: var(--sl-font-size-medium);
+        font-size: var(--font-size-base);
         font-weight: var(--sl-font-weight-medium);
+        line-height: 1;
       }
 
       .dialog__close {
-        --header-spacing: var(--sl-spacing-2x-small);
+        --header-spacing: var(--sl-spacing-x-small);
+      }
+
+      .dialog__body {
+        line-height: var(--sl-line-height-normal);
       }
 
       .dialog__footer {

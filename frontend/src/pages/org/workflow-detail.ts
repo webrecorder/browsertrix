@@ -379,7 +379,9 @@ export class WorkflowDetail extends LiteElement {
           this.crawlToDelete = null;
         }}
       >
-        ${msg("Are you sure you want to delete this crawl?")}
+        ${msg(
+          "All files and logs associated with this crawl will also be deleted, and the crawl will be removed from any Collection it is a part of."
+        )}
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
