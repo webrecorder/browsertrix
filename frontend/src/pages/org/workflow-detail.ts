@@ -389,7 +389,7 @@ export class WorkflowDetail extends LiteElement {
           >
           <sl-button
             size="small"
-            variant="primary"
+            variant="danger"
             @click=${async () => {
               if (this.crawlToDelete) {
                 await this.deleteCrawl(this.crawlToDelete);

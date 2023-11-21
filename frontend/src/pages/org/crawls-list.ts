@@ -471,7 +471,7 @@ export class CrawlsList extends LiteElement {
           <sl-button size="small" autofocus>${msg("Cancel")}</sl-button>
           <sl-button
             size="small"
-            variant="primary"
+            variant="danger"
             @click=${async () => {
               if (this.itemToDelete) {
                 await this.deleteItem(this.itemToDelete);
