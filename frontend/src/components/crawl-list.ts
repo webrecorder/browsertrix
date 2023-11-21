@@ -213,10 +213,6 @@ export class CrawlListItem extends LitElement {
   });
 
   render() {
-    return this.renderRow();
-  }
-
-  renderRow() {
     const search =
       this.collectionId || this.workflowId
         ? `?${queryString.stringify(
