@@ -15,6 +15,9 @@ export class MeterBar extends LitElement {
   @property({ type: Number })
   value = 0;
 
+  @property({ type: Boolean })
+  isBackground = false;
+
   static styles = css`
     :host {
       display: contents;
@@ -25,6 +28,10 @@ export class MeterBar extends LitElement {
       background-color: var(--background-color, var(--sl-color-blue-500));
       min-width: 4px;
     }
+
+    .boxShadow {
+      box-shadow: inset 0px 1px 1px 0px rgba(0, 0, 0, 0.25);
+    }
   `;
 
   render() {
@@ -33,7 +40,10 @@ export class MeterBar extends LitElement {
     }
     return html`<sl-tooltip>
       <div slot="content"><slot></slot></div>
-      <div class="bar" style="width:${this.value}%"></div>
+      <div
+        class="bar ${this.isBackground ? css`boxShadow` : css``}"
+        style="width:${this.value}%"
+      ></div>
     </sl-tooltip>`;
   }
 }

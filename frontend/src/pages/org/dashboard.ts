@@ -445,10 +445,12 @@ export class Dashboard extends LiteElement {
       /** Time in Seconds */
       value: number,
       label: string,
-      color: string
+      color: string,
+      isBackground: boolean = false
     ) => html`
       <btrix-meter-bar
         value=${(value / quotaSecondsAllTypes) * 100}
+        isBackground=${isBackground}
         style="--background-color:var(--sl-color-${color})"
       >
         <div class="text-center">
@@ -520,7 +522,8 @@ export class Dashboard extends LiteElement {
                   renderBar(
                     quotaSeconds - usageSeconds,
                     msg("Monthly Execution Time Remaining"),
-                    "green-100"
+                    "green-100",
+                    true
                   )
               )}
               ${when(usageSecondsGifted, () =>
@@ -536,7 +539,8 @@ export class Dashboard extends LiteElement {
                 renderBar(
                   this.org!.giftedExecSecondsAvailable,
                   msg("Gifted Execution Time Remaining"),
-                  "blue-100"
+                  "blue-100",
+                  true
                 )
               )}
               ${when(usageSecondsExtra, () =>
@@ -552,7 +556,8 @@ export class Dashboard extends LiteElement {
                 renderBar(
                   this.org!.extraExecSecondsAvailable,
                   msg("Extra Execution Time Remaining"),
-                  "red-100"
+                  "red-100",
+                  true
                 )
               )}
               <div slot="available" class="flex-1">
