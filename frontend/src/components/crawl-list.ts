@@ -21,7 +21,6 @@ import {
 } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
-import type { SlIconButton, SlMenu } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
 import type { Button } from "./button";
@@ -188,9 +187,6 @@ export class CrawlListItem extends LitElement {
 
   @query("btrix-overflow-dropdown")
   dropdownMenu!: OverflowDropdown;
-
-  @state()
-  private hasMenuItems?: boolean;
 
   // TODO localize
   private numberFormatter = new Intl.NumberFormat(undefined, {

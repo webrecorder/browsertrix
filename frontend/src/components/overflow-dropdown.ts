@@ -34,7 +34,7 @@ export class OverflowDropdown extends LitElement {
   @state()
   private hasMenuItems?: boolean;
 
-  @queryAssignedElements({ selector: "sl-menu-item", flatten: true })
+  @queryAssignedElements({ selector: "sl-menu", flatten: true })
   private menu!: Array<SlMenu>;
 
   render() {
