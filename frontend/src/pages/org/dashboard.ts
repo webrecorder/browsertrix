@@ -485,7 +485,7 @@ export class Dashboard extends LiteElement {
                       false,
                       true
                     )}
-                    ${msg("Available")}
+                    <span class="ml-1">${msg("Available")}</span>
                   </span>
                 `
               : ""
