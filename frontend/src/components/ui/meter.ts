@@ -59,6 +59,11 @@ export class DividedMeterBar extends LitElement {
       min-width: 4px;
     }
 
+    .rightBorderRadius {
+      border-radius: 0 var(--sl-border-radius-medium)
+        var(--sl-border-radius-medium) 0;
+    }
+
     .quotaBar {
       height: 1rem;
       background-color: var(--quota-background-color, var(--sl-color-blue-100));
@@ -72,7 +77,12 @@ export class DividedMeterBar extends LitElement {
     return html`<sl-tooltip>
       <div slot="content"><slot></slot></div>
       ${when(this.value, () => {
-        return html`<div class="bar" style="width:${this.value}%"></div>`;
+        return html`<div
+          class="bar ${this.value < this.quota
+            ? css`rightBorderRadius`
+            : css``}"
+          style="width:${this.value}%"
+        ></div>`;
       })}
       ${when(remainder, () => {
         return html`<div
