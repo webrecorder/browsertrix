@@ -485,7 +485,7 @@ export class Dashboard extends LiteElement {
                       false,
                       true
                     )}
-                    <span class="ml-1">${msg("Available")}</span>
+                    <span class="ml-1">${msg("Remaining")}</span>
                   </span>
                 `
               : ""
@@ -511,6 +511,18 @@ export class Dashboard extends LiteElement {
                   "green-400"
                 )
               )}
+              ${when(
+                (this.org!.giftedExecSecondsAvailable ||
+                  this.org!.extraExecSecondsAvailable) &&
+                  quotaSeconds &&
+                  usageSeconds < quotaSeconds,
+                () =>
+                  renderBar(
+                    quotaSeconds - usageSeconds,
+                    msg("Monthly Execution Time Remaining"),
+                    "green-100"
+                  )
+              )}
               ${when(usageSecondsGifted, () =>
                 renderBar(
                   usageSecondsGifted > quotaSecondsGifted
@@ -518,6 +530,13 @@ export class Dashboard extends LiteElement {
                     : usageSecondsGifted,
                   msg("Gifted Execution Time"),
                   "blue-400"
+                )
+              )}
+              ${when(this.org!.giftedExecSecondsAvailable, () =>
+                renderBar(
+                  this.org!.giftedExecSecondsAvailable,
+                  msg("Gifted Execution Time Remaining"),
+                  "blue-100"
                 )
               )}
               ${when(usageSecondsExtra, () =>
@@ -529,36 +548,17 @@ export class Dashboard extends LiteElement {
                   "red-400"
                 )
               )}
-              ${when(
-                (this.org!.giftedExecSecondsAvailable ||
-                  this.org!.extraExecSecondsAvailable) &&
-                  quotaSeconds &&
-                  usageSeconds < quotaSeconds,
-                () =>
-                  renderBar(
-                    quotaSeconds - usageSeconds,
-                    msg("Monthly Execution Time Available"),
-                    "green-100"
-                  )
-              )}
-              ${when(this.org!.giftedExecSecondsAvailable, () =>
-                renderBar(
-                  this.org!.giftedExecSecondsAvailable,
-                  msg("Gifted Execution Time Available"),
-                  "blue-100"
-                )
-              )}
               ${when(this.org!.extraExecSecondsAvailable, () =>
                 renderBar(
                   this.org!.extraExecSecondsAvailable,
-                  msg("Extra Execution Time Available"),
+                  msg("Extra Execution Time Remaining"),
                   "red-100"
                 )
               )}
               <div slot="available" class="flex-1">
                 <sl-tooltip class="text-center">
                   <div slot="content">
-                    <div>${msg("Monthly Execution Time Available")}</div>
+                    <div>${msg("Monthly Execution Time Remaining")}</div>
                     <div class="text-xs opacity-80">
                       ${humanizeExecutionSeconds(quotaSeconds - usageSeconds)} |
                       ${this.renderPercentage(
