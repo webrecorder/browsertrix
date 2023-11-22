@@ -470,8 +470,8 @@ export class Dashboard extends LiteElement {
           <div class="text-center">
             <div>${label}</div>
             <div class="text-xs opacity-80">
-              ${humanizeExecutionSeconds(used, "full", true)} /
-              ${humanizeExecutionSeconds(quota, "full", true)}
+              ${humanizeExecutionSeconds(used, { displaySeconds: true })} /
+              ${humanizeExecutionSeconds(quota, { displaySeconds: true })}
             </div>
           </div>
         </btrix-divided-meter-bar>`;
@@ -483,7 +483,7 @@ export class Dashboard extends LiteElement {
           <div class="text-center">
             <div>${label}</div>
             <div class="text-xs opacity-80">
-              ${humanizeExecutionSeconds(used, "full", true)} |
+              ${humanizeExecutionSeconds(used, { displaySeconds: true })} |
               ${this.renderPercentage(used / quota)}
             </div>
           </div>
@@ -512,9 +512,7 @@ export class Dashboard extends LiteElement {
                         usageSeconds +
                         this.org!.extraExecSecondsAvailable +
                         this.org!.giftedExecSecondsAvailable,
-                      "short",
-                      false,
-                      true
+                      { style: "short", round: "down" }
                     )}
                     <span class="ml-1">${msg("Remaining")}</span>
                   </span>
@@ -573,11 +571,9 @@ export class Dashboard extends LiteElement {
                   <div slot="content">
                     <div>${msg("Monthly Execution Time Remaining")}</div>
                     <div class="text-xs opacity-80">
-                      ${humanizeExecutionSeconds(
-                        quotaSeconds - usageSeconds,
-                        "full",
-                        true
-                      )}
+                      ${humanizeExecutionSeconds(quotaSeconds - usageSeconds, {
+                        displaySeconds: true,
+                      })}
                       |
                       ${this.renderPercentage(
                         (quotaSeconds - usageSeconds) / quotaSeconds
@@ -588,10 +584,14 @@ export class Dashboard extends LiteElement {
                 </sl-tooltip>
               </div>
               <span slot="valueLabel">
-                ${humanizeExecutionSeconds(usageSecondsAllTypes, "short")}
+                ${humanizeExecutionSeconds(usageSecondsAllTypes, {
+                  style: "short",
+                })}
               </span>
               <span slot="maxLabel">
-                ${humanizeExecutionSeconds(quotaSecondsAllTypes, "short")}
+                ${humanizeExecutionSeconds(quotaSecondsAllTypes, {
+                  style: "short",
+                })}
               </span>
             </btrix-meter>
           </div>

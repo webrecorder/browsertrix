@@ -67,23 +67,36 @@ export function humanizeSeconds(
  */
 export const humanizeExecutionSeconds = (
   seconds: number,
-  style: "short" | "full" = "full",
-  displaySeconds = false,
-  roundDown = false
-) => {
-  const locale = getLocale();
-  let minutes = 0;
-  if (roundDown) {
-    minutes = Math.floor(seconds / 60);
-  } else {
-    minutes = Math.ceil(seconds / 60);
+  options?: {
+    /**
+     * When this is "long", the time in hours is also displayed
+     * @default "full"
+     */
+    style?: "short" | "long";
+    /**
+     * @default false
+     */
+    displaySeconds?: boolean;
+    /**
+     * @default "up"
+     */
+    round?: "up" | "down";
   }
+) => {
+  const {
+    style = "long",
+    displaySeconds = false,
+    round = "up",
+  } = options || {};
+  const locale = getLocale();
+  const minutes =
+    round === "down" ? Math.floor(seconds / 60) : Math.ceil(seconds / 60);
 
   const compactMinuteFormatter = new Intl.NumberFormat(locale, {
     notation: "compact",
     style: "unit",
     unit: "minute",
-    unitDisplay: "long",
+    unitDisplay: style,
   });
 
   const longMinuteFormatter = new Intl.NumberFormat(locale, {
@@ -102,7 +115,7 @@ export const humanizeExecutionSeconds = (
       : `\u00a0(${details})`;
 
   switch (style) {
-    case "full":
+    case "long":
       return html`<span title="${longMinuteFormatter.format(minutes)}">
           ${compactMinuteFormatter.format(minutes)}</span
         >${formattedDetails}`;
