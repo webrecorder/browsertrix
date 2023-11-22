@@ -51,7 +51,7 @@ export class RequestVerify extends LitElement {
     }
 
     return html`
-      <button
+      <span
         class="text-sm text-primary hover:text-indigo-400"
         role="button"
         ?disabled=${this.isRequesting}
@@ -60,7 +60,7 @@ export class RequestVerify extends LitElement {
         ${this.isRequesting
           ? msg("Sending...")
           : msg("Resend verification email")}
-      </button>
+      </span>
     `;
   }
 
