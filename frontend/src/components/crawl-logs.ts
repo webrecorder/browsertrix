@@ -1,7 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
-import { msg, localized, str } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 
 import { truncate } from "../utils/css";
 import type { APIPaginatedList } from "../types/api";
@@ -131,7 +130,7 @@ export class CrawlLogs extends LitElement {
                     hour="2-digit"
                     minute="2-digit"
                     second="2-digit"
-                    hour-format="24"
+                    hourFormat="24"
                   >
                   </sl-format-date>
                 </div>
@@ -161,8 +160,8 @@ export class CrawlLogs extends LitElement {
         : ""}
 
       <btrix-dialog
-        label=${msg("Log Details")}
-        ?open=${this.selectedLog}
+        .label=${msg("Log Details")}
+        .open=${!!this.selectedLog}
         style="--width: 40rem"
         @sl-after-hide=${() => (this.selectedLog = null)}
         >${this.renderLogDetails()}</btrix-dialog

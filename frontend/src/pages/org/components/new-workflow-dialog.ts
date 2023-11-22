@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
+import { property, customElement } from "lit/decorators.js";
+import { msg, localized } from "@lit/localize";
 
 import seededCrawlSvg from "../../../assets/images/new-crawl-config_Seeded-Crawl.svg";
 import urlListSvg from "../../../assets/images/new-crawl-config_URL-List.svg";
@@ -71,8 +71,8 @@ export class NewWorkflowDialog extends LitElement {
   render() {
     return html`
       <btrix-dialog
-        label=${msg("Create a New Crawl Workflow")}
-        ?open=${this.open}
+        .label=${msg("Create a New Crawl Workflow")}
+        .open=${this.open}
         style="--width: 46rem"
       >
         <h3 class="title heading">${msg("Choose Crawl Type")}</h3>

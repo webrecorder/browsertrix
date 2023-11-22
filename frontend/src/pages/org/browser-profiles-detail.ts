@@ -5,7 +5,7 @@ import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import { Profile } from "./types";
+import type { Profile } from "./types";
 
 /**
  * Usage:
@@ -129,7 +129,7 @@ export class BrowserProfilesDetail extends LiteElement {
                       year="2-digit"
                       hour="numeric"
                       minute="numeric"
-                      time-zone-name="short"
+                      timeZoneName="short"
                     ></sl-format-date>
                   `
                 : ""}
@@ -217,8 +217,8 @@ export class BrowserProfilesDetail extends LiteElement {
       </div>
 
       <btrix-dialog
-        label=${msg(str`Edit Profile`)}
-        ?open=${this.isEditDialogOpen}
+        .label=${msg(str`Edit Profile`)}
+        .open=${this.isEditDialogOpen}
         @sl-request-close=${() => (this.isEditDialogOpen = false)}
         @sl-show=${() => (this.isEditDialogContentVisible = true)}
         @sl-after-hide=${() => (this.isEditDialogContentVisible = false)}

@@ -44,7 +44,7 @@ export class Input extends LiteElement {
   @property()
   required?: any;
 
-  @property()
+  @property({ type: Number })
   minlength?: number;
 
   @property({ type: Boolean })

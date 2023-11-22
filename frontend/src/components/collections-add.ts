@@ -2,7 +2,7 @@ import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
-import type { SlMenuItem, SlIconButton } from "@shoelace-style/shoelace";
+import type { SlMenuItem } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
 import type { AuthState } from "../utils/AuthService";

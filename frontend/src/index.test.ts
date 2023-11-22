@@ -1,7 +1,8 @@
-import { spy, stub, mock, restore } from "sinon";
+import { stub, restore } from "sinon";
 import { fixture, expect } from "@open-wc/testing";
 
 import AuthService from "./utils/AuthService";
+import type { APIUser } from "./index";
 import { App } from "./index";
 
 describe("browsertrix-app", () => {
@@ -74,10 +75,13 @@ describe("browsertrix-app", () => {
             name: "test org",
             slug: "test-org",
             role: 10,
-            email: "test@org.org",
+            quotas: {},
+            bytesStored: 100,
+            usage: null,
+            crawlExecSeconds: null,
           },
         ],
-      })
+      } satisfies APIUser)
     );
     stub(AuthService.prototype, "startFreshnessCheck");
     stub(window.sessionStorage, "getItem").callsFake((key) => {

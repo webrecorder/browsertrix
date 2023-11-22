@@ -1,10 +1,6 @@
 import { property, state, query, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
-import {
-  parse as yamlToJson,
-  stringify as yamlStringify,
-  YAMLParseError,
-} from "yaml";
+import { parse as yamlToJson, YAMLParseError } from "yaml";
 
 import LiteElement, { html } from "../utils/LiteElement";
 
@@ -63,7 +59,7 @@ export class ConfigEditor extends LiteElement {
           </div>
 
           <btrix-copy-button
-            .getValue=${() => this.textareaElem?.value}
+            .getValue=${() => this.textareaElem?.value || ""}
           ></btrix-copy-button>
         </header>
 
@@ -96,7 +92,7 @@ export class ConfigEditor extends LiteElement {
             autocomplete="off"
             autocapitalize="off"
             spellcheck="false"
-            wrap="off"
+            wrap="${"off" as any}"
             rows=${lineCount}
             .value=${this.value}
             @keydown=${(e: any) => {

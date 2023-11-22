@@ -15,15 +15,15 @@ import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 @customElement("btrix-pw-strength-alert")
 @localized()
 export class PasswordStrengthAlert extends LitElement {
-  @property({ type: String })
+  @property({ attribute: false })
   result?: ZxcvbnResult;
 
   /** Minimum acceptable score */
-  @property({ type: String })
+  @property({ type: Number })
   min = 1;
 
   /** Optimal score */
-  @property({ type: String })
+  @property({ type: Number })
   optimal = 4;
 
   static styles = css`

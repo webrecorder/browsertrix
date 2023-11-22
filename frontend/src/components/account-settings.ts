@@ -10,8 +10,7 @@ import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 import type { CurrentUser } from "../types/user";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
-import type { AuthState, Auth } from "../utils/AuthService";
-import AuthService from "../utils/AuthService";
+import type { AuthState } from "../utils/AuthService";
 import PasswordService from "../utils/PasswordService";
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
@@ -19,7 +18,7 @@ const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
 
 @localized()
 @customElement("btrix-request-verify")
-class RequestVerify extends LitElement {
+export class RequestVerify extends LitElement {
   @property({ type: String })
   email!: string;
 
@@ -52,7 +51,7 @@ class RequestVerify extends LitElement {
     }
 
     return html`
-      <span
+      <button
         class="text-sm text-primary hover:text-indigo-400"
         role="button"
         ?disabled=${this.isRequesting}
@@ -61,7 +60,7 @@ class RequestVerify extends LitElement {
         ${this.isRequesting
           ? msg("Sending...")
           : msg("Resend verification email")}
-      </span>
+      </button>
     `;
   }
 
@@ -225,7 +224,7 @@ export class AccountSettings extends LiteElement {
                     label=${msg("Enter your current password")}
                     type="password"
                     autocomplete="current-password"
-                    password-toggle
+                    passwordToggle
                     required
                   ></sl-input>
                   <sl-input
@@ -233,7 +232,7 @@ export class AccountSettings extends LiteElement {
                     label=${msg("New password")}
                     type="password"
                     autocomplete="new-password"
-                    password-toggle
+                    passwordToggle
                     minlength="8"
                     required
                     @input=${this.onPasswordInput}
@@ -282,7 +281,7 @@ export class AccountSettings extends LiteElement {
   private renderPasswordStrength = () => html`
     <div class="mt-4">
       <btrix-pw-strength-alert
-        .result=${this.pwStrengthResults}
+        .result=${this.pwStrengthResults || undefined}
         min=${PASSWORD_MIN_SCORE}
       >
       </btrix-pw-strength-alert>
@@ -389,7 +388,7 @@ export class AccountSettings extends LiteElement {
   private async onSubmitPassword(e: SubmitEvent) {
     if (!this.userInfo || !this.authState) return;
     const form = e.target as HTMLFormElement;
-    const inputs = Array.from(form.querySelectorAll("sl-input")) as SlInput[];
+    const inputs = Array.from(form.querySelectorAll("sl-input"));
     if (inputs.some((input) => !input.checkValidity())) {
       return;
     }

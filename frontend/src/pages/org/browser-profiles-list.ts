@@ -1,5 +1,5 @@
 import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 
 import type { AuthState } from "../../utils/AuthService";
@@ -135,7 +135,7 @@ export class BrowserProfilesList extends LiteElement {
 
   private renderMenu(data: Profile) {
     return html`
-      <sl-dropdown hoist="true" @click=${(e: Event) => e.preventDefault()}>
+      <sl-dropdown hoist @click=${(e: Event) => e.preventDefault()}>
         <sl-icon-button
           slot="trigger"
           name="three-dots"

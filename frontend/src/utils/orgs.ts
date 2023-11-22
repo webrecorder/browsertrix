@@ -1,4 +1,5 @@
-import { AccessCode, UserRole, OrgData } from "../types/org";
+import type { UserRole } from "../types/org";
+import { AccessCode } from "../types/org";
 export * from "../types/org";
 
 export function isOwner(accessCode?: (typeof AccessCode)[UserRole]): boolean {

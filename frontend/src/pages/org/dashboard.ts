@@ -2,7 +2,7 @@ import type { PropertyValues, TemplateResult } from "lit";
 import { state, property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { msg, localized, str } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
 
 import LiteElement, { html } from "../../utils/LiteElement";
@@ -31,7 +31,6 @@ type Metrics = {
   collectionsCount: number;
   publicCollectionsCount: number;
 };
-const BYTES_PER_GB = 1e9;
 
 @localized()
 @customElement("btrix-dashboard")
@@ -355,7 +354,7 @@ export class Dashboard extends LiteElement {
     `;
   }
 
-  private renderCrawlingMeter(metrics: Metrics) {
+  private renderCrawlingMeter(_metrics: Metrics) {
     let quotaSeconds = 0;
     if (this.org!.quotas && this.org!.quotas.maxExecMinutesPerMonth) {
       quotaSeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
@@ -570,7 +569,7 @@ export class Dashboard extends LiteElement {
           html`
             <sl-format-date
               date="${mY}-01T00:00:00.000Z"
-              time-zone="utc"
+              timeZone="utc"
               month="long"
               year="numeric"
             >

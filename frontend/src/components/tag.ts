@@ -1,5 +1,5 @@
 import { css, html } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
+import { property, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import SLTag from "@shoelace-style/shoelace/dist/components/tag/tag.js";
 import tagStyles from "@shoelace-style/shoelace/dist/components/tag/tag.styles.js";
@@ -98,6 +98,11 @@ export class Tag extends SLTag {
 
   render() {
     const template = super.render();
-    return html`<span tabindex=${ifDefined(this.tabindex)}>${template}</span>`;
+    return html`<span
+      tabindex="${ifDefined(
+        this.tabindex != null ? Number(this.tabIndex) : undefined
+      )}"
+      >${template}</span
+    >`;
   }
 }

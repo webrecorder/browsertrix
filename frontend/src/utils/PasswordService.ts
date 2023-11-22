@@ -1,4 +1,5 @@
-import { zxcvbn, zxcvbnOptions, OptionsType } from "@zxcvbn-ts/core";
+import type { OptionsType } from "@zxcvbn-ts/core";
+import { zxcvbn, zxcvbnOptions } from "@zxcvbn-ts/core";
 
 const loadOptions = async (): Promise<OptionsType> => {
   const zxcvbnCommonPackage = await import(

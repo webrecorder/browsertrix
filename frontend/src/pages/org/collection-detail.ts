@@ -143,8 +143,8 @@ export class CollectionDetail extends LiteElement {
       )}
 
       <btrix-dialog
-        label=${msg("Delete Collection?")}
-        ?open=${this.openDialogName === "delete"}
+        .label=${msg("Delete Collection?")}
+        .open=${this.openDialogName === "delete"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
       >
         ${msg(
@@ -181,8 +181,8 @@ export class CollectionDetail extends LiteElement {
   private renderShareDialog() {
     return html`
       <btrix-dialog
-        label=${msg("Share Collection")}
-        ?open=${this.showShareInfo}
+        .label=${msg("Share Collection")}
+        .open=${this.showShareInfo}
         @sl-request-close=${() => (this.showShareInfo = false)}
         style="--width: 32rem;"
       >
@@ -503,7 +503,7 @@ export class CollectionDetail extends LiteElement {
                         style=${`max-height: ${DESCRIPTION_MAX_HEIGHT_PX}px`}
                       >
                         <btrix-markdown-viewer
-                          value=${this.collection!.description}
+                          value=${this.collection.description}
                         ></btrix-markdown-viewer>
                       </div>
                       <div
@@ -622,7 +622,7 @@ export class CollectionDetail extends LiteElement {
     html`
       <btrix-crawl-list-item
         orgSlug=${this.appState.orgSlug || ""}
-        .crawl=${item}
+        .crawl=${item as Crawl}
       >
         ${when(
           this.isCrawler,
@@ -818,7 +818,7 @@ export class CollectionDetail extends LiteElement {
 
   private async removeArchivedItem(id: string, pageIndex: number) {
     try {
-      const data: Crawl | Upload = await this.apiFetch(
+      await this.apiFetch(
         `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
         this.authState!,
         {

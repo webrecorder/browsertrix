@@ -185,7 +185,7 @@ export class OrgSettings extends LiteElement {
               value=${this.org.name}
               minlength="2"
               required
-              help-text=${this.validateOrgNameMax.helpText}
+              helpText=${this.validateOrgNameMax.helpText}
               @sl-input=${this.validateOrgNameMax.validate}
             ></sl-input>
           </div>
@@ -210,7 +210,7 @@ export class OrgSettings extends LiteElement {
               minlength="2"
               maxlength="30"
               required
-              help-text=${msg(
+              helpText=${msg(
                 str`Org home page: ${window.location.protocol}//${
                   window.location.hostname
                 }/orgs/${
@@ -277,7 +277,7 @@ export class OrgSettings extends LiteElement {
       <section class="rounded border overflow-hidden">
         <btrix-data-table
           .columns=${[msg("Name"), msg("Role"), ""]}
-          .rows=${Object.entries(this.org.users!).map(([id, user]) => [
+          .rows=${Object.entries(this.org.users!).map(([_id, user]) => [
             user.name,
             this.renderUserRoleSelect(user),
             this.renderRemoveMemberButton(user),
@@ -312,8 +312,8 @@ export class OrgSettings extends LiteElement {
       )}
 
       <btrix-dialog
-        label=${msg("Invite New Member")}
-        ?open=${this.isAddingMember}
+        .label=${msg("Invite New Member")}
+        .open=${this.isAddingMember}
         @sl-request-close=${this.hideInviteDialog}
         @sl-show=${() => (this.isAddMemberFormVisible = true)}
         @sl-after-hide=${() => (this.isAddMemberFormVisible = false)}
@@ -359,7 +359,6 @@ export class OrgSettings extends LiteElement {
       }
     }
     return html`<btrix-button
-      name="trash"
       icon
       ?disabled=${disableButton}
       aria-details=${ifDefined(
@@ -520,17 +519,13 @@ export class OrgSettings extends LiteElement {
     this.isSubmittingInvite = true;
 
     try {
-      const data = await this.apiFetch(
-        `/orgs/${this.orgId}/invite`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email: inviteEmail,
-            role: Number(role),
-          }),
-        }
-      );
+      await this.apiFetch(`/orgs/${this.orgId}/invite`, this.authState!, {
+        method: "POST",
+        body: JSON.stringify({
+          email: inviteEmail,
+          role: Number(role),
+        }),
+      });
 
       this.notify({
         message: msg(str`Successfully invited ${inviteEmail}.`),

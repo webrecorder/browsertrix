@@ -1,4 +1,5 @@
-import { LitElement, html, css, PropertyValues } from "lit";
+import type { PropertyValues } from "lit";
+import { LitElement, html, css } from "lit";
 import {
   property,
   query,
@@ -138,7 +139,7 @@ export class Meter extends LitElement {
     return html`
       <div
         class="meter"
-        role="meter"
+        role="${"meter" as any}"
         aria-valuenow=${boundedValue}
         aria-valuetext=${ifDefined(this.valueText)}
         aria-valuemin=${this.min}

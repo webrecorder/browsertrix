@@ -30,8 +30,8 @@ export class NewCollectionDialog extends LiteElement {
 
   render() {
     return html` <btrix-dialog
-      label=${msg(str`Create a New Collection`)}
-      ?open=${this.open}
+      .label=${msg(str`Create a New Collection`)}
+      .open=${this.open}
       style="--width: 46rem"
       @sl-initial-focus=${async (e: CustomEvent) => {
         const nameInput = (await this.form).querySelector(
@@ -52,7 +52,7 @@ export class NewCollectionDialog extends LiteElement {
           placeholder=${msg("My Collection")}
           autocomplete="off"
           required
-          help-text=${this.validateNameMax.helpText}
+          helpText=${this.validateNameMax.helpText}
           @sl-input=${this.validateNameMax.validate}
         ></sl-input>
 

@@ -5,8 +5,7 @@ import type { CurrentUser, UserOrg } from "../types/user";
 import type { OrgData } from "../utils/orgs";
 import LiteElement, { html } from "../utils/LiteElement";
 
-import { isAdmin } from "../utils/orgs";
-import { SlInput } from "@shoelace-style/shoelace";
+import type { SlInput } from "@shoelace-style/shoelace";
 
 @localized()
 @customElement("btrix-orgs-list")
@@ -45,8 +44,8 @@ export class OrgsList extends LiteElement {
 
     return html`
       <btrix-dialog
-        label=${msg(str`Quotas for: ${this.currOrg.name}`)}
-        ?open=${!!this.currOrg}
+        .label=${msg(str`Quotas for: ${this.currOrg.name}`)}
+        .open=${!!this.currOrg}
         @sl-request-close=${() => (this.currOrg = null)}
       >
         ${Object.entries(this.currOrg.quotas).map(([key, value]) => {
@@ -164,7 +163,7 @@ export class OrgsList extends LiteElement {
     `;
   }
 
-  private makeOnOrgClick(org: OrgData): Function {
+  private makeOnOrgClick(org: OrgData) {
     const navigate = () => this.navTo(`/orgs/${org.slug}`);
 
     if (typeof window.getSelection !== undefined) {

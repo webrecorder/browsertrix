@@ -1,5 +1,4 @@
-import type { HTMLTemplateResult, PropertyValueMap } from "lit";
-import { state, property, query, customElement } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -7,9 +6,9 @@ import queryString from "query-string";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, ListWorkflow, Workflow, WorkflowParams } from "./types";
+import type { ListWorkflow, Workflow, WorkflowParams } from "./types";
 import { CopyButton } from "../../components/copy-button";
-import { SlCheckbox } from "@shoelace-style/shoelace";
+import type { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
 import type { PageChangeEvent } from "../../components/pagination";
 import type { SelectNewDialogEvent } from "./index";
@@ -370,7 +369,11 @@ export class WorkflowsList extends LiteElement {
           };
         }}
         @on-clear=${() => {
-          const { name, firstSeed, ...otherFilters } = this.filterBy;
+          const {
+            name: _name,
+            firstSeed: _firstSeed,
+            ...otherFilters
+          } = this.filterBy;
           this.filterBy = otherFilters;
         }}
       >
@@ -594,7 +597,7 @@ export class WorkflowsList extends LiteElement {
    * Fetch Workflows and update state
    **/
   private async getWorkflows(
-    queryParams?: APIPaginationQuery & {}
+    queryParams?: APIPaginationQuery & Record<string, unknown>
   ): Promise<APIPaginatedList> {
     const query = queryString.stringify(
       {
@@ -766,7 +769,7 @@ export class WorkflowsList extends LiteElement {
 
   private async runNow(workflow: ListWorkflow): Promise<void> {
     try {
-      const data = await this.apiFetch(
+      await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/run`,
         this.authState!,
         {

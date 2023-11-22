@@ -11,6 +11,7 @@ import type { CrawlConfig, Seed, SeedConfig } from "../pages/org/types";
 import type { Collection, CollectionList } from "../types/collection";
 import { humanizeSchedule } from "../utils/cron";
 import { RelativeDuration } from "./relative-duration";
+import { nothing } from "lit";
 
 /**
  * Usage:
@@ -219,10 +220,12 @@ export class ConfigDetails extends LiteElement {
             msg("Block Ads by Domain"),
             crawlConfig?.config.blockAds
           )}
-          ${this.renderSetting(
-            msg("Language"),
-            ISO6391.getName(crawlConfig?.config.lang!)
-          )}
+          ${crawlConfig?.config.lang
+            ? this.renderSetting(
+                msg("Language"),
+                ISO6391.getName(crawlConfig?.config.lang)
+              )
+            : nothing}
         </btrix-desc-list>
       </section>
       <section id="crawl-scheduling" class="mb-8">
@@ -452,7 +455,7 @@ export class ConfigDetails extends LiteElement {
   }
 
   private async getCollections() {
-    let collections: CollectionList = [];
+    const collections: CollectionList = [];
     const orgId = this.crawlConfig?.oid;
 
     if (this.crawlConfig?.autoAddCollections && orgId) {

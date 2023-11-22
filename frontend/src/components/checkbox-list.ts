@@ -1,11 +1,10 @@
-import { SlCheckbox } from "@shoelace-style/shoelace";
+import type { SlCheckbox } from "@shoelace-style/shoelace";
 import { LitElement, html, css } from "lit";
 import {
   customElement,
   property,
   query,
   queryAssignedElements,
-  state,
 } from "lit/decorators.js";
 
 export type CheckboxChangeEvent = CustomEvent<{

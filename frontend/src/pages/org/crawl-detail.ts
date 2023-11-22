@@ -11,8 +11,8 @@ import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { isActive } from "../../utils/crawler";
 import { CopyButton } from "../../components/copy-button";
-import type { Crawl, Seed } from "./types";
-import { APIPaginatedList } from "../../types/api";
+import type { Crawl, CrawlConfig, Seed } from "./types";
+import type { APIPaginatedList } from "../../types/api";
 import { humanizeExecutionSeconds } from "../../utils/executionTimeFormatter";
 
 const SECTIONS = [
@@ -25,11 +25,6 @@ const SECTIONS = [
   "exclusions",
 ] as const;
 type SectionName = (typeof SECTIONS)[number];
-
-const LOG_LEVEL_VARIANTS = {
-  error: "danger",
-} as const;
-const POLL_INTERVAL_SECONDS = 10;
 
 /**
  * Usage:
@@ -79,13 +74,7 @@ export class CrawlDetail extends LiteElement {
   private sectionName: SectionName = "overview";
 
   @state()
-  private isSubmittingUpdate: boolean = false;
-
-  @state()
   private openDialogName?: "scale" | "metadata" | "exclusions";
-
-  @state()
-  private isDialogVisible: boolean = false;
 
   private get listUrl(): string {
     let path = "items";
@@ -103,11 +92,6 @@ export class CrawlDetail extends LiteElement {
 
   // TODO localize
   private numberFormatter = new Intl.NumberFormat();
-  private dateFormatter = new Intl.DateTimeFormat(undefined, {
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-  });
 
   private get isActive(): boolean | null {
     if (!this.crawl) return null;
@@ -433,12 +417,6 @@ export class CrawlDetail extends LiteElement {
   private renderMenu() {
     if (!this.crawl) return;
 
-    const crawlId = this.crawl.id;
-
-    const closeDropdown = (e: any) => {
-      e.target.closest("sl-dropdown").hide();
-    };
-
     return html`
       <sl-dropdown placement="bottom-end" distance="4" hoist>
         <sl-button slot="trigger" size="small" caret
@@ -596,7 +574,7 @@ export class CrawlDetail extends LiteElement {
                     year="2-digit"
                     hour="numeric"
                     minute="numeric"
-                    time-zone-name="short"
+                    timeZoneName="short"
                   ></sl-format-date>
                 </btrix-desc-list-item>
               `
@@ -609,7 +587,7 @@ export class CrawlDetail extends LiteElement {
                     year="2-digit"
                     hour="numeric"
                     minute="numeric"
-                    time-zone-name="short"
+                    timeZoneName="short"
                   ></sl-format-date>
                 </btrix-desc-list-item>
                 <btrix-desc-list-item label=${msg("Finish Time")}>
@@ -621,7 +599,7 @@ export class CrawlDetail extends LiteElement {
                         year="2-digit"
                         hour="numeric"
                         minute="numeric"
-                        time-zone-name="short"
+                        timeZoneName="short"
                       ></sl-format-date>`
                     : html`<span class="text-0-400">${msg("Pending")}</span>`}
                 </btrix-desc-list-item>
@@ -716,10 +694,11 @@ export class CrawlDetail extends LiteElement {
             () =>
               when(
                 this.crawl!.description?.length,
-                () => html`<pre class="whitespace-pre-line font-sans">
+                () =>
+                  html`<pre class="whitespace-pre-line font-sans">
 ${this.crawl?.description}
                 </pre
-                >`,
+                  >`,
                 () => noneText
               ),
             () => html`<sl-skeleton></sl-skeleton>`
@@ -799,12 +778,13 @@ ${this.crawl?.description}
                     >
                       ${when(
                         file.numReplicas > 0,
-                        () => html` <sl-tooltip content=${msg("Backed up")}>
-                          <sl-icon
-                            name="clouds"
-                            class="w-4 h-4 mr-2 align-text-bottom shrink-0 text-success"
-                          ></sl-icon>
-                        </sl-tooltip>`
+                        () =>
+                          html` <sl-tooltip content=${msg("Backed up")}>
+                            <sl-icon
+                              name="clouds"
+                              class="w-4 h-4 mr-2 align-text-bottom shrink-0 text-success"
+                            ></sl-icon>
+                          </sl-tooltip>`
                       )}
                       <sl-format-bytes value=${file.size}></sl-format-bytes>
                     </div>
@@ -862,7 +842,7 @@ ${this.crawl?.description}
               .crawlConfig=${{
                 ...this.crawl,
                 autoAddCollections: this.crawl!.collectionIds,
-              }}
+              } as CrawlConfig}
               .seeds=${this.seeds!.items}
               hideTags
             ></btrix-config-details>
@@ -873,11 +853,10 @@ ${this.crawl?.description}
     `;
   }
 
-  private renderLoading = () => html`<div
-    class="w-full flex items-center justify-center my-24 text-3xl"
-  >
-    <sl-spinner></sl-spinner>
-  </div>`;
+  private renderLoading = () =>
+    html`<div class="w-full flex items-center justify-center my-24 text-3xl">
+      <sl-spinner></sl-spinner>
+    </div>`;
 
   /**
    * Fetch crawl and update internal state
@@ -1020,18 +999,6 @@ ${this.crawl?.description}
     }
 
     try {
-      const data = await this.apiFetch(
-        `/orgs/${this.crawl!.oid}/${
-          this.crawl!.type === "crawl" ? "crawls" : "uploads"
-        }/delete`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            crawl_ids: [this.crawl!.id],
-          }),
-        }
-      );
       this.navTo(this.listUrl);
       this.notify({
         message: msg(`Successfully deleted crawl`),
@@ -1056,39 +1023,6 @@ ${this.crawl?.description}
         variant: "danger",
         icon: "exclamation-octagon",
       });
-    }
-  }
-
-  /** Callback when crawl is no longer running */
-  private crawlDone() {
-    if (!this.crawl) return;
-
-    this.fetchCrawlLogs();
-
-    this.notify({
-      message: msg(html`Done crawling <strong>${this.renderName()}</strong>.`),
-      variant: "success",
-      icon: "check2-circle",
-    });
-
-    if (this.sectionName === "watch") {
-      // Show replay tab
-      this.sectionName = "replay";
-    }
-  }
-
-  /**
-   * Enter fullscreen mode
-   * @param id ID of element to fullscreen
-   */
-  private async enterFullscreen(id: string) {
-    try {
-      document.getElementById(id)!.requestFullscreen({
-        // Show browser navigation controls
-        navigationUI: "show",
-      });
-    } catch (err) {
-      console.error(err);
     }
   }
 }

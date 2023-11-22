@@ -1,5 +1,5 @@
 import { customElement, property, state } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 
 import type { ExclusionRemoveEvent } from "./queue-exclusion-table";
 import type {
@@ -45,7 +45,7 @@ export class ExclusionEditor extends LiteElement {
   @property({ type: String })
   crawlId?: string;
 
-  @property({ type: Array })
+  @property({ attribute: false })
   config?: SeedConfig;
 
   @property({ type: Boolean })

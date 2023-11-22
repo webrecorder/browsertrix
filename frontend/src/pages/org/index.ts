@@ -59,7 +59,7 @@ type Params = {
   collectionTab?: string;
   itemType?: Crawl["type"];
   jobType?: JobType;
-  settingsTab?: string;
+  settingsTab?: "information" | "members";
   new?: ResourceName;
 };
 const defaultTab = "home";
@@ -500,7 +500,7 @@ export class Org extends LiteElement {
         <btrix-workflow-detail
           class="col-span-5 mt-6"
           .authState=${this.authState!}
-          orgId=${this.orgId!}
+          orgId=${this.orgId}
           ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
           ?orgExecutionMinutesQuotaReached=${this
             .orgExecutionMinutesQuotaReached}
@@ -520,7 +520,7 @@ export class Org extends LiteElement {
       return html` <btrix-workflows-new
         class="col-span-5 mt-6"
         .authState=${this.authState!}
-        orgId=${this.orgId!}
+        orgId=${this.orgId}
         ?isCrawler=${this.isCrawler}
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
@@ -535,7 +535,7 @@ export class Org extends LiteElement {
 
     return html`<btrix-workflows-list
       .authState=${this.authState!}
-      orgId=${this.orgId!}
+      orgId=${this.orgId}
       ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
       ?orgExecutionMinutesQuotaReached=${this.orgExecutionMinutesQuotaReached}
       userId=${this.userInfo!.id}
@@ -550,7 +550,7 @@ export class Org extends LiteElement {
     if (this.params.browserProfileId) {
       return html`<btrix-browser-profiles-detail
         .authState=${this.authState!}
-        .orgId=${this.orgId!}
+        .orgId=${this.orgId}
         profileId=${this.params.browserProfileId}
         @storage-quota-update=${this.onStorageQuotaUpdate}
       ></btrix-browser-profiles-detail>`;
@@ -559,7 +559,7 @@ export class Org extends LiteElement {
     if (this.params.browserId) {
       return html`<btrix-browser-profiles-new
         .authState=${this.authState!}
-        .orgId=${this.orgId!}
+        .orgId=${this.orgId}
         .browserId=${this.params.browserId}
         @storage-quota-update=${this.onStorageQuotaUpdate}
       ></btrix-browser-profiles-new>`;
@@ -567,7 +567,7 @@ export class Org extends LiteElement {
 
     return html`<btrix-browser-profiles-list
       .authState=${this.authState!}
-      .orgId=${this.orgId!}
+      .orgId=${this.orgId}
       @storage-quota-update=${this.onStorageQuotaUpdate}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-browser-profiles-list>`;
@@ -578,7 +578,7 @@ export class Org extends LiteElement {
       if (this.orgPath.includes(`/edit/${this.params.collectionId}`)) {
         return html`<btrix-collection-edit
           .authState=${this.authState!}
-          orgId=${this.orgId!}
+          orgId=${this.orgId}
           collectionId=${this.params.collectionId}
           ?isCrawler=${this.isCrawler}
         ></btrix-collection-edit>`;
@@ -586,7 +586,7 @@ export class Org extends LiteElement {
 
       return html`<btrix-collection-detail
         .authState=${this.authState!}
-        orgId=${this.orgId!}
+        orgId=${this.orgId}
         collectionId=${this.params.collectionId}
         collectionTab=${(this.params.collectionTab as CollectionTab) ||
         "replay"}
@@ -596,7 +596,7 @@ export class Org extends LiteElement {
 
     return html`<btrix-collections-list
       .authState=${this.authState!}
-      orgId=${this.orgId!}
+      orgId=${this.orgId}
       ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-collections-list>`;

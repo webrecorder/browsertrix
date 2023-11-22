@@ -2,7 +2,6 @@ import { LitElement, html, css } from "lit";
 import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import type {
-  SlInput,
   SlMenu,
   SlMenuItem,
   SlPopup,
@@ -312,8 +311,9 @@ export class TagInput extends LitElement {
     };
     return html`
       <btrix-tag
-        variant="primary"
-        removable
+        .variant=${"primary"}
+        .removable=${true}
+        testing123=${239}
         @sl-remove=${removeTag}
         title=${content}
         tabindex="-1"
@@ -380,7 +380,7 @@ export class TagInput extends LitElement {
       const menuItem = this.menu?.querySelector("sl-menu-item");
       if (menuItem) {
         // Reset roving tabindex set by shoelace
-        this.menu!.setCurrentItem(menuItem);
+        this.menu.setCurrentItem(menuItem);
         menuItem.focus();
       }
       return;
@@ -417,8 +417,8 @@ export class TagInput extends LitElement {
     }
   }
 
-  private onInput = debounce(200)(async (e: InputEvent) => {
-    const input = this.input!;
+  private onInput = debounce(200)(async () => {
+    const input = this.input;
     this.inputValue = input.value;
     if (input.value.length) {
       this.dropdownIsOpen = true;
@@ -485,7 +485,7 @@ export class TagInput extends LitElement {
     this.tags = uniqueTags;
     this.dispatchChange();
     this.dropdownIsOpen = false;
-    this.input!.value = "";
+    this.input.value = "";
     if (repeatTags.length) {
       repeatTags.forEach(this.shakeTag);
     }

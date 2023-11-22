@@ -1,4 +1,5 @@
-import { LitElement, html, css, TemplateResult } from "lit";
+import type { TemplateResult } from "lit";
+import { LitElement, html, css } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 type CellContent = string | TemplateResult;

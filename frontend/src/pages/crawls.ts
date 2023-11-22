@@ -1,6 +1,6 @@
 import { state, property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
-import { msg, localized, str } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
@@ -9,7 +9,7 @@ import { CrawlStatus } from "../components/crawl-status";
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
-import { activeCrawlStates, inactiveCrawlStates } from "../utils/crawler";
+import { activeCrawlStates } from "../utils/crawler";
 import type { Crawl, CrawlState } from "../types/crawler";
 import type { APIPaginationQuery, APIPaginatedList } from "../types/api";
 import "./org/workflow-detail";
@@ -183,7 +183,7 @@ export class Crawls extends LiteElement {
             size="small"
             pill
             multiple
-            max-options-visible="1"
+            maxOptionsVisible="1"
             placeholder=${viewPlaceholder}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];

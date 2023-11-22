@@ -4,7 +4,7 @@ import sortBy from "lodash/fp/sortBy";
 
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
-import { OrgData } from "../types/org";
+import type { OrgData } from "../types/org";
 
 const sortByName = sortBy("name");
 

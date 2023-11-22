@@ -1,6 +1,6 @@
 import { LitElement, html } from "lit";
 import { property, state, query, customElement } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import Fuse from "fuse.js";
@@ -181,7 +181,7 @@ export class SearchCombobox extends LitElement {
     `;
   }
 
-  private onSearchInput = debounce(150)((e: any) => {
+  private onSearchInput = debounce(150)(() => {
     this.searchByValue = this.input.value?.trim();
 
     if (this.searchResultsOpen === false && this.hasSearchStr) {

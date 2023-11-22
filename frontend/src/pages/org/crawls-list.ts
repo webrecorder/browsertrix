@@ -10,13 +10,9 @@ import { CrawlStatus } from "../../components/crawl-status";
 import type { PageChangeEvent } from "../../components/pagination";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
+import type { Crawl, CrawlState, Workflow } from "./types";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
-import {
-  isActive,
-  activeCrawlStates,
-  finishedCrawlStates,
-} from "../../utils/crawler";
+import { isActive, finishedCrawlStates } from "../../utils/crawler";
 
 type Crawls = APIPaginatedList & {
   items: Crawl[];
@@ -28,7 +24,6 @@ type SortDirection = "asc" | "desc";
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
-const POLL_INTERVAL_SECONDS = 10;
 const sortableFields: Record<
   SortField,
   { label: string; defaultDirection?: SortDirection }
@@ -318,7 +313,7 @@ export class CrawlsList extends LiteElement {
             size="small"
             pill
             multiple
-            max-options-visible="1"
+            maxOptionsVisible="1"
             placeholder=${viewPlaceholder}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
@@ -359,7 +354,7 @@ export class CrawlsList extends LiteElement {
   }
 
   private renderSortControl() {
-    let options = Object.entries(sortableFields).map(
+    const options = Object.entries(sortableFields).map(
       ([value, { label }]) => html`
         <sl-option value=${value}>${label}</sl-option>
       `
@@ -414,6 +409,7 @@ export class CrawlsList extends LiteElement {
           };
         }}
         @on-clear=${() => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { name, firstSeed, ...otherFilters } = this.filterBy;
           this.filterBy = otherFilters;
         }}
@@ -432,7 +428,7 @@ export class CrawlsList extends LiteElement {
 
       <btrix-crawl-metadata-editor
         .authState=${this.authState}
-        .crawl=${this.itemToEdit}
+        .crawl=${this.itemToEdit || undefined}
         ?open=${this.isEditingItem}
         @request-close=${() => (this.isEditingItem = false)}
         @updated=${
@@ -442,15 +438,14 @@ export class CrawlsList extends LiteElement {
     `;
   }
 
-  private renderArchivedItem = (item: Crawl) =>
-    html`
-      <btrix-crawl-list-item
-        orgSlug=${this.appState.orgSlug || ""}
-        .crawl=${item}
-      >
-        <sl-menu slot="menu"> ${this.crawlerMenuItemsRenderer(item)} </sl-menu>
-      </btrix-crawl-list-item>
-    `;
+  private renderArchivedItem = (item: Crawl) => html`
+    <btrix-crawl-list-item
+      orgSlug=${this.appState.orgSlug || ""}
+      .crawl=${item}
+    >
+      <sl-menu slot="menu"> ${this.crawlerMenuItemsRenderer(item)} </sl-menu>
+    </btrix-crawl-list-item>
+  `;
 
   private crawlerMenuItemsRenderer = (item: Crawl) =>
     // HACK shoelace doesn't current have a way to override non-hover
@@ -680,7 +675,7 @@ export class CrawlsList extends LiteElement {
     }
 
     try {
-      const data = await this.apiFetch(
+      await this.apiFetch(
         `/orgs/${item.oid}/${apiPath}/delete`,
         this.authState!,
         {

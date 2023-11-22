@@ -167,8 +167,8 @@ export class CollectionsList extends LiteElement {
       )}
 
       <btrix-dialog
-        label=${msg("Delete Collection?")}
-        ?open=${this.openDialogName === "delete"}
+        .label=${msg("Delete Collection?")}
+        .open=${this.openDialogName === "delete"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
@@ -326,7 +326,7 @@ export class CollectionsList extends LiteElement {
           @sl-clear=${() => {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
-            const { name, ...otherFilters } = this.filterBy;
+            const { name: _, ...otherFilters } = this.filterBy;
             this.filterBy = otherFilters;
           }}
           @sl-input=${this.onSearchInput}
@@ -625,7 +625,7 @@ export class CollectionsList extends LiteElement {
     }
 
     if (!this.searchByValue) {
-      const { name, ...otherFilters } = this.filterBy;
+      const { name: _, ...otherFilters } = this.filterBy;
       this.filterBy = {
         ...otherFilters,
       };
@@ -633,7 +633,7 @@ export class CollectionsList extends LiteElement {
   }) as any;
 
   private async onTogglePublic(coll: Collection, isPublic: boolean) {
-    const res = await this.apiFetch(
+    await this.apiFetch(
       `/orgs/${this.orgId}/collections/${coll.id}`,
       this.authState!,
       {
