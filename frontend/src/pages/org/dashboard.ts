@@ -396,10 +396,13 @@ export class Dashboard extends LiteElement {
 
     let usageSecondsExtra = 0;
     if (this.org!.extraExecSeconds) {
-      usageSecondsExtra =
+      const actualUsageExtra =
         this.org!.extraExecSeconds[
           `${now.getFullYear()}-${now.getUTCMonth() + 1}`
         ];
+      if (actualUsageExtra) {
+        usageSecondsExtra = actualUsageExtra;
+      }
     }
     const maxExecSecsExtra = this.org!.quotas.extraExecMinutes * 60;
     // Cap usage at quota for display purposes
@@ -415,10 +418,13 @@ export class Dashboard extends LiteElement {
 
     let usageSecondsGifted = 0;
     if (this.org!.giftedExecSeconds) {
-      usageSecondsGifted =
+      const actualUsageGifted =
         this.org!.giftedExecSeconds[
           `${now.getFullYear()}-${now.getUTCMonth() + 1}`
         ];
+      if (actualUsageGifted) {
+        usageSecondsGifted = actualUsageGifted;
+      }
     }
     const maxExecSecsGifted = this.org!.quotas.giftedExecMinutes * 60;
     // Cap usage at quota for display purposes
@@ -444,6 +450,8 @@ export class Dashboard extends LiteElement {
     const renderBar = (
       /** Time in Seconds */
       value: number,
+      used: number,
+      quota: number,
       label: string,
       color: string,
       isBackground: boolean = false
@@ -456,7 +464,8 @@ export class Dashboard extends LiteElement {
         <div class="text-center">
           <div>${label}</div>
           <div class="text-xs opacity-80">
-            ${humanizeExecutionSeconds(value, "short")}
+            ${humanizeExecutionSeconds(used, "full", true)} /
+            ${humanizeExecutionSeconds(quota, "full", true)}
           </div>
         </div>
       </btrix-meter-bar>
@@ -509,7 +518,9 @@ export class Dashboard extends LiteElement {
               ${when(usageSeconds, () =>
                 renderBar(
                   usageSeconds > quotaSeconds ? quotaSeconds : usageSeconds,
-                  msg("Monthly Execution Time"),
+                  usageSeconds > quotaSeconds ? quotaSeconds : usageSeconds,
+                  quotaSeconds,
+                  msg("Monthly Execution Time Used"),
                   "green-400"
                 )
               )}
@@ -521,7 +532,9 @@ export class Dashboard extends LiteElement {
                 () =>
                   renderBar(
                     quotaSeconds - usageSeconds,
-                    msg("Monthly Execution Time Remaining"),
+                    usageSeconds > quotaSeconds ? quotaSeconds : usageSeconds,
+                    quotaSeconds,
+                    msg("Monthly Execution Time Used"),
                     "green-100",
                     true
                   )
@@ -531,14 +544,22 @@ export class Dashboard extends LiteElement {
                   usageSecondsGifted > quotaSecondsGifted
                     ? quotaSecondsGifted
                     : usageSecondsGifted,
-                  msg("Gifted Execution Time"),
+                  usageSecondsGifted > quotaSecondsGifted
+                    ? quotaSecondsGifted
+                    : usageSecondsGifted,
+                  quotaSecondsGifted,
+                  msg("Gifted Execution Time Used"),
                   "blue-400"
                 )
               )}
               ${when(this.org!.giftedExecSecondsAvailable, () =>
                 renderBar(
                   this.org!.giftedExecSecondsAvailable,
-                  msg("Gifted Execution Time Remaining"),
+                  usageSecondsGifted > quotaSecondsGifted
+                    ? quotaSecondsGifted
+                    : usageSecondsGifted,
+                  quotaSecondsGifted,
+                  msg("Gifted Execution Time Used"),
                   "blue-100",
                   true
                 )
@@ -548,14 +569,22 @@ export class Dashboard extends LiteElement {
                   usageSecondsExtra > quotaSecondsExtra
                     ? quotaSecondsExtra
                     : usageSecondsExtra,
-                  msg("Extra Execution Time"),
+                  usageSecondsExtra > quotaSecondsExtra
+                    ? quotaSecondsExtra
+                    : usageSecondsExtra,
+                  quotaSecondsExtra,
+                  msg("Extra Execution Time Used"),
                   "red-400"
                 )
               )}
               ${when(this.org!.extraExecSecondsAvailable, () =>
                 renderBar(
                   this.org!.extraExecSecondsAvailable,
-                  msg("Extra Execution Time Remaining"),
+                  usageSecondsExtra > quotaSecondsExtra
+                    ? quotaSecondsExtra
+                    : usageSecondsExtra,
+                  quotaSecondsExtra,
+                  msg("Extra Execution Time Used"),
                   "red-100",
                   true
                 )
