@@ -31,7 +31,17 @@ module.exports = {
     ],
     "@typescript-eslint/consistent-type-imports": "error",
     "@typescript-eslint/consistent-type-exports": "error",
+    "@typescript-eslint/no-explicit-any": "warn",
   },
   reportUnusedDisableDirectives: true,
   ignorePatterns: ["__generated__", "__mocks__"],
+  overrides: [
+    {
+      extends: ["plugin:@typescript-eslint/disable-type-checked"],
+      files: ["webpack.*.js"],
+      rules: {
+        "@typescript-eslint/no-var-requires": "off",
+      },
+    },
+  ],
 };

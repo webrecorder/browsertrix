@@ -19,7 +19,9 @@
         "strict": true,
         "rules": {
           "no-missing-import": "off"
-        }
+        },
+        "globalTags": ["replay-web-page"],
+        "maxNodeModuleImportDepth": -1
       }
     ]
   },
