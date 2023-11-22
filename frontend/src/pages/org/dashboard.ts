@@ -447,29 +447,49 @@ export class Dashboard extends LiteElement {
       quotaSecondsAllTypes = maxTotalTime;
     }
 
+    const hasExtra =
+      usageSecondsExtra ||
+      this.org!.extraExecSecondsAvailable ||
+      usageSecondsGifted ||
+      this.org!.giftedExecSecondsAvailable;
+
     const renderBar = (
       /** Time in Seconds */
-      value: number,
       used: number,
       quota: number,
       label: string,
       color: string,
-      isBackground: boolean = false
-    ) => html`
-      <btrix-meter-bar
-        value=${(value / quotaSecondsAllTypes) * 100}
-        isBackground=${isBackground}
-        style="--background-color:var(--sl-color-${color})"
-      >
-        <div class="text-center">
-          <div>${label}</div>
-          <div class="text-xs opacity-80">
-            ${humanizeExecutionSeconds(used, "full", true)} /
-            ${humanizeExecutionSeconds(quota, "full", true)}
+      divided: boolean = true
+    ) => {
+      if (divided) {
+        return html` <btrix-divided-meter-bar
+          value=${(used / quotaSecondsAllTypes) * 100}
+          quota=${(quota / quotaSecondsAllTypes) * 100}
+          style="--background-color:var(--sl-color-${color}-400); --quota-background-color:var(--sl-color-${color}-100)"
+        >
+          <div class="text-center">
+            <div>${label}</div>
+            <div class="text-xs opacity-80">
+              ${humanizeExecutionSeconds(used, "full", true)} /
+              ${humanizeExecutionSeconds(quota, "full", true)}
+            </div>
           </div>
-        </div>
-      </btrix-meter-bar>
-    `;
+        </btrix-divided-meter-bar>`;
+      } else {
+        return html`<btrix-meter-bar
+          value=${100}
+          style="--background-color:var(--sl-color-${color}-400);"
+        >
+          <div class="text-center">
+            <div>${label}</div>
+            <div class="text-xs opacity-80">
+              ${humanizeExecutionSeconds(used, "full", true)} |
+              ${this.renderPercentage(used / quota)}
+            </div>
+          </div>
+        </btrix-meter-bar>`;
+      }
+    };
     return html`
       <div class="font-semibold mb-1">
         ${when(
@@ -515,86 +535,50 @@ export class Dashboard extends LiteElement {
               max=${quotaSecondsAllTypes}
               valueText=${msg("time")}
             >
-              ${when(usageSeconds, () =>
+              ${when(usageSeconds || quotaSeconds, () =>
                 renderBar(
                   usageSeconds > quotaSeconds ? quotaSeconds : usageSeconds,
-                  usageSeconds > quotaSeconds ? quotaSeconds : usageSeconds,
-                  quotaSeconds,
+                  hasExtra ? quotaSeconds : quotaSecondsAllTypes,
                   msg("Monthly Execution Time Used"),
-                  "green-400"
+                  "green",
+                  hasExtra ? true : false
                 )
               )}
               ${when(
-                (this.org!.giftedExecSecondsAvailable ||
-                  this.org!.extraExecSecondsAvailable) &&
-                  quotaSeconds &&
-                  usageSeconds < quotaSeconds,
+                usageSecondsGifted || this.org!.giftedExecSecondsAvailable,
                 () =>
                   renderBar(
-                    quotaSeconds - usageSeconds,
-                    usageSeconds > quotaSeconds ? quotaSeconds : usageSeconds,
-                    quotaSeconds,
-                    msg("Monthly Execution Time Used"),
-                    "green-100",
-                    true
+                    usageSecondsGifted > quotaSecondsGifted
+                      ? quotaSecondsGifted
+                      : usageSecondsGifted,
+                    quotaSecondsGifted,
+                    msg("Gifted Execution Time Used"),
+                    "blue"
                   )
               )}
-              ${when(usageSecondsGifted, () =>
-                renderBar(
-                  usageSecondsGifted > quotaSecondsGifted
-                    ? quotaSecondsGifted
-                    : usageSecondsGifted,
-                  usageSecondsGifted > quotaSecondsGifted
-                    ? quotaSecondsGifted
-                    : usageSecondsGifted,
-                  quotaSecondsGifted,
-                  msg("Gifted Execution Time Used"),
-                  "blue-400"
-                )
-              )}
-              ${when(this.org!.giftedExecSecondsAvailable, () =>
-                renderBar(
-                  this.org!.giftedExecSecondsAvailable,
-                  usageSecondsGifted > quotaSecondsGifted
-                    ? quotaSecondsGifted
-                    : usageSecondsGifted,
-                  quotaSecondsGifted,
-                  msg("Gifted Execution Time Used"),
-                  "blue-100",
-                  true
-                )
-              )}
-              ${when(usageSecondsExtra, () =>
-                renderBar(
-                  usageSecondsExtra > quotaSecondsExtra
-                    ? quotaSecondsExtra
-                    : usageSecondsExtra,
-                  usageSecondsExtra > quotaSecondsExtra
-                    ? quotaSecondsExtra
-                    : usageSecondsExtra,
-                  quotaSecondsExtra,
-                  msg("Extra Execution Time Used"),
-                  "red-400"
-                )
-              )}
-              ${when(this.org!.extraExecSecondsAvailable, () =>
-                renderBar(
-                  this.org!.extraExecSecondsAvailable,
-                  usageSecondsExtra > quotaSecondsExtra
-                    ? quotaSecondsExtra
-                    : usageSecondsExtra,
-                  quotaSecondsExtra,
-                  msg("Extra Execution Time Used"),
-                  "red-100",
-                  true
-                )
+              ${when(
+                usageSecondsExtra || this.org!.extraExecSecondsAvailable,
+                () =>
+                  renderBar(
+                    usageSecondsExtra > quotaSecondsExtra
+                      ? quotaSecondsExtra
+                      : usageSecondsExtra,
+                    quotaSecondsExtra,
+                    msg("Extra Execution Time Used"),
+                    "red"
+                  )
               )}
               <div slot="available" class="flex-1">
                 <sl-tooltip class="text-center">
                   <div slot="content">
                     <div>${msg("Monthly Execution Time Remaining")}</div>
                     <div class="text-xs opacity-80">
-                      ${humanizeExecutionSeconds(quotaSeconds - usageSeconds)} |
+                      ${humanizeExecutionSeconds(
+                        quotaSeconds - usageSeconds,
+                        "full",
+                        true
+                      )}
+                      |
                       ${this.renderPercentage(
                         (quotaSeconds - usageSeconds) / quotaSeconds
                       )}
