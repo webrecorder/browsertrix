@@ -30,7 +30,7 @@ import type { Crawl } from "../types/crawler";
 import { srOnly, truncate } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 import { isActive } from "../utils/crawler";
-import type { DropdownMenu } from "./dropdown-menu";
+import type { OverflowDropdown } from "./overflow-dropdown";
 
 const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;
@@ -186,8 +186,8 @@ export class CrawlListItem extends LitElement {
   @query(".row")
   row!: HTMLElement;
 
-  @query("btrix-dropdown-menu")
-  dropdownMenu!: DropdownMenu;
+  @query("btrix-overflow-dropdown")
+  dropdownMenu!: OverflowDropdown;
 
   @state()
   private hasMenuItems?: boolean;
@@ -364,7 +364,7 @@ export class CrawlListItem extends LitElement {
 
   private renderActions() {
     return html` <div class="col action">
-      <btrix-dropdown-menu>
+      <btrix-overflow-dropdown>
         <slot
           name="menu"
           @click=${(e: MouseEvent) => {
@@ -373,7 +373,7 @@ export class CrawlListItem extends LitElement {
             e.stopPropagation();
           }}
         ></slot>
-      </btrix-dropdown-menu>
+      </btrix-overflow-dropdown>
     </div>`;
   }
 }

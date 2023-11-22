@@ -4,11 +4,21 @@ import { msg, localized } from "@lit/localize";
 import type { SlMenu } from "@shoelace-style/shoelace";
 
 /**
- * Dropdown action menu
+ * Dropdown for additional actions.
+ *
+ * Usage:
+ * ```ts
+ * <btrix-overflow-dropdown>
+ *   <sl-menu>
+ *     <sl-menu-item>Item 1</sl-menu-item>
+ *     <sl-menu-item>Item 2</sl-menu-item>
+ *   </sl-menu>
+ *< /btrix-overflow-dropdown>
+ * ```
  */
 @localized()
-@customElement("btrix-dropdown-menu")
-export class DropdownMenu extends LitElement {
+@customElement("btrix-overflow-dropdown")
+export class OverflowDropdown extends LitElement {
   static style = [
     css`
       .trigger {
@@ -24,7 +34,7 @@ export class DropdownMenu extends LitElement {
   @state()
   private hasMenuItems?: boolean;
 
-  @queryAssignedElements({ selector: "sl-menu", flatten: true })
+  @queryAssignedElements({ selector: "sl-menu-item", flatten: true })
   private menu!: Array<SlMenu>;
 
   render() {
