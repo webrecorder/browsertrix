@@ -48,9 +48,6 @@ export class DividedMeterBar extends LitElement {
   @property({ type: Number })
   quota = 0;
 
-  @property({ type: Number })
-  allQuotas = 0;
-
   static styles = css`
     :host {
       display: contents;
