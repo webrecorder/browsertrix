@@ -70,7 +70,7 @@ export const humanizeExecutionSeconds = (
   options?: {
     /**
      * When this is "long", the time in hours is also displayed
-     * @default "full"
+     * @default "long"
      */
     style?: "short" | "long";
     /**
