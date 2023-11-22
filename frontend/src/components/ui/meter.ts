@@ -73,20 +73,18 @@ export class DividedMeterBar extends LitElement {
   `;
 
   render() {
-    const remainder = this.quota - this.value;
     return html`<sl-tooltip>
       <div slot="content"><slot></slot></div>
-      ${when(this.value, () => {
-        return html`<div
-          class="bar ${this.value < this.quota
-            ? css`rightBorderRadius`
-            : css``}"
-          style="width:${this.value}%"
-        ></div>`;
-      })}
-      ${when(remainder, () => {
-        return html`<div class="quotaBar" style="width:${remainder}%"></div>`;
-      })}
+      <div class="quotaBar" style="width:100%">
+        ${when(this.value, () => {
+          return html`<div
+            class="bar ${this.value < this.quota
+              ? css`rightBorderRadius`
+              : css``}"
+            style="width:${(this.value / this.quota) * 100}%"
+          ></div>`;
+        })}
+      </div>
     </sl-tooltip>`;
   }
 }
