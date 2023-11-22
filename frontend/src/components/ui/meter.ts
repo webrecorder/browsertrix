@@ -48,6 +48,9 @@ export class DividedMeterBar extends LitElement {
   @property({ type: Number })
   quota = 0;
 
+  @property({ type: Number })
+  allQuotas = 0;
+
   static styles = css`
     :host {
       display: contents;
@@ -75,7 +78,7 @@ export class DividedMeterBar extends LitElement {
   render() {
     return html`<sl-tooltip>
       <div slot="content"><slot></slot></div>
-      <div class="quotaBar" style="width:100%">
+      <div class="quotaBar" style="width:${this.quota}%">
         ${when(this.value, () => {
           return html`<div
             class="bar ${this.value < this.quota
