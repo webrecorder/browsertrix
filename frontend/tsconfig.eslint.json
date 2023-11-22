@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "types": ["@types/node"],
+    "noEmit": true
+  },
+  "extends": "./tsconfig.json",
+  "include": ["**/*.ts", ".eslintrc.js"]
+}

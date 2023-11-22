@@ -4,6 +4,7 @@ const webpack = require("webpack");
 const ESLintPlugin = require("eslint-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 const childProcess = require("child_process");
 const packageJSON = require("./package.json");
 const fs = require("fs");
@@ -19,7 +20,7 @@ require("dotenv").config({
 });
 
 // for testing: for prod, the Dockerfile should have the official prod version used
-const RWP_BASE_URL = process.env.RWP_BASE_URL || "https://replayweb.page/";
+const _RWP_BASE_URL = process.env.RWP_BASE_URL || "https://replayweb.page/";
 
 const WEBSOCKET_HOST =
   isDevServer && process.env.API_BASE_URL
@@ -82,6 +83,7 @@ const main = {
         exclude: /node_modules/,
         options: {
           onlyCompileBundledFiles: true,
+          transpileOnly: true,
         },
       },
       {
@@ -122,6 +124,8 @@ const main = {
     new webpack.optimize.LimitChunkCountPlugin({
       maxChunks: 12,
     }),
+
+    new ForkTsCheckerWebpackPlugin(),
 
     new HtmlWebpackPlugin({
       template: "src/index.ejs",
