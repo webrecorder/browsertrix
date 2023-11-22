@@ -30,6 +30,7 @@ import type { Crawl } from "../types/crawler";
 import { srOnly, truncate } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 import { isActive } from "../utils/crawler";
+import type { DropdownMenu } from "./dropdown-menu";
 
 const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;
@@ -167,14 +168,6 @@ export class CrawlListItem extends LitElement {
         align-items: center;
         justify-content: center;
       }
-
-      .dropdownTrigger {
-        font-size: 1rem;
-      }
-
-      .dropdownTrigger[disabled] {
-        visibility: hidden;
-      }
     `,
   ];
 
@@ -193,15 +186,8 @@ export class CrawlListItem extends LitElement {
   @query(".row")
   row!: HTMLElement;
 
-  // TODO consolidate with btrix-combobox
-  @query(".dropdown")
-  dropdown!: HTMLElement;
-
-  @query(".dropdownTrigger")
-  dropdownTrigger!: SlIconButton;
-
-  @queryAssignedElements({ selector: "sl-menu", slot: "menu" })
-  private menuArr!: Array<SlMenu>;
+  @query("btrix-dropdown-menu")
+  dropdownMenu!: DropdownMenu;
 
   @state()
   private hasMenuItems?: boolean;
@@ -226,7 +212,7 @@ export class CrawlListItem extends LitElement {
       class="item row"
       role="button"
       @click=${async (e: MouseEvent) => {
-        if (e.target === this.dropdownTrigger && this.hasMenuItems) {
+        if (e.target === this.dropdownMenu) {
           return;
         }
         e.preventDefault();
@@ -378,25 +364,16 @@ export class CrawlListItem extends LitElement {
 
   private renderActions() {
     return html` <div class="col action">
-      <sl-dropdown ?disabled=${!this.hasMenuItems}>
-        <sl-icon-button
-          slot="trigger"
-          class="dropdownTrigger"
-          label=${msg("Actions")}
-          name="three-dots-vertical"
-          ?disabled=${!this.hasMenuItems}
-        >
-        </sl-icon-button>
+      <btrix-dropdown-menu>
         <slot
           name="menu"
-          @slotchange=${() => (this.hasMenuItems = this.menuArr.length > 0)}
           @click=${(e: MouseEvent) => {
             // Prevent navigation to detail view
             e.preventDefault();
             e.stopPropagation();
           }}
         ></slot>
-      </sl-dropdown>
+      </btrix-dropdown-menu>
     </div>`;
   }
 }
