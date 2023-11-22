@@ -477,14 +477,14 @@ export class Dashboard extends LiteElement {
               ? html`
                   <span class="inline-flex items-center">
                     ${humanizeExecutionSeconds(
-                      (quotaSeconds -
+                      quotaSeconds -
                         usageSeconds +
                         this.org!.extraExecSecondsAvailable +
-                        this.org!.giftedExecSecondsAvailable),
+                        this.org!.giftedExecSecondsAvailable,
                       "short",
                       false,
                       true
-                    }
+                    )}
                     ${msg("Available")}
                   </span>
                 `
@@ -747,17 +747,11 @@ export class Dashboard extends LiteElement {
             >
             </sl-format-date>
           `,
-          humanizeSeconds((crawlTime || 0)),
-          totalTimeSeconds
-            ? humanizeSeconds(totalTimeSeconds)
-            : "--",
+          humanizeSeconds(crawlTime || 0),
+          totalTimeSeconds ? humanizeSeconds(totalTimeSeconds) : "--",
           value ? humanizeSeconds(value) : "--",
-          extraSecondsUsed
-            ? humanizeSeconds(extraSecondsUsed)
-            : "--",
-          giftedSecondsUsed
-            ? humanizeSeconds(giftedSecondsUsed)
-            : "--",
+          extraSecondsUsed ? humanizeSeconds(extraSecondsUsed) : "--",
+          giftedSecondsUsed ? humanizeSeconds(giftedSecondsUsed) : "--",
         ];
       });
     return html`
