@@ -17,18 +17,18 @@ type CrawlerVersionsAPIResponse = {
  *
  * Usage example:
  * ```ts
- * <btrix-select-crawler-version
+ * <btrix-select-crawler
  *   authState=${authState}
  *   orgId=${orgId}
  *   on-change=${({value}) => selectedCrawler = value}
- * ></btrix-select-crawler-version>
+ * ></btrix-select-crawler>
  * ```
  *
  * @event on-change
  */
-@customElement("btrix-select-crawler-version")
+@customElement("btrix-select-crawler")
 @localized()
-export class SelectCrawlerVersion extends LiteElement {
+export class SelectCrawler extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
 

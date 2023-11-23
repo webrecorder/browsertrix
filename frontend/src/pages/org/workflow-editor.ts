@@ -1624,7 +1624,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         accounts.`)
       )}
       ${this.renderFormCol(html`
-        <btrix-select-crawler-version
+        <btrix-select-crawler
           orgId=${this.orgId}
           .crawlerId=${this.formState.crawlerid}
           .authState=${this.authState}
@@ -1632,7 +1632,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             this.updateFormState({
               crawlerid: e.detail.value,
             })}
-        ></btrix-select-crawler-version>
+        ></btrix-select-crawler>
       `)}
       ${this.renderHelpTextCol(
         msg(
