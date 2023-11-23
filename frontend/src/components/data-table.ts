@@ -2,7 +2,7 @@ import type { TemplateResult } from "lit";
 import { LitElement, html, css } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-type CellContent = string | TemplateResult;
+type CellContent = string | TemplateResult<1 | 2>;
 
 /**
  * Styled data table

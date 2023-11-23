@@ -273,15 +273,16 @@ export class OrgSettings extends LiteElement {
 
   private renderMembers() {
     const columnWidths = ["100%", "10rem", "1.5rem"];
+    const rows = Object.entries(this.org.users!).map(([_id, user]) => [
+      user.name,
+      this.renderUserRoleSelect(user),
+      this.renderRemoveMemberButton(user),
+    ]);
     return html`
       <section class="rounded border overflow-hidden">
         <btrix-data-table
           .columns=${[msg("Name"), msg("Role"), ""]}
-          .rows=${Object.entries(this.org.users!).map(([_id, user]) => [
-            user.name,
-            this.renderUserRoleSelect(user),
-            this.renderRemoveMemberButton(user),
-          ])}
+          .rows=${rows}
           .columnWidths=${columnWidths}
         >
         </btrix-data-table>

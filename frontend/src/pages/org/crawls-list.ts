@@ -437,7 +437,7 @@ export class CrawlsList extends LiteElement {
 
       <btrix-crawl-metadata-editor
         .authState=${this.authState}
-        .crawl=${this.itemToEdit || undefined}
+        .crawl=${this.itemToEdit as Crawl}
         ?open=${this.isEditingItem}
         @request-close=${() => (this.isEditingItem = false)}
         @updated=${
@@ -445,8 +445,8 @@ export class CrawlsList extends LiteElement {
         }
       ></btrix-crawl-metadata-editor>
       <btrix-dialog
-        label=${msg("Delete Archived Item?")}
-        ?open=${this.isDeletingItem}
+        .label=${msg("Delete Archived Item?")}
+        .open=${this.isDeletingItem}
         @sl-after-hide=${() => (this.isDeletingItem = false)}
       >
         ${msg("This item will be removed from any Collection it is a part of.")}
@@ -456,7 +456,9 @@ export class CrawlsList extends LiteElement {
           )
         )}
         <div slot="footer" class="flex justify-between">
-          <sl-button size="small" autofocus>${msg("Cancel")}</sl-button>
+          <sl-button size="small" .autofocus=${true}
+            >${msg("Cancel")}</sl-button
+          >
           <sl-button
             size="small"
             variant="danger"
