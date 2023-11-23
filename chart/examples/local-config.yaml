@@ -16,9 +16,8 @@
 # frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
 
 # uncomment to set custom crawler_versions
-# it's recommended to always retain "latest" as an option, as this is
-# used as a fallback value for workflow and profile browser creation in
-# the backend API
+# "latest" should always be one of the values, as it is used as a
+# fallback value for workflow and browser profile creation
 # crawler_versions:
 #   - id: latest
 #     name: "Latest Release"

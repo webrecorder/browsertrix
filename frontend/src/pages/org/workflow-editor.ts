@@ -118,7 +118,7 @@ type FormState = {
   autoAddCollections: string[];
   description: WorkflowParams["description"];
   autoscrollBehavior: boolean;
-  crawlerid: string | null;
+  crawlerid: string;
 };
 
 const DEPTH_SUPPORTED_SCOPES = ["prefix", "host", "domain", "custom", "any"];
@@ -195,7 +195,7 @@ const getDefaultFormState = (): FormState => ({
   autoAddCollections: [],
   description: null,
   autoscrollBehavior: true,
-  crawlerid: null,
+  crawlerid: "latest",
 });
 const defaultProgressState = getDefaultProgressState();
 
@@ -2387,7 +2387,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           : DEFAULT_BEHAVIORS.slice(1)
         ).join(","),
       },
-      crawlerid: this.formState.crawlerid || "",
+      crawlerid: this.formState.crawlerid || "latest",
     };
 
     return config;

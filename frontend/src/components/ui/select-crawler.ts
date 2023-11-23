@@ -2,7 +2,7 @@ import { html } from "lit";
 import { property, state, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { when } from "lit/directives/when.js";
-import orderBy from "lodash/fp/orderBy";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import type { AuthState } from "../utils/AuthService";
 import LiteElement from "../utils/LiteElement";
@@ -53,9 +53,8 @@ export class SelectCrawler extends LiteElement {
       <sl-select
         name="crawlerid"
         label=${msg("Crawler Version")}
-        value=${this.selectedCrawler?.id || ""}
-        placeholder=${msg("Loading")}
-        hoist
+        value=${this.selectedCrawler?.id || "latest"}
+        placeholder=${msg("Latest Release")}
         @sl-change=${this.onChange}
         @sl-focus=${() => {
           // Refetch to keep list up to date
@@ -64,12 +63,8 @@ export class SelectCrawler extends LiteElement {
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
       >
-        ${when(
-          !this.crawlerVersions.length,
-          () => html`<sl-spinner slot="prefix"></sl-spinner>`
-        )}
         ${this.crawlerVersions?.map(
-          (crawler) => html` <sl-option value=${crawler.id}>
+          (crawler) => html`<sl-option value=${crawler.id}>
             ${crawler.name}
           </sl-option>`
         )}
@@ -78,6 +73,8 @@ export class SelectCrawler extends LiteElement {
   }
 
   private onChange(e: any) {
+    this.stopProp(e);
+
     this.selectedCrawler = this.crawlerVersions?.find(
       ({ id }) => id === e.target.value
     );
@@ -85,7 +82,7 @@ export class SelectCrawler extends LiteElement {
     this.dispatchEvent(
       new CustomEvent("on-change", {
         detail: {
-          value: this.selectedCrawler,
+          value: this.selectedCrawler?.id,
         },
       })
     );
@@ -98,9 +95,7 @@ export class SelectCrawler extends LiteElement {
     try {
       const versions = await this.getCrawlerVersions();
 
-      this.crawlerVersions = orderBy(["name"])(["asc", "desc"])(
-        versions
-      ) as CrawlerVersion[];
+      this.crawlerVersions = versions as CrawlerVersion[];
 
       if (this.crawlerId && !this.selectedCrawler) {
         this.selectedCrawler = this.crawlerVersions.find(
