@@ -81,7 +81,7 @@ describe("browsertrix-app", () => {
             crawlExecSeconds: null,
           },
         ],
-      } satisfies APIUser)
+      } as APIUser)
     );
     stub(AuthService.prototype, "startFreshnessCheck");
     stub(window.sessionStorage, "getItem").callsFake((key) => {
@@ -104,8 +104,11 @@ describe("browsertrix-app", () => {
           id: "test_org_id",
           name: "test org",
           role: 10,
-          email: "test@org.org",
           slug: "test-org",
+          quotas: {},
+          bytesStored: 100,
+          usage: null,
+          crawlExecSeconds: null,
         },
       ],
     });
