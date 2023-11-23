@@ -313,7 +313,6 @@ export class TagInput extends LitElement {
       <btrix-tag
         .variant=${"primary"}
         .removable=${true}
-        testing123=${239}
         @sl-remove=${removeTag}
         title=${content}
         tabindex="-1"
