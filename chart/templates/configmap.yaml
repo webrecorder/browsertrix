@@ -48,6 +48,8 @@ data:
 
   STORAGES_JSON: "/ops-configs/storages.json"
 
+  CRAWLER_VERSIONS_JSON: "/ops-configs/crawler_versions.json"
+
 ---
 apiVersion: v1
 kind: ConfigMap

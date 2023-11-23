@@ -112,6 +112,7 @@ class CrawlManager(K8sAPI):
         self,
         crawlconfig: CrawlConfig,
         storage: StorageRef,
+        crawler_image: str,
         run_now: bool,
         out_filename: str,
         profile_filename: str,
@@ -134,7 +135,7 @@ class CrawlManager(K8sAPI):
 
         if run_now:
             crawl_id = await self.create_crawl_job(
-                crawlconfig, storage, str(crawlconfig.modifiedBy)
+                crawlconfig, storage, crawler_image, str(crawlconfig.modifiedBy)
             )
 
         await self._update_scheduled_job(crawlconfig)
@@ -145,6 +146,7 @@ class CrawlManager(K8sAPI):
         self,
         crawlconfig: CrawlConfig,
         storage: StorageRef,
+        crawler_image: str,
         userid: str,
     ) -> str:
         """create new crawl job from config"""
@@ -159,6 +161,7 @@ class CrawlManager(K8sAPI):
             userid,
             crawlconfig.oid,
             storage,
+            crawler_image,
             crawlconfig.scale,
             crawlconfig.crawlTimeout,
             crawlconfig.maxCrawlSize,

@@ -179,7 +179,16 @@ redis_storage: "3Gi"
 
 # Crawler Image
 # =========================================
+# crawler versions available to use in workflows
+crawler_versions:
+  - id: latest
+    name: "Latest Release"
+    image: "docker.io/webrecorder/browsertrix-crawler:latest"
+  - id: beta
+    name: "Beta Release"
+    image: "docker.io/webrecorder/browsertrix-crawler:1.0.0-beta.0"
 
+# TODO: Remove this, still used for profiles for now
 crawler_image: "webrecorder/browsertrix-crawler:latest"
 crawler_pull_policy: "Always"
 

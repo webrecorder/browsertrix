@@ -282,6 +282,8 @@ class CrawlConfigIn(BaseModel):
 
     crawlFilenameTemplate: Optional[str] = None
 
+    crawlerid: str = "latest"
+
 
 # ============================================================================
 class ConfigRevision(BaseMongoModel):
@@ -361,6 +363,8 @@ class CrawlConfigAdditional(BaseModel):
 
     isCrawlRunning: Optional[bool] = False
 
+    crawlerid: str
+
 
 # ============================================================================
 class CrawlConfig(CrawlConfigCore, CrawlConfigAdditional):
@@ -418,6 +422,23 @@ class UpdateCrawlConfig(BaseModel):
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = None  # type: ignore
     crawlFilenameTemplate: Optional[str] = None
     config: Optional[RawCrawlConfig] = None
+
+
+# ============================================================================
+
+### CRAWLER VERSIONS ###
+
+
+# ============================================================================
+class CrawlerVersion(BaseModel):
+    id: str
+    name: str
+    image: str
+
+
+# ============================================================================
+class CrawlerVersions(BaseModel):
+    versions: List[CrawlerVersion] = []
 
 
 # ============================================================================

@@ -112,6 +112,7 @@ class CrawlSpec(BaseModel):
     scale: int = 1
     storage: StorageRef
     started: str
+    crawler_image: str
     stopping: bool = False
     scheduled: bool = False
     timeout: int = 0
@@ -444,6 +445,7 @@ class BtrixOperator(K8sAPI):
             cid=cid,
             oid=oid,
             storage=StorageRef(spec["storageName"]),
+            crawler_image=spec.get("crawlerImage"),
             scale=spec.get("scale", 1),
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
@@ -521,6 +523,8 @@ class BtrixOperator(K8sAPI):
         params["storage_path"] = storage_path
         params["storage_secret"] = storage_secret
         params["profile_filename"] = configmap["PROFILE_FILENAME"]
+
+        params["crawler_image"] = crawl.crawler_image
 
         params["storage_filename"] = configmap["STORE_FILENAME"]
         params["restart_time"] = spec.get("restartTime")

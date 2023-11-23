@@ -6,6 +6,7 @@ Crawl Config API handling
 from typing import List, Union, Optional, Tuple, TYPE_CHECKING, cast
 
 import asyncio
+import json
 import re
 import os
 from datetime import datetime
@@ -28,6 +29,8 @@ from .models import (
     User,
     PaginatedResponse,
     FAILED_STATES,
+    CrawlerVersion,
+    CrawlerVersions,
 )
 from .utils import dt_now
 
@@ -202,9 +205,14 @@ class CrawlConfigOps:
             run_now = False
             print(f"Execution minutes quota exceeded for org {org.id}", flush=True)
 
+        crawler_image = self.get_crawler_image_by_id(crawlconfig.crawlerid)
+        if not crawler_image:
+            raise HTTPException(status_code=404, detail="crawler_not_found")
+
         crawl_id = await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
             storage=org.storage,
+            crawler_image=crawler_image,
             run_now=run_now,
             out_filename=out_filename,
             profile_filename=profile_filename or "",
@@ -802,6 +810,10 @@ class CrawlConfigOps:
         except:
             await self.readd_configmap(crawlconfig, org)
 
+        crawler_image = self.get_crawler_image_by_id(crawlconfig.crawlerid)
+        if not crawler_image:
+            raise HTTPException(status_code=404, detail="crawler_not_found")
+
         if await self.org_ops.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
@@ -810,7 +822,7 @@ class CrawlConfigOps:
 
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
-                crawlconfig, org.storage, userid=str(user.id)
+                crawlconfig, org.storage, crawler_image, userid=str(user.id)
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
             return crawl_id
@@ -859,6 +871,28 @@ class CrawlConfigOps:
         # pylint: disable=broad-exception-caught
         except Exception:
             return [], 0
+
+    def get_crawler_image_by_id(self, crawler_id: str) -> str:
+        """Get crawler image name by id"""
+        crawler_image = ""
+        with open(os.environ["CRAWLER_VERSIONS_JSON"], encoding="utf-8") as fh:
+            crawler_list = json.loads(fh.read())
+            matching_images = [
+                crawler["image"]
+                for crawler in crawler_list
+                if crawler["id"] == crawler_id
+            ]
+            if matching_images:
+                crawler_image = matching_images[0]
+        return crawler_image
+
+    def get_crawler_versions(self) -> CrawlerVersions:
+        """Get available crawler versions"""
+        with open(os.environ["CRAWLER_VERSIONS_JSON"], encoding="utf-8") as fh:
+            crawler_list = json.loads(fh.read())
+            return CrawlerVersions(
+                versions=[CrawlerVersion(**crawler) for crawler in crawler_list]
+            )
 
 
 # ============================================================================
@@ -1007,6 +1041,12 @@ def init_crawl_config_api(
         org: Organization = Depends(org_viewer_dep),
     ):
         return await ops.get_crawl_config_search_values(org)
+
+    @router.get("/crawler-versions", response_model=CrawlerVersions)
+    async def get_crawler_versions(
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return ops.get_crawler_versions()
 
     @router.get("/{cid}/seeds", response_model=PaginatedResponse)
     async def get_crawl_config_seeds(
