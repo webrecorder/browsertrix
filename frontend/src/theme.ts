@@ -23,6 +23,7 @@ const theme = css`
     /* Custom font variables */
     --font-monostyle-family: var(--sl-font-mono);
     --font-monostyle-variation: "MONO" 0.51, "CASL" 0, "slnt" 0, "CRSV" 0;
+    --font-size-base: 1rem;
 
     /*
      * Shoelace Theme Tokens

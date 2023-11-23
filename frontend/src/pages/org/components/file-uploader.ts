@@ -450,7 +450,7 @@ export class FileUploader extends LiteElement {
               class="underline hover:no-underline"
               href="${this.orgBasePath}/items/upload/${data.id}"
               @click="${this.navLink.bind(this)}"
-              >View Archive</a
+              >View Item</a
             > `),
           variant: "success",
           icon: "check2-circle",
