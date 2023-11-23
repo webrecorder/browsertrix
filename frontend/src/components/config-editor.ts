@@ -59,7 +59,7 @@ export class ConfigEditor extends LiteElement {
           </div>
 
           <btrix-copy-button
-            .getValue=${() => this.textareaElem?.value || ""}
+            .getValue=${() => this.textareaElem?.value ?? ""}
           ></btrix-copy-button>
         </header>
 

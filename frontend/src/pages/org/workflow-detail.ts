@@ -1013,7 +1013,7 @@ export class WorkflowDetail extends LiteElement {
             <btrix-screencast
               authToken=${authToken}
               orgId=${this.orgId}
-              .crawlId=${this.lastCrawlId || undefined}
+              .crawlId=${this.lastCrawlId ?? undefined}
               scale=${this.workflow!.scale}
             ></btrix-screencast>
           </div>

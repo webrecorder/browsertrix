@@ -594,8 +594,8 @@ export class App extends LiteElement {
           }}
           @notify="${this.onNotify}"
           .authState=${this.authService.authState}
-          .userInfo=${this.appState.userInfo || undefined}
-          slug=${ifDefined(this.appState.orgSlug || undefined)}
+          .userInfo=${this.appState.userInfo ?? undefined}
+          slug=${ifDefined(this.appState.orgSlug ?? undefined)}
         ></btrix-home>`;
 
       case "orgs":
@@ -603,7 +603,7 @@ export class App extends LiteElement {
           class="w-full md:bg-neutral-50"
           @navigate="${this.onNavigateTo}"
           .authState="${this.authService.authState}"
-          .userInfo="${this.appState.userInfo || undefined}"
+          .userInfo="${this.appState.userInfo ?? undefined}"
         ></btrix-orgs>`;
 
       case "org": {
@@ -623,7 +623,7 @@ export class App extends LiteElement {
           }}
           @notify="${this.onNotify}"
           .authState=${this.authService.authState}
-          .userInfo=${this.appState.userInfo || undefined}
+          .userInfo=${this.appState.userInfo ?? undefined}
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
           slug=${slug}
@@ -643,7 +643,7 @@ export class App extends LiteElement {
           }}
           @notify="${this.onNotify}"
           .authState="${this.authService.authState}"
-          .userInfo="${this.appState.userInfo || undefined}"
+          .userInfo="${this.appState.userInfo ?? undefined}"
         ></btrix-account-settings>`;
 
       case "usersInvite": {

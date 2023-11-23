@@ -281,7 +281,7 @@ export class AccountSettings extends LiteElement {
   private renderPasswordStrength = () => html`
     <div class="mt-4">
       <btrix-pw-strength-alert
-        .result=${this.pwStrengthResults || undefined}
+        .result=${this.pwStrengthResults ?? undefined}
         min=${PASSWORD_MIN_SCORE}
       >
       </btrix-pw-strength-alert>

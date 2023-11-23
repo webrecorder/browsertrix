@@ -128,7 +128,7 @@ export class CrawlMetadataEditor extends LiteElement {
         ></btrix-tag-input>
         <div class="mt-4">
           <btrix-collections-add
-            .authState=${this.authState || null}
+            .authState=${this.authState ?? null}
             .initialCollections=${this.crawl.collectionIds}
             .orgId=${this.crawl.oid}
             .configId=${"temp"}
