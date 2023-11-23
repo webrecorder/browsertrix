@@ -73,6 +73,7 @@
     "start": "webpack serve --mode=development --config webpack.dev.js",
     "serve": "node scripts/serve.js",
     "lint": "eslint --fix \"src/**/*.{ts,js}\"",
+    "lint:lit-analyzer": "lit-analyzer",
     "format": "prettier --write \"src/**/*.{ts,js,html,css,json}\"",
     "localize:prepare": "yarn localize:extract && yarn localize:build",
     "localize:extract": "lit-localize extract",
