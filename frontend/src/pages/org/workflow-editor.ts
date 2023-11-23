@@ -228,6 +228,14 @@ const DEFAULT_BEHAVIORS = [
 const BYTES_PER_GB = 1e9;
 const URL_LIST_MAX_URLS = 1000;
 
+type CrawlConfigResponse = {
+  run_now_job?: boolean;
+  started?: boolean;
+  storageQuotaReached?: boolean;
+  execMinutesQuotaReached?: boolean;
+  quotas?: { maxPagesPerCrawl?: number };
+  id?: string;
+};
 @localized()
 @customElement("btrix-workflow-editor")
 export class CrawlConfigEditor extends LiteElement {
@@ -278,7 +286,7 @@ export class CrawlConfigEditor extends LiteElement {
   private serverError?: TemplateResult | string;
 
   // For fuzzy search:
-  private fuse = new Fuse([], {
+  private fuse = new Fuse<string>([], {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
@@ -1787,7 +1795,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private renderJobMetadata() {
-    if (!this.configId) throw new Error("missing configId");
     return html`
       ${this.renderFormCol(html`
         <sl-input
@@ -2177,7 +2184,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     try {
       const data = await (this.configId
-        ? this.apiFetch(
+        ? this.apiFetch<CrawlConfigResponse>(
             `/orgs/${this.orgId}/crawlconfigs/${this.configId}`,
             this.authState!,
             {
@@ -2185,10 +2192,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
               body: JSON.stringify(config),
             }
           )
-        : this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/`, this.authState!, {
-            method: "POST",
-            body: JSON.stringify(config),
-          }));
+        : this.apiFetch<CrawlConfigResponse>(
+            `/orgs/${this.orgId}/crawlconfigs/`,
+            this.authState!,
+            {
+              method: "POST",
+              body: JSON.stringify(config),
+            }
+          ));
 
       const crawlId = data.run_now_job || data.started || null;
       const storageQuotaReached = data.storageQuotaReached;
@@ -2311,7 +2322,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async fetchTags() {
     this.tagOptions = [];
     try {
-      const tags = await this.apiFetch(
+      const tags = await this.apiFetch<string[]>(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
         this.authState!
       );
@@ -2478,7 +2489,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private async fetchOrgQuotaDefaults() {
     try {
-      const data = await this.apiFetch(`/orgs/${this.orgId}`, this.authState!);
+      const data = await this.apiFetch<{
+        quotas: { maxPagesPerCrawl?: number };
+      }>(`/orgs/${this.orgId}`, this.authState!);
       const orgDefaults = {
         ...this.orgDefaults,
       };

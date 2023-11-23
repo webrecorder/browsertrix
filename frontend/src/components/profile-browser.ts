@@ -317,11 +317,11 @@ export class ProfileBrowser extends LiteElement {
     }
   }
 
-  private async getBrowser(): Promise<{
-    detail?: string;
-    url?: string;
-  }> {
-    const data = await this.apiFetch(
+  private async getBrowser() {
+    const data = await this.apiFetch<{
+      detail?: string;
+      url?: string;
+    }>(
       `/orgs/${this.orgId}/profiles/browser/${this.browserId}`,
       this.authState!
     );
@@ -353,7 +353,7 @@ export class ProfileBrowser extends LiteElement {
   private async pingBrowser() {
     if (!this.iframeSrc) return;
 
-    const data = await this.apiFetch(
+    const data = await this.apiFetch<{ origins: string[] }>(
       `/orgs/${this.orgId}/profiles/browser/${this.browserId}/ping`,
       this.authState!,
       {

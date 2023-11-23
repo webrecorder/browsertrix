@@ -938,7 +938,7 @@ ${this.crawl?.description}
 
   private async cancel() {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/cancel`,
         this.authState!,
         {
@@ -960,7 +960,7 @@ ${this.crawl?.description}
 
   private async stop() {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/stop`,
         this.authState!,
         {

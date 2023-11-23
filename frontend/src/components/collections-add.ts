@@ -51,7 +51,7 @@ export class CollectionsAdd extends LiteElement {
   orgId!: string;
 
   @property({ type: String })
-  configId!: string;
+  configId?: string;
 
   @property({ type: String })
   label?: string;

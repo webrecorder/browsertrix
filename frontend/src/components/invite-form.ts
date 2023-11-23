@@ -124,7 +124,7 @@ export class InviteForm extends LiteElement {
     const inviteEmail = formData.get("inviteEmail") as string;
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ invited: string }>(
         `/orgs/${this.selectedOrgId}/invite`,
         this.authState,
         {

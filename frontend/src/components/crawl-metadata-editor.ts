@@ -169,7 +169,8 @@ export class CrawlMetadataEditor extends LiteElement {
   private async fetchTags() {
     if (!this.crawl) return;
     try {
-      const tags = await this.apiFetch(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO fixme
+      const tags = await this.apiFetch<any>(
         `/orgs/${this.crawl.oid}/crawlconfigs/tags`,
         this.authState!
       );
@@ -224,7 +225,7 @@ export class CrawlMetadataEditor extends LiteElement {
     this.isSubmittingUpdate = true;
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ updated: boolean }>(
         `/orgs/${this.crawl.oid}/all-crawls/${this.crawl.id}`,
         this.authState!,
         {

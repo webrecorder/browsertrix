@@ -357,7 +357,7 @@ export class Crawls extends LiteElement {
     );
 
     this.getCrawlsController = new AbortController();
-    const data = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList>(
       `/orgs/all/crawls?${query}`,
       this.authState!,
       {

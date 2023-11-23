@@ -693,7 +693,7 @@ export class CollectionDetail extends LiteElement {
   };
 
   private async onTogglePublic(isPublic: boolean) {
-    const res = await this.apiFetch(
+    const res = await this.apiFetch<{ updated: boolean }>(
       `/orgs/${this.orgId}/collections/${this.collectionId}`,
       this.authState!,
       {
@@ -752,8 +752,8 @@ export class CollectionDetail extends LiteElement {
     }
   }
 
-  private async getCollection(): Promise<Collection> {
-    const data = await this.apiFetch(
+  private async getCollection() {
+    const data = await this.apiFetch<Collection>(
       `/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`,
       this.authState!
     );

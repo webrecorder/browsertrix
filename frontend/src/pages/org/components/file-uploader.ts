@@ -374,7 +374,7 @@ export class FileUploader extends LiteElement {
 
   private async fetchTags() {
     try {
-      const tags = await this.apiFetch(
+      const tags = await this.apiFetch<never>(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
         this.authState!
       );

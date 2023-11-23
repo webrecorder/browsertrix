@@ -726,7 +726,7 @@ export class WorkflowsList extends LiteElement {
   private async cancel(crawlId: ListWorkflow["lastCrawlId"]) {
     if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${crawlId}/cancel`,
         this.authState!,
         {
@@ -748,7 +748,7 @@ export class WorkflowsList extends LiteElement {
   private async stop(crawlId: ListWorkflow["lastCrawlId"]) {
     if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${crawlId}/stop`,
         this.authState!,
         {

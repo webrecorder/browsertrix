@@ -1350,7 +1350,7 @@ export class WorkflowDetail extends LiteElement {
     this.isSubmittingUpdate = true;
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ scaled: boolean }>(
         `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/scale`,
         this.authState!,
         {
@@ -1468,7 +1468,7 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private async getCrawl(crawlId: Crawl["id"]): Promise<Crawl> {
-    const data = await this.apiFetch(
+    const data = await this.apiFetch<Crawl>(
       `/orgs/${this.orgId}/crawls/${crawlId}/replay.json`,
       this.authState!
     );
@@ -1576,7 +1576,7 @@ export class WorkflowDetail extends LiteElement {
     this.isCancelingOrStoppingCrawl = true;
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/cancel`,
         this.authState!,
         {
@@ -1605,7 +1605,7 @@ export class WorkflowDetail extends LiteElement {
     this.isCancelingOrStoppingCrawl = true;
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/stop`,
         this.authState!,
         {
@@ -1630,7 +1630,7 @@ export class WorkflowDetail extends LiteElement {
 
   private async runNow(): Promise<void> {
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ started: string | null }>(
         `/orgs/${this.orgId}/crawlconfigs/${this.workflow!.id}/run`,
         this.authState!,
         {

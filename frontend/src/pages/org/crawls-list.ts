@@ -655,7 +655,7 @@ export class CrawlsList extends LiteElement {
     );
 
     this.getArchivedItemsController = new AbortController();
-    const data = await this.apiFetch(
+    const data = await this.apiFetch<Crawls>(
       `/orgs/${this.orgId}/all-crawls?${query}`,
       this.authState!,
       {
