@@ -1044,6 +1044,7 @@ def init_crawl_config_api(
 
     @router.get("/crawler-versions", response_model=CrawlerVersions)
     async def get_crawler_versions(
+        # pylint: disable=unused-argument
         org: Organization = Depends(org_crawl_dep),
     ):
         return ops.get_crawler_versions()
