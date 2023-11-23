@@ -90,7 +90,7 @@ class ProfileOps:
             prev_profile_id = str(profile_launch.profileId)
 
         crawler_image = self.crawlconfigs.get_crawler_image_by_id(
-            profile_launch.browserId
+            profile_launch.crawlerId
         )
         if not crawler_image:
             raise HTTPException(status_code=404, detail="crawler_not_found")
