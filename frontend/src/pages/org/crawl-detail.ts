@@ -999,6 +999,18 @@ ${this.crawl?.description}
     }
 
     try {
+      const _data = await this.apiFetch(
+        `/orgs/${this.crawl!.oid}/${
+          this.crawl!.type === "crawl" ? "crawls" : "uploads"
+        }/delete`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            crawl_ids: [this.crawl!.id],
+          }),
+        }
+      );
       this.navTo(this.listUrl);
       this.notify({
         message: msg(`Successfully deleted crawl`),
@@ -1023,6 +1035,39 @@ ${this.crawl?.description}
         variant: "danger",
         icon: "exclamation-octagon",
       });
+    }
+  }
+
+  /** Callback when crawl is no longer running */
+  private _crawlDone() {
+    if (!this.crawl) return;
+
+    this.fetchCrawlLogs();
+
+    this.notify({
+      message: msg(html`Done crawling <strong>${this.renderName()}</strong>.`),
+      variant: "success",
+      icon: "check2-circle",
+    });
+
+    if (this.sectionName === "watch") {
+      // Show replay tab
+      this.sectionName = "replay";
+    }
+  }
+
+  /**
+   * Enter fullscreen mode
+   * @param id ID of element to fullscreen
+   */
+  private async _enterFullscreen(id: string) {
+    try {
+      document.getElementById(id)!.requestFullscreen({
+        // Show browser navigation controls
+        navigationUI: "show",
+      });
+    } catch (err) {
+      console.error(err);
     }
   }
 }

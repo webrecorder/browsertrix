@@ -409,8 +409,11 @@ export class CrawlsList extends LiteElement {
           };
         }}
         @on-clear=${() => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { name, firstSeed, ...otherFilters } = this.filterBy;
+          const {
+            name: _name,
+            firstSeed: _firstSeed,
+            ...otherFilters
+          } = this.filterBy;
           this.filterBy = otherFilters;
         }}
       >
@@ -675,7 +678,7 @@ export class CrawlsList extends LiteElement {
     }
 
     try {
-      await this.apiFetch(
+      const _data = await this.apiFetch(
         `/orgs/${item.oid}/${apiPath}/delete`,
         this.authState!,
         {

@@ -1637,6 +1637,16 @@ export class WorkflowDetail extends LiteElement {
 
   private async deleteCrawl(crawl: Crawl) {
     try {
+      const _data = await this.apiFetch(
+        `/orgs/${crawl.oid}/crawls/delete`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            crawl_ids: [crawl.id],
+          }),
+        }
+      );
       this.crawls = {
         ...this.crawls!,
         items: this.crawls!.items.filter((c) => c.id !== crawl.id),

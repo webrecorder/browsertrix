@@ -519,13 +519,17 @@ export class OrgSettings extends LiteElement {
     this.isSubmittingInvite = true;
 
     try {
-      await this.apiFetch(`/orgs/${this.orgId}/invite`, this.authState!, {
-        method: "POST",
-        body: JSON.stringify({
-          email: inviteEmail,
-          role: Number(role),
-        }),
-      });
+      const _data = await this.apiFetch(
+        `/orgs/${this.orgId}/invite`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email: inviteEmail,
+            role: Number(role),
+          }),
+        }
+      );
 
       this.notify({
         message: msg(str`Successfully invited ${inviteEmail}.`),

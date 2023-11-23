@@ -716,7 +716,7 @@ export class CollectionDetail extends LiteElement {
 
     try {
       const name = this.collection.name;
-      await this.apiFetch(
+      const _data: Crawl | Upload = await this.apiFetch(
         `/orgs/${this.orgId}/collections/${this.collection.id}`,
         this.authState!,
         {
