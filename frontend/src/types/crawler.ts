@@ -48,6 +48,7 @@ export type WorkflowParams = {
   maxCrawlSize: number | null;
   description: string | null;
   autoAddCollections: string[];
+  crawlerid: string | null;
 };
 
 export type CrawlConfig = WorkflowParams & {
@@ -169,4 +170,10 @@ export type Upload = Omit<
   | "crawlExecSeconds"
 > & {
   type: "upload";
+};
+
+export type CrawlerVersion = {
+  id: string;
+  name: string;
+  image: string;
 };

@@ -30,6 +30,7 @@ const defaultValue = {
   jobType: undefined,
   scale: 1,
   autoAddCollections: [],
+  crawlerid: null,
 } as WorkflowParams;
 
 /**

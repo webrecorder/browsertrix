@@ -118,6 +118,7 @@ type FormState = {
   autoAddCollections: string[];
   description: WorkflowParams["description"];
   autoscrollBehavior: boolean;
+  crawlerid: string | null;
 };
 
 const DEPTH_SUPPORTED_SCOPES = ["prefix", "host", "domain", "custom", "any"];
@@ -194,6 +195,7 @@ const getDefaultFormState = (): FormState => ({
   autoAddCollections: [],
   description: null,
   autoscrollBehavior: true,
+  crawlerid: null,
 });
 const defaultProgressState = getDefaultProgressState();
 
@@ -582,6 +584,7 @@ export class CrawlConfigEditor extends LiteElement {
       autoscrollBehavior: this.initialWorkflow.config.behaviors
         ? this.initialWorkflow.config.behaviors.includes("autoscroll")
         : defaultFormState.autoscrollBehavior,
+      crawlerid: this.initialWorkflow.crawlerid || defaultFormState.crawlerid,
       ...formState,
     };
   }
@@ -1621,6 +1624,22 @@ https://archiveweb.page/images/${"logo.svg"}`}
         accounts.`)
       )}
       ${this.renderFormCol(html`
+        <btrix-select-crawler-version
+          orgId=${this.orgId}
+          .crawlerId=${this.formState.crawlerid}
+          .authState=${this.authState}
+          @on-change=${(e: any) =>
+            this.updateFormState({
+              crawlerid: e.detail.value,
+            })}
+        ></btrix-select-crawler-version>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(
+          `Choose a version of Browsertrix Crawler to use with this workflow.`
+        )
+      )}
+      ${this.renderFormCol(html`
         <sl-checkbox name="blockAds" ?checked=${this.formState.blockAds}>
           ${msg("Block ads by domain")}
         </sl-checkbox>
@@ -2368,6 +2387,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           : DEFAULT_BEHAVIORS.slice(1)
         ).join(","),
       },
+      crawlerid: this.formState.crawlerid || "",
     };
 
     return config;
