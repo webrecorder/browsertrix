@@ -15,6 +15,18 @@
 # backend_image: docker.io/webrecorder/browsertrix-backend:latest
 # frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
 
+# uncomment to set custom crawler_versions
+# it's recommended to always retain "latest" as an option, as this is
+# used as a fallback value for workflow and profile browser creation in
+# the backend API
+# crawler_versions:
+#   - id: latest
+#     name: "Latest Release"
+#     image: "docker.io/webrecorder/browsertrix-crawler:latest"
+#   - id: beta
+#     name: "Beta Release"
+#     image: "docker.io/webrecorder/browsertrix-crawler:1.0.0-beta.0"
+
 # overrides to use existing images in local Docker, otherwise will pull from repository
 # backend_pull_policy: "Never"
 # frontend_pull_policy: "Never"

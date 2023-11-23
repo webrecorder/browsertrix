@@ -180,6 +180,9 @@ redis_storage: "3Gi"
 # Crawler Image
 # =========================================
 # crawler versions available to use in workflows
+# it's recommended to always retain "latest" as an option, as this is
+# used as a fallback value for workflow and profile browser creation in
+# the backend API
 crawler_versions:
   - id: latest
     name: "Latest Release"
