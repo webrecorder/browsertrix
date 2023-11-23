@@ -8,6 +8,10 @@ import type { AuthState } from "../utils/AuthService";
 import LiteElement from "../utils/LiteElement";
 import type { CrawlerVersion } from "../pages/org/types";
 
+type CrawlerVersionsAPIResponse = {
+  versions: CrawlerVersion[];
+};
+
 /**
  * Crawler version select dropdown
  *
@@ -92,10 +96,10 @@ export class SelectCrawlerVersion extends LiteElement {
    */
   private async fetchCrawlerVersions(): Promise<void> {
     try {
-      const data = await this.getCrawlerVersions();
+      const versions = await this.getCrawlerVersions();
 
       this.crawlerVersions = orderBy(["name"])(["asc", "desc"])(
-        data
+        versions
       ) as CrawlerVersion[];
 
       if (this.crawlerId && !this.selectedCrawler) {
@@ -112,12 +116,14 @@ export class SelectCrawlerVersion extends LiteElement {
     }
   }
 
-  private async getCrawlerVersions(): Promise<Profile[]> {
-    const data: APIPaginatedList = await this.apiFetch(
+  private async getCrawlerVersions(): Promise<CrawlerVersion[]> {
+    console.log("Fetching crawler versions");
+    const data: CrawlerVersionsAPIResponse = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs/crawler-versions`,
       this.authState!
     );
-    return data;
+    console.log(data.versions);
+    return data.versions;
   }
 
   /**
