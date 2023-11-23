@@ -188,8 +188,6 @@ crawler_versions:
     name: "Beta Release"
     image: "docker.io/webrecorder/browsertrix-crawler:1.0.0-beta.0"
 
-# TODO: Remove this, still used for profiles for now
-crawler_image: "webrecorder/browsertrix-crawler:latest"
 crawler_pull_policy: "Always"
 
 crawler_namespace: "crawlers"

@@ -33,6 +33,7 @@ class CrawlManager(K8sAPI):
         oid: str,
         url: str,
         storage: StorageRef,
+        crawler_image: str,
         baseprofile: str = "",
         profile_filename: str = "",
     ) -> str:
@@ -55,6 +56,7 @@ class CrawlManager(K8sAPI):
             "url": url,
             "vnc_password": secrets.token_hex(16),
             "expire_time": to_k8s_date(dt_now() + timedelta(seconds=30)),
+            "crawler_image": crawler_image,
         }
 
         data = self.templates.env.get_template("profile_job.yaml").render(params)

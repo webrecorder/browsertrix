@@ -365,6 +365,7 @@ class BtrixOperator(K8sAPI):
         params["storage_path"] = storage_path
         params["storage_secret"] = storage_secret
         params["profile_filename"] = spec.get("profileFilename", "")
+        params["crawler_image"] = spec["crawlerImage"]
 
         params["url"] = spec.get("startUrl", "about:blank")
         params["vnc_password"] = spec.get("vncPassword")

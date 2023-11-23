@@ -1084,6 +1084,7 @@ class ProfileLaunchBrowserIn(UrlIn):
     """Request to launch new browser for creating profile"""
 
     profileId: Optional[UUID] = None
+    crawlerId: str = "latest"
 
 
 # ============================================================================

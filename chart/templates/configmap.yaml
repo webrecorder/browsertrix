@@ -88,7 +88,6 @@ data:
     redis_storage: "{{ .Values.redis_storage }}"
 
     # crawler
-    crawler_image: {{ .Values.crawler_image }}
     crawler_image_pull_policy: {{ .Values.crawler_pull_policy }}
 
     crawler_cpu_base: "{{ .Values.crawler_cpu_base }}"
