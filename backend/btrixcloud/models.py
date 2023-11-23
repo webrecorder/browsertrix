@@ -431,6 +431,8 @@ class UpdateCrawlConfig(BaseModel):
 
 # ============================================================================
 class CrawlerVersion(BaseModel):
+    """Crawler version available to use in workflows"""
+
     id: str
     name: str
     image: str
@@ -438,6 +440,8 @@ class CrawlerVersion(BaseModel):
 
 # ============================================================================
 class CrawlerVersions(BaseModel):
+    """List of CrawlerVersion instances for API"""
+
     versions: List[CrawlerVersion] = []
 
 
