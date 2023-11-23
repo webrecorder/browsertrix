@@ -4,7 +4,7 @@ blank_issues_enabled: true
 contact_links:
   - name: Report a replay issue
     about: Issues related to archived content not displaying properly should be reported in the ReplayWeb.page repo.
-    url: https://github.com/webrecorder/replayweb.page/issues/new/choose
+    url: https://github.com/webrecorder/replayweb.page/issues/new?template=replay-bug.yml&title=%5BReplay+Bug%5D%3A+
   - name: Report a security vulnerability
     about: Please do not file an issue and instead email security@webrecorder.org. We will follow up with you there!
     url: https://webrecorder.net/.well-known/security.txt
