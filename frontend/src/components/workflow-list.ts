@@ -82,7 +82,7 @@ export class WorkflowListItem extends LitElement {
       }
 
       .item {
-        content-visibility: auto;
+        contain: size;
         contain-intrinsic-height: auto 4rem;
         cursor: pointer;
         transition-property: background-color, box-shadow, margin;
