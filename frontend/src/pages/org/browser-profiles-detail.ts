@@ -452,7 +452,7 @@ export class BrowserProfilesDetail extends LiteElement {
     const profileName = this.profile!.name;
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<Profile & { error: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profile!.id}`,
         this.authState!,
         {
@@ -465,9 +465,7 @@ export class BrowserProfilesDetail extends LiteElement {
           message: msg(
             html`Could not delete <strong>${profileName}</strong>, in use by
               <strong
-                >${data.crawlconfigs
-                  .map(({ name }: any) => name)
-                  .join(", ")}</strong
+                >${data.crawlconfigs.map(({ name }) => name).join(", ")}</strong
               >. Please remove browser profile from Workflow to continue.`
           ),
           variant: "warning",
@@ -483,7 +481,7 @@ export class BrowserProfilesDetail extends LiteElement {
           icon: "check2-circle",
         });
       }
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't delete browser profile at this time."),
         variant: "danger",
@@ -498,7 +496,7 @@ export class BrowserProfilesDetail extends LiteElement {
       profileId: this.profile!.id,
     };
 
-    return this.apiFetch(
+    return this.apiFetch<{ browserid: string }>(
       `/orgs/${this.orgId}/profiles/browser`,
       this.authState!,
       {
@@ -526,7 +524,7 @@ export class BrowserProfilesDetail extends LiteElement {
       const data = await this.getProfile();
 
       this.profile = data;
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
         variant: "danger",
@@ -535,8 +533,8 @@ export class BrowserProfilesDetail extends LiteElement {
     }
   }
 
-  private async getProfile(): Promise<Profile> {
-    const data = await this.apiFetch(
+  private async getProfile() {
+    const data = await this.apiFetch<Profile>(
       `/orgs/${this.orgId}/profiles/${this.profileId}`,
       this.authState!
     );
@@ -565,7 +563,7 @@ export class BrowserProfilesDetail extends LiteElement {
     };
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ updated: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profileId}`,
         this.authState!,
         {
@@ -585,7 +583,7 @@ export class BrowserProfilesDetail extends LiteElement {
       } else {
         throw data;
       }
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't save browser profile at this time."),
         variant: "danger",
@@ -610,7 +608,7 @@ export class BrowserProfilesDetail extends LiteElement {
     };
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ updated: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profileId}`,
         this.authState!,
         {

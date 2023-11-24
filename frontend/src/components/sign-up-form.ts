@@ -168,7 +168,7 @@ export class SignUpForm extends LiteElement {
       value,
       userInputs
     );
-  }) as any;
+  }) as (e: InputEvent) => void;
 
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();

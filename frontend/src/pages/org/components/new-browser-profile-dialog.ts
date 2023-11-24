@@ -158,7 +158,7 @@ export class NewBrowserProfileDialog extends LiteElement {
       url,
     };
 
-    return this.apiFetch(
+    return this.apiFetch<{ browserid: string }>(
       `/orgs/${this.orgId}/profiles/browser`,
       this.authState!,
       {

@@ -454,8 +454,8 @@ export class OrgSettings extends LiteElement {
     return !formEl.querySelector("[data-invalid]");
   }
 
-  private async getPendingInvites(): Promise<Invite[]> {
-    const data: APIPaginatedList = await this.apiFetch(
+  private async getPendingInvites() {
+    const data = await this.apiFetch<APIPaginatedList<Invite>>(
       `/orgs/${this.org.id}/invites`,
       this.authState!
     );

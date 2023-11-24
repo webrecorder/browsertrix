@@ -23,6 +23,7 @@ import { inactiveCrawlStates, isActive } from "../../utils/crawler";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import type { PageChangeEvent } from "../../components/pagination";
 import { ExclusionEditor } from "../../components/exclusion-editor";
+import type { CrawlLog } from "../../components/crawl-logs";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];
@@ -70,15 +71,13 @@ export class WorkflowDetail extends LiteElement {
   private workflow?: Workflow;
 
   @state()
-  private seeds?: APIPaginatedList & {
-    items: Seed[];
-  };
+  private seeds?: APIPaginatedList<Seed>;
 
   @state()
-  private crawls?: APIPaginatedList; // Only inactive crawls
+  private crawls?: APIPaginatedList<Crawl>; // Only inactive crawls
 
   @state()
-  private logs?: APIPaginatedList;
+  private logs?: APIPaginatedList<CrawlLog>;
 
   @state()
   private lastCrawlId: Workflow["lastCrawlId"] = null;
@@ -125,7 +124,7 @@ export class WorkflowDetail extends LiteElement {
   private isPanelHeaderVisible?: boolean;
 
   private getWorkflowPromise?: Promise<Workflow>;
-  private getSeedsPromise?: Promise<APIPaginatedList>;
+  private getSeedsPromise?: Promise<APIPaginatedList<Seed>>;
 
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Crawls"),
@@ -315,7 +314,7 @@ export class WorkflowDetail extends LiteElement {
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
-            autofocus
+            .autofocus=${true}
             @click=${() => (this.openDialogName = undefined)}
             >${msg("Keep Crawling")}</sl-button
           >
@@ -344,7 +343,7 @@ export class WorkflowDetail extends LiteElement {
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
-            autofocus
+            .autofocus=${true}
             @click=${() => (this.openDialogName = undefined)}
             >${msg("Keep Crawling")}</sl-button
           >
@@ -361,8 +360,8 @@ export class WorkflowDetail extends LiteElement {
         </div>
       </btrix-dialog>
       <btrix-dialog
-        label=${msg("Delete Crawl?")}
-        ?open=${this.openDialogName === "delete"}
+        .label=${msg("Delete Crawl?")}
+        .open=${this.openDialogName === "delete"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${this.showDialog}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
@@ -373,7 +372,7 @@ export class WorkflowDetail extends LiteElement {
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
-            autofocus
+            .autofocus=${true}
             @click=${() => (this.openDialogName = undefined)}
             >${msg("Cancel")}</sl-button
           >
@@ -1411,8 +1410,8 @@ export class WorkflowDetail extends LiteElement {
     }
   }
 
-  private async getSeeds(): Promise<APIPaginatedList> {
-    const data: APIPaginatedList = await this.apiFetch(
+  private async getSeeds() {
+    const data = await this.apiFetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}/seeds`,
       this.authState!
     );
@@ -1431,7 +1430,7 @@ export class WorkflowDetail extends LiteElement {
     }
   }
 
-  private async getCrawls(): Promise<APIPaginatedList> {
+  private async getCrawls() {
     const query = queryString.stringify(
       {
         state: this.filterBy.state,
@@ -1442,7 +1441,7 @@ export class WorkflowDetail extends LiteElement {
         arrayFormat: "comma",
       }
     );
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Crawl>>(
       `/orgs/${this.orgId}/crawls?${query}`,
       this.authState!
     );
@@ -1743,13 +1742,11 @@ export class WorkflowDetail extends LiteElement {
     }
   }
 
-  private async getCrawlErrors(
-    params: Partial<APIPaginatedList>
-  ): Promise<APIPaginatedList> {
+  private async getCrawlErrors(params: Partial<APIPaginatedList>) {
     const page = params.page || this.logs?.page || 1;
     const pageSize = params.pageSize || this.logs?.pageSize || LOGS_PAGE_SIZE;
 
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<CrawlLog>>(
       `/orgs/${this.orgId}/crawls/${
         this.workflow!.lastCrawlId
       }/errors?page=${page}&pageSize=${pageSize}`,

@@ -14,6 +14,7 @@ import { CopyButton } from "../../components/copy-button";
 import type { Crawl, CrawlConfig, Seed } from "./types";
 import type { APIPaginatedList } from "../../types/api";
 import { humanizeExecutionSeconds } from "../../utils/executionTimeFormatter";
+import type { CrawlLog } from "../../components/crawl-logs";
 
 const SECTIONS = [
   "overview",
@@ -63,12 +64,10 @@ export class CrawlDetail extends LiteElement {
   private crawl?: Crawl;
 
   @state()
-  private seeds?: APIPaginatedList & {
-    items: Seed[];
-  };
+  private seeds?: APIPaginatedList<Seed>;
 
   @state()
-  private logs?: APIPaginatedList;
+  private logs?: APIPaginatedList<CrawlLog>;
 
   @state()
   private sectionName: SectionName = "overview";
@@ -123,7 +122,7 @@ export class CrawlDetail extends LiteElement {
   connectedCallback(): void {
     // Set initial active section based on URL #hash value
     const hash = window.location.hash.slice(1);
-    if (SECTIONS.includes(hash as any)) {
+    if ((SECTIONS as readonly string[]).includes(hash)) {
       this.sectionName = hash as SectionName;
     }
     super.connectedCallback();
@@ -896,9 +895,9 @@ ${this.crawl?.description}
     return data;
   }
 
-  private async getSeeds(): Promise<APIPaginatedList> {
+  private async getSeeds() {
     // NOTE Returns first 1000 seeds (backend pagination max)
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/seeds`,
       this.authState!
     );
@@ -922,13 +921,11 @@ ${this.crawl?.description}
     }
   }
 
-  private async getCrawlErrors(
-    params: Partial<APIPaginatedList>
-  ): Promise<APIPaginatedList> {
+  private async getCrawlErrors(params: Partial<APIPaginatedList>) {
     const page = params.page || this.logs?.page || 1;
     const pageSize = params.pageSize || this.logs?.pageSize || 50;
 
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = (await this.apiFetch)<APIPaginatedList<CrawlLog>>(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/errors?page=${page}&pageSize=${pageSize}`,
       this.authState!
     );

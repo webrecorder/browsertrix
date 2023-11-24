@@ -68,7 +68,7 @@ export class CollectionsNew extends LiteElement {
 
     try {
       const { name, description, crawlIds, isPublic } = e.detail.values;
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<Collection>(
         `/orgs/${this.orgId}/collections`,
         this.authState!,
         {

@@ -7,6 +7,7 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import type { Profile } from "./types";
 import type { APIPaginatedList } from "../../types/api";
 import type { SelectNewDialogEvent } from "./index";
+import type { Browser } from "../../types/browser";
 
 /**
  * Usage:
@@ -215,7 +216,7 @@ export class BrowserProfilesList extends LiteElement {
 
   private async deleteProfile(profile: Profile) {
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<Profile & { error?: boolean }>(
         `/orgs/${this.orgId}/profiles/${profile.id}`,
         this.authState!,
         {
@@ -248,7 +249,7 @@ export class BrowserProfilesList extends LiteElement {
           (p) => p.id !== profile.id
         );
       }
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't delete browser profile at this time."),
         variant: "danger",
@@ -262,7 +263,7 @@ export class BrowserProfilesList extends LiteElement {
       url,
     };
 
-    return this.apiFetch(
+    return this.apiFetch<Browser>(
       `/orgs/${this.orgId}/profiles/browser`,
       this.authState!,
       {
@@ -280,7 +281,7 @@ export class BrowserProfilesList extends LiteElement {
       const data = await this.getProfiles();
 
       this.browserProfiles = data;
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
         variant: "danger",
@@ -289,8 +290,8 @@ export class BrowserProfilesList extends LiteElement {
     }
   }
 
-  private async getProfiles(): Promise<Profile[]> {
-    const data: APIPaginatedList = await this.apiFetch(
+  private async getProfiles() {
+    const data = await this.apiFetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles`,
       this.authState!
     );

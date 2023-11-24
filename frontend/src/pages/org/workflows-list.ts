@@ -6,7 +6,7 @@ import queryString from "query-string";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { ListWorkflow, Workflow, WorkflowParams } from "./types";
+import type { ListWorkflow, Seed, Workflow, WorkflowParams } from "./types";
 import { CopyButton } from "../../components/copy-button";
 import type { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
@@ -84,9 +84,7 @@ export class WorkflowsList extends LiteElement {
   isCrawler!: boolean;
 
   @state()
-  private workflows?: APIPaginatedList & {
-    items: ListWorkflow[];
-  };
+  private workflows?: APIPaginatedList<ListWorkflow>;
 
   @state()
   private searchOptions: any[] = [];
@@ -598,7 +596,7 @@ export class WorkflowsList extends LiteElement {
    **/
   private async getWorkflows(
     queryParams?: APIPaginationQuery & Record<string, unknown>
-  ): Promise<APIPaginatedList> {
+  ) {
     const query = queryString.stringify(
       {
         ...this.filterBy,
@@ -617,7 +615,7 @@ export class WorkflowsList extends LiteElement {
     );
 
     this.getWorkflowsController = new AbortController();
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Workflow>>(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
       this.authState!,
       {
@@ -850,9 +848,9 @@ export class WorkflowsList extends LiteElement {
     return data;
   }
 
-  private async getSeeds(workflow: ListWorkflow): Promise<APIPaginatedList> {
+  private async getSeeds(workflow: ListWorkflow) {
     // NOTE Returns first 1000 seeds (backend pagination max)
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/seeds`,
       this.authState!
     );

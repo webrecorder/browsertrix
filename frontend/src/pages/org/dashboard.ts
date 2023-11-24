@@ -600,7 +600,7 @@ export class Dashboard extends LiteElement {
 
   private async fetchMetrics() {
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<Metrics | undefined>(
         `/orgs/${this.orgId}/metrics`,
         this.authState!
       );

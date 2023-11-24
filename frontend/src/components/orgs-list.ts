@@ -14,7 +14,7 @@ export class OrgsList extends LiteElement {
   userInfo?: CurrentUser;
 
   @property({ type: Array })
-  orgList: OrgData[] = [];
+  orgList?: OrgData[] = [];
 
   @property({ type: Object })
   defaultOrg?: UserOrg;

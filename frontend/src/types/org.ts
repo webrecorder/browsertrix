@@ -33,4 +33,4 @@ export type OrgData = {
   };
 };
 
-export type OrgConfig = any;
+export type OrgConfig = unknown;

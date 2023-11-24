@@ -7,6 +7,7 @@ import { maxLengthValidator } from "../../../utils/form";
 import type { AuthState } from "../../../utils/AuthService";
 import LiteElement, { html } from "../../../utils/LiteElement";
 import type { Dialog } from "../../../components/dialog";
+import type { Collection } from "../../../types/collection";
 
 @localized()
 @customElement("btrix-new-collection-dialog")
@@ -135,7 +136,7 @@ export class NewCollectionDialog extends LiteElement {
     const { name, description, isPublic } = serialize(form);
     this.isSubmitting = true;
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<Collection>(
         `/orgs/${this.orgId}/collections`,
         this.authState!,
         {

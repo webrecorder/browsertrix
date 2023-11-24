@@ -65,7 +65,7 @@ export class CrawlMetadataEditor extends LiteElement {
 
   private validateCrawlDescriptionMax = maxLengthValidator(500);
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: Map<string, never>) {
     if (changedProperties.has("open") && this.open) {
       this.fetchTags();
     }

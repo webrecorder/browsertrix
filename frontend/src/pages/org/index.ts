@@ -629,7 +629,10 @@ export class Org extends LiteElement {
   }
 
   private async getOrg(orgId: string): Promise<OrgData> {
-    const data = await this.apiFetch(`/orgs/${orgId}`, this.authState!);
+    const data = await this.apiFetch<OrgData>(
+      `/orgs/${orgId}`,
+      this.authState!
+    );
 
     return data;
   }

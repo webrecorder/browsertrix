@@ -5,10 +5,10 @@ import { msg, localized } from "@lit/localize";
 import { truncate } from "../utils/css";
 import type { APIPaginatedList } from "../types/api";
 
-type CrawlLog = {
+export type CrawlLog = {
   timestamp: string;
   logLevel: "error";
-  details: Record<string, any>;
+  details: Record<string, string>;
   context: string;
   message: string;
 };
@@ -82,7 +82,7 @@ export class CrawlLogs extends LitElement {
   ];
 
   @property({ type: Object })
-  logs?: APIPaginatedList;
+  logs?: APIPaginatedList<CrawlLog>;
 
   @property({ type: Boolean })
   paginate = false;
@@ -190,6 +190,7 @@ export class CrawlLogs extends LitElement {
     `;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private renderPre(value: any) {
     let str = value;
     if (typeof value !== "string") {

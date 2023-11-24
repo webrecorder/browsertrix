@@ -46,7 +46,7 @@ export class CollectionDetail extends LiteElement {
   private collection?: Collection;
 
   @state()
-  private archivedItems?: APIPaginatedList;
+  private archivedItems?: APIPaginatedList<Crawl | Upload>;
 
   @state()
   private openDialogName?: "delete";
@@ -794,7 +794,7 @@ export class CollectionDetail extends LiteElement {
     }> &
       APIPaginationQuery &
       APISortQuery
-  ): Promise<APIPaginatedList> {
+  ) {
     const query = queryString.stringify(
       {
         ...params,
@@ -808,7 +808,7 @@ export class CollectionDetail extends LiteElement {
         arrayFormat: "comma",
       }
     );
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Crawl | Upload>>(
       `/orgs/${this.orgId}/all-crawls?collectionId=${this.collectionId}&${query}`,
       this.authState!
     );

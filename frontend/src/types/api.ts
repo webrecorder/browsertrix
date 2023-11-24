@@ -1,5 +1,5 @@
-export type APIPaginatedList = {
-  items: any[];
+export type APIPaginatedList<T = never> = {
+  items: T[];
   total: number;
   page: number;
   pageSize: number;

@@ -6,7 +6,7 @@ import type { SlMenuItem } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
 import type { AuthState } from "../utils/AuthService";
-import type { Collection, CollectionList } from "../types/collection";
+import type { Collection } from "../types/collection";
 import LiteElement, { html } from "../utils/LiteElement";
 import type {
   APIPaginatedList,
@@ -16,10 +16,6 @@ import type {
 
 const INITIAL_PAGE_SIZE = 10;
 const MIN_SEARCH_LENGTH = 2;
-
-type CollectionSearchResults = APIPaginatedList & {
-  items: CollectionList;
-};
 
 export type CollectionsChangeEvent = CustomEvent<{
   collections: string[];
@@ -70,7 +66,7 @@ export class CollectionsAdd extends LiteElement {
   private searchByValue: string = "";
 
   @state()
-  private searchResults: CollectionList = [];
+  private searchResults: Collection[] = [];
 
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
@@ -256,16 +252,15 @@ export class CollectionsAdd extends LiteElement {
       this.searchResultsOpen = true;
     }
 
-    const data: CollectionSearchResults | undefined =
-      await this.fetchCollectionsByPrefix(this.searchByValue);
-    let searchResults: CollectionList = [];
+    const data = await this.fetchCollectionsByPrefix(this.searchByValue);
+    let searchResults: Collection[] = [];
     if (data && data.items.length) {
       searchResults = this.filterOutSelectedCollections(data.items);
     }
     this.searchResults = searchResults;
   }) as any;
 
-  private filterOutSelectedCollections(results: CollectionList) {
+  private filterOutSelectedCollections(results: Collection[]) {
     return results.filter((result) => {
       return !this.collectionIds.some((id) => id === result.id);
     });
@@ -273,7 +268,7 @@ export class CollectionsAdd extends LiteElement {
 
   private async fetchCollectionsByPrefix(namePrefix: string) {
     try {
-      const results: CollectionSearchResults = await this.getCollections({
+      const results = await this.getCollections({
         oid: this.orgId,
         namePrefix: namePrefix,
         sortBy: "name",
@@ -296,11 +291,11 @@ export class CollectionsAdd extends LiteElement {
     }> &
       APIPaginationQuery &
       APISortQuery
-  ): Promise<APIPaginatedList> {
+  ) {
     const query = queryString.stringify(params || {}, {
       arrayFormat: "comma",
     });
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Collection>>(
       `/orgs/${this.orgId}/collections?${query}`,
       this.authState!
     );

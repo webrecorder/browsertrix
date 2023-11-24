@@ -8,7 +8,7 @@ import ISO6391 from "iso-639-1";
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
 import type { CrawlConfig, Seed, SeedConfig } from "../pages/org/types";
-import type { Collection, CollectionList } from "../types/collection";
+import type { Collection } from "../types/collection";
 import { humanizeSchedule } from "../utils/cron";
 import { RelativeDuration } from "./relative-duration";
 import { nothing } from "lit";
@@ -49,7 +49,7 @@ export class ConfigDetails extends LiteElement {
   };
 
   @state()
-  private collections: CollectionList = [];
+  private collections: Collection[] = [];
 
   private readonly scopeTypeLabels: Record<
     CrawlConfig["config"]["scopeType"],
@@ -455,7 +455,7 @@ export class ConfigDetails extends LiteElement {
   }
 
   private async getCollections() {
-    const collections: CollectionList = [];
+    const collections: Collection[] = [];
     const orgId = this.crawlConfig?.oid;
 
     if (this.crawlConfig?.autoAddCollections && orgId) {

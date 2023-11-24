@@ -156,7 +156,7 @@ export class ExclusionEditor extends LiteElement {
 
     try {
       const params = new URLSearchParams({ regex });
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${this.crawlId}/exclusions?${params}`,
         this.authState!,
         {
@@ -215,10 +215,10 @@ export class ExclusionEditor extends LiteElement {
     this.isLoading = false;
   }
 
-  private async getQueueMatches(): Promise<ResponseData> {
+  private async getQueueMatches() {
     const regex = this.regex;
     const params = new URLSearchParams({ regex });
-    const data: ResponseData = await this.apiFetch(
+    const data = await this.apiFetch<ResponseData>(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/queueMatchAll?${params}`,
       this.authState!
     );
@@ -244,7 +244,7 @@ export class ExclusionEditor extends LiteElement {
 
     try {
       const params = new URLSearchParams({ regex });
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${this.crawlId}/exclusions?${params}`,
         this.authState!,
         {

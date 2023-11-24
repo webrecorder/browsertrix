@@ -196,7 +196,7 @@ export class BrowserProfilesNew extends LiteElement {
     };
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ id: string }>(
         `/orgs/${this.orgId}/profiles`,
         this.authState!,
         {

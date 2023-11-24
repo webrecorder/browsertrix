@@ -23,7 +23,8 @@
         "globalTags": ["replay-web-page"],
         "maxNodeModuleImportDepth": -1
       }
-    ]
+    ],
+    "incremental": true
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules"]

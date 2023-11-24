@@ -18,9 +18,7 @@ import type {
 import noCollectionsImg from "../../assets/images/no-collections-found.webp";
 import type { SelectNewDialogEvent } from "./index";
 
-type Collections = APIPaginatedList & {
-  items: Collection[];
-};
+type Collections = APIPaginatedList<Collection>;
 type SearchFields = "name";
 type SearchResult = {
   item: {
@@ -725,9 +723,7 @@ export class CollectionsList extends LiteElement {
     }
   }
 
-  private async getCollections(
-    queryParams?: APIPaginationQuery
-  ): Promise<APIPaginatedList> {
+  private async getCollections(queryParams?: APIPaginationQuery) {
     const query = queryString.stringify(
       {
         ...this.filterBy,
@@ -744,7 +740,7 @@ export class CollectionsList extends LiteElement {
       }
     );
 
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Collection>>(
       `/orgs/${this.orgId}/collections?${query}`,
       this.authState!
     );

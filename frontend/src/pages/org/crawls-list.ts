@@ -14,9 +14,7 @@ import type { Crawl, CrawlState, Workflow, Upload } from "./types";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
 import { isActive, finishedCrawlStates } from "../../utils/crawler";
 
-type Crawls = APIPaginatedList & {
-  items: Crawl[];
-};
+type Crawls = APIPaginatedList<Crawl>;
 type SearchFields = "name" | "firstSeed";
 type SortField = "finished" | "fileSize";
 type SortDirection = "asc" | "desc";

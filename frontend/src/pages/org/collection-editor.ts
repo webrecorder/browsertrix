@@ -119,9 +119,7 @@ export class CollectionEditor extends LiteElement {
   private savedCollectionUploadIds: string[] = [];
 
   @state()
-  private workflows?: APIPaginatedList & {
-    items: Workflow[];
-  };
+  private workflows?: APIPaginatedList<Workflow>;
 
   @state()
   private workflowPagination: {
@@ -136,9 +134,7 @@ export class CollectionEditor extends LiteElement {
   } = {};
 
   @state()
-  private uploads?: APIPaginatedList & {
-    items: Upload[];
-  };
+  private uploads?: APIPaginatedList<Upload>;
 
   @state()
   private selectedCrawls: {
@@ -196,7 +192,7 @@ export class CollectionEditor extends LiteElement {
   });
 
   // For fuzzy search:
-  private fuse = new Fuse([], {
+  private fuse = new Fuse<SearchResult["item"]>([], {
     keys: ["value"],
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
@@ -1369,16 +1365,14 @@ export class CollectionEditor extends LiteElement {
     }
   }
 
-  private async getWorkflows(
-    params: APIPaginationQuery
-  ): Promise<APIPaginatedList> {
+  private async getWorkflows(params: APIPaginationQuery) {
     const query = queryString.stringify({
       ...params,
       ...this.filterWorkflowsBy,
       sortBy: this.orderWorkflowsBy.field,
       sortDirection: this.orderWorkflowsBy.direction === "desc" ? -1 : 1,
     });
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Workflow>>(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
       this.authState!
     );
@@ -1409,12 +1403,12 @@ export class CollectionEditor extends LiteElement {
     }> &
       APIPaginationQuery &
       APISortQuery
-  ): Promise<APIPaginatedList> {
+  ) {
     const query = queryString.stringify({
       state: "complete",
       ...params,
     });
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Upload>>(
       `/orgs/${this.orgId}/uploads?${query}`,
       this.authState!
     );
@@ -1513,11 +1507,11 @@ export class CollectionEditor extends LiteElement {
     }> &
       APIPaginationQuery &
       APISortQuery
-  ): Promise<APIPaginatedList> {
+  ) {
     const query = queryString.stringify(params || {}, {
       arrayFormat: "comma",
     });
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Crawl>>(
       `/orgs/${this.orgId}/crawls?${query}`,
       this.authState!
     );
@@ -1527,10 +1521,10 @@ export class CollectionEditor extends LiteElement {
 
   private async fetchSearchValues() {
     try {
-      const { names, firstSeeds } = await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/search-values`,
-        this.authState!
-      );
+      const { names, firstSeeds } = await this.apiFetch<{
+        names: string[];
+        firstSeeds: string[];
+      }>(`/orgs/${this.orgId}/crawlconfigs/search-values`, this.authState!);
 
       // Update search/filter collection
       const toSearchItem =
@@ -1542,7 +1536,7 @@ export class CollectionEditor extends LiteElement {
       this.fuse.setCollection([
         ...names.map(toSearchItem("name")),
         ...firstSeeds.map(toSearchItem("firstSeed")),
-      ] as any);
+      ]);
     } catch (e) {
       console.debug(e);
     }

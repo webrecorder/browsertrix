@@ -50,7 +50,7 @@ export class Crawls extends LiteElement {
   private crawl?: Crawl;
 
   @state()
-  private crawls?: APIPaginatedList;
+  private crawls?: APIPaginatedList<Crawl>;
 
   @state()
   private slugLookup: Record<string, string> = {};
@@ -341,7 +341,7 @@ export class Crawls extends LiteElement {
 
   private async getCrawls(
     queryParams?: APIPaginationQuery & { state?: CrawlState[] }
-  ): Promise<APIPaginatedList> {
+  ) {
     const query = queryString.stringify(
       {
         ...this.filterBy,
@@ -357,7 +357,7 @@ export class Crawls extends LiteElement {
     );
 
     this.getCrawlsController = new AbortController();
-    const data = await this.apiFetch<APIPaginatedList>(
+    const data = await this.apiFetch<APIPaginatedList<Crawl>>(
       `/orgs/all/crawls?${query}`,
       this.authState!,
       {
@@ -369,8 +369,8 @@ export class Crawls extends LiteElement {
     return data;
   }
 
-  private async getCrawl(): Promise<Crawl> {
-    const data: Crawl = await this.apiFetch(
+  private async getCrawl() {
+    const data: Crawl = await this.apiFetch<Crawl>(
       `/orgs/all/crawls/${this.crawlId}/replay.json`,
       this.authState!
     );
@@ -378,8 +378,11 @@ export class Crawls extends LiteElement {
     return data;
   }
 
-  private async getSlugLookup(): Promise<any> {
-    const data = await this.apiFetch(`/orgs/slug-lookup`, this.authState!);
+  private async getSlugLookup() {
+    const data = await this.apiFetch<Record<string, string>>(
+      `/orgs/slug-lookup`,
+      this.authState!
+    );
 
     return data;
   }
