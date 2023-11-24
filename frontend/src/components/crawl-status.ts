@@ -1,11 +1,7 @@
-import { LitElement, html, css, TemplateResult } from "lit";
-import {
-  customElement,
-  property,
-  queryAssignedElements,
-} from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
-import { msg, localized, str } from "@lit/localize";
+import type { TemplateResult } from "lit";
+import { LitElement, html, css } from "lit";
+import { customElement, property } from "lit/decorators.js";
+import { msg, localized } from "@lit/localize";
 import startCase from "lodash/fp/startCase";
 
 import type { CrawlState } from "../types/crawler";

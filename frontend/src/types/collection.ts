@@ -12,8 +12,6 @@ export type Collection = {
   isPublic: boolean;
 };
 
-export type CollectionList = Collection[];
-
 export type CollectionSearchValues = {
   names: string[];
 };

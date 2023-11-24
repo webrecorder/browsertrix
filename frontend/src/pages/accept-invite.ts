@@ -5,6 +5,12 @@ import LiteElement, { html } from "../utils/LiteElement";
 import type { AuthState } from "../utils/AuthService";
 import { ROUTES } from "../routes";
 
+type InviteInfo = {
+  inviterEmail: string;
+  inviterName: string;
+  orgName: string;
+};
+
 @localized()
 @customElement("btrix-accept-invite")
 export class AcceptInvite extends LiteElement {
@@ -21,11 +27,7 @@ export class AcceptInvite extends LiteElement {
   serverError?: string;
 
   @state()
-  private inviteInfo: {
-    inviterEmail: string;
-    inviterName: string;
-    orgName: string;
-  } = {
+  private inviteInfo: InviteInfo = {
     inviterEmail: "",
     inviterName: "",
     orgName: "",
@@ -125,7 +127,7 @@ export class AcceptInvite extends LiteElement {
     if (!this.authState) return;
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<InviteInfo>(
         `/users/me/invite/${this.token}`,
         this.authState
       );

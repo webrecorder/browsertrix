@@ -1,5 +1,5 @@
 import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 import debounce from "lodash/fp/debounce";
 
 import LiteElement, { html } from "../utils/LiteElement";

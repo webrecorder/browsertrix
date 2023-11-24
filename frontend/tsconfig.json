@@ -11,9 +11,21 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "sourceMap": true,
-    "inlineSources": true
+    "inlineSources": true,
+    "skipLibCheck": true,
+    "plugins": [
+      {
+        "name": "ts-lit-plugin",
+        "strict": true,
+        "rules": {
+          "no-missing-import": "off"
+        },
+        "globalTags": ["replay-web-page"],
+        "maxNodeModuleImportDepth": -1
+      }
+    ],
+    "incremental": true
   },
-  "include": [
-    "**/*.ts"
-  ]
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules"]
 }

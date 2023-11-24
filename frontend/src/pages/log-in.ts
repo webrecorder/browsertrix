@@ -43,10 +43,6 @@ type FormTypestate =
       context: FormContext;
     }
   | {
-      value: "signIn";
-      context: FormContext;
-    }
-  | {
       value: "forgotPassword";
       context: FormContext;
     }

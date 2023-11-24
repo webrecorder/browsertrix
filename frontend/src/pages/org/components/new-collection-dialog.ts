@@ -7,6 +7,7 @@ import { maxLengthValidator } from "../../../utils/form";
 import type { AuthState } from "../../../utils/AuthService";
 import LiteElement, { html } from "../../../utils/LiteElement";
 import type { Dialog } from "../../../components/dialog";
+import type { Collection } from "../../../types/collection";
 
 @localized()
 @customElement("btrix-new-collection-dialog")
@@ -30,8 +31,8 @@ export class NewCollectionDialog extends LiteElement {
 
   render() {
     return html` <btrix-dialog
-      label=${msg(str`Create a New Collection`)}
-      ?open=${this.open}
+      .label=${msg(str`Create a New Collection`)}
+      .open=${this.open}
       style="--width: 46rem"
       @sl-initial-focus=${async (e: CustomEvent) => {
         const nameInput = (await this.form).querySelector(
@@ -52,7 +53,7 @@ export class NewCollectionDialog extends LiteElement {
           placeholder=${msg("My Collection")}
           autocomplete="off"
           required
-          help-text=${this.validateNameMax.helpText}
+          helpText=${this.validateNameMax.helpText}
           @sl-input=${this.validateNameMax.validate}
         ></sl-input>
 
@@ -135,7 +136,7 @@ export class NewCollectionDialog extends LiteElement {
     const { name, description, isPublic } = serialize(form);
     this.isSubmitting = true;
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<Collection>(
         `/orgs/${this.orgId}/collections`,
         this.authState!,
         {

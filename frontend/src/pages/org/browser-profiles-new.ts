@@ -124,8 +124,8 @@ export class BrowserProfilesNew extends LiteElement {
       </div>
 
       <btrix-dialog
-        label=${msg(str`Save Browser Profile`)}
-        ?open=${this.isDialogVisible}
+        .label=${msg(str`Save Browser Profile`)}
+        .open=${this.isDialogVisible}
         @sl-request-close=${() => (this.isDialogVisible = false)}
       >
         ${this.renderForm()}
@@ -152,7 +152,7 @@ export class BrowserProfilesNew extends LiteElement {
         <sl-textarea
           name="description"
           label=${msg("Description")}
-          help-text=${msg("Optional profile description")}
+          helpText=${msg("Optional profile description")}
           placeholder=${msg("Example (example.com) login profile", {
             desc: "Example browser profile name",
           })}
@@ -196,7 +196,7 @@ export class BrowserProfilesNew extends LiteElement {
     };
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ id: string }>(
         `/orgs/${this.orgId}/profiles`,
         this.authState!,
         {

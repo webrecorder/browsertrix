@@ -1,6 +1,6 @@
 import { state, property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
-import { msg, localized, str } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
@@ -9,7 +9,7 @@ import { CrawlStatus } from "../components/crawl-status";
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
-import { activeCrawlStates, inactiveCrawlStates } from "../utils/crawler";
+import { activeCrawlStates } from "../utils/crawler";
 import type { Crawl, CrawlState } from "../types/crawler";
 import type { APIPaginationQuery, APIPaginatedList } from "../types/api";
 import "./org/workflow-detail";
@@ -50,7 +50,7 @@ export class Crawls extends LiteElement {
   private crawl?: Crawl;
 
   @state()
-  private crawls?: APIPaginatedList;
+  private crawls?: APIPaginatedList<Crawl>;
 
   @state()
   private slugLookup: Record<string, string> = {};
@@ -183,7 +183,7 @@ export class Crawls extends LiteElement {
             size="small"
             pill
             multiple
-            max-options-visible="1"
+            maxOptionsVisible="1"
             placeholder=${viewPlaceholder}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
@@ -341,7 +341,7 @@ export class Crawls extends LiteElement {
 
   private async getCrawls(
     queryParams?: APIPaginationQuery & { state?: CrawlState[] }
-  ): Promise<APIPaginatedList> {
+  ) {
     const query = queryString.stringify(
       {
         ...this.filterBy,
@@ -357,7 +357,7 @@ export class Crawls extends LiteElement {
     );
 
     this.getCrawlsController = new AbortController();
-    const data = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Crawl>>(
       `/orgs/all/crawls?${query}`,
       this.authState!,
       {
@@ -369,8 +369,8 @@ export class Crawls extends LiteElement {
     return data;
   }
 
-  private async getCrawl(): Promise<Crawl> {
-    const data: Crawl = await this.apiFetch(
+  private async getCrawl() {
+    const data: Crawl = await this.apiFetch<Crawl>(
       `/orgs/all/crawls/${this.crawlId}/replay.json`,
       this.authState!
     );
@@ -378,8 +378,11 @@ export class Crawls extends LiteElement {
     return data;
   }
 
-  private async getSlugLookup(): Promise<any> {
-    const data = await this.apiFetch(`/orgs/slug-lookup`, this.authState!);
+  private async getSlugLookup() {
+    const data = await this.apiFetch<Record<string, string>>(
+      `/orgs/slug-lookup`,
+      this.authState!
+    );
 
     return data;
   }

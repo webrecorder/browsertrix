@@ -1,7 +1,6 @@
-import type { TemplateResult, LitElement, PropertyValues } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
-import { msg, localized, str } from "@lit/localize";
+import type { LitElement } from "lit";
+import { property, customElement } from "lit/decorators.js";
+import { msg, localized } from "@lit/localize";
 import { mergeDeep } from "immutable";
 
 import type { AuthState } from "../../utils/AuthService";
@@ -75,8 +74,8 @@ export class WorkflowsNew extends LiteElement {
   }
 
   private renderHeader() {
-    let href = `${this.orgBasePath}/workflows/crawls`;
-    let label = msg("Back to Crawl Workflows");
+    const href = `${this.orgBasePath}/workflows/crawls`;
+    const label = msg("Back to Crawl Workflows");
 
     return html`
       <nav class="mb-5">

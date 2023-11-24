@@ -1,5 +1,5 @@
 import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
 
@@ -65,7 +65,7 @@ export class CrawlMetadataEditor extends LiteElement {
 
   private validateCrawlDescriptionMax = maxLengthValidator(500);
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: Map<string, never>) {
     if (changedProperties.has("open") && this.open) {
       this.fetchTags();
     }
@@ -79,8 +79,8 @@ export class CrawlMetadataEditor extends LiteElement {
   render() {
     return html`
       <btrix-dialog
-        label=${msg("Edit Metadata")}
-        ?open=${this.open}
+        .label=${msg("Edit Metadata")}
+        .open=${this.open}
         @sl-show=${() => (this.isDialogVisible = true)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
         @sl-request-close=${this.requestClose}
@@ -116,7 +116,7 @@ export class CrawlMetadataEditor extends LiteElement {
           rows="3"
           autocomplete="off"
           resize="auto"
-          help-text=${helpText}
+          helpText=${helpText}
           @sl-input=${validate}
         ></sl-textarea>
         <btrix-tag-input
@@ -128,7 +128,7 @@ export class CrawlMetadataEditor extends LiteElement {
         ></btrix-tag-input>
         <div class="mt-4">
           <btrix-collections-add
-            .authState=${this.authState}
+            .authState=${this.authState ?? null}
             .initialCollections=${this.crawl.collectionIds}
             .orgId=${this.crawl.oid}
             .configId=${"temp"}
@@ -169,13 +169,14 @@ export class CrawlMetadataEditor extends LiteElement {
   private async fetchTags() {
     if (!this.crawl) return;
     try {
-      const tags = await this.apiFetch(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO fixme
+      const tags = await this.apiFetch<any>(
         `/orgs/${this.crawl.oid}/crawlconfigs/tags`,
         this.authState!
       );
 
       // Update search/filter collection
-      this.fuse.setCollection(tags as any);
+      this.fuse.setCollection(tags);
     } catch (e) {
       // Fail silently, since users can still enter tags
       console.debug(e);
@@ -224,8 +225,8 @@ export class CrawlMetadataEditor extends LiteElement {
     this.isSubmittingUpdate = true;
 
     try {
-      const data = await this.apiFetch(
-        `/orgs/${this.crawl!.oid}/all-crawls/${this.crawl.id}`,
+      const data = await this.apiFetch<{ updated: boolean }>(
+        `/orgs/${this.crawl.oid}/all-crawls/${this.crawl.id}`,
         this.authState!,
         {
           method: "PATCH",

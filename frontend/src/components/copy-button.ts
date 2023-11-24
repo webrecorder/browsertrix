@@ -28,8 +28,8 @@ export class CopyButton extends LitElement {
   @property({ type: String })
   content?: string;
 
-  @property({ type: Function })
-  getValue?: () => string;
+  @property({ attribute: false })
+  getValue?: () => string | undefined;
 
   @state()
   private isCopied: boolean = false;

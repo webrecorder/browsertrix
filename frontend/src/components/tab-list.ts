@@ -1,4 +1,4 @@
-import { LitElement, html, css, CSSResultGroup } from "lit";
+import { LitElement, html, css } from "lit";
 import { property, queryAsync, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
@@ -304,7 +304,7 @@ export class TabList extends LitElement {
 
   private getPanels(): TabPanelElement[] {
     const slotElems = (
-      this.renderRoot!.querySelector(
+      this.renderRoot.querySelector(
         ".content slot:not([name])"
       ) as HTMLSlotElement
     ).assignedElements();
@@ -315,7 +315,7 @@ export class TabList extends LitElement {
 
   private getTabs(): TabElement[] {
     const slotElems = (
-      this.renderRoot!.querySelector("slot[name='nav']") as HTMLSlotElement
+      this.renderRoot.querySelector("slot[name='nav']") as HTMLSlotElement
     ).assignedElements();
     return ([...slotElems] as TabElement[]).filter(
       (el) => el.tagName.toLowerCase() === "btrix-tab"
@@ -343,7 +343,7 @@ export class TabList extends LitElement {
         tab.active = true;
 
         if (!this.progressPanel) {
-          this.repositionIndicator(tab as TabElement, !isFirstChange);
+          this.repositionIndicator(tab, !isFirstChange);
         }
       } else {
         tab.active = false;

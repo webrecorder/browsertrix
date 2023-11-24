@@ -1,9 +1,7 @@
-import type { TemplateResult } from "lit";
 import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
-import { styleMap } from "lit/directives/style-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { ref } from "lit/directives/ref.js";
 import debounce from "lodash/fp/debounce";
@@ -12,18 +10,13 @@ import omit from "lodash/fp/omit";
 import groupBy from "lodash/fp/groupBy";
 import keyBy from "lodash/fp/keyBy";
 import orderBy from "lodash/fp/orderBy";
-import flow from "lodash/fp/flow";
 import uniqBy from "lodash/fp/uniqBy";
 import Fuse from "fuse.js";
 import queryString from "query-string";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 
-import type {
-  CheckboxChangeEvent,
-  CheckboxGroupList,
-} from "../../components/checkbox-list";
-import type { MarkdownChangeEvent } from "../../components/markdown-editor";
+import type { CheckboxChangeEvent } from "../../components/checkbox-list";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { maxLengthValidator } from "../../utils/form";
@@ -126,9 +119,7 @@ export class CollectionEditor extends LiteElement {
   private savedCollectionUploadIds: string[] = [];
 
   @state()
-  private workflows?: APIPaginatedList & {
-    items: Workflow[];
-  };
+  private workflows?: APIPaginatedList<Workflow>;
 
   @state()
   private workflowPagination: {
@@ -143,9 +134,7 @@ export class CollectionEditor extends LiteElement {
   } = {};
 
   @state()
-  private uploads?: APIPaginatedList & {
-    items: Upload[];
-  };
+  private uploads?: APIPaginatedList<Upload>;
 
   @state()
   private selectedCrawls: {
@@ -203,7 +192,7 @@ export class CollectionEditor extends LiteElement {
   });
 
   // For fuzzy search:
-  private fuse = new Fuse([], {
+  private fuse = new Fuse<SearchResult["item"]>([], {
     keys: ["value"],
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
@@ -536,7 +525,7 @@ export class CollectionEditor extends LiteElement {
             autocomplete="off"
             value=${ifDefined(this.metadataValues?.name)}
             required
-            help-text=${this.validateNameMax.helpText}
+            helpText=${this.validateNameMax.helpText}
             @sl-input=${this.validateNameMax.validate}
           ></sl-input>
 
@@ -677,7 +666,7 @@ export class CollectionEditor extends LiteElement {
 
     return html`
       <btrix-checkbox-list-item
-        ?checked=${selectedCrawlIds.length}
+        ?checked=${!!selectedCrawlIds.length}
         ?allChecked=${allChecked}
         group
         aria-controls=${selectedCrawlIds.join(" ")}
@@ -766,9 +755,7 @@ export class CollectionEditor extends LiteElement {
     return html`
       <btrix-checkbox-list-item
         id=${item.id}
-        name="crawlIds"
-        value=${item.id}
-        ?checked=${this.selectedCrawls[item.id]}
+        ?checked=${!!this.selectedCrawls[item.id]}
         @on-change=${(e: CheckboxChangeEvent) => {
           if (e.detail.checked) {
             this.selectedCrawls = mergeDeep(this.selectedCrawls, {
@@ -825,9 +812,7 @@ export class CollectionEditor extends LiteElement {
     return html`
       <btrix-checkbox-list-item
         id=${item.id}
-        name="crawlIds"
-        value=${item.id}
-        ?checked=${this.selectedUploads[item.id]}
+        ?checked=${!!this.selectedUploads[item.id]}
         @on-change=${(e: CheckboxChangeEvent) => {
           if (e.detail.checked) {
             this.selectedUploads = mergeDeep(this.selectedUploads, {
@@ -925,6 +910,7 @@ export class CollectionEditor extends LiteElement {
           @sl-clear=${() => {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { name, firstSeed, ...otherFilters } = this.filterWorkflowsBy;
             this.filterWorkflowsBy = otherFilters;
           }}
@@ -1033,9 +1019,9 @@ export class CollectionEditor extends LiteElement {
     const allChecked = workflow.crawlSuccessfulCount === selectedCrawls.length;
     return html`
       <btrix-checkbox-list-item
-        ?checked=${selectedCrawls.length}
+        ?checked=${!!selectedCrawls.length}
         ?allChecked=${allChecked}
-        ?disabled=${this.collectionId && !this.collectionCrawls}
+        ?disabled=${!!this.collectionId && !this.collectionCrawls}
         group
         @on-change=${(e: CheckboxChangeEvent) => {
           if (e.detail.checked || !allChecked) {
@@ -1117,7 +1103,7 @@ export class CollectionEditor extends LiteElement {
   private renderUploadItem = (upload: Upload) => {
     return html`
       <btrix-checkbox-list-item
-        ?checked=${this.selectedUploads[upload.id]}
+        ?checked=${!!this.selectedUploads[upload.id]}
         @on-change=${(e: CheckboxChangeEvent) => {
           if (e.detail.checked) {
             this.collectionUploads = uniqBy("id")([
@@ -1379,16 +1365,14 @@ export class CollectionEditor extends LiteElement {
     }
   }
 
-  private async getWorkflows(
-    params: APIPaginationQuery
-  ): Promise<APIPaginatedList> {
+  private async getWorkflows(params: APIPaginationQuery) {
     const query = queryString.stringify({
       ...params,
       ...this.filterWorkflowsBy,
       sortBy: this.orderWorkflowsBy.field,
       sortDirection: this.orderWorkflowsBy.direction === "desc" ? -1 : 1,
     });
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Workflow>>(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
       this.authState!
     );
@@ -1419,12 +1403,12 @@ export class CollectionEditor extends LiteElement {
     }> &
       APIPaginationQuery &
       APISortQuery
-  ): Promise<APIPaginatedList> {
+  ) {
     const query = queryString.stringify({
       state: "complete",
       ...params,
     });
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Upload>>(
       `/orgs/${this.orgId}/uploads?${query}`,
       this.authState!
     );
@@ -1523,11 +1507,11 @@ export class CollectionEditor extends LiteElement {
     }> &
       APIPaginationQuery &
       APISortQuery
-  ): Promise<APIPaginatedList> {
+  ) {
     const query = queryString.stringify(params || {}, {
       arrayFormat: "comma",
     });
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Crawl>>(
       `/orgs/${this.orgId}/crawls?${query}`,
       this.authState!
     );
@@ -1537,10 +1521,10 @@ export class CollectionEditor extends LiteElement {
 
   private async fetchSearchValues() {
     try {
-      const { names, firstSeeds } = await this.apiFetch(
-        `/orgs/${this.orgId}/crawlconfigs/search-values`,
-        this.authState!
-      );
+      const { names, firstSeeds } = await this.apiFetch<{
+        names: string[];
+        firstSeeds: string[];
+      }>(`/orgs/${this.orgId}/crawlconfigs/search-values`, this.authState!);
 
       // Update search/filter collection
       const toSearchItem =
@@ -1552,7 +1536,7 @@ export class CollectionEditor extends LiteElement {
       this.fuse.setCollection([
         ...names.map(toSearchItem("name")),
         ...firstSeeds.map(toSearchItem("firstSeed")),
-      ] as any);
+      ]);
     } catch (e) {
       console.debug(e);
     }

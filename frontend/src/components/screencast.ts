@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { msg, localized, str } from "@lit/localize";
+import { localized } from "@lit/localize";
 import { property, state, customElement } from "lit/decorators.js";
 
 type Message = {

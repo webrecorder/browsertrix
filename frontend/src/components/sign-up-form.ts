@@ -1,5 +1,4 @@
 import { state, property, customElement } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, str, localized } from "@lit/localize";
 import debounce from "lodash/fp/debounce";
 import { when } from "lit/directives/when.js";
@@ -148,7 +147,7 @@ export class SignUpForm extends LiteElement {
   private renderPasswordStrength = () => html`
     <div class="my-3">
       <btrix-pw-strength-alert
-        .result=${this.pwStrengthResults}
+        .result=${this.pwStrengthResults ?? undefined}
         min=${PASSWORD_MIN_SCORE}
       >
       </btrix-pw-strength-alert>
@@ -169,7 +168,7 @@ export class SignUpForm extends LiteElement {
       value,
       userInputs
     );
-  }) as any;
+  }) as (e: InputEvent) => void;
 
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();

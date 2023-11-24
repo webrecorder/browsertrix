@@ -1,5 +1,5 @@
 import { state, property, queryAsync, customElement } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
@@ -18,7 +18,7 @@ import { APIError } from "../../../utils/api";
 import { maxLengthValidator } from "../../../utils/form";
 import type { FileRemoveEvent } from "../../../components/file-list";
 
-export type FileUploaderRequestCloseEvent = CustomEvent<{}>;
+export type FileUploaderRequestCloseEvent = CustomEvent<NonNullable<unknown>>;
 export type FileUploaderUploadStartEvent = CustomEvent<{
   fileName: string;
   fileSize: number;
@@ -27,10 +27,6 @@ export type FileUploaderUploadedEvent = CustomEvent<{
   fileName: string;
   fileSize: number;
 }>;
-type UploadMetadata = {
-  name?: string;
-  description?: string;
-};
 
 const ABORT_REASON_USER_CANCEL = "user-canceled";
 const ABORT_REASON_QUOTA_REACHED = "storage_quota_reached";
@@ -117,8 +113,8 @@ export class FileUploader extends LiteElement {
     const uploadInProgress = this.isUploading || this.isConfirmingCancel;
     return html`
       <btrix-dialog
-        label=${msg("Upload Archive")}
-        ?open=${this.open}
+        .label=${msg("Upload Archive")}
+        .open=${this.open}
         @sl-show=${() => (this.isDialogVisible = true)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
         @sl-request-close=${this.tryRequestClose}
@@ -241,7 +237,7 @@ export class FileUploader extends LiteElement {
         rows="3"
         autocomplete="off"
         resize="auto"
-        help-text=${helpText}
+        helpText=${helpText}
         @sl-input=${validate}
       ></sl-textarea>
       <btrix-tag-input
@@ -378,13 +374,13 @@ export class FileUploader extends LiteElement {
 
   private async fetchTags() {
     try {
-      const tags = await this.apiFetch(
+      const tags = await this.apiFetch<never>(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
         this.authState!
       );
 
       // Update search/filter collection
-      this.fuse.setCollection(tags as any);
+      this.fuse.setCollection(tags);
     } catch (e) {
       // Fail silently, since users can still enter tags
       console.debug(e);

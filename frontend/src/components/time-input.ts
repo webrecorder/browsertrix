@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
+import { property, customElement } from "lit/decorators.js";
+import { msg, localized } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 
 export type TimeInputChangeEvent = CustomEvent<{

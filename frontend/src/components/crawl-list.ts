@@ -19,7 +19,6 @@ import {
   queryAssignedElements,
   state,
 } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlMenu } from "@shoelace-style/shoelace";
 import queryString from "query-string";
@@ -29,7 +28,6 @@ import { RelativeDuration } from "./relative-duration";
 import type { Crawl } from "../types/crawler";
 import { srOnly, truncate, dropdown } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
-import { isActive } from "../utils/crawler";
 
 const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;

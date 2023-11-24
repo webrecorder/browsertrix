@@ -192,8 +192,8 @@ export class SelectBrowserProfile extends LiteElement {
     }
   }
 
-  private async getProfiles(): Promise<Profile[]> {
-    const data: APIPaginatedList = await this.apiFetch(
+  private async getProfiles() {
+    const data = await this.apiFetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles`,
       this.authState!
     );

@@ -99,7 +99,7 @@ export class ResetPassword extends LiteElement {
   private renderPasswordStrength = () => html`
     <div class="my-3">
       <btrix-pw-strength-alert
-        .result=${this.pwStrengthResults}
+        .result=${this.pwStrengthResults ?? undefined}
         min=${PASSWORD_MIN_SCORE}
       >
       </btrix-pw-strength-alert>

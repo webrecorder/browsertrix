@@ -17,21 +17,22 @@ export type Seed = {
   depth?: number | null;
 };
 
-export type SeedConfig = Pick<
-  Seed,
-  "scopeType" | "include" | "exclude" | "limit" | "extraHops"
-> & {
-  lang?: string | null;
-  blockAds?: boolean;
-  behaviorTimeout: number | null;
-  pageLoadTimeout: number | null;
-  pageExtraDelay: number | null;
-  behaviors?: string | null;
-  extraHops?: number | null;
-  useSitemap: boolean;
-  failOnFailedSeed: boolean;
-  depth?: number | null;
-};
+type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
+
+export type SeedConfig = Expand<
+  Pick<Seed, "scopeType" | "include" | "exclude" | "limit" | "extraHops"> & {
+    lang?: string | null;
+    blockAds?: boolean;
+    behaviorTimeout: number | null;
+    pageLoadTimeout: number | null;
+    pageExtraDelay: number | null;
+    behaviors?: string | null;
+    extraHops?: number | null;
+    useSitemap: boolean;
+    failOnFailedSeed: boolean;
+    depth?: number | null;
+  }
+>;
 
 export type JobType = "url-list" | "seed-crawl" | "custom";
 

@@ -14,8 +14,12 @@ import type { OrgTab } from "./pages/org";
 import type { NotifyEvent, NavigateEvent } from "./utils/LiteElement";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
-import AuthService, { AuthState } from "./utils/AuthService";
-import type { LoggedInEvent, NeedLoginEvent } from "./utils/AuthService";
+import AuthService from "./utils/AuthService";
+import type {
+  LoggedInEvent,
+  NeedLoginEvent,
+  AuthState,
+} from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser, UserOrg } from "./types/user";
 import type { AuthStorageEventData } from "./utils/AuthService";
@@ -34,7 +38,7 @@ type DialogContent = {
   noHeader?: boolean;
 };
 
-type APIUser = {
+export type APIUser = {
   id: string;
   email: string;
   name: string;
@@ -234,7 +238,7 @@ export class App extends LiteElement {
 
       <sl-dialog
         id="globalDialog"
-        ?no-header=${this.globalDialogContent?.noHeader === true}
+        ?noHeader=${this.globalDialogContent?.noHeader === true}
         label=${this.globalDialogContent?.label || msg("Message")}
         @sl-after-hide=${() => (this.globalDialogContent = {})}
         >${this.globalDialogContent?.body}</sl-dialog
@@ -566,7 +570,6 @@ export class App extends LiteElement {
           class="w-full md:bg-neutral-50 flex items-center justify-center"
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
-          .authState=${this.authService.authState}
           .viewState=${this.viewState}
           redirectUrl=${this.viewState.params.redirectUrl ||
           this.viewState.data?.redirectUrl}
@@ -577,7 +580,6 @@ export class App extends LiteElement {
           class="w-full md:bg-neutral-50 flex items-center justify-center"
           @navigate=${this.onNavigateTo}
           @logged-in=${this.onLoggedIn}
-          .authState=${this.authService.authState}
           .viewState=${this.viewState}
         ></btrix-reset-password>`;
 
@@ -592,8 +594,8 @@ export class App extends LiteElement {
           }}
           @notify="${this.onNotify}"
           .authState=${this.authService.authState}
-          .userInfo=${ifDefined(this.appState.userInfo || undefined)}
-          slug=${ifDefined(this.appState.orgSlug || undefined)}
+          .userInfo=${this.appState.userInfo ?? undefined}
+          slug=${ifDefined(this.appState.orgSlug ?? undefined)}
         ></btrix-home>`;
 
       case "orgs":
@@ -601,7 +603,7 @@ export class App extends LiteElement {
           class="w-full md:bg-neutral-50"
           @navigate="${this.onNavigateTo}"
           .authState="${this.authService.authState}"
-          .userInfo="${this.appState.userInfo}"
+          .userInfo="${this.appState.userInfo ?? undefined}"
         ></btrix-orgs>`;
 
       case "org": {
@@ -621,7 +623,7 @@ export class App extends LiteElement {
           }}
           @notify="${this.onNotify}"
           .authState=${this.authService.authState}
-          .userInfo=${this.appState.userInfo}
+          .userInfo=${this.appState.userInfo ?? undefined}
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
           slug=${slug}
@@ -641,7 +643,7 @@ export class App extends LiteElement {
           }}
           @notify="${this.onNotify}"
           .authState="${this.authService.authState}"
-          .userInfo="${this.appState.userInfo}"
+          .userInfo="${this.appState.userInfo ?? undefined}"
         ></btrix-account-settings>`;
 
       case "usersInvite": {

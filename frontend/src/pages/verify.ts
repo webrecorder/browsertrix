@@ -1,7 +1,7 @@
 import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
-import { AuthState } from "../utils/AuthService";
+import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
 
 @localized()

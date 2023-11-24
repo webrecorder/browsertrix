@@ -79,7 +79,7 @@ export default class LiteElement extends LitElement {
    * ```
    * @param event Click event
    */
-  navLink(event: MouseEvent, href?: string): void {
+  navLink(event: MouseEvent, _href?: string): void {
     if (
       // Detect keypress for opening in a new tab
       event.ctrlKey ||
@@ -115,7 +115,7 @@ export default class LiteElement extends LitElement {
     );
   }
 
-  async apiFetch(
+  async apiFetch<T = unknown>(
     path: string,
     auth: Auth,
     options?: {
@@ -125,7 +125,7 @@ export default class LiteElement extends LitElement {
       signal?: AbortSignal;
       duplex?: string;
     }
-  ) {
+  ): Promise<T> {
     const { headers, ...opts } = options || {};
     const resp = await fetch("/api" + path, {
       headers: {

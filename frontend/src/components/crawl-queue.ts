@@ -5,7 +5,7 @@ import throttle from "lodash/fp/throttle";
 
 import LiteElement, { html } from "../utils/LiteElement";
 import type { AuthState } from "../utils/AuthService";
-import { PropertyValueMap } from "lit";
+import type { PropertyValueMap } from "lit";
 
 type Pages = string[];
 type ResponseData = {
@@ -49,7 +49,7 @@ export class CrawlQueue extends LiteElement {
   regex: string = "";
 
   @property({ type: Array })
-  private exclusions = [];
+  exclusions: string[] = [];
 
   @state()
   private exclusionsRx: RegExp[] = [];
@@ -194,7 +194,7 @@ export class CrawlQueue extends LiteElement {
   private onLoadMoreIntersect = throttle(50)((e: CustomEvent) => {
     if (!e.detail.entry.isIntersecting) return;
     this.loadMore();
-  });
+  }) as (e: CustomEvent) => void;
 
   private loadMore() {
     this.pageSize = this.pageSize + 50;
