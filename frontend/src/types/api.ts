@@ -1,7 +1,7 @@
 /**
  * If no generic type is specified, `items` cannot exist.
  */
-export type APIPaginatedList<T = never> = never extends T
+export type APIPaginatedList<T = never> = [T] extends [never]
   ? {
       total: number;
       page: number;
