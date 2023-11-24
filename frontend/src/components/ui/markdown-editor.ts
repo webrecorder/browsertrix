@@ -1,3 +1,5 @@
+// cSpell:words wysimark
+
 import { LitElement, html } from "lit";
 import { state, property, customElement } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";

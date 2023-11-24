@@ -22,7 +22,7 @@ const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
 @localized()
 @customElement("btrix-sign-up-form")
 export class SignUpForm extends LiteElement {
-  /** Optonal read-only email, e.g. for invitations */
+  /** Optional read-only email, e.g. for invitations */
   @property({ type: String })
   email?: string;
 

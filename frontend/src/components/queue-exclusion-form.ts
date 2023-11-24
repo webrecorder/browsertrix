@@ -229,7 +229,7 @@ export class QueueExclusionForm extends LiteElement {
   }
 
   /**
-   * Stop propgation of sl-select events.
+   * Stop propagation of sl-select events.
    * Prevents bug where sl-dialog closes when dropdown closes
    * https://github.com/shoelace-style/shoelace/issues/170
    */

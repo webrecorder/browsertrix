@@ -4,6 +4,7 @@
     "esbenp.prettier-vscode",
     "runem.lit-plugin",
     "bradlc.vscode-tailwindcss",
-    "redhat.vscode-yaml"
+    "redhat.vscode-yaml",
+    "streetsidesoftware.code-spell-checker"
   ]
 }

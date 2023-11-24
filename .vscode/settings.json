@@ -16,5 +16,29 @@
     "tag:yaml.org,2002:python/name:materialx.emoji.to_svg",
     "tag:yaml.org,2002:python/name:materialx.emoji.twemoji",
     "tag:yaml.org,2002:python/name:pymdownx.superfences.fence_code_format"
+  ],
+  "cSpell.words": [
+    "Browsertrix",
+    "btrix",
+    "Elems",
+    "hoverable",
+    "profileid",
+    "wacz",
+    "Webrecorder",
+    "zxcvbn"
+  ],
+  "cSpell.languageSettings": [
+    {
+      "languageId": "typescript",
+      "allowCompoundWords": true,
+      "dictionaries": [
+        "typescript",
+        "node",
+        "html",
+        "fonts",
+        "typescript",
+        "css"
+      ]
+    }
   ]
 }

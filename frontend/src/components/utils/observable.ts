@@ -6,7 +6,7 @@ export type IntersectEvent = CustomEvent<{
 }>;
 
 /**
- * Observe element with Intersection Obserer API.
+ * Observe element with Intersection Observer API.
  *
  * @example Usage:
  * ```

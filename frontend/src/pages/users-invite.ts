@@ -1,6 +1,5 @@
 import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import { ifDefined } from "lit/directives/if-defined.js";
 
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
@@ -47,9 +46,9 @@ export class UsersInvite extends LiteElement {
         <btrix-invite-form
           .authState=${this.authState}
           .orgs=${this.userInfo?.orgs || []}
-          .defaultOrg=${ifDefined(
-            this.userInfo?.orgs.find((org) => org.default === true)
-          )}
+          .defaultOrg=${this.userInfo?.orgs.find(
+            (org) => org.default === true
+          ) ?? null}
           @success=${this.onSuccess}
         ></btrix-invite-form>
       </main>
