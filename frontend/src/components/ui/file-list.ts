@@ -5,7 +5,7 @@ import {
   queryAssignedElements,
 } from "lit/decorators.js";
 
-import { truncate } from "../utils/css";
+import { truncate } from "../../utils/css";
 
 export type FileRemoveEvent = CustomEvent<{
   file: File;

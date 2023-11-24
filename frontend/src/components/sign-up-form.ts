@@ -7,7 +7,7 @@ import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 import LiteElement, { html } from "../utils/LiteElement";
 import AuthService from "../utils/AuthService";
 import PasswordService from "../utils/PasswordService";
-import type { Input as BtrixInput } from "./input/input";
+import type { Input as BtrixInput } from "./ui/input/input";
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;

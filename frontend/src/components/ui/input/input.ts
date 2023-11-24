@@ -3,7 +3,7 @@ import { property, state, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg } from "@lit/localize";
 
-import LiteElement from "../../utils/LiteElement";
+import LiteElement from "../../../utils/LiteElement";
 import "./input.css";
 
 /**
