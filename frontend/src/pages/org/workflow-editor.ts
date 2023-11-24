@@ -1,5 +1,4 @@
 import type { LitElement, TemplateResult } from "lit";
-import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import type {
   SlChangeEvent,
   SlCheckbox,
@@ -55,8 +54,9 @@ import type {
   JobType,
   Seed,
   SeedConfig,
+  CrawlConfig,
 } from "./types";
-import type { CollectionList } from "../../types/collection";
+import type { LanguageCode } from "iso-639-1";
 
 type NewCrawlConfigParams = WorkflowParams & {
   runNow: boolean;
@@ -228,6 +228,14 @@ const DEFAULT_BEHAVIORS = [
 const BYTES_PER_GB = 1e9;
 const URL_LIST_MAX_URLS = 1000;
 
+type CrawlConfigResponse = {
+  run_now_job?: boolean;
+  started?: boolean;
+  storageQuotaReached?: boolean;
+  execMinutesQuotaReached?: boolean;
+  quotas?: { maxPagesPerCrawl?: number };
+  id?: string;
+};
 @localized()
 @customElement("btrix-workflow-editor")
 export class CrawlConfigEditor extends LiteElement {
@@ -278,7 +286,7 @@ export class CrawlConfigEditor extends LiteElement {
   private serverError?: TemplateResult | string;
 
   // For fuzzy search:
-  private fuse = new Fuse([], {
+  private fuse = new Fuse<string>([], {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
@@ -298,7 +306,7 @@ export class CrawlConfigEditor extends LiteElement {
       return "";
     }
     return getUTCSchedule({
-      interval: this.formState.scheduleFrequency!,
+      interval: this.formState.scheduleFrequency,
       dayOfMonth: this.formState.scheduleDayOfMonth,
       dayOfWeek: this.formState.scheduleDayOfWeek,
       ...this.formState.scheduleTime!,
@@ -586,7 +594,7 @@ export class CrawlConfigEditor extends LiteElement {
     };
     let orderedTabNames = STEPS.filter(
       (stepName) => defaultProgressState.tabs[stepName as StepName]
-    ) as StepName[];
+    );
 
     if (this.configId) {
       // Remove review tab
@@ -1215,7 +1223,11 @@ https://example.com/path`}
             <sl-input
               name="maxScopeDepth"
               label=${msg("Max Depth")}
-              value=${this.formState.maxScopeDepth}
+              value=${ifDefined(
+                this.formState.maxScopeDepth === null
+                  ? undefined
+                  : this.formState.maxScopeDepth
+              )}
               placeholder=${msg("Default: Unlimited")}
               min="0"
               type="number"
@@ -1588,6 +1600,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private renderCrawlBehaviors() {
+    if (!this.formState.lang) throw new Error("missing formstate.lang");
     return html`
       ${this.renderFormCol(html`
         <btrix-select-browser-profile
@@ -1622,10 +1635,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <btrix-language-select
-          value=${this.formState.lang}
+          .value=${this.formState.lang as LanguageCode}
           @on-change=${(e: CustomEvent) => {
             this.updateFormState({
-              lang: (e.detail as any).value,
+              lang: e.detail.value,
             });
           }}
         >
@@ -1701,7 +1714,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             <sl-radio-group
               name="scheduleDayOfWeek"
               label=${msg("Day")}
-              value=${this.formState.scheduleDayOfWeek}
+              value=${ifDefined(this.formState.scheduleDayOfWeek)}
               @sl-change=${(e: Event) =>
                 this.updateFormState({
                   scheduleDayOfWeek: +(e.target as SlRadioGroup).value,
@@ -1729,7 +1742,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               inputmode="numeric"
               min="1"
               max="31"
-              value=${this.formState.scheduleDayOfMonth}
+              value=${ifDefined(this.formState.scheduleDayOfMonth)}
               required
             >
             </sl-input>
@@ -1791,7 +1804,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           autocomplete="off"
           placeholder=${msg("Our Website (example.com)")}
           value=${this.formState.jobName}
-          help-text=${this.validateNameMax.helpText}
+          helpText=${this.validateNameMax.helpText}
           @sl-input=${this.validateNameMax.validate}
         ></sl-input>
       `)}
@@ -1805,8 +1818,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="description"
           label=${msg("Description")}
           autocomplete="off"
-          value=${this.formState.description}
-          help-text=${this.validateDescriptionMax.helpText}
+          value=${ifDefined(
+            this.formState.description === null
+              ? undefined
+              : this.formState.description
+          )}
+          helpText=${this.validateDescriptionMax.helpText}
           @sl-input=${this.validateDescriptionMax.validate}
         ></sl-textarea>
       `)}
@@ -1893,7 +1910,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
           return html`<btrix-config-details
             .authState=${this.authState!}
-            .crawlConfig=${{ ...crawlConfig, profileName, oid: this.orgId }}
+            .crawlConfig=${{
+              ...crawlConfig,
+              profileName,
+              oid: this.orgId,
+            } as CrawlConfig}
             .seeds=${crawlConfig.config.seeds}
           >
           </btrix-config-details>`;
@@ -1904,7 +1925,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   };
 
-  private hasRequiredFields(): Boolean {
+  private hasRequiredFields(): boolean {
     if (this.jobType === "seed-crawl") {
       return Boolean(this.formState.primarySeedUrl);
     }
@@ -2079,7 +2100,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private backStep() {
-    const targetTabIdx = STEPS.indexOf(this.progressState.activeTab!);
+    const targetTabIdx = STEPS.indexOf(this.progressState.activeTab);
     if (targetTabIdx) {
       this.updateProgressState({
         activeTab: STEPS[targetTabIdx - 1] as StepName,
@@ -2092,7 +2113,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     if (isValid) {
       const { activeTab } = this.progressState;
-      const nextTab = STEPS[STEPS.indexOf(activeTab!) + 1] as StepName;
+      const nextTab = STEPS[STEPS.indexOf(activeTab) + 1] as StepName;
       this.updateProgressState({
         activeTab: nextTab,
         tabs: {
@@ -2163,7 +2184,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     try {
       const data = await (this.configId
-        ? this.apiFetch(
+        ? this.apiFetch<CrawlConfigResponse>(
             `/orgs/${this.orgId}/crawlconfigs/${this.configId}`,
             this.authState!,
             {
@@ -2171,10 +2192,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
               body: JSON.stringify(config),
             }
           )
-        : this.apiFetch(`/orgs/${this.orgId}/crawlconfigs/`, this.authState!, {
-            method: "POST",
-            body: JSON.stringify(config),
-          }));
+        : this.apiFetch<CrawlConfigResponse>(
+            `/orgs/${this.orgId}/crawlconfigs/`,
+            this.authState!,
+            {
+              method: "POST",
+              body: JSON.stringify(config),
+            }
+          ));
 
       const crawlId = data.run_now_job || data.started || null;
       const storageQuotaReached = data.storageQuotaReached;
@@ -2297,13 +2322,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async fetchTags() {
     this.tagOptions = [];
     try {
-      const tags = await this.apiFetch(
+      const tags = await this.apiFetch<string[]>(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
         this.authState!
       );
 
       // Update search/filter collection
-      this.fuse.setCollection(tags as any);
+      this.fuse.setCollection(tags);
     } catch (e) {
       // Fail silently, since users can still enter tags
       console.debug(e);
@@ -2443,7 +2468,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       if (!resp.ok) {
         throw new Error(resp.statusText);
       }
-      let orgDefaults = {
+      const orgDefaults = {
         ...this.orgDefaults,
       };
       const data = await resp.json();
@@ -2464,8 +2489,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private async fetchOrgQuotaDefaults() {
     try {
-      const data = await this.apiFetch(`/orgs/${this.orgId}`, this.authState!);
-      let orgDefaults = {
+      const data = await this.apiFetch<{
+        quotas: { maxPagesPerCrawl?: number };
+      }>(`/orgs/${this.orgId}`, this.authState!);
+      const orgDefaults = {
         ...this.orgDefaults,
       };
       if (data.quotas.maxPagesPerCrawl && data.quotas.maxPagesPerCrawl > 0) {

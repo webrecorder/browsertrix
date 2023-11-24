@@ -1,5 +1,5 @@
-import { LitElement, html, css } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
+import { LitElement, css } from "lit";
+import { property, customElement } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import { micromark } from "micromark";
 

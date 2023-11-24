@@ -46,7 +46,7 @@ export class CollectionDetail extends LiteElement {
   private collection?: Collection;
 
   @state()
-  private archivedItems?: APIPaginatedList;
+  private archivedItems?: APIPaginatedList<Crawl | Upload>;
 
   @state()
   private openDialogName?: "delete";
@@ -143,8 +143,8 @@ export class CollectionDetail extends LiteElement {
       )}
 
       <btrix-dialog
-        label=${msg("Delete Collection?")}
-        ?open=${this.openDialogName === "delete"}
+        .label=${msg("Delete Collection?")}
+        .open=${this.openDialogName === "delete"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
       >
         ${msg(
@@ -181,8 +181,8 @@ export class CollectionDetail extends LiteElement {
   private renderShareDialog() {
     return html`
       <btrix-dialog
-        label=${msg("Share Collection")}
-        ?open=${this.showShareInfo}
+        .label=${msg("Share Collection")}
+        .open=${this.showShareInfo}
         @sl-request-close=${() => (this.showShareInfo = false)}
         style="--width: 32rem;"
       >
@@ -503,7 +503,7 @@ export class CollectionDetail extends LiteElement {
                         style=${`max-height: ${DESCRIPTION_MAX_HEIGHT_PX}px`}
                       >
                         <btrix-markdown-viewer
-                          value=${this.collection!.description}
+                          value=${this.collection.description}
                         ></btrix-markdown-viewer>
                       </div>
                       <div
@@ -622,7 +622,7 @@ export class CollectionDetail extends LiteElement {
     html`
       <btrix-crawl-list-item
         orgSlug=${this.appState.orgSlug || ""}
-        .crawl=${item}
+        .crawl=${item as Crawl}
       >
         ${when(
           this.isCrawler,
@@ -693,7 +693,7 @@ export class CollectionDetail extends LiteElement {
   };
 
   private async onTogglePublic(isPublic: boolean) {
-    const res = await this.apiFetch(
+    const res = await this.apiFetch<{ updated: boolean }>(
       `/orgs/${this.orgId}/collections/${this.collectionId}`,
       this.authState!,
       {
@@ -716,7 +716,7 @@ export class CollectionDetail extends LiteElement {
 
     try {
       const name = this.collection.name;
-      await this.apiFetch(
+      const _data: Crawl | Upload = await this.apiFetch(
         `/orgs/${this.orgId}/collections/${this.collection.id}`,
         this.authState!,
         {
@@ -752,8 +752,8 @@ export class CollectionDetail extends LiteElement {
     }
   }
 
-  private async getCollection(): Promise<Collection> {
-    const data = await this.apiFetch(
+  private async getCollection() {
+    const data = await this.apiFetch<Collection>(
       `/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`,
       this.authState!
     );
@@ -794,7 +794,7 @@ export class CollectionDetail extends LiteElement {
     }> &
       APIPaginationQuery &
       APISortQuery
-  ): Promise<APIPaginatedList> {
+  ) {
     const query = queryString.stringify(
       {
         ...params,
@@ -808,7 +808,7 @@ export class CollectionDetail extends LiteElement {
         arrayFormat: "comma",
       }
     );
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Crawl | Upload>>(
       `/orgs/${this.orgId}/all-crawls?collectionId=${this.collectionId}&${query}`,
       this.authState!
     );
@@ -818,7 +818,7 @@ export class CollectionDetail extends LiteElement {
 
   private async removeArchivedItem(id: string, pageIndex: number) {
     try {
-      const data: Crawl | Upload = await this.apiFetch(
+      await this.apiFetch(
         `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
         this.authState!,
         {

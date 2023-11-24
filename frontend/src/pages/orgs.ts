@@ -64,8 +64,8 @@ export class Orgs extends LiteElement {
     `;
   }
 
-  private async getOrgs(): Promise<OrgData[]> {
-    const data: APIPaginatedList = await this.apiFetch(
+  private async getOrgs() {
+    const data = await this.apiFetch<APIPaginatedList<OrgData>>(
       "/orgs",
       this.authState!
     );

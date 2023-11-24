@@ -57,7 +57,7 @@ export class ProfileBrowser extends LiteElement {
   private showOriginSidebar = false;
 
   @state()
-  private newOrigins: string[] = [];
+  private newOrigins?: string[] = [];
 
   @query("#profileBrowserSidebar")
   private sidebar?: HTMLElement;
@@ -227,7 +227,7 @@ export class ProfileBrowser extends LiteElement {
   }
 
   private renderNewOrigins() {
-    if (!this.newOrigins.length) return;
+    if (!this.newOrigins?.length) return;
 
     return html`
       <h4 class="text-xs text-neutral-500 leading-tight p-2 border-b">
@@ -317,11 +317,11 @@ export class ProfileBrowser extends LiteElement {
     }
   }
 
-  private async getBrowser(): Promise<{
-    detail?: string;
-    url?: string;
-  }> {
-    const data = await this.apiFetch(
+  private async getBrowser() {
+    const data = await this.apiFetch<{
+      detail?: string;
+      url?: string;
+    }>(
       `/orgs/${this.orgId}/profiles/browser/${this.browserId}`,
       this.authState!
     );
@@ -353,7 +353,7 @@ export class ProfileBrowser extends LiteElement {
   private async pingBrowser() {
     if (!this.iframeSrc) return;
 
-    const data = await this.apiFetch(
+    const data = await this.apiFetch<{ origins?: string[] }>(
       `/orgs/${this.orgId}/profiles/browser/${this.browserId}/ping`,
       this.authState!,
       {

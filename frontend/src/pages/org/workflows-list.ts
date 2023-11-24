@@ -1,5 +1,4 @@
-import type { HTMLTemplateResult, PropertyValueMap } from "lit";
-import { state, property, query, customElement } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -7,9 +6,9 @@ import queryString from "query-string";
 
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, ListWorkflow, Workflow, WorkflowParams } from "./types";
+import type { ListWorkflow, Seed, Workflow, WorkflowParams } from "./types";
 import { CopyButton } from "../../components/copy-button";
-import { SlCheckbox } from "@shoelace-style/shoelace";
+import type { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
 import type { PageChangeEvent } from "../../components/pagination";
 import type { SelectNewDialogEvent } from "./index";
@@ -85,9 +84,7 @@ export class WorkflowsList extends LiteElement {
   isCrawler!: boolean;
 
   @state()
-  private workflows?: APIPaginatedList & {
-    items: ListWorkflow[];
-  };
+  private workflows?: APIPaginatedList<ListWorkflow>;
 
   @state()
   private searchOptions: any[] = [];
@@ -370,7 +367,11 @@ export class WorkflowsList extends LiteElement {
           };
         }}
         @on-clear=${() => {
-          const { name, firstSeed, ...otherFilters } = this.filterBy;
+          const {
+            name: _name,
+            firstSeed: _firstSeed,
+            ...otherFilters
+          } = this.filterBy;
           this.filterBy = otherFilters;
         }}
       >
@@ -594,8 +595,8 @@ export class WorkflowsList extends LiteElement {
    * Fetch Workflows and update state
    **/
   private async getWorkflows(
-    queryParams?: APIPaginationQuery & {}
-  ): Promise<APIPaginatedList> {
+    queryParams?: APIPaginationQuery & Record<string, unknown>
+  ) {
     const query = queryString.stringify(
       {
         ...this.filterBy,
@@ -614,7 +615,7 @@ export class WorkflowsList extends LiteElement {
     );
 
     this.getWorkflowsController = new AbortController();
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Workflow>>(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
       this.authState!,
       {
@@ -723,7 +724,7 @@ export class WorkflowsList extends LiteElement {
   private async cancel(crawlId: ListWorkflow["lastCrawlId"]) {
     if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${crawlId}/cancel`,
         this.authState!,
         {
@@ -745,7 +746,7 @@ export class WorkflowsList extends LiteElement {
   private async stop(crawlId: ListWorkflow["lastCrawlId"]) {
     if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${crawlId}/stop`,
         this.authState!,
         {
@@ -766,7 +767,7 @@ export class WorkflowsList extends LiteElement {
 
   private async runNow(workflow: ListWorkflow): Promise<void> {
     try {
-      const data = await this.apiFetch(
+      await this.apiFetch(
         `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/run`,
         this.authState!,
         {
@@ -847,9 +848,9 @@ export class WorkflowsList extends LiteElement {
     return data;
   }
 
-  private async getSeeds(workflow: ListWorkflow): Promise<APIPaginatedList> {
+  private async getSeeds(workflow: ListWorkflow) {
     // NOTE Returns first 1000 seeds (backend pagination max)
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawlconfigs/${workflow.id}/seeds`,
       this.authState!
     );

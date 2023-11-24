@@ -36,7 +36,7 @@ export class LocalePicker extends LitElement {
 
     return html`
       <sl-dropdown
-        value=${selectedLocale}
+        value="${selectedLocale}"
         @sl-select=${this.localeChanged}
         placement="top-end"
         distance="4"

@@ -4,7 +4,8 @@ import sortBy from "lodash/fp/sortBy";
 
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
-import { OrgData } from "../types/org";
+import type { OrgData } from "../types/org";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 const sortByName = sortBy("name");
 
@@ -18,10 +19,10 @@ export class InviteForm extends LiteElement {
   authState?: AuthState;
 
   @property({ type: Array })
-  orgs: OrgData[] = [];
+  orgs?: OrgData[] = [];
 
   @property({ type: Object })
-  defaultOrg: OrgData | null = null;
+  defaultOrg: Partial<OrgData> | null = null;
 
   @state()
   private isSubmitting: boolean = false;
@@ -66,7 +67,9 @@ export class InviteForm extends LiteElement {
         <div class="mb-5">
           <sl-select
             label=${msg("Organization")}
-            value=${this.defaultOrg ? this.defaultOrg.id : sortedOrgs[0]?.id}
+            value=${ifDefined(
+              this.defaultOrg ? this.defaultOrg.id : sortedOrgs[0]?.id
+            )}
             @sl-change=${(e: Event) => {
               this.selectedOrgId = (e.target as HTMLSelectElement).value;
             }}
@@ -124,7 +127,7 @@ export class InviteForm extends LiteElement {
     const inviteEmail = formData.get("inviteEmail") as string;
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ invited: string }>(
         `/orgs/${this.selectedOrgId}/invite`,
         this.authState,
         {

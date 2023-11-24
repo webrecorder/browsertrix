@@ -13,7 +13,7 @@ export type ScheduleInterval = "daily" | "weekly" | "monthly";
 export function getScheduleInterval(
   schedule: string
 ): "daily" | "weekly" | "monthly" {
-  const [minute, hour, dayofMonth, month, dayOfWeek] = schedule.split(" ");
+  const [_minute, _hour, dayofMonth, _month, dayOfWeek] = schedule.split(" ");
   if (dayofMonth === "*") {
     if (dayOfWeek === "*") {
       return "daily";

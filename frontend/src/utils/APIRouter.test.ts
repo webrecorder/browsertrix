@@ -1,4 +1,3 @@
-import { spy } from "sinon";
 import { expect } from "@esm-bundle/chai";
 
 import APIRouter from "./APIRouter";

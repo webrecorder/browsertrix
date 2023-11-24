@@ -2,9 +2,7 @@ import { LitElement, html, css } from "lit";
 import {
   customElement,
   property,
-  query,
   queryAssignedElements,
-  state,
 } from "lit/decorators.js";
 
 import { truncate } from "../utils/css";
@@ -63,7 +61,7 @@ export class FileListItem extends LitElement {
     `,
   ];
 
-  @property({ type: File })
+  @property({ attribute: false })
   file?: File | null = null;
 
   @property({ type: Number })

@@ -25,6 +25,7 @@
   box-shadow: none;
   padding: 0 var(--sl-input-spacing-medium);
   cursor: inherit;
+  appearance: none;
   -webkit-appearance: none;
   transition: var(--sl-transition-fast) border,
     var(--sl-transition-fast) box-shadow,

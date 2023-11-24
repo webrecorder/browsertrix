@@ -17,18 +17,14 @@ import {
   property,
   query,
   queryAssignedElements,
-  state,
 } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import queryString from "query-string";
 
-import type { Button } from "./button";
 import { RelativeDuration } from "./relative-duration";
 import type { Crawl } from "../types/crawler";
 import { srOnly, truncate } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
-import { isActive } from "../utils/crawler";
 import type { OverflowDropdown } from "./overflow-dropdown";
 
 const mediumBreakpointCss = css`30rem`;

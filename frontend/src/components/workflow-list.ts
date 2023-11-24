@@ -16,18 +16,15 @@ import {
   property,
   query,
   queryAssignedElements,
-  state,
   customElement,
 } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
-import type { SlIconButton, SlMenu } from "@shoelace-style/shoelace";
 
 import { RelativeDuration } from "./relative-duration";
-import type { Crawl, ListWorkflow } from "../types/crawler";
+import type { ListWorkflow } from "../types/crawler";
 import { srOnly, truncate } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
-import { humanizeNextDate, humanizeSchedule } from "../utils/cron";
+import { humanizeSchedule } from "../utils/cron";
 import { numberFormatter } from "../utils/number";
 import type { OverflowDropdown } from "./overflow-dropdown";
 

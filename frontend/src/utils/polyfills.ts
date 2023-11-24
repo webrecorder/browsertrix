@@ -10,8 +10,8 @@ if (!Object.fromEntries) {
         "Object.fromEntries() requires a single iterable argument"
       );
     }
-    let obj: any = {};
-    for (let [key, value] of entries) {
+    const obj: any = {};
+    for (const [key, value] of entries) {
       obj[key] = value;
     }
     return obj;

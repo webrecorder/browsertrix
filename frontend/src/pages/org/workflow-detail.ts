@@ -1,8 +1,7 @@
-import type { HTMLTemplateResult, TemplateResult } from "lit";
+import type { TemplateResult } from "lit";
 import { state, property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { until } from "lit/directives/until.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import queryString from "query-string";
 
@@ -16,21 +15,20 @@ import type {
   CrawlState,
   Workflow,
   WorkflowParams,
-  JobType,
   Seed,
 } from "./types";
-import { humanizeSchedule, humanizeNextDate } from "../../utils/cron";
-import { APIPaginatedList } from "../../types/api";
+import { humanizeSchedule } from "../../utils/cron";
+import type { APIPaginatedList } from "../../types/api";
 import { inactiveCrawlStates, isActive } from "../../utils/crawler";
-import { SlSelect } from "@shoelace-style/shoelace";
+import type { SlSelect } from "@shoelace-style/shoelace";
 import type { PageChangeEvent } from "../../components/pagination";
 import { ExclusionEditor } from "../../components/exclusion-editor";
+import type { CrawlLog } from "../../components/crawl-logs";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];
 const DEFAULT_SECTION: Tab = "crawls";
 const POLL_INTERVAL_SECONDS = 10;
-const ABORT_REASON_CANCLED = "canceled";
 const LOGS_PAGE_SIZE = 50;
 
 /**
@@ -64,7 +62,7 @@ export class WorkflowDetail extends LiteElement {
   isCrawler!: boolean;
 
   @property({ type: String })
-  openDialogName?: "scale" | "exclusions" | "cancel" | "stop";
+  openDialogName?: "scale" | "exclusions" | "cancel" | "stop" | "delete";
 
   @property({ type: String })
   initialActivePanel?: Tab;
@@ -73,15 +71,13 @@ export class WorkflowDetail extends LiteElement {
   private workflow?: Workflow;
 
   @state()
-  private seeds?: APIPaginatedList & {
-    items: Seed[];
-  };
+  private seeds?: APIPaginatedList<Seed>;
 
   @state()
-  private crawls?: APIPaginatedList; // Only inactive crawls
+  private crawls?: APIPaginatedList<Crawl>; // Only inactive crawls
 
   @state()
-  private logs?: APIPaginatedList;
+  private logs?: APIPaginatedList<CrawlLog>;
 
   @state()
   private lastCrawlId: Workflow["lastCrawlId"] = null;
@@ -108,6 +104,9 @@ export class WorkflowDetail extends LiteElement {
   private isCancelingOrStoppingCrawl: boolean = false;
 
   @state()
+  private crawlToDelete: Crawl | null = null;
+
+  @state()
   private filterBy: Partial<Record<keyof Crawl, any>> = {};
 
   // TODO localize
@@ -125,13 +124,7 @@ export class WorkflowDetail extends LiteElement {
   private isPanelHeaderVisible?: boolean;
 
   private getWorkflowPromise?: Promise<Workflow>;
-  private getSeedsPromise?: Promise<APIPaginatedList>;
-
-  private readonly jobTypeLabels: Record<JobType, string> = {
-    "url-list": msg("URL List"),
-    "seed-crawl": msg("Seeded Crawl"),
-    custom: msg("Custom"),
-  };
+  private getSeedsPromise?: Promise<APIPaginatedList<Seed>>;
 
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Crawls"),
@@ -309,8 +302,8 @@ export class WorkflowDetail extends LiteElement {
       </div>
 
       <btrix-dialog
-        label=${msg("Stop Crawl?")}
-        ?open=${this.openDialogName === "stop"}
+        .label=${msg("Stop Crawl?")}
+        .open=${this.openDialogName === "stop"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${this.showDialog}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
@@ -321,8 +314,9 @@ export class WorkflowDetail extends LiteElement {
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
+            .autofocus=${true}
             @click=${() => (this.openDialogName = undefined)}
-            >Keep Crawling</sl-button
+            >${msg("Keep Crawling")}</sl-button
           >
           <sl-button
             size="small"
@@ -332,13 +326,13 @@ export class WorkflowDetail extends LiteElement {
               await this.stop();
               this.openDialogName = undefined;
             }}
-            >Stop Crawling</sl-button
+            >${msg("Stop Crawling")}</sl-button
           >
         </div>
       </btrix-dialog>
       <btrix-dialog
-        label=${msg("Cancel Crawl?")}
-        ?open=${this.openDialogName === "cancel"}
+        .label=${msg("Cancel Crawl?")}
+        .open=${this.openDialogName === "cancel"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${this.showDialog}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
@@ -349,8 +343,9 @@ export class WorkflowDetail extends LiteElement {
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
+            .autofocus=${true}
             @click=${() => (this.openDialogName = undefined)}
-            >Keep Crawling</sl-button
+            >${msg("Keep Crawling")}</sl-button
           >
           <sl-button
             size="small"
@@ -360,7 +355,37 @@ export class WorkflowDetail extends LiteElement {
               await this.cancel();
               this.openDialogName = undefined;
             }}
-            >Cancel & Discard Crawl</sl-button
+            >${msg("Cancel & Discard Crawl")}</sl-button
+          >
+        </div>
+      </btrix-dialog>
+      <btrix-dialog
+        .label=${msg("Delete Crawl?")}
+        .open=${this.openDialogName === "delete"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-show=${this.showDialog}
+        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      >
+        ${msg(
+          "All files and logs associated with this crawl will also be deleted, and the crawl will be removed from any Collection it is a part of."
+        )}
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            .autofocus=${true}
+            @click=${() => (this.openDialogName = undefined)}
+            >${msg("Cancel")}</sl-button
+          >
+          <sl-button
+            size="small"
+            variant="danger"
+            @click=${async () => {
+              this.openDialogName = undefined;
+              if (this.crawlToDelete) {
+                await this.deleteCrawl(this.crawlToDelete);
+              }
+            }}
+            >${msg("Delete Crawl")}</sl-button
           >
         </div>
       </btrix-dialog>
@@ -538,14 +563,14 @@ export class WorkflowDetail extends LiteElement {
         <btrix-workflow-editor
           .initialWorkflow=${this.workflow}
           .initialSeeds=${this.seeds!.items}
-          jobType=${this.workflow!.jobType}
+          jobType=${this.workflow!.jobType!}
           configId=${this.workflow!.id}
           orgId=${this.orgId}
           .authState=${this.authState}
           ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
           ?orgExecutionMinutesQuotaReached=${this
             .orgExecutionMinutesQuotaReached}
-          @reset=${(e: Event) =>
+          @reset=${() =>
             this.navTo(
               `${this.orgBasePath}/workflows/crawl/${this.workflow!.id}`
             )}
@@ -723,7 +748,7 @@ export class WorkflowDetail extends LiteElement {
         ${this.renderDetailItem(
           msg("Total Size"),
           () => html` <sl-format-bytes
-            value=${this.workflow!.totalSize}
+            value=${Number(this.workflow!.totalSize)}
             display="narrow"
           ></sl-format-bytes>`
         )}
@@ -798,7 +823,7 @@ export class WorkflowDetail extends LiteElement {
               size="small"
               pill
               multiple
-              max-options-visible="1"
+              maxOptionsVisible="1"
               placeholder=${msg("All Crawls")}
               @sl-change=${async (e: CustomEvent) => {
                 const value = (e.target as SlSelect).value as CrawlState[];
@@ -855,7 +880,7 @@ export class WorkflowDetail extends LiteElement {
                     () => html` <sl-menu slot="menu">
                       <sl-menu-item
                         style="--sl-color-neutral-700: var(--danger)"
-                        @click=${() => this.deleteCrawl(crawl)}
+                        @click=${() => this.confirmDeleteCrawl(crawl)}
                       >
                         <sl-icon name="trash3" slot="prefix"></sl-icon>
                         ${msg("Delete Crawl")}
@@ -987,7 +1012,7 @@ export class WorkflowDetail extends LiteElement {
             <btrix-screencast
               authToken=${authToken}
               orgId=${this.orgId}
-              crawlId=${this.lastCrawlId}
+              .crawlId=${this.lastCrawlId ?? undefined}
               scale=${this.workflow!.scale}
             ></btrix-screencast>
           </div>
@@ -996,8 +1021,8 @@ export class WorkflowDetail extends LiteElement {
           <section class="mt-8">${this.renderExclusions()}</section>
 
           <btrix-dialog
-            label=${msg("Edit Crawler Instances")}
-            ?open=${this.openDialogName === "scale"}
+            .label=${msg("Edit Crawler Instances")}
+            .open=${this.openDialogName === "scale"}
             @sl-request-close=${() => (this.openDialogName = undefined)}
             @sl-show=${this.showDialog}
             @sl-after-hide=${() => (this.isDialogVisible = false)}
@@ -1203,15 +1228,15 @@ export class WorkflowDetail extends LiteElement {
         () => html`
           <btrix-crawl-queue
             orgId=${this.orgId}
-            crawlId=${this.lastCrawlId}
+            .crawlId=${this.lastCrawlId ?? undefined}
             .authState=${this.authState}
           ></btrix-crawl-queue>
         `
       )}
 
       <btrix-dialog
-        label=${msg("Crawl Queue Editor")}
-        ?open=${this.openDialogName === "exclusions"}
+        .label=${msg("Crawl Queue Editor")}
+        .open=${this.openDialogName === "exclusions"}
         style=${/* max-w-screen-lg: */ `--width: 1124px;`}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${this.showDialog}
@@ -1220,10 +1245,10 @@ export class WorkflowDetail extends LiteElement {
         ${this.workflow && this.isDialogVisible
           ? html`<btrix-exclusion-editor
               orgId=${this.orgId}
-              crawlId=${ifDefined(this.lastCrawlId)}
+              .crawlId=${this.lastCrawlId ?? undefined}
               .config=${this.workflow.config}
               .authState=${this.authState}
-              ?isActiveCrawl=${isActive(this.workflow.lastCrawlState!)}
+              ?isActiveCrawl=${isActive(this.workflow.lastCrawlState)}
               @on-success=${this.handleExclusionChange}
             ></btrix-exclusion-editor>`
           : ""}
@@ -1258,7 +1283,7 @@ export class WorkflowDetail extends LiteElement {
       <div>
         <sl-radio-group
           value=${this.workflow.scale}
-          help-text=${msg(
+          helpText=${msg(
             "This change will only apply to the currently running crawl."
           )}
         >
@@ -1315,7 +1340,7 @@ export class WorkflowDetail extends LiteElement {
     this.isDialogVisible = true;
   };
 
-  private handleExclusionChange(e: CustomEvent) {
+  private handleExclusionChange() {
     this.fetchWorkflow();
   }
 
@@ -1324,7 +1349,7 @@ export class WorkflowDetail extends LiteElement {
     this.isSubmittingUpdate = true;
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ scaled: boolean }>(
         `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/scale`,
         this.authState!,
         {
@@ -1362,7 +1387,7 @@ export class WorkflowDetail extends LiteElement {
     return data;
   }
 
-  private async onCloseExclusions(e: Event) {
+  private async onCloseExclusions() {
     const editor = this.querySelector("btrix-exclusion-editor");
     if (editor && editor instanceof ExclusionEditor) {
       await editor.onClose();
@@ -1385,8 +1410,8 @@ export class WorkflowDetail extends LiteElement {
     }
   }
 
-  private async getSeeds(): Promise<APIPaginatedList> {
-    const data: APIPaginatedList = await this.apiFetch(
+  private async getSeeds() {
+    const data = await this.apiFetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}/seeds`,
       this.authState!
     );
@@ -1405,7 +1430,7 @@ export class WorkflowDetail extends LiteElement {
     }
   }
 
-  private async getCrawls(): Promise<APIPaginatedList> {
+  private async getCrawls() {
     const query = queryString.stringify(
       {
         state: this.filterBy.state,
@@ -1416,7 +1441,7 @@ export class WorkflowDetail extends LiteElement {
         arrayFormat: "comma",
       }
     );
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<Crawl>>(
       `/orgs/${this.orgId}/crawls?${query}`,
       this.authState!
     );
@@ -1442,7 +1467,7 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private async getCrawl(crawlId: Crawl["id"]): Promise<Crawl> {
-    const data = await this.apiFetch(
+    const data = await this.apiFetch<Crawl>(
       `/orgs/${this.orgId}/crawls/${crawlId}/replay.json`,
       this.authState!
     );
@@ -1550,7 +1575,7 @@ export class WorkflowDetail extends LiteElement {
     this.isCancelingOrStoppingCrawl = true;
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/cancel`,
         this.authState!,
         {
@@ -1579,7 +1604,7 @@ export class WorkflowDetail extends LiteElement {
     this.isCancelingOrStoppingCrawl = true;
 
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${this.lastCrawlId}/stop`,
         this.authState!,
         {
@@ -1604,7 +1629,7 @@ export class WorkflowDetail extends LiteElement {
 
   private async runNow(): Promise<void> {
     try {
-      const data = await this.apiFetch(
+      const data = await this.apiFetch<{ started: string | null }>(
         `/orgs/${this.orgId}/crawlconfigs/${this.workflow!.id}/run`,
         this.authState!,
         {
@@ -1644,9 +1669,14 @@ export class WorkflowDetail extends LiteElement {
     }
   }
 
+  private confirmDeleteCrawl = (crawl: Crawl) => {
+    this.crawlToDelete = crawl;
+    this.openDialogName = "delete";
+  };
+
   private async deleteCrawl(crawl: Crawl) {
     try {
-      const data = await this.apiFetch(
+      const _data = await this.apiFetch(
         `/orgs/${crawl.oid}/crawls/delete`,
         this.authState!,
         {
@@ -1656,6 +1686,7 @@ export class WorkflowDetail extends LiteElement {
           }),
         }
       );
+      this.crawlToDelete = null;
       this.crawls = {
         ...this.crawls!,
         items: this.crawls!.items.filter((c) => c.id !== crawl.id),
@@ -1667,6 +1698,10 @@ export class WorkflowDetail extends LiteElement {
       });
       this.fetchCrawls();
     } catch (e: any) {
+      if (this.crawlToDelete) {
+        this.confirmDeleteCrawl(this.crawlToDelete);
+      }
+
       let message = msg(
         str`Sorry, couldn't delete archived item at this time.`
       );
@@ -1707,13 +1742,11 @@ export class WorkflowDetail extends LiteElement {
     }
   }
 
-  private async getCrawlErrors(
-    params: Partial<APIPaginatedList>
-  ): Promise<APIPaginatedList> {
+  private async getCrawlErrors(params: Partial<APIPaginatedList>) {
     const page = params.page || this.logs?.page || 1;
     const pageSize = params.pageSize || this.logs?.pageSize || LOGS_PAGE_SIZE;
 
-    const data: APIPaginatedList = await this.apiFetch(
+    const data = await this.apiFetch<APIPaginatedList<CrawlLog>>(
       `/orgs/${this.orgId}/crawls/${
         this.workflow!.lastCrawlId
       }/errors?page=${page}&pageSize=${pageSize}`,

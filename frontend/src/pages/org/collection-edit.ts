@@ -194,8 +194,8 @@ export class CollectionEdit extends LiteElement {
     }
   }
 
-  private async getCollection(): Promise<Collection> {
-    const data = await this.apiFetch(
+  private async getCollection() {
+    const data = await this.apiFetch<Collection>(
       `/orgs/${this.orgId}/collections/${this.collectionId}`,
       this.authState!
     );

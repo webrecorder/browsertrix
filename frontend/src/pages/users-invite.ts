@@ -5,7 +5,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";
-import { CurrentUser } from "../types/user";
+import type { CurrentUser } from "../types/user";
 
 @needLogin
 @localized()

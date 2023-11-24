@@ -1,5 +1,4 @@
 import { state, property, customElement } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 
@@ -154,8 +153,8 @@ export class Home extends LiteElement {
             <btrix-orgs-list
               .userInfo=${this.userInfo}
               .orgList=${this.orgList}
-              .defaultOrg=${ifDefined(
-                this.userInfo?.orgs.find((org) => org.default === true)
+              .defaultOrg=${this.userInfo?.orgs.find(
+                (org) => org.default === true
               )}
               @update-quotas=${this.onUpdateOrgQuotas}
             ></btrix-orgs-list>
@@ -172,8 +171,8 @@ export class Home extends LiteElement {
       </div>
 
       <btrix-dialog
-        label=${msg("New Organization")}
-        ?open=${this.isAddingOrg}
+        .label=${msg("New Organization")}
+        .open=${this.isAddingOrg}
         @sl-request-close=${(e: CustomEvent) => {
           // Disable closing if there are no orgs
           if (this.orgList?.length) {
@@ -200,7 +199,7 @@ export class Home extends LiteElement {
                     placeholder=${msg("My Organization")}
                     autocomplete="off"
                     required
-                    help-text=${this.validateOrgNameMax.helpText}
+                    helpText=${this.validateOrgNameMax.helpText}
                     @sl-input=${this.validateOrgNameMax.validate}
                   >
                   </sl-input>
@@ -273,8 +272,8 @@ export class Home extends LiteElement {
     this.orgList = await this.getOrgs();
   }
 
-  private async getOrgs(): Promise<OrgData[]> {
-    const data: APIPaginatedList = await this.apiFetch(
+  private async getOrgs() {
+    const data = await this.apiFetch<APIPaginatedList<OrgData>>(
       "/orgs",
       this.authState!
     );

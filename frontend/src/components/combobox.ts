@@ -6,13 +6,7 @@ import {
   queryAssignedElements,
   customElement,
 } from "lit/decorators.js";
-import {
-  SlInput,
-  SlMenu,
-  SlMenuItem,
-  SlPopup,
-  SlTag,
-} from "@shoelace-style/shoelace";
+import type { SlMenu, SlMenuItem, SlPopup } from "@shoelace-style/shoelace";
 
 import { dropdown } from "../utils/css";
 
@@ -132,7 +126,7 @@ export class Combobox extends LitElement {
         // Focus on first menu item
         e.preventDefault();
         const menuItem = this.menuItems[0];
-        this.menu!.setCurrentItem(menuItem);
+        this.menu.setCurrentItem(menuItem);
         menuItem.focus();
       }
     }

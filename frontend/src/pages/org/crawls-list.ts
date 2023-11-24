@@ -10,17 +10,11 @@ import { CrawlStatus } from "../../components/crawl-status";
 import type { PageChangeEvent } from "../../components/pagination";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
-import type { Crawl, CrawlState, Workflow, WorkflowParams } from "./types";
+import type { Crawl, CrawlState, Workflow, Upload } from "./types";
 import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
-import {
-  isActive,
-  activeCrawlStates,
-  finishedCrawlStates,
-} from "../../utils/crawler";
+import { isActive, finishedCrawlStates } from "../../utils/crawler";
 
-type Crawls = APIPaginatedList & {
-  items: Crawl[];
-};
+type Crawls = APIPaginatedList<Crawl>;
 type SearchFields = "name" | "firstSeed";
 type SortField = "finished" | "fileSize";
 type SortDirection = "asc" | "desc";
@@ -28,7 +22,6 @@ type SortDirection = "asc" | "desc";
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
-const POLL_INTERVAL_SECONDS = 10;
 const sortableFields: Record<
   SortField,
   { label: string; defaultDirection?: SortDirection }
@@ -97,10 +90,16 @@ export class CrawlsList extends LiteElement {
   private filterBy: Partial<Record<keyof Crawl, any>> = {};
 
   @state()
-  private itemToEdit: Crawl | null = null;
+  private itemToEdit: Crawl | Upload | null = null;
 
   @state()
   private isEditingItem = false;
+
+  @state()
+  private itemToDelete: Crawl | Upload | null = null;
+
+  @state()
+  private isDeletingItem = false;
 
   @state()
   private isUploadingArchive = false;
@@ -318,7 +317,7 @@ export class CrawlsList extends LiteElement {
             size="small"
             pill
             multiple
-            max-options-visible="1"
+            maxOptionsVisible="1"
             placeholder=${viewPlaceholder}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];
@@ -359,7 +358,7 @@ export class CrawlsList extends LiteElement {
   }
 
   private renderSortControl() {
-    let options = Object.entries(sortableFields).map(
+    const options = Object.entries(sortableFields).map(
       ([value, { label }]) => html`
         <sl-option value=${value}>${label}</sl-option>
       `
@@ -414,7 +413,11 @@ export class CrawlsList extends LiteElement {
           };
         }}
         @on-clear=${() => {
-          const { name, firstSeed, ...otherFilters } = this.filterBy;
+          const {
+            name: _name,
+            firstSeed: _firstSeed,
+            ...otherFilters
+          } = this.filterBy;
           this.filterBy = otherFilters;
         }}
       >
@@ -432,25 +435,58 @@ export class CrawlsList extends LiteElement {
 
       <btrix-crawl-metadata-editor
         .authState=${this.authState}
-        .crawl=${this.itemToEdit}
+        .crawl=${this.itemToEdit as Crawl}
         ?open=${this.isEditingItem}
         @request-close=${() => (this.isEditingItem = false)}
         @updated=${
           /* TODO fetch current page or single crawl */ this.fetchArchivedItems
         }
       ></btrix-crawl-metadata-editor>
+      <btrix-dialog
+        .label=${msg("Delete Archived Item?")}
+        .open=${this.isDeletingItem}
+        @sl-after-hide=${() => (this.isDeletingItem = false)}
+      >
+        ${msg("This item will be removed from any Collection it is a part of.")}
+        ${when(this.itemToDelete?.type === "crawl", () =>
+          msg(
+            "All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow."
+          )
+        )}
+        <div slot="footer" class="flex justify-between">
+          <sl-button size="small" .autofocus=${true}
+            >${msg("Cancel")}</sl-button
+          >
+          <sl-button
+            size="small"
+            variant="danger"
+            @click=${async () => {
+              this.isDeletingItem = false;
+              if (this.itemToDelete) {
+                await this.deleteItem(this.itemToDelete);
+              }
+            }}
+            >${msg(
+              str`Delete ${
+                this.itemToDelete?.type === "upload"
+                  ? msg("Upload")
+                  : msg("Crawl")
+              }`
+            )}</sl-button
+          >
+        </div>
+      </btrix-dialog>
     `;
   }
 
-  private renderArchivedItem = (item: Crawl) =>
-    html`
-      <btrix-crawl-list-item
-        orgSlug=${this.appState.orgSlug || ""}
-        .crawl=${item}
-      >
-        <sl-menu slot="menu"> ${this.crawlerMenuItemsRenderer(item)} </sl-menu>
-      </btrix-crawl-list-item>
-    `;
+  private renderArchivedItem = (item: Crawl) => html`
+    <btrix-crawl-list-item
+      orgSlug=${this.appState.orgSlug || ""}
+      .crawl=${item}
+    >
+      <sl-menu slot="menu"> ${this.crawlerMenuItemsRenderer(item)} </sl-menu>
+    </btrix-crawl-list-item>
+  `;
 
   private crawlerMenuItemsRenderer = (item: Crawl) =>
     // HACK shoelace doesn't current have a way to override non-hover
@@ -504,7 +540,7 @@ export class CrawlsList extends LiteElement {
           <sl-divider></sl-divider>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => this.deleteItem(item)}
+            @click=${() => this.confirmDeleteItem(item)}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${msg("Delete Item")}
@@ -617,7 +653,7 @@ export class CrawlsList extends LiteElement {
     );
 
     this.getArchivedItemsController = new AbortController();
-    const data = await this.apiFetch(
+    const data = await this.apiFetch<Crawls>(
       `/orgs/${this.orgId}/all-crawls?${query}`,
       this.authState!,
       {
@@ -658,13 +694,12 @@ export class CrawlsList extends LiteElement {
     }
   }
 
-  private async deleteItem(item: Crawl) {
-    if (
-      !window.confirm(msg(str`Are you sure you want to delete ${item.name}?`))
-    ) {
-      return;
-    }
+  private confirmDeleteItem = (item: Crawl | Upload) => {
+    this.itemToDelete = item;
+    this.isDeletingItem = true;
+  };
 
+  private async deleteItem(item: Crawl | Upload) {
     let apiPath;
 
     switch (this.itemType) {
@@ -680,7 +715,7 @@ export class CrawlsList extends LiteElement {
     }
 
     try {
-      const data = await this.apiFetch(
+      const _data = await this.apiFetch(
         `/orgs/${item.oid}/${apiPath}/delete`,
         this.authState!,
         {
@@ -691,6 +726,7 @@ export class CrawlsList extends LiteElement {
         }
       );
       const { items, ...crawlsData } = this.archivedItems!;
+      this.itemToDelete = null;
       this.archivedItems = {
         ...crawlsData,
         items: items.filter((c) => c.id !== item.id),
@@ -702,6 +738,9 @@ export class CrawlsList extends LiteElement {
       });
       this.fetchArchivedItems();
     } catch (e: any) {
+      if (this.itemToDelete) {
+        this.confirmDeleteItem(this.itemToDelete);
+      }
       let message = msg(
         str`Sorry, couldn't delete archived item at this time.`
       );
