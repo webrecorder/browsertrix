@@ -10,7 +10,7 @@ import type {
 import inputCss from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
 import debounce from "lodash/fp/debounce";
 
-import { dropdown } from "../utils/css";
+import { dropdown } from "../../utils/css";
 
 export type Tags = string[];
 export type TagsChangeEvent = CustomEvent<{

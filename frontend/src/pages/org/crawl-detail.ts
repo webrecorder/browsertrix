@@ -5,12 +5,12 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { classMap } from "lit/directives/class-map.js";
 import { msg, localized, str } from "@lit/localize";
 
-import type { PageChangeEvent } from "../../components/pagination";
-import { RelativeDuration } from "../../components/relative-duration";
+import type { PageChangeEvent } from "../../components/ui/pagination";
+import { RelativeDuration } from "../../components/ui/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { isActive } from "../../utils/crawler";
-import { CopyButton } from "../../components/copy-button";
+import { CopyButton } from "../../components/utils/copy-button";
 import type { Crawl, CrawlConfig, Seed } from "./types";
 import type { APIPaginatedList } from "../../types/api";
 import { humanizeExecutionSeconds } from "../../utils/executionTimeFormatter";

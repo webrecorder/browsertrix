@@ -10,7 +10,7 @@ import LiteElement, { html } from "../utils/LiteElement";
 import type { CrawlConfig, Seed, SeedConfig } from "../pages/org/types";
 import type { Collection } from "../types/collection";
 import { humanizeSchedule } from "../utils/cron";
-import { RelativeDuration } from "./relative-duration";
+import { RelativeDuration } from "./ui/relative-duration";
 import { nothing } from "lit";
 
 /**

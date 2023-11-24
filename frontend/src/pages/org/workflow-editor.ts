@@ -41,12 +41,12 @@ import type {
   ExclusionRemoveEvent,
   ExclusionChangeEvent,
 } from "../../components/queue-exclusion-table";
-import type { TimeInputChangeEvent } from "../../components/time-input";
+import type { TimeInputChangeEvent } from "../../components/ui/time-input";
 import type {
   TagInputEvent,
   Tags,
   TagsChangeEvent,
-} from "../../components/tag-input";
+} from "../../components/ui/tag-input";
 import type { CollectionsChangeEvent } from "../../components/collections-add";
 import type {
   WorkflowParams,

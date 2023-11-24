@@ -11,7 +11,7 @@ import type {
   Tags,
   TagInputEvent,
   TagsChangeEvent,
-} from "../../../components/tag-input";
+} from "../../../components/ui/tag-input";
 import type { AuthState } from "../../../utils/AuthService";
 import LiteElement, { html } from "../../../utils/LiteElement";
 import { APIError } from "../../../utils/api";

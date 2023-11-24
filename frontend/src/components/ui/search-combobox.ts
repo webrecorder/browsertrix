@@ -1,4 +1,4 @@
-import { LitElement, html } from "lit";
+import { LitElement, html, nothing } from "lit";
 import { property, state, query, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { when } from "lit/directives/when.js";
@@ -6,17 +6,10 @@ import debounce from "lodash/fp/debounce";
 import Fuse from "fuse.js";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 
-export type SelectEvent = CustomEvent<{
+export type SelectEvent<T> = CustomEvent<{
   key: string | null;
-  value?: any;
+  value?: T;
 }>;
-type SearchResult = {
-  item: any;
-  matches: {
-    key: string;
-    value: string;
-  }[];
-};
 
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_RESULTS = 10;
@@ -29,9 +22,9 @@ const MAX_SEARCH_RESULTS = 10;
  */
 @localized()
 @customElement("btrix-search-combobox")
-export class SearchCombobox extends LitElement {
+export class SearchCombobox<T> extends LitElement {
   @property({ type: Array })
-  searchOptions: any[] = [];
+  searchOptions: T[] = [];
 
   @property({ type: Array })
   searchKeys: string[] = [];
@@ -58,7 +51,7 @@ export class SearchCombobox extends LitElement {
   @query("sl-input")
   private input!: SlInput;
 
-  private fuse = new Fuse([], {
+  private fuse = new Fuse<T>([], {
     keys: [],
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
@@ -70,14 +63,14 @@ export class SearchCombobox extends LitElement {
     super.disconnectedCallback();
   }
 
-  protected willUpdate(changedProperties: Map<string, any>) {
+  protected willUpdate(changedProperties: Map<string, T>) {
     if (changedProperties.get("selectedKey") && !this.selectedKey) {
       this.onSearchInput.cancel();
       this.searchByValue = "";
     }
     if (changedProperties.has("searchKeys") && this.searchKeys) {
       this.onSearchInput.cancel();
-      this.fuse = new Fuse([], {
+      this.fuse = new Fuse<T>([], {
         ...(this.fuse as any).options,
         keys: this.searchKeys,
       });
@@ -106,7 +99,7 @@ export class SearchCombobox extends LitElement {
           this.searchByValue = item.value;
           await this.updateComplete;
           this.dispatchEvent(
-            <SelectEvent>new CustomEvent("on-select", {
+            <SelectEvent<T>>new CustomEvent("on-select", {
               detail: {
                 key: key,
                 value: item.value,
@@ -125,7 +118,7 @@ export class SearchCombobox extends LitElement {
             this.onSearchInput.cancel();
             this.dispatchEvent(new CustomEvent("on-clear"));
           }}
-          @sl-input=${this.onSearchInput}
+          @sl-input=${this.onSearchInput as () => void}
         >
           ${when(
             this.selectedKey,
@@ -156,7 +149,7 @@ export class SearchCombobox extends LitElement {
 
     const searchResults = this.fuse
       .search(this.searchByValue)
-      .slice(0, MAX_SEARCH_RESULTS) as any;
+      .slice(0, MAX_SEARCH_RESULTS);
     if (!searchResults.length) {
       return html`
         <sl-menu-item slot="menu-item" disabled
@@ -166,16 +159,18 @@ export class SearchCombobox extends LitElement {
     }
 
     return html`
-      ${searchResults.map(({ matches }: SearchResult) =>
-        matches.map(
-          ({ key, value }) => html`
-            <sl-menu-item slot="menu-item" data-key=${key} value=${value}>
-              <sl-tag slot="prefix" size="small" pill
-                >${this.keyLabels[key]}</sl-tag
-              >
-              ${value}
-            </sl-menu-item>
-          `
+      ${searchResults.map(({ matches }) =>
+        matches?.map(({ key, value }) =>
+          !!key && !!value
+            ? html`
+                <sl-menu-item slot="menu-item" data-key=${key} value=${value}>
+                  <sl-tag slot="prefix" size="small" pill
+                    >${this.keyLabels[key]}</sl-tag
+                  >
+                  ${value}
+                </sl-menu-item>
+              `
+            : nothing
         )
       )}
     `;
@@ -191,5 +186,5 @@ export class SearchCombobox extends LitElement {
     if (!this.searchByValue && this.selectedKey) {
       this.dispatchEvent(new CustomEvent("on-clear"));
     }
-  }) as any;
+  });
 }

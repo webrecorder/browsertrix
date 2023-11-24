@@ -5,9 +5,9 @@ import { until } from "lit/directives/until.js";
 import { msg, localized, str } from "@lit/localize";
 import queryString from "query-string";
 
-import { CopyButton } from "../../components/copy-button";
+import { CopyButton } from "../../components/utils/copy-button";
 import { CrawlStatus } from "../../components/crawl-status";
-import { RelativeDuration } from "../../components/relative-duration";
+import { RelativeDuration } from "../../components/ui/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import type {
@@ -21,7 +21,7 @@ import { humanizeSchedule } from "../../utils/cron";
 import type { APIPaginatedList } from "../../types/api";
 import { inactiveCrawlStates, isActive } from "../../utils/crawler";
 import type { SlSelect } from "@shoelace-style/shoelace";
-import type { PageChangeEvent } from "../../components/pagination";
+import type { PageChangeEvent } from "../../components/ui/pagination";
 import { ExclusionEditor } from "../../components/exclusion-editor";
 import type { CrawlLog } from "../../components/crawl-logs";
 

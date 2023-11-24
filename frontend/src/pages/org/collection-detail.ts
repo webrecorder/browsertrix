@@ -16,7 +16,7 @@ import type {
   APISortQuery,
 } from "../../types/api";
 import type { Crawl, CrawlState, Upload } from "../../types/crawler";
-import type { PageChangeEvent } from "../../components/pagination";
+import type { PageChangeEvent } from "../../components/ui/pagination";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const DESCRIPTION_MAX_HEIGHT_PX = 200;

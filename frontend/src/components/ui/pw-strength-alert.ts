@@ -2,7 +2,7 @@ import { LitElement, html, css } from "lit";
 import { msg, localized } from "@lit/localize";
 import { property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
-import type { ZxcvbnResult } from "@zxcvbn-ts/core";
+import type { Score, ZxcvbnResult } from "@zxcvbn-ts/core";
 
 /**
  * Show results of password strength estimate
@@ -20,11 +20,11 @@ export class PasswordStrengthAlert extends LitElement {
 
   /** Minimum acceptable score */
   @property({ type: Number })
-  min = 1;
+  min: Score = 1;
 
   /** Optimal score */
   @property({ type: Number })
-  optimal = 4;
+  optimal: Score = 4;
 
   static styles = css`
     sl-alert::part(message) {

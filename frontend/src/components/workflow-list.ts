@@ -22,7 +22,7 @@ import {
 import { msg, localized, str } from "@lit/localize";
 import type { SlIconButton, SlMenu } from "@shoelace-style/shoelace";
 
-import { RelativeDuration } from "./relative-duration";
+import { RelativeDuration } from "./ui/relative-duration";
 import type { ListWorkflow } from "../types/crawler";
 import { srOnly, truncate, dropdown } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
