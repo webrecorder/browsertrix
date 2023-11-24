@@ -11,6 +11,7 @@
  * </btrix-workflow-list>
  * ```
  */
+import type { TemplateResult } from "lit";
 import { LitElement, html, css } from "lit";
 import {
   property,
@@ -403,7 +404,9 @@ export class WorkflowListItem extends LitElement {
     </div>`;
   }
 
-  private safeRender(render: (workflow: ListWorkflow) => any) {
+  private safeRender(
+    render: (workflow: ListWorkflow) => string | TemplateResult<1>
+  ) {
     if (!this.workflow) {
       return html`<sl-skeleton></sl-skeleton>`;
     }
@@ -417,7 +420,7 @@ export class WorkflowListItem extends LitElement {
     if (!workflow.firstSeed)
       return html`<span class="truncate">${workflow.id}</span>`;
     const remainder = workflow.seedCount - 1;
-    let nameSuffix: any = "";
+    let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
       if (remainder === 1) {
         nameSuffix = html`<span class="additionalUrls"

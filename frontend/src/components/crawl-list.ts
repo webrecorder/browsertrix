@@ -11,6 +11,7 @@
  * </btrix-crawl-list>
  * ```
  */
+import type { TemplateResult } from "lit";
 import { LitElement, html, css } from "lit";
 import {
   customElement,
@@ -325,7 +326,9 @@ export class CrawlListItem extends LitElement {
     </div>`;
   }
 
-  private safeRender(render: (crawl: Crawl) => any) {
+  private safeRender(
+    render: (crawl: Crawl) => string | TemplateResult<1> | undefined
+  ) {
     if (!this.crawl) {
       return html`<sl-skeleton></sl-skeleton>`;
     }
@@ -337,7 +340,7 @@ export class CrawlListItem extends LitElement {
     if (!crawl.firstSeed)
       return html`<span class="truncate">${crawl.id}</span>`;
     const remainder = crawl.seedCount - 1;
-    let nameSuffix: any = "";
+    let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
       if (remainder === 1) {
         nameSuffix = html`<span class="additionalUrls"
