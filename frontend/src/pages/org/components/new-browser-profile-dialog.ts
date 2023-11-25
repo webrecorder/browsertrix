@@ -4,7 +4,7 @@ import type { SlInput } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "../../../utils/AuthService";
 import LiteElement, { html } from "../../../utils/LiteElement";
-import type { Dialog } from "../../../components/utils/dialog";
+import type { Dialog } from "../../../components/ui/dialog";
 
 @localized()
 @customElement("btrix-new-browser-profile-dialog")

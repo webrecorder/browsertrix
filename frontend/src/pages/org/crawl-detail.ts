@@ -10,7 +10,7 @@ import { RelativeDuration } from "../../components/ui/relative-duration";
 import type { AuthState } from "../../utils/AuthService";
 import LiteElement, { html } from "../../utils/LiteElement";
 import { isActive } from "../../utils/crawler";
-import { CopyButton } from "../../components/utils/copy-button";
+import { CopyButton } from "../../components/ui/copy-button";
 import type { Crawl, CrawlConfig, Seed } from "./types";
 import type { APIPaginatedList } from "../../types/api";
 import { humanizeExecutionSeconds } from "../../utils/executionTimeFormatter";

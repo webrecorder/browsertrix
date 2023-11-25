@@ -5,7 +5,7 @@ import { when } from "lit/directives/when.js";
 import type { SlCheckbox, SlSelect } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
-import { CopyButton } from "../../components/utils/copy-button";
+import { CopyButton } from "../../components/ui/copy-button";
 import { CrawlStatus } from "../../components/crawl-status";
 import type { PageChangeEvent } from "../../components/ui/pagination";
 import type { AuthState } from "../../utils/AuthService";

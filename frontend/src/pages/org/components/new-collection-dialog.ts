@@ -6,7 +6,7 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { maxLengthValidator } from "../../../utils/form";
 import type { AuthState } from "../../../utils/AuthService";
 import LiteElement, { html } from "../../../utils/LiteElement";
-import type { Dialog } from "../../../components/utils/dialog";
+import type { Dialog } from "../../../components/ui/dialog";
 import type { Collection } from "../../../types/collection";
 
 @localized()

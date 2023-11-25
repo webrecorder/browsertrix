@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// cSpell:disable
 /**
  * Object.entriesFrom() polyfill
  * @author Chris Ferdinandi

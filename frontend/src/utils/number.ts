@@ -7,7 +7,10 @@
  * formatter.format(10, { ordinal: true }); // 10th
  * ```
  **/
-export function numberFormatter(locales?: any, opts?: any) {
+export function numberFormatter(
+  locales?: string | string[],
+  opts?: Intl.NumberFormatOptions
+) {
   const numFormat = new Intl.NumberFormat(locales, opts);
   const pluralRules = new Intl.PluralRules("en", { type: "ordinal" });
 
