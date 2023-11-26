@@ -48,3 +48,4 @@ import("./code");
 import("./pw-strength-alert");
 import("./search-combobox");
 import("./meter");
+import("./overflow-dropdown");

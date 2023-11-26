@@ -11,23 +11,23 @@
  * </btrix-workflow-list>
  * ```
  */
+import type { TemplateResult } from "lit";
 import { LitElement, html, css } from "lit";
 import {
   property,
   query,
   queryAssignedElements,
-  state,
   customElement,
 } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import type { SlIconButton, SlMenu } from "@shoelace-style/shoelace";
 
 import { RelativeDuration } from "./relative-duration";
 import type { ListWorkflow } from "../types/crawler";
-import { srOnly, truncate, dropdown } from "../utils/css";
+import { srOnly, truncate } from "../utils/css";
 import type { NavigateEvent } from "../utils/LiteElement";
 import { humanizeSchedule } from "../utils/cron";
 import { numberFormatter } from "../utils/number";
+import type { OverflowDropdown } from "./overflow-dropdown";
 
 const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;
@@ -74,7 +74,6 @@ const hostVars = css`
 export class WorkflowListItem extends LitElement {
   static styles = [
     truncate,
-    dropdown,
     rowCss,
     columnCss,
     hostVars,
@@ -84,8 +83,7 @@ export class WorkflowListItem extends LitElement {
       }
 
       .item {
-        contain: content;
-        content-visibility: auto;
+        contain: size;
         contain-intrinsic-height: auto 4rem;
         cursor: pointer;
         transition-property: background-color, box-shadow, margin;
@@ -99,11 +97,7 @@ export class WorkflowListItem extends LitElement {
       .item:focus-within {
         background-color: var(--sl-color-neutral-50);
       }
-      .dropdown {
-        contain: content;
-        position: absolute;
-        z-index: 99;
-      }
+
       .item:hover {
         background-color: var(--sl-color-neutral-50);
         margin-left: calc(-1 * var(--row-offset));
@@ -196,10 +190,6 @@ export class WorkflowListItem extends LitElement {
         justify-content: center;
       }
 
-      .action sl-icon-button {
-        font-size: 1rem;
-      }
-
       @media only screen and (min-width: ${largeBreakpointCss}) {
         .action {
           border-left: 1px solid var(--sl-panel-border-color);
@@ -217,52 +207,30 @@ export class WorkflowListItem extends LitElement {
   @query(".row")
   row!: HTMLElement;
 
-  // TODO consolidate with btrix-combobox
-  @query(".dropdown")
-  dropdown!: HTMLElement;
-
-  @query(".dropdownTrigger")
-  dropdownTrigger!: SlIconButton;
-
-  @queryAssignedElements({ selector: "sl-menu", slot: "menu" })
-  private menuArr!: Array<SlMenu>;
-
-  @state()
-  private dropdownIsOpen?: boolean;
+  @query("btrix-overflow-dropdown")
+  dropdownMenu!: OverflowDropdown;
 
   private numberFormatter = numberFormatter(undefined, {
     notation: "compact",
   });
 
-  willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("dropdownIsOpen")) {
-      if (this.dropdownIsOpen) {
-        this.openDropdown();
-      } else {
-        this.closeDropdown();
-      }
-    }
-  }
-
   render() {
-    return html`${this.renderRow()}${this.renderDropdown()}`;
-  }
-
-  renderRow() {
     const notSpecified = html`<span class="notSpecified" role="presentation"
       >---</span
     >`;
 
-    return html`<a
+    return html`<div
       class="item row"
       role="button"
-      href=${`/orgs/${this.orgSlug}/workflows/crawl/${this.workflow?.id}#${
-        this.workflow?.isCrawlRunning ? "watch" : "crawls"
-      }`}
       @click=${async (e: MouseEvent) => {
+        if (e.target === this.dropdownMenu) {
+          return;
+        }
         e.preventDefault();
         await this.updateComplete;
-        const href = (e.currentTarget as HTMLAnchorElement).href;
+        const href = `/orgs/${this.orgSlug}/workflows/crawl/${
+          this.workflow?.id
+        }#${this.workflow?.isCrawlRunning ? "watch" : "crawls"}`;
         // TODO consolidate with LiteElement navTo
         const evt: NavigateEvent = new CustomEvent("navigate", {
           detail: { url: href },
@@ -422,59 +390,23 @@ export class WorkflowListItem extends LitElement {
         </div>
       </div>
       <div class="col action">
-        <sl-icon-button
-          class="dropdownTrigger"
-          name="three-dots-vertical"
-          label=${msg("Actions")}
-          @click=${(e: MouseEvent) => {
-            // Prevent anchor link default behavior
-            e.preventDefault();
-            // Stop prop to anchor link
-            e.stopPropagation();
-            this.dropdownIsOpen = !this.dropdownIsOpen;
-          }}
-          @focusout=${(e: FocusEvent) => {
-            const relatedTarget = e.relatedTarget as HTMLElement;
-            if (relatedTarget) {
-              if (this.menuArr[0]?.contains(relatedTarget)) {
-                // Keep dropdown open if moving to menu selection
-                return;
-              }
-              if (this.row?.isEqualNode(relatedTarget)) {
-                // Handle with click event
-                return;
-              }
-            }
-            this.dropdownIsOpen = false;
-          }}
-        ></sl-icon-button>
+        <btrix-overflow-dropdown>
+          <slot
+            name="menu"
+            @click=${(e: MouseEvent) => {
+              // Prevent navigation to detail view
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          ></slot>
+        </btrix-overflow-dropdown>
       </div>
-    </a>`;
+    </div>`;
   }
 
-  private renderDropdown() {
-    return html`<div
-      class="dropdown hidden"
-      aria-hidden=${!this.dropdownIsOpen}
-      @animationend=${(e: AnimationEvent) => {
-        const el = e.target as HTMLDivElement;
-        if (e.animationName === "dropdownShow") {
-          el.classList.remove("animateShow");
-        }
-        if (e.animationName === "dropdownHide") {
-          el.classList.add("hidden");
-          el.classList.remove("animateHide");
-        }
-      }}
-    >
-      <slot
-        name="menu"
-        @sl-select=${() => (this.dropdownIsOpen = false)}
-      ></slot>
-    </div> `;
-  }
-
-  private safeRender(render: (workflow: ListWorkflow) => any) {
+  private safeRender(
+    render: (workflow: ListWorkflow) => string | TemplateResult<1>
+  ) {
     if (!this.workflow) {
       return html`<sl-skeleton></sl-skeleton>`;
     }
@@ -488,7 +420,7 @@ export class WorkflowListItem extends LitElement {
     if (!workflow.firstSeed)
       return html`<span class="truncate">${workflow.id}</span>`;
     const remainder = workflow.seedCount - 1;
-    let nameSuffix: any = "";
+    let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
       if (remainder === 1) {
         nameSuffix = html`<span class="additionalUrls"
@@ -504,22 +436,6 @@ export class WorkflowListItem extends LitElement {
       <span class="primaryUrl truncate">${workflow.firstSeed}</span
       >${nameSuffix}
     `;
-  }
-
-  private repositionDropdown() {
-    const { x, y } = this.dropdownTrigger.getBoundingClientRect();
-    this.dropdown.style.left = `${x + window.scrollX}px`;
-    this.dropdown.style.top = `${y + window.scrollY - 8}px`;
-  }
-
-  private openDropdown() {
-    this.repositionDropdown();
-    this.dropdown.classList.add("animateShow");
-    this.dropdown.classList.remove("hidden");
-  }
-
-  private closeDropdown() {
-    this.dropdown.classList.add("animateHide");
   }
 }
 
