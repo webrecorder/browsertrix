@@ -101,7 +101,7 @@ def test_get_background_job(admin_auth_headers, default_org_id):
 
 
 def test_retry_all_failed_bg_jobs_not_superuser(crawler_auth_headers):
-    r = requests.get(
+    r = requests.post(
         f"{API_PREFIX}/orgs/all/jobs/retryFailed", headers=crawler_auth_headers
     )
     assert r.status_code == 403

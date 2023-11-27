@@ -10,7 +10,7 @@ API_PREFIX = HOST_PREFIX + "/api"
 ADMIN_USERNAME = "admin@example.com"
 ADMIN_PW = "PASSW0RD!"
 
-CRAWLER_USERNAME = "crawler@example.com"
+CRAWLER_USERNAME = "crawlernightly@example.com"
 CRAWLER_PW = "crawlerPASSWORD!"
 
 
