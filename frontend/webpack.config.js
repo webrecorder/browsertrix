@@ -1,3 +1,4 @@
+// cSpell:ignore glitchtip
 // webpack.config.js
 const path = require("path");
 const webpack = require("webpack");
@@ -5,6 +6,7 @@ const ESLintPlugin = require("eslint-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
+const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const childProcess = require("child_process");
 const packageJSON = require("./package.json");
 const fs = require("fs");
@@ -65,6 +67,7 @@ const version = (() => {
   return packageJSON.version;
 })();
 
+/** @type {import('webpack').Configuration} */
 const main = {
   entry: "./src/index.ts",
   output: {
@@ -114,6 +117,7 @@ const main = {
 
   resolve: {
     extensions: [".ts", ".js"],
+    plugins: [new TsconfigPathsPlugin()],
   },
 
   plugins: [

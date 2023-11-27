@@ -5,9 +5,9 @@ import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 
-import chevronLeft from "../assets/icons/chevron-left.svg";
-import chevronRight from "../assets/icons/chevron-right.svg";
-import { srOnly } from "../../utils/css";
+import chevronLeft from "~assets/icons/chevron-left.svg";
+import chevronRight from "~assets/icons/chevron-right.svg";
+import { srOnly } from "@/utils/css";
 
 export type PageChangeEvent = CustomEvent<{
   page: number;

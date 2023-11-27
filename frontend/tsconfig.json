@@ -26,7 +26,8 @@
     ],
     "incremental": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "~assets/*": ["./src/assets/*"]
     }
   },
   "include": ["**/*.ts"],

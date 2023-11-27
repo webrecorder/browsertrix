@@ -1,7 +1,7 @@
 import { LitElement, html, css, unsafeCSS } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import caretDownFillSvg from "../assets/images/caret-down-fill.svg";
-import caretRightFillSvg from "../assets/images/caret-right-fill.svg";
+import caretDownFillSvg from "@assets/images/caret-down-fill.svg";
+import caretRightFillSvg from "@assets/images/caret-right-fill.svg";
 
 /**
  * Styled <details>
