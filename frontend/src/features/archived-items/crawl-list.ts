@@ -11,23 +11,22 @@
  * </btrix-crawl-list>
  * ```
  */
+import type { TemplateResult } from "lit";
 import { LitElement, html, css } from "lit";
 import {
   customElement,
   property,
   query,
   queryAssignedElements,
-  state,
 } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import type { SlMenu } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
-import type { Button } from "../../components/ui/button";
-import { RelativeDuration } from "../../components/ui/relative-duration";
-import type { Crawl } from "../../types/crawler";
-import { srOnly, truncate, dropdown } from "../../utils/css";
-import type { NavigateEvent } from "../../utils/LiteElement";
+import { RelativeDuration } from "@/components/ui/relative-duration";
+import type { Crawl } from "@/types/crawler";
+import { srOnly, truncate } from "@/utils/css";
+import type { NavigateEvent } from "@/utils/LiteElement";
+import type { OverflowDropdown } from "@/components/overflow-dropdown";
 
 const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;
@@ -75,7 +74,6 @@ const hostVars = css`
 export class CrawlListItem extends LitElement {
   static styles = [
     truncate,
-    dropdown,
     rowCss,
     columnCss,
     hostVars,
@@ -94,12 +92,6 @@ export class CrawlListItem extends LitElement {
         .item {
           height: 2.5rem;
         }
-      }
-
-      .dropdown {
-        contain: content;
-        position: absolute;
-        z-index: 99;
       }
 
       .col {
@@ -172,10 +164,6 @@ export class CrawlListItem extends LitElement {
         align-items: center;
         justify-content: center;
       }
-
-      .action sl-icon-button {
-        font-size: 1rem;
-      }
     `,
   ];
 
@@ -194,42 +182,15 @@ export class CrawlListItem extends LitElement {
   @query(".row")
   row!: HTMLElement;
 
-  // TODO consolidate with btrix-combobox
-  @query(".dropdown")
-  dropdown!: HTMLElement;
-
-  @query(".dropdownTrigger")
-  dropdownTrigger!: Button;
-
-  @queryAssignedElements({ selector: "sl-menu", slot: "menu" })
-  private menuArr!: Array<SlMenu>;
-
-  @state()
-  private dropdownIsOpen?: boolean;
-
-  @state()
-  private hasMenuItems?: boolean;
+  @query("btrix-overflow-dropdown")
+  dropdownMenu!: OverflowDropdown;
 
   // TODO localize
   private numberFormatter = new Intl.NumberFormat(undefined, {
     notation: "compact",
   });
 
-  willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("dropdownIsOpen")) {
-      if (this.dropdownIsOpen) {
-        this.openDropdown();
-      } else {
-        this.closeDropdown();
-      }
-    }
-  }
-
   render() {
-    return html`${this.renderRow()}${this.renderDropdown()}`;
-  }
-
-  renderRow() {
     const search =
       this.collectionId || this.workflowId
         ? `?${queryString.stringify(
@@ -240,15 +201,16 @@ export class CrawlListItem extends LitElement {
             { skipEmptyString: true }
           )}`
         : "";
-    return html`<a
+    return html`<div
       class="item row"
       role="button"
-      href="/orgs/${this.orgSlug}/items/${this.crawl?.type}/${this.crawl
-        ?.id}${search}"
       @click=${async (e: MouseEvent) => {
+        if (e.target === this.dropdownMenu) {
+          return;
+        }
         e.preventDefault();
         await this.updateComplete;
-        const href = (e.currentTarget as HTMLAnchorElement).href;
+        const href = `/orgs/${this.orgSlug}/items/${this.crawl?.type}/${this.crawl?.id}${search}`;
         // TODO consolidate with LiteElement navTo
         const evt: NavigateEvent = new CustomEvent("navigate", {
           detail: { url: href },
@@ -361,33 +323,12 @@ export class CrawlListItem extends LitElement {
         </div>
       </div>
       ${this.renderActions()}
-    </a>`;
+    </div>`;
   }
 
-  private renderDropdown() {
-    return html`<div
-      class="dropdown hidden"
-      aria-hidden=${!this.dropdownIsOpen}
-      @animationend=${(e: AnimationEvent) => {
-        const el = e.target as HTMLDivElement;
-        if (e.animationName === "dropdownShow") {
-          el.classList.remove("animateShow");
-        }
-        if (e.animationName === "dropdownHide") {
-          el.classList.add("hidden");
-          el.classList.remove("animateHide");
-        }
-      }}
-    >
-      <slot
-        name="menu"
-        @slotchange=${() => (this.hasMenuItems = this.menuArr.length > 0)}
-        @sl-select=${() => (this.dropdownIsOpen = false)}
-      ></slot>
-    </div> `;
-  }
-
-  private safeRender(render: (crawl: Crawl) => any) {
+  private safeRender(
+    render: (crawl: Crawl) => string | TemplateResult<1> | undefined
+  ) {
     if (!this.crawl) {
       return html`<sl-skeleton></sl-skeleton>`;
     }
@@ -399,7 +340,7 @@ export class CrawlListItem extends LitElement {
     if (!crawl.firstSeed)
       return html`<span class="truncate">${crawl.id}</span>`;
     const remainder = crawl.seedCount - 1;
-    let nameSuffix: any = "";
+    let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
       if (remainder === 1) {
         nameSuffix = html`<span class="additionalUrls"
@@ -417,55 +358,18 @@ export class CrawlListItem extends LitElement {
   }
 
   private renderActions() {
-    if (!this.hasMenuItems) {
-      return;
-    }
-
     return html` <div class="col action">
-      <sl-icon-button
-        class="dropdownTrigger"
-        label=${msg("Actions")}
-        name="three-dots-vertical"
-        @click=${(e: MouseEvent) => {
-          // Prevent anchor link default behavior
-          e.preventDefault();
-          // Stop prop to anchor link
-          e.stopPropagation();
-          this.dropdownIsOpen = !this.dropdownIsOpen;
-        }}
-        @focusout=${(e: FocusEvent) => {
-          const relatedTarget = e.relatedTarget as HTMLElement;
-          if (relatedTarget) {
-            if (this.menuArr[0]?.contains(relatedTarget)) {
-              // Keep dropdown open if moving to menu selection
-              return;
-            }
-            if (this.row?.isEqualNode(relatedTarget)) {
-              // Handle with click event
-              return;
-            }
-          }
-          this.dropdownIsOpen = false;
-        }}
-      >
-      </sl-icon-button>
+      <btrix-overflow-dropdown>
+        <slot
+          name="menu"
+          @click=${(e: MouseEvent) => {
+            // Prevent navigation to detail view
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        ></slot>
+      </btrix-overflow-dropdown>
     </div>`;
-  }
-
-  private repositionDropdown() {
-    const { x, y } = this.dropdownTrigger.getBoundingClientRect();
-    this.dropdown.style.left = `${x + window.scrollX}px`;
-    this.dropdown.style.top = `${y + window.scrollY - 8}px`;
-  }
-
-  private openDropdown() {
-    this.repositionDropdown();
-    this.dropdown.classList.add("animateShow");
-    this.dropdown.classList.remove("hidden");
-  }
-
-  private closeDropdown() {
-    this.dropdown.classList.add("animateHide");
   }
 }
 

@@ -129,7 +129,9 @@ const main = {
       maxChunks: 12,
     }),
 
-    new ForkTsCheckerWebpackPlugin(),
+    new ForkTsCheckerWebpackPlugin({
+      typescript: { configOverwrite: { exclude: ["**/*.test.ts"] } },
+    }),
 
     new HtmlWebpackPlugin({
       template: "src/index.ejs",

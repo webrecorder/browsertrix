@@ -4,6 +4,8 @@ import requests
 import socket
 import subprocess
 import time
+from typing import Dict
+from uuid import UUID
 
 
 HOST_PREFIX = "http://127.0.0.1:30870"
@@ -500,6 +502,44 @@ def url_list_config_id(crawler_auth_headers, default_org_id):
         json=crawl_data,
     )
     return r.json()["id"]
+
+
+@pytest.fixture(scope="session")
+def profile_browser_id(admin_auth_headers, default_org_id):
+    return _create_profile_browser(admin_auth_headers, default_org_id)
+
+
+@pytest.fixture(scope="session")
+def profile_browser_2_id(admin_auth_headers, default_org_id):
+    return _create_profile_browser(admin_auth_headers, default_org_id)
+
+
+@pytest.fixture(scope="session")
+def profile_browser_3_id(admin_auth_headers, default_org_id):
+    return _create_profile_browser(admin_auth_headers, default_org_id)
+
+
+def _create_profile_browser(headers: Dict[str, str], oid: UUID):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{oid}/profiles/browser",
+        headers=headers,
+        json={"url": "https://webrecorder.net"},
+    )
+    assert r.status_code == 200
+    browser_id = r.json()["browserid"]
+
+    time.sleep(5)
+
+    # Wait until successful ping, then return profile browser id
+    while True:
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{oid}/profiles/browser/{browser_id}/ping",
+            headers=headers,
+        )
+        data = r.json()
+        if data.get("success"):
+            return browser_id
+        time.sleep(5)
 
 
 @pytest.fixture(scope="function")
