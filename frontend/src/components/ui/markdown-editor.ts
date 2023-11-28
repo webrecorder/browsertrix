@@ -5,7 +5,7 @@ import { state, property, customElement } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
 import { createWysimark } from "@wysimark/standalone";
 
-import { getHelpText } from "../../utils/form";
+import { getHelpText } from "@/utils/form";
 
 export type MarkdownChangeEvent = CustomEvent<{
   value: string;

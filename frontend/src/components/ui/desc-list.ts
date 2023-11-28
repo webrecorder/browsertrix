@@ -1,3 +1,7 @@
+import { LitElement, html, css } from "lit";
+import { customElement, property } from "lit/decorators.js";
+import { classMap } from "lit/directives/class-map.js";
+
 /**
  * Styled <dl>, <dt> and <dd> for displaying data
  * as a list of key-value pair.
@@ -14,10 +18,6 @@
  * </btrix-desc-list>
  * ```
  */
-import { LitElement, html, css } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { classMap } from "lit/directives/class-map.js";
-
 @customElement("btrix-desc-list-item")
 export class DescListItem extends LitElement {
   static styles = css`

@@ -3,7 +3,7 @@ import { property, customElement } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import { micromark } from "micromark";
 
-import { typography } from "../../utils/css";
+import { typography } from "@/utils/css";
 
 /**
  * View rendered markdown

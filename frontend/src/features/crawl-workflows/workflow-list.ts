@@ -27,7 +27,7 @@ import { srOnly, truncate } from "@/utils/css";
 import type { NavigateEvent } from "@/utils/LiteElement";
 import { humanizeSchedule } from "@/utils/cron";
 import { numberFormatter } from "@/utils/number";
-import type { OverflowDropdown } from "@/components/overflow-dropdown";
+import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 
 const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;

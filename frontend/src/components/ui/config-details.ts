@@ -5,12 +5,12 @@ import { msg, localized, str } from "@lit/localize";
 import RegexColorize from "regex-colorize";
 import ISO6391 from "iso-639-1";
 
-import type { AuthState } from "../utils/AuthService";
-import LiteElement, { html } from "../utils/LiteElement";
-import type { CrawlConfig, Seed, SeedConfig } from "../pages/org/types";
-import type { Collection } from "../types/collection";
-import { humanizeSchedule } from "../utils/cron";
-import { RelativeDuration } from "./ui/relative-duration";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
+import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
+import type { Collection } from "@/types/collection";
+import { humanizeSchedule } from "@/utils/cron";
+import { RelativeDuration } from "./relative-duration";
 import { nothing } from "lit";
 
 /**

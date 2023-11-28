@@ -7,11 +7,11 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { SlInput } from "@shoelace-style/shoelace";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 
-import type { CurrentUser } from "../types/user";
-import LiteElement, { html } from "../utils/LiteElement";
-import { needLogin } from "../utils/auth";
-import type { AuthState } from "../utils/AuthService";
-import PasswordService from "../utils/PasswordService";
+import type { CurrentUser } from "@/types/user";
+import LiteElement, { html } from "@/utils/LiteElement";
+import { needLogin } from "@/utils/auth";
+import type { AuthState } from "@/utils/AuthService";
+import PasswordService from "@/utils/PasswordService";
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;

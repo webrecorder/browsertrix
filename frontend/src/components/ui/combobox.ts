@@ -8,7 +8,7 @@ import {
 } from "lit/decorators.js";
 import type { SlMenu, SlMenuItem, SlPopup } from "@shoelace-style/shoelace";
 
-import { dropdown } from "../../utils/css";
+import { dropdown } from "@/utils/css";
 
 /**
  * Input that opens a popup of autocomplete options

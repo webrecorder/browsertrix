@@ -27,6 +27,7 @@ import theme from "./theme";
 import { ROUTES } from "./routes";
 import "./shoelace";
 import "./components";
+import "./features";
 import "./pages";
 import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
