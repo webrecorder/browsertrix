@@ -1,8 +1,6 @@
 import { html } from "lit";
 import { property, state, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
-import { when } from "lit/directives/when.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 
 import type { AuthState } from "../utils/AuthService";
 import LiteElement from "../utils/LiteElement";
@@ -51,7 +49,7 @@ export class SelectCrawler extends LiteElement {
   render() {
     return html`
       <sl-select
-        name="crawlerid"
+        name="crawlerid-select"
         label=${msg("Crawler Version")}
         value=${this.selectedCrawler?.id || "latest"}
         placeholder=${msg("Latest Release")}
@@ -112,12 +110,10 @@ export class SelectCrawler extends LiteElement {
   }
 
   private async getCrawlerVersions(): Promise<CrawlerVersion[]> {
-    console.log("Fetching crawler versions");
     const data: CrawlerVersionsAPIResponse = await this.apiFetch(
       `/orgs/${this.orgId}/crawlconfigs/crawler-versions`,
       this.authState!
     );
-    console.log(data.versions);
     return data.versions;
   }
 
