@@ -4,9 +4,9 @@ import { when } from "lit/directives/when.js";
 import difference from "lodash/fp/difference";
 
 import type { CollectionSubmitEvent } from "./collection-editor";
-import type { AuthState } from "../../utils/AuthService";
-import LiteElement, { html } from "../../utils/LiteElement";
-import type { Collection } from "../../types/collection";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
+import type { Collection } from "@/types/collection";
 import "./collection-editor";
 
 @localized()

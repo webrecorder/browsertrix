@@ -4,8 +4,8 @@ import { customElement, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import startCase from "lodash/fp/startCase";
 
-import type { CrawlState } from "../../types/crawler";
-import { animatePulse } from "../../utils/css";
+import type { CrawlState } from "@/types/crawler";
+import { animatePulse } from "@/utils/css";
 
 @localized()
 @customElement("btrix-crawl-status")

@@ -2,8 +2,8 @@ import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import debounce from "lodash/fp/debounce";
 
-import LiteElement, { html } from "../utils/LiteElement";
-import { regexEscape } from "../utils/string";
+import LiteElement, { html } from "@/utils/LiteElement";
+import { regexEscape } from "@/utils/string";
 
 export type Exclusion = {
   type: "text" | "regex";

@@ -1,9 +1,9 @@
 import { state, property, customElement } from "lit/decorators.js";
 import { msg, str, localized } from "@lit/localize";
 
-import LiteElement, { html } from "../utils/LiteElement";
-import type { AuthState } from "../utils/AuthService";
-import { ROUTES } from "../routes";
+import LiteElement, { html } from "@/utils/LiteElement";
+import type { AuthState } from "@/utils/AuthService";
+import { ROUTES } from "@/routes";
 
 type InviteInfo = {
   inviterEmail: string;

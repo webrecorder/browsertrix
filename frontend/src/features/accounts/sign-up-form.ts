@@ -4,10 +4,10 @@ import debounce from "lodash/fp/debounce";
 import { when } from "lit/directives/when.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 
-import LiteElement, { html } from "../utils/LiteElement";
-import AuthService from "../utils/AuthService";
-import PasswordService from "../utils/PasswordService";
-import type { Input as BtrixInput } from "./ui/input/input";
+import LiteElement, { html } from "@/utils/LiteElement";
+import AuthService from "@/utils/AuthService";
+import PasswordService from "@/utils/PasswordService";
+import type { Input as BtrixInput } from "@/components/ui/input";
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;

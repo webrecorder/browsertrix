@@ -3,7 +3,7 @@
  * https://github.com/shoelace-style/shoelace/blob/next/src/themes/light.css
  *
  * To make new variables available to Tailwind, update
- * `theme` in tailwind.cofnig.js
+ * `theme` in tailwind.config.js
  */
 import { css, unsafeCSS } from "lit";
 import Color from "color";

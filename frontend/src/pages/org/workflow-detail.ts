@@ -5,11 +5,11 @@ import { until } from "lit/directives/until.js";
 import { msg, localized, str } from "@lit/localize";
 import queryString from "query-string";
 
-import { CopyButton } from "../../components/ui/copy-button";
-import { CrawlStatus } from "../../features/archived-items/crawl-status";
-import { RelativeDuration } from "../../components/ui/relative-duration";
-import type { AuthState } from "../../utils/AuthService";
-import LiteElement, { html } from "../../utils/LiteElement";
+import { CopyButton } from "@/components/ui/copy-button";
+import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { RelativeDuration } from "@/components/ui/relative-duration";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
 import type {
   Crawl,
   CrawlState,
@@ -17,13 +17,13 @@ import type {
   WorkflowParams,
   Seed,
 } from "./types";
-import { humanizeSchedule } from "../../utils/cron";
-import type { APIPaginatedList } from "../../types/api";
-import { inactiveCrawlStates, isActive } from "../../utils/crawler";
+import { humanizeSchedule } from "@/utils/cron";
+import type { APIPaginatedList } from "@/types/api";
+import { inactiveCrawlStates, isActive } from "@/utils/crawler";
 import type { SlSelect } from "@shoelace-style/shoelace";
-import type { PageChangeEvent } from "../../components/ui/pagination";
-import { ExclusionEditor } from "../../features/crawl-workflows/exclusion-editor";
-import type { CrawlLog } from "../../features/archived-items/crawl-logs";
+import type { PageChangeEvent } from "@/components/ui/pagination";
+import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
+import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];

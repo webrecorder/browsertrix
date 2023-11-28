@@ -1,1 +1,1 @@
-export * from "../../types/crawler";
+export * from "@/types/crawler";

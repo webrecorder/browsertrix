@@ -5,14 +5,14 @@ import { when } from "lit/directives/when.js";
 import type { SlCheckbox, SlSelect } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
-import { CopyButton } from "../../components/ui/copy-button";
-import { CrawlStatus } from "../../features/archived-items/crawl-status";
-import type { PageChangeEvent } from "../../components/ui/pagination";
-import type { AuthState } from "../../utils/AuthService";
-import LiteElement, { html } from "../../utils/LiteElement";
+import { CopyButton } from "@/components/ui/copy-button";
+import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import type { PageChangeEvent } from "@/components/ui/pagination";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
 import type { Crawl, CrawlState, Workflow, Upload } from "./types";
-import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
-import { isActive, finishedCrawlStates } from "../../utils/crawler";
+import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import { isActive, finishedCrawlStates } from "@/utils/crawler";
 
 type Crawls = APIPaginatedList<Crawl>;
 type SearchFields = "name" | "firstSeed";

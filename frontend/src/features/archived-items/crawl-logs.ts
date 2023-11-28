@@ -2,8 +2,8 @@ import { LitElement, html, css } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
-import { truncate } from "../../utils/css";
-import type { APIPaginatedList } from "../../types/api";
+import { truncate } from "@/utils/css";
+import type { APIPaginatedList } from "@/types/api";
 
 export type CrawlLog = {
   timestamp: string;

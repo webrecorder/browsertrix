@@ -3,11 +3,11 @@ import { msg, localized, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 
-import { maxLengthValidator } from "../../../utils/form";
-import type { AuthState } from "../../../utils/AuthService";
-import LiteElement, { html } from "../../../utils/LiteElement";
-import type { Dialog } from "../../../components/ui/dialog";
-import type { Collection } from "../../../types/collection";
+import { maxLengthValidator } from "@/utils/form";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
+import type { Dialog } from "@/components/ui/dialog";
+import type { Collection } from "@/types/collection";
 
 @localized()
 @customElement("btrix-new-collection-dialog")

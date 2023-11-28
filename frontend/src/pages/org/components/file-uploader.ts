@@ -11,12 +11,12 @@ import type {
   Tags,
   TagInputEvent,
   TagsChangeEvent,
-} from "../../../components/ui/tag-input";
-import type { AuthState } from "../../../utils/AuthService";
-import LiteElement, { html } from "../../../utils/LiteElement";
-import { APIError } from "../../../utils/api";
-import { maxLengthValidator } from "../../../utils/form";
-import type { FileRemoveEvent } from "../../../components/ui/file-list";
+} from "@/components/ui/tag-input";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
+import { APIError } from "@/utils/api";
+import { maxLengthValidator } from "@/utils/form";
+import type { FileRemoveEvent } from "@/components/ui/file-list";
 
 export type FileUploaderRequestCloseEvent = CustomEvent<NonNullable<unknown>>;
 export type FileUploaderUploadStartEvent = CustomEvent<{

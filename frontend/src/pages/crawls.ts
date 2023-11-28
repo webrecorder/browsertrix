@@ -4,14 +4,14 @@ import { msg, localized } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
-import type { PageChangeEvent } from "../components/ui/pagination";
-import { CrawlStatus } from "../features/archived-items/crawl-status";
-import type { AuthState } from "../utils/AuthService";
-import LiteElement, { html } from "../utils/LiteElement";
-import { needLogin } from "../utils/auth";
-import { activeCrawlStates } from "../utils/crawler";
-import type { Crawl, CrawlState } from "../types/crawler";
-import type { APIPaginationQuery, APIPaginatedList } from "../types/api";
+import type { PageChangeEvent } from "@/components/ui/pagination";
+import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
+import { needLogin } from "@/utils/auth";
+import { activeCrawlStates } from "@/utils/crawler";
+import type { Crawl, CrawlState } from "@/types/crawler";
+import type { APIPaginationQuery, APIPaginatedList } from "@/types/api";
 import "./org/workflow-detail";
 import "./org/crawls-list";
 

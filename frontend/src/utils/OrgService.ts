@@ -1,4 +1,4 @@
-import type { UserOrg } from "../types/user";
+import type { UserOrg } from "@/types/user";
 
 const ORG_STORAGE_KEY_PREFIX = "btrix.org";
 

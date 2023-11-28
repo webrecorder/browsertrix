@@ -2,9 +2,9 @@ import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import sortBy from "lodash/fp/sortBy";
 
-import type { AuthState } from "../utils/AuthService";
-import LiteElement, { html } from "../utils/LiteElement";
-import type { OrgData } from "../types/org";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
+import type { OrgData } from "@/types/org";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 const sortByName = sortBy("name");

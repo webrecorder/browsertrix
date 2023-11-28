@@ -5,16 +5,16 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { classMap } from "lit/directives/class-map.js";
 import { msg, localized, str } from "@lit/localize";
 
-import type { PageChangeEvent } from "../../components/ui/pagination";
-import { RelativeDuration } from "../../components/ui/relative-duration";
-import type { AuthState } from "../../utils/AuthService";
-import LiteElement, { html } from "../../utils/LiteElement";
-import { isActive } from "../../utils/crawler";
-import { CopyButton } from "../../components/ui/copy-button";
+import type { PageChangeEvent } from "@/components/ui/pagination";
+import { RelativeDuration } from "@/components/ui/relative-duration";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
+import { isActive } from "@/utils/crawler";
+import { CopyButton } from "@/components/ui/copy-button";
 import type { Crawl, CrawlConfig, Seed } from "./types";
-import type { APIPaginatedList } from "../../types/api";
-import { humanizeExecutionSeconds } from "../../utils/executionTimeFormatter";
-import type { CrawlLog } from "../../features/archived-items/crawl-logs";
+import type { APIPaginatedList } from "@/types/api";
+import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 
 const SECTIONS = [
   "overview",

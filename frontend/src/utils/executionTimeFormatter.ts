@@ -6,7 +6,7 @@ import { getLocale } from "./localization";
  * Biases towards minutes:
  * - When the time is exactly on an hour boundary, just shows hours
  *   - e.g. `3h`
- * - When the time isn't on an hour boundary but is on a minute broundary, just shows hours (if applicable) and minutes
+ * - When the time isn't on an hour boundary but is on a minute boundary, just shows hours (if applicable) and minutes
  *   - e.g. `3h 2m` or `32m`
  * - When the time is less than a minute, shows minutes and seconds
  *   - e.g. `0m 43s`

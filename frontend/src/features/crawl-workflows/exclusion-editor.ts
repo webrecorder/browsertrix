@@ -1,14 +1,14 @@
 import { customElement, property, state } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
-import type { ExclusionRemoveEvent } from "../../components/queue-exclusion-table";
+import type { ExclusionRemoveEvent } from "./queue-exclusion-table";
 import type {
   ExclusionAddEvent,
   ExclusionChangeEvent,
-} from "../../components/queue-exclusion-form";
-import type { SeedConfig } from "../../pages/org/types";
-import LiteElement, { html } from "../../utils/LiteElement";
-import type { AuthState } from "../../utils/AuthService";
+} from "./queue-exclusion-form";
+import type { SeedConfig } from "@/pages/org/types";
+import LiteElement, { html } from "@/utils/LiteElement";
+import type { AuthState } from "@/utils/AuthService";
 
 type URLs = string[];
 type ResponseData = {

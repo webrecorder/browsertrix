@@ -1,10 +1,10 @@
 import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
-import type { AuthState } from "../utils/AuthService";
-import LiteElement, { html } from "../utils/LiteElement";
-import { needLogin } from "../utils/auth";
-import type { CurrentUser } from "../types/user";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
+import { needLogin } from "@/utils/auth";
+import type { CurrentUser } from "@/types/user";
 
 @needLogin
 @localized()

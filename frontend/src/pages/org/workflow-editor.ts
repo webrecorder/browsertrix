@@ -25,29 +25,29 @@ import flow from "lodash/fp/flow";
 import uniq from "lodash/fp/uniq";
 import Fuse from "fuse.js";
 
-import LiteElement, { html } from "../../utils/LiteElement";
-import { regexEscape } from "../../utils/string";
-import type { AuthState } from "../../utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
+import { regexEscape } from "@/utils/string";
+import type { AuthState } from "@/utils/AuthService";
 import {
   getUTCSchedule,
   humanizeSchedule,
   humanizeNextDate,
   getScheduleInterval,
   getNextDate,
-} from "../../utils/cron";
-import { maxLengthValidator } from "../../utils/form";
-import type { Tab } from "../../components/ui/tab-list";
+} from "@/utils/cron";
+import { maxLengthValidator } from "@/utils/form";
+import type { Tab } from "@/components/ui/tab-list";
 import type {
   ExclusionRemoveEvent,
   ExclusionChangeEvent,
-} from "../../components/queue-exclusion-table";
-import type { TimeInputChangeEvent } from "../../components/ui/time-input";
+} from "@/features/crawl-workflows/queue-exclusion-table";
+import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import type {
   TagInputEvent,
   Tags,
   TagsChangeEvent,
-} from "../../components/ui/tag-input";
-import type { CollectionsChangeEvent } from "../../features/collections/collections-add";
+} from "@/components/ui/tag-input";
+import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type {
   WorkflowParams,
   Profile,

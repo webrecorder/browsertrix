@@ -1,6 +1,6 @@
 import { configureLocalization } from "@lit/localize";
 
-import { sourceLocale, targetLocales } from "../__generated__/locale-codes";
+import { sourceLocale, targetLocales } from "@/__generated__/locale-codes";
 
 export const { getLocale, setLocale } = configureLocalization({
   sourceLocale,

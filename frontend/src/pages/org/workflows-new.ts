@@ -3,8 +3,8 @@ import { property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { mergeDeep } from "immutable";
 
-import type { AuthState } from "../../utils/AuthService";
-import LiteElement, { html } from "../../utils/LiteElement";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
 import type { JobType, Seed, WorkflowParams } from "./types";
 import type { SelectNewDialogEvent } from "./index";
 import "./workflow-editor";
