@@ -32,7 +32,7 @@ import type {
   OrgRemoveMemberEvent,
 } from "./settings";
 import type { Tab as CollectionTab } from "./collection-detail";
-import type { SelectJobTypeEvent } from "@/components/new-workflow-dialog";
+import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
