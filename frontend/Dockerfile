@@ -5,7 +5,7 @@ WORKDIR /app
 COPY yarn.lock package.json ./
 # Uses `yarn cache clean` to let Docker cache layer instead
 # of including yarn cache in the build image
-RUN yarn --frozen-lockfile --ignore-optional --network-timeout 1000000 && \
+RUN yarn --production --frozen-lockfile --ignore-optional --network-timeout 1000000 && \
     yarn cache clean
 
 COPY --link lit-localize.json \
@@ -32,7 +32,7 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
 
 # Prevent Docker image including node_modules to save space
 RUN yarn build && \
-    rm -rf ./node_modules
+  rm -rf ./node_modules
 
 FROM docker.io/library/nginx:1.23.2
 
