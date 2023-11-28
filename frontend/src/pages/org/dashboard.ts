@@ -514,7 +514,7 @@ export class Dashboard extends LiteElement {
                         this.org!.giftedExecSecondsAvailable,
                       { style: "short", round: "down" }
                     )}
-                    <span class="ml-1">${msg("Remaining")}</span>
+                    <span class="ml-1">${msg("remaining")}</span>
                   </span>
                 `
               : ""
