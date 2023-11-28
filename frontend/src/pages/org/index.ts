@@ -25,10 +25,6 @@ import "./browser-profiles-list";
 import "./browser-profiles-new";
 import "./settings";
 import "./dashboard";
-import "./components/file-uploader";
-import "./components/new-browser-profile-dialog";
-import "./components/new-collection-dialog";
-import "./components/new-workflow-dialog";
 import type {
   Member,
   OrgInfoChangeEvent,
@@ -36,7 +32,7 @@ import type {
   OrgRemoveMemberEvent,
 } from "./settings";
 import type { Tab as CollectionTab } from "./collection-detail";
-import type { SelectJobTypeEvent } from "./components/new-workflow-dialog";
+import type { SelectJobTypeEvent } from "@/components/new-workflow-dialog";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
