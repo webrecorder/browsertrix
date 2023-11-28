@@ -317,6 +317,19 @@ class OrgOps:
                 {"$inc": {"giftedExecSecondsAvailable": gifted_secs_diff}},
             )
 
+        # If extra/gifted time was previously set but now 0, clear available seconds
+        if quotas.extraExecMinutes == 0 and org.extraExecSecondsAvailable:
+            await self.orgs.find_one_and_update(
+                {"_id": org.id},
+                {"$set": {"extraExecSecondsAvailable": 0}},
+            )
+
+        if quotas.giftedExecMinutes == 0 and org.giftedExecSecondsAvailable:
+            await self.orgs.find_one_and_update(
+                {"_id": org.id},
+                {"$set": {"giftedExecSecondsAvailable": 0}},
+            )
+
     async def update_event_webhook_urls(self, org: Organization, urls: OrgWebhookUrls):
         """Update organization event webhook URLs"""
         return await self.orgs.find_one_and_update(
