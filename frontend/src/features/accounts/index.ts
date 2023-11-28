@@ -1,3 +1,3 @@
 import("./account-settings");
 import("./invite-form");
-import("./account-settings");
+import("./sign-up-form");
