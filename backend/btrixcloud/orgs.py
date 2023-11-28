@@ -545,30 +545,26 @@ class OrgOps:
                 {
                     "$inc": {
                         f"giftedExecSeconds.{yymm}": gifted_secs_available,
-                        "giftedExecSecondsAvailable": -gifted_secs_available,
                         # Reduce crawlExecSecs by amount we're adding to gifted
                         f"crawlExecSeconds.{yymm}": -gifted_secs_available,
-                    }
+                    },
+                    "$set": {"giftedExecSecondsAvailable": 0}
                 },
             )
 
         secs_still_over_quota = current_monthly_exec_secs - (
             monthly_quota_secs + gifted_secs_available
         )
-        extra_secs_available = org.extraExecSecondsAvailable
-        if extra_secs_available:
+        secs_to_use = min(secs_still_over_quota, org.extraExecSecondsAvailable)
+        if secs_to_use:
             return await self.orgs.find_one_and_update(
                 {"_id": oid},
                 {
                     "$inc": {
-                        f"extraExecSeconds.{yymm}": secs_still_over_quota,
-                        # Don't let extra seconds available fall below 0
-                        "extraExecSecondsAvailable": -min(
-                            secs_still_over_quota, extra_secs_available
-                        ),
-                        # Reduce crawlExecSecs by remaining overage since we're
-                        # applying the remainder to extra
-                        f"crawlExecSeconds.{yymm}": -secs_still_over_quota,
+                        f"extraExecSeconds.{yymm}": secs_to_use,
+                        # Reduce crawlExecSecs by amount we're adding to extra
+                        f"crawlExecSeconds.{yymm}": -secs_to_use,
+                        "extraExecSecondsAvailable": -secs_to_use,
                     }
                 },
             )
