@@ -65,6 +65,7 @@ const version = (() => {
   return packageJSON.version;
 })();
 
+/** @type {import('webpack').Configuration} */
 const main = {
   entry: "./src/index.ts",
   output: {
@@ -125,7 +126,9 @@ const main = {
       maxChunks: 12,
     }),
 
-    new ForkTsCheckerWebpackPlugin(),
+    new ForkTsCheckerWebpackPlugin({
+      typescript: { configOverwrite: { exclude: ["**/*.test.ts"] } },
+    }),
 
     new HtmlWebpackPlugin({
       template: "src/index.ejs",
