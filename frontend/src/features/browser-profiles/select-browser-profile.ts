@@ -3,10 +3,10 @@ import { property, state, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import orderBy from "lodash/fp/orderBy";
 
-import type { AuthState } from "../utils/AuthService";
-import LiteElement from "../utils/LiteElement";
-import type { Profile } from "../pages/org/types";
-import type { APIPaginatedList } from "../types/api";
+import type { AuthState } from "../../utils/AuthService";
+import LiteElement from "../../utils/LiteElement";
+import type { Profile } from "../../pages/org/types";
+import type { APIPaginatedList } from "../../types/api";
 
 /**
  * Browser profile select dropdown

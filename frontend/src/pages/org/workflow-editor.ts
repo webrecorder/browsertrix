@@ -36,7 +36,7 @@ import {
   getNextDate,
 } from "../../utils/cron";
 import { maxLengthValidator } from "../../utils/form";
-import type { Tab } from "../../components/tab-list";
+import type { Tab } from "../../components/ui/tab-list";
 import type {
   ExclusionRemoveEvent,
   ExclusionChangeEvent,
@@ -47,7 +47,7 @@ import type {
   Tags,
   TagsChangeEvent,
 } from "../../components/ui/tag-input";
-import type { CollectionsChangeEvent } from "../../components/collections-add";
+import type { CollectionsChangeEvent } from "../../features/collections/collections-add";
 import type {
   WorkflowParams,
   Profile,

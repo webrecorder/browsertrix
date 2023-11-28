@@ -14,7 +14,7 @@ import { CopyButton } from "../../components/ui/copy-button";
 import type { Crawl, CrawlConfig, Seed } from "./types";
 import type { APIPaginatedList } from "../../types/api";
 import { humanizeExecutionSeconds } from "../../utils/executionTimeFormatter";
-import type { CrawlLog } from "../../components/crawl-logs";
+import type { CrawlLog } from "../../features/archived-items/crawl-logs";
 
 const SECTIONS = [
   "overview",

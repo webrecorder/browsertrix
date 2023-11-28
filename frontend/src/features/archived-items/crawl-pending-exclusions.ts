@@ -1,7 +1,7 @@
 import { customElement, property, state } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
-import LiteElement, { html } from "../utils/LiteElement";
+import LiteElement, { html } from "../../utils/LiteElement";
 
 type URLs = string[];
 

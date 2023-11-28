@@ -5,7 +5,7 @@ import type { SlSelect } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
 import type { PageChangeEvent } from "../components/ui/pagination";
-import { CrawlStatus } from "../components/crawl-status";
+import { CrawlStatus } from "../features/archived-items/crawl-status";
 import type { AuthState } from "../utils/AuthService";
 import LiteElement, { html } from "../utils/LiteElement";
 import { needLogin } from "../utils/auth";

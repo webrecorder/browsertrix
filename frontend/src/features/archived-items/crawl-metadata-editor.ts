@@ -3,11 +3,15 @@ import { msg, localized } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
 
-import type { Tags, TagInputEvent, TagsChangeEvent } from "./ui/tag-input";
-import type { AuthState } from "../utils/AuthService";
-import LiteElement, { html } from "../utils/LiteElement";
-import { maxLengthValidator } from "../utils/form";
-import type { Crawl } from "../types/crawler";
+import type {
+  Tags,
+  TagInputEvent,
+  TagsChangeEvent,
+} from "../../components/ui/tag-input";
+import type { AuthState } from "../../utils/AuthService";
+import LiteElement, { html } from "../../utils/LiteElement";
+import { maxLengthValidator } from "../../utils/form";
+import type { Crawl } from "../../types/crawler";
 
 /**
  * Usage:

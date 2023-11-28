@@ -3,8 +3,8 @@ import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import throttle from "lodash/fp/throttle";
 
-import LiteElement, { html } from "../utils/LiteElement";
-import type { AuthState } from "../utils/AuthService";
+import LiteElement, { html } from "../../utils/LiteElement";
+import type { AuthState } from "../../utils/AuthService";
 import type { PropertyValueMap } from "lit";
 
 type Pages = string[];

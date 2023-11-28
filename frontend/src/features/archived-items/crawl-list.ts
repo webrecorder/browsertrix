@@ -23,11 +23,11 @@ import { msg, localized, str } from "@lit/localize";
 import type { SlMenu } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
-import type { Button } from "./ui/button";
-import { RelativeDuration } from "./ui/relative-duration";
-import type { Crawl } from "../types/crawler";
-import { srOnly, truncate, dropdown } from "../utils/css";
-import type { NavigateEvent } from "../utils/LiteElement";
+import type { Button } from "../../components/ui/button";
+import { RelativeDuration } from "../../components/ui/relative-duration";
+import type { Crawl } from "../../types/crawler";
+import { srOnly, truncate, dropdown } from "../../utils/css";
+import type { NavigateEvent } from "../../utils/LiteElement";
 
 const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;

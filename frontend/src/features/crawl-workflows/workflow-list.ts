@@ -22,12 +22,12 @@ import {
 import { msg, localized, str } from "@lit/localize";
 import type { SlIconButton, SlMenu } from "@shoelace-style/shoelace";
 
-import { RelativeDuration } from "./ui/relative-duration";
-import type { ListWorkflow } from "../types/crawler";
-import { srOnly, truncate, dropdown } from "../utils/css";
-import type { NavigateEvent } from "../utils/LiteElement";
-import { humanizeSchedule } from "../utils/cron";
-import { numberFormatter } from "../utils/number";
+import { RelativeDuration } from "../../components/ui/relative-duration";
+import type { ListWorkflow } from "../../types/crawler";
+import { srOnly, truncate, dropdown } from "../../utils/css";
+import type { NavigateEvent } from "../../utils/LiteElement";
+import { humanizeSchedule } from "../../utils/cron";
+import { numberFormatter } from "../../utils/number";
 
 const mediumBreakpointCss = css`30rem`;
 const largeBreakpointCss = css`60rem`;
