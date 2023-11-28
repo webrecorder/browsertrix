@@ -548,7 +548,7 @@ class OrgOps:
                         # Reduce crawlExecSecs by amount we're adding to gifted
                         f"crawlExecSeconds.{yymm}": -gifted_secs_available,
                     },
-                    "$set": {"giftedExecSecondsAvailable": 0}
+                    "$set": {"giftedExecSecondsAvailable": 0},
                 },
             )
 
