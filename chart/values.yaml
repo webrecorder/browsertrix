@@ -180,12 +180,13 @@ redis_storage: "3Gi"
 # Crawler Image
 # =========================================
 # crawler versions available to use in workflows
-# "latest" should always be one of the values, as it is used as a
-# fallback value for workflow and browser profile creation
 crawler_versions:
+  # Don't edit this value, it is used as a fallback for workflow and
+  # browser profile creation
   - id: latest
     name: "Latest Release"
     image: "docker.io/webrecorder/browsertrix-crawler:latest"
+  # Add, remove, or edit additional crawler versions below
   - id: beta
     name: "Beta Release"
     image: "docker.io/webrecorder/browsertrix-crawler:1.0.0-beta.0"

@@ -92,7 +92,6 @@ export class SelectCrawler extends LiteElement {
   private async fetchCrawlerVersions(): Promise<void> {
     try {
       const versions = await this.getCrawlerVersions();
-
       this.crawlerVersions = versions as CrawlerVersion[];
 
       if (this.crawlerId && !this.selectedCrawler) {

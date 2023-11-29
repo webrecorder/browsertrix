@@ -16,12 +16,13 @@
 # frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
 
 # uncomment to set custom crawler_versions
-# "latest" should always be one of the values, as it is used as a
-# fallback value for workflow and browser profile creation
 # crawler_versions:
+#   # Don't edit this value, it is used as a fallback for workflow and
+#   # browser profile creation
 #   - id: latest
 #     name: "Latest Release"
 #     image: "docker.io/webrecorder/browsertrix-crawler:latest"
+#   # Add, remove, or edit additional crawler versions below
 #   - id: beta
 #     name: "Beta Release"
 #     image: "docker.io/webrecorder/browsertrix-crawler:1.0.0-beta.0"
