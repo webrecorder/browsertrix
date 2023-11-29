@@ -1,7 +1,7 @@
 import { LitElement, html } from "lit";
 import type { TemplateResult } from "lit";
 
-import { APIController } from "@/components/controllers/api";
+import { APIController } from "@/controllers/api";
 import appState, { use } from "./state";
 
 export interface NavigateEvent extends CustomEvent {
