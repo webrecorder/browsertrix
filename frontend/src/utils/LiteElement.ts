@@ -3,8 +3,6 @@ import type { TemplateResult } from "lit";
 
 import { APIController } from "@/components/controllers/api";
 import appState, { use } from "./state";
-import type { Auth } from "./AuthService";
-import type { APIFetchOptions } from "@/components/controllers/api";
 
 export interface NavigateEvent extends CustomEvent {
   detail: {
@@ -116,11 +114,10 @@ export default class LiteElement extends LitElement {
     );
   }
 
-  apiFetch<T = unknown>(
-    path: string,
-    auth: Auth,
-    options?: APIFetchOptions
-  ): Promise<T> {
-    return this.api.apiFetch(path, auth, options);
+  /**
+   * @deprecated New components should use APIController directly
+   */
+  async apiFetch<T = unknown>(...args: Parameters<APIController["fetch"]>) {
+    return this.api.fetch<T>(...args);
   }
 }

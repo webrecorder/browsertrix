@@ -1,20 +1,19 @@
-import type { LitElement, ReactiveController } from "lit";
+import type {
+  LitElement,
+  ReactiveController,
+  ReactiveControllerHost,
+} from "lit";
 import { msg } from "@lit/localize";
 
 import type { Auth } from "@/utils/AuthService";
 import AuthService from "@/utils/AuthService";
 import { APIError } from "@/utils/api";
 
-export type APIFetchOptions = {
-  method?: string;
-  headers?: any;
-  body?: any;
-  signal?: AbortSignal;
-  duplex?: string;
-};
-
+/**
+ * Utilities for interacting with the Browsertrix backend API
+ */
 export class APIController implements ReactiveController {
-  host: LitElement;
+  host: ReactiveControllerHost & EventTarget;
 
   constructor(host: LitElement) {
     this.host = host;
@@ -24,10 +23,16 @@ export class APIController implements ReactiveController {
   hostConnected() {}
   hostDisconnected() {}
 
-  async apiFetch<T = unknown>(
+  async fetch<T = unknown>(
     path: string,
     auth: Auth,
-    options?: APIFetchOptions
+    options?: {
+      method?: string;
+      headers?: any;
+      body?: any;
+      signal?: AbortSignal;
+      duplex?: string;
+    }
   ): Promise<T> {
     const { headers, ...opts } = options || {};
     const resp = await fetch("/api" + path, {
