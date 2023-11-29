@@ -153,7 +153,7 @@ class ProfileOps:
 
     async def commit_to_profile(
         self,
-        browser_commit: Union[ProfileCreate, ProfileUpdate],
+        browser_commit: ProfileCreate,
         storage: StorageRef,
         metadata: dict,
         profileid: Optional[UUID] = None,
@@ -206,6 +206,7 @@ class ProfileOps:
             userid=UUID(metadata.get("btrix.user")),
             oid=oid,
             baseid=baseid,
+            crawlerid=browser_commit.crawlerid,
         )
 
         await self.profiles.find_one_and_update(
@@ -439,6 +440,14 @@ def init_profiles_api(
 
         else:
             metadata = await browser_get_metadata(browser_commit.browserid, org)
+
+            profile = await ops.get_profile(profileid)
+            browser_commit = ProfileCreate(
+                browserid=browser_commit.browserid,
+                name=browser_commit.name,
+                description=browser_commit.description or profile.description,
+                crawlerid=profile.crawlerid,
+            )
 
             await ops.commit_to_profile(
                 browser_commit, org.storage, metadata, profileid

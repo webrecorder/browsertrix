@@ -153,7 +153,7 @@ export class NewBrowserProfileDialog extends LiteElement {
           data.browserid
         }?name=${window.encodeURIComponent(
           "My Profile"
-        )}&description=&profileId=`
+        )}&description=&profileId=&crawlerId=${this.crawlerid}`
       );
     } catch (e: any) {
       this.notify({

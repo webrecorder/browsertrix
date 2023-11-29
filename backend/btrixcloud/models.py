@@ -1063,6 +1063,7 @@ class Profile(BaseMongoModel):
 
     created: Optional[datetime]
     baseid: Optional[UUID] = None
+    crawlerid: Optional[str]
 
 
 # ============================================================================
@@ -1101,6 +1102,7 @@ class ProfileCreate(BaseModel):
     browserid: str
     name: str
     description: Optional[str] = ""
+    crawlerid: str
 
 
 # ============================================================================
