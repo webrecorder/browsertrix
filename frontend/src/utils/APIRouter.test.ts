@@ -1,7 +1,7 @@
 import { expect } from "@esm-bundle/chai";
 
 import APIRouter from "./APIRouter";
-import { ROUTES } from "../routes";
+import { ROUTES } from "@/routes";
 
 describe("APIRouter", () => {
   describe("match", () => {

@@ -7,16 +7,16 @@ import queryString from "query-string";
 import type { TemplateResult } from "lit";
 import type { SlCheckbox } from "@shoelace-style/shoelace";
 
-import type { AuthState } from "../../utils/AuthService";
-import LiteElement, { html } from "../../utils/LiteElement";
-import type { Collection } from "../../types/collection";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
+import type { Collection } from "@/types/collection";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
-} from "../../types/api";
-import type { Crawl, CrawlState, Upload } from "../../types/crawler";
-import type { PageChangeEvent } from "../../components/pagination";
+} from "@/types/api";
+import type { Crawl, CrawlState, Upload } from "@/types/crawler";
+import type { PageChangeEvent } from "@/components/ui/pagination";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const DESCRIPTION_MAX_HEIGHT_PX = 200;

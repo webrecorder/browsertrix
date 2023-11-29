@@ -5,14 +5,14 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
 
-import LiteElement, { html } from "../../utils/LiteElement";
-import type { AuthState } from "../../utils/AuthService";
-import type { OrgData } from "../../utils/orgs";
+import LiteElement, { html } from "@/utils/LiteElement";
+import type { AuthState } from "@/utils/AuthService";
+import type { OrgData } from "@/utils/orgs";
 import type { SelectNewDialogEvent } from "./index";
 import {
   humanizeExecutionSeconds,
   humanizeSeconds,
-} from "../../utils/executionTimeFormatter";
+} from "@/utils/executionTimeFormatter";
 
 type Metrics = {
   storageUsedBytes: number;

@@ -3,14 +3,14 @@ import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
-import type { ViewState } from "../../utils/APIRouter";
-import type { AuthState } from "../../utils/AuthService";
-import type { CurrentUser } from "../../types/user";
-import type { Crawl, JobType } from "../../types/crawler";
-import type { OrgData } from "../../utils/orgs";
-import { isAdmin, isCrawler } from "../../utils/orgs";
-import LiteElement, { html } from "../../utils/LiteElement";
-import { needLogin } from "../../utils/auth";
+import type { ViewState } from "@/utils/APIRouter";
+import type { AuthState } from "@/utils/AuthService";
+import type { CurrentUser } from "@/types/user";
+import type { Crawl, JobType } from "@/types/crawler";
+import type { OrgData } from "@/utils/orgs";
+import { isAdmin, isCrawler } from "@/utils/orgs";
+import LiteElement, { html } from "@/utils/LiteElement";
+import { needLogin } from "@/utils/auth";
 import "./workflow-detail";
 import "./workflows-list";
 import "./workflows-new";
@@ -25,10 +25,6 @@ import "./browser-profiles-list";
 import "./browser-profiles-new";
 import "./settings";
 import "./dashboard";
-import "./components/file-uploader";
-import "./components/new-browser-profile-dialog";
-import "./components/new-collection-dialog";
-import "./components/new-workflow-dialog";
 import type {
   Member,
   OrgInfoChangeEvent,
@@ -36,7 +32,7 @@ import type {
   OrgRemoveMemberEvent,
 } from "./settings";
 import type { Tab as CollectionTab } from "./collection-detail";
-import type { SelectJobTypeEvent } from "./components/new-workflow-dialog";
+import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];

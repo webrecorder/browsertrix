@@ -4,13 +4,13 @@ import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import queryString from "query-string";
 
-import type { AuthState } from "../../utils/AuthService";
-import LiteElement, { html } from "../../utils/LiteElement";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
 import type { ListWorkflow, Seed, Workflow, WorkflowParams } from "./types";
-import { CopyButton } from "../../components/copy-button";
+import { CopyButton } from "@/components/ui/copy-button";
 import type { SlCheckbox } from "@shoelace-style/shoelace";
-import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
-import type { PageChangeEvent } from "../../components/pagination";
+import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type { PageChangeEvent } from "@/components/ui/pagination";
 import type { SelectNewDialogEvent } from "./index";
 
 type SearchFields = "name" | "firstSeed";

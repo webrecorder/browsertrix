@@ -6,13 +6,13 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import slugify from "slugify";
 import type { SlInput } from "@shoelace-style/shoelace";
 
-import type { AuthState } from "../../utils/AuthService";
-import LiteElement, { html } from "../../utils/LiteElement";
-import { isAdmin, isCrawler, AccessCode } from "../../utils/orgs";
-import type { OrgData } from "../../utils/orgs";
-import type { CurrentUser } from "../../types/user";
-import type { APIPaginatedList } from "../../types/api";
-import { maxLengthValidator } from "../../utils/form";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
+import { isAdmin, isCrawler, AccessCode } from "@/utils/orgs";
+import type { OrgData } from "@/utils/orgs";
+import type { CurrentUser } from "@/types/user";
+import type { APIPaginatedList } from "@/types/api";
+import { maxLengthValidator } from "@/utils/form";
 
 type Tab = "information" | "members";
 type User = {

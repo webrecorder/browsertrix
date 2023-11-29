@@ -1,4 +1,4 @@
-import type { CrawlState } from "../types/crawler";
+import type { CrawlState } from "@/types/crawler";
 export const activeCrawlStates: CrawlState[] = [
   "starting",
   "waiting_org_limit",

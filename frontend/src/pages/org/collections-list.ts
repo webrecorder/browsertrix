@@ -7,15 +7,12 @@ import Fuse from "fuse.js";
 import debounce from "lodash/fp/debounce";
 import type { SlMenuItem } from "@shoelace-style/shoelace";
 
-import type { PageChangeEvent } from "../../components/pagination";
-import type { AuthState } from "../../utils/AuthService";
-import LiteElement, { html } from "../../utils/LiteElement";
-import type { APIPaginatedList, APIPaginationQuery } from "../../types/api";
-import type {
-  Collection,
-  CollectionSearchValues,
-} from "../../types/collection";
-import noCollectionsImg from "../../assets/images/no-collections-found.webp";
+import type { PageChangeEvent } from "@/components/ui/pagination";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
+import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type { Collection, CollectionSearchValues } from "@/types/collection";
+import noCollectionsImg from "~assets/images/no-collections-found.webp";
 import type { SelectNewDialogEvent } from "./index";
 
 type Collections = APIPaginatedList<Collection>;

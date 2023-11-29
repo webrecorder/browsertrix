@@ -4,7 +4,7 @@ import { property, state, query, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized } from "@lit/localize";
 import { ifDefined } from "lit/directives/if-defined.js";
-import type { SlDialog } from "@shoelace-style/shoelace";
+import type { SlDialog, SlInput } from "@shoelace-style/shoelace";
 import "broadcastchannel-polyfill";
 import "tailwindcss/tailwind.css";
 
@@ -27,6 +27,7 @@ import theme from "./theme";
 import { ROUTES } from "./routes";
 import "./shoelace";
 import "./components";
+import "./features";
 import "./pages";
 import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
@@ -62,8 +63,8 @@ export class App extends LiteElement {
   @property({ type: String })
   version?: string;
 
-  private router: APIRouter = new APIRouter(ROUTES);
-  authService: AuthService = new AuthService();
+  private router = new APIRouter(ROUTES);
+  authService = new AuthService();
 
   @use()
   appState = appState;
@@ -87,7 +88,7 @@ export class App extends LiteElement {
     let authState: AuthState = null;
     try {
       authState = await AuthService.initSessionStorage();
-    } catch (e: any) {
+    } catch (e) {
       console.debug(e);
     }
     this.syncViewState();
@@ -109,7 +110,7 @@ export class App extends LiteElement {
     this.fetchAppSettings();
   }
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: Map<string, unknown>) {
     if (changedProperties.get("viewState") && this.viewState.route === "org") {
       AppStateService.updateOrgSlug(this.viewState.params.slug || null);
     }
@@ -161,6 +162,7 @@ export class App extends LiteElement {
         const firstOrg = orgs[0].slug;
         AppStateService.updateOrgSlug(firstOrg);
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
         console.debug(
@@ -262,7 +264,7 @@ export class App extends LiteElement {
             <a
               class="text-sm hover:text-neutral-400 font-medium"
               href=${homeHref}
-              @click=${(e: any) => {
+              @click=${(e: Event) => {
                 if (isAdmin) {
                   this.clearSelectedOrg();
                 }
@@ -281,7 +283,7 @@ export class App extends LiteElement {
                   <a
                     class="text-neutral-500 hover:text-neutral-400 font-medium"
                     href="/"
-                    @click=${(e: any) => {
+                    @click=${(e: Event) => {
                       this.clearSelectedOrg();
                       this.navLink(e);
                     }}
@@ -716,11 +718,13 @@ export class App extends LiteElement {
   private renderFindCrawl() {
     return html`
       <sl-dropdown
-        @sl-after-show=${(e: any) => {
-          e.target.querySelector("sl-input").focus();
+        @sl-after-show=${(e: Event) => {
+          (e.target as HTMLElement).querySelector("sl-input")?.focus();
         }}
-        @sl-after-hide=${(e: any) => {
-          e.target.querySelector("sl-input").value = "";
+        @sl-after-hide=${(e: Event) => {
+          (
+            (e.target as HTMLElement).querySelector("sl-input") as SlInput
+          ).value = "";
         }}
         hoist
       >
@@ -733,11 +737,13 @@ export class App extends LiteElement {
 
         <div class="p-2">
           <form
-            @submit=${(e: any) => {
+            @submit=${(e: SubmitEvent) => {
               e.preventDefault();
-              const id = new FormData(e.target).get("crawlId") as string;
+              const id = new FormData(e.target as HTMLFormElement).get(
+                "crawlId"
+              ) as string;
               this.navigate(`/crawls/crawl/${id}#watch`);
-              e.target.closest("sl-dropdown").hide();
+              (e.target as HTMLFormElement).closest("sl-dropdown")?.hide();
             }}
           >
             <div class="flex flex-wrap items-center">
@@ -805,10 +811,10 @@ export class App extends LiteElement {
       new CustomEvent("notify", {
         detail: {
           message: msg("Please log in to continue."),
-          variant: "warning" as any,
+          variant: "warning",
           icon: "exclamation-triangle",
         },
-      })
+      } as const)
     );
   };
 

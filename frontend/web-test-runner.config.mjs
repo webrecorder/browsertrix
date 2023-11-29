@@ -1,11 +1,13 @@
 import { esbuildPlugin } from "@web/dev-server-esbuild";
 import { importMapsPlugin } from "@web/dev-server-import-maps";
+import { typescriptPaths as typescriptPathsPlugin } from "rollup-plugin-typescript-paths";
 import commonjsPlugin from "@rollup/plugin-commonjs";
 import { fromRollup } from "@web/dev-server-rollup";
 import { fileURLToPath } from "url";
 import glob from "glob";
 
 const commonjs = fromRollup(commonjsPlugin);
+const typescriptPaths = fromRollup(typescriptPathsPlugin);
 
 // Map all css imports to mock file
 const cssImports = {};
@@ -19,6 +21,14 @@ export default {
   nodeResolve: true,
   rootDir: process.cwd(),
   plugins: [
+    typescriptPaths({
+      preserveExtensions: true,
+      absolute: false,
+      nonRelative: true, // needed for non-ts files
+      transform(path) {
+        return `/${path}`;
+      },
+    }),
     esbuildPlugin({
       ts: true,
       tsconfig: fileURLToPath(new URL("./tsconfig.json", import.meta.url)),
