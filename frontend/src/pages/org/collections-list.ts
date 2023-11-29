@@ -14,6 +14,7 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection, CollectionSearchValues } from "@/types/collection";
 import noCollectionsImg from "~assets/images/no-collections-found.webp";
 import type { SelectNewDialogEvent } from "./index";
+import "@/features/collections/collection-items-dialog";
 
 type Collections = APIPaginatedList<Collection>;
 type SearchFields = "name";
@@ -188,6 +189,10 @@ export class CollectionsList extends LiteElement {
           >
         </div>
       </btrix-dialog>
+
+      <btrix-collection-items-dialog
+        .authState=${this.authState}
+      ></btrix-collection-items-dialog>
     `;
   }
 
@@ -550,7 +555,7 @@ export class CollectionsList extends LiteElement {
           ${!col?.isPublic
             ? html`
                 <sl-menu-item
-                  style="--sl-color-neutral-700: var(--success)"
+                  style="--sl-color-neutral-700: var(--btrix-success)"
                   @click=${() => this.onTogglePublic(col, true)}
                 >
                   <sl-icon name="people-fill" slot="prefix"></sl-icon>
@@ -558,7 +563,9 @@ export class CollectionsList extends LiteElement {
                 </sl-menu-item>
               `
             : html`
-                <sl-menu-item style="--sl-color-neutral-700: var(--success)">
+                <sl-menu-item
+                  style="--sl-color-neutral-700: var(--btrix-success)"
+                >
                   <sl-icon name="box-arrow-up-right" slot="prefix"></sl-icon>
                   <a
                     target="_blank"
@@ -571,7 +578,7 @@ export class CollectionsList extends LiteElement {
                   </a>
                 </sl-menu-item>
                 <sl-menu-item
-                  style="--sl-color-neutral-700: var(--warning)"
+                  style="--sl-color-neutral-700: var(--btrix-warning)"
                   @click=${() => this.onTogglePublic(col, false)}
                 >
                   <sl-icon name="eye-slash" slot="prefix"></sl-icon>
@@ -593,7 +600,7 @@ export class CollectionsList extends LiteElement {
           </a>
           <sl-divider></sl-divider>
           <sl-menu-item
-            style="--sl-color-neutral-700: var(--danger)"
+            style="--sl-color-neutral-700: var(--btrix-danger)"
             @click=${() => this.confirmDelete(col)}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>

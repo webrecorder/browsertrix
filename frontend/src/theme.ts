@@ -20,6 +20,9 @@ const theme = css`
     --warning: var(--sl-color-warning-600);
     --danger: var(--sl-color-danger-600);
 
+    /* Custom screen widths */
+    --btrix-screen-lg: 1124px;
+
     /* Custom font variables */
     --font-monostyle-family: var(--sl-font-mono);
     --font-monostyle-variation: "MONO" 0.51, "CASL" 0, "slnt" 0, "CRSV" 0;
