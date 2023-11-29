@@ -24,6 +24,7 @@ export default {
     typescriptPaths({
       preserveExtensions: true,
       absolute: false,
+      nonRelative: true, // needed for non-ts files
       transform(path) {
         return `/${path}`;
       },
