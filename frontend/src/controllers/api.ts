@@ -11,6 +11,17 @@ import { APIError } from "@/utils/api";
 
 /**
  * Utilities for interacting with the Browsertrix backend API
+ *
+ * @example Usage:
+ * ```ts
+ * class MyComponent extends LitElement {
+ *   private api = new APIController(this);
+ *
+ *   async getSomething() {
+ *     await this.api.fetch("/path", this.authState)
+ *   }
+ * }
+ * ```
  */
 export class APIController implements ReactiveController {
   host: ReactiveControllerHost & EventTarget;
