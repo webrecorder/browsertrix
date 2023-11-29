@@ -15,7 +15,7 @@ import { APIError } from "@/utils/api";
 export class APIController implements ReactiveController {
   host: ReactiveControllerHost & EventTarget;
 
-  constructor(host: LitElement) {
+  constructor(host: APIController["host"]) {
     this.host = host;
     host.addController(this);
   }
@@ -26,13 +26,7 @@ export class APIController implements ReactiveController {
   async fetch<T = unknown>(
     path: string,
     auth: Auth,
-    options?: {
-      method?: string;
-      headers?: any;
-      body?: any;
-      signal?: AbortSignal;
-      duplex?: string;
-    }
+    options?: RequestInit
   ): Promise<T> {
     const { headers, ...opts } = options || {};
     const resp = await fetch("/api" + path, {
