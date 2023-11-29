@@ -1,8 +1,10 @@
-import { html } from "lit";
+import { LitElement, html } from "lit";
 import type { TemplateResult } from "lit";
 
-import { LitElementWithAPIFetch } from "@/components/mixins/api-fetch";
+import { APIController } from "@/components/controllers/api";
 import appState, { use } from "./state";
+import type { Auth } from "./AuthService";
+import type { APIFetchOptions } from "@/components/controllers/api";
 
 export interface NavigateEvent extends CustomEvent {
   detail: {
@@ -43,9 +45,11 @@ export interface NotifyEvent extends CustomEvent {
 
 export { html };
 
-export default class LiteElement extends LitElementWithAPIFetch {
+export default class LiteElement extends LitElement {
   @use()
   appState = appState;
+
+  private api = new APIController(this);
 
   protected get orgBasePath() {
     const slug = this.appState.orgSlug;
@@ -110,5 +114,13 @@ export default class LiteElement extends LitElementWithAPIFetch {
         detail,
       })
     );
+  }
+
+  apiFetch<T = unknown>(
+    path: string,
+    auth: Auth,
+    options?: APIFetchOptions
+  ): Promise<T> {
+    return this.api.apiFetch(path, auth, options);
   }
 }
