@@ -1,7 +1,7 @@
 import { html } from "lit";
 import type { TemplateResult } from "lit";
 
-import { LitElementWithAPIFetch } from "./api";
+import { LitElementWithAPIFetch } from "@/components/mixins/api-fetch";
 import appState, { use } from "./state";
 
 export interface NavigateEvent extends CustomEvent {
