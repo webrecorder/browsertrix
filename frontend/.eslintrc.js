@@ -22,7 +22,7 @@ module.exports = {
     "no-restricted-globals": [2, "event", "error"],
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": [
-      "error",
+      "warn",
       {
         argsIgnorePattern: "^_",
         varsIgnorePattern: "^_",

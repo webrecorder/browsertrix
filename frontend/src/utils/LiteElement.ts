@@ -1,10 +1,7 @@
 import { LitElement, html } from "lit";
 import type { TemplateResult } from "lit";
-import { msg } from "@lit/localize";
 
-import type { Auth } from "./AuthService";
-import AuthService from "./AuthService";
-import { APIError } from "./api";
+import { APIController } from "@/controllers/api";
 import appState, { use } from "./state";
 
 export interface NavigateEvent extends CustomEvent {
@@ -49,6 +46,8 @@ export { html };
 export default class LiteElement extends LitElement {
   @use()
   appState = appState;
+
+  private api = new APIController(this);
 
   protected get orgBasePath() {
     const slug = this.appState.orgSlug;
@@ -115,110 +114,10 @@ export default class LiteElement extends LitElement {
     );
   }
 
-  async apiFetch<T = unknown>(
-    path: string,
-    auth: Auth,
-    options?: {
-      method?: string;
-      headers?: any;
-      body?: any;
-      signal?: AbortSignal;
-      duplex?: string;
-    }
-  ): Promise<T> {
-    const { headers, ...opts } = options || {};
-    const resp = await fetch("/api" + path, {
-      headers: {
-        "Content-Type": "application/json",
-        ...headers,
-        ...auth.headers,
-      },
-      ...opts,
-    });
-
-    if (resp.ok) {
-      const body = await resp.json();
-      const storageQuotaReached = body.storageQuotaReached;
-      const executionMinutesQuotaReached = body.executionMinutesQuotaReached;
-      if (typeof storageQuotaReached === "boolean") {
-        this.dispatchEvent(
-          new CustomEvent("storage-quota-update", {
-            detail: { reached: storageQuotaReached },
-            bubbles: true,
-          })
-        );
-      }
-      if (typeof executionMinutesQuotaReached === "boolean") {
-        this.dispatchEvent(
-          new CustomEvent("execution-minutes-quota-update", {
-            detail: { reached: executionMinutesQuotaReached },
-            bubbles: true,
-          })
-        );
-      }
-
-      return body;
-    }
-
-    let errorDetail;
-    try {
-      errorDetail = (await resp.json()).detail;
-    } catch {}
-
-    let errorMessage: string = msg("Unknown API error");
-
-    switch (resp.status) {
-      case 401: {
-        this.dispatchEvent(AuthService.createNeedLoginEvent());
-        errorMessage = msg("Need login");
-        break;
-      }
-      case 403: {
-        if (errorDetail === "storage_quota_reached") {
-          this.dispatchEvent(
-            new CustomEvent("storage-quota-update", {
-              detail: { reached: true },
-              bubbles: true,
-            })
-          );
-          errorMessage = msg("Storage quota reached");
-          break;
-        }
-        if (errorDetail === "exec_minutes_quota_reached") {
-          this.dispatchEvent(
-            new CustomEvent("execution-minutes-quota-update", {
-              detail: { reached: true },
-              bubbles: true,
-            })
-          );
-          errorMessage = msg("Monthly execution minutes quota reached");
-          break;
-        }
-      }
-      case 404: {
-        errorMessage = msg("Not found");
-        break;
-      }
-      default: {
-        if (typeof errorDetail === "string") {
-          errorMessage = errorDetail;
-        } else if (Array.isArray(errorDetail) && errorDetail.length) {
-          const fieldDetail = errorDetail[0] || {};
-          const { loc, msg } = fieldDetail;
-
-          const fieldName = loc
-            .filter((v: any) => v !== "body" && typeof v === "string")
-            .join(" ");
-          errorMessage = `${fieldName} ${msg}`;
-        }
-        break;
-      }
-    }
-
-    throw new APIError({
-      message: errorMessage,
-      status: resp.status,
-      details: errorDetail,
-    });
+  /**
+   * @deprecated New components should use APIController directly
+   */
+  async apiFetch<T = unknown>(...args: Parameters<APIController["fetch"]>) {
+    return this.api.fetch<T>(...args);
   }
 }
