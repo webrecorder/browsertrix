@@ -22,6 +22,10 @@ export type OrgData = {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
   } | null;
+  monthlyExecSeconds: {
+    // Keyed by {4-digit year}-{2-digit month}
+    [key: string]: number;
+  } | null;
   extraExecSeconds: {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;

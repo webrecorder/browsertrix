@@ -851,8 +851,7 @@ class OrgOut(BaseMongoModel):
     name: str
     slug: str
     users: Optional[Dict[str, Any]]
-    usage: Optional[Dict[str, int]]
-    crawlExecSeconds: Optional[Dict[str, int]]
+
     default: bool = False
     bytesStored: int
     bytesStoredCrawls: int
@@ -860,18 +859,22 @@ class OrgOut(BaseMongoModel):
     bytesStoredProfiles: int
     origin: Optional[AnyHttpUrl] = None
 
-    webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
-    quotas: Optional[OrgQuotas] = OrgQuotas()
-    quotaUpdates: Optional[List[OrgQuotaUpdate]] = []
-
     storageQuotaReached: Optional[bool]
     execMinutesQuotaReached: Optional[bool]
 
+    usage: Optional[Dict[str, int]]
+    crawlExecSeconds: Dict[str, int] = {}
+    monthlyExecSeconds: Dict[str, int] = {}
     extraExecSeconds: Dict[str, int] = {}
     giftedExecSeconds: Dict[str, int] = {}
 
     extraExecSecondsAvailable: int = 0
     giftedExecSecondsAvailable: int = 0
+
+    quotas: Optional[OrgQuotas] = OrgQuotas()
+    quotaUpdates: Optional[List[OrgQuotaUpdate]] = []
+
+    webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 
 
 # ============================================================================
@@ -879,29 +882,29 @@ class Organization(BaseMongoModel):
     """Organization Base Model"""
 
     id: UUID
-
     name: str
     slug: str
-
     users: Dict[str, UserRole]
 
+    default: bool = False
+
     storage: StorageRef
-
     storageReplicas: List[StorageRef] = []
-
     customStorages: Dict[str, S3Storage] = {}
-
-    usage: Dict[str, int] = {}
-    crawlExecSeconds: Dict[str, int] = {}
-    extraExecSeconds: Dict[str, int] = {}
-    giftedExecSeconds: Dict[str, int] = {}
 
     bytesStored: int = 0
     bytesStoredCrawls: int = 0
     bytesStoredUploads: int = 0
     bytesStoredProfiles: int = 0
 
-    default: bool = False
+    usage: Dict[str, int] = {}
+    crawlExecSeconds: Dict[str, int] = {}
+    monthlyExecSeconds: Dict[str, int] = {}
+    extraExecSeconds: Dict[str, int] = {}
+    giftedExecSeconds: Dict[str, int] = {}
+
+    extraExecSecondsAvailable: int = 0
+    giftedExecSecondsAvailable: int = 0
 
     quotas: Optional[OrgQuotas] = OrgQuotas()
     quotaUpdates: Optional[List[OrgQuotaUpdate]] = []
@@ -909,9 +912,6 @@ class Organization(BaseMongoModel):
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 
     origin: Optional[AnyHttpUrl] = None
-
-    extraExecSecondsAvailable: int = 0
-    giftedExecSecondsAvailable: int = 0
 
     def is_owner(self, user):
         """Check if user is owner"""

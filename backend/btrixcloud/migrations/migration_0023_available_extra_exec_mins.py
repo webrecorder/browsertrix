@@ -18,9 +18,13 @@ class Migration(BaseMigration):
 
         Add extraExecSecondsAvailable and giftedExecSecondsAvailable to org.
         Initialize at 0 to avoid them being None.
+
+        Also add monthlyExecSeconds and copy previous crawlExecSeconds values
+        to it.
         """
         # pylint: disable=duplicate-code
         mdb_orgs = self.mdb["organizations"]
+
         query = {
             "extraExecSecondsAvailable": None,
             "giftedExecSecondsAvailable": None,
@@ -41,5 +45,19 @@ class Migration(BaseMigration):
             except Exception as err:
                 print(
                     f"Error adding exec seconds available fields to org {oid}: {err}",
+                    flush=True,
+                )
+
+        async for org in mdb_orgs.find({"monthlyExecSeconds": None}):
+            oid = org["_id"]
+            try:
+                await mdb_orgs.find_one_and_update(
+                    {"_id": oid},
+                    {"$set": {"monthlyExecSeconds": "$crawlExecSeconds"}},
+                )
+            # pylint: disable=broad-exception-caught
+            except Exception as err:
+                print(
+                    f"Error copying crawlExecSeconds to monthlyExecSeconds for org {oid}: {err}",
                     flush=True,
                 )

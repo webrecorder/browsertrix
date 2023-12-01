@@ -378,9 +378,9 @@ export class Dashboard extends LiteElement {
     const now = new Date();
 
     let usageSeconds = 0;
-    if (this.org!.crawlExecSeconds) {
+    if (this.org!.monthlyExecSeconds) {
       const actualUsage =
-        this.org!.crawlExecSeconds[
+        this.org!.monthlyExecSeconds[
           `${now.getFullYear()}-${now.getUTCMonth() + 1}`
         ];
       if (actualUsage) {
@@ -392,7 +392,16 @@ export class Dashboard extends LiteElement {
       usageSeconds = quotaSeconds;
     }
 
-    let usageSecondsAllTypes = usageSeconds;
+    let usageSecondsAllTypes = 0;
+    if (this.org!.crawlExecSeconds) {
+      const actualUsage =
+        this.org!.crawlExecSeconds[
+          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
+        ];
+      if (actualUsage) {
+        usageSecondsAllTypes = actualUsage;
+      }
+    }
 
     let usageSecondsExtra = 0;
     if (this.org!.extraExecSeconds) {
@@ -410,7 +419,6 @@ export class Dashboard extends LiteElement {
       usageSecondsExtra = maxExecSecsExtra;
     }
     if (usageSecondsExtra) {
-      usageSecondsAllTypes += usageSecondsExtra;
       // Quota for extra = this month's usage + remaining available
       quotaSecondsAllTypes += usageSecondsExtra;
       quotaSecondsExtra += usageSecondsExtra;
@@ -432,7 +440,6 @@ export class Dashboard extends LiteElement {
       usageSecondsGifted = maxExecSecsGifted;
     }
     if (usageSecondsGifted) {
-      usageSecondsAllTypes += usageSecondsGifted;
       // Quota for gifted = this month's usage + remaining available
       quotaSecondsAllTypes += usageSecondsGifted;
       quotaSecondsGifted += usageSecondsGifted;
