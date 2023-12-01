@@ -187,6 +187,7 @@ class CrawlManager(K8sAPI):
             # crawlconfig here has already been updated
             await self._update_scheduled_job(crawlconfig)
 
+        # pylint: disable=too-many-boolean-expressions
         if (
             has_scale_update
             or has_config_update

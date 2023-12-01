@@ -31,6 +31,7 @@ class Migration(BaseMigration):
                     {"_id": config_id},
                     {"$set": {"crawlerid": "latest"}},
                 )
+            # pylint: disable=broad-except
             except Exception as err:
                 print(
                     f"Error adding crawlerid 'latest' to workflow {config_id}: {err}",
@@ -44,6 +45,7 @@ class Migration(BaseMigration):
                     {"_id": profile_id},
                     {"$set": {"crawlerid": "latest"}},
                 )
+            # pylint: disable=broad-except
             except Exception as err:
                 print(
                     f"Error adding crawlerid 'latest' to profile {profile_id}: {err}",
