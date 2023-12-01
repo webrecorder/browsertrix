@@ -498,6 +498,7 @@ class OrgOps:
 
     async def inc_org_time_stats(self, oid, duration, is_exec_time=False):
         """inc crawl duration stats for org"""
+        # pylint: disable=too-many-return-statements
         key = "crawlExecSeconds" if is_exec_time else "usage"
         yymm = datetime.utcnow().strftime("%Y-%m")
         await self.orgs.find_one_and_update(
@@ -510,7 +511,6 @@ class OrgOps:
         org = await self.get_org_by_id(oid)
 
         monthly_exec_secs_used = await self.get_monthly_crawl_exec_seconds(oid)
-        remaining_duration = 0
 
         monthly_quota_mins = await self.get_org_exec_mins_monthly_quota(oid)
         monthly_quota_secs = monthly_quota_mins * 60
@@ -519,23 +519,23 @@ class OrgOps:
             return await self.orgs.find_one_and_update(
                 {"_id": oid}, {"$inc": {f"monthlyExecSeconds.{yymm}": duration}}
             )
-        else:
-            monthly_remaining_time = monthly_quota_secs - monthly_exec_secs_used
-            if duration <= monthly_remaining_time:
-                return await self.orgs.find_one_and_update(
-                    {"_id": oid}, {"$inc": {f"monthlyExecSeconds.{yymm}": duration}}
-                )
 
-            if not org.giftedExecSecondsAvailable and not org.extraExecSecondsAvailable:
-                return await self.orgs.find_one_and_update(
-                    {"_id": oid}, {"$inc": {f"monthlyExecSeconds.{yymm}": duration}}
-                )
-
-            await self.orgs.find_one_and_update(
-                {"_id": oid},
-                {"$inc": {f"monthlyExecSeconds.{yymm}": monthly_remaining_time}},
+        monthly_remaining_time = monthly_quota_secs - monthly_exec_secs_used
+        if duration <= monthly_remaining_time:
+            return await self.orgs.find_one_and_update(
+                {"_id": oid}, {"$inc": {f"monthlyExecSeconds.{yymm}": duration}}
             )
-            secs_over_quota = duration - monthly_remaining_time
+
+        if not org.giftedExecSecondsAvailable and not org.extraExecSecondsAvailable:
+            return await self.orgs.find_one_and_update(
+                {"_id": oid}, {"$inc": {f"monthlyExecSeconds.{yymm}": duration}}
+            )
+
+        await self.orgs.find_one_and_update(
+            {"_id": oid},
+            {"$inc": {f"monthlyExecSeconds.{yymm}": monthly_remaining_time}},
+        )
+        secs_over_quota = duration - monthly_remaining_time
 
         # If we've surpassed monthly base quota, use gifted and extra exec minutes
         # in that order if available, track their usage per month, and recalculate
