@@ -1102,7 +1102,7 @@ class ProfileCreate(BaseModel):
     browserid: str
     name: str
     description: Optional[str] = ""
-    crawlerid: str
+    crawlerid: str = "latest"
 
 
 # ============================================================================
