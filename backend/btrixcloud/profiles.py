@@ -442,7 +442,7 @@ def init_profiles_api(
             metadata = await browser_get_metadata(browser_commit.browserid, org)
 
             profile = await ops.get_profile(profileid)
-            browser_commit = ProfileCreate(
+            new_browser_commit = ProfileCreate(
                 browserid=browser_commit.browserid,
                 name=browser_commit.name,
                 description=browser_commit.description or profile.description,
@@ -450,7 +450,7 @@ def init_profiles_api(
             )
 
             await ops.commit_to_profile(
-                browser_commit, org.storage, metadata, profileid
+                new_browser_commit, org.storage, metadata, profileid
             )
 
         return {"updated": True}
