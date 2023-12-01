@@ -181,6 +181,7 @@ class CrawlManager(K8sAPI):
         has_timeout_update = update.crawlTimeout is not None
         has_max_crawl_size_update = update.maxCrawlSize is not None
         has_config_update = update.config is not None
+        has_crawlerid_update = update.crawlerid is not None
 
         if has_sched_update:
             # crawlconfig here has already been updated
@@ -192,6 +193,7 @@ class CrawlManager(K8sAPI):
             or has_timeout_update
             or profile_filename is not None
             or has_max_crawl_size_update
+            or has_crawlerid_update
         ):
             await self._update_config_map(
                 crawlconfig,

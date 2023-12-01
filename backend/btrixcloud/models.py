@@ -422,6 +422,7 @@ class UpdateCrawlConfig(BaseModel):
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = None  # type: ignore
     crawlFilenameTemplate: Optional[str] = None
     config: Optional[RawCrawlConfig] = None
+    crawlerid: Optional[str] = None
 
 
 # ============================================================================

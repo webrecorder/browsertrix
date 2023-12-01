@@ -315,6 +315,11 @@ class CrawlConfigOps:
             and update.profileid != orig_crawl_config.profileid
             and ((not update.profileid) != (not orig_crawl_config.profileid))
         )
+        changed = changed or (
+            update.crawlerid is not None
+            and update.crawlerid != orig_crawl_config.crawlerid
+            and ((not update.crawlerid) != (not orig_crawl_config.crawlerid))
+        )
 
         metadata_changed = self.check_attr_changed(orig_crawl_config, update, "name")
         metadata_changed = metadata_changed or self.check_attr_changed(
