@@ -1,6 +1,6 @@
 """ Profile Management """
 
-from typing import Optional, Union, TYPE_CHECKING, Any, cast
+from typing import Optional, TYPE_CHECKING, Any, cast
 from datetime import datetime
 from uuid import UUID, uuid4
 import os
