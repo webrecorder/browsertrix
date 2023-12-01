@@ -2,9 +2,9 @@ import { html } from "lit";
 import { property, state, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
-import type { AuthState } from "../utils/AuthService";
-import LiteElement from "../utils/LiteElement";
-import type { CrawlerVersion } from "../pages/org/types";
+import type { AuthState } from "../../utils/AuthService";
+import LiteElement from "../../utils/LiteElement";
+import type { CrawlerVersion } from "../../pages/org/types";
 
 type CrawlerVersionsAPIResponse = {
   versions: CrawlerVersion[];
