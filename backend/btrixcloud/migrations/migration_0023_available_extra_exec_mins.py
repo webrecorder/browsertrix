@@ -51,9 +51,9 @@ class Migration(BaseMigration):
         async for org in mdb_orgs.find({"monthlyExecSeconds": None}):
             oid = org["_id"]
             try:
-                await mdb_orgs.find_one_and_update(
+                await mdb_orgs.update_one(
                     {"_id": oid},
-                    {"$set": {"monthlyExecSeconds": "$crawlExecSeconds"}},
+                    [{"$set": {"monthlyExecSeconds": "$crawlExecSeconds"}}],
                 )
             # pylint: disable=broad-exception-caught
             except Exception as err:
