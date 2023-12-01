@@ -21,19 +21,19 @@ export type OrgData = {
   crawlExecSeconds: {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
-  } | null;
+  };
   monthlyExecSeconds: {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
-  } | null;
+  };
   extraExecSeconds: {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
-  } | null;
+  };
   giftedExecSeconds: {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
-  } | null;
+  };
   extraExecSecondsAvailable: number;
   giftedExecSecondsAvailable: number;
   storageQuotaReached?: boolean;

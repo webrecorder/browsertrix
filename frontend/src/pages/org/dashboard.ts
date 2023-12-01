@@ -677,69 +677,77 @@ export class Dashboard extends LiteElement {
       <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
     `;
 
-  // TODO fix style when data-table is converted to slots
-  readonly usageTableCols = [
-    msg("Month"),
-    html`
-      ${msg("Elapsed Time")}
-      <sl-tooltip>
-        <div slot="content" style="text-transform: initial">
-          ${msg("Total time elapsed between when crawls started and ended")}
-        </div>
-        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
-      </sl-tooltip>
-    `,
-    html`
-      ${msg("Total Execution Time")}
-      <sl-tooltip>
-        <div slot="content" style="text-transform: initial">
-          ${msg("Total running time of all crawler instances")}
-        </div>
-        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
-      </sl-tooltip>
-    `,
-    html`
-      ${msg("Execution: Monthly")}
-      <sl-tooltip>
-        <div slot="content" style="text-transform: initial">
-          ${msg("Monthly execution time used on crawls this month")}
-        </div>
-        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
-      </sl-tooltip>
-    `,
-    html`
-      ${msg("Execution: Extra")}
-      <sl-tooltip>
-        <div slot="content" style="text-transform: initial">
-          ${msg("Billable rollover execution time used on crawls this month")}
-        </div>
-        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
-      </sl-tooltip>
-    `,
-    html`
-      ${msg("Execution: Gifted")}
-      <sl-tooltip>
-        <div slot="content" style="text-transform: initial">
-          ${msg("Gifted execution time used on crawls this month")}
-        </div>
-        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
-      </sl-tooltip>
-    `,
-  ];
+  private hasMonthlyTime = () =>
+    Object.keys(this.org!.monthlyExecSeconds).length;
+
+  private hasExtraTime = () => Object.keys(this.org!.extraExecSeconds).length;
+
+  private hasGiftedTime = () => Object.keys(this.org!.giftedExecSeconds).length;
 
   private renderUsageHistory() {
     if (!this.org) return;
+
+    const usageTableCols = [
+      msg("Month"),
+      html`
+        ${msg("Elapsed Time")}
+        <sl-tooltip>
+          <div slot="content" style="text-transform: initial">
+            ${msg("Total time elapsed between when crawls started and ended")}
+          </div>
+          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+        </sl-tooltip>
+      `,
+      html`
+        ${msg("Total Execution Time")}
+        <sl-tooltip>
+          <div slot="content" style="text-transform: initial">
+            ${msg("Total running time of all crawler instances")}
+          </div>
+          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+        </sl-tooltip>
+      `,
+    ];
+
+    if (this.hasMonthlyTime()) {
+      usageTableCols.push(html`${msg("Execution: Monthly")}
+        <sl-tooltip>
+          <div slot="content" style="text-transform: initial">
+            ${msg("Monthly execution time used on crawls this month")}
+          </div>
+          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+        </sl-tooltip>`);
+    }
+    if (this.hasExtraTime()) {
+      usageTableCols.push(html`${msg("Execution: Extra")}
+        <sl-tooltip>
+          <div slot="content" style="text-transform: initial">
+            ${msg("Billable rollover execution time used on crawls this month")}
+          </div>
+          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+        </sl-tooltip>`);
+    }
+    if (this.hasGiftedTime()) {
+      usageTableCols.push(html`${msg("Execution: Gifted")}
+        <sl-tooltip>
+          <div slot="content" style="text-transform: initial">
+            ${msg("Gifted execution time used on crawls this month")}
+          </div>
+          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+        </sl-tooltip>`);
+    }
+
     const rows = Object.entries(this.org.usage || {})
       // Sort latest
       .reverse()
       .map(([mY, crawlTime]) => {
-        let value = this.org!.crawlExecSeconds?.[mY] || 0;
+        let monthlySecondsUsed = this.org!.monthlyExecSeconds?.[mY] || 0;
         let maxMonthlySeconds = 0;
         if (this.org!.quotas.maxExecMinutesPerMonth) {
           maxMonthlySeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
         }
-        if (value > maxMonthlySeconds) {
-          value = maxMonthlySeconds;
+        if (monthlySecondsUsed > maxMonthlySeconds) {
+          monthlySecondsUsed = maxMonthlySeconds;
         }
 
         let extraSecondsUsed = this.org!.extraExecSeconds?.[mY] || 0;
@@ -760,9 +768,14 @@ export class Dashboard extends LiteElement {
           giftedSecondsUsed = maxGiftedSeconds;
         }
 
-        const totalTimeSeconds = value + extraSecondsUsed + giftedSecondsUsed;
+        let totalSecondsUsed = this.org!.crawlExecSeconds?.[mY] || 0;
+        const totalMaxQuota =
+          maxMonthlySeconds + maxExtraSeconds + maxGiftedSeconds;
+        if (totalSecondsUsed > totalMaxQuota) {
+          totalSecondsUsed = totalMaxQuota;
+        }
 
-        return [
+        const tableRows = [
           html`
             <sl-format-date
               date="${mY}-01T00:00:00.000Z"
@@ -773,18 +786,31 @@ export class Dashboard extends LiteElement {
             </sl-format-date>
           `,
           humanizeSeconds(crawlTime || 0),
-          totalTimeSeconds ? humanizeSeconds(totalTimeSeconds) : "--",
-          value ? humanizeSeconds(value) : "--",
-          extraSecondsUsed ? humanizeSeconds(extraSecondsUsed) : "--",
-          giftedSecondsUsed ? humanizeSeconds(giftedSecondsUsed) : "--",
+          totalSecondsUsed ? humanizeSeconds(totalSecondsUsed) : "--",
         ];
+        if (this.hasMonthlyTime()) {
+          tableRows.push(
+            monthlySecondsUsed ? humanizeSeconds(monthlySecondsUsed) : "--"
+          );
+        }
+        if (this.hasExtraTime()) {
+          tableRows.push(
+            extraSecondsUsed ? humanizeSeconds(extraSecondsUsed) : "--"
+          );
+        }
+        if (this.hasGiftedTime()) {
+          tableRows.push(
+            giftedSecondsUsed ? humanizeSeconds(giftedSecondsUsed) : "--"
+          );
+        }
+        return tableRows;
       });
     return html`
       <btrix-details>
         <span slot="title">${msg("Usage History")}</span>
         <div class="border rounded overflow-hidden">
           <btrix-data-table
-            .columns=${this.usageTableCols}
+            .columns=${usageTableCols}
             .rows=${rows}
           ></btrix-data-table>
         </div>
