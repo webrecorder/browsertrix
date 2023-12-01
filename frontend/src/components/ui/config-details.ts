@@ -217,6 +217,14 @@ export class ConfigDetails extends LiteElement {
             )
           )}
           ${this.renderSetting(
+            msg("Crawler Version"),
+            when(
+              crawlConfig?.crawlerid,
+              () => html`${crawlConfig?.crawlerid}`,
+              () => msg("Latest Release")
+            )
+          )}
+          ${this.renderSetting(
             msg("Block Ads by Domain"),
             crawlConfig?.config.blockAds
           )}
