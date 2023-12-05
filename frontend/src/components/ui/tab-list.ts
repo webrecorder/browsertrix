@@ -26,19 +26,13 @@ const SCREEN_LG = 896;
 export class TabPanel extends LitElement {
   // postcss-lit-disable-next-line
   static styles = css`
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+
     :host {
       display: flex;
       min-height: 100%;
-    }
-
-    .panel[aria-hidden="false"] {
-      flex: 1;
-    }
-
-    .panel[aria-hidden="true"] {
-      display: none;
-      height: 0;
-      width: 0;
     }
   `;
 
@@ -51,7 +45,7 @@ export class TabPanel extends LitElement {
   render() {
     return html`
       <div
-        class="panel"
+        class="flex-auto aria-hidden:hidden"
         role="tabpanel"
         id=${ifDefined(this.name)}
         aria-hidden=${!this.active}
@@ -163,6 +157,7 @@ export class TabList extends LitElement {
 
     .content {
       grid-area: main;
+      max-width: ${SCREEN_LG}px;
     }
 
     .nav {
