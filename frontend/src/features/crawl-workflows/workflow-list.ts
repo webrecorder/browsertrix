@@ -24,7 +24,7 @@ import { msg, localized, str } from "@lit/localize";
 import { RelativeDuration } from "@/components/ui/relative-duration";
 import type { ListWorkflow } from "@/types/crawler";
 import { srOnly, truncate } from "@/utils/css";
-import type { NavigateEvent } from "@/utils/LiteElement";
+import type { NavigateEvent } from "@/controllers/navigate";
 import { humanizeSchedule } from "@/utils/cron";
 import { numberFormatter } from "@/utils/number";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
