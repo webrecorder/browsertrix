@@ -143,8 +143,8 @@ export class CollectionDetail extends LiteElement {
       )}
 
       <btrix-dialog
-        .label=${msg("Delete Collection?")}
-        .open=${this.openDialogName === "delete"}
+        label=${msg("Delete Collection?")}
+        ?open=${this.openDialogName === "delete"}
         @sl-request-close=${() => (this.openDialogName = undefined)}
       >
         ${msg(
@@ -175,7 +175,8 @@ export class CollectionDetail extends LiteElement {
             orgId=${this.orgId}
             .authState=${this.authState}
             .collection=${this.collection!}
-            open
+            ?open=${this.openDialogName === "editMetadata"}
+            @sl-request-close=${() => (this.openDialogName = undefined)}
           >
           </btrix-collection-metadata-dialog>
         `
@@ -371,8 +372,12 @@ export class CollectionDetail extends LiteElement {
                 `${this.orgBasePath}/collections/edit/${this.collectionId}`
               )}
           >
-            <sl-icon name="gear" slot="prefix"></sl-icon>
-            ${msg("Edit Collection")}
+            <sl-icon name="ui-checks" slot="prefix"></sl-icon>
+            ${msg("Select Archived Items")}
+          </sl-menu-item>
+          <sl-menu-item @click=${() => (this.openDialogName = "editMetadata")}>
+            <sl-icon name="pencil" slot="prefix"></sl-icon>
+            ${msg("Edit Metadata")}
           </sl-menu-item>
           <sl-divider></sl-divider>
           ${!this.collection?.isPublic
