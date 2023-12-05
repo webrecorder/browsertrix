@@ -1,3 +1,4 @@
+import { TailwindElement } from "@/classes/TailwindElement";
 import { LitElement, html, css } from "lit";
 import { property, queryAsync, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -23,19 +24,7 @@ const SCREEN_LG = 896;
  */
 
 @customElement("btrix-tab-panel")
-export class TabPanel extends LitElement {
-  // postcss-lit-disable-next-line
-  static styles = css`
-    @tailwind base;
-    @tailwind components;
-    @tailwind utilities;
-
-    :host {
-      display: flex;
-      min-height: 100%;
-    }
-  `;
-
+export class TabPanel extends TailwindElement {
   @property({ type: String })
   name?: string;
 
@@ -57,7 +46,7 @@ export class TabPanel extends LitElement {
 }
 
 @customElement("btrix-tab")
-export class Tab extends LitElement {
+export class Tab extends TailwindElement {
   // ID of panel the tab labels/controls
   @property({ type: String })
   name?: string;
@@ -68,34 +57,10 @@ export class Tab extends LitElement {
   @property({ type: Boolean })
   disabled = false;
 
-  // postcss-lit-disable-next-line
-  static styles = css`
-    .tab {
-      padding: 1rem 0.75rem;
-      line-height: 1.2;
-      font-weight: 600;
-      color: var(--sl-color-neutral-500);
-      transition: var(--sl-transition-fast) color;
-    }
-
-    .tab[aria-selected="true"] {
-      color: var(--sl-color-blue-600);
-    }
-
-    .tab[aria-disabled="false"] {
-      cursor: pointer;
-    }
-
-    .tab[aria-disabled="true"] {
-      color: var(--sl-color-neutral-300);
-      cursor: default;
-    }
-  `;
-
   render() {
     return html`
       <li
-        class="tab"
+        class="py-4 px-3 leading-tight font-semibold text-neutral-500 transition-colors duration-fast aria-selected:text-blue-600 cursor-pointer aria-disabled:cursor-default"
         role="tab"
         aria-selected=${this.active}
         aria-controls=${ifDefined(this.name)}
@@ -133,6 +98,7 @@ export class TabList extends LitElement {
         grid-template-areas:
           ". header"
           "menu main";
+        grid-template-columns: auto minmax(auto, 896px);
       }
     }
 
@@ -157,7 +123,6 @@ export class TabList extends LitElement {
 
     .content {
       grid-area: main;
-      max-width: ${SCREEN_LG}px;
     }
 
     .nav {
