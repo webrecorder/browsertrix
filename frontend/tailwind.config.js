@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+const { tailwindTransform } = require("postcss-lit");
+
 /**
  * Use Shoelace CSS variables in Tailwind theme for consistency
  *
@@ -89,12 +92,18 @@ function makeTheme() {
   };
 }
 
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   theme: {
     extend: makeTheme(),
   },
 
-  content: ["./src/**/*.html", "./src/**/*.{ts,js,ejs}"],
+  content: {
+    files: ["./src/**/*.html", "./src/**/*.{ts,js,ejs}"],
+    transform: {
+      ts: tailwindTransform,
+    },
+  },
 
   extract: {
     include: ["./src/**/*.{ts,js}"],

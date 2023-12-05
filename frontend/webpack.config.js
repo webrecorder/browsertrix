@@ -82,12 +82,26 @@ const main = {
       {
         test: /\.ts$/,
         include: path.resolve(__dirname, "src"),
-        loader: "ts-loader",
+        use: [
+          {
+            loader: "postcss-loader",
+            options: {
+              /** @type {import('postcss-load-config').Config} */
+              postcssOptions: {
+                syntax: "postcss-lit",
+                plugins: [["tailwindcss"], ["autoprefixer"]],
+              },
+            },
+          },
+          {
+            loader: "ts-loader",
+            options: {
+              onlyCompileBundledFiles: true,
+              transpileOnly: true,
+            },
+          },
+        ],
         exclude: /node_modules/,
-        options: {
-          onlyCompileBundledFiles: true,
-          transpileOnly: true,
-        },
       },
       {
         test: /\.css$/,
