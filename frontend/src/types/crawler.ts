@@ -54,6 +54,7 @@ export type WorkflowParams = {
 export type CrawlConfig = WorkflowParams & {
   oid: string;
   profileName: string | null;
+  crawlerLabel?: string | null;
 };
 
 export type Workflow = CrawlConfig & {
@@ -156,6 +157,7 @@ export type Crawl = CrawlConfig & {
   collections: { id: string; name: string }[];
   type?: "crawl" | "upload" | null;
   crawlExecSeconds: number;
+  crawlerLabel: string | null;
 };
 
 export type Upload = Omit<

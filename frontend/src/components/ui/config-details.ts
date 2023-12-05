@@ -219,8 +219,8 @@ export class ConfigDetails extends LiteElement {
           ${this.renderSetting(
             msg("Crawler Version"),
             when(
-              crawlConfig?.crawlerid,
-              () => html`${crawlConfig?.crawlerid}`,
+              crawlConfig?.crawlerLabel,
+              () => html`${crawlConfig?.crawlerLabel}`,
               () => msg("Latest Release")
             )
           )}

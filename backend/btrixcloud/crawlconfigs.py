@@ -185,6 +185,11 @@ class CrawlConfigOps:
         if config.autoAddCollections:
             data["autoAddCollections"] = config.autoAddCollections
 
+        crawler_version = self.get_crawler_version_by_id(config.crawlerid)
+        if not crawler_version:
+            raise HTTPException(status_code=404, detail="crawler_not_found")
+        data["crawlerLabel"] = crawler_version["name"]
+
         result = await self.crawl_configs.insert_one(data)
 
         crawlconfig = CrawlConfig.from_dict(data)
@@ -205,14 +210,10 @@ class CrawlConfigOps:
             run_now = False
             print(f"Execution minutes quota exceeded for org {org.id}", flush=True)
 
-        crawler_image = self.get_crawler_image_by_id(crawlconfig.crawlerid)
-        if not crawler_image:
-            raise HTTPException(status_code=404, detail="crawler_not_found")
-
         crawl_id = await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
             storage=org.storage,
-            crawler_image=crawler_image,
+            crawler_image=crawler_version["image"],
             run_now=run_now,
             out_filename=out_filename,
             profile_filename=profile_filename or "",
@@ -815,8 +816,8 @@ class CrawlConfigOps:
         except:
             await self.readd_configmap(crawlconfig, org)
 
-        crawler_image = self.get_crawler_image_by_id(crawlconfig.crawlerid)
-        if not crawler_image:
+        crawler_version = self.get_crawler_version_by_id(crawlconfig.crawlerid)
+        if not crawler_version:
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
         if await self.org_ops.storage_quota_reached(org.id):
@@ -827,7 +828,7 @@ class CrawlConfigOps:
 
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
-                crawlconfig, org.storage, crawler_image, userid=str(user.id)
+                crawlconfig, org.storage, crawler_version["image"], userid=str(user.id)
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
             return crawl_id
@@ -877,19 +878,15 @@ class CrawlConfigOps:
         except Exception:
             return [], 0
 
-    def get_crawler_image_by_id(self, crawler_id: str) -> str:
+    def get_crawler_version_by_id(self, crawler_id: str) -> Optional[CrawlerVersion]:
         """Get crawler image name by id"""
-        crawler_image = ""
         with open(os.environ["CRAWLER_VERSIONS_JSON"], encoding="utf-8") as fh:
             crawler_list = json.loads(fh.read())
             matching_images = [
-                crawler["image"]
-                for crawler in crawler_list
-                if crawler["id"] == crawler_id
+                crawler for crawler in crawler_list if crawler["id"] == crawler_id
             ]
             if matching_images:
-                crawler_image = matching_images[0]
-        return crawler_image
+                return matching_images[0]
 
     def get_crawler_versions(self) -> CrawlerVersions:
         """Get available crawler versions"""

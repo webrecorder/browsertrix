@@ -326,6 +326,8 @@ class CrawlConfigCore(BaseMongoModel):
 
     profileid: Optional[UUID]
 
+    crawlerLabel: Optional[str] = None
+
 
 # ============================================================================
 class CrawlConfigAdditional(BaseModel):
@@ -612,6 +614,8 @@ class CrawlOut(BaseMongoModel):
 
     storageQuotaReached: Optional[bool]
     execMinutesQuotaReached: Optional[bool]
+
+    crawlerLabel: Optional[str]
 
 
 # ============================================================================

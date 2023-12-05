@@ -266,6 +266,7 @@ class CrawlOps(BaseCrawlOps):
             started=started,
             tags=crawlconfig.tags,
             name=crawlconfig.name,
+            crawlerLabel=crawlconfig.crawlerLabel,
         )
 
         try:
