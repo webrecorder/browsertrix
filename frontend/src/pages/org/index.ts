@@ -468,12 +468,12 @@ export class Org extends LiteElement {
           }}
         >
         </btrix-new-workflow-dialog>
-        <btrix-new-collection-dialog
+        <btrix-collection-metadata-dialog
           .authState=${this.authState}
           orgId=${this.orgId}
           ?open=${this.openDialogName === "collection"}
         >
-        </btrix-new-collection-dialog>
+        </btrix-collection-metadata-dialog>
       </div>
     `;
   }

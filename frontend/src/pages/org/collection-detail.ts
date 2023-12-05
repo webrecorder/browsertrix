@@ -49,7 +49,7 @@ export class CollectionDetail extends LiteElement {
   private archivedItems?: APIPaginatedList<Crawl | Upload>;
 
   @state()
-  private openDialogName?: "delete";
+  private openDialogName?: "delete" | "editMetadata";
 
   @state()
   private isDescriptionExpanded = false;
@@ -155,7 +155,7 @@ export class CollectionDetail extends LiteElement {
           <sl-button
             size="small"
             @click=${() => (this.openDialogName = undefined)}
-            >Cancel</sl-button
+            >${msg("Cancel")}</sl-button
           >
           <sl-button
             size="small"
@@ -164,10 +164,22 @@ export class CollectionDetail extends LiteElement {
               await this.deleteCollection();
               this.openDialogName = undefined;
             }}
-            >Delete Collection</sl-button
+            >${msg("Delete Collection")}</sl-button
           >
         </div>
       </btrix-dialog>
+      ${when(
+        this.collection,
+        () => html`
+          <btrix-collection-metadata-dialog
+            orgId=${this.orgId}
+            .authState=${this.authState}
+            .collection=${this.collection!}
+            open
+          >
+          </btrix-collection-metadata-dialog>
+        `
+      )}
       ${this.renderShareDialog()}`;
   }
 
@@ -481,8 +493,7 @@ export class CollectionDetail extends LiteElement {
                 <sl-icon-button
                   class="text-base"
                   name="pencil"
-                  href=${`${this.orgBasePath}/collections/edit/${this.collectionId}#metadata`}
-                  @click=${this.navLink}
+                  @click=${() => (this.openDialogName = "editMetadata")}
                   label=${msg("Edit description")}
                 ></sl-icon-button>
               `
