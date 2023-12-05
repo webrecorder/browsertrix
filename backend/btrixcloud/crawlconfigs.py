@@ -887,6 +887,7 @@ class CrawlConfigOps:
             ]
             if matching_images:
                 return matching_images[0]
+            return None
 
     def get_crawler_versions(self) -> CrawlerVersions:
         """Get available crawler versions"""
