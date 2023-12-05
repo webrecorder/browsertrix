@@ -5,6 +5,7 @@ const { tailwindTransform } = require("postcss-lit");
  * Use Shoelace CSS variables in Tailwind theme for consistency
  *
  * Customize Shoelace variables in `theme.ts`
+ * @returns {import('tailwindcss').Config['theme']}
  */
 function makeTheme() {
   // Map color palettes:
@@ -88,6 +89,13 @@ function makeTheme() {
       lg: "1124px",
       // Override default of:
       // => @media (min-width: 1024px) { ... }
+    },
+    transitionDuration: {
+      "x-slow": "var(--sl-transition-x-slow)",
+      slow: "var(--sl-transition-slow)",
+      medium: "var(--sl-transition-medium)",
+      fast: "var(--sl-transition-fast)",
+      "x-fast": "var(--sl-transition-x-fast)",
     },
   };
 }
