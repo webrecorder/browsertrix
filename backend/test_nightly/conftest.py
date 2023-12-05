@@ -10,6 +10,9 @@ API_PREFIX = HOST_PREFIX + "/api"
 ADMIN_USERNAME = "admin@example.com"
 ADMIN_PW = "PASSW0RD!"
 
+CRAWLER_USERNAME = "crawlernightly@example.com"
+CRAWLER_PW = "crawlerPASSWORD!"
+
 
 @pytest.fixture(scope="session")
 def admin_auth_headers():
@@ -42,6 +45,32 @@ def default_org_id(admin_auth_headers):
         except:
             print("Waiting for default org id")
             time.sleep(5)
+
+
+@pytest.fixture(scope="session")
+def crawler_auth_headers(admin_auth_headers, default_org_id):
+    requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/add-user",
+        json={
+            "email": CRAWLER_USERNAME,
+            "password": CRAWLER_PW,
+            "name": "new-crawler",
+            "description": "crawler test crawl",
+            "role": 20,
+        },
+        headers=admin_auth_headers,
+    )
+    r = requests.post(
+        f"{API_PREFIX}/auth/jwt/login",
+        data={
+            "username": CRAWLER_USERNAME,
+            "password": CRAWLER_PW,
+            "grant_type": "password",
+        },
+    )
+    data = r.json()
+    access_token = data.get("access_token")
+    return {"Authorization": f"Bearer {access_token}"}
 
 
 @pytest.fixture(scope="session")
