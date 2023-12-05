@@ -177,6 +177,7 @@ export class CollectionDetail extends LiteElement {
             .collection=${this.collection!}
             ?open=${this.openDialogName === "editMetadata"}
             @sl-request-close=${() => (this.openDialogName = undefined)}
+            @btrix-collection-saved=${() => this.fetchCollection()}
           >
           </btrix-collection-metadata-dialog>
         `

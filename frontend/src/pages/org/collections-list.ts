@@ -79,13 +79,13 @@ export class CollectionsList extends LiteElement {
   private searchResultsOpen = false;
 
   @state()
-  private openDialogName?: "delete";
+  private openDialogName?: "delete" | "editMetadata";
 
   @state()
   private isDialogVisible: boolean = false;
 
   @state()
-  private collectionToDelete?: Collection;
+  private selectedCollection?: Collection;
 
   @state()
   private fetchErrorStatusCode?: number;
@@ -169,7 +169,7 @@ export class CollectionsList extends LiteElement {
       >
         ${msg(
           html`Are you sure you want to delete
-            <strong>${this.collectionToDelete?.name}</strong>?`
+            <strong>${this.selectedCollection?.name}</strong>?`
         )}
         <div slot="footer" class="flex justify-between">
           <sl-button
@@ -181,13 +181,27 @@ export class CollectionsList extends LiteElement {
             size="small"
             variant="primary"
             @click=${async () => {
-              await this.deleteCollection(this.collectionToDelete!);
+              await this.deleteCollection(this.selectedCollection!);
               this.openDialogName = undefined;
             }}
             >Delete Collection</sl-button
           >
         </div>
       </btrix-dialog>
+      ${when(
+        this.selectedCollection,
+        () => html`
+          <btrix-collection-metadata-dialog
+            orgId=${this.orgId}
+            .authState=${this.authState}
+            .collection=${this.selectedCollection!}
+            ?open=${this.openDialogName === "editMetadata"}
+            @sl-request-close=${() => (this.openDialogName = undefined)}
+            @btrix-collection-saved=${() => this.fetchCollections()}
+          >
+          </btrix-collection-metadata-dialog>
+        `
+      )}
     `;
   }
 
@@ -543,8 +557,14 @@ export class CollectionsList extends LiteElement {
             @click=${() =>
               this.navTo(`${this.orgBasePath}/collections/edit/${col.id}`)}
           >
-            <sl-icon name="gear" slot="prefix"></sl-icon>
-            ${msg("Edit Collection")}
+            <sl-icon name="ui-checks" slot="prefix"></sl-icon>
+            ${msg("Select Archived Items")}
+          </sl-menu-item>
+          <sl-menu-item
+            @click=${() => this.manageCollection(col, "editMetadata")}
+          >
+            <sl-icon name="pencil" slot="prefix"></sl-icon>
+            ${msg("Edit Metadata")}
           </sl-menu-item>
           <sl-divider></sl-divider>
           ${!col?.isPublic
@@ -594,7 +614,7 @@ export class CollectionsList extends LiteElement {
           <sl-divider></sl-divider>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => this.confirmDelete(col)}
+            @click=${() => this.manageCollection(col, "delete")}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${msg("Delete Collection")}
@@ -647,9 +667,13 @@ export class CollectionsList extends LiteElement {
     ).href;
   }
 
-  private confirmDelete = (collection: Collection) => {
-    this.collectionToDelete = collection;
-    this.openDialogName = "delete";
+  private manageCollection = async (
+    collection: Collection,
+    dialogName: CollectionsList["openDialogName"]
+  ) => {
+    this.selectedCollection = collection;
+    await this.updateComplete;
+    this.openDialogName = dialogName;
   };
 
   private async deleteCollection(collection: Collection): Promise<void> {
@@ -664,7 +688,7 @@ export class CollectionsList extends LiteElement {
         }
       );
 
-      this.collectionToDelete = undefined;
+      this.selectedCollection = undefined;
       this.fetchCollections();
 
       this.notify({
