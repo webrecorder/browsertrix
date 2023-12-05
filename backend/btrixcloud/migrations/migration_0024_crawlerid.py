@@ -29,7 +29,7 @@ class Migration(BaseMigration):
             try:
                 await mdb_crawl_configs.find_one_and_update(
                     {"_id": config_id},
-                    {"$set": {"crawlerid": "latest"}},
+                    {"$set": {"crawlerid": "latest", "crawlerLabel": "Latest Release"}},
                 )
             # pylint: disable=broad-except
             except Exception as err:

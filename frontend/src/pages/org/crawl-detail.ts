@@ -675,17 +675,16 @@ export class CrawlDetail extends LiteElement {
               ></btrix-copy-field>`
             : html`<sl-skeleton class="h-[16px] mb-[3px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Crawler Version")}>
-          ${this.crawl && this.crawl.crawlerLabel
-            ? html`
-                <div class="flex items-center gap-2">
-                  <code class="grow" title=${this.crawl.crawlerLabel}
-                    >${this.crawl.crawlerLabel}</code
-                  >
-                </div>
-              `
-            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
-        </btrix-desc-list-item>
+        ${when(
+          this.crawl && this.crawl.crawlerLabel,
+          () => html` <btrix-desc-list-item label=${msg("Crawler Version")}>
+            <div class="flex items-center gap-2">
+              <code class="grow" title=${this.crawl?.crawlerLabel}
+                >${this.crawl?.crawlerLabel}</code
+              >
+            </div>
+          </btrix-desc-list-item>`
+        )}
       </btrix-desc-list>
     `;
   }
