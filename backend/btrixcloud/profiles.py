@@ -100,7 +100,7 @@ class ProfileOps:
             str(org.id),
             url=profile_launch.url,
             storage=org.storage,
-            crawler_image=crawler_version["image"],
+            crawler_image=crawler_version.image,
             baseprofile=prev_profile_id,
             profile_filename=prev_profile,
         )

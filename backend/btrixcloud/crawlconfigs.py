@@ -188,7 +188,7 @@ class CrawlConfigOps:
         crawler_version = self.get_crawler_version_by_id(config.crawlerid)
         if not crawler_version:
             raise HTTPException(status_code=404, detail="crawler_not_found")
-        data["crawlerLabel"] = crawler_version["name"]
+        data["crawlerLabel"] = crawler_version.name
 
         result = await self.crawl_configs.insert_one(data)
 
@@ -213,7 +213,7 @@ class CrawlConfigOps:
         crawl_id = await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
             storage=org.storage,
-            crawler_image=crawler_version["image"],
+            crawler_image=crawler_version.image,
             run_now=run_now,
             out_filename=out_filename,
             profile_filename=profile_filename or "",
@@ -828,7 +828,7 @@ class CrawlConfigOps:
 
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
-                crawlconfig, org.storage, crawler_version["image"], userid=str(user.id)
+                crawlconfig, org.storage, crawler_version.image, userid=str(user.id)
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
             return crawl_id
@@ -886,7 +886,8 @@ class CrawlConfigOps:
                 crawler for crawler in crawler_list if crawler["id"] == crawler_id
             ]
             if matching_images:
-                return matching_images[0]
+                data = matching_images[0]
+                return CrawlerVersion(**data)
             return None
 
     def get_crawler_versions(self) -> CrawlerVersions:
