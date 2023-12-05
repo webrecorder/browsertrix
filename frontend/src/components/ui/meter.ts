@@ -15,6 +15,7 @@ export class MeterBar extends LitElement {
   @property({ type: Number })
   value = 0;
 
+  // postcss-lit-disable-next-line
   static styles = css`
     :host {
       display: contents;
@@ -73,6 +74,7 @@ export class Meter extends LitElement {
   @query(".maxText")
   private maxText?: HTMLElement;
 
+  // postcss-lit-disable-next-line
   static styles = css`
     .meter {
       position: relative;

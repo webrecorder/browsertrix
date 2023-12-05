@@ -20,6 +20,7 @@ import { classMap } from "lit/directives/class-map.js";
  */
 @customElement("btrix-desc-list-item")
 export class DescListItem extends LitElement {
+  // postcss-lit-disable-next-line
   static styles = css`
     :host {
       display: contents;
@@ -68,6 +69,7 @@ export class DescListItem extends LitElement {
 
 @customElement("btrix-desc-list")
 export class DescList extends LitElement {
+  // postcss-lit-disable-next-line
   static styles = css`
     dl {
       display: grid;

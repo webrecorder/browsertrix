@@ -31,6 +31,7 @@ const languages = sortBy("name")(
 @customElement("btrix-language-select")
 @localized()
 export class LanguageSelect extends LitElement {
+  // postcss-lit-disable-next-line
   static styles = css`
     sl-select::part(control) {
       box-shadow: var(--sl-shadow-small);

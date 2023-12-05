@@ -40,6 +40,7 @@ export class Button extends LitElement {
   @property({ type: Boolean })
   icon: boolean = false;
 
+  // postcss-lit-disable-next-line
   static styles = css`
     :host {
       display: inline-block;

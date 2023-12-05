@@ -13,6 +13,7 @@ export type SelectJobTypeEvent = CustomEvent<"url-list" | "seed-crawl">;
 @localized()
 @customElement("btrix-new-workflow-dialog")
 export class NewWorkflowDialog extends LitElement {
+  // postcss-lit-disable-next-line
   static styles = css`
     .title,
     .container {

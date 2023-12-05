@@ -14,6 +14,7 @@ export class Badge extends LitElement {
   @property({ type: String })
   variant: "success" | "warning" | "danger" | "neutral" = "neutral";
 
+  // postcss-lit-disable-next-line
   static styles = css`
     :host > span {
       display: inline-flex;

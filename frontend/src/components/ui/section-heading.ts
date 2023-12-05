@@ -11,6 +11,7 @@ import { customElement } from "lit/decorators.js";
  */
 @customElement("btrix-section-heading")
 export class SectionHeading extends LitElement {
+  // postcss-lit-disable-next-line
   static styles = css`
     .heading {
       display: flex;

@@ -3,8 +3,8 @@ import { property, queryAsync, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 const DEFAULT_PANEL_ID = "default-panel";
-// Match witch tailwind 4xl max width
-// https://tailwindcss.com/docs/max-width
+// // Match witch tailwind 4xl max width
+// // https://tailwindcss.com/docs/max-width
 const SCREEN_LG = 896;
 
 /**
@@ -24,6 +24,7 @@ const SCREEN_LG = 896;
 
 @customElement("btrix-tab-panel")
 export class TabPanel extends LitElement {
+  // postcss-lit-disable-next-line
   static styles = css`
     :host {
       display: flex;
@@ -73,6 +74,7 @@ export class Tab extends LitElement {
   @property({ type: Boolean })
   disabled = false;
 
+  // postcss-lit-disable-next-line
   static styles = css`
     .tab {
       padding: 1rem 0.75rem;
