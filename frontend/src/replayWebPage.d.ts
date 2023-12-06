@@ -1,15 +1,12 @@
-import { type LitElement } from "lit";
-import { type TemplateResult } from "lit-html";
-
-class ReplayWebPage extends LitElement {
-  source: string;
-  coll: string;
-  config: string;
-  replayBase: string;
-  noSandbox: string;
-  noCache: string;
-  render(): TemplateResult<1>;
-}
+/**
+ * @attr {String} source
+ * @attr {String} coll
+ * @attr {String} config
+ * @attr {String} replayBase
+ * @attr {String} noSandbox
+ * @attr {String} noCache
+ */
+class ReplayWebPage {}
 
 declare global {
   interface HTMLElementTagNameMap {
