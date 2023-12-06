@@ -82,15 +82,11 @@ export class MarkdownEditor extends LitElement {
                 font-family: var(--sl-font-sans);
                 font-size: 1rem;
               }
-              /* Dropdown appended to body: */
-              .--icon svg {
-                top: 0 !important;
-              }
               /* Hide unsupported button features */
               /* Text styles: */
-              .markdown-editor > div > div > div:nth-child(5),
+              .markdown-editor > div > div > div > div:nth-child(4),
               /* Table: */
-              .markdown-editor > div > div > div:nth-child(9) {
+              .markdown-editor > div > div > div > div:nth-child(12) {
                 display: none !important;
               }
               .markdown-editor div[role="textbox"] {
@@ -113,6 +109,7 @@ export class MarkdownEditor extends LitElement {
   private initEditor() {
     const editor = createWysimark(this.querySelector(".markdown-editor")!, {
       initialMarkdown: this.initialValue,
+      minHeight: "12rem",
       onChange: async () => {
         const value = editor.getMarkdown();
         const input = this.querySelector(

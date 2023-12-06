@@ -164,7 +164,7 @@ export class CollectionMetadataDialog extends LiteElement {
       });
 
       if (!this.collection) {
-        this.navTo(`${this.orgBasePath}/collections/edit/${data.id}#crawls`);
+        this.navTo(`${this.orgBasePath}/collections/view/${data.id}/items`);
       }
 
       this.dispatchEvent(new CustomEvent("btrix-collection-saved"));

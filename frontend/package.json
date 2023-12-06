@@ -14,7 +14,7 @@
     "@types/sinon": "^10.0.6",
     "@typescript-eslint/eslint-plugin": "^6.12.0",
     "@typescript-eslint/parser": "^6.12.0",
-    "@wysimark/standalone": "2.2.15",
+    "@wysimark/standalone": "3.0.20",
     "@xstate/fsm": "^1.6.2",
     "@zxcvbn-ts/core": "^3.0.4",
     "@zxcvbn-ts/language-common": "^3.0.4",
