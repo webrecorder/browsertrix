@@ -114,36 +114,54 @@ export class CollectionDetail extends LiteElement {
         </div>
         ${when(
           this.isCrawler || (!this.isCrawler && this.collection?.isPublic),
-          () => html`
-            <sl-button
-              variant="primary"
-              size="small"
-              @click=${() => (this.showShareInfo = true)}
-            >
-              <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
-              Share
-            </sl-button>
-          `
+          () =>
+            this.collection?.crawlCount
+              ? html`
+                  <sl-button
+                    variant="primary"
+                    size="small"
+                    @click=${() => (this.showShareInfo = true)}
+                  >
+                    <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+                    ${msg("Share")}
+                  </sl-button>
+                `
+              : html`
+                  <sl-button
+                    variant="primary"
+                    size="small"
+                    @click=${() => (this.openDialogName = "editItems")}
+                  >
+                    <sl-icon name="ui-checks" slot="prefix"></sl-icon>
+                    ${msg("Add Archived Items")}
+                  </sl-button>
+                `
         )}
         ${when(this.isCrawler, this.renderActions)}
       </header>
       <div class="border rounded-lg py-2 px-4 mb-3">
         ${this.renderInfoBar()}
       </div>
-      <div class="mb-3">${this.renderTabs()}</div>
 
-      ${choose(
-        this.collectionTab,
-        [
-          ["replay", this.renderOverview],
-          [
-            "items",
-            () => guard([this.archivedItems], this.renderArchivedItems),
-          ],
-        ],
+      ${when(
+        this.collection?.crawlCount,
+        () => html`
+          <div class="mb-3">${this.renderTabs()}</div>
+          ${choose(
+            this.collectionTab,
+            [
+              ["replay", () => guard([this.collectionId], this.renderReplay)],
+              [
+                "items",
+                () => guard([this.archivedItems], this.renderArchivedItems),
+              ],
+            ],
 
-        () => html`<btrix-not-found></btrix-not-found>`
+            () => html`<btrix-not-found></btrix-not-found>`
+          )}
+        `
       )}
+      <div class="my-7">${this.renderDescription()}</div>
 
       <btrix-dialog
         label=${msg("Delete Collection?")}
@@ -561,11 +579,6 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
-  private renderOverview = () => html`
-    ${this.renderReplay()}
-    <div class="my-7">${this.renderDescription()}</div>
-  `;
-
   private renderArchivedItems = () => html`<section>
     ${when(
       this.archivedItems,
@@ -633,7 +646,7 @@ export class CollectionDetail extends LiteElement {
     return html`
       <div class="border-t border-b py-5">
         <p class="text-center text-neutral-500">
-          ${msg("No matching web captures found.")}
+          ${msg("No matching items found.")}
         </p>
       </div>
     `;
@@ -661,7 +674,7 @@ export class CollectionDetail extends LiteElement {
       </btrix-crawl-list-item>
     `;
 
-  private renderReplay() {
+  private renderReplay = () => {
     const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
@@ -669,22 +682,17 @@ export class CollectionDetail extends LiteElement {
     return html`<section>
       <main>
         <div class="aspect-4/3 border rounded-lg overflow-hidden">
-          ${guard(
-            [replaySource],
-            () => html`
-              <replay-web-page
-                source=${replaySource}
-                replayBase="/replay/"
-                config="${config}"
-                noSandbox="true"
-                noCache="true"
-              ></replay-web-page>
-            `
-          )}
+          <replay-web-page
+            source=${replaySource}
+            replayBase="/replay/"
+            config="${config}"
+            noSandbox="true"
+            noCache="true"
+          ></replay-web-page>
         </div>
       </main>
     </section>`;
-  }
+  };
 
   private async checkTruncateDescription() {
     await this.updateComplete;
