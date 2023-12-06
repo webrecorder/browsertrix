@@ -134,6 +134,24 @@ export class Org extends LiteElement {
     return false;
   }
 
+  connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener(
+      "execution-minutes-quota-update",
+      this.onExecutionMinutesQuotaUpdate
+    );
+    this.addEventListener("storage-quota-update", this.onStorageQuotaUpdate);
+  }
+
+  disconnectedCallback() {
+    this.removeEventListener(
+      "execution-minutes-quota-update",
+      this.onExecutionMinutesQuotaUpdate
+    );
+    this.removeEventListener("storage-quota-update", this.onStorageQuotaUpdate);
+    this.disconnectedCallback();
+  }
+
   async willUpdate(changedProperties: Map<string, any>) {
     if (
       (changedProperties.has("userInfo") && this.userInfo) ||
@@ -469,7 +487,6 @@ export class Org extends LiteElement {
         workflowId=${this.params.workflowId || ""}
         itemType=${this.params.itemType || "crawl"}
         ?isCrawler=${this.isCrawler}
-        @storage-quota-update=${this.onStorageQuotaUpdate}
       ></btrix-crawl-detail>`;
     }
 
@@ -480,7 +497,6 @@ export class Org extends LiteElement {
       ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
       ?isCrawler=${this.isCrawler}
       itemType=${ifDefined(this.params.itemType || undefined)}
-      @storage-quota-update=${this.onStorageQuotaUpdate}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-crawls-list>`;
   }
@@ -504,8 +520,6 @@ export class Org extends LiteElement {
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
-          @storage-quota-update=${this.onStorageQuotaUpdate}
-          @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
         ></btrix-workflow-detail>
       `;
     }
@@ -523,8 +537,6 @@ export class Org extends LiteElement {
         jobType=${ifDefined(this.params.jobType)}
         ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
         ?orgExecutionMinutesQuotaReached=${this.orgExecutionMinutesQuotaReached}
-        @storage-quota-update=${this.onStorageQuotaUpdate}
-        @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }
@@ -536,8 +548,6 @@ export class Org extends LiteElement {
       ?orgExecutionMinutesQuotaReached=${this.orgExecutionMinutesQuotaReached}
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
-      @storage-quota-update=${this.onStorageQuotaUpdate}
-      @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-workflows-list>`;
   }
@@ -548,7 +558,6 @@ export class Org extends LiteElement {
         .authState=${this.authState!}
         .orgId=${this.orgId}
         profileId=${this.params.browserProfileId}
-        @storage-quota-update=${this.onStorageQuotaUpdate}
       ></btrix-browser-profiles-detail>`;
     }
 
@@ -557,14 +566,12 @@ export class Org extends LiteElement {
         .authState=${this.authState!}
         .orgId=${this.orgId}
         .browserId=${this.params.browserId}
-        @storage-quota-update=${this.onStorageQuotaUpdate}
       ></btrix-browser-profiles-new>`;
     }
 
     return html`<btrix-browser-profiles-list
       .authState=${this.authState!}
       .orgId=${this.orgId}
-      @storage-quota-update=${this.onStorageQuotaUpdate}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-browser-profiles-list>`;
   }
@@ -671,8 +678,11 @@ export class Org extends LiteElement {
     this.removeMember(e.detail.member);
   }
 
-  private async onStorageQuotaUpdate(e: CustomEvent) {
+  private async onStorageQuotaUpdate(e: Event) {
     e.stopPropagation();
+    if (!this.isCustomEvent(e)) {
+      return;
+    }
     const { reached } = e.detail;
     this.orgStorageQuotaReached = reached;
     if (reached) {
@@ -680,8 +690,15 @@ export class Org extends LiteElement {
     }
   }
 
-  private async onExecutionMinutesQuotaUpdate(e: CustomEvent) {
+  isCustomEvent(event: Event): event is CustomEvent {
+    return "detail" in event;
+  }
+
+  private async onExecutionMinutesQuotaUpdate(e: Event) {
     e.stopPropagation();
+    if (!this.isCustomEvent(e)) {
+      return;
+    }
     const { reached } = e.detail;
     this.orgExecutionMinutesQuotaReached = reached;
     if (reached) {
