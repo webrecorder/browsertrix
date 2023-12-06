@@ -58,6 +58,12 @@ type Params = {
   settingsTab?: "information" | "members";
   new?: ResourceName;
 };
+
+interface OrgEventMap {
+  "execution-minutes-quota-update": CustomEvent<any>;
+  "storage-quota-update": CustomEvent<any>;
+}
+
 const defaultTab = "home";
 
 const UUID_REGEX =
@@ -132,6 +138,31 @@ export class Org extends LiteElement {
     const userOrg = this.userOrg;
     if (userOrg) return isCrawler(userOrg.role);
     return false;
+  }
+
+  public addEventListener<T extends keyof OrgEventMap>(
+    type: T,
+    listener: (this: Org, ev: OrgEventMap[T]) => unknown,
+    options?: boolean | AddEventListenerOptions
+  ): void;
+  public addEventListener(
+    type: string,
+    listener: (this: Org, ev: Event) => unknown,
+    options?: boolean | AddEventListenerOptions
+  ): void {
+    super.addEventListener(type, listener, options);
+  }
+  public removeEventListener<T extends keyof OrgEventMap>(
+    type: T,
+    listener: (this: Org, ev: OrgEventMap[T]) => unknown,
+    options?: boolean | AddEventListenerOptions
+  ): void;
+  public removeEventListener(
+    type: string,
+    listener: (this: Org, ev: Event) => unknown,
+    options?: boolean | AddEventListenerOptions
+  ): void {
+    super.addEventListener(type, listener, options);
   }
 
   connectedCallback() {
@@ -678,11 +709,8 @@ export class Org extends LiteElement {
     this.removeMember(e.detail.member);
   }
 
-  private async onStorageQuotaUpdate(e: Event) {
+  private async onStorageQuotaUpdate(e: CustomEvent) {
     e.stopPropagation();
-    if (!this.isCustomEvent(e)) {
-      return;
-    }
     const { reached } = e.detail;
     this.orgStorageQuotaReached = reached;
     if (reached) {
@@ -690,15 +718,8 @@ export class Org extends LiteElement {
     }
   }
 
-  isCustomEvent(event: Event): event is CustomEvent {
-    return "detail" in event;
-  }
-
-  private async onExecutionMinutesQuotaUpdate(e: Event) {
+  private async onExecutionMinutesQuotaUpdate(e: CustomEvent) {
     e.stopPropagation();
-    if (!this.isCustomEvent(e)) {
-      return;
-    }
     const { reached } = e.detail;
     this.orgExecutionMinutesQuotaReached = reached;
     if (reached) {
