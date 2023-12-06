@@ -2,7 +2,7 @@ import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
-import { ifDefined } from "lit/directives/if-defined.js";
+import { choose } from "lit/directives/choose.js";
 import { ref } from "lit/directives/ref.js";
 import debounce from "lodash/fp/debounce";
 import { mergeDeep } from "immutable";
@@ -19,7 +19,6 @@ import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 import type { CheckboxChangeEvent } from "@/components/ui/checkbox-list";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { maxLengthValidator } from "@/utils/form";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -163,18 +162,8 @@ export class CollectionEditor extends LiteElement {
   @state()
   private searchResultsOpen = false;
 
-  @query("#collectionForm-name-input")
-  private nameInput?: SlInput;
-
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
-  }
-
-  private get hasItemSelection() {
-    return Boolean(
-      Object.keys(this.selectedCrawls).length ||
-        Object.keys(this.selectedUploads).length
-    );
   }
 
   private get selectedSearchFilterKey() {
@@ -195,16 +184,20 @@ export class CollectionEditor extends LiteElement {
     threshold: 0.2, // stricter; default is 0.6
   });
 
-  private validateNameMax = maxLengthValidator(50);
-
   private readonly fieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
   };
 
-  private readonly tabLabels: Record<Tab, string> = {
-    crawls: msg("Select Crawls"),
-    uploads: msg("Select Uploads"),
+  private readonly tabLabels: Record<Tab, { icon: string; label: string }> = {
+    crawls: {
+      icon: "gear-wide-connected",
+      label: msg("Crawls"),
+    },
+    uploads: {
+      icon: "upload",
+      label: msg("Uploads"),
+    },
   };
 
   protected async willUpdate(changedProperties: Map<string, any>) {
@@ -244,63 +237,28 @@ export class CollectionEditor extends LiteElement {
       autocomplete="off"
       @submit=${this.onSubmit}
     >
-      <btrix-tab-list
-        activePanel="collectionForm-${this.activeTab}"
-        progressPanel="collectionForm-${this.activeTab}"
-      >
-        ${guard(
-          [this.activeTab],
-          () => html`
-            <h3 slot="header" class="font-semibold">
-              ${this.tabLabels[this.activeTab]}
-            </h3>
-
-            ${TABS.map(this.renderTab)}
-          `
-        )}
-
-        <btrix-tab-panel name="collectionForm-crawls">
-          ${this.renderSelectCrawls()}
-        </btrix-tab-panel>
-        <btrix-tab-panel name="collectionForm-uploads">
-          ${this.renderSelectUploads()}
-        </btrix-tab-panel>
-      </btrix-tab-list>
+      <div class="flex gap-3 mb-5">${TABS.map(this.renderTab)}</div>
+      ${choose(this.activeTab, [
+        ["crawls", this.renderSelectCrawls],
+        ["uploads", this.renderSelectUploads],
+      ])}
     </form>`;
   }
 
   private renderTab = (tab: Tab) => {
-    const isActive = tab === this.activeTab;
-    const completed = false; // TODO
-    const iconProps = {
-      name: "circle",
-      library: "default",
-      class: "text-neutral-400",
-    };
-    if (isActive) {
-      iconProps.name = "pencil-circle-dashed";
-      iconProps.library = "app";
-      iconProps.class = "text-base";
-    } else if (completed) {
-      iconProps.name = "check-circle";
-    }
+    const isSelected = tab === this.activeTab;
+    const { icon, label } = this.tabLabels[tab];
 
     return html`
-      <btrix-tab
-        slot="nav"
-        name="collectionForm-${tab}"
-        class="whitespace-nowrap"
+      <btrix-button
         @click=${() => this.goToTab(tab)}
+        variant=${isSelected ? "primary" : "neutral"}
+        ?raised=${isSelected}
+        aria-selected="${isSelected}"
       >
-        <sl-icon
-          name=${iconProps.name}
-          library=${iconProps.library}
-          class="inline-block align-middle mr-1 text-base ${iconProps.class}"
-        ></sl-icon>
-        <span class="inline-block align-middle whitespace-normal">
-          ${this.tabLabels[tab]}
-        </span>
-      </btrix-tab>
+        <sl-icon name=${icon}></sl-icon>
+        <span>${label}</span>
+      </btrix-button>
     `;
   };
 
@@ -308,9 +266,7 @@ export class CollectionEditor extends LiteElement {
     return html`
       <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <section class="col-span-1 flex flex-col">
-          <h4 class="text-base font-semibold mb-3">
-            ${msg("Crawls in Collection")}
-          </h4>
+          <h4 class="font-semibold mb-3">${msg("In Collection")}</h4>
           <div class="border rounded-lg py-2 flex-1">
             ${guard(
               [
@@ -325,7 +281,7 @@ export class CollectionEditor extends LiteElement {
           </div>
         </section>
         <section class="col-span-1 flex flex-col">
-          <h4 class="text-base font-semibold mb-3">${msg("All Workflows")}</h4>
+          <h4 class="font-semibold mb-3">${msg("All Workflows")}</h4>
           ${when(
             this.workflows?.total,
             () =>
@@ -400,9 +356,7 @@ export class CollectionEditor extends LiteElement {
     return html`
       <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <section class="col-span-1 flex flex-col">
-          <h4 class="text-base font-semibold mb-3">
-            ${msg("Uploads in Collection")}
-          </h4>
+          <h4 class="font-semibold mb-3">${msg("In Collection")}</h4>
           <div class="border rounded-lg py-2 flex-1">
             ${guard(
               [this.collectionUploads, this.selectedUploads],
@@ -411,7 +365,7 @@ export class CollectionEditor extends LiteElement {
           </div>
         </section>
         <section class="col-span-1 flex flex-col">
-          <h4 class="text-base font-semibold mb-3">${msg("All Uploads")}</h4>
+          <h4 class="font-semibold mb-3">${msg("All Uploads")}</h4>
           <div class="flex-1">
             ${guard(
               [this.isCrawler, this.uploads, this.selectedUploads],

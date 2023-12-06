@@ -136,7 +136,10 @@ export class CollectionDetail extends LiteElement {
         this.collectionTab,
         [
           ["replay", this.renderOverview],
-          ["items", this.renderArchivedItems],
+          [
+            "items",
+            () => guard([this.archivedItems], this.renderArchivedItems),
+          ],
         ],
 
         () => html`<btrix-not-found></btrix-not-found>`
