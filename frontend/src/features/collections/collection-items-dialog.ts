@@ -214,6 +214,7 @@ export class CollectionEditor extends LiteElement {
       label=${msg("Select Archived Items")}
       ?open=${this.open}
       style="--width: var(--btrix-screen-lg); --body-spacing: 0;"
+      @sl-after-hide=${() => this.reset()}
     >
       <div class="flex flex-col min-h-[50vh]">
         <div class="flex gap-3 px-4 py-3">${TABS.map(this.renderTab)}</div>
@@ -224,7 +225,7 @@ export class CollectionEditor extends LiteElement {
         ])}
       </div>
       <div slot="footer" class="flex gap-3 items-center justify-end">
-        <sl-button class="mr-auto" size="small" @click=${() => this.reset()}
+        <sl-button class="mr-auto" size="small" @click=${() => this.close()}
           >${msg("Cancel")}</sl-button
         >
         <sl-button
@@ -1068,9 +1069,21 @@ export class CollectionEditor extends LiteElement {
     }
   }) as any;
 
-  private reset() {
+  private close() {
     this.dialog.hide();
+  }
+
+  private reset() {
     this.activeTab = TABS[0];
+    this.workflowPagination = {};
+    this.selectedCrawls = {};
+    this.selectedUploads = {};
+    this.orderWorkflowsBy = {
+      field: "lastRun",
+      direction: sortableFields["lastRun"].defaultDirection!,
+    };
+    this.filterWorkflowsBy = {};
+    this.searchByValue = "";
   }
 
   private async save() {
@@ -1116,7 +1129,7 @@ export class CollectionEditor extends LiteElement {
     try {
       await Promise.all(requests);
 
-      this.reset();
+      this.close();
       this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
       this.notify({
         message: msg(str`Successfully saved archived item selection.`),

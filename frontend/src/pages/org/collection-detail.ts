@@ -142,18 +142,20 @@ export class CollectionDetail extends LiteElement {
       <div class="border rounded-lg py-2 px-4 mb-3">
         ${this.renderInfoBar()}
       </div>
-      <div class="mb-3">${this.renderTabs()}</div>
+      <div class="flex justify-between items-center mb-3">
+        ${this.renderTabs()}
+        <sl-button
+          size="small"
+          @click=${() => (this.openDialogName = "editItems")}
+        >
+          <sl-icon name="ui-checks" slot="prefix"></sl-icon>
+          ${msg("Select Items")}
+        </sl-button>
+      </div>
       ${choose(
         this.collectionTab,
         [
-          [
-            "replay",
-            () =>
-              guard(
-                [this.collectionId, this.collection?.crawlCount],
-                this.renderReplay
-              ),
-          ],
+          ["replay", () => guard([this.collection], this.renderReplay)],
           [
             "items",
             () => guard([this.archivedItems], this.renderArchivedItems),
