@@ -17,7 +17,6 @@ import "./workflows-new";
 import "./crawl-detail";
 import "./crawls-list";
 import "./collections-list";
-import "./collections-new";
 import "./collection-edit";
 import "./collection-detail";
 import "./browser-profiles-detail";
