@@ -1,4 +1,4 @@
-import { state, property, customElement } from "lit/decorators.js";
+import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
@@ -11,6 +11,7 @@ import groupBy from "lodash/fp/groupBy";
 import keyBy from "lodash/fp/keyBy";
 import orderBy from "lodash/fp/orderBy";
 import uniqBy from "lodash/fp/uniqBy";
+import difference from "lodash/fp/difference";
 import Fuse from "fuse.js";
 import queryString from "query-string";
 import type { SlMenuItem } from "@shoelace-style/shoelace";
@@ -27,6 +28,7 @@ import type { Collection } from "@/types/collection";
 import type { Crawl, CrawlState, Upload, Workflow } from "@/types/crawler";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { finishedCrawlStates } from "@/utils/crawler";
+import type { Dialog } from "@/components/ui/dialog";
 
 const TABS = ["crawls", "uploads"] as const;
 type Tab = (typeof TABS)[number];
@@ -80,11 +82,8 @@ type FormValues = {
   isPublic?: string;
 };
 
-/**
- * @event on-submit
- */
 @localized()
-@customElement("btrix-collection-editor")
+@customElement("btrix-collection-items-dialog")
 export class CollectionEditor extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
@@ -163,6 +162,9 @@ export class CollectionEditor extends LiteElement {
 
   @state()
   private searchResultsOpen = false;
+
+  @query("btrix-dialog")
+  private dialog!: Dialog;
 
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
@@ -252,9 +254,7 @@ export class CollectionEditor extends LiteElement {
         <sl-button
           class="mr-auto"
           size="small"
-          @click=${() => {
-            console.log("TODO");
-          }}
+          @click=${() => this.dialog.hide()}
           >${msg("Cancel")}</sl-button
         >
         <sl-button
@@ -1107,25 +1107,65 @@ export class CollectionEditor extends LiteElement {
 
   private async save() {
     await this.updateComplete;
+    const crawlIds = [
+      ...Object.keys(this.selectedCrawls),
+      ...Object.keys(this.selectedUploads),
+    ];
+    const oldCrawlIds = [
+      ...this.savedCollectionCrawlIds,
+      ...this.savedCollectionUploadIds,
+    ];
+    const remove = difference(oldCrawlIds)(crawlIds);
+    const add = difference(crawlIds)(oldCrawlIds);
+    const requests = [];
+    if (add.length) {
+      requests.push(
+        this.apiFetch(
+          `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
+          this.authState!,
+          {
+            method: "POST",
+            body: JSON.stringify({ crawlIds: add }),
+          }
+        )
+      );
+    }
+    if (remove.length) {
+      requests.push(
+        this.apiFetch(
+          `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
+          this.authState!,
+          {
+            method: "POST",
+            body: JSON.stringify({ crawlIds: remove }),
+          }
+        )
+      );
+    }
 
-    const values = {
-      crawlIds: [
-        ...Object.keys(this.selectedCrawls),
-        ...Object.keys(this.selectedUploads),
-      ],
-      oldCrawlIds: [
-        ...this.savedCollectionCrawlIds,
-        ...this.savedCollectionUploadIds,
-      ],
-    };
+    this.isSubmitting = true;
 
-    console.log(values);
+    try {
+      await Promise.all(requests);
 
-    // this.dispatchEvent(
-    //   <CollectionSubmitEvent>new CustomEvent("on-submit", {
-    //     detail: { values },
-    //   })
-    // );
+      this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
+      this.notify({
+        message: msg(str`Successfully saved archived item selection.`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+      this.dialog.hide();
+    } catch (e: any) {
+      this.notify({
+        message: e.isApiError
+          ? (e.message as string)
+          : msg("Something unexpected went wrong"),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+
+    this.isSubmitting = false;
   }
 
   private getActivePanelFromHash = () => {

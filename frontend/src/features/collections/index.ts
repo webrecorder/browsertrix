@@ -1,3 +1,3 @@
 import("./collections-add");
-import("./select-collection-items");
+import("./collection-items-dialog");
 import("./collection-metadata-dialog");

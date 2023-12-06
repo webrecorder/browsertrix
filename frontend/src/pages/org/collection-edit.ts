@@ -3,7 +3,7 @@ import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import difference from "lodash/fp/difference";
 
-import type { CollectionSubmitEvent } from "@/features/collections/select-collection-items";
+import type { CollectionSubmitEvent } from "@/features/collections/collection-items-dialog";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { Collection } from "@/types/collection";
@@ -45,7 +45,7 @@ export class CollectionEdit extends LiteElement {
       ${when(
         this.collection,
         () => html`
-          <btrix-collection-editor
+          <btrix-collection-items-dialog
             .authState=${this.authState}
             orgId=${this.orgId}
             collectionId=${this.collectionId}
@@ -53,7 +53,7 @@ export class CollectionEdit extends LiteElement {
             ?isCrawler=${this.isCrawler}
             ?open=${true}
             @on-submit=${this.onSubmit}
-          ></btrix-collection-editor>
+          ></btrix-collection-items-dialog>
         `
       )} `;
   }
