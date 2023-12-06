@@ -60,10 +60,18 @@ type Params = {
   new?: ResourceName;
 };
 
-interface OrgEventMap {
-  "execution-minutes-quota-update": CustomEvent<QuotaUpdateEvent>;
-  "storage-quota-update": CustomEvent<QuotaUpdateEvent>;
-}
+type OrgEventMap = {
+  "execution-minutes-quota-update": QuotaUpdateEvent;
+  "storage-quota-update": QuotaUpdateEvent;
+};
+
+type OrgEventListener<T extends string> = T extends keyof OrgEventMap
+  ? (this: Org, ev: OrgEventMap[T]) => unknown
+  : EventListenerOrEventListenerObject;
+
+// `string & {}` is resolved to `string`, but not by intellisense, so this gives us string suggestions in vscode from OrgEventMap but still allows arbitrary strings
+// eslint-disable-next-line @typescript-eslint/ban-types
+type EventType = keyof OrgEventMap | (string & {});
 
 const defaultTab = "home";
 
@@ -148,6 +156,7 @@ export class Org extends LiteElement {
       this.onExecutionMinutesQuotaUpdate
     );
     this.addEventListener("storage-quota-update", this.onStorageQuotaUpdate);
+    this.addEventListener("", () => {});
   }
 
   disconnectedCallback() {
@@ -685,7 +694,7 @@ export class Org extends LiteElement {
     this.removeMember(e.detail.member);
   }
 
-  private async onStorageQuotaUpdate(e: CustomEvent) {
+  private async onStorageQuotaUpdate(e: QuotaUpdateEvent) {
     e.stopPropagation();
     const { reached } = e.detail;
     this.orgStorageQuotaReached = reached;
@@ -694,7 +703,7 @@ export class Org extends LiteElement {
     }
   }
 
-  private async onExecutionMinutesQuotaUpdate(e: CustomEvent) {
+  private async onExecutionMinutesQuotaUpdate(e: QuotaUpdateEvent) {
     e.stopPropagation();
     const { reached } = e.detail;
     this.orgExecutionMinutesQuotaReached = reached;
@@ -804,28 +813,18 @@ export class Org extends LiteElement {
     this.showExecutionMinutesQuotaAlert = this.orgExecutionMinutesQuotaReached;
   }
 
-  addEventListener<T extends keyof OrgEventMap>(
+  addEventListener<T extends EventType>(
     type: T,
-    listener: (this: Org, ev: OrgEventMap[T]) => unknown,
-    options?: boolean | AddEventListenerOptions
-  ): void;
-  addEventListener(
-    type: string,
-    listener: (this: Org, ev: Event) => unknown,
+    listener: OrgEventListener<T>,
     options?: boolean | AddEventListenerOptions
   ): void {
-    super.addEventListener(type, listener, options);
+    super.addEventListener(type, listener as EventListener, options);
   }
-  removeEventListener<T extends keyof OrgEventMap>(
+  removeEventListener<T extends EventType>(
     type: T,
-    listener: (this: Org, ev: OrgEventMap[T]) => unknown,
-    options?: boolean | AddEventListenerOptions
-  ): void;
-  removeEventListener(
-    type: string,
-    listener: (this: Org, ev: Event) => unknown,
+    listener: OrgEventListener<T>,
     options?: boolean | AddEventListenerOptions
   ): void {
-    super.addEventListener(type, listener, options);
+    super.removeEventListener(type, listener as EventListener, options);
   }
 }
