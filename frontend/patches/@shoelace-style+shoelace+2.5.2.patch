@@ -13,15 +13,16 @@ index 74ef460..6233245 100644
      private readonly localize;
      date: Date | string;
 diff --git a/node_modules/@shoelace-style/shoelace/dist/components/input/input.d.ts b/node_modules/@shoelace-style/shoelace/dist/components/input/input.d.ts
-index 7e9abef..bb884b2 100644
+index 7e9abef..cc5667d 100644
 --- a/node_modules/@shoelace-style/shoelace/dist/components/input/input.d.ts
 +++ b/node_modules/@shoelace-style/shoelace/dist/components/input/input.d.ts
-@@ -2,6 +2,9 @@ import '../icon/icon.js';
+@@ -2,6 +2,10 @@ import '../icon/icon.js';
  import ShoelaceElement from '../../internal/shoelace-element.js';
  import type { CSSResultGroup } from 'lit';
  import type { ShoelaceFormControl } from '../../internal/shoelace-element.js';
 +/**
 + * @attr {String} help-text
++ * @attr {Boolean} password-toggle
 + */
  export default class SlInput extends ShoelaceElement implements ShoelaceFormControl {
      static styles: CSSResultGroup;
