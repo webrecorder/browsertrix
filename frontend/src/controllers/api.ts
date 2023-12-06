@@ -58,6 +58,7 @@ export class APIController implements ReactiveController {
           new CustomEvent("storage-quota-update", {
             detail: { reached: storageQuotaReached },
             bubbles: true,
+            composed: true,
           })
         );
       }
@@ -66,6 +67,7 @@ export class APIController implements ReactiveController {
           new CustomEvent("execution-minutes-quota-update", {
             detail: { reached: executionMinutesQuotaReached },
             bubbles: true,
+            composed: true,
           })
         );
       }
@@ -92,6 +94,7 @@ export class APIController implements ReactiveController {
             new CustomEvent("storage-quota-update", {
               detail: { reached: true },
               bubbles: true,
+              composed: true,
             })
           );
           errorMessage = msg("Storage quota reached");
@@ -102,6 +105,7 @@ export class APIController implements ReactiveController {
             new CustomEvent("execution-minutes-quota-update", {
               detail: { reached: true },
               bubbles: true,
+              composed: true,
             })
           );
           errorMessage = msg("Monthly execution minutes quota reached");
