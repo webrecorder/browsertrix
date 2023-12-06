@@ -5,7 +5,6 @@
   },
   "lit-plugin.strict": true,
   "lit-plugin.rules.no-missing-import": "off",
-  "lit-plugin.globalTags": ["replay-web-page"],
   "lit-plugin.maxNodeModuleImportDepth": -1,
   "yaml.schemas": {
     "https://squidfunk.github.io/mkdocs-material/schema.json": "mkdocs.yml"
