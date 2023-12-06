@@ -75,13 +75,14 @@ function makeTheme() {
       lg: `var(--sl-border-radius-large)`,
       xl: `var(--sl-border-radius-x-large)`,
     },
-    boxShadow: {
-      sm: `var(--sl-shadow-small)`,
-      DEFAULT: `var(--sl-shadow-medium)`,
-      md: `var(--sl-shadow-medium)`,
-      lg: `var(--sl-shadow-large)`,
-      xl: `var(--sl-shadow-x-large)`,
-    },
+    // TODO see if there's a way to use Shoelace's box shadows with customizable colors
+    // boxShadow: {
+    //   sm: `var(--sl-shadow-small)`,
+    //   DEFAULT: `var(--sl-shadow-medium)`,
+    //   md: `var(--sl-shadow-medium)`,
+    //   lg: `var(--sl-shadow-large)`,
+    //   xl: `var(--sl-shadow-x-large)`,
+    // },
     aspectRatio: {
       "4/3": "4 / 3", // For Browsertrix watch/replay
     },

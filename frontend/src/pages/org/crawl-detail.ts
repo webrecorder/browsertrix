@@ -314,7 +314,7 @@ export class CrawlDetail extends LiteElement {
         <li class="relative grow" role="menuitem" aria-selected="${isActive}">
           <a
             class="flex gap-2 flex-col md:flex-row items-center font-semibold rounded-md h-full p-2 ${isActive
-              ? "text-blue-600 bg-blue-100 shadow-sm"
+              ? "text-blue-600 bg-blue-100 shadow-sm shadow-blue-800/20"
               : "text-neutral-600 hover:bg-blue-50"}"
             href=${`${baseUrl}${window.location.search}#${section}`}
             @click=${() => (this.sectionName = section)}

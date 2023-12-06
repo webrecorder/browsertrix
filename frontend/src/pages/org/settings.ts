@@ -160,7 +160,7 @@ export class OrgSettings extends LiteElement {
         slot="nav"
         href=${`${this.orgBasePath}/${path}`}
         class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
-          ? "text-blue-600 bg-blue-50 shadow-sm"
+          ? "text-blue-600 bg-blue-50 shadow-sm shadow-blue-800/20"
           : "text-neutral-600 hover:bg-neutral-50"}"
         @click=${this.navLink}
         aria-selected=${isActive}
@@ -174,9 +174,9 @@ export class OrgSettings extends LiteElement {
     return html`<div class="rounded border">
       <form @submit=${this.onOrgInfoSubmit}>
         <div class="grid grid-cols-5 gap-x-4 p-4">
-          <div class="col-span-5 md:col-span-3">
+          <div class="col-span-5 md:col-span-3 self-baseline">
             <sl-input
-              class="with-max-help-text"
+              class="with-max-help-text mb-2"
               name="orgName"
               size="small"
               label=${msg("Org Name")}
@@ -189,7 +189,7 @@ export class OrgSettings extends LiteElement {
               @sl-input=${this.validateOrgNameMax.validate}
             ></sl-input>
           </div>
-          <div class="col-span-5 md:col-span-2 flex gap-2 pt-6">
+          <div class="col-span-5 md:col-span-2 flex gap-2 md:mt-8">
             <div class="text-base">
               <sl-icon name="info-circle"></sl-icon>
             </div>
@@ -199,8 +199,9 @@ export class OrgSettings extends LiteElement {
               )}
             </div>
           </div>
-          <div class="col-span-5 md:col-span-3">
+          <div class="col-span-5 md:col-span-3 mt-6">
             <sl-input
+              class="mb-2"
               name="orgSlug"
               size="small"
               label=${msg("Custom URL Identifier")}
@@ -224,7 +225,7 @@ export class OrgSettings extends LiteElement {
             ></sl-input>
           </div>
 
-          <div class="col-span-5 md:col-span-2 flex gap-2 pt-6">
+          <div class="col-span-5 md:col-span-2 flex gap-2 md:mt-14">
             <div class="text-base">
               <sl-icon name="info-circle"></sl-icon>
             </div>
@@ -235,17 +236,27 @@ export class OrgSettings extends LiteElement {
             </div>
           </div>
           <div class="col-span-5 md:col-span-3 mt-6">
-            <span class="text-xs">${msg("Org ID")}</span>
-            <div
-              class="flex items-center justify-between border rounded text-neutral-500 mt-1 mb-4 px-2"
+            <sl-input
+              class="mb-2 input-font-monostyle"
+              name="orgId"
+              size="small"
+              filled
+              label=${msg("Org ID")}
+              value=${this.org.id}
+              readonly
+              @sl-focus=${(e: FocusEvent) => {
+                (e.currentTarget as HTMLInputElement | undefined)?.select();
+              }}
             >
-              ${this.org.id}
               <btrix-copy-button
+                slot="suffix"
+                hoist
+                class="m-0"
                 .getValue=${() => this.org.id}
               ></btrix-copy-button>
-            </div>
+            </sl-input>
           </div>
-          <div class="col-span-5 md:col-span-2 flex gap-2 pt-6 mt-6">
+          <div class="col-span-5 md:col-span-2 flex gap-2 md:mt-14">
             <div class="text-base">
               <sl-icon name="info-circle"></sl-icon>
             </div>

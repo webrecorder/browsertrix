@@ -13,6 +13,10 @@ const PRIMARY_COLOR = "#4876ff";
 const primaryColor = Color(PRIMARY_COLOR);
 
 const theme = css`
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+
   :root {
     /* Custom contextual variables */
     --primary: ${unsafeCSS(PRIMARY_COLOR)};
@@ -239,7 +243,8 @@ const theme = css`
   }
 
   /* Aesthetically closer to monospaced font: */
-  .font-monostyle {
+  .font-monostyle,
+  sl-input.input-font-monostyle::part(input) {
     font-family: var(--font-monostyle-family);
     font-variation-settings: var(--font-monostyle-variation);
   }
@@ -255,6 +260,18 @@ const theme = css`
     bottom: -9999px;
     visibility: hidden;
     clip: rect(0 0 0 0);
+  }
+
+  sl-input[filled]::part(form-control-input) {
+    --sl-input-filled-background-color: theme(colors.slate.50);
+    --sl-input-filled-background-color-hover: var(
+      --sl-input-filled-background-color
+    );
+  }
+
+  sl-input[filled]::part(base) {
+    border: 1px solid theme(colors.gray.200);
+    border-radius: var(--sl-input-border-radius-small);
   }
 `;
 
