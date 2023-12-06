@@ -569,7 +569,7 @@ export class Dashboard extends LiteElement {
           html`
             <sl-format-date
               date="${mY}-01T00:00:00.000Z"
-              timeZone="utc"
+              time-zone="utc"
               month="long"
               year="numeric"
             >

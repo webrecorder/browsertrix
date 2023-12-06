@@ -525,7 +525,7 @@ export class CollectionEditor extends LiteElement {
             autocomplete="off"
             value=${ifDefined(this.metadataValues?.name)}
             required
-            helpText=${this.validateNameMax.helpText}
+            help-text=${this.validateNameMax.helpText}
             @sl-input=${this.validateNameMax.validate}
           ></sl-input>
 

@@ -317,7 +317,7 @@ export class CrawlsList extends LiteElement {
             size="small"
             pill
             multiple
-            maxOptionsVisible="1"
+            max-options-visible="1"
             placeholder=${viewPlaceholder}
             @sl-change=${async (e: CustomEvent) => {
               const value = (e.target as SlSelect).value as CrawlState[];

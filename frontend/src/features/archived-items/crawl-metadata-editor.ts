@@ -120,7 +120,7 @@ export class CrawlMetadataEditor extends LiteElement {
           rows="3"
           autocomplete="off"
           resize="auto"
-          helpText=${helpText}
+          help-text=${helpText}
           @sl-input=${validate}
         ></sl-textarea>
         <btrix-tag-input
