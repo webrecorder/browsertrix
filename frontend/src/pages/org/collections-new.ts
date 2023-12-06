@@ -39,9 +39,6 @@ export class CollectionsNew extends LiteElement {
       <btrix-collection-editor
         .authState=${this.authState}
         orgId=${this.orgId}
-        .metadataValues=${{
-          name: this.name || "",
-        }}
         ?isSubmitting=${this.isSubmitting}
         ?isCrawler=${this.isCrawler}
         @on-submit=${this.onSubmit}

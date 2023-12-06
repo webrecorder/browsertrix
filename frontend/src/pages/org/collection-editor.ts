@@ -30,7 +30,7 @@ import type { Crawl, CrawlState, Upload, Workflow } from "@/types/crawler";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { finishedCrawlStates } from "@/utils/crawler";
 
-const TABS = ["crawls", "uploads", "metadata"] as const;
+const TABS = ["crawls", "uploads"] as const;
 type Tab = (typeof TABS)[number];
 type SearchFields = "name" | "firstSeed";
 type SearchResult = {
@@ -98,10 +98,7 @@ export class CollectionEditor extends LiteElement {
   isCrawler?: boolean;
 
   @property({ type: String })
-  collectionId?: string;
-
-  @property({ type: Object })
-  metadataValues?: Partial<Collection>;
+  collectionId!: string;
 
   @property({ type: Boolean })
   isSubmitting = false;
@@ -208,7 +205,6 @@ export class CollectionEditor extends LiteElement {
   private readonly tabLabels: Record<Tab, string> = {
     crawls: msg("Select Crawls"),
     uploads: msg("Select Uploads"),
-    metadata: msg("Metadata"),
   };
 
   protected async willUpdate(changedProperties: Map<string, any>) {
@@ -268,12 +264,6 @@ export class CollectionEditor extends LiteElement {
         </btrix-tab-panel>
         <btrix-tab-panel name="collectionForm-uploads">
           ${this.renderSelectUploads()}
-        </btrix-tab-panel>
-        <btrix-tab-panel name="collectionForm-metadata">
-          ${guard(
-            [this.metadataValues, this.isSubmitting, this.workflowIsLoading],
-            this.renderMetadata
-          )}
         </btrix-tab-panel>
       </btrix-tab-list>
     </form>`;
@@ -389,19 +379,6 @@ export class CollectionEditor extends LiteElement {
         <footer
           class="col-span-full border rounded-lg px-6 py-4 flex gap-2 justify-end"
         >
-          ${when(
-            !this.collectionId,
-            () => html`
-              <sl-button
-                type="button"
-                size="small"
-                @click=${() => this.goToTab("uploads")}
-              >
-                <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-                ${msg("Select Uploads")}
-              </sl-button>
-            `
-          )}
           <sl-button
             type="submit"
             size="small"
@@ -412,11 +389,7 @@ export class CollectionEditor extends LiteElement {
             )}
             ?loading=${this.isSubmitting}
           >
-            ${this.collectionId
-              ? msg("Save Crawls")
-              : this.hasItemSelection
-              ? msg("Create Collection")
-              : msg("Create Collection without Items")}
+            ${msg("Save Crawls")}
           </sl-button>
         </footer>
       </section>
@@ -469,28 +442,6 @@ export class CollectionEditor extends LiteElement {
         <footer
           class="col-span-full border rounded-lg px-6 py-4 flex gap-2 justify-end"
         >
-          ${when(
-            !this.collectionId,
-            () => html`
-              <sl-button
-                type="button"
-                class="mr-auto"
-                size="small"
-                @click=${() => this.goToTab("crawls")}
-              >
-                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-                ${msg("Previous Step")}
-              </sl-button>
-              <sl-button
-                type="button"
-                size="small"
-                @click=${() => this.goToTab("metadata")}
-              >
-                <sl-icon slot="suffix" name="chevron-right"></sl-icon>
-                ${msg("Add Metadata")}
-              </sl-button>
-            `
-          )}
           <sl-button
             type="submit"
             size="small"
@@ -501,79 +452,7 @@ export class CollectionEditor extends LiteElement {
             )}
             ?loading=${this.isSubmitting}
           >
-            ${this.collectionId
-              ? msg("Save Uploads")
-              : this.hasItemSelection
-              ? msg("Create Collection")
-              : msg("Create Collection without Items")}
-          </sl-button>
-        </footer>
-      </section>
-    `;
-  };
-
-  private renderMetadata = () => {
-    return html`
-      <section class="border rounded-lg">
-        <div class="p-6">
-          <sl-input
-            class="mb-2 with-max-help-text"
-            id="collectionForm-name-input"
-            name="name"
-            label=${msg("Name")}
-            placeholder=${msg("My Collection")}
-            autocomplete="off"
-            value=${ifDefined(this.metadataValues?.name)}
-            required
-            help-text=${this.validateNameMax.helpText}
-            @sl-input=${this.validateNameMax.validate}
-          ></sl-input>
-
-          <fieldset>
-            <label class="form-label">${msg("Description")}</label>
-            <btrix-markdown-editor
-              name="description"
-              initialValue=${this.metadataValues?.description || ""}
-              maxlength=${4000}
-            ></btrix-markdown-editor>
-          </fieldset>
-          <label>
-            <sl-switch
-              name="isPublic"
-              ?checked=${this.metadataValues?.isPublic}
-            >
-              ${msg("Publicly Accessible")}
-            </sl-switch>
-          </label>
-        </div>
-        <footer class="border-t px-6 py-4 flex gap-2 justify-end">
-          ${when(
-            !this.collectionId,
-            () => html`
-              <sl-button
-                type="button"
-                class="mr-auto"
-                size="small"
-                @click=${() => this.goToTab("uploads")}
-              >
-                <sl-icon slot="prefix" name="chevron-left"></sl-icon>
-                ${msg("Previous Step")}
-              </sl-button>
-            `
-          )}
-          <sl-button
-            type="submit"
-            size="small"
-            variant="primary"
-            ?disabled=${this.isSubmitting ||
-            Object.values(this.workflowIsLoading).some(
-              (isLoading) => isLoading === true
-            )}
-            ?loading=${this.isSubmitting}
-          >
-            ${this.collectionId
-              ? msg("Save Metadata")
-              : msg("Create Collection")}
+            ${msg("Save Uploads")}
           </sl-button>
         </footer>
       </section>
@@ -587,7 +466,7 @@ export class CollectionEditor extends LiteElement {
       return;
     }
 
-    if (this.collectionId && !this.collectionCrawls) {
+    if (!this.collectionCrawls) {
       return this.renderLoading();
     }
 
@@ -630,7 +509,7 @@ export class CollectionEditor extends LiteElement {
   };
 
   private renderCollectionUploadList = () => {
-    if (this.collectionId && !this.collectionUploads) {
+    if (!this.collectionUploads) {
       return this.renderLoading();
     }
 
@@ -1021,7 +900,7 @@ export class CollectionEditor extends LiteElement {
       <btrix-checkbox-list-item
         ?checked=${!!selectedCrawls.length}
         ?allChecked=${allChecked}
-        ?disabled=${!!this.collectionId && !this.collectionCrawls}
+        ?disabled=${!this.collectionCrawls}
         group
         @on-change=${(e: CheckboxChangeEvent) => {
           if (e.detail.checked || !allChecked) {
@@ -1272,26 +1151,9 @@ export class CollectionEditor extends LiteElement {
     await this.updateComplete;
 
     const form = event.target as HTMLFormElement;
-    const isNameValid = this.nameInput!.checkValidity();
-    if (!isNameValid) {
-      this.goToTab("metadata");
-      return;
-    }
 
     const formValues = serialize(form) as FormValues;
-    let values: any = {};
-
-    if (this.collectionId) {
-      values = this.getEditedValues(formValues);
-    } else {
-      values.name = formValues.name;
-      values.description = formValues.description;
-      values.isPublic = Boolean(formValues.isPublic);
-      values.crawlIds = [
-        ...Object.keys(this.selectedCrawls),
-        ...Object.keys(this.selectedUploads),
-      ];
-    }
+    const values = this.getEditedValues(formValues);
 
     this.dispatchEvent(
       <CollectionSubmitEvent>new CustomEvent("on-submit", {
@@ -1303,24 +1165,14 @@ export class CollectionEditor extends LiteElement {
   private getEditedValues(formValues: FormValues) {
     const values: any = {};
     switch (this.activeTab) {
-      case "metadata": {
-        values.name = formValues.name;
-        values.description = formValues.description;
-        values.isPublic = Boolean(formValues.isPublic);
-        break;
-      }
       case "crawls": {
         values.crawlIds = Object.keys(this.selectedCrawls);
-        if (this.collectionId) {
-          values.oldCrawlIds = this.savedCollectionCrawlIds;
-        }
+        values.oldCrawlIds = this.savedCollectionCrawlIds;
         break;
       }
       case "uploads": {
         values.crawlIds = Object.keys(this.selectedUploads);
-        if (this.collectionId) {
-          values.oldCrawlIds = this.savedCollectionUploadIds;
-        }
+        values.oldCrawlIds = this.savedCollectionUploadIds;
         break;
       }
       default:
@@ -1417,8 +1269,6 @@ export class CollectionEditor extends LiteElement {
   }
 
   private async fetchCollectionCrawlsAndUploads() {
-    if (!this.collectionId) return;
-
     try {
       const [crawlsRes, uploadsRes] = await Promise.allSettled([
         this.getCrawls({
