@@ -622,7 +622,7 @@ export class CrawlDetail extends LiteElement {
                   ${this.crawl!.finished
                     ? html`<span
                         >${humanizeExecutionSeconds(
-                          this.crawl!.crawlExecSeconds * 1000
+                          this.crawl!.crawlExecSeconds
                         )}</span
                       >`
                     : html`<span class="text-0-400">${msg("Pending")}</span>`}
