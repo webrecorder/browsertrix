@@ -17,7 +17,6 @@ import "./workflows-new";
 import "./crawl-detail";
 import "./crawls-list";
 import "./collections-list";
-import "./collection-edit";
 import "./collection-detail";
 import "./browser-profiles-detail";
 import "./browser-profiles-list";
@@ -591,15 +590,6 @@ export class Org extends LiteElement {
 
   private renderCollections() {
     if (this.params.collectionId) {
-      if (this.orgPath.includes(`/edit/${this.params.collectionId}`)) {
-        return html`<btrix-collection-edit
-          .authState=${this.authState!}
-          orgId=${this.orgId}
-          collectionId=${this.params.collectionId}
-          ?isCrawler=${this.isCrawler}
-        ></btrix-collection-edit>`;
-      }
-
       return html`<btrix-collection-detail
         .authState=${this.authState!}
         orgId=${this.orgId}

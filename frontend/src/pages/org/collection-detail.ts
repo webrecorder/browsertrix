@@ -49,7 +49,7 @@ export class CollectionDetail extends LiteElement {
   private archivedItems?: APIPaginatedList<Crawl | Upload>;
 
   @state()
-  private openDialogName?: "delete" | "editMetadata";
+  private openDialogName?: "delete" | "editMetadata" | "editItems";
 
   @state()
   private isDescriptionExpanded = false;
@@ -171,6 +171,16 @@ export class CollectionDetail extends LiteElement {
           >
         </div>
       </btrix-dialog>
+      <btrix-collection-items-dialog
+        orgId=${this.orgId}
+        collectionId=${this.collectionId}
+        .authState=${this.authState}
+        ?isCrawler=${this.isCrawler}
+        ?open=${this.openDialogName === "editItems"}
+        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @btrix-collection-saved=${() => this.fetchCollection()}
+      >
+      </btrix-collection-items-dialog>
       ${when(
         this.collection,
         () => html`
@@ -370,18 +380,13 @@ export class CollectionDetail extends LiteElement {
           >${msg("Actions")}</sl-button
         >
         <sl-menu>
-          <sl-menu-item
-            @click=${() =>
-              this.navTo(
-                `${this.orgBasePath}/collections/edit/${this.collectionId}`
-              )}
-          >
-            <sl-icon name="ui-checks" slot="prefix"></sl-icon>
-            ${msg("Select Archived Items")}
-          </sl-menu-item>
           <sl-menu-item @click=${() => (this.openDialogName = "editMetadata")}>
             <sl-icon name="pencil" slot="prefix"></sl-icon>
             ${msg("Edit Metadata")}
+          </sl-menu-item>
+          <sl-menu-item @click=${() => (this.openDialogName = "editItems")}>
+            <sl-icon name="ui-checks" slot="prefix"></sl-icon>
+            ${msg("Select Archived Items")}
           </sl-menu-item>
           <sl-divider></sl-divider>
           ${!this.collection?.isPublic

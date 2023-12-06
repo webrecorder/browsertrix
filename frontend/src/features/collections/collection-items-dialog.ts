@@ -67,21 +67,6 @@ const WORKFLOW_PAGE_SIZE = 10;
 const CRAWL_PAGE_SIZE = 5;
 const MIN_SEARCH_LENGTH = 2;
 
-export type CollectionSubmitEvent = CustomEvent<{
-  values: {
-    name: string;
-    description: string | null;
-    crawlIds: string[];
-    oldCrawlIds?: string[];
-    isPublic: boolean;
-  };
-}>;
-type FormValues = {
-  name: string;
-  description: string;
-  isPublic?: string;
-};
-
 @localized()
 @customElement("btrix-collection-items-dialog")
 export class CollectionEditor extends LiteElement {
@@ -98,10 +83,10 @@ export class CollectionEditor extends LiteElement {
   collectionId!: string;
 
   @property({ type: Boolean })
-  isSubmitting = false;
-
-  @property({ type: Boolean })
   open = false;
+
+  @state()
+  private isSubmitting = false;
 
   @state()
   private collectionCrawls?: Crawl[];
@@ -224,18 +209,6 @@ export class CollectionEditor extends LiteElement {
     }
   }
 
-  connectedCallback(): void {
-    // Set initial active section and dialog based on URL #hash value
-    this.getActivePanelFromHash();
-    super.connectedCallback();
-    window.addEventListener("hashchange", this.getActivePanelFromHash);
-  }
-
-  disconnectedCallback(): void {
-    super.disconnectedCallback();
-    window.removeEventListener("hashchange", this.getActivePanelFromHash);
-  }
-
   render() {
     return html`<btrix-dialog
       label=${msg("Select Archived Items")}
@@ -278,7 +251,7 @@ export class CollectionEditor extends LiteElement {
 
     return html`
       <btrix-button
-        @click=${() => this.goToTab(tab)}
+        @click=${() => (this.activeTab = tab)}
         variant=${isSelected ? "primary" : "neutral"}
         ?raised=${isSelected}
         aria-selected="${isSelected}"
@@ -1166,25 +1139,6 @@ export class CollectionEditor extends LiteElement {
     }
 
     this.isSubmitting = false;
-  }
-
-  private getActivePanelFromHash = () => {
-    const hashValue = window.location.hash.slice(1).split("?")[0];
-    if (TABS.includes(hashValue as any)) {
-      this.activeTab = hashValue as Tab;
-    } else {
-      this.goToTab(TABS[0], { replace: true });
-    }
-  };
-
-  private goToTab(tab: Tab, { replace = false } = {}) {
-    const path = `${window.location.href.split("#")[0]}#${tab}`;
-    if (replace) {
-      window.history.replaceState(null, "", path);
-    } else {
-      window.history.pushState(null, "", path);
-    }
-    this.activeTab = tab;
   }
 
   private async fetchWorkflows(params: APIPaginationQuery = {}) {

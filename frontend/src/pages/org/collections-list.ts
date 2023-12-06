@@ -554,13 +554,6 @@ export class CollectionsList extends LiteElement {
         </btrix-button>
         <sl-menu>
           <sl-menu-item
-            @click=${() =>
-              this.navTo(`${this.orgBasePath}/collections/edit/${col.id}`)}
-          >
-            <sl-icon name="ui-checks" slot="prefix"></sl-icon>
-            ${msg("Select Archived Items")}
-          </sl-menu-item>
-          <sl-menu-item
             @click=${() => this.manageCollection(col, "editMetadata")}
           >
             <sl-icon name="pencil" slot="prefix"></sl-icon>
