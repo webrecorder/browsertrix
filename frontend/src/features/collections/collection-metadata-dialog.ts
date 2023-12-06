@@ -71,21 +71,29 @@ export class CollectionMetadataDialog extends LiteElement {
             maxlength=${4000}
           ></btrix-markdown-editor>
         </fieldset>
-        <label>
-          <sl-switch name="isPublic">${msg("Publicly Accessible")}</sl-switch>
-          <sl-tooltip
-            content=${msg(
-              "Enable public access to make Collections shareable. Only people with the shared link can view your Collection."
-            )}
-            hoist
-            @sl-hide=${this.stopProp}
-            @sl-after-hide=${this.stopProp}
-            ><sl-icon
-              class="ml-1 inline-block align-middle text-slate-500"
-              name="info-circle"
-            ></sl-icon
-          ></sl-tooltip>
-        </label>
+        ${when(
+          !this.collection,
+          () => html`
+            <label>
+              <sl-switch name="isPublic"
+                >${msg("Publicly Accessible")}</sl-switch
+              >
+              <sl-tooltip
+                content=${msg(
+                  "Enable public access to make Collections shareable. Only people with the shared link can view your Collection."
+                )}
+                hoist
+                @sl-hide=${this.stopProp}
+                @sl-after-hide=${this.stopProp}
+                ><sl-icon
+                  class="ml-1 inline-block align-middle text-slate-500"
+                  name="info-circle"
+                ></sl-icon
+              ></sl-tooltip>
+            </label>
+          `
+        )}
+
         <input class="invisible h-0 w-0" type="submit" />
       </form>
       <div slot="footer" class="flex gap-3 items-center justify-end">
