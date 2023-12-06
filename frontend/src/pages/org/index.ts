@@ -33,6 +33,7 @@ import type {
 } from "./settings";
 import type { Tab as CollectionTab } from "./collection-detail";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import type { QuotaUpdateEvent } from "@/controllers/api";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -60,8 +61,8 @@ type Params = {
 };
 
 interface OrgEventMap {
-  "execution-minutes-quota-update": CustomEvent<any>;
-  "storage-quota-update": CustomEvent<any>;
+  "execution-minutes-quota-update": CustomEvent<QuotaUpdateEvent>;
+  "storage-quota-update": CustomEvent<QuotaUpdateEvent>;
 }
 
 const defaultTab = "home";
@@ -138,31 +139,6 @@ export class Org extends LiteElement {
     const userOrg = this.userOrg;
     if (userOrg) return isCrawler(userOrg.role);
     return false;
-  }
-
-  public addEventListener<T extends keyof OrgEventMap>(
-    type: T,
-    listener: (this: Org, ev: OrgEventMap[T]) => unknown,
-    options?: boolean | AddEventListenerOptions
-  ): void;
-  public addEventListener(
-    type: string,
-    listener: (this: Org, ev: Event) => unknown,
-    options?: boolean | AddEventListenerOptions
-  ): void {
-    super.addEventListener(type, listener, options);
-  }
-  public removeEventListener<T extends keyof OrgEventMap>(
-    type: T,
-    listener: (this: Org, ev: OrgEventMap[T]) => unknown,
-    options?: boolean | AddEventListenerOptions
-  ): void;
-  public removeEventListener(
-    type: string,
-    listener: (this: Org, ev: Event) => unknown,
-    options?: boolean | AddEventListenerOptions
-  ): void {
-    super.addEventListener(type, listener, options);
   }
 
   connectedCallback() {
@@ -826,5 +802,30 @@ export class Org extends LiteElement {
   checkExecutionMinutesQuota() {
     this.orgExecutionMinutesQuotaReached = !!this.org?.execMinutesQuotaReached;
     this.showExecutionMinutesQuotaAlert = this.orgExecutionMinutesQuotaReached;
+  }
+
+  addEventListener<T extends keyof OrgEventMap>(
+    type: T,
+    listener: (this: Org, ev: OrgEventMap[T]) => unknown,
+    options?: boolean | AddEventListenerOptions
+  ): void;
+  addEventListener(
+    type: string,
+    listener: (this: Org, ev: Event) => unknown,
+    options?: boolean | AddEventListenerOptions
+  ): void {
+    super.addEventListener(type, listener, options);
+  }
+  removeEventListener<T extends keyof OrgEventMap>(
+    type: T,
+    listener: (this: Org, ev: OrgEventMap[T]) => unknown,
+    options?: boolean | AddEventListenerOptions
+  ): void;
+  removeEventListener(
+    type: string,
+    listener: (this: Org, ev: Event) => unknown,
+    options?: boolean | AddEventListenerOptions
+  ): void {
+    super.addEventListener(type, listener, options);
   }
 }
