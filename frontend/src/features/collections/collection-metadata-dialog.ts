@@ -40,7 +40,7 @@ export class CollectionMetadataDialog extends LiteElement {
     return html` <btrix-dialog
       label=${this.collection
         ? msg("Edit Collection Metadata")
-        : msg(str`Create a New Collection`)}
+        : msg("Create a New Collection")}
       ?open=${this.open}
       style="--width: 46rem"
     >

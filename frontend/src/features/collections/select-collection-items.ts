@@ -1,4 +1,4 @@
-import { state, property, query, customElement } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
@@ -13,8 +13,7 @@ import orderBy from "lodash/fp/orderBy";
 import uniqBy from "lodash/fp/uniqBy";
 import Fuse from "fuse.js";
 import queryString from "query-string";
-import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
+import type { SlMenuItem } from "@shoelace-style/shoelace";
 
 import type { CheckboxChangeEvent } from "@/components/ui/checkbox-list";
 import type { AuthState } from "@/utils/AuthService";
@@ -101,6 +100,9 @@ export class CollectionEditor extends LiteElement {
 
   @property({ type: Boolean })
   isSubmitting = false;
+
+  @property({ type: Boolean })
+  open = false;
 
   @state()
   private collectionCrawls?: Crawl[];
@@ -203,6 +205,7 @@ export class CollectionEditor extends LiteElement {
   protected async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("orgId") && this.orgId) {
       this.fetchSearchValues();
+      this.fetchUploads();
     }
     if (
       (changedProperties.has("orgId") && this.orgId) ||
@@ -211,10 +214,10 @@ export class CollectionEditor extends LiteElement {
     ) {
       this.fetchWorkflows();
     }
-    if (changedProperties.has("orgId") && this.orgId) {
-      this.fetchUploads();
-    }
-    if (changedProperties.has("collectionId") && this.collectionId) {
+    if (
+      (changedProperties.has("collectionId") && this.collectionId) ||
+      (changedProperties.has("open") && this.open)
+    ) {
       this.fetchCollectionCrawlsAndUploads();
     }
   }
@@ -232,17 +235,41 @@ export class CollectionEditor extends LiteElement {
   }
 
   render() {
-    return html`<form
-      name="collectionForm"
-      autocomplete="off"
-      @submit=${this.onSubmit}
+    return html`<btrix-dialog
+      label=${msg("Select Archived Items")}
+      ?open=${this.open}
+      style="--width: var(--btrix-screen-lg); --body-spacing: 0;"
     >
-      <div class="flex gap-3 mb-5">${TABS.map(this.renderTab)}</div>
-      ${choose(this.activeTab, [
-        ["crawls", this.renderSelectCrawls],
-        ["uploads", this.renderSelectUploads],
-      ])}
-    </form>`;
+      <div class="flex flex-col min-h-[50vh]">
+        <div class="flex gap-3 px-4 py-3">${TABS.map(this.renderTab)}</div>
+        <hr />
+        ${choose(this.activeTab, [
+          ["crawls", this.renderSelectCrawls],
+          ["uploads", this.renderSelectUploads],
+        ])}
+      </div>
+      <div slot="footer" class="flex gap-3 items-center justify-end">
+        <sl-button
+          class="mr-auto"
+          size="small"
+          @click=${() => {
+            console.log("TODO");
+          }}
+          >${msg("Cancel")}</sl-button
+        >
+        <sl-button
+          variant="primary"
+          size="small"
+          ?disabled=${this.isSubmitting ||
+          Object.values(this.workflowIsLoading).some(
+            (isLoading) => isLoading === true
+          )}
+          ?loading=${this.isSubmitting}
+          @click=${() => this.save()}
+          >${msg("Save Selection")}</sl-button
+        >
+      </div>
+    </btrix-dialog>`;
   }
 
   private renderTab = (tab: Tab) => {
@@ -257,16 +284,23 @@ export class CollectionEditor extends LiteElement {
         aria-selected="${isSelected}"
       >
         <sl-icon name=${icon}></sl-icon>
-        <span>${label}</span>
+        <span
+          >${label}
+          (${Object.keys(
+            tab === "crawls" ? this.selectedCrawls : this.selectedUploads
+          ).length})</span
+        >
       </btrix-button>
     `;
   };
 
   private renderSelectCrawls = () => {
     return html`
-      <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <section class="flex-1 p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
         <section class="col-span-1 flex flex-col">
-          <h4 class="font-semibold mb-3">${msg("In Collection")}</h4>
+          <h4 class="font-semibold leading-none mb-3">
+            ${msg("In Collection")}
+          </h4>
           <div class="border rounded-lg py-2 flex-1">
             ${guard(
               [
@@ -281,7 +315,9 @@ export class CollectionEditor extends LiteElement {
           </div>
         </section>
         <section class="col-span-1 flex flex-col">
-          <h4 class="font-semibold mb-3">${msg("All Workflows")}</h4>
+          <h4 class="font-semibold leading-none mb-3">
+            ${msg("All Workflows")}
+          </h4>
           ${when(
             this.workflows?.total,
             () =>
@@ -332,31 +368,17 @@ export class CollectionEditor extends LiteElement {
             )}
           </footer>
         </section>
-        <footer
-          class="col-span-full border rounded-lg px-6 py-4 flex gap-2 justify-end"
-        >
-          <sl-button
-            type="submit"
-            size="small"
-            variant="primary"
-            ?disabled=${this.isSubmitting ||
-            Object.values(this.workflowIsLoading).some(
-              (isLoading) => isLoading === true
-            )}
-            ?loading=${this.isSubmitting}
-          >
-            ${msg("Save Crawls")}
-          </sl-button>
-        </footer>
       </section>
     `;
   };
 
   private renderSelectUploads = () => {
     return html`
-      <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <section class="flex-1 p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
         <section class="col-span-1 flex flex-col">
-          <h4 class="font-semibold mb-3">${msg("In Collection")}</h4>
+          <h4 class="font-semibold leading-none mb-3">
+            ${msg("In Collection")}
+          </h4>
           <div class="border rounded-lg py-2 flex-1">
             ${guard(
               [this.collectionUploads, this.selectedUploads],
@@ -365,7 +387,7 @@ export class CollectionEditor extends LiteElement {
           </div>
         </section>
         <section class="col-span-1 flex flex-col">
-          <h4 class="font-semibold mb-3">${msg("All Uploads")}</h4>
+          <h4 class="font-semibold leading-none mb-3">${msg("All Uploads")}</h4>
           <div class="flex-1">
             ${guard(
               [this.isCrawler, this.uploads, this.selectedUploads],
@@ -393,22 +415,6 @@ export class CollectionEditor extends LiteElement {
             )}
           </footer>
         </section>
-        <footer
-          class="col-span-full border rounded-lg px-6 py-4 flex gap-2 justify-end"
-        >
-          <sl-button
-            type="submit"
-            size="small"
-            variant="primary"
-            ?disabled=${this.isSubmitting ||
-            Object.values(this.workflowIsLoading).some(
-              (isLoading) => isLoading === true
-            )}
-            ?loading=${this.isSubmitting}
-          >
-            ${msg("Save Uploads")}
-          </sl-button>
-        </footer>
       </section>
     `;
   };
@@ -1099,41 +1105,27 @@ export class CollectionEditor extends LiteElement {
     }
   }) as any;
 
-  private async onSubmit(event: SubmitEvent) {
-    event.preventDefault();
-    event.stopPropagation();
+  private async save() {
     await this.updateComplete;
 
-    const form = event.target as HTMLFormElement;
+    const values = {
+      crawlIds: [
+        ...Object.keys(this.selectedCrawls),
+        ...Object.keys(this.selectedUploads),
+      ],
+      oldCrawlIds: [
+        ...this.savedCollectionCrawlIds,
+        ...this.savedCollectionUploadIds,
+      ],
+    };
 
-    const formValues = serialize(form) as FormValues;
-    const values = this.getEditedValues(formValues);
+    console.log(values);
 
-    this.dispatchEvent(
-      <CollectionSubmitEvent>new CustomEvent("on-submit", {
-        detail: { values },
-      })
-    );
-  }
-
-  private getEditedValues(formValues: FormValues) {
-    const values: any = {};
-    switch (this.activeTab) {
-      case "crawls": {
-        values.crawlIds = Object.keys(this.selectedCrawls);
-        values.oldCrawlIds = this.savedCollectionCrawlIds;
-        break;
-      }
-      case "uploads": {
-        values.crawlIds = Object.keys(this.selectedUploads);
-        values.oldCrawlIds = this.savedCollectionUploadIds;
-        break;
-      }
-      default:
-        break;
-    }
-
-    return values;
+    // this.dispatchEvent(
+    //   <CollectionSubmitEvent>new CustomEvent("on-submit", {
+    //     detail: { values },
+    //   })
+    // );
   }
 
   private getActivePanelFromHash = () => {

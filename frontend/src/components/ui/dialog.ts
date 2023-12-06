@@ -16,6 +16,7 @@ export class Dialog extends SlDialog {
       :host {
         --header-spacing: var(--sl-spacing-medium);
         --body-spacing: var(--sl-spacing-medium);
+        --footer-spacing: var(--sl-spacing-medium);
       }
 
       .dialog__panel {
