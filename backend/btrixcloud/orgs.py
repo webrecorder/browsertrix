@@ -534,7 +534,7 @@ class OrgOps:
                 {"_id": oid}, {"$inc": {f"monthlyExecSeconds.{yymm}": duration}}
             )
 
-        # Otherwise, add execution seconds to montlyExecSeconds up to quota
+        # Otherwise, add execution seconds to monthlyExecSeconds up to quota
         await self.orgs.find_one_and_update(
             {"_id": oid},
             {"$inc": {f"monthlyExecSeconds.{yymm}": monthly_remaining_time}},
@@ -562,7 +562,7 @@ class OrgOps:
                 )
 
             # If seconds over quota is higher than gifted seconds available,
-            # use remaining gifted gifted time
+            # use remaining gifted gifted time and then move on
             await self.orgs.find_one_and_update(
                 {"_id": oid},
                 {
