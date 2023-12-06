@@ -106,7 +106,7 @@ function makeTheme() {
       "4/3": "4 / 3", // For Browsertrix watch/replay
     },
     screens: {
-      lg: "1124px",
+      lg: "var(--btrix-screen-lg)",
       // Override default of:
       // => @media (min-width: 1024px) { ... }
     },

@@ -1237,7 +1237,7 @@ export class WorkflowDetail extends LiteElement {
       <btrix-dialog
         .label=${msg("Crawl Queue Editor")}
         .open=${this.openDialogName === "exclusions"}
-        style=${/* max-w-screen-lg: */ `--width: 1124px;`}
+        style=${`--width: var(--btrix-screen-lg)`}
         @sl-request-close=${() => (this.openDialogName = undefined)}
         @sl-show=${this.showDialog}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
