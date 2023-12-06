@@ -224,10 +224,7 @@ export class CollectionEditor extends LiteElement {
         ])}
       </div>
       <div slot="footer" class="flex gap-3 items-center justify-end">
-        <sl-button
-          class="mr-auto"
-          size="small"
-          @click=${() => this.dialog.hide()}
+        <sl-button class="mr-auto" size="small" @click=${() => this.reset()}
           >${msg("Cancel")}</sl-button
         >
         <sl-button
@@ -408,20 +405,13 @@ export class CollectionEditor extends LiteElement {
     if (!crawlsInCollection.length) {
       return html`
         <div
-          class="flex flex-col items-center justify-center text-center p-4 my-12"
+          class="h-full flex flex-col items-center justify-center text-center p-4"
         >
           <span class="text-base font-semibold text-primary"
-            >${msg("No Crawls in this Collection, yet")}</span
+            >${msg(
+              "Select a Workflow to include all or some of its crawls."
+            )}</span
           >
-          <p class="max-w-[24em] mx-auto mt-4">
-            ${(this.workflows && !this.workflows.total) || !this.isCrawler
-              ? msg(
-                  "Select Workflows or individual Crawls. You can always come back and add Crawls later."
-                )
-              : msg(
-                  "Create a Workflow to select Crawls. You can always come back and add Crawls later."
-                )}
-          </p>
         </div>
       `;
     }
@@ -451,10 +441,10 @@ export class CollectionEditor extends LiteElement {
     if (!uploadsInCollection.length) {
       return html`
         <div
-          class="flex flex-col items-center justify-center text-center p-4 my-12"
+          class="h-full flex flex-col items-center justify-center text-center p-4"
         >
           <span class="text-base font-semibold text-primary"
-            >${msg("No uploads in this Collection, yet")}</span
+            >${msg("Select uploads to add to this Collection.")}</span
           >
         </div>
       `;
@@ -1078,6 +1068,11 @@ export class CollectionEditor extends LiteElement {
     }
   }) as any;
 
+  private reset() {
+    this.dialog.hide();
+    this.activeTab = TABS[0];
+  }
+
   private async save() {
     await this.updateComplete;
     const crawlIds = [
@@ -1121,13 +1116,13 @@ export class CollectionEditor extends LiteElement {
     try {
       await Promise.all(requests);
 
+      this.reset();
       this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
       this.notify({
         message: msg(str`Successfully saved archived item selection.`),
         variant: "success",
         icon: "check2-circle",
       });
-      this.dialog.hide();
     } catch (e: any) {
       this.notify({
         message: e.isApiError

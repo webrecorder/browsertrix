@@ -142,24 +142,25 @@ export class CollectionDetail extends LiteElement {
       <div class="border rounded-lg py-2 px-4 mb-3">
         ${this.renderInfoBar()}
       </div>
+      <div class="mb-3">${this.renderTabs()}</div>
+      ${choose(
+        this.collectionTab,
+        [
+          [
+            "replay",
+            () =>
+              guard(
+                [this.collectionId, this.collection?.crawlCount],
+                this.renderReplay
+              ),
+          ],
+          [
+            "items",
+            () => guard([this.archivedItems], this.renderArchivedItems),
+          ],
+        ],
 
-      ${when(
-        this.collection?.crawlCount,
-        () => html`
-          <div class="mb-3">${this.renderTabs()}</div>
-          ${choose(
-            this.collectionTab,
-            [
-              ["replay", () => guard([this.collectionId], this.renderReplay)],
-              [
-                "items",
-                () => guard([this.archivedItems], this.renderArchivedItems),
-              ],
-            ],
-
-            () => html`<btrix-not-found></btrix-not-found>`
-          )}
-        `
+        () => html`<btrix-not-found></btrix-not-found>`
       )}
       <div class="my-7">${this.renderDescription()}</div>
 
@@ -196,7 +197,10 @@ export class CollectionDetail extends LiteElement {
         ?isCrawler=${this.isCrawler}
         ?open=${this.openDialogName === "editItems"}
         @sl-hide=${() => (this.openDialogName = undefined)}
-        @btrix-collection-saved=${() => this.fetchCollection()}
+        @btrix-collection-saved=${() => {
+          this.fetchCollection();
+          this.fetchArchivedItems();
+        }}
       >
       </btrix-collection-items-dialog>
       ${when(
@@ -633,20 +637,12 @@ export class CollectionDetail extends LiteElement {
   }
 
   private renderEmptyState() {
-    if (this.archivedItems?.page && this.archivedItems?.page > 1) {
-      return html`
-        <div class="border-t border-b py-5">
-          <p class="text-center text-neutral-500">
-            ${msg("Could not find page.")}
-          </p>
-        </div>
-      `;
-    }
-
     return html`
-      <div class="border-t border-b py-5">
+      <div class="border rounded p-5">
         <p class="text-center text-neutral-500">
-          ${msg("No matching items found.")}
+          ${this.archivedItems?.page && this.archivedItems?.page > 1
+            ? msg("Page not found.")
+            : msg("This Collection doesn’t have any archived items, yet.")}
         </p>
       </div>
     `;
@@ -675,6 +671,10 @@ export class CollectionDetail extends LiteElement {
     `;
 
   private renderReplay = () => {
+    if (!this.collection?.crawlCount) {
+      return this.renderEmptyState();
+    }
+
     const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
