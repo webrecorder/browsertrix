@@ -115,27 +115,16 @@ export class CollectionDetail extends LiteElement {
         ${when(
           this.isCrawler || (!this.isCrawler && this.collection?.isPublic),
           () =>
-            this.collection?.crawlCount
-              ? html`
-                  <sl-button
-                    variant="primary"
-                    size="small"
-                    @click=${() => (this.showShareInfo = true)}
-                  >
-                    <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
-                    ${msg("Share")}
-                  </sl-button>
-                `
-              : html`
-                  <sl-button
-                    variant="primary"
-                    size="small"
-                    @click=${() => (this.openDialogName = "editItems")}
-                  >
-                    <sl-icon name="ui-checks" slot="prefix"></sl-icon>
-                    ${msg("Add Archived Items")}
-                  </sl-button>
-                `
+            html`
+              <sl-button
+                variant=${this.collection?.crawlCount ? "primary" : "default"}
+                size="small"
+                @click=${() => (this.showShareInfo = true)}
+              >
+                <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+                ${msg("Share")}
+              </sl-button>
+            `
         )}
         ${when(this.isCrawler, this.renderActions)}
       </header>
@@ -145,8 +134,12 @@ export class CollectionDetail extends LiteElement {
       <div class="flex justify-between items-center mb-3">
         ${this.renderTabs()}
         <sl-button
+          variant=${!this.collection || this.collection.crawlCount
+            ? "default"
+            : "primary"}
           size="small"
           @click=${() => (this.openDialogName = "editItems")}
+          ?disabled=${!this.collection}
         >
           <sl-icon name="ui-checks" slot="prefix"></sl-icon>
           ${msg("Select Items")}
