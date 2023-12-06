@@ -52,7 +52,7 @@ export class APIController implements ReactiveController {
     if (resp.ok) {
       const body = await resp.json();
       const storageQuotaReached = body.storageQuotaReached;
-      const executionMinutesQuotaReached = body.executionMinutesQuotaReached;
+      const executionMinutesQuotaReached = body.execMinutesQuotaReached;
       if (typeof storageQuotaReached === "boolean") {
         this.host.dispatchEvent(
           new CustomEvent("storage-quota-update", {
