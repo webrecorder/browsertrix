@@ -183,10 +183,12 @@ export class CollectionMetadataDialog extends LiteElement {
       });
       this.hideDialog();
     } catch (e: any) {
+      let message = e?.isApiError && e?.message;
+      if (message === "collection_name_taken") {
+        message = msg("This name is already taken.");
+      }
       this.notify({
-        message:
-          (e?.isApiError && e?.message) ||
-          msg("Something unexpected went wrong"),
+        message: message || msg("Something unexpected went wrong"),
         variant: "danger",
         icon: "exclamation-octagon",
       });

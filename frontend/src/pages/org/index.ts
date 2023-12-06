@@ -475,7 +475,9 @@ export class Org extends LiteElement {
           ?open=${this.openDialogName === "collection"}
           @sl-hide=${() => (this.openDialogName = undefined)}
           @btrix-collection-saved=${(e: CollectionSavedEvent) => {
-            this.navTo(`${this.orgBasePath}/collections/view/${e.detail.id}`);
+            this.navTo(
+              `${this.orgBasePath}/collections/view/${e.detail.id}/items`
+            );
           }}
         >
         </btrix-collection-metadata-dialog>

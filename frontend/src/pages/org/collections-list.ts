@@ -195,7 +195,9 @@ export class CollectionsList extends LiteElement {
         @sl-after-hide=${() => (this.selectedCollection = undefined)}
         @btrix-collection-saved=${(e: CollectionSavedEvent) => {
           if (this.openDialogName === "create") {
-            this.navTo(`${this.orgBasePath}/collections/view/${e.detail.id}`);
+            this.navTo(
+              `${this.orgBasePath}/collections/view/${e.detail.id}/items`
+            );
           } else {
             this.fetchCollections();
           }
