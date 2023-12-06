@@ -12,6 +12,7 @@ import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection, CollectionSearchValues } from "@/types/collection";
+import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import noCollectionsImg from "~assets/images/no-collections-found.webp";
 import type { SelectNewDialogEvent } from "./index";
 
@@ -79,7 +80,7 @@ export class CollectionsList extends LiteElement {
   private searchResultsOpen = false;
 
   @state()
-  private openDialogName?: "delete" | "editMetadata";
+  private openDialogName?: "create" | "delete" | "editMetadata";
 
   @state()
   private isDialogVisible: boolean = false;
@@ -131,13 +132,7 @@ export class CollectionsList extends LiteElement {
               <sl-button
                 variant="primary"
                 size="small"
-                @click=${() => {
-                  this.dispatchEvent(
-                    <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
-                      detail: "collection",
-                    })
-                  );
-                }}
+                @click=${() => (this.openDialogName = "create")}
               >
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                 ${msg("New Collection")}
@@ -164,7 +159,7 @@ export class CollectionsList extends LiteElement {
       <btrix-dialog
         .label=${msg("Delete Collection?")}
         .open=${this.openDialogName === "delete"}
-        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-hide=${() => (this.openDialogName = undefined)}
         @sl-after-hide=${() => (this.isDialogVisible = false)}
       >
         ${msg(
@@ -188,20 +183,25 @@ export class CollectionsList extends LiteElement {
           >
         </div>
       </btrix-dialog>
-      ${when(
-        this.selectedCollection,
-        () => html`
-          <btrix-collection-metadata-dialog
-            orgId=${this.orgId}
-            .authState=${this.authState}
-            .collection=${this.selectedCollection!}
-            ?open=${this.openDialogName === "editMetadata"}
-            @sl-request-close=${() => (this.openDialogName = undefined)}
-            @btrix-collection-saved=${() => this.fetchCollections()}
-          >
-          </btrix-collection-metadata-dialog>
-        `
-      )}
+      <btrix-collection-metadata-dialog
+        orgId=${this.orgId}
+        .authState=${this.authState}
+        .collection=${this.openDialogName === "create"
+          ? undefined
+          : this.selectedCollection}
+        ?open=${this.openDialogName === "create" ||
+        this.openDialogName === "editMetadata"}
+        @sl-hide=${() => (this.openDialogName = undefined)}
+        @sl-after-hide=${() => (this.selectedCollection = undefined)}
+        @btrix-collection-saved=${(e: CollectionSavedEvent) => {
+          if (this.openDialogName === "create") {
+            this.navTo(`${this.orgBasePath}/collections/view/${e.detail.id}`);
+          } else {
+            this.fetchCollections();
+          }
+        }}
+      >
+      </btrix-collection-metadata-dialog>
     `;
   }
 

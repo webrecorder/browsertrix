@@ -34,6 +34,7 @@ import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import { type TemplateResult } from "lit";
 import { APIError } from "@/utils/api";
+import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -455,11 +456,13 @@ export class Org extends LiteElement {
           .authState=${this.authState}
           orgId=${this.orgId}
           ?open=${this.openDialogName === "browser-profile"}
+          @sl-hide=${() => (this.openDialogName = undefined)}
         >
         </btrix-new-browser-profile-dialog>
         <btrix-new-workflow-dialog
           orgId=${this.orgId}
           ?open=${this.openDialogName === "workflow"}
+          @sl-hide=${() => (this.openDialogName = undefined)}
           @select-job-type=${(e: SelectJobTypeEvent) => {
             this.openDialogName = undefined;
             this.navTo(`${this.orgBasePath}/workflows?new&jobType=${e.detail}`);
@@ -467,9 +470,13 @@ export class Org extends LiteElement {
         >
         </btrix-new-workflow-dialog>
         <btrix-collection-metadata-dialog
-          .authState=${this.authState}
           orgId=${this.orgId}
+          .authState=${this.authState}
           ?open=${this.openDialogName === "collection"}
+          @sl-hide=${() => (this.openDialogName = undefined)}
+          @btrix-collection-saved=${(e: CollectionSavedEvent) => {
+            this.navTo(`${this.orgBasePath}/collections/view/${e.detail.id}`);
+          }}
         >
         </btrix-collection-metadata-dialog>
       </div>

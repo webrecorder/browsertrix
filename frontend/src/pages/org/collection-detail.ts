@@ -166,7 +166,7 @@ export class CollectionDetail extends LiteElement {
       <btrix-dialog
         label=${msg("Delete Collection?")}
         ?open=${this.openDialogName === "delete"}
-        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-hide=${() => (this.openDialogName = undefined)}
       >
         ${msg(
           html`Are you sure you want to delete
@@ -195,7 +195,7 @@ export class CollectionDetail extends LiteElement {
         .authState=${this.authState}
         ?isCrawler=${this.isCrawler}
         ?open=${this.openDialogName === "editItems"}
-        @sl-request-close=${() => (this.openDialogName = undefined)}
+        @sl-hide=${() => (this.openDialogName = undefined)}
         @btrix-collection-saved=${() => this.fetchCollection()}
       >
       </btrix-collection-items-dialog>
@@ -207,7 +207,7 @@ export class CollectionDetail extends LiteElement {
             .authState=${this.authState}
             .collection=${this.collection!}
             ?open=${this.openDialogName === "editMetadata"}
-            @sl-request-close=${() => (this.openDialogName = undefined)}
+            @sl-hide=${() => (this.openDialogName = undefined)}
             @btrix-collection-saved=${() => this.fetchCollection()}
           >
           </btrix-collection-metadata-dialog>
@@ -228,7 +228,7 @@ export class CollectionDetail extends LiteElement {
       <btrix-dialog
         .label=${msg("Share Collection")}
         .open=${this.showShareInfo}
-        @sl-request-close=${() => (this.showShareInfo = false)}
+        @sl-hide=${() => (this.showShareInfo = false)}
         style="--width: 32rem;"
       >
         ${

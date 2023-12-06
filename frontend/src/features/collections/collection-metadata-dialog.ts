@@ -10,8 +10,12 @@ import LiteElement, { html } from "@/utils/LiteElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { Collection } from "@/types/collection";
 
+export type CollectionSavedEvent = CustomEvent<{
+  id: string;
+}>;
+
 /**
- * @fires btrix-collection-saved Fires on successful save
+ * @fires btrix-collection-saved CollectionSavedEvent Fires
  */
 @localized()
 @customElement("btrix-collection-metadata-dialog")
@@ -163,11 +167,13 @@ export class CollectionMetadataDialog extends LiteElement {
         body,
       });
 
-      if (!this.collection) {
-        this.navTo(`${this.orgBasePath}/collections/view/${data.id}/items`);
-      }
-
-      this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
+      this.dispatchEvent(
+        <CollectionSavedEvent>new CustomEvent("btrix-collection-saved", {
+          detail: {
+            id: this.collection?.id || data.id,
+          },
+        })
+      );
       this.notify({
         message: msg(
           str`Successfully saved "${data.name || name}" Collection.`
