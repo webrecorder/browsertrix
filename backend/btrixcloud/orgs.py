@@ -303,7 +303,7 @@ class OrgOps:
         )
 
         # Inc org available fields for extra/gifted execution time as needed
-        if quotas.extraExecMinutes or quotas.extraExecMinutes == 0:
+        if quotas.extraExecMinutes is not None:
             extra_secs_diff = (quotas.extraExecMinutes - previous_extra_mins) * 60
             if org.extraExecSecondsAvailable + extra_secs_diff <= 0:
                 await self.orgs.find_one_and_update(
@@ -316,7 +316,7 @@ class OrgOps:
                     {"$inc": {"extraExecSecondsAvailable": extra_secs_diff}},
                 )
 
-        if quotas.giftedExecMinutes or quotas.giftedExecMinutes == 0:
+        if quotas.giftedExecMinutes is not None:
             gifted_secs_diff = (quotas.giftedExecMinutes - previous_gifted_mins) * 60
             if org.giftedExecSecondsAvailable + gifted_secs_diff <= 0:
                 await self.orgs.find_one_and_update(
