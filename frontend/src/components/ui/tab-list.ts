@@ -4,8 +4,8 @@ import { property, queryAsync, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 const DEFAULT_PANEL_ID = "default-panel";
-// // Match witch tailwind 4xl max width
-// // https://tailwindcss.com/docs/max-width
+// Match witch tailwind 4xl max width
+// https://tailwindcss.com/docs/max-width
 const SCREEN_LG = 896;
 
 /**
