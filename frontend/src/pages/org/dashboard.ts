@@ -778,7 +778,7 @@ export class Dashboard extends LiteElement {
         const tableRows = [
           html`
             <sl-format-date
-              date="${mY}-01T00:00:00.000Z"
+              date="${mY}-15T00:00:00.000Z"
               timeZone="utc"
               month="long"
               year="numeric"
