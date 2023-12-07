@@ -1,17 +1,11 @@
-import type {
-  LitElement,
-  ReactiveController,
-  ReactiveControllerHost,
-} from "lit";
+import type { ReactiveController, ReactiveControllerHost } from "lit";
 import { msg } from "@lit/localize";
 
 import type { Auth } from "@/utils/AuthService";
 import AuthService from "@/utils/AuthService";
 import { APIError } from "@/utils/api";
 
-export type QuotaUpdateEvent = CustomEvent<{
-  reached: boolean;
-}>;
+export type QuotaUpdate = { reached: boolean };
 
 /**
  * Utilities for interacting with the Browsertrix backend API
@@ -59,7 +53,7 @@ export class APIController implements ReactiveController {
       const executionMinutesQuotaReached = body.execMinutesQuotaReached;
       if (typeof storageQuotaReached === "boolean") {
         this.host.dispatchEvent(
-          <QuotaUpdateEvent>new CustomEvent("storage-quota-update", {
+          new CustomEvent<QuotaUpdate>("storage-quota-update", {
             detail: { reached: storageQuotaReached },
             bubbles: true,
             composed: true,
@@ -68,7 +62,7 @@ export class APIController implements ReactiveController {
       }
       if (typeof executionMinutesQuotaReached === "boolean") {
         this.host.dispatchEvent(
-          <QuotaUpdateEvent>new CustomEvent("execution-minutes-quota-update", {
+          new CustomEvent<QuotaUpdate>("execution-minutes-quota-update", {
             detail: { reached: executionMinutesQuotaReached },
             bubbles: true,
             composed: true,
@@ -95,7 +89,7 @@ export class APIController implements ReactiveController {
       case 403: {
         if (errorDetail === "storage_quota_reached") {
           this.host.dispatchEvent(
-            <QuotaUpdateEvent>new CustomEvent("storage-quota-update", {
+            new CustomEvent<QuotaUpdate>("storage-quota-update", {
               detail: { reached: true },
               bubbles: true,
               composed: true,
@@ -106,13 +100,11 @@ export class APIController implements ReactiveController {
         }
         if (errorDetail === "exec_minutes_quota_reached") {
           this.host.dispatchEvent(
-            <QuotaUpdateEvent>(
-              new CustomEvent("execution-minutes-quota-update", {
-                detail: { reached: true },
-                bubbles: true,
-                composed: true,
-              })
-            )
+            new CustomEvent<QuotaUpdate>("execution-minutes-quota-update", {
+              detail: { reached: true },
+              bubbles: true,
+              composed: true,
+            })
           );
           errorMessage = msg("Monthly execution minutes quota reached");
           break;

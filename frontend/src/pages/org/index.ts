@@ -33,7 +33,7 @@ import type {
 } from "./settings";
 import type { Tab as CollectionTab } from "./collection-detail";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import type { QuotaUpdateEvent } from "@/controllers/api";
+import { type QuotaUpdate } from "@/controllers/api";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -61,12 +61,12 @@ type Params = {
 };
 
 type OrgEventMap = {
-  "execution-minutes-quota-update": QuotaUpdateEvent;
-  "storage-quota-update": QuotaUpdateEvent;
+  "execution-minutes-quota-update": QuotaUpdate;
+  "storage-quota-update": QuotaUpdate;
 };
 
 type OrgEventListener<T extends string> = T extends keyof OrgEventMap
-  ? (this: Org, ev: OrgEventMap[T]) => unknown
+  ? (this: Org, ev: CustomEvent<OrgEventMap[T]>) => unknown
   : EventListenerOrEventListenerObject;
 
 // `string & {}` is resolved to `string`, but not by intellisense, so this gives us string suggestions in vscode from OrgEventMap but still allows arbitrary strings
@@ -694,7 +694,7 @@ export class Org extends LiteElement {
     this.removeMember(e.detail.member);
   }
 
-  private async onStorageQuotaUpdate(e: QuotaUpdateEvent) {
+  private async onStorageQuotaUpdate(e: CustomEvent<QuotaUpdate>) {
     e.stopPropagation();
     const { reached } = e.detail;
     this.orgStorageQuotaReached = reached;
@@ -703,7 +703,7 @@ export class Org extends LiteElement {
     }
   }
 
-  private async onExecutionMinutesQuotaUpdate(e: QuotaUpdateEvent) {
+  private async onExecutionMinutesQuotaUpdate(e: CustomEvent<QuotaUpdate>) {
     e.stopPropagation();
     const { reached } = e.detail;
     this.orgExecutionMinutesQuotaReached = reached;
