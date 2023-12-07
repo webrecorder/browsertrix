@@ -78,7 +78,6 @@ describe("browsertrix-app", () => {
             quotas: {},
             bytesStored: 100,
             usage: null,
-            crawlExecSeconds: null,
           },
         ],
       } as APIUser)
@@ -108,7 +107,6 @@ describe("browsertrix-app", () => {
           quotas: {},
           bytesStored: 100,
           usage: null,
-          crawlExecSeconds: null,
         },
       ],
     });

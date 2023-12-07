@@ -18,24 +18,24 @@ export type OrgData = {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
   } | null;
-  crawlExecSeconds: {
+  crawlExecSeconds?: {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
   };
-  monthlyExecSeconds: {
+  monthlyExecSeconds?: {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
   };
-  extraExecSeconds: {
+  extraExecSeconds?: {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
   };
-  giftedExecSeconds: {
+  giftedExecSeconds?: {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
   };
-  extraExecSecondsAvailable: number;
-  giftedExecSecondsAvailable: number;
+  extraExecSecondsAvailable?: number;
+  giftedExecSecondsAvailable?: number;
   storageQuotaReached?: boolean;
   execMinutesQuotaReached?: boolean;
   users?: {

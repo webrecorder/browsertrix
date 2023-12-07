@@ -517,8 +517,8 @@ export class Dashboard extends LiteElement {
                     ${humanizeExecutionSeconds(
                       quotaSeconds -
                         usageSeconds +
-                        this.org!.extraExecSecondsAvailable +
-                        this.org!.giftedExecSecondsAvailable,
+                        (this.org!.extraExecSecondsAvailable ?? 0) +
+                        (this.org!.giftedExecSecondsAvailable ?? 0),
                       { style: "short", round: "down" }
                     )}
                     <span class="ml-1">${msg("remaining")}</span>
@@ -678,11 +678,15 @@ export class Dashboard extends LiteElement {
     `;
 
   private hasMonthlyTime = () =>
-    Object.keys(this.org!.monthlyExecSeconds).length;
+    this.org?.monthlyExecSeconds &&
+    Object.keys(this.org.monthlyExecSeconds).length;
 
-  private hasExtraTime = () => Object.keys(this.org!.extraExecSeconds).length;
+  private hasExtraTime = () =>
+    this.org?.extraExecSeconds && Object.keys(this.org.extraExecSeconds).length;
 
-  private hasGiftedTime = () => Object.keys(this.org!.giftedExecSeconds).length;
+  private hasGiftedTime = () =>
+    this.org?.giftedExecSeconds &&
+    Object.keys(this.org.giftedExecSeconds).length;
 
   private renderUsageHistory() {
     if (!this.org) return;
