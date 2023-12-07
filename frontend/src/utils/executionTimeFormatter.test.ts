@@ -85,4 +85,5 @@ describe("humanizeExecutionSeconds", () => {
     expect(el.textContent?.trim()).to.equal("1 minute");
     expect(parentNode.innerText).to.equal("1 minute");
   });
+  // TODO(emma) test second logic
 });

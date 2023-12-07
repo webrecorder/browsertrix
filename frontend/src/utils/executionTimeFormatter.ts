@@ -110,7 +110,7 @@ export const humanizeExecutionSeconds = (
 
   // if the time is less than an hour and lines up exactly on the minute, don't render the details.
   const formattedDetails =
-    minutes === Math.floor(seconds / 60) && seconds < 3600
+    (displaySeconds ? seconds % 60 === 0 : true) && seconds < 3600
       ? nothing
       : `\u00a0(${details})`;
 

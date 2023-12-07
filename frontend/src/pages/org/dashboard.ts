@@ -789,22 +789,26 @@ export class Dashboard extends LiteElement {
             >
             </sl-format-date>
           `,
-          humanizeSeconds(crawlTime || 0),
-          totalSecondsUsed ? humanizeSeconds(totalSecondsUsed) : "--",
+          humanizeExecutionSeconds(crawlTime || 0),
+          totalSecondsUsed ? humanizeExecutionSeconds(totalSecondsUsed) : "--",
         ];
         if (this.hasMonthlyTime()) {
           tableRows.push(
-            monthlySecondsUsed ? humanizeSeconds(monthlySecondsUsed) : "--"
+            monthlySecondsUsed
+              ? humanizeExecutionSeconds(monthlySecondsUsed)
+              : "--"
           );
         }
         if (this.hasExtraTime()) {
           tableRows.push(
-            extraSecondsUsed ? humanizeSeconds(extraSecondsUsed) : "--"
+            extraSecondsUsed ? humanizeExecutionSeconds(extraSecondsUsed) : "--"
           );
         }
         if (this.hasGiftedTime()) {
           tableRows.push(
-            giftedSecondsUsed ? humanizeSeconds(giftedSecondsUsed) : "--"
+            giftedSecondsUsed
+              ? humanizeExecutionSeconds(giftedSecondsUsed)
+              : "--"
           );
         }
         return tableRows;
