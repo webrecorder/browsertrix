@@ -21,6 +21,7 @@ from .models import (
     Organization,
     StorageRef,
     OrgQuotas,
+    OrgQuotaUpdate,
     OrgMetrics,
     OrgWebhookUrls,
     CreateOrg,
@@ -268,16 +269,65 @@ class OrgOps:
 
     async def update_quotas(self, org: Organization, quotas: OrgQuotas):
         """update organization quotas"""
-        return await self.orgs.find_one_and_update(
+
+        previous_extra_mins = (
+            org.quotas.extraExecMinutes
+            if (org.quotas and org.quotas.extraExecMinutes)
+            else 0
+        )
+        previous_gifted_mins = (
+            org.quotas.giftedExecMinutes
+            if (org.quotas and org.quotas.giftedExecMinutes)
+            else 0
+        )
+
+        update = quotas.dict(
+            exclude_unset=True, exclude_defaults=True, exclude_none=True
+        )
+
+        quota_updates = []
+        for prev_update in org.quotaUpdates or []:
+            quota_updates.append(prev_update.dict())
+        quota_updates.append(
+            OrgQuotaUpdate(update=update, modified=datetime.now()).dict()
+        )
+
+        await self.orgs.find_one_and_update(
             {"_id": org.id},
             {
                 "$set": {
-                    "quotas": quotas.dict(
-                        exclude_unset=True, exclude_defaults=True, exclude_none=True
-                    )
+                    "quotas": update,
+                    "quotaUpdates": quota_updates,
                 }
             },
         )
+
+        # Inc org available fields for extra/gifted execution time as needed
+        if quotas.extraExecMinutes is not None:
+            extra_secs_diff = (quotas.extraExecMinutes - previous_extra_mins) * 60
+            if org.extraExecSecondsAvailable + extra_secs_diff <= 0:
+                await self.orgs.find_one_and_update(
+                    {"_id": org.id},
+                    {"$set": {"extraExecSecondsAvailable": 0}},
+                )
+            else:
+                await self.orgs.find_one_and_update(
+                    {"_id": org.id},
+                    {"$inc": {"extraExecSecondsAvailable": extra_secs_diff}},
+                )
+
+        if quotas.giftedExecMinutes is not None:
+            gifted_secs_diff = (quotas.giftedExecMinutes - previous_gifted_mins) * 60
+            if org.giftedExecSecondsAvailable + gifted_secs_diff <= 0:
+                await self.orgs.find_one_and_update(
+                    {"_id": org.id},
+                    {"$set": {"giftedExecSecondsAvailable": 0}},
+                )
+            else:
+                await self.orgs.find_one_and_update(
+                    {"_id": org.id},
+                    {"$inc": {"giftedExecSecondsAvailable": gifted_secs_diff}},
+                )
 
     async def update_event_webhook_urls(self, org: Organization, urls: OrgWebhookUrls):
         """Update organization event webhook URLs"""
@@ -367,32 +417,37 @@ class OrgOps:
 
         return False
 
-    async def get_this_month_crawl_exec_seconds(self, oid: UUID) -> int:
-        """Return crawlExecSeconds for current month"""
+    async def get_monthly_crawl_exec_seconds(self, oid: UUID) -> int:
+        """Return monthlyExecSeconds for current month"""
         org = await self.orgs.find_one({"_id": oid})
         org = Organization.from_dict(org)
         yymm = datetime.utcnow().strftime("%Y-%m")
         try:
-            return org.crawlExecSeconds[yymm]
+            return org.monthlyExecSeconds[yymm]
         except KeyError:
             return 0
 
-    async def exec_mins_quota_reached(self, oid: UUID) -> bool:
-        """Return bools for if execution minutes quota"""
-        quota = await self.get_org_exec_mins_monthly_quota(oid)
+    async def exec_mins_quota_reached(
+        self, oid: UUID, include_extra: bool = True
+    ) -> bool:
+        """Return bool for if execution minutes quota is reached"""
+        if include_extra:
+            gifted_seconds = await self.get_gifted_exec_secs_available(oid)
+            if gifted_seconds:
+                return False
 
-        quota_reached = False
+            extra_seconds = await self.get_extra_exec_secs_available(oid)
+            if extra_seconds:
+                return False
 
-        if quota:
-            monthly_exec_seconds = await self.get_this_month_crawl_exec_seconds(oid)
+        monthly_quota = await self.get_org_exec_mins_monthly_quota(oid)
+        if monthly_quota:
+            monthly_exec_seconds = await self.get_monthly_crawl_exec_seconds(oid)
             monthly_exec_minutes = math.floor(monthly_exec_seconds / 60)
+            if monthly_exec_minutes >= monthly_quota:
+                return True
 
-            if monthly_exec_minutes >= quota:
-                quota_reached = True
-
-        # add additional quotas here
-
-        return quota_reached
+        return False
 
     async def get_org_storage_quota(self, oid: UUID) -> int:
         """return max allowed concurrent crawls, if any"""
@@ -408,6 +463,22 @@ class OrgOps:
         if org:
             org = Organization.from_dict(org)
             return org.quotas.maxExecMinutesPerMonth
+        return 0
+
+    async def get_extra_exec_secs_available(self, oid: UUID) -> int:
+        """return extra billable rollover seconds available, if any"""
+        org = await self.orgs.find_one({"_id": oid})
+        if org:
+            org = Organization.from_dict(org)
+            return org.extraExecSecondsAvailable
+        return 0
+
+    async def get_gifted_exec_secs_available(self, oid: UUID) -> int:
+        """return gifted rollover seconds available, if any"""
+        org = await self.orgs.find_one({"_id": oid})
+        if org:
+            org = Organization.from_dict(org)
+            return org.giftedExecSecondsAvailable
         return 0
 
     async def set_origin(self, org: Organization, request: Request):
@@ -426,13 +497,93 @@ class OrgOps:
         )
 
     async def inc_org_time_stats(self, oid, duration, is_exec_time=False):
-        """inc crawl duration stats for org oid"""
-        # init org crawl stats
+        """inc crawl duration stats for org
+
+        Overage is applied only to crawlExecSeconds - monthlyExecSeconds,
+        giftedExecSeconds, and extraExecSeconds are added to only up to quotas
+        """
+        # pylint: disable=too-many-return-statements
         key = "crawlExecSeconds" if is_exec_time else "usage"
         yymm = datetime.utcnow().strftime("%Y-%m")
         await self.orgs.find_one_and_update(
             {"_id": oid}, {"$inc": {f"{key}.{yymm}": duration}}
         )
+
+        if not is_exec_time:
+            return
+
+        org = await self.get_org_by_id(oid)
+
+        monthly_exec_secs_used = await self.get_monthly_crawl_exec_seconds(oid)
+
+        monthly_quota_mins = await self.get_org_exec_mins_monthly_quota(oid)
+        monthly_quota_secs = monthly_quota_mins * 60
+
+        if (
+            not monthly_quota_secs
+            and not org.giftedExecSecondsAvailable
+            and not org.extraExecSecondsAvailable
+        ):
+            return
+
+        monthly_remaining_time = monthly_quota_secs - monthly_exec_secs_used
+
+        # If adding duration won't pass monthly quota, add duration and return
+        if duration <= monthly_remaining_time:
+            return await self.orgs.find_one_and_update(
+                {"_id": oid}, {"$inc": {f"monthlyExecSeconds.{yymm}": duration}}
+            )
+
+        # Otherwise, add execution seconds to monthlyExecSeconds up to quota
+        await self.orgs.find_one_and_update(
+            {"_id": oid},
+            {"$inc": {f"monthlyExecSeconds.{yymm}": monthly_remaining_time}},
+        )
+
+        if not org.giftedExecSecondsAvailable and not org.extraExecSecondsAvailable:
+            return
+
+        secs_over_quota = duration - monthly_remaining_time
+
+        # If we've surpassed monthly base quota, use gifted and extra exec minutes
+        # in that order if available, track their usage per month, and recalculate
+        # extraExecSecondsAvailable and giftedExecSecondsAvailable as needed
+        gifted_secs_available = org.giftedExecSecondsAvailable
+        if gifted_secs_available:
+            if secs_over_quota <= gifted_secs_available:
+                return await self.orgs.find_one_and_update(
+                    {"_id": oid},
+                    {
+                        "$inc": {
+                            f"giftedExecSeconds.{yymm}": secs_over_quota,
+                            "giftedExecSecondsAvailable": -secs_over_quota,
+                        }
+                    },
+                )
+
+            # If seconds over quota is higher than gifted seconds available,
+            # use remaining gifted gifted time and then move on
+            await self.orgs.find_one_and_update(
+                {"_id": oid},
+                {
+                    "$inc": {f"giftedExecSeconds.{yymm}": gifted_secs_available},
+                    "$set": {"giftedExecSecondsAvailable": 0},
+                },
+            )
+            secs_over_quota = secs_over_quota - gifted_secs_available
+
+        # If we still have an overage, apply to extra up to quota
+        secs_to_use = min(secs_over_quota, org.extraExecSecondsAvailable)
+        if secs_to_use:
+            return await self.orgs.find_one_and_update(
+                {"_id": oid},
+                {
+                    "$inc": {
+                        f"extraExecSeconds.{yymm}": secs_to_use,
+                        "extraExecSecondsAvailable": -secs_to_use,
+                    }
+                },
+            )
 
     async def get_max_concurrent_crawls(self, oid):
         """return max allowed concurrent crawls, if any"""

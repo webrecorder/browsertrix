@@ -55,14 +55,17 @@ describe("humanizeExecutionSeconds", () => {
 
   it("shows a short version when set", async () => {
     const parentNode = document.createElement("div");
-    const el = await fixture(humanizeExecutionSeconds(1_234_567_890, "short"), {
-      parentNode,
-    });
+    const el = await fixture(
+      humanizeExecutionSeconds(1_234_567_890, { style: "short" }),
+      {
+        parentNode,
+      }
+    );
     expect(el.getAttribute("title")).to.equal(
       "20,576,132 minutes\u00a0(342,935h 32m)"
     );
-    expect(el.textContent?.trim()).to.equal("21M minutes");
-    expect(parentNode.innerText).to.equal("21M minutes");
+    expect(el.textContent?.trim()).to.equal("21M min");
+    expect(parentNode.innerText).to.equal("21M min");
   });
   it("skips the details when given a time less than an hour that is exactly in minutes", async () => {
     const parentNode = document.createElement("div");
@@ -72,5 +75,14 @@ describe("humanizeExecutionSeconds", () => {
     expect(el.getAttribute("title")).to.equal("59 minutes");
     expect(el.textContent?.trim()).to.equal("59 minutes");
     expect(parentNode.innerText).to.equal("59 minutes");
+  });
+  it("rounds minutes down when set", async () => {
+    const parentNode = document.createElement("div");
+    const el = await fixture(humanizeExecutionSeconds(90, { round: "down" }), {
+      parentNode,
+    });
+    expect(el.getAttribute("title")).to.equal("1 minute");
+    expect(el.textContent?.trim()).to.equal("1 minute");
+    expect(parentNode.innerText).to.equal("1 minute");
   });
 });

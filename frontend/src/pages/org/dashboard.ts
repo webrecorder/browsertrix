@@ -356,15 +356,31 @@ export class Dashboard extends LiteElement {
 
   private renderCrawlingMeter(_metrics: Metrics) {
     let quotaSeconds = 0;
+
     if (this.org!.quotas && this.org!.quotas.maxExecMinutesPerMonth) {
       quotaSeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
     }
 
-    let usageSeconds = 0;
+    let quotaSecondsAllTypes = quotaSeconds;
+
+    let quotaSecondsExtra = 0;
+    if (this.org!.extraExecSecondsAvailable) {
+      quotaSecondsExtra = this.org!.extraExecSecondsAvailable;
+      quotaSecondsAllTypes += this.org!.extraExecSecondsAvailable;
+    }
+
+    let quotaSecondsGifted = 0;
+    if (this.org!.giftedExecSecondsAvailable) {
+      quotaSecondsGifted = this.org!.giftedExecSecondsAvailable;
+      quotaSecondsAllTypes += this.org!.giftedExecSecondsAvailable;
+    }
+
     const now = new Date();
-    if (this.org!.crawlExecSeconds) {
+
+    let usageSeconds = 0;
+    if (this.org!.monthlyExecSeconds) {
       const actualUsage =
-        this.org!.crawlExecSeconds[
+        this.org!.monthlyExecSeconds[
           `${now.getFullYear()}-${now.getUTCMonth() + 1}`
         ];
       if (actualUsage) {
@@ -372,32 +388,115 @@ export class Dashboard extends LiteElement {
       }
     }
 
-    const hasQuota = Boolean(quotaSeconds);
-    const isReached = hasQuota && usageSeconds >= quotaSeconds;
-
-    if (isReached) {
+    if (usageSeconds > quotaSeconds) {
       usageSeconds = quotaSeconds;
     }
 
+    let usageSecondsAllTypes = 0;
+    if (this.org!.crawlExecSeconds) {
+      const actualUsage =
+        this.org!.crawlExecSeconds[
+          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
+        ];
+      if (actualUsage) {
+        usageSecondsAllTypes = actualUsage;
+      }
+    }
+
+    let usageSecondsExtra = 0;
+    if (this.org!.extraExecSeconds) {
+      const actualUsageExtra =
+        this.org!.extraExecSeconds[
+          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
+        ];
+      if (actualUsageExtra) {
+        usageSecondsExtra = actualUsageExtra;
+      }
+    }
+    const maxExecSecsExtra = this.org!.quotas.extraExecMinutes * 60;
+    // Cap usage at quota for display purposes
+    if (usageSecondsExtra > maxExecSecsExtra) {
+      usageSecondsExtra = maxExecSecsExtra;
+    }
+    if (usageSecondsExtra) {
+      // Quota for extra = this month's usage + remaining available
+      quotaSecondsAllTypes += usageSecondsExtra;
+      quotaSecondsExtra += usageSecondsExtra;
+    }
+
+    let usageSecondsGifted = 0;
+    if (this.org!.giftedExecSeconds) {
+      const actualUsageGifted =
+        this.org!.giftedExecSeconds[
+          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
+        ];
+      if (actualUsageGifted) {
+        usageSecondsGifted = actualUsageGifted;
+      }
+    }
+    const maxExecSecsGifted = this.org!.quotas.giftedExecMinutes * 60;
+    // Cap usage at quota for display purposes
+    if (usageSecondsGifted > maxExecSecsGifted) {
+      usageSecondsGifted = maxExecSecsGifted;
+    }
+    if (usageSecondsGifted) {
+      // Quota for gifted = this month's usage + remaining available
+      quotaSecondsAllTypes += usageSecondsGifted;
+      quotaSecondsGifted += usageSecondsGifted;
+    }
+
+    const hasQuota = Boolean(quotaSecondsAllTypes);
+    const isReached = hasQuota && usageSecondsAllTypes >= quotaSecondsAllTypes;
+
+    const maxTotalTime = quotaSeconds + quotaSecondsExtra + quotaSecondsGifted;
+    if (isReached) {
+      usageSecondsAllTypes = maxTotalTime;
+      quotaSecondsAllTypes = maxTotalTime;
+    }
+
+    const hasExtra =
+      usageSecondsExtra ||
+      this.org!.extraExecSecondsAvailable ||
+      usageSecondsGifted ||
+      this.org!.giftedExecSecondsAvailable;
+
     const renderBar = (
       /** Time in Seconds */
-      value: number,
+      used: number,
+      quota: number,
       label: string,
-      color: string
-    ) => html`
-      <btrix-meter-bar
-        value=${(value / usageSeconds) * 100}
-        style="--background-color:var(--sl-color-${color}-400)"
-      >
-        <div class="text-center">
-          <div>${label}</div>
-          <div class="text-xs opacity-80">
-            ${humanizeExecutionSeconds(value)} |
-            ${this.renderPercentage(value / quotaSeconds)}
+      color: string,
+      divided: boolean = true
+    ) => {
+      if (divided) {
+        return html` <btrix-divided-meter-bar
+          value=${(used / quotaSecondsAllTypes) * 100}
+          quota=${(quota / quotaSecondsAllTypes) * 100}
+          style="--background-color:var(--sl-color-${color}-400); --quota-background-color:var(--sl-color-${color}-100)"
+        >
+          <div class="text-center">
+            <div>${label}</div>
+            <div class="text-xs opacity-80">
+              ${humanizeExecutionSeconds(used, { displaySeconds: true })} /
+              ${humanizeExecutionSeconds(quota, { displaySeconds: true })}
+            </div>
           </div>
-        </div>
-      </btrix-meter-bar>
-    `;
+        </btrix-divided-meter-bar>`;
+      } else {
+        return html`<btrix-meter-bar
+          value=${100}
+          style="--background-color:var(--sl-color-${color}-400);"
+        >
+          <div class="text-center">
+            <div>${label}</div>
+            <div class="text-xs opacity-80">
+              ${humanizeExecutionSeconds(used, { displaySeconds: true })} |
+              ${this.renderPercentage(used / quota)}
+            </div>
+          </div>
+        </btrix-meter-bar>`;
+      }
+    };
     return html`
       <div class="font-semibold mb-1">
         ${when(
@@ -408,15 +507,21 @@ export class Dashboard extends LiteElement {
                 class="text-danger"
                 name="exclamation-triangle"
               ></sl-icon>
-              <span>${msg("Monthly Execution Minutes Quota Reached")}</span>
+              <span>${msg("Execution Minutes Quota Reached")}</span>
             </div>
           `,
           () =>
             hasQuota
               ? html`
                   <span class="inline-flex items-center">
-                    ${humanizeExecutionSeconds(quotaSeconds - usageSeconds)}
-                    ${msg("Available")}
+                    ${humanizeExecutionSeconds(
+                      quotaSeconds -
+                        usageSeconds +
+                        this.org!.extraExecSecondsAvailable +
+                        this.org!.giftedExecSecondsAvailable,
+                      { style: "short", round: "down" }
+                    )}
+                    <span class="ml-1">${msg("remaining")}</span>
                   </span>
                 `
               : ""
@@ -427,23 +532,56 @@ export class Dashboard extends LiteElement {
         () => html`
           <div class="mb-2">
             <btrix-meter
-              value=${isReached ? quotaSeconds : usageSeconds}
-              max=${ifDefined(quotaSeconds || undefined)}
+              value=${this.org!.giftedExecSecondsAvailable ||
+              this.org!.extraExecSecondsAvailable ||
+              isReached
+                ? quotaSecondsAllTypes
+                : usageSeconds}
+              max=${quotaSecondsAllTypes}
               valueText=${msg("time")}
             >
-              ${when(usageSeconds, () =>
+              ${when(usageSeconds || quotaSeconds, () =>
                 renderBar(
-                  usageSeconds,
+                  usageSeconds > quotaSeconds ? quotaSeconds : usageSeconds,
+                  hasExtra ? quotaSeconds : quotaSecondsAllTypes,
                   msg("Monthly Execution Time Used"),
-                  isReached ? "warning" : this.colors.runningTime
+                  "green",
+                  hasExtra ? true : false
                 )
+              )}
+              ${when(
+                usageSecondsGifted || this.org!.giftedExecSecondsAvailable,
+                () =>
+                  renderBar(
+                    usageSecondsGifted > quotaSecondsGifted
+                      ? quotaSecondsGifted
+                      : usageSecondsGifted,
+                    quotaSecondsGifted,
+                    msg("Gifted Execution Time Used"),
+                    "blue"
+                  )
+              )}
+              ${when(
+                usageSecondsExtra || this.org!.extraExecSecondsAvailable,
+                () =>
+                  renderBar(
+                    usageSecondsExtra > quotaSecondsExtra
+                      ? quotaSecondsExtra
+                      : usageSecondsExtra,
+                    quotaSecondsExtra,
+                    msg("Extra Execution Time Used"),
+                    "red"
+                  )
               )}
               <div slot="available" class="flex-1">
                 <sl-tooltip class="text-center">
                   <div slot="content">
-                    <div>${msg("Monthly Execution Time Available")}</div>
+                    <div>${msg("Monthly Execution Time Remaining")}</div>
                     <div class="text-xs opacity-80">
-                      ${humanizeExecutionSeconds(quotaSeconds - usageSeconds)} |
+                      ${humanizeExecutionSeconds(quotaSeconds - usageSeconds, {
+                        displaySeconds: true,
+                      })}
+                      |
                       ${this.renderPercentage(
                         (quotaSeconds - usageSeconds) / quotaSeconds
                       )}
@@ -453,10 +591,14 @@ export class Dashboard extends LiteElement {
                 </sl-tooltip>
               </div>
               <span slot="valueLabel">
-                ${humanizeExecutionSeconds(usageSeconds, "short")}
+                ${humanizeExecutionSeconds(usageSecondsAllTypes, {
+                  style: "short",
+                })}
               </span>
               <span slot="maxLabel">
-                ${humanizeExecutionSeconds(quotaSeconds, "short")}
+                ${humanizeExecutionSeconds(quotaSecondsAllTypes, {
+                  style: "short",
+                })}
               </span>
             </btrix-meter>
           </div>
@@ -535,56 +677,140 @@ export class Dashboard extends LiteElement {
       <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
     `;
 
-  // TODO fix style when data-table is converted to slots
-  readonly usageTableCols = [
-    msg("Month"),
-    html`
-      ${msg("Execution Time")}
-      <sl-tooltip>
-        <div slot="content" style="text-transform: initial">
-          ${msg("Total running time of all crawler instances")}
-        </div>
-        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
-      </sl-tooltip>
-    `,
-    html`
-      ${msg("Elapsed Time")}
-      <sl-tooltip>
-        <div slot="content" style="text-transform: initial">
-          ${msg("Total time elapsed between when crawls started and ended")}
-        </div>
-        <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
-      </sl-tooltip>
-    `,
-  ];
+  private hasMonthlyTime = () =>
+    Object.keys(this.org!.monthlyExecSeconds).length;
+
+  private hasExtraTime = () => Object.keys(this.org!.extraExecSeconds).length;
+
+  private hasGiftedTime = () => Object.keys(this.org!.giftedExecSeconds).length;
 
   private renderUsageHistory() {
     if (!this.org) return;
+
+    const usageTableCols = [
+      msg("Month"),
+      html`
+        ${msg("Elapsed Time")}
+        <sl-tooltip>
+          <div slot="content" style="text-transform: initial">
+            ${msg("Total time elapsed between when crawls started and ended")}
+          </div>
+          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+        </sl-tooltip>
+      `,
+      html`
+        ${msg("Total Execution Time")}
+        <sl-tooltip>
+          <div slot="content" style="text-transform: initial">
+            ${msg("Total running time of all crawler instances")}
+          </div>
+          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+        </sl-tooltip>
+      `,
+    ];
+
+    if (this.hasMonthlyTime()) {
+      usageTableCols.push(html`${msg("Execution: Monthly")}
+        <sl-tooltip>
+          <div slot="content" style="text-transform: initial">
+            ${msg("Monthly execution time used on crawls this month")}
+          </div>
+          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+        </sl-tooltip>`);
+    }
+    if (this.hasExtraTime()) {
+      usageTableCols.push(html`${msg("Execution: Extra")}
+        <sl-tooltip>
+          <div slot="content" style="text-transform: initial">
+            ${msg("Billable rollover execution time used on crawls this month")}
+          </div>
+          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+        </sl-tooltip>`);
+    }
+    if (this.hasGiftedTime()) {
+      usageTableCols.push(html`${msg("Execution: Gifted")}
+        <sl-tooltip>
+          <div slot="content" style="text-transform: initial">
+            ${msg("Gifted execution time used on crawls this month")}
+          </div>
+          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
+        </sl-tooltip>`);
+    }
+
     const rows = Object.entries(this.org.usage || {})
       // Sort latest
       .reverse()
       .map(([mY, crawlTime]) => {
-        const value = this.org!.crawlExecSeconds?.[mY];
-        return [
+        let monthlySecondsUsed = this.org!.monthlyExecSeconds?.[mY] || 0;
+        let maxMonthlySeconds = 0;
+        if (this.org!.quotas.maxExecMinutesPerMonth) {
+          maxMonthlySeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
+        }
+        if (monthlySecondsUsed > maxMonthlySeconds) {
+          monthlySecondsUsed = maxMonthlySeconds;
+        }
+
+        let extraSecondsUsed = this.org!.extraExecSeconds?.[mY] || 0;
+        let maxExtraSeconds = 0;
+        if (this.org!.quotas.extraExecMinutes) {
+          maxExtraSeconds = this.org!.quotas.extraExecMinutes * 60;
+        }
+        if (extraSecondsUsed > maxExtraSeconds) {
+          extraSecondsUsed = maxExtraSeconds;
+        }
+
+        let giftedSecondsUsed = this.org!.giftedExecSeconds?.[mY] || 0;
+        let maxGiftedSeconds = 0;
+        if (this.org!.quotas.giftedExecMinutes) {
+          maxGiftedSeconds = this.org!.quotas.giftedExecMinutes * 60;
+        }
+        if (giftedSecondsUsed > maxGiftedSeconds) {
+          giftedSecondsUsed = maxGiftedSeconds;
+        }
+
+        let totalSecondsUsed = this.org!.crawlExecSeconds?.[mY] || 0;
+        const totalMaxQuota =
+          maxMonthlySeconds + maxExtraSeconds + maxGiftedSeconds;
+        if (totalSecondsUsed > totalMaxQuota) {
+          totalSecondsUsed = totalMaxQuota;
+        }
+
+        const tableRows = [
           html`
             <sl-format-date
-              date="${mY}-01T00:00:00.000Z"
+              date="${mY}-15T00:00:00.000Z"
               time-zone="utc"
               month="long"
               year="numeric"
             >
             </sl-format-date>
           `,
-          value ? humanizeExecutionSeconds(value) : "--",
           humanizeSeconds(crawlTime || 0),
+          totalSecondsUsed ? humanizeSeconds(totalSecondsUsed) : "--",
         ];
+        if (this.hasMonthlyTime()) {
+          tableRows.push(
+            monthlySecondsUsed ? humanizeSeconds(monthlySecondsUsed) : "--"
+          );
+        }
+        if (this.hasExtraTime()) {
+          tableRows.push(
+            extraSecondsUsed ? humanizeSeconds(extraSecondsUsed) : "--"
+          );
+        }
+        if (this.hasGiftedTime()) {
+          tableRows.push(
+            giftedSecondsUsed ? humanizeSeconds(giftedSecondsUsed) : "--"
+          );
+        }
+        return tableRows;
       });
     return html`
       <btrix-details>
         <span slot="title">${msg("Usage History")}</span>
         <div class="border rounded overflow-hidden">
           <btrix-data-table
-            .columns=${this.usageTableCols}
+            .columns=${usageTableCols}
             .rows=${rows}
           ></btrix-data-table>
         </div>
