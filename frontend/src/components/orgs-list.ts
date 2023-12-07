@@ -64,6 +64,12 @@ export class OrgsList extends LiteElement {
             case "maxExecMinutesPerMonth":
               label = msg("Max Execution Minutes Per Month");
               break;
+            case "extraExecMinutes":
+              label = msg("Extra Execution Minutes");
+              break;
+            case "giftedExecMinutes":
+              label = msg("Gifted Execution Minutes");
+              break;
             default:
               label = msg("Unlabeled");
           }
