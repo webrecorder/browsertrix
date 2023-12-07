@@ -33,6 +33,7 @@ import type {
 } from "./settings";
 import type { Tab as CollectionTab } from "./collection-detail";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import { type QuotaUpdate } from "@/controllers/api";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -58,6 +59,20 @@ type Params = {
   settingsTab?: "information" | "members";
   new?: ResourceName;
 };
+
+type OrgEventMap = {
+  "execution-minutes-quota-update": QuotaUpdate;
+  "storage-quota-update": QuotaUpdate;
+};
+
+type OrgEventListener<T extends string> = T extends keyof OrgEventMap
+  ? (this: Org, ev: CustomEvent<OrgEventMap[T]>) => unknown
+  : EventListenerOrEventListenerObject;
+
+// `string & {}` is resolved to `string`, but not by intellisense, so this gives us string suggestions in vscode from OrgEventMap but still allows arbitrary strings
+// eslint-disable-next-line @typescript-eslint/ban-types
+type EventType = keyof OrgEventMap | (string & {});
+
 const defaultTab = "home";
 
 const UUID_REGEX =
@@ -132,6 +147,25 @@ export class Org extends LiteElement {
     const userOrg = this.userOrg;
     if (userOrg) return isCrawler(userOrg.role);
     return false;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener(
+      "execution-minutes-quota-update",
+      this.onExecutionMinutesQuotaUpdate
+    );
+    this.addEventListener("storage-quota-update", this.onStorageQuotaUpdate);
+    this.addEventListener("", () => {});
+  }
+
+  disconnectedCallback() {
+    this.removeEventListener(
+      "execution-minutes-quota-update",
+      this.onExecutionMinutesQuotaUpdate
+    );
+    this.removeEventListener("storage-quota-update", this.onStorageQuotaUpdate);
+    this.disconnectedCallback();
   }
 
   async willUpdate(changedProperties: Map<string, any>) {
@@ -469,7 +503,6 @@ export class Org extends LiteElement {
         workflowId=${this.params.workflowId || ""}
         itemType=${this.params.itemType || "crawl"}
         ?isCrawler=${this.isCrawler}
-        @storage-quota-update=${this.onStorageQuotaUpdate}
       ></btrix-crawl-detail>`;
     }
 
@@ -480,7 +513,6 @@ export class Org extends LiteElement {
       ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
       ?isCrawler=${this.isCrawler}
       itemType=${ifDefined(this.params.itemType || undefined)}
-      @storage-quota-update=${this.onStorageQuotaUpdate}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-crawls-list>`;
   }
@@ -504,8 +536,6 @@ export class Org extends LiteElement {
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
-          @storage-quota-update=${this.onStorageQuotaUpdate}
-          @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
         ></btrix-workflow-detail>
       `;
     }
@@ -523,8 +553,6 @@ export class Org extends LiteElement {
         jobType=${ifDefined(this.params.jobType)}
         ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
         ?orgExecutionMinutesQuotaReached=${this.orgExecutionMinutesQuotaReached}
-        @storage-quota-update=${this.onStorageQuotaUpdate}
-        @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-workflows-new>`;
     }
@@ -536,8 +564,6 @@ export class Org extends LiteElement {
       ?orgExecutionMinutesQuotaReached=${this.orgExecutionMinutesQuotaReached}
       userId=${this.userInfo!.id}
       ?isCrawler=${this.isCrawler}
-      @storage-quota-update=${this.onStorageQuotaUpdate}
-      @execution-minutes-quota-update=${this.onExecutionMinutesQuotaUpdate}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-workflows-list>`;
   }
@@ -548,7 +574,6 @@ export class Org extends LiteElement {
         .authState=${this.authState!}
         .orgId=${this.orgId}
         profileId=${this.params.browserProfileId}
-        @storage-quota-update=${this.onStorageQuotaUpdate}
       ></btrix-browser-profiles-detail>`;
     }
 
@@ -557,14 +582,12 @@ export class Org extends LiteElement {
         .authState=${this.authState!}
         .orgId=${this.orgId}
         .browserId=${this.params.browserId}
-        @storage-quota-update=${this.onStorageQuotaUpdate}
       ></btrix-browser-profiles-new>`;
     }
 
     return html`<btrix-browser-profiles-list
       .authState=${this.authState!}
       .orgId=${this.orgId}
-      @storage-quota-update=${this.onStorageQuotaUpdate}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-browser-profiles-list>`;
   }
@@ -671,7 +694,7 @@ export class Org extends LiteElement {
     this.removeMember(e.detail.member);
   }
 
-  private async onStorageQuotaUpdate(e: CustomEvent) {
+  private async onStorageQuotaUpdate(e: CustomEvent<QuotaUpdate>) {
     e.stopPropagation();
     const { reached } = e.detail;
     this.orgStorageQuotaReached = reached;
@@ -680,7 +703,7 @@ export class Org extends LiteElement {
     }
   }
 
-  private async onExecutionMinutesQuotaUpdate(e: CustomEvent) {
+  private async onExecutionMinutesQuotaUpdate(e: CustomEvent<QuotaUpdate>) {
     e.stopPropagation();
     const { reached } = e.detail;
     this.orgExecutionMinutesQuotaReached = reached;
@@ -788,5 +811,20 @@ export class Org extends LiteElement {
   checkExecutionMinutesQuota() {
     this.orgExecutionMinutesQuotaReached = !!this.org?.execMinutesQuotaReached;
     this.showExecutionMinutesQuotaAlert = this.orgExecutionMinutesQuotaReached;
+  }
+
+  addEventListener<T extends EventType>(
+    type: T,
+    listener: OrgEventListener<T>,
+    options?: boolean | AddEventListenerOptions
+  ): void {
+    super.addEventListener(type, listener as EventListener, options);
+  }
+  removeEventListener<T extends EventType>(
+    type: T,
+    listener: OrgEventListener<T>,
+    options?: boolean | AddEventListenerOptions
+  ): void {
+    super.removeEventListener(type, listener as EventListener, options);
   }
 }
