@@ -104,7 +104,7 @@ export class Dashboard extends LiteElement {
               );
             }}
           >
-            <sl-button slot="trigger" size="small" caret>
+            <sl-button slot="trigger" size="small" variant="primary" caret>
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>
               ${msg("Create New...")}
             </sl-button>
