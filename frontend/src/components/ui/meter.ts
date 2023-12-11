@@ -6,7 +6,7 @@ import {
   queryAssignedElements,
   customElement,
 } from "lit/decorators.js";
-import { classMap } from "lit/directives/class-map";
+import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
