@@ -129,7 +129,7 @@ export class BrowserProfilesDetail extends LiteElement {
                       year="2-digit"
                       hour="numeric"
                       minute="numeric"
-                      timeZoneName="short"
+                      time-zone-name="short"
                     ></sl-format-date>
                   `
                 : ""}

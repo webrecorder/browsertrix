@@ -199,7 +199,7 @@ export class Home extends LiteElement {
                     placeholder=${msg("My Organization")}
                     autocomplete="off"
                     required
-                    helpText=${this.validateOrgNameMax.helpText}
+                    help-text=${this.validateOrgNameMax.helpText}
                     @sl-input=${this.validateOrgNameMax.validate}
                   >
                   </sl-input>

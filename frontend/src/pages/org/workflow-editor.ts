@@ -1804,7 +1804,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           autocomplete="off"
           placeholder=${msg("Our Website (example.com)")}
           value=${this.formState.jobName}
-          helpText=${this.validateNameMax.helpText}
+          help-text=${this.validateNameMax.helpText}
           @sl-input=${this.validateNameMax.validate}
         ></sl-input>
       `)}
@@ -1823,7 +1823,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               ? undefined
               : this.formState.description
           )}
-          helpText=${this.validateDescriptionMax.helpText}
+          help-text=${this.validateDescriptionMax.helpText}
           @sl-input=${this.validateDescriptionMax.validate}
         ></sl-textarea>
       `)}

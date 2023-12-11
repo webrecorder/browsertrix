@@ -185,7 +185,7 @@ export class OrgSettings extends LiteElement {
               value=${this.org.name}
               minlength="2"
               required
-              helpText=${this.validateOrgNameMax.helpText}
+              help-text=${this.validateOrgNameMax.helpText}
               @sl-input=${this.validateOrgNameMax.validate}
             ></sl-input>
           </div>
@@ -210,7 +210,7 @@ export class OrgSettings extends LiteElement {
               minlength="2"
               maxlength="30"
               required
-              helpText=${msg(
+              help-text=${msg(
                 str`Org home page: ${window.location.protocol}//${
                   window.location.hostname
                 }/orgs/${
