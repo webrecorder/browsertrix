@@ -6,6 +6,7 @@ import {
   queryAssignedElements,
   customElement,
 } from "lit/decorators.js";
+import { classMap } from "lit/directives/class-map";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
@@ -79,9 +80,9 @@ export class DividedMeterBar extends LitElement {
       <div class="quotaBar" style="width:${this.quota}%">
         ${when(this.value, () => {
           return html`<div
-            class="bar ${this.value < this.quota
-              ? css`rightBorderRadius`
-              : css``}"
+            class="bar ${classMap({
+              rightBorderRadius: this.value < this.quota,
+            })}"
             style="width:${(this.value / this.quota) * 100}%"
           ></div>`;
         })}
