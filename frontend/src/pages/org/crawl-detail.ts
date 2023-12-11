@@ -218,7 +218,7 @@ export class CrawlDetail extends LiteElement {
         break;
     }
 
-    let label = "";
+    let label = "Back";
     if (this.workflowId) {
       label = msg("Back to Crawl Workflow");
     } else if (this.collectionId) {
@@ -269,15 +269,12 @@ export class CrawlDetail extends LiteElement {
 
   private renderName() {
     if (!this.crawl)
-      return html`<sl-skeleton
-        class="inline-block"
-        style="width: 15em"
-      ></sl-skeleton>`;
+      return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
 
     if (this.crawl.name) return this.crawl.name;
     if (!this.crawl.firstSeed) return this.crawl.id;
     const remainder = this.crawl.seedCount - 1;
-    let crawlName: any = html`<span class="break-words"
+    let crawlName: TemplateResult = html`<span class="break-words"
       >${this.crawl.firstSeed}</span
     >`;
     if (remainder) {
@@ -380,7 +377,7 @@ export class CrawlDetail extends LiteElement {
     return html`
       <header class="md:flex items-center gap-2 pb-3 mb-3 border-b">
         <h1
-          class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
+          class="grid flex-1 min-w-0 text-xl font-semibold leading-7 truncate mb-2 md:mb-0"
         >
           ${this.renderName()}
         </h1>
@@ -407,7 +404,9 @@ export class CrawlDetail extends LiteElement {
                 </sl-button-group>
               `
             : ""}
-          ${this.crawl && this.isCrawler ? this.renderMenu() : ""}
+          ${this.crawl && this.isCrawler
+            ? this.renderMenu()
+            : html`<sl-skeleton class="w-24 h-8"></sl-skeleton>`}
         </div>
       </header>
     `;
@@ -560,7 +559,7 @@ export class CrawlDetail extends LiteElement {
                   ?isUpload=${this.crawl.type === "upload"}
                 ></btrix-crawl-status>
               `
-            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+            : html`<sl-skeleton class="h-[16px] mb-[3px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         ${when(this.crawl, () =>
           this.crawl!.type === "upload"
@@ -665,7 +664,7 @@ export class CrawlDetail extends LiteElement {
                           <span> pages</span>`
                       : ""}`
                 : html`<span class="text-0-400">${msg("Unknown")}</span>`}`
-            : html`<sl-skeleton class="h-5"></sl-skeleton>`}
+            : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Crawl ID")}>
           ${this.crawl
@@ -677,7 +676,7 @@ export class CrawlDetail extends LiteElement {
                   <btrix-copy-button value=${this.crawl.id}></btrix-copy-button>
                 </div>
               `
-            : html`<sl-skeleton class="h-6"></sl-skeleton>`}
+            : html`<sl-skeleton class="h-[16px] mb-[3px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
       </btrix-desc-list>
     `;
@@ -700,7 +699,7 @@ ${this.crawl?.description}
                   >`,
                 () => noneText
               ),
-            () => html`<sl-skeleton></sl-skeleton>`
+            () => html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`
           )}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Tags")}>
@@ -716,7 +715,7 @@ ${this.crawl?.description}
                   ),
                 () => noneText
               ),
-            () => html`<sl-skeleton></sl-skeleton>`
+            () => html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`
           )}
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("In Collections")}>
@@ -742,7 +741,7 @@ ${this.crawl?.description}
                 `,
                 () => noneText
               ),
-            () => html`<sl-skeleton></sl-skeleton>`
+            () => html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`
           )}
         </btrix-desc-list-item>
       </btrix-desc-list>
