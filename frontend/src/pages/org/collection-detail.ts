@@ -245,7 +245,7 @@ export class CollectionDetail extends LiteElement {
             (e.currentTarget as HTMLInputElement | undefined)?.select();
           }}
         >
-          <sl-tooltip slot="prefix" content="Open in New Tab" hoist>
+          <sl-tooltip slot="prefix" content=${msg("Open in New Tab")} hoist>
             <sl-icon-button
               href=${publicReplayUrl}
               name="box-arrow-up-right"
