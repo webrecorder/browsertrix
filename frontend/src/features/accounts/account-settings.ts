@@ -224,7 +224,7 @@ export class AccountSettings extends LiteElement {
                     label=${msg("Enter your current password")}
                     type="password"
                     autocomplete="current-password"
-                    passwordToggle
+                    password-toggle
                     required
                   ></sl-input>
                   <sl-input
@@ -232,7 +232,7 @@ export class AccountSettings extends LiteElement {
                     label=${msg("New password")}
                     type="password"
                     autocomplete="new-password"
-                    passwordToggle
+                    password-toggle
                     minlength="8"
                     required
                     @input=${this.onPasswordInput}

@@ -823,7 +823,7 @@ export class WorkflowDetail extends LiteElement {
               size="small"
               pill
               multiple
-              maxOptionsVisible="1"
+              max-options-visible="1"
               placeholder=${msg("All Crawls")}
               @sl-change=${async (e: CustomEvent) => {
                 const value = (e.target as SlSelect).value as CrawlState[];
@@ -1283,7 +1283,7 @@ export class WorkflowDetail extends LiteElement {
       <div>
         <sl-radio-group
           value=${this.workflow.scale}
-          helpText=${msg(
+          help-text=${msg(
             "This change will only apply to the currently running crawl."
           )}
         >

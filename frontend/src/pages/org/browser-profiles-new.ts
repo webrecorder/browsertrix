@@ -152,7 +152,7 @@ export class BrowserProfilesNew extends LiteElement {
         <sl-textarea
           name="description"
           label=${msg("Description")}
-          helpText=${msg("Optional profile description")}
+          help-text=${msg("Optional profile description")}
           placeholder=${msg("Example (example.com) login profile", {
             desc: "Example browser profile name",
           })}

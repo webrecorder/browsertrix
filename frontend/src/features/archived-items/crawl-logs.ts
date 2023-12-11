@@ -130,7 +130,7 @@ export class CrawlLogs extends LitElement {
                     hour="2-digit"
                     minute="2-digit"
                     second="2-digit"
-                    hourFormat="24"
+                    hour-format="24"
                   >
                   </sl-format-date>
                 </div>

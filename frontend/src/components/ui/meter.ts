@@ -7,6 +7,7 @@ import {
   customElement,
 } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
 @customElement("btrix-meter-bar")
@@ -25,7 +26,6 @@ export class MeterBar extends LitElement {
       height: 1rem;
       background-color: var(--background-color, var(--sl-color-blue-500));
       min-width: 4px;
-      border-right: var(--border-right, 0);
     }
   `;
 
@@ -36,6 +36,56 @@ export class MeterBar extends LitElement {
     return html`<sl-tooltip>
       <div slot="content"><slot></slot></div>
       <div class="bar" style="width:${this.value}%"></div>
+    </sl-tooltip>`;
+  }
+}
+
+@customElement("btrix-divided-meter-bar")
+export class DividedMeterBar extends LitElement {
+  /* Percentage of value / max */
+  @property({ type: Number })
+  value = 0;
+
+  @property({ type: Number })
+  quota = 0;
+
+  static styles = css`
+    :host {
+      display: contents;
+    }
+
+    .bar {
+      height: 1rem;
+      background-color: var(--background-color, var(--sl-color-blue-400));
+      min-width: 4px;
+    }
+
+    .rightBorderRadius {
+      border-radius: 0 var(--sl-border-radius-medium)
+        var(--sl-border-radius-medium) 0;
+    }
+
+    .quotaBar {
+      height: 1rem;
+      background-color: var(--quota-background-color, var(--sl-color-blue-100));
+      min-width: 4px;
+      box-shadow: inset 0px 1px 1px 0px rgba(0, 0, 0, 0.25);
+    }
+  `;
+
+  render() {
+    return html`<sl-tooltip>
+      <div slot="content"><slot></slot></div>
+      <div class="quotaBar" style="width:${this.quota}%">
+        ${when(this.value, () => {
+          return html`<div
+            class="bar ${this.value < this.quota
+              ? css`rightBorderRadius`
+              : css``}"
+            style="width:${(this.value / this.quota) * 100}%"
+          ></div>`;
+        })}
+      </div>
     </sl-tooltip>`;
   }
 }
