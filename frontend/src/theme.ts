@@ -13,10 +13,6 @@ const PRIMARY_COLOR = "#4876ff";
 const primaryColor = Color(PRIMARY_COLOR);
 
 const theme = css`
-  @tailwind base;
-  @tailwind components;
-  @tailwind utilities;
-
   :root {
     /* Custom contextual variables */
     --primary: ${unsafeCSS(PRIMARY_COLOR)};
