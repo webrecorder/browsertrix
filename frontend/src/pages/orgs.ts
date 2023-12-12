@@ -8,9 +8,9 @@ import LiteElement, { html } from "@/utils/LiteElement";
 import { needLogin } from "@/utils/auth";
 import type { APIPaginatedList } from "@/types/api";
 
-@needLogin
 @localized()
 @customElement("btrix-orgs")
+@needLogin
 export class Orgs extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;

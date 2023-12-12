@@ -88,9 +88,9 @@ export class RequestVerify extends LitElement {
   }
 }
 
-@needLogin
 @localized()
 @customElement("btrix-account-settings")
+@needLogin
 export class AccountSettings extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;

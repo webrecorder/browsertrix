@@ -3,10 +3,13 @@ import type { AuthState } from "@/utils/AuthService";
 import AuthService from "@/utils/AuthService";
 
 /**
- * Block rendering and dispatch event if user is not logged in
+ * Block rendering and dispatch event if user is not logged in.
+ * When using with other class decorators, `@needLogin` should
+ * be closest to the component (see usage example.)
  *
- * Usage example:
+ * @example Usage:
  * ```ts
+ * @customElement("my-component")
  * @needLogin
  * MyComponent extends LiteElement {}
  * ```
