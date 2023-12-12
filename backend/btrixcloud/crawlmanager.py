@@ -386,7 +386,11 @@ class CrawlManager(K8sAPI):
         profile_filename: Optional[str] = None,
         update_config: bool = False,
     ) -> None:
-        config_map = await self.get_configmap(str(crawlconfig.id))
+        try:
+            config_map = await self.get_configmap(str(crawlconfig.id))
+        # pylint: disable=raise-missing-from
+        except:
+            raise FileNotFoundError(str(crawlconfig.id))
 
         if update.scale is not None:
             config_map.data["INITIAL_SCALE"] = str(update.scale)
