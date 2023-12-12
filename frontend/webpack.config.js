@@ -10,6 +10,7 @@ const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const childProcess = require("child_process");
 const packageJSON = require("./package.json");
 const fs = require("fs");
+const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
 const isDevServer = process.env.WEBPACK_SERVE;
 
@@ -174,6 +175,7 @@ const main = {
         },
       ],
     }),
+    ...(process.env.BUNDLE_ANALYZER ? [new BundleAnalyzerPlugin()] : []),
   ],
 };
 
