@@ -1,5 +1,26 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const { tailwindTransform } = require("postcss-lit");
+const Color = require("color");
+
+const PRIMARY_COLOR = "#4876ff";
+const primaryColor = Color(PRIMARY_COLOR);
+
+const primary = {
+  DEFAULT: PRIMARY_COLOR,
+  50: primaryColor.lighten(0.54).hex(),
+  100: primaryColor.lighten(0.5).hex(),
+  200: primaryColor.lighten(0.4).hex(),
+  300: primaryColor.lighten(0.3).hex(),
+  400: primaryColor.lighten(0.2).hex(),
+  500: primaryColor.lighten(0.1).hex(),
+  600: PRIMARY_COLOR,
+  700: primaryColor.darken(0.1).hex(),
+  800: primaryColor.darken(0.2).hex(),
+  900: primaryColor.darken(0.3).hex(),
+  950: primaryColor.darken(0.4).hex(),
+};
+
+console.log(JSON.stringify(primary));
 
 /**
  * Use Shoelace CSS variables in Tailwind theme for consistency
@@ -33,7 +54,7 @@ function makeTheme() {
     colors: {
       current: "currentColor",
       ...colors.map(makeColorPalette),
-      primary: `var(--primary)`,
+      primary,
       success: `var(--success)`,
       warning: `var(--warning)`,
       danger: `var(--danger)`,

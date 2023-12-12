@@ -5,17 +5,14 @@
  * To make new variables available to Tailwind, update
  * `theme` in tailwind.config.js
  */
-import { css, unsafeCSS } from "lit";
-import Color from "color";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-// TODO generate at build time
-const PRIMARY_COLOR = "#4876ff";
-const primaryColor = Color(PRIMARY_COLOR);
-
-const theme = css`
+@layer base {
   :root {
     /* Custom contextual variables */
-    --primary: ${unsafeCSS(PRIMARY_COLOR)};
+    --primary: theme(colors.primary.DEFAULT);
     --success: var(--sl-color-success-600);
     --warning: var(--sl-color-warning-600);
     --danger: var(--sl-color-danger-600);
@@ -29,17 +26,17 @@ const theme = css`
      * Shoelace Theme Tokens
      */
     /* Primary */
-    --sl-color-primary-50: ${unsafeCSS(primaryColor.lighten(0.54))};
-    --sl-color-primary-100: ${unsafeCSS(primaryColor.lighten(0.5))};
-    --sl-color-primary-200: ${unsafeCSS(primaryColor.lighten(0.4))};
-    --sl-color-primary-300: ${unsafeCSS(primaryColor.lighten(0.3))};
-    --sl-color-primary-400: ${unsafeCSS(primaryColor.lighten(0.2))};
-    --sl-color-primary-500: ${unsafeCSS(primaryColor.lighten(0.1))};
-    --sl-color-primary-600: var(--primary);
-    --sl-color-primary-700: ${unsafeCSS(primaryColor.darken(0.1))};
-    --sl-color-primary-800: ${unsafeCSS(primaryColor.darken(0.2))};
-    --sl-color-primary-900: ${unsafeCSS(primaryColor.darken(0.3))};
-    --sl-color-primary-950: ${unsafeCSS(primaryColor.darken(0.4))};
+    --sl-color-primary-50: theme(colors.primary.50);
+    --sl-color-primary-100: theme(colors.primary.100);
+    --sl-color-primary-200: theme(colors.primary.200);
+    --sl-color-primary-300: theme(colors.primary.300);
+    --sl-color-primary-400: theme(colors.primary.400);
+    --sl-color-primary-500: theme(colors.primary.500);
+    --sl-color-primary-600: theme(colors.primary.600);
+    --sl-color-primary-700: theme(colors.primary.700);
+    --sl-color-primary-800: theme(colors.primary.800);
+    --sl-color-primary-900: theme(colors.primary.900);
+    --sl-color-primary-950: theme(colors.primary.950);
 
     /*
      * Typography
@@ -95,7 +92,9 @@ const theme = css`
   body {
     font-size: var(--sl-font-size-medium);
   }
+}
 
+@layer components {
   .sl-toast-stack {
     bottom: 0;
     top: auto;
@@ -237,14 +236,14 @@ const theme = css`
   .textarea-wrap::part(textarea) {
     white-space: pre;
   }
+}
 
+@layer utilities {
   /* Aesthetically closer to monospaced font: */
-  .font-monostyle,
-  sl-input.input-font-monostyle::part(input) {
+  .font-monostyle {
     font-family: var(--font-monostyle-family);
     font-variation-settings: var(--font-monostyle-variation);
   }
-
   .truncate {
     /* Fix tailwind clipping vertical */
     overflow: clip visible;
@@ -256,6 +255,12 @@ const theme = css`
     bottom: -9999px;
     visibility: hidden;
     clip: rect(0 0 0 0);
+  }
+}
+
+@layer components {
+  sl-input.input-font-monostyle::part(input) {
+    @apply font-monostyle;
   }
 
   sl-input[filled]::part(form-control-input) {
@@ -269,6 +274,4 @@ const theme = css`
     border: 1px solid theme(colors.gray.200);
     border-radius: var(--sl-input-border-radius-small);
   }
-`;
-
-export default theme;
+}
