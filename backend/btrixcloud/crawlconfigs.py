@@ -802,12 +802,6 @@ class CrawlConfigOps:
         except:
             await self.readd_configmap(crawlconfig, org)
 
-            # pylint: disable=broad-exception-raised,raise-missing-from
-            # raise HTTPException(
-            #    status_code=404,
-            #    detail=f"crawl-config-{cid} missing, can not start crawl",
-            # )
-
         if await self.org_ops.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
