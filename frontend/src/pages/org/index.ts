@@ -165,7 +165,7 @@ export class Org extends LiteElement {
       this.onExecutionMinutesQuotaUpdate
     );
     this.removeEventListener("storage-quota-update", this.onStorageQuotaUpdate);
-    this.disconnectedCallback();
+    super.disconnectedCallback();
   }
 
   async willUpdate(changedProperties: Map<string, any>) {
