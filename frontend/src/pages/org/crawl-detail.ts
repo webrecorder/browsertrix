@@ -406,7 +406,9 @@ export class CrawlDetail extends LiteElement {
             : ""}
           ${this.crawl && this.isCrawler
             ? this.renderMenu()
-            : html`<sl-skeleton class="w-24 h-8"></sl-skeleton>`}
+            : html`<sl-skeleton
+                class="w-24 h-8 [--border-radius:theme(borderRadius.sm)]"
+              ></sl-skeleton>`}
         </div>
       </header>
     `;
