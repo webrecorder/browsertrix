@@ -13,6 +13,8 @@ import AuthService from "@/utils/AuthService";
  * @needLogin
  * MyComponent extends LiteElement {}
  * ```
+ *
+ * @fires need-login
  */
 export function needLogin<T extends { new (...args: any[]): LiteElement }>(
   constructor: T
@@ -31,9 +33,9 @@ export function needLogin<T extends { new (...args: any[]): LiteElement }>(
         super.update(changedProperties);
       } else {
         this.dispatchEvent(
-          AuthService.createNeedLoginEvent(
-            `${window.location.pathname}${window.location.search}${window.location.hash}`
-          )
+          AuthService.createNeedLoginEvent({
+            redirectUrl: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+          })
         );
       }
     }
