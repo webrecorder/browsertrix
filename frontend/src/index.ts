@@ -31,10 +31,10 @@ import "./pages";
 import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
-import { getThemeCSSStyleSheet } from "@/classes/TailwindElement";
+import { theme } from "@/theme";
 
 // Make theme CSS available in document
-document.adoptedStyleSheets = [getThemeCSSStyleSheet()];
+document.adoptedStyleSheets = [theme];
 
 type DialogContent = {
   label?: TemplateResult | string;

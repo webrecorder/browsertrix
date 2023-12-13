@@ -1,19 +1,10 @@
 import { LitElement } from "lit";
-
-import themeCSS from "../theme.css";
-
-// Create a new style sheet from the compiled theme CSS...
-const theme = new CSSStyleSheet();
-theme.replaceSync(themeCSS);
-
-export function getThemeCSSStyleSheet() {
-  return theme;
-}
+import { theme } from "@/theme";
 
 export class TailwindElement extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
-    // ... and insert it into the shadow root!
+    // Insert the compiled Tailwind css into the shadow root.
     // This has the benefit of not requiring a whole copy of compiled Tailwind
     // for every TailwindElement, so we still get the benefits of atomic CSS.
     // And because Tailwind uses `@layer`[^1], the order of declarations ends up
