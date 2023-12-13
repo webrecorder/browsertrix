@@ -109,10 +109,11 @@ export const humanizeExecutionSeconds = (
   const details = humanizeSeconds(seconds, locale, displaySeconds);
 
   // if the time is less than an hour and lines up exactly on the minute, don't render the details.
+  const detailsRelevant = displaySeconds
+    ? seconds % 60 !== 0
+    : Math.floor(seconds / 60) === 0 && seconds % 60 !== 0;
   const formattedDetails =
-    minutes === Math.floor(seconds / 60) && seconds < 3600
-      ? nothing
-      : `\u00a0(${details})`;
+    detailsRelevant || seconds > 3600 ? `\u00a0(${details})` : nothing;
 
   switch (style) {
     case "long":
