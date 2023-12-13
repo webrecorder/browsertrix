@@ -31,6 +31,9 @@ export class CopyButton extends LitElement {
   @property({ attribute: false })
   getValue?: () => string | undefined;
 
+  @property({ type: Boolean })
+  hoist = false;
+
   @state()
   private isCopied: boolean = false;
 
@@ -53,6 +56,7 @@ export class CopyButton extends LitElement {
           : this.content
           ? this.content
           : msg("Copy")}
+        ?hoist=${this.hoist}
       >
         <sl-icon-button
           name=${this.isCopied ? "check-lg" : this.name ? this.name : "files"}

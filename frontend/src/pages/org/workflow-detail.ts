@@ -530,7 +530,7 @@ export class WorkflowDetail extends LiteElement {
     const isActive = tabName === this.activePanel;
     let className = "text-neutral-600 hover:bg-neutral-50";
     if (isActive) {
-      className = "text-blue-600 bg-blue-50 shadow-sm";
+      className = "text-blue-600 bg-blue-50 shadow-sm shadow-blue-800/20";
     } else if (disabled) {
       className = "text-neutral-300 cursor-not-allowed";
     }

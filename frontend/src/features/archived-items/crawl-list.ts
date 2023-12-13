@@ -28,8 +28,11 @@ import type { Crawl } from "@/types/crawler";
 import { srOnly, truncate } from "@/utils/css";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 
+// postcss-lit-disable-next-line
 const mediumBreakpointCss = css`30rem`;
+// postcss-lit-disable-next-line
 const largeBreakpointCss = css`60rem`;
+// postcss-lit-disable-next-line
 const rowCss = css`
   .row {
     display: grid;

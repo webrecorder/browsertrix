@@ -6,7 +6,6 @@ import { msg, localized } from "@lit/localize";
 import { ifDefined } from "lit/directives/if-defined.js";
 import type { SlDialog, SlInput } from "@shoelace-style/shoelace";
 import "broadcastchannel-polyfill";
-import "tailwindcss/tailwind.css";
 
 import "./utils/polyfills";
 import appState, { use, AppStateService } from "./utils/state";
@@ -24,7 +23,6 @@ import type {
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser, UserOrg } from "./types/user";
 import type { AuthStorageEventDetail } from "./utils/AuthService";
-import theme from "./theme";
 import { ROUTES } from "./routes";
 import "./shoelace";
 import "./components";
@@ -33,6 +31,10 @@ import "./pages";
 import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
+import { theme } from "@/theme";
+
+// Make theme CSS available in document
+document.adoptedStyleSheets = [theme];
 
 type DialogContent = {
   label?: TemplateResult | string;
@@ -219,10 +221,6 @@ export class App extends LiteElement {
 
   render() {
     return html`
-      <style>
-        ${theme}
-      </style>
-
       <div class="min-w-screen min-h-screen flex flex-col">
         ${this.renderNavBar()}
         <main class="relative flex-auto flex">${this.renderPage()}</main>

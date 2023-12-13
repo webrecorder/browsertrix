@@ -234,25 +234,21 @@ export class CollectionDetail extends LiteElement {
         <p class="mb-3">
           ${msg("This collection can be viewed by anyone with the link.")}
         </p>
-        <div class="flex items-center rounded border">
-          <div class="text-base">
-            <sl-tooltip content="Open in New Tab">
-              <sl-icon-button
-                href=${publicReplayUrl}
-                name="box-arrow-up-right"
-                target="_blank"
-              >
-              </sl-icon-button>
-            </sl-tooltip>
-          </div>
-          <div class="flex-1 min-w-0 truncate">${publicReplayUrl}</div>
-          <div class="text-base">
-            <btrix-copy-button
-              .getValue=${() => publicReplayUrl}
-              content=${msg("Copy Public URL")}
-            ></btrix-copy-button>
-          </div>
-        </div>
+
+        <btrix-copy-field
+          class="mb-2"
+          .value="${publicReplayUrl}"
+          hideContentFromScreenReaders
+        >
+          <sl-tooltip slot="prefix" content=${msg("Open in New Tab")}>
+            <sl-icon-button
+              href=${publicReplayUrl}
+              name="box-arrow-up-right"
+              target="_blank"
+            >
+            </sl-icon-button>
+          </sl-tooltip>
+        </btrix-copy-field>
       </section>
       <btrix-section-heading>${msg("Embed Collection")}</btrix-section-heading>
       <section class="mt-3">

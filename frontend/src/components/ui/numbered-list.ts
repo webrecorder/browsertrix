@@ -35,6 +35,7 @@ export class NumberedListItem extends LitElement {
   @property({ type: Boolean })
   hoverable: boolean = false;
 
+  // postcss-lit-disable-next-line
   static styles = css`
     :host,
     .item {
@@ -111,6 +112,7 @@ export class NumberedListItem extends LitElement {
 
 @customElement("btrix-numbered-list-header")
 export class NumberedListHeader extends LitElement {
+  // postcss-lit-disable-next-line
   static styles = css`
     :host,
     header {
@@ -135,6 +137,7 @@ export class NumberedListHeader extends LitElement {
 
 @customElement("btrix-numbered-list")
 export class NumberedList extends LitElement {
+  // postcss-lit-disable-next-line
   static styles = css`
     :host {
       display: block;

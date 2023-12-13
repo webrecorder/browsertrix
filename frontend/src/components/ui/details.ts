@@ -25,6 +25,7 @@ export class Details extends LitElement {
   @property({ type: Boolean })
   disabled? = false;
 
+  // postcss-lit-disable-next-line
   static styles = css`
     :host {
       display: block;

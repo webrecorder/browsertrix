@@ -203,6 +203,7 @@ export class CrawlsList extends LiteElement {
                 >
                   <sl-button
                     size="small"
+                    variant="primary"
                     @click=${() => (this.isUploadingArchive = true)}
                     ?disabled=${this.orgStorageQuotaReached}
                   >

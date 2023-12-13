@@ -1,7 +1,30 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+const { tailwindTransform } = require("postcss-lit");
+const Color = require("color");
+
+const PRIMARY_COLOR = "#4876ff";
+const primaryColor = Color(PRIMARY_COLOR);
+
+const primary = {
+  DEFAULT: PRIMARY_COLOR,
+  50: primaryColor.lighten(0.54).hex(),
+  100: primaryColor.lighten(0.5).hex(),
+  200: primaryColor.lighten(0.4).hex(),
+  300: primaryColor.lighten(0.3).hex(),
+  400: primaryColor.lighten(0.2).hex(),
+  500: primaryColor.lighten(0.1).hex(),
+  600: PRIMARY_COLOR,
+  700: primaryColor.darken(0.1).hex(),
+  800: primaryColor.darken(0.2).hex(),
+  900: primaryColor.darken(0.3).hex(),
+  950: primaryColor.darken(0.4).hex(),
+};
+
 /**
  * Use Shoelace CSS variables in Tailwind theme for consistency
  *
  * Customize Shoelace variables in `theme.ts`
+ * @returns {import('tailwindcss').Config['theme']}
  */
 function makeTheme() {
   // Map color palettes:
@@ -29,7 +52,7 @@ function makeTheme() {
     colors: {
       current: "currentColor",
       ...colors.map(makeColorPalette),
-      primary: `var(--primary)`,
+      primary,
       success: `var(--success)`,
       warning: `var(--warning)`,
       danger: `var(--danger)`,
@@ -71,13 +94,14 @@ function makeTheme() {
       lg: `var(--sl-border-radius-large)`,
       xl: `var(--sl-border-radius-x-large)`,
     },
-    boxShadow: {
-      sm: `var(--sl-shadow-small)`,
-      DEFAULT: `var(--sl-shadow-medium)`,
-      md: `var(--sl-shadow-medium)`,
-      lg: `var(--sl-shadow-large)`,
-      xl: `var(--sl-shadow-x-large)`,
-    },
+    // TODO see if there's a way to use Shoelace's box shadows with customizable colors
+    // boxShadow: {
+    //   sm: `var(--sl-shadow-small)`,
+    //   DEFAULT: `var(--sl-shadow-medium)`,
+    //   md: `var(--sl-shadow-medium)`,
+    //   lg: `var(--sl-shadow-large)`,
+    //   xl: `var(--sl-shadow-x-large)`,
+    // },
     aspectRatio: {
       "4/3": "4 / 3", // For Browsertrix watch/replay
     },
@@ -86,15 +110,28 @@ function makeTheme() {
       // Override default of:
       // => @media (min-width: 1024px) { ... }
     },
+    transitionDuration: {
+      "x-slow": "var(--sl-transition-x-slow)",
+      slow: "var(--sl-transition-slow)",
+      medium: "var(--sl-transition-medium)",
+      fast: "var(--sl-transition-fast)",
+      "x-fast": "var(--sl-transition-x-fast)",
+    },
   };
 }
 
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   theme: {
     extend: makeTheme(),
   },
 
-  content: ["./src/**/*.html", "./src/**/*.{ts,js,ejs}"],
+  content: {
+    files: ["./src/**/*.html", "./src/**/*.{ts,js,ejs}"],
+    transform: {
+      ts: tailwindTransform,
+    },
+  },
 
   extract: {
     include: ["./src/**/*.{ts,js}"],

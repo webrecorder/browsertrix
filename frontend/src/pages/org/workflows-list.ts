@@ -294,7 +294,7 @@ export class WorkflowsList extends LiteElement {
       <div class="flex flex-wrap items-center justify-between">
         <div class="text-sm">
           <button
-            class="inline-block font-medium border-2 border-transparent ${this
+            class="inline-block font-medium border-b-2 border-transparent ${this
               .filterBy.schedule === undefined
               ? "border-b-current text-primary"
               : "text-neutral-500"} mr-3"
@@ -308,7 +308,7 @@ export class WorkflowsList extends LiteElement {
             ${msg("All")}
           </button>
           <button
-            class="inline-block font-medium border-2 border-transparent ${this
+            class="inline-block font-medium border-b-2 border-transparent ${this
               .filterBy.schedule === true
               ? "border-b-current text-primary"
               : "text-neutral-500"} mr-3"
@@ -322,7 +322,7 @@ export class WorkflowsList extends LiteElement {
             ${msg("Scheduled")}
           </button>
           <button
-            class="inline-block font-medium border-2 border-transparent ${this
+            class="inline-block font-medium border-b-2 border-transparent ${this
               .filterBy.schedule === false
               ? "border-b-current text-primary"
               : "text-neutral-500"} mr-3"

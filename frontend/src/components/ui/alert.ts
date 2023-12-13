@@ -15,6 +15,7 @@ export class Alert extends LitElement {
   @property({ type: String })
   variant: "success" | "warning" | "danger" | "info" = "info";
 
+  // postcss-lit-disable-next-line
   static styles = css`
     :host > div {
       padding: var(--sl-spacing-x-small) var(--sl-spacing-small);

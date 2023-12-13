@@ -26,6 +26,7 @@ export class PasswordStrengthAlert extends LitElement {
   @property({ type: Number })
   optimal: Score = 4;
 
+  // postcss-lit-disable-next-line
   static styles = css`
     sl-alert::part(message) {
       /* Decrease padding size: */

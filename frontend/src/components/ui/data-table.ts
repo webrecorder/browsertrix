@@ -22,6 +22,7 @@ type CellContent = string | TemplateResult<1>;
  */
 @customElement("btrix-data-table")
 export class DataTable extends LitElement {
+  // postcss-lit-disable-next-line
   static styles = css`
     :host {
       display: contents;

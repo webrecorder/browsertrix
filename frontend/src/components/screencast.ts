@@ -42,6 +42,7 @@ export class Screencast extends LitElement {
   }/watch`;
   static maxRetries = 10;
 
+  // postcss-lit-disable-next-line
   static styles = css`
     .wrapper {
       position: relative;
