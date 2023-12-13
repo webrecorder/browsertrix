@@ -670,14 +670,9 @@ export class CrawlDetail extends LiteElement {
         </btrix-desc-list-item>
         <btrix-desc-list-item label=${msg("Crawl ID")}>
           ${this.crawl
-            ? html`
-                <div class="flex items-center gap-2">
-                  <code class="grow" title=${this.crawl.id}
-                    >${this.crawl.id}</code
-                  >
-                  <btrix-copy-button value=${this.crawl.id}></btrix-copy-button>
-                </div>
-              `
+            ? html`<btrix-copy-field
+                value="${this.crawl.id}"
+              ></btrix-copy-field>`
             : html`<sl-skeleton class="h-[16px] mb-[3px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
       </btrix-desc-list>
