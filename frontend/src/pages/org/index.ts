@@ -80,6 +80,7 @@ const UUID_REGEX =
 
 @localized()
 @customElement("btrix-org")
+@needLogin
 export class Org extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
