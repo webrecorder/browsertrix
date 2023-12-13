@@ -96,11 +96,6 @@
 }
 
 @layer components {
-  .sl-toast-stack {
-    bottom: 0;
-    top: auto;
-  }
-
   /* Add more spacing between label, input and help text */
   .form-label,
   btrix-tag-input::part(form-control-label),
@@ -282,4 +277,9 @@
     border: 1px solid theme(colors.gray.200);
     border-radius: var(--sl-input-border-radius-small);
   }
+}
+
+.sl-toast-stack {
+  bottom: 0;
+  top: auto;
 }

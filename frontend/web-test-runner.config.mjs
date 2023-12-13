@@ -12,6 +12,7 @@ const typescriptPaths = fromRollup(typescriptPathsPlugin);
 // Map all css imports to mock file
 const cssImports = {};
 glob.sync("./src/**/*.css").forEach((filepath) => {
+  console.log(filepath);
   cssImports[filepath] = fileURLToPath(
     new URL("./src/__mocks__/css.js", import.meta.url)
   );
