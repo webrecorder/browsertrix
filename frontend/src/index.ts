@@ -11,19 +11,19 @@ import "tailwindcss/tailwind.css";
 import "./utils/polyfills";
 import appState, { use, AppStateService } from "./utils/state";
 import type { OrgTab } from "./pages/org";
-import type { NavigateEvent } from "@/controllers/navigate";
-import type { NotifyEvent } from "@/controllers/notify";
+import type { NavigateEventDetail } from "@/controllers/navigate";
+import type { NotifyEventDetail } from "@/controllers/notify";
 import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import AuthService from "./utils/AuthService";
 import type {
-  LoggedInEvent,
-  NeedLoginEvent,
+  LoggedInEventDetail,
+  NeedLoginEventDetail,
   AuthState,
 } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser, UserOrg } from "./types/user";
-import type { AuthStorageEventData } from "./utils/AuthService";
+import type { AuthStorageEventDetail } from "./utils/AuthService";
 import theme from "./theme";
 import { ROUTES } from "./routes";
 import "./shoelace";
@@ -49,15 +49,6 @@ export type APIUser = {
   orgs: UserOrg[];
 };
 
-/**
- * @event navigate
- * @event notify
- * @event need-login
- * @event logged-in
- * @event log-out
- * @event user-info-change
- * @event update-user-info
- */
 @localized()
 @customElement("browsertrix-app")
 export class App extends LiteElement {
@@ -102,7 +93,11 @@ export class App extends LiteElement {
     }
     super.connectedCallback();
 
-    window.addEventListener("need-login", this.onNeedLogin);
+    this.addEventListener("btrix-navigate", this.onNavigateTo);
+    this.addEventListener("btrix-notify", this.onNotify);
+    this.addEventListener("btrix-need-login", this.onNeedLogin);
+    this.addEventListener("btrix-logged-in", this.onLoggedIn);
+    this.addEventListener("btrix-log-out", this.onLogOut);
     window.addEventListener("popstate", () => {
       this.syncViewState();
     });
@@ -222,11 +217,6 @@ export class App extends LiteElement {
     );
   }
 
-  navLink(event: Event) {
-    event.preventDefault();
-    this.navigate((event.currentTarget as HTMLAnchorElement).href);
-  }
-
   render() {
     return html`
       <style>
@@ -265,7 +255,7 @@ export class App extends LiteElement {
             <a
               class="text-sm hover:text-neutral-400 font-medium"
               href=${homeHref}
-              @click=${(e: Event) => {
+              @click=${(e: MouseEvent) => {
                 if (isAdmin) {
                   this.clearSelectedOrg();
                 }
@@ -284,7 +274,7 @@ export class App extends LiteElement {
                   <a
                     class="text-neutral-500 hover:text-neutral-400 font-medium"
                     href="/"
-                    @click=${(e: Event) => {
+                    @click=${(e: MouseEvent) => {
                       this.clearSelectedOrg();
                       this.navLink(e);
                     }}
@@ -525,9 +515,6 @@ export class App extends LiteElement {
         if (this.isRegistrationEnabled) {
           return html`<btrix-sign-up
             class="w-full md:bg-neutral-50 flex items-center justify-center"
-            @navigate="${this.onNavigateTo}"
-            @logged-in="${this.onLoggedIn}"
-            @log-out="${this.onLogOut}"
             .authState="${this.authService.authState}"
           ></btrix-sign-up>`;
         } else {
@@ -539,9 +526,6 @@ export class App extends LiteElement {
         return html`<btrix-verify
           class="w-full md:bg-neutral-50 flex items-center justify-center"
           token="${this.viewState.params.token}"
-          @navigate="${this.onNavigateTo}"
-          @notify="${this.onNotify}"
-          @log-out="${this.onLogOut}"
           @user-info-change="${this.onUserInfoChange}"
           .authState="${this.authService.authState}"
         ></btrix-verify>`;
@@ -549,8 +533,6 @@ export class App extends LiteElement {
       case "join":
         return html`<btrix-join
           class="w-full md:bg-neutral-50 flex items-center justify-center"
-          @navigate="${this.onNavigateTo}"
-          @logged-in="${this.onLoggedIn}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
         ></btrix-join>`;
@@ -558,9 +540,6 @@ export class App extends LiteElement {
       case "acceptInvite":
         return html`<btrix-accept-invite
           class="w-full md:bg-neutral-50 flex items-center justify-center"
-          @navigate="${this.onNavigateTo}"
-          @logged-in="${this.onLoggedIn}"
-          @notify="${this.onNotify}"
           .authState="${this.authService.authState}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
@@ -572,7 +551,6 @@ export class App extends LiteElement {
         return html`<btrix-log-in
           class="w-full md:bg-neutral-50 flex items-center justify-center"
           @navigate=${this.onNavigateTo}
-          @logged-in=${this.onLoggedIn}
           .viewState=${this.viewState}
           redirectUrl=${this.viewState.params.redirectUrl ||
           this.viewState.data?.redirectUrl}
@@ -582,7 +560,6 @@ export class App extends LiteElement {
         return html`<btrix-reset-password
           class="w-full md:bg-neutral-50 flex items-center justify-center"
           @navigate=${this.onNavigateTo}
-          @logged-in=${this.onLoggedIn}
           .viewState=${this.viewState}
         ></btrix-reset-password>`;
 
@@ -590,12 +567,10 @@ export class App extends LiteElement {
         return html`<btrix-home
           class="w-full md:bg-neutral-50"
           @navigate=${this.onNavigateTo}
-          @logged-in=${this.onLoggedIn}
           @update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
             this.updateUserInfo();
           }}
-          @notify="${this.onNotify}"
           .authState=${this.authService.authState}
           .userInfo=${this.appState.userInfo ?? undefined}
           slug=${ifDefined(this.appState.orgSlug ?? undefined)}
@@ -604,7 +579,6 @@ export class App extends LiteElement {
       case "orgs":
         return html`<btrix-orgs
           class="w-full md:bg-neutral-50"
-          @navigate="${this.onNavigateTo}"
           .authState="${this.authService.authState}"
           .userInfo="${this.appState.userInfo ?? undefined}"
         ></btrix-orgs>`;
@@ -624,7 +598,6 @@ export class App extends LiteElement {
             e.stopPropagation();
             this.updateUserInfo();
           }}
-          @notify="${this.onNotify}"
           .authState=${this.authService.authState}
           .userInfo=${this.appState.userInfo ?? undefined}
           .viewStateData=${this.viewState.data}
@@ -638,13 +611,10 @@ export class App extends LiteElement {
       case "accountSettings":
         return html`<btrix-account-settings
           class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
-          @navigate="${this.onNavigateTo}"
-          @logged-in=${this.onLoggedIn}
           @update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
             this.updateUserInfo();
           }}
-          @notify="${this.onNotify}"
           .authState="${this.authService.authState}"
           .userInfo="${this.appState.userInfo ?? undefined}"
         ></btrix-account-settings>`;
@@ -654,8 +624,6 @@ export class App extends LiteElement {
           if (this.appState.userInfo.isAdmin) {
             return html`<btrix-users-invite
               class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
-              @navigate="${this.onNavigateTo}"
-              @logged-in=${this.onLoggedIn}
               .authState="${this.authService.authState}"
               .userInfo="${this.appState.userInfo}"
             ></btrix-users-invite>`;
@@ -780,7 +748,7 @@ export class App extends LiteElement {
     }
   }
 
-  onLoggedIn(event: LoggedInEvent) {
+  onLoggedIn(event: CustomEvent<LoggedInEventDetail>) {
     const { detail } = event;
 
     this.authService.saveLogin({
@@ -800,33 +768,29 @@ export class App extends LiteElement {
     this.updateUserInfo();
   }
 
-  onNeedLogin = (e: Event) => {
+  onNeedLogin = (e: CustomEvent<NeedLoginEventDetail>) => {
     e.stopPropagation();
 
     this.clearUser();
-    const redirectUrl = (e as NeedLoginEvent).detail?.redirectUrl;
+    const redirectUrl = e.detail?.redirectUrl;
     this.navigate(ROUTES.login, {
       redirectUrl,
     });
-    this.onNotify(
-      new CustomEvent("notify", {
-        detail: {
-          message: msg("Please log in to continue."),
-          variant: "warning",
-          icon: "exclamation-triangle",
-        },
-      } as const)
-    );
+    this.notify({
+      message: msg("Please log in to continue."),
+      variant: "warning",
+      icon: "exclamation-triangle",
+    });
   };
 
-  onNavigateTo(event: NavigateEvent) {
+  onNavigateTo = (event: CustomEvent<NavigateEventDetail>) => {
     event.stopPropagation();
 
     this.navigate(event.detail.url, event.detail.state);
 
     // Scroll to top of page
     window.scrollTo({ top: 0 });
-  }
+  };
 
   onUserInfoChange(event: CustomEvent<Partial<CurrentUser>>) {
     AppStateService.updateUserInfo({
@@ -838,7 +802,7 @@ export class App extends LiteElement {
   /**
    * Show global toast alert
    */
-  onNotify(event: NotifyEvent) {
+  onNotify = (event: CustomEvent<NotifyEventDetail>) => {
     event.stopPropagation();
 
     const {
@@ -872,7 +836,7 @@ export class App extends LiteElement {
     );
     document.body.append(alert);
     alert.toast();
-  }
+  };
 
   getUserInfo(): Promise<APIUser> {
     return this.apiFetch("/users/me", this.authService.authState!);
@@ -926,7 +890,7 @@ export class App extends LiteElement {
   private startSyncBrowserTabs() {
     AuthService.broadcastChannel.addEventListener(
       "message",
-      ({ data }: { data: AuthStorageEventData }) => {
+      ({ data }: { data: AuthStorageEventDetail }) => {
         if (data.name === "auth_storage") {
           if (data.value !== AuthService.storage.getItem()) {
             if (data.value) {

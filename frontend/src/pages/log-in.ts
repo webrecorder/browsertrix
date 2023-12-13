@@ -361,11 +361,14 @@ export class LogInPage extends LiteElement {
     try {
       const data = await AuthService.login({ email: username, password });
 
-      (data as LoggedInEventDetail).redirectUrl = this.redirectUrl;
+      this.dispatchEvent(
+        AuthService.createLoggedInEvent({
+          ...data,
+          redirectUrl: this.redirectUrl,
+        })
+      );
 
-      this.dispatchEvent(AuthService.createLoggedInEvent(data));
-
-      // no state update here, since "logged-in" event
+      // no state update here, since "btrix-logged-in" event
       // will result in a route change
     } catch (e: any) {
       if (e.isApiError) {

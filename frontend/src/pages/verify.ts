@@ -3,7 +3,11 @@ import { msg, localized } from "@lit/localize";
 
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
+import AuthService from "@/utils/AuthService";
 
+/**
+ * @fires user-info-change
+ */
 @localized()
 @customElement("btrix-verify")
 export class Verify extends LiteElement {
@@ -77,7 +81,7 @@ export class Verify extends LiteElement {
     });
 
     if (shouldLogOut) {
-      this.dispatchEvent(new CustomEvent("log-out"));
+      this.dispatchEvent(AuthService.createLogOutEvent());
     } else {
       if (isLoggedIn) {
         this.dispatchEvent(

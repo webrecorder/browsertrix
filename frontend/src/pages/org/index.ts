@@ -33,7 +33,9 @@ import type {
 } from "./settings";
 import type { Tab as CollectionTab } from "./collection-detail";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import { type QuotaUpdate } from "@/controllers/api";
+import type { QuotaUpdateDetail } from "@/controllers/api";
+import { type TemplateResult } from "lit";
+import { APIError } from "@/utils/api";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -60,24 +62,14 @@ type Params = {
   new?: ResourceName;
 };
 
-type OrgEventMap = {
-  "execution-minutes-quota-update": QuotaUpdate;
-  "storage-quota-update": QuotaUpdate;
-};
-
-type OrgEventListener<T extends string> = T extends keyof OrgEventMap
-  ? (this: Org, ev: CustomEvent<OrgEventMap[T]>) => unknown
-  : EventListenerOrEventListenerObject;
-
-// `string & {}` is resolved to `string`, but not by intellisense, so this gives us string suggestions in vscode from OrgEventMap but still allows arbitrary strings
-// eslint-disable-next-line @typescript-eslint/ban-types
-type EventType = keyof OrgEventMap | (string & {});
-
 const defaultTab = "home";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
+/**
+ * @fires update-user-info
+ */
 @localized()
 @customElement("btrix-org")
 @needLogin
@@ -152,23 +144,29 @@ export class Org extends LiteElement {
   connectedCallback() {
     super.connectedCallback();
     this.addEventListener(
-      "execution-minutes-quota-update",
+      "btrix-execution-minutes-quota-update",
       this.onExecutionMinutesQuotaUpdate
     );
-    this.addEventListener("storage-quota-update", this.onStorageQuotaUpdate);
+    this.addEventListener(
+      "btrix-storage-quota-update",
+      this.onStorageQuotaUpdate
+    );
     this.addEventListener("", () => {});
   }
 
   disconnectedCallback() {
     this.removeEventListener(
-      "execution-minutes-quota-update",
+      "btrix-execution-minutes-quota-update",
       this.onExecutionMinutesQuotaUpdate
     );
-    this.removeEventListener("storage-quota-update", this.onStorageQuotaUpdate);
+    this.removeEventListener(
+      "btrix-storage-quota-update",
+      this.onStorageQuotaUpdate
+    );
     super.disconnectedCallback();
   }
 
-  async willUpdate(changedProperties: Map<string, any>) {
+  async willUpdate(changedProperties: Map<string, unknown>) {
     if (
       (changedProperties.has("userInfo") && this.userInfo) ||
       (changedProperties.has("slug") && this.slug)
@@ -249,7 +247,7 @@ export class Org extends LiteElement {
       return "";
     }
 
-    let tabPanelContent = "" as any;
+    let tabPanelContent: TemplateResult<1> | string | undefined = "";
 
     switch (this.orgTab) {
       case "home":
@@ -677,11 +675,12 @@ export class Org extends LiteElement {
       if (newSlug) {
         this.navTo(`/orgs/${newSlug}${this.orgPath}`);
       }
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
-        message: e.isApiError
-          ? e.message
-          : msg("Sorry, couldn't update organization at this time."),
+        message:
+          e instanceof APIError && e.isApiError
+            ? e.message
+            : msg("Sorry, couldn't update organization at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -694,7 +693,7 @@ export class Org extends LiteElement {
     this.removeMember(e.detail.member);
   }
 
-  private async onStorageQuotaUpdate(e: CustomEvent<QuotaUpdate>) {
+  private async onStorageQuotaUpdate(e: CustomEvent<QuotaUpdateDetail>) {
     e.stopPropagation();
     const { reached } = e.detail;
     this.orgStorageQuotaReached = reached;
@@ -703,7 +702,9 @@ export class Org extends LiteElement {
     }
   }
 
-  private async onExecutionMinutesQuotaUpdate(e: CustomEvent<QuotaUpdate>) {
+  private async onExecutionMinutesQuotaUpdate(
+    e: CustomEvent<QuotaUpdateDetail>
+  ) {
     e.stopPropagation();
     const { reached } = e.detail;
     this.orgExecutionMinutesQuotaReached = reached;
@@ -732,17 +733,18 @@ export class Org extends LiteElement {
         icon: "check2-circle",
       });
       this.org = await this.getOrg(this.orgId);
-    } catch (e: any) {
+    } catch (e) {
       console.debug(e);
 
       this.notify({
-        message: e.isApiError
-          ? e.message
-          : msg(
-              str`Sorry, couldn't update role for ${
-                user.name || user.email
-              } at this time.`
-            ),
+        message:
+          e instanceof APIError && e.isApiError
+            ? e.message
+            : msg(
+                str`Sorry, couldn't update role for ${
+                  user.name || user.email
+                } at this time.`
+              ),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -786,17 +788,18 @@ export class Org extends LiteElement {
       } else {
         this.org = await this.getOrg(this.orgId);
       }
-    } catch (e: any) {
+    } catch (e) {
       console.debug(e);
 
       this.notify({
-        message: e.isApiError
-          ? e.message
-          : msg(
-              str`Sorry, couldn't remove ${
-                member.name || member.email
-              } at this time.`
-            ),
+        message:
+          e instanceof APIError && e.isApiError
+            ? e.message
+            : msg(
+                str`Sorry, couldn't remove ${
+                  member.name || member.email
+                } at this time.`
+              ),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -811,20 +814,5 @@ export class Org extends LiteElement {
   checkExecutionMinutesQuota() {
     this.orgExecutionMinutesQuotaReached = !!this.org?.execMinutesQuotaReached;
     this.showExecutionMinutesQuotaAlert = this.orgExecutionMinutesQuotaReached;
-  }
-
-  addEventListener<T extends EventType>(
-    type: T,
-    listener: OrgEventListener<T>,
-    options?: boolean | AddEventListenerOptions
-  ): void {
-    super.addEventListener(type, listener as EventListener, options);
-  }
-  removeEventListener<T extends EventType>(
-    type: T,
-    listener: OrgEventListener<T>,
-    options?: boolean | AddEventListenerOptions
-  ): void {
-    super.removeEventListener(type, listener as EventListener, options);
   }
 }
