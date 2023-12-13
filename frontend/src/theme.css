@@ -20,6 +20,7 @@
     /* Custom font variables */
     --font-monostyle-family: var(--sl-font-mono);
     --font-monostyle-variation: "MONO" 0.51, "CASL" 0, "slnt" 0, "CRSV" 0;
+    --font-monospace-variation: "MONO" 1, "CASL" 0, "slnt" 0, "CRSV" 0;
     --font-size-base: 1rem;
 
     /*
@@ -241,9 +242,16 @@
 @layer utilities {
   /* Aesthetically closer to monospaced font: */
   .font-monostyle {
-    font-family: var(--font-monostyle-family);
+    @apply font-mono;
     font-variation-settings: var(--font-monostyle-variation);
   }
+
+  /* Actually monospaced font */
+  .font-monospace {
+    @apply font-mono;
+    font-variation-settings: var(--font-monospace-variation);
+  }
+
   .truncate {
     /* Fix tailwind clipping vertical */
     overflow: clip visible;

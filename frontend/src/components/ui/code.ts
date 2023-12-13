@@ -4,22 +4,16 @@ import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import hljs from "highlight.js/lib/core";
 import javascript from "highlight.js/lib/languages/javascript";
 import xml from "highlight.js/lib/languages/xml";
+import { TailwindElement } from "@/classes/TailwindElement";
 
 /**
  * Syntax highlighting for javascript and HTML (XML)
  */
 @customElement("btrix-code")
-export class Code extends LitElement {
+export class Code extends TailwindElement {
   static styles = [
+    TailwindElement.styles,
     css`
-      pre {
-        white-space: pre-wrap;
-        font-family: var(--sl-font-mono);
-        font-size: 0.9em;
-        color: #24292e;
-        margin: 0;
-      }
-
       .hljs-name {
         color: #22863a;
       }
@@ -50,8 +44,8 @@ export class Code extends LitElement {
     const htmlStr = hljs.highlight(this.value, {
       language: this.language,
     }).value;
-    return html`<pre><code>${staticHtml`${unsafeStatic(
-      htmlStr
-    )}`}</code></pre>`;
+    return html`<pre
+      class="whitespace-pre-wrap text-neutral-800 m-0 font-monospace"
+    ><code>${staticHtml`${unsafeStatic(htmlStr)}`}</code></pre>`;
   }
 }

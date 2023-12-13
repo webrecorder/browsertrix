@@ -20,8 +20,6 @@ const primary = {
   950: primaryColor.darken(0.4).hex(),
 };
 
-console.log(JSON.stringify(primary));
-
 /**
  * Use Shoelace CSS variables in Tailwind theme for consistency
  *
