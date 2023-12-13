@@ -22,10 +22,10 @@ import {
 import { msg, localized, str } from "@lit/localize";
 import queryString from "query-string";
 
+import { NavigateController } from "@/controllers/navigate";
 import { RelativeDuration } from "@/components/ui/relative-duration";
 import type { Crawl } from "@/types/crawler";
 import { srOnly, truncate } from "@/utils/css";
-import type { NavigateEvent } from "@/controllers/navigate";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 
 // postcss-lit-disable-next-line
@@ -188,6 +188,8 @@ export class CrawlListItem extends LitElement {
   @query("btrix-overflow-dropdown")
   dropdownMenu!: OverflowDropdown;
 
+  private navigate = new NavigateController(this);
+
   // TODO localize
   private numberFormatter = new Intl.NumberFormat(undefined, {
     notation: "compact",
@@ -214,13 +216,7 @@ export class CrawlListItem extends LitElement {
         e.preventDefault();
         await this.updateComplete;
         const href = `/orgs/${this.orgSlug}/items/${this.crawl?.type}/${this.crawl?.id}${search}`;
-        // TODO consolidate with LiteElement navTo
-        const evt: NavigateEvent = new CustomEvent("navigate", {
-          detail: { url: href },
-          bubbles: true,
-          composed: true,
-        });
-        this.dispatchEvent(evt);
+        this.navigate.to(href);
       }}
     >
       <div class="col">

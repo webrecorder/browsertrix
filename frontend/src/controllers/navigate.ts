@@ -2,14 +2,16 @@ import type { ReactiveController, ReactiveControllerHost } from "lit";
 
 import appState from "@/utils/state";
 
-const NAVIGATE_EVENT_NAME = "navigate";
+export type NavigateEventDetail = {
+  url: string;
+  state?: object;
+};
 
-export interface NavigateEvent extends CustomEvent {
-  detail: {
-    url: string;
-    state?: object;
-  };
+export interface NavigateEventMap {
+  "btrix-navigate": CustomEvent<NavigateEventDetail>;
 }
+
+const NAVIGATE_EVENT_NAME: keyof NavigateEventMap = "btrix-navigate";
 
 /**
  * Manage app navigation
@@ -34,7 +36,7 @@ export class NavigateController implements ReactiveController {
   hostDisconnected() {}
 
   to(url: string, state?: object): void {
-    const evt: NavigateEvent = new CustomEvent(NAVIGATE_EVENT_NAME, {
+    const evt = new CustomEvent<NavigateEventDetail>(NAVIGATE_EVENT_NAME, {
       detail: { url, state },
       bubbles: true,
       composed: true,
@@ -65,7 +67,7 @@ export class NavigateController implements ReactiveController {
 
     event.preventDefault();
 
-    const evt: NavigateEvent = new CustomEvent(NAVIGATE_EVENT_NAME, {
+    const evt = new CustomEvent<NavigateEventDetail>(NAVIGATE_EVENT_NAME, {
       detail: { url: (event.currentTarget as HTMLAnchorElement).href },
       bubbles: true,
       composed: true,

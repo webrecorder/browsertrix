@@ -3,13 +3,18 @@ import type { AuthState } from "@/utils/AuthService";
 import AuthService from "@/utils/AuthService";
 
 /**
- * Block rendering and dispatch event if user is not logged in
+ * Block rendering and dispatch event if user is not logged in.
+ * When using with other class decorators, `@needLogin` should
+ * be closest to the component (see usage example.)
  *
- * Usage example:
+ * @example Usage:
  * ```ts
+ * @customElement("my-component")
  * @needLogin
  * MyComponent extends LiteElement {}
  * ```
+ *
+ * @fires btrix-need-login
  */
 export function needLogin<T extends { new (...args: any[]): LiteElement }>(
   constructor: T
@@ -28,9 +33,9 @@ export function needLogin<T extends { new (...args: any[]): LiteElement }>(
         super.update(changedProperties);
       } else {
         this.dispatchEvent(
-          AuthService.createNeedLoginEvent(
-            `${window.location.pathname}${window.location.search}${window.location.hash}`
-          )
+          AuthService.createNeedLoginEvent({
+            redirectUrl: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+          })
         );
       }
     }

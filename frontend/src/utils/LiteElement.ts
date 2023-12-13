@@ -26,28 +26,24 @@ export default class LiteElement extends LitElement {
   /**
    * @deprecated New components should use NavigateController directly
    */
-  navTo(...args: Parameters<NavigateController["to"]>) {
-    return this.navigateController.to(...args);
-  }
+  navTo = (...args: Parameters<NavigateController["to"]>) =>
+    this.navigateController.to(...args);
 
   /**
    * @deprecated New components should use NavigateController directly
    */
-  navLink(...args: Parameters<NavigateController["link"]>) {
-    return this.navigateController.link(...args);
-  }
+  navLink = (...args: Parameters<NavigateController["link"]>) =>
+    this.navigateController.link(...args);
 
   /**
    * @deprecated New components should use NotifyController directly
    */
-  notify(...args: Parameters<NotifyController["toast"]>) {
-    return this.notifyController.toast(...args);
-  }
+  notify = (...args: Parameters<NotifyController["toast"]>) =>
+    this.notifyController.toast(...args);
 
   /**
    * @deprecated New components should use APIController directly
    */
-  async apiFetch<T = unknown>(...args: Parameters<APIController["fetch"]>) {
-    return this.apiController.fetch<T>(...args);
-  }
+  apiFetch = async <T = unknown>(...args: Parameters<APIController["fetch"]>) =>
+    this.apiController.fetch<T>(...args);
 }

@@ -36,9 +36,9 @@ const sortableFields: Record<
 };
 const ABORT_REASON_THROTTLE = "throttled";
 
-@needLogin
 @localized()
 @customElement("btrix-crawls")
+@needLogin
 export class Crawls extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;

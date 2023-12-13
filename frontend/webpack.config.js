@@ -196,6 +196,9 @@ const main = {
         },
       ],
     }),
+    ...(process.env.BUNDLE_ANALYZER
+      ? [new (require("webpack-bundle-analyzer").BundleAnalyzerPlugin)()]
+      : []),
   ],
 };
 

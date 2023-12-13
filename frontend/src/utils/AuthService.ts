@@ -24,31 +24,33 @@ export type LoggedInEventDetail = Auth & {
   redirectUrl?: string;
 };
 
-export interface LoggedInEvent<T = LoggedInEventDetail> extends CustomEvent {
-  readonly detail: T;
-}
+export type NeedLoginEventDetail = {
+  redirectUrl?: string;
+};
 
-export interface NeedLoginEvent extends CustomEvent {
-  readonly bubbles: boolean;
-  readonly composed: boolean;
-  readonly detail: {
-    redirectUrl?: string;
-  };
-}
+export type LogOutEventDetail = {
+  redirect?: boolean;
+};
 
-type AuthRequestEventData = {
+type AuthRequestEventDetail = {
   name: "requesting_auth";
 };
 
-type AuthResponseEventData = {
+type AuthResponseEventDetail = {
   name: "responding_auth";
   auth: AuthState;
 };
 
-export type AuthStorageEventData = {
+export type AuthStorageEventDetail = {
   name: "auth_storage";
   value: string | null;
 };
+
+export interface AuthEventMap {
+  "btrix-need-login": CustomEvent<NeedLoginEventDetail>;
+  "btrix-logged-in": CustomEvent<LoggedInEventDetail>;
+  "btrix-log-out": CustomEvent<LogOutEventDetail>;
+}
 
 // Check for token freshness every 5 minutes
 const FRESHNESS_TIMER_INTERVAL = 60 * 1000 * 5;
@@ -59,8 +61,9 @@ export default class AuthService {
 
   static storageKey = "btrix.auth";
   static unsupportedAuthErrorCode = "UNSUPPORTED_AUTH_TYPE";
-  static loggedInEvent = "logged-in";
-  static needLoginEvent = "need-login";
+  static loggedInEvent: keyof AuthEventMap = "btrix-logged-in";
+  static logOutEvent: keyof AuthEventMap = "btrix-log-out";
+  static needLoginEvent: keyof AuthEventMap = "btrix-need-login";
 
   static broadcastChannel = new BroadcastChannel(AuthService.storageKey);
   static storage = {
@@ -71,7 +74,7 @@ export default class AuthService {
       const oldValue = AuthService.storage.getItem();
       if (oldValue === newValue) return;
       window.sessionStorage.setItem(AuthService.storageKey, newValue);
-      AuthService.broadcastChannel.postMessage(<AuthStorageEventData>{
+      AuthService.broadcastChannel.postMessage(<AuthStorageEventDetail>{
         name: "auth_storage",
         value: newValue,
       });
@@ -80,7 +83,7 @@ export default class AuthService {
       const oldValue = AuthService.storage.getItem();
       if (!oldValue) return;
       window.sessionStorage.removeItem(AuthService.storageKey);
-      AuthService.broadcastChannel.postMessage(<AuthStorageEventData>{
+      AuthService.broadcastChannel.postMessage(<AuthStorageEventDetail>{
         name: "auth_storage",
         value: null,
       });
@@ -91,17 +94,32 @@ export default class AuthService {
     return this._authState;
   }
 
-  static createLoggedInEvent = (detail: LoggedInEventDetail): LoggedInEvent => {
-    return new CustomEvent(AuthService.loggedInEvent, { detail });
-  };
-
-  static createNeedLoginEvent = (redirectUrl?: string): NeedLoginEvent => {
-    return new CustomEvent(AuthService.needLoginEvent, {
+  static createLoggedInEvent = (
+    detail?: LoggedInEventDetail
+  ): CustomEvent<LoggedInEventDetail> =>
+    new CustomEvent<LoggedInEventDetail>(AuthService.loggedInEvent, {
       bubbles: true,
       composed: true,
-      detail: { redirectUrl },
+      detail,
     });
-  };
+
+  static createLogOutEvent = (
+    detail?: LogOutEventDetail
+  ): CustomEvent<LogOutEventDetail> =>
+    new CustomEvent<LogOutEventDetail>(AuthService.logOutEvent, {
+      bubbles: true,
+      composed: true,
+      detail,
+    });
+
+  static createNeedLoginEvent = (
+    detail?: NeedLoginEventDetail
+  ): CustomEvent<NeedLoginEventDetail> =>
+    new CustomEvent<NeedLoginEventDetail>(AuthService.needLoginEvent, {
+      bubbles: true,
+      composed: true,
+      detail,
+    });
 
   static async login({
     email,
@@ -174,10 +192,10 @@ export default class AuthService {
 
     AuthService.broadcastChannel.addEventListener(
       "message",
-      ({ data }: { data: AuthRequestEventData | AuthStorageEventData }) => {
+      ({ data }: { data: AuthRequestEventDetail | AuthStorageEventDetail }) => {
         if (data.name === "requesting_auth") {
           // A new tab/window opened and is requesting shared auth
-          AuthService.broadcastChannel.postMessage(<AuthResponseEventData>{
+          AuthService.broadcastChannel.postMessage(<AuthResponseEventDetail>{
             name: "responding_auth",
             auth: AuthService.getCurrentTabAuth(),
           });
@@ -202,13 +220,13 @@ export default class AuthService {
    * Retrieve shared session from another tab/window
    **/
   private static async getSharedSessionAuth(): Promise<AuthState> {
-    const broadcastPromise = new Promise((resolve) => {
+    const broadcastPromise = new Promise<AuthState>((resolve) => {
       // Check if there's any authenticated tabs
-      AuthService.broadcastChannel.postMessage(<AuthRequestEventData>{
+      AuthService.broadcastChannel.postMessage(<AuthRequestEventDetail>{
         name: "requesting_auth",
       });
       // Wait for another tab to respond
-      const cb = ({ data }: any) => {
+      const cb = ({ data }: MessageEvent<AuthResponseEventDetail>) => {
         if (data.name === "responding_auth") {
           AuthService.broadcastChannel.removeEventListener("message", cb);
           resolve(data.auth);
@@ -218,19 +236,17 @@ export default class AuthService {
     });
     // Ensure that `getSharedSessionAuth` is resolved within a reasonable
     // timeframe, even if another window/tab doesn't respond:
-    const timeoutPromise = new Promise((resolve) => {
+    const timeoutPromise = new Promise<null>((resolve) => {
       window.setTimeout(() => {
         resolve(null);
       }, 10);
     });
 
     return Promise.race([broadcastPromise, timeoutPromise]).then(
-      (value: any) => {
-        try {
-          if (value.username && value.headers && value.tokenExpiresAt) {
-            return value;
-          }
-        } catch {
+      (value) => {
+        if (value && value.username && value.headers && value.tokenExpiresAt) {
+          return value;
+        } else {
           return null;
         }
       },
@@ -332,7 +348,7 @@ export default class AuthService {
           pathname !== ROUTES.login && pathname !== ROUTES.home
             ? `${pathname}${search}${hash}`
             : "";
-        window.dispatchEvent(AuthService.createNeedLoginEvent(redirectUrl));
+        window.dispatchEvent(AuthService.createNeedLoginEvent({ redirectUrl }));
       }
     }
   }

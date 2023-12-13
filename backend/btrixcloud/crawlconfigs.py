@@ -254,6 +254,25 @@ class CrawlConfigOps:
 
         return False
 
+    async def readd_configmap(
+        self,
+        crawlconfig: CrawlConfig,
+        org: Organization,
+        profile_filename: Optional[str] = None,
+    ) -> None:
+        """readd configmap that may have been deleted / is invalid"""
+
+        if profile_filename is None:
+            _, profile_filename = await self._lookup_profile(crawlconfig.profileid, org)
+
+        await self.crawl_manager.add_crawl_config(
+            crawlconfig=crawlconfig,
+            storage=org.storage,
+            run_now=False,
+            out_filename=self.default_filename_template,
+            profile_filename=profile_filename or "",
+        )
+
     async def update_crawl_config(
         self, cid: UUID, org: Organization, user: User, update: UpdateCrawlConfig
     ) -> dict[str, bool]:
@@ -352,6 +371,9 @@ class CrawlConfigOps:
                 await self.crawl_manager.update_crawl_config(
                     crawlconfig, update, profile_filename
                 )
+            except FileNotFoundError:
+                await self.readd_configmap(crawlconfig, org, profile_filename)
+
             except Exception as exc:
                 print(exc, flush=True)
                 # pylint: disable=raise-missing-from
@@ -776,12 +798,9 @@ class CrawlConfigOps:
         # ensure crawlconfig exists
         try:
             await self.crawl_manager.get_configmap(crawlconfig.id)
+        # pylint: disable=bare-except
         except:
-            # pylint: disable=broad-exception-raised,raise-missing-from
-            raise HTTPException(
-                status_code=404,
-                detail=f"crawl-config-{cid} missing, can not start crawl",
-            )
+            await self.readd_configmap(crawlconfig, org)
 
         if await self.org_ops.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")

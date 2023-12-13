@@ -6,9 +6,9 @@ import LiteElement, { html } from "@/utils/LiteElement";
 import { needLogin } from "@/utils/auth";
 import type { CurrentUser } from "@/types/user";
 
-@needLogin
 @localized()
 @customElement("btrix-users-invite")
+@needLogin
 export class UsersInvite extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
