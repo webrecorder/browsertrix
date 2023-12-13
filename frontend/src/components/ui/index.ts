@@ -6,6 +6,7 @@ import("./code");
 import("./combobox");
 import("./config-details");
 import("./copy-button");
+import("./copy-field");
 import("./data-table");
 import("./desc-list");
 import("./details");

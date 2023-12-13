@@ -236,25 +236,11 @@ export class OrgSettings extends LiteElement {
             </div>
           </div>
           <div class="col-span-5 md:col-span-3 mt-6">
-            <sl-input
-              class="mb-2 input-font-monostyle"
-              name="orgId"
-              size="small"
-              filled
+            <btrix-copy-field
+              class="mb-2"
               label=${msg("Org ID")}
               value=${this.org.id}
-              readonly
-              @sl-focus=${(e: FocusEvent) => {
-                (e.currentTarget as HTMLInputElement | undefined)?.select();
-              }}
-            >
-              <btrix-copy-button
-                slot="suffix"
-                hoist
-                class="m-0"
-                .getValue=${() => this.org.id}
-              ></btrix-copy-button>
-            </sl-input>
+            ></btrix-copy-field>
           </div>
           <div class="col-span-5 md:col-span-2 flex gap-2 md:mt-14">
             <div class="text-base">
