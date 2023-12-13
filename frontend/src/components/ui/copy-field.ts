@@ -42,14 +42,11 @@ export class CopyField extends TailwindElement {
   @property()
   label?: string;
 
-  static styles = [
-    TailwindElement.styles,
-    css`
-      :host {
-        display: block;
-      }
-    `,
-  ];
+  static styles = css`
+    :host {
+      display: block;
+    }
+  `;
 
   get _slottedChildren() {
     const slot = this.shadowRoot?.querySelector("slot[name=label]");

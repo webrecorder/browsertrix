@@ -11,22 +11,19 @@ import { TailwindElement } from "@/classes/TailwindElement";
  */
 @customElement("btrix-code")
 export class Code extends TailwindElement {
-  static styles = [
-    TailwindElement.styles,
-    css`
-      .hljs-name {
-        color: #22863a;
-      }
+  static styles = css`
+    .hljs-name {
+      color: #22863a;
+    }
 
-      .hljs-attr {
-        color: #6f42c1;
-      }
+    .hljs-attr {
+      color: #6f42c1;
+    }
 
-      .hljs-string {
-        color: #032f62;
-      }
-    `,
-  ];
+    .hljs-string {
+      color: #032f62;
+    }
+  `;
 
   @property({ type: String })
   value: string = "";
