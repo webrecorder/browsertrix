@@ -249,33 +249,6 @@ export class CollectionDetail extends LiteElement {
             </sl-icon-button>
           </sl-tooltip>
         </btrix-copy-field>
-
-        <sl-input
-          class="mb-2 input-font-monostyle"
-          size="small"
-          readonly
-          filled
-          value="${publicReplayUrl}"
-          @sl-focus=${(e: FocusEvent) => {
-            (e.currentTarget as HTMLInputElement | undefined)?.select();
-          }}
-        >
-          <sl-tooltip slot="prefix" content=${msg("Open in New Tab")} hoist>
-            <sl-icon-button
-              href=${publicReplayUrl}
-              name="box-arrow-up-right"
-              target="_blank"
-            >
-            </sl-icon-button>
-          </sl-tooltip>
-          <btrix-copy-button
-            slot="suffix"
-            class="m-0"
-            hoist
-            .getValue=${() => publicReplayUrl}
-            content=${msg("Copy Public URL")}
-          ></btrix-copy-button>
-        </sl-input>
       </section>
       <btrix-section-heading>${msg("Embed Collection")}</btrix-section-heading>
       <section class="mt-3">
