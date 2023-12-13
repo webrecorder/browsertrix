@@ -1,5 +1,5 @@
 const { merge } = require("webpack-merge");
-const UglifyJSPlugin = require("uglifyjs-webpack-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 
 const [main, vnc] = require("./webpack.config.js");
 
@@ -15,11 +15,12 @@ module.exports = [
         // Split both async and non-async chunks (only async by default)
         chunks: "all",
       },
+      minimize: true,
       minimizer: [
-        new UglifyJSPlugin({
-          uglifyOptions: {
+        new TerserPlugin({
+          terserOptions: {
             compress: {
-              pure_funcs: ["console.log", "console.debug"],
+              drop_console: ["log", "info"],
             },
           },
         }),
