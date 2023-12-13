@@ -2,7 +2,7 @@ import { state, property, customElement } from "lit/decorators.js";
 import { msg, str, localized } from "@lit/localize";
 
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { LoggedInEvent } from "@/utils/AuthService";
+import type { LoggedInEventDetail } from "@/utils/AuthService";
 import AuthService from "@/utils/AuthService";
 
 @localized()
@@ -113,7 +113,7 @@ export class Join extends LiteElement {
     }
   }
 
-  private onAuthenticated(event: LoggedInEvent) {
+  private onAuthenticated(event: CustomEvent<LoggedInEventDetail>) {
     this.dispatchEvent(
       AuthService.createLoggedInEvent({
         ...event.detail,

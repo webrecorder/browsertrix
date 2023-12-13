@@ -18,40 +18,38 @@ type JWT = {
   exp: number;
 };
 
-export type LoggedInEvent = CustomEvent<
-  Auth & {
-    api?: boolean;
-    firstLogin?: boolean;
-    redirectUrl?: string;
-  }
->;
-
-export type NeedLoginEvent = CustomEvent<{
+export type LoggedInEventDetail = Auth & {
+  api?: boolean;
+  firstLogin?: boolean;
   redirectUrl?: string;
-}>;
+};
 
-export type LogOutEvent = CustomEvent<{
+export type NeedLoginEventDetail = {
+  redirectUrl?: string;
+};
+
+export type LogOutEventDetail = {
   redirect?: boolean;
-}>;
+};
 
-type AuthRequestEventData = {
+type AuthRequestEventDetail = {
   name: "requesting_auth";
 };
 
-type AuthResponseEventData = {
+type AuthResponseEventDetail = {
   name: "responding_auth";
   auth: AuthState;
 };
 
-export type AuthStorageEventData = {
+export type AuthStorageEventDetail = {
   name: "auth_storage";
   value: string | null;
 };
 
 export interface AuthEventMap {
-  "btrix-need-login": NeedLoginEvent;
-  "btrix-logged-in": LoggedInEvent;
-  "btrix-log-out": LogOutEvent;
+  "btrix-need-login": CustomEvent<NeedLoginEventDetail>;
+  "btrix-logged-in": CustomEvent<LoggedInEventDetail>;
+  "btrix-log-out": CustomEvent<LogOutEventDetail>;
 }
 
 // Check for token freshness every 5 minutes
@@ -76,7 +74,7 @@ export default class AuthService {
       const oldValue = AuthService.storage.getItem();
       if (oldValue === newValue) return;
       window.sessionStorage.setItem(AuthService.storageKey, newValue);
-      AuthService.broadcastChannel.postMessage(<AuthStorageEventData>{
+      AuthService.broadcastChannel.postMessage(<AuthStorageEventDetail>{
         name: "auth_storage",
         value: newValue,
       });
@@ -85,7 +83,7 @@ export default class AuthService {
       const oldValue = AuthService.storage.getItem();
       if (!oldValue) return;
       window.sessionStorage.removeItem(AuthService.storageKey);
-      AuthService.broadcastChannel.postMessage(<AuthStorageEventData>{
+      AuthService.broadcastChannel.postMessage(<AuthStorageEventDetail>{
         name: "auth_storage",
         value: null,
       });
@@ -97,25 +95,27 @@ export default class AuthService {
   }
 
   static createLoggedInEvent = (
-    detail?: LoggedInEvent["detail"]
-  ): LoggedInEvent =>
-    new CustomEvent(AuthService.loggedInEvent, {
+    detail?: LoggedInEventDetail
+  ): CustomEvent<LoggedInEventDetail> =>
+    new CustomEvent<LoggedInEventDetail>(AuthService.loggedInEvent, {
       bubbles: true,
       composed: true,
       detail,
     });
 
-  static createLogOutEvent = (detail?: LogOutEvent["detail"]): LogOutEvent =>
-    new CustomEvent(AuthService.logOutEvent, {
+  static createLogOutEvent = (
+    detail?: LogOutEventDetail
+  ): CustomEvent<LogOutEventDetail> =>
+    new CustomEvent<LogOutEventDetail>(AuthService.logOutEvent, {
       bubbles: true,
       composed: true,
       detail,
     });
 
   static createNeedLoginEvent = (
-    detail?: NeedLoginEvent["detail"]
-  ): NeedLoginEvent =>
-    new CustomEvent(AuthService.needLoginEvent, {
+    detail?: NeedLoginEventDetail
+  ): CustomEvent<NeedLoginEventDetail> =>
+    new CustomEvent<NeedLoginEventDetail>(AuthService.needLoginEvent, {
       bubbles: true,
       composed: true,
       detail,
@@ -192,10 +192,10 @@ export default class AuthService {
 
     AuthService.broadcastChannel.addEventListener(
       "message",
-      ({ data }: { data: AuthRequestEventData | AuthStorageEventData }) => {
+      ({ data }: { data: AuthRequestEventDetail | AuthStorageEventDetail }) => {
         if (data.name === "requesting_auth") {
           // A new tab/window opened and is requesting shared auth
-          AuthService.broadcastChannel.postMessage(<AuthResponseEventData>{
+          AuthService.broadcastChannel.postMessage(<AuthResponseEventDetail>{
             name: "responding_auth",
             auth: AuthService.getCurrentTabAuth(),
           });
@@ -222,11 +222,11 @@ export default class AuthService {
   private static async getSharedSessionAuth(): Promise<AuthState> {
     const broadcastPromise = new Promise<AuthState>((resolve) => {
       // Check if there's any authenticated tabs
-      AuthService.broadcastChannel.postMessage(<AuthRequestEventData>{
+      AuthService.broadcastChannel.postMessage(<AuthRequestEventDetail>{
         name: "requesting_auth",
       });
       // Wait for another tab to respond
-      const cb = ({ data }: MessageEvent<AuthResponseEventData>) => {
+      const cb = ({ data }: MessageEvent<AuthResponseEventDetail>) => {
         if (data.name === "responding_auth") {
           AuthService.broadcastChannel.removeEventListener("message", cb);
           resolve(data.auth);

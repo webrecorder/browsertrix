@@ -17,13 +17,13 @@ import LiteElement, { html } from "./utils/LiteElement";
 import APIRouter from "./utils/APIRouter";
 import AuthService from "./utils/AuthService";
 import type {
-  LoggedInEvent,
-  NeedLoginEvent,
+  LoggedInEventDetail,
+  NeedLoginEventDetail,
   AuthState,
 } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser, UserOrg } from "./types/user";
-import type { AuthStorageEventData } from "./utils/AuthService";
+import type { AuthStorageEventDetail } from "./utils/AuthService";
 import theme from "./theme";
 import { ROUTES } from "./routes";
 import "./shoelace";
@@ -748,7 +748,7 @@ export class App extends LiteElement {
     }
   }
 
-  onLoggedIn(event: LoggedInEvent) {
+  onLoggedIn(event: CustomEvent<LoggedInEventDetail>) {
     const { detail } = event;
 
     this.authService.saveLogin({
@@ -768,11 +768,11 @@ export class App extends LiteElement {
     this.updateUserInfo();
   }
 
-  onNeedLogin = (e: Event) => {
+  onNeedLogin = (e: CustomEvent<NeedLoginEventDetail>) => {
     e.stopPropagation();
 
     this.clearUser();
-    const redirectUrl = (e as NeedLoginEvent).detail?.redirectUrl;
+    const redirectUrl = e.detail?.redirectUrl;
     this.navigate(ROUTES.login, {
       redirectUrl,
     });
@@ -890,7 +890,7 @@ export class App extends LiteElement {
   private startSyncBrowserTabs() {
     AuthService.broadcastChannel.addEventListener(
       "message",
-      ({ data }: { data: AuthStorageEventData }) => {
+      ({ data }: { data: AuthStorageEventDetail }) => {
         if (data.name === "auth_storage") {
           if (data.value !== AuthService.storage.getItem()) {
             if (data.value) {
