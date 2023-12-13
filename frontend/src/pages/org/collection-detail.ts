@@ -235,7 +235,11 @@ export class CollectionDetail extends LiteElement {
           ${msg("This collection can be viewed by anyone with the link.")}
         </p>
 
-        <btrix-copy-field class="mb-2" .value="${publicReplayUrl}">
+        <btrix-copy-field
+          class="mb-2"
+          .value="${publicReplayUrl}"
+          hideContentFromScreenReaders
+        >
           <sl-tooltip slot="prefix" content=${msg("Open in New Tab")}>
             <sl-icon-button
               href=${publicReplayUrl}
