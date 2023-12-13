@@ -1,15 +1,14 @@
 import { LitElement } from "lit";
 
-// Load the contents of `theme.css`, processed with postcss (tailwind), as a
-// string using Webpack's raw-loader.
-// TODO(emma, 2023-12-12) Figure out how this'll need to change with Webpack 5,
-// as it removes raw-loader
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const themeCSS = require("!!raw-loader!postcss-loader!../theme.css").default;
+import themeCSS from "../theme.css";
 
 // Create a new style sheet from the compiled theme CSS...
 const theme = new CSSStyleSheet();
 theme.replaceSync(themeCSS);
+
+export function getThemeCSS() {
+  return theme;
+}
 
 export class TailwindElement extends LitElement {
   connectedCallback(): void {

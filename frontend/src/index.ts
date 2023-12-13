@@ -25,13 +25,16 @@ import type { CurrentUser, UserOrg } from "./types/user";
 import type { AuthStorageEventData } from "./utils/AuthService";
 import { ROUTES } from "./routes";
 import "./shoelace";
-import "./theme.css";
+// import "./theme.css";
 import "./components";
 import "./features";
 import "./pages";
 import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
+import { getThemeCSS } from "@/classes/TailwindElement";
+
+document.adoptedStyleSheets = [getThemeCSS()];
 
 type DialogContent = {
   label?: TemplateResult | string;

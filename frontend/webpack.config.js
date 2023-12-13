@@ -108,13 +108,19 @@ const main = {
         include: [
           path.resolve(__dirname, "src"),
           path.resolve(__dirname, "node_modules/@shoelace-style/shoelace"),
-          path.resolve(__dirname, "node_modules/tailwindcss"),
         ],
+        exclude: [path.resolve(__dirname, "src/theme.css")],
         use: [
           "style-loader",
           { loader: "css-loader", options: { importLoaders: 1 } },
           "postcss-loader",
         ],
+      },
+      {
+        test: /\.css$/,
+        type: "asset/source",
+        include: [path.resolve(__dirname, "src/theme")],
+        use: ["postcss-loader"],
       },
       {
         test: /\.html$/,
