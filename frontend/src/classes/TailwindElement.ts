@@ -6,7 +6,7 @@ import themeCSS from "../theme.css";
 const theme = new CSSStyleSheet();
 theme.replaceSync(themeCSS);
 
-export function getThemeCSS() {
+export function getThemeCSSStyleSheet() {
   return theme;
 }
 

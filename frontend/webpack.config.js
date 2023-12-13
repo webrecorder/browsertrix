@@ -104,6 +104,7 @@ const main = {
         exclude: /node_modules/,
       },
       {
+        // Non-theme styles and assets like fonts and Shoelace
         test: /\.css$/,
         include: [
           path.resolve(__dirname, "src"),
@@ -117,9 +118,10 @@ const main = {
         ],
       },
       {
-        test: /\.css$/,
+        // Theme CSS loaded as raw string and used as a CSSStyleSheet
+        test: /theme\.css$/,
         type: "asset/source",
-        include: [path.resolve(__dirname, "src/theme")],
+        include: [path.resolve(__dirname, "src")],
         use: ["postcss-loader"],
       },
       {
