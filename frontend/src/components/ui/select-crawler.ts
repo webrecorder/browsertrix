@@ -2,8 +2,10 @@ import { html } from "lit";
 import { property, state, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
+import { APIController } from "@/controllers/api";
+import { NotifyController } from "@/controllers/notify";
 import type { AuthState } from "../../utils/AuthService";
-import LiteElement from "../../utils/LiteElement";
+import { TailwindElement } from "@/classes/TailwindElement";
 import type { CrawlerVersion } from "../../pages/org/types";
 
 type CrawlerVersionsAPIResponse = {
@@ -26,7 +28,7 @@ type CrawlerVersionsAPIResponse = {
  */
 @customElement("btrix-select-crawler")
 @localized()
-export class SelectCrawler extends LiteElement {
+export class SelectCrawler extends TailwindElement {
   @property({ type: Object })
   authState!: AuthState;
 
@@ -41,6 +43,9 @@ export class SelectCrawler extends LiteElement {
 
   @state()
   private crawlerVersions?: CrawlerVersion[];
+
+  private apiController = new APIController(this);
+  private notifyController = new NotifyController(this);
 
   protected firstUpdated() {
     this.fetchCrawlerVersions();
@@ -100,7 +105,7 @@ export class SelectCrawler extends LiteElement {
         );
       }
     } catch (e) {
-      this.notify({
+      this.notifyController.toast({
         message: msg("Sorry, couldn't retrieve crawler versions at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -109,7 +114,7 @@ export class SelectCrawler extends LiteElement {
   }
 
   private async getCrawlerVersions(): Promise<CrawlerVersion[]> {
-    const data: CrawlerVersionsAPIResponse = await this.apiFetch(
+    const data: CrawlerVersionsAPIResponse = await this.apiController.fetch(
       `/orgs/${this.orgId}/crawlconfigs/crawler-versions`,
       this.authState!
     );
