@@ -464,3 +464,19 @@ def test_get_config_seeds(crawler_auth_headers, default_org_id, url_list_config_
     items = data["items"]
     assert len(items) == 1
     assert items[0]["url"] in EXPECTED_SEED_URLS
+
+
+def test_get_crawler_versions(crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/crawler-versions",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    crawler_versions = r.json()["versions"]
+    assert crawler_versions
+    assert len(crawler_versions) == 2
+    for crawler_version in versions:
+        assert crawler_version["id"]
+        assert crawler_version["name"]
+        assert crawler_version["image"]
+
