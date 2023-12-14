@@ -475,7 +475,7 @@ def test_get_crawler_versions(crawler_auth_headers, default_org_id):
     crawler_versions = r.json()["versions"]
     assert crawler_versions
     assert len(crawler_versions) == 2
-    for crawler_version in versions:
+    for crawler_version in crawler_versions:
         assert crawler_version["id"]
         assert crawler_version["name"]
         assert crawler_version["image"]
