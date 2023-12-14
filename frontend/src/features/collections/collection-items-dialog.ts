@@ -267,6 +267,15 @@ export class CollectionEditor extends LiteElement {
 
   private renderSelectCrawls = () => {
     return html`
+      <section class="p-3">
+        <btrix-collection-workflow-list
+          .authState=${this.authState}
+          orgId=${this.orgId}
+          .items=${this.workflows?.items || []}
+        >
+        </btrix-collection-workflow-list>
+      </section>
+
       <section class="flex-1 p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
         <section class="col-span-1 flex flex-col">
           <h4 class="font-semibold leading-none mb-3">

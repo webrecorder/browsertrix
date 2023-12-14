@@ -15,7 +15,7 @@ import type {
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import type { Crawl, CrawlState, Upload } from "@/types/crawler";
+import type { ArchivedItem, Crawl, CrawlState, Upload } from "@/types/crawler";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 
 const ABORT_REASON_THROTTLE = "throttled";
@@ -46,10 +46,11 @@ export class CollectionDetail extends LiteElement {
   private collection?: Collection;
 
   @state()
-  private archivedItems?: APIPaginatedList<Crawl | Upload>;
+  private archivedItems?: APIPaginatedList<ArchivedItem>;
 
   @state()
-  private openDialogName?: "delete" | "editMetadata" | "editItems";
+  private openDialogName?: "delete" | "editMetadata" | "editItems" =
+    "editItems";
 
   @state()
   private isDescriptionExpanded = false;

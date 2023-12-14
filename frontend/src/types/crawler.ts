@@ -177,3 +177,4 @@ export type CrawlerChannel = {
   id: string;
   image: string;
 };
+export type ArchivedItem = Crawl | Upload;
