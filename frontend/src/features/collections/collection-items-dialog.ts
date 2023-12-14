@@ -266,88 +266,17 @@ export class CollectionEditor extends LiteElement {
   };
 
   private renderSelectCrawls = () => {
+    const crawlsInCollection = this.collectionCrawls || [];
+
     return html`
       <section class="p-3">
         <btrix-collection-workflow-list
           .authState=${this.authState}
           orgId=${this.orgId}
-          .items=${this.workflows?.items || []}
+          .workflows=${this.workflows?.items || []}
+          .crawlsInCollection=${this.collectionCrawls || []}
         >
         </btrix-collection-workflow-list>
-      </section>
-
-      <section class="flex-1 p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <section class="col-span-1 flex flex-col">
-          <h4 class="font-semibold leading-none mb-3">
-            ${msg("In Collection")}
-          </h4>
-          <div class="border rounded-lg py-2 flex-1">
-            ${guard(
-              [
-                this.activeTab === "crawls",
-                this.isCrawler,
-                this.collectionCrawls,
-                this.selectedCrawls,
-                this.workflowPagination,
-              ],
-              this.renderCollectionWorkflowList
-            )}
-          </div>
-        </section>
-        <section class="col-span-1 flex flex-col">
-          <h4 class="font-semibold leading-none mb-3">
-            ${msg("All Workflows")}
-          </h4>
-          ${when(
-            this.workflows?.total,
-            () =>
-              html`
-                <div class="flex-0 border rounded bg-neutral-50 p-2 mb-2">
-                  ${guard(
-                    [
-                      this.searchResultsOpen,
-                      this.searchByValue,
-                      this.filterWorkflowsBy,
-                      this.orderWorkflowsBy,
-                    ],
-                    this.renderWorkflowListControls
-                  )}
-                </div>
-              `
-          )}
-          <div class="flex-1">
-            ${guard(
-              [
-                this.isCrawler,
-                this.workflows,
-                this.collectionCrawls,
-                this.selectedCrawls,
-                this.workflowIsLoading,
-              ],
-              this.renderWorkflowList
-            )}
-          </div>
-          <footer class="mt-4 flex justify-center">
-            ${when(
-              this.workflows?.total,
-              () => html`
-                <btrix-pagination
-                  page=${this.workflows!.page}
-                  totalCount=${this.workflows!.total}
-                  size=${this.workflows!.pageSize}
-                  @page-change=${async (e: PageChangeEvent) => {
-                    await this.fetchWorkflows({
-                      page: e.detail.page,
-                    });
-
-                    // Scroll to top of list
-                    this.scrollIntoView({ behavior: "smooth" });
-                  }}
-                ></btrix-pagination>
-              `
-            )}
-          </footer>
-        </section>
       </section>
     `;
   };
@@ -1243,6 +1172,8 @@ export class CollectionEditor extends LiteElement {
         crawlsRes.status === "fulfilled" ? crawlsRes.value.items : [];
       const uploads =
         uploadsRes.status === "fulfilled" ? uploadsRes.value.items : [];
+
+      // Get workflows in collection
 
       this.selectedCrawls = mergeDeep(this.selectedCrawls, keyBy("id")(crawls));
       this.selectedUploads = mergeDeep(

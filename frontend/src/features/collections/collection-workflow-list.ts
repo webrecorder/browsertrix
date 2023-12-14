@@ -1,4 +1,10 @@
-import { type TemplateResult, LitElement, html, css } from "lit";
+import {
+  type TemplateResult,
+  type PropertyValueMap,
+  LitElement,
+  html,
+  css,
+} from "lit";
 import {
   customElement,
   property,
@@ -8,6 +14,7 @@ import {
 } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import queryString from "query-string";
+import groupBy from "lodash/fp/groupBy";
 
 import type {
   APIPaginatedList,
@@ -18,6 +25,7 @@ import { APIController } from "@/controllers/api";
 import type { Workflow, ArchivedItem, Crawl } from "@/types/crawler";
 import { type AuthState } from "@/utils/AuthService";
 import { TailwindElement } from "@/classes/TailwindElement";
+import { finishedCrawlStates } from "@/utils/crawler";
 
 /**
  * @example Usage:
@@ -95,29 +103,82 @@ export class CollectionWorkflowList extends TailwindElement {
   orgId?: string;
 
   @property({ type: Array })
-  items: Workflow[] = [];
+  workflows: Workflow[] = [];
 
-  /** Crawls keyed by workflow ID */
+  @property({ type: Array })
+  crawlsInCollection: Crawl[] = [];
+
+  /** Crawls grouped by workflow ID */
   @state()
   private crawlsByWorkflowID: { [workflowID: string]: Crawl[] } = {};
 
+  /** Selected crawls keyed by ID */
+  @state()
+  private selectedCrawls: { [crawlId: string]: boolean } = {};
+
   private api = new APIController(this);
+
+  protected willUpdate(
+    changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
+  ): void {
+    if (
+      changedProperties.has("crawlsInCollection") &&
+      this.crawlsInCollection
+    ) {
+      const selectedCrawls: Record<string, boolean> = {};
+      this.crawlsInCollection.forEach((crawl) => {
+        selectedCrawls[crawl.id] = true;
+      });
+      this.selectedCrawls = selectedCrawls;
+    }
+  }
 
   render() {
     return html`<sl-tree selection="multiple">
       <sl-icon slot="expand-icon" name="chevron-double-down"></sl-icon>
       <sl-icon slot="collapse-icon" name="chevron-double-left"></sl-icon>
-      ${this.items.map(this.renderWorkflow)}</sl-tree
+      ${this.workflows.map(this.renderWorkflow)}</sl-tree
     >`;
   }
 
   renderWorkflow = (workflow: Workflow) => {
+    let selectedCrawlCount = 0;
+    if (this.crawlsByWorkflowID[workflow.id]) {
+      selectedCrawlCount = this.crawlsByWorkflowID[workflow.id].filter(
+        ({ id }) => this.selectedCrawls[id]
+      ).length;
+    } else if (this.crawlsInCollection) {
+      this.crawlsInCollection.forEach((crawl) => {
+        if (crawl.cid === workflow.id && this.selectedCrawls[crawl.id])
+          selectedCrawlCount += 1;
+      });
+    }
     return html`
       <sl-tree-item
         ?lazy=${!this.crawlsByWorkflowID[workflow.id]}
+        ?selected=${selectedCrawlCount > 0}
         @sl-lazy-load=${() => this.fetchCrawls(workflow)}
       >
-        ${this.renderName(workflow)}
+        <div class="flex-1 flex items-center gap-3">
+          <div class="flex-1">${this.renderName(workflow)}</div>
+          <div>
+            <sl-switch
+              class="flex"
+              size="small"
+              ?checked=${workflow.autoAddCollections?.length > 0}
+              >${msg("Auto-Add")}</sl-switch
+            >
+          </div>
+          <div class="text-xs text-neutral-600">
+            ${workflow.crawlSuccessfulCount === 1
+              ? msg(
+                  str`${selectedCrawlCount.toLocaleString()} / ${workflow.crawlSuccessfulCount?.toLocaleString()} crawl`
+                )
+              : msg(
+                  str`${selectedCrawlCount.toLocaleString()} / ${workflow.crawlSuccessfulCount?.toLocaleString()} crawls`
+                )}
+          </div>
+        </div>
         ${this.crawlsByWorkflowID[workflow.id]?.map(this.renderCrawl)}
       </sl-tree-item>
     `;
@@ -126,8 +187,8 @@ export class CollectionWorkflowList extends TailwindElement {
   renderCrawl = (crawl: Crawl) => {
     const pageCount = +(crawl.stats?.done || 0);
     return html`
-      <sl-tree-item selected>
-        <div class="flex items-center w-full">
+      <sl-tree-item ?selected=${this.selectedCrawls[crawl.id]}>
+        <div class="flex-1 flex items-center">
           <div class="flex-1">
             <sl-format-date
               date=${`${crawl.finished}Z`}
@@ -183,6 +244,7 @@ export class CollectionWorkflowList extends TailwindElement {
     const query = queryString.stringify(
       {
         ...params,
+        state: finishedCrawlStates,
         pageSize: 100,
       },
       {
