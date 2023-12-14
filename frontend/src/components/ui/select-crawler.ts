@@ -1,4 +1,4 @@
-import { html } from "lit";
+import { LitElement, html } from "lit";
 import { property, state, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
@@ -28,7 +28,7 @@ type CrawlerVersionsAPIResponse = {
  */
 @customElement("btrix-select-crawler")
 @localized()
-export class SelectCrawler extends TailwindElement {
+export class SelectCrawler extends LitElement {
   @property({ type: Object })
   authState!: AuthState;
 

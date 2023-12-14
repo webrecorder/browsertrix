@@ -274,9 +274,14 @@ class CrawlConfigOps:
         if profile_filename is None:
             _, profile_filename = await self._lookup_profile(crawlconfig.profileid, org)
 
+        crawler_version = self.get_crawler_version_by_id(crawlconfig.crawlerid)
+        if not crawler_version:
+            raise HTTPException(status_code=404, detail="crawler_not_found")
+
         await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
             storage=org.storage,
+            crawler_image=crawler_version.image,
             run_now=False,
             out_filename=self.default_filename_template,
             profile_filename=profile_filename or "",
