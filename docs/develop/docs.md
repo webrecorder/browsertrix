@@ -34,7 +34,7 @@ Webrecorder is a global team but we use American English when writing documentat
 1. Swap the `s` for a `z` in words like _categorize_ and _pluralize_.
 2. Remove the `u` from words like _color_ and _honor_.
 3. Swap `tre` for `ter` in words like _center_.
-4. Numbers should be formatted with commas for seperation of values, using periods to denote decimals (e.g: _3,153.89_, not _3 153,89_).
+4. Numbers should be formatted with commas for separation of values, using periods to denote decimals (e.g: _3,153.89_, not _3 153,89_).
 
 ### Oxford Commas
 
@@ -46,6 +46,18 @@ In a list of three or more items, the list item proceeding the word "and" should
 | ----------------------------- | ---------------------------- |
 | One, two, three, and four.    | One, two, three and four.    |
 | Charles, Ada, and Alan.       | Charles, Ada and Alan.       |
+
+### Be Concise, Avoid "You Statements"
+
+Generally, people don't want to have to read documentation. When writing, try to explain concepts simply and with clear objective language. Avoid spending time referring to the reader, instead tell them what they should know. Do not use "we" to refer to communication between the author and the reader, use "we" to refer to Webrecorder.
+
+##### Example
+
+> If you want to do x, you can click on y
+
+Can be shortened to:
+
+> To do x, click on y.
 
 ### Acronyms
 
@@ -103,12 +115,12 @@ Renders to: `#!python range()`
 
 ### Admonitions
 
-We use [Admonitions](https://squidfunk.github.io/mkdocs-material/reference/admonitions/) in their collapsed state to offer additional context or tips that aren't relevant to all users reading the section. We use standard un-collapsable ones when we need to call attention to a specific point.
+We use [Admonitions](https://squidfunk.github.io/mkdocs-material/reference/admonitions/) in their collapsed state to offer additional context or tips that aren't relevant to all users reading the section. We use standard un-collapsible ones when we need to call attention to a specific point.
 
 There are a lot of different options provided by Material for MkDocs — So many in fact that we try to pair down their usage into the following categories.
 
 ???+ Note
-    The default call-out, used to highlight something if there isn't a more relevant one — should generally be expanded by default but can be collapsable by the user if the note is long.
+    The default call-out, used to highlight something if there isn't a more relevant one — should generally be expanded by default but can be collapsible by the user if the note is long.
 
 !!! Tip "Tip: May have a title stating the tip or best practice"
     Used to highlight a point that is useful for everyone to understand about the documented subject — should be expanded and kept brief.
