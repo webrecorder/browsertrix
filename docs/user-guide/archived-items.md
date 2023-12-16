@@ -1,10 +1,23 @@
 # Archived Items
 
-Archived Items consist of one or more WACZ files created by a Crawl Workflow, or uploaded to Browsertrix. They can be individually replayed, or combined with other Archived Items in a a [Collection](collections.md).  The Archived Items page lists all items in the organization.
+Archived Items consist of one or more WACZ files created by a Crawl Workflow, or uploaded to Browsertrix. They can be individually replayed, or combined with other Archived Items in a [Collection](collections.md).  The Archived Items page lists all items in the organization.
 
 ## Uploading Web Archives
 
 WACZ files can be given metadata and uploaded to Browsertrix by pressing the _Upload WACZ_ button on the Archived Items list page. Only one WACZ file can be uploaded at a time.
+
+## Status
+
+The status of an Archived Item depends on its type.  Uploads will always have the status <span class="status-success">:bootstrap-upload: Uploaded</span>, Crawls have four possible states:
+
+| Status | Description |
+| ---- | ---- |
+| <span class="status-success">:bootstrap-check-circle: Complete</span>     | The crawl completed according to the Workflow's settings. Workflows with [limits](../workflow-setup/#limits) set may stop running before they capture every queued page, but the resulting archived item will still be marked as "Complete". |
+| <span class="status-warning">:bootstrap-dash-circle: Stopped</span>       | The crawl workflow was _stopped_ gracefully by a user and data is saved. |
+| <span class="status-danger">:bootstrap-x-octagon: Cancelled</span>        | The crawl workflow was _cancelled_ by a user, no data is saved. |
+| <span class="status-danger">:bootstrap-exclamation-triangle: Failed</span> | A serious error occurred while crawling, no data is saved.|
+
+Because <span class="status-danger">:bootstrap-x-octagon: Cancelled</span> and <span class="status-danger">:bootstrap-exclamation-triangle: Failed</span> crawls do not contain data, they are omitted from the Archived Items list page and cannot be added to a Collection.
 
 ## Archived Item Details
 
