@@ -21,15 +21,15 @@ The docs hosted on [docs.browsertrix.cloud](https://docs.browsertrix.cloud) are 
 
 ## Adding Icons
 
-We typically use the [Bootstrap icon set](https://icons.getbootstrap.com/) with our projects.  This set is quite expansive, and we don't add the entire set into our docs folder as most icons go unused.  If you wish to use an icon when writing documentation to refer to an icon present in part of the app, you may have to download the SVG file and add it to the repo.
+We typically use the [Bootstrap icon set](https://icons.getbootstrap.com/) with our projects.  This set is quite expansive, and we don't add the entire set into our docs folder as most icons go unused. If you wish to use an icon when writing documentation to refer to an icon present in part of the app, you may have to download the SVG file and add it to the repo.
 
-Icons are placed in the `docs/overrides/.icons/iconsetname/icon-name.svg` directory, and can be added in markdown files as `:iconsetname-icon-name:` accordingly.  For more information, see the [Material for MKDocs page on Changing the logo and icons](https://squidfunk.github.io/mkdocs-material/setup/changing-the-logo-and-icons/#customization).
+Icons are placed in the `docs/overrides/.icons/iconsetname/icon-name.svg` directory, and can be added in markdown files as `:iconsetname-icon-name:` accordingly. After adding icons to the folder, MKDocs must be restarted. For more information, see the [Material for MKDocs page on Changing the logo and icons](https://squidfunk.github.io/mkdocs-material/setup/changing-the-logo-and-icons/#customization).
 
 ## Docs Style Guide
 
 ### American English
 
-Webrecorder is a global team but we use American English when writing documentation and in-app copy.  Some basic rules to follow are:
+Webrecorder is a global team but we use American English when writing documentation and in-app copy. Some basic rules to follow are:
 
 1. Swap the `s` for a `z` in words like _categorize_ and _pluralize_.
 2. Remove the `u` from words like _color_ and _honor_.
