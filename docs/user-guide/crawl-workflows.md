@@ -4,7 +4,19 @@ Crawl Workflows consist of a list of configuration options that instruct the cra
 
 ## Creating and Editing Crawl Workflows
 
-New crawl workflows can be created from the Crawling page. A detailed breakdown of available settings can be found [here](../workflow-setup).
+New Crawl Workflows can be created from the Crawling page. A detailed breakdown of available settings can be found [here](../workflow-setup).
+
+## Status
+
+Crawl Workflows inherit the [status of the last item they created](../archived-items/#status). When a Workflow has been instructed to run it can have have five possible states:
+
+| Status | Description |
+| ---- | ---- |
+| <span class="status-waiting">:bootstrap-hourglass-split: Waiting</span>     | The Workflow can't start running yet but it is queued to run when resources are available. |
+| <span class="status-waiting">:btrix-status-dot: Starting</span>       | New resources are starting up. Crawling should begin shortly.|
+| <span class="status-success">:btrix-status-dot: Running</span>        | The crawler is finding and capturing pages! |
+| <span class="status-waiting">:btrix-status-dot: Stopping</span> | A user has instructed this Workflow to stop. Finishing capture of the current pages.|
+| <span class="status-waiting">:btrix-status-dot: Finishing Crawl</span> | The workflow has finished crawling and data is being packaged into WACZ files.|
 
 ## Running Crawl Workflows
 
