@@ -1,10 +1,10 @@
 # Archived Items
 
-Archived Items consist of one or more WACZ files created by a Crawl Workflow, or uploaded to Browsertrix. They can be individually replayed, or combined with other Archived Items in a [Collection](collections.md).  The Archived Items page lists all items in the organization.
+Archived Items consist of one or more WACZ files created by a crawl workflow, or uploaded to Browsertrix. They can be individually replayed, or combined with other archived items in a [collection](collections.md).  The archived items page lists all items in the organization.
 
 ## Uploading Web Archives
 
-WACZ files can be given metadata and uploaded to Browsertrix by pressing the _Upload WACZ_ button on the Archived Items list page. Only one WACZ file can be uploaded at a time.
+WACZ files can be given metadata and uploaded to Browsertrix by pressing the _Upload WACZ_ button on the archived items list page. Only one WACZ file can be uploaded at a time.
 
 ## Status
 
@@ -21,7 +21,7 @@ Because <span class="status-danger">:bootstrap-x-octagon: Canceled</span> and <s
 
 ## Archived Item Details
 
-The Archived Item details page is composed of five sections, though the Crawl Settings tab is only available for Crawls and not Uploads.
+The Archived Item details page is composed of five sections, though the crawl settings tab is only available for crawls and not uploads.
 
 ### Overview
 
@@ -31,13 +31,13 @@ Metadata can be edited by pressing the pencil icon at the top right of the metad
 
 ### Replay
 
-The Replay tab displays the web content contained within the Archived Item.
+The Replay tab displays the web content contained within the archived item.
 
 For more details on navigating web archives within ReplayWeb.page, see the [ReplayWeb.page user documentation.](https://replayweb.page/docs/exploring)
 
 ### Files
 
-The Files tab lists the individually downloadable WACZ files that make up the Archived Item as well as their file sizes.
+The Files tab lists the individually downloadable WACZ files that make up the archived item as well as their file sizes.
 
 ### Error Logs
 

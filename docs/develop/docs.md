@@ -47,6 +47,22 @@ In a list of three or more items, the list item proceeding the word "and" should
 | One, two, three, and four.    | One, two, three and four.    |
 | Charles, Ada, and Alan.       | Charles, Ada and Alan.       |
 
+
+### Capitalization of Concepts and Tools
+
+Webrecorder has a number of common nouns that we use in our products. Examples include: archived items, crawl workflows, browser profiles, collections, and organizations. Because these are concepts and not specific instances of each concept, do not capitalize them unless they are at the start of a sentence.
+
+##### Example
+
+When starting a sentence: 
+> Archived Items consist of one or more...
+
+In the middle of a sentence:
+
+> ...they are omitted from the archived items list page...
+
+Webrecorder's software packages are all proper nouns and should always be capitalized.  Examples include: Browsertrix, ReplayWeb.page, ArchiveWeb.Page, and PYWB.
+
 ### Be Concise, Avoid "You Statements"
 
 Generally, people don't want to have to read documentation. When writing, try to explain concepts simply and with clear objective language. Avoid spending time referring to the reader, instead tell them what they should know. Do not use "we" to refer to communication between the author and the reader, use "we" to refer to Webrecorder.
