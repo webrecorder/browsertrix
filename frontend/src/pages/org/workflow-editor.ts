@@ -187,7 +187,7 @@ const getDefaultFormState = (): FormState => ({
     minute: 0,
     period: "AM",
   },
-  runNow: true,
+  runNow: false,
   jobName: "",
   browserProfile: null,
   tags: [],
@@ -454,6 +454,9 @@ export class CrawlConfigEditor extends LiteElement {
 
   private getInitialFormState(): FormState {
     const defaultFormState = getDefaultFormState();
+    if (!this.configId) {
+      defaultFormState.runNow = true;
+    }
     if (!this.initialWorkflow) return defaultFormState;
     const formState: Partial<FormState> = {};
     const seedsConfig = this.initialWorkflow.config;
