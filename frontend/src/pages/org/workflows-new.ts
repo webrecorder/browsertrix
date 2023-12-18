@@ -125,7 +125,6 @@ export class WorkflowsNew extends LiteElement {
           ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
           ?orgExecutionMinutesQuotaReached=${this
             .orgExecutionMinutesQuotaReached}
-          ?newWorkflow=${true}
           @reset=${async (e: Event) => {
             await (e.target as LitElement).updateComplete;
             this.dispatchEvent(

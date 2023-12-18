@@ -263,9 +263,6 @@ export class CrawlConfigEditor extends LiteElement {
   @property({ type: Boolean })
   orgExecutionMinutesQuotaReached = false;
 
-  @property({ type: Boolean })
-  newWorkflow = false;
-
   @state()
   private tagOptions: string[] = [];
 
@@ -457,7 +454,7 @@ export class CrawlConfigEditor extends LiteElement {
 
   private getInitialFormState(): FormState {
     const defaultFormState = getDefaultFormState();
-    if (this.newWorkflow) {
+    if (!this.configId) {
       defaultFormState.runNow = true;
     }
     if (!this.initialWorkflow) return defaultFormState;
