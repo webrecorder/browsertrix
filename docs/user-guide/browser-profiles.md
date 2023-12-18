@@ -1,6 +1,6 @@
 # Browser Profiles
 
-Browser profiles are saved instances of a web browsing session that can be reused to crawl websites as they were configured, with any cookies or saved login sessions. Using a pre-configured profile also means that content that can only be viewed by logged in users can be archived, without archiving the actual login credentials.
+Browser Profiles are saved instances of a web browsing session that can be reused to crawl websites as they were configured, with any cookies or saved login sessions. Using a pre-configured profile also means that content that can only be viewed by logged in users can be archived, without archiving the actual login credentials.
 
 !!! tip "Best practice: Create and use web archiving-specific accounts for crawling with browser profiles"
 
@@ -18,7 +18,7 @@ Browser profiles are saved instances of a web browsing session that can be reuse
 
 ## Creating New Browser Profiles
 
-New browser profiles can be created on the Browser Profiles page by pressing the _New Browser Profile_ button and providing a starting URL. Once in the profile creator, log in to any websites that should behave as logged in while crawling and accept any pop-ups that require interaction from the user to proceed with using the website.
+New browser profiles can be created on the browser profiles page by pressing the _New Browser Profile_ button and providing a starting URL. Once in the profile creator, log in to any websites that should behave as logged in while crawling and accept any pop-ups that require interaction from the user to proceed with using the website.
 
 Press the _Finish Browsing_ button to save the browser profile with a _Name_ and _Description_ of what is logged in or otherwise notable about this browser session.
 
