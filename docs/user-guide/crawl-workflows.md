@@ -1,6 +1,6 @@
 # Crawl Workflows
 
-Crawl workflows consist of a list of configuration options that instruct the crawler what it should capture.
+Crawl Workflows consist of a list of configuration options that instruct the crawler what it should capture.
 
 ## Creating and Editing Crawl Workflows
 
@@ -8,7 +8,7 @@ New crawl workflows can be created from the Crawling page. A detailed breakdown 
 
 ## Running Crawl Workflows
 
-Crawl workflows can be run from the actions menu of the workflow in the crawl workflow list, or by clicking the _Run Crawl_ button on the workflow's details page.
+Crawl Workflows can be run from the actions menu of the workflow in the crawl workflow list, or by clicking the _Run Crawl_ button on the workflow's details page.
 
 While crawling, the Watch Crawl page displays a list of queued URLs that will be visited, and streams the current state of the browser windows as they visit pages from the queue.
 
