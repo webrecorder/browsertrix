@@ -54,14 +54,14 @@ Webrecorder has a number of common nouns that we use in our products. Examples i
 
 ##### Example
 
-When starting a sentence: 
+When starting a sentence:
 > Archived Items consist of one or more...
 
 In the middle of a sentence:
 
 > ...they are omitted from the archived items list page...
 
-Webrecorder's software packages are all proper nouns and should always be capitalized.  Examples include: Browsertrix, ReplayWeb.page, ArchiveWeb.Page, and PYWB.
+Webrecorder's software packages are all proper nouns and should always be capitalized.  Examples include: Browsertrix, ReplayWeb.page, ArchiveWeb.Page, and PYWB. Specific pages such as the Archived Items page should also be capitalized as they are not referencing the concept of archived items and are instead referencing the page in question that happens to share the same name.
 
 ### Be Concise, Avoid "You Statements"
 
