@@ -21,7 +21,7 @@ Because <span class="status-danger">:bootstrap-x-octagon: Canceled</span> and <s
 
 ## Archived Item Details
 
-The archived item details page is composed of five sections, though the crawl settings tab is only available for crawls and not uploads.
+The archived item details page is composed of five sections, though the Crawl Settings tab is only available for crawls and not uploads.
 
 ### Overview
 
