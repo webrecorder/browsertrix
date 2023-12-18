@@ -69,7 +69,7 @@ Generally, people don't want to have to read documentation. When writing, try to
 
 ##### Example
 
-> If you want to do x, you can click on y
+> If you want to do x, you can click on y.
 
 Can be shortened to:
 
