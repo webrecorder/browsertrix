@@ -1,6 +1,6 @@
 # Archived Items
 
-Archived Items consist of one or more WACZ files created by a crawl workflow, or uploaded to Browsertrix. They can be individually replayed, or combined with other archived items in a [collection](collections.md). The archived items page lists all items in the organization.
+Archived Items consist of one or more WACZ files created by a crawl workflow, or uploaded to Browsertrix. They can be individually replayed, or combined with other archived items in a [collection](collections.md). The Archived Items page lists all items in the organization.
 
 ## Uploading Web Archives
 
@@ -8,7 +8,7 @@ WACZ files can be given metadata and uploaded to Browsertrix by pressing the _Up
 
 ## Status
 
-The status of an Archived Item depends on its type. Uploads will always have the status <span class="status-success">:bootstrap-upload: Uploaded</span>, Crawls have four possible states:
+The status of an archived item depends on its type. Uploads will always have the status <span class="status-success">:bootstrap-upload: Uploaded</span>, crawls have four possible states:
 
 | Status | Description |
 | ---- | ---- |
@@ -21,7 +21,7 @@ Because <span class="status-danger">:bootstrap-x-octagon: Canceled</span> and <s
 
 ## Archived Item Details
 
-The Archived Item details page is composed of five sections, though the crawl settings tab is only available for crawls and not uploads.
+The archived item details page is composed of five sections, though the crawl settings tab is only available for crawls and not uploads.
 
 ### Overview
 
@@ -47,4 +47,4 @@ All log entries with that were recorded in the creation of the Archived Item can
 
 ### Crawl Settings
 
-The Crawl Settings tab displays the Crawl Workflow configuration options that were used to generate the resulting Archived Item.
+The Crawl Settings tab displays the crawl workflow configuration options that were used to generate the resulting archived item.
