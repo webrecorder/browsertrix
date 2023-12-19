@@ -50,5 +50,5 @@ export class Dialog extends SlDialog {
         border-top: 1px solid var(--sl-color-neutral-100);
       }
     `,
-  ];
+  ] as any;
 }

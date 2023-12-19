@@ -7,7 +7,7 @@ import type { Upload } from "@/types/crawler";
 import type { TableRow } from "@/components/ui/table/table-row";
 
 export type SelectionChangeDetail = {
-  item: { id: string; checked: boolean };
+  selection: Record<string, boolean>;
 };
 
 /**
@@ -129,9 +129,8 @@ export class CollectionUploadList extends LitElement {
                   "btrix-selection-change",
                   {
                     detail: {
-                      item: {
-                        id: item.id,
-                        checked: (e.currentTarget as SlCheckbox).checked,
+                      selection: {
+                        [item.id]: (e.currentTarget as SlCheckbox).checked,
                       },
                     },
                   }

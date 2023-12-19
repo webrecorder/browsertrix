@@ -180,7 +180,7 @@ export class CollectionEditor extends TailwindElement {
           <div class="flex gap-3 px-4 py-3" role="tablist">
             ${TABS.map(this.renderTab)}
           </div>
-          <hr />
+          <div class="border-y bg-neutral-50 p-3">TODO controls</div>
           <div
             id="tabPanel-crawls"
             role="tabpanel"
@@ -190,6 +190,7 @@ export class CollectionEditor extends TailwindElement {
           >
             ${this.renderSelectCrawls()}
           </div>
+
           <div
             id="tabPanel-uploads"
             role="tabpanel"
@@ -274,17 +275,13 @@ export class CollectionEditor extends TailwindElement {
               orgId=${this.orgId}
               .workflows=${this.orgWorkflows!.items || []}
               .selection=${this.selection}
-              @sl-selection-change=${(e: CustomEvent) => {
-                const selection: CollectionEditor["selection"] = {
+              @btrix-selection-change=${(
+                e: CustomEvent<SelectionChangeDetail>
+              ) => {
+                this.selection = {
                   ...this.selection,
+                  ...e.detail.selection,
                 };
-                e.detail.selection.forEach((item: SlTreeItem) => {
-                  const crawlID = item.dataset.crawlId;
-                  if (crawlID) {
-                    selection[crawlID] = item.selected;
-                  }
-                });
-                this.selection = selection;
               }}
             >
             </btrix-collection-workflow-list>
@@ -302,10 +299,9 @@ export class CollectionEditor extends TailwindElement {
           collectionId=${this.collectionId}
           .items=${this.orgUploads?.items || []}
           @btrix-selection-change=${(e: CustomEvent<SelectionChangeDetail>) => {
-            const { id, checked } = e.detail.item;
             this.selection = {
               ...this.selection,
-              [id]: checked,
+              ...e.detail.selection,
             };
           }}
         ></btrix-collection-upload-list>
