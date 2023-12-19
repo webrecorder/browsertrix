@@ -26,7 +26,7 @@ type SearchResult = {
 };
 type SortField = "modified" | "name" | "totalSize";
 type SortDirection = "asc" | "desc";
-const INITIAL_PAGE_SIZE = 1;
+const INITIAL_PAGE_SIZE = 20;
 const sortableFields: Record<
   SortField,
   { label: string; defaultDirection?: SortDirection }

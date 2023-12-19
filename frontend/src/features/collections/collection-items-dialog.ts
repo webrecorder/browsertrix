@@ -1,3 +1,4 @@
+import { type PropertyValues } from "lit";
 import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
@@ -14,7 +15,7 @@ import uniqBy from "lodash/fp/uniqBy";
 import difference from "lodash/fp/difference";
 import Fuse from "fuse.js";
 import queryString from "query-string";
-import type { SlMenuItem } from "@shoelace-style/shoelace";
+import type { SlMenuItem, SlTreeItem } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -24,10 +25,20 @@ import type {
   APISortQuery,
 } from "@/types/api";
 import type { Collection } from "@/types/collection";
-import type { Crawl, CrawlState, Upload, Workflow } from "@/types/crawler";
+import type {
+  ArchivedItem,
+  Crawl,
+  CrawlState,
+  Upload,
+  Workflow,
+} from "@/types/crawler";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { finishedCrawlStates } from "@/utils/crawler";
 import type { Dialog } from "@/components/ui/dialog";
+import { TailwindElement } from "@/classes/TailwindElement";
+import { APIController } from "@/controllers/api";
+import { type SelectionChangeDetail } from "@/features/collections/collection-upload-list";
+import { NotifyController } from "@/controllers/notify";
 
 const TABS = ["crawls", "uploads"] as const;
 type Tab = (typeof TABS)[number];
@@ -61,14 +72,15 @@ const sortableFields: Record<
     defaultDirection: "asc",
   },
 };
-const WORKFLOW_CRAWL_LIMIT = 100;
+
+const COLLECTION_ITEMS_PAGE_SIZE = 100;
 const WORKFLOW_PAGE_SIZE = 10;
-const CRAWL_PAGE_SIZE = 5;
+const UPLOADS_PAGE_SIZE = 10;
 const MIN_SEARCH_LENGTH = 2;
 
 @localized()
 @customElement("btrix-collection-items-dialog")
-export class CollectionEditor extends LiteElement {
+export class CollectionEditor extends TailwindElement {
   @property({ type: Object })
   authState!: AuthState;
 
@@ -88,94 +100,31 @@ export class CollectionEditor extends LiteElement {
   private isSubmitting = false;
 
   @state()
-  private collectionCrawls?: Crawl[];
-
-  @state()
-  private collectionUploads?: Upload[];
-
-  // Store crawl IDs to compare later
-  private savedCollectionCrawlIds: string[] = [];
-
-  // Store upload IDs to compare later
-  private savedCollectionUploadIds: string[] = [];
-
-  @state()
-  private workflows?: APIPaginatedList<Workflow>;
-
-  @state()
-  private workflowPagination: {
-    [workflowId: string]: APIPaginationQuery & {
-      items: Workflow[];
-    };
-  } = {};
-
-  @state()
-  private workflowIsLoading: {
-    [workflowId: string]: boolean;
-  } = {};
-
-  @state()
-  private uploads?: APIPaginatedList<Upload>;
-
-  @state()
-  private selectedCrawls: {
-    [crawlId: string]: Crawl;
-  } = {};
-
-  @state()
-  private selectedUploads: {
-    [uploadId: string]: Upload;
-  } = {};
-  @state()
   private activeTab: Tab = TABS[0];
 
   @state()
-  private orderWorkflowsBy: {
-    field: SortField;
-    direction: SortDirection;
-  } = {
-    field: "lastRun",
-    direction: sortableFields["lastRun"].defaultDirection!,
-  };
+  private collectionCrawls?: APIPaginatedList<Crawl>;
 
   @state()
-  private filterWorkflowsBy: Partial<Record<keyof Crawl, any>> = {};
+  private collectionUploads?: APIPaginatedList<Upload>;
 
   @state()
-  private searchByValue: string = "";
+  private orgUploads?: APIPaginatedList<Upload>;
 
   @state()
-  private searchResultsOpen = false;
+  private orgWorkflows?: APIPaginatedList<Workflow>;
+
+  /**
+   * Whether item is selected or not, keyed by ID
+   */
+  @state()
+  private selection: { [itemID: string]: boolean } = {};
 
   @query("btrix-dialog")
   private dialog!: Dialog;
 
-  private get hasSearchStr() {
-    return this.searchByValue.length >= MIN_SEARCH_LENGTH;
-  }
-
-  private get selectedSearchFilterKey() {
-    return Object.keys(this.fieldLabels).find((key) =>
-      Boolean((this.filterWorkflowsBy as any)[key])
-    );
-  }
-
-  // TODO localize
-  private numberFormatter = new Intl.NumberFormat(undefined, {
-    notation: "compact",
-  });
-
-  // For fuzzy search:
-  private fuse = new Fuse<SearchResult["item"]>([], {
-    keys: ["value"],
-    shouldSort: false,
-    threshold: 0.2, // stricter; default is 0.6
-  });
-
-  private readonly fieldLabels: Record<SearchFields, string> = {
-    name: msg("Name"),
-    firstSeed: msg("Crawl Start URL"),
-  };
+  private api = new APIController(this);
+  private notify = new NotifyController(this);
 
   private readonly tabLabels: Record<Tab, { icon: string; label: string }> = {
     crawls: {
@@ -188,58 +137,46 @@ export class CollectionEditor extends LiteElement {
     },
   };
 
-  protected async willUpdate(changedProperties: Map<string, any>) {
-    if (changedProperties.has("orgId") && this.orgId) {
-      this.fetchSearchValues();
-      this.fetchUploads();
-    }
-    if (
-      (changedProperties.has("orgId") && this.orgId) ||
-      changedProperties.has("filterWorkflowsBy") ||
-      changedProperties.has("orderWorkflowsBy")
-    ) {
-      this.fetchWorkflows();
-    }
-    if (
-      (changedProperties.has("collectionId") && this.collectionId) ||
-      (changedProperties.has("open") && this.open)
-    ) {
-      this.fetchCollectionCrawlsAndUploads();
+  protected willUpdate(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("open") && this.open) {
+      this.fetchOrgUploads();
+      this.fetchOrgWorkflows();
+      this.fetchCollectionCrawls();
+      this.fetchCollectionUploads();
     }
   }
 
   render() {
-    return html`<btrix-dialog
-      label=${msg("Select Archived Items")}
-      ?open=${this.open}
-      style="--width: var(--btrix-screen-lg); --body-spacing: 0;"
-      @sl-after-hide=${() => this.reset()}
-    >
-      <div class="flex flex-col min-h-[50vh]">
-        <div class="flex gap-3 px-4 py-3">${TABS.map(this.renderTab)}</div>
-        <hr />
-        ${choose(this.activeTab, [
-          ["crawls", this.renderSelectCrawls],
-          ["uploads", this.renderSelectUploads],
-        ])}
-      </div>
-      <div slot="footer" class="flex gap-3 items-center justify-end">
-        <sl-button class="mr-auto" size="small" @click=${() => this.close()}
-          >${msg("Cancel")}</sl-button
-        >
-        <sl-button
-          variant="primary"
-          size="small"
-          ?disabled=${this.isSubmitting ||
-          Object.values(this.workflowIsLoading).some(
-            (isLoading) => isLoading === true
-          )}
-          ?loading=${this.isSubmitting}
-          @click=${() => this.save()}
-          >${msg("Save Selection")}</sl-button
-        >
-      </div>
-    </btrix-dialog>`;
+    return html`
+      <btrix-dialog
+        label=${msg("Select Archived Items")}
+        ?open=${this.open}
+        style="--width: var(--btrix-screen-lg); --body-spacing: 0;"
+        @sl-after-hide=${() => this.reset()}
+      >
+        <div class="flex flex-col min-h-[50vh]">
+          <div class="flex gap-3 px-4 py-3">${TABS.map(this.renderTab)}</div>
+          <hr />
+          ${choose(this.activeTab, [
+            ["crawls", this.renderSelectCrawls],
+            ["uploads", this.renderSelectUploads],
+          ])}
+        </div>
+        <div slot="footer" class="flex gap-3 items-center justify-end">
+          <sl-button class="mr-auto" size="small" @click=${() => this.close()}
+            >${msg("Cancel")}</sl-button
+          >
+          <sl-button
+            variant="primary"
+            size="small"
+            ?disabled=${this.isSubmitting}
+            ?loading=${this.isSubmitting}
+            @click=${() => this.save()}
+            >${msg("Save Selection")}</sl-button
+          >
+        </div>
+      </btrix-dialog>
+    `;
   }
 
   private renderTab = (tab: Tab) => {
@@ -254,26 +191,56 @@ export class CollectionEditor extends LiteElement {
         aria-selected="${isSelected}"
       >
         <sl-icon name=${icon}></sl-icon>
-        <span
-          >${label}
-          (${Object.keys(
-            tab === "crawls" ? this.selectedCrawls : this.selectedUploads
-          ).length})</span
-        >
+        <span>${label}</span>
       </btrix-button>
     `;
   };
 
   private renderSelectCrawls = () => {
-    const crawlsInCollection = this.collectionCrawls || [];
-
     return html`
+      <div class="sticky top-0 bg-white z-10">
+        <btrix-section-heading>
+          <div class="flex-1 flex items-center justify-between">
+            <div class="px-3">${msg("Crawl Workflows")}</div>
+            ${when(
+              this.orgWorkflows &&
+                this.orgWorkflows.total > this.orgWorkflows.pageSize,
+              () => html`
+                <btrix-pagination
+                  page=${this.orgWorkflows!.page}
+                  size=${this.orgWorkflows!.pageSize}
+                  totalCount=${this.orgWorkflows!.total}
+                  compact
+                  @page-change=${(e: PageChangeEvent) => {
+                    this.fetchOrgWorkflows({
+                      page: e.detail.page,
+                    });
+                  }}
+                >
+                </btrix-pagination>
+              `
+            )}
+          </div>
+        </btrix-section-heading>
+      </div>
       <section class="p-3">
         <btrix-collection-workflow-list
           .authState=${this.authState}
           orgId=${this.orgId}
-          .workflows=${this.workflows?.items || []}
-          .crawlsInCollection=${this.collectionCrawls || []}
+          .workflows=${this.orgWorkflows?.items || []}
+          .selection=${this.selection}
+          @sl-selection-change=${(e: CustomEvent) => {
+            const selection: CollectionEditor["selection"] = {
+              ...this.selection,
+            };
+            e.detail.selection.forEach((item: SlTreeItem) => {
+              const crawlID = item.dataset.crawlId;
+              if (crawlID) {
+                selection[crawlID] = item.selected;
+              }
+            });
+            this.selection = selection;
+          }}
         >
         </btrix-collection-workflow-list>
       </section>
@@ -282,166 +249,21 @@ export class CollectionEditor extends LiteElement {
 
   private renderSelectUploads = () => {
     return html`
-      <section>
-        <btrix-collection-item-list
-          .items=${this.uploads?.items || []}
-        ></btrix-collection-item-list>
+      <section class="p-3">
+        <btrix-collection-upload-list
+          collectionId=${this.collectionId}
+          .items=${this.orgUploads?.items || []}
+          @btrix-selection-change=${(e: CustomEvent<SelectionChangeDetail>) => {
+            const { id, checked } = e.detail.item;
+            this.selection = {
+              ...this.selection,
+              [id]: checked,
+            };
+          }}
+        ></btrix-collection-upload-list>
       </section>
     `;
   };
-
-  private renderWorkflowListControls = () => {
-    return html`
-      <div>
-        <div class="mb-2">${this.renderSearch()}</div>
-        <div class="flex items-center">
-          <div class="whitespace-nowrap text-neutral-500 mx-2">
-            ${msg("Sort by:")}
-          </div>
-          <sl-select
-            class="flex-1"
-            size="small"
-            pill
-            value=${this.orderWorkflowsBy.field}
-            @sl-change=${(e: Event) => {
-              const field = (e.target as HTMLSelectElement).value as SortField;
-              this.orderWorkflowsBy = {
-                field: field,
-                direction:
-                  sortableFields[field].defaultDirection ||
-                  this.orderWorkflowsBy.direction,
-              };
-            }}
-          >
-            ${Object.entries(sortableFields).map(
-              ([value, { label }]) => html`
-                <sl-option value=${value}>${label}</sl-option>
-              `
-            )}
-          </sl-select>
-          <sl-icon-button
-            name="arrow-down-up"
-            label=${msg("Reverse sort")}
-            @click=${() => {
-              this.orderWorkflowsBy = {
-                ...this.orderWorkflowsBy,
-                direction:
-                  this.orderWorkflowsBy.direction === "asc" ? "desc" : "asc",
-              };
-            }}
-          ></sl-icon-button>
-        </div>
-      </div>
-    `;
-  };
-
-  private renderSearch() {
-    return html`
-      <btrix-combobox
-        ?open=${this.searchResultsOpen}
-        @request-close=${() => {
-          this.searchResultsOpen = false;
-          this.searchByValue = "";
-        }}
-        @sl-select=${async (e: CustomEvent) => {
-          this.searchResultsOpen = false;
-          const item = e.detail.item as SlMenuItem;
-          const key = item.dataset["key"] as SearchFields;
-          this.searchByValue = item.value;
-          await this.updateComplete;
-          this.filterWorkflowsBy = {
-            ...this.filterWorkflowsBy,
-            [key]: item.value,
-          };
-        }}
-      >
-        <sl-input
-          size="small"
-          placeholder=${msg("Search by Name or Crawl Start URL")}
-          clearable
-          value=${this.searchByValue}
-          @sl-clear=${() => {
-            this.searchResultsOpen = false;
-            this.onSearchInput.cancel();
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { name, firstSeed, ...otherFilters } = this.filterWorkflowsBy;
-            this.filterWorkflowsBy = otherFilters;
-          }}
-          @sl-input=${this.onSearchInput}
-        >
-          ${when(
-            this.selectedSearchFilterKey,
-            () =>
-              html`<sl-tag
-                slot="prefix"
-                size="small"
-                pill
-                style="margin-left: var(--sl-spacing-3x-small)"
-                >${this.fieldLabels[
-                  this.selectedSearchFilterKey as SearchFields
-                ]}</sl-tag
-              >`,
-            () => html`<sl-icon name="search" slot="prefix"></sl-icon>`
-          )}
-        </sl-input>
-        ${this.renderSearchResults()}
-      </btrix-combobox>
-    `;
-  }
-
-  private renderSearchResults() {
-    if (!this.hasSearchStr) {
-      return html`
-        <sl-menu-item slot="menu-item" disabled
-          >${msg("Start typing to view crawl filters.")}</sl-menu-item
-        >
-      `;
-    }
-
-    const searchResults = this.fuse.search(this.searchByValue).slice(0, 10);
-    if (!searchResults.length) {
-      return html`
-        <sl-menu-item slot="menu-item" disabled
-          >${msg("No matching crawls found.")}</sl-menu-item
-        >
-      `;
-    }
-
-    return html`
-      ${searchResults.map(
-        ({ item }: SearchResult) => html`
-          <sl-menu-item
-            slot="menu-item"
-            data-key=${item.key}
-            value=${item.value}
-          >
-            <sl-tag slot="prefix" size="small" pill
-              >${this.fieldLabels[item.key]}</sl-tag
-            >
-            ${item.value}
-          </sl-menu-item>
-        `
-      )}
-    `;
-  }
-
-  private onSearchInput = debounce(150)((e: any) => {
-    this.searchByValue = e.target.value.trim();
-
-    if (this.searchResultsOpen === false && this.hasSearchStr) {
-      this.searchResultsOpen = true;
-    }
-
-    if (!this.searchByValue && this.selectedSearchFilterKey) {
-      const {
-        [this.selectedSearchFilterKey as SearchFields]: _,
-        ...otherFilters
-      } = this.filterWorkflowsBy;
-      this.filterWorkflowsBy = {
-        ...otherFilters,
-      };
-    }
-  }) as any;
 
   private close() {
     this.dialog.hide();
@@ -449,33 +271,33 @@ export class CollectionEditor extends LiteElement {
 
   private reset() {
     this.activeTab = TABS[0];
-    this.workflowPagination = {};
-    this.selectedCrawls = {};
-    this.selectedUploads = {};
-    this.orderWorkflowsBy = {
-      field: "lastRun",
-      direction: sortableFields["lastRun"].defaultDirection!,
-    };
-    this.filterWorkflowsBy = {};
-    this.searchByValue = "";
+  }
+
+  private selectAllItems(items: ArchivedItem[]) {
+    const selection = { ...this.selection };
+    items.forEach((item) => {
+      if (!selection.hasOwnProperty(item.id)) {
+        selection[item.id] = true;
+      }
+    });
+    this.selection = selection;
   }
 
   private async save() {
     await this.updateComplete;
-    const crawlIds = [
-      ...Object.keys(this.selectedCrawls),
-      ...Object.keys(this.selectedUploads),
+    const itemIds = Object.entries(this.selection)
+      .filter(([, isSelected]) => isSelected)
+      .map(([id]) => id);
+    const oldItemIds = [
+      ...this.collectionCrawls!.items.map(({ id }) => id),
+      ...this.collectionUploads!.items.map(({ id }) => id),
     ];
-    const oldCrawlIds = [
-      ...this.savedCollectionCrawlIds,
-      ...this.savedCollectionUploadIds,
-    ];
-    const remove = difference(oldCrawlIds)(crawlIds);
-    const add = difference(crawlIds)(oldCrawlIds);
+    const remove = difference(oldItemIds)(itemIds);
+    const add = difference(itemIds)(oldItemIds);
     const requests = [];
     if (add.length) {
       requests.push(
-        this.apiFetch(
+        this.api.fetch(
           `/orgs/${this.orgId}/collections/${this.collectionId}/add`,
           this.authState!,
           {
@@ -487,7 +309,7 @@ export class CollectionEditor extends LiteElement {
     }
     if (remove.length) {
       requests.push(
-        this.apiFetch(
+        this.api.fetch(
           `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
           this.authState!,
           {
@@ -505,13 +327,13 @@ export class CollectionEditor extends LiteElement {
 
       this.close();
       this.dispatchEvent(new CustomEvent("btrix-collection-saved"));
-      this.notify({
+      this.notify.toast({
         message: msg(str`Successfully saved archived item selection.`),
         variant: "success",
         icon: "check2-circle",
       });
     } catch (e: any) {
-      this.notify({
+      this.notify.toast({
         message: e.isApiError
           ? (e.message as string)
           : msg("Something unexpected went wrong"),
@@ -523,169 +345,78 @@ export class CollectionEditor extends LiteElement {
     this.isSubmitting = false;
   }
 
-  private async fetchWorkflows(params: APIPaginationQuery = {}) {
+  private async fetchOrgUploads() {
     try {
-      this.workflows = await this.getWorkflows({
-        page: params.page || this.workflows?.page || 1,
-        pageSize:
-          params.pageSize || this.workflows?.pageSize || WORKFLOW_PAGE_SIZE,
+      this.orgUploads = await this.getUploads({
+        pageSize: UPLOADS_PAGE_SIZE,
       });
     } catch (e: any) {
-      this.notify({
-        message: msg("Sorry, couldn't retrieve Workflows at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
+      console.debug(e);
     }
   }
 
-  private async getWorkflows(params: APIPaginationQuery) {
-    const query = queryString.stringify({
-      ...params,
-      ...this.filterWorkflowsBy,
-      sortBy: this.orderWorkflowsBy.field,
-      sortDirection: this.orderWorkflowsBy.direction === "desc" ? -1 : 1,
-    });
-    const data = await this.apiFetch<APIPaginatedList<Workflow>>(
-      `/orgs/${this.orgId}/crawlconfigs?${query}`,
-      this.authState!
-    );
-
-    return data;
-  }
-
-  private async fetchUploads(params: APIPaginationQuery = {}) {
+  private async fetchOrgWorkflows(params: { page?: number } = {}) {
     try {
-      this.uploads = await this.getUploads({
-        page: params.page || this.uploads?.page || 1,
-        pageSize:
-          params.pageSize || this.uploads?.pageSize || WORKFLOW_PAGE_SIZE,
+      this.orgWorkflows = await this.getWorkflows({
+        page: params.page || this.orgWorkflows?.page || 1,
+        pageSize: WORKFLOW_PAGE_SIZE,
       });
     } catch (e: any) {
-      this.notify({
-        message: msg("Sorry, couldn't retrieve uploads at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
+      console.debug(e);
     }
   }
 
-  private async getUploads(
-    params: Partial<{
-      collectionId?: string;
-      state: CrawlState[];
-    }> &
-      APIPaginationQuery &
-      APISortQuery
-  ) {
-    const query = queryString.stringify({
-      state: "complete",
-      ...params,
-    });
-    const data = await this.apiFetch<APIPaginatedList<Upload>>(
-      `/orgs/${this.orgId}/uploads?${query}`,
-      this.authState!
-    );
-
-    return data;
-  }
-
-  private async fetchCollectionCrawlsAndUploads() {
+  private async fetchCollectionCrawls() {
     try {
-      const [crawlsRes, uploadsRes] = await Promise.allSettled([
-        this.getCrawls({
-          collectionId: this.collectionId,
-          sortBy: "finished",
-          pageSize: WORKFLOW_CRAWL_LIMIT,
-        }),
-        this.getUploads({
-          collectionId: this.collectionId,
-          sortBy: "finished",
-          pageSize: WORKFLOW_CRAWL_LIMIT,
-        }),
-      ]);
-      const crawls =
-        crawlsRes.status === "fulfilled" ? crawlsRes.value.items : [];
-      const uploads =
-        uploadsRes.status === "fulfilled" ? uploadsRes.value.items : [];
-
-      // Get workflows in collection
-
-      this.selectedCrawls = mergeDeep(this.selectedCrawls, keyBy("id")(crawls));
-      this.selectedUploads = mergeDeep(
-        this.selectedUploads,
-        keyBy("id")(uploads)
-      );
-
-      // TODO remove omit once API removes errors
-      this.collectionCrawls = crawls.map(omit("errors")) as Crawl[];
-      this.collectionUploads = uploads;
-      // Store crawl IDs to compare later
-      this.savedCollectionCrawlIds = this.collectionCrawls.map(({ id }) => id);
-      this.savedCollectionUploadIds = this.collectionUploads.map(
-        ({ id }) => id
-      );
-    } catch {
-      this.notify({
-        message: msg(
-          "Sorry, couldn't retrieve Crawls in Collection at this time."
-        ),
-        variant: "danger",
-        icon: "exclamation-octagon",
+      this.collectionCrawls = await this.getCrawls({
+        collectionId: this.collectionId,
+        pageSize: COLLECTION_ITEMS_PAGE_SIZE,
       });
+      this.selectAllItems(this.collectionCrawls.items);
+      if (this.collectionCrawls.total > this.collectionCrawls.pageSize) {
+        // TODO show warning in UI
+        console.warn(
+          `more than ${COLLECTION_ITEMS_PAGE_SIZE} crawls in collection`
+        );
+      }
+    } catch (e: any) {
+      console.debug(e);
     }
   }
 
-  private async fetchWorkflowCrawls(workflowId: string): Promise<Crawl[]> {
-    this.workflowIsLoading = mergeDeep(this.workflowIsLoading, {
-      [workflowId]: true,
-    });
-
-    let workflowCrawls: Crawl[] = [];
-
+  private async fetchCollectionUploads() {
     try {
-      const { items } = await this.getCrawls({
-        cid: workflowId,
-        state: finishedCrawlStates,
-        sortBy: "finished",
-        pageSize: WORKFLOW_CRAWL_LIMIT,
+      this.collectionUploads = await this.getUploads({
+        collectionId: this.collectionId,
+        pageSize: COLLECTION_ITEMS_PAGE_SIZE,
       });
-      // TODO remove omit once API removes errors
-      const crawls = items.map(omit("errors")) as Crawl[];
-      this.collectionCrawls = uniqBy("id")([
-        ...(this.collectionCrawls || []),
-        ...crawls,
-      ] as any) as any;
-
-      workflowCrawls = crawls;
-    } catch {
-      this.notify({
-        message: msg("Sorry, couldn't retrieve Crawl Workflow at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
+      this.selectAllItems(this.collectionUploads.items);
+      if (this.collectionUploads.total > this.collectionUploads.pageSize) {
+        // TODO show warning in UI
+        console.warn(
+          `more than ${COLLECTION_ITEMS_PAGE_SIZE} crawls in collection`
+        );
+      }
+    } catch (e: any) {
+      console.debug(e);
     }
-
-    this.workflowIsLoading = mergeDeep(this.workflowIsLoading, {
-      [workflowId]: false,
-    });
-
-    return workflowCrawls;
   }
 
   private async getCrawls(
-    params: Partial<{
-      cid?: string;
+    params: {
       collectionId?: string;
-      state: CrawlState[];
-    }> &
-      APIPaginationQuery &
-      APISortQuery
+    } & APIPaginationQuery = {}
   ) {
-    const query = queryString.stringify(params || {}, {
-      arrayFormat: "comma",
-    });
-    const data = await this.apiFetch<APIPaginatedList<Crawl>>(
+    const query = queryString.stringify(
+      {
+        state: finishedCrawlStates,
+        ...params,
+      },
+      {
+        arrayFormat: "comma",
+      }
+    );
+    const data = await this.api.fetch<APIPaginatedList<Crawl>>(
       `/orgs/${this.orgId}/crawls?${query}`,
       this.authState!
     );
@@ -693,26 +424,32 @@ export class CollectionEditor extends LiteElement {
     return data;
   }
 
-  private async fetchSearchValues() {
-    try {
-      const { names, firstSeeds } = await this.apiFetch<{
-        names: string[];
-        firstSeeds: string[];
-      }>(`/orgs/${this.orgId}/crawlconfigs/search-values`, this.authState!);
+  private async getWorkflows(params: APIPaginationQuery = {}) {
+    const query = queryString.stringify({
+      ...params,
+    });
+    const data = await this.api.fetch<APIPaginatedList<Workflow>>(
+      `/orgs/${this.orgId}/crawlconfigs?${query}`,
+      this.authState!
+    );
 
-      // Update search/filter collection
-      const toSearchItem =
-        (key: SearchFields) =>
-        (value: string): SearchResult["item"] => ({
-          key,
-          value,
-        });
-      this.fuse.setCollection([
-        ...names.map(toSearchItem("name")),
-        ...firstSeeds.map(toSearchItem("firstSeed")),
-      ]);
-    } catch (e) {
-      console.debug(e);
-    }
+    return data;
+  }
+
+  private async getUploads(
+    params: {
+      collectionId?: string;
+    } & APIPaginationQuery = {}
+  ) {
+    const query = queryString.stringify({
+      state: "complete",
+      ...params,
+    });
+    const data = await this.api.fetch<APIPaginatedList<Upload>>(
+      `/orgs/${this.orgId}/uploads?${query}`,
+      this.authState!
+    );
+
+    return data;
   }
 }

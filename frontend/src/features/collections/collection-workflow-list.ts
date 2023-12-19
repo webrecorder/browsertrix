@@ -1,6 +1,6 @@
 import {
   type TemplateResult,
-  type PropertyValueMap,
+  type PropertyValues,
   LitElement,
   html,
   css,
@@ -12,9 +12,9 @@ import {
   queryAssignedElements,
   state,
 } from "lit/decorators.js";
+import { classMap } from "lit/directives/class-map.js";
 import { msg, localized, str } from "@lit/localize";
 import queryString from "query-string";
-import groupBy from "lodash/fp/groupBy";
 
 import type {
   APIPaginatedList,
@@ -27,6 +27,8 @@ import { type AuthState } from "@/utils/AuthService";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { finishedCrawlStates } from "@/utils/crawler";
 
+const CRAWLS_PAGE_SIZE = 50;
+
 /**
  * @example Usage:
  * ```ts
@@ -38,6 +40,14 @@ export class CollectionWorkflowList extends TailwindElement {
   static styles = css`
     :host {
       --border: 1px solid var(--sl-panel-border-color);
+    }
+
+    sl-tree-item.workflow:not(.selectable)::part(base) {
+      cursor: default;
+    }
+
+    sl-tree-item.workflow:not(.selectable)::part(checkbox) {
+      visibility: hidden;
     }
 
     sl-tree-item::part(expand-button) {
@@ -105,31 +115,21 @@ export class CollectionWorkflowList extends TailwindElement {
   @property({ type: Array })
   workflows: Workflow[] = [];
 
-  @property({ type: Array })
-  crawlsInCollection: Crawl[] = [];
+  /**
+   * Whether item is selected or not, keyed by ID
+   */
+  @property({ type: Object })
+  selection: { [itemID: string]: boolean } = {};
 
   /** Crawls grouped by workflow ID */
   @state()
   private crawlsByWorkflowID: { [workflowID: string]: Crawl[] } = {};
 
-  /** Selected crawls keyed by ID */
-  @state()
-  private selectedCrawls: { [crawlId: string]: boolean } = {};
-
   private api = new APIController(this);
 
-  protected willUpdate(
-    changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
-  ): void {
-    if (
-      changedProperties.has("crawlsInCollection") &&
-      this.crawlsInCollection
-    ) {
-      const selectedCrawls: Record<string, boolean> = {};
-      this.crawlsInCollection.forEach((crawl) => {
-        selectedCrawls[crawl.id] = true;
-      });
-      this.selectedCrawls = selectedCrawls;
+  protected willUpdate(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("workflows")) {
+      Promise.all(this.workflows.map((workflow) => this.fetchCrawls(workflow)));
     }
   }
 
@@ -142,41 +142,55 @@ export class CollectionWorkflowList extends TailwindElement {
   }
 
   renderWorkflow = (workflow: Workflow) => {
+    const crawlCount = this.crawlsByWorkflowID[workflow.id]?.length || 0;
     let selectedCrawlCount = 0;
-    if (this.crawlsByWorkflowID[workflow.id]) {
+    if (crawlCount) {
       selectedCrawlCount = this.crawlsByWorkflowID[workflow.id].filter(
-        ({ id }) => this.selectedCrawls[id]
+        ({ id }) => this.selection[id]
       ).length;
-    } else if (this.crawlsInCollection) {
-      this.crawlsInCollection.forEach((crawl) => {
-        if (crawl.cid === workflow.id && this.selectedCrawls[crawl.id])
-          selectedCrawlCount += 1;
-      });
     }
+    const isSelected = selectedCrawlCount > 0;
+    // sl-tree-item doesn't expose `?indeterminate`
+    // so we need to set the value directly with `.indeterminate`
+    // See https://github.com/shoelace-style/shoelace/discussions/1630
+    const isIndeterminate = isSelected && selectedCrawlCount < crawlCount;
     return html`
       <sl-tree-item
-        ?lazy=${!this.crawlsByWorkflowID[workflow.id]}
-        ?selected=${selectedCrawlCount > 0}
-        @sl-lazy-load=${() => this.fetchCrawls(workflow)}
+        class=${classMap({
+          workflow: true,
+          selectable: crawlCount > 0,
+        })}
+        .indeterminate=${isIndeterminate}
+        ?selected=${!isIndeterminate && isSelected}
+        @click=${(e: MouseEvent) => {
+          if (!crawlCount) {
+            // Prevent selection since we're just allowing auto-add
+            e.stopPropagation();
+          }
+        }}
       >
-        <div class="flex-1 flex items-center gap-3">
+        <div class="flex-1 flex items-center gap-6">
           <div class="flex-1">${this.renderName(workflow)}</div>
-          <div>
+          <div class="flex-0 text-neutral-500 text-right">
+            ${crawlCount === 1
+              ? msg(
+                  str`${selectedCrawlCount.toLocaleString()} / ${crawlCount?.toLocaleString()} crawl`
+                )
+              : crawlCount
+              ? msg(
+                  str`${selectedCrawlCount.toLocaleString()} / ${crawlCount?.toLocaleString()} crawls`
+                )
+              : msg("0 crawls")}
+          </div>
+          <div class="flex-0">
             <sl-switch
               class="flex"
               size="small"
               ?checked=${workflow.autoAddCollections?.length > 0}
-              >${msg("Auto-Add")}</sl-switch
+              @click=${(e: MouseEvent) => e.stopPropagation()}
             >
-          </div>
-          <div class="text-xs text-neutral-600">
-            ${workflow.crawlSuccessfulCount === 1
-              ? msg(
-                  str`${selectedCrawlCount.toLocaleString()} / ${workflow.crawlSuccessfulCount?.toLocaleString()} crawl`
-                )
-              : msg(
-                  str`${selectedCrawlCount.toLocaleString()} / ${workflow.crawlSuccessfulCount?.toLocaleString()} crawls`
-                )}
+              <span class="text-neutral-500">${msg("Auto-Add")}</span>
+            </sl-switch>
           </div>
         </div>
         ${this.crawlsByWorkflowID[workflow.id]?.map(this.renderCrawl)}
@@ -187,7 +201,10 @@ export class CollectionWorkflowList extends TailwindElement {
   renderCrawl = (crawl: Crawl) => {
     const pageCount = +(crawl.stats?.done || 0);
     return html`
-      <sl-tree-item ?selected=${this.selectedCrawls[crawl.id]}>
+      <sl-tree-item
+        ?selected=${this.selection[crawl.id]}
+        data-crawl-id=${crawl.id}
+      >
         <div class="flex-1 flex items-center">
           <div class="flex-1">
             <sl-format-date
@@ -221,7 +238,10 @@ export class CollectionWorkflowList extends TailwindElement {
 
   private async fetchCrawls(workflow: Workflow) {
     try {
-      const crawls = await this.getCrawls({ cid: workflow.id });
+      const crawls = await this.getCrawls({
+        cid: workflow.id,
+        pageSize: CRAWLS_PAGE_SIZE,
+      });
       this.crawlsByWorkflowID = {
         ...this.crawlsByWorkflowID,
         [workflow.id]: crawls.items,
@@ -243,9 +263,8 @@ export class CollectionWorkflowList extends TailwindElement {
 
     const query = queryString.stringify(
       {
-        ...params,
         state: finishedCrawlStates,
-        pageSize: 100,
+        ...params,
       },
       {
         arrayFormat: "comma",

@@ -644,7 +644,7 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
-  private renderArchivedItem = (item: Crawl | Upload, idx: number) =>
+  private renderArchivedItem = (item: ArchivedItem, idx: number) =>
     html`
       <btrix-crawl-list-item
         orgSlug=${this.appState.orgSlug || ""}
