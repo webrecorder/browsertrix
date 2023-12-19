@@ -339,17 +339,10 @@ def test_crawl_stats_all_orgs(admin_auth_headers):
             assert row["avg_page_time"] or row["avg_page_time"] == 0
 
 
-def test_crawl_stats_not_superadmin(crawler_auth_headers, default_org_id):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/stats", headers=crawler_auth_headers
-    )
-    assert r.status_code == 403
-
-
-def test_crawl_stats(admin_auth_headers, default_org_id):
+def test_crawl_stats(crawler_auth_headers, default_org_id):
     with requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/stats",
-        headers=admin_auth_headers,
+        headers=crawler_auth_headers,
         stream=True,
     ) as r:
         assert r.status_code == 200
