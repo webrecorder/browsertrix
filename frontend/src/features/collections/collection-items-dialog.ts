@@ -40,7 +40,7 @@ import { APIController } from "@/controllers/api";
 import { type SelectionChangeDetail } from "@/features/collections/collection-upload-list";
 import { NotifyController } from "@/controllers/notify";
 
-const TABS = ["crawls", "uploads"] as const;
+const TABS = ["crawl", "upload"] as const;
 type Tab = (typeof TABS)[number];
 type SearchFields = "name" | "firstSeed";
 type SearchResult = {
@@ -145,11 +145,11 @@ export class CollectionEditor extends TailwindElement {
   private notify = new NotifyController(this);
 
   private readonly tabLabels: Record<Tab, { icon: string; label: string }> = {
-    crawls: {
+    crawl: {
       icon: "gear-wide-connected",
       label: msg("Crawls"),
     },
-    uploads: {
+    upload: {
       icon: "upload",
       label: msg("Uploads"),
     },
@@ -180,13 +180,19 @@ export class CollectionEditor extends TailwindElement {
           <div class="flex gap-3 px-4 py-3" role="tablist">
             ${TABS.map(this.renderTab)}
           </div>
-          <div class="border-y bg-neutral-50 p-3">TODO controls</div>
+          <div class="border-y bg-neutral-50 p-3 z-20">
+            <btrix-item-list-controls
+              .authState=${this.authState}
+              orgId=${this.orgId}
+              itemType=${this.activeTab}
+            ></btrix-item-list-controls>
+          </div>
           <div
             id="tabPanel-crawls"
             role="tabpanel"
             tabindex="0"
             aria-labelledby="tab-crawls"
-            ?hidden=${this.activeTab !== "crawls"}
+            ?hidden=${this.activeTab !== "crawl"}
           >
             ${this.renderSelectCrawls()}
           </div>
@@ -196,7 +202,7 @@ export class CollectionEditor extends TailwindElement {
             role="tabpanel"
             tabindex="0"
             aria-labelledby="tab-uploads"
-            ?hidden=${this.activeTab !== "uploads"}
+            ?hidden=${this.activeTab !== "upload"}
           >
             ${this.renderSelectUploads()}
           </div>

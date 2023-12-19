@@ -29,7 +29,7 @@ export class SearchCombobox<T> extends LitElement {
   @property({ type: Array })
   searchKeys: string[] = [];
 
-  @property({ type: Array })
+  @property({ type: Object })
   keyLabels: { [key: string]: string } = {};
 
   @property({ type: String })

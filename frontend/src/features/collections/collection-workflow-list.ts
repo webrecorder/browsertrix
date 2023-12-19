@@ -198,9 +198,9 @@ export class CollectionWorkflowList extends TailwindElement {
           }
         }}
       >
-        <div class="flex-1 flex items-center gap-6">
+        <div class="flex-1 flex flex-wrap items-center gap-x-6 gap-y-2">
           <div class="flex-1">${this.renderName(workflow)}</div>
-          <div class="flex-0 text-neutral-500 text-right">
+          <div class="flex-0 text-neutral-500 md:text-right">
             ${crawlCount === 1
               ? msg(
                   str`${selectedCrawlCount.toLocaleString()} / ${crawlCount?.toLocaleString()} crawl`
@@ -235,8 +235,8 @@ export class CollectionWorkflowList extends TailwindElement {
         class="crawl"
         data-crawl-id=${crawl.id}
       >
-        <div class="flex-1 flex items-center">
-          <div class="flex-1">
+        <div class="flex-1 grid grid-cols-5 items-center">
+          <div class="col-span-3 md:col-span-1">
             <sl-format-date
               date=${`${crawl.finished}Z`}
               month="2-digit"
@@ -246,21 +246,23 @@ export class CollectionWorkflowList extends TailwindElement {
               minute="2-digit"
             ></sl-format-date>
           </div>
-          <div class="flex-1">
+          <div class="col-span-2 md:col-span-1">
             <btrix-crawl-status state=${crawl.state}></btrix-crawl-status>
           </div>
-          <div class="flex-1">
+          <div class="col-span-3 md:col-span-1">
             <sl-format-bytes
               value=${crawl.fileSize || 0}
               display="narrow"
             ></sl-format-bytes>
           </div>
-          <div class="flex-1">
+          <div class="col-span-2 md:col-span-1">
             ${pageCount === 1
               ? msg(str`${pageCount.toLocaleString()} page`)
               : msg(str`${pageCount.toLocaleString()} pages`)}
           </div>
-          <div class="flex-1">${crawl.userName}</div>
+          <div class="col-span-5 md:col-span-1 truncate">
+            ${msg(str`Started by ${crawl.userName}`)}
+          </div>
         </div>
       </sl-tree-item>
     `;
