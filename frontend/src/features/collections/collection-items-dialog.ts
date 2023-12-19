@@ -1,4 +1,4 @@
-import { type PropertyValues } from "lit";
+import { type PropertyValues, css } from "lit";
 import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
@@ -81,6 +81,21 @@ const MIN_SEARCH_LENGTH = 2;
 @localized()
 @customElement("btrix-collection-items-dialog")
 export class CollectionEditor extends TailwindElement {
+  static styles = css`
+    btrix-dialog {
+      --width: var(--btrix-screen-lg);
+      --body-spacing: 0;
+    }
+
+    .dialogContent {
+      /**
+       * Fill height of viewport
+       * FIXME dynamically calculate height of dialog controls?
+       */
+      min-height: calc(100vh - 8.6rem);
+    }
+  `;
+
   @property({ type: Object })
   authState!: AuthState;
 
@@ -156,16 +171,31 @@ export class CollectionEditor extends TailwindElement {
       <btrix-dialog
         label=${msg("Select Archived Items")}
         ?open=${this.open}
-        style="--width: var(--btrix-screen-lg); --body-spacing: 0;"
         @sl-after-hide=${() => this.reset()}
       >
-        <div class="flex flex-col min-h-[50vh]">
-          <div class="flex gap-3 px-4 py-3">${TABS.map(this.renderTab)}</div>
+        <div class="dialogContent flex flex-col">
+          <div class="flex gap-3 px-4 py-3" role="tablist">
+            ${TABS.map(this.renderTab)}
+          </div>
           <hr />
-          ${choose(this.activeTab, [
-            ["crawls", this.renderSelectCrawls],
-            ["uploads", this.renderSelectUploads],
-          ])}
+          <div
+            id="tabPanel-crawls"
+            role="tabpanel"
+            tabindex="0"
+            aria-labelledby="tab-crawls"
+            ?hidden=${this.activeTab !== "crawls"}
+          >
+            ${this.renderSelectCrawls()}
+          </div>
+          <div
+            id="tabPanel-uploads"
+            role="tabpanel"
+            tabindex="0"
+            aria-labelledby="tab-uploads"
+            ?hidden=${this.activeTab !== "uploads"}
+          >
+            ${this.renderSelectUploads()}
+          </div>
         </div>
         <div slot="footer" class="flex gap-3 items-center justify-end">
           <sl-button class="mr-auto" size="small" @click=${() => this.close()}
@@ -194,6 +224,10 @@ export class CollectionEditor extends TailwindElement {
         variant=${isSelected ? "primary" : "neutral"}
         ?raised=${isSelected}
         aria-selected="${isSelected}"
+        role="tab"
+        aria-controls="tabPanel-${tab}"
+        id="tab-${tab}"
+        tabindex="-1"
       >
         <sl-icon name=${icon}></sl-icon>
         <span>${label}</span>
