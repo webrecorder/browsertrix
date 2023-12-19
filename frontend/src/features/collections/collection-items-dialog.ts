@@ -108,6 +108,9 @@ export class CollectionEditor extends TailwindElement {
   @property({ type: String })
   collectionId!: string;
 
+  @property({ type: String })
+  collectionName = "";
+
   @property({ type: Boolean })
   open = false;
 
@@ -169,7 +172,7 @@ export class CollectionEditor extends TailwindElement {
   render() {
     return html`
       <btrix-dialog
-        label=${msg("Select Archived Items")}
+        label=${msg(str`Select Archived Items for ${this.collectionName}`)}
         ?open=${this.open}
         @sl-after-hide=${() => this.reset()}
       >

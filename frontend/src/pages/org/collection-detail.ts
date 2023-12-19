@@ -189,6 +189,7 @@ export class CollectionDetail extends LiteElement {
       <btrix-collection-items-dialog
         orgId=${this.orgId}
         collectionId=${this.collectionId}
+        collectionName=${this.collection?.name || ""}
         .authState=${this.authState}
         ?isCrawler=${this.isCrawler}
         ?open=${this.openDialogName === "editItems"}
