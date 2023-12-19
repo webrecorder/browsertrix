@@ -727,7 +727,6 @@ def init_crawls_api(app, user_dep, *args):
     @app.get("/orgs/{oid}/crawls/stats", tags=["crawls"])
     async def get_org_crawl_stats(
         org: Organization = Depends(org_crawl_dep),
-        user: User = Depends(user_dep),
     ):
         crawl_stats = await ops.get_crawl_stats(org)
         return stream_dict_list_as_csv(crawl_stats, f"crawling-stats-{org.id}.csv")
