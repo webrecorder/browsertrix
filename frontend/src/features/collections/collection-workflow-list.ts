@@ -13,6 +13,7 @@ import {
   state,
 } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
+import { until } from "lit/directives/until.js";
 import { msg, localized, str } from "@lit/localize";
 import queryString from "query-string";
 
@@ -121,15 +122,14 @@ export class CollectionWorkflowList extends TailwindElement {
   @property({ type: Object })
   selection: { [itemID: string]: boolean } = {};
 
-  /** Crawls grouped by workflow ID */
-  @state()
-  private crawlsByWorkflowID: { [workflowID: string]: Crawl[] } = {};
+  private crawlsMap: Map</* workflow ID: */ string, Promise<Crawl[]>> =
+    new Map();
 
   private api = new APIController(this);
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("workflows")) {
-      Promise.all(this.workflows.map((workflow) => this.fetchCrawls(workflow)));
+      this.fetchCrawls();
     }
   }
 
@@ -137,17 +137,23 @@ export class CollectionWorkflowList extends TailwindElement {
     return html`<sl-tree selection="multiple">
       <sl-icon slot="expand-icon" name="chevron-double-down"></sl-icon>
       <sl-icon slot="collapse-icon" name="chevron-double-left"></sl-icon>
-      ${this.workflows.map(this.renderWorkflow)}</sl-tree
+      ${this.workflows.map(this.renderWorkflowAsync)}</sl-tree
     >`;
   }
 
-  renderWorkflow = (workflow: Workflow) => {
-    const crawlCount = this.crawlsByWorkflowID[workflow.id]?.length || 0;
+  private renderWorkflowAsync = (workflow: Workflow) =>
+    until(
+      this.crawlsMap
+        .get(workflow.id)
+        ?.then((crawls) => this.renderWorkflow(workflow, crawls)),
+      html`loading`
+    );
+
+  private renderWorkflow = (workflow: Workflow, crawls: Crawl[]) => {
+    const crawlCount = crawls.length || 0;
     let selectedCrawlCount = 0;
     if (crawlCount) {
-      selectedCrawlCount = this.crawlsByWorkflowID[workflow.id].filter(
-        ({ id }) => this.selection[id]
-      ).length;
+      selectedCrawlCount = crawls.filter(({ id }) => this.selection[id]).length;
     }
     const isSelected = selectedCrawlCount > 0;
     // sl-tree-item doesn't expose `?indeterminate`
@@ -193,12 +199,12 @@ export class CollectionWorkflowList extends TailwindElement {
             </sl-switch>
           </div>
         </div>
-        ${this.crawlsByWorkflowID[workflow.id]?.map(this.renderCrawl)}
+        ${crawls.map(this.renderCrawl)}
       </sl-tree-item>
     `;
   };
 
-  renderCrawl = (crawl: Crawl) => {
+  private renderCrawl = (crawl: Crawl) => {
     const pageCount = +(crawl.stats?.done || 0);
     return html`
       <sl-tree-item
@@ -236,16 +242,21 @@ export class CollectionWorkflowList extends TailwindElement {
     `;
   };
 
-  private async fetchCrawls(workflow: Workflow) {
+  /**
+   * Get crawls for each workflow in list
+   */
+  private async fetchCrawls() {
     try {
-      const crawls = await this.getCrawls({
-        cid: workflow.id,
-        pageSize: CRAWLS_PAGE_SIZE,
+      this.workflows.forEach((workflow) => {
+        this.crawlsMap.set(
+          workflow.id,
+          this.getCrawls({ cid: workflow.id, pageSize: CRAWLS_PAGE_SIZE }).then(
+            ({ items }) => items
+          )
+        );
       });
-      this.crawlsByWorkflowID = {
-        ...this.crawlsByWorkflowID,
-        [workflow.id]: crawls.items,
-      };
+      await this.crawlsMap.values();
+      console.debug("all done");
     } catch (e: unknown) {
       console.log(e);
     }

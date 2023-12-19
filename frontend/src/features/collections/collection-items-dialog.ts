@@ -138,9 +138,14 @@ export class CollectionEditor extends TailwindElement {
   };
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("open") && this.open) {
+    if (
+      changedProperties.has("orgId") ||
+      changedProperties.has("collectionId")
+    ) {
       this.fetchOrgUploads();
       this.fetchOrgWorkflows();
+    }
+    if (changedProperties.has("open") && this.open) {
       this.fetchCollectionCrawls();
       this.fetchCollectionUploads();
     }
@@ -224,25 +229,31 @@ export class CollectionEditor extends TailwindElement {
         </btrix-section-heading>
       </div>
       <section class="p-3">
-        <btrix-collection-workflow-list
-          .authState=${this.authState}
-          orgId=${this.orgId}
-          .workflows=${this.orgWorkflows?.items || []}
-          .selection=${this.selection}
-          @sl-selection-change=${(e: CustomEvent) => {
-            const selection: CollectionEditor["selection"] = {
-              ...this.selection,
-            };
-            e.detail.selection.forEach((item: SlTreeItem) => {
-              const crawlID = item.dataset.crawlId;
-              if (crawlID) {
-                selection[crawlID] = item.selected;
-              }
-            });
-            this.selection = selection;
-          }}
-        >
-        </btrix-collection-workflow-list>
+        ${when(
+          this.orgWorkflows,
+          () => html`
+            <btrix-collection-workflow-list
+              .authState=${this.authState}
+              orgId=${this.orgId}
+              .workflows=${this.orgWorkflows!.items || []}
+              .selection=${this.selection}
+              @sl-selection-change=${(e: CustomEvent) => {
+                const selection: CollectionEditor["selection"] = {
+                  ...this.selection,
+                };
+                e.detail.selection.forEach((item: SlTreeItem) => {
+                  const crawlID = item.dataset.crawlId;
+                  if (crawlID) {
+                    selection[crawlID] = item.selected;
+                  }
+                });
+                this.selection = selection;
+              }}
+            >
+            </btrix-collection-workflow-list>
+          `,
+          this.renderLoading
+        )}
       </section>
     `;
   };
@@ -264,6 +275,12 @@ export class CollectionEditor extends TailwindElement {
       </section>
     `;
   };
+
+  private renderLoading = () => html`
+    <div class="w-full flex items-center justify-center my-24 text-3xl">
+      <sl-spinner></sl-spinner>
+    </div>
+  `;
 
   private close() {
     this.dialog.hide();
