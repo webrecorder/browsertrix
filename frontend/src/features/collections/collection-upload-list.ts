@@ -143,9 +143,23 @@ export class CollectionUploadList extends LitElement {
         <btrix-table-cell class="name">
           ${this.renderName(item)}</btrix-table-cell
         >
-        <btrix-table-cell> TODO </btrix-table-cell>
-        <btrix-table-cell> TODO </btrix-table-cell>
-        <btrix-table-cell> TODO </btrix-table-cell>
+        <btrix-table-cell
+          ><sl-format-date
+            date=${`${item.finished}Z`}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+            hour="2-digit"
+            minute="2-digit"
+          ></sl-format-date
+        ></btrix-table-cell>
+        <btrix-table-cell
+          ><sl-format-bytes
+            value=${item.fileSize || 0}
+            display="narrow"
+          ></sl-format-bytes
+        ></btrix-table-cell>
+        <btrix-table-cell><span>${item.userName}</span></btrix-table-cell>
       </btrix-table-row>
     `;
   };
