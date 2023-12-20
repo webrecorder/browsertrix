@@ -158,7 +158,7 @@ Will prevent any content from the domains listed in [Steven Black's Unified Host
 
 ### Custom User Agent
 
-Sets the browser's user agent in outgoing requests to the specified value. If not set, the crawler will use the browser's default user agent.
+Sets the browser's user agent in outgoing requests to the specified value. If left blank, the crawler will use the browser's default user agent.
 
 ### Language
 
