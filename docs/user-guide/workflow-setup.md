@@ -156,6 +156,10 @@ Sets the [_Browser Profile_](../browser-profiles) to be used for this crawl.
 
 Will prevent any content from the domains listed in [Steven Black's Unified Hosts file](https://github.com/StevenBlack/hosts) (ads & malware) from being captured by the crawler.
 
+### Custom User Agent
+
+Sets the browser's user agent in outgoing requests to the specified value. If not set, the crawler will use the browser's default user agent.
+
 ### Language
 
 Sets the browser's language setting. Useful for crawling websites that detect the browser's language setting and serve content accordingly.
