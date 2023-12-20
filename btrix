@@ -7,7 +7,7 @@
 #
 # Usage:
 #
-# $ ./btrix set
+# $ ./btrix setup
 # Copy local config to expected location
 # Local config must exist for other commands to work
 #
