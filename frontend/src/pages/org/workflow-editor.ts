@@ -118,6 +118,7 @@ type FormState = {
   autoAddCollections: string[];
   description: WorkflowParams["description"];
   autoscrollBehavior: boolean;
+  userAgent: string | null;
 };
 
 const DEPTH_SUPPORTED_SCOPES = ["prefix", "host", "domain", "custom", "any"];
@@ -194,6 +195,7 @@ const getDefaultFormState = (): FormState => ({
   autoAddCollections: [],
   description: null,
   autoscrollBehavior: true,
+  userAgent: null,
 });
 const defaultProgressState = getDefaultProgressState();
 
@@ -582,6 +584,8 @@ export class CrawlConfigEditor extends LiteElement {
       autoscrollBehavior: this.initialWorkflow.config.behaviors
         ? this.initialWorkflow.config.behaviors.includes("autoscroll")
         : defaultFormState.autoscrollBehavior,
+      userAgent:
+        this.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,
       ...formState,
     };
   }
@@ -1637,6 +1641,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
         false
       )}
       ${this.renderFormCol(html`
+        <sl-input
+          name="userAgent"
+          label=${msg("Custom User Agent")}
+          autocomplete="off"
+          placeholder=${msg(
+            "Mozilla/5.0 (<system-information>) <platform> (<platform-details>) <extensions>"
+          )}
+          value=${this.formState.userAgent}
+        >
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(`Set custom user agent for crawler browsers to use in requests.`)
+      )}
+      ${this.renderFormCol(html`
         <btrix-language-select
           .value=${this.formState.lang as LanguageCode}
           @on-change=${(e: CustomEvent) => {
@@ -2358,7 +2377,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         behaviorTimeout: this.formState.behaviorTimeoutSeconds,
         pageLoadTimeout: this.formState.pageLoadTimeoutSeconds,
         pageExtraDelay: this.formState.pageExtraDelaySeconds,
-
+        userAgent: this.formState.userAgent,
         limit: this.formState.pageLimit,
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,

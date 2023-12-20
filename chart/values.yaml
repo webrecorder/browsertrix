@@ -26,13 +26,6 @@ crawler_extract_full_text: false
 # if set, each workflow can have a lower limit, but not higher
 max_pages_per_crawl: 50000
 
-# User Agent Options
-# set to add suffix to default browser User Agent
-# user_agent_suffix:
-
-# set to override User Agent completely (also overrides user_agent_suffix if both are set)
-# user_agent:
-
 
 # default template for generate wacz files
 # supports following interpolated vars:

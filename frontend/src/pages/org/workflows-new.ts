@@ -23,6 +23,7 @@ const defaultValue = {
     pageExtraDelay: null,
     useSitemap: false,
     failOnFailedSeed: false,
+    userAgent: null,
   },
   tags: [],
   crawlTimeout: null,
