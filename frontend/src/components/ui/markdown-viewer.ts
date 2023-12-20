@@ -2,6 +2,10 @@ import { LitElement, css } from "lit";
 import { property, customElement } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import { micromark } from "micromark";
+import {
+  gfmStrikethrough,
+  gfmStrikethroughHtml,
+} from "micromark-extension-gfm-strikethrough";
 
 import { typography } from "@/utils/css";
 
@@ -32,6 +36,11 @@ export class MarkdownViewer extends LitElement {
   value = "";
 
   render() {
-    return staticHtml`${unsafeStatic(micromark(this.value))}`;
+    return staticHtml`${unsafeStatic(
+      micromark(this.value, {
+        extensions: [gfmStrikethrough()],
+        htmlExtensions: [gfmStrikethroughHtml()],
+      })
+    )}`;
   }
 }

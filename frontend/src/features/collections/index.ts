@@ -1,2 +1,3 @@
 import("./collections-add");
-import("./new-collection-dialog");
+import("./collection-items-dialog");
+import("./collection-metadata-dialog");

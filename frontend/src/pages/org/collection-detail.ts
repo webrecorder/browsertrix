@@ -49,7 +49,7 @@ export class CollectionDetail extends LiteElement {
   private archivedItems?: APIPaginatedList<Crawl | Upload>;
 
   @state()
-  private openDialogName?: "delete";
+  private openDialogName?: "delete" | "editMetadata" | "editItems";
 
   @state()
   private isDescriptionExpanded = false;
@@ -114,38 +114,55 @@ export class CollectionDetail extends LiteElement {
         </div>
         ${when(
           this.isCrawler || (!this.isCrawler && this.collection?.isPublic),
-          () => html`
-            <sl-button
-              variant="primary"
-              size="small"
-              @click=${() => (this.showShareInfo = true)}
-            >
-              <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
-              Share
-            </sl-button>
-          `
+          () =>
+            html`
+              <sl-button
+                variant=${this.collection?.crawlCount ? "primary" : "default"}
+                size="small"
+                @click=${() => (this.showShareInfo = true)}
+              >
+                <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+                ${msg("Share")}
+              </sl-button>
+            `
         )}
         ${when(this.isCrawler, this.renderActions)}
       </header>
       <div class="border rounded-lg py-2 px-4 mb-3">
         ${this.renderInfoBar()}
       </div>
-      <div class="mb-3">${this.renderTabs()}</div>
-
+      <div class="flex justify-between items-center mb-3">
+        ${this.renderTabs()}
+        <sl-button
+          variant=${!this.collection || this.collection.crawlCount
+            ? "default"
+            : "primary"}
+          size="small"
+          @click=${() => (this.openDialogName = "editItems")}
+          ?disabled=${!this.collection}
+        >
+          <sl-icon name="ui-checks" slot="prefix"></sl-icon>
+          ${msg("Select Items")}
+        </sl-button>
+      </div>
       ${choose(
         this.collectionTab,
         [
-          ["replay", this.renderOverview],
-          ["items", this.renderArchivedItems],
+          ["replay", () => guard([this.collection], this.renderReplay)],
+          [
+            "items",
+            () => guard([this.archivedItems], this.renderArchivedItems),
+          ],
         ],
 
         () => html`<btrix-not-found></btrix-not-found>`
       )}
+      <div class="my-7">${this.renderDescription()}</div>
 
       <btrix-dialog
-        .label=${msg("Delete Collection?")}
-        .open=${this.openDialogName === "delete"}
-        @sl-request-close=${() => (this.openDialogName = undefined)}
+        label=${msg("Delete Collection?")}
+        ?open=${this.openDialogName === "delete"}
+        @sl-hide=${() => (this.openDialogName = undefined)}
       >
         ${msg(
           html`Are you sure you want to delete
@@ -155,7 +172,7 @@ export class CollectionDetail extends LiteElement {
           <sl-button
             size="small"
             @click=${() => (this.openDialogName = undefined)}
-            >Cancel</sl-button
+            >${msg("Cancel")}</sl-button
           >
           <sl-button
             size="small"
@@ -164,10 +181,37 @@ export class CollectionDetail extends LiteElement {
               await this.deleteCollection();
               this.openDialogName = undefined;
             }}
-            >Delete Collection</sl-button
+            >${msg("Delete Collection")}</sl-button
           >
         </div>
       </btrix-dialog>
+      <btrix-collection-items-dialog
+        orgId=${this.orgId}
+        collectionId=${this.collectionId}
+        .authState=${this.authState}
+        ?isCrawler=${this.isCrawler}
+        ?open=${this.openDialogName === "editItems"}
+        @sl-hide=${() => (this.openDialogName = undefined)}
+        @btrix-collection-saved=${() => {
+          this.fetchCollection();
+          this.fetchArchivedItems();
+        }}
+      >
+      </btrix-collection-items-dialog>
+      ${when(
+        this.collection,
+        () => html`
+          <btrix-collection-metadata-dialog
+            orgId=${this.orgId}
+            .authState=${this.authState}
+            .collection=${this.collection!}
+            ?open=${this.openDialogName === "editMetadata"}
+            @sl-hide=${() => (this.openDialogName = undefined)}
+            @btrix-collection-saved=${() => this.fetchCollection()}
+          >
+          </btrix-collection-metadata-dialog>
+        `
+      )}
       ${this.renderShareDialog()}`;
   }
 
@@ -183,7 +227,7 @@ export class CollectionDetail extends LiteElement {
       <btrix-dialog
         .label=${msg("Share Collection")}
         .open=${this.showShareInfo}
-        @sl-request-close=${() => (this.showShareInfo = false)}
+        @sl-hide=${() => (this.showShareInfo = false)}
         style="--width: 32rem;"
       >
         ${
@@ -353,14 +397,13 @@ export class CollectionDetail extends LiteElement {
           >${msg("Actions")}</sl-button
         >
         <sl-menu>
-          <sl-menu-item
-            @click=${() =>
-              this.navTo(
-                `${this.orgBasePath}/collections/edit/${this.collectionId}`
-              )}
-          >
-            <sl-icon name="gear" slot="prefix"></sl-icon>
-            ${msg("Edit Collection")}
+          <sl-menu-item @click=${() => (this.openDialogName = "editMetadata")}>
+            <sl-icon name="pencil" slot="prefix"></sl-icon>
+            ${msg("Edit Metadata")}
+          </sl-menu-item>
+          <sl-menu-item @click=${() => (this.openDialogName = "editItems")}>
+            <sl-icon name="ui-checks" slot="prefix"></sl-icon>
+            ${msg("Select Archived Items")}
           </sl-menu-item>
           <sl-divider></sl-divider>
           ${!this.collection?.isPublic
@@ -481,8 +524,7 @@ export class CollectionDetail extends LiteElement {
                 <sl-icon-button
                   class="text-base"
                   name="pencil"
-                  href=${`${this.orgBasePath}/collections/edit/${this.collectionId}#metadata`}
-                  @click=${this.navLink}
+                  @click=${() => (this.openDialogName = "editMetadata")}
                   label=${msg("Edit description")}
                 ></sl-icon-button>
               `
@@ -535,11 +577,6 @@ export class CollectionDetail extends LiteElement {
       </section>
     `;
   }
-
-  private renderOverview = () => html`
-    ${this.renderReplay()}
-    <div class="my-7">${this.renderDescription()}</div>
-  `;
 
   private renderArchivedItems = () => html`<section>
     ${when(
@@ -595,20 +632,12 @@ export class CollectionDetail extends LiteElement {
   }
 
   private renderEmptyState() {
-    if (this.archivedItems?.page && this.archivedItems?.page > 1) {
-      return html`
-        <div class="border-t border-b py-5">
-          <p class="text-center text-neutral-500">
-            ${msg("Could not find page.")}
-          </p>
-        </div>
-      `;
-    }
-
     return html`
-      <div class="border-t border-b py-5">
+      <div class="border rounded p-5">
         <p class="text-center text-neutral-500">
-          ${msg("No matching web captures found.")}
+          ${this.archivedItems?.page && this.archivedItems?.page > 1
+            ? msg("Page not found.")
+            : msg("This Collection doesn’t have any archived items, yet.")}
         </p>
       </div>
     `;
@@ -636,7 +665,11 @@ export class CollectionDetail extends LiteElement {
       </btrix-crawl-list-item>
     `;
 
-  private renderReplay() {
+  private renderReplay = () => {
+    if (!this.collection?.crawlCount) {
+      return this.renderEmptyState();
+    }
+
     const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
@@ -644,22 +677,17 @@ export class CollectionDetail extends LiteElement {
     return html`<section>
       <main>
         <div class="aspect-4/3 border rounded-lg overflow-hidden">
-          ${guard(
-            [replaySource],
-            () => html`
-              <replay-web-page
-                source=${replaySource}
-                replayBase="/replay/"
-                config="${config}"
-                noSandbox="true"
-                noCache="true"
-              ></replay-web-page>
-            `
-          )}
+          <replay-web-page
+            source=${replaySource}
+            replayBase="/replay/"
+            config="${config}"
+            noSandbox="true"
+            noCache="true"
+          ></replay-web-page>
         </div>
       </main>
     </section>`;
-  }
+  };
 
   private async checkTruncateDescription() {
     await this.updateComplete;

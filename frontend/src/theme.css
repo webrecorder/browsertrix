@@ -23,6 +23,9 @@
     --font-monospace-variation: "MONO" 1, "CASL" 0, "slnt" 0, "CRSV" 0;
     --font-size-base: 1rem;
 
+    /* Custom screen widths */
+    --btrix-screen-lg: 1124px; /* Should match tailwind.config.screens.lg */
+
     /*
      * Shoelace Theme Tokens
      */

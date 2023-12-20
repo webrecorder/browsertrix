@@ -13,6 +13,12 @@ export class Dialog extends SlDialog {
   static styles = [
     dialogStyles,
     css`
+      :host {
+        --header-spacing: var(--sl-spacing-medium);
+        --body-spacing: var(--sl-spacing-medium);
+        --footer-spacing: var(--sl-spacing-medium);
+      }
+
       .dialog__panel {
         overflow: hidden;
       }

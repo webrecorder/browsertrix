@@ -77,20 +77,15 @@ export class MarkdownEditor extends LitElement {
               https://github.com/portive/wysimark/issues/10 */
               /* Editor container: */
               .markdown-editor > div {
-                /* overflow: hidden; */
+                overflow: hidden;
                 border-radius: var(--sl-input-border-radius-medium);
                 font-family: var(--sl-font-sans);
                 font-size: 1rem;
               }
-              /* Dropdown appended to body: */
-              .--icon svg {
-                top: 0 !important;
-              }
               /* Hide unsupported button features */
-              /* Text styles: */
-              .markdown-editor > div > div > div:nth-child(5),
-              /* Table: */
-              .markdown-editor > div > div > div:nth-child(9) {
+              /* Table, images: */
+              .markdown-editor > div > div > div > div:nth-child(9),
+              .markdown-editor > div > div > div > div:nth-child(10) {
                 display: none !important;
               }
               .markdown-editor div[role="textbox"] {
@@ -113,6 +108,7 @@ export class MarkdownEditor extends LitElement {
   private initEditor() {
     const editor = createWysimark(this.querySelector(".markdown-editor")!, {
       initialMarkdown: this.initialValue,
+      minHeight: "12rem",
       onChange: async () => {
         const value = editor.getMarkdown();
         const input = this.querySelector(

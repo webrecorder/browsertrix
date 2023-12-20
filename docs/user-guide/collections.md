@@ -9,7 +9,7 @@ Collections are the primary way of organizing and combining archived items into 
 
 ## Adding Content to Collections
 
-Crawls and uploads can be added to a collection as part of the initial creation process or after creation by selecting _Edit Collection_ from the collection's actions menu.
+Crawls and uploads can be added to a collection after creation by selecting _Select Archived Items_ from the collection's actions menu.
 
 A crawl workflow can also be set to [automatically add any completed archived items to a collection](../workflow-setup/#collection-auto-add) in the workflow's settings.
 

@@ -17,8 +17,6 @@ import "./workflows-new";
 import "./crawl-detail";
 import "./crawls-list";
 import "./collections-list";
-import "./collections-new";
-import "./collection-edit";
 import "./collection-detail";
 import "./browser-profiles-detail";
 import "./browser-profiles-list";
@@ -36,6 +34,7 @@ import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import { type TemplateResult } from "lit";
 import { APIError } from "@/utils/api";
+import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -457,23 +456,31 @@ export class Org extends LiteElement {
           .authState=${this.authState}
           orgId=${this.orgId}
           ?open=${this.openDialogName === "browser-profile"}
+          @sl-hide=${() => (this.openDialogName = undefined)}
         >
         </btrix-new-browser-profile-dialog>
         <btrix-new-workflow-dialog
           orgId=${this.orgId}
           ?open=${this.openDialogName === "workflow"}
+          @sl-hide=${() => (this.openDialogName = undefined)}
           @select-job-type=${(e: SelectJobTypeEvent) => {
             this.openDialogName = undefined;
             this.navTo(`${this.orgBasePath}/workflows?new&jobType=${e.detail}`);
           }}
         >
         </btrix-new-workflow-dialog>
-        <btrix-new-collection-dialog
-          .authState=${this.authState}
+        <btrix-collection-metadata-dialog
           orgId=${this.orgId}
+          .authState=${this.authState}
           ?open=${this.openDialogName === "collection"}
+          @sl-hide=${() => (this.openDialogName = undefined)}
+          @btrix-collection-saved=${(e: CollectionSavedEvent) => {
+            this.navTo(
+              `${this.orgBasePath}/collections/view/${e.detail.id}/items`
+            );
+          }}
         >
-        </btrix-new-collection-dialog>
+        </btrix-collection-metadata-dialog>
       </div>
     `;
   }
@@ -592,15 +599,6 @@ export class Org extends LiteElement {
 
   private renderCollections() {
     if (this.params.collectionId) {
-      if (this.orgPath.includes(`/edit/${this.params.collectionId}`)) {
-        return html`<btrix-collection-edit
-          .authState=${this.authState!}
-          orgId=${this.orgId}
-          collectionId=${this.params.collectionId}
-          ?isCrawler=${this.isCrawler}
-        ></btrix-collection-edit>`;
-      }
-
       return html`<btrix-collection-detail
         .authState=${this.authState!}
         orgId=${this.orgId}
