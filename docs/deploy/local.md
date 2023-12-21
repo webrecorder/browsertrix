@@ -6,12 +6,11 @@ To try out the latest release of Browsertrix Cloud on your local machine, you'll
 
 Before running Browsertrix Cloud, you'll need to set up a running [Kubernetes](https://kubernetes.io/) cluster.
 
-Today, there are numerous ways to deploy Kubernetes fairly easily, and we recommend trying one of the single-node options, which include Docker Desktop, microk8s, minikube and k3s.
+Today, there are numerous ways to deploy Kubernetes fairly easily, and we recommend trying one of the single-node options, which include Docker Desktop, microk8s, minikube, and k3s.
 
-The instructions below assume you have the local package managers for your platform (eg. `brew` for macOS, `choco` for Windows, etc...) already installed.
+The instructions below assume a local package manager for your platform (eg. `brew` for macOS, `choco` for Windows, etc...) is already installed.
 
-Cloning the repository at [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud) is only needed
-to access additional configuration files.
+Cloning the repository at [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud) is only needed to access additional configuration files.
 
 Here are some environment specific instructions for setting up a local cluster from different Kubernetes vendors:
 
@@ -21,49 +20,48 @@ Here are some environment specific instructions for setting up a local cluster f
 
     1. [Install Docker Desktop](https://www.docker.com/products/docker-desktop/) if not already installed.
 
-    2. From the Dashboard app, ensure `Enable Kubernetes` is checked from the Preferences screen.
+    2. Under Settings > Kubernetes, ensure _Enable Kubernetes_ is checked.
 
     3. Restart Docker Desktop if asked, and wait for it to fully restart.
 
-    4. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (macOS) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
+    4. Install [Helm](https://helm.sh/), with `#!sh brew install helm` (macOS) or `#!powershell choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
 
 ??? info "MicroK8S (recommended for Ubuntu)"
 
-    For Ubuntu and other linux distros, we recommend using MicroK8S for both local deployment and production.
+    For Ubuntu and other Linux distros, we recommend using MicroK8S for both local deployment and production.
 
-    1. Install MicroK8s, by running `sudo snap install microk8s --classic` [see more detailed instructions here](https://microk8s.io/docs/getting-started) or [alternate installation instructions here](https://microk8s.io/docs/install-alternatives)
+    1. Install MicroK8s, by running `#!sh sudo snap install microk8s --classic` [see more detailed instructions here](https://microk8s.io/docs/getting-started) or [alternate installation instructions here](https://microk8s.io/docs/install-alternatives).
 
-    2. Install the following addons `microk8s enable dns hostpath-storage registry helm3`. (For production, also add `ingress cert-manager` to the list of addons)
+    2. Install the following addons: `#!sh microk8s enable dns hostpath-storage registry helm3`. (For production, also add `ingress cert-manager` to the list of addons)
 
-    3. Wait for add-ons to finish installing with `microk8s status --wait-ready`
+    3. Wait for add-ons to finish installing with `#!sh microk8s status --wait-ready`
 
-    Note: microk8s comes with its own version helm, so you don't need to install it separately. Replace `helm` with `microk8s helm3` in the subsequent instructions below.
+    **Note:** microk8s comes with its own version helm, so you don't need to install it separately. Replace `helm` with `microk8s helm3` in the subsequent instructions below.
 
 ??? info "Minikube (Windows, macOS, or Linux)"
 
     1. Install Minikube [following installation instructions](https://minikube.sigs.k8s.io/docs/start/), eg. `brew install minikube`.
        Note that Minikube also requires Docker or another container management system to be installed as well.
 
-    2. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (macOS) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
+    2. Install [Helm](https://helm.sh/), with `!sh brew install helm` (macOS) or `#!powershell choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
 
 
 ??? info "K3S (recommended for non-Ubuntu Linux)"
 
     1. Install K3s [as per the instructions](https://docs.k3s.io/quick-start)
 
-    2. Install [Helm](https://helm.sh/), which can be installed with `brew install helm` (macOS) or `choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
+    2. Install [Helm](https://helm.sh/), with `#!sh brew install helm` (macOS) or `#!powershell choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
 
     3. Set `KUBECONFIG` to point to the config for K3S: `export KUBECONFIG=/etc/rancher/k3s/k3s.yaml` to ensure Helm will use the correct version.
 
 ## Launching Browsertrix Cloud with Helm
 
-Once you have a running Kubernetes cluster with one of the options above, and Helm 3 installed, you can install the latest release of Browsertrix Cloud
-directly from the latest GitHub release.
+Once you have a running Kubernetes cluster with one of the options above, and Helm 3 installed, install the latest release of Browsertrix Cloud directly from the latest GitHub release.
 
 <insert-version></insert-version>
 
 
-```
+```sh
 helm upgrade --install btrix \
 https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-VERSION.tgz
 ```
@@ -79,10 +77,10 @@ https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/brows
     https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-VERSION.tgz
     ```
 
-    Subsequent commands will also use `microk8s helm3` instead of `helm`.
+    **Note:** Subsequent commands will also use `microk8s helm3` instead of `helm`.
 
 
-The default setup includes the full Browsertrix Cloud system, with frontend, backend api, db (via MongoDB) and storage (via Minio)
+The default setup includes the full Browsertrix Cloud system, with frontend, backend api, db (via MongoDB), and storage (via Minio)
 
 An admin user with name `admin@example.com` and password `PASSW0RD!` will be automatically created.
 
@@ -97,7 +95,7 @@ You can then redeploy with these additional settings by running:
 
 <insert-version></insert-version>
 
-```
+```shell
 helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-VERSION.tgz \
 -f ./chart/examples/local-config.yaml
 ```
@@ -121,11 +119,15 @@ TEST SUITE: None
 
 After that, especially on first run, it may take a few minutes for the Browsertrix Cloud cluster to start, as all images need to be downloaded locally.
 
-You can try running the command: `kubectl wait --for=condition=ready pod --all --timeout=300s` to wait for all pods to be initialized.
+You can try running the following command to wait for all pods to be initialized: 
+
+```shell
+kubectl wait --for=condition=ready pod --all --timeout=300s
+```
 
 The command will exit when all pods have been loaded, or if there is an error and it times out.
 
-If the command succeeds, you should be able to access Browsertrix Cloud by loading: **[http://localhost:30870/](http://localhost:30870/)** in your browser.
+If the command succeeds, you should be able to access Browsertrix Cloud by loading: [http://localhost:30870/](http://localhost:30870/) in your browser.
 
 ??? info "Minikube (on macOS)"
 
@@ -136,17 +138,17 @@ If the command succeeds, you should be able to access Browsertrix Cloud by loadi
 
 ### Debugging Pod Issues
 
-If this command fails, you can also run `kubectl get pods` to see the status of each of the pods.
+If this command fails, you can also run `#!sh kubectl get pods` to see the status of each of the pods.
 
-There should be 4 pods listed: backend, frontend, minio and mongodb. If any one is not ready for a while, something may be wrong.
+There should be 4 pods listed: backend, frontend, minio, and mongodb. If any one is not ready for a while, something may be wrong.
 
-To get more details about why a pod has not started, you can run `kubectl describe <podname>` and see the latest status at the bottom.
+To get more details about why a pod has not started, run `#!sh kubectl describe <podname>` and see the latest status at the bottom.
 
 Often, the error may be obvious, such as failed to pull an image.
 
-If the pod is running, or previously ran, you can also get the logs from the container by running `kubectl logs <podname>`
+If the pod is running, or previously ran, you can also get the logs from the container by running `#!sh kubectl logs <podname>`
 
-The outputs of these commands will be helpful if you'd like to report an issue [on GitHub](https://github.com/webrecorder/browsertrix-cloud/issues)
+The outputs of these commands are helpful when reporting an issue [on GitHub](https://github.com/webrecorder/browsertrix-cloud/issues)
 
 ## Updating the Cluster
 
@@ -154,20 +156,19 @@ To update the cluster, for example to update to new version `NEWVERSION`, re-run
 
 ```shell
 helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/NEWVERSION/browsertrix-cloud-NEWVERSION.tgz
-
 ```
 
 ## Uninstalling
 
-To uninstall, run `helm uninstall btrix`.
+To uninstall, run `#!sh helm uninstall btrix`.
 
-By default, the database + storage volumes are not automatically deleted, so you can run `helm upgrade ...` again to restart the cluster in its current state.
+By default, the database + storage volumes are not automatically deleted, run `#!sh helm upgrade ...` again to restart the cluster in its current state.
 
-If you are upgrading from a previous version, and run into issues with `helm upgrade ...`, we recommend uninstalling and then re-running upgrade.
+If you are upgrading from a previous version, and run into issues with `#!sh helm upgrade ...`, we recommend uninstalling and then re-running upgrade.
 
 ## Deleting all Data
 
-To fully delete all persistent data (db + archives) created in the cluster, also run `kubectl delete pvc --all` after uninstalling.
+To fully delete all persistent data (db + archives) created in the cluster, run `#!sh kubectl delete pvc --all` after uninstalling.
 
 ## Deploying for Local Development
 
