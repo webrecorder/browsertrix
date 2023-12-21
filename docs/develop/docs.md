@@ -65,13 +65,13 @@ Webrecorder's software packages are all proper nouns and should always be capita
 
 ### Be Concise, Avoid "You Statements"
 
-Generally, people don't want to have to read documentation. When writing, try to explain concepts simply and with clear objective language. Avoid spending time referring to the reader, instead tell them what they should know. Do not use "we" to refer to communication between the author and the reader, use "we" to refer to Webrecorder.
+Generally, people don't want to have to read documentation. When writing, try to explain concepts simply and with clear objective language. Do not use "we" to refer to communication between the author and the reader, use "we" to refer to Webrecorder. "You can" or "you may" can be used, but preferably when giving supplemental advice and generally not when providing instructions that should be followed to achieve a successful outcome. Otherwise, avoid spending time referring to the reader, instead tell them what they should know.
 
 ##### Example
 
 > If you want to do x, you can click on y.
 
-Can be shortened to:
+Can often be shortened to:
 
 > To do x, click on y.
 
