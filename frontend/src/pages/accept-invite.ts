@@ -106,7 +106,7 @@ export class AcceptInvite extends LiteElement {
               html`You've been invited to join
                 <span class="text-primary break-words"
                   >${hasInviteInfo
-                    ? this.inviteInfo.orgName || msg("Browsertrix Cloud")
+                    ? this.inviteInfo.orgName || msg("Browsertrix")
                     : placeholder}</span
                 >`
             )}

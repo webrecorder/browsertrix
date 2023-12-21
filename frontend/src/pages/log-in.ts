@@ -288,7 +288,7 @@ export class LogInPage extends LiteElement {
           ? html` <div class="mt-3">
               <btrix-alert variant="warning" class="text-center"
                 >${msg(
-                  "Please wait while Browsertrix Cloud is initializing"
+                  "Please wait while Browsertrix is initializing"
                 )}</btrix-alert
               >
             </div>`
