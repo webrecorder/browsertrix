@@ -17,6 +17,7 @@ Crawl Workflows inherit the [status of the last item they created](../archived-i
 | <span class="status-success">:btrix-status-dot: Running</span>        | The crawler is finding and capturing pages! |
 | <span class="status-waiting">:btrix-status-dot: Stopping</span> | A user has instructed this workflow to stop. Finishing capture of the current pages.|
 | <span class="status-waiting">:btrix-status-dot: Finishing Crawl</span> | The workflow has finished crawling and data is being packaged into WACZ files.|
+| <span class="status-waiting">:btrix-status-dot: Uploading WACZ</span> | WACZ files have been created and are being transferred to storage.|
 
 ## Running Crawl Workflows
 
