@@ -7,7 +7,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Browsertrix Cloud Version
+      label: Browsertrix Version
       description: This can be found in the site footer
       placeholder: "v1.5.0-beta.0-67d0c6a"
     validations:
@@ -38,6 +38,6 @@ body:
   - type: textarea
     attributes:
       label: Additional details
-      description: Add any other relevant information here, such as your local environment if you are running Browsertrix Cloud locally.
+      description: Add any other relevant information here, such as your local environment if you are running Browsertrix locally.
     validations:
       required: false
