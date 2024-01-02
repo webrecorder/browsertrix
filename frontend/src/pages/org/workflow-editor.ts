@@ -1643,7 +1643,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${this.renderFormCol(html`
         <sl-input
           name="userAgent"
-          label=${msg("Custom User Agent")}
+          label=${msg("User Agent")}
           autocomplete="off"
           placeholder=${msg(
             "Mozilla/5.0 (<system-information>) <platform> (<platform-details>) <extensions>"

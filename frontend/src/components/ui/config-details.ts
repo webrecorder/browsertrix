@@ -224,7 +224,7 @@ export class ConfigDetails extends LiteElement {
             crawlConfig?.config.userAgent,
             () => html`
               ${this.renderSetting(
-                msg("Custom User Agent"),
+                msg("User Agent"),
                 crawlConfig?.config.userAgent
               )}
             `
