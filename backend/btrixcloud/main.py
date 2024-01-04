@@ -10,6 +10,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
 
+from fastapi_profiler import PyInstrumentProfilerMiddleware
+
 from .db import init_db, await_db_and_migrations, update_and_prepare_db
 
 from .emailsender import EmailSender
@@ -39,6 +41,8 @@ app_root = FastAPI(
     redoc_url=API_PREFIX + "/redoc",
     openapi_url=API_PREFIX + "/openapi.json",
 )
+
+app_root.add_middleware(PyInstrumentProfilerMiddleware)
 
 db_inited = {"inited": False}
 
