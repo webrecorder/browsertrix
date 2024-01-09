@@ -10,7 +10,10 @@ import { type AuthState } from "@/utils/AuthService";
 import type { CrawlState, ArchivedItem } from "@/types/crawler";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { type SelectEvent } from "@/components/ui/search-combobox";
+import { merge, remove } from "immutable";
 
+export type FilterChangeEventDetail = Partial<ArchivedItem>;
 type SearchFields = "itemName" | "workflowName" | "firstSeed";
 type SortField = "finished" | "fileSize";
 type SortDirection = "asc" | "desc";
@@ -34,6 +37,9 @@ const sortableFields: Record<
   },
 };
 
+/**
+ * @fires btrix-filter-change
+ */
 @localized()
 @customElement("btrix-item-list-controls")
 export class ItemListControls extends TailwindElement {
@@ -61,7 +67,7 @@ export class ItemListControls extends TailwindElement {
   };
 
   @state()
-  private filterBy: Partial<Record<keyof ArchivedItem, any>> = {};
+  filterBy: Partial<ArchivedItem> = {};
 
   private api = new APIController(this);
 
@@ -85,6 +91,17 @@ export class ItemListControls extends TailwindElement {
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("orgId") || changedProperties.has("itemType")) {
       this.fetchSearchValues();
+    }
+  }
+
+  protected updated(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("filterBy")) {
+      this.dispatchEvent(
+        new CustomEvent<FilterChangeEventDetail>("btrix-filter-change", {
+          detail: this.filterBy,
+          composed: true,
+        })
+      );
     }
   }
 
@@ -124,11 +141,14 @@ export class ItemListControls extends TailwindElement {
         .keyLabels=${this.fieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         placeholder=${placeholder}
-        @on-select=${(e: CustomEvent) => {
-          console.log("select");
+        @btrix-select=${(e: SelectEvent<string>) => {
+          const { key, value } = e.detail;
+          if (key) {
+            this.filterBy = merge(this.filterBy, { [key]: value });
+          }
         }}
-        @on-clear=${() => {
-          console.log("clear");
+        @btrix-clear=${() => {
+          this.filterBy = {};
         }}
       >
       </btrix-search-combobox>

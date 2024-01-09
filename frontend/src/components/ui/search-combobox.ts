@@ -17,8 +17,8 @@ const MAX_SEARCH_RESULTS = 10;
 /**
  * Fuzzy search through list of options
  *
- * @event on-select
- * @event on-clear
+ * @event btrix-select
+ * @event btrix-clear
  */
 @localized()
 @customElement("btrix-search-combobox")
@@ -99,7 +99,7 @@ export class SearchCombobox<T> extends LitElement {
           this.searchByValue = item.value;
           await this.updateComplete;
           this.dispatchEvent(
-            <SelectEvent<T>>new CustomEvent("on-select", {
+            <SelectEvent<T>>new CustomEvent("btrix-select", {
               detail: {
                 key: key,
                 value: item.value,
@@ -116,7 +116,7 @@ export class SearchCombobox<T> extends LitElement {
           @sl-clear=${() => {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
-            this.dispatchEvent(new CustomEvent("on-clear"));
+            this.dispatchEvent(new CustomEvent("btrix-clear"));
           }}
           @sl-input=${this.onSearchInput as () => void}
         >
@@ -184,7 +184,7 @@ export class SearchCombobox<T> extends LitElement {
     }
 
     if (!this.searchByValue && this.selectedKey) {
-      this.dispatchEvent(new CustomEvent("on-clear"));
+      this.dispatchEvent(new CustomEvent("btrix-clear"));
     }
   });
 }

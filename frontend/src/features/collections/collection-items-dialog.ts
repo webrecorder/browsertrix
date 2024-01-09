@@ -39,6 +39,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
 import { type SelectionChangeDetail } from "@/features/collections/collection-upload-list";
 import { NotifyController } from "@/controllers/notify";
+import { type FilterChangeEventDetail } from "../archived-items/item-list-controls";
 
 const TABS = ["crawl", "upload"] as const;
 type Tab = (typeof TABS)[number];
@@ -185,6 +186,15 @@ export class CollectionEditor extends TailwindElement {
               .authState=${this.authState}
               orgId=${this.orgId}
               itemType=${this.activeTab}
+              @btrix-filter-change=${(
+                e: CustomEvent<FilterChangeEventDetail>
+              ) => {
+                if (this.activeTab === "crawl") {
+                  this.fetchCollectionCrawls({ filterBy: e.detail });
+                } else {
+                  this.fetchCollectionUploads({ filterBy: e.detail });
+                }
+              }}
             ></btrix-item-list-controls>
           </div>
           <div
@@ -422,7 +432,8 @@ export class CollectionEditor extends TailwindElement {
     }
   }
 
-  private async fetchCollectionCrawls() {
+  private async fetchCollectionCrawls({ filterBy }: any = {}) {
+    console.log(filterBy);
     try {
       this.collectionCrawls = await this.getCrawls({
         collectionId: this.collectionId,
@@ -440,7 +451,8 @@ export class CollectionEditor extends TailwindElement {
     }
   }
 
-  private async fetchCollectionUploads() {
+  private async fetchCollectionUploads({ filterBy }: any = {}) {
+    console.log(filterBy);
     try {
       this.collectionUploads = await this.getUploads({
         collectionId: this.collectionId,
