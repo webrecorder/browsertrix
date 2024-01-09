@@ -11,9 +11,14 @@ import type { CrawlState, ArchivedItem } from "@/types/crawler";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 
-type SearchFields = "name" | "firstSeed" | "description";
+type SearchFields = "itemName" | "workflowName" | "firstSeed";
 type SortField = "finished" | "fileSize";
 type SortDirection = "asc" | "desc";
+type SearchValues = {
+  names: string[];
+  firstSeeds: string[];
+  descriptions: string[];
+};
 
 const sortableFields: Record<
   SortField,
@@ -62,15 +67,15 @@ export class ItemListControls extends TailwindElement {
 
   // For fuzzy search:
   private readonly searchKeys: SearchFields[] = [
-    "name",
+    "itemName",
+    "workflowName",
     "firstSeed",
-    "description",
   ];
 
   private readonly fieldLabels: Record<SearchFields, string> = {
-    name: msg("Name"),
+    itemName: msg("Item Name"),
+    workflowName: msg("Workflow Name"),
     firstSeed: msg("Crawl Start URL"),
-    description: msg("Description"),
   };
 
   private get selectedSearchFilterKey() {
@@ -108,13 +113,17 @@ export class ItemListControls extends TailwindElement {
   }
 
   private renderSearch() {
+    const placeholder =
+      this.itemType === "crawl"
+        ? msg("Start typing to search crawls or workflows")
+        : msg("Start typing to search uploads");
     return html`
       <btrix-search-combobox
         .searchKeys=${this.searchKeys}
         .searchOptions=${this.searchOptions}
         .keyLabels=${this.fieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
-        placeholder=${msg("Start typing to search items")}
+        placeholder=${placeholder}
         @on-select=${(e: CustomEvent) => {
           console.log("select");
         }}
@@ -210,23 +219,27 @@ export class ItemListControls extends TailwindElement {
       const query = queryString.stringify({
         crawlType: this.itemType,
       });
-      const data: {
-        names: string[];
-        descriptions: string[];
-        firstSeeds: string[];
-      } = await this.api.fetch(
-        `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
-        this.authState!
-      );
+      const [itemsValues, workflowsValues] = await Promise.all<
+        Promise<SearchValues>[]
+      >([
+        this.api.fetch(
+          `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
+          this.authState!
+        ),
+        this.api.fetch(
+          `/orgs/${this.orgId}/crawlconfigs/search-values?${query}`,
+          this.authState!
+        ),
+      ]);
 
       // Update search/filter collection
       const toSearchItem = (key: SearchFields) => (value: string) => ({
         [key]: value,
       });
       this.searchOptions = [
-        ...data.names.map(toSearchItem("name")),
-        ...data.firstSeeds.map(toSearchItem("firstSeed")),
-        ...data.descriptions.map(toSearchItem("description")),
+        ...itemsValues.names.map(toSearchItem("itemName")),
+        ...workflowsValues.names.map(toSearchItem("workflowName")),
+        ...itemsValues.firstSeeds.map(toSearchItem("firstSeed")),
       ];
     } catch (e) {
       console.debug(e);
