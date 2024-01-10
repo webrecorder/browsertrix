@@ -4,6 +4,8 @@ import time
 import io
 import zipfile
 import re
+import csv
+import codecs
 
 from .conftest import API_PREFIX, HOST_PREFIX
 from .test_collections import UPDATED_NAME as COLLECTION_NAME
@@ -295,6 +297,81 @@ def test_update_crawl(
     data = r.json()
     assert data["tags"] == []
     assert not data["description"]
+
+
+def test_crawl_stats_all_orgs_not_superadmin(crawler_auth_headers):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/all/crawls/stats", headers=crawler_auth_headers
+    )
+    assert r.status_code == 403
+
+
+def test_crawl_stats_all_orgs(admin_auth_headers):
+    with requests.get(
+        f"{API_PREFIX}/orgs/all/crawls/stats", headers=admin_auth_headers, stream=True
+    ) as r:
+        assert r.status_code == 200
+
+        # Wait for stream content
+        if not r.content:
+            while True:
+                if r.content:
+                    break
+                time.sleep(5)
+
+        buffer = r.iter_lines()
+        for row in csv.DictReader(
+            codecs.iterdecode(buffer, "utf-8"), skipinitialspace=True
+        ):
+            assert row["id"]
+            assert row["oid"]
+            assert row["org"]
+            assert row["cid"]
+            assert row["name"] or row["name"] == ""
+            assert row["state"]
+            assert row["userid"]
+            assert row["user"]
+            assert row["started"]
+            assert row["finished"] or row["finished"] is None
+            assert row["duration"] or row["duration"] == 0
+            assert row["pages"] or row["pages"] == 0
+            assert row["filesize"] or row["filesize"] == 0
+            assert row["avg_page_time"] or row["avg_page_time"] == 0
+
+
+def test_crawl_stats(crawler_auth_headers, default_org_id):
+    with requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/stats",
+        headers=crawler_auth_headers,
+        stream=True,
+    ) as r:
+        assert r.status_code == 200
+
+        # Wait for stream content
+        if not r.content:
+            while True:
+                if r.content:
+                    break
+                time.sleep(5)
+
+        buffer = r.iter_lines()
+        for row in csv.DictReader(
+            codecs.iterdecode(buffer, "utf-8"), skipinitialspace=True
+        ):
+            assert row["id"]
+            assert row["oid"] == default_org_id
+            assert row["org"]
+            assert row["cid"]
+            assert row["name"] or row["name"] == ""
+            assert row["state"]
+            assert row["userid"]
+            assert row["user"]
+            assert row["started"]
+            assert row["finished"] or row["finished"] is None
+            assert row["duration"] or row["duration"] == 0
+            assert row["pages"] or row["pages"] == 0
+            assert row["filesize"] or row["filesize"] == 0
+            assert row["avg_page_time"] or row["avg_page_time"] == 0
 
 
 def test_delete_crawls_crawler(

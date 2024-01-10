@@ -1,6 +1,7 @@
 """
 Organization API handling
 """
+# pylint: disable=too-many-lines
 import math
 import os
 import time
@@ -653,7 +654,7 @@ class OrgOps:
         slugs = await self.orgs.distinct("slug", {})
         return {"slugs": slugs}
 
-    async def get_all_org_slugs_with_ids(self):
+    async def get_org_slugs_by_ids(self):
         """Return dict with {id: slug} for all orgs."""
         slug_id_map = {}
         async for org in self.orgs.find({}):
@@ -933,6 +934,6 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     async def get_all_org_slugs_with_ids(user: User = Depends(user_dep)):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
-        return await ops.get_all_org_slugs_with_ids()
+        return await ops.get_org_slugs_by_ids()
 
     return ops
