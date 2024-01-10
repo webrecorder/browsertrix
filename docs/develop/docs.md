@@ -55,7 +55,7 @@ Webrecorder has a number of common nouns that we use in our products. Examples i
 ##### Example
 
 When starting a sentence:
-> Archived Items consist of one or more...
+> Archived items consist of one or more...
 
 In the middle of a sentence:
 
