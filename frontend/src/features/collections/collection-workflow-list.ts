@@ -45,14 +45,6 @@ export class CollectionWorkflowList extends TailwindElement {
       --border: 1px solid var(--sl-panel-border-color);
     }
 
-    sl-tree-item.workflow:not(.selectable)::part(base) {
-      cursor: default;
-    }
-
-    sl-tree-item.workflow:not(.selectable)::part(checkbox) {
-      visibility: hidden;
-    }
-
     sl-tree-item::part(expand-button) {
       /* Move expand button to end */
       order: 2;
@@ -79,6 +71,14 @@ export class CollectionWorkflowList extends TailwindElement {
 
     sl-tree-item::part(checkbox) {
       padding: var(--sl-spacing-small);
+    }
+
+    /* Add disabled styles only to checkbox */
+    sl-tree-item::part(item--disabled) {
+      opacity: 1;
+    }
+    sl-tree-item.workflow:not(.selectable)::part(checkbox) {
+      opacity: 0;
     }
 
     sl-tree > sl-tree-item:not([expanded])::part(item) {
@@ -172,8 +172,10 @@ export class CollectionWorkflowList extends TailwindElement {
     >
       <sl-icon slot="expand-icon" name="chevron-double-down"></sl-icon>
       <sl-icon slot="collapse-icon" name="chevron-double-left"></sl-icon>
-      ${workflowWithCrawls.map(({ workflow, crawls }) =>
-        this.renderWorkflow(workflow, crawls)
+      ${repeat(
+        workflowWithCrawls,
+        ({ workflow }) => workflow.id,
+        (item) => this.renderWorkflow(item.workflow, item.crawls)
       )}
     </sl-tree>`;
   };
@@ -190,7 +192,10 @@ export class CollectionWorkflowList extends TailwindElement {
           workflow: true,
           selectable: crawlCount > 0,
         })}
-        .selectable=${crawlCount > 0}
+        ?selected=${selectedCrawlCount > 0 && selectedCrawlCount === crawlCount}
+        .indeterminate=${selectedCrawlCount > 0 &&
+        selectedCrawlCount < crawlCount}
+        ?disabled=${crawlCount < 1}
         @click=${(e: MouseEvent) => {
           if (!crawlCount) {
             // Prevent selection since we're just allowing auto-add

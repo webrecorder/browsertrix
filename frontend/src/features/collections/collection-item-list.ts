@@ -3,7 +3,7 @@ import { customElement, property, queryAll } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { type SlCheckbox } from "@shoelace-style/shoelace";
 
-import type { Upload } from "@/types/crawler";
+import type { ArchivedItem } from "@/types/crawler";
 import type { TableRow } from "@/components/ui/table/table-row";
 
 export type SelectionChangeDetail = {
@@ -18,8 +18,8 @@ export type SelectionChangeDetail = {
  * @fires btrix-selection-change
  */
 @localized()
-@customElement("btrix-collection-upload-list")
-export class CollectionUploadList extends LitElement {
+@customElement("btrix-collection-item-list")
+export class CollectionItemList extends LitElement {
   static styles = css`
     :host {
       --border: var(--sl-panel-border-width) solid var(--sl-panel-border-color);
@@ -82,7 +82,7 @@ export class CollectionUploadList extends LitElement {
   collectionId = "";
 
   @property({ type: Array })
-  items: Upload[] = [];
+  items: ArchivedItem[] = [];
 
   @queryAll("btrix-table-row")
   rows!: NodeListOf<TableRow>;
@@ -95,26 +95,25 @@ export class CollectionUploadList extends LitElement {
           >${msg("Name")}</btrix-table-header-cell
         >
         <btrix-table-header-cell slot="head"
-          >${msg("Date Uploaded")}</btrix-table-header-cell
+          >${msg("Date Created")}</btrix-table-header-cell
         >
         <btrix-table-header-cell slot="head"
           >${msg("Size")}</btrix-table-header-cell
         >
         <btrix-table-header-cell slot="head"
-          >${msg("Uploaded By")}</btrix-table-header-cell
+          >${msg("Created By")}</btrix-table-header-cell
         >
         ${this.items.map(this.renderRow)}
       </btrix-table>
     `;
   }
 
-  private renderRow = (item: Upload) => {
+  private renderRow = (item: ArchivedItem) => {
     const isInCollection = item.collectionIds.includes(this.collectionId);
     return html`
       <btrix-table-row
         class="itemRow"
         tabindex="0"
-        data-upload-id=${item.id}
         @click=${(e: MouseEvent) => {
           (e.currentTarget as TableRow).querySelector("sl-checkbox")?.click();
         }}
@@ -163,8 +162,8 @@ export class CollectionUploadList extends LitElement {
     `;
   };
 
-  private renderName(item: Upload) {
+  private renderName(item: ArchivedItem) {
     if (item.name) return html`<span class="truncate">${item.name}</span>`;
-    return html`<span class="truncate">${msg("(unnamed upload)")}</span>`;
+    return html`<span class="truncate">${msg("(unnamed item)")}</span>`;
   }
 }

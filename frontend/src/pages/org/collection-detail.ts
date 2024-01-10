@@ -34,6 +34,9 @@ export class CollectionDetail extends LiteElement {
   orgId!: string;
 
   @property({ type: String })
+  userId!: string;
+
+  @property({ type: String })
   collectionId!: string;
 
   @property({ type: String })
@@ -188,6 +191,7 @@ export class CollectionDetail extends LiteElement {
       </btrix-dialog>
       <btrix-collection-items-dialog
         orgId=${this.orgId}
+        userId=${this.userId}
         collectionId=${this.collectionId}
         collectionName=${this.collection?.name || ""}
         .authState=${this.authState}

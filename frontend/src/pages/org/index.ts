@@ -602,6 +602,7 @@ export class Org extends LiteElement {
       return html`<btrix-collection-detail
         .authState=${this.authState!}
         orgId=${this.orgId}
+        userId=${this.userInfo!.id}
         collectionId=${this.params.collectionId}
         collectionTab=${(this.params.collectionTab as CollectionTab) ||
         "replay"}

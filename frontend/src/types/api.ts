@@ -21,5 +21,5 @@ export type APIPaginationQuery = {
 
 export type APISortQuery = {
   sortBy?: string;
-  sortDirection?: -1 | 1;
+  sortDirection?: number; // -1 | 1
 };

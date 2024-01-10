@@ -2,100 +2,81 @@ import { html, css, type PropertyValues } from "lit";
 import { state, property, query, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
-import queryString from "query-string";
+import { type SlSelect } from "@shoelace-style/shoelace";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { APIController } from "@/controllers/api";
-import { type AuthState } from "@/utils/AuthService";
-import type { CrawlState, ArchivedItem } from "@/types/crawler";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { type SelectEvent } from "@/components/ui/search-combobox";
-import { merge, remove } from "immutable";
+import { merge } from "immutable";
 
-export type FilterChangeEventDetail = Partial<ArchivedItem>;
-type SearchFields = "itemName" | "workflowName" | "firstSeed";
-type SortField = "finished" | "fileSize";
-type SortDirection = "asc" | "desc";
-type SearchValues = {
+type FilterBy = Partial<Record<string, string>>;
+export type SearchValues = {
   names: string[];
   firstSeeds: string[];
   descriptions: string[];
 };
-
-const sortableFields: Record<
-  SortField,
-  { label: string; defaultDirection?: SortDirection }
-> = {
-  finished: {
-    label: msg("Date Created"),
-    defaultDirection: "desc",
-  },
-  fileSize: {
-    label: msg("Size"),
-    defaultDirection: "desc",
-  },
+export type SortOptions = {
+  field: string;
+  label: string;
+  defaultDirection: number;
+}[];
+export type SortBy = {
+  field: string;
+  direction: number;
 };
+export type FilterChangeEventDetail = FilterBy;
+export type SortChangeEventDetail = Partial<SortBy>;
 
 /**
  * @fires btrix-filter-change
+ * @fires btrix-sort-change
  */
 @localized()
 @customElement("btrix-item-list-controls")
 export class ItemListControls extends TailwindElement {
   static styles = css``;
 
+  @property({ type: Array })
+  searchKeys: string[] = ["name"];
+
   @property({ type: Object })
-  authState!: AuthState;
+  keyLabels?: { [key: string]: string };
 
-  @property({ type: String })
-  orgId!: string;
+  @property({ type: Object })
+  searchValues?: SearchValues;
 
-  @property({ type: String })
-  itemType: ArchivedItem["type"] = null;
+  @property({ type: Array })
+  sortOptions: SortOptions = [];
 
-  @state()
-  private searchOptions: Partial<Record<SearchFields, string>>[] = [];
-
-  @state()
-  private orderBy: {
-    field: SortField;
-    direction: SortDirection;
-  } = {
-    field: "finished",
-    direction: sortableFields["finished"].defaultDirection!,
-  };
+  @property({ type: Object })
+  sortBy?: SortBy;
 
   @state()
-  filterBy: Partial<ArchivedItem> = {};
+  private searchOptions: FilterBy[] = [];
 
-  private api = new APIController(this);
-
-  // For fuzzy search:
-  private readonly searchKeys: SearchFields[] = [
-    "itemName",
-    "workflowName",
-    "firstSeed",
-  ];
-
-  private readonly fieldLabels: Record<SearchFields, string> = {
-    itemName: msg("Item Name"),
-    workflowName: msg("Workflow Name"),
-    firstSeed: msg("Crawl Start URL"),
-  };
+  @state()
+  filterBy: FilterBy = {};
 
   private get selectedSearchFilterKey() {
     return this.searchKeys.find((key) => Boolean((this.filterBy as any)[key]));
   }
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("orgId") || changedProperties.has("itemType")) {
-      this.fetchSearchValues();
+    if (changedProperties.has("searchValues") && this.searchValues) {
+      // Update search/filter collection
+      const toSearchItem = (key: string) => (value: string) => ({
+        [key]: value,
+      });
+      this.searchOptions = [
+        ...this.searchValues.names.map(toSearchItem("name")),
+        ...this.searchValues.firstSeeds.map(toSearchItem("firstSeed")),
+      ];
     }
   }
 
   protected updated(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("filterBy")) {
+    if (changedProperties.get("filterBy")) {
       this.dispatchEvent(
         new CustomEvent<FilterChangeEventDetail>("btrix-filter-change", {
           detail: this.filterBy,
@@ -107,40 +88,23 @@ export class ItemListControls extends TailwindElement {
 
   render() {
     return html`
-      <div
-        @sl-hide=${(e: CustomEvent) => {
-          // Prevent closing dialogs when dropdowns close
-          e.stopPropagation();
-        }}
-      >
+      <div @sl-hide=${this.stopProp} @sl-after-hide=${this.stopProp}>
         <div class="flex flex-wrap items-center md:justify-end gap-x-5 gap-y-3">
           <div class="flex-1">${this.renderSearch()}</div>
-          ${this.renderStatusFilter()}
-        </div>
-        <div
-          class="flex flex-wrap items-center md:justify-between gap-x-5 gap-y-3 mt-3"
-        >
           ${this.renderSort()}
-          <div class="flex gap-x-5 gap-y-3">
-            ${this.renderCollectionToggle()} ${this.renderMineToggle()}
-          </div>
         </div>
       </div>
     `;
   }
 
   private renderSearch() {
-    const placeholder =
-      this.itemType === "crawl"
-        ? msg("Start typing to search crawls or workflows")
-        : msg("Start typing to search uploads");
     return html`
       <btrix-search-combobox
         .searchKeys=${this.searchKeys}
+        .keyLabels=${this.keyLabels}
         .searchOptions=${this.searchOptions}
-        .keyLabels=${this.fieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
-        placeholder=${placeholder}
+        placeholder=${msg("Start typing to search by name")}
         @btrix-select=${(e: SelectEvent<string>) => {
           const { key, value } = e.detail;
           if (key) {
@@ -179,11 +143,9 @@ export class ItemListControls extends TailwindElement {
   }
 
   private renderSort() {
-    const options = Object.entries(sortableFields).map(
-      ([value, { label }]) => html`
-        <sl-option value=${value}>${label}</sl-option>
-      `
-    );
+    if (!this.sortBy) {
+      return;
+    }
 
     return html`
       <div class="flex items-center gap-2">
@@ -193,76 +155,50 @@ export class ItemListControls extends TailwindElement {
             class="flex-1"
             size="small"
             pill
-            value=${this.orderBy.field}
-            @sl-change=${async (e: CustomEvent) => {}}
+            value=${this.sortBy.field}
+            @sl-change=${(e: CustomEvent) => {
+              e.stopPropagation();
+              this.dispatchEvent(
+                new CustomEvent<SortChangeEventDetail>("btrix-sort-change", {
+                  detail: {
+                    field: (e.target as SlSelect).value as string,
+                  },
+                  composed: true,
+                })
+              );
+            }}
           >
-            ${options}
+            ${this.sortOptions.map(
+              ({ field, label }) => html`
+                <sl-option value=${field}>${label}</sl-option>
+              `
+            )}
           </sl-select>
           <sl-icon-button
             name="arrow-down-up"
             label=${msg("Reverse sort")}
-            @click=${() => {}}
+            @click=${() => {
+              this.dispatchEvent(
+                new CustomEvent<SortChangeEventDetail>("btrix-sort-change", {
+                  detail: {
+                    direction: this.sortBy ? this.sortBy.direction * -1 : -1,
+                  },
+                  composed: true,
+                })
+              );
+            }}
           ></sl-icon-button>
         </div>
       </div>
     `;
   }
 
-  private renderCollectionToggle() {
-    return html`
-      <label class="flex items-center gap-2">
-        <div class="text-neutral-500">${msg("Show only in Collection")}</div>
-        <sl-switch
-          class="flex"
-          size="small"
-          @sl-change=${(e: CustomEvent) => {}}
-        ></sl-switch>
-      </label>
-    `;
-  }
-
-  private renderMineToggle() {
-    return html`
-      <label class="flex items-center gap-2">
-        <div class="text-neutral-500">${msg("Only mine")}</div>
-        <sl-switch
-          class="flex"
-          size="small"
-          @sl-change=${(e: CustomEvent) => {}}
-        ></sl-switch>
-      </label>
-    `;
-  }
-
-  private async fetchSearchValues() {
-    try {
-      const query = queryString.stringify({
-        crawlType: this.itemType,
-      });
-      const [itemsValues, workflowsValues] = await Promise.all<
-        Promise<SearchValues>[]
-      >([
-        this.api.fetch(
-          `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
-          this.authState!
-        ),
-        this.api.fetch(
-          `/orgs/${this.orgId}/crawlconfigs/search-values?${query}`,
-          this.authState!
-        ),
-      ]);
-
-      // Update search/filter collection
-      const toSearchItem = (key: SearchFields) => (value: string) => ({
-        [key]: value,
-      });
-      this.searchOptions = [
-        ...itemsValues.names.map(toSearchItem("itemName")),
-        ...workflowsValues.names.map(toSearchItem("workflowName")),
-        ...itemsValues.firstSeeds.map(toSearchItem("firstSeed")),
-      ];
-    } catch (e) {
-      console.debug(e);
-    }
+  /**
+   * Stop propgation of sl-select events.
+   * Prevents bug where sl-dialog closes when dropdown closes
+   * https://github.com/shoelace-style/shoelace/issues/170
+   */
+  private stopProp(e: CustomEvent) {
+    e.stopPropagation();
   }
 }

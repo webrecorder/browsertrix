@@ -30,7 +30,7 @@ export class SearchCombobox<T> extends LitElement {
   searchKeys: string[] = [];
 
   @property({ type: Object })
-  keyLabels: { [key: string]: string } = {};
+  keyLabels?: { [key: string]: string };
 
   @property({ type: String })
   selectedKey?: string;
@@ -121,14 +121,14 @@ export class SearchCombobox<T> extends LitElement {
           @sl-input=${this.onSearchInput as () => void}
         >
           ${when(
-            this.selectedKey,
+            this.selectedKey && this.keyLabels?.[this.selectedKey as string],
             () =>
               html`<sl-tag
                 slot="prefix"
                 size="small"
                 pill
                 style="margin-left: var(--sl-spacing-3x-small)"
-                >${this.keyLabels[this.selectedKey as string]}</sl-tag
+                >${this.keyLabels![this.selectedKey as string]}</sl-tag
               >`,
             () => html`<sl-icon name="search" slot="prefix"></sl-icon>`
           )}
@@ -160,18 +160,22 @@ export class SearchCombobox<T> extends LitElement {
 
     return html`
       ${searchResults.map(({ matches }) =>
-        matches?.map(({ key, value }) =>
-          !!key && !!value
-            ? html`
-                <sl-menu-item slot="menu-item" data-key=${key} value=${value}>
-                  <sl-tag slot="prefix" size="small" pill
-                    >${this.keyLabels[key]}</sl-tag
-                  >
-                  ${value}
-                </sl-menu-item>
-              `
-            : nothing
-        )
+        matches?.map(({ key, value }) => {
+          if (!!key && !!value) {
+            const keyLabel = this.keyLabels?.[key];
+            return html`
+              <sl-menu-item slot="menu-item" data-key=${key} value=${value}>
+                ${keyLabel
+                  ? html`<sl-tag slot="prefix" size="small" pill
+                      >${keyLabel}</sl-tag
+                    >`
+                  : nothing}
+                ${value}
+              </sl-menu-item>
+            `;
+          }
+          return nothing;
+        })
       )}
     `;
   }

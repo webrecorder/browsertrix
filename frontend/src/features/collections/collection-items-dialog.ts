@@ -1,87 +1,65 @@
-import { type PropertyValues, css } from "lit";
+import { type PropertyValues, css, html } from "lit";
 import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
-import { guard } from "lit/directives/guard.js";
-import { choose } from "lit/directives/choose.js";
-import { ref } from "lit/directives/ref.js";
-import debounce from "lodash/fp/debounce";
-import { mergeDeep } from "immutable";
-import omit from "lodash/fp/omit";
-import groupBy from "lodash/fp/groupBy";
-import keyBy from "lodash/fp/keyBy";
-import orderBy from "lodash/fp/orderBy";
-import uniqBy from "lodash/fp/uniqBy";
 import difference from "lodash/fp/difference";
-import Fuse from "fuse.js";
 import queryString from "query-string";
-import type { SlMenuItem, SlTreeItem } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import type { Collection } from "@/types/collection";
-import type {
-  ArchivedItem,
-  Crawl,
-  CrawlState,
-  Upload,
-  Workflow,
-} from "@/types/crawler";
+import type { ArchivedItem, Crawl, Upload, Workflow } from "@/types/crawler";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { finishedCrawlStates } from "@/utils/crawler";
 import type { Dialog } from "@/components/ui/dialog";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
-import { type SelectionChangeDetail } from "@/features/collections/collection-upload-list";
+import { type SelectionChangeDetail } from "@/features/collections/collection-item-list";
 import { NotifyController } from "@/controllers/notify";
-import { type FilterChangeEventDetail } from "../archived-items/item-list-controls";
+import type {
+  SortChangeEventDetail,
+  FilterChangeEventDetail,
+  SearchValues,
+  SortOptions,
+  SortBy,
+} from "@/features/archived-items/item-list-controls";
 
 const TABS = ["crawl", "upload"] as const;
 type Tab = (typeof TABS)[number];
-type SearchFields = "name" | "firstSeed";
-type SearchResult = {
-  item: {
-    key: SearchFields;
-    value: string;
-  };
-};
-type SortField = "lastRun" | "modified" | "created" | "firstSeed";
-type SortDirection = "asc" | "desc";
-const sortableFields: Record<
-  SortField,
-  { label: string; defaultDirection?: SortDirection }
-> = {
-  lastRun: {
+const searchKeys = ["name", "firstSeed"];
+const workflowSortOptions: SortOptions = [
+  {
+    field: "lastRun",
     label: msg("Latest Crawl"),
-    defaultDirection: "desc",
+    defaultDirection: -1,
   },
-  modified: {
-    label: msg("Last Modified"),
-    defaultDirection: "desc",
-  },
-  created: {
-    label: msg("Created At"),
-    defaultDirection: "desc",
-  },
-  firstSeed: {
+  {
+    field: "firstSeed",
     label: msg("Crawl Start URL"),
-    defaultDirection: "asc",
+    defaultDirection: 1,
   },
-};
-
-const COLLECTION_ITEMS_PAGE_SIZE = 100;
-const WORKFLOW_PAGE_SIZE = 10;
-const UPLOADS_PAGE_SIZE = 10;
-const MIN_SEARCH_LENGTH = 2;
+];
+const itemSortOptions: SortOptions = [
+  {
+    field: "finished",
+    label: msg("Date Created"),
+    defaultDirection: -1,
+  },
+  {
+    field: "fileSize",
+    label: msg("File Size"),
+    defaultDirection: -1,
+  },
+];
+const COLLECTION_ITEMS_MAX = 1000;
+const ORG_ITEMS_PAGE_SIZE = 10;
 
 @localized()
 @customElement("btrix-collection-items-dialog")
-export class CollectionEditor extends TailwindElement {
+export class CollectionItemsDialog extends TailwindElement {
   static styles = css`
     btrix-dialog {
       --width: var(--btrix-screen-lg);
@@ -102,6 +80,9 @@ export class CollectionEditor extends TailwindElement {
 
   @property({ type: String })
   orgId!: string;
+
+  @property({ type: String })
+  userId!: string;
 
   @property({ type: Boolean })
   isCrawler?: boolean;
@@ -133,6 +114,30 @@ export class CollectionEditor extends TailwindElement {
   @state()
   private orgWorkflows?: APIPaginatedList<Workflow>;
 
+  @state()
+  showOnlyInCollection = false;
+
+  @state()
+  showOnlyMine = false;
+
+  @state()
+  sortWorkflowsBy: SortBy = {
+    field: "lastRun",
+    direction: -1,
+  };
+
+  @state()
+  sortUploadsBy: SortBy = {
+    field: "finished",
+    direction: -1,
+  };
+
+  @state()
+  private workflowSearchValues?: SearchValues;
+
+  @state()
+  private uploadSearchValues?: SearchValues;
+
   /**
    * Whether item is selected or not, keyed by ID
    */
@@ -159,10 +164,21 @@ export class CollectionEditor extends TailwindElement {
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (
       changedProperties.has("orgId") ||
-      changedProperties.has("collectionId")
+      changedProperties.has("showOnlyMine")
     ) {
-      this.fetchOrgUploads();
       this.fetchOrgWorkflows();
+      this.fetchOrgUploads();
+      this.fetchSearchValues();
+    } else {
+      if (changedProperties.has("sortWorkflowsBy")) {
+        this.fetchOrgWorkflows();
+      }
+      if (
+        changedProperties.has("sortUploadsBy") ||
+        changedProperties.has("showOnlyInCollection")
+      ) {
+        this.fetchOrgUploads();
+      }
     }
     if (changedProperties.has("open") && this.open) {
       this.fetchCollectionCrawls();
@@ -172,49 +188,42 @@ export class CollectionEditor extends TailwindElement {
 
   render() {
     return html`
-      <btrix-dialog
-        label=${msg(str`Select Archived Items for ${this.collectionName}`)}
-        ?open=${this.open}
-        @sl-after-hide=${() => this.reset()}
-      >
+      <btrix-dialog ?open=${this.open} @sl-after-hide=${() => this.reset()}>
+        <span slot="label">
+          ${msg("Select Archived Items")}
+          <span class="text-neutral-500 font-normal"
+            >${msg(str`in ${this.collectionName}`)}</span
+          >
+        </span>
         <div class="dialogContent flex flex-col">
-          <div class="flex gap-3 px-4 py-3" role="tablist">
-            ${TABS.map(this.renderTab)}
-          </div>
-          <div class="border-y bg-neutral-50 p-3 z-20">
-            <btrix-item-list-controls
-              .authState=${this.authState}
-              orgId=${this.orgId}
-              itemType=${this.activeTab}
-              @btrix-filter-change=${(
-                e: CustomEvent<FilterChangeEventDetail>
-              ) => {
-                if (this.activeTab === "crawl") {
-                  this.fetchCollectionCrawls({ filterBy: e.detail });
-                } else {
-                  this.fetchCollectionUploads({ filterBy: e.detail });
-                }
-              }}
-            ></btrix-item-list-controls>
+          <div class="flex items-center justify-between">
+            <div class="flex gap-3 px-4 py-3" role="tablist">
+              ${TABS.map(this.renderTab)}
+            </div>
+            <div class="flex gap-3 px-4 py-3">
+              ${this.renderCollectionToggle()} ${this.renderMineToggle()}
+            </div>
           </div>
           <div
             id="tabPanel-crawls"
+            class="flex-1${this.activeTab === "crawl" ? " flex flex-col" : ""}"
             role="tabpanel"
             tabindex="0"
             aria-labelledby="tab-crawls"
             ?hidden=${this.activeTab !== "crawl"}
           >
-            ${this.renderSelectCrawls()}
+            ${this.renderCrawls()}
           </div>
 
           <div
             id="tabPanel-uploads"
+            class="flex-1${this.activeTab === "upload" ? " flex flex-col" : ""}"
             role="tabpanel"
             tabindex="0"
             aria-labelledby="tab-uploads"
             ?hidden=${this.activeTab !== "upload"}
           >
-            ${this.renderSelectUploads()}
+            ${this.renderUploads()}
           </div>
         </div>
         <div slot="footer" class="flex gap-3 items-center justify-end">
@@ -255,34 +264,34 @@ export class CollectionEditor extends TailwindElement {
     `;
   };
 
-  private renderSelectCrawls = () => {
+  private renderCrawls = () => {
+    if (this.showOnlyInCollection) {
+      return html`TODO`;
+    }
+
     return html`
-      <div class="sticky top-0 bg-white z-10">
-        <btrix-section-heading>
-          <div class="flex-1 flex items-center justify-between">
-            <div class="px-3">${msg("Crawl Workflows")}</div>
-            ${when(
-              this.orgWorkflows &&
-                this.orgWorkflows.total > this.orgWorkflows.pageSize,
-              () => html`
-                <btrix-pagination
-                  page=${this.orgWorkflows!.page}
-                  size=${this.orgWorkflows!.pageSize}
-                  totalCount=${this.orgWorkflows!.total}
-                  compact
-                  @page-change=${(e: PageChangeEvent) => {
-                    this.fetchOrgWorkflows({
-                      page: e.detail.page,
-                    });
-                  }}
-                >
-                </btrix-pagination>
-              `
-            )}
-          </div>
-        </btrix-section-heading>
+      <div class="border-y bg-neutral-50 p-3 z-20">
+        <btrix-item-list-controls
+          .searchKeys=${searchKeys}
+          .searchValues=${this.workflowSearchValues}
+          .sortOptions=${workflowSortOptions}
+          .sortBy=${this.sortWorkflowsBy}
+          @btrix-filter-change=${(e: CustomEvent<FilterChangeEventDetail>) => {
+            this.fetchOrgWorkflows({
+              name: e.detail.name,
+              firstSeed: e.detail.firstSeed,
+              page: 1,
+            });
+          }}
+          @btrix-sort-change=${(e: CustomEvent<SortChangeEventDetail>) => {
+            this.sortWorkflowsBy = {
+              ...this.sortWorkflowsBy,
+              ...e.detail,
+            };
+          }}
+        ></btrix-item-list-controls>
       </div>
-      <section class="p-3">
+      <section class="flex-1 p-3">
         ${when(
           this.orgWorkflows,
           () => html`
@@ -305,13 +314,52 @@ export class CollectionEditor extends TailwindElement {
           this.renderLoading
         )}
       </section>
+      <footer class="flex justify-center pb-3">
+        ${when(
+          this.orgWorkflows &&
+            this.orgWorkflows.total > this.orgWorkflows.pageSize,
+          () => html`
+            <btrix-pagination
+              page=${this.orgWorkflows!.page}
+              size=${this.orgWorkflows!.pageSize}
+              totalCount=${this.orgWorkflows!.total}
+              @page-change=${(e: PageChangeEvent) => {
+                this.fetchOrgWorkflows({
+                  page: e.detail.page,
+                });
+              }}
+            >
+            </btrix-pagination>
+          `
+        )}
+      </footer>
     `;
   };
 
-  private renderSelectUploads = () => {
+  private renderUploads = () => {
     return html`
-      <section class="p-3">
-        <btrix-collection-upload-list
+      <div class="border-y bg-neutral-50 p-3 z-20">
+        <btrix-item-list-controls
+          .searchKeys=${searchKeys}
+          .searchValues=${this.uploadSearchValues}
+          .sortOptions=${itemSortOptions}
+          .sortBy=${this.sortUploadsBy}
+          @btrix-filter-change=${(e: CustomEvent<FilterChangeEventDetail>) => {
+            this.fetchOrgUploads({
+              name: e.detail.name,
+              page: 1,
+            });
+          }}
+          @btrix-sort-change=${(e: CustomEvent<SortChangeEventDetail>) => {
+            this.sortUploadsBy = {
+              ...this.sortUploadsBy,
+              ...e.detail,
+            };
+          }}
+        ></btrix-item-list-controls>
+      </div>
+      <section class="flex-1 p-3">
+        <btrix-collection-item-list
           collectionId=${this.collectionId}
           .items=${this.orgUploads?.items || []}
           @btrix-selection-change=${(e: CustomEvent<SelectionChangeDetail>) => {
@@ -320,10 +368,57 @@ export class CollectionEditor extends TailwindElement {
               ...e.detail.selection,
             };
           }}
-        ></btrix-collection-upload-list>
+        ></btrix-collection-item-list>
       </section>
+      <footer class="flex justify-center pb-3">
+        ${when(
+          this.orgUploads && this.orgUploads.total > this.orgUploads.pageSize,
+          () => html`
+            <btrix-pagination
+              page=${this.orgUploads!.page}
+              size=${this.orgUploads!.pageSize}
+              totalCount=${this.orgUploads!.total}
+              @page-change=${(e: PageChangeEvent) => {
+                this.fetchOrgUploads({
+                  page: e.detail.page,
+                });
+              }}
+            >
+            </btrix-pagination>
+          `
+        )}
+      </footer>
     `;
   };
+
+  private renderCollectionToggle() {
+    return html`
+      <label class="flex items-center gap-2">
+        <div class="text-neutral-500">${msg("Only in Collection")}</div>
+        <sl-switch
+          class="flex"
+          size="small"
+          ?checked=${this.showOnlyInCollection}
+          @sl-change=${() =>
+            (this.showOnlyInCollection = !this.showOnlyInCollection)}
+        ></sl-switch>
+      </label>
+    `;
+  }
+
+  private renderMineToggle() {
+    return html`
+      <label class="flex items-center gap-2">
+        <div class="text-neutral-500">${msg("Only mine")}</div>
+        <sl-switch
+          class="flex"
+          size="small"
+          ?checked=${this.showOnlyMine}
+          @sl-change=${() => (this.showOnlyMine = !this.showOnlyMine)}
+        ></sl-switch>
+      </label>
+    `;
+  }
 
   private renderLoading = () => html`
     <div class="w-full flex items-center justify-center my-24 text-3xl">
@@ -411,60 +506,86 @@ export class CollectionEditor extends TailwindElement {
     this.isSubmitting = false;
   }
 
-  private async fetchOrgUploads() {
+  private async fetchOrgUploads(
+    params: { name?: string } & APIPaginationQuery = {}
+  ) {
     try {
       this.orgUploads = await this.getUploads({
-        pageSize: UPLOADS_PAGE_SIZE,
+        ...params,
+        page: params.page || this.orgUploads?.page || 1,
+        pageSize: ORG_ITEMS_PAGE_SIZE,
+        sortBy: this.sortUploadsBy.field,
+        sortDirection: this.sortUploadsBy.direction,
+        userid: this.showOnlyMine ? this.userId : undefined,
+        collectionId: this.showOnlyInCollection ? this.collectionId : undefined,
       });
     } catch (e: any) {
       console.debug(e);
     }
   }
 
-  private async fetchOrgWorkflows(params: { page?: number } = {}) {
+  private async fetchOrgWorkflows(
+    params: { name?: string; firstSeed?: string } & APIPaginationQuery = {}
+  ) {
     try {
       this.orgWorkflows = await this.getWorkflows({
+        ...params,
         page: params.page || this.orgWorkflows?.page || 1,
-        pageSize: WORKFLOW_PAGE_SIZE,
+        pageSize: ORG_ITEMS_PAGE_SIZE,
+        sortBy: this.sortWorkflowsBy.field,
+        sortDirection: this.sortWorkflowsBy.direction,
       });
     } catch (e: any) {
       console.debug(e);
     }
   }
 
-  private async fetchCollectionCrawls({ filterBy }: any = {}) {
-    console.log(filterBy);
+  private async fetchCollectionCrawls(
+    params: { name?: string; firstSeed?: string } = {}
+  ) {
     try {
       this.collectionCrawls = await this.getCrawls({
+        ...params,
         collectionId: this.collectionId,
-        pageSize: COLLECTION_ITEMS_PAGE_SIZE,
+        page: 1,
+        pageSize: COLLECTION_ITEMS_MAX,
       });
       this.selectAllItems(this.collectionCrawls.items);
       if (this.collectionCrawls.total > this.collectionCrawls.pageSize) {
         // TODO show warning in UI
-        console.warn(
-          `more than ${COLLECTION_ITEMS_PAGE_SIZE} crawls in collection`
-        );
+        console.warn(`more than ${COLLECTION_ITEMS_MAX} crawls in collection`);
       }
     } catch (e: any) {
       console.debug(e);
     }
   }
 
-  private async fetchCollectionUploads({ filterBy }: any = {}) {
-    console.log(filterBy);
+  private async fetchCollectionUploads(params: { name?: string } = {}) {
     try {
       this.collectionUploads = await this.getUploads({
+        ...params,
         collectionId: this.collectionId,
-        pageSize: COLLECTION_ITEMS_PAGE_SIZE,
+        page: 1,
+        pageSize: COLLECTION_ITEMS_MAX,
       });
       this.selectAllItems(this.collectionUploads.items);
       if (this.collectionUploads.total > this.collectionUploads.pageSize) {
         // TODO show warning in UI
-        console.warn(
-          `more than ${COLLECTION_ITEMS_PAGE_SIZE} crawls in collection`
-        );
+        console.warn(`more than ${COLLECTION_ITEMS_MAX} crawls in collection`);
       }
+    } catch (e: any) {
+      console.debug(e);
+    }
+  }
+
+  private async fetchSearchValues() {
+    try {
+      const [workflowValues, uploadValues] = await Promise.all([
+        this.getSearchValues("crawl"),
+        this.getSearchValues("upload"),
+      ]);
+      this.workflowSearchValues = workflowValues;
+      this.uploadSearchValues = uploadValues;
     } catch (e: any) {
       console.debug(e);
     }
@@ -492,7 +613,10 @@ export class CollectionEditor extends TailwindElement {
     return data;
   }
 
-  private async getWorkflows(params: APIPaginationQuery = {}) {
+  private async getWorkflows(
+    params: { name?: string; firstSeed?: string } & APIPaginationQuery &
+      APISortQuery = {}
+  ) {
     const query = queryString.stringify({
       ...params,
     });
@@ -507,7 +631,10 @@ export class CollectionEditor extends TailwindElement {
   private async getUploads(
     params: {
       collectionId?: string;
-    } & APIPaginationQuery = {}
+      userid?: string;
+      name?: string;
+    } & APIPaginationQuery &
+      APISortQuery = {}
   ) {
     const query = queryString.stringify({
       state: "complete",
@@ -519,5 +646,18 @@ export class CollectionEditor extends TailwindElement {
     );
 
     return data;
+  }
+
+  private async getSearchValues(itemType: ArchivedItem["type"]) {
+    if (itemType === "upload") {
+      return this.api.fetch<SearchValues>(
+        `/orgs/${this.orgId}/all-crawls/search-values?crawlType=upload`,
+        this.authState!
+      );
+    }
+    return this.api.fetch<SearchValues>(
+      `/orgs/${this.orgId}/crawlconfigs/search-values`,
+      this.authState!
+    );
   }
 }
