@@ -1,4 +1,5 @@
-uvicorn
+hypercorn
+hypercorn[uvloop]
 fastapi==0.103.2
 motor==3.3.1
 passlib

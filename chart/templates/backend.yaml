@@ -53,6 +53,22 @@ spec:
         - name: api
           image: {{ .Values.backend_image }}
           imagePullPolicy: {{ .Values.backend_pull_policy }}
+          command:
+              - hypercorn
+              - btrixcloud.main:app_root
+              - --bind
+              - "0.0.0.0:8000"
+              - --access-logfile
+              - "-"
+              - --error-logfile
+              - "-"
+              - --log-level
+              - info
+              - --workers
+              - "{{ .Values.backend_workers | default 4 }}"
+              - --worker-class
+              - uvloop
+
           envFrom:
             - configMapRef:
                 name: backend-env-config
@@ -114,15 +130,20 @@ spec:
           image: {{ .Values.backend_image }}
           imagePullPolicy: {{ .Values.backend_pull_policy }}
           command:
-              - uvicorn
+              - hypercorn
               - btrixcloud.main_op:app_root
-              - --host
-              - 0.0.0.0
-              - --port
-              - "{{ .Values.opPort }}"
-              - --access-log
+              - --bind
+              - "0.0.0.0:{{ .Values.opPort }}"
+              - --access-logfile
+              - "-"
+              - --error-logfile
+              - "-"
               - --log-level
               - info
+              - --workers
+              - "{{ .Values.backend_workers | default 4 }}"
+              - --worker-class
+              - uvloop
 
           envFrom:
             - configMapRef:
