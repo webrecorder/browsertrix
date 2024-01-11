@@ -10,7 +10,7 @@ import { classMap } from "lit/directives/class-map.js";
 import { until } from "lit/directives/until.js";
 import { repeat } from "lit/directives/repeat.js";
 import { msg, localized, str } from "@lit/localize";
-import { type SlTreeItem } from "@shoelace-style/shoelace";
+import type { SlSwitch, SlTreeItem } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
 import type {
@@ -27,15 +27,16 @@ import { finishedCrawlStates } from "@/utils/crawler";
 export type SelectionChangeDetail = {
   selection: Record<string, boolean>;
 };
+export type AutoAddChangeDetail = {
+  id: string;
+  checked: boolean;
+};
 
 const CRAWLS_PAGE_SIZE = 50;
 
 /**
- * @example Usage:
- * ```ts
- * ```
- *
  * @fires btrix-selection-change
+ * @fires btrix-auto-add-change
  */
 @localized()
 @customElement("btrix-collection-workflow-list")
@@ -139,17 +140,6 @@ export class CollectionWorkflowList extends TailwindElement {
   }
 
   render() {
-    // It seems we need to render all children at once
-    // for sl-tree-item checkbox syncing to work
-    const renderAsync = this.workflows.map((workflow) =>
-      this.crawlsMap.get(workflow.id)!.then((crawls) => ({ workflow, crawls }))
-    );
-    return until(Promise.all(renderAsync).then(this.renderTree));
-  }
-
-  private renderTree = (
-    workflowWithCrawls: { workflow: Workflow; crawls: Crawl[] }[]
-  ) => {
     return html`<sl-tree
       selection="multiple"
       @sl-selection-change=${(e: CustomEvent<{ selection: SlTreeItem[] }>) => {
@@ -172,29 +162,36 @@ export class CollectionWorkflowList extends TailwindElement {
     >
       <sl-icon slot="expand-icon" name="chevron-double-down"></sl-icon>
       <sl-icon slot="collapse-icon" name="chevron-double-left"></sl-icon>
-      ${repeat(
-        workflowWithCrawls,
-        ({ workflow }) => workflow.id,
-        (item) => this.renderWorkflow(item.workflow, item.crawls)
-      )}
+      ${repeat(this.workflows, ({ id }) => id, this.renderWorkflow)}
     </sl-tree>`;
-  };
+  }
 
-  private renderWorkflow = (workflow: Workflow, crawls: Crawl[]) => {
-    const crawlCount = crawls.length || 0;
-    let selectedCrawlCount = 0;
-    if (crawlCount) {
-      selectedCrawlCount = crawls.filter(({ id }) => this.selection[id]).length;
-    }
+  private renderWorkflow = (workflow: Workflow) => {
+    const crawlsAsync = this.crawlsMap.get(workflow.id) || Promise.resolve([]);
+    const selectedCrawlCountAsync = crawlsAsync?.then((crawls) => {
+      return crawls.filter(({ id }) => this.selection[id]).length;
+    });
+    const crawlCount = workflow.crawlSuccessfulCount;
+
     return html`
       <sl-tree-item
         class=${classMap({
           workflow: true,
           selectable: crawlCount > 0,
         })}
-        ?selected=${selectedCrawlCount > 0 && selectedCrawlCount === crawlCount}
-        .indeterminate=${selectedCrawlCount > 0 &&
-        selectedCrawlCount < crawlCount}
+        ?selected=${until(
+          selectedCrawlCountAsync.then((n) => n > 0 && n === crawlCount),
+          false
+        )}
+        .indeterminate=${
+          // NOTE `indeterminate` is not a documented public property,
+          // we're manually setting it since async child tree-items
+          // doesn't work as of shoelace 2.8.0
+          until(
+            selectedCrawlCountAsync.then((n) => n > 0 && n < crawlCount),
+            false
+          )
+        }
         ?disabled=${crawlCount < 1}
         @click=${(e: MouseEvent) => {
           if (!crawlCount) {
@@ -206,28 +203,46 @@ export class CollectionWorkflowList extends TailwindElement {
         <div class="flex-1 flex flex-wrap items-center gap-x-6 gap-y-2">
           <div class="flex-1">${this.renderName(workflow)}</div>
           <div class="flex-0 text-neutral-500 md:text-right">
-            ${crawlCount === 1
-              ? msg(
-                  str`${selectedCrawlCount.toLocaleString()} / ${crawlCount?.toLocaleString()} crawl`
-                )
-              : crawlCount
-              ? msg(
-                  str`${selectedCrawlCount.toLocaleString()} / ${crawlCount?.toLocaleString()} crawls`
-                )
-              : msg("0 crawls")}
+            ${until(
+              selectedCrawlCountAsync.then((n) =>
+                crawlCount === 1
+                  ? msg(
+                      str`${n.toLocaleString()} / ${crawlCount?.toLocaleString()} crawl`
+                    )
+                  : crawlCount
+                  ? msg(
+                      str`${n.toLocaleString()} / ${crawlCount?.toLocaleString()} crawls`
+                    )
+                  : msg("0 crawls")
+              )
+            )}
           </div>
           <div class="flex-0">
             <sl-switch
               class="flex"
               size="small"
               ?checked=${workflow.autoAddCollections?.length > 0}
-              @click=${(e: MouseEvent) => e.stopPropagation()}
+              @sl-change=${(e: CustomEvent) => {
+                e.stopPropagation();
+                this.dispatchEvent(
+                  new CustomEvent<AutoAddChangeDetail>(
+                    "btrix-auto-add-change",
+                    {
+                      detail: {
+                        id: workflow.id,
+                        checked: (e.target as SlSwitch).checked,
+                      },
+                      composed: true,
+                    }
+                  )
+                );
+              }}
             >
               <span class="text-neutral-500">${msg("Auto-Add")}</span>
             </sl-switch>
           </div>
         </div>
-        ${crawls.map(this.renderCrawl)}
+        ${until(crawlsAsync?.then((crawls) => crawls.map(this.renderCrawl)))}
       </sl-tree-item>
     `;
   };

@@ -1,5 +1,6 @@
 import { type TemplateResult, LitElement, html, css } from "lit";
 import { customElement, property, queryAll } from "lit/decorators.js";
+import { repeat } from "lit/directives/repeat.js";
 import { msg, localized, str } from "@lit/localize";
 import { type SlCheckbox } from "@shoelace-style/shoelace";
 
@@ -103,7 +104,7 @@ export class CollectionItemList extends LitElement {
         <btrix-table-header-cell slot="head"
           >${msg("Created By")}</btrix-table-header-cell
         >
-        ${this.items.map(this.renderRow)}
+        ${repeat(this.items, ({ id }) => id, this.renderRow)}
       </btrix-table>
     `;
   }
