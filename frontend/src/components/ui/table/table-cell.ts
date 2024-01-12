@@ -9,8 +9,17 @@ export class TableCell extends LitElement {
     }
 
     .cell {
+      display: flex;
+      gap: var(--btrix-cell-gap, 0);
+      align-items: center;
       height: 100%;
       box-sizing: border-box;
+      padding: var(--btrix-cell-padding-top) var(--btrix-cell-padding-right)
+        var(--btrix-cell-padding-bottom) var(--btrix-cell-padding-left);
+      border-top: var(--btrix-cell-border-top);
+      border-left: var(--btrix-cell-border-left);
+      border-right: var(--btrix-cell-border-right);
+      border-bottom: var(--btrix-cell-border-bottom);
     }
   `;
 

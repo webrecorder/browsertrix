@@ -52,8 +52,7 @@ export class CollectionDetail extends LiteElement {
   private archivedItems?: APIPaginatedList<ArchivedItem>;
 
   @state()
-  private openDialogName?: "delete" | "editMetadata" | "editItems" =
-    "editItems";
+  private openDialogName?: "delete" | "editMetadata" | "editItems";
 
   @state()
   private isDescriptionExpanded = false;
@@ -631,6 +630,8 @@ export class CollectionDetail extends LiteElement {
     if (!this.archivedItems) return;
 
     return html`
+      <btrix-collection-item-list .items=${this.archivedItems.items}>
+      </btrix-collection-item-list>
       <btrix-crawl-list collectionId=${this.collectionId}>
         ${this.archivedItems.items.map(this.renderArchivedItem)}
       </btrix-crawl-list>

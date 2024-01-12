@@ -4,6 +4,8 @@ import { type TableHeaderCell } from "./table-header-cell";
 import { type TableRow } from "./table-row";
 
 /**
+ * Low-level component for displaying content as a table.
+ *
  * @example Usage:
  * ```ts
  * <btrix-table>
@@ -23,13 +25,22 @@ import { type TableRow } from "./table-row";
 @customElement("btrix-table")
 export class Table extends LitElement {
   static styles = css`
+    :host {
+      --btrix-cell-gap: 0;
+      --btrix-cell-padding-top: 0;
+      --btrix-cell-padding-left: 0;
+      --btrix-cell-padding-right: 0;
+      --btrix-cell-padding-bottom: 0;
+    }
+
     .table {
       display: grid;
-      grid-template-columns: min-content;
+      grid-auto-columns: var(--btrix-table-grid-auto-columns, auto);
     }
 
     .head,
     .body {
+      /* Initial value is set in js: */
       grid-column: var(--btrix-table-grid-column);
       display: grid;
       grid-template-columns: subgrid;
