@@ -48,7 +48,7 @@ data:
 
   STORAGES_JSON: "/ops-configs/storages.json"
 
-  CRAWLER_VERSIONS_JSON: "/ops-configs/crawler_versions.json"
+  CRAWLER_CHANNELS_JSON: "/ops-configs/crawler_channels.json"
 
 ---
 apiVersion: v1

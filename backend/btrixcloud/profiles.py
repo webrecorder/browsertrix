@@ -89,7 +89,7 @@ class ProfileOps:
 
             prev_profile_id = str(profile_launch.profileId)
 
-        crawler_image = self.crawlconfigs.get_crawler_image_by_id(
+        crawler_image = self.crawlconfigs.get_channel_crawler_image(
             profile_launch.crawlerChannel
         )
         if not crawler_image:

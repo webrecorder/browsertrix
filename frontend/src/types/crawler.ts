@@ -173,8 +173,7 @@ export type Upload = Omit<
   type: "upload";
 };
 
-export type CrawlerVersion = {
+export type CrawlerChannel = {
   id: string;
-  name: string;
   image: string;
 };

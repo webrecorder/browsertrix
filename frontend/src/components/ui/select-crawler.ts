@@ -3,17 +3,17 @@ import { property, state, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
 import type { AuthState } from "../../utils/AuthService";
-import type { CrawlerVersion } from "../../pages/org/types";
+import type { CrawlerChannel } from "../../pages/org/types";
 
 import LiteElement from "@/utils/LiteElement";
 import capitalize from "lodash/fp/capitalize";
 
-type CrawlerVersionsAPIResponse = {
-  versions: CrawlerVersion[];
+type CrawlerChannelsAPIResponse = {
+  channels: CrawlerChannel[];
 };
 
 /**
- * Crawler version select dropdown
+ * Crawler channel select dropdown
  *
  * Usage example:
  * ```ts
@@ -39,16 +39,20 @@ export class SelectCrawler extends LiteElement {
   crawlerChannel?: string;
 
   @state()
-  private selectedCrawler?: CrawlerVersion;
+  private selectedCrawler?: CrawlerChannel;
 
   @state()
-  private crawlerVersions?: CrawlerVersion[];
+  private crawlerChannels?: CrawlerChannel[];
 
   protected firstUpdated() {
-    this.fetchCrawlerVersions();
+    this.fetchCrawlerChannels();
   }
 
   render() {
+    if (this.crawlerChannels && this.crawlerChannels.length < 2) {
+      return html``;
+    }
+
     return html`
       <sl-select
         name="crawlerChannel-select"
@@ -59,12 +63,12 @@ export class SelectCrawler extends LiteElement {
         @sl-change=${this.onChange}
         @sl-focus=${() => {
           // Refetch to keep list up to date
-          this.fetchCrawlerVersions();
+          this.fetchCrawlerChannels();
         }}
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
       >
-        ${this.crawlerVersions?.map(
+        ${this.crawlerChannels?.map(
           (crawler) => html` <sl-option value=${crawler.id}>
             ${capitalize(crawler.id)}
           </sl-option>`
@@ -76,7 +80,7 @@ export class SelectCrawler extends LiteElement {
                 style="font-size: smaller"
                 class="text-right"
               >
-                Current Version:
+                Current Channel:
                 <span class="font-monospace"
                   >${this.selectedCrawler.image}</span
                 >
@@ -90,7 +94,7 @@ export class SelectCrawler extends LiteElement {
   private onChange(e: any) {
     this.stopProp(e);
 
-    this.selectedCrawler = this.crawlerVersions?.find(
+    this.selectedCrawler = this.crawlerChannels?.find(
       ({ id }) => id === e.target.value
     );
 
@@ -104,35 +108,57 @@ export class SelectCrawler extends LiteElement {
   }
 
   /**
-   * Fetch crawler versions and update internal state
+   * Fetch crawler channels and update internal state
    */
-  private async fetchCrawlerVersions(): Promise<void> {
+  private async fetchCrawlerChannels(): Promise<void> {
     try {
-      const versions = await this.getCrawlerVersions();
-      this.crawlerVersions = versions as CrawlerVersion[];
+      const channels = await this.getCrawlerChannels();
+      this.crawlerChannels = channels as CrawlerChannel[];
 
       if (this.crawlerChannel && !this.selectedCrawler) {
-        this.selectedCrawler = this.crawlerVersions.find(
+        this.selectedCrawler = this.crawlerChannels.find(
           ({ id }) => id === this.crawlerChannel
         );
       }
+
+      if (!this.selectedCrawler) {
+        this.crawlerChannel = "latest";
+        this.dispatchEvent(
+          new CustomEvent("on-change", {
+            detail: {
+              value: "latest",
+            },
+          })
+        );
+        this.selectedCrawler = this.crawlerChannels.find(
+          ({ id }) => id === this.crawlerChannel
+        );
+      }
+
+      this.dispatchEvent(
+        new CustomEvent("on-update", {
+          detail: {
+            show: this.crawlerChannels.length > 1,
+          },
+        })
+      );
     } catch (e) {
       this.notify({
-        message: msg("Sorry, couldn't retrieve crawler versions at this time."),
+        message: msg("Sorry, couldn't retrieve crawler channels at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
     }
   }
 
-  private async getCrawlerVersions(): Promise<CrawlerVersion[]> {
-    const data: CrawlerVersionsAPIResponse =
-      await this.apiFetch<CrawlerVersionsAPIResponse>(
-        `/orgs/${this.orgId}/crawlconfigs/crawler-versions`,
+  private async getCrawlerChannels(): Promise<CrawlerChannel[]> {
+    const data: CrawlerChannelsAPIResponse =
+      await this.apiFetch<CrawlerChannelsAPIResponse>(
+        `/orgs/${this.orgId}/crawlconfigs/crawler-channels`,
         this.authState!
       );
 
-    return data.versions;
+    return data.channels;
   }
 
   /**

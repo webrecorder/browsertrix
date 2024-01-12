@@ -29,8 +29,8 @@ from .models import (
     User,
     PaginatedResponse,
     FAILED_STATES,
-    CrawlerVersion,
-    CrawlerVersions,
+    CrawlerChannel,
+    CrawlerChannels,
 )
 from .utils import dt_now
 
@@ -69,7 +69,7 @@ class CrawlConfigOps:
     crawl_ops: CrawlOps
     coll_ops: CollectionOps
 
-    crawler_versions: CrawlerVersions
+    crawler_channels: CrawlerChannels
     crawler_images_map: dict[str, str]
 
     def __init__(
@@ -104,14 +104,15 @@ class CrawlConfigOps:
         self._file_rx = re.compile("\\W+")
 
         self.crawler_images_map = {}
-        versions = []
-        with open(os.environ["CRAWLER_VERSIONS_JSON"], encoding="utf-8") as fh:
-            crawler_data = json.loads(fh.read())
-            for id_, image in crawler_data.items():
-                versions.append(CrawlerVersion(id=id_, image=image))
-                self.crawler_images_map[id_] = image
+        channels = []
+        with open(os.environ["CRAWLER_CHANNELS_JSON"], encoding="utf-8") as fh:
+            crawler_list: list[dict] = json.loads(fh.read())
+            for channel_data in crawler_list:
+                channel = CrawlerChannel(**channel_data)
+                channels.append(channel)
+                self.crawler_images_map[channel.id] = channel.image
 
-            self.crawler_versions = CrawlerVersions(versions=versions)
+            self.crawler_channels = CrawlerChannels(channels=channels)
 
     def set_crawl_ops(self, ops):
         """set crawl ops reference"""
@@ -198,7 +199,7 @@ class CrawlConfigOps:
         if config.autoAddCollections:
             data["autoAddCollections"] = config.autoAddCollections
 
-        if not self.get_crawler_image_by_id(config.crawlerChannel):
+        if not self.get_channel_crawler_image(config.crawlerChannel):
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
         result = await self.crawl_configs.insert_one(data)
@@ -284,7 +285,7 @@ class CrawlConfigOps:
         if profile_filename is None:
             _, profile_filename = await self._lookup_profile(crawlconfig.profileid, org)
 
-        if not self.get_crawler_image_by_id(crawlconfig.crawlerChannel):
+        if not self.get_channel_crawler_image(crawlconfig.crawlerChannel):
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
         await self.crawl_manager.add_crawl_config(
@@ -886,7 +887,9 @@ class CrawlConfigOps:
         except Exception:
             return [], 0
 
-    def get_crawler_image_by_id(self, crawler_channel: Optional[str]) -> Optional[str]:
+    def get_channel_crawler_image(
+        self, crawler_channel: Optional[str]
+    ) -> Optional[str]:
         """Get crawler image name by id"""
         return self.crawler_images_map.get(crawler_channel or "")
 
@@ -1038,12 +1041,12 @@ def init_crawl_config_api(
     ):
         return await ops.get_crawl_config_search_values(org)
 
-    @router.get("/crawler-versions", response_model=CrawlerVersions)
-    async def get_crawler_versions(
+    @router.get("/crawler-channels", response_model=CrawlerChannels)
+    async def get_crawler_channels(
         # pylint: disable=unused-argument
         org: Organization = Depends(org_crawl_dep),
     ):
-        return ops.crawler_versions
+        return ops.crawler_channels
 
     @router.get("/{cid}/seeds", response_model=PaginatedResponse)
     async def get_crawl_config_seeds(

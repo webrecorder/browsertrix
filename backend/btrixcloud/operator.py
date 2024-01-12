@@ -526,7 +526,7 @@ class BtrixOperator(K8sAPI):
         params["storage_secret"] = storage_secret
         params["profile_filename"] = configmap["PROFILE_FILENAME"]
 
-        status.crawlerImage = self.crawl_config_ops.get_crawler_image_by_id(
+        status.crawlerImage = self.crawl_config_ops.get_channel_crawler_image(
             crawl.crawler_channel
         )
         params["crawler_image"] = status.crawlerImage

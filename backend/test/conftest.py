@@ -233,7 +233,7 @@ def crawler_crawl_id(crawler_auth_headers, default_org_id):
         "description": "crawler test crawl",
         "tags": ["wr-test-2"],
         "config": {"seeds": [{"url": "https://webrecorder.net/"}], "limit": 1},
-        "crawlerid": "beta",
+        "crawlerChannel": "test",
     }
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",

@@ -17,12 +17,12 @@ crawler_extra_cpu_per_browser: 300m
 
 crawler_extra_memory_per_browser: 256Mi
 
-crawler_versions:
-  # Must include at least the 'latest' value:
-  latest: "docker.io/webrecorder/browsertrix-crawler:latest"
+crawler_channels:
+  - id: latest
+    image: "docker.io/webrecorder/browsertrix-crawler:latest"
 
-  # Add, remove, or edit additional crawler versions below, example:
-  beta: "docker.io/webrecorder/browsertrix-crawler:1.0.0-beta.1"
+  - id: test
+    image: "docker.io/webrecorder/browsertrix-crawler:latest"
 
 mongo_auth:
   # specify either username + password (for local mongo)

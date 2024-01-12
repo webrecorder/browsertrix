@@ -266,6 +266,9 @@ export class CrawlConfigEditor extends LiteElement {
   orgExecutionMinutesQuotaReached = false;
 
   @state()
+  private showCrawlerChannels = false;
+
+  @state()
   private tagOptions: string[] = [];
 
   @state()
@@ -1633,13 +1636,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
             this.updateFormState({
               crawlerChannel: e.detail.value,
             })}
+          @on-update=${(e: any) => (this.showCrawlerChannels = e.detail.show)}
         ></btrix-select-crawler>
       `)}
-      ${this.renderHelpTextCol(
-        msg(
-          `Choose a Browsertrix Crawler Release Channel. If available, other versions may provide new/experimental crawling features.`
-        )
-      )}
+      ${this.showCrawlerChannels
+        ? this.renderHelpTextCol(
+            msg(
+              `Choose a Browsertrix Crawler Release Channel. If available, other versions may provide new/experimental crawling features.`
+            )
+          )
+        : html``}
       ${this.renderFormCol(html`
         <sl-checkbox name="blockAds" ?checked=${this.formState.blockAds}>
           ${msg("Block ads by domain")}
