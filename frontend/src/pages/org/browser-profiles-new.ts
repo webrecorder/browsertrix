@@ -41,7 +41,7 @@ export class BrowserProfilesNew extends LiteElement {
     description: string;
     navigateUrl: string;
     profileId: string | null;
-    crawlerId: string;
+    crawlerChannel: string;
   }> = {};
 
   firstUpdated() {
@@ -53,7 +53,7 @@ export class BrowserProfilesNew extends LiteElement {
       description: params.get("description") || "",
       navigateUrl: params.get("navigateUrl") || "",
       profileId: profileId || null,
-      crawlerId: params.get("crawlerId") || "latest",
+      crawlerChannel: params.get("crawlerChannel") || "latest",
     };
   }
 
@@ -195,7 +195,7 @@ export class BrowserProfilesNew extends LiteElement {
       browserid: this.browserId,
       name: formData.get("name"),
       description: formData.get("description"),
-      crawlerId: this.params.crawlerId,
+      crawlerChannel: this.params.crawlerChannel,
     };
 
     try {

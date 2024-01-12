@@ -36,7 +36,7 @@ export class SelectCrawler extends LiteElement {
   orgId!: string;
 
   @property({ type: String })
-  crawlerId?: string;
+  crawlerChannel?: string;
 
   @state()
   private selectedCrawler?: CrawlerVersion;
@@ -51,7 +51,7 @@ export class SelectCrawler extends LiteElement {
   render() {
     return html`
       <sl-select
-        name="crawlerid-select"
+        name="crawlerChannel-select"
         label=${msg("Crawler Release Channel")}
         value=${this.selectedCrawler?.id || ""}
         placeholder=${msg("Latest")}
@@ -111,9 +111,9 @@ export class SelectCrawler extends LiteElement {
       const versions = await this.getCrawlerVersions();
       this.crawlerVersions = versions as CrawlerVersion[];
 
-      if (this.crawlerId && !this.selectedCrawler) {
+      if (this.crawlerChannel && !this.selectedCrawler) {
         this.selectedCrawler = this.crawlerVersions.find(
-          ({ id }) => id === this.crawlerId
+          ({ id }) => id === this.crawlerChannel
         );
       }
     } catch (e) {

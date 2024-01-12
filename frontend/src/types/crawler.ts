@@ -48,13 +48,12 @@ export type WorkflowParams = {
   maxCrawlSize: number | null;
   description: string | null;
   autoAddCollections: string[];
-  crawlerId: string;
+  crawlerChannel: string;
 };
 
 export type CrawlConfig = WorkflowParams & {
   oid: string;
   profileName: string | null;
-  crawlerId?: string | null;
 };
 
 export type Workflow = CrawlConfig & {
@@ -157,7 +156,7 @@ export type Crawl = CrawlConfig & {
   collections: { id: string; name: string }[];
   type?: "crawl" | "upload" | null;
   crawlExecSeconds: number;
-  crawlerId: string | null;
+  crawlerChannel: string | null;
 };
 
 export type Upload = Omit<

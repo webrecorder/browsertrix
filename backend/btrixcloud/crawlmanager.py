@@ -130,7 +130,7 @@ class CrawlManager(K8sAPI):
             INITIAL_SCALE=str(crawlconfig.scale),
             CRAWL_TIMEOUT=str(crawlconfig.crawlTimeout or 0),
             MAX_CRAWL_SIZE=str(crawlconfig.maxCrawlSize or 0),
-            CRAWLER_ID=crawlconfig.crawlerId,
+            CRAWLER_ID=crawlconfig.crawlerChannel,
         )
 
         crawl_id = None
@@ -162,7 +162,7 @@ class CrawlManager(K8sAPI):
             userid,
             crawlconfig.oid,
             storage,
-            crawlconfig.crawlerId,
+            crawlconfig.crawlerChannel,
             crawlconfig.scale,
             crawlconfig.crawlTimeout,
             crawlconfig.maxCrawlSize,
@@ -179,7 +179,7 @@ class CrawlManager(K8sAPI):
         has_timeout_update = update.crawlTimeout is not None
         has_max_crawl_size_update = update.maxCrawlSize is not None
         has_config_update = update.config is not None
-        has_crawlerid_update = update.crawlerId is not None
+        has_crawlerid_update = update.crawlerChannel is not None
 
         if has_sched_update:
             # crawlconfig here has already been updated
@@ -411,8 +411,8 @@ class CrawlManager(K8sAPI):
         if update.crawlFilenameTemplate is not None:
             config_map.data["STORE_FILENAME"] = update.crawlFilenameTemplate
 
-        if update.crawlerId is not None:
-            config_map.data["CRAWLER_ID"] = update.crawlerId
+        if update.crawlerChannel is not None:
+            config_map.data["CRAWLER_CHANNEL"] = update.crawlerChannel
 
         if profile_filename is not None:
             config_map.data["PROFILE_FILENAME"] = profile_filename

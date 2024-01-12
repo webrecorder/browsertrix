@@ -220,7 +220,7 @@ export class ConfigDetails extends LiteElement {
           )}
           ${this.renderSetting(
             msg("Crawler Version"),
-            capitalize(crawlConfig?.crawlerId || "latest")
+            capitalize(crawlConfig?.crawlerChannel || "latest")
           )}
           ${this.renderSetting(
             msg("Block Ads by Domain"),

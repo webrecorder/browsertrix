@@ -118,7 +118,7 @@ type FormState = {
   autoAddCollections: string[];
   description: WorkflowParams["description"];
   autoscrollBehavior: boolean;
-  crawlerId: string;
+  crawlerChannel: string;
 };
 
 const DEPTH_SUPPORTED_SCOPES = ["prefix", "host", "domain", "custom", "any"];
@@ -195,7 +195,7 @@ const getDefaultFormState = (): FormState => ({
   autoAddCollections: [],
   description: null,
   autoscrollBehavior: true,
-  crawlerId: "latest",
+  crawlerChannel: "latest",
 });
 const defaultProgressState = getDefaultProgressState();
 
@@ -584,7 +584,8 @@ export class CrawlConfigEditor extends LiteElement {
       autoscrollBehavior: this.initialWorkflow.config.behaviors
         ? this.initialWorkflow.config.behaviors.includes("autoscroll")
         : defaultFormState.autoscrollBehavior,
-      crawlerId: this.initialWorkflow.crawlerId || defaultFormState.crawlerId,
+      crawlerChannel:
+        this.initialWorkflow.crawlerChannel || defaultFormState.crawlerChannel,
       ...formState,
     };
   }
@@ -1626,11 +1627,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${this.renderFormCol(html`
         <btrix-select-crawler
           orgId=${this.orgId}
-          .crawlerId=${this.formState.crawlerId}
+          .crawlerChannel=${this.formState.crawlerChannel}
           .authState=${this.authState}
           @on-change=${(e: any) =>
             this.updateFormState({
-              crawlerId: e.detail.value,
+              crawlerChannel: e.detail.value,
             })}
         ></btrix-select-crawler>
       `)}
@@ -2387,7 +2388,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           : DEFAULT_BEHAVIORS.slice(1)
         ).join(","),
       },
-      crawlerId: this.formState.crawlerId || "latest",
+      crawlerChannel: this.formState.crawlerChannel || "latest",
     };
 
     return config;

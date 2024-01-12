@@ -198,7 +198,7 @@ class CrawlConfigOps:
         if config.autoAddCollections:
             data["autoAddCollections"] = config.autoAddCollections
 
-        if not self.get_crawler_image_by_id(config.crawlerId):
+        if not self.get_crawler_image_by_id(config.crawlerChannel):
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
         result = await self.crawl_configs.insert_one(data)
@@ -284,7 +284,7 @@ class CrawlConfigOps:
         if profile_filename is None:
             _, profile_filename = await self._lookup_profile(crawlconfig.profileid, org)
 
-        if not self.get_crawler_image_by_id(crawlconfig.crawlerId):
+        if not self.get_crawler_image_by_id(crawlconfig.crawlerChannel):
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
         await self.crawl_manager.add_crawl_config(
@@ -331,7 +331,7 @@ class CrawlConfigOps:
         )
 
         changed = changed or self.check_attr_changed(
-            orig_crawl_config, update, "crawlerId"
+            orig_crawl_config, update, "crawlerChannel"
         )
 
         metadata_changed = self.check_attr_changed(orig_crawl_config, update, "name")
@@ -886,9 +886,9 @@ class CrawlConfigOps:
         except Exception:
             return [], 0
 
-    def get_crawler_image_by_id(self, crawler_id: Optional[str]) -> Optional[str]:
+    def get_crawler_image_by_id(self, crawler_channel: Optional[str]) -> Optional[str]:
         """Get crawler image name by id"""
-        return self.crawler_images_map.get(crawler_id or "")
+        return self.crawler_images_map.get(crawler_channel or "")
 
 
 # ============================================================================

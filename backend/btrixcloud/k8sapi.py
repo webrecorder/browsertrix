@@ -76,7 +76,7 @@ class K8sAPI:
         userid,
         oid,
         storage,
-        crawler_id,
+        crawler_channel,
         scale=1,
         crawl_timeout=0,
         max_crawl_size=0,
@@ -99,7 +99,7 @@ class K8sAPI:
             "max_crawl_size": max_crawl_size or 0,
             "storage_name": str(storage),
             "manual": "1" if manual else "0",
-            "crawler_id": crawler_id,
+            "crawler_channel": crawler_channel,
         }
 
         data = self.templates.env.get_template("crawl_job.yaml").render(params)

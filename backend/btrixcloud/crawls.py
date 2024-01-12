@@ -266,7 +266,7 @@ class CrawlOps(BaseCrawlOps):
             started=started,
             tags=crawlconfig.tags,
             name=crawlconfig.name,
-            crawlerId=crawlconfig.crawlerId,
+            crawlerChannel=crawlconfig.crawlerChannel,
         )
 
         try:
