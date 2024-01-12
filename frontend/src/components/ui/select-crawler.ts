@@ -1,12 +1,12 @@
-import { LitElement, html } from "lit";
+import { html } from "lit";
 import { property, state, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 
-import { APIController } from "@/controllers/api";
-import { NotifyController } from "@/controllers/notify";
 import type { AuthState } from "../../utils/AuthService";
-import { TailwindElement } from "@/classes/TailwindElement";
 import type { CrawlerVersion } from "../../pages/org/types";
+
+import LiteElement from "@/utils/LiteElement";
+import capitalize from "lodash/fp/capitalize";
 
 type CrawlerVersionsAPIResponse = {
   versions: CrawlerVersion[];
@@ -28,7 +28,7 @@ type CrawlerVersionsAPIResponse = {
  */
 @customElement("btrix-select-crawler")
 @localized()
-export class SelectCrawler extends LitElement {
+export class SelectCrawler extends LiteElement {
   @property({ type: Object })
   authState!: AuthState;
 
@@ -44,9 +44,6 @@ export class SelectCrawler extends LitElement {
   @state()
   private crawlerVersions?: CrawlerVersion[];
 
-  private apiController = new APIController(this);
-  private notifyController = new NotifyController(this);
-
   protected firstUpdated() {
     this.fetchCrawlerVersions();
   }
@@ -55,9 +52,10 @@ export class SelectCrawler extends LitElement {
     return html`
       <sl-select
         name="crawlerid-select"
-        label=${msg("Crawler Version")}
-        value=${this.selectedCrawler?.id || "latest"}
-        placeholder=${msg("Latest Release")}
+        label=${msg("Crawler Release Channel")}
+        value=${this.selectedCrawler?.id || ""}
+        placeholder=${msg("Latest")}
+        hoist
         @sl-change=${this.onChange}
         @sl-focus=${() => {
           // Refetch to keep list up to date
@@ -67,10 +65,24 @@ export class SelectCrawler extends LitElement {
         @sl-after-hide=${this.stopProp}
       >
         ${this.crawlerVersions?.map(
-          (crawler) => html`<sl-option value=${crawler.id}>
-            ${crawler.name}
+          (crawler) => html` <sl-option value=${crawler.id}>
+            ${capitalize(crawler.id)}
           </sl-option>`
         )}
+        ${this.selectedCrawler
+          ? html`
+              <div
+                slot="help-text"
+                style="font-size: smaller"
+                class="text-right"
+              >
+                Current Version:
+                <span class="font-monospace"
+                  >${this.selectedCrawler.image}</span
+                >
+              </div>
+            `
+          : ``}
       </sl-select>
     `;
   }
@@ -105,7 +117,7 @@ export class SelectCrawler extends LitElement {
         );
       }
     } catch (e) {
-      this.notifyController.toast({
+      this.notify({
         message: msg("Sorry, couldn't retrieve crawler versions at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -114,10 +126,12 @@ export class SelectCrawler extends LitElement {
   }
 
   private async getCrawlerVersions(): Promise<CrawlerVersion[]> {
-    const data: CrawlerVersionsAPIResponse = await this.apiController.fetch(
-      `/orgs/${this.orgId}/crawlconfigs/crawler-versions`,
-      this.authState!
-    );
+    const data: CrawlerVersionsAPIResponse =
+      await this.apiFetch<CrawlerVersionsAPIResponse>(
+        `/orgs/${this.orgId}/crawlconfigs/crawler-versions`,
+        this.authState!
+      );
+
     return data.versions;
   }
 

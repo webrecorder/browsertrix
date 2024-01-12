@@ -69,6 +69,9 @@ class CrawlConfigOps:
     crawl_ops: CrawlOps
     coll_ops: CollectionOps
 
+    crawler_versions: CrawlerVersions
+    crawler_images_map: dict[str, str]
+
     def __init__(
         self,
         dbclient,
@@ -99,6 +102,17 @@ class CrawlConfigOps:
         )
 
         self._file_rx = re.compile("\\W+")
+
+        self.crawler_images_map = {}
+        versions = []
+        with open(os.environ["CRAWLER_VERSIONS_JSON"], encoding="utf-8") as fh:
+            crawler_list: List[dict] = json.loads(fh.read())
+            for crawler_data in crawler_list:
+                version = CrawlerVersion(**crawler_data)
+                versions.append(version)
+                self.crawler_images_map[version.id] = version.image
+
+            self.crawler_versions = CrawlerVersions(versions=versions)
 
     def set_crawl_ops(self, ops):
         """set crawl ops reference"""
@@ -185,10 +199,8 @@ class CrawlConfigOps:
         if config.autoAddCollections:
             data["autoAddCollections"] = config.autoAddCollections
 
-        crawler_version = self.get_crawler_version_by_id(config.crawlerid)
-        if not crawler_version:
+        if not self.get_crawler_image_by_id(config.crawlerId):
             raise HTTPException(status_code=404, detail="crawler_not_found")
-        data["crawlerLabel"] = crawler_version.name
 
         result = await self.crawl_configs.insert_one(data)
 
@@ -213,7 +225,6 @@ class CrawlConfigOps:
         crawl_id = await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
             storage=org.storage,
-            crawler_image=crawler_version.image,
             run_now=run_now,
             out_filename=out_filename,
             profile_filename=profile_filename or "",
@@ -274,14 +285,12 @@ class CrawlConfigOps:
         if profile_filename is None:
             _, profile_filename = await self._lookup_profile(crawlconfig.profileid, org)
 
-        crawler_version = self.get_crawler_version_by_id(crawlconfig.crawlerid)
-        if not crawler_version:
+        if not self.get_crawler_image_by_id(crawlconfig.crawlerId):
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
         await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
             storage=org.storage,
-            crawler_image=crawler_version.image,
             run_now=False,
             out_filename=self.default_filename_template,
             profile_filename=profile_filename or "",
@@ -321,10 +330,9 @@ class CrawlConfigOps:
             and update.profileid != orig_crawl_config.profileid
             and ((not update.profileid) != (not orig_crawl_config.profileid))
         )
-        changed = changed or (
-            update.crawlerid is not None
-            and update.crawlerid != orig_crawl_config.crawlerid
-            and ((not update.crawlerid) != (not orig_crawl_config.crawlerid))
+
+        changed = changed or self.check_attr_changed(
+            orig_crawl_config, update, "crawlerId"
         )
 
         metadata_changed = self.check_attr_changed(orig_crawl_config, update, "name")
@@ -821,10 +829,6 @@ class CrawlConfigOps:
         except:
             await self.readd_configmap(crawlconfig, org)
 
-        crawler_version = self.get_crawler_version_by_id(crawlconfig.crawlerid)
-        if not crawler_version:
-            raise HTTPException(status_code=404, detail="crawler_not_found")
-
         if await self.org_ops.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
@@ -833,7 +837,7 @@ class CrawlConfigOps:
 
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
-                crawlconfig, org.storage, crawler_version.image, userid=str(user.id)
+                crawlconfig, org.storage, userid=str(user.id)
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
             return crawl_id
@@ -883,25 +887,9 @@ class CrawlConfigOps:
         except Exception:
             return [], 0
 
-    def get_crawler_version_by_id(self, crawler_id: str) -> Optional[CrawlerVersion]:
+    def get_crawler_image_by_id(self, crawler_id: Optional[str]) -> Optional[str]:
         """Get crawler image name by id"""
-        with open(os.environ["CRAWLER_VERSIONS_JSON"], encoding="utf-8") as fh:
-            crawler_list = json.loads(fh.read())
-            matching_images = [
-                crawler for crawler in crawler_list if crawler["id"] == crawler_id
-            ]
-            if matching_images:
-                data = matching_images[0]
-                return CrawlerVersion(**data)
-            return None
-
-    def get_crawler_versions(self) -> CrawlerVersions:
-        """Get available crawler versions"""
-        with open(os.environ["CRAWLER_VERSIONS_JSON"], encoding="utf-8") as fh:
-            crawler_list = json.loads(fh.read())
-            return CrawlerVersions(
-                versions=[CrawlerVersion(**crawler) for crawler in crawler_list]
-            )
+        return self.crawler_images_map.get(crawler_id or "")
 
 
 # ============================================================================
@@ -1056,7 +1044,7 @@ def init_crawl_config_api(
         # pylint: disable=unused-argument
         org: Organization = Depends(org_crawl_dep),
     ):
-        return ops.get_crawler_versions()
+        return ops.crawler_versions
 
     @router.get("/{cid}/seeds", response_model=PaginatedResponse)
     async def get_crawl_config_seeds(

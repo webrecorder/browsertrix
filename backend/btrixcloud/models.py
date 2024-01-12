@@ -282,7 +282,7 @@ class CrawlConfigIn(BaseModel):
 
     crawlFilenameTemplate: Optional[str] = None
 
-    crawlerid: str = "latest"
+    crawlerId: str = "latest"
 
 
 # ============================================================================
@@ -326,7 +326,7 @@ class CrawlConfigCore(BaseMongoModel):
 
     profileid: Optional[UUID]
 
-    crawlerLabel: Optional[str] = None
+    crawlerId: Optional[str] = None
 
 
 # ============================================================================
@@ -365,7 +365,7 @@ class CrawlConfigAdditional(BaseModel):
 
     isCrawlRunning: Optional[bool] = False
 
-    crawlerid: str
+    crawlerId: str
 
 
 # ============================================================================
@@ -424,7 +424,7 @@ class UpdateCrawlConfig(BaseModel):
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = None  # type: ignore
     crawlFilenameTemplate: Optional[str] = None
     config: Optional[RawCrawlConfig] = None
-    crawlerid: Optional[str] = None
+    crawlerId: Optional[str] = None
 
 
 # ============================================================================
@@ -437,7 +437,6 @@ class CrawlerVersion(BaseModel):
     """Crawler version available to use in workflows"""
 
     id: str
-    name: str
     image: str
 
 
@@ -615,7 +614,7 @@ class CrawlOut(BaseMongoModel):
     storageQuotaReached: Optional[bool]
     execMinutesQuotaReached: Optional[bool]
 
-    crawlerLabel: Optional[str]
+    crawlerId: Optional[str]
 
 
 # ============================================================================
@@ -673,6 +672,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     stopping: Optional[bool] = False
 
     crawlExecSeconds: int = 0
+
+    image: Optional[str] = None
 
 
 # ============================================================================
@@ -1068,7 +1069,7 @@ class Profile(BaseMongoModel):
 
     created: Optional[datetime]
     baseid: Optional[UUID] = None
-    crawlerid: Optional[str]
+    crawlerId: Optional[str]
 
 
 # ============================================================================
@@ -1107,7 +1108,7 @@ class ProfileCreate(BaseModel):
     browserid: str
     name: str
     description: Optional[str] = ""
-    crawlerid: str = "latest"
+    crawlerId: str = "latest"
 
 
 # ============================================================================

@@ -195,7 +195,7 @@ export class BrowserProfilesNew extends LiteElement {
       browserid: this.browserId,
       name: formData.get("name"),
       description: formData.get("description"),
-      crawlerid: this.params.crawlerId,
+      crawlerId: this.params.crawlerId,
     };
 
     try {

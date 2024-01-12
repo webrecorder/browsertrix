@@ -16,6 +16,8 @@ import type { APIPaginatedList } from "@/types/api";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 
+import capitalize from "lodash/fp/capitalize";
+
 const SECTIONS = [
   "overview",
   "watch",
@@ -669,11 +671,11 @@ export class CrawlDetail extends LiteElement {
             : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
         ${when(
-          this.crawl && this.crawl.crawlerLabel,
+          this.crawl && this.crawl.crawlerId,
           () => html` <btrix-desc-list-item label=${msg("Crawler Version")}>
             <div class="flex items-center gap-2">
-              <code class="grow" title=${this.crawl?.crawlerLabel}
-                >${this.crawl?.crawlerLabel}</code
+              <code class="grow" title=${this.crawl?.crawlerId}
+                >${capitalize(this.crawl?.crawlerId || "latest")}</code
               >
             </div>
           </btrix-desc-list-item>`

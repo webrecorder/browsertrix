@@ -118,7 +118,7 @@ type FormState = {
   autoAddCollections: string[];
   description: WorkflowParams["description"];
   autoscrollBehavior: boolean;
-  crawlerid: string;
+  crawlerId: string;
 };
 
 const DEPTH_SUPPORTED_SCOPES = ["prefix", "host", "domain", "custom", "any"];
@@ -195,7 +195,7 @@ const getDefaultFormState = (): FormState => ({
   autoAddCollections: [],
   description: null,
   autoscrollBehavior: true,
-  crawlerid: "latest",
+  crawlerId: "latest",
 });
 const defaultProgressState = getDefaultProgressState();
 
@@ -584,7 +584,7 @@ export class CrawlConfigEditor extends LiteElement {
       autoscrollBehavior: this.initialWorkflow.config.behaviors
         ? this.initialWorkflow.config.behaviors.includes("autoscroll")
         : defaultFormState.autoscrollBehavior,
-      crawlerid: this.initialWorkflow.crawlerid || defaultFormState.crawlerid,
+      crawlerId: this.initialWorkflow.crawlerId || defaultFormState.crawlerId,
       ...formState,
     };
   }
@@ -1626,17 +1626,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${this.renderFormCol(html`
         <btrix-select-crawler
           orgId=${this.orgId}
-          .crawlerId=${this.formState.crawlerid}
+          .crawlerId=${this.formState.crawlerId}
           .authState=${this.authState}
           @on-change=${(e: any) =>
             this.updateFormState({
-              crawlerid: e.detail.value,
+              crawlerId: e.detail.value,
             })}
         ></btrix-select-crawler>
       `)}
       ${this.renderHelpTextCol(
         msg(
-          `Choose a version of Browsertrix Crawler to use with this workflow.`
+          `Choose a Browsertrix Crawler Release Channel. If available, other versions may provide new/experimental crawling features.`
         )
       )}
       ${this.renderFormCol(html`
@@ -2387,7 +2387,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           : DEFAULT_BEHAVIORS.slice(1)
         ).join(","),
       },
-      crawlerid: this.formState.crawlerid || "latest",
+      crawlerId: this.formState.crawlerId || "latest",
     };
 
     return config;

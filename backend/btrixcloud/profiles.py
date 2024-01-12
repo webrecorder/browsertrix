@@ -89,10 +89,10 @@ class ProfileOps:
 
             prev_profile_id = str(profile_launch.profileId)
 
-        crawler_version = self.crawlconfigs.get_crawler_version_by_id(
+        crawler_image = self.crawlconfigs.get_crawler_image_by_id(
             profile_launch.crawlerId
         )
-        if not crawler_version:
+        if not crawler_image:
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
         browserid = await self.crawl_manager.run_profile_browser(
@@ -100,7 +100,7 @@ class ProfileOps:
             str(org.id),
             url=profile_launch.url,
             storage=org.storage,
-            crawler_image=crawler_version.image,
+            crawler_image=crawler_image,
             baseprofile=prev_profile_id,
             profile_filename=prev_profile,
         )
@@ -206,7 +206,7 @@ class ProfileOps:
             userid=UUID(metadata.get("btrix.user")),
             oid=oid,
             baseid=baseid,
-            crawlerid=browser_commit.crawlerid,
+            crawlerId=browser_commit.crawlerId,
         )
 
         await self.profiles.find_one_and_update(
@@ -446,7 +446,7 @@ def init_profiles_api(
                     browserid=browser_commit.browserid,
                     name=browser_commit.name,
                     description=browser_commit.description or profile.description,
-                    crawlerid=profile.crawlerid,
+                    crawlerId=profile.crawlerId,
                 ),
                 storage=org.storage,
                 metadata=metadata,
