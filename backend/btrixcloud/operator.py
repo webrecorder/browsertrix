@@ -223,6 +223,7 @@ class CrawlStatus(BaseModel):
     stopping: bool = False
     stopReason: Optional[str] = None
     initRedis: bool = False
+    crawlerImage: Optional[str] = None
     lastActiveTime: str = ""
     podStatus: Optional[DefaultDict[str, PodInfo]] = defaultdict(
         lambda: PodInfo()  # pylint: disable=unnecessary-lambda
@@ -525,9 +526,10 @@ class BtrixOperator(K8sAPI):
         params["storage_secret"] = storage_secret
         params["profile_filename"] = configmap["PROFILE_FILENAME"]
 
-        params["crawler_image"] = self.crawl_config_ops.get_crawler_image_by_id(
+        status.crawlerImage = self.crawl_config_ops.get_crawler_image_by_id(
             crawl.crawler_id
         )
+        params["crawler_image"] = status.crawlerImage
 
         params["storage_filename"] = configmap["STORE_FILENAME"]
         params["restart_time"] = spec.get("restartTime")

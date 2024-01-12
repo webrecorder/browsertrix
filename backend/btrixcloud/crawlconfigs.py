@@ -106,11 +106,10 @@ class CrawlConfigOps:
         self.crawler_images_map = {}
         versions = []
         with open(os.environ["CRAWLER_VERSIONS_JSON"], encoding="utf-8") as fh:
-            crawler_list: List[dict] = json.loads(fh.read())
-            for crawler_data in crawler_list:
-                version = CrawlerVersion(**crawler_data)
-                versions.append(version)
-                self.crawler_images_map[version.id] = version.image
+            crawler_data = json.loads(fh.read())
+            for id_, image in crawler_data.items():
+                versions.append(CrawlerVersion(id=id_, image=image))
+                self.crawler_images_map[id_] = image
 
             self.crawler_versions = CrawlerVersions(versions=versions)
 

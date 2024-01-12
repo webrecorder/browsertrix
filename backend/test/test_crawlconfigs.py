@@ -477,5 +477,4 @@ def test_get_crawler_versions(crawler_auth_headers, default_org_id):
     assert len(crawler_versions) == 2
     for crawler_version in crawler_versions:
         assert crawler_version["id"]
-        assert crawler_version["name"]
         assert crawler_version["image"]
