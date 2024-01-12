@@ -114,6 +114,9 @@ class CrawlConfigOps:
 
             self.crawler_channels = CrawlerChannels(channels=channels)
 
+        if "latest" not in self.crawler_images_map:
+            raise TypeError("The channel list must include a 'latest' channel")
+
     def set_crawl_ops(self, ops):
         """set crawl ops reference"""
         self.crawl_ops = ops
