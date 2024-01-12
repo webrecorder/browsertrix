@@ -80,7 +80,7 @@ export class SelectCrawler extends LiteElement {
                 style="font-size: smaller"
                 class="text-right"
               >
-                Current Channel:
+                Version:
                 <span class="font-monospace"
                   >${this.selectedCrawler.image}</span
                 >
