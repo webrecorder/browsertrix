@@ -18,7 +18,7 @@ crawler_extra_cpu_per_browser: 300m
 crawler_extra_memory_per_browser: 256Mi
 
 crawler_channels:
-  - id: latest
+  - id: default
     image: "docker.io/webrecorder/browsertrix-crawler:latest"
 
   - id: test

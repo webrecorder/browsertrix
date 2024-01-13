@@ -272,7 +272,7 @@ class CrawlConfigIn(BaseModel):
     jobType: Optional[JobType] = JobType.CUSTOM
 
     profileid: Union[UUID, EmptyStr, None]
-    crawlerChannel: str = "latest"
+    crawlerChannel: str = "default"
 
     autoAddCollections: Optional[List[UUID]] = []
     tags: Optional[List[str]] = []
@@ -611,7 +611,7 @@ class CrawlOut(BaseMongoModel):
     storageQuotaReached: Optional[bool]
     execMinutesQuotaReached: Optional[bool]
 
-    crawlerChannel: str = "latest"
+    crawlerChannel: str = "default"
     image: Optional[str]
 
 
@@ -1089,7 +1089,7 @@ class ProfileLaunchBrowserIn(UrlIn):
     """Request to launch new browser for creating profile"""
 
     profileId: Optional[UUID] = None
-    crawlerChannel: str = "latest"
+    crawlerChannel: str = "default"
 
 
 # ============================================================================
@@ -1106,7 +1106,7 @@ class ProfileCreate(BaseModel):
     browserid: str
     name: str
     description: Optional[str] = ""
-    crawlerChannel: str = "latest"
+    crawlerChannel: str = "default"
 
 
 # ============================================================================

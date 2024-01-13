@@ -22,7 +22,7 @@ export class NewBrowserProfileDialog extends LiteElement {
   private isSubmitting = false;
 
   @state()
-  private crawlerChannel = "latest";
+  private crawlerChannel = "default";
 
   @queryAsync("#browserProfileForm")
   private form!: Promise<HTMLFormElement>;

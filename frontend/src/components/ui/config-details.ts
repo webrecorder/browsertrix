@@ -220,7 +220,7 @@ export class ConfigDetails extends LiteElement {
           )}
           ${this.renderSetting(
             msg("Crawler Channel (Exact Crawler Version)"),
-            capitalize(crawlConfig?.crawlerChannel || "latest") +
+            capitalize(crawlConfig?.crawlerChannel || "default") +
               (crawlConfig?.image ? ` (${crawlConfig?.image})` : "")
           )}
           ${this.renderSetting(

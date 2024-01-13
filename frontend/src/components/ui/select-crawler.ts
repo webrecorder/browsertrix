@@ -118,11 +118,11 @@ export class SelectCrawler extends LiteElement {
       }
 
       if (!this.selectedCrawler) {
-        this.crawlerChannel = "latest";
+        this.crawlerChannel = "default";
         this.dispatchEvent(
           new CustomEvent("on-change", {
             detail: {
-              value: "latest",
+              value: "default",
             },
           })
         );

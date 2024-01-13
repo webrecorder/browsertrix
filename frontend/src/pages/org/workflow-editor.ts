@@ -195,7 +195,7 @@ const getDefaultFormState = (): FormState => ({
   autoAddCollections: [],
   description: null,
   autoscrollBehavior: true,
-  crawlerChannel: "latest",
+  crawlerChannel: "default",
 });
 const defaultProgressState = getDefaultProgressState();
 
@@ -2395,7 +2395,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           : DEFAULT_BEHAVIORS.slice(1)
         ).join(","),
       },
-      crawlerChannel: this.formState.crawlerChannel || "latest",
+      crawlerChannel: this.formState.crawlerChannel || "default",
     };
 
     return config;

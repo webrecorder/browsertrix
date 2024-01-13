@@ -30,7 +30,7 @@ const defaultValue = {
   jobType: undefined,
   scale: 1,
   autoAddCollections: [],
-  crawlerChannel: "latest",
+  crawlerChannel: "default",
 } as WorkflowParams;
 
 /**

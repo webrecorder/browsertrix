@@ -53,7 +53,7 @@ export class BrowserProfilesNew extends LiteElement {
       description: params.get("description") || "",
       navigateUrl: params.get("navigateUrl") || "",
       profileId: profileId || null,
-      crawlerChannel: params.get("crawlerChannel") || "latest",
+      crawlerChannel: params.get("crawlerChannel") || "default",
     };
   }
 

@@ -18,9 +18,9 @@
 # uncomment to enable custom crawler dropdown
 # Support for additional crawler release channels
 # If more than one channel provided, a dropdown will be shown to users
-# 'latest' channel must always be included
+# 'default' channel must always be included
 # crawler_channels:
-#   - id: latest
+#   - id: default
 #     image: "docker.io/webrecorder/browsertrix-crawler:latest"
 #
 #   # Add, remove, or edit additional crawler release channels for example:

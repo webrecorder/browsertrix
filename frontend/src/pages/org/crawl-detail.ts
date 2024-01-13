@@ -688,7 +688,7 @@ export class CrawlDetail extends LiteElement {
     }
 
     const text =
-      capitalize(this.crawl.crawlerChannel || "latest") +
+      capitalize(this.crawl.crawlerChannel || "default") +
       (this.crawl.image ? ` (${this.crawl.image})` : "");
 
     return html` <btrix-desc-list-item

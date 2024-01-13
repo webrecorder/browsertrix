@@ -31,12 +31,12 @@ class Migration(BaseMigration):
             try:
                 await mdb_crawl_configs.find_one_and_update(
                     {"_id": config_id},
-                    {"$set": {"crawlerChannel": "latest"}},
+                    {"$set": {"crawlerChannel": "default"}},
                 )
             # pylint: disable=broad-except
             except Exception as err:
                 print(
-                    f"Error adding crawlerChannel 'latest' to workflow {config_id}: {err}",
+                    f"Error adding crawlerChannel 'default' to workflow {config_id}: {err}",
                     flush=True,
                 )
 
@@ -45,12 +45,12 @@ class Migration(BaseMigration):
             try:
                 await mdb_profiles.find_one_and_update(
                     {"_id": profile_id},
-                    {"$set": {"crawlerChannel": "latest"}},
+                    {"$set": {"crawlerChannel": "default"}},
                 )
             # pylint: disable=broad-except
             except Exception as err:
                 print(
-                    f"Error adding crawlerChannel 'latest' to profile {profile_id}: {err}",
+                    f"Error adding crawlerChannel 'default' to profile {profile_id}: {err}",
                     flush=True,
                 )
 
@@ -61,7 +61,7 @@ class Migration(BaseMigration):
             config = CrawlConfig.from_dict(config_dict)
             try:
                 await crawl_manager.update_crawl_config(
-                    config, UpdateCrawlConfig(crawlerChannel="latest")
+                    config, UpdateCrawlConfig(crawlerChannel="default")
                 )
             # pylint: disable=broad-except
             except Exception as exc:
