@@ -75,12 +75,8 @@ export class SelectCrawler extends LiteElement {
         )}
         ${this.selectedCrawler
           ? html`
-              <div
-                slot="help-text"
-                style="font-size: smaller"
-                class="text-right"
-              >
-                Version:
+              <div slot="help-text">
+                ${msg("Version:")}
                 <span class="font-monospace"
                   >${this.selectedCrawler.image}</span
                 >

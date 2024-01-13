@@ -612,6 +612,7 @@ class CrawlOut(BaseMongoModel):
     execMinutesQuotaReached: Optional[bool]
 
     crawlerChannel: str = "latest"
+    image: Optional[str]
 
 
 # ============================================================================
@@ -669,6 +670,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     stopping: Optional[bool] = False
 
     crawlExecSeconds: int = 0
+
+    image: Optional[str]
 
 
 # ============================================================================

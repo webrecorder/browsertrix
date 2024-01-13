@@ -526,9 +526,13 @@ class BtrixOperator(K8sAPI):
         params["storage_secret"] = storage_secret
         params["profile_filename"] = configmap["PROFILE_FILENAME"]
 
-        status.crawlerImage = self.crawl_config_ops.get_channel_crawler_image(
-            crawl.crawler_channel
-        )
+        # only resolve if not already set
+        # not automatically updating image for existing crawls
+        if not status.crawlerImage:
+            status.crawlerImage = self.crawl_config_ops.get_channel_crawler_image(
+                crawl.crawler_channel
+            )
+
         params["crawler_image"] = status.crawlerImage
 
         params["storage_filename"] = configmap["STORE_FILENAME"]
@@ -1641,7 +1645,7 @@ class BtrixOperator(K8sAPI):
             userid=userid,
             oid=oid,
             storage=org.storage,
-            crawler_channel=configmap["CRAWLER_ID"],
+            crawler_channel=configmap["CRAWLER_CHANNEL"],
             scale=int(configmap.get("INITIAL_SCALE", 1)),
             crawl_timeout=int(configmap.get("CRAWL_TIMEOUT", 0)),
             max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),

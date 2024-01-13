@@ -247,6 +247,8 @@ class CrawlOps(BaseCrawlOps):
             if user:
                 username = user.name
 
+        image = self.crawl_configs.get_channel_crawler_image(crawlconfig.crawlerChannel)
+
         crawl = Crawl(
             id=crawl_id,
             state="starting",
@@ -267,6 +269,7 @@ class CrawlOps(BaseCrawlOps):
             tags=crawlconfig.tags,
             name=crawlconfig.name,
             crawlerChannel=crawlconfig.crawlerChannel,
+            image=image,
         )
 
         try:

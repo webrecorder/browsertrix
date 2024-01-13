@@ -1943,6 +1943,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               ...crawlConfig,
               profileName,
               oid: this.orgId,
+              image: null,
             } as CrawlConfig}
             .seeds=${crawlConfig.config.seeds}
           >

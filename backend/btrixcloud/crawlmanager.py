@@ -130,7 +130,7 @@ class CrawlManager(K8sAPI):
             INITIAL_SCALE=str(crawlconfig.scale),
             CRAWL_TIMEOUT=str(crawlconfig.crawlTimeout or 0),
             MAX_CRAWL_SIZE=str(crawlconfig.maxCrawlSize or 0),
-            CRAWLER_ID=crawlconfig.crawlerChannel,
+            CRAWLER_CHANNEL=crawlconfig.crawlerChannel,
         )
 
         crawl_id = None

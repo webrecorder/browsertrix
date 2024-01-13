@@ -219,8 +219,9 @@ export class ConfigDetails extends LiteElement {
             )
           )}
           ${this.renderSetting(
-            msg("Crawler Version"),
-            capitalize(crawlConfig?.crawlerChannel || "latest")
+            msg("Crawler Channel (Exact Crawler Version)"),
+            capitalize(crawlConfig?.crawlerChannel || "latest") +
+              (crawlConfig?.image ? ` (${crawlConfig?.image})` : "")
           )}
           ${this.renderSetting(
             msg("Block Ads by Domain"),

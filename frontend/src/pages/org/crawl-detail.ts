@@ -670,16 +670,7 @@ export class CrawlDetail extends LiteElement {
                 : html`<span class="text-0-400">${msg("Unknown")}</span>`}`
             : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
         </btrix-desc-list-item>
-        ${when(
-          this.crawl && this.crawl.crawlerChannel,
-          () => html` <btrix-desc-list-item label=${msg("Crawler Version")}>
-            <div class="flex items-center gap-2">
-              <code class="grow" title=${this.crawl?.crawlerChannel}
-                >${capitalize(this.crawl?.crawlerChannel || "latest")}</code
-              >
-            </div>
-          </btrix-desc-list-item>`
-        )}
+        ${this.renderCrawlChannelVersion()}
         <btrix-desc-list-item label=${msg("Crawl ID")}>
           ${this.crawl
             ? html`<btrix-copy-field
@@ -689,6 +680,24 @@ export class CrawlDetail extends LiteElement {
         </btrix-desc-list-item>
       </btrix-desc-list>
     `;
+  }
+
+  private renderCrawlChannelVersion() {
+    if (!this.crawl) {
+      return html``;
+    }
+
+    const text =
+      capitalize(this.crawl.crawlerChannel || "latest") +
+      (this.crawl.image ? ` (${this.crawl.image})` : "");
+
+    return html` <btrix-desc-list-item
+      label=${msg("Crawler Channel (Exact Crawler Version)")}
+    >
+      <div class="flex items-center gap-2">
+        <code class="grow" title=${text}>${text}</code>
+      </div>
+    </btrix-desc-list-item>`;
   }
 
   private renderMetadata() {
