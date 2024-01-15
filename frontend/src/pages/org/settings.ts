@@ -269,33 +269,33 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderMembers() {
-    const dataTableStyle = `--btrix-table-grid-auto-columns: 1fr 12rem 3rem`;
+    const tableStyle = `--btrix-table-grid-auto-columns: 1fr 12rem 3rem`;
     return html`
-      <btrix-table class="data-table" style=${dataTableStyle}>
-        <btrix-table-header-cell slot="head">
-          ${msg("Name")}
-        </btrix-table-header-cell>
-        <btrix-table-header-cell slot="head">
-          ${msg("Role")}
-        </btrix-table-header-cell>
-        <btrix-table-header-cell slot="head">
-          <span class="sr-only">${msg("Row Actions")}</span>
-        </btrix-table-header-cell>
-        ${Object.values(this.org.users!).map(
-          (user) => html`
-            <btrix-table-row>
-              <btrix-table-cell>${user.name}</btrix-table-cell>
-              <btrix-table-cell
-                style="--btrix-cell-padding-top: 0; --btrix-cell-padding-bottom: 0;"
-              >
-                ${this.renderUserRoleSelect(user)}
-              </btrix-table-cell>
-              <btrix-table-cell>
-                ${this.renderRemoveMemberButton(user)}
-              </btrix-table-cell>
-            </btrix-table-row>
-          `
-        )}
+      <btrix-table class="border rounded" style=${tableStyle}>
+        <btrix-table-head>
+          <btrix-table-header-cell> ${msg("Name")} </btrix-table-header-cell>
+          <btrix-table-header-cell class="border-l">
+            ${msg("Role")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell class="border-l">
+            <span class="sr-only">${msg("Row Actions")}</span>
+          </btrix-table-header-cell>
+        </btrix-table-head>
+        <btrix-table-body>
+          ${Object.values(this.org.users!).map(
+            (user, i) => html`
+              <btrix-table-row class="border-t">
+                <btrix-table-cell>${user.name}</btrix-table-cell>
+                <btrix-table-cell class="border-l py-0">
+                  ${this.renderUserRoleSelect(user)}
+                </btrix-table-cell>
+                <btrix-table-cell class="border-l">
+                  ${this.renderRemoveMemberButton(user)}
+                </btrix-table-cell>
+              </btrix-table-row>
+            `
+          )}
+        </btrix-table-body>
       </btrix-table>
 
       ${when(
@@ -307,31 +307,33 @@ export class OrgSettings extends LiteElement {
             </h3>
 
             <div class="rounded border overflow-hidden">
-              <btrix-table class="data-table" style=${dataTableStyle}>
-                <btrix-table-header-cell slot="head">
-                  ${msg("Email")}
-                </btrix-table-header-cell>
-                <btrix-table-header-cell slot="head">
-                  ${msg("Role")}
-                </btrix-table-header-cell>
-                <btrix-table-header-cell slot="head">
-                  <span class="sr-only">${msg("Row Actions")}</span>
-                </btrix-table-header-cell>
-                ${this.pendingInvites.map(
-                  (user) => html`
-                    <btrix-table-row>
-                      <btrix-table-cell>${user.email}</btrix-table-cell>
-                      <btrix-table-cell
-                        style="--btrix-cell-padding-top: 0; --btrix-cell-padding-bottom: 0;"
-                      >
-                        ${this.renderUserRole(user)}
-                      </btrix-table-cell>
-                      <btrix-table-cell>
-                        ${this.renderRemoveInviteButton(user)}
-                      </btrix-table-cell>
-                    </btrix-table-row>
-                  `
-                )}
+              <btrix-table class="border rounded" style=${tableStyle}>
+                <btrix-table-head>
+                  <btrix-table-header-cell>
+                    ${msg("Email")}
+                  </btrix-table-header-cell>
+                  <btrix-table-header-cell class="border-l">
+                    ${msg("Role")}
+                  </btrix-table-header-cell>
+                  <btrix-table-header-cell class="border-l">
+                    <span class="sr-only">${msg("Row Actions")}</span>
+                  </btrix-table-header-cell>
+                </btrix-table-head>
+                <btrix-table-body>
+                  ${this.pendingInvites.map(
+                    (user, i) => html`
+                      <btrix-table-row class="border-t">
+                        <btrix-table-cell> ${user.email} </btrix-table-cell>
+                        <btrix-table-cell class="border-l py-0">
+                          ${this.renderUserRole(user)}
+                        </btrix-table-cell>
+                        <btrix-table-cell class="border-l">
+                          ${this.renderRemoveInviteButton(user)}
+                        </btrix-table-cell>
+                      </btrix-table-row>
+                    `
+                  )}
+                </btrix-table-body>
               </btrix-table>
             </div>
           </section>

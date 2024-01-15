@@ -23,31 +23,12 @@ export type SelectionChangeDetail = {
 @customElement("btrix-collection-item-list")
 export class CollectionItemList extends TailwindElement {
   static styles = css`
-    .itemRow {
-      cursor: pointer;
-    }
-
-    .itemRow::part(base) {
-      transition-property: background-color, box-shadow;
-      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-      transition-duration: 150ms;
-    }
-
-    .itemRow:hover::part(base),
-    .itemRow:focus-within::part(base) {
-      background-color: var(--sl-color-neutral-50);
-    }
-
-    .checkbox + .name::part(base) {
+    .checkbox + .name {
       padding-left: 0;
     }
 
-    btrix-table-cell::part(base) {
+    btrix-table-cell {
       height: 2.5rem;
-    }
-
-    btrix-table-cell.name::part(base) {
-      min-width: 32em;
     }
   `;
 
@@ -61,35 +42,45 @@ export class CollectionItemList extends TailwindElement {
   rows!: NodeListOf<TableRow>;
 
   render() {
+    const colWidths = ["minmax(32em, auto)", "auto", "auto", "auto"];
+    if (this.collectionId) {
+      colWidths.unshift("min-content");
+    }
     return html`
-      <btrix-table class="data-table">
-        ${this.collectionId
-          ? html`<btrix-table-header-cell slot="head" class="checkbox">
-              <span class="sr-only">${msg("Is in Collection?")}</span>
-            </btrix-table-header-cell>`
-          : nothing}
-        <btrix-table-header-cell slot="head" class="name">
-          ${msg("Name")}
-        </btrix-table-header-cell>
-        <btrix-table-header-cell slot="head">
-          ${msg("Date Created")}
-        </btrix-table-header-cell>
-        <btrix-table-header-cell slot="head">
-          ${msg("Size")}
-        </btrix-table-header-cell>
-        <btrix-table-header-cell slot="head">
-          ${msg("Created By")}
-        </btrix-table-header-cell>
-        ${repeat(this.items, ({ id }) => id, this.renderRow)}
+      <btrix-table
+        style="--btrix-table-grid-auto-columns: ${colWidths.join(" ")}"
+      >
+        <btrix-table-head>
+          ${this.collectionId
+            ? html`<btrix-table-header-cell class="checkbox">
+                <span class="sr-only">${msg("Is in Collection?")}</span>
+              </btrix-table-header-cell>`
+            : nothing}
+          <btrix-table-header-cell class="name">
+            ${msg("Name")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell>
+            ${msg("Date Created")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell> ${msg("Size")} </btrix-table-header-cell>
+          <btrix-table-header-cell>
+            ${msg("Created By")}
+          </btrix-table-header-cell>
+        </btrix-table-head>
+        <btrix-table-body class="border rounded">
+          ${repeat(this.items, ({ id }) => id, this.renderRow)}
+        </btrix-table-body>
       </btrix-table>
     `;
   }
 
-  private renderRow = (item: ArchivedItem) => {
+  private renderRow = (item: ArchivedItem, i: number) => {
     return html`
       <btrix-table-row
-        part="temp"
-        class="itemRow"
+        class="cursor-pointer transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50 ${i >
+        0
+          ? "border-t"
+          : ""}"
         tabindex="0"
         @click=${(e: MouseEvent) => {
           (e.currentTarget as TableRow).querySelector("sl-checkbox")?.click();

@@ -282,37 +282,6 @@
   }
 }
 
-/* TODO move? */
-@layer components {
-  .data-table {
-    --btrix-cell-gap: var(--sl-spacing-x-small);
-    --btrix-cell-padding-top: var(--sl-spacing-small);
-    --btrix-cell-padding-left: var(--sl-spacing-small);
-    --btrix-cell-padding-right: var(--sl-spacing-small);
-    --btrix-cell-padding-bottom: var(--sl-spacing-small);
-  }
-
-  .data-table::part(head) {
-    color: var(--sl-color-neutral-700);
-    font-size: var(--sl-font-size-x-small);
-    line-height: 1;
-  }
-
-  .data-table::part(body) {
-    border: 1px solid var(--sl-panel-border-color);
-    border-radius: var(--sl-border-radius-medium);
-    color: var(--sl-color-neutral-900);
-  }
-
-  .data-table btrix-table-header-cell {
-    --btrix-padding-bottom: var(--sl-spacing-x-small);
-  }
-
-  .data-table btrix-table-row:nth-of-type(n + 2)::part(base) {
-    border-top: 1px solid var(--sl-panel-border-color);
-  }
-}
-
 .sl-toast-stack {
   bottom: 0;
   top: auto;
