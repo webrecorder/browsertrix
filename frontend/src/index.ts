@@ -33,6 +33,8 @@ import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
 import { theme } from "@/theme";
 
+// Comment to remove - triggering frontend build check
+
 // Make theme CSS available in document
 document.adoptedStyleSheets = [theme];
 
