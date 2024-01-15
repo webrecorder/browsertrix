@@ -6,8 +6,8 @@ Welcome to the Browsertrix User Guide. This page covers the basics of using Brow
 
 To get started crawling with Browsertrix:
 
-1. Create an account and join an Organization [as described here](signup).
-2. After being redirected to the organization's [Overview page](overview), click the _Create New_ button in the top right and select _[Crawl Workflow](crawl-workflows)_ to begin configuring your first crawl!
+1. Create an account and join an organization [as described here](signup).
+2. After being redirected to the organization's [overview page](overview), click the _Create New_ button in the top right and select _[Crawl Workflow](crawl-workflows)_ to begin configuring your first crawl!
 3. For a simple crawl, choose the _Seeded Crawl_ option, and enter a page url in the _Crawl Start URL_ field. By default, the crawler will archive all pages under the starting path.
 4. Next, click _Review & Save_, and ensure the _Run on Save_ option is selected. Then click _Save Workflow_.
 5. Wait a moment for the crawler to start and watch as it archives the website!
