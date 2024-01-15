@@ -551,6 +551,8 @@ class CrawlOut(BaseMongoModel):
     userName: Optional[str]
     oid: UUID
 
+    profileid: Optional[UUID]
+
     name: Optional[str]
     description: Optional[str]
 
