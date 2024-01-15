@@ -812,32 +812,12 @@ export class Dashboard extends LiteElement {
     return html`
       <btrix-details>
         <span slot="title">${msg("Usage History")}</span>
-        <btrix-table class="border rounded">
-          <btrix-table-head>
-            ${usageTableCols.map(
-              (content, i) => html`
-                <btrix-table-header-cell class=${i > 0 ? "border-l" : ""}
-                  >${content}</btrix-table-header-cell
-                >
-              `
-            )}
-          </btrix-table-head>
-          <btrix-table-body>
-            ${rows.map(
-              (row) => html`
-                <btrix-table-row class="border-t">
-                  ${row.map(
-                    (content, i) => html`
-                      <btrix-table-cell class=${i > 0 ? "border-l" : ""}>
-                        ${content}
-                      </btrix-table-cell>
-                    `
-                  )}
-                </btrix-table-row>
-              `
-            )}
-          </btrix-table-body>
-        </btrix-table>
+        <div class="border rounded overflow-hidden">
+          <btrix-data-table
+            .columns=${usageTableCols}
+            .rows=${rows}
+          ></btrix-data-table>
+        </div>
       </btrix-details>
     `;
   }

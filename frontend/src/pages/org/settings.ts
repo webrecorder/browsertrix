@@ -269,34 +269,21 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderMembers() {
-    const tableStyle = `--btrix-table-grid-auto-columns: 1fr 12rem 3rem`;
+    const columnWidths = ["100%", "10rem", "1.5rem"];
+    const rows = Object.entries(this.org.users!).map(([_id, user]) => [
+      user.name,
+      this.renderUserRoleSelect(user),
+      this.renderRemoveMemberButton(user),
+    ]);
     return html`
-      <btrix-table class="border rounded" style=${tableStyle}>
-        <btrix-table-head>
-          <btrix-table-header-cell> ${msg("Name")} </btrix-table-header-cell>
-          <btrix-table-header-cell class="border-l">
-            ${msg("Role")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell class="border-l">
-            <span class="sr-only">${msg("Row Actions")}</span>
-          </btrix-table-header-cell>
-        </btrix-table-head>
-        <btrix-table-body>
-          ${Object.values(this.org.users!).map(
-            (user, i) => html`
-              <btrix-table-row class="border-t">
-                <btrix-table-cell>${user.name}</btrix-table-cell>
-                <btrix-table-cell class="border-l">
-                  ${this.renderUserRoleSelect(user)}
-                </btrix-table-cell>
-                <btrix-table-cell class="border-l">
-                  ${this.renderRemoveMemberButton(user)}
-                </btrix-table-cell>
-              </btrix-table-row>
-            `
-          )}
-        </btrix-table-body>
-      </btrix-table>
+      <section class="rounded border overflow-hidden">
+        <btrix-data-table
+          .columns=${[msg("Name"), msg("Role"), ""]}
+          .rows=${rows}
+          .columnWidths=${columnWidths}
+        >
+        </btrix-data-table>
+      </section>
 
       ${when(
         this.pendingInvites.length,
@@ -307,34 +294,16 @@ export class OrgSettings extends LiteElement {
             </h3>
 
             <div class="rounded border overflow-hidden">
-              <btrix-table class="border rounded" style=${tableStyle}>
-                <btrix-table-head>
-                  <btrix-table-header-cell>
-                    ${msg("Email")}
-                  </btrix-table-header-cell>
-                  <btrix-table-header-cell class="border-l">
-                    ${msg("Role")}
-                  </btrix-table-header-cell>
-                  <btrix-table-header-cell class="border-l">
-                    <span class="sr-only">${msg("Row Actions")}</span>
-                  </btrix-table-header-cell>
-                </btrix-table-head>
-                <btrix-table-body>
-                  ${this.pendingInvites.map(
-                    (user, i) => html`
-                      <btrix-table-row class="border-t">
-                        <btrix-table-cell> ${user.email} </btrix-table-cell>
-                        <btrix-table-cell class="border-l">
-                          ${this.renderUserRole(user)}
-                        </btrix-table-cell>
-                        <btrix-table-cell class="border-l">
-                          ${this.renderRemoveInviteButton(user)}
-                        </btrix-table-cell>
-                      </btrix-table-row>
-                    `
-                  )}
-                </btrix-table-body>
-              </btrix-table>
+              <btrix-data-table
+                .columns=${[msg("Email"), msg("Role"), ""]}
+                .rows=${this.pendingInvites.map((user) => [
+                  user.email,
+                  this.renderUserRole(user),
+                  this.renderRemoveInviteButton(user),
+                ])}
+                .columnWidths=${columnWidths}
+              >
+              </btrix-data-table>
             </div>
           </section>
         `
