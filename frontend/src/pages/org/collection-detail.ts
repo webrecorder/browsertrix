@@ -6,6 +6,7 @@ import { guard } from "lit/directives/guard.js";
 import queryString from "query-string";
 import type { TemplateResult } from "lit";
 import type { SlCheckbox } from "@shoelace-style/shoelace";
+import { repeat } from "lit/directives/repeat.js";
 
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -630,11 +631,14 @@ export class CollectionDetail extends LiteElement {
     if (!this.archivedItems) return;
 
     return html`
-      <btrix-collection-item-list .items=${this.archivedItems.items}>
-      </btrix-collection-item-list>
-      <btrix-crawl-list collectionId=${this.collectionId}>
-        ${this.archivedItems.items.map(this.renderArchivedItem)}
-      </btrix-crawl-list>
+      <btrix-archived-item-list>
+        <span slot="actions" class="sr-only">${msg("Row actions")}</span>
+        ${repeat(
+          this.archivedItems.items,
+          ({ id }) => id,
+          this.renderArchivedItem
+        )}
+      </btrix-archived-item-list>
     `;
   }
 
@@ -652,24 +656,48 @@ export class CollectionDetail extends LiteElement {
 
   private renderArchivedItem = (item: ArchivedItem, idx: number) =>
     html`
-      <btrix-crawl-list-item
-        orgSlug=${this.appState.orgSlug || ""}
-        .crawl=${item as Crawl}
+      <btrix-archived-item-list-item
+        class="cursor-pointer transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50"
+        .item=${item as Crawl}
+        role="button"
+        @click=${async (e: MouseEvent) => {
+          e.preventDefault();
+          await this.updateComplete;
+          const href = `/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`;
+          this.navTo(href);
+        }}
       >
+        <btrix-crawl-status
+          slot="prefix"
+          state=${item.state}
+          hideLabel
+          ?isUpload=${item.type === "upload"}
+        ></btrix-crawl-status>
         ${when(
           this.isCrawler,
           () =>
-            html` <sl-menu slot="menu">
-              <sl-menu-item
-                style="--sl-color-neutral-700: var(--warning)"
-                @click=${() => this.removeArchivedItem(item.id, idx)}
+            html`
+              <btrix-overflow-dropdown
+                slot="actions"
+                @click=${(e: MouseEvent) => {
+                  // Prevent navigation to detail view
+                  e.preventDefault();
+                  e.stopImmediatePropagation();
+                }}
               >
-                <sl-icon name="folder-minus" slot="prefix"></sl-icon>
-                ${msg("Remove from Collection")}
-              </sl-menu-item>
-            </sl-menu>`
+                <sl-menu>
+                  <sl-menu-item
+                    style="--sl-color-neutral-700: var(--warning)"
+                    @click=${() => this.removeArchivedItem(item.id, idx)}
+                  >
+                    <sl-icon name="folder-minus" slot="prefix"></sl-icon>
+                    ${msg("Remove from Collection")}
+                  </sl-menu-item>
+                </sl-menu>
+              </btrix-overflow-dropdown>
+            `
         )}
-      </btrix-crawl-list-item>
+      </btrix-archived-item-list-item>
     `;
 
   private renderReplay = () => {
@@ -858,13 +886,7 @@ export class CollectionDetail extends LiteElement {
         }
       );
 
-      const { page, items, total } = this.archivedItems!;
-      // Update state for immediate feedback while retrieving list
-      this.archivedItems = {
-        ...this.archivedItems!,
-        total: total - 1,
-        items: [...items.slice(0, pageIndex), ...items.slice(pageIndex + 1)],
-      };
+      const { page, items } = this.archivedItems!;
 
       this.notify({
         message: msg(str`Successfully removed item from Collection.`),

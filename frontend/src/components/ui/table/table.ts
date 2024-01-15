@@ -49,10 +49,10 @@ export class Table extends TailwindElement {
   static styles = css`
     :host {
       --btrix-cell-gap: var(--sl-spacing-x-small);
-      --btrix-cell-padding-top: var(--sl-spacing-small);
+      --btrix-cell-padding-top: var(--sl-spacing-x-small);
+      --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
       --btrix-cell-padding-left: var(--sl-spacing-small);
       --btrix-cell-padding-right: var(--sl-spacing-small);
-      --btrix-cell-padding-bottom: var(--sl-spacing-small);
 
       display: grid;
       grid-auto-columns: var(--btrix-table-grid-auto-columns, auto);

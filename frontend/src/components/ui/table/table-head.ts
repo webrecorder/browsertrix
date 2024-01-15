@@ -35,6 +35,7 @@ export class TableHead extends LitElement {
 
   @queryAssignedElements({
     selector: "btrix-table-header-cell",
+    flatten: true,
   })
   private headerCells!: Array<TableHeaderCell>;
 

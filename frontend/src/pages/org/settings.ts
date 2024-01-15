@@ -286,7 +286,7 @@ export class OrgSettings extends LiteElement {
             (user, i) => html`
               <btrix-table-row class="border-t">
                 <btrix-table-cell>${user.name}</btrix-table-cell>
-                <btrix-table-cell class="border-l py-0">
+                <btrix-table-cell class="border-l">
                   ${this.renderUserRoleSelect(user)}
                 </btrix-table-cell>
                 <btrix-table-cell class="border-l">
@@ -324,7 +324,7 @@ export class OrgSettings extends LiteElement {
                     (user, i) => html`
                       <btrix-table-row class="border-t">
                         <btrix-table-cell> ${user.email} </btrix-table-cell>
-                        <btrix-table-cell class="border-l py-0">
+                        <btrix-table-cell class="border-l">
                           ${this.renderUserRole(user)}
                         </btrix-table-cell>
                         <btrix-table-cell class="border-l">

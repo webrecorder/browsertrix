@@ -1,0 +1,156 @@
+import { html, css, nothing, type TemplateResult } from "lit";
+import {
+  customElement,
+  property,
+  queryAssignedElements,
+} from "lit/decorators.js";
+import { msg, localized, str } from "@lit/localize";
+import type { SlCheckbox } from "@shoelace-style/shoelace";
+
+import { TailwindElement } from "@/classes/TailwindElement";
+import type { Crawl, Upload } from "@/types/crawler";
+
+function renderName(item: Crawl | Upload) {
+  if (item.name) return html`<span class="truncate">${item.name}</span>`;
+  if (item.hasOwnProperty("firstSeed")) {
+    const remainder = (item as Crawl).seedCount - 1;
+    let nameSuffix: string | TemplateResult<1> = "";
+    if (remainder) {
+      if (remainder === 1) {
+        nameSuffix = html`<span class="additionalUrls"
+          >${msg(str`+${remainder} URL`)}</span
+        >`;
+      } else {
+        nameSuffix = html`<span class="additionalUrls"
+          >${msg(str`+${remainder} URLs`)}</span
+        >`;
+      }
+    }
+    return html`
+      <span class="primaryUrl truncate">${(item as Crawl).firstSeed}</span>
+      ${nameSuffix}
+    `;
+  }
+
+  return html`<span class="truncate">${msg("(unnamed item)")}</span>`;
+}
+
+/**
+ * @slot checkbox - Checkbox column content
+ * @slot prefix - Space before archived item name
+ * @slot actions - Action column content
+ */
+@localized()
+@customElement("btrix-archived-item-list-item")
+export class ArchivedItemListItem extends TailwindElement {
+  static styles = css`
+    :host {
+      grid-column: var(--btrix-table-grid-column);
+      display: grid;
+      grid-template-columns: subgrid;
+    }
+  `;
+
+  @property({ type: Object })
+  item?: Crawl | Upload;
+
+  @property({ type: Number })
+  index = 0;
+
+  @queryAssignedElements({
+    slot: "checkbox",
+    selector: "sl-checkbox",
+    flatten: true,
+  })
+  checkbox!: Array<SlCheckbox>;
+
+  render() {
+    if (!this.item) return;
+    return html`
+      <btrix-table-row tabindex="0" @click=${() => this.checkbox[0]?.click()}>
+        <btrix-table-cell class="p-0">
+          <slot name="checkbox"></slot>
+        </btrix-table-cell>
+        <btrix-table-cell>
+          <slot name="prefix"></slot>
+          ${renderName(this.item)}
+        </btrix-table-cell>
+        <btrix-table-cell>
+          <sl-format-date
+            date=${`${this.item.finished}Z`}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+            hour="2-digit"
+            minute="2-digit"
+          ></sl-format-date>
+        </btrix-table-cell>
+        <btrix-table-cell
+          ><sl-format-bytes
+            value=${this.item.fileSize || 0}
+            display="narrow"
+          ></sl-format-bytes
+        ></btrix-table-cell>
+        <btrix-table-cell><span>${this.item.userName}</span></btrix-table-cell>
+        <btrix-table-cell>
+          <slot name="actions"></slot>
+        </btrix-table-cell>
+      </btrix-table-row>
+    `;
+  }
+}
+
+/**
+ * @example Usage:
+ * ```ts
+ * <btrix-archived-item-list>
+ *   <btrix-archived-item-list-item .item=${item}
+ *   ></btrix-archived-item-list-item>
+ * </btrix-archived-item-list>
+ * ```
+ *
+ * @slot checkbox
+ * @slot actions
+ */
+@localized()
+@customElement("btrix-archived-item-list")
+export class ArchivedItemList extends TailwindElement {
+  @queryAssignedElements({ selector: "btrix-archived-item-list-item" })
+  items!: Array<ArchivedItemListItem>;
+
+  render() {
+    return html`
+      <btrix-table
+        style="--btrix-table-grid-auto-columns: min-content minmax(32em, auto) auto auto auto min-content"
+      >
+        <btrix-table-head>
+          <btrix-table-header-cell class="p-0">
+            <slot name="checkbox"></slot>
+          </btrix-table-header-cell>
+          <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
+          <btrix-table-header-cell>
+            ${msg("Date Created")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
+          <btrix-table-header-cell>
+            ${msg("Created By")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell
+            ><slot name="actions"></slot
+          ></btrix-table-header-cell>
+        </btrix-table-head>
+        <btrix-table-body class="border rounded overflow-hidden">
+          <slot @slotchange=${this.onSlotChange}></slot>
+        </btrix-table-body>
+      </btrix-table>
+    `;
+  }
+
+  private onSlotChange() {
+    this.items.forEach((item, i) => {
+      if (i > 0) {
+        item.classList.add("border-t");
+      }
+    });
+  }
+}

@@ -8,6 +8,8 @@ import without from "lodash/fp/without";
 import union from "lodash/fp/union";
 import queryString from "query-string";
 import { merge } from "immutable";
+import { repeat } from "lit/directives/repeat.js";
+import type { SlCheckbox } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "@/utils/AuthService";
 import type {
@@ -21,7 +23,6 @@ import { finishedCrawlStates } from "@/utils/crawler";
 import type { Dialog } from "@/components/ui/dialog";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
-import { type SelectionChangeDetail } from "@/features/collections/collection-item-list";
 import { NotifyController } from "@/controllers/notify";
 import type {
   SortChangeEventDetail,
@@ -31,7 +32,10 @@ import type {
   SortBy,
   FilterBy,
 } from "@/features/archived-items/item-list-controls";
-import type { AutoAddChangeDetail } from "./collection-workflow-list";
+import type {
+  AutoAddChangeDetail,
+  SelectionChangeDetail,
+} from "./collection-workflow-list";
 
 const TABS = ["crawl", "upload"] as const;
 type Tab = (typeof TABS)[number];
@@ -362,16 +366,10 @@ export class CollectionItemsDialog extends TailwindElement {
         </btrix-section-heading>
       </header>
       <section class="flex-1 p-3">
-        <btrix-collection-item-list
-          collectionId=${this.collectionId}
-          .items=${this.uploads.items || []}
-          @btrix-selection-change=${(e: CustomEvent<SelectionChangeDetail>) => {
-            this.selection = {
-              ...this.selection,
-              ...e.detail.selection,
-            };
-          }}
-        ></btrix-collection-item-list>
+        <btrix-archived-item-list>
+          <span class="sr-only" slot="checkbox">${msg("In Collection?")}</span>
+          ${repeat(this.uploads.items, ({ id }) => id, this.renderArchivedItem)}
+        </btrix-archived-item-list>
       </section>
       <footer class="flex justify-center pb-3">
         ${when(
@@ -401,16 +399,10 @@ export class CollectionItemsDialog extends TailwindElement {
 
     return html`
       <section class="flex-1 p-3">
-        <btrix-collection-item-list
-          collectionId=${this.collectionId}
-          .items=${this.crawls.items || []}
-          @btrix-selection-change=${(e: CustomEvent<SelectionChangeDetail>) => {
-            this.selection = {
-              ...this.selection,
-              ...e.detail.selection,
-            };
-          }}
-        ></btrix-collection-item-list>
+        <btrix-archived-item-list>
+          <span class="sr-only" slot="checkbox">${msg("In Collection?")}</span>
+          ${repeat(this.crawls.items, ({ id }) => id, this.renderArchivedItem)}
+        </btrix-archived-item-list>
       </section>
 
       <footer class="flex justify-center pb-3">
@@ -512,6 +504,36 @@ export class CollectionItemsDialog extends TailwindElement {
       </sl-switch>
     `;
   }
+
+  renderArchivedItem = (item: Crawl | Upload) => html`
+    <btrix-archived-item-list-item
+      class="cursor-pointer transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50"
+      .item=${item}
+      role="button"
+      @click=${async (e: MouseEvent) =>
+        (e.currentTarget as HTMLElement).querySelector("sl-checkbox")?.click()}
+    >
+      ${this.renderCheckbox(item)}
+    </btrix-archived-item-list-item>
+  `;
+
+  private renderCheckbox = (item: ArchivedItem) => {
+    const isInCollection = item.collectionIds.includes(this.collectionId);
+    return html`
+      <div slot="checkbox" class="pl-3">
+        <sl-checkbox
+          class="flex"
+          ?checked=${isInCollection}
+          @sl-change=${(e: CustomEvent) => {
+            this.selection = {
+              ...this.selection,
+              [item.id]: (e.currentTarget as SlCheckbox).checked,
+            };
+          }}
+        ></sl-checkbox>
+      </div>
+    `;
+  };
 
   renderSave = () => {
     const { add, remove } = this.difference;
