@@ -102,7 +102,7 @@ backend_password_secret: "PASSWORD!"
 backend_num_replicas: 1
 
 # number of workers per pod
-backend_workers: 2
+backend_workers: 1
 
 backend_cpu: "25m"
 

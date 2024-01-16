@@ -53,6 +53,18 @@ spec:
         - name: api
           image: {{ .Values.backend_image }}
           imagePullPolicy: {{ .Values.backend_pull_policy }}
+          command:
+              - gunicorn
+              - btrixcloud.main:app_root
+              - --bind
+              - "0.0.0.0:8000"
+              - --access-logfile
+              - "-"
+              - --workers
+              - "{{ .Values.backend_workers | default 1 }}"
+              - --worker-class
+              - uvicorn.workers.UvicornWorker
+
           envFrom:
             - configMapRef:
                 name: backend-env-config
@@ -62,8 +74,8 @@ spec:
                 name: mongo-auth
 
           env:
-            - name: WEB_CONCURRENCY
-              value: "{{ .Values.backend_workers | default 4 }}"
+            - name: MOTOR_MAX_WORKERS
+              value: "{{ .Values.backend_mongodb_workers | default 1 }}"
 
           volumeMounts:
             - name: ops-configs
@@ -114,15 +126,16 @@ spec:
           image: {{ .Values.backend_image }}
           imagePullPolicy: {{ .Values.backend_pull_policy }}
           command:
-              - uvicorn
+              - gunicorn
               - btrixcloud.main_op:app_root
-              - --host
-              - 0.0.0.0
-              - --port
-              - "{{ .Values.opPort }}"
-              - --access-log
-              - --log-level
-              - info
+              - --bind
+              - "0.0.0.0:{{ .Values.opPort }}"
+              - --access-logfile
+              - "-"
+              - --workers
+              - "{{ .Values.backend_workers | default 1 }}"
+              - --worker-class
+              - uvicorn.workers.UvicornWorker
 
           envFrom:
             - configMapRef:
@@ -133,8 +146,8 @@ spec:
                 name: mongo-auth
 
           env:
-            - name: WEB_CONCURRENCY
-              value: "{{ .Values.operator_workers | default 1 }}"
+            - name: MOTOR_MAX_WORKERS
+              value: "{{ .Values.backend_mongodb_workers | default 1 }}"
 
           volumeMounts:
             - name: config-volume
