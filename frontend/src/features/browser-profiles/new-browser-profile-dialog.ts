@@ -21,6 +21,9 @@ export class NewBrowserProfileDialog extends LiteElement {
   @state()
   private isSubmitting = false;
 
+  @state()
+  private crawlerChannel = "default";
+
   @queryAsync("#browserProfileForm")
   private form!: Promise<HTMLFormElement>;
 
@@ -76,6 +79,14 @@ export class NewBrowserProfileDialog extends LiteElement {
             </div>
           </div>
         </div>
+        <div class="mt-1">
+          <btrix-select-crawler
+            orgId=${this.orgId}
+            .crawlerChannel=${this.crawlerChannel}
+            .authState=${this.authState}
+            @on-change=${(e: any) => (this.crawlerChannel = e.detail.value)}
+          ></btrix-select-crawler>
+        </div>
         <input class="invisible h-0 w-0" type="submit" />
       </form>
       <div slot="footer" class="flex justify-between">
@@ -128,6 +139,7 @@ export class NewBrowserProfileDialog extends LiteElement {
         url: `${formData.get("urlPrefix")}${url.substring(
           url.indexOf(",") + 1
         )}`,
+        crawlerChannel: this.crawlerChannel,
       });
 
       this.notify({
@@ -141,7 +153,7 @@ export class NewBrowserProfileDialog extends LiteElement {
           data.browserid
         }?name=${window.encodeURIComponent(
           "My Profile"
-        )}&description=&profileId=`
+        )}&description=&profileId=&crawlerChannel=${this.crawlerChannel}`
       );
     } catch (e: any) {
       this.notify({
@@ -153,9 +165,16 @@ export class NewBrowserProfileDialog extends LiteElement {
     this.isSubmitting = false;
   }
 
-  private createBrowser({ url }: { url: string }) {
+  private createBrowser({
+    url,
+    crawlerChannel,
+  }: {
+    url: string;
+    crawlerChannel: string;
+  }) {
     const params = {
       url,
+      crawlerChannel,
     };
 
     return this.apiFetch<{ browserid: string }>(

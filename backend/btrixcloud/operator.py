@@ -112,6 +112,7 @@ class CrawlSpec(BaseModel):
     scale: int = 1
     storage: StorageRef
     started: str
+    crawler_channel: str
     stopping: bool = False
     scheduled: bool = False
     timeout: int = 0
@@ -222,6 +223,7 @@ class CrawlStatus(BaseModel):
     stopping: bool = False
     stopReason: Optional[str] = None
     initRedis: bool = False
+    crawlerImage: Optional[str] = None
     lastActiveTime: str = ""
     podStatus: Optional[DefaultDict[str, PodInfo]] = defaultdict(
         lambda: PodInfo()  # pylint: disable=unnecessary-lambda
@@ -364,6 +366,7 @@ class BtrixOperator(K8sAPI):
         params["storage_path"] = storage_path
         params["storage_secret"] = storage_secret
         params["profile_filename"] = spec.get("profileFilename", "")
+        params["crawler_image"] = spec["crawlerImage"]
 
         params["url"] = spec.get("startUrl", "about:blank")
         params["vnc_password"] = spec.get("vncPassword")
@@ -444,6 +447,7 @@ class BtrixOperator(K8sAPI):
             cid=cid,
             oid=oid,
             storage=StorageRef(spec["storageName"]),
+            crawler_channel=spec.get("crawlerChannel"),
             scale=spec.get("scale", 1),
             started=data.parent["metadata"]["creationTimestamp"],
             stopping=spec.get("stopping", False),
@@ -521,6 +525,15 @@ class BtrixOperator(K8sAPI):
         params["storage_path"] = storage_path
         params["storage_secret"] = storage_secret
         params["profile_filename"] = configmap["PROFILE_FILENAME"]
+
+        # only resolve if not already set
+        # not automatically updating image for existing crawls
+        if not status.crawlerImage:
+            status.crawlerImage = self.crawl_config_ops.get_channel_crawler_image(
+                crawl.crawler_channel
+            )
+
+        params["crawler_image"] = status.crawlerImage
 
         params["storage_filename"] = configmap["STORE_FILENAME"]
         params["restart_time"] = spec.get("restartTime")
@@ -1632,6 +1645,7 @@ class BtrixOperator(K8sAPI):
             userid=userid,
             oid=oid,
             storage=org.storage,
+            crawler_channel=configmap["CRAWLER_CHANNEL"],
             scale=int(configmap.get("INITIAL_SCALE", 1)),
             crawl_timeout=int(configmap.get("CRAWL_TIMEOUT", 0)),
             max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),

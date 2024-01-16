@@ -48,6 +48,8 @@ data:
 
   STORAGES_JSON: "/ops-configs/storages.json"
 
+  CRAWLER_CHANNELS_JSON: "/ops-configs/crawler_channels.json"
+
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -86,7 +88,6 @@ data:
     redis_storage: "{{ .Values.redis_storage }}"
 
     # crawler
-    crawler_image: {{ .Values.crawler_image }}
     crawler_image_pull_policy: {{ .Values.crawler_pull_policy }}
 
     crawler_cpu_base: "{{ .Values.crawler_cpu_base }}"

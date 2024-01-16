@@ -118,6 +118,7 @@ type FormState = {
   autoAddCollections: string[];
   description: WorkflowParams["description"];
   autoscrollBehavior: boolean;
+  crawlerChannel: string;
 };
 
 const DEPTH_SUPPORTED_SCOPES = ["prefix", "host", "domain", "custom", "any"];
@@ -194,6 +195,7 @@ const getDefaultFormState = (): FormState => ({
   autoAddCollections: [],
   description: null,
   autoscrollBehavior: true,
+  crawlerChannel: "default",
 });
 const defaultProgressState = getDefaultProgressState();
 
@@ -262,6 +264,9 @@ export class CrawlConfigEditor extends LiteElement {
 
   @property({ type: Boolean })
   orgExecutionMinutesQuotaReached = false;
+
+  @state()
+  private showCrawlerChannels = false;
 
   @state()
   private tagOptions: string[] = [];
@@ -582,6 +587,8 @@ export class CrawlConfigEditor extends LiteElement {
       autoscrollBehavior: this.initialWorkflow.config.behaviors
         ? this.initialWorkflow.config.behaviors.includes("autoscroll")
         : defaultFormState.autoscrollBehavior,
+      crawlerChannel:
+        this.initialWorkflow.crawlerChannel || defaultFormState.crawlerChannel,
       ...formState,
     };
   }
@@ -1621,6 +1628,25 @@ https://archiveweb.page/images/${"logo.svg"}`}
         accounts.`)
       )}
       ${this.renderFormCol(html`
+        <btrix-select-crawler
+          orgId=${this.orgId}
+          .crawlerChannel=${this.formState.crawlerChannel}
+          .authState=${this.authState}
+          @on-change=${(e: any) =>
+            this.updateFormState({
+              crawlerChannel: e.detail.value,
+            })}
+          @on-update=${(e: any) => (this.showCrawlerChannels = e.detail.show)}
+        ></btrix-select-crawler>
+      `)}
+      ${this.showCrawlerChannels
+        ? this.renderHelpTextCol(
+            msg(
+              `Choose a Browsertrix Crawler Release Channel. If available, other versions may provide new/experimental crawling features.`
+            )
+          )
+        : html``}
+      ${this.renderFormCol(html`
         <sl-checkbox name="blockAds" ?checked=${this.formState.blockAds}>
           ${msg("Block ads by domain")}
         </sl-checkbox>
@@ -1917,6 +1943,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
               ...crawlConfig,
               profileName,
               oid: this.orgId,
+              image: null,
             } as CrawlConfig}
             .seeds=${crawlConfig.config.seeds}
           >
@@ -2368,6 +2395,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           : DEFAULT_BEHAVIORS.slice(1)
         ).join(","),
       },
+      crawlerChannel: this.formState.crawlerChannel || "default",
     };
 
     return config;

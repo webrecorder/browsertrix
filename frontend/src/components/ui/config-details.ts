@@ -13,6 +13,8 @@ import { humanizeSchedule } from "@/utils/cron";
 import { RelativeDuration } from "./relative-duration";
 import { nothing } from "lit";
 
+import capitalize from "lodash/fp/capitalize";
+
 /**
  * Usage:
  * ```ts
@@ -215,6 +217,11 @@ export class ConfigDetails extends LiteElement {
               </a>`,
               () => msg("Default Profile")
             )
+          )}
+          ${this.renderSetting(
+            msg("Crawler Channel (Exact Crawler Version)"),
+            capitalize(crawlConfig?.crawlerChannel || "default") +
+              (crawlConfig?.image ? ` (${crawlConfig?.image})` : "")
           )}
           ${this.renderSetting(
             msg("Block Ads by Domain"),

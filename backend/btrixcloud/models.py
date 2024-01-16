@@ -272,6 +272,7 @@ class CrawlConfigIn(BaseModel):
     jobType: Optional[JobType] = JobType.CUSTOM
 
     profileid: Union[UUID, EmptyStr, None]
+    crawlerChannel: str = "default"
 
     autoAddCollections: Optional[List[UUID]] = []
     tags: Optional[List[str]] = []
@@ -294,6 +295,7 @@ class ConfigRevision(BaseMongoModel):
     config: RawCrawlConfig
 
     profileid: Optional[UUID]
+    crawlerChannel: Optional[str]
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
@@ -323,6 +325,7 @@ class CrawlConfigCore(BaseMongoModel):
     oid: UUID
 
     profileid: Optional[UUID]
+    crawlerChannel: Optional[str] = None
 
 
 # ============================================================================
@@ -413,11 +416,32 @@ class UpdateCrawlConfig(BaseModel):
     # crawl data: revision tracked
     schedule: Optional[str] = None
     profileid: Union[UUID, EmptyStr, None] = None
+    crawlerChannel: Optional[str] = None
     crawlTimeout: Optional[int] = None
     maxCrawlSize: Optional[int] = None
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = None  # type: ignore
     crawlFilenameTemplate: Optional[str] = None
     config: Optional[RawCrawlConfig] = None
+
+
+# ============================================================================
+
+### CRAWLER VERSIONS ###
+
+
+# ============================================================================
+class CrawlerChannel(BaseModel):
+    """Crawler version available to use in workflows"""
+
+    id: str
+    image: str
+
+
+# ============================================================================
+class CrawlerChannels(BaseModel):
+    """List of CrawlerChannel instances for API"""
+
+    channels: List[CrawlerChannel] = []
 
 
 # ============================================================================
@@ -587,6 +611,9 @@ class CrawlOut(BaseMongoModel):
     storageQuotaReached: Optional[bool]
     execMinutesQuotaReached: Optional[bool]
 
+    crawlerChannel: str = "default"
+    image: Optional[str]
+
 
 # ============================================================================
 class CrawlOutWithResources(CrawlOut):
@@ -643,6 +670,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     stopping: Optional[bool] = False
 
     crawlExecSeconds: int = 0
+
+    image: Optional[str]
 
 
 # ============================================================================
@@ -1038,6 +1067,7 @@ class Profile(BaseMongoModel):
 
     created: Optional[datetime]
     baseid: Optional[UUID] = None
+    crawlerChannel: Optional[str]
 
 
 # ============================================================================
@@ -1059,6 +1089,7 @@ class ProfileLaunchBrowserIn(UrlIn):
     """Request to launch new browser for creating profile"""
 
     profileId: Optional[UUID] = None
+    crawlerChannel: str = "default"
 
 
 # ============================================================================
@@ -1075,6 +1106,7 @@ class ProfileCreate(BaseModel):
     browserid: str
     name: str
     description: Optional[str] = ""
+    crawlerChannel: str = "default"
 
 
 # ============================================================================
