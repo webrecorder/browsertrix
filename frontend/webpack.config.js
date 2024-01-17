@@ -214,4 +214,6 @@ const vnc = {
   },
 };
 
+require("util").inspect(main.module.rules[0]);
+
 module.exports = [main, vnc];
