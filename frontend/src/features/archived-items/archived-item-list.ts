@@ -11,7 +11,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import type { ArchivedItem } from "@/types/crawler";
 
 function renderName(item: ArchivedItem) {
-  if (item.name) return html`<span class="truncate">${item.name}</span>`;
+  if (item.name) return html`<span>${item.name}</span>`;
   if (item.firstSeed && item.seedCount) {
     const remainder = item.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
@@ -27,12 +27,14 @@ function renderName(item: ArchivedItem) {
       }
     }
     return html`
-      <span class="primaryUrl truncate">${item.firstSeed}</span>
-      ${nameSuffix}
+      <div class="overflow-hidden whitespace-nowrap flex">
+        <span class="truncate min-w-0 flex-1">${item.firstSeed}</span>
+        <span>${nameSuffix}</span>
+      </div>
     `;
   }
 
-  return html`<span class="truncate">${msg("(unnamed item)")}</span>`;
+  return html`<span class="text-neutral-500">${msg("(unnamed item)")}</span>`;
 }
 
 /**
@@ -127,8 +129,8 @@ export class ArchivedItemList extends TailwindElement {
       --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
       --btrix-cell-padding-left: var(--sl-spacing-small);
       --btrix-cell-padding-right: var(--sl-spacing-small);
-      --btrix-table-grid-auto-columns: min-content minmax(28em, auto) auto auto
-        auto auto min-content;
+      --btrix-table-grid-auto-columns: min-content 26rem 12rem 1fr 1fr 1fr
+        min-content;
     }
   `;
 
@@ -166,7 +168,9 @@ export class ArchivedItemList extends TailwindElement {
 
   private onSlotChange() {
     this.items.forEach((item, i) => {
-      if (i > 0) {
+      if (i === 0) {
+        item.classList.remove("border-t");
+      } else {
         item.classList.add("border-t");
       }
     });
