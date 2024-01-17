@@ -3,6 +3,7 @@ import { customElement, property } from "lit/decorators.js";
 
 /**
  * @cssproperty --btrix-table-grid-column
+ * @cssproperty --btrix-row-gap
  */
 @customElement("btrix-table-body")
 export class TableBody extends LitElement {
@@ -11,6 +12,7 @@ export class TableBody extends LitElement {
       grid-column: var(--btrix-table-grid-column);
       display: grid;
       grid-template-columns: subgrid;
+      grid-row-gap: var(--btrix-row-gap, 0);
       color: var(--sl-color-neutral-900);
     }
   `;

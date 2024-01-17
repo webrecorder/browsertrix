@@ -34,6 +34,9 @@ import { type TableHead } from "./table-head";
  * </btrix-table>
  * ```
  *
+ * Table columns will be automatically sized according to its content.
+ * To specify column size, use `--btrix-table-grid-auto-columns`.
+ *
  * @slot head
  * @slot
  * @csspart head
