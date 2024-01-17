@@ -531,7 +531,7 @@ export class CollectionItemsDialog extends TailwindElement {
 
   renderArchivedItem = (item: Crawl | Upload) => html`
     <btrix-archived-item-list-item
-      class="cursor-pointer transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50"
+      class="cursor-pointer select-none"
       .item=${item}
       role="button"
       @click=${async (e: MouseEvent) =>

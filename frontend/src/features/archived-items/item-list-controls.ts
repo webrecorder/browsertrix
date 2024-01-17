@@ -93,7 +93,7 @@ export class ItemListControls extends TailwindElement {
         .keyLabels=${this.keyLabels}
         .searchOptions=${this.searchOptions}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
-        placeholder=${msg("Search by name")}
+        placeholder=${msg("Filter by name")}
         @btrix-select=${(e: SelectEvent<string>) => {
           const { key, value } = e.detail;
           if (key) {

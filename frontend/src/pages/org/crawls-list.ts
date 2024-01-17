@@ -73,7 +73,7 @@ export class CrawlsList extends LiteElement {
   isCrawler!: boolean;
 
   @property({ type: String })
-  itemType: ArchivedItem["type"] = "crawl";
+  itemType: ArchivedItem["type"] | null = null;
 
   @state()
   private archivedItems?: Crawls;

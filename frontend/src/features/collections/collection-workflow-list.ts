@@ -227,6 +227,9 @@ export class CollectionWorkflowList extends TailwindElement {
               ?checked=${workflow.autoAddCollections.some(
                 (id) => id === this.collectionId
               )}
+              @click=${(e: MouseEvent) => {
+                e.stopPropagation();
+              }}
               @sl-change=${(e: CustomEvent) => {
                 e.stopPropagation();
                 this.dispatchEvent(
