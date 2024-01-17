@@ -11,7 +11,7 @@ import type {
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { maxLengthValidator } from "@/utils/form";
-import type { Crawl } from "@/types/crawler";
+import type { ArchivedItem } from "@/types/crawler";
 
 /**
  * Usage:
@@ -35,7 +35,7 @@ export class CrawlMetadataEditor extends LiteElement {
   authState?: AuthState;
 
   @property({ type: Object })
-  crawl?: Crawl;
+  crawl?: ArchivedItem;
 
   @property({ type: Boolean })
   open = false;

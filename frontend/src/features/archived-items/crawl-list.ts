@@ -24,7 +24,7 @@ import queryString from "query-string";
 
 import { NavigateController } from "@/controllers/navigate";
 import { RelativeDuration } from "@/components/ui/relative-duration";
-import type { Crawl } from "@/types/crawler";
+import type { ArchivedItem } from "@/types/crawler";
 import { srOnly, truncate } from "@/utils/css";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 
@@ -72,6 +72,9 @@ const hostVars = css`
   }
 `;
 
+/**
+ * @deprecated for btrix-archived-item-list-item
+ */
 @localized()
 @customElement("btrix-crawl-list-item")
 export class CrawlListItem extends LitElement {
@@ -174,7 +177,7 @@ export class CrawlListItem extends LitElement {
   orgSlug!: string;
 
   @property({ type: Object })
-  crawl?: Crawl;
+  crawl?: ArchivedItem;
 
   @property({ type: String })
   collectionId?: string;
@@ -326,7 +329,7 @@ export class CrawlListItem extends LitElement {
   }
 
   private safeRender(
-    render: (crawl: Crawl) => string | TemplateResult<1> | undefined
+    render: (crawl: ArchivedItem) => string | TemplateResult<1> | undefined
   ) {
     if (!this.crawl) {
       return html`<sl-skeleton></sl-skeleton>`;
@@ -334,9 +337,9 @@ export class CrawlListItem extends LitElement {
     return render(this.crawl);
   }
 
-  private renderName(crawl: Crawl) {
+  private renderName(crawl: ArchivedItem) {
     if (crawl.name) return html`<span class="truncate">${crawl.name}</span>`;
-    if (!crawl.firstSeed)
+    if (!crawl.firstSeed || !crawl.seedCount)
       return html`<span class="truncate">${crawl.id}</span>`;
     const remainder = crawl.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
@@ -372,6 +375,9 @@ export class CrawlListItem extends LitElement {
   }
 }
 
+/**
+ * @deprecated for btrix-archived-item-list
+ */
 @localized()
 @customElement("btrix-crawl-list")
 export class CrawlList extends LitElement {
@@ -440,7 +446,7 @@ export class CrawlList extends LitElement {
   workflowId?: string;
 
   @property({ type: String })
-  itemType: Crawl["type"] = null;
+  itemType: ArchivedItem["type"] = "crawl";
 
   @queryAssignedElements({ selector: "btrix-crawl-list-item" })
   listItems!: Array<HTMLElement>;

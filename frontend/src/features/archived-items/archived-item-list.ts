@@ -8,12 +8,12 @@ import { msg, localized, str } from "@lit/localize";
 import type { SlCheckbox } from "@shoelace-style/shoelace";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import type { Crawl, Upload } from "@/types/crawler";
+import type { ArchivedItem } from "@/types/crawler";
 
-function renderName(item: Crawl | Upload) {
+function renderName(item: ArchivedItem) {
   if (item.name) return html`<span class="truncate">${item.name}</span>`;
-  if (item.hasOwnProperty("firstSeed")) {
-    const remainder = (item as Crawl).seedCount - 1;
+  if (item.firstSeed && item.seedCount) {
+    const remainder = item.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
       if (remainder === 1) {
@@ -27,7 +27,7 @@ function renderName(item: Crawl | Upload) {
       }
     }
     return html`
-      <span class="primaryUrl truncate">${(item as Crawl).firstSeed}</span>
+      <span class="primaryUrl truncate">${item.firstSeed}</span>
       ${nameSuffix}
     `;
   }
@@ -52,7 +52,7 @@ export class ArchivedItemListItem extends TailwindElement {
   `;
 
   @property({ type: Object })
-  item?: Crawl | Upload;
+  item?: ArchivedItem;
 
   @property({ type: Number })
   index = 0;
@@ -85,12 +85,15 @@ export class ArchivedItemListItem extends TailwindElement {
             minute="2-digit"
           ></sl-format-date>
         </btrix-table-cell>
-        <btrix-table-cell
-          ><sl-format-bytes
+        <btrix-table-cell>
+          <sl-format-bytes
             value=${this.item.fileSize || 0}
             display="narrow"
-          ></sl-format-bytes
-        ></btrix-table-cell>
+          ></sl-format-bytes>
+        </btrix-table-cell>
+        <btrix-table-cell>
+          ${this.item.type === "crawl" ? this.item.stats?.done : msg("N/A")}
+        </btrix-table-cell>
         <btrix-table-cell><span>${this.item.userName}</span></btrix-table-cell>
         <btrix-table-cell>
           <slot name="actions"></slot>
@@ -132,6 +135,7 @@ export class ArchivedItemList extends TailwindElement {
             ${msg("Date Created")}
           </btrix-table-header-cell>
           <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
+          <btrix-table-header-cell>${msg("Pages")}</btrix-table-header-cell>
           <btrix-table-header-cell>
             ${msg("Created By")}
           </btrix-table-header-cell>

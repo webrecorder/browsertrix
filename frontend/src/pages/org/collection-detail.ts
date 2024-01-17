@@ -658,7 +658,7 @@ export class CollectionDetail extends LiteElement {
     html`
       <btrix-archived-item-list-item
         class="cursor-pointer transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50"
-        .item=${item as Crawl}
+        .item=${item}
         role="button"
         @click=${async (e: MouseEvent) => {
           e.preventDefault();
