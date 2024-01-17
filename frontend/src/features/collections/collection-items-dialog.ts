@@ -373,7 +373,7 @@ export class CollectionItemsDialog extends TailwindElement {
           </div>
         </btrix-section-heading>
       </header>
-      <section class="flex-1 p-3">
+      <section class="flex-1 px-3 pb-3 pt-2">
         <btrix-archived-item-list>
           <span class="sr-only" slot="checkbox">${msg("In Collection?")}</span>
           ${repeat(this.uploads.items, ({ id }) => id, this.renderArchivedItem)}
@@ -413,7 +413,7 @@ export class CollectionItemsDialog extends TailwindElement {
     }
 
     return html`
-      <section class="flex-1 p-3">
+      <section class="flex-1 px-3 pb-3 pt-2">
         <btrix-archived-item-list>
           <span class="sr-only" slot="checkbox">${msg("In Collection?")}</span>
           ${repeat(this.crawls.items, ({ id }) => id, this.renderArchivedItem)}

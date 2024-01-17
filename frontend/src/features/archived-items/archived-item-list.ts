@@ -50,6 +50,7 @@ export class ArchivedItemListItem extends TailwindElement {
       grid-column: var(--btrix-table-grid-column);
       display: grid;
       grid-template-columns: subgrid;
+      height: 2.5rem;
     }
   `;
 
@@ -96,7 +97,7 @@ export class ArchivedItemListItem extends TailwindElement {
         <btrix-table-cell>
           ${this.item.type === "crawl"
             ? this.item.stats?.done
-            : html`<span class="text-neutral-400">--</span>`}
+            : html`<span class="text-neutral-400">${msg("n/a")}</span>`}
         </btrix-table-cell>
         <btrix-table-cell><span>${this.item.userName}</span></btrix-table-cell>
         <btrix-table-cell>
@@ -125,8 +126,8 @@ export class ArchivedItemList extends TailwindElement {
   static styles = css`
     btrix-table {
       --btrix-cell-gap: var(--sl-spacing-x-small);
-      --btrix-cell-padding-top: var(--sl-spacing-x-small);
-      --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
+      /* --btrix-cell-padding-top: var(--sl-spacing-x-small);
+      --btrix-cell-padding-bottom: var(--sl-spacing-x-small); */
       --btrix-cell-padding-left: var(--sl-spacing-small);
       --btrix-cell-padding-right: var(--sl-spacing-small);
       --btrix-table-grid-auto-columns: min-content 26rem 12rem 1fr 1fr 1fr
