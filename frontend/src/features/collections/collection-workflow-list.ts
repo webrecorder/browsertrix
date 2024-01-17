@@ -12,6 +12,7 @@ import { repeat } from "lit/directives/repeat.js";
 import { msg, localized, str } from "@lit/localize";
 import type { SlSwitch, SlTreeItem } from "@shoelace-style/shoelace";
 import queryString from "query-string";
+import isEqual from "lodash/fp/isEqual";
 
 import type {
   APIPaginatedList,
@@ -119,7 +120,20 @@ export class CollectionWorkflowList extends TailwindElement {
   @property({ type: String })
   collectionId?: string;
 
-  @property({ type: Array })
+  @property({
+    type: Array,
+    hasChanged(newVal, oldVal) {
+      // Customize change detection to only re-render
+      // when workflow IDs change
+      if (Array.isArray(newVal) && Array.isArray(oldVal)) {
+        return (
+          newVal.length !== oldVal.length ||
+          !isEqual(newVal.map(({ id }) => id))(oldVal.map(({ id }) => id))
+        );
+      }
+      return newVal !== oldVal;
+    },
+  })
   workflows: Workflow[] = [];
 
   /**
@@ -137,7 +151,7 @@ export class CollectionWorkflowList extends TailwindElement {
   private api = new APIController(this);
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("workflows")) {
+    if (changedProperties.has("workflows") && this.workflows) {
       this.fetchCrawls();
     }
   }
@@ -310,7 +324,7 @@ export class CollectionWorkflowList extends TailwindElement {
         );
       });
     } catch (e: unknown) {
-      console.log(e);
+      console.debug(e);
     }
   }
 

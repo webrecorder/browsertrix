@@ -3,7 +3,6 @@ import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { cache } from "lit/directives/cache.js";
 import { when } from "lit/directives/when.js";
-import { keyed } from "lit/directives/keyed.js";
 import difference from "lodash/fp/difference";
 import without from "lodash/fp/without";
 import union from "lodash/fp/union";
@@ -160,6 +159,9 @@ export class CollectionItemsDialog extends TailwindElement {
   @state()
   private selection: { [itemID: string]: boolean } = {};
 
+  @state()
+  private isReady = false;
+
   @query("btrix-dialog")
   private dialog!: Dialog;
 
@@ -180,10 +182,11 @@ export class CollectionItemsDialog extends TailwindElement {
   };
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
-    if (
-      changedProperties.has("orgId") ||
-      changedProperties.has("collectionId")
-    ) {
+    if (!this.open) {
+      // Don't perform any updates if dialog isn't open
+      return;
+    }
+    if (changedProperties.has("open")) {
       this.initSelection();
     } else if (
       changedProperties.has("showOnlyMine") ||
@@ -209,6 +212,7 @@ export class CollectionItemsDialog extends TailwindElement {
   render() {
     return html` <btrix-dialog
       ?open=${this.open}
+      @sl-show=${() => (this.isReady = true)}
       @sl-after-hide=${() => this.reset()}
     >
       <span slot="label">
@@ -218,7 +222,7 @@ export class CollectionItemsDialog extends TailwindElement {
         >
       </span>
       <div class="dialogContent flex flex-col">
-        ${keyed(this.open, this.renderContent())}
+        ${when(this.isReady, this.renderContent)}
       </div>
       <div slot="footer" class="flex gap-3 items-center justify-end">
         <sl-button class="mr-auto" size="small" @click=${() => this.close()}
@@ -229,7 +233,7 @@ export class CollectionItemsDialog extends TailwindElement {
     </btrix-dialog>`;
   }
 
-  private renderContent() {
+  private renderContent = () => {
     return html`
       <div class="flex items-center justify-between">
         <div class="flex gap-3 px-4 py-3" role="tablist">
@@ -261,7 +265,7 @@ export class CollectionItemsDialog extends TailwindElement {
         ${this.renderUploads()}
       </div>
     `;
-  }
+  };
 
   private renderTab = (tab: Tab) => {
     const isSelected = tab === this.activeTab;
@@ -611,9 +615,12 @@ export class CollectionItemsDialog extends TailwindElement {
   }
 
   private reset() {
-    this.activeTab = TABS[0];
+    this.isReady = false;
     // Reset selection and filters
-    // TODO use `keyed` to reset state?
+    this.activeTab = TABS[0];
+    this.crawls = undefined;
+    this.workflows = undefined;
+    this.uploads = undefined;
     this.showOnlyInCollection = false;
     this.showOnlyMine = false;
     this.sortCrawlsBy = {
@@ -703,16 +710,18 @@ export class CollectionItemsDialog extends TailwindElement {
   }
 
   private async initSelection() {
-    this.fetchCrawls({ pageSize: DEFAULT_PAGE_SIZE });
-    this.fetchUploads({ pageSize: DEFAULT_PAGE_SIZE });
+    this.fetchCrawls({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
+    this.fetchUploads({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
     this.fetchSearchValues();
 
     const [crawls, uploads] = await Promise.all([
       this.getCrawls({
+        page: 1,
         pageSize: COLLECTION_ITEMS_MAX,
         collectionId: this.collectionId,
       }).then(({ items }) => items),
       this.getUploads({
+        page: 1,
         pageSize: COLLECTION_ITEMS_MAX,
         collectionId: this.collectionId,
       }).then(({ items }) => items),
@@ -752,7 +761,7 @@ export class CollectionItemsDialog extends TailwindElement {
           ...this.filterCrawlsBy,
         });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.debug(e);
     }
   }
@@ -769,7 +778,7 @@ export class CollectionItemsDialog extends TailwindElement {
         ...pageParams,
         ...this.filterUploadsBy,
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.debug(e);
     }
   }
@@ -783,7 +792,7 @@ export class CollectionItemsDialog extends TailwindElement {
       ]);
       this.crawlSearchValues = merge(crawlValues, workflowValues);
       this.uploadSearchValues = uploadValues;
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.debug(e);
     }
   }
