@@ -3,6 +3,7 @@ import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { cache } from "lit/directives/cache.js";
 import { when } from "lit/directives/when.js";
+import { keyed } from "lit/directives/keyed.js";
 import difference from "lodash/fp/difference";
 import without from "lodash/fp/without";
 import union from "lodash/fp/union";
@@ -206,52 +207,59 @@ export class CollectionItemsDialog extends TailwindElement {
   }
 
   render() {
-    return html`
-      <btrix-dialog ?open=${this.open} @sl-after-hide=${() => this.reset()}>
-        <span slot="label">
-          ${msg("Select Archived Items")}
-          <span class="text-neutral-500 font-normal"
-            >${msg(str`in ${this.collectionName}`)}</span
-          >
-        </span>
-        <div class="dialogContent flex flex-col">
-          <div class="flex items-center justify-between">
-            <div class="flex gap-3 px-4 py-3" role="tablist">
-              ${TABS.map(this.renderTab)}
-            </div>
-            <div class="flex gap-3 px-4 py-3">
-              ${this.renderCollectionToggle()} ${this.renderMineToggle()}
-            </div>
-          </div>
-          <div
-            id="tabPanel-crawls"
-            class="flex-1${this.activeTab === "crawl" ? " flex flex-col" : ""}"
-            role="tabpanel"
-            tabindex="0"
-            aria-labelledby="tab-crawls"
-            ?hidden=${this.activeTab !== "crawl"}
-          >
-            ${this.renderCrawls()}
-          </div>
+    return html` <btrix-dialog
+      ?open=${this.open}
+      @sl-after-hide=${() => this.reset()}
+    >
+      <span slot="label">
+        ${msg("Select Archived Items")}
+        <span class="text-neutral-500 font-normal"
+          >${msg(str`in ${this.collectionName}`)}</span
+        >
+      </span>
+      <div class="dialogContent flex flex-col">
+        ${keyed(this.open, this.renderContent())}
+      </div>
+      <div slot="footer" class="flex gap-3 items-center justify-end">
+        <sl-button class="mr-auto" size="small" @click=${() => this.close()}
+          >${msg("Cancel")}</sl-button
+        >
+        ${this.renderSave()}
+      </div>
+    </btrix-dialog>`;
+  }
 
-          <div
-            id="tabPanel-uploads"
-            class="flex-1${this.activeTab === "upload" ? " flex flex-col" : ""}"
-            role="tabpanel"
-            tabindex="0"
-            aria-labelledby="tab-uploads"
-            ?hidden=${this.activeTab !== "upload"}
-          >
-            ${this.renderUploads()}
-          </div>
+  private renderContent() {
+    return html`
+      <div class="flex items-center justify-between">
+        <div class="flex gap-3 px-4 py-3" role="tablist">
+          ${TABS.map(this.renderTab)}
         </div>
-        <div slot="footer" class="flex gap-3 items-center justify-end">
-          <sl-button class="mr-auto" size="small" @click=${() => this.close()}
-            >${msg("Cancel")}</sl-button
-          >
-          ${this.renderSave()}
+        <div class="flex gap-3 px-4 py-3">
+          ${this.renderCollectionToggle()} ${this.renderMineToggle()}
         </div>
-      </btrix-dialog>
+      </div>
+      <div
+        id="tabPanel-crawls"
+        class="flex-1${this.activeTab === "crawl" ? " flex flex-col" : ""}"
+        role="tabpanel"
+        tabindex="0"
+        aria-labelledby="tab-crawls"
+        ?hidden=${this.activeTab !== "crawl"}
+      >
+        ${this.renderCrawls()}
+      </div>
+
+      <div
+        id="tabPanel-uploads"
+        class="flex-1${this.activeTab === "upload" ? " flex flex-col" : ""}"
+        role="tabpanel"
+        tabindex="0"
+        aria-labelledby="tab-uploads"
+        ?hidden=${this.activeTab !== "upload"}
+      >
+        ${this.renderUploads()}
+      </div>
     `;
   }
 
@@ -551,7 +559,7 @@ export class CollectionItemsDialog extends TailwindElement {
     `;
   };
 
-  renderSave = () => {
+  private renderSave = () => {
     const { add, remove } = this.difference;
     const addCount = add.length;
     const removeCount = remove.length;
@@ -604,6 +612,21 @@ export class CollectionItemsDialog extends TailwindElement {
 
   private reset() {
     this.activeTab = TABS[0];
+    // Reset selection and filters
+    // TODO use `keyed` to reset state?
+    this.showOnlyInCollection = false;
+    this.showOnlyMine = false;
+    this.sortCrawlsBy = {
+      field: "finished",
+      direction: -1,
+    };
+    this.sortUploadsBy = {
+      field: "finished",
+      direction: -1,
+    };
+    this.filterCrawlsBy = {};
+    this.filterUploadsBy = {};
+    this.selection = {};
   }
 
   private selectAllItems(items: ArchivedItem[]) {
