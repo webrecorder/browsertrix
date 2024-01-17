@@ -15,6 +15,18 @@
 # backend_image: docker.io/webrecorder/browsertrix-backend:latest
 # frontend_image: docker.io/webrecorder/browsertrix-frontend:latest
 
+# uncomment to enable custom crawler dropdown
+# Support for additional crawler release channels
+# If more than one channel provided, a dropdown will be shown to users
+# 'default' channel must always be included
+# crawler_channels:
+#   - id: default
+#     image: "docker.io/webrecorder/browsertrix-crawler:latest"
+#
+#   # Add, remove, or edit additional crawler release channels for example:
+#   - id: custom_version
+#     image: "<DOCKER IMAGE>"
+
 # overrides to use existing images in local Docker, otherwise will pull from repository
 # backend_pull_policy: "Never"
 # frontend_pull_policy: "Never"

@@ -22,6 +22,7 @@ spec:
   maxCrawlSize: {{ max_crawl_size }}
   timeout: {{ timeout }}
   manual: {{ manual }}
+  crawlerChannel: "{{ crawler_channel }}"
   ttlSecondsAfterFinished: 30
 
   storageName: "{{ storage_name }}"

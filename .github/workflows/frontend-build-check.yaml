@@ -36,6 +36,9 @@ jobs:
       - name: Localization build
         working-directory: frontend
         run: yarn localize:prepare
+      - name: Remove non-production dependencies
+        working-directory: frontend
+        run: yarn install --frozen-lockfile --ignore-optional --production
       - name: Webpack build
         working-directory: frontend
         run: yarn build

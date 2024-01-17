@@ -1,15 +1,19 @@
 """ k8s utils """
 
-from typing import Optional
-import os
 import asyncio
-import json
-import sys
-import signal
 import atexit
+import csv
+import io
+import json
+import signal
+import os
+import sys
 
 from datetime import datetime
+from typing import Optional, Dict, Union, List
 
+from fastapi import HTTPException
+from fastapi.responses import StreamingResponse
 from slugify import slugify
 
 
@@ -97,3 +101,22 @@ def is_bool(stri: Optional[str]) -> bool:
 def slug_from_name(name: str) -> str:
     """Generate slug from name"""
     return slugify(name.replace("'", ""))
+
+
+def stream_dict_list_as_csv(data: List[Dict[str, Union[str, int]]], filename: str):
+    """Stream list of dictionaries as CSV with attachment filename header"""
+    if not data:
+        raise HTTPException(status_code=404, detail="crawls_not_found")
+
+    keys = data[0].keys()
+
+    buffer = io.StringIO()
+    dict_writer = csv.DictWriter(buffer, keys, quoting=csv.QUOTE_NONNUMERIC)
+    dict_writer.writeheader()
+    dict_writer.writerows(data)
+
+    return StreamingResponse(
+        iter([buffer.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment;filename={filename}"},
+    )

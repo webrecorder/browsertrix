@@ -33,6 +33,7 @@ class CrawlManager(K8sAPI):
         oid: str,
         url: str,
         storage: StorageRef,
+        crawler_image: str,
         baseprofile: str = "",
         profile_filename: str = "",
     ) -> str:
@@ -55,6 +56,7 @@ class CrawlManager(K8sAPI):
             "url": url,
             "vnc_password": secrets.token_hex(16),
             "expire_time": to_k8s_date(dt_now() + timedelta(seconds=30)),
+            "crawler_image": crawler_image,
         }
 
         data = self.templates.env.get_template("profile_job.yaml").render(params)
@@ -128,6 +130,7 @@ class CrawlManager(K8sAPI):
             INITIAL_SCALE=str(crawlconfig.scale),
             CRAWL_TIMEOUT=str(crawlconfig.crawlTimeout or 0),
             MAX_CRAWL_SIZE=str(crawlconfig.maxCrawlSize or 0),
+            CRAWLER_CHANNEL=crawlconfig.crawlerChannel,
         )
 
         crawl_id = None
@@ -159,6 +162,7 @@ class CrawlManager(K8sAPI):
             userid,
             crawlconfig.oid,
             storage,
+            crawlconfig.crawlerChannel,
             crawlconfig.scale,
             crawlconfig.crawlTimeout,
             crawlconfig.maxCrawlSize,
@@ -175,17 +179,20 @@ class CrawlManager(K8sAPI):
         has_timeout_update = update.crawlTimeout is not None
         has_max_crawl_size_update = update.maxCrawlSize is not None
         has_config_update = update.config is not None
+        has_crawlerid_update = update.crawlerChannel is not None
 
         if has_sched_update:
             # crawlconfig here has already been updated
             await self._update_scheduled_job(crawlconfig)
 
+        # pylint: disable=too-many-boolean-expressions
         if (
             has_scale_update
             or has_config_update
             or has_timeout_update
             or profile_filename is not None
             or has_max_crawl_size_update
+            or has_crawlerid_update
         ):
             await self._update_config_map(
                 crawlconfig,
@@ -403,6 +410,9 @@ class CrawlManager(K8sAPI):
 
         if update.crawlFilenameTemplate is not None:
             config_map.data["STORE_FILENAME"] = update.crawlFilenameTemplate
+
+        if update.crawlerChannel is not None:
+            config_map.data["CRAWLER_CHANNEL"] = update.crawlerChannel
 
         if profile_filename is not None:
             config_map.data["PROFILE_FILENAME"] = profile_filename

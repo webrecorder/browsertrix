@@ -1,6 +1,6 @@
 """ Profile Management """
 
-from typing import Optional, Union, TYPE_CHECKING, Any, cast
+from typing import Optional, TYPE_CHECKING, Any, cast
 from datetime import datetime
 from uuid import UUID, uuid4
 import os
@@ -89,11 +89,18 @@ class ProfileOps:
 
             prev_profile_id = str(profile_launch.profileId)
 
+        crawler_image = self.crawlconfigs.get_channel_crawler_image(
+            profile_launch.crawlerChannel
+        )
+        if not crawler_image:
+            raise HTTPException(status_code=404, detail="crawler_not_found")
+
         browserid = await self.crawl_manager.run_profile_browser(
             str(user.id),
             str(org.id),
             url=profile_launch.url,
             storage=org.storage,
+            crawler_image=crawler_image,
             baseprofile=prev_profile_id,
             profile_filename=prev_profile,
         )
@@ -146,7 +153,7 @@ class ProfileOps:
 
     async def commit_to_profile(
         self,
-        browser_commit: Union[ProfileCreate, ProfileUpdate],
+        browser_commit: ProfileCreate,
         storage: StorageRef,
         metadata: dict,
         profileid: Optional[UUID] = None,
@@ -199,6 +206,7 @@ class ProfileOps:
             userid=UUID(metadata.get("btrix.user")),
             oid=oid,
             baseid=baseid,
+            crawlerChannel=browser_commit.crawlerChannel,
         )
 
         await self.profiles.find_one_and_update(
@@ -432,9 +440,17 @@ def init_profiles_api(
 
         else:
             metadata = await browser_get_metadata(browser_commit.browserid, org)
-
+            profile = await ops.get_profile(profileid)
             await ops.commit_to_profile(
-                browser_commit, org.storage, metadata, profileid
+                browser_commit=ProfileCreate(
+                    browserid=browser_commit.browserid,
+                    name=browser_commit.name,
+                    description=browser_commit.description or profile.description,
+                    crawlerChannel=profile.crawlerChannel,
+                ),
+                storage=org.storage,
+                metadata=metadata,
+                profileid=profileid,
             )
 
         return {"updated": True}

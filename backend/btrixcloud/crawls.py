@@ -6,7 +6,7 @@ import re
 import urllib.parse
 from uuid import UUID
 
-from typing import Optional, List
+from typing import Optional, List, Dict, Union
 
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -14,7 +14,7 @@ from redis import asyncio as exceptions
 import pymongo
 
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import dt_now, parse_jsonl_error_messages
+from .utils import dt_now, parse_jsonl_error_messages, stream_dict_list_as_csv
 from .basecrawls import BaseCrawlOps
 from .models import (
     UpdateCrawl,
@@ -247,6 +247,8 @@ class CrawlOps(BaseCrawlOps):
             if user:
                 username = user.name
 
+        image = self.crawl_configs.get_channel_crawler_image(crawlconfig.crawlerChannel)
+
         crawl = Crawl(
             id=crawl_id,
             state="starting",
@@ -266,6 +268,8 @@ class CrawlOps(BaseCrawlOps):
             started=started,
             tags=crawlconfig.tags,
             name=crawlconfig.name,
+            crawlerChannel=crawlconfig.crawlerChannel,
+            image=image,
         )
 
         try:
@@ -497,6 +501,74 @@ class CrawlOps(BaseCrawlOps):
         except Exception:
             return [], 0
 
+    async def get_crawl_stats(
+        self, org: Optional[Organization] = None
+    ) -> List[Dict[str, Union[str, int]]]:
+        """Return crawl statistics"""
+        # pylint: disable=too-many-locals
+        org_slugs = await self.orgs.get_org_slugs_by_ids()
+        user_emails = await self.user_manager.get_user_emails_by_ids()
+
+        crawls_data: List[Dict[str, Union[str, int]]] = []
+
+        query: Dict[str, Union[str, UUID]] = {"type": "crawl"}
+        if org:
+            query["oid"] = org.id
+
+        async for crawl in self.crawls.find(query):
+            data: Dict[str, Union[str, int]] = {}
+            data["id"] = str(crawl.get("_id"))
+
+            oid = crawl.get("oid")
+            data["oid"] = str(oid)
+            data["org"] = org_slugs[oid]
+
+            data["cid"] = str(crawl.get("cid"))
+            crawl_name = crawl.get("name")
+            data["name"] = f'"{crawl_name}"' if crawl_name else ""
+            data["state"] = crawl.get("state")
+
+            userid = crawl.get("userid")
+            data["userid"] = str(userid)
+            data["user"] = user_emails.get(userid)
+
+            started = crawl.get("started")
+            finished = crawl.get("finished")
+
+            data["started"] = str(started)
+            data["finished"] = str(finished)
+
+            data["duration"] = 0
+            if started and finished:
+                duration = finished - started
+                duration_seconds = int(duration.total_seconds())
+                if duration_seconds:
+                    data["duration"] = duration_seconds
+
+            done_stats = None
+            if crawl.get("stats") and crawl.get("stats").get("done"):
+                done_stats = crawl["stats"]["done"]
+
+            data["pages"] = 0
+            if done_stats:
+                data["pages"] = done_stats
+
+            data["filesize"] = crawl.get("fileSize", 0)
+
+            data["avg_page_time"] = 0
+            if (
+                done_stats
+                and done_stats != 0
+                and started
+                and finished
+                and duration_seconds
+            ):
+                data["avg_page_time"] = int(duration_seconds / done_stats)
+
+            crawls_data.append(data)
+
+        return crawls_data
+
 
 # ============================================================================
 async def recompute_crawl_file_count_and_size(crawls, crawl_id):
@@ -645,6 +717,23 @@ def init_crawls_api(app, user_dep, *args):
         org: Organization = Depends(org_crawl_dep),
     ):
         return await ops.delete_crawls(org, delete_list, "crawl", user)
+
+    @app.get("/orgs/all/crawls/stats", tags=["crawls"])
+    async def get_all_orgs_crawl_stats(
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        crawl_stats = await ops.get_crawl_stats()
+        return stream_dict_list_as_csv(crawl_stats, "crawling-stats.csv")
+
+    @app.get("/orgs/{oid}/crawls/stats", tags=["crawls"])
+    async def get_org_crawl_stats(
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        crawl_stats = await ops.get_crawl_stats(org)
+        return stream_dict_list_as_csv(crawl_stats, f"crawling-stats-{org.id}.csv")
 
     @app.get(
         "/orgs/all/crawls/{crawl_id}/replay.json",

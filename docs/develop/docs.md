@@ -21,20 +21,20 @@ The docs hosted on [docs.browsertrix.cloud](https://docs.browsertrix.cloud) are 
 
 ## Adding Icons
 
-We typically use the [Bootstrap icon set](https://icons.getbootstrap.com/) with our projects.  This set is quite expansive, and we don't add the entire set into our docs folder as most icons go unused.  If you wish to use an icon when writing documentation to refer to an icon present in part of the app, you may have to download the SVG file and add it to the repo.
+We typically use the [Bootstrap icon set](https://icons.getbootstrap.com/) with our projects. This set is quite expansive, and we don't add the entire set into our docs folder as most icons go unused. If you wish to use an icon when writing documentation to refer to an icon present in part of the app, you may have to download the SVG file and add it to the repo.
 
-Icons are placed in the `docs/overrides/.icons/iconsetname/icon-name.svg` directory, and can be added in markdown files as `:iconsetname-icon-name:` accordingly.  For more information, see the [Material for MKDocs page on Changing the logo and icons](https://squidfunk.github.io/mkdocs-material/setup/changing-the-logo-and-icons/#customization).
+Icons are placed in the `docs/overrides/.icons/iconsetname/icon-name.svg` directory, and can be added in markdown files as `:iconsetname-icon-name:` accordingly. After adding icons to the folder, MKDocs must be restarted. For more information, see the [Material for MKDocs page on Changing the logo and icons](https://squidfunk.github.io/mkdocs-material/setup/changing-the-logo-and-icons/#customization).
 
 ## Docs Style Guide
 
 ### American English
 
-Webrecorder is a global team but we use American English when writing documentation and in-app copy.  Some basic rules to follow are:
+Webrecorder is a global team but we use American English when writing documentation and in-app copy. Some basic rules to follow are:
 
 1. Swap the `s` for a `z` in words like _categorize_ and _pluralize_.
 2. Remove the `u` from words like _color_ and _honor_.
 3. Swap `tre` for `ter` in words like _center_.
-4. Numbers should be formatted with commas for seperation of values, using periods to denote decimals (e.g: _3,153.89_, not _3 153,89_).
+4. Numbers should be formatted with commas for separation of values, using periods to denote decimals (e.g: _3,153.89_, not _3 153,89_).
 
 ### Oxford Commas
 
@@ -47,9 +47,37 @@ In a list of three or more items, the list item proceeding the word "and" should
 | One, two, three, and four.    | One, two, three and four.    |
 | Charles, Ada, and Alan.       | Charles, Ada and Alan.       |
 
+
+### Capitalization of Concepts and Tools
+
+Webrecorder has a number of common nouns that we use in our products. Examples include: archived items, crawl workflows, browser profiles, collections, and organizations. Because these are concepts and not specific instances of each concept, do not capitalize them unless they are at the start of a sentence.
+
+##### Example
+
+When starting a sentence:
+> Archived items consist of one or more...
+
+In the middle of a sentence:
+
+> ...they are omitted from the archived items list page...
+
+Webrecorder's software packages are all proper nouns and should always be capitalized.  Examples include: Browsertrix, ReplayWeb.page, ArchiveWeb.Page, and PYWB. Specific pages such as the Archived Items page should also be capitalized as they are not referencing the concept of archived items and are instead referencing the page in question that happens to share the same name.
+
+### Be Concise, Avoid "You Statements"
+
+Generally, people don't want to have to read documentation. When writing, try to explain concepts simply and with clear objective language. Do not use "we" to refer to communication between the author and the reader, use "we" to refer to Webrecorder. "You can" or "you may" can be used, but preferably when giving supplemental advice and generally not when providing instructions that should be followed to achieve a successful outcome. Otherwise, avoid spending time referring to the reader, instead tell them what they should know.
+
+##### Example
+
+> If you want to do x, you can click on y.
+
+Can often be shortened to:
+
+> To do x, click on y.
+
 ### Acronyms
 
-Avoid using acronyms when reuse is not frequent enough to warrant space savings. When acronyms must be used, spell the full phrase first and include the acronym in parentheses `()` the first time it is used in each document.  This can be omitted for extremely common acronyms such as "URL" or "HTTP".
+Avoid using acronyms when reuse is not frequent enough to warrant space savings. When acronyms must be used, spell the full phrase first and include the acronym in parentheses `()` the first time it is used in each document. This can be omitted for extremely common acronyms such as "URL" or "HTTP".
 
 ##### Example
 
@@ -103,12 +131,12 @@ Renders to: `#!python range()`
 
 ### Admonitions
 
-We use [Admonitions](https://squidfunk.github.io/mkdocs-material/reference/admonitions/) in their collapsed state to offer additional context or tips that aren't relevant to all users reading the section. We use standard un-collapsable ones when we need to call attention to a specific point.
+We use [Admonitions](https://squidfunk.github.io/mkdocs-material/reference/admonitions/) in their collapsed state to offer additional context or tips that aren't relevant to all users reading the section. We use standard un-collapsible ones when we need to call attention to a specific point.
 
 There are a lot of different options provided by Material for MkDocs — So many in fact that we try to pair down their usage into the following categories.
 
 ???+ Note
-    The default call-out, used to highlight something if there isn't a more relevant one — should generally be expanded by default but can be collapsable by the user if the note is long.
+    The default call-out, used to highlight something if there isn't a more relevant one — should generally be expanded by default but can be collapsible by the user if the note is long.
 
 !!! Tip "Tip: May have a title stating the tip or best practice"
     Used to highlight a point that is useful for everyone to understand about the documented subject — should be expanded and kept brief.

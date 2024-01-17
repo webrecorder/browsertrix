@@ -25,6 +25,7 @@ import("./pw-strength-alert");
 import("./relative-duration");
 import("./search-combobox");
 import("./section-heading");
+import("./select-crawler");
 import("./tab-list");
 import("./tag-input");
 import("./tag");

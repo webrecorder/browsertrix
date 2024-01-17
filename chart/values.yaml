@@ -95,7 +95,7 @@ backend_password_secret: "PASSWORD!"
 backend_num_replicas: 1
 
 # number of workers per pod
-backend_workers: 2
+backend_workers: 1
 
 backend_cpu: "25m"
 
@@ -170,10 +170,19 @@ redis_memory: "200Mi"
 redis_storage: "3Gi"
 
 
-# Crawler Image
+# Crawler Channels
 # =========================================
+# Support for additional crawler release channels
+# If more than one channel provided, a dropdown will be shown to users
+# 'default' channel must always be included
+crawler_channels:
+  - id: default
+    image: "docker.io/webrecorder/browsertrix-crawler:latest"
 
-crawler_image: "webrecorder/browsertrix-crawler:latest"
+  # Add, remove, or edit additional crawler versions below, for example:
+  # - id: custom_version
+  #   image: "<DOCKER IMAGE>"
+
 crawler_pull_policy: "Always"
 
 crawler_namespace: "crawlers"
