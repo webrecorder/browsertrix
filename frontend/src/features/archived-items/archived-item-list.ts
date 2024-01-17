@@ -37,7 +37,7 @@ function renderName(item: ArchivedItem) {
 
 /**
  * @slot checkbox - Checkbox column content
- * @slot prefix - Space before archived item name
+ * @slot prefix - Archived item name prefix
  * @slot actions - Action column content
  */
 @localized()
@@ -92,7 +92,9 @@ export class ArchivedItemListItem extends TailwindElement {
           ></sl-format-bytes>
         </btrix-table-cell>
         <btrix-table-cell>
-          ${this.item.type === "crawl" ? this.item.stats?.done : msg("N/A")}
+          ${this.item.type === "crawl"
+            ? this.item.stats?.done
+            : html`<span class="text-neutral-400">--</span>`}
         </btrix-table-cell>
         <btrix-table-cell><span>${this.item.userName}</span></btrix-table-cell>
         <btrix-table-cell>
@@ -118,14 +120,24 @@ export class ArchivedItemListItem extends TailwindElement {
 @localized()
 @customElement("btrix-archived-item-list")
 export class ArchivedItemList extends TailwindElement {
+  static styles = css`
+    btrix-table {
+      --btrix-cell-gap: var(--sl-spacing-x-small);
+      --btrix-cell-padding-top: var(--sl-spacing-x-small);
+      --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
+      --btrix-cell-padding-left: var(--sl-spacing-small);
+      --btrix-cell-padding-right: var(--sl-spacing-small);
+      --btrix-table-grid-auto-columns: min-content minmax(28em, auto) auto auto
+        auto auto min-content;
+    }
+  `;
+
   @queryAssignedElements({ selector: "btrix-archived-item-list-item" })
   items!: Array<ArchivedItemListItem>;
 
   render() {
     return html`
-      <btrix-table
-        style="--btrix-table-grid-auto-columns: min-content minmax(32em, auto) auto auto auto min-content"
-      >
+      <btrix-table>
         <btrix-table-head>
           <btrix-table-header-cell class="p-0">
             <slot name="checkbox"></slot>
@@ -135,7 +147,9 @@ export class ArchivedItemList extends TailwindElement {
             ${msg("Date Created")}
           </btrix-table-header-cell>
           <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
-          <btrix-table-header-cell>${msg("Pages")}</btrix-table-header-cell>
+          <btrix-table-header-cell
+            >${msg("Pages Crawled")}</btrix-table-header-cell
+          >
           <btrix-table-header-cell>
             ${msg("Created By")}
           </btrix-table-header-cell>
