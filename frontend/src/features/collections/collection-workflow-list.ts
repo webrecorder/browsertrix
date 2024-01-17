@@ -185,19 +185,21 @@ export class CollectionWorkflowList extends TailwindElement {
 
   private renderWorkflow = (workflow: Workflow) => {
     const crawlsAsync = this.crawlsMap.get(workflow.id) || Promise.resolve([]);
-    const selectedCrawlCountAsync = crawlsAsync?.then((crawls) => {
-      return crawls.filter(({ id }) => this.selection[id]).length;
-    });
-    const crawlCount = workflow.crawlSuccessfulCount;
+    const countAsync = crawlsAsync?.then((crawls) => ({
+      total: crawls.length,
+      selected: crawls.filter(({ id }) => this.selection[id]).length,
+    }));
 
     return html`
       <sl-tree-item
-        class=${classMap({
-          workflow: true,
-          selectable: crawlCount > 0,
-        })}
+        class="workflow ${until(
+          countAsync.then(({ total }) => (total > 0 ? "selectable" : "")),
+          ""
+        )}"
         ?selected=${until(
-          selectedCrawlCountAsync.then((n) => n > 0 && n === crawlCount),
+          countAsync.then(
+            ({ total, selected }) => selected > 0 && selected === total
+          ),
           false
         )}
         .indeterminate=${
@@ -205,30 +207,37 @@ export class CollectionWorkflowList extends TailwindElement {
           // we're manually setting it since async child tree-items
           // doesn't work as of shoelace 2.8.0
           until(
-            selectedCrawlCountAsync.then((n) => n > 0 && n < crawlCount),
+            countAsync.then(
+              ({ total, selected }) => selected > 0 && selected < total
+            ),
             false
           )
         }
-        ?disabled=${crawlCount < 1}
+        ?disabled=${until(
+          countAsync.then(({ total }) => total === 0),
+          true
+        )}
         @click=${(e: MouseEvent) => {
-          if (!crawlCount) {
-            // Prevent selection since we're just allowing auto-add
-            e.stopPropagation();
-          }
+          countAsync.then(({ total }) => {
+            if (!total) {
+              // Prevent selection since we're just allowing auto-add
+              e.stopPropagation();
+            }
+          });
         }}
       >
         <div class="flex-1 flex flex-wrap items-center gap-x-6 gap-y-2">
           <div class="flex-1">${this.renderName(workflow)}</div>
           <div class="flex-0 text-neutral-500 md:text-right">
             ${until(
-              selectedCrawlCountAsync.then((n) =>
-                crawlCount === 1
+              countAsync.then(({ total, selected }) =>
+                total === 1
                   ? msg(
-                      str`${n.toLocaleString()} / ${crawlCount?.toLocaleString()} crawl`
+                      str`${selected.toLocaleString()} / ${total?.toLocaleString()} crawl`
                     )
-                  : crawlCount
+                  : total
                   ? msg(
-                      str`${n.toLocaleString()} / ${crawlCount?.toLocaleString()} crawls`
+                      str`${selected.toLocaleString()} / ${total?.toLocaleString()} crawls`
                     )
                   : msg("0 crawls")
               )
