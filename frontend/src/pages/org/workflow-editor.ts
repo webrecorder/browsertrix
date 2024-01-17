@@ -1671,15 +1671,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
           name="userAgent"
           label=${msg("User Agent")}
           autocomplete="off"
-          placeholder=${msg(
-            "Mozilla/5.0 (<system-information>) <platform> (<platform-details>) <extensions>"
-          )}
+          placeholder=${msg("Default")}
           value=${this.formState.userAgent}
         >
         </sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Set custom user agent for crawler browsers to use in requests.`)
+        msg(html`Set custom user agent for crawler browsers to use in requests.
+          For common user agents see
+          <a
+            href="https://www.useragents.me/"
+            class="text-blue-600 hover:text-blue-500"
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            >Useragents.me</a
+          >.`)
       )}
       ${this.renderFormCol(html`
         <btrix-language-select
