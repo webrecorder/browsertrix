@@ -137,17 +137,22 @@ export class CollectionDetail extends LiteElement {
       </div>
       <div class="flex justify-between items-center mb-3">
         ${this.renderTabs()}
-        <sl-button
-          variant=${!this.collection || this.collection.crawlCount
-            ? "default"
-            : "primary"}
-          size="small"
-          @click=${() => (this.openDialogName = "editItems")}
-          ?disabled=${!this.collection}
-        >
-          <sl-icon name="ui-checks" slot="prefix"></sl-icon>
-          ${msg("Select Items")}
-        </sl-button>
+        ${when(
+          this.isCrawler,
+          () => html`
+            <sl-button
+              variant=${!this.collection || this.collection.crawlCount
+                ? "default"
+                : "primary"}
+              size="small"
+              @click=${() => (this.openDialogName = "editItems")}
+              ?disabled=${!this.collection}
+            >
+              <sl-icon name="ui-checks" slot="prefix"></sl-icon>
+              ${msg("Select Items")}
+            </sl-button>
+          `
+        )}
       </div>
       ${choose(
         this.collectionTab,
