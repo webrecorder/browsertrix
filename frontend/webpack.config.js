@@ -152,7 +152,11 @@ const main = {
     }),
 
     new ForkTsCheckerWebpackPlugin({
-      typescript: { configOverwrite: { exclude: ["**/*.test.ts"] } },
+      typescript: {
+        configOverwrite: {
+          exclude: ["**/*.test.ts", "tests/**/*.ts", "playwright.config.ts"],
+        },
+      },
     }),
 
     new HtmlWebpackPlugin({
