@@ -370,6 +370,13 @@ export class CollectionItemsDialog extends TailwindElement {
           <span class="sr-only" slot="checkbox">${msg("In Collection?")}</span>
           ${repeat(this.uploads.items, ({ id }) => id, this.renderArchivedItem)}
         </btrix-archived-item-list>
+        ${when(
+          !this.uploads.total,
+          () =>
+            html`<p class="p-5 text-center text-neutral-500">
+              ${msg("No matching uploads found.")}
+            </p>`
+        )}
       </section>
       <footer class="flex justify-center pb-3">
         ${when(
@@ -403,6 +410,14 @@ export class CollectionItemsDialog extends TailwindElement {
           <span class="sr-only" slot="checkbox">${msg("In Collection?")}</span>
           ${repeat(this.crawls.items, ({ id }) => id, this.renderArchivedItem)}
         </btrix-archived-item-list>
+
+        ${when(
+          !this.crawls.total,
+          () =>
+            html`<p class="p-5 text-center text-neutral-500">
+              ${msg("No matching crawls found.")}
+            </p>`
+        )}
       </section>
 
       <footer class="flex justify-center pb-3">
