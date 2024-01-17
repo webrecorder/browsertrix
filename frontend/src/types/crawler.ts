@@ -31,6 +31,7 @@ export type SeedConfig = Expand<
     useSitemap: boolean;
     failOnFailedSeed: boolean;
     depth?: number | null;
+    userAgent?: string | null;
   }
 >;
 

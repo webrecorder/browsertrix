@@ -227,6 +227,12 @@ export class ConfigDetails extends LiteElement {
             msg("Block Ads by Domain"),
             crawlConfig?.config.blockAds
           )}
+          ${this.renderSetting(
+            msg("User Agent"),
+            crawlConfig?.config.userAgent
+              ? crawlConfig?.config.userAgent
+              : msg("Default User Agent")
+          )}
           ${crawlConfig?.config.lang
             ? this.renderSetting(
                 msg("Language"),

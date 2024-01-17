@@ -118,6 +118,7 @@ type FormState = {
   autoAddCollections: string[];
   description: WorkflowParams["description"];
   autoscrollBehavior: boolean;
+  userAgent: string | null;
   crawlerChannel: string;
 };
 
@@ -195,6 +196,7 @@ const getDefaultFormState = (): FormState => ({
   autoAddCollections: [],
   description: null,
   autoscrollBehavior: true,
+  userAgent: null,
   crawlerChannel: "default",
 });
 const defaultProgressState = getDefaultProgressState();
@@ -587,6 +589,8 @@ export class CrawlConfigEditor extends LiteElement {
       autoscrollBehavior: this.initialWorkflow.config.behaviors
         ? this.initialWorkflow.config.behaviors.includes("autoscroll")
         : defaultFormState.autoscrollBehavior,
+      userAgent:
+        this.initialWorkflow.config.userAgent ?? defaultFormState.userAgent,
       crawlerChannel:
         this.initialWorkflow.crawlerChannel || defaultFormState.crawlerChannel,
       ...formState,
@@ -1663,6 +1667,27 @@ https://archiveweb.page/images/${"logo.svg"}`}
         false
       )}
       ${this.renderFormCol(html`
+        <sl-input
+          name="userAgent"
+          label=${msg("User Agent")}
+          autocomplete="off"
+          placeholder=${msg("Default")}
+          value=${this.formState.userAgent}
+        >
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(html`Set custom user agent for crawler browsers to use in requests.
+          For common user agents see
+          <a
+            href="https://www.useragents.me/"
+            class="text-blue-600 hover:text-blue-500"
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            >Useragents.me</a
+          >.`)
+      )}
+      ${this.renderFormCol(html`
         <btrix-language-select
           .value=${this.formState.lang as LanguageCode}
           @on-change=${(e: CustomEvent) => {
@@ -2385,7 +2410,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         behaviorTimeout: this.formState.behaviorTimeoutSeconds,
         pageLoadTimeout: this.formState.pageLoadTimeoutSeconds,
         pageExtraDelay: this.formState.pageExtraDelaySeconds,
-
+        userAgent: this.formState.userAgent,
         limit: this.formState.pageLimit,
         lang: this.formState.lang || "",
         blockAds: this.formState.blockAds,
