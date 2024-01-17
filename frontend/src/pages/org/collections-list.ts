@@ -170,7 +170,7 @@ export class CollectionsList extends LiteElement {
           <sl-button
             size="small"
             @click=${() => (this.openDialogName = undefined)}
-            >Cancel</sl-button
+            >${msg("Cancel")}</sl-button
           >
           <sl-button
             size="small"
@@ -179,7 +179,7 @@ export class CollectionsList extends LiteElement {
               await this.deleteCollection(this.selectedCollection!);
               this.openDialogName = undefined;
             }}
-            >Delete Collection</sl-button
+            >${msg("Delete Collection")}</sl-button
           >
         </div>
       </btrix-dialog>

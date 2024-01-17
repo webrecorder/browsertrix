@@ -116,6 +116,9 @@ export class CollectionWorkflowList extends TailwindElement {
   @property({ type: String })
   orgId?: string;
 
+  @property({ type: String })
+  collectionId?: string;
+
   @property({ type: Array })
   workflows: Workflow[] = [];
 
@@ -221,7 +224,9 @@ export class CollectionWorkflowList extends TailwindElement {
             <sl-switch
               class="flex"
               size="small"
-              ?checked=${workflow.autoAddCollections?.length > 0}
+              ?checked=${workflow.autoAddCollections.some(
+                (id) => id === this.collectionId
+              )}
               @sl-change=${(e: CustomEvent) => {
                 e.stopPropagation();
                 this.dispatchEvent(

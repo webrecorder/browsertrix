@@ -450,6 +450,7 @@ export class CollectionItemsDialog extends TailwindElement {
         <btrix-collection-workflow-list
           .authState=${this.authState}
           orgId=${this.orgId}
+          collectionId=${this.collectionId}
           .workflows=${this.workflows!.items || []}
           .selection=${this.selection}
           @btrix-selection-change=${(e: CustomEvent<SelectionChangeDetail>) => {
@@ -503,7 +504,7 @@ export class CollectionItemsDialog extends TailwindElement {
         @sl-change=${() =>
           (this.showOnlyInCollection = !this.showOnlyInCollection)}
       >
-        ${msg("Only in Collection")}
+        ${msg("Only items in Collection")}
       </sl-switch>
     `;
   }
