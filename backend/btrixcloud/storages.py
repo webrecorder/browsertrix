@@ -275,8 +275,11 @@ class StorageOps:
         ) as client:
             yield client, bucket, key
 
-    def get_sync_s3_client(self, storage: S3Storage) -> tuple[S3Client, str, str]:
+    @contextmanager
+    def get_sync_client(self, org: Organization) -> Iterator[tuple[S3Client, str, str]]:
         """context manager for s3 client"""
+        storage = self.get_org_primary_storage(org)
+
         endpoint_url = storage.endpoint_url
 
         if not endpoint_url.endswith("/"):
@@ -287,19 +290,17 @@ class StorageOps:
 
         endpoint_url = parts.scheme + "://" + parts.netloc
 
-        client = boto3.client(
-            "s3",
-            region_name=storage.region,
-            endpoint_url=endpoint_url,
-            aws_access_key_id=storage.access_key,
-            aws_secret_access_key=storage.secret_key,
-        )
-
-        # public_endpoint_url = (
-        #    storage.endpoint_url if not use_access else storage.access_endpoint_url
-        # )
-
-        return client, bucket, key
+        try:
+            client = boto3.client(
+                "s3",
+                region_name=storage.region,
+                endpoint_url=endpoint_url,
+                aws_access_key_id=storage.access_key,
+                aws_secret_access_key=storage.secret_key,
+            )
+            yield client, bucket, key
+        finally:
+            client.close()
 
     async def verify_storage_upload(self, storage: S3Storage, filename: str) -> None:
         """Test credentials and storage endpoint by uploading an empty test file"""
@@ -364,17 +365,6 @@ class StorageOps:
             key += filename
 
             await client.put_object(Bucket=bucket, Key=key, Body=data)
-
-    @contextmanager
-    def get_sync_client(self, org: Organization) -> tuple[S3Client, str, str, str]:
-        """get sync client"""
-        s3storage = self.get_org_primary_storage(org)
-
-        try:
-            client, bucket, key = self.get_sync_s3_client(s3storage)
-            yield client, bucket, key
-        finally:
-            client.close()
 
     # pylint: disable=too-many-arguments,too-many-locals
     async def do_upload_multipart(
