@@ -86,7 +86,8 @@ export class TimeInput extends LitElement {
               value=${this.hour}
               ?disabled=${this.disabled}
               required
-              @keyup=${(e: KeyboardEvent) => {
+              @sl-change=${async (e: Event) => {
+                e.stopPropagation();
                 const input = e.target as SlInput;
                 if (input.value) {
                   const int = +input.value.replace(/[^0-9]/g, "");
@@ -94,10 +95,7 @@ export class TimeInput extends LitElement {
                 } else {
                   input.value = "12";
                 }
-              }}
-              @sl-change=${async (e: Event) => {
-                e.stopPropagation();
-                const input = e.target as SlInput;
+
                 await input.updateComplete;
                 this.hour = +input.value;
                 this.dispatchChange();
@@ -114,18 +112,19 @@ export class TimeInput extends LitElement {
                 : this.minute}
               ?disabled=${this.disabled}
               required
-              @keyup=${(e: KeyboardEvent) => {
-                const input = e.target as SlInput;
-                if (input.value) {
-                  const int = +input.value.replace(/[^0-9]/g, "");
-                  input.value = `${Math.min(59, Math.max(0, int))}`;
-                } else {
-                  input.value = "00";
-                }
-              }}
               @sl-change=${async (e: Event) => {
                 e.stopPropagation();
                 const input = e.target as SlInput;
+                if (input.value) {
+                  const int = Math.min(
+                    59,
+                    Math.max(0, +input.value.replace(/[^0-9]/g, ""))
+                  );
+                  input.value = int < 10 ? `0${int}` : `${int}`;
+                } else {
+                  input.value = "00";
+                }
+
                 await input.updateComplete;
                 this.minute = +input.value;
                 this.dispatchChange();
