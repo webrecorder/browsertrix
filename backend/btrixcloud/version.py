@@ -1,2 +1,2 @@
 """ current version """
-__version__ = "1.9.0-beta.1"
+__version__ = "1.9.0-beta.2"
