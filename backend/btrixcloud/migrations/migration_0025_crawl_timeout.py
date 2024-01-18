@@ -16,16 +16,16 @@ class Migration(BaseMigration):
     async def migrate_up(self):
         """Perform migration up.
 
-        Set crawlTimeout to 0 in any workflows where it is not set
+        Set crawlTimeout to 0 in any workflows where it is not set.
         """
-        # pylint: disable=duplicate-code
         mdb_crawl_configs = self.mdb["crawl_configs"]
         try:
             await mdb_crawl_configs.update_many(
                 {"crawlTimeout": None},
                 {"$set": {"crawlTimeout": 0}},
             )
-        except Exception as err:
+        # pylint: disable=broad-except
+        except Exception:
             print(
                 "Error updating null crawlconfig crawlTimeouts to 0",
                 flush=True,
