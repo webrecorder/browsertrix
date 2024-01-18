@@ -867,10 +867,11 @@ ${this.crawl?.description}
               .crawlConfig=${{
                 ...this.crawl,
                 jobType: this.workflow?.jobType,
-                autoAddCollections: this.crawl!.collectionIds,
+                name: this.workflow?.name,
+                description: this.workflow?.description,
+                tags: this.workflow?.tags,
               } as CrawlConfig}
               .seeds=${this.seeds!.items}
-              hideTags
             ></btrix-config-details>
           `,
           this.renderLoading
