@@ -17,18 +17,18 @@ function renderName(item: ArchivedItem) {
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
       if (remainder === 1) {
-        nameSuffix = html`<span class="additionalUrls"
+        nameSuffix = html`<span class="ml-1"
           >${msg(str`+${remainder} URL`)}</span
         >`;
       } else {
-        nameSuffix = html`<span class="additionalUrls"
+        nameSuffix = html`<span class="ml-1"
           >${msg(str`+${remainder} URLs`)}</span
         >`;
       }
     }
     return html`
       <div class="overflow-hidden whitespace-nowrap flex">
-        <span class="truncate min-w-0 flex-1">${item.firstSeed}</span>
+        <span class="truncate min-w-0">${item.firstSeed}</span>
         <span>${nameSuffix}</span>
       </div>
     `;
@@ -126,12 +126,10 @@ export class ArchivedItemList extends TailwindElement {
   static styles = css`
     btrix-table {
       --btrix-cell-gap: var(--sl-spacing-x-small);
-      /* --btrix-cell-padding-top: var(--sl-spacing-x-small);
-      --btrix-cell-padding-bottom: var(--sl-spacing-x-small); */
       --btrix-cell-padding-left: var(--sl-spacing-small);
       --btrix-cell-padding-right: var(--sl-spacing-small);
-      --btrix-table-grid-auto-columns: min-content 26rem 12rem 1fr 1fr 1fr
-        min-content;
+      --btrix-table-grid-auto-columns: min-content minmax(26rem, auto)
+        minmax(12rem, auto) 1fr 1fr 1fr min-content;
     }
   `;
 
@@ -140,30 +138,32 @@ export class ArchivedItemList extends TailwindElement {
 
   render() {
     return html`
-      <btrix-table>
-        <btrix-table-head>
-          <btrix-table-header-cell class="p-0">
-            <slot name="checkbox"></slot>
-          </btrix-table-header-cell>
-          <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
-          <btrix-table-header-cell>
-            ${msg("Date Created")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
-          <btrix-table-header-cell
-            >${msg("Pages Crawled")}</btrix-table-header-cell
-          >
-          <btrix-table-header-cell>
-            ${msg("Created By")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell
-            ><slot name="actions"></slot
-          ></btrix-table-header-cell>
-        </btrix-table-head>
-        <btrix-table-body class="border rounded overflow-hidden">
-          <slot @slotchange=${this.onSlotChange}></slot>
-        </btrix-table-body>
-      </btrix-table>
+      <div class="overflow-auto">
+        <btrix-table>
+          <btrix-table-head class="mb-2">
+            <btrix-table-header-cell class="p-0">
+              <slot name="checkbox"></slot>
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg("Date Created")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
+            <btrix-table-header-cell
+              >${msg("Pages Crawled")}</btrix-table-header-cell
+            >
+            <btrix-table-header-cell>
+              ${msg("Created By")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell
+              ><slot name="actions"></slot
+            ></btrix-table-header-cell>
+          </btrix-table-head>
+          <btrix-table-body class="border rounded overflow-hidden">
+            <slot @slotchange=${this.onSlotChange}></slot>
+          </btrix-table-body>
+        </btrix-table>
+      </div>
     `;
   }
 

@@ -15,8 +15,6 @@ import { type TableHeaderCell } from "./table-header-cell";
 export class TableHead extends LitElement {
   static styles = css`
     :host {
-      --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
-
       grid-column: var(--btrix-table-grid-column);
       display: grid;
       grid-template-columns: subgrid;

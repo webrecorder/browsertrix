@@ -53,11 +53,13 @@ export class CollectionWorkflowList extends TailwindElement {
       /* Increase size */
       font-size: 1rem;
       padding: var(--sl-spacing-small);
+      flex: none;
     }
 
     /* Increase size of label */
     sl-tree-item::part(label) {
-      flex: 1;
+      flex: 1 1 0%;
+      overflow: hidden;
     }
 
     /* Hide default indentation marker */
@@ -226,9 +228,9 @@ export class CollectionWorkflowList extends TailwindElement {
           });
         }}
       >
-        <div class="flex-1 flex flex-wrap items-center gap-x-6 gap-y-2">
-          <div class="flex-1">${this.renderName(workflow)}</div>
-          <div class="flex-0 text-neutral-500 md:text-right">
+        <div class="flex-1 overflow-hidden flex items-center gap-2 md:gap-x-6">
+          <div class="flex-1 overflow-hidden">${this.renderName(workflow)}</div>
+          <div class="flex-none text-neutral-500 md:text-right">
             ${until(
               countAsync.then(({ total, selected }) =>
                 total === 1
@@ -243,7 +245,7 @@ export class CollectionWorkflowList extends TailwindElement {
               )
             )}
           </div>
-          <div class="flex-0">
+          <div class="flex-none">
             <sl-switch
               class="flex"
               size="small"
@@ -366,26 +368,27 @@ export class CollectionWorkflowList extends TailwindElement {
 
   // TODO consolidate collections/workflow name
   private renderName(workflow: Workflow) {
-    if (workflow.name)
-      return html`<span class="truncate">${workflow.name}</span>`;
-    if (!workflow.firstSeed)
-      return html`<span class="truncate">${workflow.id}</span>`;
-    const remainder = workflow.seedCount - 1;
-    let nameSuffix: string | TemplateResult<1> = "";
-    if (remainder) {
-      if (remainder === 1) {
-        nameSuffix = html`<span class="additionalUrls"
-          >${msg(str`+${remainder} URL`)}</span
-        >`;
-      } else {
-        nameSuffix = html`<span class="additionalUrls"
-          >${msg(str`+${remainder} URLs`)}</span
-        >`;
+    if (workflow.name) return html`<span>${workflow.name}</span>`;
+    if (workflow.firstSeed && workflow.seedCount) {
+      const remainder = workflow.seedCount - 1;
+      let nameSuffix: string | TemplateResult<1> = "";
+      if (remainder) {
+        if (remainder === 1) {
+          nameSuffix = html`<span class="ml-1"
+            >${msg(str`+${remainder} URL`)}</span
+          >`;
+        } else {
+          nameSuffix = html`<span class="ml-1"
+            >${msg(str`+${remainder} URLs`)}</span
+          >`;
+        }
       }
+      return html`
+        <div class="overflow-hidden whitespace-nowrap flex">
+          <span class="truncate min-w-0">${workflow.firstSeed}</span>
+          <span>${nameSuffix}</span>
+        </div>
+      `;
     }
-    return html`
-      <span class="primaryUrl truncate">${workflow.firstSeed}</span
-      >${nameSuffix}
-    `;
   }
 }

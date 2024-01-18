@@ -235,7 +235,7 @@ export class CollectionItemsDialog extends TailwindElement {
 
   private renderContent = () => {
     return html`
-      <div class="flex items-center justify-between">
+      <div class="flex flex-wrap items-center justify-between">
         <div class="flex gap-3 px-4 py-3" role="tablist">
           ${TABS.map(this.renderTab)}
         </div>

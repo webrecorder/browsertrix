@@ -393,7 +393,7 @@ export class CollectionsList extends LiteElement {
         <btrix-table
           style="--btrix-table-grid-auto-columns: min-content 24rem 1fr 1fr 1fr 12rem min-content"
         >
-          <btrix-table-head>
+          <btrix-table-head class="mb-2">
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Collection Access")}</span>
             </btrix-table-header-cell>

@@ -7,7 +7,6 @@ import {
 } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { type TableHeaderCell } from "./table-header-cell";
 import { type TableHead } from "./table-head";
 
 /**
@@ -61,13 +60,6 @@ export class Table extends TailwindElement {
       grid-auto-columns: var(--btrix-table-grid-auto-columns, auto);
     }
   `;
-
-  @queryAssignedElements({
-    slot: "head",
-    selector: "btrix-table-header-cell",
-    flatten: true,
-  })
-  private headerCells!: Array<TableHeaderCell>;
 
   @property({ type: String, reflect: true, noAccessor: true })
   role = "table";
