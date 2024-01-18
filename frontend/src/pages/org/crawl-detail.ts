@@ -336,7 +336,7 @@ export class CrawlDetail extends LiteElement {
       `;
     };
     return html`
-      <nav class="border-b md:border-b-0 pb-4 md:mt-10">
+      <nav class="sticky top-0 border-b md:border-b-0 pb-4 md:mt-10">
         <ul
           class="flex flex-row md:flex-col gap-2 text-center md:text-start"
           role="menu"
