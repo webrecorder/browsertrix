@@ -12,9 +12,16 @@ For all organizations the storage panel displays the total number of archived it
 
 ## Crawling
 
+The crawling panel lists the number of currently running and waiting crawls, as well as the total number of pages captured.
+
+### Execution Time
+
+`Paid Feature`{.badge-green}
+
 For organizations with a set execution minute limit, the crawling panel displays a graph of how much execution time has been used and how much is currently remaining. Monthly execution time limits reset on the first of each month at 12:00 AM GMT.
 
-The crawling panel also lists the number of currently running and waiting crawls, as well as the total number of pages captured.
+??? Question "How is execution time calculated?"
+    Execution time is calculated by multiplying a crawl's elapsed time by the [_Crawler Instances_](../workflow-setup/#crawler-instances) scale value. Like elapsed time, this is tracked as the crawl runs and lowering the _Crawler Instances_ scale while a crawl is running will also reduce the execution time multiplier.
 
 ## Collections
 
