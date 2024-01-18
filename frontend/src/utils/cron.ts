@@ -10,11 +10,9 @@ export type ScheduleInterval = "daily" | "weekly" | "monthly";
 /**
  * Parse interval from cron expression
  **/
-export function getScheduleInterval(
-  schedule: string
-): "daily" | "weekly" | "monthly" {
-  const [_minute, _hour, dayofMonth, _month, dayOfWeek] = schedule.split(" ");
-  if (dayofMonth === "*") {
+export function getScheduleInterval(schedule: string): ScheduleInterval {
+  const [_minute, _hour, dayOfMonth, _month, dayOfWeek] = schedule.split(" ");
+  if (dayOfMonth === "*") {
     if (dayOfWeek === "*") {
       return "daily";
     }
@@ -63,7 +61,7 @@ export function humanizeNextDate(
 export function humanizeSchedule(
   schedule: string,
   options: { length?: "short" } = {},
-  numberFormatter: any = numberUtils.numberFormatter
+  numberFormatter = numberUtils.numberFormatter
 ): string {
   const interval = getScheduleInterval(schedule);
   const parsed = parseCron(schedule);
@@ -77,7 +75,7 @@ export function humanizeSchedule(
     weekday: "long",
   });
 
-  let intervalMsg: any = "";
+  let intervalMsg = "";
 
   if (options.length === "short") {
     switch (interval) {
