@@ -867,11 +867,9 @@ ${this.crawl?.description}
               .crawlConfig=${{
                 ...this.crawl,
                 jobType: this.workflow?.jobType,
-                name: this.workflow?.name,
-                description: this.workflow?.description,
-                tags: this.workflow?.tags,
               } as CrawlConfig}
               .seeds=${this.seeds!.items}
+              hideMetadata
             ></btrix-config-details>
           `,
           this.renderLoading

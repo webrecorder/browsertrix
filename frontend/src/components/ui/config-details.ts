@@ -39,6 +39,10 @@ export class ConfigDetails extends LiteElement {
   @property({ type: Boolean })
   anchorLinks = false;
 
+  // Hide metadata section, e.g. if embedded in crawl detail view
+  @property({ type: Boolean })
+  hideMetadata = false;
+
   @state()
   private orgDefaults?: {
     pageLoadTimeoutSeconds?: number;
@@ -258,51 +262,51 @@ export class ConfigDetails extends LiteElement {
           )}
         </btrix-desc-list>
       </section>
-      <section id="crawl-metadata" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-          <h4>${msg("Workflow Metadata")}</h4>
-        </btrix-section-heading>
-        <btrix-desc-list>
-          ${this.renderSetting(msg("Name"), crawlConfig?.name)}
-          ${this.renderSetting(
-            msg("Description"),
-            crawlConfig?.description
-              ? html`
-                  <p class="font-sans max-w-prose">
-                    ${crawlConfig?.description}
-                  </p>
-                `
-              : undefined
-          )}
-          ${crawlConfig?.tags
-            ? this.renderSetting(
-                msg("Tags"),
-                crawlConfig?.tags?.length
-                  ? crawlConfig.tags.map(
-                      (tag) =>
-                        html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
-                    )
-                  : []
-              )
-            : nothing}
-          ${crawlConfig?.autoAddCollections
-            ? this.renderSetting(
-                msg("Collections"),
-                this.collections.length
-                  ? this.collections.map(
-                      (coll) =>
-                        html`<sl-tag class="mt-1 mr-2" variant="neutral">
-                          ${coll.name}
-                          <span class="pl-1 font-monostyle text-xs">
-                            (${msg(str`${coll.crawlCount} items`)})
-                          </span>
-                        </sl-tag>`
-                    )
-                  : undefined
-              )
-            : nothing}
-        </btrix-desc-list>
-      </section>
+      ${this.hideMetadata
+        ? nothing
+        : html`
+            <section id="crawl-metadata" class="mb-8">
+              <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+                <h4>${msg("Metadata")}</h4>
+              </btrix-section-heading>
+              <btrix-desc-list>
+                ${this.renderSetting(msg("Name"), crawlConfig?.name)}
+                ${this.renderSetting(
+                  msg("Description"),
+                  crawlConfig?.description
+                    ? html`
+                        <p class="font-sans max-w-prose">
+                          ${crawlConfig?.description}
+                        </p>
+                      `
+                    : undefined
+                )}
+                ${this.renderSetting(
+                  msg("Tags"),
+                  crawlConfig?.tags?.length
+                    ? crawlConfig.tags.map(
+                        (tag) =>
+                          html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
+                      )
+                    : []
+                )}
+                ${this.renderSetting(
+                  msg("Collections"),
+                  this.collections.length
+                    ? this.collections.map(
+                        (coll) =>
+                          html`<sl-tag class="mt-1 mr-2" variant="neutral">
+                            ${coll.name}
+                            <span class="pl-1 font-monostyle text-xs">
+                              (${msg(str`${coll.crawlCount} items`)})
+                            </span>
+                          </sl-tag>`
+                      )
+                    : undefined
+                )}
+              </btrix-desc-list>
+            </section>
+          `}
     `;
   }
 
