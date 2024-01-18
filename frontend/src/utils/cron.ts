@@ -168,9 +168,15 @@ export function getUTCSchedule({
 
   localDate.setHours(+hour + periodOffset);
   localDate.setMinutes(+minute);
-  const date =
-    interval === "monthly" ? dayOfMonth || localDate.getUTCDate() : "*";
-  const day = interval === "weekly" ? dayOfWeek || localDate.getUTCDay() : "*";
+
+  if (interval === "monthly" && dayOfMonth) {
+    localDate.setDate(dayOfMonth);
+  } else if (interval == "weekly" && dayOfWeek) {
+    localDate.setDate(localDate.getDate() + dayOfWeek - localDate.getDay());
+  }
+
+  const date = interval === "monthly" ? localDate.getUTCDate() : "*";
+  const day = interval === "weekly" ? localDate.getUTCDay() : "*";
   const month = "*";
 
   const schedule = `${localDate.getUTCMinutes()} ${localDate.getUTCHours()} ${date} ${month} ${day}`;

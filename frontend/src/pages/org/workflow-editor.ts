@@ -1672,7 +1672,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           label=${msg("User Agent")}
           autocomplete="off"
           placeholder=${msg("Default")}
-          value=${this.formState.userAgent}
+          value=${this.formState.userAgent || ""}
         >
         </sl-input>
       `)}
