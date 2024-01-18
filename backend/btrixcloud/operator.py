@@ -1645,7 +1645,7 @@ class BtrixOperator(K8sAPI):
             userid=userid,
             oid=oid,
             storage=org.storage,
-            crawler_channel=configmap["CRAWLER_CHANNEL"],
+            crawler_channel=configmap.get("CRAWLER_CHANNEL", "default"),
             scale=int(configmap.get("INITIAL_SCALE", 1)),
             crawl_timeout=int(configmap.get("CRAWL_TIMEOUT", 0)),
             max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),
