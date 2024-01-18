@@ -120,7 +120,7 @@ Adds a hard limit on the number of pages that will be crawled. The crawl will be
 
 ### Crawl Time Limit
 
-The crawl will be gracefully stopped after this set period of time.
+The crawl will be gracefully stopped after this set period of elapsed time.
 
 ### Crawl Size Limit
 
@@ -132,11 +132,11 @@ Increasing the amount of crawler instances will speed up crawls by using additio
 
 ### Page Load Timeout
 
-Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.
+Limits amount of elapsed time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.
 
 ### Behavior Timeout
 
-Limits how long behaviors can run on each page.
+Limits amount of elapsed time behaviors have to complete.
 
 ### Auto Scroll Behavior
 
@@ -144,7 +144,7 @@ When enabled, the browser will automatically scroll to the end of the page.
 
 ### Delay Before Next Page
 
-Waits on the page for a set period of time after any behaviors have finished running. This can be helpful to avoid rate limiting however it will slow down your crawl.
+Waits on the page for a set period of elapsed time after any behaviors have finished running. This can be helpful to avoid rate limiting however it will slow down your crawl.
 
 ## Browser Settings
 
