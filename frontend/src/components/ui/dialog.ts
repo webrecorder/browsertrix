@@ -49,10 +49,10 @@ export class Dialog extends SlDialog {
         padding-bottom: var(--sl-spacing-small);
         border-top: 1px solid var(--sl-color-neutral-100);
       }
-    ` as unknown as typeof dialogStyles,
+    `,
     // TODO remove this type coercion once we migrate to
     // lit@3 (or more specifically, to when the version of lit we use uses the
     // same version of `@lit/reactive-element` as Shoelace -- at the time of
     // writing, that's `@lit/reactive-element@2.0.2`)
-  ];
+  ] as typeof SlDialog.styles;
 }
