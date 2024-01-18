@@ -13,7 +13,7 @@ To run this ansible playbook, you need to:
 - `doctl` command line client configured (run `doctl auth init`)
 - Create a [DigitalOcean Spaces](https://docs.digitalocean.com/reference/api/spaces-api/) API Key which will also need to be set in your terminal sessions environment variables, which should be set as `DO_AWS_ACCESS_KEY` and `DO_AWS_SECRET_KEY`
 - Configure a DNS A Record and CNAME record.
-- Have a working python and pip configuration through your OS Package Manager
+- Have a working Python and pip configuration through your OS Package Manager
 
 #### Install
 
