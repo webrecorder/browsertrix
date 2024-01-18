@@ -20,6 +20,7 @@ theme:
     - content.code.copy
     - content.action.edit
     - content.tooltips
+    - search.suggest
   palette:
     scheme: webrecorder
   logo: assets/brand/btrix-logo.svg
@@ -103,3 +104,6 @@ extra:
     - icon: bootstrap/youtube
       link: https://www.youtube.com/@webrecorder
 copyright: "Creative Commons Attribution 4.0 International (CC BY 4.0)"
+
+plugins:
+  - search
