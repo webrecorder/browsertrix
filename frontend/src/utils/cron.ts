@@ -123,7 +123,7 @@ export function humanizeSchedule(
         break;
       case "monthly":
         intervalMsg = msg(
-          str`On day ${days[0]} of the month at ${formattedTime}`
+          str`On day ${nextDate.getDate()} of the month at ${formattedTime}`
         );
         break;
       default:
