@@ -89,13 +89,13 @@ export class Home extends LiteElement {
     return html`
       <div class="bg-white">
         <header
-          class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border md:py-8"
+          class="w-full max-w-screen-desktop mx-auto px-3 py-4 box-border md:py-8"
         >
           <h1 class="text-xl font-medium">${title}</h1>
         </header>
         <hr />
       </div>
-      <main class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border">
+      <main class="w-full max-w-screen-desktop mx-auto px-3 py-4 box-border">
         ${content}
       </main>
     `;

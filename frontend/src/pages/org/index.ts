@@ -282,7 +282,7 @@ export class Org extends LiteElement {
       ${this.renderOrgNavBar()}
       <main>
         <div
-          class="w-full max-w-screen-lg mx-auto px-3 box-border py-7"
+          class="w-full max-w-screen-desktop mx-auto px-3 box-border py-7"
           aria-labelledby="${this.orgTab}-tab"
         >
           ${tabPanelContent}
@@ -299,7 +299,7 @@ export class Org extends LiteElement {
           ? "bg-slate-100 border-b py-5"
           : ""}"
       >
-        <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
+        <div class="w-full max-w-screen-desktop mx-auto px-3 box-border">
           <sl-alert
             variant="warning"
             closable
@@ -325,7 +325,7 @@ export class Org extends LiteElement {
           ? "bg-slate-100 border-b py-5"
           : ""}"
       >
-        <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
+        <div class="w-full max-w-screen-desktop mx-auto px-3 box-border">
           <sl-alert
             variant="warning"
             closable
@@ -350,7 +350,7 @@ export class Org extends LiteElement {
 
   private renderOrgNavBar() {
     return html`
-      <div class="w-full max-w-screen-lg mx-auto px-3 box-border">
+      <div class="w-full max-w-screen-desktop mx-auto px-3 box-border">
         <nav class="-ml-3 flex items-end overflow-x-auto">
           ${this.renderNavTab({
             tabName: "home",

@@ -99,7 +99,7 @@ export class Crawls extends LiteElement {
 
   render() {
     return html` <div
-      class="w-full max-w-screen-lg mx-auto px-3 py-4 box-border"
+      class="w-full max-w-screen-desktop mx-auto px-3 py-4 box-border"
     >
       ${this.crawlId
         ? // Render loading indicator while preparing to redirect

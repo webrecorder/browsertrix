@@ -247,7 +247,7 @@ export class App extends LiteElement {
     return html`
       <div class="border-b">
         <nav
-          class="max-w-screen-lg mx-auto pl-3 box-border h-12 flex items-center justify-between"
+          class="max-w-screen-desktop mx-auto pl-3 box-border h-12 flex items-center justify-between"
         >
           <div>
             <a
@@ -448,7 +448,7 @@ export class App extends LiteElement {
   private renderFooter() {
     return html`
       <footer
-        class="w-full max-w-screen-lg mx-auto p-3 box-border flex flex-col gap-4 md:flex-row justify-between"
+        class="w-full max-w-screen-desktop mx-auto p-3 box-border flex flex-col gap-4 md:flex-row justify-between"
       >
         <!-- <div> -->
         <!-- TODO re-enable when translations are added -->
@@ -608,7 +608,7 @@ export class App extends LiteElement {
 
       case "accountSettings":
         return html`<btrix-account-settings
-          class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
+          class="w-full max-w-screen-desktop mx-auto p-2 md:py-8 box-border"
           @update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
             this.updateUserInfo();
@@ -621,7 +621,7 @@ export class App extends LiteElement {
         if (this.appState.userInfo) {
           if (this.appState.userInfo.isAdmin) {
             return html`<btrix-users-invite
-              class="w-full max-w-screen-lg mx-auto p-2 md:py-8 box-border"
+              class="w-full max-w-screen-desktop mx-auto p-2 md:py-8 box-border"
               .authState="${this.authService.authState}"
               .userInfo="${this.appState.userInfo}"
             ></btrix-users-invite>`;

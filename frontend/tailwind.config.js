@@ -106,7 +106,7 @@ function makeTheme() {
       "4/3": "4 / 3", // For Browsertrix watch/replay
     },
     screens: {
-      lg: "1124px", // Should match --btrix-screen-lg
+      desktop: "85rem",
       // Override default of:
       // => @media (min-width: 1024px) { ... }
     },
