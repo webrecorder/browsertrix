@@ -280,21 +280,25 @@ export class Crawls extends LiteElement {
     `;
   }
 
-  private renderCrawlItem = (crawl: Crawl) =>
-    html`
+  private renderCrawlItem = (crawl: Crawl) => {
+    const crawlPath = `/orgs/${this.slugLookup[crawl.oid]}/items/crawl/${
+      crawl.id
+    }`;
+    return html`
       <btrix-crawl-list-item
-        orgSlug=${this.slugLookup[crawl.oid]}
+        class="cursor-pointer transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50"
+        role="button"
         .crawl=${crawl}
+        @click=${() => this.navTo(crawlPath)}
       >
         <sl-menu slot="menu">
-          <sl-menu-item
-            @click=${() => this.navTo(`/crawls/crawl/${crawl.id}#settings`)}
-          >
+          <sl-menu-item @click=${() => this.navTo(`${crawlPath}#config`)}>
             ${msg("View Crawl Settings")}
           </sl-menu-item>
         </sl-menu>
       </btrix-crawl-list-item>
     `;
+  };
 
   private async fetchWorkflowId() {
     try {
