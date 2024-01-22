@@ -5,7 +5,7 @@
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@cheap-glitch/mi-cron": "^1.0.1",
-    "@lit/localize": "^0.11.4",
+    "@lit/localize": "^0.12.1",
     "@novnc/novnc": "^1.4.0-beta",
     "@rollup/plugin-commonjs": "^18.0.0",
     "@shoelace-style/shoelace": "^2.8.0",
@@ -41,7 +41,7 @@
     "html-webpack-plugin": "^5.5.0",
     "immutable": "^4.1.0",
     "iso-639-1": "^2.1.15",
-    "lit": "2.7.5",
+    "lit": "3.1.1",
     "lit-shared-state": "^0.2.1",
     "lodash": "^4.17.21",
     "micromark": "^4.0.0",
@@ -88,7 +88,7 @@
     "localize:build": "lit-localize build"
   },
   "devDependencies": {
-    "@lit/localize-tools": "^0.6.9",
+    "@lit/localize-tools": "^0.7.1",
     "@web/dev-server-esbuild": "^0.3.3",
     "@web/dev-server-import-maps": "^0.0.6",
     "@web/dev-server-rollup": "^0.3.21",
@@ -124,6 +124,7 @@
     "node": ">=16"
   },
   "resolutions": {
-    "**/playwright": "1.32.1"
+    "**/playwright": "1.32.1",
+    "**/lit": "3.1.1"
   }
 }
