@@ -862,19 +862,7 @@ export class WorkflowDetail extends LiteElement {
             this.crawls,
             () =>
               this.crawls!.items.map(
-                (crawl: Crawl) => html` <btrix-crawl-list-item
-                  orgSlug=${this.appState.orgSlug || ""}
-                  .crawl=${crawl}
-                >
-                  <sl-format-date
-                    slot="id"
-                    date=${`${crawl.started}Z`}
-                    month="2-digit"
-                    day="2-digit"
-                    year="2-digit"
-                    hour="2-digit"
-                    minute="2-digit"
-                  ></sl-format-date>
+                (crawl: Crawl) => html` <btrix-crawl-list-item .crawl=${crawl}>
                   ${when(
                     this.isCrawler,
                     () => html` <sl-menu slot="menu">

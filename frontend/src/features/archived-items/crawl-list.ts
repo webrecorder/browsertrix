@@ -70,7 +70,7 @@ export class CrawlListItem extends TailwindElement {
           e.preventDefault();
         }}
       >
-        <btrix-table-cell class="pl-2 pr-0">
+        <btrix-table-cell class="pr-0">
           ${this.safeRender(
             (workflow) => html`
               <btrix-crawl-status
@@ -83,7 +83,7 @@ export class CrawlListItem extends TailwindElement {
         ${this.workflowId
           ? nothing
           : html`
-              <btrix-table-cell class="pl-0">
+              <btrix-table-cell>
                 <div class="max-w-sm truncate">
                   ${this.safeRender((workflow) => renderName(workflow))}
                 </div>
@@ -218,9 +218,6 @@ export class CrawlList extends TailwindElement {
   @property({ type: String })
   workflowId?: string;
 
-  @property({ type: String })
-  itemType: Crawl["type"] = "crawl";
-
   @queryAssignedElements({ selector: "btrix-crawl-list-item" })
   listItems!: Array<HTMLElement>;
 
@@ -228,13 +225,13 @@ export class CrawlList extends TailwindElement {
     return html` <div class="overflow-auto">
       <btrix-table>
         <btrix-table-head class="mb-2">
-          <btrix-table-header-cell class="pl-2 pr-0">
+          <btrix-table-header-cell class="pr-0">
             <span class="sr-only">${msg("Status")}</span>
           </btrix-table-header-cell>
           ${this.workflowId
             ? nothing
             : html`
-                <btrix-table-header-cell class="pl-0">
+                <btrix-table-header-cell>
                   ${msg("Name")}
                 </btrix-table-header-cell>
               `}
