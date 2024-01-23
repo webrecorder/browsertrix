@@ -159,7 +159,7 @@ export class OrgSettings extends LiteElement {
       <a
         slot="nav"
         href=${`${this.orgBasePath}/${path}`}
-        class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
+        class="block font-medium rounded-sm mb-2 p-2 transition-all ${isActive
           ? "text-blue-600 bg-blue-50 shadow-sm shadow-blue-800/20"
           : "text-neutral-600 hover:bg-neutral-50"}"
         @click=${this.navLink}
@@ -269,7 +269,7 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderMembers() {
-    const columnWidths = ["1fr", "10rem", "min-content"];
+    const columnWidths = ["1fr", "auto", "min-content"];
     const rows = Object.entries(this.org.users!).map(([_id, user]) => [
       user.name,
       this.renderUserRoleSelect(user),
