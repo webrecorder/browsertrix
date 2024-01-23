@@ -6,7 +6,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 const DEFAULT_PANEL_ID = "default-panel";
 // Match witch tailwind 4xl max width
 // https://tailwindcss.com/docs/max-width
-const SCREEN_LG = 896;
+const SCREEN_LG_PX = 896;
 
 /**
  * Tab list
@@ -93,12 +93,12 @@ export class TabList extends LitElement {
       grid-gap: 1rem;
     }
 
-    @media only screen and (min-width: ${SCREEN_LG}px) {
+    @media only screen and (min-width: ${SCREEN_LG_PX}px) {
       .container {
         grid-template-areas:
           ". header"
           "menu main";
-        grid-template-columns: auto minmax(auto, 896px);
+        grid-template-columns: auto minmax(auto, 70rem);
       }
     }
 
@@ -106,7 +106,7 @@ export class TabList extends LitElement {
       grid-area: menu;
     }
 
-    @media only screen and (min-width: ${SCREEN_LG}px) {
+    @media only screen and (min-width: ${SCREEN_LG_PX}px) {
       .navWrapper {
         overflow: initial;
       }
@@ -141,7 +141,7 @@ export class TabList extends LitElement {
       margin-left: var(--track-width);
     }
 
-    @media only screen and (min-width: ${SCREEN_LG}px) {
+    @media only screen and (min-width: ${SCREEN_LG_PX}px) {
       .tablist {
         display: block;
       }
@@ -166,7 +166,7 @@ export class TabList extends LitElement {
       background-color: var(--sl-color-blue-500);
     }
 
-    @media only screen and (min-width: ${SCREEN_LG}px) {
+    @media only screen and (min-width: ${SCREEN_LG_PX}px) {
       .tablist,
       .show-indicator .track,
       .show-indicator .indicator {

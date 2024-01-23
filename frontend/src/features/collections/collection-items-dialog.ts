@@ -212,6 +212,7 @@ export class CollectionItemsDialog extends TailwindElement {
   render() {
     return html` <btrix-dialog
       ?open=${this.open}
+      style="--width: var(--btrix-screen-desktop); --body-spacing: 0;"
       @sl-show=${() => (this.isReady = true)}
       @sl-after-hide=${() => this.reset()}
     >
