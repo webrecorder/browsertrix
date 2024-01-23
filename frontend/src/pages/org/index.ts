@@ -269,6 +269,7 @@ export class Org extends LiteElement {
           tabPanelContent = this.renderOrgSettings();
           break;
         }
+        // falls through
       }
       default:
         tabPanelContent = html`<btrix-not-found
@@ -523,9 +524,10 @@ export class Org extends LiteElement {
   }
 
   private renderWorkflows() {
-    const isEditing = this.params.hasOwnProperty("edit");
+    const isEditing = Object.prototype.hasOwnProperty.call(this.params, "edit");
     const isNewResourceTab =
-      this.params.hasOwnProperty("new") && this.params.jobType;
+      Object.prototype.hasOwnProperty.call(this.params, "new") &&
+      this.params.jobType;
     const workflowId = this.params.workflowId;
 
     if (workflowId) {
@@ -621,7 +623,10 @@ export class Org extends LiteElement {
   private renderOrgSettings() {
     if (!this.userInfo || !this.org) return;
     const activePanel = this.params.settingsTab || "information";
-    const isAddingMember = this.params.hasOwnProperty("invite");
+    const isAddingMember = Object.prototype.hasOwnProperty.call(
+      this.params,
+      "invite"
+    );
 
     return html`<btrix-org-settings
       .authState=${this.authState}

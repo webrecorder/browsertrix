@@ -84,7 +84,9 @@ export class APIController implements ReactiveController {
     let errorDetail;
     try {
       errorDetail = (await resp.json()).detail;
-    } catch {}
+    } catch {
+      /* empty */
+    }
 
     let errorMessage: string = msg("Unknown API error");
 
@@ -120,6 +122,7 @@ export class APIController implements ReactiveController {
           errorMessage = msg("Monthly execution minutes quota reached");
           break;
         }
+        break;
       }
       case 404: {
         errorMessage = msg("Not found");

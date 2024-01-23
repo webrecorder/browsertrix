@@ -139,7 +139,7 @@ export class ResetPassword extends LiteElement {
         this.navTo("/log-in");
         break;
       case 400:
-      case 422:
+      case 422: {
         const { detail } = await resp.json();
         if (detail === "reset_password_bad_token") {
           // TODO password validation details
@@ -152,6 +152,7 @@ export class ResetPassword extends LiteElement {
           );
         }
         break;
+      }
       default:
         this.serverError = msg("Something unexpected went wrong");
         break;

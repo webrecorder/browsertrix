@@ -211,7 +211,7 @@ function getLocalizedWeekDays() {
 }
 
 function validURL(url: string) {
-  return /((((https?):(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)/.test(
+  return /((((https?):(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w\-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[.!/\\\w]*))?)/.test(
     url
   );
 }
@@ -1095,7 +1095,9 @@ https://example.com/path`}
     if (this.formState.primarySeedUrl) {
       try {
         exampleUrl = new URL(this.formState.primarySeedUrl);
-      } catch {}
+      } catch {
+        /* empty */
+      }
     }
     const exampleHost = exampleUrl.host;
     const exampleProtocol = exampleUrl.protocol;
@@ -2111,7 +2113,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private updateFormStateOnChange(e: Event) {
     const elem = e.target as SlTextarea | SlInput | SlCheckbox;
     const name = elem.name;
-    if (!this.formState.hasOwnProperty(name)) {
+    if (!Object.prototype.hasOwnProperty.call(this.formState, name)) {
       return;
     }
     const tagName = elem.tagName.toLowerCase();

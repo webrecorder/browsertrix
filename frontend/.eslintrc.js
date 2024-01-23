@@ -1,3 +1,4 @@
+/* eslint-env node */
 /** @type {import('eslint').Linter.Config} */
 module.exports = {
   parser: "@typescript-eslint/parser",
@@ -7,9 +8,10 @@ module.exports = {
     es2017: true,
   },
   extends: [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
     "plugin:wc/recommended",
     "plugin:lit/recommended",
-    "plugin:@typescript-eslint/recommended",
     "prettier",
   ],
   plugins: ["@typescript-eslint", "lit"],

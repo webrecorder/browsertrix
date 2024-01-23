@@ -661,6 +661,7 @@ export class App extends LiteElement {
             return;
           }
         }
+        // falls through
       }
 
       default:

@@ -172,7 +172,7 @@ export class OrgsList extends LiteElement {
   private makeOnOrgClick(org: OrgData) {
     const navigate = () => this.navTo(`/orgs/${org.slug}`);
 
-    if (typeof window.getSelection !== undefined) {
+    if (typeof window.getSelection !== "undefined") {
       return () => {
         // Prevent navigation on user text selection
         if (window.getSelection()?.type === "Range") {

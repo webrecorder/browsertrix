@@ -212,7 +212,7 @@ export class SignUpForm extends LiteElement {
     let shouldLogIn = false;
 
     switch (resp.status) {
-      case 201:
+      case 201: {
         const data = await resp.json();
 
         if (data.id) {
@@ -220,8 +220,9 @@ export class SignUpForm extends LiteElement {
         }
 
         break;
+      }
       case 400:
-      case 422:
+      case 422: {
         const { detail } = await resp.json();
         if (detail === "user_already_exists") {
           shouldLogIn = true;
@@ -233,6 +234,7 @@ export class SignUpForm extends LiteElement {
           this.serverError = msg("Invalid email or password");
         }
         break;
+      }
       default:
         this.serverError = msg("Something unexpected went wrong");
         break;
@@ -262,12 +264,8 @@ export class SignUpForm extends LiteElement {
     email: string;
     password: string;
   }) {
-    try {
-      const data = await AuthService.login({ email, password });
+    const data = await AuthService.login({ email, password });
 
-      this.dispatchEvent(new CustomEvent("authenticated", { detail: data }));
-    } catch (e) {
-      throw e;
-    }
+    this.dispatchEvent(new CustomEvent("authenticated", { detail: data }));
   }
 }

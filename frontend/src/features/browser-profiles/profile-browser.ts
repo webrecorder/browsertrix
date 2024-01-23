@@ -394,7 +394,9 @@ export class ProfileBrowser extends LiteElement {
     this.isIframeLoaded = true;
     try {
       this.iframe?.contentWindow?.localStorage.setItem("uiTheme", '"default"');
-    } catch (e) {}
+    } catch (e) {
+      /* empty */
+    }
     this.dispatchEvent(new CustomEvent("load", { detail: this.iframeSrc }));
   }
 

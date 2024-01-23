@@ -634,7 +634,7 @@ export class CollectionItemsDialog extends TailwindElement {
   private selectAllItems(items: ArchivedItem[]) {
     const selection = { ...this.selection };
     items.forEach((item) => {
-      if (!selection.hasOwnProperty(item.id)) {
+      if (!Object.prototype.hasOwnProperty.call(selection, item.id)) {
         selection[item.id] = true;
       }
     });

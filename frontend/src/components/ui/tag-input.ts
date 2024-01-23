@@ -388,6 +388,7 @@ export class TagInput extends LitElement {
       case "Backspace":
       case "Delete":
       // TODO localize, handle RTL
+      // falls through
       case "ArrowLeft": {
         if (this.input.selectionStart! > 0) return;
         e.preventDefault();
