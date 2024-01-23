@@ -265,13 +265,13 @@ export class CrawlDetail extends LiteElement {
         </section>
       </main>
 
-      <btrix-crawl-metadata-editor
+      <btrix-item-metadata-editor
         .authState=${this.authState}
         .crawl=${this.crawl}
         ?open=${this.openDialogName === "metadata"}
         @request-close=${() => (this.openDialogName = undefined)}
         @updated=${() => this.fetchCrawl()}
-      ></btrix-crawl-metadata-editor>
+      ></btrix-item-metadata-editor>
     `;
   }
 

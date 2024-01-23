@@ -444,7 +444,7 @@ export class CrawlsList extends LiteElement {
 
       ${this.itemToEdit
         ? html`
-            <btrix-crawl-metadata-editor
+            <btrix-item-metadata-editor
               .authState=${this.authState}
               .crawl=${this.itemToEdit}
               ?open=${this.isEditingItem}
@@ -453,7 +453,7 @@ export class CrawlsList extends LiteElement {
                 /* TODO fetch current page or single crawl */ this
                   .fetchArchivedItems
               }
-            ></btrix-crawl-metadata-editor>
+            ></btrix-item-metadata-editor>
           `
         : nothing}
 
