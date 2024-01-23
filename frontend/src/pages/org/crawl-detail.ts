@@ -11,7 +11,7 @@ import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { isActive } from "@/utils/crawler";
 import { CopyButton } from "@/components/ui/copy-button";
-import type { ArchivedItem, Crawl, CrawlConfig, Seed } from "./types";
+import type { ArchivedItem, Crawl, CrawlConfig, Seed, Workflow } from "./types";
 import type { APIPaginatedList } from "@/types/api";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
@@ -66,6 +66,9 @@ export class CrawlDetail extends LiteElement {
   private crawl?: ArchivedItem;
 
   @state()
+  private workflow?: Workflow;
+
+  @state()
   private seeds?: APIPaginatedList<Seed>;
 
   @state()
@@ -118,6 +121,9 @@ export class CrawlDetail extends LiteElement {
       this.fetchCrawl();
       this.fetchCrawlLogs();
       this.fetchSeeds();
+    }
+    if (changedProperties.has("workflowId") && this.workflowId) {
+      this.fetchWorkflow();
     }
   }
 
@@ -330,7 +336,7 @@ export class CrawlDetail extends LiteElement {
       `;
     };
     return html`
-      <nav class="border-b md:border-b-0 pb-4 md:mt-10">
+      <nav class="sticky top-0 border-b md:border-b-0 pb-4 md:mt-10">
         <ul
           class="flex flex-row md:flex-col gap-2 text-center md:text-start"
           role="menu"
@@ -854,16 +860,16 @@ ${this.crawl?.description}
     return html`
       <div aria-live="polite" aria-busy=${!this.crawl || !this.seeds}>
         ${when(
-          this.crawl && this.seeds,
+          this.crawl && this.seeds && (!this.workflowId || this.workflow),
           () => html`
             <btrix-config-details
               .authState=${this.authState!}
               .crawlConfig=${{
                 ...this.crawl,
-                autoAddCollections: this.crawl!.collectionIds,
+                jobType: this.workflow?.jobType,
               } as CrawlConfig}
               .seeds=${this.seeds!.items}
-              hideTags
+              hideMetadata
             ></btrix-config-details>
           `,
           this.renderLoading
@@ -906,13 +912,19 @@ ${this.crawl?.description}
     }
   }
 
+  private async fetchWorkflow(): Promise<void> {
+    try {
+      this.workflow = await this.getWorkflow();
+    } catch (e: unknown) {
+      console.debug(e);
+    }
+  }
+
   private async getCrawl(): Promise<Crawl> {
     const apiPath = `/orgs/${this.orgId}/${
       this.itemType === "upload" ? "uploads" : "crawls"
     }/${this.crawlId}/replay.json`;
-    const data: Crawl = await this.apiFetch(apiPath, this.authState!);
-
-    return data;
+    return this.apiFetch<Crawl>(apiPath, this.authState!);
   }
 
   private async getSeeds() {
@@ -922,6 +934,13 @@ ${this.crawl?.description}
       this.authState!
     );
     return data;
+  }
+
+  private async getWorkflow(): Promise<Workflow> {
+    return this.apiFetch<Workflow>(
+      `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}`,
+      this.authState!
+    );
   }
 
   private async fetchCrawlLogs(

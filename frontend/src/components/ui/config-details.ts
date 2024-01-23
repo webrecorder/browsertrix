@@ -39,9 +39,9 @@ export class ConfigDetails extends LiteElement {
   @property({ type: Boolean })
   anchorLinks = false;
 
-  // Hide tag field, e.g. if embedded in crawl detail view
+  // Hide metadata section, e.g. if embedded in crawl detail view
   @property({ type: Boolean })
-  hideTags = false;
+  hideMetadata = false;
 
   @state()
   private orgDefaults?: {
@@ -215,7 +215,7 @@ export class ConfigDetails extends LiteElement {
               >
                 ${crawlConfig?.profileName}
               </a>`,
-              () => msg("Default Profile")
+              () => crawlConfig?.profileName || msg("Default Profile")
             )
           )}
           ${this.renderSetting(
@@ -262,45 +262,51 @@ export class ConfigDetails extends LiteElement {
           )}
         </btrix-desc-list>
       </section>
-      <section id="crawl-metadata" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-          <h4>${msg("Crawl Metadata")}</h4>
-        </btrix-section-heading>
-        <btrix-desc-list>
-          ${this.renderSetting(msg("Name"), crawlConfig?.name)}
-          ${this.renderSetting(
-            msg("Description"),
-            html`
-              <p class="font-sans max-w-prose">${crawlConfig?.description}</p>
-            `
-          )}
-          ${this.hideTags
-            ? ""
-            : this.renderSetting(
-                msg("Tags"),
-                crawlConfig?.tags?.length
-                  ? crawlConfig.tags.map(
-                      (tag) =>
-                        html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
-                    )
-                  : undefined
-              )}
-          ${this.renderSetting(
-            msg("Collections"),
-            this.collections.length
-              ? this.collections.map(
-                  (coll) =>
-                    html`<sl-tag class="mt-1 mr-2" variant="neutral">
-                      ${coll.name}
-                      <span class="pl-1 font-monostyle text-xs">
-                        (${msg(str`${coll.crawlCount} items`)})
-                      </span>
-                    </sl-tag>`
-                )
-              : undefined
-          )}
-        </btrix-desc-list>
-      </section>
+      ${this.hideMetadata
+        ? nothing
+        : html`
+            <section id="crawl-metadata" class="mb-8">
+              <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+                <h4>${msg("Metadata")}</h4>
+              </btrix-section-heading>
+              <btrix-desc-list>
+                ${this.renderSetting(msg("Name"), crawlConfig?.name)}
+                ${this.renderSetting(
+                  msg("Description"),
+                  crawlConfig?.description
+                    ? html`
+                        <p class="font-sans max-w-prose">
+                          ${crawlConfig?.description}
+                        </p>
+                      `
+                    : undefined
+                )}
+                ${this.renderSetting(
+                  msg("Tags"),
+                  crawlConfig?.tags?.length
+                    ? crawlConfig.tags.map(
+                        (tag) =>
+                          html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
+                      )
+                    : []
+                )}
+                ${this.renderSetting(
+                  msg("Collections"),
+                  this.collections.length
+                    ? this.collections.map(
+                        (coll) =>
+                          html`<sl-tag class="mt-1 mr-2" variant="neutral">
+                            ${coll.name}
+                            <span class="pl-1 font-monostyle text-xs">
+                              (${msg(str`${coll.crawlCount} items`)})
+                            </span>
+                          </sl-tag>`
+                      )
+                    : undefined
+                )}
+              </btrix-desc-list>
+            </section>
+          `}
     `;
   }
 
@@ -436,6 +442,8 @@ export class ConfigDetails extends LiteElement {
       content = html` <sl-skeleton></sl-skeleton> `;
     } else if (typeof value === "boolean") {
       content = value ? msg("Yes") : msg("No");
+    } else if (Array.isArray(value) && !value.length) {
+      content = html`<span class="text-neutral-400">${msg("None")}</span>`;
     } else if (typeof value !== "number" && !value) {
       content = html`<span class="text-neutral-400"
         >${msg("Not specified")}</span
