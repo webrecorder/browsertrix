@@ -510,8 +510,9 @@ export class CrawlsList extends LiteElement {
         this.isCrawler,
         () => html`
           <sl-menu-item
-            @click=${() => {
+            @click=${async () => {
               this.itemToEdit = item;
+              await this.updateComplete;
               this.isEditingItem = true;
             }}
           >
