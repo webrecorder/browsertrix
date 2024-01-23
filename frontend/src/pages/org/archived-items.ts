@@ -21,7 +21,7 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isActive, finishedCrawlStates } from "@/utils/crawler";
 import { nothing } from "lit";
 
-type Crawls = APIPaginatedList<Crawl>;
+type ArchivedItems = APIPaginatedList<ArchivedItem>;
 type SearchFields = "name" | "firstSeed";
 type SortField = "finished" | "fileSize";
 type SortDirection = "asc" | "desc";
@@ -46,11 +46,11 @@ const sortableFields: Record<
 /**
  * Usage:
  * ```ts
- * <btrix-crawls-list></btrix-crawls-list>
+ * <btrix-archived-items></btrix-archived-items>
  * ```
  */
 @localized()
-@customElement("btrix-crawls-list")
+@customElement("btrix-archived-items")
 export class CrawlsList extends LiteElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
@@ -76,7 +76,7 @@ export class CrawlsList extends LiteElement {
   itemType: ArchivedItem["type"] | null = null;
 
   @state()
-  private archivedItems?: Crawls;
+  private archivedItems?: ArchivedItems;
 
   @state()
   private searchOptions: any[] = [];
@@ -94,7 +94,7 @@ export class CrawlsList extends LiteElement {
   private filterByCurrentUser = false;
 
   @state()
-  private filterBy: Partial<Record<keyof Crawl, any>> = {};
+  private filterBy: Partial<Record<keyof ArchivedItem, any>> = {};
 
   @state()
   private itemToEdit: ArchivedItem | null = null;
@@ -437,9 +437,10 @@ export class CrawlsList extends LiteElement {
     if (!this.archivedItems) return;
 
     return html`
-      <btrix-crawl-list itemType=${ifDefined(this.itemType || undefined)}>
+      <btrix-archived-item-list>
+        <span slot="actions" class="sr-only">${msg("Row actions")}</span>
         ${this.archivedItems.items.map(this.renderArchivedItem)}
-      </btrix-crawl-list>
+      </btrix-archived-item-list>
 
       ${this.itemToEdit
         ? html`
@@ -493,16 +494,28 @@ export class CrawlsList extends LiteElement {
     `;
   }
 
-  private renderArchivedItem = (item: Crawl) => html`
-    <btrix-crawl-list-item
-      orgSlug=${this.appState.orgSlug || ""}
-      .crawl=${item}
-    >
-      <sl-menu slot="menu"> ${this.crawlerMenuItemsRenderer(item)} </sl-menu>
-    </btrix-crawl-list-item>
+  private renderArchivedItem = (item: ArchivedItem) => html`
+    <btrix-archived-item-list-item .item=${item}>
+      <btrix-crawl-status
+        slot="prefix"
+        state=${item.state}
+        hideLabel
+        ?isUpload=${item.type === "upload"}
+      ></btrix-crawl-status>
+      <btrix-overflow-dropdown
+        slot="actions"
+        @click=${(e: MouseEvent) => {
+          // Prevent navigation to detail view
+          e.preventDefault();
+          e.stopImmediatePropagation();
+        }}
+      >
+        <sl-menu>${this.renderMenuItems(item)}</sl-menu>
+      </btrix-overflow-dropdown>
+    </btrix-archived-item-list-item>
   `;
 
-  private crawlerMenuItemsRenderer = (item: Crawl) =>
+  private renderMenuItems = (item: ArchivedItem) =>
     // HACK shoelace doesn't current have a way to override non-hover
     // color without resetting the --sl-color-neutral-700 variable
     html`
@@ -527,12 +540,16 @@ export class CrawlsList extends LiteElement {
         () => html`
           <sl-menu-item
             @click=${() =>
-              this.navTo(`${this.orgBasePath}/workflows/crawl/${item.cid}`)}
+              this.navTo(
+                `${this.orgBasePath}/workflows/crawl/${(item as Crawl).cid}`
+              )}
           >
             <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
             ${msg("Go to Workflow")}
           </sl-menu-item>
-          <sl-menu-item @click=${() => CopyButton.copyToClipboard(item.cid)}>
+          <sl-menu-item
+            @click=${() => CopyButton.copyToClipboard((item as Crawl).cid)}
+          >
             <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
             ${msg("Copy Workflow ID")}
           </sl-menu-item>
@@ -645,7 +662,7 @@ export class CrawlsList extends LiteElement {
 
   private async getArchivedItems(
     queryParams?: APIPaginationQuery & { state?: CrawlState[] }
-  ): Promise<Crawls> {
+  ): Promise<ArchivedItems> {
     const query = queryString.stringify(
       {
         ...this.filterBy,
@@ -668,7 +685,7 @@ export class CrawlsList extends LiteElement {
     );
 
     this.getArchivedItemsController = new AbortController();
-    const data = await this.apiFetch<Crawls>(
+    const data = await this.apiFetch<ArchivedItems>(
       `/orgs/${this.orgId}/all-crawls?${query}`,
       this.authState!,
       {
@@ -709,12 +726,12 @@ export class CrawlsList extends LiteElement {
     }
   }
 
-  private confirmDeleteItem = (item: Crawl | Upload) => {
+  private confirmDeleteItem = (item: ArchivedItem) => {
     this.itemToDelete = item;
     this.isDeletingItem = true;
   };
 
-  private async deleteItem(item: Crawl | Upload) {
+  private async deleteItem(item: ArchivedItem) {
     let apiPath;
 
     switch (this.itemType) {

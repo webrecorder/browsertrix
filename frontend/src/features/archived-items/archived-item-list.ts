@@ -9,33 +9,7 @@ import type { SlCheckbox } from "@shoelace-style/shoelace";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { ArchivedItem } from "@/types/crawler";
-
-function renderName(item: ArchivedItem) {
-  if (item.name) return html`<span>${item.name}</span>`;
-  if (item.firstSeed && item.seedCount) {
-    const remainder = item.seedCount - 1;
-    let nameSuffix: string | TemplateResult<1> = "";
-    if (remainder) {
-      if (remainder === 1) {
-        nameSuffix = html`<span class="ml-1"
-          >${msg(str`+${remainder} URL`)}</span
-        >`;
-      } else {
-        nameSuffix = html`<span class="ml-1"
-          >${msg(str`+${remainder} URLs`)}</span
-        >`;
-      }
-    }
-    return html`
-      <div class="overflow-hidden whitespace-nowrap flex">
-        <span class="truncate min-w-0">${item.firstSeed}</span>
-        <span>${nameSuffix}</span>
-      </div>
-    `;
-  }
-
-  return html`<span class="text-neutral-500">${msg("(unnamed item)")}</span>`;
-}
+import { renderName } from "@/utils/crawler";
 
 /**
  * @slot checkbox - Checkbox column content
@@ -76,7 +50,7 @@ export class ArchivedItemListItem extends TailwindElement {
         </btrix-table-cell>
         <btrix-table-cell>
           <slot name="prefix"></slot>
-          ${renderName(this.item)}
+          <div class="max-w-sm overflow-hidden">${renderName(this.item)}</div>
         </btrix-table-cell>
         <btrix-table-cell>
           <sl-format-date
@@ -100,7 +74,7 @@ export class ArchivedItemListItem extends TailwindElement {
             : html`<span class="text-neutral-400">${msg("n/a")}</span>`}
         </btrix-table-cell>
         <btrix-table-cell><span>${this.item.userName}</span></btrix-table-cell>
-        <btrix-table-cell>
+        <btrix-table-cell class="px-1">
           <slot name="actions"></slot>
         </btrix-table-cell>
       </btrix-table-row>
@@ -128,8 +102,8 @@ export class ArchivedItemList extends TailwindElement {
       --btrix-cell-gap: var(--sl-spacing-x-small);
       --btrix-cell-padding-left: var(--sl-spacing-small);
       --btrix-cell-padding-right: var(--sl-spacing-small);
-      --btrix-table-grid-auto-columns: min-content minmax(26rem, auto)
-        minmax(12rem, auto) 1fr 1fr 1fr min-content;
+      --btrix-table-grid-auto-columns: min-content max-content 12em 1fr 1fr 1fr
+        min-content;
     }
   `;
 
@@ -155,9 +129,9 @@ export class ArchivedItemList extends TailwindElement {
             <btrix-table-header-cell>
               ${msg("Created By")}
             </btrix-table-header-cell>
-            <btrix-table-header-cell
-              ><slot name="actions"></slot
-            ></btrix-table-header-cell>
+            <btrix-table-header-cell class="px-1">
+              <slot name="actions"></slot>
+            </btrix-table-header-cell>
           </btrix-table-head>
           <btrix-table-body class="border rounded overflow-hidden">
             <slot @slotchange=${this.onSlotChange}></slot>

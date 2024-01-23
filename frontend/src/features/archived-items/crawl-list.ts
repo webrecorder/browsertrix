@@ -252,7 +252,7 @@ export class CrawlList extends TailwindElement {
             ${msg("Created By")}
           </btrix-table-header-cell>
           <btrix-table-header-cell class="pl-1 pr-1">
-            <span class="sr-only">${msg("Row Actions")}</span>
+            <span class="sr-only">${msg("Row actions")}</span>
           </btrix-table-header-cell>
         </btrix-table-head>
         <btrix-table-body class="border rounded overflow-hidden">

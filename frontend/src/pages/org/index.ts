@@ -15,7 +15,7 @@ import "./workflow-detail";
 import "./workflows-list";
 import "./workflows-new";
 import "./crawl-detail";
-import "./crawls-list";
+import "./archived-items";
 import "./collections-list";
 import "./collection-detail";
 import "./browser-profiles-detail";
@@ -511,7 +511,7 @@ export class Org extends LiteElement {
       ></btrix-crawl-detail>`;
     }
 
-    return html`<btrix-crawls-list
+    return html`<btrix-archived-items
       .authState=${this.authState!}
       userId=${this.userInfo!.id}
       orgId=${this.orgId}
@@ -519,7 +519,7 @@ export class Org extends LiteElement {
       ?isCrawler=${this.isCrawler}
       itemType=${ifDefined(this.params.itemType || undefined)}
       @select-new-dialog=${this.onSelectNewDialog}
-    ></btrix-crawls-list>`;
+    ></btrix-archived-items>`;
   }
 
   private renderWorkflows() {

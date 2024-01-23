@@ -12,8 +12,6 @@ import { needLogin } from "@/utils/auth";
 import { activeCrawlStates } from "@/utils/crawler";
 import type { Crawl, CrawlState } from "@/types/crawler";
 import type { APIPaginationQuery, APIPaginatedList } from "@/types/api";
-import "./org/workflow-detail";
-import "./org/crawls-list";
 
 type SortField = "started" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
