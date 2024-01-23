@@ -26,6 +26,10 @@ export class ArchivedItemListItem extends TailwindElement {
       grid-template-columns: subgrid;
       height: 2.5rem;
     }
+
+    btrix-table-cell {
+      overflow: hidden;
+    }
   `;
 
   @property({ type: Object })
@@ -50,10 +54,11 @@ export class ArchivedItemListItem extends TailwindElement {
         </btrix-table-cell>
         <btrix-table-cell>
           <slot name="prefix"></slot>
-          <div class="max-w-sm overflow-hidden">${renderName(this.item)}</div>
+          ${renderName(this.item)}
         </btrix-table-cell>
         <btrix-table-cell>
           <sl-format-date
+            class="truncate"
             date=${`${this.item.finished}Z`}
             month="2-digit"
             day="2-digit"
@@ -64,16 +69,21 @@ export class ArchivedItemListItem extends TailwindElement {
         </btrix-table-cell>
         <btrix-table-cell>
           <sl-format-bytes
+            class="truncate"
             value=${this.item.fileSize || 0}
             display="narrow"
           ></sl-format-bytes>
         </btrix-table-cell>
         <btrix-table-cell>
           ${this.item.type === "crawl"
-            ? this.item.stats?.done
+            ? html`<div class="truncate">
+                ${(this.item.stats?.done || 0).toLocaleString()}
+              </div>`
             : html`<span class="text-neutral-400">${msg("n/a")}</span>`}
         </btrix-table-cell>
-        <btrix-table-cell><span>${this.item.userName}</span></btrix-table-cell>
+        <btrix-table-cell>
+          <div class="truncate">${this.item.userName}</div>
+        </btrix-table-cell>
         <btrix-table-cell class="px-1">
           <slot name="actions"></slot>
         </btrix-table-cell>
@@ -102,7 +112,7 @@ export class ArchivedItemList extends TailwindElement {
       --btrix-cell-gap: var(--sl-spacing-x-small);
       --btrix-cell-padding-left: var(--sl-spacing-small);
       --btrix-cell-padding-right: var(--sl-spacing-small);
-      --btrix-table-grid-auto-columns: min-content max-content 12em 1fr 1fr 1fr
+      --btrix-table-grid-auto-columns: min-content 26rem 12rem 1fr 1fr 1fr
         min-content;
     }
   `;
