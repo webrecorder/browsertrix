@@ -17,8 +17,8 @@ const MAX_SEARCH_RESULTS = 10;
 /**
  * Fuzzy search through list of options
  *
- * @event on-select
- * @event on-clear
+ * @event btrix-select
+ * @event btrix-clear
  */
 @localized()
 @customElement("btrix-search-combobox")
@@ -29,8 +29,8 @@ export class SearchCombobox<T> extends LitElement {
   @property({ type: Array })
   searchKeys: string[] = [];
 
-  @property({ type: Array })
-  keyLabels: { [key: string]: string } = {};
+  @property({ type: Object })
+  keyLabels?: { [key: string]: string };
 
   @property({ type: String })
   selectedKey?: string;
@@ -99,7 +99,7 @@ export class SearchCombobox<T> extends LitElement {
           this.searchByValue = item.value;
           await this.updateComplete;
           this.dispatchEvent(
-            <SelectEvent<T>>new CustomEvent("on-select", {
+            <SelectEvent<T>>new CustomEvent("btrix-select", {
               detail: {
                 key: key,
                 value: item.value,
@@ -116,19 +116,19 @@ export class SearchCombobox<T> extends LitElement {
           @sl-clear=${() => {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
-            this.dispatchEvent(new CustomEvent("on-clear"));
+            this.dispatchEvent(new CustomEvent("btrix-clear"));
           }}
           @sl-input=${this.onSearchInput as () => void}
         >
           ${when(
-            this.selectedKey,
+            this.selectedKey && this.keyLabels?.[this.selectedKey as string],
             () =>
               html`<sl-tag
                 slot="prefix"
                 size="small"
                 pill
                 style="margin-left: var(--sl-spacing-3x-small)"
-                >${this.keyLabels[this.selectedKey as string]}</sl-tag
+                >${this.keyLabels![this.selectedKey as string]}</sl-tag
               >`,
             () => html`<sl-icon name="search" slot="prefix"></sl-icon>`
           )}
@@ -160,18 +160,22 @@ export class SearchCombobox<T> extends LitElement {
 
     return html`
       ${searchResults.map(({ matches }) =>
-        matches?.map(({ key, value }) =>
-          !!key && !!value
-            ? html`
-                <sl-menu-item slot="menu-item" data-key=${key} value=${value}>
-                  <sl-tag slot="prefix" size="small" pill
-                    >${this.keyLabels[key]}</sl-tag
-                  >
-                  ${value}
-                </sl-menu-item>
-              `
-            : nothing
-        )
+        matches?.map(({ key, value }) => {
+          if (!!key && !!value) {
+            const keyLabel = this.keyLabels?.[key];
+            return html`
+              <sl-menu-item slot="menu-item" data-key=${key} value=${value}>
+                ${keyLabel
+                  ? html`<sl-tag slot="prefix" size="small" pill
+                      >${keyLabel}</sl-tag
+                    >`
+                  : nothing}
+                ${value}
+              </sl-menu-item>
+            `;
+          }
+          return nothing;
+        })
       )}
     `;
   }
@@ -184,7 +188,7 @@ export class SearchCombobox<T> extends LitElement {
     }
 
     if (!this.searchByValue && this.selectedKey) {
-      this.dispatchEvent(new CustomEvent("on-clear"));
+      this.dispatchEvent(new CustomEvent("btrix-clear"));
     }
   });
 }

@@ -360,13 +360,13 @@ export class WorkflowsList extends LiteElement {
         .keyLabels=${WorkflowsList.FieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         placeholder=${msg("Search all Workflows by name or Crawl Start URL")}
-        @on-select=${(e: CustomEvent) => {
+        @btrix-select=${(e: CustomEvent) => {
           const { key, value } = e.detail;
           this.filterBy = {
             [key]: value,
           };
         }}
-        @on-clear=${() => {
+        @btrix-clear=${() => {
           const {
             name: _name,
             firstSeed: _firstSeed,

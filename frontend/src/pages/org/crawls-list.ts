@@ -10,9 +10,16 @@ import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { Crawl, CrawlState, Workflow, Upload } from "./types";
+import type {
+  ArchivedItem,
+  Crawl,
+  CrawlState,
+  Workflow,
+  Upload,
+} from "./types";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isActive, finishedCrawlStates } from "@/utils/crawler";
+import { nothing } from "lit";
 
 type Crawls = APIPaginatedList<Crawl>;
 type SearchFields = "name" | "firstSeed";
@@ -66,7 +73,7 @@ export class CrawlsList extends LiteElement {
   isCrawler!: boolean;
 
   @property({ type: String })
-  itemType: Crawl["type"] = null;
+  itemType: ArchivedItem["type"] | null = null;
 
   @state()
   private archivedItems?: Crawls;
@@ -90,13 +97,13 @@ export class CrawlsList extends LiteElement {
   private filterBy: Partial<Record<keyof Crawl, any>> = {};
 
   @state()
-  private itemToEdit: Crawl | Upload | null = null;
+  private itemToEdit: ArchivedItem | null = null;
 
   @state()
   private isEditingItem = false;
 
   @state()
-  private itemToDelete: Crawl | Upload | null = null;
+  private itemToDelete: ArchivedItem | null = null;
 
   @state()
   private isDeletingItem = false;
@@ -167,7 +174,7 @@ export class CrawlsList extends LiteElement {
 
   render() {
     const listTypes: {
-      itemType: Crawl["type"];
+      itemType: ArchivedItem["type"] | null;
       label: string;
       icon?: string;
     }[] = [
@@ -434,15 +441,21 @@ export class CrawlsList extends LiteElement {
         ${this.archivedItems.items.map(this.renderArchivedItem)}
       </btrix-crawl-list>
 
-      <btrix-crawl-metadata-editor
-        .authState=${this.authState}
-        .crawl=${this.itemToEdit as Crawl}
-        ?open=${this.isEditingItem}
-        @request-close=${() => (this.isEditingItem = false)}
-        @updated=${
-          /* TODO fetch current page or single crawl */ this.fetchArchivedItems
-        }
-      ></btrix-crawl-metadata-editor>
+      ${this.itemToEdit
+        ? html`
+            <btrix-crawl-metadata-editor
+              .authState=${this.authState}
+              .crawl=${this.itemToEdit}
+              ?open=${this.isEditingItem}
+              @request-close=${() => (this.isEditingItem = false)}
+              @updated=${
+                /* TODO fetch current page or single crawl */ this
+                  .fetchArchivedItems
+              }
+            ></btrix-crawl-metadata-editor>
+          `
+        : nothing}
+
       <btrix-dialog
         .label=${msg("Delete Archived Item?")}
         .open=${this.isDeletingItem}
@@ -497,8 +510,9 @@ export class CrawlsList extends LiteElement {
         this.isCrawler,
         () => html`
           <sl-menu-item
-            @click=${() => {
+            @click=${async () => {
               this.itemToEdit = item;
+              await this.updateComplete;
               this.isEditingItem = true;
             }}
           >

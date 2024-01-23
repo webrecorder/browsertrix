@@ -1,3 +1,4 @@
+import { html } from "lit";
 import { state, property, queryAsync, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { when } from "lit/directives/when.js";
@@ -13,10 +14,13 @@ import type {
   TagsChangeEvent,
 } from "@/components/ui/tag-input";
 import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { APIError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import type { FileRemoveEvent } from "@/components/ui/file-list";
+import { TailwindElement } from "@/classes/TailwindElement";
+import { APIController } from "@/controllers/api";
+import { NotifyController } from "@/controllers/notify";
+import { NavigateController } from "@/controllers/navigate";
 
 export type FileUploaderRequestCloseEvent = CustomEvent<NonNullable<unknown>>;
 export type FileUploaderUploadStartEvent = CustomEvent<{
@@ -48,7 +52,7 @@ const ABORT_REASON_QUOTA_REACHED = "storage_quota_reached";
  */
 @localized()
 @customElement("btrix-file-uploader")
-export class FileUploader extends LiteElement {
+export class FileUploader extends TailwindElement {
   @property({ type: String })
   orgId!: string;
 
@@ -84,6 +88,10 @@ export class FileUploader extends LiteElement {
 
   @queryAsync("#fileUploadForm")
   private form!: Promise<HTMLFormElement>;
+
+  private api = new APIController(this);
+  private navigate = new NavigateController(this);
+  private notify = new NotifyController(this);
 
   // For fuzzy search:
   private fuse = new Fuse([], {
@@ -374,7 +382,7 @@ export class FileUploader extends LiteElement {
 
   private async fetchTags() {
     try {
-      const tags = await this.apiFetch<never>(
+      const tags = await this.api.fetch<never>(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
         this.authState!
       );
@@ -443,13 +451,13 @@ export class FileUploader extends LiteElement {
           })
         );
         this.requestClose();
-        this.notify({
+        this.notify.toast({
           message: msg(html`Successfully uploaded
             <strong>${name}</strong>.<br />
             <a
               class="underline hover:no-underline"
-              href="${this.orgBasePath}/items/upload/${data.id}"
-              @click="${this.navLink.bind(this)}"
+              href="${this.navigate.orgBasePath}/items/upload/${data.id}"
+              @click="${this.navigate.link}"
               >View Item</a
             > `),
           variant: "success",
@@ -475,7 +483,7 @@ export class FileUploader extends LiteElement {
             })
           );
         }
-        this.notify({
+        this.notify.toast({
           message: message,
           variant: "danger",
           icon: "exclamation-octagon",

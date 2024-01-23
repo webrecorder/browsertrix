@@ -11,7 +11,7 @@ import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { isActive } from "@/utils/crawler";
 import { CopyButton } from "@/components/ui/copy-button";
-import type { Crawl, CrawlConfig, Seed } from "./types";
+import type { ArchivedItem, Crawl, CrawlConfig, Seed } from "./types";
 import type { APIPaginatedList } from "@/types/api";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
@@ -42,7 +42,7 @@ export class CrawlDetail extends LiteElement {
   authState?: AuthState;
 
   @property({ type: String })
-  itemType: Crawl["type"] = null;
+  itemType: ArchivedItem["type"] = "crawl";
 
   @property({ type: String })
   collectionId?: string;
@@ -63,7 +63,7 @@ export class CrawlDetail extends LiteElement {
   isCrawler!: boolean;
 
   @state()
-  private crawl?: Crawl;
+  private crawl?: ArchivedItem;
 
   @state()
   private seeds?: APIPaginatedList<Seed>;
@@ -274,7 +274,7 @@ export class CrawlDetail extends LiteElement {
       return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
 
     if (this.crawl.name) return this.crawl.name;
-    if (!this.crawl.firstSeed) return this.crawl.id;
+    if (!this.crawl.firstSeed || !this.crawl.seedCount) return this.crawl.id;
     const remainder = this.crawl.seedCount - 1;
     let crawlName: TemplateResult = html`<span class="break-words"
       >${this.crawl.firstSeed}</span
@@ -447,14 +447,17 @@ export class CrawlDetail extends LiteElement {
               <sl-menu-item
                 @click=${() =>
                   this.navTo(
-                    `${this.orgBasePath}/workflows/crawl/${this.crawl!.cid}`
+                    `${this.orgBasePath}/workflows/crawl/${
+                      (this.crawl as Crawl).cid
+                    }`
                   )}
               >
                 <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
                 ${msg("Go to Workflow")}
               </sl-menu-item>
               <sl-menu-item
-                @click=${() => CopyButton.copyToClipboard(this.crawl!.cid)}
+                @click=${() =>
+                  CopyButton.copyToClipboard((this.crawl as Crawl).cid)}
               >
                 <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
                 ${msg("Copy Workflow ID")}

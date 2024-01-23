@@ -70,6 +70,12 @@ import(
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/popup/popup"
 );
+import(
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tree/tree"
+);
+import(
+  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tree-item/tree-item"
+);
 
 setBasePath("/shoelace");
 registerIconLibrary("app", {

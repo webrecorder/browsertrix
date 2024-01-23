@@ -127,54 +127,57 @@ export type CrawlState =
   | "stopped_by_user"
   | "stopped_quota_reached";
 
-export type Crawl = CrawlConfig & {
+type ArchivedItemBase = {
   id: string;
   userid: string;
   userName: string;
+  name: string;
+  description: string;
   oid: string;
-  cid: string;
-  schedule: string;
-  manual: boolean;
   started: string; // UTC ISO date
   finished?: string; // UTC ISO date
   state: CrawlState;
-  scale: number;
-  stats: { done: string; found: string; size: string } | null;
-  resources?: {
-    name: string;
-    path: string;
-    hash: string;
-    size: number;
-    numReplicas: number;
-  }[];
   fileCount?: number;
   fileSize?: number;
-  completions?: number;
-  description: string | null;
-  firstSeed: string;
-  seedCount: number;
-  stopping: boolean;
   collectionIds: string[];
   collections: { id: string; name: string }[];
-  type?: "crawl" | "upload" | null;
+  stats: { done: string; found: string; size: string } | null;
+  firstSeed: string | null;
+  seedCount: number | null;
+  tags: string[];
   crawlExecSeconds: number;
 };
 
-export type Upload = Omit<
-  Crawl,
-  | "cid"
-  | "stats"
-  | "schedule"
-  | "manual"
-  | "stopping"
-  | "firstSeed"
-  | "seedCount"
-  | "crawlExecSeconds"
-> & {
+export type Crawl = ArchivedItemBase &
+  CrawlConfig & {
+    type: "crawl";
+    cid: string;
+    schedule: string;
+    manual: boolean;
+    scale: number;
+    resources?: {
+      name: string;
+      path: string;
+      hash: string;
+      size: number;
+      numReplicas: number;
+    }[];
+    completions?: number;
+    description: string | null;
+    stopping: boolean;
+  };
+
+export type Upload = ArchivedItemBase & {
   type: "upload";
+  resources: undefined;
+  crawlerChannel: "default";
+  image: null;
+  manual: true;
 };
 
 export type CrawlerChannel = {
   id: string;
   image: string;
 };
+
+export type ArchivedItem = Crawl | Upload;

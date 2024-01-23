@@ -101,7 +101,7 @@ export class TagInput extends LitElement {
         }
       }
     `,
-  ];
+  ] as any;
 
   @property({ type: Array })
   initialTags?: Tags;

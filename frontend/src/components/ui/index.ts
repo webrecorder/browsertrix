@@ -1,7 +1,6 @@
 import "./alert";
 import "./badge";
 import("./button");
-import("./checkbox-list");
 import("./code");
 import("./combobox");
 import("./config-details");
@@ -27,6 +26,7 @@ import("./search-combobox");
 import("./section-heading");
 import("./select-crawler");
 import("./tab-list");
+import("./table");
 import("./tag-input");
 import("./tag");
 import("./time-input");
