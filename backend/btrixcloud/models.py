@@ -609,7 +609,7 @@ class CrawlOut(BaseMongoModel):
     stopping: Optional[bool]
     manual: Optional[bool]
     cid_rev: Optional[int]
-    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]  # type: ignore
 
     storageQuotaReached: Optional[bool]
     execMinutesQuotaReached: Optional[bool]
