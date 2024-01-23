@@ -12,7 +12,7 @@
  * ```
  */
 import type { TemplateResult } from "lit";
-import { LitElement, html, css } from "lit";
+import { LitElement, html, css, nothing } from "lit";
 import {
   customElement,
   property,
@@ -61,16 +61,6 @@ export class CrawlListItem extends TailwindElement {
 
   render() {
     if (!this.crawl) return;
-    const search =
-      this.collectionId || this.workflowId
-        ? `?${queryString.stringify(
-            {
-              collectionId: this.collectionId,
-              workflowId: this.workflowId,
-            },
-            { skipEmptyString: true }
-          )}`
-        : "";
     return html`
       <btrix-table-row
         @click=${async (e: MouseEvent) => {
@@ -90,11 +80,16 @@ export class CrawlListItem extends TailwindElement {
             `
           )}
         </btrix-table-cell>
-        <btrix-table-cell class="pl-0">
-          <div class="max-w-sm truncate">
-            ${this.safeRender((workflow) => renderName(workflow))}
-          </div>
-        </btrix-table-cell>
+        ${this.workflowId
+          ? nothing
+          : html`
+              <btrix-table-cell class="pl-0">
+                <div class="max-w-sm truncate">
+                  ${this.safeRender((workflow) => renderName(workflow))}
+                </div>
+              </btrix-table-cell>
+            `}
+
         <btrix-table-cell>
           ${this.safeRender(
             (crawl) =>
@@ -236,9 +231,13 @@ export class CrawlList extends TailwindElement {
           <btrix-table-header-cell class="pl-2 pr-0">
             <span class="sr-only">${msg("Status")}</span>
           </btrix-table-header-cell>
-          <btrix-table-header-cell class="pl-0">
-            ${msg("Name")}</btrix-table-header-cell
-          >
+          ${this.workflowId
+            ? nothing
+            : html`
+                <btrix-table-header-cell class="pl-0">
+                  ${msg("Name")}
+                </btrix-table-header-cell>
+              `}
           <btrix-table-header-cell> ${msg("Started")} </btrix-table-header-cell>
           <btrix-table-header-cell>
             ${msg("Finished")}
@@ -272,10 +271,18 @@ export class CrawlList extends TailwindElement {
       }
     };
 
-    this.listItems.forEach((el) => {
-      assignProp(el, { name: "role", value: "listitem" });
-      assignProp(el, { name: "collectionId", value: this.collectionId || "" });
-      assignProp(el, { name: "workflowId", value: this.workflowId || "" });
+    this.listItems.forEach((item, i) => {
+      assignProp(item, {
+        name: "collectionId",
+        value: this.collectionId || "",
+      });
+      assignProp(item, { name: "workflowId", value: this.workflowId || "" });
+
+      if (i === 0) {
+        item.classList.remove("border-t");
+      } else {
+        item.classList.add("border-t");
+      }
     });
   }
 }
