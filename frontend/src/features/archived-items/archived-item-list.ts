@@ -10,6 +10,7 @@ import type { SlCheckbox } from "@shoelace-style/shoelace";
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { ArchivedItem } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
+import { NavigateController } from "@/controllers/navigate";
 
 /**
  * @slot checkbox - Checkbox column content
@@ -30,6 +31,30 @@ export class ArchivedItemListItem extends TailwindElement {
     btrix-table-cell {
       overflow: hidden;
     }
+
+    btrix-table-row {
+      position: relative;
+    }
+
+    .clickCell {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      /* background: rgba(255, 0, 0, 0.1); */
+      grid-column: 2 / -2;
+      display: grid;
+      grid-template-columns: subgrid;
+    }
+
+    .name {
+      display: flex;
+      gap: var(--btrix-cell-gap);
+      /* background: rgba(0, 0, 255, 0.5); */
+      grid-column: span 1;
+      align-items: center;
+    }
   `;
 
   @property({ type: Object })
@@ -38,6 +63,9 @@ export class ArchivedItemListItem extends TailwindElement {
   @property({ type: Number })
   index = 0;
 
+  @property({ type: String })
+  href?: string;
+
   @queryAssignedElements({
     slot: "checkbox",
     selector: "sl-checkbox",
@@ -45,18 +73,33 @@ export class ArchivedItemListItem extends TailwindElement {
   })
   checkbox!: Array<SlCheckbox>;
 
+  private navigate = new NavigateController(this);
+
   render() {
     if (!this.item) return;
+    const rowName = html`
+      <div class="name">
+        <slot name="prefix"></slot>
+        ${renderName(this.item)}
+      </div>
+    `;
     return html`
       <btrix-table-row tabindex="0" @click=${() => this.checkbox[0]?.click()}>
         <btrix-table-cell class="p-0">
           <slot name="checkbox"></slot>
         </btrix-table-cell>
         <btrix-table-cell>
-          <slot name="prefix"></slot>
-          ${renderName(this.item)}
+          ${this.href
+            ? html`<a
+                class="clickCell"
+                href=${this.href}
+                @click=${this.navigate.link}
+              >
+                ${rowName}
+              </a>`
+            : html`<div class="clickCell">${rowName}</div>`}
         </btrix-table-cell>
-        <btrix-table-cell>
+        <btrix-table-cell style="grid-column-start: 3">
           <sl-format-date
             class="truncate"
             date=${`${this.item.finished}Z`}

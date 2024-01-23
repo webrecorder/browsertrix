@@ -662,15 +662,9 @@ export class CollectionDetail extends LiteElement {
   private renderArchivedItem = (item: ArchivedItem, idx: number) =>
     html`
       <btrix-archived-item-list-item
-        class="cursor-pointer transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50"
+        class="transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50"
+        href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
         .item=${item}
-        role="button"
-        @click=${async (e: MouseEvent) => {
-          e.preventDefault();
-          await this.updateComplete;
-          const href = `/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`;
-          this.navTo(href);
-        }}
       >
         <btrix-crawl-status
           slot="prefix"

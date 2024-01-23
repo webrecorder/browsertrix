@@ -495,7 +495,11 @@ export class CrawlsList extends LiteElement {
   }
 
   private renderArchivedItem = (item: ArchivedItem) => html`
-    <btrix-archived-item-list-item .item=${item}>
+    <btrix-archived-item-list-item
+      class="transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50"
+      href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}`}
+      .item=${item}
+    >
       <btrix-crawl-status
         slot="prefix"
         state=${item.state}
