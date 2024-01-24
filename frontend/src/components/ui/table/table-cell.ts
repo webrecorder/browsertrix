@@ -4,7 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 /**
  * @example Usage as row click target:
  * ```ts
- * <btrix-table-cell rowClickTarget>
+ * <btrix-table-cell rowClickTarget style="--btrix-row-click-cell-grid-column: 2 / -1">
  *  <a href="#">Clicking the row clicks me</a>
  * </btrix-table-cell>
  * ```
