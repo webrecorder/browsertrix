@@ -48,17 +48,6 @@ export class CrawlListItem extends TailwindElement {
       white-space: nowrap;
     }
 
-    .clickCell {
-      display: grid;
-      grid-template-columns: subgrid;
-    }
-
-    .clickRegion {
-      position: absolute;
-      inset: 0;
-      grid-column: 2 / -2;
-    }
-
     .clickLabel {
       width: ${NAME_WIDTH_CSS};
       overflow: hidden;
@@ -112,16 +101,12 @@ export class CrawlListItem extends TailwindElement {
         </btrix-table-cell>
       `;
       idCell = html`
-        <btrix-table-cell class="clickCell">
+        <btrix-table-cell rowClickTarget>
           ${this.href
-            ? html`<a
-                class="clickRegion"
-                href=${this.href}
-                @click=${this.navigate.link}
-              >
+            ? html`<a href=${this.href} @click=${this.navigate.link}>
                 ${label}
               </a>`
-            : html`<div class="clickRegion">${label}</div> `}
+            : html`<div>${label}</div> `}
         </btrix-table-cell>
       `;
     } else {
@@ -131,16 +116,12 @@ export class CrawlListItem extends TailwindElement {
         </btrix-table-cell>
       `;
       idCell = html`
-        <btrix-table-cell class="clickCell">
+        <btrix-table-cell rowClickTarget>
           ${this.href
-            ? html`<a
-                class="clickRegion"
-                href=${this.href}
-                @click=${this.navigate.link}
-              >
+            ? html`<a href=${this.href} @click=${this.navigate.link}>
                 ${label}
               </a>`
-            : html`<div class="clickRegion">${label}</div> `}
+            : html`<div>${label}</div> `}
         </btrix-table-cell>
       `;
     }
@@ -309,6 +290,7 @@ export class CrawlList extends TailwindElement {
           --btrix-table-grid-auto-columns: min-content
             ${this.workflowId ? "" : `${NAME_WIDTH_CSS} `}${NAME_WIDTH_CSS} auto
             auto auto auto auto min-content;
+          --btrix-row-click-cell-grid-column: 2 / -2;
         }
       </style>
       <div class="overflow-auto">

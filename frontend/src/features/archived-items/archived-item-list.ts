@@ -43,17 +43,6 @@ export class ArchivedItemListItem extends TailwindElement {
       overflow: hidden;
     }
 
-    .clickCell {
-      display: grid;
-      grid-template-columns: subgrid;
-    }
-
-    .clickRegion {
-      position: absolute;
-      inset: 0;
-      grid-column: var(--btrix-click-cell-grid-column);
-    }
-
     .clickLabel {
       width: ${NAME_WIDTH_CSS};
     }
@@ -117,18 +106,13 @@ export class ArchivedItemListItem extends TailwindElement {
               </btrix-table-cell>
             `
           : nothing}
-        <btrix-table-cell class="clickCell">
+        <btrix-table-cell rowClickTarget>
           ${this.href
-            ? html`<a
-                class="clickRegion"
-                href=${this.href}
-                @click=${this.navigate.link}
-              >
+            ? html`<a href=${this.href} @click=${this.navigate.link}>
                 ${rowName}
               </a>`
             : this.checkbox
             ? html`<label
-                class="clickRegion"
                 for=${checkboxId}
                 @click=${() => {
                   // We need to simulate click anyway, since external label click
@@ -138,7 +122,7 @@ export class ArchivedItemListItem extends TailwindElement {
               >
                 ${rowName}
               </label>`
-            : html`<div class="clickRegion">${rowName}</div>`}
+            : html`<div>${rowName}</div>`}
         </btrix-table-cell>
         <btrix-table-cell>
           <sl-format-date
@@ -219,7 +203,7 @@ export class ArchivedItemList extends TailwindElement {
           } ${NAME_WIDTH_CSS} 12rem 1fr 1fr 1fr ${
             this.hasActionCell ? "min-content" : ""
           }`.trim()};
-          --btrix-click-cell-grid-column: ${this.hasCheckboxCell ? 2 : 1} /
+          --btrix-row-click-cell-grid-column: ${this.hasCheckboxCell ? 2 : 1} /
             -${this.hasActionCell ? 2 : 1};
         }
       </style>
