@@ -438,7 +438,7 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <btrix-archived-item-list>
-        <btrix-table-header-cell slot="actionCell">
+        <btrix-table-header-cell slot="actionCell" class="px-1">
           <span class="sr-only">${msg("Row actions")}</span>
         </btrix-table-header-cell>
         ${this.archivedItems.items.map(this.renderArchivedItem)}
@@ -507,7 +507,7 @@ export class CrawlsList extends LiteElement {
         hideLabel
         ?isUpload=${item.type === "upload"}
       ></btrix-crawl-status>
-      <btrix-table-cell slot="actionCell">
+      <btrix-table-cell slot="actionCell" class="px-1">
         <btrix-overflow-dropdown
           @click=${(e: MouseEvent) => {
             // Prevent navigation to detail view

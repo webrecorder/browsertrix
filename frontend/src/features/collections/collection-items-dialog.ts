@@ -9,7 +9,6 @@ import union from "lodash/fp/union";
 import queryString from "query-string";
 import { merge } from "immutable";
 import { repeat } from "lit/directives/repeat.js";
-import type { SlCheckbox } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "@/utils/AuthService";
 import type {
@@ -36,6 +35,7 @@ import type {
   AutoAddChangeDetail,
   SelectionChangeDetail,
 } from "./collection-workflow-list";
+import { type CheckboxChangeEventDetail } from "../archived-items/archived-item-list";
 
 const TABS = ["crawl", "upload"] as const;
 type Tab = (typeof TABS)[number];
@@ -380,7 +380,7 @@ export class CollectionItemsDialog extends TailwindElement {
       </header>
       <section class="flex-1 px-3 pb-3 pt-2">
         <btrix-archived-item-list>
-          <btrix-table-header-cell slot="checkboxCell">
+          <btrix-table-header-cell slot="checkboxCell" class="pr-0">
             <span class="sr-only">${msg("In Collection?")}</span>
           </btrix-table-header-cell>
           ${repeat(this.uploads.items, ({ id }) => id, this.renderArchivedItem)}
@@ -422,7 +422,7 @@ export class CollectionItemsDialog extends TailwindElement {
     return html`
       <section class="flex-1 px-3 pb-3 pt-2">
         <btrix-archived-item-list>
-          <btrix-table-header-cell slot="checkboxCell">
+          <btrix-table-header-cell slot="checkboxCell" class="pr-0">
             <span class="sr-only">${msg("In Collection?")}</span>
           </btrix-table-header-cell>
           ${repeat(this.crawls.items, ({ id }) => id, this.renderArchivedItem)}
@@ -541,19 +541,19 @@ export class CollectionItemsDialog extends TailwindElement {
   renderArchivedItem = (item: ArchivedItem) => {
     const isInCollection = item.collectionIds.includes(this.collectionId);
     return html`
-      <btrix-archived-item-list-item .item=${item}>
-        <btrix-table-cell slot="checkboxCell">
-          <sl-checkbox
-            class="flex"
-            ?checked=${isInCollection}
-            @sl-change=${(e: CustomEvent) => {
-              this.selection = {
-                ...this.selection,
-                [item.id]: (e.currentTarget as SlCheckbox).checked,
-              };
-            }}
-          ></sl-checkbox>
-        </btrix-table-cell>
+      <btrix-archived-item-list-item
+        .item=${item}
+        checkbox
+        ?checked=${isInCollection}
+        @btrix-checkbox-change=${(
+          e: CustomEvent<CheckboxChangeEventDetail>
+        ) => {
+          this.selection = {
+            ...this.selection,
+            [item.id]: e.detail.checked,
+          };
+        }}
+      >
       </btrix-archived-item-list-item>
     `;
   };

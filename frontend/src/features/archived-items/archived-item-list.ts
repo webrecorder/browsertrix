@@ -4,6 +4,7 @@ import {
   property,
   state,
   queryAssignedElements,
+  query,
 } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
@@ -11,13 +12,18 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import type { ArchivedItem } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
 import { NavigateController } from "@/controllers/navigate";
+import { type SlCheckbox } from "@shoelace-style/shoelace";
 
 const NAME_WIDTH_CSS = css`26rem`;
 
+export type CheckboxChangeEventDetail = {
+  checked: boolean;
+};
+
 /**
- * @slot checkboxCell - Checkbox cell
  * @slot actionCell - Action cell
  * @slot namePrefix - Prefix name in cell
+ * @fires btrix-checkbox-change
  */
 @localized()
 @customElement("btrix-archived-item-list-item")
@@ -56,19 +62,26 @@ export class ArchivedItemListItem extends TailwindElement {
   @property({ type: Object })
   item?: ArchivedItem;
 
+  @property({ type: Boolean })
+  checkbox = false;
+
+  @property({ type: Boolean })
+  checked = false;
+
   @property({ type: Number })
   index = 0;
 
   @property({ type: String })
   href?: string;
 
-  @state()
-  private checkboxID: string | null = null;
+  @query("sl-checkbox")
+  checkboxEl?: SlCheckbox;
 
   private navigate = new NavigateController(this);
 
   render() {
     if (!this.item) return;
+    const checkboxId = `${this.item.id}-checkbox`;
     const rowName = html`
       <btrix-table-cell class="name" role="generic">
         <slot name="namePrefix"></slot>
@@ -77,27 +90,33 @@ export class ArchivedItemListItem extends TailwindElement {
     `;
     return html`
       <btrix-table-row
-        class=${this.href
-          ? "cursor-pointer transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50"
+        class=${this.href || this.checkbox
+          ? "cursor-pointer select-none transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50"
           : ""}
       >
-        <slot
-          name="checkboxCell"
-          @slotchange=${(e: Event) => {
-            const cell = (e.target as HTMLSlotElement).assignedElements()[0];
-            if (!cell) return;
-
-            const checkbox = cell.querySelector("sl-checkbox");
-            if (!checkbox) return;
-
-            let id = checkbox.getAttribute("id");
-            if (!id) {
-              id = `${this.item?.id}-checkbox`;
-              checkbox.setAttribute("id", id);
-            }
-            this.checkboxID = id;
-          }}
-        ></slot>
+        ${this.checkbox
+          ? html`
+              <btrix-table-cell>
+                <sl-checkbox
+                  id=${checkboxId}
+                  class="flex"
+                  ?checked=${this.checked}
+                  @sl-change=${(e: CustomEvent) => {
+                    this.dispatchEvent(
+                      new CustomEvent<CheckboxChangeEventDetail>(
+                        "btrix-checkbox-change",
+                        {
+                          detail: {
+                            checked: (e.currentTarget as SlCheckbox).checked,
+                          },
+                        }
+                      )
+                    );
+                  }}
+                ></sl-checkbox>
+              </btrix-table-cell>
+            `
+          : nothing}
         <btrix-table-cell class="clickRegionCell">
           ${this.href
             ? html`<a
@@ -107,8 +126,16 @@ export class ArchivedItemListItem extends TailwindElement {
               >
                 ${rowName}
               </a>`
-            : this.checkboxID
-            ? html`<label class="clickRegion" for=${this.checkboxID}>
+            : this.checkbox
+            ? html`<label
+                class="clickRegion"
+                for=${checkboxId}
+                @click=${() => {
+                  // We need to simulate click anyway, since external label click
+                  // won't work with the shoelace checkbox
+                  this.checkboxEl?.click();
+                }}
+              >
                 ${rowName}
               </label>`
             : html`<div class="clickRegion">${rowName}</div>`}
