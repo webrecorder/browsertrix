@@ -53,11 +53,8 @@ export class APIController implements ReactiveController {
     });
 
     if (resp.ok) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const body = await resp.json();
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const storageQuotaReached = body.storageQuotaReached;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const executionMinutesQuotaReached = body.execMinutesQuotaReached;
       if (typeof storageQuotaReached === "boolean") {
         this.host.dispatchEvent(
@@ -86,7 +83,6 @@ export class APIController implements ReactiveController {
 
     let errorDetail;
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       errorDetail = (await resp.json()).detail;
     } catch {
       /* empty */
@@ -136,12 +132,9 @@ export class APIController implements ReactiveController {
         if (typeof errorDetail === "string") {
           errorMessage = errorDetail;
         } else if (Array.isArray(errorDetail) && errorDetail.length) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const fieldDetail = errorDetail[0] || {};
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const { loc, msg } = fieldDetail;
 
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const fieldName = loc
             .filter((v: unknown) => v !== "body" && typeof v === "string")
             .join(" ");
