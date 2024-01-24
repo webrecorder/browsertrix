@@ -438,7 +438,9 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <btrix-archived-item-list>
-        <span slot="actions" class="sr-only">${msg("Row actions")}</span>
+        <btrix-table-header-cell slot="actionCell">
+          <span class="sr-only">${msg("Row actions")}</span>
+        </btrix-table-header-cell>
         ${this.archivedItems.items.map(this.renderArchivedItem)}
       </btrix-archived-item-list>
 
@@ -496,26 +498,26 @@ export class CrawlsList extends LiteElement {
 
   private renderArchivedItem = (item: ArchivedItem) => html`
     <btrix-archived-item-list-item
-      class="transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50"
       href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}`}
       .item=${item}
     >
       <btrix-crawl-status
-        slot="prefix"
+        slot="namePrefix"
         state=${item.state}
         hideLabel
         ?isUpload=${item.type === "upload"}
       ></btrix-crawl-status>
-      <btrix-overflow-dropdown
-        slot="actions"
-        @click=${(e: MouseEvent) => {
-          // Prevent navigation to detail view
-          e.preventDefault();
-          e.stopImmediatePropagation();
-        }}
-      >
-        <sl-menu>${this.renderMenuItems(item)}</sl-menu>
-      </btrix-overflow-dropdown>
+      <btrix-table-cell slot="actionCell">
+        <btrix-overflow-dropdown
+          @click=${(e: MouseEvent) => {
+            // Prevent navigation to detail view
+            e.preventDefault();
+            e.stopImmediatePropagation();
+          }}
+        >
+          <sl-menu>${this.renderMenuItems(item)}</sl-menu>
+        </btrix-overflow-dropdown>
+      </btrix-table-cell>
     </btrix-archived-item-list-item>
   `;
 
