@@ -46,7 +46,7 @@ export class CrawlQueue extends LiteElement {
 
   @property({ type: String })
   /** `new RegExp` constructor string */
-  regex: string = "";
+  regex = "";
 
   @property({ type: Array })
   exclusions: string[] = [];
@@ -61,7 +61,7 @@ export class CrawlQueue extends LiteElement {
   private isLoading = false;
 
   @state()
-  private pageSize: number = 50;
+  private pageSize = 50;
 
   private timerId?: number;
 
@@ -191,7 +191,7 @@ export class CrawlQueue extends LiteElement {
     `;
   }
 
-  private onLoadMoreIntersect = throttle(50)((e: CustomEvent) => {
+  private readonly onLoadMoreIntersect = throttle(50)((e: CustomEvent) => {
     if (!e.detail.entry.isIntersecting) return;
     this.loadMore();
   }) as (e: CustomEvent) => void;
@@ -241,7 +241,7 @@ export class CrawlQueue extends LiteElement {
     const regex = this.regex;
     const params = new URLSearchParams({ offset, count, regex });
     const data: ResponseData = await this.apiFetch(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/queue?${params}`,
+      `/orgs/${this.orgId}/crawls/${this.crawlId}/queue?${params.toString()}`,
       this.authState!
     );
 

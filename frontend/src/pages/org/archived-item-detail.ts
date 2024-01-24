@@ -95,7 +95,7 @@ export class CrawlDetail extends LiteElement {
   }
 
   // TODO localize
-  private numberFormatter = new Intl.NumberFormat();
+  private readonly numberFormatter = new Intl.NumberFormat();
 
   private get isActive(): boolean | null {
     if (!this.crawl) return null;
@@ -878,7 +878,7 @@ ${this.crawl?.description}
     `;
   }
 
-  private renderLoading = () =>
+  private readonly renderLoading = () =>
     html`<div class="w-full flex items-center justify-center my-24 text-3xl">
       <sl-spinner></sl-spinner>
     </div>`;

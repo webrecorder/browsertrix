@@ -1,6 +1,5 @@
 type StatusCode = number;
-type Detail = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Detail = {
   loc: any[];
   msg: string;
   type: string;

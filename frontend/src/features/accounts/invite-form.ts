@@ -6,6 +6,7 @@ import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { OrgData } from "@/types/org";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { type APIError } from "@/utils/api";
 
 const sortByName = sortBy("name");
 
@@ -25,7 +26,7 @@ export class InviteForm extends LiteElement {
   defaultOrg: Partial<OrgData> | null = null;
 
   @state()
-  private isSubmitting: boolean = false;
+  private isSubmitting = false;
 
   @state()
   private serverError?: string;
@@ -147,9 +148,9 @@ export class InviteForm extends LiteElement {
           },
         })
       );
-    } catch (e: any) {
-      if (e?.isApiError) {
-        this.serverError = e?.message;
+    } catch (e) {
+      if ((e as APIError)?.isApiError) {
+        this.serverError = (e as APIError).message;
       } else {
         this.serverError = msg("Something unexpected went wrong");
       }

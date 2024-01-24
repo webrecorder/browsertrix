@@ -4,6 +4,7 @@ import debounce from "lodash/fp/debounce";
 
 import LiteElement, { html } from "@/utils/LiteElement";
 import { regexEscape } from "@/utils/string";
+import { type SlInput, type SlSelect } from "@shoelace-style/shoelace";
 
 export type Exclusion = {
   type: "text" | "regex";
@@ -82,8 +83,10 @@ export class QueueExclusionForm extends LiteElement {
               value=${this.selectValue}
               @sl-hide=${this.stopProp}
               @sl-after-hide=${this.stopProp}
-              @sl-change=${(e: any) => {
-                this.selectValue = e.target.value;
+              @sl-change=${(e: Event) => {
+                this.selectValue = (e.target as SlSelect).value as
+                  | "text"
+                  | "regex";
               }}
             >
               <sl-option value="text">${msg("Matches Text")}</sl-option>
@@ -103,7 +106,7 @@ export class QueueExclusionForm extends LiteElement {
                 .value=${this.inputValue}
                 ?disabled=${this.isSubmitting}
                 @keydown=${this.onKeyDown}
-                @sl-input=${this.onInput}
+                @sl-input=${this.onInput as (e: Event) => void}
               >
                 ${this.fieldErrorMessage
                   ? html`
@@ -158,15 +161,15 @@ export class QueueExclusionForm extends LiteElement {
     `;
   }
 
-  private onInput = debounce(200)((e: any) => {
-    this.inputValue = e.target.value;
-  }) as any;
+  private readonly onInput = debounce(200)((e: any) => {
+    this.inputValue = (e.target as SlInput).value;
+  });
 
   private onButtonClick() {
     this.handleAdd();
   }
 
-  private onKeyDown = (e: KeyboardEvent) => {
+  private readonly onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation();
     if (e.key === "Enter") {
       this.handleAdd();

@@ -1,7 +1,7 @@
 import { html, css, type PropertyValues } from "lit";
-import { state, property, query, customElement } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { msg, localized, str } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -133,7 +133,7 @@ export class ItemListControls extends TailwindElement {
           pill
           multiple
           placeholder=${msg("Any")}
-          @sl-change=${async (e: CustomEvent) => {}}
+          @sl-change=${async (_e: CustomEvent) => {}}
         >
           ${viewOptions}
         </sl-select>

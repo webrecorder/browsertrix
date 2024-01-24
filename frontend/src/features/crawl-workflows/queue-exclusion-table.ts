@@ -8,6 +8,8 @@ import type { SeedConfig } from "@/pages/org/types";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { regexEscape } from "@/utils/string";
 import type { Exclusion } from "./queue-exclusion-form";
+import { type PageChangeEvent } from "@/components/ui/pagination";
+import { type PropertyValues } from "lit";
 
 export type ExclusionChangeEvent = CustomEvent<{
   index: number;
@@ -54,7 +56,7 @@ export class QueueExclusionTable extends LiteElement {
   labelClassName?: string;
 
   @property({ type: Number })
-  pageSize: number = 5;
+  pageSize = 5;
 
   @property({ type: Boolean })
   editable = false;
@@ -66,7 +68,7 @@ export class QueueExclusionTable extends LiteElement {
   private results: Exclusion[] = [];
 
   @state()
-  private page: number = 1;
+  private page = 1;
 
   @state()
   private exclusionToRemove?: string;
@@ -75,10 +77,10 @@ export class QueueExclusionTable extends LiteElement {
     return this.exclusions?.length;
   }
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (changedProperties.get("exclusions") && this.exclusions) {
       if (
-        changedProperties.get("exclusions").toString() ===
+        changedProperties.get("exclusions")!.toString() ===
         this.exclusions.toString()
       ) {
         // Check list equality
@@ -148,7 +150,7 @@ export class QueueExclusionTable extends LiteElement {
               size=${this.pageSize}
               totalCount=${this.total}
               compact
-              @page-change=${(e: CustomEvent) => {
+              @page-change=${(e: PageChangeEvent) => {
                 this.page = e.detail.page;
               }}
             >
@@ -179,7 +181,7 @@ export class QueueExclusionTable extends LiteElement {
     `;
   }
 
-  private renderItem = (
+  private readonly renderItem = (
     exclusion: Exclusion,
     pageIndex: number,
     arr: Exclusion[]
@@ -414,7 +416,7 @@ export class QueueExclusionTable extends LiteElement {
     // Check if any sibling inputs are now valid
     // after fixing duplicate values
     const inputElem = e.target as HTMLInputElement;
-    const table = inputElem.closest("table") as HTMLTableElement;
+    const table = inputElem.closest("table")!;
     Array.from(table?.querySelectorAll("sl-input[data-invalid]")).map(
       (elem) => {
         if (elem !== inputElem) {

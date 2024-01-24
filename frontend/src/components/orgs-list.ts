@@ -125,7 +125,7 @@ export class OrgsList extends LiteElement {
     return stop;
   }
 
-  private renderOrg = (org: OrgData) => {
+  private readonly renderOrg = (org: OrgData) => {
     let defaultLabel: any;
     if (this.defaultOrg && org.id === this.defaultOrg.id) {
       defaultLabel = html`<sl-tag size="small" variant="primary" class="mr-2"

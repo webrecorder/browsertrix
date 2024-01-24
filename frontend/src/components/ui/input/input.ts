@@ -24,7 +24,7 @@ export class Input extends LiteElement {
   label?: string;
 
   @property({ type: String })
-  id: string = "customInput";
+  id = "customInput";
 
   @property({ type: String })
   name?: string;
@@ -36,7 +36,7 @@ export class Input extends LiteElement {
   placeholder?: string;
 
   @property()
-  value?: any;
+  value?: string;
 
   @property()
   autocomplete?: any;
@@ -57,7 +57,7 @@ export class Input extends LiteElement {
   helpText?: string;
 
   @state()
-  isPasswordVisible: boolean = false;
+  isPasswordVisible = false;
   render() {
     return html`
       <div class="sl-label">
@@ -101,11 +101,11 @@ export class Input extends LiteElement {
   handleKeyDown(event: KeyboardEvent) {
     // Enable submit on enter when using <sl-button type="submit">
     if (event.key === "Enter") {
-      const form = this.closest("form") as HTMLFormElement;
+      const form = this.closest("form")!;
       if (form) {
-        const submitButton = form.querySelector(
+        const submitButton = form.querySelector<HTMLButtonElement>(
           'sl-button[type="submit"]'
-        ) as HTMLButtonElement;
+        )!;
         if (submitButton) {
           submitButton.click();
         }

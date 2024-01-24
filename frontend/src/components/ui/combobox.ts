@@ -38,24 +38,24 @@ export class Combobox extends LitElement {
   isActive = true;
 
   @query("#dropdown")
-  private dropdown?: HTMLDivElement;
+  private readonly dropdown?: HTMLDivElement;
 
   @query("sl-menu")
-  private menu?: SlMenu;
+  private readonly menu?: SlMenu;
 
   @query("sl-popup")
-  private combobox?: SlPopup;
+  private readonly combobox?: SlPopup;
 
   @queryAssignedElements({
     flatten: true,
   })
-  private anchor?: HTMLElement[];
+  private readonly anchor?: HTMLElement[];
 
   @queryAssignedElements({
     slot: "menu-item",
     selector: "sl-menu-item:not([disabled])",
   })
-  private menuItems?: SlMenuItem[];
+  private readonly menuItems?: SlMenuItem[];
 
   protected willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("open")) {

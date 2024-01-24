@@ -1,6 +1,6 @@
 import { state, property, queryAsync, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-import type { SlInput } from "@shoelace-style/shoelace";
+import { type SlInput } from "@shoelace-style/shoelace";
 
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -25,16 +25,16 @@ export class NewBrowserProfileDialog extends LiteElement {
   private crawlerChannel = "default";
 
   @queryAsync("#browserProfileForm")
-  private form!: Promise<HTMLFormElement>;
+  private readonly form!: Promise<HTMLFormElement>;
 
   render() {
     return html` <btrix-dialog
       .label=${msg(str`Create a New Browser Profile`)}
       .open=${this.open}
       @sl-initial-focus=${async (e: CustomEvent) => {
-        const nameInput = (await this.form).querySelector(
+        const nameInput = (await this.form).querySelector<SlInput>(
           'sl-input[name="url"]'
-        ) as SlInput;
+        );
         if (nameInput) {
           e.preventDefault();
           nameInput.focus();
@@ -108,9 +108,9 @@ export class NewBrowserProfileDialog extends LiteElement {
             // Using submit method instead of type="submit" fixes
             // incorrect getRootNode in Chrome
             const form = await this.form;
-            const submitInput = form.querySelector(
+            const submitInput = form.querySelector<HTMLElement>(
               'input[type="submit"]'
-            ) as HTMLInputElement;
+            );
             form.requestSubmit(submitInput);
           }}
           >${msg("Start Profile Creator")}</sl-button
@@ -120,7 +120,7 @@ export class NewBrowserProfileDialog extends LiteElement {
   }
 
   private async hideDialog() {
-    ((await this.form).closest("btrix-dialog") as Dialog).hide();
+    (await this.form).closest<Dialog>("btrix-dialog")?.hide();
   }
 
   private onReset() {
@@ -136,7 +136,7 @@ export class NewBrowserProfileDialog extends LiteElement {
 
     try {
       const data = await this.createBrowser({
-        url: `${formData.get("urlPrefix")}${url.substring(
+        url: `${formData.get("urlPrefix")?.toString()}${url.substring(
           url.indexOf(",") + 1
         )}`,
         crawlerChannel: this.crawlerChannel,

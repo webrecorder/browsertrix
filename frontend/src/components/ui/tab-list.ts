@@ -186,10 +186,10 @@ export class TabList extends LitElement {
   hideIndicator = false;
 
   @queryAsync(".track")
-  private trackElem!: HTMLElement;
+  private readonly trackElem!: HTMLElement;
 
   @queryAsync(".indicator")
-  private indicatorElem!: HTMLElement;
+  private readonly indicatorElem!: HTMLElement;
 
   updated(changedProperties: Map<string, any>) {
     if (changedProperties.has("activePanel") && this.activePanel) {
@@ -261,20 +261,18 @@ export class TabList extends LitElement {
   }
 
   private getPanels(): TabPanelElement[] {
-    const slotElems = (
-      this.renderRoot.querySelector(
-        ".content slot:not([name])"
-      ) as HTMLSlotElement
-    ).assignedElements();
+    const slotElems = this.renderRoot
+      .querySelector<HTMLSlotElement>(".content slot:not([name])")!
+      .assignedElements();
     return ([...slotElems] as TabPanelElement[]).filter(
       (el) => el.tagName.toLowerCase() === "btrix-tab-panel"
     );
   }
 
   private getTabs(): TabElement[] {
-    const slotElems = (
-      this.renderRoot.querySelector("slot[name='nav']") as HTMLSlotElement
-    ).assignedElements();
+    const slotElems = this.renderRoot
+      .querySelector<HTMLSlotElement>("slot[name='nav']")!
+      .assignedElements();
     return ([...slotElems] as TabElement[]).filter(
       (el) => el.tagName.toLowerCase() === "btrix-tab"
     );

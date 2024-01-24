@@ -8,11 +8,13 @@ import { msg, localized, str } from "@lit/localize";
 import chevronLeft from "~assets/icons/chevron-left.svg";
 import chevronRight from "~assets/icons/chevron-right.svg";
 import { srOnly } from "@/utils/css";
+import { type SlInput } from "@shoelace-style/shoelace";
 
-export type PageChangeEvent = CustomEvent<{
+type PageChangeDetail = {
   page: number;
   pages: number;
-}>;
+};
+export type PageChangeEvent = CustomEvent<PageChangeDetail>;
 
 /**
  * Pagination
@@ -23,7 +25,7 @@ export type PageChangeEvent = CustomEvent<{
  * </btrix-pagination>
  * ```
  *
- * @event page-change { page: number; pages: number; }
+ * @event page-change {PageChangeEvent}
  */
 @customElement("btrix-pagination")
 @localized()
@@ -128,13 +130,13 @@ export class Pagination extends LitElement {
   ];
 
   @property({ type: Number })
-  page: number = 1;
+  page = 1;
 
   @property({ type: Number })
-  totalCount: number = 0;
+  totalCount = 0;
 
   @property({ type: Number })
-  size: number = 10;
+  size = 10;
 
   @property({ type: Boolean })
   compact = false;
@@ -198,7 +200,7 @@ export class Pagination extends LitElement {
     `;
   }
 
-  private renderInputPage = () => html`
+  private readonly renderInputPage = () => html`
     <li class="currentPage" role="presentation">
       ${msg(html` ${this.renderInput()} of ${this.pages} `)}
     </li>
@@ -218,13 +220,13 @@ export class Pagination extends LitElement {
           autocomplete="off"
           min="1"
           max=${this.pages}
-          @keydown=${(e: any) => {
+          @keydown=${(e: KeyboardEvent) => {
             // Prevent typing non-numeric keys
             if (e.key.length === 1 && /\D/.test(e.key)) {
               e.preventDefault();
             }
           }}
-          @keyup=${(e: any) => {
+          @keyup=${(e: KeyboardEvent) => {
             const { key } = e;
 
             if (key === "ArrowUp" || key === "ArrowRight") {
@@ -232,7 +234,7 @@ export class Pagination extends LitElement {
             } else if (key === "ArrowDown" || key === "ArrowLeft") {
               this.inputValue = `${Math.max(+this.inputValue - 1, 1)}`;
             } else {
-              this.inputValue = e.target.value;
+              this.inputValue = (e.target as SlInput).value;
             }
           }}
           @sl-change=${(e: any) => {
@@ -258,7 +260,7 @@ export class Pagination extends LitElement {
     `;
   }
 
-  private renderPages = () => {
+  private readonly renderPages = () => {
     const pages = Array.from({ length: this.pages }).map((_, i) => i + 1);
     const middleVisible = 3;
     const middlePad = Math.floor(middleVisible / 2);
@@ -293,7 +295,7 @@ export class Pagination extends LitElement {
     return html`${pages.map(this.renderPageButton)}`;
   };
 
-  private renderPageButton = (page: number) => {
+  private readonly renderPageButton = (page: number) => {
     const isCurrent = page === this.page;
     return html`<li aria-current=${ifDefined(isCurrent ? "page" : undefined)}>
       <btrix-button
@@ -317,7 +319,7 @@ export class Pagination extends LitElement {
 
   private onPageChange(page: number) {
     this.dispatchEvent(
-      <PageChangeEvent>new CustomEvent("page-change", {
+      new CustomEvent<PageChangeDetail>("page-change", {
         detail: { page: page, pages: this.pages },
         composed: true,
       })

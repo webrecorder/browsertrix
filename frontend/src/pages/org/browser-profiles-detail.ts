@@ -227,7 +227,7 @@ export class BrowserProfilesDetail extends LiteElement {
       </btrix-dialog> `;
   }
 
-  private renderVisitedSites = () => {
+  private readonly renderVisitedSites = () => {
     return html`
       <section class="flex-grow-1 lg:w-80 lg:pl-6 flex flex-col">
         <header class="flex-0 mb-2">

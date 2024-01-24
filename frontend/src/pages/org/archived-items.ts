@@ -115,14 +115,14 @@ export class CrawlsList extends LiteElement {
   stateSelect?: SlSelect;
 
   // For fuzzy search:
-  private searchKeys = ["name", "firstSeed"];
+  private readonly searchKeys = ["name", "firstSeed"];
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
 
   private get selectedSearchFilterKey() {
     return Object.keys(CrawlsList.FieldLabels).find((key) =>
-      Boolean((this.filterBy as any)[key])
+      Boolean((this.filterBy as any)[key]),
     );
   }
 
@@ -157,7 +157,7 @@ export class CrawlsList extends LiteElement {
       if (changedProperties.has("filterByCurrentUser")) {
         window.sessionStorage.setItem(
           FILTER_BY_CURRENT_USER_STORAGE_KEY,
-          this.filterByCurrentUser.toString()
+          this.filterByCurrentUser.toString(),
         );
       }
     }
@@ -218,7 +218,7 @@ export class CrawlsList extends LiteElement {
                     ${msg("Upload WACZ")}
                   </sl-button>
                 </sl-tooltip>
-              `
+              `,
             )}
           </div>
           <div class="flex gap-2 mb-3">
@@ -274,7 +274,7 @@ export class CrawlsList extends LiteElement {
                       }}
                     ></btrix-pagination>
                   </footer>
-                `
+                `,
               )}
             `;
           },
@@ -282,7 +282,7 @@ export class CrawlsList extends LiteElement {
             <div class="w-full flex items-center justify-center my-12 text-2xl">
               <sl-spinner></sl-spinner>
             </div>
-          `
+          `,
         )}
       </main>
       ${when(
@@ -301,7 +301,7 @@ export class CrawlsList extends LiteElement {
               }
             }}
           ></btrix-file-uploader>
-        `
+        `,
       )}
     `;
   }
@@ -369,7 +369,7 @@ export class CrawlsList extends LiteElement {
     const options = Object.entries(sortableFields).map(
       ([value, { label }]) => html`
         <sl-option value=${value}>${label}</sl-option>
-      `
+      `,
     );
     return html`
       <sl-select
@@ -411,8 +411,8 @@ export class CrawlsList extends LiteElement {
         placeholder=${this.itemType === "upload"
           ? msg("Search all uploads by name")
           : this.itemType === "crawl"
-          ? msg("Search all crawls by name or Crawl Start URL")
-          : msg("Search all items by name or Crawl Start URL")}
+            ? msg("Search all crawls by name or Crawl Start URL")
+            : msg("Search all items by name or Crawl Start URL")}
         @on-select=${(e: CustomEvent) => {
           const { key, value } = e.detail;
           this.filterBy = {
@@ -467,8 +467,8 @@ export class CrawlsList extends LiteElement {
         ${msg("This item will be removed from any Collection it is a part of.")}
         ${when(this.itemToDelete?.type === "crawl", () =>
           msg(
-            "All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow."
-          )
+            "All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow.",
+          ),
         )}
         <div slot="footer" class="flex justify-between">
           <sl-button size="small" .autofocus=${true}
@@ -488,7 +488,7 @@ export class CrawlsList extends LiteElement {
                 this.itemToDelete?.type === "upload"
                   ? msg("Upload")
                   : msg("Crawl")
-              }`
+              }`,
             )}</sl-button
           >
         </div>
@@ -539,7 +539,7 @@ export class CrawlsList extends LiteElement {
             ${msg("Edit Metadata")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-        `
+        `,
       )}
       ${item.type === "crawl"
         ? html`
@@ -578,11 +578,11 @@ export class CrawlsList extends LiteElement {
             <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${msg("Delete Item")}
           </sl-menu-item>
-        `
+        `,
       )}
     `;
 
-  private renderStatusMenuItem = (state: CrawlState) => {
+  private readonly renderStatusMenuItem = (state: CrawlState) => {
     const { icon, label } = CrawlStatus.getContent(state);
 
     return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
@@ -662,7 +662,7 @@ export class CrawlsList extends LiteElement {
   }
 
   private async getArchivedItems(
-    queryParams?: APIPaginationQuery & { state?: CrawlState[] }
+    queryParams?: APIPaginationQuery & { state?: CrawlState[] },
   ): Promise<ArchivedItems> {
     const query = queryString.stringify(
       {
@@ -682,7 +682,7 @@ export class CrawlsList extends LiteElement {
       },
       {
         arrayFormat: "comma",
-      }
+      },
     );
 
     this.getArchivedItemsController = new AbortController();
@@ -691,7 +691,7 @@ export class CrawlsList extends LiteElement {
       this.authState!,
       {
         signal: this.getArchivedItemsController.signal,
-      }
+      },
     );
 
     this.getArchivedItemsController = null;
@@ -711,7 +711,7 @@ export class CrawlsList extends LiteElement {
         firstSeeds: string[];
       } = await this.apiFetch(
         `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
-        this.authState!
+        this.authState!,
       );
 
       // Update search/filter collection
@@ -756,7 +756,7 @@ export class CrawlsList extends LiteElement {
           body: JSON.stringify({
             crawl_ids: [item.id],
           }),
-        }
+        },
       );
       const { items, ...crawlsData } = this.archivedItems!;
       this.itemToDelete = null;
@@ -775,12 +775,12 @@ export class CrawlsList extends LiteElement {
         this.confirmDeleteItem(this.itemToDelete);
       }
       let message = msg(
-        str`Sorry, couldn't delete archived item at this time.`
+        str`Sorry, couldn't delete archived item at this time.`,
       );
       if (e.isApiError) {
         if (e.details == "not_allowed") {
           message = msg(
-            str`Only org owners can delete other users' archived items.`
+            str`Only org owners can delete other users' archived items.`,
           );
         } else if (e.message) {
           message = e.message;
@@ -797,7 +797,7 @@ export class CrawlsList extends LiteElement {
   async getWorkflow(crawl: Crawl): Promise<Workflow> {
     const data: Workflow = await this.apiFetch(
       `/orgs/${crawl.oid}/crawlconfigs/${crawl.cid}`,
-      this.authState!
+      this.authState!,
     );
 
     return data;

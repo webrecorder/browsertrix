@@ -83,9 +83,9 @@ export class NewWorkflowDialog extends LitElement {
             class="jobTypeButton"
             @click=${() => {
               this.dispatchEvent(
-                <SelectJobTypeEvent>new CustomEvent("select-job-type", {
+                new CustomEvent("select-job-type", {
                   detail: "url-list",
-                })
+                }) as SelectJobTypeEvent
               );
             }}
           >
@@ -106,9 +106,9 @@ export class NewWorkflowDialog extends LitElement {
             class="jobTypeButton"
             @click=${() => {
               this.dispatchEvent(
-                <SelectJobTypeEvent>new CustomEvent("select-job-type", {
+                new CustomEvent("select-job-type", {
                   detail: "seed-crawl",
-                })
+                }) as SelectJobTypeEvent
               );
             }}
           >

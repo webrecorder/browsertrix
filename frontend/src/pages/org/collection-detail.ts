@@ -65,7 +65,7 @@ export class CollectionDetail extends LiteElement {
   private getArchivedItemsController: AbortController | null = null;
 
   // TODO localize
-  private numberFormatter = new Intl.NumberFormat(undefined, {
+  private readonly numberFormatter = new Intl.NumberFormat(undefined, {
     notation: "compact",
   });
 
@@ -275,7 +275,7 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
-  private renderShareInfo = () => {
+  private readonly renderShareInfo = () => {
     const replaySrc = this.getPublicReplayURL();
     const encodedReplaySrc = encodeURIComponent(replaySrc);
     const publicReplayUrl = `https://replayweb.page?source=${encodedReplaySrc}`;
@@ -359,7 +359,7 @@ export class CollectionDetail extends LiteElement {
       </section>`;
   };
 
-  private renderHeader = () => html`
+  private readonly renderHeader = () => html`
     <nav class="mb-7">
       <a
         class="text-gray-600 hover:text-gray-800 text-sm font-medium"
@@ -374,7 +374,7 @@ export class CollectionDetail extends LiteElement {
     </nav>
   `;
 
-  private renderTabs = () => {
+  private readonly renderTabs = () => {
     return html`
       <nav class="flex gap-2">
         ${TABS.map((tabName) => {
@@ -399,7 +399,7 @@ export class CollectionDetail extends LiteElement {
     `;
   };
 
-  private renderActions = () => {
+  private readonly renderActions = () => {
     const authToken = this.authState!.headers.Authorization.split(" ")[1];
 
     return html`
@@ -589,7 +589,7 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
-  private renderArchivedItems = () => html`<section>
+  private readonly renderArchivedItems = () => html`<section>
     ${when(
       this.archivedItems,
       () => {
@@ -661,7 +661,7 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
-  private renderArchivedItem = (item: ArchivedItem, idx: number) =>
+  private readonly renderArchivedItem = (item: ArchivedItem, idx: number) =>
     html`
       <btrix-archived-item-list-item
         href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
@@ -699,7 +699,7 @@ export class CollectionDetail extends LiteElement {
       </btrix-archived-item-list-item>
     `;
 
-  private renderReplay = () => {
+  private readonly renderReplay = () => {
     if (!this.collection?.crawlCount) {
       return this.renderEmptyState();
     }
@@ -726,15 +726,15 @@ export class CollectionDetail extends LiteElement {
   private async checkTruncateDescription() {
     await this.updateComplete;
     window.requestAnimationFrame(() => {
-      const description = this.querySelector(".description") as HTMLElement;
-      if (description?.scrollHeight > description?.clientHeight) {
+      const description = this.querySelector<HTMLElement>(".description");
+      if (description?.scrollHeight ?? 0 > (description?.clientHeight ?? 0)) {
         this.querySelector(".descriptionExpandBtn")?.classList.remove("hidden");
       }
     });
   }
 
-  private toggleTruncateDescription = () => {
-    const description = this.querySelector(".description") as HTMLElement;
+  private readonly toggleTruncateDescription = () => {
+    const description = this.querySelector<HTMLElement>(".description");
     if (!description) {
       console.debug("no .description");
       return;
@@ -765,7 +765,7 @@ export class CollectionDetail extends LiteElement {
     }
   }
 
-  private confirmDelete = () => {
+  private readonly confirmDelete = () => {
     this.openDialogName = "delete";
   };
 
@@ -874,7 +874,7 @@ export class CollectionDetail extends LiteElement {
     return data;
   }
 
-  private async removeArchivedItem(id: string, pageIndex: number) {
+  private async removeArchivedItem(id: string, _pageIndex: number) {
     try {
       await this.apiFetch(
         `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,

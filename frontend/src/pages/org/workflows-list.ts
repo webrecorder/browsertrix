@@ -12,6 +12,8 @@ import type { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import type { SelectNewDialogEvent } from "./index";
+import { type SelectEvent } from "@/components/ui/search-combobox";
+import { type APIError } from "@/utils/api";
 
 type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
@@ -105,13 +107,13 @@ export class WorkflowsList extends LiteElement {
   };
 
   @state()
-  private filterBy: Partial<Record<keyof ListWorkflow, any>> = {};
+  private filterBy: Partial<{ [k in keyof ListWorkflow]: boolean }> = {};
 
   @state()
   private filterByCurrentUser = false;
 
   // For fuzzy search:
-  private searchKeys = ["name", "firstSeed"];
+  private readonly searchKeys = ["name", "firstSeed"];
 
   // Use to cancel requests
   private getWorkflowsController: AbortController | null = null;
@@ -166,10 +168,10 @@ export class WorkflowsList extends LiteElement {
     try {
       const workflows = await this.getWorkflows(params);
       this.workflows = workflows;
-    } catch (e: any) {
-      if (e.isApiError) {
-        this.fetchErrorStatusCode = e.statusCode;
-      } else if (e.name === "AbortError") {
+    } catch (e) {
+      if ((e as APIError).isApiError) {
+        this.fetchErrorStatusCode = (e as APIError).statusCode;
+      } else if ((e as Error).name === "AbortError") {
         console.debug("Fetch archived items aborted to throttle");
       } else {
         this.notify({
@@ -210,9 +212,9 @@ export class WorkflowsList extends LiteElement {
                 size="small"
                 @click=${() => {
                   this.dispatchEvent(
-                    <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                    new CustomEvent("select-new-dialog", {
                       detail: "workflow",
-                    })
+                    }) as SelectNewDialogEvent
                   );
                 }}
               >
@@ -360,8 +362,9 @@ export class WorkflowsList extends LiteElement {
         .keyLabels=${WorkflowsList.FieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         placeholder=${msg("Search all Workflows by name or Crawl Start URL")}
-        @btrix-select=${(e: CustomEvent) => {
+        @btrix-select=${(e: SelectEvent<typeof this.searchKeys>) => {
           const { key, value } = e.detail;
+          if (key == null) return;
           this.filterBy = {
             [key]: value,
           };
@@ -410,7 +413,7 @@ export class WorkflowsList extends LiteElement {
     `;
   }
 
-  private renderWorkflowItem = (workflow: ListWorkflow) =>
+  private readonly renderWorkflowItem = (workflow: ListWorkflow) =>
     html`
       <btrix-workflow-list-item
         orgSlug=${this.appState.orgSlug || ""}

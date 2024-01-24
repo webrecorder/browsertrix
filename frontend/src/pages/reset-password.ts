@@ -25,7 +25,7 @@ export class ResetPassword extends LiteElement {
   private serverError?: string;
 
   @state()
-  private isSubmitting: boolean = false;
+  private isSubmitting = false;
 
   protected firstUpdated() {
     PasswordService.setOptions();
@@ -96,7 +96,7 @@ export class ResetPassword extends LiteElement {
     `;
   }
 
-  private renderPasswordStrength = () => html`
+  private readonly renderPasswordStrength = () => html`
     <div class="my-3">
       <btrix-pw-strength-alert
         .result=${this.pwStrengthResults ?? undefined}
@@ -106,7 +106,7 @@ export class ResetPassword extends LiteElement {
     </div>
   `;
 
-  private onPasswordInput = debounce(150)(async (e: InputEvent) => {
+  private readonly onPasswordInput = debounce(150)(async (e: InputEvent) => {
     const { value } = e.target as BtrixInput;
     if (!value || value.length < 4) {
       this.pwStrengthResults = null;

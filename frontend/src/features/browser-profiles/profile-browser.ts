@@ -60,13 +60,13 @@ export class ProfileBrowser extends LiteElement {
   private newOrigins?: string[] = [];
 
   @query("#profileBrowserSidebar")
-  private sidebar?: HTMLElement;
+  private readonly sidebar?: HTMLElement;
 
   @query("#iframeWrapper")
-  private iframeWrapper?: HTMLElement;
+  private readonly iframeWrapper?: HTMLElement;
 
   @query("iframe")
-  private iframe?: HTMLIFrameElement;
+  private readonly iframe?: HTMLIFrameElement;
 
   private pollTimerId?: number;
 
@@ -400,7 +400,7 @@ export class ProfileBrowser extends LiteElement {
     this.dispatchEvent(new CustomEvent("load", { detail: this.iframeSrc }));
   }
 
-  private onFullscreenChange = async () => {
+  private readonly onFullscreenChange = async () => {
     if (document.fullscreenElement) {
       this.isFullscreen = true;
     } else {

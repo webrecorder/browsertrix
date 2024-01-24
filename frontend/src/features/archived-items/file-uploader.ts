@@ -21,6 +21,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
 import { NavigateController } from "@/controllers/navigate";
+import { type CollectionsChangeEvent } from "../collections/collections-add";
 
 export type FileUploaderRequestCloseEvent = CustomEvent<NonNullable<unknown>>;
 export type FileUploaderUploadStartEvent = CustomEvent<{
@@ -63,13 +64,13 @@ export class FileUploader extends TailwindElement {
   open = false;
 
   @state()
-  private isUploading: boolean = false;
+  private isUploading = false;
 
   @state()
-  private isDialogVisible: boolean = false;
+  private isDialogVisible = false;
 
   @state()
-  private isConfirmingCancel: boolean = false;
+  private isConfirmingCancel = false;
 
   @state()
   private collectionIds: string[] = [];
@@ -84,22 +85,22 @@ export class FileUploader extends TailwindElement {
   private fileList: File[] = [];
 
   @state()
-  private progress: number = 0;
+  private progress = 0;
 
   @queryAsync("#fileUploadForm")
-  private form!: Promise<HTMLFormElement>;
+  private readonly form!: Promise<HTMLFormElement>;
 
-  private api = new APIController(this);
-  private navigate = new NavigateController(this);
-  private notify = new NotifyController(this);
+  private readonly api = new APIController(this);
+  private readonly navigate = new NavigateController(this);
+  private readonly notify = new NotifyController(this);
 
   // For fuzzy search:
-  private fuse = new Fuse([], {
+  private readonly fuse = new Fuse([], {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
 
-  private validateDescriptionMax = maxLengthValidator(500);
+  private readonly validateDescriptionMax = maxLengthValidator(500);
 
   // Use to cancel requests
   private uploadRequest: XMLHttpRequest | null = null;
@@ -179,9 +180,9 @@ export class FileUploader extends TailwindElement {
             // Using submit method instead of type="submit" fixes
             // incorrect getRootNode in Chrome
             const form = await this.form;
-            const submitInput = form.querySelector(
+            const submitInput = form.querySelector<HTMLInputElement>(
               'input[type="submit"]'
-            ) as HTMLInputElement;
+            )!;
             form.requestSubmit(submitInput);
           }}
           >${msg("Upload File")}</sl-button
@@ -200,7 +201,7 @@ export class FileUploader extends TailwindElement {
               type="file"
               accept=".wacz"
               @change=${(e: Event) => {
-                const files = (e.target as HTMLInputElement).files as FileList;
+                const files = (e.target as HTMLInputElement).files!;
                 if (files?.length) {
                   this.fileList = Array.from(files);
                 }
@@ -261,7 +262,7 @@ export class FileUploader extends TailwindElement {
           .orgId=${this.orgId}
           .configId=${"temp"}
           label=${msg("Add to Collection")}
-          @collections-change=${(e: CustomEvent) =>
+          @collections-change=${(e: CollectionsChangeEvent) =>
             (this.collectionIds = e.detail.collections)}
         >
         </btrix-collections-add>
@@ -336,7 +337,7 @@ export class FileUploader extends TailwindElement {
     `;
   }
 
-  private handleRemoveFile = (e: FileRemoveEvent) => {
+  private readonly handleRemoveFile = (e: FileRemoveEvent) => {
     this.cancelUpload();
     const idx = this.fileList.indexOf(e.detail.file);
     if (idx === -1) return;
@@ -370,11 +371,11 @@ export class FileUploader extends TailwindElement {
 
   private requestClose() {
     this.dispatchEvent(
-      <FileUploaderRequestCloseEvent>new CustomEvent("request-close")
+      new CustomEvent("request-close") as FileUploaderRequestCloseEvent
     );
   }
 
-  private onTagInput = (e: TagInputEvent) => {
+  private readonly onTagInput = (e: TagInputEvent) => {
     const { value } = e.detail;
     if (!value) return;
     this.tagOptions = this.fuse.search(value).map(({ item }) => item);
@@ -406,12 +407,12 @@ export class FileUploader extends TailwindElement {
 
     this.isUploading = true;
     this.dispatchEvent(
-      <FileUploaderUploadedEvent>new CustomEvent("upload-start", {
+      new CustomEvent("upload-start", {
         detail: {
           fileName: file.name,
           fileSize: file.size,
         },
-      })
+      }) as FileUploaderUploadedEvent
     );
 
     const { name, description } = serialize(formEl);
@@ -443,12 +444,12 @@ export class FileUploader extends TailwindElement {
 
       if (data.id && data.added) {
         this.dispatchEvent(
-          <FileUploaderUploadedEvent>new CustomEvent("uploaded", {
+          new CustomEvent("uploaded", {
             detail: {
               fileName: file.name,
               fileSize: file.size,
             },
-          })
+          }) as FileUploaderUploadedEvent
         );
         this.requestClose();
         this.notify.toast({
@@ -533,7 +534,7 @@ export class FileUploader extends TailwindElement {
     });
   }
 
-  private onUploadProgress = throttle(100)((e: ProgressEvent) => {
+  private readonly onUploadProgress = throttle(100)((e: ProgressEvent) => {
     this.progress = (e.loaded / e.total) * 100;
   });
 

@@ -117,13 +117,13 @@ export class Meter extends LitElement {
   valueText?: string;
 
   @query(".valueBar")
-  private valueBar?: HTMLElement;
+  private readonly valueBar?: HTMLElement;
 
   @query(".labels")
-  private labels?: HTMLElement;
+  private readonly labels?: HTMLElement;
 
   @query(".maxText")
-  private maxText?: HTMLElement;
+  private readonly maxText?: HTMLElement;
 
   // postcss-lit-disable-next-line
   static styles = css`
@@ -176,7 +176,7 @@ export class Meter extends LitElement {
   `;
 
   @queryAssignedElements({ selector: "btrix-meter-bar" })
-  bars?: Array<HTMLElement>;
+  bars?: HTMLElement[];
 
   updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("value") || changedProperties.has("max")) {
@@ -224,12 +224,18 @@ export class Meter extends LitElement {
     `;
   }
 
-  private onTrackResize = debounce(100)((e: CustomEvent) => {
-    const { entries } = e.detail;
-    const entry = entries[0];
-    const trackWidth = entry.contentBoxSize[0].inlineSize;
-    this.repositionLabels(trackWidth);
-  }) as any;
+  private readonly onTrackResize = debounce(100)(
+    (e: CustomEvent<{ entries: ResizeObserverEntry[] }>) => {
+      const { entries } = e.detail;
+      const entry = entries[0];
+      const trackWidth = entry.contentBoxSize[0].inlineSize;
+      this.repositionLabels(trackWidth);
+    }
+  ) as (
+    e: CustomEvent<{
+      entries: ResizeObserverEntry[];
+    }>
+  ) => void;
 
   private repositionLabels(trackWidth?: number) {
     if (!this.valueBar || !this.maxText) return;

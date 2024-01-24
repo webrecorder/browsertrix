@@ -4,7 +4,7 @@ import { property, state, query, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized } from "@lit/localize";
 import { ifDefined } from "lit/directives/if-defined.js";
-import type { SlDialog, SlInput } from "@shoelace-style/shoelace";
+import type { SlDialog } from "@shoelace-style/shoelace";
 import "broadcastchannel-polyfill";
 
 import "./utils/polyfills";
@@ -57,7 +57,7 @@ export class App extends LiteElement {
   @property({ type: String })
   version?: string;
 
-  private router = new APIRouter(ROUTES);
+  private readonly router = new APIRouter(ROUTES);
   authService = new AuthService();
 
   @use()
@@ -70,10 +70,10 @@ export class App extends LiteElement {
   private globalDialogContent: DialogContent = {};
 
   @query("#globalDialog")
-  private globalDialog!: SlDialog;
+  private readonly globalDialog!: SlDialog;
 
   @state()
-  private isAppSettingsLoaded: boolean = false;
+  private isAppSettingsLoaded = false;
 
   @state()
   private isRegistrationEnabled?: boolean;
@@ -160,7 +160,6 @@ export class App extends LiteElement {
         const firstOrg = orgs[0].slug;
         AppStateService.updateOrgSlug(firstOrg);
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       if (err?.message === "Unauthorized") {
         console.debug(
@@ -179,7 +178,7 @@ export class App extends LiteElement {
     });
 
     if (resp.status === 200) {
-      const body = await resp.json();
+      const body = (await resp.json()) as { registrationEnabled: boolean };
 
       return body;
     } else {
@@ -368,7 +367,7 @@ export class App extends LiteElement {
         >
         <sl-menu
           @sl-select=${(e: CustomEvent) => {
-            const { value } = e.detail.item;
+            const { value } = e.detail.item as { value: string };
             if (value) {
               this.navigate(`/orgs/${value}`);
             } else {
@@ -690,9 +689,7 @@ export class App extends LiteElement {
           (e.target as HTMLElement).querySelector("sl-input")?.focus();
         }}
         @sl-after-hide=${(e: Event) => {
-          (
-            (e.target as HTMLElement).querySelector("sl-input") as SlInput
-          ).value = "";
+          (e.target as HTMLElement).querySelector("sl-input")!.value = "";
         }}
         hoist
       >

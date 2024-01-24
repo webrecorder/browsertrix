@@ -2,7 +2,7 @@ import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
-import type { SlMenuItem } from "@shoelace-style/shoelace";
+import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
 import type { AuthState } from "@/utils/AuthService";
@@ -63,7 +63,7 @@ export class CollectionsAdd extends LiteElement {
   private collectionIds: string[] = [];
 
   @state()
-  private searchByValue: string = "";
+  private searchByValue = "";
 
   @state()
   private searchResults: Collection[] = [];
@@ -156,7 +156,7 @@ export class CollectionsAdd extends LiteElement {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
           }}
-          @sl-input=${this.onSearchInput}
+          @sl-input=${this.onSearchInput as (e: Event) => Promise<void>}
         >
           <sl-icon name="search" slot="prefix"></sl-icon>
         </sl-input>
@@ -245,8 +245,8 @@ export class CollectionsAdd extends LiteElement {
     }
   }
 
-  private onSearchInput = debounce(200)(async (e: any) => {
-    this.searchByValue = e.target.value.trim();
+  private readonly onSearchInput = debounce(200)(async (e: Event) => {
+    this.searchByValue = (e.target as SlInput).value.trim();
 
     if (this.searchResultsOpen === false && this.hasSearchStr) {
       this.searchResultsOpen = true;
@@ -254,11 +254,11 @@ export class CollectionsAdd extends LiteElement {
 
     const data = await this.fetchCollectionsByPrefix(this.searchByValue);
     let searchResults: Collection[] = [];
-    if (data && data.items.length) {
+    if (data?.items.length) {
       searchResults = this.filterOutSelectedCollections(data.items);
     }
     this.searchResults = searchResults;
-  }) as any;
+  });
 
   private filterOutSelectedCollections(results: Collection[]) {
     return results.filter((result) => {
@@ -316,7 +316,7 @@ export class CollectionsAdd extends LiteElement {
     });
   }
 
-  private getCollection = (collId: string): Promise<Collection> => {
+  private readonly getCollection = (collId: string): Promise<Collection> => {
     return this.apiFetch(
       `/orgs/${this.orgId}/collections/${collId}`,
       this.authState!
@@ -326,9 +326,9 @@ export class CollectionsAdd extends LiteElement {
   private async dispatchChange() {
     await this.updateComplete;
     this.dispatchEvent(
-      <CollectionsChangeEvent>new CustomEvent("collections-change", {
+      new CustomEvent("collections-change", {
         detail: { collections: this.collectionIds },
-      })
+      }) as CollectionsChangeEvent
     );
   }
 }

@@ -2,6 +2,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
 import LiteElement, { html } from "@/utils/LiteElement";
+import { type PageChangeEvent } from "@/components/ui/pagination";
 
 type URLs = string[];
 
@@ -22,10 +23,11 @@ export class CrawlPendingExclusions extends LiteElement {
   matchedURLs: URLs | null = null;
 
   @state()
-  private page: number = 1;
+  private page = 1;
 
-  @state()
-  private pageSize: number = 10;
+  private get pageSize() {
+    return 10;
+  }
 
   private get total(): number {
     return this.matchedURLs?.length || 0;
@@ -50,7 +52,7 @@ export class CrawlPendingExclusions extends LiteElement {
                 size=${this.pageSize}
                 totalCount=${this.total}
                 compact
-                @page-change=${(e: CustomEvent) => {
+                @page-change=${(e: PageChangeEvent) => {
                   this.page = e.detail.page;
                 }}
               >

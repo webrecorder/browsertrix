@@ -152,17 +152,17 @@ export class Crawls extends LiteElement {
                       }}
                     ></btrix-pagination>
                   </footer>
-                `
+                `,
               )}
             `;
           },
-          this.renderLoading
+          this.renderLoading,
         )}
       </main>
     `;
   }
 
-  private renderLoading = () => html`
+  private readonly renderLoading = () => html`
     <div class="w-full flex items-center justify-center my-12 text-2xl">
       <sl-spinner></sl-spinner>
     </div>
@@ -210,7 +210,7 @@ export class Crawls extends LiteElement {
     const options = Object.entries(sortableFields).map(
       ([value, { label }]) => html`
         <sl-option value=${value}>${label}</sl-option>
-      `
+      `,
     );
     return html`
       <sl-select
@@ -242,7 +242,7 @@ export class Crawls extends LiteElement {
     `;
   }
 
-  private renderStatusMenuItem = (state: CrawlState) => {
+  private readonly renderStatusMenuItem = (state: CrawlState) => {
     const { icon, label } = CrawlStatus.getContent(state);
 
     return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
@@ -337,7 +337,7 @@ export class Crawls extends LiteElement {
   }
 
   private async getCrawls(
-    queryParams?: APIPaginationQuery & { state?: CrawlState[] }
+    queryParams?: APIPaginationQuery & { state?: CrawlState[] },
   ) {
     const query = queryString.stringify(
       {
@@ -350,7 +350,7 @@ export class Crawls extends LiteElement {
       },
       {
         arrayFormat: "comma",
-      }
+      },
     );
 
     this.getCrawlsController = new AbortController();
@@ -359,7 +359,7 @@ export class Crawls extends LiteElement {
       this.authState!,
       {
         signal: this.getCrawlsController.signal,
-      }
+      },
     );
     this.getCrawlsController = null;
 
@@ -369,7 +369,7 @@ export class Crawls extends LiteElement {
   private async getCrawl() {
     const data: Crawl = await this.apiFetch<Crawl>(
       `/orgs/all/crawls/${this.crawlId}/replay.json`,
-      this.authState!
+      this.authState!,
     );
 
     return data;
@@ -378,7 +378,7 @@ export class Crawls extends LiteElement {
   private async getSlugLookup() {
     const data = await this.apiFetch<Record<string, string>>(
       `/orgs/slug-lookup`,
-      this.authState!
+      this.authState!,
     );
 
     return data;

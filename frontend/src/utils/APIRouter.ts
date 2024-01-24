@@ -20,7 +20,7 @@ export type ViewState = {
 };
 
 export default class APIRouter {
-  private routes: Routes;
+  private readonly routes: Routes;
 
   constructor(paths: Paths) {
     this.routes = {};

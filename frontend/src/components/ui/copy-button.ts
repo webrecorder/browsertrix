@@ -35,7 +35,7 @@ export class CopyButton extends LitElement {
   hoist = false;
 
   @state()
-  private isCopied: boolean = false;
+  private isCopied = false;
 
   timeoutId?: number;
 

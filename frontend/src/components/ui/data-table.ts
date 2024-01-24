@@ -38,7 +38,7 @@ export class DataTable extends TailwindElement {
   columns: CellContent[] = [];
 
   @property({ type: Array })
-  rows: Array<CellContent[]> = [];
+  rows: CellContent[][] = [];
 
   /**
    * Array of CSS grid track widths

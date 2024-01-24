@@ -76,7 +76,7 @@ export class ConfigDetails extends LiteElement {
     const crawlConfig = this.crawlConfig;
     const seedsConfig = crawlConfig?.config;
     const exclusions = seedsConfig?.exclude || [];
-    const maxPages = (this.seeds && this.seeds[0]?.limit) ?? seedsConfig?.limit;
+    const maxPages = this.seeds?.[0]?.limit ?? seedsConfig?.limit;
     const renderTimeLimit = (
       valueSeconds?: number | null,
       fallbackValue?: number
@@ -310,7 +310,7 @@ export class ConfigDetails extends LiteElement {
     `;
   }
 
-  private renderConfirmUrlListSettings = () => {
+  private readonly renderConfirmUrlListSettings = () => {
     const crawlConfig = this.crawlConfig;
 
     return html`
@@ -347,7 +347,7 @@ export class ConfigDetails extends LiteElement {
     `;
   };
 
-  private renderConfirmSeededSettings = () => {
+  private readonly renderConfirmSeededSettings = () => {
     if (!this.seeds) return;
     const crawlConfig = this.crawlConfig!;
     const seedsConfig = crawlConfig.config;
@@ -435,7 +435,7 @@ export class ConfigDetails extends LiteElement {
     `;
   };
 
-  private renderSetting(label: string, value: any, breakAll?: boolean) {
+  private renderSetting(label: string, value: unknown, breakAll?: boolean) {
     let content = value;
 
     if (!this.crawlConfig) {
@@ -480,8 +480,7 @@ export class ConfigDetails extends LiteElement {
     const orgId = this.crawlConfig?.oid;
 
     if (this.crawlConfig?.autoAddCollections && orgId) {
-      for (let i = 0; i < this.crawlConfig.autoAddCollections.length; i++) {
-        const collectionId = this.crawlConfig.autoAddCollections[i];
+      for (const collectionId of this.crawlConfig.autoAddCollections) {
         const data: Collection = await this.apiFetch(
           `/orgs/${orgId}/collections/${collectionId}`,
           this.authState!
@@ -506,7 +505,11 @@ export class ConfigDetails extends LiteElement {
       const orgDefaults = {
         ...this.orgDefaults,
       };
-      const data = await resp.json();
+      const data = (await resp.json()) as {
+        defaultBehaviorTimeSeconds: number;
+        defaultPageLoadTimeSeconds: number;
+        maxPagesPerCrawl: number;
+      };
       if (data.defaultBehaviorTimeSeconds > 0) {
         orgDefaults.behaviorTimeoutSeconds = data.defaultBehaviorTimeSeconds;
       }

@@ -59,7 +59,7 @@ export class ExclusionEditor extends LiteElement {
 
   @state()
   /** `new RegExp` constructor string */
-  private regex: string = "";
+  private regex = "";
 
   @state()
   matchedURLs: URLs | null = null;
@@ -136,7 +136,7 @@ export class ExclusionEditor extends LiteElement {
       crawlId=${this.crawlId!}
       .authState=${this.authState}
       regex=${this.regex}
-      .exclusions=${(this.config && this.config.exclude) || []}
+      .exclusions=${this.config?.exclude || []}
       matchedTotal=${this.matchedURLs?.length || 0}
     ></btrix-crawl-queue>`;
   }
@@ -157,7 +157,9 @@ export class ExclusionEditor extends LiteElement {
     try {
       const params = new URLSearchParams({ regex });
       const data = await this.apiFetch<{ success: boolean }>(
-        `/orgs/${this.orgId}/crawls/${this.crawlId}/exclusions?${params}`,
+        `/orgs/${this.orgId}/crawls/${
+          this.crawlId
+        }/exclusions?${params.toString()}`,
         this.authState!,
         {
           method: "DELETE",
@@ -219,7 +221,9 @@ export class ExclusionEditor extends LiteElement {
     const regex = this.regex;
     const params = new URLSearchParams({ regex });
     const data = await this.apiFetch<ResponseData>(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/queueMatchAll?${params}`,
+      `/orgs/${this.orgId}/crawls/${
+        this.crawlId
+      }/queueMatchAll?${params.toString()}`,
       this.authState!
     );
 
@@ -245,7 +249,9 @@ export class ExclusionEditor extends LiteElement {
     try {
       const params = new URLSearchParams({ regex });
       const data = await this.apiFetch<{ success: boolean }>(
-        `/orgs/${this.orgId}/crawls/${this.crawlId}/exclusions?${params}`,
+        `/orgs/${this.orgId}/crawls/${
+          this.crawlId
+        }/exclusions?${params.toString()}`,
         this.authState!,
         {
           method: "POST",

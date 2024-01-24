@@ -26,10 +26,10 @@ export class RequestVerify extends LitElement {
   email!: string;
 
   @state()
-  private isRequesting: boolean = false;
+  private isRequesting = false;
 
   @state()
-  private requestSuccess: boolean = false;
+  private requestSuccess = false;
 
   willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("email")) {
@@ -111,7 +111,7 @@ export class AccountSettings extends LiteElement {
   private pwStrengthResults: null | ZxcvbnResult = null;
 
   @queryAsync('sl-input[name="password"]')
-  private passwordInput?: Promise<SlInput | null>;
+  private readonly passwordInput?: Promise<SlInput | null>;
 
   async updated(changedProperties: Map<string, any>) {
     if (
@@ -281,7 +281,7 @@ export class AccountSettings extends LiteElement {
     `;
   }
 
-  private renderPasswordStrength = () => html`
+  private readonly renderPasswordStrength = () => html`
     <div class="mt-4">
       <btrix-pw-strength-alert
         .result=${this.pwStrengthResults ?? undefined}
@@ -291,7 +291,7 @@ export class AccountSettings extends LiteElement {
     </div>
   `;
 
-  private onPasswordInput = debounce(150)(async (e: InputEvent) => {
+  private readonly onPasswordInput = debounce(150)(async (e: InputEvent) => {
     const { value } = e.target as SlInput;
     if (!value || value.length < 4) {
       this.pwStrengthResults = null;
@@ -310,7 +310,7 @@ export class AccountSettings extends LiteElement {
   private async onSubmitName(e: SubmitEvent) {
     if (!this.userInfo || !this.authState) return;
     const form = e.target as HTMLFormElement;
-    const input = form.querySelector("sl-input") as SlInput;
+    const input = form.querySelector("sl-input")!;
     if (!input.checkValidity()) {
       return;
     }
@@ -351,7 +351,7 @@ export class AccountSettings extends LiteElement {
   private async onSubmitEmail(e: SubmitEvent) {
     if (!this.userInfo || !this.authState) return;
     const form = e.target as HTMLFormElement;
-    const input = form.querySelector("sl-input") as SlInput;
+    const input = form.querySelector("sl-input")!;
     if (!input.checkValidity()) {
       return;
     }

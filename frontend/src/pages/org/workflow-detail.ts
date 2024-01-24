@@ -56,7 +56,7 @@ export class WorkflowDetail extends LiteElement {
   workflowId!: string;
 
   @property({ type: Boolean })
-  isEditing: boolean = false;
+  isEditing = false;
 
   @property({ type: Boolean })
   isCrawler!: boolean;
@@ -92,16 +92,16 @@ export class WorkflowDetail extends LiteElement {
   private activePanel: Tab = SECTIONS[0];
 
   @state()
-  private isLoading: boolean = false;
+  private isLoading = false;
 
   @state()
-  private isSubmittingUpdate: boolean = false;
+  private isSubmittingUpdate = false;
 
   @state()
-  private isDialogVisible: boolean = false;
+  private isDialogVisible = false;
 
   @state()
-  private isCancelingOrStoppingCrawl: boolean = false;
+  private isCancelingOrStoppingCrawl = false;
 
   @state()
   private crawlToDelete: Crawl | null = null;
@@ -110,10 +110,10 @@ export class WorkflowDetail extends LiteElement {
   private filterBy: Partial<Record<keyof Crawl, any>> = {};
 
   // TODO localize
-  private numberFormatter = new Intl.NumberFormat(undefined, {
+  private readonly numberFormatter = new Intl.NumberFormat(undefined, {
     // notation: "compact",
   });
-  private dateFormatter = new Intl.DateTimeFormat(undefined, {
+  private readonly dateFormatter = new Intl.DateTimeFormat(undefined, {
     year: "numeric",
     month: "numeric",
     day: "numeric",
@@ -193,7 +193,7 @@ export class WorkflowDetail extends LiteElement {
     }
   }
 
-  private getActivePanelFromHash = async () => {
+  private readonly getActivePanelFromHash = async () => {
     await this.updateComplete;
     if (this.isEditing) return;
 
@@ -416,7 +416,7 @@ export class WorkflowDetail extends LiteElement {
     `;
   }
 
-  private renderTabList = () => html`
+  private readonly renderTabList = () => html`
     <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
       <btrix-observable
         slot="header"
@@ -550,7 +550,7 @@ export class WorkflowDetail extends LiteElement {
     `;
   }
 
-  private renderEditor = () => html`
+  private readonly renderEditor = () => html`
     ${this.renderHeader(this.workflow!.id)}
 
     <header>
@@ -580,7 +580,7 @@ export class WorkflowDetail extends LiteElement {
     )}
   `;
 
-  private renderActions = () => {
+  private readonly renderActions = () => {
     if (!this.workflow) return;
     const workflow = this.workflow;
 
@@ -904,13 +904,13 @@ export class WorkflowDetail extends LiteElement {
     `;
   }
 
-  private renderStatusMenuItem = (state: CrawlState) => {
+  private readonly renderStatusMenuItem = (state: CrawlState) => {
     const { icon, label } = CrawlStatus.getContent(state);
 
     return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
   };
 
-  private renderCurrentCrawl = () => {
+  private readonly renderCurrentCrawl = () => {
     const skeleton = html`<sl-skeleton class="w-full"></sl-skeleton>`;
 
     return html`
@@ -949,7 +949,7 @@ export class WorkflowDetail extends LiteElement {
     `;
   };
 
-  private renderWatchCrawl = () => {
+  private readonly renderWatchCrawl = () => {
     if (!this.authState || !this.workflow?.lastCrawlState) return "";
 
     let waitingMsg = null;
@@ -1320,13 +1320,13 @@ export class WorkflowDetail extends LiteElement {
     </section>`;
   }
 
-  private renderLoading = () => html`<div
+  private readonly renderLoading = () => html`<div
     class="w-full flex items-center justify-center my-24 text-3xl"
   >
     <sl-spinner></sl-spinner>
   </div>`;
 
-  private showDialog = async () => {
+  private readonly showDialog = async () => {
     await this.getWorkflowPromise;
     this.isDialogVisible = true;
   };
@@ -1660,7 +1660,7 @@ export class WorkflowDetail extends LiteElement {
     }
   }
 
-  private confirmDeleteCrawl = (crawl: Crawl) => {
+  private readonly confirmDeleteCrawl = (crawl: Crawl) => {
     this.crawlToDelete = crawl;
     this.openDialogName = "delete";
   };

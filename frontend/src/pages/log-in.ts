@@ -5,7 +5,6 @@ import { createMachine, interpret, assign } from "@xstate/fsm";
 
 import type { ViewState } from "@/utils/APIRouter";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { LoggedInEventDetail } from "@/utils/AuthService";
 import AuthService from "@/utils/AuthService";
 import { ROUTES } from "@/routes";
 
@@ -146,7 +145,7 @@ export class LogInPage extends LiteElement {
   @property({ type: String })
   redirectUrl: string = ROUTES.home;
 
-  private formStateService = interpret(machine);
+  private readonly formStateService = interpret(machine);
 
   @state()
   private formState = machine.initialState;

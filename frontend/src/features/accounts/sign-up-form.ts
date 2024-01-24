@@ -38,7 +38,7 @@ export class SignUpForm extends LiteElement {
   private serverError?: string;
 
   @state()
-  private isSubmitting: boolean = false;
+  private isSubmitting = false;
 
   @state()
   private pwStrengthResults: null | ZxcvbnResult = null;
@@ -144,7 +144,7 @@ export class SignUpForm extends LiteElement {
     `;
   }
 
-  private renderPasswordStrength = () => html`
+  private readonly renderPasswordStrength = () => html`
     <div class="my-3">
       <btrix-pw-strength-alert
         .result=${this.pwStrengthResults ?? undefined}
@@ -154,7 +154,7 @@ export class SignUpForm extends LiteElement {
     </div>
   `;
 
-  private onPasswordInput = debounce(150)(async (e: InputEvent) => {
+  private readonly onPasswordInput = debounce(150)(async (e: InputEvent) => {
     const { value } = e.target as BtrixInput;
     if (!value || value.length < 4) {
       this.pwStrengthResults = null;
@@ -213,7 +213,7 @@ export class SignUpForm extends LiteElement {
 
     switch (resp.status) {
       case 201: {
-        const data = await resp.json();
+        const data = (await resp.json()) as { id: unknown };
 
         if (data.id) {
           shouldLogIn = true;
@@ -223,7 +223,9 @@ export class SignUpForm extends LiteElement {
       }
       case 400:
       case 422: {
-        const { detail } = await resp.json();
+        const { detail } = (await resp.json()) as {
+          detail: string & { code: string };
+        };
         if (detail === "user_already_exists") {
           shouldLogIn = true;
         } else if (detail.code && detail.code === "invalid_password") {

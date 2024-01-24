@@ -44,9 +44,9 @@ export class BrowserProfilesList extends LiteElement {
             size="small"
             @click=${() => {
               this.dispatchEvent(
-                <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                new CustomEvent("select-new-dialog", {
                   detail: "browser-profile",
-                })
+                }) as SelectNewDialogEvent
               );
             }}
           >

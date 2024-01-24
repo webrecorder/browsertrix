@@ -216,7 +216,7 @@ export class Org extends LiteElement {
     // and redirect to the slug url
     if (UUID_REGEX.test(this.slug)) {
       const org = await this.getOrg(this.slug);
-      const actualSlug = org && org.slug;
+      const actualSlug = org?.slug;
       if (actualSlug) {
         this.navTo(
           window.location.href

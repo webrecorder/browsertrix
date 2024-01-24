@@ -6,10 +6,11 @@ import debounce from "lodash/fp/debounce";
 import Fuse from "fuse.js";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 
-export type SelectEvent<T> = CustomEvent<{
+type SelectEventDetail<T> = {
   key: string | null;
   value?: T;
-}>;
+};
+export type SelectEvent<T> = CustomEvent<SelectEventDetail<T>>;
 
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_RESULTS = 10;
@@ -39,7 +40,7 @@ export class SearchCombobox<T> extends LitElement {
   placeholder: string = msg("Start typing to search");
 
   @state()
-  private searchByValue: string = "";
+  private searchByValue = "";
 
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
@@ -49,7 +50,7 @@ export class SearchCombobox<T> extends LitElement {
   private searchResultsOpen = false;
 
   @query("sl-input")
-  private input!: SlInput;
+  private readonly input!: SlInput;
 
   private fuse = new Fuse<T>([], {
     keys: [],
@@ -99,10 +100,10 @@ export class SearchCombobox<T> extends LitElement {
           this.searchByValue = item.value;
           await this.updateComplete;
           this.dispatchEvent(
-            <SelectEvent<T>>new CustomEvent("btrix-select", {
+            new CustomEvent<SelectEventDetail<T>>("btrix-select", {
               detail: {
-                key: key,
-                value: item.value,
+                key: key ?? null,
+                value: item.value as T,
               },
             })
           );
@@ -121,14 +122,14 @@ export class SearchCombobox<T> extends LitElement {
           @sl-input=${this.onSearchInput as () => void}
         >
           ${when(
-            this.selectedKey && this.keyLabels?.[this.selectedKey as string],
+            this.selectedKey && this.keyLabels?.[this.selectedKey],
             () =>
               html`<sl-tag
                 slot="prefix"
                 size="small"
                 pill
                 style="margin-left: var(--sl-spacing-3x-small)"
-                >${this.keyLabels![this.selectedKey as string]}</sl-tag
+                >${this.keyLabels![this.selectedKey!]}</sl-tag
               >`,
             () => html`<sl-icon name="search" slot="prefix"></sl-icon>`
           )}
@@ -180,7 +181,7 @@ export class SearchCombobox<T> extends LitElement {
     `;
   }
 
-  private onSearchInput = debounce(150)(() => {
+  private readonly onSearchInput = debounce(150)(() => {
     this.searchByValue = this.input.value?.trim();
 
     if (this.searchResultsOpen === false && this.hasSearchStr) {

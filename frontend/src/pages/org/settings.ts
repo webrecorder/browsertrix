@@ -98,7 +98,7 @@ export class OrgSettings extends LiteElement {
     };
   }
 
-  private validateOrgNameMax = maxLengthValidator(40);
+  private readonly validateOrgNameMax = maxLengthValidator(40);
 
   async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
@@ -372,9 +372,9 @@ export class OrgSettings extends LiteElement {
       )}
       @click=${() =>
         this.dispatchEvent(
-          <OrgRemoveMemberEvent>new CustomEvent("org-remove-member", {
+          new CustomEvent("org-remove-member", {
             detail: { member },
-          })
+          }) as OrgRemoveMemberEvent
         )}
     >
       <sl-icon name="trash3"></sl-icon>
@@ -495,20 +495,20 @@ export class OrgSettings extends LiteElement {
     }
 
     this.dispatchEvent(
-      <OrgInfoChangeEvent>new CustomEvent("org-info-change", {
+      new CustomEvent("org-info-change", {
         detail,
-      })
+      }) as OrgInfoChangeEvent
     );
   }
 
-  private selectUserRole = (user: User) => (e: Event) => {
+  private readonly selectUserRole = (user: User) => (e: Event) => {
     this.dispatchEvent(
-      <UserRoleChangeEvent>new CustomEvent("org-user-role-change", {
+      new CustomEvent("org-user-role-change", {
         detail: {
           user,
           newRole: Number((e.target as HTMLSelectElement).value),
         },
-      })
+      }) as UserRoleChangeEvent
     );
   };
 

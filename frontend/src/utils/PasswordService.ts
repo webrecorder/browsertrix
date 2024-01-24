@@ -23,9 +23,9 @@ const loadOptions = async (): Promise<OptionsType> => {
  * Test and estimate password strength
  */
 export default class PasswordService {
-  static readonly PASSWORD_MINLENGTH = 8;
-  static readonly PASSWORD_MAXLENGTH = 64;
-  static readonly PASSWORD_MIN_SCORE = 3;
+  static readonly PASSWORD_MINLENGTH = 8 as const;
+  static readonly PASSWORD_MAXLENGTH = 64 as const;
+  static readonly PASSWORD_MIN_SCORE = 3 as const;
 
   static options?: OptionsType;
 

@@ -75,7 +75,7 @@ export class CollectionsList extends LiteElement {
   private filterBy: Partial<Record<keyof Collection, any>> = {};
 
   @state()
-  private searchByValue: string = "";
+  private searchByValue = "";
 
   @state()
   private searchResultsOpen = false;
@@ -84,7 +84,7 @@ export class CollectionsList extends LiteElement {
   private openDialogName?: "create" | "delete" | "editMetadata";
 
   @state()
-  private isDialogVisible: boolean = false;
+  private isDialogVisible = false;
 
   @state()
   private selectedCollection?: Collection;
@@ -93,7 +93,7 @@ export class CollectionsList extends LiteElement {
   private fetchErrorStatusCode?: number;
 
   // For fuzzy search:
-  private fuse = new Fuse([], {
+  private readonly fuse = new Fuse([], {
     keys: ["value"],
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
@@ -104,7 +104,7 @@ export class CollectionsList extends LiteElement {
   }
 
   // TODO localize
-  private numberFormatter = new Intl.NumberFormat(undefined, {
+  private readonly numberFormatter = new Intl.NumberFormat(undefined, {
     notation: "compact",
   });
 
@@ -210,13 +210,13 @@ export class CollectionsList extends LiteElement {
     `;
   }
 
-  private renderLoading = () => html`<div
+  private readonly renderLoading = () => html`<div
     class="w-full flex items-center justify-center my-24 text-3xl"
   >
     <sl-spinner></sl-spinner>
   </div>`;
 
-  private renderEmpty = () => html`
+  private readonly renderEmpty = () => html`
     <div
       class="grid grid-cols-[max-content] gap-3 justify-center justify-items-center text-center"
     >
@@ -243,9 +243,9 @@ export class CollectionsList extends LiteElement {
               variant="primary"
               @click=${() => {
                 this.dispatchEvent(
-                  <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                  new CustomEvent("select-new-dialog", {
                     detail: "collection",
-                  })
+                  }) as SelectNewDialogEvent
                 );
               }}
             >
@@ -390,7 +390,7 @@ export class CollectionsList extends LiteElement {
     `;
   }
 
-  private renderList = () => {
+  private readonly renderList = () => {
     if (this.collections?.items.length) {
       return html`
         <btrix-table
@@ -465,9 +465,9 @@ export class CollectionsList extends LiteElement {
                 variant="primary"
                 @click=${() => {
                   this.dispatchEvent(
-                    <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                    new CustomEvent("select-new-dialog", {
                       detail: "collection",
-                    })
+                    }) as SelectNewDialogEvent
                   );
                 }}
               >
@@ -486,7 +486,7 @@ export class CollectionsList extends LiteElement {
     `;
   };
 
-  private renderItem = (col: Collection) =>
+  private readonly renderItem = (col: Collection) =>
     html`
       <btrix-table-row
         class="border rounded cursor-pointer select-none transition-all shadow hover:shadow-none hover:bg-neutral-50 focus-within:bg-neutral-50"
@@ -553,7 +553,7 @@ export class CollectionsList extends LiteElement {
       </btrix-table-row>
     `;
 
-  private renderActions = (col: Collection) => {
+  private readonly renderActions = (col: Collection) => {
     const authToken = this.authState!.headers.Authorization.split(" ")[1];
 
     return html`
@@ -627,7 +627,7 @@ export class CollectionsList extends LiteElement {
     `;
   };
 
-  private renderFetchError = () => html`
+  private readonly renderFetchError = () => html`
     <div>
       <btrix-alert variant="danger">
         ${msg(`Something unexpected went wrong while retrieving Collections.`)}
@@ -635,7 +635,7 @@ export class CollectionsList extends LiteElement {
     </div>
   `;
 
-  private onSearchInput = debounce(150)((e: any) => {
+  private readonly onSearchInput = debounce(150)((e: any) => {
     this.searchByValue = e.target.value.trim();
 
     if (this.searchResultsOpen === false && this.hasSearchStr) {
@@ -670,7 +670,7 @@ export class CollectionsList extends LiteElement {
     ).href;
   }
 
-  private manageCollection = async (
+  private readonly manageCollection = async (
     collection: Collection,
     dialogName: CollectionsList["openDialogName"]
   ) => {

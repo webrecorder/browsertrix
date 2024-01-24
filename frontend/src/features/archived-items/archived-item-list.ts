@@ -1,4 +1,4 @@
-import { html, css, nothing, type TemplateResult } from "lit";
+import { html, css, type TemplateResult } from "lit";
 import {
   customElement,
   property,
@@ -91,8 +91,8 @@ export class ArchivedItemListItem extends TailwindElement {
                           detail: {
                             checked: (e.currentTarget as SlCheckbox).checked,
                           },
-                        }
-                      )
+                        },
+                      ),
                     );
                   }}
                 ></sl-checkbox>
@@ -109,17 +109,17 @@ export class ArchivedItemListItem extends TailwindElement {
                 ${rowName}
               </a>`
             : this.checkbox
-            ? html`<label
-                for=${checkboxId}
-                @click=${() => {
-                  // We need to simulate click anyway, since external label click
-                  // won't work with the shoelace checkbox
-                  this.checkboxEl?.click();
-                }}
-              >
-                ${rowName}
-              </label>`
-            : html`<div>${rowName}</div>`}
+              ? html`<label
+                  for=${checkboxId}
+                  @click=${() => {
+                    // We need to simulate click anyway, since external label click
+                    // won't work with the shoelace checkbox
+                    this.checkboxEl?.click();
+                  }}
+                >
+                  ${rowName}
+                </label>`
+              : html`<div>${rowName}</div>`}
         </btrix-table-cell>
         <btrix-table-cell>
           <sl-format-date
@@ -191,7 +191,7 @@ export class ArchivedItemList extends TailwindElement {
   `;
 
   @queryAssignedElements({ selector: "btrix-archived-item-list-item" })
-  items!: Array<ArchivedItemListItem>;
+  items!: ArchivedItemListItem[];
 
   @state()
   private hasCheckboxCell = false;

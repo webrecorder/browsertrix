@@ -7,9 +7,10 @@ import { createWysimark } from "@wysimark/standalone";
 
 import { getHelpText } from "@/utils/form";
 
-export type MarkdownChangeEvent = CustomEvent<{
+type MarkdownChangeDetail = {
   value: string;
-}>;
+};
+export type MarkdownChangeEvent = CustomEvent<MarkdownChangeDetail>;
 
 /**
  * Edit and preview text in markdown
@@ -111,14 +112,14 @@ export class MarkdownEditor extends LitElement {
       minHeight: "12rem",
       onChange: async () => {
         const value = editor.getMarkdown();
-        const input = this.querySelector(
+        const input = this.querySelector<HTMLTextAreaElement>(
           `input[name=${this.name}]`
-        ) as HTMLTextAreaElement;
-        input.value = value;
+        );
+        input!.value = value;
         this.value = value;
         await this.updateComplete;
         this.dispatchEvent(
-          <MarkdownChangeEvent>new CustomEvent("on-change", {
+          new CustomEvent<MarkdownChangeDetail>("on-change", {
             detail: {
               value: value,
             },

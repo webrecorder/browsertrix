@@ -16,7 +16,7 @@ export class LocalePicker extends LitElement {
   @state()
   private localeNames: LocaleNames = {} as LocaleNames;
 
-  private setLocaleName = (locale: LocaleCode) => {
+  private readonly setLocaleName = (locale: LocaleCode) => {
     this.localeNames[locale] = new Intl.DisplayNames([locale], {
       type: "language",
     }).of(locale)!;

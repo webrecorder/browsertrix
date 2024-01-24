@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "lit";
+import { LitElement, html, css, type CSSResultGroup } from "lit";
 import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import type {
@@ -13,12 +13,14 @@ import debounce from "lodash/fp/debounce";
 import { dropdown } from "@/utils/css";
 
 export type Tags = string[];
-export type TagsChangeEvent = CustomEvent<{
+type TagsChangeEventDetail = {
   tags: string[];
-}>;
-export type TagInputEvent = CustomEvent<{
+};
+export type TagsChangeEvent = CustomEvent<TagsChangeEventDetail>;
+type TagInputEventDetail = {
   value: string;
-}>;
+};
+export type TagInputEvent = CustomEvent<TagInputEventDetail>;
 
 /**
  * Usage:
@@ -101,7 +103,7 @@ export class TagInput extends LitElement {
         }
       }
     `,
-  ] as any;
+  ] as CSSResultGroup;
 
   @property({ type: Array })
   initialTags?: Tags;
@@ -126,19 +128,19 @@ export class TagInput extends LitElement {
   private dropdownIsOpen?: boolean;
 
   @query(".form-control")
-  private formControl!: HTMLElement;
+  private readonly formControl!: HTMLElement;
 
   @query("#input")
-  private input!: HTMLInputElement;
+  private readonly input!: HTMLInputElement;
 
   @query("#dropdown")
-  private dropdown!: HTMLDivElement;
+  private readonly dropdown!: HTMLDivElement;
 
   @query("sl-menu")
-  private menu!: SlMenu;
+  private readonly menu!: SlMenu;
 
   @query("sl-popup")
-  private combobox!: SlPopup;
+  private readonly combobox!: SlPopup;
 
   connectedCallback() {
     if (this.initialTags) {
@@ -273,7 +275,7 @@ export class TagInput extends LitElement {
     return this.tags.map(this.renderTag);
   }
 
-  private renderTag = (content: string) => {
+  private readonly renderTag = (content: string) => {
     const removeTag = (e: CustomEvent | KeyboardEvent) => {
       this.tags = this.tags.filter((v) => v !== content);
       this.dispatchChange();
@@ -346,7 +348,7 @@ export class TagInput extends LitElement {
 
   private onFocus(e: FocusEvent) {
     const input = e.target as HTMLInputElement;
-    (input.parentElement as HTMLElement).classList.add("input--focused");
+    input.parentElement!.classList.add("input--focused");
     if (input.value) {
       this.dropdownIsOpen = true;
     }
@@ -368,7 +370,7 @@ export class TagInput extends LitElement {
       }
     }
     const input = e.target as HTMLInputElement;
-    (input.parentElement as HTMLElement).classList.remove("input--focused");
+    input.parentElement!.classList.remove("input--focused");
     this.addTags([input.value]);
   }
 
@@ -417,7 +419,7 @@ export class TagInput extends LitElement {
     }
   }
 
-  private onInput = debounce(200)(async () => {
+  private readonly onInput = debounce(200)(() => {
     const input = this.input;
     this.inputValue = input.value;
     if (input.value.length) {
@@ -426,17 +428,17 @@ export class TagInput extends LitElement {
       this.dropdownIsOpen = false;
     }
     this.dispatchEvent(
-      <TagInputEvent>new CustomEvent("tag-input", {
+      new CustomEvent<TagInputEventDetail>("tag-input", {
         detail: { value: input.value },
       })
     );
-  }) as any;
+  }) as () => void;
 
   // TODO consolidate with btrix-combobox
   private onKeyup(e: KeyboardEvent) {
     const input = e.target as HTMLInputElement;
     if (e.key === "Escape") {
-      (input.parentElement as HTMLElement).classList.remove("input--focused");
+      input.parentElement!.classList.remove("input--focused");
       this.dropdownIsOpen = false;
       this.inputValue = "";
       input.value = "";
@@ -491,18 +493,15 @@ export class TagInput extends LitElement {
     }
   }
 
-  private shakeTag = (tag: string) => {
-    const tagEl = this.formControl.querySelector(
-      `btrix-tag[title="${tag}"]`
-    ) as SlTag;
-    if (!tagEl) return;
-    tagEl.classList.add("shake");
+  private readonly shakeTag = (tag: string) => {
+    const tagEl = this.formControl.querySelector(`btrix-tag[title="${tag}"]`);
+    tagEl?.classList.add("shake");
   };
 
   private async dispatchChange() {
     await this.updateComplete;
     this.dispatchEvent(
-      <TagsChangeEvent>new CustomEvent("tags-change", {
+      new CustomEvent<TagsChangeEventDetail>("tags-change", {
         detail: { tags: this.tags },
       })
     );

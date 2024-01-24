@@ -70,10 +70,11 @@ export class WorkflowsNew extends LiteElement {
   get initialWorkflow(): WorkflowParams {
     return this._initialWorkflow;
   }
-  private _initialWorkflow: WorkflowParams = defaultValue;
   set initialWorkflow(val: Partial<WorkflowParams>) {
     this._initialWorkflow = mergeDeep(this._initialWorkflow, val);
   }
+
+  private _initialWorkflow: WorkflowParams = defaultValue;
 
   private renderHeader() {
     const href = `${this.orgBasePath}/workflows/crawls`;
@@ -130,9 +131,9 @@ export class WorkflowsNew extends LiteElement {
           @reset=${async (e: Event) => {
             await (e.target as LitElement).updateComplete;
             this.dispatchEvent(
-              <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+              new CustomEvent("select-new-dialog", {
                 detail: "workflow",
-              })
+              }) as SelectNewDialogEvent
             );
           }}
         ></btrix-workflow-editor>
@@ -142,7 +143,7 @@ export class WorkflowsNew extends LiteElement {
     return html``;
   }
 
-  private renderNoAccess = () => html`
+  private readonly renderNoAccess = () => html`
     <btrix-alert variant="danger">
       ${msg(`You don't have permission to create a new Workflow.`)}
     </btrix-alert>

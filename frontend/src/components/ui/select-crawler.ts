@@ -109,7 +109,7 @@ export class SelectCrawler extends LiteElement {
   private async fetchCrawlerChannels(): Promise<void> {
     try {
       const channels = await this.getCrawlerChannels();
-      this.crawlerChannels = channels as CrawlerChannel[];
+      this.crawlerChannels = channels;
 
       if (this.crawlerChannel && !this.selectedCrawler) {
         this.selectedCrawler = this.crawlerChannels.find(

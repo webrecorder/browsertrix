@@ -1,7 +1,6 @@
-import { LitElement, html, css } from "lit";
+import { html, css } from "lit";
 import {
   customElement,
-  query,
   property,
   queryAssignedElements,
 } from "lit/decorators.js";
@@ -72,7 +71,7 @@ export class Table extends LitElement {
   role = "table";
 
   @queryAssignedElements({ selector: "btrix-table-head" })
-  private head!: Array<TableHead>;
+  private readonly head!: TableHead[];
 
   render() {
     return html`<slot @slotchange=${this.onSlotChange}></slot>`;

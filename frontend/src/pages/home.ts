@@ -36,7 +36,7 @@ export class Home extends LiteElement {
   @state()
   private isSubmittingNewOrg = false;
 
-  private validateOrgNameMax = maxLengthValidator(50);
+  private readonly validateOrgNameMax = maxLengthValidator(50);
 
   connectedCallback() {
     if (this.authState) {
@@ -108,7 +108,7 @@ export class Home extends LiteElement {
           @submit=${(e: SubmitEvent) => {
             const formData = new FormData(e.target as HTMLFormElement);
             const id = formData.get("crawlId");
-            this.navTo(`/crawls/crawl/${id}`);
+            this.navTo(`/crawls/crawl/${id?.toString()}`);
           }}
         >
           <div class="flex flex-wrap items-center">
@@ -137,7 +137,7 @@ export class Home extends LiteElement {
       <div class="grid grid-cols-5 gap-8">
         <div class="col-span-5 md:col-span-3">
           <section>
-            <header class="flex items-start justify-between items-center">
+            <header class="flex justify-between items-center">
               <h2 class="text-lg font-medium mb-3 mt-2">
                 ${msg("All Organizations")}
               </h2>

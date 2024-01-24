@@ -293,13 +293,13 @@ export class CrawlConfigEditor extends LiteElement {
   private serverError?: TemplateResult | string;
 
   // For fuzzy search:
-  private fuse = new Fuse<string>([], {
+  private readonly fuse = new Fuse<string>([], {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
 
-  private validateNameMax = maxLengthValidator(50);
-  private validateDescriptionMax = maxLengthValidator(350);
+  private readonly validateNameMax = maxLengthValidator(50);
+  private readonly validateDescriptionMax = maxLengthValidator(350);
 
   private get formHasError() {
     return (
@@ -416,22 +416,22 @@ export class CrawlConfigEditor extends LiteElement {
         this.scrollToPanelTop();
 
         // Focus on first field in section
-        (
-          (await this.activeTabPanel)?.querySelector(
+        (await this.activeTabPanel)
+          ?.querySelector<HTMLElement>(
             "sl-input, sl-textarea, sl-select, sl-radio-group"
-          ) as HTMLElement
-        )?.focus();
+          )
+          ?.focus();
       }
     }
   }
 
   async firstUpdated() {
     // Focus on first field in section
-    (
-      (await this.activeTabPanel)?.querySelector(
+    (await this.activeTabPanel)
+      ?.querySelector<HTMLElement>(
         "sl-input, sl-textarea, sl-select, sl-radio-group"
-      ) as HTMLElement
-    )?.focus();
+      )
+      ?.focus();
 
     this.fetchTags();
   }
@@ -531,12 +531,12 @@ export class CrawlConfigEditor extends LiteElement {
       formState.autoAddCollections = this.initialWorkflow.autoAddCollections;
     }
 
-    const secondsToMinutes = (value: any, fallback: number = 0) => {
+    const secondsToMinutes = (value: any, fallback = 0) => {
       if (typeof value === "number" && value > 0) return value / 60;
       return fallback;
     };
 
-    const bytesToGB = (value: any, fallback: number = 0) => {
+    const bytesToGB = (value: any, fallback = 0) => {
       if (typeof value === "number" && value > 0)
         return Math.floor(value / BYTES_PER_GB);
       return fallback;
@@ -926,7 +926,7 @@ export class CrawlConfigEditor extends LiteElement {
     `;
   }
 
-  private renderFormCol = (content: TemplateResult) => {
+  private readonly renderFormCol = (content: TemplateResult) => {
     return html`<div class="col-span-5 md:col-span-3">${content}</div> `;
   };
 
@@ -941,7 +941,7 @@ export class CrawlConfigEditor extends LiteElement {
     `;
   }
 
-  private renderUrlListSetup = (isCustom = false) => {
+  private readonly renderUrlListSetup = (isCustom = false) => {
     return html`
       ${this.renderFormCol(html`
         <sl-textarea
@@ -1089,7 +1089,7 @@ https://example.com/path`}
     `;
   };
 
-  private renderSeededCrawlSetup = () => {
+  private readonly renderSeededCrawlSetup = () => {
     const urlPlaceholder = "https://example.com/path/page.html";
     let exampleUrl = new URL(urlPlaceholder);
     if (this.formState.primarySeedUrl) {
@@ -1734,7 +1734,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   }
 
-  private renderScheduleCron = () => {
+  private readonly renderScheduleCron = () => {
     const utcSchedule = this.utcSchedule;
     return html`
       ${this.renderSectionHeading(msg("Set Schedule"))}
@@ -1938,7 +1938,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   }
 
-  private renderConfirmSettings = () => {
+  private readonly renderConfirmSettings = () => {
     const errorAlert = when(this.formHasError, () => {
       const crawlSetupUrl = `${window.location.href.split("#")[0]}#crawlSetup`;
       const errorMessage = this.hasRequiredFields()
@@ -1990,7 +1990,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async scrollToPanelTop() {
-    const activeTabPanel = (await this.activeTabPanel) as HTMLElement;
+    const activeTabPanel = (await this.activeTabPanel)!;
     if (activeTabPanel && activeTabPanel.getBoundingClientRect().top < 0) {
       activeTabPanel.scrollIntoView({
         behavior: "smooth",
@@ -2063,7 +2063,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     );
   }
 
-  private validateOnBlur = async (e: Event) => {
+  private readonly validateOnBlur = async (e: Event) => {
     const el = e.target as SlInput | SlTextarea | SlSelect | SlCheckbox;
     const tagName = el.tagName.toLowerCase();
     if (
@@ -2145,7 +2145,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     });
   }
 
-  private tabClickHandler = (step: StepName) => (e: MouseEvent) => {
+  private readonly tabClickHandler = (step: StepName) => (e: MouseEvent) => {
     const tab = e.currentTarget as Tab;
     if (tab.disabled || tab.active) {
       e.preventDefault();
@@ -2182,7 +2182,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   }
 
-  private checkCurrentPanelValidity = (): boolean => {
+  private readonly checkCurrentPanelValidity = (): boolean => {
     if (!this.formElem) return false;
 
     const currentTab = this.progressState.activeTab as StepName;
@@ -2370,7 +2370,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return { isValid, helpText };
   }
 
-  private onTagInput = (e: TagInputEvent) => {
+  private readonly onTagInput = (e: TagInputEvent) => {
     const { value } = e.detail;
     if (!value) return;
     this.tagOptions = this.fuse.search(value).map(({ item }) => item);

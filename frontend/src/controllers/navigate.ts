@@ -17,7 +17,7 @@ const NAVIGATE_EVENT_NAME: keyof NavigateEventMap = "btrix-navigate";
  * Manage app navigation
  */
 export class NavigateController implements ReactiveController {
-  private host: ReactiveControllerHost & EventTarget;
+  private readonly host: ReactiveControllerHost & EventTarget;
 
   get orgBasePath() {
     const slug = appState.orgSlug;

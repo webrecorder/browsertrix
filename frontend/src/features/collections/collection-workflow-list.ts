@@ -1,12 +1,5 @@
-import {
-  type TemplateResult,
-  type PropertyValues,
-  LitElement,
-  html,
-  css,
-} from "lit";
+import { type TemplateResult, type PropertyValues, html, css } from "lit";
 import { customElement, property, queryAll } from "lit/decorators.js";
-import { classMap } from "lit/directives/class-map.js";
 import { until } from "lit/directives/until.js";
 import { repeat } from "lit/directives/repeat.js";
 import { msg, localized, str } from "@lit/localize";
@@ -20,7 +13,7 @@ import type {
   APISortQuery,
 } from "@/types/api";
 import { APIController } from "@/controllers/api";
-import type { Workflow, ArchivedItem, Crawl } from "@/types/crawler";
+import type { Workflow, Crawl } from "@/types/crawler";
 import { type AuthState } from "@/utils/AuthService";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { finishedCrawlStates } from "@/utils/crawler";
@@ -145,12 +138,14 @@ export class CollectionWorkflowList extends TailwindElement {
   selection: { [itemID: string]: boolean } = {};
 
   @queryAll(".crawl")
-  private crawlItems?: NodeListOf<SlTreeItem>;
+  private readonly crawlItems?: NodeListOf<SlTreeItem>;
 
-  private crawlsMap: Map</* workflow ID: */ string, Promise<Crawl[]>> =
-    new Map();
+  private readonly crawlsMap = new Map<
+    /* workflow ID: */ string,
+    Promise<Crawl[]>
+  >();
 
-  private api = new APIController(this);
+  private readonly api = new APIController(this);
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("workflows") && this.workflows) {
@@ -185,7 +180,7 @@ export class CollectionWorkflowList extends TailwindElement {
     </sl-tree>`;
   }
 
-  private renderWorkflow = (workflow: Workflow) => {
+  private readonly renderWorkflow = (workflow: Workflow) => {
     const crawlsAsync = this.crawlsMap.get(workflow.id) || Promise.resolve([]);
     const countAsync = crawlsAsync?.then((crawls) => ({
       total: crawls.length,
@@ -280,7 +275,7 @@ export class CollectionWorkflowList extends TailwindElement {
     `;
   };
 
-  private renderCrawl = (crawl: Crawl) => {
+  private readonly renderCrawl = (crawl: Crawl) => {
     const pageCount = +(crawl.stats?.done || 0);
     return html`
       <sl-tree-item

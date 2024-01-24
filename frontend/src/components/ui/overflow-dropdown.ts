@@ -43,7 +43,7 @@ export class OverflowDropdown extends LitElement {
   private dropdown?: SlDropdown;
 
   @queryAssignedElements({ selector: "sl-menu", flatten: true })
-  private menu!: Array<SlMenu>;
+  private readonly menu!: SlMenu[];
 
   render() {
     return html`

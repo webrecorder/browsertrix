@@ -89,9 +89,7 @@ export class SelectBrowserProfile extends LiteElement {
           : ""}
       </sl-select>
 
-      ${this.browserProfiles && this.browserProfiles.length
-        ? this.renderSelectedProfileInfo()
-        : ""}
+      ${this.browserProfiles?.length ? this.renderSelectedProfileInfo() : ""}
     `;
   }
 

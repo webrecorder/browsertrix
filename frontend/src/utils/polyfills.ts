@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // cSpell:disable
 /**
  * Object.entriesFrom() polyfill
@@ -7,7 +6,7 @@
  */
 if (!Object.fromEntries) {
   Object.fromEntries = function (entries: any) {
-    if (!entries || !entries[Symbol.iterator]) {
+    if (!entries?.[Symbol.iterator]) {
       throw new Error(
         "Object.fromEntries() requires a single iterable argument"
       );
