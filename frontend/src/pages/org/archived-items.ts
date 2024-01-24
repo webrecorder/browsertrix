@@ -541,30 +541,25 @@ export class CrawlsList extends LiteElement {
           <sl-divider></sl-divider>
         `
       )}
-      ${when(
-        item.type === "crawl",
-        () => html`
-          <sl-menu-item
-            @click=${() =>
-              this.navTo(
-                `${this.orgBasePath}/workflows/crawl/${(item as Crawl).cid}`
-              )}
-          >
-            <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
-            ${msg("Go to Workflow")}
-          </sl-menu-item>
-          <sl-menu-item
-            @click=${() => CopyButton.copyToClipboard((item as Crawl).cid)}
-          >
-            <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
-            ${msg("Copy Workflow ID")}
-          </sl-menu-item>
-          <sl-menu-item @click=${() => CopyButton.copyToClipboard(item.id)}>
-            <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
-            ${msg("Copy Crawl ID")}
-          </sl-menu-item>
-        `
-      )}
+      ${item.type === "crawl"
+        ? html`
+            <sl-menu-item
+              @click=${() =>
+                this.navTo(`${this.orgBasePath}/workflows/crawl/${item.cid}`)}
+            >
+              <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
+              ${msg("Go to Workflow")}
+            </sl-menu-item>
+            <sl-menu-item @click=${() => CopyButton.copyToClipboard(item.cid)}>
+              <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
+              ${msg("Copy Workflow ID")}
+            </sl-menu-item>
+            <sl-menu-item @click=${() => CopyButton.copyToClipboard(item.id)}>
+              <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
+              ${msg("Copy Crawl ID")}
+            </sl-menu-item>
+          `
+        : nothing}
       <sl-menu-item
         @click=${() => CopyButton.copyToClipboard(item.tags.join(", "))}
         ?disabled=${!item.tags.length}
