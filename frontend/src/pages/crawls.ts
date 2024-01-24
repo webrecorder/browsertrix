@@ -283,12 +283,7 @@ export class Crawls extends LiteElement {
       crawl.id
     }`;
     return html`
-      <btrix-crawl-list-item
-        class="cursor-pointer transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50"
-        role="button"
-        .crawl=${crawl}
-        @click=${() => this.navTo(crawlPath)}
-      >
+      <btrix-crawl-list-item href=${crawlPath} .crawl=${crawl}>
         <sl-menu slot="menu">
           <sl-menu-item @click=${() => this.navTo(`${crawlPath}#config`)}>
             ${msg("View Crawl Settings")}

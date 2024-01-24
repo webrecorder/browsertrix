@@ -27,15 +27,41 @@ import type { Crawl } from "@/types/crawler";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import { renderName } from "@/utils/crawler";
 import { TailwindElement } from "@/classes/TailwindElement";
+import { NavigateController } from "@/controllers/navigate";
+
+const NAME_WIDTH_CSS = css`16rem`;
 
 @localized()
 @customElement("btrix-crawl-list-item")
 export class CrawlListItem extends TailwindElement {
   static styles = css`
     :host {
-      grid-column: var(--btrix-table-grid-column);
+      display: contents;
+    }
+
+    btrix-table-row {
+      border-top: var(--btrix-border-top, 0);
+      position: relative;
+    }
+
+    btrix-table-cell {
+      white-space: nowrap;
+    }
+
+    .clickCell {
       display: grid;
       grid-template-columns: subgrid;
+    }
+
+    .clickRegion {
+      position: absolute;
+      inset: 0;
+      grid-column: 2 / -2;
+    }
+
+    .clickLabel {
+      width: ${NAME_WIDTH_CSS};
+      overflow: hidden;
     }
   `;
 
@@ -48,6 +74,9 @@ export class CrawlListItem extends TailwindElement {
   @property({ type: String })
   workflowId?: string;
 
+  @property({ type: String })
+  href?: string;
+
   @query(".row")
   row!: HTMLElement;
 
@@ -59,10 +88,67 @@ export class CrawlListItem extends TailwindElement {
     notation: "compact",
   });
 
+  private navigate = new NavigateController(this);
+
   render() {
     if (!this.crawl) return;
+    let idCell: TemplateResult;
+
+    if (this.workflowId) {
+      const label = html`
+        <btrix-table-cell class="clickLabel" role="generic">
+          ${this.safeRender(
+            (crawl) => html`
+              <sl-format-date
+                date=${`${crawl.started}Z`}
+                month="2-digit"
+                day="2-digit"
+                year="2-digit"
+                hour="2-digit"
+                minute="2-digit"
+              ></sl-format-date>
+            `
+          )}
+        </btrix-table-cell>
+      `;
+      idCell = html`
+        <btrix-table-cell class="clickCell">
+          ${this.href
+            ? html`<a
+                class="clickRegion"
+                href=${this.href}
+                @click=${this.navigate.link}
+              >
+                ${label}
+              </a>`
+            : html`<div class="clickRegion">${label}</div> `}
+        </btrix-table-cell>
+      `;
+    } else {
+      const label = html`
+        <btrix-table-cell class="clickLabel" role="generic">
+          ${this.safeRender((workflow) => renderName(workflow))}
+        </btrix-table-cell>
+      `;
+      idCell = html`
+        <btrix-table-cell class="clickCell">
+          ${this.href
+            ? html`<a
+                class="clickRegion"
+                href=${this.href}
+                @click=${this.navigate.link}
+              >
+                ${label}
+              </a>`
+            : html`<div class="clickRegion">${label}</div> `}
+        </btrix-table-cell>
+      `;
+    }
     return html`
       <btrix-table-row
+        class=${this.href
+          ? "cursor-pointer select-none transition-colors hover:bg-neutral-50 focus-within:bg-neutral-50"
+          : ""}
         @click=${async (e: MouseEvent) => {
           if (e.target === this.dropdownMenu) {
             return;
@@ -80,31 +166,25 @@ export class CrawlListItem extends TailwindElement {
             `
           )}
         </btrix-table-cell>
+        ${idCell}
         ${this.workflowId
           ? nothing
           : html`
               <btrix-table-cell>
-                <div class="max-w-sm truncate">
-                  ${this.safeRender((workflow) => renderName(workflow))}
-                </div>
+                ${this.safeRender(
+                  (crawl) => html`
+                    <sl-format-date
+                      date=${`${crawl.started}Z`}
+                      month="2-digit"
+                      day="2-digit"
+                      year="2-digit"
+                      hour="2-digit"
+                      minute="2-digit"
+                    ></sl-format-date>
+                  `
+                )}
               </btrix-table-cell>
             `}
-
-        <btrix-table-cell>
-          ${this.safeRender(
-            (crawl) =>
-              html`
-                <sl-format-date
-                  date=${`${crawl.started}Z`}
-                  month="2-digit"
-                  day="2-digit"
-                  year="2-digit"
-                  hour="2-digit"
-                  minute="2-digit"
-                ></sl-format-date>
-              `
-          )}
-        </btrix-table-cell>
         <btrix-table-cell>
           ${this.safeRender((crawl) =>
             crawl.finished
@@ -207,8 +287,10 @@ export class CrawlList extends TailwindElement {
       --btrix-cell-padding-bottom: var(--sl-spacing-2x-small);
       --btrix-cell-padding-left: var(--sl-spacing-small);
       --btrix-cell-padding-right: var(--sl-spacing-small);
-      --btrix-table-grid-auto-columns: min-content auto auto auto auto auto auto
-        min-content;
+    }
+
+    btrix-table-body ::slotted(*:nth-of-type(n + 2)) {
+      --btrix-border-top: 1px solid var(--sl-panel-border-color);
     }
   `;
 
@@ -222,40 +304,51 @@ export class CrawlList extends TailwindElement {
   listItems!: Array<HTMLElement>;
 
   render() {
-    return html` <div class="overflow-auto">
-      <btrix-table>
-        <btrix-table-head class="mb-2">
-          <btrix-table-header-cell class="pr-0">
-            <span class="sr-only">${msg("Status")}</span>
-          </btrix-table-header-cell>
-          ${this.workflowId
-            ? nothing
-            : html`
-                <btrix-table-header-cell>
-                  ${msg("Name")}
-                </btrix-table-header-cell>
-              `}
-          <btrix-table-header-cell> ${msg("Started")} </btrix-table-header-cell>
-          <btrix-table-header-cell>
-            ${msg("Finished")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell>${msg("Duration")}</btrix-table-header-cell>
-          <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
-          <btrix-table-header-cell
-            >${msg("Pages Crawled")}</btrix-table-header-cell
-          >
-          <btrix-table-header-cell>
-            ${msg("Created By")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell class="pl-1 pr-1">
-            <span class="sr-only">${msg("Row actions")}</span>
-          </btrix-table-header-cell>
-        </btrix-table-head>
-        <btrix-table-body class="border rounded overflow-hidden">
-          <slot @slotchange=${this.handleSlotchange}></slot>
-        </btrix-table-body>
-      </btrix-table>
-    </div>`;
+    return html` <style>
+        btrix-table {
+          --btrix-table-grid-auto-columns: min-content
+            ${this.workflowId ? "" : `${NAME_WIDTH_CSS} `}${NAME_WIDTH_CSS} auto
+            auto auto auto auto min-content;
+        }
+      </style>
+      <div class="overflow-auto">
+        <btrix-table>
+          <btrix-table-head class="mb-2">
+            <btrix-table-header-cell class="pr-0">
+              <span class="sr-only">${msg("Status")}</span>
+            </btrix-table-header-cell>
+            ${this.workflowId
+              ? nothing
+              : html`
+                  <btrix-table-header-cell>
+                    ${msg("Name")}
+                  </btrix-table-header-cell>
+                `}
+            <btrix-table-header-cell>
+              ${msg("Started")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg("Finished")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell
+              >${msg("Duration")}</btrix-table-header-cell
+            >
+            <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
+            <btrix-table-header-cell
+              >${msg("Pages Crawled")}</btrix-table-header-cell
+            >
+            <btrix-table-header-cell>
+              ${msg("Created By")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell class="pl-1 pr-1">
+              <span class="sr-only">${msg("Row actions")}</span>
+            </btrix-table-header-cell>
+          </btrix-table-head>
+          <btrix-table-body class="border rounded overflow-hidden">
+            <slot @slotchange=${this.handleSlotchange}></slot>
+          </btrix-table-body>
+        </btrix-table>
+      </div>`;
   }
 
   private handleSlotchange() {
@@ -274,12 +367,6 @@ export class CrawlList extends TailwindElement {
         value: this.collectionId || "",
       });
       assignProp(item, { name: "workflowId", value: this.workflowId || "" });
-
-      if (i === 0) {
-        item.classList.remove("border-t");
-      } else {
-        item.classList.add("border-t");
-      }
     });
   }
 }

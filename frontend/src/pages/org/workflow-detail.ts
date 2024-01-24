@@ -862,7 +862,10 @@ export class WorkflowDetail extends LiteElement {
             this.crawls,
             () =>
               this.crawls!.items.map(
-                (crawl: Crawl) => html` <btrix-crawl-list-item .crawl=${crawl}>
+                (crawl: Crawl) => html` <btrix-crawl-list-item
+                  href=${`/orgs/${this.appState.orgSlug}/items/crawl/${crawl.id}?workflowId=${this.workflowId}`}
+                  .crawl=${crawl}
+                >
                   ${when(
                     this.isCrawler,
                     () => html` <sl-menu slot="menu">

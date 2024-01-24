@@ -32,7 +32,7 @@ export function isActive(state: CrawlState) {
 }
 
 export function renderName(item: ArchivedItem | Workflow) {
-  if (item.name) return html`<span>${item.name}</span>`;
+  if (item.name) return html`<span class="truncate">${item.name}</span>`;
   if (item.firstSeed && item.seedCount) {
     const remainder = item.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
@@ -55,5 +55,7 @@ export function renderName(item: ArchivedItem | Workflow) {
     `;
   }
 
-  return html`<span class="text-neutral-500">${msg("(unnamed item)")}</span>`;
+  return html`<span class="truncate text-neutral-500"
+    >${msg("(unnamed item)")}</span
+  >`;
 }

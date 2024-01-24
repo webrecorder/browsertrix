@@ -43,7 +43,7 @@ export class ArchivedItemListItem extends TailwindElement {
       overflow: hidden;
     }
 
-    .clickRegionCell {
+    .clickCell {
       display: grid;
       grid-template-columns: subgrid;
     }
@@ -54,7 +54,7 @@ export class ArchivedItemListItem extends TailwindElement {
       grid-column: var(--btrix-click-cell-grid-column);
     }
 
-    .name {
+    .clickLabel {
       width: ${NAME_WIDTH_CSS};
     }
   `;
@@ -83,7 +83,7 @@ export class ArchivedItemListItem extends TailwindElement {
     if (!this.item) return;
     const checkboxId = `${this.item.id}-checkbox`;
     const rowName = html`
-      <btrix-table-cell class="name" role="generic">
+      <btrix-table-cell class="clickLabel" role="generic">
         <slot name="namePrefix"></slot>
         ${renderName(this.item)}
       </btrix-table-cell>
@@ -96,7 +96,7 @@ export class ArchivedItemListItem extends TailwindElement {
       >
         ${this.checkbox
           ? html`
-              <btrix-table-cell>
+              <btrix-table-cell class="pr-0">
                 <sl-checkbox
                   id=${checkboxId}
                   class="flex"
@@ -117,7 +117,7 @@ export class ArchivedItemListItem extends TailwindElement {
               </btrix-table-cell>
             `
           : nothing}
-        <btrix-table-cell class="clickRegionCell">
+        <btrix-table-cell class="clickCell">
           ${this.href
             ? html`<a
                 class="clickRegion"
