@@ -14,7 +14,7 @@ import { needLogin } from "@/utils/auth";
 import "./workflow-detail";
 import "./workflows-list";
 import "./workflows-new";
-import "./crawl-detail";
+import "./archived-item-detail";
 import "./archived-items";
 import "./collections-list";
 import "./collection-detail";
@@ -500,7 +500,7 @@ export class Org extends LiteElement {
 
   private renderArchive() {
     if (this.params.itemId) {
-      return html` <btrix-crawl-detail
+      return html` <btrix-archived-item-detail
         .authState=${this.authState!}
         orgId=${this.orgId}
         crawlId=${this.params.itemId}
@@ -508,7 +508,7 @@ export class Org extends LiteElement {
         workflowId=${this.params.workflowId || ""}
         itemType=${this.params.itemType || "crawl"}
         ?isCrawler=${this.isCrawler}
-      ></btrix-crawl-detail>`;
+      ></btrix-archived-item-detail>`;
     }
 
     return html`<btrix-archived-items
