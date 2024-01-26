@@ -17,6 +17,7 @@ from fastapi import (
     Depends,
     WebSocket,
     APIRouter,
+    Header,
 )
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -227,6 +228,33 @@ def init_jwt_auth(user_manager):
         # successfully logged in, reset failed logins, return user
         await user_manager.reset_failed_logins(login_email)
         return get_bearer_response(user)
+    
+    @auth_jwt_router.post("/login_header", response_model=BearerResponse)
+    async def login_header(
+        x_remote_user: str | None = Header(default=None),
+        x_remote_email: str | None = Header(default=None),
+        x_remote_groups: str | None = Header(default=None)
+    ) -> BearerResponse:
+
+        login_email = x_remote_email
+        login_name = x_remote_user
+
+        user = await user_manager.get_by_email(login_email)
+        if user:
+            # User exist, login immediately
+            return get_bearer_response(user)
+        else:
+            # Create verified user
+            await user_manager.create_non_super_user(login_email, None, login_name)
+            user = await user_manager.get_by_email(login_email)
+            if user:
+                # User exist, login immediately
+                return get_bearer_response(user)
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail="user_creation_failed",
+                )
 
     @auth_jwt_router.post("/refresh", response_model=BearerResponse)
     async def refresh_jwt(user=Depends(current_active_user)):

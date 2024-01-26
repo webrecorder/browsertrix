@@ -158,6 +158,35 @@ export default class AuthService {
     };
   }
 
+  static async login_header({}: {
+  }): Promise<Auth> {
+    const resp = await fetch("/api/auth/jwt/login_header", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        }).toString(),
+    });
+
+    if (resp.status !== 200) {
+      throw new APIError({
+        message: resp.statusText,
+        status: resp.status,
+      });
+    }
+
+    const data = await resp.json();
+    const token = AuthService.decodeToken(data.access_token);
+    const authHeaders = AuthService.parseAuthHeaders(data);
+
+    return {
+      username: "test_user",
+      headers: authHeaders,
+      tokenExpiresAt: token.exp * 1000,
+    };
+  }
+
   /**
    * Decode JSON web token returned as access token
    */

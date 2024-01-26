@@ -218,7 +218,9 @@ export class LogInPage extends LiteElement {
         ${successMessage}
 
         <main class="md:bg-white md:border md:shadow-lg md:rounded-lg p-10">
+          <div>${this.renderFormError()}</div>
           <div>${form}</div>
+          <div style="margin-top: 20px">${this.renderLoginHeaderButton()}</div>
         </main>
         <footer class="text-center">${link}</footer>
       </article>
@@ -235,7 +237,7 @@ export class LogInPage extends LiteElement {
     }
   }
 
-  private renderLoginForm() {
+  private renderFormError() {
     let formError;
 
     if (this.formState.context.serverError) {
@@ -247,6 +249,11 @@ export class LogInPage extends LiteElement {
         </div>
       `;
     }
+
+    return formError
+  }
+
+  private renderLoginForm() {
 
     return html`
       <form @submit=${this.onSubmitLogIn} aria-describedby="formError">
@@ -274,8 +281,6 @@ export class LogInPage extends LiteElement {
           </btrix-input>
         </div>
 
-        ${formError}
-
         <sl-button
           class="w-full"
           variant="primary"
@@ -293,6 +298,22 @@ export class LogInPage extends LiteElement {
               >
             </div>`
           : ""}
+      </form>
+    `;
+  }
+
+  private renderLoginHeaderButton() {
+
+    return html`
+      <form @submit=${this.onSubmitLogInHeader} aria-describedby="formError">
+        <sl-button
+          class="w-full"
+          variant="primary"
+          ?loading=${this.formState.value === "signingIn"}
+          ?disabled=${this.formState.value === "backendInitializing"}
+          type="submit"
+          >${msg("Log In with Single Sign On")}</sl-button
+        >
       </form>
     `;
   }
@@ -378,6 +399,42 @@ export class LogInPage extends LiteElement {
             "Sorry, too many failed login attempts. A reset password link has been sent to your email."
           );
         }
+        this.formStateService.send({
+          type: "ERROR",
+          detail: {
+            serverError: message,
+          },
+        });
+      } else {
+        this.formStateService.send({
+          type: "ERROR",
+          detail: {
+            serverError: msg("Something went wrong, couldn't sign you in"),
+          },
+        });
+      }
+    }
+  }
+
+  async onSubmitLogInHeader(event: SubmitEvent) {
+    event.preventDefault();
+    this.formStateService.send("SUBMIT");
+
+    try {
+      const data = await AuthService.login_header({});
+
+      this.dispatchEvent(
+        AuthService.createLoggedInEvent({
+          ...data,
+          redirectUrl: this.redirectUrl,
+        })
+      );
+
+      // no state update here, since "btrix-logged-in" event
+      // will result in a route change
+    } catch (e: any) {
+      if (e.isApiError) {
+        let message = msg("Sorry, an error occurred while attempting Single Sign On");
         this.formStateService.send({
           type: "ERROR",
           detail: {
