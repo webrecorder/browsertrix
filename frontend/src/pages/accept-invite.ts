@@ -4,6 +4,7 @@ import { msg, str, localized } from "@lit/localize";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { AuthState } from "@/utils/AuthService";
 import { ROUTES } from "@/routes";
+import { isApiError } from "@/utils/api";
 
 type InviteInfo = {
   inviterEmail: string;
@@ -49,7 +50,7 @@ export class AcceptInvite extends LiteElement {
 
   firstUpdated() {
     if (this.isLoggedIn) {
-      this.getInviteInfo();
+      void this.getInviteInfo();
     } else {
       this.notify({
         message: msg("Log in to continue."),
@@ -162,8 +163,8 @@ export class AcceptInvite extends LiteElement {
       });
 
       this.navTo(ROUTES.home);
-    } catch (err: any) {
-      if (err.isApiError && err.message === "Invalid Invite Code") {
+    } catch (err) {
+      if (isApiError(err) && err.message === "Invalid Invite Code") {
         this.serverError = msg("This invitation is not valid");
       } else {
         this.serverError = msg("Something unexpected went wrong");

@@ -68,7 +68,7 @@ export class LocalePicker extends LitElement {
       const url = new URL(window.location.href);
       url.searchParams.set("locale", newLocale);
       window.history.pushState(null, "", url.toString());
-      setLocaleFromUrl();
+      void setLocaleFromUrl();
     }
   }
 }

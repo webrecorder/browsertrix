@@ -1,6 +1,6 @@
 // cSpell:words wysimark
 
-import { LitElement, html } from "lit";
+import { LitElement, type PropertyValues, html } from "lit";
 import { state, property, customElement } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
 import { createWysimark } from "@wysimark/standalone";
@@ -36,7 +36,7 @@ export class MarkdownEditor extends LitElement {
     return this;
   }
 
-  protected updated(changedProperties: Map<string, any>) {
+  protected updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("initialValue") && this.initialValue) {
       this.value = this.initialValue;
       this.initEditor();

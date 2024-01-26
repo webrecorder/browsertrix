@@ -60,7 +60,7 @@ export class CrawlMetadataEditor extends LiteElement {
   private collectionsToSave: string[] = [];
 
   // For fuzzy search:
-  private readonly fuse = new Fuse([], {
+  private readonly fuse = new Fuse<string>([], {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
@@ -69,7 +69,7 @@ export class CrawlMetadataEditor extends LiteElement {
 
   willUpdate(changedProperties: Map<string, never>) {
     if (changedProperties.has("open") && this.open) {
-      this.fetchTags();
+      void this.fetchTags();
     }
     if (changedProperties.has("crawl") && this.crawl) {
       this.includeName = this.crawl.type === "upload";
@@ -171,7 +171,7 @@ export class CrawlMetadataEditor extends LiteElement {
   private async fetchTags() {
     if (!this.crawl) return;
     try {
-      const tags = await this.apiFetch<any>(
+      const tags = await this.apiFetch<string[]>(
         `/orgs/${this.crawl.oid}/crawlconfigs/tags`,
         this.authState!
       );

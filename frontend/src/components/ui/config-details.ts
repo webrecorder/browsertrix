@@ -14,6 +14,7 @@ import { RelativeDuration } from "./relative-duration";
 import { nothing } from "lit";
 
 import capitalize from "lodash/fp/capitalize";
+import { isApiError } from "@/utils/api";
 
 /**
  * Usage:
@@ -68,7 +69,7 @@ export class ConfigDetails extends LiteElement {
 
   async connectedCallback() {
     super.connectedCallback();
-    this.fetchAPIDefaults();
+    void this.fetchAPIDefaults();
     await this.fetchCollections();
   }
 
@@ -460,10 +461,10 @@ export class ConfigDetails extends LiteElement {
     if (this.crawlConfig?.autoAddCollections) {
       try {
         await this.getCollections();
-      } catch (e: any) {
+      } catch (e) {
         this.notify({
           message:
-            e.statusCode === 404
+            isApiError(e) && e.statusCode === 404
               ? msg("Collections not found.")
               : msg(
                   "Sorry, couldn't retrieve Collection details at this time."
@@ -520,7 +521,7 @@ export class ConfigDetails extends LiteElement {
         orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
       }
       this.orgDefaults = orgDefaults;
-    } catch (e: any) {
+    } catch (e) {
       console.debug(e);
     }
   }

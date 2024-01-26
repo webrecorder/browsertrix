@@ -1,4 +1,4 @@
-import type { LitElement, TemplateResult } from "lit";
+import type { LitElement, PropertyValues, TemplateResult } from "lit";
 import type {
   SlChangeEvent,
   SlCheckbox,
@@ -57,6 +57,12 @@ import type {
   CrawlConfig,
 } from "./types";
 import type { LanguageCode } from "iso-639-1";
+import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
+import {
+  type SelectCrawlerChangeEvent,
+  type SelectCrawlerUpdateEvent,
+} from "@/components/ui/select-crawler";
+import { type Detail, isApiError } from "@/utils/api";
 
 type NewCrawlConfigParams = WorkflowParams & {
   runNow: boolean;
@@ -129,7 +135,7 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   if (window.location.hash) {
     const hashValue = window.location.hash.slice(1);
 
-    if (STEPS.includes(hashValue as any)) {
+    if (STEPS.includes(hashValue as (typeof STEPS)[number])) {
       activeTab = hashValue as StepName;
     }
   }
@@ -363,7 +369,7 @@ export class CrawlConfigEditor extends LiteElement {
 
     window.addEventListener("hashchange", () => {
       const hashValue = window.location.hash.slice(1);
-      if (STEPS.includes(hashValue as any)) {
+      if (STEPS.includes(hashValue as (typeof STEPS)[number])) {
         this.updateProgressState({
           activeTab: hashValue as StepName,
         });
@@ -371,7 +377,9 @@ export class CrawlConfigEditor extends LiteElement {
     });
   }
 
-  async willUpdate(changedProperties: Map<string, any>) {
+  async willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>
+  ) {
     if (changedProperties.has("jobType") && this.jobType) {
       this.initializeEditor();
     }
@@ -386,7 +394,8 @@ export class CrawlConfigEditor extends LiteElement {
     }
     if (changedProperties.get("progressState") && this.progressState) {
       if (
-        changedProperties.get("progressState").activeTab === "crawlSetup" &&
+        (changedProperties.get("progressState") as ProgressState).activeTab ===
+          "crawlSetup" &&
         this.progressState.activeTab !== "crawlSetup"
       ) {
         // Show that required tab has error even if input hasn't been touched
@@ -407,13 +416,15 @@ export class CrawlConfigEditor extends LiteElement {
     }
   }
 
-  async updated(changedProperties: Map<string, any>) {
+  async updated(
+    changedProperties: PropertyValues<this> & Map<string, unknown>
+  ) {
     if (changedProperties.get("progressState") && this.progressState) {
       if (
-        changedProperties.get("progressState").activeTab !==
+        (changedProperties.get("progressState") as ProgressState).activeTab !==
         this.progressState.activeTab
       ) {
-        this.scrollToPanelTop();
+        void this.scrollToPanelTop();
 
         // Focus on first field in section
         (await this.activeTabPanel)
@@ -433,7 +444,7 @@ export class CrawlConfigEditor extends LiteElement {
       )
       ?.focus();
 
-    this.fetchTags();
+    void this.fetchTags();
   }
 
   private initializeEditor() {
@@ -531,12 +542,12 @@ export class CrawlConfigEditor extends LiteElement {
       formState.autoAddCollections = this.initialWorkflow.autoAddCollections;
     }
 
-    const secondsToMinutes = (value: any, fallback = 0) => {
+    const secondsToMinutes = (value: unknown, fallback = 0) => {
       if (typeof value === "number" && value > 0) return value / 60;
       return fallback;
     };
 
-    const bytesToGB = (value: any, fallback = 0) => {
+    const bytesToGB = (value: unknown, fallback = 0) => {
       if (typeof value === "number" && value > 0)
         return Math.floor(value / BYTES_PER_GB);
       return fallback;
@@ -1623,7 +1634,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           orgId=${this.orgId}
           .profileId=${this.formState.browserProfile?.id}
           .authState=${this.authState}
-          @on-change=${(e: any) =>
+          @on-change=${(e: SelectBrowserProfileChangeEvent) =>
             this.updateFormState({
               browserProfile: e.detail.value,
             })}
@@ -1638,11 +1649,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
           orgId=${this.orgId}
           .crawlerChannel=${this.formState.crawlerChannel}
           .authState=${this.authState}
-          @on-change=${(e: any) =>
+          @on-change=${(e: SelectCrawlerChangeEvent) =>
             this.updateFormState({
               crawlerChannel: e.detail.value,
             })}
-          @on-update=${(e: any) => (this.showCrawlerChannels = e.detail.show)}
+          @on-update=${(e: SelectCrawlerUpdateEvent) =>
+            (this.showCrawlerChannels = e.detail.show)}
         ></btrix-select-crawler>
       `)}
       ${this.showCrawlerChannels
@@ -2117,7 +2129,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       return;
     }
     const tagName = elem.tagName.toLowerCase();
-    let value: any;
+    let value: boolean | string | null | number;
     switch (tagName) {
       case "sl-checkbox":
         value = (elem as SlCheckbox).checked;
@@ -2282,8 +2294,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
             : ""
         }`
       );
-    } catch (e: any) {
-      if (e?.isApiError) {
+    } catch (e) {
+      if (isApiError(e)) {
         if (e.details === "crawl_already_running") {
           this.notify({
             title: msg("Workflow saved without starting crawl."),
@@ -2295,7 +2307,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             duration: 12000,
           });
         } else {
-          const isConfigError = ({ loc }: any) =>
+          const isConfigError = ({ loc }: Detail) =>
             loc.some((v: string) => v === "config");
           if (Array.isArray(e.details) && e.details.some(isConfigError)) {
             this.serverError = this.formatConfigServerError(e.details);
@@ -2318,12 +2330,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
   /**
    * Format `config` related API error returned from server
    */
-  private formatConfigServerError(details: any): TemplateResult {
+  private formatConfigServerError(details: Detail[]): TemplateResult {
     const detailsWithoutDictError = details.filter(
-      ({ type }: any) => type !== "type_error.dict"
+      ({ type }) => type !== "type_error.dict"
     );
 
-    const renderDetail = ({ loc, msg: detailMsg }: any) => html`
+    const renderDetail = ({ loc, msg: detailMsg }: Detail) => html`
       <li>
         ${loc.some((v: string) => v === "seeds") &&
         typeof loc[loc.length - 1] === "number"
@@ -2540,7 +2552,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
       }
       this.orgDefaults = orgDefaults;
-    } catch (e: any) {
+    } catch (e) {
       console.debug(e);
     }
   }
@@ -2557,7 +2569,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         orgDefaults.maxPagesPerCrawl = data.quotas.maxPagesPerCrawl;
       }
       this.orgDefaults = orgDefaults;
-    } catch (e: any) {
+    } catch (e) {
       console.debug(e);
     }
   }

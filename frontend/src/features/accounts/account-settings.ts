@@ -1,4 +1,4 @@
-import { LitElement } from "lit";
+import { LitElement, type PropertyValues } from "lit";
 import { state, queryAsync, property, customElement } from "lit/decorators.js";
 import { msg, str, localized } from "@lit/localize";
 import debounce from "lodash/fp/debounce";
@@ -12,6 +12,7 @@ import LiteElement, { html } from "@/utils/LiteElement";
 import { needLogin } from "@/utils/auth";
 import type { AuthState } from "@/utils/AuthService";
 import PasswordService from "@/utils/PasswordService";
+import { isApiError } from "@/utils/api";
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
@@ -31,7 +32,7 @@ export class RequestVerify extends LitElement {
   @state()
   private requestSuccess = false;
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("email")) {
       this.isRequesting = false;
       this.requestSuccess = false;
@@ -113,7 +114,9 @@ export class AccountSettings extends LiteElement {
   @queryAsync('sl-input[name="password"]')
   private readonly passwordInput?: Promise<SlInput | null>;
 
-  async updated(changedProperties: Map<string, any>) {
+  async updated(
+    changedProperties: PropertyValues<this> & Map<string, unknown>
+  ) {
     if (
       changedProperties.has("isChangingPassword") &&
       this.isChangingPassword
@@ -123,7 +126,7 @@ export class AccountSettings extends LiteElement {
   }
 
   protected firstUpdated() {
-    PasswordService.setOptions();
+    void PasswordService.setOptions();
   }
 
   render() {
@@ -238,7 +241,7 @@ export class AccountSettings extends LiteElement {
                     password-toggle
                     minlength="8"
                     required
-                    @input=${this.onPasswordInput}
+                    @input=${this.onPasswordInput as (e: InputEvent) => void}
                   ></sl-input>
 
                   ${when(this.pwStrengthResults, this.renderPasswordStrength)}
@@ -305,7 +308,7 @@ export class AccountSettings extends LiteElement {
       value,
       userInputs
     );
-  }) as any;
+  });
 
   private async onSubmitName(e: SubmitEvent) {
     if (!this.userInfo || !this.authState) return;
@@ -417,8 +420,8 @@ export class AccountSettings extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-    } catch (e: any) {
-      if (e.isApiError && e.details === "invalid_current_password") {
+    } catch (e) {
+      if (isApiError(e) && e.details === "invalid_current_password") {
         this.notify({
           message: msg("Please correct your current password and try again."),
           variant: "danger",

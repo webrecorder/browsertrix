@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "lit";
+import { LitElement, html, css, type PropertyValues } from "lit";
 import {
   state,
   property,
@@ -57,10 +57,10 @@ export class Combobox extends LitElement {
   })
   private readonly menuItems?: SlMenuItem[];
 
-  protected willUpdate(changedProperties: Map<string, any>) {
+  protected willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("open")) {
       if (this.open) {
-        this.openDropdown();
+        void this.openDropdown();
       } else {
         this.closeDropdown();
       }

@@ -19,7 +19,8 @@ import type {
 } from "./types";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isActive, finishedCrawlStates } from "@/utils/crawler";
-import { nothing } from "lit";
+import { type PropertyValues, nothing } from "lit";
+import { isApiError } from "@/utils/api";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;
 type SearchFields = "name" | "firstSeed";
@@ -79,7 +80,7 @@ export class CrawlsList extends LiteElement {
   private archivedItems?: ArchivedItems;
 
   @state()
-  private searchOptions: any[] = [];
+  private searchOptions: Record<string, string>[] = [];
 
   @state()
   private orderBy: {
@@ -94,7 +95,8 @@ export class CrawlsList extends LiteElement {
   private filterByCurrentUser = false;
 
   @state()
-  private filterBy: Partial<Record<keyof ArchivedItem, any>> = {};
+  private filterBy: Partial<Record<keyof ArchivedItem, string | CrawlState[]>> =
+    {};
 
   @state()
   private itemToEdit: ArchivedItem | null = null;
@@ -122,7 +124,7 @@ export class CrawlsList extends LiteElement {
 
   private get selectedSearchFilterKey() {
     return Object.keys(CrawlsList.FieldLabels).find((key) =>
-      Boolean((this.filterBy as any)[key]),
+      Boolean((this.filterBy as Record<string, unknown>)[key]),
     );
   }
 
@@ -133,7 +135,9 @@ export class CrawlsList extends LiteElement {
       "true";
   }
 
-  protected willUpdate(changedProperties: Map<string, any>) {
+  protected willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
     if (
       changedProperties.has("filterByCurrentUser") ||
       changedProperties.has("filterBy") ||
@@ -149,7 +153,7 @@ export class CrawlsList extends LiteElement {
         this.archivedItems = undefined;
       }
 
-      this.fetchArchivedItems({
+      void this.fetchArchivedItems({
         page: 1,
         pageSize: INITIAL_PAGE_SIZE,
       });
@@ -163,7 +167,7 @@ export class CrawlsList extends LiteElement {
     }
 
     if (changedProperties.has("itemType")) {
-      this.fetchConfigSearchValues();
+      void this.fetchConfigSearchValues();
     }
   }
 
@@ -295,7 +299,7 @@ export class CrawlsList extends LiteElement {
             @request-close=${() => (this.isUploadingArchive = false)}
             @uploaded=${() => {
               if (this.itemType !== "crawl") {
-                this.fetchArchivedItems({
+                void this.fetchArchivedItems({
                   page: 1,
                 });
               }
@@ -641,8 +645,8 @@ export class CrawlsList extends LiteElement {
     this.cancelInProgressGetArchivedItems();
     try {
       this.archivedItems = await this.getArchivedItems(params);
-    } catch (e: any) {
-      if (e.name === "AbortError") {
+    } catch (e) {
+      if ((e as Error).name === "AbortError") {
         console.debug("Fetch archived items aborted to throttle");
       } else {
         this.notify({
@@ -769,15 +773,15 @@ export class CrawlsList extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-      this.fetchArchivedItems();
-    } catch (e: any) {
+      void this.fetchArchivedItems();
+    } catch (e) {
       if (this.itemToDelete) {
         this.confirmDeleteItem(this.itemToDelete);
       }
       let message = msg(
         str`Sorry, couldn't delete archived item at this time.`,
       );
-      if (e.isApiError) {
+      if (isApiError(e)) {
         if (e.details == "not_allowed") {
           message = msg(
             str`Only org owners can delete other users' archived items.`,

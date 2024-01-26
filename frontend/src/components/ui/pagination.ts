@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "lit";
+import { LitElement, html, css, type PropertyValues } from "lit";
 import { property, state, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { classMap } from "lit/directives/class-map.js";
@@ -152,7 +152,7 @@ export class Pagination extends LitElement {
     super.connectedCallback();
   }
 
-  async willUpdate(changedProperties: Map<string, any>) {
+  async willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("totalCount") || changedProperties.has("size")) {
       this.calculatePages();
     }
@@ -237,8 +237,8 @@ export class Pagination extends LitElement {
               this.inputValue = (e.target as SlInput).value;
             }
           }}
-          @sl-change=${(e: any) => {
-            const page = +e.target.value;
+          @sl-change=${(e: Event) => {
+            const page = +(e.target as HTMLInputElement).value;
             let nextPage = page;
 
             if (page < 1) {
@@ -251,9 +251,9 @@ export class Pagination extends LitElement {
 
             this.onPageChange(nextPage);
           }}
-          @focus=${(e: any) => {
+          @focus=${(e: Event) => {
             // Select text on focus for easy typing
-            e.target.select();
+            (e.target as SlInput).select();
           }}
         ></sl-input>
       </div>

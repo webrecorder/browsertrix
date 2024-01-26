@@ -1,4 +1,4 @@
-import { LitElement, html, nothing } from "lit";
+import { LitElement, type PropertyValues, html, nothing } from "lit";
 import { property, state, query, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { when } from "lit/directives/when.js";
@@ -64,7 +64,7 @@ export class SearchCombobox<T> extends LitElement {
     super.disconnectedCallback();
   }
 
-  protected willUpdate(changedProperties: Map<string, T>) {
+  protected willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.get("selectedKey") && !this.selectedKey) {
       this.onSearchInput.cancel();
       this.searchByValue = "";
@@ -72,7 +72,11 @@ export class SearchCombobox<T> extends LitElement {
     if (changedProperties.has("searchKeys") && this.searchKeys) {
       this.onSearchInput.cancel();
       this.fuse = new Fuse<T>([], {
-        ...(this.fuse as any).options,
+        ...(
+          this.fuse as unknown as {
+            options: ConstructorParameters<typeof Fuse>[1];
+          }
+        ).options,
         keys: this.searchKeys,
       });
     }

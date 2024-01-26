@@ -4,6 +4,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { isApiError } from "@/utils/api";
 
 /**
  * Usage:
@@ -215,12 +216,12 @@ export class BrowserProfilesNew extends LiteElement {
       });
 
       this.navTo(`${this.orgBasePath}/browser-profiles/profile/${data.id}`);
-    } catch (e: any) {
+    } catch (e) {
       this.isSubmitting = false;
 
       let message = msg("Sorry, couldn't create browser profile at this time.");
 
-      if (e.isApiError && e.statusCode === 403) {
+      if (isApiError(e) && e.statusCode === 403) {
         if (e.details === "storage_quota_reached") {
           message = msg(
             "Your org does not have enough storage to save this browser profile."

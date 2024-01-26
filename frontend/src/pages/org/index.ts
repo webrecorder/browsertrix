@@ -170,7 +170,7 @@ export class Org extends LiteElement {
       (changedProperties.has("userInfo") && this.userInfo) ||
       (changedProperties.has("slug") && this.slug)
     ) {
-      this.updateOrg();
+      void this.updateOrg();
     }
     if (changedProperties.has("openDialogName")) {
       // Sync URL to create dialog
@@ -694,7 +694,7 @@ export class Org extends LiteElement {
   }
 
   private async onOrgRemoveMember(e: OrgRemoveMemberEvent) {
-    this.removeMember(e.detail.member);
+    void this.removeMember(e.detail.member);
   }
 
   private async onStorageQuotaUpdate(e: CustomEvent<QuotaUpdateDetail>) {

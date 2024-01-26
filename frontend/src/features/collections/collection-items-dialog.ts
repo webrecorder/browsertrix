@@ -36,6 +36,7 @@ import type {
   SelectionChangeDetail,
 } from "./collection-workflow-list";
 import { type CheckboxChangeEventDetail } from "../archived-items/archived-item-list";
+import { isApiError } from "@/utils/api";
 
 const TABS = ["crawl", "upload"] as const;
 type Tab = (typeof TABS)[number];
@@ -187,24 +188,24 @@ export class CollectionItemsDialog extends TailwindElement {
       return;
     }
     if (changedProperties.has("open")) {
-      this.initSelection();
+      void this.initSelection();
     } else if (
       changedProperties.has("showOnlyMine") ||
       changedProperties.has("showOnlyInCollection")
     ) {
-      this.fetchCrawls();
-      this.fetchUploads();
+      void this.fetchCrawls();
+      void this.fetchUploads();
     } else {
       if (changedProperties.has("sortCrawlsBy")) {
-        this.fetchCrawls();
+        void this.fetchCrawls();
       } else if (changedProperties.has("filterCrawlsBy")) {
-        this.fetchCrawls({ page: 1 });
+        void this.fetchCrawls({ page: 1 });
       }
 
       if (changedProperties.has("sortUploadsBy")) {
-        this.fetchUploads();
+        void this.fetchUploads();
       } else if (changedProperties.has("filterUploadsBy")) {
-        this.fetchUploads({ page: 1 });
+        void this.fetchUploads({ page: 1 });
       }
     }
   }
@@ -402,7 +403,7 @@ export class CollectionItemsDialog extends TailwindElement {
               size=${this.uploads!.pageSize}
               totalCount=${this.uploads!.total}
               @page-change=${(e: PageChangeEvent) => {
-                this.fetchUploads({
+                void this.fetchUploads({
                   page: e.detail.page,
                 });
               }}
@@ -446,7 +447,7 @@ export class CollectionItemsDialog extends TailwindElement {
               size=${this.crawls!.pageSize}
               totalCount=${this.crawls!.total}
               @page-change=${(e: PageChangeEvent) => {
-                this.fetchCrawls({
+                void this.fetchCrawls({
                   page: e.detail.page,
                 });
               }}
@@ -482,7 +483,7 @@ export class CollectionItemsDialog extends TailwindElement {
               (workflow) => workflow.id === id,
             );
             if (workflow) {
-              this.saveAutoAdd({
+              void this.saveAutoAdd({
                 id,
                 autoAddCollections: checked
                   ? union([this.collectionId], workflow.autoAddCollections)
@@ -502,7 +503,7 @@ export class CollectionItemsDialog extends TailwindElement {
               size=${this.workflows!.pageSize}
               totalCount=${this.workflows!.total}
               @page-change=${(e: PageChangeEvent) => {
-                this.fetchCrawls({
+                void this.fetchCrawls({
                   page: e.detail.page,
                 });
               }}
@@ -606,7 +607,7 @@ export class CollectionItemsDialog extends TailwindElement {
   `;
 
   private close() {
-    this.dialog.hide();
+    void this.dialog.hide();
   }
 
   private reset() {
@@ -691,10 +692,10 @@ export class CollectionItemsDialog extends TailwindElement {
         variant: "success",
         icon: "check2-circle",
       });
-    } catch (e: any) {
+    } catch (e) {
       this.notify.toast({
-        message: e.isApiError
-          ? (e.message as string)
+        message: isApiError(e)
+          ? e.message
           : msg("Something unexpected went wrong"),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -705,9 +706,9 @@ export class CollectionItemsDialog extends TailwindElement {
   }
 
   private async initSelection() {
-    this.fetchCrawls({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
-    this.fetchUploads({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
-    this.fetchSearchValues();
+    void this.fetchCrawls({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
+    void this.fetchUploads({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
+    void this.fetchSearchValues();
 
     const [crawls, uploads] = await Promise.all([
       this.getCrawls({

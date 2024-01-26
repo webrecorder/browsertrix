@@ -13,6 +13,8 @@ import type { OrgData } from "@/utils/orgs";
 import type { CurrentUser } from "@/types/user";
 import type { APIPaginatedList } from "@/types/api";
 import { maxLengthValidator } from "@/utils/form";
+import { isApiError } from "@/utils/api";
+import { type PropertyValues } from "lit";
 
 type Tab = "information" | "members";
 type User = {
@@ -26,10 +28,11 @@ type Invite = User & {
 export type Member = User & {
   name: string;
 };
-export type OrgInfoChangeEvent = CustomEvent<{
+type OrgInfoChangeEventDetail = {
   name: string;
   slug?: string;
-}>;
+};
+export type OrgInfoChangeEvent = CustomEvent<OrgInfoChangeEventDetail>;
 export type UserRoleChangeEvent = CustomEvent<{
   user: Member;
   newRole: number;
@@ -100,7 +103,7 @@ export class OrgSettings extends LiteElement {
 
   private readonly validateOrgNameMax = maxLengthValidator(40);
 
-  async willUpdate(changedProperties: Map<string, any>) {
+  async willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
       this.isAddMemberFormVisible = true;
     }
@@ -108,7 +111,7 @@ export class OrgSettings extends LiteElement {
       changedProperties.has("activePanel") &&
       this.activePanel === "members"
     ) {
-      this.fetchPendingInvites();
+      void this.fetchPendingInvites();
     }
   }
 
@@ -469,7 +472,7 @@ export class OrgSettings extends LiteElement {
   private async fetchPendingInvites() {
     try {
       this.pendingInvites = await this.getPendingInvites();
-    } catch (e: any) {
+    } catch (e) {
       console.debug(e);
 
       this.notify({
@@ -486,18 +489,18 @@ export class OrgSettings extends LiteElement {
     const formEl = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(formEl))) return;
 
-    const { orgName } = serialize(formEl);
+    const { orgName } = serialize(formEl) as { orgName: string };
     const orgSlug = this.slugify(this.slugValue);
-    const detail: any = { name: orgName };
+    const detail: OrgInfoChangeEventDetail = { name: orgName };
 
     if (orgSlug !== this.org.slug) {
       detail.slug = orgSlug;
     }
 
     this.dispatchEvent(
-      new CustomEvent("org-info-change", {
+      new CustomEvent<OrgInfoChangeEventDetail>("org-info-change", {
         detail,
-      }) as OrgInfoChangeEvent
+      })
     );
   }
 
@@ -541,11 +544,11 @@ export class OrgSettings extends LiteElement {
         icon: "check2-circle",
       });
 
-      this.fetchPendingInvites();
+      void this.fetchPendingInvites();
       this.hideInviteDialog();
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
-        message: e.isApiError
+        message: isApiError(e)
           ? e.message
           : msg("Sorry, couldn't invite user at this time."),
         variant: "danger",
@@ -580,11 +583,11 @@ export class OrgSettings extends LiteElement {
       this.pendingInvites = this.pendingInvites.filter(
         ({ email }) => email !== invite.email
       );
-    } catch (e: any) {
+    } catch (e) {
       console.debug(e);
 
       this.notify({
-        message: e.isApiError
+        message: isApiError(e)
           ? e.message
           : msg(str`Sorry, couldn't remove ${invite.email} at this time.`),
         variant: "danger",

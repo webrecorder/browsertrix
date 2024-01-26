@@ -6,7 +6,8 @@ import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { OrgData } from "@/types/org";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { type APIError } from "@/utils/api";
+import { isApiError } from "@/utils/api";
+import { type PropertyValues } from "lit";
 
 const sortByName = sortBy("name");
 
@@ -34,7 +35,7 @@ export class InviteForm extends LiteElement {
   @state()
   private selectedOrgId?: string;
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (
       changedProperties.has("defaultOrg") &&
       this.defaultOrg &&
@@ -57,7 +58,7 @@ export class InviteForm extends LiteElement {
       `;
     }
 
-    const sortedOrgs = sortByName(this.orgs) as any as OrgData[];
+    const sortedOrgs = sortByName(this.orgs) as unknown as OrgData[];
 
     return html`
       <form
@@ -149,8 +150,8 @@ export class InviteForm extends LiteElement {
         })
       );
     } catch (e) {
-      if ((e as APIError)?.isApiError) {
-        this.serverError = (e as APIError).message;
+      if (isApiError(e)) {
+        this.serverError = e.message;
       } else {
         this.serverError = msg("Something unexpected went wrong");
       }

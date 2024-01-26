@@ -39,10 +39,10 @@ export class Input extends LiteElement {
   value?: string;
 
   @property()
-  autocomplete?: any;
+  autocomplete?: AutoFill;
 
-  @property()
-  required?: any;
+  @property({ type: Boolean })
+  required?: boolean;
 
   @property({ type: Number })
   minlength?: number;
@@ -70,8 +70,12 @@ export class Input extends LiteElement {
           name=${ifDefined(this.name)}
           type=${this.type === "password" && this.isPasswordVisible
             ? "text"
-            : ifDefined(this.type as any)}
-          autocomplete=${ifDefined(this.autocomplete)}
+            : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (ifDefined(this.type) as unknown as any)}
+          autocomplete=${
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ifDefined(this.autocomplete) as unknown as any
+          }
           placeholder=${ifDefined(this.placeholder)}
           value=${ifDefined(this.value)}
           minlength=${ifDefined(this.minlength)}

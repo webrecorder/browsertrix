@@ -7,6 +7,19 @@ import type { CrawlerChannel } from "../../pages/org/types";
 
 import LiteElement from "@/utils/LiteElement";
 import capitalize from "lodash/fp/capitalize";
+import { type SlSelect } from "@shoelace-style/shoelace";
+
+type SelectCrawlerChangeDetail = {
+  value: string | undefined;
+};
+
+export type SelectCrawlerChangeEvent = CustomEvent<SelectCrawlerChangeDetail>;
+
+type SelectCrawlerUpdateDetail = {
+  show: boolean;
+};
+
+export type SelectCrawlerUpdateEvent = CustomEvent<SelectCrawlerUpdateDetail>;
 
 type CrawlerChannelsAPIResponse = {
   channels: CrawlerChannel[];
@@ -45,7 +58,7 @@ export class SelectCrawler extends LiteElement {
   private crawlerChannels?: CrawlerChannel[];
 
   protected firstUpdated() {
-    this.fetchCrawlerChannels();
+    void this.fetchCrawlerChannels();
   }
 
   render() {
@@ -63,7 +76,7 @@ export class SelectCrawler extends LiteElement {
         @sl-change=${this.onChange}
         @sl-focus=${() => {
           // Refetch to keep list up to date
-          this.fetchCrawlerChannels();
+          void this.fetchCrawlerChannels();
         }}
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
@@ -87,15 +100,15 @@ export class SelectCrawler extends LiteElement {
     `;
   }
 
-  private onChange(e: any) {
+  private onChange(e: Event) {
     this.stopProp(e);
 
     this.selectedCrawler = this.crawlerChannels?.find(
-      ({ id }) => id === e.target.value
+      ({ id }) => id === (e.target as SlSelect).value
     );
 
     this.dispatchEvent(
-      new CustomEvent("on-change", {
+      new CustomEvent<SelectCrawlerChangeDetail>("on-change", {
         detail: {
           value: this.selectedCrawler?.id,
         },
@@ -132,7 +145,7 @@ export class SelectCrawler extends LiteElement {
       }
 
       this.dispatchEvent(
-        new CustomEvent("on-update", {
+        new CustomEvent<SelectCrawlerUpdateDetail>("on-update", {
           detail: {
             show: this.crawlerChannels.length > 1,
           },
@@ -162,7 +175,7 @@ export class SelectCrawler extends LiteElement {
    * Prevents bug where sl-dialog closes when dropdown closes
    * https://github.com/shoelace-style/shoelace/issues/170
    */
-  private stopProp(e: CustomEvent) {
+  private stopProp(e: Event) {
     e.stopPropagation();
   }
 }

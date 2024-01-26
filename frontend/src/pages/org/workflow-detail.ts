@@ -1,4 +1,4 @@
-import type { TemplateResult } from "lit";
+import type { PropertyValues, TemplateResult } from "lit";
 import { state, property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { until } from "lit/directives/until.js";
@@ -24,6 +24,7 @@ import type { SlSelect } from "@shoelace-style/shoelace";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
+import { isApiError } from "@/utils/api";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];
@@ -107,7 +108,7 @@ export class WorkflowDetail extends LiteElement {
   private crawlToDelete: Crawl | null = null;
 
   @state()
-  private filterBy: Partial<Record<keyof Crawl, any>> = {};
+  private filterBy: Partial<Record<keyof Crawl, string | CrawlState[]>> = {};
 
   // TODO localize
   private readonly numberFormatter = new Intl.NumberFormat(undefined, {
@@ -138,7 +139,7 @@ export class WorkflowDetail extends LiteElement {
     if (this.initialActivePanel) {
       this.activePanel = this.initialActivePanel;
     } else {
-      this.getActivePanelFromHash();
+      void this.getActivePanelFromHash();
     }
 
     super.connectedCallback();
@@ -156,23 +157,23 @@ export class WorkflowDetail extends LiteElement {
       this.openDialogName &&
       (this.openDialogName === "scale" || this.openDialogName === "exclusions")
     ) {
-      this.showDialog();
+      void this.showDialog();
     }
   }
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (
       (changedProperties.has("workflowId") && this.workflowId) ||
       (changedProperties.get("isEditing") === true && this.isEditing === false)
     ) {
-      this.fetchWorkflow();
-      this.fetchSeeds();
+      void this.fetchWorkflow();
+      void this.fetchSeeds();
     }
     if (changedProperties.has("isEditing")) {
       if (this.isEditing) {
         this.stopPoll();
       } else {
-        this.getActivePanelFromHash();
+        void this.getActivePanelFromHash();
       }
     }
     if (
@@ -188,7 +189,7 @@ export class WorkflowDetail extends LiteElement {
       }
 
       if (this.activePanel === "crawls") {
-        this.fetchCrawls();
+        void this.fetchCrawls();
       }
     }
   }
@@ -198,7 +199,7 @@ export class WorkflowDetail extends LiteElement {
     if (this.isEditing) return;
 
     const hashValue = window.location.hash.slice(1);
-    if (SECTIONS.includes(hashValue as any)) {
+    if (SECTIONS.includes(hashValue as (typeof SECTIONS)[number])) {
       this.activePanel = hashValue as Tab;
     } else {
       this.goToTab(DEFAULT_SECTION, { replace: true });
@@ -228,19 +229,19 @@ export class WorkflowDetail extends LiteElement {
 
       if (this.lastCrawlId) {
         if (this.workflow.isCrawlRunning) {
-          this.fetchCurrentCrawlStats();
-          this.fetchCrawlLogs();
+          void this.fetchCurrentCrawlStats();
+          void this.fetchCrawlLogs();
         } else if (this.lastCrawlId !== prevLastCrawlId) {
           this.logs = undefined;
-          this.fetchCrawlLogs();
+          void this.fetchCrawlLogs();
         }
       }
       // TODO: Check if storage quota has been exceeded here by running
       // crawl??
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
         message:
-          e.statusCode === 404
+          isApiError(e) && e.statusCode === 404
             ? msg("Workflow not found.")
             : msg("Sorry, couldn't retrieve Workflow at this time."),
         variant: "danger",
@@ -253,7 +254,7 @@ export class WorkflowDetail extends LiteElement {
     if (!this.isEditing) {
       // Restart timer for next poll
       this.timerId = window.setTimeout(() => {
-        this.fetchWorkflow();
+        void this.fetchWorkflow();
       }, 1000 * POLL_INTERVAL_SECONDS);
     }
   }
@@ -776,7 +777,7 @@ export class WorkflowDetail extends LiteElement {
 
   private renderDetailItem(
     label: string | TemplateResult,
-    renderContent: () => any
+    renderContent: () => TemplateResult | string | number
   ) {
     return html`
       <btrix-desc-list-item label=${label}>
@@ -832,7 +833,7 @@ export class WorkflowDetail extends LiteElement {
                   ...this.filterBy,
                   state: value,
                 };
-                this.fetchCrawls();
+                void this.fetchCrawls();
               }}
             >
               ${inactiveCrawlStates.map(this.renderStatusMenuItem)}
@@ -1332,7 +1333,7 @@ export class WorkflowDetail extends LiteElement {
   };
 
   private handleExclusionChange() {
-    this.fetchWorkflow();
+    void this.fetchWorkflow();
   }
 
   private async scale(value: Crawl["scale"]) {
@@ -1350,7 +1351,7 @@ export class WorkflowDetail extends LiteElement {
       );
 
       if (data.scaled) {
-        this.fetchWorkflow();
+        void this.fetchWorkflow();
         this.notify({
           message: msg("Updated crawl scale."),
           variant: "success",
@@ -1574,7 +1575,7 @@ export class WorkflowDetail extends LiteElement {
         }
       );
       if (data.success === true) {
-        this.fetchWorkflow();
+        void this.fetchWorkflow();
       } else {
         throw data;
       }
@@ -1603,7 +1604,7 @@ export class WorkflowDetail extends LiteElement {
         }
       );
       if (data.success === true) {
-        this.fetchWorkflow();
+        void this.fetchWorkflow();
       } else {
         throw data;
       }
@@ -1631,7 +1632,7 @@ export class WorkflowDetail extends LiteElement {
       // remove 'Z' from timestamp to match API response
       this.lastCrawlStartTime = new Date().toISOString().slice(0, -1);
       this.logs = undefined;
-      this.fetchWorkflow();
+      void this.fetchWorkflow();
       this.goToTab("watch");
 
       this.notify({
@@ -1639,9 +1640,9 @@ export class WorkflowDetail extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-    } catch (e: any) {
+    } catch (e) {
       let message = msg("Sorry, couldn't run crawl at this time.");
-      if (e.isApiError && e.statusCode === 403) {
+      if (isApiError(e) && e.statusCode === 403) {
         if (e.details === "storage_quota_reached") {
           message = msg("Your org does not have enough storage to run crawls.");
         } else if (e.details === "exec_minutes_quota_reached") {
@@ -1687,8 +1688,8 @@ export class WorkflowDetail extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-      this.fetchCrawls();
-    } catch (e: any) {
+      void this.fetchCrawls();
+    } catch (e) {
       if (this.crawlToDelete) {
         this.confirmDeleteCrawl(this.crawlToDelete);
       }
@@ -1696,7 +1697,7 @@ export class WorkflowDetail extends LiteElement {
       let message = msg(
         str`Sorry, couldn't delete archived item at this time.`
       );
-      if (e.isApiError) {
+      if (isApiError(e)) {
         if (e.details == "not_allowed") {
           message = msg(
             str`Only org owners can delete other users' archived items.`
@@ -1718,8 +1719,8 @@ export class WorkflowDetail extends LiteElement {
   ): Promise<void> {
     try {
       this.logs = await this.getCrawlErrors(params);
-    } catch (e: any) {
-      if (e.isApiError && e.statusCode === 503) {
+    } catch (e) {
+      if (isApiError(e) && e.statusCode === 503) {
         // do nothing, keep logs if previously loaded
       } else {
         this.notify({

@@ -6,6 +6,7 @@ import type { OrgData } from "../utils/orgs";
 import LiteElement, { html } from "../utils/LiteElement";
 
 import type { SlInput } from "@shoelace-style/shoelace";
+import { type TemplateResult } from "lit";
 
 @localized()
 @customElement("btrix-orgs-list")
@@ -126,7 +127,7 @@ export class OrgsList extends LiteElement {
   }
 
   private readonly renderOrg = (org: OrgData) => {
-    let defaultLabel: any;
+    let defaultLabel: TemplateResult | undefined;
     if (this.defaultOrg && org.id === this.defaultOrg.id) {
       defaultLabel = html`<sl-tag size="small" variant="primary" class="mr-2"
         >${msg("Default")}</sl-tag

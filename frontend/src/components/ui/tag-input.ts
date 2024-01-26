@@ -1,4 +1,10 @@
-import { LitElement, html, css, type CSSResultGroup } from "lit";
+import {
+  LitElement,
+  html,
+  css,
+  type CSSResultGroup,
+  type PropertyValues,
+} from "lit";
 import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import type {
@@ -149,7 +155,7 @@ export class TagInput extends LitElement {
     super.connectedCallback();
   }
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (changedProperties.has("tags") && this.required) {
       if (this.tags.length) {
         this.removeAttribute("data-invalid");

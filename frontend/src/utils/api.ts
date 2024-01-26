@@ -1,15 +1,15 @@
 type StatusCode = number;
 export type Detail = {
-  loc: any[];
+  loc: string[];
   msg: string;
   type: string;
 };
 
 export class APIError extends Error {
   statusCode: StatusCode;
-  details: Detail[] | null;
+  details: Detail[] | string | null;
 
-  get isApiError() {
+  get isApiError(): true {
     return true;
   }
 
@@ -27,4 +27,8 @@ export class APIError extends Error {
     this.statusCode = status;
     this.details = details || null;
   }
+}
+
+export function isApiError(error: unknown): error is APIError {
+  return (error as APIError)?.isApiError;
 }

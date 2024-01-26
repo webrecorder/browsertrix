@@ -13,7 +13,8 @@ import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import type { SelectNewDialogEvent } from "./index";
 import { type SelectEvent } from "@/components/ui/search-combobox";
-import { type APIError } from "@/utils/api";
+import { isApiError } from "@/utils/api";
+import { type PropertyValues } from "lit";
 
 type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
@@ -89,7 +90,7 @@ export class WorkflowsList extends LiteElement {
   private workflows?: APIPaginatedList<ListWorkflow>;
 
   @state()
-  private searchOptions: any[] = [];
+  private searchOptions: { [x: string]: string }[] = [];
 
   @state()
   private isFetching = false;
@@ -121,7 +122,7 @@ export class WorkflowsList extends LiteElement {
 
   private get selectedSearchFilterKey() {
     return Object.keys(WorkflowsList.FieldLabels).find((key) =>
-      Boolean((this.filterBy as any)[key])
+      Boolean((this.filterBy as Record<string, unknown>)[key])
     );
   }
 
@@ -132,9 +133,11 @@ export class WorkflowsList extends LiteElement {
       "true";
   }
 
-  protected async willUpdate(changedProperties: Map<string, any>) {
+  protected async willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>
+  ) {
     if (changedProperties.has("orgId")) {
-      this.fetchConfigSearchValues();
+      void this.fetchConfigSearchValues();
     }
     if (
       changedProperties.has("orgId") ||
@@ -143,7 +146,7 @@ export class WorkflowsList extends LiteElement {
       changedProperties.has("filterByScheduled") ||
       changedProperties.has("filterBy")
     ) {
-      this.fetchWorkflows({
+      void this.fetchWorkflows({
         page: changedProperties.has("orgId") ? 1 : undefined,
       });
     }
@@ -169,8 +172,8 @@ export class WorkflowsList extends LiteElement {
       const workflows = await this.getWorkflows(params);
       this.workflows = workflows;
     } catch (e) {
-      if ((e as APIError).isApiError) {
-        this.fetchErrorStatusCode = (e as APIError).statusCode;
+      if (isApiError(e)) {
+        this.fetchErrorStatusCode = e.statusCode;
       } else if ((e as Error).name === "AbortError") {
         console.debug("Fetch archived items aborted to throttle");
       } else {
@@ -185,7 +188,7 @@ export class WorkflowsList extends LiteElement {
 
     // Restart timer for next poll
     this.timerId = window.setTimeout(() => {
-      this.fetchWorkflows();
+      void this.fetchWorkflows();
     }, 1000 * POLL_INTERVAL_SECONDS);
   }
 
@@ -680,7 +683,7 @@ export class WorkflowsList extends LiteElement {
         }
       );
 
-      this.fetchWorkflows();
+      void this.fetchWorkflows();
       this.notify({
         message: msg(
           html`Deactivated <strong>${this.renderName(workflow)}</strong>.`
@@ -707,7 +710,7 @@ export class WorkflowsList extends LiteElement {
         }
       );
 
-      this.fetchWorkflows();
+      void this.fetchWorkflows();
       this.notify({
         message: msg(
           html`Deleted <strong>${this.renderName(workflow)}</strong>.`
@@ -735,7 +738,7 @@ export class WorkflowsList extends LiteElement {
         }
       );
       if (data.success === true) {
-        this.fetchWorkflows();
+        void this.fetchWorkflows();
       } else {
         this.notify({
           message: msg("Something went wrong, couldn't cancel crawl."),
@@ -757,7 +760,7 @@ export class WorkflowsList extends LiteElement {
         }
       );
       if (data.success === true) {
-        this.fetchWorkflows();
+        void this.fetchWorkflows();
       } else {
         this.notify({
           message: msg("Something went wrong, couldn't stop crawl."),
@@ -797,9 +800,9 @@ export class WorkflowsList extends LiteElement {
       await this.fetchWorkflows();
       // Scroll to top of list
       this.scrollIntoView({ behavior: "smooth" });
-    } catch (e: any) {
+    } catch (e) {
       let message = msg("Sorry, couldn't run crawl at this time.");
-      if (e.isApiError && e.statusCode === 403) {
+      if (isApiError(e) && e.statusCode === 403) {
         if (e.details === "storage_quota_reached") {
           message = msg("Your org does not have enough storage to run crawls.");
         } else if (e.details === "exec_minutes_quota_reached") {

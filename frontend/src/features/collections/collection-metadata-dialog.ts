@@ -9,6 +9,7 @@ import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { Collection } from "@/types/collection";
+import { isApiError } from "@/utils/api";
 
 export type CollectionSavedEvent = CustomEvent<{
   id: string;
@@ -139,11 +140,11 @@ export class CollectionMetadataDialog extends LiteElement {
   }
 
   private async hideDialog() {
-    (await this.form).closest<Dialog>("btrix-dialog")!.hide();
+    void (await this.form).closest<Dialog>("btrix-dialog")!.hide();
   }
 
   private onReset() {
-    this.hideDialog();
+    void this.hideDialog();
   }
 
   private async onSubmit(event: SubmitEvent) {
@@ -189,9 +190,9 @@ export class CollectionMetadataDialog extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-      this.hideDialog();
-    } catch (e: any) {
-      let message = e?.isApiError && e?.message;
+      void this.hideDialog();
+    } catch (e) {
+      let message = isApiError(e) && e?.message;
       if (message === "collection_name_taken") {
         message = msg("This name is already taken.");
       }

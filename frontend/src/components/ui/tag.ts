@@ -89,7 +89,7 @@ export class Tag extends SLTag {
         padding: 0 0.125rem 0 0.5rem;
       }
     `,
-  ] as any;
+  ] as (typeof SLTag)["styles"];
 
   @property({ type: String, noAccessor: true })
   tabindex?: string;

@@ -40,7 +40,7 @@ export class CopyButton extends LitElement {
   timeoutId?: number;
 
   static copyToClipboard(value: string) {
-    navigator.clipboard.writeText(value);
+    void navigator.clipboard.writeText(value);
   }
 
   disconnectedCallback() {
