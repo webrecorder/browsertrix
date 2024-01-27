@@ -36,6 +36,9 @@ RESET_VERIFY_TOKEN_LIFETIME_MINUTES = 60
 
 PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+SSO_HEADER_ENABLED = bool(int(os.environ.get("SSO_HEADER_ENABLED", 0)))
+SSO_HEADER_GROUPS_SEPARATOR = os.environ.get("SSO_HEADER_GROUPS_SEPARATOR", ";")
+
 # Audiences
 AUTH_AUD = "btrix:auth"
 RESET_AUD = "btrix:reset"
@@ -56,6 +59,8 @@ class BearerResponse(BaseModel):
     access_token: str
     token_type: str
 
+class LoginMethodsInquiryResponse(BaseModel):
+    login_methods: dict
 
 # ============================================================================
 # pylint: disable=too-few-public-methods
@@ -250,24 +255,28 @@ def init_jwt_auth(user_manager):
         await user_manager.reset_failed_logins(login_email)
         return get_bearer_response(user)
     
-    @auth_jwt_router.post("/login_header", response_model=BearerResponse)
+    @auth_jwt_router.get("/login_header", response_model=BearerResponse)
     async def login_header(
         x_remote_user: str | None = Header(default=None),
         x_remote_email: str | None = Header(default=None),
         x_remote_groups: str | None = Header(default=None)
     ) -> BearerResponse:
 
+        if not SSO_HEADER_ENABLED:
+            raise HTTPException(
+                status_code=405,
+                detail="sso_is_disabled",
+            )
+
         if not (x_remote_user is not None and x_remote_email is not None and x_remote_groups is not None):
             raise HTTPException(
                 status_code=500,
                 detail="invalid_parameters_for_login",
             )
-        
-        SSO_GROUP_SEPARATOR = ";" # Potentially dynamically pull this from config
 
         login_email = x_remote_email
         login_name = x_remote_user
-        groups = [group.lower() for group in x_remote_groups.split(SSO_GROUP_SEPARATOR)] 
+        groups = [group.lower() for group in x_remote_groups.split(SSO_HEADER_GROUPS_SEPARATOR)] 
 
         user = await user_manager.get_by_email(login_email)
         ops = user_manager.org_ops
@@ -289,6 +298,17 @@ def init_jwt_auth(user_manager):
                     status_code=500,
                     detail="user_creation_failed",
                 )
+
+    @auth_jwt_router.get("/login_methods", response_model=LoginMethodsInquiryResponse)
+    async def login_header() -> LoginMethodsInquiryResponse:
+        enabled_login_methods = {
+            'password': True,
+            'sso_header': False
+        }
+
+        if SSO_HEADER_ENABLED:
+            enabled_login_methods['sso_header'] = True
+        return LoginMethodsInquiryResponse(login_methods=enabled_login_methods)
 
     @auth_jwt_router.post("/refresh", response_model=BearerResponse)
     async def refresh_jwt(user=Depends(current_active_user)):

@@ -160,14 +160,7 @@ export default class AuthService {
 
   static async login_header({}: {
   }): Promise<Auth> {
-    const resp = await fetch("/api/auth/jwt/login_header", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        }).toString(),
-    });
+    const resp = await fetch("/api/auth/jwt/login_header");
 
     if (resp.status !== 200) {
       throw new APIError({
