@@ -51,6 +51,9 @@ SSO_OIDC_CLIENT_ID = os.environ.get("SSO_OIDC_CLIENT_ID", "")
 SSO_OIDC_CLIENT_SECRET = os.environ.get("SSO_OIDC_CLIENT_SECRET", "")
 SSO_OIDC_REDIRECT_URL = os.environ.get("SSO_OIDC_REDIRECT_URL", "")
 SSO_OIDC_ALLOW_HTTP_INSECURE = bool(int(os.environ.get("SSO_OIDC_ALLOW_HTTP_INSECURE", 0)))
+SSO_OIDC_USERINFO_EMAIL_FIELD = os.environ.get("SSO_OIDC_USERINFO_EMAIL_FIELD", "email")
+SSO_OIDC_USERINFO_USERNAME_FIELD = os.environ.get("SSO_OIDC_USERINFO_USERNAME_FIELD", "preferred_username")
+SSO_OIDC_USERINFO_GROUPS_FIELD = os.environ.get("SSO_OIDC_USERINFO_GROUPS_FIELD", "isMemberOf")
 
 # Audiences
 AUTH_AUD = "btrix:auth"
@@ -159,9 +162,9 @@ def generate_password() -> str:
 # ============================================================================
 def openid_convertor(response: Dict[str, Any], session = None) -> OpenID:
     
-    email = response.get("email", None)
-    username = response.get("preferred_username", None)
-    groups = response.get("isMemberOf", None)
+    email = response.get("SSO_OIDC_USERINFO_EMAIL_FIELD", None)
+    username = response.get("SSO_OIDC_USERINFO_USERNAME_FIELD", None)
+    groups = response.get("SSO_OIDC_USERINFO_GROUPS_FIELD", None)
 
     if email is None or username is None or groups is None or not isinstance(groups, list):
         raise HTTPException(
