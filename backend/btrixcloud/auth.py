@@ -42,6 +42,10 @@ PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SSO_HEADER_ENABLED = bool(int(os.environ.get("SSO_HEADER_ENABLED", 0)))
 SSO_HEADER_GROUPS_SEPARATOR = os.environ.get("SSO_HEADER_GROUPS_SEPARATOR", ";")
+SSO_HEADER_EMAIL_FIELD = os.environ.get("SSO_HEADER_EMAIL_FIELD", "x-remote-email")
+SSO_HEADER_USERNAME_FIELD = os.environ.get("SSO_HEADER_USERNAME_FIELD", "x-remote-user")
+SSO_HEADER_GROUPS_FIELD = os.environ.get("SSO_HEADER_GROUPS_FIELD", "x-remote-groups")
+
 
 SSO_OIDC_ENABLED = bool(int(os.environ.get("SSO_OIDC_ENABLED", 0)))
 SSO_OIDC_AUTH_ENDPOINT = os.environ.get("SSO_OIDC_AUTH_ENDPOINT", "")
@@ -328,10 +332,12 @@ def init_jwt_auth(user_manager):
     
     @auth_jwt_router.get("/login/header", response_model=BearerResponse)
     async def login_header(
-        x_remote_user: str | None = Header(default=None),
-        x_remote_email: str | None = Header(default=None),
-        x_remote_groups: str | None = Header(default=None)
+        request: Request
     ) -> BearerResponse:
+
+        x_remote_email = request.headers.get(SSO_HEADER_EMAIL_FIELD, None)
+        x_remote_user = request.headers.get(SSO_HEADER_USERNAME_FIELD, None)
+        x_remote_groups = request.headers.get(SSO_HEADER_GROUPS_FIELD, None)
 
         if not SSO_HEADER_ENABLED:
             raise HTTPException(

@@ -52,6 +52,12 @@ data:
 
   SSO_HEADER_ENABLED: "{{ .Values.sso_header_enabled | default 0 }}"
 
+  SSO_HEADER_EMAIL_FIELD: {{ .Values.sso_header_email_field | default "x-remote-email" }}
+
+  SSO_HEADER_USERNAME_FIELD: {{ .Values.sso_header_username_field | default "x-remote-user" }}
+
+  SSO_HEADER_GROUPS_FIELD: {{ .Values.sso_header_groups_field | default "x-remote-groups" }}
+
   SSO_HEADER_GROUPS_SEPARATOR: {{ .Values.sso_header_groups_separator | default ";" }}
 
   SSO_OIDC_ENABLED: "{{ .Values.sso_oidc_enabled | default 0 }}"
