@@ -180,6 +180,51 @@ export default class AuthService {
     };
   }
 
+  static async login_oidc({}: {
+  }): Promise<Auth> {
+    const resp = await fetch("/api/auth/jwt/login/oidc");
+
+    if (resp.status !== 200) {
+      throw new APIError({
+        message: resp.statusText,
+        status: resp.status,
+      });
+    }
+
+    const data = await resp.json();
+    const token = AuthService.decodeToken(data.access_token);
+    const authHeaders = AuthService.parseAuthHeaders(data);
+
+    return {
+      username: "test_user",
+      headers: authHeaders,
+      tokenExpiresAt: token.exp * 1000,
+    };
+  }
+
+  static async login_oidc_callback({}: {
+  }): Promise<Auth> {
+    const resp = await fetch("/api/auth/jwt/login/oidc/callback");
+
+    if (resp.status !== 200) {
+      throw new APIError({
+        message: resp.statusText,
+        status: resp.status,
+      });
+    }
+
+    const data = await resp.json();
+    const token = AuthService.decodeToken(data.access_token);
+    const authHeaders = AuthService.parseAuthHeaders(data);
+
+    return {
+      username: "test_user",
+      headers: authHeaders,
+      tokenExpiresAt: token.exp * 1000,
+    };
+  }
+
+
   /**
    * Decode JSON web token returned as access token
    */

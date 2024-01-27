@@ -54,6 +54,29 @@ data:
 
   SSO_HEADER_GROUPS_SEPARATOR: {{ .Values.sso_header_groups_separator | default ";" }}
 
+  SSO_OIDC_ENABLED: "{{ .Values.sso_oidc_enabled | default 0 }}"
+
+  SSO_OIDC_AUTH_ENDPOINT: {{ .Values.sso_oidc_auth_endpoint | default "" }}
+  
+  SSO_OIDC_TOKEN_ENDPOINT: {{ .Values.sso_oidc_token_endpoint | default "" }}
+  
+  SSO_OIDC_USERINFO_ENDPOINT: {{ .Values.sso_oidc_userinfo_endpoint | default "" }}
+
+  SSO_OIDC_CLIENT_ID: {{ .Values.sso_oidc_client_id | default "" }}
+
+  SSO_OIDC_CLIENT_SECRET: {{ .Values.sso_oidc_client_secret | default "" }}
+
+  SSO_OIDC_REDIRECT_URL: {{ .Values.sso_oidc_redirect_url | default "" }}
+
+  SSO_OIDC_ALLOW_HTTP_INSECURE: "{{ .Values.sso_oidc_allow_http_insecure | default 0 }}"
+
+  SSO_OIDC_USERINFO_EMAIL_FIELD: {{ .Values.sso_oidc_userinfo_email_field | default "email" }}
+
+  SSO_OIDC_USERINFO_USERNAME_FIELD: {{ .Values.sso_oidc_userinfo_username_field | default "preferred_username" }}
+  
+  SSO_OIDC_USERINFO_GROUPS_FIELD: {{ .Values.sso_oidc_userinfo_groups_field | default "isMemberOf" }}
+
+
 ---
 apiVersion: v1
 kind: ConfigMap
