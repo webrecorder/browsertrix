@@ -22,7 +22,7 @@ from fastapi import (
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from .models import User
+from .models import User, UserRole
 
 
 # ============================================================================
@@ -139,6 +139,27 @@ def generate_password() -> str:
 
 
 # ============================================================================
+async def update_user_orgs(groups: [str], user, ops):
+    orgs = await ops.get_org_slugs_by_ids()
+    user_orgs, _ = await ops.get_orgs_for_user(user)
+    for org_id, slug in orgs.items():
+        if slug.lower() in groups:
+            already_in_org = False
+            for user_org in user_orgs:
+                if user_org.slug == slug:
+                    # User is already in org, no need to add
+                    already_in_org = True
+            if not already_in_org:
+                org = await ops.get_org_by_id(org_id)
+                await ops.add_user_to_org(org, user.id, UserRole.CRAWLER)
+
+    for org in user_orgs:
+        if org.slug.lower() not in groups:
+            del org.users[str(user.id)]
+            await ops.update_users(org)
+
+
+# ============================================================================
 # pylint: disable=raise-missing-from
 def init_jwt_auth(user_manager):
     """init jwt auth router + current_active_user dependency"""
@@ -236,19 +257,32 @@ def init_jwt_auth(user_manager):
         x_remote_groups: str | None = Header(default=None)
     ) -> BearerResponse:
 
+        if not (x_remote_user is not None and x_remote_email is not None and x_remote_groups is not None):
+            raise HTTPException(
+                status_code=500,
+                detail="invalid_parameters_for_login",
+            )
+        
+        SSO_GROUP_SEPARATOR = ";" # Potentially dynamically pull this from config
+
         login_email = x_remote_email
         login_name = x_remote_user
+        groups = [group.lower() for group in x_remote_groups.split(SSO_GROUP_SEPARATOR)] 
 
         user = await user_manager.get_by_email(login_email)
+        ops = user_manager.org_ops
+
         if user:
-            # User exist, login immediately
+            await update_user_orgs(groups, user, ops)
+            # User exist, and correct orgs have been set, proceed to login
             return get_bearer_response(user)
         else:
             # Create verified user
             await user_manager.create_non_super_user(login_email, None, login_name)
             user = await user_manager.get_by_email(login_email)
             if user:
-                # User exist, login immediately
+                await update_user_orgs(groups, user, ops)
+                # User has been created and correct orgs have been set, proceed to login
                 return get_bearer_response(user)
             else:
                 raise HTTPException(
