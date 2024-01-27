@@ -255,7 +255,7 @@ def init_jwt_auth(user_manager):
         await user_manager.reset_failed_logins(login_email)
         return get_bearer_response(user)
     
-    @auth_jwt_router.get("/login_header", response_model=BearerResponse)
+    @auth_jwt_router.get("/login/header", response_model=BearerResponse)
     async def login_header(
         x_remote_user: str | None = Header(default=None),
         x_remote_email: str | None = Header(default=None),
@@ -299,7 +299,7 @@ def init_jwt_auth(user_manager):
                     detail="user_creation_failed",
                 )
 
-    @auth_jwt_router.get("/login_methods", response_model=LoginMethodsInquiryResponse)
+    @auth_jwt_router.get("/login/methods", response_model=LoginMethodsInquiryResponse)
     async def login_header() -> LoginMethodsInquiryResponse:
         enabled_login_methods = {
             'password': True,

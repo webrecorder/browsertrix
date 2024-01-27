@@ -160,7 +160,7 @@ export default class AuthService {
 
   static async login_header({}: {
   }): Promise<Auth> {
-    const resp = await fetch("/api/auth/jwt/login_header");
+    const resp = await fetch("/api/auth/jwt/login/header");
 
     if (resp.status !== 200) {
       throw new APIError({
