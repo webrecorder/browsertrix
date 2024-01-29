@@ -28,25 +28,7 @@ export class TableCell extends LitElement {
       padding: var(--btrix-cell-padding-top) var(--btrix-cell-padding-right)
         var(--btrix-cell-padding-bottom) var(--btrix-cell-padding-left);
     }
-
-    :host([rowClickTarget]) {
-      display: grid;
-      grid-template-columns: subgrid;
-    }
-
-    :host([rowClickTarget]) ::slotted(*) {
-      position: absolute;
-      inset: 0;
-      grid-column: var(--btrix-row-click-cell-grid-column, 1 / -1);
-    }
   `;
-
-  /**
-   * Denotes that clicking the row should simulate
-   * clicking the cell content.
-   */
-  @property({ type: Boolean })
-  rowClickTarget = false;
 
   @property({ type: String, reflect: true, noAccessor: true })
   role = "cell";

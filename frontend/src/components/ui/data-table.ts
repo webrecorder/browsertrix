@@ -40,10 +40,18 @@ export class DataTable extends TailwindElement {
   @property({ type: Array })
   rows: Array<CellContent[]> = [];
 
-  // Array of CSS grid track widths
-  // https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-columns#values
+  /**
+   * Array of CSS grid track widths
+   * https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-columns#values
+   */
   @property({ type: Array })
   columnWidths: string[] = [];
+
+  /**
+   * Table border style
+   */
+  @property({ type: String })
+  border?: "grid" | "horizontal";
 
   render() {
     const gridAutoColumnsStyle = `--btrix-table-grid-auto-columns: ${

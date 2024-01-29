@@ -11,8 +11,6 @@ export class TableHeaderCell extends TableCell {
   @property({ type: String, reflect: true, noAccessor: true })
   ariaSort = "none";
 
-  rowClickTarget = false;
-
   render() {
     return html`<slot></slot>`;
   }

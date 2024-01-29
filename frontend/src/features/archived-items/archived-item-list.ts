@@ -35,6 +35,9 @@ export class ArchivedItemListItem extends TailwindElement {
 
     btrix-table-row {
       border-top: var(--btrix-border-top, 0);
+      border-radius: var(--btrix-border-radius-top, 0)
+        var(--btrix-border-radius-to, 0) var(--btrix-border-radius-bottom, 0)
+        var(--btrix-border-radius-bottom, 0);
       position: relative;
       height: 2.5rem;
     }
@@ -43,8 +46,27 @@ export class ArchivedItemListItem extends TailwindElement {
       overflow: hidden;
     }
 
+    /* TODO consolidate with crawl-list and data-table */
+    .rowClickTarget {
+      display: grid;
+      grid-template-columns: subgrid;
+    }
+
+    .rowClickTarget > * {
+      position: absolute;
+      inset: 0;
+      grid-column: var(--btrix-row-click-cell-grid-column, 1 / -1);
+    }
+
     .clickLabel {
       width: ${NAME_WIDTH_CSS};
+      display: flex;
+      gap: var(--btrix-cell-gap, 0);
+      align-items: center;
+      height: 100%;
+      box-sizing: border-box;
+      padding: var(--btrix-cell-padding-top) var(--btrix-cell-padding-right)
+        var(--btrix-cell-padding-bottom) var(--btrix-cell-padding-left);
     }
   `;
 
@@ -72,10 +94,10 @@ export class ArchivedItemListItem extends TailwindElement {
     if (!this.item) return;
     const checkboxId = `${this.item.id}-checkbox`;
     const rowName = html`
-      <btrix-table-cell class="clickLabel" role="generic">
+      <div class="clickLabel">
         <slot name="namePrefix"></slot>
         ${renderName(this.item)}
-      </btrix-table-cell>
+      </div>
     `;
     return html`
       <btrix-table-row
@@ -106,7 +128,7 @@ export class ArchivedItemListItem extends TailwindElement {
               </btrix-table-cell>
             `
           : nothing}
-        <btrix-table-cell rowClickTarget>
+        <btrix-table-cell class="rowClickTarget">
           ${this.href
             ? html`<a href=${this.href} @click=${this.navigate.link}>
                 ${rowName}
@@ -183,6 +205,14 @@ export class ArchivedItemList extends TailwindElement {
     btrix-table-body ::slotted(*:nth-of-type(n + 2)) {
       --btrix-border-top: 1px solid var(--sl-panel-border-color);
     }
+
+    btrix-table-body ::slotted(*:first-of-type) {
+      --btrix-border-radius-top: var(--sl-border-radius-medium);
+    }
+
+    btrix-table-body ::slotted(*:last-of-type) {
+      --btrix-border-radius-bottom: var(--sl-border-radius-medium);
+    }
   `;
 
   @queryAssignedElements({ selector: "btrix-archived-item-list-item" })
@@ -234,7 +264,7 @@ export class ArchivedItemList extends TailwindElement {
                   (e.target as HTMLSlotElement).assignedElements().length > 0)}
             ></slot>
           </btrix-table-head>
-          <btrix-table-body class="border rounded overflow-hidden">
+          <btrix-table-body class="border rounded">
             <slot></slot>
           </btrix-table-body>
         </btrix-table>
