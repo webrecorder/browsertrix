@@ -253,7 +253,7 @@ export class Org extends LiteElement {
         tabPanelContent = this.renderDashboard();
         break;
       case "items":
-        tabPanelContent = this.renderArchive();
+        tabPanelContent = this.renderArchivedItem();
         break;
       case "workflows":
         tabPanelContent = this.renderWorkflows();
@@ -499,7 +499,7 @@ export class Org extends LiteElement {
     `;
   }
 
-  private renderArchive() {
+  private renderArchivedItem() {
     if (this.params.itemId) {
       return html` <btrix-archived-item-detail
         .authState=${this.authState!}
