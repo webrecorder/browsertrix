@@ -50,7 +50,7 @@ export type OrgParams = {
   items: {
     itemType?: Crawl["type"];
     itemId?: string;
-    qaTab?: "replay" | "screenshots";
+    qaTab?: "screenshots" | "replay";
     workflowId?: string;
     collectionId?: string;
   };
@@ -98,7 +98,7 @@ export class Org extends LiteElement {
   orgPath!: string;
 
   @property({ type: Object })
-  params!: OrgParams[OrgTab];
+  params: OrgParams[OrgTab] = {};
 
   @property({ type: String })
   orgTab: OrgTab = defaultTab;
@@ -286,12 +286,17 @@ export class Org extends LiteElement {
         break;
     }
 
+    const noMaxWidth =
+      this.orgTab === "items" && (this.params as OrgParams["items"]).qaTab;
+
     return html`
       ${this.renderStorageAlert()} ${this.renderExecutionMinutesAlert()}
       ${this.renderOrgNavBar()}
       <main>
         <div
-          class="w-full max-w-screen-desktop mx-auto px-3 box-border py-7"
+          class="${noMaxWidth
+            ? "w-full"
+            : "w-full max-w-screen-desktop"} mx-auto px-3 box-border py-7"
           aria-labelledby="${this.orgTab}-tab"
         >
           ${tabPanelContent}
