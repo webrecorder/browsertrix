@@ -99,7 +99,7 @@ export class TimeInput extends LitElement {
 
                 await input.updateComplete;
                 this.hour = +input.value;
-                this.dispatchChange();
+                void this.dispatchChange();
               }}
             >
             </sl-input>
@@ -128,7 +128,7 @@ export class TimeInput extends LitElement {
 
                 await input.updateComplete;
                 this.minute = +input.value;
-                this.dispatchChange();
+                void this.dispatchChange();
               }}
             >
             </sl-input>
@@ -143,7 +143,7 @@ export class TimeInput extends LitElement {
             @sl-change=${(e: Event) => {
               e.stopPropagation();
               this.period = (e.target as SlSelect).value as "AM" | "PM";
-              this.dispatchChange();
+              void this.dispatchChange();
             }}
           >
             <sl-option value="AM"

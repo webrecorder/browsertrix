@@ -63,14 +63,16 @@ export class Crawls extends LiteElement {
   };
 
   @state()
-  private filterBy: Partial<Record<keyof Crawl, any>> = {
+  private filterBy: Partial<Record<keyof Crawl, unknown>> = {
     state: activeCrawlStates,
   };
 
   // Use to cancel requests
   private getCrawlsController: AbortController | null = null;
 
-  protected async willUpdate(changedProperties: Map<string, any>) {
+  protected async willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
     if (changedProperties.has("crawlId") && this.crawlId) {
       // Redirect to org crawl page
       await this.fetchWorkflowId();
@@ -81,13 +83,13 @@ export class Crawls extends LiteElement {
         changedProperties.has("filterBy") ||
         changedProperties.has("orderBy")
       ) {
-        this.fetchCrawls();
+        void this.fetchCrawls();
       }
     }
   }
 
   firstUpdated() {
-    this.fetchSlugLookup();
+    void this.fetchSlugLookup();
   }
 
   disconnectedCallback(): void {
@@ -304,7 +306,7 @@ export class Crawls extends LiteElement {
   private async fetchSlugLookup() {
     try {
       this.slugLookup = await this.getSlugLookup();
-    } catch (e: any) {
+    } catch (e) {
       console.debug(e);
     }
   }
@@ -316,8 +318,8 @@ export class Crawls extends LiteElement {
     this.cancelInProgressGetCrawls();
     try {
       this.crawls = await this.getCrawls(params);
-    } catch (e: any) {
-      if (e.name === "AbortError") {
+    } catch (e) {
+      if ((e as Error).name === "AbortError") {
         console.debug("Fetch crawls aborted to throttle");
       } else {
         this.notify({

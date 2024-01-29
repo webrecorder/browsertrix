@@ -85,7 +85,7 @@ export class WorkflowsNew extends LiteElement {
         <a
           class="text-gray-600 hover:text-gray-800 text-sm font-medium"
           href=${href}
-          @click=${(e: any) => {
+          @click=${(e: MouseEvent) => {
             this.navLink(e);
             this.jobType = undefined;
           }}

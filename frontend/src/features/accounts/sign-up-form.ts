@@ -44,7 +44,7 @@ export class SignUpForm extends LiteElement {
   private pwStrengthResults: null | ZxcvbnResult = null;
 
   protected firstUpdated() {
-    PasswordService.setOptions();
+    void PasswordService.setOptions();
   }
 
   render() {

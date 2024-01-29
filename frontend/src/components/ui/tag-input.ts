@@ -284,7 +284,7 @@ export class TagInput extends LitElement {
   private readonly renderTag = (content: string) => {
     const removeTag = (e: CustomEvent | KeyboardEvent) => {
       this.tags = this.tags.filter((v) => v !== content);
-      this.dispatchChange();
+      void this.dispatchChange();
 
       const tag = e.currentTarget as SlTag;
       const focusTarget = tag.previousElementSibling as HTMLElement | null;
@@ -348,7 +348,7 @@ export class TagInput extends LitElement {
   }
 
   private onSelect(e: CustomEvent) {
-    this.addTags([e.detail.item.value]);
+    void this.addTags([e.detail.item.value]);
     this.input.focus();
   }
 
@@ -377,7 +377,7 @@ export class TagInput extends LitElement {
     }
     const input = e.target as HTMLInputElement;
     input.parentElement!.classList.remove("input--focused");
-    this.addTags([input.value]);
+    void this.addTags([input.value]);
   }
 
   // TODO consolidate with btrix-combobox
@@ -416,7 +416,7 @@ export class TagInput extends LitElement {
         const input = e.target as HTMLInputElement;
         const value = input.value.trim();
         if (value) {
-          this.addTags([value]);
+          void this.addTags([value]);
         }
         break;
       }
@@ -461,7 +461,7 @@ export class TagInput extends LitElement {
         .replace(/[\u200B-\u200D\uFEFF]/g, "")
         .trim();
       if (text) {
-        this.addTags(text.split(","));
+        void this.addTags(text.split(","));
       }
     }
   }
@@ -491,7 +491,7 @@ export class TagInput extends LitElement {
       }
     });
     this.tags = uniqueTags;
-    this.dispatchChange();
+    void this.dispatchChange();
     this.dropdownIsOpen = false;
     this.input.value = "";
     if (repeatTags.length) {

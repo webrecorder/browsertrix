@@ -149,7 +149,7 @@ export class CollectionWorkflowList extends TailwindElement {
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("workflows") && this.workflows) {
-      this.fetchCrawls();
+      void this.fetchCrawls();
     }
   }
 
@@ -215,7 +215,7 @@ export class CollectionWorkflowList extends TailwindElement {
           true
         )}
         @click=${(e: MouseEvent) => {
-          countAsync.then(({ total }) => {
+          void countAsync.then(({ total }) => {
             if (!total) {
               // Prevent selection since we're just allowing auto-add
               e.stopPropagation();

@@ -9,7 +9,7 @@ import LiteElement, { html } from "@/utils/LiteElement";
 import { regexEscape } from "@/utils/string";
 import type { Exclusion } from "./queue-exclusion-form";
 import { type PageChangeEvent } from "@/components/ui/pagination";
-import { type PropertyValues } from "lit";
+import { type TemplateResult, type PropertyValues } from "lit";
 
 export type ExclusionChangeEvent = CustomEvent<{
   index: number;
@@ -114,7 +114,7 @@ export class QueueExclusionTable extends LiteElement {
 
     this.results = this.exclusions
       .slice((this.page - 1) * this.pageSize, this.page * this.pageSize)
-      .map((str: any) => {
+      .map((str: string) => {
         return {
           // if escaped version of string, with '\' removed matches string, then consider it
           // to be matching text, otherwise, regex
@@ -259,7 +259,7 @@ export class QueueExclusionTable extends LiteElement {
     exclusion: Exclusion;
     index: number;
   }) {
-    let value: any = exclusion.value;
+    let value: string | TemplateResult = exclusion.value;
 
     if (this.editable) {
       return html`
@@ -402,7 +402,7 @@ export class QueueExclusionTable extends LiteElement {
       try {
         // Check if valid regex
         new RegExp(value);
-      } catch (err: any) {
+      } catch (err) {
         return msg(
           "Please enter a valid Regular Expression constructor pattern"
         );

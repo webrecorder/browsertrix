@@ -281,7 +281,7 @@ export default class AuthService {
 
   startFreshnessCheck() {
     window.clearTimeout(this.timerId);
-    this.checkFreshness();
+    void this.checkFreshness();
   }
 
   private cancelFreshnessCheck() {
@@ -317,7 +317,7 @@ export default class AuthService {
       // console.debug("fresh! restart timer paddedNow:", new Date(paddedNow));
       // Restart timer
       this.timerId = window.setTimeout(() => {
-        this.checkFreshness();
+        void this.checkFreshness();
       }, FRESHNESS_TIMER_INTERVAL);
     } else {
       try {
@@ -337,7 +337,7 @@ export default class AuthService {
 
         // Restart timer
         this.timerId = window.setTimeout(() => {
-          this.checkFreshness();
+          void this.checkFreshness();
         }, FRESHNESS_TIMER_INTERVAL);
       } catch (e) {
         console.debug(e);

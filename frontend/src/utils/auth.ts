@@ -16,6 +16,7 @@ import AuthService from "@/utils/AuthService";
  *
  * @fires btrix-need-login
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function needLogin<T extends { new (...args: any[]): LiteElement }>(
   constructor: T
 ) {
@@ -28,7 +29,7 @@ export function needLogin<T extends { new (...args: any[]): LiteElement }>(
       };
     }
 
-    update(changedProperties: Map<string, any>) {
+    update(changedProperties: Map<string, unknown>) {
       if (this.authState) {
         super.update(changedProperties);
       } else {

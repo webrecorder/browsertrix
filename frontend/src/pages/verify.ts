@@ -22,7 +22,7 @@ export class Verify extends LiteElement {
 
   firstUpdated() {
     if (this.token) {
-      this.verify();
+      void this.verify();
     }
   }
 

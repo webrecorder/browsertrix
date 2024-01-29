@@ -2,6 +2,7 @@ import { spy } from "sinon";
 import { expect } from "@esm-bundle/chai";
 
 import * as auth from "./auth";
+import type LiteElement from "./LiteElement";
 
 describe("auth", () => {
   describe("needLogin", () => {
@@ -12,13 +13,13 @@ describe("auth", () => {
       }
 
       const Element = auth.needLogin(
-        class extends LiteElementMock {
+        class TestElement extends LiteElementMock {
           authState = null;
-        } as any
+        } as unknown as { new (...args: unknown[]): LiteElement }
       );
 
       const element = new Element();
-      element.update();
+      element.update(new Map());
 
       expect(dispatchEventSpy.getCall(0).firstArg.type).to.equal(
         "btrix-need-login"

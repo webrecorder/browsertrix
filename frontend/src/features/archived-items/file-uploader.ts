@@ -1,4 +1,4 @@
-import { html } from "lit";
+import { type PropertyValues, html } from "lit";
 import { state, property, queryAsync, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { when } from "lit/directives/when.js";
@@ -33,8 +33,10 @@ export type FileUploaderUploadedEvent = CustomEvent<{
   fileSize: number;
 }>;
 
-const ABORT_REASON_USER_CANCEL = "user-canceled";
-const ABORT_REASON_QUOTA_REACHED = "storage_quota_reached";
+enum AbortReason {
+  UserCancel = "user-canceled",
+  QuotaReached = "storage_quota_reached",
+}
 
 /**
  * Usage:
@@ -105,9 +107,9 @@ export class FileUploader extends TailwindElement {
   // Use to cancel requests
   private uploadRequest: XMLHttpRequest | null = null;
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (changedProperties.has("open") && this.open) {
-      this.fetchTags();
+      void this.fetchTags();
 
       if (changedProperties.get("open") === undefined) {
         this.isDialogVisible = true;
@@ -467,13 +469,13 @@ export class FileUploader extends TailwindElement {
       } else {
         throw data;
       }
-    } catch (err: any) {
-      if (err === ABORT_REASON_USER_CANCEL) {
+    } catch (err) {
+      if (err === AbortReason.UserCancel) {
         console.debug("Upload aborted to user cancel");
       } else {
         let message = msg("Sorry, couldn't upload file at this time.");
         console.debug(err);
-        if (err === ABORT_REASON_QUOTA_REACHED) {
+        if (err === AbortReason.QuotaReached) {
           message = msg(
             "Your org does not have enough storage to upload this file."
           );
@@ -512,7 +514,7 @@ export class FileUploader extends TailwindElement {
           resolve(JSON.parse(xhr.response));
         }
         if (xhr.status === 403) {
-          reject(ABORT_REASON_QUOTA_REACHED);
+          reject(AbortReason.QuotaReached);
         }
       });
       xhr.addEventListener("error", () => {
@@ -524,7 +526,7 @@ export class FileUploader extends TailwindElement {
         );
       });
       xhr.addEventListener("abort", () => {
-        reject(ABORT_REASON_USER_CANCEL);
+        reject(AbortReason.UserCancel);
       });
       xhr.upload.addEventListener("progress", this.onUploadProgress);
 

@@ -4,7 +4,7 @@ import appState from "@/utils/state";
 
 export type NavigateEventDetail = {
   url: string;
-  state?: object;
+  state?: { [key: string]: unknown };
 };
 
 export interface NavigateEventMap {
@@ -35,7 +35,7 @@ export class NavigateController implements ReactiveController {
   hostConnected() {}
   hostDisconnected() {}
 
-  to = (url: string, state?: object): void => {
+  to = (url: string, state?: { [key: string]: unknown }): void => {
     const evt = new CustomEvent<NavigateEventDetail>(NAVIGATE_EVENT_NAME, {
       detail: { url, state },
       bubbles: true,

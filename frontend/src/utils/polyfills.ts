@@ -4,14 +4,18 @@
  * @author Chris Ferdinandi
  * @license MIT
  */
+
 if (!Object.fromEntries) {
-  Object.fromEntries = function (entries: any) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Object.fromEntries = function <T = any>(
+    entries: Iterable<readonly [PropertyKey, T]>
+  ): { [k: string]: T } {
     if (!entries?.[Symbol.iterator]) {
       throw new Error(
         "Object.fromEntries() requires a single iterable argument"
       );
     }
-    const obj: any = {};
+    const obj: { [k: PropertyKey]: T } = {};
     for (const [key, value] of entries) {
       obj[key] = value;
     }

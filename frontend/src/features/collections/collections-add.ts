@@ -80,7 +80,7 @@ export class CollectionsAdd extends LiteElement {
       this.collectionIds = this.initialCollections;
     }
     super.connectedCallback();
-    this.initializeCollectionsFromIds();
+    void this.initializeCollectionsFromIds();
   }
 
   disconnectedCallback() {
@@ -142,7 +142,7 @@ export class CollectionsAdd extends LiteElement {
                 };
               }
               this.collectionIds = [...this.collectionIds, id];
-              this.dispatchChange();
+              void this.dispatchChange();
             }
           }
         }}
@@ -240,7 +240,7 @@ export class CollectionsAdd extends LiteElement {
           ...this.collectionIds.slice(0, collIdIndex),
           ...this.collectionIds.slice(collIdIndex + 1),
         ];
-        this.dispatchChange();
+        void this.dispatchChange();
       }
     }
   }

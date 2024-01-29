@@ -5,7 +5,7 @@ import throttle from "lodash/fp/throttle";
 
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { AuthState } from "@/utils/AuthService";
-import type { PropertyValueMap } from "lit";
+import type { PropertyValues } from "lit";
 
 type Pages = string[];
 type ResponseData = {
@@ -70,9 +70,7 @@ export class CrawlQueue extends LiteElement {
     super.disconnectedCallback();
   }
 
-  protected updated(
-    changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
-  ): void {
+  protected updated(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("exclusions")) {
       this.exclusionsRx = this.exclusions
         ? this.exclusions.map((x) => new RegExp(x))
@@ -80,7 +78,7 @@ export class CrawlQueue extends LiteElement {
     }
   }
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (
       changedProperties.has("authState") ||
       changedProperties.has("orgId") ||
@@ -88,7 +86,7 @@ export class CrawlQueue extends LiteElement {
       changedProperties.has("pageSize") ||
       changedProperties.has("regex")
     ) {
-      this.fetchOnUpdate();
+      void this.fetchOnUpdate();
     }
   }
 
@@ -212,10 +210,10 @@ export class CrawlQueue extends LiteElement {
     try {
       this.queue = await this.getQueue();
       this.timerId = window.setTimeout(() => {
-        this.fetchQueue();
+        void this.fetchQueue();
       }, POLL_INTERVAL_SECONDS * 1000);
-    } catch (e: any) {
-      if (e.message !== "invalid_regex") {
+    } catch (e) {
+      if ((e as Error).message !== "invalid_regex") {
         this.notify({
           message: msg("Sorry, couldn't fetch crawl queue at this time."),
           variant: "danger",

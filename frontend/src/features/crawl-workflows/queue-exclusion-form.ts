@@ -5,6 +5,7 @@ import debounce from "lodash/fp/debounce";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { regexEscape } from "@/utils/string";
 import { type SlInput, type SlSelect } from "@shoelace-style/shoelace";
+import { type PropertyValues } from "lit";
 
 export type Exclusion = {
   type: "text" | "regex";
@@ -55,7 +56,9 @@ export class QueueExclusionForm extends LiteElement {
   @state()
   private isRegexInvalid = false;
 
-  async willUpdate(changedProperties: Map<string, any>) {
+  async willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>
+  ) {
     if (
       changedProperties.get("selectValue") ||
       (changedProperties.has("inputValue") &&
@@ -63,7 +66,7 @@ export class QueueExclusionForm extends LiteElement {
     ) {
       this.fieldErrorMessage = "";
       this.checkInputValidity();
-      this.dispatchChangeEvent();
+      void this.dispatchChangeEvent();
     }
   }
 
@@ -161,18 +164,18 @@ export class QueueExclusionForm extends LiteElement {
     `;
   }
 
-  private readonly onInput = debounce(200)((e: any) => {
+  private readonly onInput = debounce(200)((e: Event) => {
     this.inputValue = (e.target as SlInput).value;
   });
 
   private onButtonClick() {
-    this.handleAdd();
+    void this.handleAdd();
   }
 
   private readonly onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation();
     if (e.key === "Enter") {
-      this.handleAdd();
+      void this.handleAdd();
     }
   };
 
@@ -185,8 +188,8 @@ export class QueueExclusionForm extends LiteElement {
       try {
         // Check if valid regex
         new RegExp(this.inputValue);
-      } catch (err: any) {
-        this.fieldErrorMessage = err.message;
+      } catch (err) {
+        this.fieldErrorMessage = (err as Error).message;
         isValid = false;
       }
     }

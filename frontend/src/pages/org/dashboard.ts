@@ -60,7 +60,7 @@ export class Dashboard extends LiteElement {
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("orgId")) {
-      this.fetchMetrics();
+      void this.fetchMetrics();
     }
   }
 
@@ -833,7 +833,7 @@ export class Dashboard extends LiteElement {
       );
 
       this.metrics = data;
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve org metrics at this time."),
         variant: "danger",

@@ -100,5 +100,11 @@ module.exports = {
         "@typescript-eslint/no-var-requires": "off",
       },
     },
+    {
+      files: ["*.test.ts"],
+      rules: {
+        "@typescript-eslint/no-floating-promises": "off",
+      },
+    },
   ],
 };

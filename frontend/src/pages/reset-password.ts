@@ -28,7 +28,7 @@ export class ResetPassword extends LiteElement {
   private isSubmitting = false;
 
   protected firstUpdated() {
-    PasswordService.setOptions();
+    void PasswordService.setOptions();
   }
 
   render() {
@@ -59,7 +59,9 @@ export class ResetPassword extends LiteElement {
                 autocomplete="new-password"
                 passwordToggle
                 required
-                @input=${this.onPasswordInput}
+                @input=${this.onPasswordInput as (
+                  e: InputEvent
+                ) => Promise<void>}
               >
               </btrix-input>
               <p class="mt-2 text-gray-500">
@@ -113,7 +115,7 @@ export class ResetPassword extends LiteElement {
       return;
     }
     this.pwStrengthResults = await PasswordService.checkStrength(value);
-  }) as any;
+  });
 
   async onSubmit(event: SubmitEvent) {
     event.preventDefault();

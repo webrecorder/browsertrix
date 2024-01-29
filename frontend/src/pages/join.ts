@@ -37,7 +37,7 @@ export class Join extends LiteElement {
   }
 
   firstUpdated() {
-    this.getInviteInfo();
+    void this.getInviteInfo();
   }
 
   render() {
