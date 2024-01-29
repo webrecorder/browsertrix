@@ -18,6 +18,7 @@ import type { SelectNewDialogEvent } from "./index";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import { isApiError } from "@/utils/api";
 import { type PropertyValues } from "lit";
+import type { UnderlyingFunction } from "@/types/utils";
 
 type Collections = APIPaginatedList<Collection>;
 type SearchFields = "name";
@@ -346,7 +347,9 @@ export class CollectionsList extends LiteElement {
             const { name: _, ...otherFilters } = this.filterBy;
             this.filterBy = otherFilters;
           }}
-          @sl-input=${this.onSearchInput as (e: Event) => void}
+          @sl-input=${this.onSearchInput as UnderlyingFunction<
+            typeof this.onSearchInput
+          >}
         >
           <sl-icon
             name="search"

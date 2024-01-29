@@ -6,6 +6,7 @@ import LiteElement, { html } from "@/utils/LiteElement";
 import { regexEscape } from "@/utils/string";
 import { type SlInput, type SlSelect } from "@shoelace-style/shoelace";
 import { type PropertyValues } from "lit";
+import type { UnderlyingFunction } from "@/types/utils";
 
 export type Exclusion = {
   type: "text" | "regex";
@@ -109,7 +110,9 @@ export class QueueExclusionForm extends LiteElement {
                 .value=${this.inputValue}
                 ?disabled=${this.isSubmitting}
                 @keydown=${this.onKeyDown}
-                @sl-input=${this.onInput as (e: Event) => void}
+                @sl-input=${this.onInput as UnderlyingFunction<
+                  typeof this.onInput
+                >}
               >
                 ${this.fieldErrorMessage
                   ? html`

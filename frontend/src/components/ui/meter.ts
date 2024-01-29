@@ -1,3 +1,4 @@
+import type { UnderlyingFunction } from "@/types/utils";
 import type { PropertyValues } from "lit";
 import { LitElement, html, css } from "lit";
 import {
@@ -201,7 +202,11 @@ export class Meter extends LitElement {
         aria-valuemin=${this.min}
         aria-valuemax=${max}
       >
-        <sl-resize-observer @sl-resize=${this.onTrackResize}>
+        <sl-resize-observer
+          @sl-resize=${this.onTrackResize as UnderlyingFunction<
+            typeof this.onTrackResize
+          >}
+        >
           <div class="track">
             <div class="valueBar" style="width:${barWidth}">
               <slot @slotchange=${this.handleSlotchange}></slot>
@@ -234,11 +239,7 @@ export class Meter extends LitElement {
       const trackWidth = entry.contentBoxSize[0].inlineSize;
       this.repositionLabels(trackWidth);
     }
-  ) as (
-    e: CustomEvent<{
-      entries: ResizeObserverEntry[];
-    }>
-  ) => void;
+  );
 
   private repositionLabels(trackWidth?: number) {
     if (!this.valueBar || !this.maxText) return;

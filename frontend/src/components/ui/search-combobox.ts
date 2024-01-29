@@ -5,6 +5,7 @@ import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import Fuse from "fuse.js";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
+import { type UnderlyingFunction } from "@/types/utils";
 
 type SelectEventDetail<T> = {
   key: string | null;
@@ -123,7 +124,9 @@ export class SearchCombobox<T> extends LitElement {
             this.onSearchInput.cancel();
             this.dispatchEvent(new CustomEvent("btrix-clear"));
           }}
-          @sl-input=${this.onSearchInput as () => void}
+          @sl-input=${this.onSearchInput as UnderlyingFunction<
+            typeof this.onSearchInput
+          >}
         >
           ${when(
             this.selectedKey && this.keyLabels?.[this.selectedKey],

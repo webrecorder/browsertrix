@@ -8,6 +8,7 @@ import type { ViewState } from "@/utils/APIRouter";
 import LiteElement, { html } from "@/utils/LiteElement";
 import PasswordService from "@/utils/PasswordService";
 import type { Input as BtrixInput } from "@/components/ui/input";
+import type { UnderlyingFunction } from "@/types/utils";
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
@@ -59,9 +60,9 @@ export class ResetPassword extends LiteElement {
                 autocomplete="new-password"
                 passwordToggle
                 required
-                @input=${this.onPasswordInput as (
-                  e: InputEvent
-                ) => Promise<void>}
+                @input=${this.onPasswordInput as UnderlyingFunction<
+                  typeof this.onPasswordInput
+                >}
               >
               </btrix-input>
               <p class="mt-2 text-gray-500">

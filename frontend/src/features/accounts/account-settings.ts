@@ -13,6 +13,7 @@ import { needLogin } from "@/utils/auth";
 import type { AuthState } from "@/utils/AuthService";
 import PasswordService from "@/utils/PasswordService";
 import { isApiError } from "@/utils/api";
+import type { UnderlyingFunction } from "@/types/utils";
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
@@ -241,7 +242,9 @@ export class AccountSettings extends LiteElement {
                     password-toggle
                     minlength="8"
                     required
-                    @input=${this.onPasswordInput as (e: InputEvent) => void}
+                    @input=${this.onPasswordInput as UnderlyingFunction<
+                      typeof this.onPasswordInput
+                    >}
                   ></sl-input>
 
                   ${when(this.pwStrengthResults, this.renderPasswordStrength)}

@@ -8,6 +8,7 @@ import LiteElement, { html } from "@/utils/LiteElement";
 import AuthService from "@/utils/AuthService";
 import PasswordService from "@/utils/PasswordService";
 import type { Input as BtrixInput } from "@/components/ui/input";
+import type { UnderlyingFunction } from "@/types/utils";
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
@@ -118,7 +119,9 @@ export class SignUpForm extends LiteElement {
             autocomplete="new-password"
             passwordToggle
             required
-            @input=${this.onPasswordInput}
+            @input=${this.onPasswordInput as UnderlyingFunction<
+              typeof this.onPasswordInput
+            >}
           >
           </btrix-input>
           <p class="mt-2 text-gray-500">
@@ -168,7 +171,7 @@ export class SignUpForm extends LiteElement {
       value,
       userInputs
     );
-  }) as (e: InputEvent) => void;
+  });
 
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();

@@ -13,6 +13,7 @@ import type {
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
+import type { UnderlyingFunction } from "@/types/utils";
 
 const INITIAL_PAGE_SIZE = 10;
 const MIN_SEARCH_LENGTH = 2;
@@ -156,7 +157,9 @@ export class CollectionsAdd extends LiteElement {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
           }}
-          @sl-input=${this.onSearchInput as (e: Event) => Promise<void>}
+          @sl-input=${this.onSearchInput as UnderlyingFunction<
+            typeof this.onSearchInput
+          >}
         >
           <sl-icon name="search" slot="prefix"></sl-icon>
         </sl-input>

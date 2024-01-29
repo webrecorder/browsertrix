@@ -17,6 +17,7 @@ import inputCss from "@shoelace-style/shoelace/dist/components/input/input.style
 import debounce from "lodash/fp/debounce";
 
 import { dropdown } from "@/utils/css";
+import type { UnderlyingFunction } from "@/types/utils";
 
 export type Tags = string[];
 type TagsChangeEventDetail = {
@@ -217,7 +218,7 @@ export class TagInput extends LitElement {
               style="min-width: ${placeholder.length}ch"
               @focus=${this.onFocus}
               @blur=${this.onBlur}
-              @input=${this.onInput}
+              @input=${this.onInput as UnderlyingFunction<typeof this.onInput>}
               @keydown=${this.onKeydown}
               @keyup=${this.onKeyup}
               @paste=${this.onPaste}
@@ -438,7 +439,7 @@ export class TagInput extends LitElement {
         detail: { value: input.value },
       })
     );
-  }) as () => void;
+  });
 
   // TODO consolidate with btrix-combobox
   private onKeyup(e: KeyboardEvent) {
