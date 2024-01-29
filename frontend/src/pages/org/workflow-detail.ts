@@ -538,7 +538,7 @@ export class WorkflowDetail extends LiteElement {
       <a
         slot="nav"
         href=${`${window.location.pathname}#${tabName}`}
-        class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${className}"
+        class="block font-medium rounded-sm mb-2 p-2 transition-all ${className}"
         aria-selected=${isActive}
         aria-disabled=${disabled}
         @click=${(e: MouseEvent) => {

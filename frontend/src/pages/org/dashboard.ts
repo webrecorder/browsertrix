@@ -812,12 +812,10 @@ export class Dashboard extends LiteElement {
     return html`
       <btrix-details>
         <span slot="title">${msg("Usage History")}</span>
-        <div class="border rounded overflow-hidden">
-          <btrix-data-table
-            .columns=${usageTableCols}
-            .rows=${rows}
-          ></btrix-data-table>
-        </div>
+        <btrix-data-table
+          .columns=${usageTableCols}
+          .rows=${rows}
+        ></btrix-data-table>
       </btrix-details>
     `;
   }

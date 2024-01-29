@@ -259,9 +259,9 @@ export class CrawlDetail extends LiteElement {
       <div class="mb-4">${this.renderHeader()}</div>
 
       <main>
-        <section class="grid grid-cols-6 gap-4">
-          <div class="col-span-6 md:col-span-1">${this.renderNav()}</div>
-          <div class="col-span-6 md:col-span-5">${sectionContent}</div>
+        <section class="grid grid-cols-14 gap-6">
+          <div class="col-span-14 md:col-span-3">${this.renderNav()}</div>
+          <div class="col-span-14 md:col-span-11">${sectionContent}</div>
         </section>
       </main>
 

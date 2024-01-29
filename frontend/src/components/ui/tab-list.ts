@@ -4,9 +4,8 @@ import { property, queryAsync, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 const DEFAULT_PANEL_ID = "default-panel";
-// Match witch tailwind 4xl max width
-// https://tailwindcss.com/docs/max-width
-const SCREEN_LG_PX = 896;
+// Breakpoint in pixels for 2-column layout
+const TWO_COL_SCREEN_MIN = 1032;
 
 /**
  * Tab list
@@ -90,15 +89,15 @@ export class TabList extends LitElement {
         "header"
         "main";
       grid-template-columns: 1fr;
-      grid-gap: 1rem;
+      grid-gap: 1.5rem;
     }
 
-    @media only screen and (min-width: ${SCREEN_LG_PX}px) {
+    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN}px) {
       .container {
         grid-template-areas:
           ". header"
           "menu main";
-        grid-template-columns: auto minmax(auto, 70rem);
+        grid-template-columns: 16.5rem 1fr;
       }
     }
 
@@ -106,7 +105,7 @@ export class TabList extends LitElement {
       grid-area: menu;
     }
 
-    @media only screen and (min-width: ${SCREEN_LG_PX}px) {
+    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN}px) {
       .navWrapper {
         overflow: initial;
       }
@@ -141,7 +140,7 @@ export class TabList extends LitElement {
       margin-left: var(--track-width);
     }
 
-    @media only screen and (min-width: ${SCREEN_LG_PX}px) {
+    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN}px) {
       .tablist {
         display: block;
       }
@@ -166,7 +165,7 @@ export class TabList extends LitElement {
       background-color: var(--sl-color-blue-500);
     }
 
-    @media only screen and (min-width: ${SCREEN_LG_PX}px) {
+    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN}px) {
       .tablist,
       .show-indicator .track,
       .show-indicator .indicator {

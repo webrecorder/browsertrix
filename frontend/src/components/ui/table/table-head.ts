@@ -21,7 +21,6 @@ export class TableHead extends LitElement {
       color: var(--sl-color-neutral-700);
       font-size: var(--sl-font-size-x-small);
       line-height: 1;
-      white-space: nowrap;
     }
   `;
 

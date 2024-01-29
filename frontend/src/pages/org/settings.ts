@@ -159,7 +159,7 @@ export class OrgSettings extends LiteElement {
       <a
         slot="nav"
         href=${`${this.orgBasePath}/${path}`}
-        class="block font-medium rounded-sm mb-2 mr-2 p-2 transition-all ${isActive
+        class="block font-medium rounded-sm mb-2 p-2 transition-all ${isActive
           ? "text-blue-600 bg-blue-50 shadow-sm shadow-blue-800/20"
           : "text-neutral-600 hover:bg-neutral-50"}"
         @click=${this.navLink}
@@ -269,16 +269,20 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderMembers() {
-    const columnWidths = ["100%", "10rem", "1.5rem"];
+    const columnWidths = ["1fr", "auto", "min-content"];
     const rows = Object.entries(this.org.users!).map(([_id, user]) => [
       user.name,
       this.renderUserRoleSelect(user),
       this.renderRemoveMemberButton(user),
     ]);
     return html`
-      <section class="rounded border overflow-hidden">
+      <section>
         <btrix-data-table
-          .columns=${[msg("Name"), msg("Role"), ""]}
+          .columns=${[
+            msg("Name"),
+            msg("Role"),
+            html`<span class="sr-only">${msg("Delete")}</span>`,
+          ]}
           .rows=${rows}
           .columnWidths=${columnWidths}
         >
@@ -293,18 +297,20 @@ export class OrgSettings extends LiteElement {
               ${msg("Pending Invites")}
             </h3>
 
-            <div class="rounded border overflow-hidden">
-              <btrix-data-table
-                .columns=${[msg("Email"), msg("Role"), ""]}
-                .rows=${this.pendingInvites.map((user) => [
-                  user.email,
-                  this.renderUserRole(user),
-                  this.renderRemoveInviteButton(user),
-                ])}
-                .columnWidths=${columnWidths}
-              >
-              </btrix-data-table>
-            </div>
+            <btrix-data-table
+              .columns=${[
+                msg("Email"),
+                msg("Role"),
+                html`<span class="sr-only">${msg("Remove")}</span>`,
+              ]}
+              .rows=${this.pendingInvites.map((user) => [
+                user.email,
+                this.renderUserRole(user),
+                this.renderRemoveInviteButton(user),
+              ])}
+              .columnWidths=${columnWidths}
+            >
+            </btrix-data-table>
           </section>
         `
       )}
