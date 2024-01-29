@@ -44,7 +44,11 @@ export class Verify extends LiteElement {
       }),
     });
 
-    const data = await resp.json();
+    const data = (await resp.json()) as {
+      email: string;
+      is_verified: boolean;
+      detail?: string;
+    };
 
     switch (resp.status) {
       case 200:

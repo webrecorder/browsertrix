@@ -309,7 +309,7 @@ export class QueueExclusionTable extends LiteElement {
 
     if (exclusion.type === "regex") {
       value = staticHtml`<span class="regex">${unsafeStatic(
-        new RegexColorize().colorizeText(exclusion.value)
+        new RegexColorize().colorizeText(exclusion.value) as string
       )}</span>`;
     }
 

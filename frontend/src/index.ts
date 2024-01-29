@@ -19,6 +19,7 @@ import type {
   LoggedInEventDetail,
   NeedLoginEventDetail,
   AuthState,
+  Auth,
 } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser, UserOrg } from "./types/user";
@@ -366,8 +367,8 @@ export class App extends LiteElement {
           >${selectedOption.name.slice(0, orgNameLength)}</sl-button
         >
         <sl-menu
-          @sl-select=${(e: CustomEvent) => {
-            const { value } = e.detail.item as { value: string };
+          @sl-select=${(e: CustomEvent<{ item: { value: string } }>) => {
+            const { value } = e.detail.item;
             if (value) {
               this.navigate(`/orgs/${value}`);
             } else {
@@ -890,7 +891,7 @@ export class App extends LiteElement {
         if (data.name === "auth_storage") {
           if (data.value !== AuthService.storage.getItem()) {
             if (data.value) {
-              this.authService.saveLogin(JSON.parse(data.value));
+              this.authService.saveLogin(JSON.parse(data.value) as Auth);
               void this.updateUserInfo();
               this.syncViewState();
             } else {

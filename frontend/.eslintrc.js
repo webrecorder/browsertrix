@@ -77,13 +77,13 @@ module.exports = {
     "@typescript-eslint/no-unnecessary-type-assertion": "warn",
     "@typescript-eslint/no-unnecessary-type-constraint": "warn",
     /* TODO eventually turn all these on */
-    // "@typescript-eslint/no-unsafe-argument": "warn",
+    "@typescript-eslint/no-unsafe-argument": "warn",
     // "@typescript-eslint/no-unsafe-assignment": "warn",
     // "@typescript-eslint/no-unsafe-call": "warn",
     "@typescript-eslint/no-unsafe-declaration-merging": "warn",
     "@typescript-eslint/no-unsafe-enum-comparison": "warn",
     // "@typescript-eslint/no-unsafe-member-access": "warn",
-    // "@typescript-eslint/no-unsafe-return": "warn",
+    "@typescript-eslint/no-unsafe-return": "warn",
     "@typescript-eslint/prefer-as-const": "warn",
     "require-await": "off",
     // "@typescript-eslint/require-await": "warn",
@@ -104,6 +104,7 @@ module.exports = {
       files: ["*.test.ts"],
       rules: {
         "@typescript-eslint/no-floating-promises": "off",
+        "@typescript-eslint/no-unsafe-call": "off",
       },
     },
   ],

@@ -25,6 +25,7 @@ import type { PageChangeEvent } from "@/components/ui/pagination";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 import { isApiError } from "@/utils/api";
+import { type IntersectEvent } from "@/components/utils/observable";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];
@@ -421,7 +422,7 @@ export class WorkflowDetail extends LiteElement {
     <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
       <btrix-observable
         slot="header"
-        @intersect=${({ detail }: CustomEvent) =>
+        @intersect=${({ detail }: IntersectEvent) =>
           (this.isPanelHeaderVisible = detail.entry.isIntersecting)}
       >
         <header class="flex items-center justify-between h-5">

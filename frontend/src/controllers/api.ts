@@ -78,7 +78,7 @@ export class APIController implements ReactiveController {
         );
       }
 
-      return body;
+      return body as T;
     }
 
     let errorDetail;

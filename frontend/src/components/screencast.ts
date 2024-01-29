@@ -346,8 +346,10 @@ export class Screencast extends LitElement {
       }/${index}/ws?auth_bearer=${this.authToken || ""}`
     );
 
-    ws.addEventListener("message", ({ data }) => {
-      this.handleMessage(JSON.parse(data));
+    ws.addEventListener("message", ({ data }: MessageEvent<string>) => {
+      this.handleMessage(
+        JSON.parse(data) as InitMessage | ScreencastMessage | CloseMessage
+      );
     });
 
     return ws;

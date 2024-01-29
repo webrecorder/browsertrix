@@ -117,7 +117,7 @@ export class CollectionWorkflowList extends TailwindElement {
 
   @property({
     type: Array,
-    hasChanged(newVal, oldVal) {
+    hasChanged(newVal: Workflow[], oldVal: Workflow[]) {
       // Customize change detection to only re-render
       // when workflow IDs change
       if (Array.isArray(newVal) && Array.isArray(oldVal)) {

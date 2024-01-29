@@ -383,7 +383,7 @@ export class ConfigDetails extends LiteElement {
                 ${includeUrlList.map(
                   (url: string) =>
                     staticHtml`<li class="regex">${unsafeStatic(
-                      new RegexColorize().colorizeText(url)
+                      new RegexColorize().colorizeText(url) as string
                     )}</li>`
                 )}
               </ul>

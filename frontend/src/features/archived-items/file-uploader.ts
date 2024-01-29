@@ -511,7 +511,13 @@ export class FileUploader extends TailwindElement {
       });
       xhr.addEventListener("load", () => {
         if (xhr.status === 200) {
-          resolve(JSON.parse(xhr.response));
+          resolve(
+            JSON.parse(xhr.response as string) as {
+              id: string;
+              added: boolean;
+              storageQuotaReached: boolean;
+            }
+          );
         }
         if (xhr.status === 403) {
           reject(AbortReason.QuotaReached);

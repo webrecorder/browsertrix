@@ -147,7 +147,10 @@ export default class AuthService {
       });
     }
 
-    const data = await resp.json();
+    const data = (await resp.json()) as {
+      token_type: string;
+      access_token: string;
+    };
     const token = AuthService.decodeToken(data.access_token);
     const authHeaders = AuthService.parseAuthHeaders(data);
 
@@ -162,7 +165,7 @@ export default class AuthService {
    * Decode JSON web token returned as access token
    */
   private static decodeToken(token: string): JWT {
-    return JSON.parse(window.atob(token.split(".")[1]));
+    return JSON.parse(window.atob(token.split(".")[1])) as JWT;
   }
 
   /**
@@ -210,7 +213,7 @@ export default class AuthService {
     const auth = AuthService.storage.getItem();
 
     if (auth) {
-      return JSON.parse(auth);
+      return JSON.parse(auth) as AuthState;
     }
 
     return null;
@@ -373,7 +376,10 @@ export default class AuthService {
       });
     }
 
-    const data = await resp.json();
+    const data = (await resp.json()) as {
+      token_type: string;
+      access_token: string;
+    };
     const token = AuthService.decodeToken(data.access_token);
     const authHeaders = AuthService.parseAuthHeaders(data);
 

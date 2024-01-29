@@ -347,7 +347,7 @@ export class TagInput extends LitElement {
     this.dropdown.classList.add("animateHide");
   }
 
-  private onSelect(e: CustomEvent) {
+  private onSelect(e: CustomEvent<{ item: { value: string } }>) {
     void this.addTags([e.detail.item.value]);
     this.input.focus();
   }

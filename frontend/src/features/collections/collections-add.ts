@@ -125,9 +125,9 @@ export class CollectionsAdd extends LiteElement {
           this.searchResultsOpen = false;
           this.searchByValue = "";
         }}
-        @sl-select=${async (e: CustomEvent) => {
+        @sl-select=${async (e: CustomEvent<{ item: SlMenuItem }>) => {
           this.searchResultsOpen = false;
-          const item = e.detail.item as SlMenuItem;
+          const item = e.detail.item;
           const collId = item.dataset["key"];
           if (collId && this.collectionIds.indexOf(collId) === -1) {
             const coll = this.searchResults.find(

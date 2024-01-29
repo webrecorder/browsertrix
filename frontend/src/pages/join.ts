@@ -97,7 +97,11 @@ export class Join extends LiteElement {
     );
 
     if (resp.status === 200) {
-      const body = await resp.json();
+      const body = (await resp.json()) as {
+        inviterEmail: string;
+        inviterName: string;
+        orgName: string;
+      };
 
       this.inviteInfo = {
         inviterEmail: body.inviterEmail,
