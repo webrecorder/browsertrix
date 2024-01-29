@@ -16,6 +16,7 @@ import "./workflows-list";
 import "./workflows-new";
 import "./archived-item-detail";
 import "./archived-items";
+import "./archived-item-qa";
 import "./collections-list";
 import "./collection-detail";
 import "./browser-profiles-detail";
@@ -39,28 +40,34 @@ import type { CollectionSavedEvent } from "@/features/collections/collection-met
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
 export type SelectNewDialogEvent = CustomEvent<ResourceName>;
-export type OrgTab =
-  | "home"
-  | "crawls"
-  | "workflows"
-  | "items"
-  | "browser-profiles"
-  | "collections"
-  | "settings";
-
-type Params = {
-  workflowId?: string;
-  browserProfileId?: string;
-  browserId?: string;
-  itemId?: string;
-  collectionId?: string;
-  collectionTab?: string;
-  itemType?: Crawl["type"];
-  jobType?: JobType;
-  settingsTab?: "information" | "members";
-  new?: ResourceName;
-  reviewTab?: "screenshots" | "replay";
+export type OrgParams = {
+  home: Record<string, never>;
+  workflows: {
+    workflowId?: string;
+    jobType?: JobType;
+    new?: ResourceName;
+  };
+  items: {
+    itemType?: Crawl["type"];
+    itemId?: string;
+    qaTab?: "replay" | "screenshots";
+    workflowId?: string;
+    collectionId?: string;
+  };
+  "browser-profiles": {
+    browserProfileId?: string;
+    browserId?: string;
+    new?: ResourceName;
+  };
+  collections: {
+    collectionId?: string;
+    collectionTab?: string;
+  };
+  settings: {
+    settingsTab?: "information" | "members";
+  };
 };
+export type OrgTab = keyof OrgParams;
 
 const defaultTab = "home";
 
@@ -91,7 +98,7 @@ export class Org extends LiteElement {
   orgPath!: string;
 
   @property({ type: Object })
-  params!: Params;
+  params!: OrgParams[OrgTab];
 
   @property({ type: String })
   orgTab: OrgTab = defaultTab;
@@ -501,14 +508,25 @@ export class Org extends LiteElement {
   }
 
   private renderArchivedItem() {
-    if (this.params.itemId) {
+    const params = this.params as OrgParams["items"];
+
+    if (params.itemId) {
+      if (params.qaTab) {
+        return html` <btrix-archived-item-qa
+          .authState=${this.authState!}
+          orgId=${this.orgId}
+          itemId=${params.itemId}
+          ?isCrawler=${this.isCrawler}
+        ></btrix-archived-item-qa>`;
+      }
+
       return html` <btrix-archived-item-detail
         .authState=${this.authState!}
         orgId=${this.orgId}
-        crawlId=${this.params.itemId}
-        collectionId=${this.params.collectionId || ""}
-        workflowId=${this.params.workflowId || ""}
-        itemType=${this.params.itemType || "crawl"}
+        crawlId=${params.itemId}
+        collectionId=${params.collectionId || ""}
+        workflowId=${params.workflowId || ""}
+        itemType=${params.itemType || "crawl"}
         ?isCrawler=${this.isCrawler}
       ></btrix-archived-item-detail>`;
     }
@@ -519,17 +537,16 @@ export class Org extends LiteElement {
       orgId=${this.orgId}
       ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
       ?isCrawler=${this.isCrawler}
-      itemType=${ifDefined(this.params.itemType || undefined)}
+      itemType=${ifDefined(params.itemType || undefined)}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-archived-items>`;
   }
 
   private renderWorkflows() {
-    const isEditing = Object.prototype.hasOwnProperty.call(this.params, "edit");
-    const isNewResourceTab =
-      Object.prototype.hasOwnProperty.call(this.params, "new") &&
-      this.params.jobType;
-    const workflowId = this.params.workflowId;
+    const params = this.params as OrgParams["workflows"];
+    const isEditing = params.hasOwnProperty("edit");
+    const isNewResourceTab = params.hasOwnProperty("new") && params.jobType;
+    const workflowId = params.workflowId;
 
     if (workflowId) {
       return html`
@@ -558,7 +575,7 @@ export class Org extends LiteElement {
         ?isCrawler=${this.isCrawler}
         .initialWorkflow=${workflow}
         .initialSeeds=${seeds}
-        jobType=${ifDefined(this.params.jobType)}
+        jobType=${ifDefined(params.jobType)}
         ?orgStorageQuotaReached=${this.orgStorageQuotaReached}
         ?orgExecutionMinutesQuotaReached=${this.orgExecutionMinutesQuotaReached}
         @select-new-dialog=${this.onSelectNewDialog}
@@ -577,19 +594,21 @@ export class Org extends LiteElement {
   }
 
   private renderBrowserProfiles() {
-    if (this.params.browserProfileId) {
+    const params = this.params as OrgParams["browser-profiles"];
+
+    if (params.browserProfileId) {
       return html`<btrix-browser-profiles-detail
         .authState=${this.authState!}
         .orgId=${this.orgId}
-        profileId=${this.params.browserProfileId}
+        profileId=${params.browserProfileId}
       ></btrix-browser-profiles-detail>`;
     }
 
-    if (this.params.browserId) {
+    if (params.browserId) {
       return html`<btrix-browser-profiles-new
         .authState=${this.authState!}
         .orgId=${this.orgId}
-        .browserId=${this.params.browserId}
+        .browserId=${params.browserId}
       ></btrix-browser-profiles-new>`;
     }
 
@@ -601,14 +620,15 @@ export class Org extends LiteElement {
   }
 
   private renderCollections() {
-    if (this.params.collectionId) {
+    const params = this.params as OrgParams["collections"];
+
+    if (params.collectionId) {
       return html`<btrix-collection-detail
         .authState=${this.authState!}
         orgId=${this.orgId}
         userId=${this.userInfo!.id}
-        collectionId=${this.params.collectionId}
-        collectionTab=${(this.params.collectionTab as CollectionTab) ||
-        "replay"}
+        collectionId=${params.collectionId}
+        collectionTab=${(params.collectionTab as CollectionTab) || "replay"}
         ?isCrawler=${this.isCrawler}
       ></btrix-collection-detail>`;
     }
@@ -623,11 +643,9 @@ export class Org extends LiteElement {
 
   private renderOrgSettings() {
     if (!this.userInfo || !this.org) return;
-    const activePanel = this.params.settingsTab || "information";
-    const isAddingMember = Object.prototype.hasOwnProperty.call(
-      this.params,
-      "invite"
-    );
+    const params = this.params as OrgParams["settings"];
+    const activePanel = params.settingsTab || "information";
+    const isAddingMember = this.params.hasOwnProperty("invite");
 
     return html`<btrix-org-settings
       .authState=${this.authState}
