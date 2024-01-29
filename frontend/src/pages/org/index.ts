@@ -59,6 +59,7 @@ type Params = {
   jobType?: JobType;
   settingsTab?: "information" | "members";
   new?: ResourceName;
+  reviewTab?: "screenshots" | "replay";
 };
 
 const defaultTab = "home";
