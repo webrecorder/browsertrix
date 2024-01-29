@@ -290,19 +290,19 @@ export class Org extends LiteElement {
       this.orgTab === "items" && (this.params as OrgParams["items"]).qaTab;
 
     return html`
-      ${this.renderStorageAlert()} ${this.renderExecutionMinutesAlert()}
-      ${this.renderOrgNavBar()}
-      <main>
-        <div
-          class="${noMaxWidth
+      <div class="flex flex-col min-h-full">
+        ${this.renderStorageAlert()} ${this.renderExecutionMinutesAlert()}
+        ${this.renderOrgNavBar()}
+        <main
+          class="flex-1 ${noMaxWidth
             ? "w-full"
-            : "w-full max-w-screen-desktop"} mx-auto px-3 box-border py-7"
+            : "w-full max-w-screen-desktop"} mx-auto p-3 box-border pt-7 flex flex-col"
           aria-labelledby="${this.orgTab}-tab"
         >
           ${tabPanelContent}
-        </div>
-      </main>
-      ${this.renderNewResourceDialogs()}
+        </main>
+        ${this.renderNewResourceDialogs()}
+      </div>
     `;
   }
 
@@ -518,6 +518,7 @@ export class Org extends LiteElement {
     if (params.itemId) {
       if (params.qaTab) {
         return html` <btrix-archived-item-qa
+          class="flex-1"
           .authState=${this.authState!}
           orgId=${this.orgId}
           itemId=${params.itemId}
