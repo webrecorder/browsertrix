@@ -122,7 +122,7 @@ export class ArchivedItemListItem extends TailwindElement {
             `
           : nothing}
         <btrix-table-cell
-          rowClickTarget=${this.href ? "a" : this.checkbox ? "label" : "div"}
+          rowClickTarget=${this.href ? "a" : this.checkbox ? "label" : ""}
         >
           ${this.href
             ? html`<a href=${this.href} @click=${this.navigate.link}>

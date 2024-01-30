@@ -1,12 +1,7 @@
-import {
-  LitElement,
-  html,
-  css,
-  unsafeCSS,
-  type PropertyValues,
-  nothing,
-} from "lit";
+import { LitElement, html, css, unsafeCSS, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
+
+const ALLOWED_ROW_CLICK_TARGET_TAG = ["a", "label"] as const;
 
 /**
  * @example Usage as row click target:
@@ -45,10 +40,11 @@ export class TableCell extends LitElement {
   role = "cell";
 
   @property({ type: String })
-  rowClickTarget = "";
+  rowClickTarget?: (typeof ALLOWED_ROW_CLICK_TARGET_TAG)[number] | "" = "";
 
   render() {
-    return html` ${this.rowClickTarget
+    return html`${this.rowClickTarget &&
+      ALLOWED_ROW_CLICK_TARGET_TAG.includes(this.rowClickTarget)
         ? html`<style>
             :host {
               display: grid;
@@ -61,7 +57,6 @@ export class TableCell extends LitElement {
               grid-column: clickable-start / clickable-end;
             }
           </style>`
-        : nothing}
-      <slot></slot>`;
+        : nothing} <slot></slot>`;
   }
 }

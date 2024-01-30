@@ -118,7 +118,7 @@ export class CrawlListItem extends TailwindElement {
         </div>
       `;
       idCell = html`
-        <btrix-table-cell rowClickTarget=${this.href ? "a" : "div"}>
+        <btrix-table-cell rowClickTarget=${this.href ? "a" : ""}>
           ${this.href
             ? html`<a href=${this.href} @click=${this.navigate.link}>
                 ${label}
