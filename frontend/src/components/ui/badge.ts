@@ -1,4 +1,5 @@
-import { LitElement, html, css } from "lit";
+import { TailwindElement } from "@/classes/TailwindElement";
+import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 /**
@@ -10,48 +11,30 @@ import { customElement, property } from "lit/decorators.js";
  * ```
  */
 @customElement("btrix-badge")
-export class Badge extends LitElement {
+export class Badge extends TailwindElement {
   @property({ type: String })
-  variant: "success" | "warning" | "danger" | "neutral" = "neutral";
-
-  // postcss-lit-disable-next-line
-  static styles = css`
-    :host > span {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: var(--sl-font-size-x-small);
-      line-height: 1.125rem;
-      height: 1.125rem;
-      padding: 0 0.5rem;
-      border-radius: var(--sl-border-radius-small);
-      vertical-align: 1px;
-    }
-
-    .success {
-      background-color: var(--sl-color-success-500);
-      color: var(--sl-color-neutral-0);
-    }
-
-    .warning {
-      background-color: var(--sl-color-warning-600);
-      color: var(--sl-color-neutral-0);
-    }
-
-    .danger {
-      background-color: var(--sl-color-danger-500);
-      color: var(--sl-color-neutral-0);
-    }
-
-    .neutral {
-      background-color: var(--sl-color-neutral-100);
-      color: var(--sl-color-neutral-600);
-    }
-  `;
+  variant:
+    | "success"
+    | "warning"
+    | "danger"
+    | "neutral"
+    | "primary"
+    | "high-contrast" = "neutral";
 
   render() {
     return html`
-      <span class=${this.variant}>
+      <span
+        class="h-4.5 ${{
+          success: "bg-success-500 text-neutral-0",
+          warning: "bg-warning-600 text-neutral-0",
+          danger: "bg-danger-500 text-neutral-0",
+          neutral: "bg-neutral-100 text-neutral-600",
+          "high-contrast": "bg-neutral-600 text-neutral-0",
+          primary: "bg-primary text-neutral-0",
+        }[
+          this.variant
+        ]} inline-flex items-center justify-center rounded-sm px-2 align-[1px] text-xs"
+      >
         <slot></slot>
       </span>
     `;

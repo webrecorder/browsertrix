@@ -10,6 +10,7 @@ export const ROUTES = {
   resetPassword: "/reset-password",
   accountSettings: "/account/settings",
   orgs: "/orgs",
+  components: "/components",
   org: [
     "/orgs/:slug",
     // Org sections:

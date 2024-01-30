@@ -664,6 +664,9 @@ export class App extends LiteElement {
         // falls through
       }
 
+      case "components":
+        return html`<btrix-components></btrix-components>`;
+
       default:
         return this.renderNotFoundPage();
     }

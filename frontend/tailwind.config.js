@@ -40,11 +40,23 @@ function makeTheme() {
   // Map color grading:
   const colorGrades = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
 
+  /**
+   * @param {string} color
+   * @returns {Record<string, string>}
+   */
   const makeColorPalette = (color) =>
-    colorGrades.reduce((acc, v) => ({
-      ...acc,
-      [v]: `var(--sl-color-${color}-${v})`,
-    }));
+    colorGrades.reduce(
+      /**
+       * @param {Record<string, string>} acc
+       * @param {number} v
+       * @returns
+       */
+      (acc, v) => ({
+        ...acc,
+        [v]: `var(--sl-color-${color}-${v})`,
+      }),
+      {},
+    );
 
   return {
     // https://github.com/tailwindlabs/tailwindcss/blob/52ab3154392ba3d7a05cae643694384e72dc24b2/stubs/defaultConfig.stub.js
@@ -52,9 +64,9 @@ function makeTheme() {
       current: "currentColor",
       ...colors.map(makeColorPalette),
       primary,
-      success: `var(--success)`,
-      warning: `var(--warning)`,
-      danger: `var(--danger)`,
+      success: { ...makeColorPalette("success"), DEFAULT: `var(--success)` },
+      warning: { ...makeColorPalette("warning"), DEFAULT: `var(--warning)` },
+      danger: { ...makeColorPalette("danger"), DEFAULT: `var(--danger)` },
       neutral: {
         ...makeColorPalette("neutral"),
         // Shoelace supports additional neutral variables:
