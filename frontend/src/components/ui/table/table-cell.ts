@@ -1,10 +1,22 @@
-import { LitElement, html, css } from "lit";
+import {
+  LitElement,
+  html,
+  css,
+  unsafeCSS,
+  type PropertyValues,
+  nothing,
+} from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 /**
  * @example Usage as row click target:
  * ```ts
- * <btrix-table-cell>
+ * <style>
+ *  btrix-table {
+ *    grid-template-columns: 20px [clickable-start] 50px 100px [clickable-end];
+ *  }
+ * </style>
+ * <btrix-table-cell rowClickTarget="a">
  *  <a href="#">Clicking the row clicks me</a>
  * </btrix-table-cell>
  * ```
@@ -32,7 +44,24 @@ export class TableCell extends LitElement {
   @property({ type: String, reflect: true, noAccessor: true })
   role = "cell";
 
+  @property({ type: String })
+  rowClickTarget = "";
+
   render() {
-    return html`<slot></slot>`;
+    return html` ${this.rowClickTarget
+        ? html`<style>
+            :host {
+              display: grid;
+              grid-template-columns: subgrid;
+            }
+
+            ::slotted(${unsafeCSS(this.rowClickTarget)}) {
+              position: absolute;
+              inset: 0;
+              grid-column: clickable-start / clickable-end;
+            }
+          </style>`
+        : nothing}
+      <slot></slot>`;
   }
 }

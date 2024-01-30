@@ -58,17 +58,6 @@ export class CrawlListItem extends TailwindElement {
       white-space: nowrap;
     }
 
-    .rowClickTarget {
-      display: grid;
-      grid-template-columns: subgrid;
-    }
-
-    .rowClickTarget > * {
-      position: absolute;
-      inset: 0;
-      grid-column: clickable-start / clickable-end;
-    }
-
     .clickLabel {
       width: ${NAME_WIDTH_CSS};
       overflow: hidden;
@@ -129,7 +118,7 @@ export class CrawlListItem extends TailwindElement {
         </div>
       `;
       idCell = html`
-        <btrix-table-cell class="rowClickTarget">
+        <btrix-table-cell rowClickTarget=${this.href ? "a" : "div"}>
           ${this.href
             ? html`<a href=${this.href} @click=${this.navigate.link}>
                 ${label}
