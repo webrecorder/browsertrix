@@ -14,8 +14,6 @@ import { renderName } from "@/utils/crawler";
 import { NavigateController } from "@/controllers/navigate";
 import { type SlCheckbox } from "@shoelace-style/shoelace";
 
-const NAME_WIDTH_CSS = css`26rem`;
-
 export type CheckboxChangeEventDetail = {
   checked: boolean;
 };
@@ -39,21 +37,6 @@ export class ArchivedItemListItem extends TailwindElement {
         var(--btrix-border-radius-to, 0) var(--btrix-border-radius-bottom, 0)
         var(--btrix-border-radius-bottom, 0);
       height: 2.5rem;
-    }
-
-    /*
-     * TODO consolidate data-table variations
-     * https://github.com/webrecorder/browsertrix-cloud/issues/1504
-     */
-    .clickLabel {
-      width: ${NAME_WIDTH_CSS};
-      display: flex;
-      gap: var(--btrix-cell-gap, 0);
-      align-items: center;
-      height: 100%;
-      box-sizing: border-box;
-      padding: var(--btrix-cell-padding-top) var(--btrix-cell-padding-right)
-        var(--btrix-cell-padding-bottom) var(--btrix-cell-padding-left);
     }
   `;
 
@@ -81,7 +64,7 @@ export class ArchivedItemListItem extends TailwindElement {
     if (!this.item) return;
     const checkboxId = `${this.item.id}-checkbox`;
     const rowName = html`
-      <div class="clickLabel">
+      <div class="flex items-center gap-3">
         <slot name="namePrefix"></slot>
         ${renderName(this.item)}
       </div>
@@ -219,7 +202,7 @@ export class ArchivedItemList extends TailwindElement {
         btrix-table {
           grid-template-columns: ${`${
             this.hasCheckboxCell ? "min-content" : ""
-          } [clickable-start] ${NAME_WIDTH_CSS} 12rem 1fr 1fr 1fr [clickable-end] ${
+          } [clickable-start] 60ch 12rem 1fr 1fr 30ch [clickable-end] ${
             this.hasActionCell ? "min-content" : ""
           }`.trim()};
         }

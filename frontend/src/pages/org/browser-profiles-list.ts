@@ -61,7 +61,7 @@ export class BrowserProfilesList extends LiteElement {
   private renderTable() {
     return html`
       <btrix-table
-        style="grid-template-columns: min-content [clickable-start] repeat(3, auto) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
+        style="grid-template-columns: min-content [clickable-start] 60ch repeat(2, auto) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
       >
         <btrix-table-head class="mb-2">
           <btrix-table-header-cell>
@@ -118,7 +118,10 @@ export class BrowserProfilesList extends LiteElement {
             ></sl-icon>
           </sl-tooltip>
         </btrix-table-cell>
-        <btrix-table-cell rowClickTarget="a">
+        <btrix-table-cell
+          class="flex-col items-start justify-center"
+          rowClickTarget="a"
+        >
           <a
             class="flex items-center gap-3"
             href=${`${this.orgBasePath}/browser-profiles/profile/${data.id}`}
@@ -126,6 +129,13 @@ export class BrowserProfilesList extends LiteElement {
           >
             ${data.name}
           </a>
+          <div class="text-xs text-neutral-500 w-full">
+            <div class="truncate">
+              ${data.description} ${data.description} ${data.description}
+              ${data.description} ${data.description} ${data.description}
+              ${data.description}
+            </div>
+          </div>
         </btrix-table-cell>
         <btrix-table-cell class="whitespace-nowrap">
           <sl-format-date
@@ -147,15 +157,11 @@ export class BrowserProfilesList extends LiteElement {
 
   private renderActions(data: Profile) {
     return html`
-      <sl-dropdown hoist @click=${(e: Event) => e.preventDefault()}>
-        <btrix-button class="p-2" slot="trigger" label=${msg("Actions")} icon>
-          <sl-icon class="font-base" name="three-dots-vertical"></sl-icon>
-        </btrix-button>
+      <btrix-overflow-dropdown @click=${(e: Event) => e.preventDefault()}>
         <sl-menu>
           <sl-menu-item
             @click=${(e: any) => {
               this.duplicateProfile(data);
-              e.target.closest("sl-dropdown").hide();
             }}
           >
             <sl-icon slot="prefix" name="files"></sl-icon>
@@ -163,9 +169,6 @@ export class BrowserProfilesList extends LiteElement {
           </sl-menu-item>
           <sl-menu-item
             @click=${(e: any) => {
-              // Close dropdown before deleting template
-              e.target.closest("sl-dropdown").hide();
-
               this.deleteProfile(data);
             }}
           >
@@ -173,7 +176,7 @@ export class BrowserProfilesList extends LiteElement {
             ${msg("Delete")}
           </sl-menu-item>
         </sl-menu>
-      </sl-dropdown>
+      </btrix-overflow-dropdown>
     `;
   }
 

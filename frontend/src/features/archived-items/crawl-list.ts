@@ -28,8 +28,6 @@ import { renderName } from "@/utils/crawler";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { NavigateController } from "@/controllers/navigate";
 
-const NAME_WIDTH_CSS = css`16rem`;
-
 /**
  * @slot menu
  */
@@ -46,22 +44,6 @@ export class CrawlListItem extends TailwindElement {
       border-radius: var(--btrix-border-radius-top, 0)
         var(--btrix-border-radius-to, 0) var(--btrix-border-radius-bottom, 0)
         var(--btrix-border-radius-bottom, 0);
-    }
-
-    /*
-     * TODO consolidate data-table variations
-     * https://github.com/webrecorder/browsertrix-cloud/issues/1504
-     */
-    .clickLabel {
-      width: ${NAME_WIDTH_CSS};
-      overflow: hidden;
-      display: flex;
-      gap: var(--btrix-cell-gap, 0);
-      align-items: center;
-      height: 100%;
-      box-sizing: border-box;
-      padding: var(--btrix-cell-padding-top) var(--btrix-cell-padding-right)
-        var(--btrix-cell-padding-bottom) var(--btrix-cell-padding-left);
     }
   `;
 
@@ -96,7 +78,7 @@ export class CrawlListItem extends TailwindElement {
 
     if (this.workflowId) {
       const label = html`
-        <div class="clickLabel">
+        <div>
           ${this.safeRender(
             (crawl) => html`
               <sl-format-date
@@ -314,7 +296,7 @@ export class CrawlList extends TailwindElement {
         btrix-table {
           grid-template-columns:
             min-content [clickable-start]
-            ${this.workflowId ? "" : `${NAME_WIDTH_CSS} `}${NAME_WIDTH_CSS} auto
+            ${this.workflowId ? "" : `auto `}auto auto
             auto auto auto auto [clickable-end] min-content;
         }
       </style>

@@ -282,6 +282,18 @@
     border: 1px solid theme(colors.gray.200);
     border-radius: var(--sl-input-border-radius-small);
   }
+
+  .rowClickTarget {
+    max-width: 100%;
+  }
+
+  .rowClickTarget::after {
+    content: "";
+    display: block;
+    position: absolute;
+    inset: 0;
+    grid-column: clickable-start / clickable-end;
+  }
 }
 
 .sl-toast-stack {
