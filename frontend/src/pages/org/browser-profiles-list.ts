@@ -61,12 +61,15 @@ export class BrowserProfilesList extends LiteElement {
   private renderTable() {
     return html`
       <btrix-table
-        style="grid-template-columns: [clickable-start] repeat(3, auto) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
+        style="grid-template-columns: min-content [clickable-start] repeat(3, auto) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
       >
         <btrix-table-head class="mb-2">
-          <btrix-table-header-cell class="pl-3"
-            >${msg("Name")}</btrix-table-header-cell
-          >
+          <btrix-table-header-cell>
+            <span class="sr-only">${msg("Backed up status")}</span>
+          </btrix-table-header-cell>
+          <btrix-table-header-cell class="pl-0">
+            ${msg("Name")}
+          </btrix-table-header-cell>
           <btrix-table-header-cell>
             ${msg("Date Created")}
           </btrix-table-header-cell>
@@ -100,26 +103,28 @@ export class BrowserProfilesList extends LiteElement {
   }
 
   private renderItem = (data: Profile) => {
+    const isBackedUp = data.resource && data.resource.replicas.length > 0;
     return html`
       <btrix-table-row
         class="border rounded cursor-pointer select-none transition-all shadow hover:shadow-none hover:bg-neutral-50 focus-within:bg-neutral-50"
       >
-        <btrix-table-cell class="pl-3" rowClickTarget="a">
+        <btrix-table-cell class="p-3">
+          <sl-tooltip
+            content=${isBackedUp ? msg("Backed up") : msg("Not backed up")}
+          >
+            <sl-icon
+              name=${isBackedUp ? "clouds" : "cloud-slash"}
+              class="${isBackedUp ? "text-success" : "text-neutral-500"}"
+            ></sl-icon>
+          </sl-tooltip>
+        </btrix-table-cell>
+        <btrix-table-cell rowClickTarget="a">
           <a
-            class="flex items-center gap-3 px-3 py-2"
+            class="flex items-center gap-3"
             href=${`${this.orgBasePath}/browser-profiles/profile/${data.id}`}
             @click=${this.navLink}
           >
             ${data.name}
-            ${when(
-              data.resource && data.resource.replicas.length > 0,
-              () => html` <sl-tooltip content=${msg("Backed up")}>
-                <sl-icon
-                  name="clouds"
-                  class="w-4 h-4 align-text-bottom text-success"
-                ></sl-icon>
-              </sl-tooltip>`
-            )}
           </a>
         </btrix-table-cell>
         <btrix-table-cell class="whitespace-nowrap">
