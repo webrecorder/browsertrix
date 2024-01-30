@@ -54,7 +54,7 @@ export class DataTable extends TailwindElement {
   border?: "grid" | "horizontal";
 
   render() {
-    const gridAutoColumnsStyle = `--btrix-table-grid-auto-columns: ${
+    const gridAutoColumnsStyle = `grid-template-columns: ${
       this.columnWidths.length
         ? this.columnWidths.join(" ")
         : "minmax(max-content, auto)"

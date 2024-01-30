@@ -34,7 +34,7 @@ import { type TableHead } from "./table-head";
  * ```
  *
  * Table columns will be automatically sized according to its content.
- * To specify column size, use `--btrix-table-grid-auto-columns`.
+ * To specify column size, use `grid-template-columns`.
  *
  * @slot head
  * @slot
@@ -44,7 +44,6 @@ import { type TableHead } from "./table-head";
  * @cssproperty --btrix-cell-padding-left
  * @cssproperty --btrix-cell-padding-right
  * @cssproperty --btrix-cell-padding-bottom
- * @cssproperty --btrix-table-grid-auto-columns
  */
 @customElement("btrix-table")
 export class Table extends TailwindElement {
@@ -57,7 +56,6 @@ export class Table extends TailwindElement {
       --btrix-cell-padding-right: 0;
 
       display: grid;
-      grid-auto-columns: var(--btrix-table-grid-auto-columns, auto);
     }
   `;
 

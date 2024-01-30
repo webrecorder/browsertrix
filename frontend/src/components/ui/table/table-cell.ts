@@ -4,7 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 /**
  * @example Usage as row click target:
  * ```ts
- * <btrix-table-cell rowClickTarget style="--btrix-row-click-cell-grid-column: 2 / -1">
+ * <btrix-table-cell>
  *  <a href="#">Clicking the row clicks me</a>
  * </btrix-table-cell>
  * ```
@@ -14,7 +14,6 @@ import { customElement, property } from "lit/decorators.js";
  * @cssproperty --btrix-cell-padding-left
  * @cssproperty --btrix-cell-padding-right
  * @cssproperty --btrix-cell-padding-bottom
- * @cssproperty --btrix-row-click-cell-grid-column
  */
 @customElement("btrix-table-cell")
 export class TableCell extends LitElement {

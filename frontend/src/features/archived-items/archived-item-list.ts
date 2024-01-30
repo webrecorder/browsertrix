@@ -59,7 +59,7 @@ export class ArchivedItemListItem extends TailwindElement {
     .rowClickTarget > * {
       position: absolute;
       inset: 0;
-      grid-column: var(--btrix-row-click-cell-grid-column, 1 / -1);
+      grid-column: clickable-start / clickable-end;
     }
 
     .clickLabel {
@@ -232,13 +232,11 @@ export class ArchivedItemList extends TailwindElement {
     return html`
       <style>
         btrix-table {
-          --btrix-table-grid-auto-columns: ${`${
+          grid-template-columns: ${`${
             this.hasCheckboxCell ? "min-content" : ""
-          } ${NAME_WIDTH_CSS} 12rem 1fr 1fr 1fr ${
+          } [clickable-start] ${NAME_WIDTH_CSS} 12rem 1fr 1fr 1fr [clickable-end] ${
             this.hasActionCell ? "min-content" : ""
           }`.trim()};
-          --btrix-row-click-cell-grid-column: ${this.hasCheckboxCell ? 2 : 1} /
-            -${this.hasActionCell ? 2 : 1};
         }
       </style>
       <div class="overflow-auto">

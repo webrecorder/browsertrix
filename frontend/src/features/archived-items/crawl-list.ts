@@ -66,7 +66,7 @@ export class CrawlListItem extends TailwindElement {
     .rowClickTarget > * {
       position: absolute;
       inset: 0;
-      grid-column: var(--btrix-row-click-cell-grid-column, 1 / -1);
+      grid-column: clickable-start / clickable-end;
     }
 
     .clickLabel {
@@ -329,10 +329,10 @@ export class CrawlList extends TailwindElement {
   render() {
     return html` <style>
         btrix-table {
-          --btrix-table-grid-auto-columns: min-content
+          grid-template-columns:
+            min-content [clickable-start]
             ${this.workflowId ? "" : `${NAME_WIDTH_CSS} `}${NAME_WIDTH_CSS} auto
-            auto auto auto auto min-content;
-          --btrix-row-click-cell-grid-column: 2 / -2;
+            auto auto auto auto [clickable-end] min-content;
         }
       </style>
       <div class="overflow-auto">
