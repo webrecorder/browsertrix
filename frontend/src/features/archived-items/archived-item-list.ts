@@ -42,7 +42,10 @@ export class ArchivedItemListItem extends TailwindElement {
       height: 2.5rem;
     }
 
-    /* TODO consolidate with crawl-list and data-table */
+    /*
+     * TODO consolidate data-table variations
+     * https://github.com/webrecorder/browsertrix-cloud/issues/1504
+     */
     btrix-table-cell {
       overflow: hidden;
       white-space: nowrap;

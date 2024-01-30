@@ -49,7 +49,10 @@ export class CrawlListItem extends TailwindElement {
       position: relative;
     }
 
-    /* TODO consolidate with archived-item-list and data-table */
+    /*
+     * TODO consolidate data-table variations
+     * https://github.com/webrecorder/browsertrix-cloud/issues/1504
+     */
     btrix-table-cell {
       overflow: hidden;
       white-space: nowrap;
