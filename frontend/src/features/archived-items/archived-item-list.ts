@@ -38,7 +38,6 @@ export class ArchivedItemListItem extends TailwindElement {
       border-radius: var(--btrix-border-radius-top, 0)
         var(--btrix-border-radius-to, 0) var(--btrix-border-radius-bottom, 0)
         var(--btrix-border-radius-bottom, 0);
-      position: relative;
       height: 2.5rem;
     }
 
@@ -46,11 +45,6 @@ export class ArchivedItemListItem extends TailwindElement {
      * TODO consolidate data-table variations
      * https://github.com/webrecorder/browsertrix-cloud/issues/1504
      */
-    btrix-table-cell {
-      overflow: hidden;
-      white-space: nowrap;
-    }
-
     .clickLabel {
       width: ${NAME_WIDTH_CSS};
       display: flex;

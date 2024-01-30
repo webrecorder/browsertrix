@@ -8,6 +8,7 @@ import type { Profile } from "./types";
 import type { APIPaginatedList } from "@/types/api";
 import type { SelectNewDialogEvent } from "./index";
 import type { Browser } from "@/types/browser";
+import { nothing } from "lit";
 
 /**
  * Usage:
@@ -54,118 +55,106 @@ export class BrowserProfilesList extends LiteElement {
           </sl-button>
         </div>
       </header>
-
-      ${this.renderTable()}`;
+      <div class="overflow-auto pb-1">${this.renderTable()}</div>`;
   }
 
   private renderTable() {
     return html`
-      <div role="table">
-        <div class="mb-2 px-1" role="rowgroup">
-          <div
-            class="hidden md:grid grid-cols-8 gap-3 md:gap-5 text-sm text-neutral-500"
-            role="row"
-          >
-            <div class="col-span-3 px-2" role="columnheader" aria-sort="none">
-              ${msg("Description")}
-            </div>
-            <div class="col-span-1 px-2" role="columnheader" aria-sort="none">
-              ${msg("Created")}
-            </div>
-            <div class="col-span-2 px-2" role="columnheader" aria-sort="none">
-              ${msg("Visited URLs")}
-            </div>
-          </div>
-        </div>
-        ${this.browserProfiles
-          ? this.browserProfiles.length
-            ? html`<div class="border rounded" role="rowgroup">
-                ${this.browserProfiles.map(this.renderItem.bind(this))}
-              </div>`
-            : html`
-                <div class="border-t border-b py-5">
-                  <p class="text-center text-0-500">
-                    ${msg("No browser profiles yet.")}
-                  </p>
-                </div>
-              `
-          : ""}
-      </div>
-    `;
-  }
-
-  private renderItem(data: Profile) {
-    return html`
-      <a
-        class="block p-1 leading-none hover:bg-zinc-50 hover:text-primary border-t first:border-t-0 transition-colors"
-        href=${`${this.orgBasePath}/browser-profiles/profile/${data.id}`}
-        @click=${this.navLink}
-        title=${data.name}
+      <btrix-table
+        style="grid-template-columns: [clickable-start] repeat(3, auto) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
       >
-        <div class="grid grid-cols-8 gap-3 md:gap-5" role="row">
-          <div class="col-span-8 md:col-span-3 p-2" role="cell">
-            <div class="font-medium text-sm">
-              <span>${data.name}</span>
-              ${when(
-                data.resource && data.resource.replicas.length > 0,
-                () => html` <sl-tooltip content=${msg("Backed up")}>
-                  <sl-icon
-                    name="clouds"
-                    class="w-4 h-4 ml-2 align-text-bottom text-success"
-                  ></sl-icon>
-                </sl-tooltip>`
-              )}
+        <btrix-table-head class="mb-2">
+          <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
+          <btrix-table-header-cell>
+            ${msg("Date Created")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell>
+            ${msg("Visited URLs")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell>
+            <span class="sr-only">${msg("Row Actions")}</span>
+          </btrix-table-header-cell>
+        </btrix-table-head>
+        ${this.browserProfiles?.length
+          ? html`
+              <btrix-table-body
+                style="--btrix-row-gap: var(--sl-spacing-x-small); --btrix-cell-padding-top: var(--sl-spacing-2x-small); --btrix-cell-padding-bottom: var(--sl-spacing-2x-small);"
+              >
+                ${this.browserProfiles.map(this.renderItem)}
+              </btrix-table-body>
+            `
+          : nothing}
+      </btrix-table>
+      ${this.browserProfiles?.length
+        ? nothing
+        : html`
+            <div class="border-t border-b py-5">
+              <p class="text-center text-0-500">
+                ${msg("No browser profiles yet.")}
+              </p>
             </div>
-            <div class="text-sm truncate" title=${data.description}>
-              ${data.description}
-            </div>
-          </div>
-          <div class="col-span-8 md:col-span-1 p-2 text-sm" role="cell">
-            ${new Date(data.created).toLocaleDateString()}
-          </div>
-          <div class="col-span-7 md:col-span-3 p-2 text-sm" role="cell">
-            ${data.origins.join(", ")}
-          </div>
-          <div class="col-span-1 md:col-span-1 flex items-center justify-end">
-            ${this.renderMenu(data)}
-          </div>
-        </div>
-      </a>
+          `}
     `;
   }
 
-  private renderMenu(data: Profile) {
+  private renderItem = (data: Profile) => {
+    return html`
+      <btrix-table-row
+        class="border rounded cursor-pointer select-none transition-all shadow hover:shadow-none hover:bg-neutral-50 focus-within:bg-neutral-50"
+      >
+        <btrix-table-cell class="whitespace-nowrap pl-3" rowClickTarget="a">
+          <a
+            class="flex items-center gap-3 p-2"
+            href=${`${this.orgBasePath}/browser-profiles/profile/${data.id}`}
+            @click=${this.navLink}
+          >
+            ${data.name}
+            ${when(
+              data.resource && data.resource.replicas.length > 0,
+              () => html` <sl-tooltip content=${msg("Backed up")}>
+                <sl-icon
+                  name="clouds"
+                  class="w-4 h-4 align-text-bottom text-success"
+                ></sl-icon>
+              </sl-tooltip>`
+            )}
+          </a>
+        </btrix-table-cell>
+        <btrix-table-cell class="whitespace-nowrap">
+          <sl-format-date
+            date=${`${data.created}Z`}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+            hour="2-digit"
+            minute="2-digit"
+          ></sl-format-date>
+        </btrix-table-cell>
+        <btrix-table-cell>${data.origins.join(", ")}</btrix-table-cell>
+        <btrix-table-cell class="p-0"
+          >${this.renderActions(data)}</btrix-table-cell
+        >
+      </btrix-table-row>
+    `;
+  };
+
+  private renderActions(data: Profile) {
     return html`
       <sl-dropdown hoist @click=${(e: Event) => e.preventDefault()}>
-        <sl-icon-button
-          slot="trigger"
-          name="three-dots"
-          label=${msg("Actions")}
-          style="font-size: 1rem"
-        ></sl-icon-button>
-        <ul
-          class="text-sm text-neutral-800 bg-white whitespace-nowrap"
-          role="menu"
-        >
-          <li
-            class="p-2 hover:bg-zinc-100 cursor-pointer"
-            role="menuitem"
+        <btrix-button class="p-2" slot="trigger" label=${msg("Actions")} icon>
+          <sl-icon class="font-base" name="three-dots-vertical"></sl-icon>
+        </btrix-button>
+        <sl-menu>
+          <sl-menu-item
             @click=${(e: any) => {
               this.duplicateProfile(data);
               e.target.closest("sl-dropdown").hide();
             }}
           >
-            <sl-icon
-              class="inline-block align-middle px-1"
-              name="files"
-            ></sl-icon>
-            <span class="inline-block align-middle pr-2"
-              >${msg("Duplicate profile")}</span
-            >
-          </li>
-          <li
-            class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
-            role="menuitem"
+            <sl-icon slot="prefix" name="files"></sl-icon>
+            ${msg("Duplicate profile")}
+          </sl-menu-item>
+          <sl-menu-item
             @click=${(e: any) => {
               // Close dropdown before deleting template
               e.target.closest("sl-dropdown").hide();
@@ -173,13 +162,10 @@ export class BrowserProfilesList extends LiteElement {
               this.deleteProfile(data);
             }}
           >
-            <sl-icon
-              class="inline-block align-middle px-1"
-              name="trash3"
-            ></sl-icon>
-            <span class="inline-block align-middle pr-2">${msg("Delete")}</span>
-          </li>
-        </ul>
+            <sl-icon slot="prefix" name="trash3"></sl-icon>
+            ${msg("Delete")}
+          </sl-menu-item>
+        </sl-menu>
       </sl-dropdown>
     `;
   }

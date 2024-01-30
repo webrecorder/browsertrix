@@ -46,18 +46,12 @@ export class CrawlListItem extends TailwindElement {
       border-radius: var(--btrix-border-radius-top, 0)
         var(--btrix-border-radius-to, 0) var(--btrix-border-radius-bottom, 0)
         var(--btrix-border-radius-bottom, 0);
-      position: relative;
     }
 
     /*
      * TODO consolidate data-table variations
      * https://github.com/webrecorder/browsertrix-cloud/issues/1504
      */
-    btrix-table-cell {
-      overflow: hidden;
-      white-space: nowrap;
-    }
-
     .clickLabel {
       width: ${NAME_WIDTH_CSS};
       overflow: hidden;
