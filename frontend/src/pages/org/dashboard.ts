@@ -702,7 +702,9 @@ export class Dashboard extends LiteElement {
         ${msg("Total Execution Time")}
         <sl-tooltip>
           <div slot="content" style="text-transform: initial">
-            ${msg("Total running time of all crawler instances")}
+            ${msg(
+              "Total billable time of all crawler instances this used month"
+            )}
           </div>
           <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
         </sl-tooltip>
@@ -713,7 +715,7 @@ export class Dashboard extends LiteElement {
       usageTableCols.push(html`${msg("Execution: Monthly")}
         <sl-tooltip>
           <div slot="content" style="text-transform: initial">
-            ${msg("Monthly execution time used on crawls this month")}
+            ${msg("Billable time used, included with monthly plan")}
           </div>
           <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
         </sl-tooltip>`);
@@ -722,7 +724,9 @@ export class Dashboard extends LiteElement {
       usageTableCols.push(html`${msg("Execution: Extra")}
         <sl-tooltip>
           <div slot="content" style="text-transform: initial">
-            ${msg("Billable rollover execution time used on crawls this month")}
+            ${msg(
+              "Additional units of billable time used, any extra minutes will roll over to next month"
+            )}
           </div>
           <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
         </sl-tooltip>`);
@@ -731,7 +735,9 @@ export class Dashboard extends LiteElement {
       usageTableCols.push(html`${msg("Execution: Gifted")}
         <sl-tooltip>
           <div slot="content" style="text-transform: initial">
-            ${msg("Gifted execution time used on crawls this month")}
+            ${msg(
+              "Usage of execution time added to your account free of charge"
+            )}
           </div>
           <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
         </sl-tooltip>`);
