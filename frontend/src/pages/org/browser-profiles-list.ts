@@ -64,7 +64,9 @@ export class BrowserProfilesList extends LiteElement {
         style="grid-template-columns: [clickable-start] repeat(3, auto) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
       >
         <btrix-table-head class="mb-2">
-          <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
+          <btrix-table-header-cell class="pl-3"
+            >${msg("Name")}</btrix-table-header-cell
+          >
           <btrix-table-header-cell>
             ${msg("Date Created")}
           </btrix-table-header-cell>
@@ -102,9 +104,9 @@ export class BrowserProfilesList extends LiteElement {
       <btrix-table-row
         class="border rounded cursor-pointer select-none transition-all shadow hover:shadow-none hover:bg-neutral-50 focus-within:bg-neutral-50"
       >
-        <btrix-table-cell class="whitespace-nowrap pl-3" rowClickTarget="a">
+        <btrix-table-cell class="pl-3" rowClickTarget="a">
           <a
-            class="flex items-center gap-3 p-2"
+            class="flex items-center gap-3 px-3 py-2"
             href=${`${this.orgBasePath}/browser-profiles/profile/${data.id}`}
             @click=${this.navLink}
           >
