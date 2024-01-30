@@ -30,6 +30,9 @@ import { NavigateController } from "@/controllers/navigate";
 
 const NAME_WIDTH_CSS = css`16rem`;
 
+/**
+ * @slot menu
+ */
 @localized()
 @customElement("btrix-crawl-list-item")
 export class CrawlListItem extends TailwindElement {
@@ -46,11 +49,12 @@ export class CrawlListItem extends TailwindElement {
       position: relative;
     }
 
+    /* TODO consolidate with archived-item-list and data-table */
     btrix-table-cell {
+      overflow: hidden;
       white-space: nowrap;
     }
 
-    /* TODO consolidate with archived-item-list and data-table */
     .rowClickTarget {
       display: grid;
       grid-template-columns: subgrid;
@@ -279,16 +283,22 @@ export class CrawlListItem extends TailwindElement {
   }
 }
 
+/**
+ * @slot
+ */
 @localized()
 @customElement("btrix-crawl-list")
 export class CrawlList extends TailwindElement {
   static styles = css`
     btrix-table {
       --btrix-cell-gap: var(--sl-spacing-x-small);
-      --btrix-cell-padding-top: var(--sl-spacing-2x-small);
-      --btrix-cell-padding-bottom: var(--sl-spacing-2x-small);
       --btrix-cell-padding-left: var(--sl-spacing-small);
       --btrix-cell-padding-right: var(--sl-spacing-small);
+    }
+
+    btrix-table-body {
+      --btrix-cell-padding-top: var(--sl-spacing-2x-small);
+      --btrix-cell-padding-bottom: var(--sl-spacing-2x-small);
     }
 
     btrix-table-body ::slotted(*:nth-of-type(n + 2)) {

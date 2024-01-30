@@ -250,7 +250,7 @@ export class CrawlsList extends LiteElement {
           () => {
             const { items, page, total, pageSize } = this.archivedItems!;
             return html`
-              <section>
+              <section class="mx-2">
                 ${items.length
                   ? this.renderArchivedItemList()
                   : this.renderEmptyState()}

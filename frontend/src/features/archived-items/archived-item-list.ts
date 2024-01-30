@@ -42,11 +42,12 @@ export class ArchivedItemListItem extends TailwindElement {
       height: 2.5rem;
     }
 
+    /* TODO consolidate with crawl-list and data-table */
     btrix-table-cell {
       overflow: hidden;
+      white-space: nowrap;
     }
 
-    /* TODO consolidate with crawl-list and data-table */
     .rowClickTarget {
       display: grid;
       grid-template-columns: subgrid;
