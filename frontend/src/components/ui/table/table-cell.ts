@@ -49,6 +49,8 @@ export class TableCell extends LitElement {
             :host {
               display: grid;
               grid-template-columns: subgrid;
+              white-space: nowrap;
+              overflow: hidden;
             }
 
             ::slotted(${unsafeCSS(this.rowClickTarget)}) {

@@ -151,7 +151,9 @@ export class CollectionsList extends LiteElement {
               >
                 ${this.renderControls()}
               </div>
-              ${guard([this.collections], this.renderList)}
+              <div class="overflow-auto pb-1">
+                ${guard([this.collections], this.renderList)}
+              </div>
             `
           : this.renderLoading()
       )}
@@ -391,7 +393,7 @@ export class CollectionsList extends LiteElement {
     if (this.collections?.items.length) {
       return html`
         <btrix-table
-          style="grid-template-columns: min-content 24rem repeat(3, 1fr) 12rem min-content"
+          style="grid-template-columns: min-content [clickable-start] 24rem repeat(3, 1fr) 12rem [clickable-end] min-content"
         >
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell>
@@ -485,7 +487,9 @@ export class CollectionsList extends LiteElement {
 
   private renderItem = (col: Collection) =>
     html`
-      <btrix-table-row class="border rounded">
+      <btrix-table-row
+        class="border rounded cursor-pointer select-none transition-all shadow hover:shadow-none hover:bg-neutral-50 focus-within:bg-neutral-50"
+      >
         <btrix-table-cell class="p-3">
           ${col?.isPublic
             ? html`
@@ -507,10 +511,10 @@ export class CollectionsList extends LiteElement {
                 </sl-tooltip>
               `}
         </btrix-table-cell>
-        <btrix-table-cell>
+        <btrix-table-cell rowClickTarget="a">
           <a
+            class="block py-2 max-w-[24rem] truncate"
             href=${`${this.orgBasePath}/collections/view/${col.id}`}
-            class="block text-primary hover:text-indigo-500"
             @click=${this.navLink}
           >
             ${col.name}
