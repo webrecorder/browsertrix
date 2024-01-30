@@ -19,11 +19,11 @@ CHUNK_SIZE = 1024 * 256
 
 
 # ============================================================================
-def sync_get_log_stream(client, bucket, key, log_zipinfo, cd_start):
-    """Return uncompressed byte stream of log file in WACZ"""
+def sync_get_filestream(client, bucket, key, file_zipinfo, cd_start):
+    """Return uncompressed byte stream of file in WACZ"""
     # pylint: disable=too-many-locals
     file_head = sync_fetch(
-        client, bucket, key, cd_start + log_zipinfo.header_offset + 26, 4
+        client, bucket, key, cd_start + file_zipinfo.header_offset + 26, 4
     )
     name_len = parse_little_endian_to_int(file_head[0:2])
     extra_len = parse_little_endian_to_int(file_head[2:4])
@@ -32,24 +32,25 @@ def sync_get_log_stream(client, bucket, key, log_zipinfo, cd_start):
         client,
         bucket,
         key,
-        cd_start + log_zipinfo.header_offset + 30 + name_len + extra_len,
-        log_zipinfo.compress_size,
+        cd_start + file_zipinfo.header_offset + 30 + name_len + extra_len,
+        file_zipinfo.compress_size,
     )
 
-    if log_zipinfo.compress_type == zipfile.ZIP_DEFLATED:
-        uncompressed_content = zlib.decompressobj(-zlib.MAX_WBITS).decompress(content)
-    else:
-        uncompressed_content = content
+    decompress = False
+    if file_zipinfo.compress_type == zipfile.ZIP_DEFLATED:
+        decompress = True
 
-    return sync_iter_lines(uncompressed_content)
+    return sync_iter_lines(content, decompress=decompress)
 
 
-def sync_iter_lines(chunk_iter, keepends=True):
+def sync_iter_lines(chunk_iter, decompress=False, keepends=True):
     """
     Iter by lines, adapted from botocore
     """
     pending = b""
     for chunk in chunk_iter:
+        if decompress:
+            chunk = zlib.decompressobj(-zlib.MAX_WBITS).decompress(chunk)
         lines = (pending + chunk).splitlines(True)
         for line in lines[:-1]:
             yield line.splitlines(keepends)[0]

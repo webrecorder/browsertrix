@@ -1366,3 +1366,37 @@ class AnyJob(BaseModel):
     """Union of all job types, for response model"""
 
     __root__: Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob]
+
+
+# ============================================================================
+
+### PAGES ###
+
+
+# ============================================================================
+class PageReviewUpdate(BaseModel):
+    """Update model for page manual review"""
+
+    notes: Optional[List[str]] = None
+    approved: Optional[bool] = None
+
+
+# ============================================================================
+class Page(BaseMongoModel):
+    """Model for crawl pages"""
+
+    oid: UUID
+    crawl_id: str
+    url: AnyHttpUrl
+    title: Optional[str] = None
+    timestamp: Optional[datetime] = None
+    load_state: Optional[int]
+
+    # automated heuristics
+    screenshot_comparison: Optional[Dict[str, int]] = {}
+
+    # manual review
+    userid: Optional[UUID] = None
+    modified: Optional[datetime] = None
+    approved: Optional[bool] = None
+    notes: Optional[List[str]] = []

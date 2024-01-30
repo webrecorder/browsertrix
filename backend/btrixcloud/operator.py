@@ -47,10 +47,11 @@ if TYPE_CHECKING:
     from .webhooks import EventWebhookOps
     from .users import UserManager
     from .background_jobs import BackgroundJobOps
+    from .pages import PageOps
     from redis.asyncio.client import Redis
 else:
     CrawlConfigOps = CrawlOps = OrgOps = CollectionOps = Redis = object
-    StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = object
+    StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = PageOps = object
 
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
@@ -268,6 +269,7 @@ class BtrixOperator(K8sAPI):
     event_webhook_ops: EventWebhookOps
     background_job_ops: BackgroundJobOps
     user_ops: UserManager
+    page_ops: PageOps
 
     def __init__(
         self,
@@ -278,6 +280,7 @@ class BtrixOperator(K8sAPI):
         storage_ops,
         event_webhook_ops,
         background_job_ops,
+        page_ops,
     ):
         super().__init__()
 
@@ -288,6 +291,7 @@ class BtrixOperator(K8sAPI):
         self.storage_ops = storage_ops
         self.background_job_ops = background_job_ops
         self.event_webhook_ops = event_webhook_ops
+        self.page_ops = page_ops
 
         self.user_ops = crawl_config_ops.user_manager
 
@@ -1533,8 +1537,9 @@ class BtrixOperator(K8sAPI):
             crawl_id, oid, state
         )
 
-        # add crawl errors to db
         await self.add_crawl_errors_to_db(crawl_id)
+
+        await self.page_ops.add_crawl_pages_to_db(crawl_id, oid)
 
         # finally, delete job
         await self.delete_crawl_job(crawl_id)

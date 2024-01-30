@@ -374,6 +374,85 @@ def test_crawl_stats(crawler_auth_headers, default_org_id):
             assert row["avg_page_time"] or row["avg_page_time"] == 0
 
 
+def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
+    # Test GET list endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] >= 0
+
+    pages = data["items"]
+    assert pages
+
+    for page in pages:
+        assert page["id"]
+        assert page["oid"]
+        assert page["crawl_id"]
+        assert page["url"]
+        assert page["timestamp"]
+        assert page.get("title") or page.get("title") is None
+        assert page["load_state"]
+
+    # Test GET page endpoint
+    page_id = pages[0]["id"]
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    page = r.json()
+
+    assert page["id"] == page_id
+    assert page["oid"]
+    assert page["crawl_id"]
+    assert page["url"]
+    assert page["timestamp"]
+    assert page.get("title") or page.get("title") is None
+    assert page["load_state"]
+
+    assert page["screenshot_comparison"] == {}
+
+    assert page["notes"] == []
+    assert page.get("userid") is None
+    assert page.get("modified") is None
+    assert page.get("approved") is None
+
+    # Update page with review
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+        json={
+            "notes": ["first note"],
+            "approved": True,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    page = r.json()
+
+    assert page["id"] == page_id
+    assert page["oid"]
+    assert page["crawl_id"]
+    assert page["url"]
+    assert page["timestamp"]
+    assert page.get("title") or page.get("title") is None
+    assert page["load_state"]
+
+    assert page["notes"] == ["first note"]
+    assert page["userid"]
+    assert page["modified"]
+    assert page["approved"]
+
+
 def test_delete_crawls_crawler(
     crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id
 ):
