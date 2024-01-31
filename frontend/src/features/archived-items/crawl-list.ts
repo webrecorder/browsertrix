@@ -12,7 +12,7 @@
  * ```
  */
 import type { TemplateResult } from "lit";
-import { LitElement, html, css, nothing } from "lit";
+import { html, css, nothing } from "lit";
 import {
   customElement,
   property,
@@ -71,7 +71,7 @@ export class CrawlListItem extends TailwindElement {
     notation: "compact",
   });
 
-  private navigate = new NavigateController(this);
+  private readonly navigate = new NavigateController(this);
 
   render() {
     if (!this.crawl) return;
@@ -353,7 +353,7 @@ export class CrawlList extends TailwindElement {
       }
     };
 
-    this.listItems.forEach((item, i) => {
+    this.listItems.forEach((item) => {
       assignProp(item, {
         name: "collectionId",
         value: this.collectionId || "",

@@ -1,4 +1,4 @@
-import { html, css, type TemplateResult } from "lit";
+import { html, css, nothing } from "lit";
 import {
   customElement,
   property,
@@ -59,7 +59,7 @@ export class ArchivedItemListItem extends TailwindElement {
   @query("sl-checkbox")
   checkboxEl?: SlCheckbox;
 
-  private navigate = new NavigateController(this);
+  private readonly navigate = new NavigateController(this);
 
   render() {
     if (!this.item) return;
@@ -101,7 +101,7 @@ export class ArchivedItemListItem extends TailwindElement {
           : nothing}
         <btrix-table-cell
           rowClickTarget=${ifDefined(
-            this.href ? "a" : this.checkbox ? "label" : undefined
+            this.href ? "a" : this.checkbox ? "label" : undefined,
           )}
         >
           ${this.href

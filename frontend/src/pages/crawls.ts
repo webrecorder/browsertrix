@@ -12,6 +12,7 @@ import { needLogin } from "@/utils/auth";
 import { activeCrawlStates } from "@/utils/crawler";
 import type { Crawl, CrawlState } from "@/types/crawler";
 import type { APIPaginationQuery, APIPaginatedList } from "@/types/api";
+import { type PropertyValues } from "lit";
 
 type SortField = "started" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
@@ -280,7 +281,7 @@ export class Crawls extends LiteElement {
     `;
   }
 
-  private renderCrawlItem = (crawl: Crawl) => {
+  private readonly renderCrawlItem = (crawl: Crawl) => {
     const crawlPath = `/orgs/${this.slugLookup[crawl.oid]}/items/crawl/${
       crawl.id
     }`;

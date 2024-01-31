@@ -10,13 +10,7 @@ import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type {
-  ArchivedItem,
-  Crawl,
-  CrawlState,
-  Workflow,
-  Upload,
-} from "./types";
+import type { ArchivedItem, Crawl, CrawlState, Workflow } from "./types";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isActive, finishedCrawlStates } from "@/utils/crawler";
 import { type PropertyValues, nothing } from "lit";
@@ -500,7 +494,7 @@ export class CrawlsList extends LiteElement {
     `;
   }
 
-  private renderArchivedItem = (item: ArchivedItem) => html`
+  private readonly renderArchivedItem = (item: ArchivedItem) => html`
     <btrix-archived-item-list-item
       href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}`}
       .item=${item}
@@ -525,7 +519,7 @@ export class CrawlsList extends LiteElement {
     </btrix-archived-item-list-item>
   `;
 
-  private renderMenuItems = (item: ArchivedItem) =>
+  private readonly renderMenuItems = (item: ArchivedItem) =>
     // HACK shoelace doesn't current have a way to override non-hover
     // color without resetting the --sl-color-neutral-700 variable
     html`
@@ -731,7 +725,7 @@ export class CrawlsList extends LiteElement {
     }
   }
 
-  private confirmDeleteItem = (item: ArchivedItem) => {
+  private readonly confirmDeleteItem = (item: ArchivedItem) => {
     this.itemToDelete = item;
     this.isDeletingItem = true;
   };

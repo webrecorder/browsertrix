@@ -4,7 +4,7 @@ import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
 import queryString from "query-string";
-import { nothing, type TemplateResult } from "lit";
+import { nothing, type PropertyValues, type TemplateResult } from "lit";
 import type { SlCheckbox } from "@shoelace-style/shoelace";
 import { repeat } from "lit/directives/repeat.js";
 
