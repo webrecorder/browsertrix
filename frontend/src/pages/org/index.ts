@@ -31,6 +31,7 @@ import type {
   OrgRemoveMemberEvent,
 } from "./settings";
 import type { Tab as CollectionTab } from "./collection-detail";
+import type { QATab } from "./archived-item-qa";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import { type TemplateResult } from "lit";
@@ -50,7 +51,7 @@ export type OrgParams = {
   items: {
     itemType?: Crawl["type"];
     itemId?: string;
-    qaTab?: "screenshots" | "replay";
+    qaTab?: QATab;
     workflowId?: string;
     collectionId?: string;
   };
@@ -522,6 +523,7 @@ export class Org extends LiteElement {
           .authState=${this.authState!}
           orgId=${this.orgId}
           itemId=${params.itemId}
+          tab=${params.qaTab}
           ?isCrawler=${this.isCrawler}
         ></btrix-archived-item-qa>`;
       }
