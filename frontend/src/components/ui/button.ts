@@ -5,6 +5,7 @@ import { html, literal } from "lit/static-html.js";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { TailwindElement } from "@/classes/TailwindElement";
+import { tw } from "@/utils/tailwind";
 
 /**
  * Custom styled button
@@ -56,15 +57,13 @@ export class Button extends TailwindElement {
     return html`<${tag}
       type=${this.type === "submit" ? "submit" : "button"}
       class=${[
-        "flex gap-2 items-center justify-center rounded-sm font-medium text-center cursor-pointer transition-all disabled:cursor-not-allowed disabled:text-neutral-300 h-6",
-        this.icon ? "min-w-6 min-h-6 px-1" : "h-6 px-2",
-        this.raised ? "shadow-sm" : "",
+        tw`flex h-6 cursor-pointer items-center justify-center gap-2 rounded-sm text-center font-medium transition-all disabled:cursor-not-allowed disabled:text-neutral-300`,
+        this.icon ? tw`min-h-6 min-w-6 px-1` : tw`h-6 px-2`,
+        this.raised ? tw`shadow-sm` : "",
         {
-          primary:
-            "bg-blue-50 text-blue-600 hover:bg-blue-100 shadow-blue-800/20",
-          danger:
-            "bg-danger-50 text-danger-600 hover:bg-danger-100 shadow-danger-800/20",
-          neutral: "text-neutral-600 hover:text-blue-600",
+          primary: tw`bg-blue-50 text-blue-600 shadow-blue-800/20 hover:bg-blue-100`,
+          danger: tw`shadow-danger-800/20 bg-danger-50 text-danger-600 hover:bg-danger-100`,
+          neutral: tw`text-neutral-600 hover:text-blue-600`,
         }[this.variant],
       ]
         .filter(Boolean)

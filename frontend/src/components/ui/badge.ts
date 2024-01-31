@@ -1,4 +1,5 @@
 import { TailwindElement } from "@/classes/TailwindElement";
+import { tw } from "@/utils/tailwind";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
@@ -25,12 +26,12 @@ export class Badge extends TailwindElement {
     return html`
       <span
         class="h-4.5 ${{
-          success: "bg-success-500 text-neutral-0",
-          warning: "bg-warning-600 text-neutral-0",
-          danger: "bg-danger-500 text-neutral-0",
-          neutral: "bg-neutral-100 text-neutral-600",
-          "high-contrast": "bg-neutral-600 text-neutral-0",
-          primary: "bg-primary text-neutral-0",
+          success: tw`bg-success-500 text-neutral-0`,
+          warning: tw`bg-warning-600 text-neutral-0`,
+          danger: tw`bg-danger-500 text-neutral-0`,
+          neutral: tw`bg-neutral-100 text-neutral-600`,
+          "high-contrast": tw`bg-neutral-600 text-neutral-0`,
+          primary: tw`bg-primary text-neutral-0`,
         }[
           this.variant
         ]} inline-flex items-center justify-center rounded-sm px-2 align-[1px] text-xs"
