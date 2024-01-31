@@ -51,7 +51,7 @@ export class Button extends TailwindElement {
     return html`<${tag}
       type=${this.type === "submit" ? "submit" : "button"}
       class=${[
-        tw`flex w-full cursor-pointer items-center justify-start gap-2 rounded-sm px-2 py-4 font-medium transition-all disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50`,
+        tw`flex w-full cursor-pointer items-center justify-start gap-2 rounded-sm px-2 py-4 font-medium  outline-primary-600 transition-shadow focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-1 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50`,
         this.icon ? tw`min-h-6 min-w-6` : tw`h-6`,
         this.active
           ? tw`bg-blue-100 text-blue-600 shadow-sm shadow-blue-800/20 hover:bg-blue-100`

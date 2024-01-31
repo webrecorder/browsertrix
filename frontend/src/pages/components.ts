@@ -12,7 +12,7 @@ export class Home extends TailwindElement {
     }
   `;
   render() {
-    return html`<div class="flex w-full p-8 *:flex-auto">
+    return html`<div class="flex w-full gap-2 p-8 *:flex-auto">
       <btrix-navigation-button disabled>
         Disabled
         <btrix-badge variant="primary">1</btrix-badge>

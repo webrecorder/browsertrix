@@ -132,6 +132,12 @@ function makeTheme() {
       fast: "var(--sl-transition-fast)",
       "x-fast": "var(--sl-transition-x-fast)",
     },
+    outlineWidth: {
+      3: "3px",
+    },
+    outlineOffset: {
+      3: "3px",
+    },
   };
 }
 
