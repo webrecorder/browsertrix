@@ -166,9 +166,9 @@ def generate_password() -> str:
 # ============================================================================
 def openid_convertor(response: Dict[str, Any], session = None) -> OpenID:
     
-    email = response.get("SSO_OIDC_USERINFO_EMAIL_FIELD", None)
-    username = response.get("SSO_OIDC_USERINFO_USERNAME_FIELD", None)
-    groups = response.get("SSO_OIDC_USERINFO_GROUPS_FIELD", None)
+    email = response.get(SSO_OIDC_USERINFO_EMAIL_FIELD, None)
+    username = response.get(SSO_OIDC_USERINFO_USERNAME_FIELD, None)
+    groups = response.get(SSO_OIDC_USERINFO_GROUPS_FIELD, None)
 
     if email is None or username is None or groups is None or not isinstance(groups, list):
         raise HTTPException(
