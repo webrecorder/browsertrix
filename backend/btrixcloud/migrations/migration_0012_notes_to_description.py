@@ -1,6 +1,7 @@
 """
 Migration 0012 - Notes to description
 """
+
 from btrixcloud.migrations import BaseMigration
 
 

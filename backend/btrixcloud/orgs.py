@@ -1,6 +1,7 @@
 """
 Organization API handling
 """
+
 # pylint: disable=too-many-lines
 import math
 import os
