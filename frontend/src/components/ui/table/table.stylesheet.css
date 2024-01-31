@@ -16,3 +16,9 @@ btrix-table-cell[rowClickTarget] {
   inset: 0;
   grid-column: clickable-start / clickable-end;
 }
+
+.rowClickTarget:focus-visible {
+  outline: var(--sl-focus-ring);
+  outline-offset: -0.25rem;
+  border-radius: 0.5rem;
+}
