@@ -152,7 +152,7 @@ export class CollectionsList extends LiteElement {
               >
                 ${this.renderControls()}
               </div>
-              <div class="overflow-auto pb-1">
+              <div class="overflow-auto pb-1 px-2">
                 ${guard([this.collections], this.renderList)}
               </div>
             `

@@ -55,7 +55,7 @@ export class BrowserProfilesList extends LiteElement {
           </sl-button>
         </div>
       </header>
-      <div class="overflow-auto pb-1">${this.renderTable()}</div>`;
+      <div class="overflow-auto pb-1 px-2">${this.renderTable()}</div>`;
   }
 
   private renderTable() {
