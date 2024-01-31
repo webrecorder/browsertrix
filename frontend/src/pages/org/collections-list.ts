@@ -112,7 +112,7 @@ export class CollectionsList extends LiteElement {
   });
 
   protected async willUpdate(
-    changedProperties: PropertyValues<this> & Map<string, unknown>,
+    changedProperties: PropertyValues<this> & Map<string, unknown>
   ) {
     if (changedProperties.has("orgId")) {
       this.collections = undefined;
@@ -143,7 +143,7 @@ export class CollectionsList extends LiteElement {
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                 ${msg("New Collection")}
               </sl-button>
-            `,
+            `
           )}
         </div>
       </header>
@@ -161,7 +161,7 @@ export class CollectionsList extends LiteElement {
                 ${guard([this.collections], this.renderList)}
               </div>
             `
-          : this.renderLoading(),
+          : this.renderLoading()
       )}
 
       <btrix-dialog
@@ -172,7 +172,7 @@ export class CollectionsList extends LiteElement {
       >
         ${msg(
           html`Are you sure you want to delete
-            <strong>${this.selectedCollection?.name}</strong>?`,
+            <strong>${this.selectedCollection?.name}</strong>?`
         )}
         <div slot="footer" class="flex justify-between">
           <sl-button
@@ -204,7 +204,7 @@ export class CollectionsList extends LiteElement {
         @btrix-collection-saved=${(e: CollectionSavedEvent) => {
           if (this.openDialogName === "create") {
             this.navTo(
-              `${this.orgBasePath}/collections/view/${e.detail.id}/items`,
+              `${this.orgBasePath}/collections/view/${e.detail.id}/items`
             );
           } else {
             void this.fetchCollections();
@@ -239,7 +239,7 @@ export class CollectionsList extends LiteElement {
         () => html`
           <p class="max-w-[18em]">
             ${msg(
-              "Organize your crawls into a Collection to easily replay them together.",
+              "Organize your crawls into a Collection to easily replay them together."
             )}
           </p>
           <div>
@@ -249,7 +249,7 @@ export class CollectionsList extends LiteElement {
                 this.dispatchEvent(
                   new CustomEvent("select-new-dialog", {
                     detail: "collection",
-                  }) as SelectNewDialogEvent,
+                  }) as SelectNewDialogEvent
                 );
               }}
             >
@@ -262,7 +262,7 @@ export class CollectionsList extends LiteElement {
           <p class="max-w-[18em]">
             ${msg("Your organization doesn't have any Collections, yet.")}
           </p>
-        `,
+        `
       )}
     </div>
   `;
@@ -297,7 +297,7 @@ export class CollectionsList extends LiteElement {
               ${Object.entries(sortableFields).map(
                 ([value, { label }]) => html`
                   <sl-option value=${value}>${label}</sl-option>
-                `,
+                `
               )}
             </sl-select>
             <sl-icon-button
@@ -391,7 +391,7 @@ export class CollectionsList extends LiteElement {
           >
             ${item.value}
           </sl-menu-item>
-        `,
+        `
       )}
     `;
   }
@@ -448,7 +448,7 @@ export class CollectionsList extends LiteElement {
                 }}
               ></btrix-pagination>
             </footer>
-          `,
+          `
         )}
       `;
     }
@@ -463,7 +463,7 @@ export class CollectionsList extends LiteElement {
           () => html`
             <p class="p-4 text-center">
               ${msg(
-                "Organize your crawls into a Collection to easily replay them together.",
+                "Organize your crawls into a Collection to easily replay them together."
               )}
             </p>
             <div>
@@ -473,7 +473,7 @@ export class CollectionsList extends LiteElement {
                   this.dispatchEvent(
                     new CustomEvent("select-new-dialog", {
                       detail: "collection",
-                    }) as SelectNewDialogEvent,
+                    }) as SelectNewDialogEvent
                   );
                 }}
               >
@@ -486,7 +486,7 @@ export class CollectionsList extends LiteElement {
             <p class="max-w-[18em] text-center">
               ${msg("Your organization doesn't have any Collections, yet.")}
             </p>
-          `,
+          `
         )}
       </div>
     `;
@@ -588,7 +588,7 @@ export class CollectionsList extends LiteElement {
                     target="_blank"
                     slot="prefix"
                     href="https://replayweb.page?source=${this.getPublicReplayURL(
-                      col,
+                      col
                     )}"
                   >
                     Visit Shareable URL
@@ -660,7 +660,7 @@ export class CollectionsList extends LiteElement {
       {
         method: "PATCH",
         body: JSON.stringify({ isPublic }),
-      },
+      }
     );
 
     void this.fetchCollections();
@@ -669,13 +669,13 @@ export class CollectionsList extends LiteElement {
   private getPublicReplayURL(col: Collection) {
     return new URL(
       `/api/orgs/${this.orgId}/collections/${col.id}/public/replay.json`,
-      window.location.href,
+      window.location.href
     ).href;
   }
 
   private readonly manageCollection = async (
     collection: Collection,
-    dialogName: CollectionsList["openDialogName"],
+    dialogName: CollectionsList["openDialogName"]
   ) => {
     this.selectedCollection = collection;
     await this.updateComplete;
@@ -691,7 +691,7 @@ export class CollectionsList extends LiteElement {
         // FIXME API method is GET right now
         {
           method: "DELETE",
-        },
+        }
       );
 
       this.selectedCollection = undefined;
@@ -715,7 +715,7 @@ export class CollectionsList extends LiteElement {
     try {
       const searchValues: CollectionSearchValues = await this.apiFetch(
         `/orgs/${this.orgId}/collections/search-values`,
-        this.authState!,
+        this.authState!
       );
       const names = searchValues.names;
 
@@ -764,12 +764,12 @@ export class CollectionsList extends LiteElement {
       },
       {
         arrayFormat: "comma",
-      },
+      }
     );
 
     const data = await this.apiFetch<APIPaginatedList<Collection>>(
       `/orgs/${this.orgId}/collections?${query}`,
-      this.authState!,
+      this.authState!
     );
 
     return data;

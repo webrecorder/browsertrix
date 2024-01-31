@@ -62,7 +62,9 @@ const version = (() => {
 
   try {
     return fs.readFileSync("../version.txt", { encoding: "utf-8" }).trim();
-  } catch (e) {}
+  } catch (e) {
+    /* empty */
+  }
 
   return packageJSON.version;
 })();

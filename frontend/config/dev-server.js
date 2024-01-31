@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+/* eslint-env node */
 const path = require("path");
 require(path.resolve(process.cwd(), "./webpack.config.js"));
 

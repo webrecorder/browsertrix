@@ -301,7 +301,7 @@ export class CollectionItemsDialog extends TailwindElement {
             .sortOptions=${crawlSortOptions}
             .sortBy=${this.sortCrawlsBy}
             @btrix-filter-change=${(
-              e: CustomEvent<FilterChangeEventDetail>,
+              e: CustomEvent<FilterChangeEventDetail>
             ) => {
               this.filterCrawlsBy = e.detail;
             }}
@@ -320,10 +320,10 @@ export class CollectionItemsDialog extends TailwindElement {
               () =>
                 this.showOnlyInCollection
                   ? msg(
-                      str`Crawls in Collection (${data!.total.toLocaleString()})`,
+                      str`Crawls in Collection (${data!.total.toLocaleString()})`
                     )
                   : msg(str`All Workflows (${data!.total.toLocaleString()})`),
-              () => msg("Loading..."),
+              () => msg("Loading...")
             )}
           </div>
         </btrix-section-heading>
@@ -331,7 +331,7 @@ export class CollectionItemsDialog extends TailwindElement {
       ${cache(
         this.showOnlyInCollection
           ? this.renderCollectionCrawls()
-          : this.renderOrgWorkflows(),
+          : this.renderOrgWorkflows()
       )}
     `;
   };
@@ -350,7 +350,7 @@ export class CollectionItemsDialog extends TailwindElement {
             .sortOptions=${uploadSortOptions}
             .sortBy=${this.sortUploadsBy}
             @btrix-filter-change=${(
-              e: CustomEvent<FilterChangeEventDetail>,
+              e: CustomEvent<FilterChangeEventDetail>
             ) => {
               this.filterUploadsBy = e.detail;
             }}
@@ -369,12 +369,12 @@ export class CollectionItemsDialog extends TailwindElement {
               () =>
                 this.showOnlyInCollection
                   ? msg(
-                      str`Uploads in Collection (${this.uploads!.total.toLocaleString()})`,
+                      str`Uploads in Collection (${this.uploads!.total.toLocaleString()})`
                     )
                   : msg(
-                      str`All Uploads (${this.uploads!.total.toLocaleString()})`,
+                      str`All Uploads (${this.uploads!.total.toLocaleString()})`
                     ),
-              () => msg("Loading..."),
+              () => msg("Loading...")
             )}
           </div>
         </btrix-section-heading>
@@ -391,7 +391,7 @@ export class CollectionItemsDialog extends TailwindElement {
           () =>
             html`<p class="p-5 text-center text-neutral-500">
               ${msg("No matching uploads found.")}
-            </p>`,
+            </p>`
         )}
       </section>
       <footer class="flex justify-center pb-3">
@@ -409,7 +409,7 @@ export class CollectionItemsDialog extends TailwindElement {
               }}
             >
             </btrix-pagination>
-          `,
+          `
         )}
       </footer>
     `;
@@ -434,7 +434,7 @@ export class CollectionItemsDialog extends TailwindElement {
           () =>
             html`<p class="p-5 text-center text-neutral-500">
               ${msg("No matching crawls found.")}
-            </p>`,
+            </p>`
         )}
       </section>
 
@@ -453,7 +453,7 @@ export class CollectionItemsDialog extends TailwindElement {
               }}
             >
             </btrix-pagination>
-          `,
+          `
         )}
       </footer>
     `;
@@ -480,7 +480,7 @@ export class CollectionItemsDialog extends TailwindElement {
           @btrix-auto-add-change=${(e: CustomEvent<AutoAddChangeDetail>) => {
             const { id, checked } = e.detail;
             const workflow = this.workflows?.items.find(
-              (workflow) => workflow.id === id,
+              (workflow) => workflow.id === id
             );
             if (workflow) {
               void this.saveAutoAdd({
@@ -509,7 +509,7 @@ export class CollectionItemsDialog extends TailwindElement {
               }}
             >
             </btrix-pagination>
-          `,
+          `
         )}
       </footer> `;
   };
@@ -547,7 +547,7 @@ export class CollectionItemsDialog extends TailwindElement {
         checkbox
         ?checked=${isInCollection}
         @btrix-checkbox-change=${(
-          e: CustomEvent<CheckboxChangeEventDetail>,
+          e: CustomEvent<CheckboxChangeEventDetail>
         ) => {
           this.selection = {
             ...this.selection,
@@ -572,14 +572,14 @@ export class CollectionItemsDialog extends TailwindElement {
         messages.push(
           addCount === 1
             ? msg(str`Adding 1 item`)
-            : msg(str`Adding ${addCount.toLocaleString()} items`),
+            : msg(str`Adding ${addCount.toLocaleString()} items`)
         );
       }
       if (removeCount) {
         messages.push(
           removeCount === 1
             ? msg(str`Removing 1 item`)
-            : msg(str`Removing ${removeCount.toLocaleString()} items`),
+            : msg(str`Removing ${removeCount.toLocaleString()} items`)
         );
       }
 
@@ -663,8 +663,8 @@ export class CollectionItemsDialog extends TailwindElement {
           {
             method: "POST",
             body: JSON.stringify({ crawlIds: add }),
-          },
-        ),
+          }
+        )
       );
     }
     if (remove.length) {
@@ -675,8 +675,8 @@ export class CollectionItemsDialog extends TailwindElement {
           {
             method: "POST",
             body: JSON.stringify({ crawlIds: remove }),
-          },
-        ),
+          }
+        )
       );
     }
 
@@ -799,7 +799,7 @@ export class CollectionItemsDialog extends TailwindElement {
       collectionId?: string;
       firstSeed?: string;
     } & APIPaginationQuery &
-      APISortQuery = {},
+      APISortQuery = {}
   ) {
     const query = queryString.stringify(
       {
@@ -808,11 +808,11 @@ export class CollectionItemsDialog extends TailwindElement {
       },
       {
         arrayFormat: "comma",
-      },
+      }
     );
     const data = await this.api.fetch<APIPaginatedList<Crawl>>(
       `/orgs/${this.orgId}/crawls?${query}`,
-      this.authState!,
+      this.authState!
     );
 
     return data;
@@ -824,14 +824,14 @@ export class CollectionItemsDialog extends TailwindElement {
       name?: string;
       firstSeed?: string;
     } & APIPaginationQuery &
-      APISortQuery = {},
+      APISortQuery = {}
   ) {
     const query = queryString.stringify({
       ...params,
     });
     const data = await this.api.fetch<APIPaginatedList<Workflow>>(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
-      this.authState!,
+      this.authState!
     );
 
     return data;
@@ -843,7 +843,7 @@ export class CollectionItemsDialog extends TailwindElement {
       collectionId?: string;
       name?: string;
     } & APIPaginationQuery &
-      APISortQuery = {},
+      APISortQuery = {}
   ) {
     const query = queryString.stringify({
       state: "complete",
@@ -851,7 +851,7 @@ export class CollectionItemsDialog extends TailwindElement {
     });
     const data = await this.api.fetch<APIPaginatedList<Upload>>(
       `/orgs/${this.orgId}/uploads?${query}`,
-      this.authState!,
+      this.authState!
     );
 
     return data;
@@ -861,12 +861,12 @@ export class CollectionItemsDialog extends TailwindElement {
     if (searchType === "workflow") {
       return this.api.fetch<SearchValues>(
         `/orgs/${this.orgId}/crawlconfigs/search-values`,
-        this.authState!,
+        this.authState!
       );
     }
     return this.api.fetch<SearchValues>(
       `/orgs/${this.orgId}/all-crawls/search-values?crawlType=${searchType}`,
-      this.authState!,
+      this.authState!
     );
   }
 
@@ -883,7 +883,7 @@ export class CollectionItemsDialog extends TailwindElement {
           body: JSON.stringify({
             autoAddCollections: autoAddCollections,
           }),
-        },
+        }
       );
       this.notify.toast({
         message: msg(str`Updated.`),
@@ -895,7 +895,7 @@ export class CollectionItemsDialog extends TailwindElement {
       console.debug(e);
       this.notify.toast({
         message: msg(
-          "Something unexpected went wrong, couldn't save auto-add setting.",
+          "Something unexpected went wrong, couldn't save auto-add setting."
         ),
         variant: "warning",
         icon: "exclamation-circle",
