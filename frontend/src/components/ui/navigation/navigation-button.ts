@@ -1,6 +1,6 @@
 /* eslint-disable lit/binding-positions */
 /* eslint-disable lit/no-invalid-html */
-import { css } from "lit";
+import { type PropertyValueMap, css } from "lit";
 import { html, literal } from "lit/static-html.js";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -35,6 +35,15 @@ export class Button extends TailwindElement {
   @property({ type: Boolean })
   icon = false;
 
+  @property({ type: String, reflect: true })
+  role: ARIAMixin["role"] = "tab";
+
+  protected willUpdate(changedProperties: PropertyValueMap<this>) {
+    if (changedProperties.has("active")) {
+      this.ariaSelected = this.active ? "true" : null;
+    }
+  }
+
   static styles = css`
     :host {
       display: inline-block;
@@ -51,10 +60,10 @@ export class Button extends TailwindElement {
     return html`<${tag}
       type=${this.type === "submit" ? "submit" : "button"}
       class=${[
-        tw`flex w-full cursor-pointer items-center justify-start gap-2 rounded-sm px-2 py-4 font-medium  outline-primary-600 transition-shadow focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-1 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50`,
+        tw`flex w-full cursor-pointer items-center justify-start gap-2 rounded-sm px-2 py-4 font-medium  outline-primary-600 transition hover:transition-none focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-1 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50`,
         this.icon ? tw`min-h-6 min-w-6` : tw`h-6`,
         this.active
-          ? tw`bg-blue-100 text-blue-600 shadow-sm shadow-blue-800/20 hover:bg-blue-100`
+          ? tw`bg-blue-100 text-blue-600 shadow-sm hover:bg-blue-100`
           : tw`text-neutral-600 hover:bg-blue-50`,
       ]
         .filter(Boolean)
