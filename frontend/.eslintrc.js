@@ -1,4 +1,3 @@
-/* eslint-env node */
 /** @type {import('eslint').Linter.Config} */
 module.exports = {
   parser: "@typescript-eslint/parser",
@@ -91,11 +90,18 @@ module.exports = {
     "@typescript-eslint/unbound-method": "off",
   },
   reportUnusedDisableDirectives: true,
-  ignorePatterns: ["__generated__", "__mocks__"],
+  ignorePatterns: ["__generated__", "__mocks__", "dist"],
   overrides: [
     {
       extends: ["plugin:@typescript-eslint/disable-type-checked"],
-      files: ["webpack.*.js"],
+      files: [
+        "webpack.*.js",
+        "config/*.js",
+        "scripts/*.js",
+        ".*.js",
+        "*.config.js",
+      ],
+      env: { node: true },
       rules: {
         "@typescript-eslint/no-var-requires": "off",
       },
