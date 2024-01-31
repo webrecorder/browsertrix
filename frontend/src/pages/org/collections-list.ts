@@ -609,11 +609,9 @@ export class CollectionsList extends LiteElement {
             class="px-6 py-[0.6rem] flex gap-2 items-center whitespace-nowrap hover:bg-neutral-100"
             download
             @click=${(e: MouseEvent) => {
-              (
-                (e.target as HTMLAnchorElement).closest(
-                  "btrix-overflow-dropdown",
-                ) as OverflowDropdown
-              )?.hide();
+              (e.target as HTMLAnchorElement)
+                .closest<OverflowDropdown>("btrix-overflow-dropdown")
+                ?.hide();
             }}
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>

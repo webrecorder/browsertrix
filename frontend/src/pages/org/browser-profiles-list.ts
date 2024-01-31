@@ -1,6 +1,5 @@
 import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
-import { when } from "lit/directives/when.js";
 
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -102,7 +101,7 @@ export class BrowserProfilesList extends LiteElement {
     `;
   }
 
-  private renderItem = (data: Profile) => {
+  private readonly renderItem = (data: Profile) => {
     const isBackedUp = data.resource && data.resource.replicas.length > 0;
     return html`
       <btrix-table-row
@@ -160,8 +159,8 @@ export class BrowserProfilesList extends LiteElement {
       <btrix-overflow-dropdown @click=${(e: Event) => e.preventDefault()}>
         <sl-menu>
           <sl-menu-item
-            @click=${(e: any) => {
-              this.duplicateProfile(data);
+            @click=${() => {
+              void this.duplicateProfile(data);
             }}
           >
             <sl-icon slot="prefix" name="files"></sl-icon>
@@ -169,8 +168,8 @@ export class BrowserProfilesList extends LiteElement {
           </sl-menu-item>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
-            @click=${(e: any) => {
-              this.deleteProfile(data);
+            @click=${() => {
+              void this.deleteProfile(data);
             }}
           >
             <sl-icon slot="prefix" name="trash3"></sl-icon>
