@@ -1,4 +1,4 @@
-import { html, css } from "lit";
+import { html, css, LitElement } from "lit";
 import {
   customElement,
   property,
@@ -84,7 +84,7 @@ export class Table extends LitElement {
 
     this.style.setProperty(
       "--btrix-table-grid-column",
-      `span ${headEl.colCount}`
+      `span ${headEl.colCount}`,
     );
   }
 }
