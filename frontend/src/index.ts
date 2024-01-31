@@ -554,6 +554,20 @@ export class App extends LiteElement {
           this.viewState.data?.redirectUrl}
         ></btrix-log-in>`;
 
+      case "loginSsoHeader":
+        return html`<btrix-log-in-header
+          class="w-full md:bg-neutral-50 flex items-center justify-center"
+          @navigate=${this.onNavigateTo}
+          .viewState=${this.viewState}
+        ></btrix-log-in-header>`;
+
+      case "loginSsoOidc":
+        return html`<btrix-log-in-oidc
+          class="w-full md:bg-neutral-50 flex items-center justify-center"
+          @navigate=${this.onNavigateTo}
+          .viewState=${this.viewState}
+        ></btrix-log-in-oidc>`;
+
       case "resetPassword":
         return html`<btrix-reset-password
           class="w-full md:bg-neutral-50 flex items-center justify-center"

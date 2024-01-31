@@ -82,6 +82,9 @@ class BearerResponse(BaseModel):
 class LoginMethodsInquiryResponse(BaseModel):
     login_methods: dict
 
+class OIDCRedirectResponse(BaseModel):
+    redirect_url: str
+
 # ============================================================================
 # pylint: disable=too-few-public-methods
 class OA2BearerOrQuery(OAuth2PasswordBearer):
@@ -358,8 +361,8 @@ def init_jwt_auth(user_manager):
         user = await process_sso_user_login(user_manager, login_email, login_name, groups)
         return get_bearer_response(user)
 
-    @auth_jwt_router.get("/login/oidc")
-    async def login_header():
+    @auth_jwt_router.get("/login/oidc", response_model=OIDCRedirectResponse)
+    async def login_oidc() -> OIDCRedirectResponse:
         if not SSO_OIDC_ENABLED:
             raise HTTPException(
                 status_code=405,
@@ -368,10 +371,11 @@ def init_jwt_auth(user_manager):
         
         """Redirect the user to the OIDC login page."""
         with sso:
-            return await sso.get_login_redirect()
+            redirect_url = await sso.get_login_url()
+            return OIDCRedirectResponse(redirect_url=redirect_url)
     
     @auth_jwt_router.get("/login/oidc/callback", response_model=BearerResponse)
-    async def login_header(request: Request) -> BearerResponse:
+    async def login_oidc_callback(request: Request) -> BearerResponse:
         if not SSO_OIDC_ENABLED:
             raise HTTPException(
                 status_code=405,
@@ -390,7 +394,7 @@ def init_jwt_auth(user_manager):
             return get_bearer_response(user)
     
     @auth_jwt_router.get("/login/methods", response_model=LoginMethodsInquiryResponse)
-    async def login_header() -> LoginMethodsInquiryResponse:
+    async def login_methods() -> LoginMethodsInquiryResponse:
         enabled_login_methods = {
             'password': True,
             'sso_header': False,

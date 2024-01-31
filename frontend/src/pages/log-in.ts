@@ -221,6 +221,7 @@ export class LogInPage extends LiteElement {
           <div>${this.renderFormError()}</div>
           <div>${form}</div>
           <div style="margin-top: 20px">${this.renderLoginHeaderButton()}</div>
+          <div style="margin-top: 20px">${this.renderLoginOIDCButton()}</div>
         </main>
         <footer class="text-center">${link}</footer>
       </article>
@@ -305,14 +306,30 @@ export class LogInPage extends LiteElement {
   private renderLoginHeaderButton() {
 
     return html`
-      <form @submit=${this.onSubmitLogInHeader} aria-describedby="formError">
+      <form @submit=${this.onSubmitLogInHeader}>
         <sl-button
           class="w-full"
           variant="primary"
           ?loading=${this.formState.value === "signingIn"}
           ?disabled=${this.formState.value === "backendInitializing"}
           type="submit"
-          >${msg("Log In with Single Sign On")}</sl-button
+          >${msg("Log In with Single Sign On (Header)")}</sl-button
+        >
+      </form>
+    `;
+  }
+
+  private renderLoginOIDCButton() {
+
+    return html`
+      <form @submit=${this.onSubmitLogInOIDC}>
+        <sl-button
+          class="w-full"
+          variant="primary"
+          ?loading=${this.formState.value === "signingIn"}
+          ?disabled=${this.formState.value === "backendInitializing"}
+          type="submit"
+          >${msg("Log In with Single Sign On (OIDC)")}</sl-button
         >
       </form>
     `;
@@ -418,38 +435,12 @@ export class LogInPage extends LiteElement {
 
   async onSubmitLogInHeader(event: SubmitEvent) {
     event.preventDefault();
-    this.formStateService.send("SUBMIT");
+    window.location.href = "/log-in/header";
+  }
 
-    try {
-      const data = await AuthService.login_header({});
-
-      this.dispatchEvent(
-        AuthService.createLoggedInEvent({
-          ...data,
-          redirectUrl: this.redirectUrl,
-        })
-      );
-
-      // no state update here, since "btrix-logged-in" event
-      // will result in a route change
-    } catch (e: any) {
-      if (e.isApiError) {
-        let message = msg("Sorry, an error occurred while attempting Single Sign On");
-        this.formStateService.send({
-          type: "ERROR",
-          detail: {
-            serverError: message,
-          },
-        });
-      } else {
-        this.formStateService.send({
-          type: "ERROR",
-          detail: {
-            serverError: msg("Something went wrong, couldn't sign you in"),
-          },
-        });
-      }
-    }
+  async onSubmitLogInOIDC(event: SubmitEvent) {
+    event.preventDefault();
+    window.location.href = "/log-in/oidc";
   }
 
   async onSubmitResetPassword(event: SubmitEvent) {

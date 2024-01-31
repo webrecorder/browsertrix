@@ -174,14 +174,14 @@ export default class AuthService {
     const authHeaders = AuthService.parseAuthHeaders(data);
 
     return {
-      username: "test_user",
+      username: "placeholder",
       headers: authHeaders,
       tokenExpiresAt: token.exp * 1000,
     };
   }
 
   static async login_oidc({}: {
-  }): Promise<Auth> {
+  }): Promise<string> {
     const resp = await fetch("/api/auth/jwt/login/oidc");
 
     if (resp.status !== 200) {
@@ -192,19 +192,19 @@ export default class AuthService {
     }
 
     const data = await resp.json();
-    const token = AuthService.decodeToken(data.access_token);
-    const authHeaders = AuthService.parseAuthHeaders(data);
 
-    return {
-      username: "test_user",
-      headers: authHeaders,
-      tokenExpiresAt: token.exp * 1000,
-    };
+    return data.redirect_url
   }
 
-  static async login_oidc_callback({}: {
+  static async login_oidc_callback({
+    session_state,
+    code,
+  }: {
+    session_state: string,
+    code: string
   }): Promise<Auth> {
-    const resp = await fetch("/api/auth/jwt/login/oidc/callback");
+    const params = "?session_state=" + session_state + "&code=" + code
+    const resp = await fetch("/api/auth/jwt/login/oidc/callback" + params);
 
     if (resp.status !== 200) {
       throw new APIError({
@@ -218,7 +218,7 @@ export default class AuthService {
     const authHeaders = AuthService.parseAuthHeaders(data);
 
     return {
-      username: "test_user",
+      username: "placeholder",
       headers: authHeaders,
       tokenExpiresAt: token.exp * 1000,
     };
