@@ -23,9 +23,6 @@ export class Button extends TailwindElement {
   variant: "primary" | "danger" | "neutral" = "neutral";
 
   @property({ type: String })
-  size: "small" | "normal" = "normal";
-
-  @property({ type: String })
   label?: string;
 
   @property({ type: String })
@@ -52,66 +49,7 @@ export class Button extends TailwindElement {
       display: block;
       font-size: 1rem;
     }
-
-    /* .icon {
-      @apply px-1;
-      @apply min-w-6;
-      @apply min-h-6;
-    } */
   `;
-  //   @tailwind base;
-  //   @tailwind components;
-  //   @tailwind utilities;
-
-  //   :host {
-  //     display: inline-block;
-  //   }
-
-  //   ::slotted(sl-icon) {
-  //     display: block;
-  //     font-size: 1rem;
-  //   }
-
-  //   .button:not(.icon) {
-  //     height: var(--sl-input-height-small);
-  //     padding: 0 var(--sl-spacing-x-small);
-  //   }
-
-  //   .raised {
-  //     box-shadow: var(--sl-shadow-x-small);
-  //   }
-
-  //   :not([aria-disabled]) .raised:not([disabled]):hover {
-  //     box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1);
-  //     transform: translateY(1px);
-  //   }
-
-  //   .primary {
-  //     background-color: var(--sl-color-blue-50);
-  //     color: var(--sl-color-blue-600);
-  //   }
-
-  //   :not([aria-disabled]) .primary:hover {
-  //     background-color: var(--sl-color-blue-100);
-  //   }
-
-  //   .danger {
-  //     background-color: var(--sl-color-danger-50);
-  //     color: var(--sl-color-danger-600);
-  //   }
-
-  //   :not([aria-disabled]) .danger:hover {
-  //     background-color: var(--sl-color-danger-100);
-  //   }
-
-  //   .neutral {
-  //     color: var(--sl-color-neutral-600);
-  //   }
-
-  //   .neutral:hover {
-  //     color: var(--sl-color-blue-500);
-  //   }
-  //
 
   render() {
     const tag = this.href ? literal`a` : literal`button`;
@@ -119,10 +57,7 @@ export class Button extends TailwindElement {
       type=${this.type === "submit" ? "submit" : "button"}
       class=${[
         "flex gap-2 items-center justify-center rounded-sm font-medium text-center cursor-pointer transition-all disabled:cursor-not-allowed disabled:text-neutral-300 h-6",
-        this.icon
-          ? "min-w-6 min-h-6 " + (this.size === "normal" ? "px-2" : "px-1")
-          : "h-6 " + (this.size === "normal" ? "px-2" : "px-2"),
-        this.size === "normal" ? "py-4" : "",
+        this.icon ? "min-w-6 min-h-6 px-1" : "h-6 px-2",
         this.raised ? "shadow-sm" : "",
         {
           primary:
