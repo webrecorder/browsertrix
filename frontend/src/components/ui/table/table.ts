@@ -6,8 +6,17 @@ import {
   queryAssignedElements,
 } from "lit/decorators.js";
 
+import { theme } from "@/theme";
+import tableCSS from "./table.stylesheet.css";
 import { type TableHead } from "./table-head";
-import "./table.css";
+
+// Add table CSS to theme CSS to make it available throughout the app,
+// to both shadow and light dom components.
+// TODO Remove once all `LiteElement`s are migrated over to `TailwindElement`
+tableCSS.split("}").forEach((rule: string) => {
+  if (!rule.trim()) return;
+  theme.insertRule(`${rule}}`);
+});
 
 /**
  * Low-level component for displaying content as a table.

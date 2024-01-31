@@ -15,5 +15,4 @@ btrix-table-cell[rowClickTarget] {
   position: absolute;
   inset: 0;
   grid-column: clickable-start / clickable-end;
-  outline: 2px solid red;
 }
