@@ -552,8 +552,9 @@ export class Org extends LiteElement {
 
   private renderWorkflows() {
     const params = this.params as OrgParams["workflows"];
-    const isEditing = params.hasOwnProperty("edit");
-    const isNewResourceTab = params.hasOwnProperty("new") && params.jobType;
+    const isEditing = Object.prototype.hasOwnProperty.call(params, "edit");
+    const isNewResourceTab =
+      Object.prototype.hasOwnProperty.call(params, "new") && params.jobType;
     const workflowId = params.workflowId;
 
     if (workflowId) {
@@ -653,7 +654,10 @@ export class Org extends LiteElement {
     if (!this.userInfo || !this.org) return;
     const params = this.params as OrgParams["settings"];
     const activePanel = params.settingsTab || "information";
-    const isAddingMember = this.params.hasOwnProperty("invite");
+    const isAddingMember = Object.prototype.hasOwnProperty.call(
+      this.params,
+      "invite"
+    );
 
     return html`<btrix-org-settings
       .authState=${this.authState}

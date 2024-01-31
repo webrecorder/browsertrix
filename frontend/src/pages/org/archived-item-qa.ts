@@ -1,4 +1,4 @@
-import { html, css, type PropertyValueMap, nothing } from "lit";
+import { html, css, nothing, type PropertyValues } from "lit";
 import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { choose } from "lit/directives/choose.js";
@@ -81,15 +81,15 @@ export class ArchivedItemQA extends TailwindElement {
   @state()
   private item?: ArchivedItem;
 
-  private api = new APIController(this);
-  private navigate = new NavigateController(this);
-  private notify = new NotifyController(this);
+  private readonly api = new APIController(this);
+  private readonly navigate = new NavigateController(this);
+  private readonly notify = new NotifyController(this);
 
   protected willUpdate(
-    changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
+    changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>
   ): void {
     if (changedProperties.has("itemId") && this.itemId) {
-      this.fetchArchivedItem();
+      void this.fetchArchivedItem();
     }
   }
 
@@ -155,11 +155,11 @@ export class ArchivedItemQA extends TailwindElement {
     `;
   }
 
-  private renderScreenshots = () => {
+  private readonly renderScreenshots = () => {
     return html`[screenshots]`;
   };
 
-  private renderReplay = () => {
+  private readonly renderReplay = () => {
     return html`[replay]`;
   };
 
