@@ -547,7 +547,7 @@ export class CollectionsList extends LiteElement {
             minute="2-digit"
           ></sl-format-date>
         </btrix-table-cell>
-        <btrix-table-cell>
+        <btrix-table-cell class="px-1">
           ${this.isCrawler ? this.renderActions(col) : ""}
         </btrix-table-cell>
       </btrix-table-row>

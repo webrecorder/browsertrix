@@ -148,7 +148,7 @@ export class BrowserProfilesList extends LiteElement {
           ></sl-format-date>
         </btrix-table-cell>
         <btrix-table-cell>${data.origins.join(", ")}</btrix-table-cell>
-        <btrix-table-cell class="p-0"
+        <btrix-table-cell class="px-1"
           >${this.renderActions(data)}</btrix-table-cell
         >
       </btrix-table-row>
@@ -168,6 +168,7 @@ export class BrowserProfilesList extends LiteElement {
             ${msg("Duplicate profile")}
           </sl-menu-item>
           <sl-menu-item
+            style="--sl-color-neutral-700: var(--danger)"
             @click=${(e: any) => {
               this.deleteProfile(data);
             }}
