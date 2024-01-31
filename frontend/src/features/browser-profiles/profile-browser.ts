@@ -3,6 +3,7 @@ import { msg, localized, str } from "@lit/localize";
 
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { type PropertyValues } from "lit";
 
 const POLL_INTERVAL_SECONDS = 2;
 const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];
@@ -60,13 +61,13 @@ export class ProfileBrowser extends LiteElement {
   private newOrigins?: string[] = [];
 
   @query("#profileBrowserSidebar")
-  private sidebar?: HTMLElement;
+  private readonly sidebar?: HTMLElement;
 
   @query("#iframeWrapper")
-  private iframeWrapper?: HTMLElement;
+  private readonly iframeWrapper?: HTMLElement;
 
   @query("iframe")
-  private iframe?: HTMLIFrameElement;
+  private readonly iframe?: HTMLIFrameElement;
 
   private pollTimerId?: number;
 
@@ -81,11 +82,11 @@ export class ProfileBrowser extends LiteElement {
     document.removeEventListener("fullscreenchange", this.onFullscreenChange);
   }
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (changedProperties.has("browserId")) {
       if (this.browserId) {
         window.clearTimeout(this.pollTimerId);
-        this.fetchBrowser();
+        void this.fetchBrowser();
       } else if (changedProperties.get("browserId")) {
         this.iframeSrc = undefined;
         this.isIframeLoaded = false;
@@ -311,7 +312,7 @@ export class ProfileBrowser extends LiteElement {
 
       this.dispatchEvent(new CustomEvent("load", { detail: result.url }));
 
-      this.pingBrowser();
+      void this.pingBrowser();
     } else {
       console.debug("Unknown checkBrowserStatus state");
     }
@@ -381,7 +382,7 @@ export class ProfileBrowser extends LiteElement {
    */
   private async enterFullscreen(id: string) {
     try {
-      document.getElementById(id)!.requestFullscreen({
+      await document.getElementById(id)!.requestFullscreen({
         // Hide browser navigation controls
         navigationUI: "hide",
       });
@@ -394,11 +395,13 @@ export class ProfileBrowser extends LiteElement {
     this.isIframeLoaded = true;
     try {
       this.iframe?.contentWindow?.localStorage.setItem("uiTheme", '"default"');
-    } catch (e) {}
+    } catch (e) {
+      /* empty */
+    }
     this.dispatchEvent(new CustomEvent("load", { detail: this.iframeSrc }));
   }
 
-  private onFullscreenChange = async () => {
+  private readonly onFullscreenChange = async () => {
     if (document.fullscreenElement) {
       this.isFullscreen = true;
     } else {

@@ -1,4 +1,4 @@
-import { html, css, nothing, type TemplateResult } from "lit";
+import { html, css, nothing } from "lit";
 import {
   customElement,
   property,
@@ -7,7 +7,7 @@ import {
   query,
 } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { msg, localized, str } from "@lit/localize";
+import { msg, localized } from "@lit/localize";
 import { type SlCheckbox } from "@shoelace-style/shoelace";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -59,7 +59,7 @@ export class ArchivedItemListItem extends TailwindElement {
   @query("sl-checkbox")
   checkboxEl?: SlCheckbox;
 
-  private navigate = new NavigateController(this);
+  private readonly navigate = new NavigateController(this);
 
   render() {
     if (!this.item) return;
@@ -91,8 +91,8 @@ export class ArchivedItemListItem extends TailwindElement {
                           detail: {
                             checked: (e.currentTarget as SlCheckbox).checked,
                           },
-                        }
-                      )
+                        },
+                      ),
                     );
                   }}
                 ></sl-checkbox>
@@ -101,7 +101,7 @@ export class ArchivedItemListItem extends TailwindElement {
           : nothing}
         <btrix-table-cell
           rowClickTarget=${ifDefined(
-            this.href ? "a" : this.checkbox ? "label" : undefined
+            this.href ? "a" : this.checkbox ? "label" : undefined,
           )}
         >
           ${this.href
@@ -109,17 +109,17 @@ export class ArchivedItemListItem extends TailwindElement {
                 ${rowName}
               </a>`
             : this.checkbox
-            ? html`<label
-                for=${checkboxId}
-                @click=${() => {
-                  // We need to simulate click anyway, since external label click
-                  // won't work with the shoelace checkbox
-                  this.checkboxEl?.click();
-                }}
-              >
-                ${rowName}
-              </label>`
-            : html`<div>${rowName}</div>`}
+              ? html`<label
+                  for=${checkboxId}
+                  @click=${() => {
+                    // We need to simulate click anyway, since external label click
+                    // won't work with the shoelace checkbox
+                    this.checkboxEl?.click();
+                  }}
+                >
+                  ${rowName}
+                </label>`
+              : html`<div>${rowName}</div>`}
         </btrix-table-cell>
         <btrix-table-cell>
           <sl-format-date
@@ -191,7 +191,7 @@ export class ArchivedItemList extends TailwindElement {
   `;
 
   @queryAssignedElements({ selector: "btrix-archived-item-list-item" })
-  items!: Array<ArchivedItemListItem>;
+  items!: ArchivedItemListItem[];
 
   @state()
   private hasCheckboxCell = false;

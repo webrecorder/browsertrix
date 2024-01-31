@@ -12,6 +12,9 @@ import type { SlCheckbox } from "@shoelace-style/shoelace";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import type { SelectNewDialogEvent } from "./index";
+import { type SelectEvent } from "@/components/ui/search-combobox";
+import { isApiError } from "@/utils/api";
+import { type PropertyValues } from "lit";
 
 type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
@@ -87,7 +90,7 @@ export class WorkflowsList extends LiteElement {
   private workflows?: APIPaginatedList<ListWorkflow>;
 
   @state()
-  private searchOptions: any[] = [];
+  private searchOptions: { [x: string]: string }[] = [];
 
   @state()
   private isFetching = false;
@@ -105,13 +108,13 @@ export class WorkflowsList extends LiteElement {
   };
 
   @state()
-  private filterBy: Partial<Record<keyof ListWorkflow, any>> = {};
+  private filterBy: Partial<{ [k in keyof ListWorkflow]: boolean }> = {};
 
   @state()
   private filterByCurrentUser = false;
 
   // For fuzzy search:
-  private searchKeys = ["name", "firstSeed"];
+  private readonly searchKeys = ["name", "firstSeed"];
 
   // Use to cancel requests
   private getWorkflowsController: AbortController | null = null;
@@ -119,7 +122,7 @@ export class WorkflowsList extends LiteElement {
 
   private get selectedSearchFilterKey() {
     return Object.keys(WorkflowsList.FieldLabels).find((key) =>
-      Boolean((this.filterBy as any)[key])
+      Boolean((this.filterBy as Record<string, unknown>)[key])
     );
   }
 
@@ -130,9 +133,11 @@ export class WorkflowsList extends LiteElement {
       "true";
   }
 
-  protected async willUpdate(changedProperties: Map<string, any>) {
+  protected async willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>
+  ) {
     if (changedProperties.has("orgId")) {
-      this.fetchConfigSearchValues();
+      void this.fetchConfigSearchValues();
     }
     if (
       changedProperties.has("orgId") ||
@@ -141,7 +146,7 @@ export class WorkflowsList extends LiteElement {
       changedProperties.has("filterByScheduled") ||
       changedProperties.has("filterBy")
     ) {
-      this.fetchWorkflows({
+      void this.fetchWorkflows({
         page: changedProperties.has("orgId") ? 1 : undefined,
       });
     }
@@ -166,10 +171,10 @@ export class WorkflowsList extends LiteElement {
     try {
       const workflows = await this.getWorkflows(params);
       this.workflows = workflows;
-    } catch (e: any) {
-      if (e.isApiError) {
+    } catch (e) {
+      if (isApiError(e)) {
         this.fetchErrorStatusCode = e.statusCode;
-      } else if (e.name === "AbortError") {
+      } else if ((e as Error).name === "AbortError") {
         console.debug("Fetch archived items aborted to throttle");
       } else {
         this.notify({
@@ -183,7 +188,7 @@ export class WorkflowsList extends LiteElement {
 
     // Restart timer for next poll
     this.timerId = window.setTimeout(() => {
-      this.fetchWorkflows();
+      void this.fetchWorkflows();
     }, 1000 * POLL_INTERVAL_SECONDS);
   }
 
@@ -210,9 +215,9 @@ export class WorkflowsList extends LiteElement {
                 size="small"
                 @click=${() => {
                   this.dispatchEvent(
-                    <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                    new CustomEvent("select-new-dialog", {
                       detail: "workflow",
-                    })
+                    }) as SelectNewDialogEvent
                   );
                 }}
               >
@@ -360,8 +365,9 @@ export class WorkflowsList extends LiteElement {
         .keyLabels=${WorkflowsList.FieldLabels}
         selectedKey=${ifDefined(this.selectedSearchFilterKey)}
         placeholder=${msg("Search all Workflows by name or Crawl Start URL")}
-        @btrix-select=${(e: CustomEvent) => {
+        @btrix-select=${(e: SelectEvent<typeof this.searchKeys>) => {
           const { key, value } = e.detail;
+          if (key == null) return;
           this.filterBy = {
             [key]: value,
           };
@@ -410,7 +416,7 @@ export class WorkflowsList extends LiteElement {
     `;
   }
 
-  private renderWorkflowItem = (workflow: ListWorkflow) =>
+  private readonly renderWorkflowItem = (workflow: ListWorkflow) =>
     html`
       <btrix-workflow-list-item
         orgSlug=${this.appState.orgSlug || ""}
@@ -677,7 +683,7 @@ export class WorkflowsList extends LiteElement {
         }
       );
 
-      this.fetchWorkflows();
+      void this.fetchWorkflows();
       this.notify({
         message: msg(
           html`Deactivated <strong>${this.renderName(workflow)}</strong>.`
@@ -704,7 +710,7 @@ export class WorkflowsList extends LiteElement {
         }
       );
 
-      this.fetchWorkflows();
+      void this.fetchWorkflows();
       this.notify({
         message: msg(
           html`Deleted <strong>${this.renderName(workflow)}</strong>.`
@@ -732,7 +738,7 @@ export class WorkflowsList extends LiteElement {
         }
       );
       if (data.success === true) {
-        this.fetchWorkflows();
+        void this.fetchWorkflows();
       } else {
         this.notify({
           message: msg("Something went wrong, couldn't cancel crawl."),
@@ -754,7 +760,7 @@ export class WorkflowsList extends LiteElement {
         }
       );
       if (data.success === true) {
-        this.fetchWorkflows();
+        void this.fetchWorkflows();
       } else {
         this.notify({
           message: msg("Something went wrong, couldn't stop crawl."),
@@ -794,9 +800,9 @@ export class WorkflowsList extends LiteElement {
       await this.fetchWorkflows();
       // Scroll to top of list
       this.scrollIntoView({ behavior: "smooth" });
-    } catch (e: any) {
+    } catch (e) {
       let message = msg("Sorry, couldn't run crawl at this time.");
-      if (e.isApiError && e.statusCode === 403) {
+      if (isApiError(e) && e.statusCode === 403) {
         if (e.details === "storage_quota_reached") {
           message = msg("Your org does not have enough storage to run crawls.");
         } else if (e.details === "exec_minutes_quota_reached") {

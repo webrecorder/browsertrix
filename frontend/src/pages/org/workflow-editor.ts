@@ -1,4 +1,4 @@
-import type { LitElement, TemplateResult } from "lit";
+import type { LitElement, PropertyValues, TemplateResult } from "lit";
 import type {
   SlChangeEvent,
   SlCheckbox,
@@ -57,6 +57,12 @@ import type {
   CrawlConfig,
 } from "./types";
 import type { LanguageCode } from "iso-639-1";
+import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
+import {
+  type SelectCrawlerChangeEvent,
+  type SelectCrawlerUpdateEvent,
+} from "@/components/ui/select-crawler";
+import { type Detail, isApiError } from "@/utils/api";
 
 type NewCrawlConfigParams = WorkflowParams & {
   runNow: boolean;
@@ -129,7 +135,7 @@ const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   if (window.location.hash) {
     const hashValue = window.location.hash.slice(1);
 
-    if (STEPS.includes(hashValue as any)) {
+    if (STEPS.includes(hashValue as (typeof STEPS)[number])) {
       activeTab = hashValue as StepName;
     }
   }
@@ -211,7 +217,7 @@ function getLocalizedWeekDays() {
 }
 
 function validURL(url: string) {
-  return /((((https?):(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)/.test(
+  return /((((https?):(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w\-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[.!/\\\w]*))?)/.test(
     url
   );
 }
@@ -293,13 +299,13 @@ export class CrawlConfigEditor extends LiteElement {
   private serverError?: TemplateResult | string;
 
   // For fuzzy search:
-  private fuse = new Fuse<string>([], {
+  private readonly fuse = new Fuse<string>([], {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
 
-  private validateNameMax = maxLengthValidator(50);
-  private validateDescriptionMax = maxLengthValidator(350);
+  private readonly validateNameMax = maxLengthValidator(50);
+  private readonly validateDescriptionMax = maxLengthValidator(350);
 
   private get formHasError() {
     return (
@@ -363,7 +369,7 @@ export class CrawlConfigEditor extends LiteElement {
 
     window.addEventListener("hashchange", () => {
       const hashValue = window.location.hash.slice(1);
-      if (STEPS.includes(hashValue as any)) {
+      if (STEPS.includes(hashValue as (typeof STEPS)[number])) {
         this.updateProgressState({
           activeTab: hashValue as StepName,
         });
@@ -371,7 +377,9 @@ export class CrawlConfigEditor extends LiteElement {
     });
   }
 
-  async willUpdate(changedProperties: Map<string, any>) {
+  async willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>
+  ) {
     if (changedProperties.has("jobType") && this.jobType) {
       this.initializeEditor();
     }
@@ -386,7 +394,8 @@ export class CrawlConfigEditor extends LiteElement {
     }
     if (changedProperties.get("progressState") && this.progressState) {
       if (
-        changedProperties.get("progressState").activeTab === "crawlSetup" &&
+        (changedProperties.get("progressState") as ProgressState).activeTab ===
+          "crawlSetup" &&
         this.progressState.activeTab !== "crawlSetup"
       ) {
         // Show that required tab has error even if input hasn't been touched
@@ -407,33 +416,35 @@ export class CrawlConfigEditor extends LiteElement {
     }
   }
 
-  async updated(changedProperties: Map<string, any>) {
+  async updated(
+    changedProperties: PropertyValues<this> & Map<string, unknown>
+  ) {
     if (changedProperties.get("progressState") && this.progressState) {
       if (
-        changedProperties.get("progressState").activeTab !==
+        (changedProperties.get("progressState") as ProgressState).activeTab !==
         this.progressState.activeTab
       ) {
-        this.scrollToPanelTop();
+        void this.scrollToPanelTop();
 
         // Focus on first field in section
-        (
-          (await this.activeTabPanel)?.querySelector(
+        (await this.activeTabPanel)
+          ?.querySelector<HTMLElement>(
             "sl-input, sl-textarea, sl-select, sl-radio-group"
-          ) as HTMLElement
-        )?.focus();
+          )
+          ?.focus();
       }
     }
   }
 
   async firstUpdated() {
     // Focus on first field in section
-    (
-      (await this.activeTabPanel)?.querySelector(
+    (await this.activeTabPanel)
+      ?.querySelector<HTMLElement>(
         "sl-input, sl-textarea, sl-select, sl-radio-group"
-      ) as HTMLElement
-    )?.focus();
+      )
+      ?.focus();
 
-    this.fetchTags();
+    void this.fetchTags();
   }
 
   private initializeEditor() {
@@ -531,12 +542,12 @@ export class CrawlConfigEditor extends LiteElement {
       formState.autoAddCollections = this.initialWorkflow.autoAddCollections;
     }
 
-    const secondsToMinutes = (value: any, fallback: number = 0) => {
+    const secondsToMinutes = (value: unknown, fallback = 0) => {
       if (typeof value === "number" && value > 0) return value / 60;
       return fallback;
     };
 
-    const bytesToGB = (value: any, fallback: number = 0) => {
+    const bytesToGB = (value: unknown, fallback = 0) => {
       if (typeof value === "number" && value > 0)
         return Math.floor(value / BYTES_PER_GB);
       return fallback;
@@ -926,7 +937,7 @@ export class CrawlConfigEditor extends LiteElement {
     `;
   }
 
-  private renderFormCol = (content: TemplateResult) => {
+  private readonly renderFormCol = (content: TemplateResult) => {
     return html`<div class="col-span-5 md:col-span-3">${content}</div> `;
   };
 
@@ -941,7 +952,7 @@ export class CrawlConfigEditor extends LiteElement {
     `;
   }
 
-  private renderUrlListSetup = (isCustom = false) => {
+  private readonly renderUrlListSetup = (isCustom = false) => {
     return html`
       ${this.renderFormCol(html`
         <sl-textarea
@@ -1089,13 +1100,15 @@ https://example.com/path`}
     `;
   };
 
-  private renderSeededCrawlSetup = () => {
+  private readonly renderSeededCrawlSetup = () => {
     const urlPlaceholder = "https://example.com/path/page.html";
     let exampleUrl = new URL(urlPlaceholder);
     if (this.formState.primarySeedUrl) {
       try {
         exampleUrl = new URL(this.formState.primarySeedUrl);
-      } catch {}
+      } catch {
+        /* empty */
+      }
     }
     const exampleHost = exampleUrl.host;
     const exampleProtocol = exampleUrl.protocol;
@@ -1621,7 +1634,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           orgId=${this.orgId}
           .profileId=${this.formState.browserProfile?.id}
           .authState=${this.authState}
-          @on-change=${(e: any) =>
+          @on-change=${(e: SelectBrowserProfileChangeEvent) =>
             this.updateFormState({
               browserProfile: e.detail.value,
             })}
@@ -1636,11 +1649,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
           orgId=${this.orgId}
           .crawlerChannel=${this.formState.crawlerChannel}
           .authState=${this.authState}
-          @on-change=${(e: any) =>
+          @on-change=${(e: SelectCrawlerChangeEvent) =>
             this.updateFormState({
               crawlerChannel: e.detail.value,
             })}
-          @on-update=${(e: any) => (this.showCrawlerChannels = e.detail.show)}
+          @on-update=${(e: SelectCrawlerUpdateEvent) =>
+            (this.showCrawlerChannels = e.detail.show)}
         ></btrix-select-crawler>
       `)}
       ${this.showCrawlerChannels
@@ -1732,7 +1746,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   }
 
-  private renderScheduleCron = () => {
+  private readonly renderScheduleCron = () => {
     const utcSchedule = this.utcSchedule;
     return html`
       ${this.renderSectionHeading(msg("Set Schedule"))}
@@ -1936,7 +1950,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     `;
   }
 
-  private renderConfirmSettings = () => {
+  private readonly renderConfirmSettings = () => {
     const errorAlert = when(this.formHasError, () => {
       const crawlSetupUrl = `${window.location.href.split("#")[0]}#crawlSetup`;
       const errorMessage = this.hasRequiredFields()
@@ -1988,7 +2002,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async scrollToPanelTop() {
-    const activeTabPanel = (await this.activeTabPanel) as HTMLElement;
+    const activeTabPanel = (await this.activeTabPanel)!;
     if (activeTabPanel && activeTabPanel.getBoundingClientRect().top < 0) {
       activeTabPanel.scrollIntoView({
         behavior: "smooth",
@@ -2061,7 +2075,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     );
   }
 
-  private validateOnBlur = async (e: Event) => {
+  private readonly validateOnBlur = async (e: Event) => {
     const el = e.target as SlInput | SlTextarea | SlSelect | SlCheckbox;
     const tagName = el.tagName.toLowerCase();
     if (
@@ -2111,11 +2125,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private updateFormStateOnChange(e: Event) {
     const elem = e.target as SlTextarea | SlInput | SlCheckbox;
     const name = elem.name;
-    if (!this.formState.hasOwnProperty(name)) {
+    if (!Object.prototype.hasOwnProperty.call(this.formState, name)) {
       return;
     }
     const tagName = elem.tagName.toLowerCase();
-    let value: any;
+    let value: boolean | string | null | number;
     switch (tagName) {
       case "sl-checkbox":
         value = (elem as SlCheckbox).checked;
@@ -2143,7 +2157,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     });
   }
 
-  private tabClickHandler = (step: StepName) => (e: MouseEvent) => {
+  private readonly tabClickHandler = (step: StepName) => (e: MouseEvent) => {
     const tab = e.currentTarget as Tab;
     if (tab.disabled || tab.active) {
       e.preventDefault();
@@ -2180,7 +2194,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
   }
 
-  private checkCurrentPanelValidity = (): boolean => {
+  private readonly checkCurrentPanelValidity = (): boolean => {
     if (!this.formElem) return false;
 
     const currentTab = this.progressState.activeTab as StepName;
@@ -2280,8 +2294,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
             : ""
         }`
       );
-    } catch (e: any) {
-      if (e?.isApiError) {
+    } catch (e) {
+      if (isApiError(e)) {
         if (e.details === "crawl_already_running") {
           this.notify({
             title: msg("Workflow saved without starting crawl."),
@@ -2293,7 +2307,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             duration: 12000,
           });
         } else {
-          const isConfigError = ({ loc }: any) =>
+          const isConfigError = ({ loc }: Detail) =>
             loc.some((v: string) => v === "config");
           if (Array.isArray(e.details) && e.details.some(isConfigError)) {
             this.serverError = this.formatConfigServerError(e.details);
@@ -2316,12 +2330,12 @@ https://archiveweb.page/images/${"logo.svg"}`}
   /**
    * Format `config` related API error returned from server
    */
-  private formatConfigServerError(details: any): TemplateResult {
+  private formatConfigServerError(details: Detail[]): TemplateResult {
     const detailsWithoutDictError = details.filter(
-      ({ type }: any) => type !== "type_error.dict"
+      ({ type }) => type !== "type_error.dict"
     );
 
-    const renderDetail = ({ loc, msg: detailMsg }: any) => html`
+    const renderDetail = ({ loc, msg: detailMsg }: Detail) => html`
       <li>
         ${loc.some((v: string) => v === "seeds") &&
         typeof loc[loc.length - 1] === "number"
@@ -2368,7 +2382,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     return { isValid, helpText };
   }
 
-  private onTagInput = (e: TagInputEvent) => {
+  private readonly onTagInput = (e: TagInputEvent) => {
     const { value } = e.detail;
     if (!value) return;
     this.tagOptions = this.fuse.search(value).map(({ item }) => item);
@@ -2538,7 +2552,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
       }
       this.orgDefaults = orgDefaults;
-    } catch (e: any) {
+    } catch (e) {
       console.debug(e);
     }
   }
@@ -2555,7 +2569,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         orgDefaults.maxPagesPerCrawl = data.quotas.maxPagesPerCrawl;
       }
       this.orgDefaults = orgDefaults;
-    } catch (e: any) {
+    } catch (e) {
       console.debug(e);
     }
   }

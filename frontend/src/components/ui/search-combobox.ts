@@ -1,15 +1,17 @@
-import { LitElement, html, nothing } from "lit";
+import { LitElement, type PropertyValues, html, nothing } from "lit";
 import { property, state, query, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import Fuse from "fuse.js";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
+import { type UnderlyingFunction } from "@/types/utils";
 
-export type SelectEvent<T> = CustomEvent<{
+type SelectEventDetail<T> = {
   key: string | null;
   value?: T;
-}>;
+};
+export type SelectEvent<T> = CustomEvent<SelectEventDetail<T>>;
 
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_RESULTS = 10;
@@ -39,7 +41,7 @@ export class SearchCombobox<T> extends LitElement {
   placeholder: string = msg("Start typing to search");
 
   @state()
-  private searchByValue: string = "";
+  private searchByValue = "";
 
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
@@ -49,7 +51,7 @@ export class SearchCombobox<T> extends LitElement {
   private searchResultsOpen = false;
 
   @query("sl-input")
-  private input!: SlInput;
+  private readonly input!: SlInput;
 
   private fuse = new Fuse<T>([], {
     keys: [],
@@ -63,7 +65,7 @@ export class SearchCombobox<T> extends LitElement {
     super.disconnectedCallback();
   }
 
-  protected willUpdate(changedProperties: Map<string, T>) {
+  protected willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.get("selectedKey") && !this.selectedKey) {
       this.onSearchInput.cancel();
       this.searchByValue = "";
@@ -71,7 +73,11 @@ export class SearchCombobox<T> extends LitElement {
     if (changedProperties.has("searchKeys") && this.searchKeys) {
       this.onSearchInput.cancel();
       this.fuse = new Fuse<T>([], {
-        ...(this.fuse as any).options,
+        ...(
+          this.fuse as unknown as {
+            options: ConstructorParameters<typeof Fuse>[1];
+          }
+        ).options,
         keys: this.searchKeys,
       });
     }
@@ -99,10 +105,10 @@ export class SearchCombobox<T> extends LitElement {
           this.searchByValue = item.value;
           await this.updateComplete;
           this.dispatchEvent(
-            <SelectEvent<T>>new CustomEvent("btrix-select", {
+            new CustomEvent<SelectEventDetail<T>>("btrix-select", {
               detail: {
-                key: key,
-                value: item.value,
+                key: key ?? null,
+                value: item.value as T,
               },
             })
           );
@@ -118,17 +124,19 @@ export class SearchCombobox<T> extends LitElement {
             this.onSearchInput.cancel();
             this.dispatchEvent(new CustomEvent("btrix-clear"));
           }}
-          @sl-input=${this.onSearchInput as () => void}
+          @sl-input=${this.onSearchInput as UnderlyingFunction<
+            typeof this.onSearchInput
+          >}
         >
           ${when(
-            this.selectedKey && this.keyLabels?.[this.selectedKey as string],
+            this.selectedKey && this.keyLabels?.[this.selectedKey],
             () =>
               html`<sl-tag
                 slot="prefix"
                 size="small"
                 pill
                 style="margin-left: var(--sl-spacing-3x-small)"
-                >${this.keyLabels![this.selectedKey as string]}</sl-tag
+                >${this.keyLabels![this.selectedKey!]}</sl-tag
               >`,
             () => html`<sl-icon name="search" slot="prefix"></sl-icon>`
           )}
@@ -180,7 +188,7 @@ export class SearchCombobox<T> extends LitElement {
     `;
   }
 
-  private onSearchInput = debounce(150)(() => {
+  private readonly onSearchInput = debounce(150)(() => {
     this.searchByValue = this.input.value?.trim();
 
     if (this.searchResultsOpen === false && this.hasSearchStr) {

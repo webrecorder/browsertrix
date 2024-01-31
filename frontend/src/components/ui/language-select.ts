@@ -9,11 +9,11 @@ import type { SlSelect } from "@shoelace-style/shoelace";
 
 const languages = sortBy("name")(
   ISO6391.getLanguages(ISO6391.getAllCodes())
-) as unknown as Array<{
+) as unknown as {
   code: LanguageCode;
   name: string;
   nativeName: string;
-}>;
+}[];
 
 /**
  * Choose language from dropdown.

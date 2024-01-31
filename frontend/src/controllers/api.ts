@@ -3,7 +3,7 @@ import { msg } from "@lit/localize";
 
 import type { Auth } from "@/utils/AuthService";
 import AuthService from "@/utils/AuthService";
-import { APIError } from "@/utils/api";
+import { APIError, type Detail } from "@/utils/api";
 
 export type QuotaUpdateDetail = { reached: boolean };
 
@@ -78,13 +78,15 @@ export class APIController implements ReactiveController {
         );
       }
 
-      return body;
+      return body as T;
     }
 
     let errorDetail;
     try {
       errorDetail = (await resp.json()).detail;
-    } catch {}
+    } catch {
+      /* empty */
+    }
 
     let errorMessage: string = msg("Unknown API error");
 
@@ -120,6 +122,7 @@ export class APIController implements ReactiveController {
           errorMessage = msg("Monthly execution minutes quota reached");
           break;
         }
+        break;
       }
       case 404: {
         errorMessage = msg("Not found");
@@ -144,7 +147,7 @@ export class APIController implements ReactiveController {
     throw new APIError({
       message: errorMessage,
       status: resp.status,
-      details: errorDetail,
+      details: errorDetail as Detail[],
     });
   }
 }

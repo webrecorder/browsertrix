@@ -211,9 +211,9 @@ export class WorkflowListItem extends LitElement {
   @query("btrix-overflow-dropdown")
   dropdownMenu!: OverflowDropdown;
 
-  private navigate = new NavigateController(this);
+  private readonly navigate = new NavigateController(this);
 
-  private numberFormatter = numberFormatter(undefined, {
+  private readonly numberFormatter = numberFormatter(undefined, {
     notation: "compact",
   });
 
@@ -483,7 +483,7 @@ export class WorkflowList extends LitElement {
   ];
 
   @queryAssignedElements({ selector: "btrix-workflow-list-item" })
-  listItems!: Array<HTMLElement>;
+  listItems!: HTMLElement[];
 
   render() {
     return html` <div class="listHeader row">

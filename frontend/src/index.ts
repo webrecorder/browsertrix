@@ -4,7 +4,7 @@ import { property, state, query, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { msg, localized } from "@lit/localize";
 import { ifDefined } from "lit/directives/if-defined.js";
-import type { SlDialog, SlInput } from "@shoelace-style/shoelace";
+import type { SlDialog } from "@shoelace-style/shoelace";
 import "broadcastchannel-polyfill";
 
 import "./utils/polyfills";
@@ -19,6 +19,7 @@ import type {
   LoggedInEventDetail,
   NeedLoginEventDetail,
   AuthState,
+  Auth,
 } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser, UserOrg } from "./types/user";
@@ -57,7 +58,7 @@ export class App extends LiteElement {
   @property({ type: String })
   version?: string;
 
-  private router = new APIRouter(ROUTES);
+  private readonly router = new APIRouter(ROUTES);
   authService = new AuthService();
 
   @use()
@@ -70,10 +71,10 @@ export class App extends LiteElement {
   private globalDialogContent: DialogContent = {};
 
   @query("#globalDialog")
-  private globalDialog!: SlDialog;
+  private readonly globalDialog!: SlDialog;
 
   @state()
-  private isAppSettingsLoaded: boolean = false;
+  private isAppSettingsLoaded = false;
 
   @state()
   private isRegistrationEnabled?: boolean;
@@ -91,7 +92,7 @@ export class App extends LiteElement {
     }
     if (authState) {
       this.authService.saveLogin(authState);
-      this.updateUserInfo();
+      void this.updateUserInfo();
     }
     super.connectedCallback();
 
@@ -105,7 +106,7 @@ export class App extends LiteElement {
     });
 
     this.startSyncBrowserTabs();
-    this.fetchAppSettings();
+    void this.fetchAppSettings();
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {
@@ -160,9 +161,8 @@ export class App extends LiteElement {
         const firstOrg = orgs[0].slug;
         AppStateService.updateOrgSlug(firstOrg);
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      if (err?.message === "Unauthorized") {
+    } catch (err) {
+      if ((err as Error)?.message === "Unauthorized") {
         console.debug(
           "Unauthorized with authState:",
           this.authService.authState
@@ -179,7 +179,7 @@ export class App extends LiteElement {
     });
 
     if (resp.status === 200) {
-      const body = await resp.json();
+      const body = (await resp.json()) as { registrationEnabled: boolean };
 
       return body;
     } else {
@@ -187,7 +187,7 @@ export class App extends LiteElement {
     }
   }
 
-  navigate(newViewPath: string, state?: object) {
+  navigate(newViewPath: string, state?: { [key: string]: unknown }) {
     let url;
 
     if (newViewPath.startsWith("http")) {
@@ -367,7 +367,7 @@ export class App extends LiteElement {
           >${selectedOption.name.slice(0, orgNameLength)}</sl-button
         >
         <sl-menu
-          @sl-select=${(e: CustomEvent) => {
+          @sl-select=${(e: CustomEvent<{ item: { value: string } }>) => {
             const { value } = e.detail.item;
             if (value) {
               this.navigate(`/orgs/${value}`);
@@ -567,7 +567,7 @@ export class App extends LiteElement {
           @navigate=${this.onNavigateTo}
           @update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
-            this.updateUserInfo();
+            void this.updateUserInfo();
           }}
           .authState=${this.authService.authState}
           .userInfo=${this.appState.userInfo ?? undefined}
@@ -594,7 +594,7 @@ export class App extends LiteElement {
           @navigate=${this.onNavigateTo}
           @update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
-            this.updateUserInfo();
+            void this.updateUserInfo();
           }}
           .authState=${this.authService.authState}
           .userInfo=${this.appState.userInfo ?? undefined}
@@ -611,7 +611,7 @@ export class App extends LiteElement {
           class="w-full max-w-screen-desktop mx-auto p-2 md:py-8 box-border"
           @update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
-            this.updateUserInfo();
+            void this.updateUserInfo();
           }}
           .authState="${this.authService.authState}"
           .userInfo="${this.appState.userInfo ?? undefined}"
@@ -661,6 +661,7 @@ export class App extends LiteElement {
             return;
           }
         }
+        // falls through
       }
 
       default:
@@ -689,9 +690,7 @@ export class App extends LiteElement {
           (e.target as HTMLElement).querySelector("sl-input")?.focus();
         }}
         @sl-after-hide=${(e: Event) => {
-          (
-            (e.target as HTMLElement).querySelector("sl-input") as SlInput
-          ).value = "";
+          (e.target as HTMLElement).querySelector("sl-input")!.value = "";
         }}
         hoist
       >
@@ -710,7 +709,7 @@ export class App extends LiteElement {
                 "crawlId"
               ) as string;
               this.navigate(`/crawls/crawl/${id}#watch`);
-              (e.target as HTMLFormElement).closest("sl-dropdown")?.hide();
+              void (e.target as HTMLFormElement).closest("sl-dropdown")?.hide();
             }}
           >
             <div class="flex flex-wrap items-center">
@@ -763,7 +762,7 @@ export class App extends LiteElement {
       this.onFirstLogin({ email: detail.username });
     }
 
-    this.updateUserInfo();
+    void this.updateUserInfo();
   }
 
   onNeedLogin = (e: CustomEvent<NeedLoginEventDetail>) => {
@@ -833,7 +832,7 @@ export class App extends LiteElement {
       container
     );
     document.body.append(alert);
-    alert.toast();
+    void alert.toast();
   };
 
   getUserInfo(): Promise<APIUser> {
@@ -848,11 +847,11 @@ export class App extends LiteElement {
 
   private showDialog(content: DialogContent) {
     this.globalDialogContent = content;
-    this.globalDialog.show();
+    void this.globalDialog.show();
   }
 
   private closeDialog() {
-    this.globalDialog.hide();
+    void this.globalDialog.hide();
   }
 
   private onFirstLogin({ email }: { email: string }) {
@@ -892,8 +891,8 @@ export class App extends LiteElement {
         if (data.name === "auth_storage") {
           if (data.value !== AuthService.storage.getItem()) {
             if (data.value) {
-              this.authService.saveLogin(JSON.parse(data.value));
-              this.updateUserInfo();
+              this.authService.saveLogin(JSON.parse(data.value) as Auth);
+              void this.updateUserInfo();
               this.syncViewState();
             } else {
               this.clearUser();

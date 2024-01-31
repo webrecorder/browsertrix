@@ -8,6 +8,7 @@ import type { ViewState } from "@/utils/APIRouter";
 import LiteElement, { html } from "@/utils/LiteElement";
 import PasswordService from "@/utils/PasswordService";
 import type { Input as BtrixInput } from "@/components/ui/input";
+import type { UnderlyingFunction } from "@/types/utils";
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
@@ -25,10 +26,10 @@ export class ResetPassword extends LiteElement {
   private serverError?: string;
 
   @state()
-  private isSubmitting: boolean = false;
+  private isSubmitting = false;
 
   protected firstUpdated() {
-    PasswordService.setOptions();
+    void PasswordService.setOptions();
   }
 
   render() {
@@ -59,7 +60,9 @@ export class ResetPassword extends LiteElement {
                 autocomplete="new-password"
                 passwordToggle
                 required
-                @input=${this.onPasswordInput}
+                @input=${this.onPasswordInput as UnderlyingFunction<
+                  typeof this.onPasswordInput
+                >}
               >
               </btrix-input>
               <p class="mt-2 text-gray-500">
@@ -96,7 +99,7 @@ export class ResetPassword extends LiteElement {
     `;
   }
 
-  private renderPasswordStrength = () => html`
+  private readonly renderPasswordStrength = () => html`
     <div class="my-3">
       <btrix-pw-strength-alert
         .result=${this.pwStrengthResults ?? undefined}
@@ -106,14 +109,14 @@ export class ResetPassword extends LiteElement {
     </div>
   `;
 
-  private onPasswordInput = debounce(150)(async (e: InputEvent) => {
+  private readonly onPasswordInput = debounce(150)(async (e: InputEvent) => {
     const { value } = e.target as BtrixInput;
     if (!value || value.length < 4) {
       this.pwStrengthResults = null;
       return;
     }
     this.pwStrengthResults = await PasswordService.checkStrength(value);
-  }) as any;
+  });
 
   async onSubmit(event: SubmitEvent) {
     event.preventDefault();
@@ -139,7 +142,7 @@ export class ResetPassword extends LiteElement {
         this.navTo("/log-in");
         break;
       case 400:
-      case 422:
+      case 422: {
         const { detail } = await resp.json();
         if (detail === "reset_password_bad_token") {
           // TODO password validation details
@@ -152,6 +155,7 @@ export class ResetPassword extends LiteElement {
           );
         }
         break;
+      }
       default:
         this.serverError = msg("Something unexpected went wrong");
         break;

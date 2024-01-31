@@ -5,7 +5,7 @@ import { guard } from "lit/directives/guard.js";
 import queryString from "query-string";
 import Fuse from "fuse.js";
 import debounce from "lodash/fp/debounce";
-import type { SlMenuItem } from "@shoelace-style/shoelace";
+import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import type { AuthState } from "@/utils/AuthService";
@@ -16,6 +16,9 @@ import type { CollectionSavedEvent } from "@/features/collections/collection-met
 import noCollectionsImg from "~assets/images/no-collections-found.webp";
 import type { SelectNewDialogEvent } from "./index";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
+import { isApiError } from "@/utils/api";
+import { type PropertyValues } from "lit";
+import type { UnderlyingFunction } from "@/types/utils";
 
 type Collections = APIPaginatedList<Collection>;
 type SearchFields = "name";
@@ -72,10 +75,10 @@ export class CollectionsList extends LiteElement {
   };
 
   @state()
-  private filterBy: Partial<Record<keyof Collection, any>> = {};
+  private filterBy: Partial<Record<keyof Collection, unknown>> = {};
 
   @state()
-  private searchByValue: string = "";
+  private searchByValue = "";
 
   @state()
   private searchResultsOpen = false;
@@ -84,7 +87,7 @@ export class CollectionsList extends LiteElement {
   private openDialogName?: "create" | "delete" | "editMetadata";
 
   @state()
-  private isDialogVisible: boolean = false;
+  private isDialogVisible = false;
 
   @state()
   private selectedCollection?: Collection;
@@ -93,7 +96,7 @@ export class CollectionsList extends LiteElement {
   private fetchErrorStatusCode?: number;
 
   // For fuzzy search:
-  private fuse = new Fuse([], {
+  private readonly fuse = new Fuse<{ key: "name"; value: string }>([], {
     keys: ["value"],
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
@@ -104,21 +107,23 @@ export class CollectionsList extends LiteElement {
   }
 
   // TODO localize
-  private numberFormatter = new Intl.NumberFormat(undefined, {
+  private readonly numberFormatter = new Intl.NumberFormat(undefined, {
     notation: "compact",
   });
 
-  protected async willUpdate(changedProperties: Map<string, any>) {
+  protected async willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
     if (changedProperties.has("orgId")) {
       this.collections = undefined;
-      this.fetchSearchValues();
+      void this.fetchSearchValues();
     }
     if (
       changedProperties.has("orgId") ||
       changedProperties.has("filterBy") ||
       changedProperties.has("orderBy")
     ) {
-      this.fetchCollections();
+      void this.fetchCollections();
     }
   }
 
@@ -138,7 +143,7 @@ export class CollectionsList extends LiteElement {
                 <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                 ${msg("New Collection")}
               </sl-button>
-            `
+            `,
           )}
         </div>
       </header>
@@ -156,7 +161,7 @@ export class CollectionsList extends LiteElement {
                 ${guard([this.collections], this.renderList)}
               </div>
             `
-          : this.renderLoading()
+          : this.renderLoading(),
       )}
 
       <btrix-dialog
@@ -167,7 +172,7 @@ export class CollectionsList extends LiteElement {
       >
         ${msg(
           html`Are you sure you want to delete
-            <strong>${this.selectedCollection?.name}</strong>?`
+            <strong>${this.selectedCollection?.name}</strong>?`,
         )}
         <div slot="footer" class="flex justify-between">
           <sl-button
@@ -199,10 +204,10 @@ export class CollectionsList extends LiteElement {
         @btrix-collection-saved=${(e: CollectionSavedEvent) => {
           if (this.openDialogName === "create") {
             this.navTo(
-              `${this.orgBasePath}/collections/view/${e.detail.id}/items`
+              `${this.orgBasePath}/collections/view/${e.detail.id}/items`,
             );
           } else {
-            this.fetchCollections();
+            void this.fetchCollections();
           }
         }}
       >
@@ -210,13 +215,12 @@ export class CollectionsList extends LiteElement {
     `;
   }
 
-  private renderLoading = () => html`<div
-    class="w-full flex items-center justify-center my-24 text-3xl"
-  >
-    <sl-spinner></sl-spinner>
-  </div>`;
+  private readonly renderLoading = () =>
+    html`<div class="w-full flex items-center justify-center my-24 text-3xl">
+      <sl-spinner></sl-spinner>
+    </div>`;
 
-  private renderEmpty = () => html`
+  private readonly renderEmpty = () => html`
     <div
       class="grid grid-cols-[max-content] gap-3 justify-center justify-items-center text-center"
     >
@@ -235,7 +239,7 @@ export class CollectionsList extends LiteElement {
         () => html`
           <p class="max-w-[18em]">
             ${msg(
-              "Organize your crawls into a Collection to easily replay them together."
+              "Organize your crawls into a Collection to easily replay them together.",
             )}
           </p>
           <div>
@@ -243,9 +247,9 @@ export class CollectionsList extends LiteElement {
               variant="primary"
               @click=${() => {
                 this.dispatchEvent(
-                  <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                  new CustomEvent("select-new-dialog", {
                     detail: "collection",
-                  })
+                  }) as SelectNewDialogEvent,
                 );
               }}
             >
@@ -258,7 +262,7 @@ export class CollectionsList extends LiteElement {
           <p class="max-w-[18em]">
             ${msg("Your organization doesn't have any Collections, yet.")}
           </p>
-        `
+        `,
       )}
     </div>
   `;
@@ -293,7 +297,7 @@ export class CollectionsList extends LiteElement {
               ${Object.entries(sortableFields).map(
                 ([value, { label }]) => html`
                   <sl-option value=${value}>${label}</sl-option>
-                `
+                `,
               )}
             </sl-select>
             <sl-icon-button
@@ -343,7 +347,9 @@ export class CollectionsList extends LiteElement {
             const { name: _, ...otherFilters } = this.filterBy;
             this.filterBy = otherFilters;
           }}
-          @sl-input=${this.onSearchInput}
+          @sl-input=${this.onSearchInput as UnderlyingFunction<
+            typeof this.onSearchInput
+          >}
         >
           <sl-icon
             name="search"
@@ -385,12 +391,12 @@ export class CollectionsList extends LiteElement {
           >
             ${item.value}
           </sl-menu-item>
-        `
+        `,
       )}
     `;
   }
 
-  private renderList = () => {
+  private readonly renderList = () => {
     if (this.collections?.items.length) {
       return html`
         <btrix-table
@@ -442,7 +448,7 @@ export class CollectionsList extends LiteElement {
                 }}
               ></btrix-pagination>
             </footer>
-          `
+          `,
         )}
       `;
     }
@@ -457,7 +463,7 @@ export class CollectionsList extends LiteElement {
           () => html`
             <p class="p-4 text-center">
               ${msg(
-                "Organize your crawls into a Collection to easily replay them together."
+                "Organize your crawls into a Collection to easily replay them together.",
               )}
             </p>
             <div>
@@ -465,9 +471,9 @@ export class CollectionsList extends LiteElement {
                 variant="primary"
                 @click=${() => {
                   this.dispatchEvent(
-                    <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                    new CustomEvent("select-new-dialog", {
                       detail: "collection",
-                    })
+                    }) as SelectNewDialogEvent,
                   );
                 }}
               >
@@ -480,80 +486,79 @@ export class CollectionsList extends LiteElement {
             <p class="max-w-[18em] text-center">
               ${msg("Your organization doesn't have any Collections, yet.")}
             </p>
-          `
+          `,
         )}
       </div>
     `;
   };
 
-  private renderItem = (col: Collection) =>
-    html`
-      <btrix-table-row
-        class="border rounded cursor-pointer select-none transition-all shadow hover:shadow-none hover:bg-neutral-50 focus-within:bg-neutral-50"
-      >
-        <btrix-table-cell class="p-3">
-          ${col?.isPublic
-            ? html`
-                <sl-tooltip content=${msg("Shareable")}>
-                  <sl-icon
-                    class="inline-block align-middle"
-                    name="people-fill"
-                    label=${msg("Shareable Collection")}
-                  ></sl-icon>
-                </sl-tooltip>
-              `
-            : html`
-                <sl-tooltip content=${msg("Private")}>
-                  <sl-icon
-                    class="inline-block align-middle"
-                    name="eye-slash-fill"
-                    label=${msg("Private Collection")}
-                  ></sl-icon>
-                </sl-tooltip>
-              `}
-        </btrix-table-cell>
-        <btrix-table-cell rowClickTarget="a">
-          <a
-            class="block py-2 truncate"
-            href=${`${this.orgBasePath}/collections/view/${col.id}`}
-            @click=${this.navLink}
-          >
-            ${col.name}
-          </a>
-        </btrix-table-cell>
-        <btrix-table-cell>
-          ${col.crawlCount === 1
-            ? msg("1 item")
-            : msg(str`${this.numberFormatter.format(col.crawlCount)} items`)}
-        </btrix-table-cell>
-        <btrix-table-cell>
-          <sl-format-bytes
-            value=${col.totalSize || 0}
-            display="narrow"
-          ></sl-format-bytes>
-        </btrix-table-cell>
-        <btrix-table-cell>
-          ${col.pageCount === 1
-            ? msg("1 page")
-            : msg(str`${this.numberFormatter.format(col.pageCount)} pages`)}
-        </btrix-table-cell>
-        <btrix-table-cell>
-          <sl-format-date
-            date=${`${col.modified}Z`}
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-            hour="2-digit"
-            minute="2-digit"
-          ></sl-format-date>
-        </btrix-table-cell>
-        <btrix-table-cell class="px-1">
-          ${this.isCrawler ? this.renderActions(col) : ""}
-        </btrix-table-cell>
-      </btrix-table-row>
-    `;
+  private readonly renderItem = (col: Collection) => html`
+    <btrix-table-row
+      class="border rounded cursor-pointer select-none transition-all shadow hover:shadow-none hover:bg-neutral-50 focus-within:bg-neutral-50"
+    >
+      <btrix-table-cell class="p-3">
+        ${col?.isPublic
+          ? html`
+              <sl-tooltip content=${msg("Shareable")}>
+                <sl-icon
+                  class="inline-block align-middle"
+                  name="people-fill"
+                  label=${msg("Shareable Collection")}
+                ></sl-icon>
+              </sl-tooltip>
+            `
+          : html`
+              <sl-tooltip content=${msg("Private")}>
+                <sl-icon
+                  class="inline-block align-middle"
+                  name="eye-slash-fill"
+                  label=${msg("Private Collection")}
+                ></sl-icon>
+              </sl-tooltip>
+            `}
+      </btrix-table-cell>
+      <btrix-table-cell rowClickTarget="a">
+        <a
+          class="block py-2 truncate"
+          href=${`${this.orgBasePath}/collections/view/${col.id}`}
+          @click=${this.navLink}
+        >
+          ${col.name}
+        </a>
+      </btrix-table-cell>
+      <btrix-table-cell>
+        ${col.crawlCount === 1
+          ? msg("1 item")
+          : msg(str`${this.numberFormatter.format(col.crawlCount)} items`)}
+      </btrix-table-cell>
+      <btrix-table-cell>
+        <sl-format-bytes
+          value=${col.totalSize || 0}
+          display="narrow"
+        ></sl-format-bytes>
+      </btrix-table-cell>
+      <btrix-table-cell>
+        ${col.pageCount === 1
+          ? msg("1 page")
+          : msg(str`${this.numberFormatter.format(col.pageCount)} pages`)}
+      </btrix-table-cell>
+      <btrix-table-cell>
+        <sl-format-date
+          date=${`${col.modified}Z`}
+          month="2-digit"
+          day="2-digit"
+          year="2-digit"
+          hour="2-digit"
+          minute="2-digit"
+        ></sl-format-date>
+      </btrix-table-cell>
+      <btrix-table-cell class="px-1">
+        ${this.isCrawler ? this.renderActions(col) : ""}
+      </btrix-table-cell>
+    </btrix-table-row>
+  `;
 
-  private renderActions = (col: Collection) => {
+  private readonly renderActions = (col: Collection) => {
     const authToken = this.authState!.headers.Authorization.split(" ")[1];
 
     return html`
@@ -583,7 +588,7 @@ export class CollectionsList extends LiteElement {
                     target="_blank"
                     slot="prefix"
                     href="https://replayweb.page?source=${this.getPublicReplayURL(
-                      col
+                      col,
                     )}"
                   >
                     Visit Shareable URL
@@ -604,11 +609,9 @@ export class CollectionsList extends LiteElement {
             class="px-6 py-[0.6rem] flex gap-2 items-center whitespace-nowrap hover:bg-neutral-100"
             download
             @click=${(e: MouseEvent) => {
-              (
-                (e.target as HTMLAnchorElement).closest(
-                  "btrix-overflow-dropdown"
-                ) as OverflowDropdown
-              )?.hide();
+              (e.target as HTMLAnchorElement)
+                .closest<OverflowDropdown>("btrix-overflow-dropdown")
+                ?.hide();
             }}
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
@@ -627,7 +630,7 @@ export class CollectionsList extends LiteElement {
     `;
   };
 
-  private renderFetchError = () => html`
+  private readonly renderFetchError = () => html`
     <div>
       <btrix-alert variant="danger">
         ${msg(`Something unexpected went wrong while retrieving Collections.`)}
@@ -635,8 +638,8 @@ export class CollectionsList extends LiteElement {
     </div>
   `;
 
-  private onSearchInput = debounce(150)((e: any) => {
-    this.searchByValue = e.target.value.trim();
+  private readonly onSearchInput = debounce(150)((e: Event) => {
+    this.searchByValue = (e.target as SlInput).value.trim();
 
     if (this.searchResultsOpen === false && this.hasSearchStr) {
       this.searchResultsOpen = true;
@@ -648,7 +651,7 @@ export class CollectionsList extends LiteElement {
         ...otherFilters,
       };
     }
-  }) as any;
+  });
 
   private async onTogglePublic(coll: Collection, isPublic: boolean) {
     await this.apiFetch(
@@ -657,22 +660,22 @@ export class CollectionsList extends LiteElement {
       {
         method: "PATCH",
         body: JSON.stringify({ isPublic }),
-      }
+      },
     );
 
-    this.fetchCollections();
+    void this.fetchCollections();
   }
 
   private getPublicReplayURL(col: Collection) {
     return new URL(
       `/api/orgs/${this.orgId}/collections/${col.id}/public/replay.json`,
-      window.location.href
+      window.location.href,
     ).href;
   }
 
-  private manageCollection = async (
+  private readonly manageCollection = async (
     collection: Collection,
-    dialogName: CollectionsList["openDialogName"]
+    dialogName: CollectionsList["openDialogName"],
   ) => {
     this.selectedCollection = collection;
     await this.updateComplete;
@@ -688,11 +691,11 @@ export class CollectionsList extends LiteElement {
         // FIXME API method is GET right now
         {
           method: "DELETE",
-        }
+        },
       );
 
       this.selectedCollection = undefined;
-      this.fetchCollections();
+      void this.fetchCollections();
 
       this.notify({
         message: msg(html`Deleted <strong>${name}</strong> Collection.`),
@@ -712,7 +715,7 @@ export class CollectionsList extends LiteElement {
     try {
       const searchValues: CollectionSearchValues = await this.apiFetch(
         `/orgs/${this.orgId}/collections/search-values`,
-        this.authState!
+        this.authState!,
       );
       const names = searchValues.names;
 
@@ -723,7 +726,7 @@ export class CollectionsList extends LiteElement {
           key,
           value,
         });
-      this.fuse.setCollection([...names.map(toSearchItem("name"))] as any);
+      this.fuse.setCollection([...names.map(toSearchItem("name"))]);
     } catch (e) {
       console.debug(e);
     }
@@ -734,8 +737,8 @@ export class CollectionsList extends LiteElement {
 
     try {
       this.collections = await this.getCollections(params);
-    } catch (e: any) {
-      if (e.isApiError) {
+    } catch (e) {
+      if (isApiError(e)) {
         this.fetchErrorStatusCode = e.statusCode;
       } else {
         this.notify({
@@ -761,12 +764,12 @@ export class CollectionsList extends LiteElement {
       },
       {
         arrayFormat: "comma",
-      }
+      },
     );
 
     const data = await this.apiFetch<APIPaginatedList<Collection>>(
       `/orgs/${this.orgId}/collections?${query}`,
-      this.authState!
+      this.authState!,
     );
 
     return data;

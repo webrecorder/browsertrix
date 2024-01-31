@@ -2,7 +2,7 @@ import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
-import type { SlMenuItem } from "@shoelace-style/shoelace";
+import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
 import type { AuthState } from "@/utils/AuthService";
@@ -13,6 +13,7 @@ import type {
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
+import type { UnderlyingFunction } from "@/types/utils";
 
 const INITIAL_PAGE_SIZE = 10;
 const MIN_SEARCH_LENGTH = 2;
@@ -63,7 +64,7 @@ export class CollectionsAdd extends LiteElement {
   private collectionIds: string[] = [];
 
   @state()
-  private searchByValue: string = "";
+  private searchByValue = "";
 
   @state()
   private searchResults: Collection[] = [];
@@ -80,7 +81,7 @@ export class CollectionsAdd extends LiteElement {
       this.collectionIds = this.initialCollections;
     }
     super.connectedCallback();
-    this.initializeCollectionsFromIds();
+    void this.initializeCollectionsFromIds();
   }
 
   disconnectedCallback() {
@@ -125,9 +126,9 @@ export class CollectionsAdd extends LiteElement {
           this.searchResultsOpen = false;
           this.searchByValue = "";
         }}
-        @sl-select=${async (e: CustomEvent) => {
+        @sl-select=${async (e: CustomEvent<{ item: SlMenuItem }>) => {
           this.searchResultsOpen = false;
-          const item = e.detail.item as SlMenuItem;
+          const item = e.detail.item;
           const collId = item.dataset["key"];
           if (collId && this.collectionIds.indexOf(collId) === -1) {
             const coll = this.searchResults.find(
@@ -142,7 +143,7 @@ export class CollectionsAdd extends LiteElement {
                 };
               }
               this.collectionIds = [...this.collectionIds, id];
-              this.dispatchChange();
+              void this.dispatchChange();
             }
           }
         }}
@@ -156,7 +157,9 @@ export class CollectionsAdd extends LiteElement {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
           }}
-          @sl-input=${this.onSearchInput}
+          @sl-input=${this.onSearchInput as UnderlyingFunction<
+            typeof this.onSearchInput
+          >}
         >
           <sl-icon name="search" slot="prefix"></sl-icon>
         </sl-input>
@@ -240,13 +243,13 @@ export class CollectionsAdd extends LiteElement {
           ...this.collectionIds.slice(0, collIdIndex),
           ...this.collectionIds.slice(collIdIndex + 1),
         ];
-        this.dispatchChange();
+        void this.dispatchChange();
       }
     }
   }
 
-  private onSearchInput = debounce(200)(async (e: any) => {
-    this.searchByValue = e.target.value.trim();
+  private readonly onSearchInput = debounce(200)(async (e: Event) => {
+    this.searchByValue = (e.target as SlInput).value.trim();
 
     if (this.searchResultsOpen === false && this.hasSearchStr) {
       this.searchResultsOpen = true;
@@ -254,11 +257,11 @@ export class CollectionsAdd extends LiteElement {
 
     const data = await this.fetchCollectionsByPrefix(this.searchByValue);
     let searchResults: Collection[] = [];
-    if (data && data.items.length) {
+    if (data?.items.length) {
       searchResults = this.filterOutSelectedCollections(data.items);
     }
     this.searchResults = searchResults;
-  }) as any;
+  });
 
   private filterOutSelectedCollections(results: Collection[]) {
     return results.filter((result) => {
@@ -316,7 +319,7 @@ export class CollectionsAdd extends LiteElement {
     });
   }
 
-  private getCollection = (collId: string): Promise<Collection> => {
+  private readonly getCollection = (collId: string): Promise<Collection> => {
     return this.apiFetch(
       `/orgs/${this.orgId}/collections/${collId}`,
       this.authState!
@@ -326,9 +329,9 @@ export class CollectionsAdd extends LiteElement {
   private async dispatchChange() {
     await this.updateComplete;
     this.dispatchEvent(
-      <CollectionsChangeEvent>new CustomEvent("collections-change", {
+      new CustomEvent("collections-change", {
         detail: { collections: this.collectionIds },
-      })
+      }) as CollectionsChangeEvent
     );
   }
 }

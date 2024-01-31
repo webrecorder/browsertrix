@@ -1,7 +1,7 @@
 import { state, property, queryAsync, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { when } from "lit/directives/when.js";
-import type { SlInput } from "@shoelace-style/shoelace";
+import { type SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 
 import { maxLengthValidator } from "@/utils/form";
@@ -9,6 +9,7 @@ import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { Collection } from "@/types/collection";
+import { isApiError } from "@/utils/api";
 
 export type CollectionSavedEvent = CustomEvent<{
   id: string;
@@ -36,9 +37,9 @@ export class CollectionMetadataDialog extends LiteElement {
   private isSubmitting = false;
 
   @queryAsync("#collectionForm")
-  private form!: Promise<HTMLFormElement>;
+  private readonly form!: Promise<HTMLFormElement>;
 
-  private validateNameMax = maxLengthValidator(50);
+  private readonly validateNameMax = maxLengthValidator(50);
 
   render() {
     return html` <btrix-dialog
@@ -125,9 +126,9 @@ export class CollectionMetadataDialog extends LiteElement {
             // Using submit method instead of type="submit" fixes
             // incorrect getRootNode in Chrome
             const form = await this.form;
-            const submitInput = form.querySelector(
+            const submitInput = form.querySelector<HTMLInputElement>(
               'input[type="submit"]'
-            ) as HTMLInputElement;
+            );
             form.requestSubmit(submitInput);
           }}
           >${this.collection
@@ -139,11 +140,11 @@ export class CollectionMetadataDialog extends LiteElement {
   }
 
   private async hideDialog() {
-    ((await this.form).closest("btrix-dialog") as Dialog).hide();
+    void (await this.form).closest<Dialog>("btrix-dialog")!.hide();
   }
 
   private onReset() {
-    this.hideDialog();
+    void this.hideDialog();
   }
 
   private async onSubmit(event: SubmitEvent) {
@@ -151,8 +152,8 @@ export class CollectionMetadataDialog extends LiteElement {
     event.stopPropagation();
 
     const form = event.target as HTMLFormElement;
-    const nameInput = form.querySelector('sl-input[name="name"]') as SlInput;
-    if (!nameInput.checkValidity()) {
+    const nameInput = form.querySelector<SlInput>('sl-input[name="name"]');
+    if (!nameInput?.checkValidity()) {
       return;
     }
 
@@ -176,11 +177,11 @@ export class CollectionMetadataDialog extends LiteElement {
       });
 
       this.dispatchEvent(
-        <CollectionSavedEvent>new CustomEvent("btrix-collection-saved", {
+        new CustomEvent("btrix-collection-saved", {
           detail: {
             id: this.collection?.id || data.id,
           },
-        })
+        }) as CollectionSavedEvent
       );
       this.notify({
         message: msg(
@@ -189,9 +190,9 @@ export class CollectionMetadataDialog extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-      this.hideDialog();
-    } catch (e: any) {
-      let message = e?.isApiError && e?.message;
+      void this.hideDialog();
+    } catch (e) {
+      let message = isApiError(e) && e?.message;
       if (message === "collection_name_taken") {
         message = msg("This name is already taken.");
       }

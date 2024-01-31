@@ -52,7 +52,7 @@ describe("browsertrix-app", () => {
         });
       return null;
     });
-    const el = (await fixture("<browsertrix-app></browsertrix-app>")) as App;
+    const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
 
     expect(el.authService.authState).to.eql({
       headers: "_fake_headers_",
@@ -96,7 +96,7 @@ describe("browsertrix-app", () => {
         });
       return null;
     });
-    const el = (await fixture("<browsertrix-app></browsertrix-app>")) as App;
+    const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
 
     expect(el.appState.userInfo).to.eql({
       id: "test_id",

@@ -1,5 +1,5 @@
 import { TailwindElement } from "@/classes/TailwindElement";
-import { LitElement, html, css } from "lit";
+import { LitElement, html, css, type PropertyValues } from "lit";
 import { property, queryAsync, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
@@ -186,12 +186,12 @@ export class TabList extends LitElement {
   hideIndicator = false;
 
   @queryAsync(".track")
-  private trackElem!: HTMLElement;
+  private readonly trackElem!: HTMLElement;
 
   @queryAsync(".indicator")
-  private indicatorElem!: HTMLElement;
+  private readonly indicatorElem!: HTMLElement;
 
-  updated(changedProperties: Map<string, any>) {
+  updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("activePanel") && this.activePanel) {
       this.onActiveChange(!changedProperties.get("activePanel"));
     }
@@ -261,20 +261,18 @@ export class TabList extends LitElement {
   }
 
   private getPanels(): TabPanelElement[] {
-    const slotElems = (
-      this.renderRoot.querySelector(
-        ".content slot:not([name])"
-      ) as HTMLSlotElement
-    ).assignedElements();
+    const slotElems = this.renderRoot
+      .querySelector<HTMLSlotElement>(".content slot:not([name])")!
+      .assignedElements();
     return ([...slotElems] as TabPanelElement[]).filter(
       (el) => el.tagName.toLowerCase() === "btrix-tab-panel"
     );
   }
 
   private getTabs(): TabElement[] {
-    const slotElems = (
-      this.renderRoot.querySelector("slot[name='nav']") as HTMLSlotElement
-    ).assignedElements();
+    const slotElems = this.renderRoot
+      .querySelector<HTMLSlotElement>("slot[name='nav']")!
+      .assignedElements();
     return ([...slotElems] as TabElement[]).filter(
       (el) => el.tagName.toLowerCase() === "btrix-tab"
     );
@@ -291,7 +289,7 @@ export class TabList extends LitElement {
       (el) => el.name === this.progressPanel
     );
     if (progressTab) {
-      this.repositionIndicator(progressTab, !isFirstChange);
+      void this.repositionIndicator(progressTab, !isFirstChange);
     }
   }
 
@@ -301,7 +299,7 @@ export class TabList extends LitElement {
         tab.active = true;
 
         if (!this.progressPanel) {
-          this.repositionIndicator(tab, !isFirstChange);
+          void this.repositionIndicator(tab, !isFirstChange);
         }
       } else {
         tab.active = false;

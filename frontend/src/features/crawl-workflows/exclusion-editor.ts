@@ -9,6 +9,8 @@ import type {
 import type { SeedConfig } from "@/pages/org/types";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { AuthState } from "@/utils/AuthService";
+import { type PropertyValues } from "lit";
+import { isApiError } from "@/utils/api";
 
 type URLs = string[];
 type ResponseData = {
@@ -59,7 +61,7 @@ export class ExclusionEditor extends LiteElement {
 
   @state()
   /** `new RegExp` constructor string */
-  private regex: string = "";
+  private regex = "";
 
   @state()
   matchedURLs: URLs | null = null;
@@ -67,14 +69,14 @@ export class ExclusionEditor extends LiteElement {
   @state()
   private isLoading = false;
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (
       changedProperties.has("authState") ||
       changedProperties.has("orgId") ||
       changedProperties.has("crawlId") ||
       changedProperties.has("regex")
     ) {
-      this.fetchQueueMatches();
+      void this.fetchQueueMatches();
     }
   }
 
@@ -136,7 +138,7 @@ export class ExclusionEditor extends LiteElement {
       crawlId=${this.crawlId!}
       .authState=${this.authState}
       regex=${this.regex}
-      .exclusions=${(this.config && this.config.exclude) || []}
+      .exclusions=${this.config?.exclude || []}
       matchedTotal=${this.matchedURLs?.length || 0}
     ></btrix-crawl-queue>`;
   }
@@ -157,7 +159,9 @@ export class ExclusionEditor extends LiteElement {
     try {
       const params = new URLSearchParams({ regex });
       const data = await this.apiFetch<{ success: boolean }>(
-        `/orgs/${this.orgId}/crawls/${this.crawlId}/exclusions?${params}`,
+        `/orgs/${this.orgId}/crawls/${
+          this.crawlId
+        }/exclusions?${params.toString()}`,
         this.authState!,
         {
           method: "DELETE",
@@ -175,10 +179,10 @@ export class ExclusionEditor extends LiteElement {
       } else {
         throw data;
       }
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
         message:
-          e.message === "crawl_running_cant_deactivate"
+          isApiError(e) && e.message === "crawl_running_cant_deactivate"
             ? msg("Cannot remove exclusion when crawl is no longer running.")
             : msg("Sorry, couldn't remove exclusion at this time."),
         variant: "danger",
@@ -198,8 +202,8 @@ export class ExclusionEditor extends LiteElement {
     try {
       const { matched } = await this.getQueueMatches();
       this.matchedURLs = matched;
-    } catch (e: any) {
-      if (e.message === "invalid_regex") {
+    } catch (e) {
+      if (isApiError(e) && e.message === "invalid_regex") {
         this.exclusionFieldErrorMessage = msg("Invalid Regex");
       } else {
         this.notify({
@@ -219,7 +223,9 @@ export class ExclusionEditor extends LiteElement {
     const regex = this.regex;
     const params = new URLSearchParams({ regex });
     const data = await this.apiFetch<ResponseData>(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/queueMatchAll?${params}`,
+      `/orgs/${this.orgId}/crawls/${
+        this.crawlId
+      }/queueMatchAll?${params.toString()}`,
       this.authState!
     );
 
@@ -245,7 +251,9 @@ export class ExclusionEditor extends LiteElement {
     try {
       const params = new URLSearchParams({ regex });
       const data = await this.apiFetch<{ success: boolean }>(
-        `/orgs/${this.orgId}/crawls/${this.crawlId}/exclusions?${params}`,
+        `/orgs/${this.orgId}/crawls/${
+          this.crawlId
+        }/exclusions?${params.toString()}`,
         this.authState!,
         {
           method: "POST",
@@ -270,11 +278,13 @@ export class ExclusionEditor extends LiteElement {
       } else {
         throw data;
       }
-    } catch (e: any) {
-      if (e.message === "exclusion_already_exists") {
-        this.exclusionFieldErrorMessage = msg("Exclusion already exists");
-      } else if (e.message === "invalid_regex") {
-        this.exclusionFieldErrorMessage = msg("Invalid Regex");
+    } catch (e) {
+      if (isApiError(e)) {
+        if (e.message === "exclusion_already_exists") {
+          this.exclusionFieldErrorMessage = msg("Exclusion already exists");
+        } else if (e.message === "invalid_regex") {
+          this.exclusionFieldErrorMessage = msg("Invalid Regex");
+        }
       } else {
         this.notify({
           message: msg("Sorry, couldn't add exclusion at this time."),

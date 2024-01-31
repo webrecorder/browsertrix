@@ -1,4 +1,4 @@
-import { LitElement } from "lit";
+import { LitElement, type PropertyValues } from "lit";
 import { state, queryAsync, property, customElement } from "lit/decorators.js";
 import { msg, str, localized } from "@lit/localize";
 import debounce from "lodash/fp/debounce";
@@ -12,6 +12,8 @@ import LiteElement, { html } from "@/utils/LiteElement";
 import { needLogin } from "@/utils/auth";
 import type { AuthState } from "@/utils/AuthService";
 import PasswordService from "@/utils/PasswordService";
+import { isApiError } from "@/utils/api";
+import type { UnderlyingFunction } from "@/types/utils";
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
@@ -26,12 +28,12 @@ export class RequestVerify extends LitElement {
   email!: string;
 
   @state()
-  private isRequesting: boolean = false;
+  private isRequesting = false;
 
   @state()
-  private requestSuccess: boolean = false;
+  private requestSuccess = false;
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("email")) {
       this.isRequesting = false;
       this.requestSuccess = false;
@@ -111,9 +113,11 @@ export class AccountSettings extends LiteElement {
   private pwStrengthResults: null | ZxcvbnResult = null;
 
   @queryAsync('sl-input[name="password"]')
-  private passwordInput?: Promise<SlInput | null>;
+  private readonly passwordInput?: Promise<SlInput | null>;
 
-  async updated(changedProperties: Map<string, any>) {
+  async updated(
+    changedProperties: PropertyValues<this> & Map<string, unknown>
+  ) {
     if (
       changedProperties.has("isChangingPassword") &&
       this.isChangingPassword
@@ -123,7 +127,7 @@ export class AccountSettings extends LiteElement {
   }
 
   protected firstUpdated() {
-    PasswordService.setOptions();
+    void PasswordService.setOptions();
   }
 
   render() {
@@ -238,7 +242,9 @@ export class AccountSettings extends LiteElement {
                     password-toggle
                     minlength="8"
                     required
-                    @input=${this.onPasswordInput}
+                    @input=${this.onPasswordInput as UnderlyingFunction<
+                      typeof this.onPasswordInput
+                    >}
                   ></sl-input>
 
                   ${when(this.pwStrengthResults, this.renderPasswordStrength)}
@@ -281,7 +287,7 @@ export class AccountSettings extends LiteElement {
     `;
   }
 
-  private renderPasswordStrength = () => html`
+  private readonly renderPasswordStrength = () => html`
     <div class="mt-4">
       <btrix-pw-strength-alert
         .result=${this.pwStrengthResults ?? undefined}
@@ -291,7 +297,7 @@ export class AccountSettings extends LiteElement {
     </div>
   `;
 
-  private onPasswordInput = debounce(150)(async (e: InputEvent) => {
+  private readonly onPasswordInput = debounce(150)(async (e: InputEvent) => {
     const { value } = e.target as SlInput;
     if (!value || value.length < 4) {
       this.pwStrengthResults = null;
@@ -305,12 +311,12 @@ export class AccountSettings extends LiteElement {
       value,
       userInputs
     );
-  }) as any;
+  });
 
   private async onSubmitName(e: SubmitEvent) {
     if (!this.userInfo || !this.authState) return;
     const form = e.target as HTMLFormElement;
-    const input = form.querySelector("sl-input") as SlInput;
+    const input = form.querySelector("sl-input")!;
     if (!input.checkValidity()) {
       return;
     }
@@ -351,7 +357,7 @@ export class AccountSettings extends LiteElement {
   private async onSubmitEmail(e: SubmitEvent) {
     if (!this.userInfo || !this.authState) return;
     const form = e.target as HTMLFormElement;
-    const input = form.querySelector("sl-input") as SlInput;
+    const input = form.querySelector("sl-input")!;
     if (!input.checkValidity()) {
       return;
     }
@@ -417,8 +423,8 @@ export class AccountSettings extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-    } catch (e: any) {
-      if (e.isApiError && e.details === "invalid_current_password") {
+    } catch (e) {
+      if (isApiError(e) && e.details === "invalid_current_password") {
         this.notify({
           message: msg("Please correct your current password and try again."),
           variant: "danger",

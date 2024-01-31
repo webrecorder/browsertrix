@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "lit";
+import { html, css } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import hljs from "highlight.js/lib/core";
@@ -26,7 +26,7 @@ export class Code extends TailwindElement {
   `;
 
   @property({ type: String })
-  value: string = "";
+  value = "";
 
   @property({ type: String })
   language: "javascript" | "xml" = "xml";

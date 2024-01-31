@@ -1,4 +1,4 @@
-import { html } from "lit";
+import { type PropertyValues, html } from "lit";
 import { state, property, queryAsync, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { when } from "lit/directives/when.js";
@@ -21,6 +21,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
 import { NavigateController } from "@/controllers/navigate";
+import { type CollectionsChangeEvent } from "../collections/collections-add";
 
 export type FileUploaderRequestCloseEvent = CustomEvent<NonNullable<unknown>>;
 export type FileUploaderUploadStartEvent = CustomEvent<{
@@ -32,8 +33,10 @@ export type FileUploaderUploadedEvent = CustomEvent<{
   fileSize: number;
 }>;
 
-const ABORT_REASON_USER_CANCEL = "user-canceled";
-const ABORT_REASON_QUOTA_REACHED = "storage_quota_reached";
+enum AbortReason {
+  UserCancel = "user-canceled",
+  QuotaReached = "storage_quota_reached",
+}
 
 /**
  * Usage:
@@ -63,13 +66,13 @@ export class FileUploader extends TailwindElement {
   open = false;
 
   @state()
-  private isUploading: boolean = false;
+  private isUploading = false;
 
   @state()
-  private isDialogVisible: boolean = false;
+  private isDialogVisible = false;
 
   @state()
-  private isConfirmingCancel: boolean = false;
+  private isConfirmingCancel = false;
 
   @state()
   private collectionIds: string[] = [];
@@ -84,29 +87,29 @@ export class FileUploader extends TailwindElement {
   private fileList: File[] = [];
 
   @state()
-  private progress: number = 0;
+  private progress = 0;
 
   @queryAsync("#fileUploadForm")
-  private form!: Promise<HTMLFormElement>;
+  private readonly form!: Promise<HTMLFormElement>;
 
-  private api = new APIController(this);
-  private navigate = new NavigateController(this);
-  private notify = new NotifyController(this);
+  private readonly api = new APIController(this);
+  private readonly navigate = new NavigateController(this);
+  private readonly notify = new NotifyController(this);
 
   // For fuzzy search:
-  private fuse = new Fuse([], {
+  private readonly fuse = new Fuse([], {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
 
-  private validateDescriptionMax = maxLengthValidator(500);
+  private readonly validateDescriptionMax = maxLengthValidator(500);
 
   // Use to cancel requests
   private uploadRequest: XMLHttpRequest | null = null;
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (changedProperties.has("open") && this.open) {
-      this.fetchTags();
+      void this.fetchTags();
 
       if (changedProperties.get("open") === undefined) {
         this.isDialogVisible = true;
@@ -179,9 +182,9 @@ export class FileUploader extends TailwindElement {
             // Using submit method instead of type="submit" fixes
             // incorrect getRootNode in Chrome
             const form = await this.form;
-            const submitInput = form.querySelector(
+            const submitInput = form.querySelector<HTMLInputElement>(
               'input[type="submit"]'
-            ) as HTMLInputElement;
+            )!;
             form.requestSubmit(submitInput);
           }}
           >${msg("Upload File")}</sl-button
@@ -200,7 +203,7 @@ export class FileUploader extends TailwindElement {
               type="file"
               accept=".wacz"
               @change=${(e: Event) => {
-                const files = (e.target as HTMLInputElement).files as FileList;
+                const files = (e.target as HTMLInputElement).files!;
                 if (files?.length) {
                   this.fileList = Array.from(files);
                 }
@@ -261,7 +264,7 @@ export class FileUploader extends TailwindElement {
           .orgId=${this.orgId}
           .configId=${"temp"}
           label=${msg("Add to Collection")}
-          @collections-change=${(e: CustomEvent) =>
+          @collections-change=${(e: CollectionsChangeEvent) =>
             (this.collectionIds = e.detail.collections)}
         >
         </btrix-collections-add>
@@ -336,7 +339,7 @@ export class FileUploader extends TailwindElement {
     `;
   }
 
-  private handleRemoveFile = (e: FileRemoveEvent) => {
+  private readonly handleRemoveFile = (e: FileRemoveEvent) => {
     this.cancelUpload();
     const idx = this.fileList.indexOf(e.detail.file);
     if (idx === -1) return;
@@ -370,11 +373,11 @@ export class FileUploader extends TailwindElement {
 
   private requestClose() {
     this.dispatchEvent(
-      <FileUploaderRequestCloseEvent>new CustomEvent("request-close")
+      new CustomEvent("request-close") as FileUploaderRequestCloseEvent
     );
   }
 
-  private onTagInput = (e: TagInputEvent) => {
+  private readonly onTagInput = (e: TagInputEvent) => {
     const { value } = e.detail;
     if (!value) return;
     this.tagOptions = this.fuse.search(value).map(({ item }) => item);
@@ -406,12 +409,12 @@ export class FileUploader extends TailwindElement {
 
     this.isUploading = true;
     this.dispatchEvent(
-      <FileUploaderUploadedEvent>new CustomEvent("upload-start", {
+      new CustomEvent("upload-start", {
         detail: {
           fileName: file.name,
           fileSize: file.size,
         },
-      })
+      }) as FileUploaderUploadedEvent
     );
 
     const { name, description } = serialize(formEl);
@@ -443,12 +446,12 @@ export class FileUploader extends TailwindElement {
 
       if (data.id && data.added) {
         this.dispatchEvent(
-          <FileUploaderUploadedEvent>new CustomEvent("uploaded", {
+          new CustomEvent("uploaded", {
             detail: {
               fileName: file.name,
               fileSize: file.size,
             },
-          })
+          }) as FileUploaderUploadedEvent
         );
         this.requestClose();
         this.notify.toast({
@@ -466,13 +469,13 @@ export class FileUploader extends TailwindElement {
       } else {
         throw data;
       }
-    } catch (err: any) {
-      if (err === ABORT_REASON_USER_CANCEL) {
+    } catch (err) {
+      if (err === AbortReason.UserCancel) {
         console.debug("Upload aborted to user cancel");
       } else {
         let message = msg("Sorry, couldn't upload file at this time.");
         console.debug(err);
-        if (err === ABORT_REASON_QUOTA_REACHED) {
+        if (err === AbortReason.QuotaReached) {
           message = msg(
             "Your org does not have enough storage to upload this file."
           );
@@ -508,10 +511,16 @@ export class FileUploader extends TailwindElement {
       });
       xhr.addEventListener("load", () => {
         if (xhr.status === 200) {
-          resolve(JSON.parse(xhr.response));
+          resolve(
+            JSON.parse(xhr.response as string) as {
+              id: string;
+              added: boolean;
+              storageQuotaReached: boolean;
+            }
+          );
         }
         if (xhr.status === 403) {
-          reject(ABORT_REASON_QUOTA_REACHED);
+          reject(AbortReason.QuotaReached);
         }
       });
       xhr.addEventListener("error", () => {
@@ -523,7 +532,7 @@ export class FileUploader extends TailwindElement {
         );
       });
       xhr.addEventListener("abort", () => {
-        reject(ABORT_REASON_USER_CANCEL);
+        reject(AbortReason.UserCancel);
       });
       xhr.upload.addEventListener("progress", this.onUploadProgress);
 
@@ -533,7 +542,7 @@ export class FileUploader extends TailwindElement {
     });
   }
 
-  private onUploadProgress = throttle(100)((e: ProgressEvent) => {
+  private readonly onUploadProgress = throttle(100)((e: ProgressEvent) => {
     this.progress = (e.loaded / e.total) * 100;
   });
 

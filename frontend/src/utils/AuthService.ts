@@ -74,19 +74,19 @@ export default class AuthService {
       const oldValue = AuthService.storage.getItem();
       if (oldValue === newValue) return;
       window.sessionStorage.setItem(AuthService.storageKey, newValue);
-      AuthService.broadcastChannel.postMessage(<AuthStorageEventDetail>{
+      AuthService.broadcastChannel.postMessage({
         name: "auth_storage",
         value: newValue,
-      });
+      } as AuthStorageEventDetail);
     },
     removeItem() {
       const oldValue = AuthService.storage.getItem();
       if (!oldValue) return;
       window.sessionStorage.removeItem(AuthService.storageKey);
-      AuthService.broadcastChannel.postMessage(<AuthStorageEventDetail>{
+      AuthService.broadcastChannel.postMessage({
         name: "auth_storage",
         value: null,
-      });
+      } as AuthStorageEventDetail);
     },
   };
 
@@ -147,7 +147,10 @@ export default class AuthService {
       });
     }
 
-    const data = await resp.json();
+    const data = (await resp.json()) as {
+      token_type: string;
+      access_token: string;
+    };
     const token = AuthService.decodeToken(data.access_token);
     const authHeaders = AuthService.parseAuthHeaders(data);
 
@@ -162,7 +165,7 @@ export default class AuthService {
    * Decode JSON web token returned as access token
    */
   private static decodeToken(token: string): JWT {
-    return JSON.parse(window.atob(token.split(".")[1]));
+    return JSON.parse(window.atob(token.split(".")[1])) as JWT;
   }
 
   /**
@@ -195,10 +198,10 @@ export default class AuthService {
       ({ data }: { data: AuthRequestEventDetail | AuthStorageEventDetail }) => {
         if (data.name === "requesting_auth") {
           // A new tab/window opened and is requesting shared auth
-          AuthService.broadcastChannel.postMessage(<AuthResponseEventDetail>{
+          AuthService.broadcastChannel.postMessage({
             name: "responding_auth",
             auth: AuthService.getCurrentTabAuth(),
-          });
+          } as AuthResponseEventDetail);
         }
       }
     );
@@ -210,7 +213,7 @@ export default class AuthService {
     const auth = AuthService.storage.getItem();
 
     if (auth) {
-      return JSON.parse(auth);
+      return JSON.parse(auth) as AuthState;
     }
 
     return null;
@@ -222,9 +225,9 @@ export default class AuthService {
   private static async getSharedSessionAuth(): Promise<AuthState> {
     const broadcastPromise = new Promise<AuthState>((resolve) => {
       // Check if there's any authenticated tabs
-      AuthService.broadcastChannel.postMessage(<AuthRequestEventDetail>{
+      AuthService.broadcastChannel.postMessage({
         name: "requesting_auth",
-      });
+      } as AuthRequestEventDetail);
       // Wait for another tab to respond
       const cb = ({ data }: MessageEvent<AuthResponseEventDetail>) => {
         if (data.name === "responding_auth") {
@@ -244,7 +247,7 @@ export default class AuthService {
 
     return Promise.race([broadcastPromise, timeoutPromise]).then(
       (value) => {
-        if (value && value.username && value.headers && value.tokenExpiresAt) {
+        if (value?.username && value.headers && value.tokenExpiresAt) {
           return value;
         } else {
           return null;
@@ -281,7 +284,7 @@ export default class AuthService {
 
   startFreshnessCheck() {
     window.clearTimeout(this.timerId);
-    this.checkFreshness();
+    void this.checkFreshness();
   }
 
   private cancelFreshnessCheck() {
@@ -317,7 +320,7 @@ export default class AuthService {
       // console.debug("fresh! restart timer paddedNow:", new Date(paddedNow));
       // Restart timer
       this.timerId = window.setTimeout(() => {
-        this.checkFreshness();
+        void this.checkFreshness();
       }, FRESHNESS_TIMER_INTERVAL);
     } else {
       try {
@@ -337,7 +340,7 @@ export default class AuthService {
 
         // Restart timer
         this.timerId = window.setTimeout(() => {
-          this.checkFreshness();
+          void this.checkFreshness();
         }, FRESHNESS_TIMER_INTERVAL);
       } catch (e) {
         console.debug(e);
@@ -373,7 +376,10 @@ export default class AuthService {
       });
     }
 
-    const data = await resp.json();
+    const data = (await resp.json()) as {
+      token_type: string;
+      access_token: string;
+    };
     const token = AuthService.decodeToken(data.access_token);
     const authHeaders = AuthService.parseAuthHeaders(data);
 

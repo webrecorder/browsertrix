@@ -88,7 +88,11 @@ export class PasswordStrengthAlert extends LitElement {
     if (!this.result) return;
 
     const { score, feedback } = this.result;
-    let scoreProps = {
+    let scoreProps: {
+      icon: string;
+      label: string;
+      variant: "primary" | "neutral" | "danger" | "success" | "warning";
+    } = {
       icon: "exclamation-triangle",
       label: msg("Very weak password"),
       variant: "danger",
@@ -122,7 +126,7 @@ export class PasswordStrengthAlert extends LitElement {
       scoreProps.label = msg("Please choose a stronger password");
     }
     return html`
-      <sl-alert variant=${scoreProps.variant as any} open>
+      <sl-alert variant=${scoreProps.variant} open>
         <div class="score">
           <sl-icon class="icon" name=${scoreProps.icon}></sl-icon>
           <p class="label">${scoreProps.label}</p>

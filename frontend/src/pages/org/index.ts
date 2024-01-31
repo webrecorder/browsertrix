@@ -170,7 +170,7 @@ export class Org extends LiteElement {
       (changedProperties.has("userInfo") && this.userInfo) ||
       (changedProperties.has("slug") && this.slug)
     ) {
-      this.updateOrg();
+      void this.updateOrg();
     }
     if (changedProperties.has("openDialogName")) {
       // Sync URL to create dialog
@@ -216,7 +216,7 @@ export class Org extends LiteElement {
     // and redirect to the slug url
     if (UUID_REGEX.test(this.slug)) {
       const org = await this.getOrg(this.slug);
-      const actualSlug = org && org.slug;
+      const actualSlug = org?.slug;
       if (actualSlug) {
         this.navTo(
           window.location.href
@@ -269,6 +269,7 @@ export class Org extends LiteElement {
           tabPanelContent = this.renderOrgSettings();
           break;
         }
+        // falls through
       }
       default:
         tabPanelContent = html`<btrix-not-found
@@ -523,9 +524,10 @@ export class Org extends LiteElement {
   }
 
   private renderWorkflows() {
-    const isEditing = this.params.hasOwnProperty("edit");
+    const isEditing = Object.prototype.hasOwnProperty.call(this.params, "edit");
     const isNewResourceTab =
-      this.params.hasOwnProperty("new") && this.params.jobType;
+      Object.prototype.hasOwnProperty.call(this.params, "new") &&
+      this.params.jobType;
     const workflowId = this.params.workflowId;
 
     if (workflowId) {
@@ -621,7 +623,10 @@ export class Org extends LiteElement {
   private renderOrgSettings() {
     if (!this.userInfo || !this.org) return;
     const activePanel = this.params.settingsTab || "information";
-    const isAddingMember = this.params.hasOwnProperty("invite");
+    const isAddingMember = Object.prototype.hasOwnProperty.call(
+      this.params,
+      "invite"
+    );
 
     return html`<btrix-org-settings
       .authState=${this.authState}
@@ -689,7 +694,7 @@ export class Org extends LiteElement {
   }
 
   private async onOrgRemoveMember(e: OrgRemoveMemberEvent) {
-    this.removeMember(e.detail.member);
+    void this.removeMember(e.detail.member);
   }
 
   private async onStorageQuotaUpdate(e: CustomEvent<QuotaUpdateDetail>) {

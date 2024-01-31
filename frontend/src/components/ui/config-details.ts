@@ -14,6 +14,7 @@ import { RelativeDuration } from "./relative-duration";
 import { nothing } from "lit";
 
 import capitalize from "lodash/fp/capitalize";
+import { isApiError } from "@/utils/api";
 
 /**
  * Usage:
@@ -68,7 +69,7 @@ export class ConfigDetails extends LiteElement {
 
   async connectedCallback() {
     super.connectedCallback();
-    this.fetchAPIDefaults();
+    void this.fetchAPIDefaults();
     await this.fetchCollections();
   }
 
@@ -76,7 +77,7 @@ export class ConfigDetails extends LiteElement {
     const crawlConfig = this.crawlConfig;
     const seedsConfig = crawlConfig?.config;
     const exclusions = seedsConfig?.exclude || [];
-    const maxPages = (this.seeds && this.seeds[0]?.limit) ?? seedsConfig?.limit;
+    const maxPages = this.seeds?.[0]?.limit ?? seedsConfig?.limit;
     const renderTimeLimit = (
       valueSeconds?: number | null,
       fallbackValue?: number
@@ -310,7 +311,7 @@ export class ConfigDetails extends LiteElement {
     `;
   }
 
-  private renderConfirmUrlListSettings = () => {
+  private readonly renderConfirmUrlListSettings = () => {
     const crawlConfig = this.crawlConfig;
 
     return html`
@@ -347,7 +348,7 @@ export class ConfigDetails extends LiteElement {
     `;
   };
 
-  private renderConfirmSeededSettings = () => {
+  private readonly renderConfirmSeededSettings = () => {
     if (!this.seeds) return;
     const crawlConfig = this.crawlConfig!;
     const seedsConfig = crawlConfig.config;
@@ -382,7 +383,7 @@ export class ConfigDetails extends LiteElement {
                 ${includeUrlList.map(
                   (url: string) =>
                     staticHtml`<li class="regex">${unsafeStatic(
-                      new RegexColorize().colorizeText(url)
+                      new RegexColorize().colorizeText(url) as string
                     )}</li>`
                 )}
               </ul>
@@ -435,7 +436,7 @@ export class ConfigDetails extends LiteElement {
     `;
   };
 
-  private renderSetting(label: string, value: any, breakAll?: boolean) {
+  private renderSetting(label: string, value: unknown, breakAll?: boolean) {
     let content = value;
 
     if (!this.crawlConfig) {
@@ -460,10 +461,10 @@ export class ConfigDetails extends LiteElement {
     if (this.crawlConfig?.autoAddCollections) {
       try {
         await this.getCollections();
-      } catch (e: any) {
+      } catch (e) {
         this.notify({
           message:
-            e.statusCode === 404
+            isApiError(e) && e.statusCode === 404
               ? msg("Collections not found.")
               : msg(
                   "Sorry, couldn't retrieve Collection details at this time."
@@ -480,8 +481,7 @@ export class ConfigDetails extends LiteElement {
     const orgId = this.crawlConfig?.oid;
 
     if (this.crawlConfig?.autoAddCollections && orgId) {
-      for (let i = 0; i < this.crawlConfig.autoAddCollections.length; i++) {
-        const collectionId = this.crawlConfig.autoAddCollections[i];
+      for (const collectionId of this.crawlConfig.autoAddCollections) {
         const data: Collection = await this.apiFetch(
           `/orgs/${orgId}/collections/${collectionId}`,
           this.authState!
@@ -506,7 +506,11 @@ export class ConfigDetails extends LiteElement {
       const orgDefaults = {
         ...this.orgDefaults,
       };
-      const data = await resp.json();
+      const data = (await resp.json()) as {
+        defaultBehaviorTimeSeconds: number;
+        defaultPageLoadTimeSeconds: number;
+        maxPagesPerCrawl: number;
+      };
       if (data.defaultBehaviorTimeSeconds > 0) {
         orgDefaults.behaviorTimeoutSeconds = data.defaultBehaviorTimeSeconds;
       }
@@ -517,7 +521,7 @@ export class ConfigDetails extends LiteElement {
         orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
       }
       this.orgDefaults = orgDefaults;
-    } catch (e: any) {
+    } catch (e) {
       console.debug(e);
     }
   }

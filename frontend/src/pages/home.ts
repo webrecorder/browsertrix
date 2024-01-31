@@ -8,6 +8,8 @@ import type { OrgData } from "@/utils/orgs";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { APIPaginatedList } from "@/types/api";
 import { maxLengthValidator } from "@/utils/form";
+import { type TemplateResult, type PropertyValues } from "lit";
+import { isApiError } from "@/utils/api";
 
 @localized()
 @customElement("btrix-home")
@@ -36,7 +38,7 @@ export class Home extends LiteElement {
   @state()
   private isSubmittingNewOrg = false;
 
-  private validateOrgNameMax = maxLengthValidator(50);
+  private readonly validateOrgNameMax = maxLengthValidator(50);
 
   connectedCallback() {
     if (this.authState) {
@@ -46,15 +48,17 @@ export class Home extends LiteElement {
     }
   }
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("slug") && this.slug) {
       this.navTo(`/orgs/${this.slug}`);
     } else if (changedProperties.has("authState") && this.authState) {
-      this.fetchOrgs();
+      void this.fetchOrgs();
     }
   }
 
-  async updated(changedProperties: Map<string, any>) {
+  async updated(
+    changedProperties: PropertyValues<this> & Map<string, unknown>
+  ) {
     const orgListUpdated = changedProperties.has("orgList") && this.orgList;
     const userInfoUpdated = changedProperties.has("userInfo") && this.userInfo;
     if (orgListUpdated || userInfoUpdated) {
@@ -73,8 +77,8 @@ export class Home extends LiteElement {
       `;
     }
 
-    let title: any;
-    let content: any;
+    let title: string | undefined;
+    let content: TemplateResult<1> | undefined;
 
     if (this.userInfo.isAdmin === true) {
       title = msg("Welcome");
@@ -108,7 +112,7 @@ export class Home extends LiteElement {
           @submit=${(e: SubmitEvent) => {
             const formData = new FormData(e.target as HTMLFormElement);
             const id = formData.get("crawlId");
-            this.navTo(`/crawls/crawl/${id}`);
+            this.navTo(`/crawls/crawl/${id?.toString()}`);
           }}
         >
           <div class="flex flex-wrap items-center">
@@ -137,7 +141,7 @@ export class Home extends LiteElement {
       <div class="grid grid-cols-5 gap-8">
         <div class="col-span-5 md:col-span-3">
           <section>
-            <header class="flex items-start justify-between items-center">
+            <header class="flex justify-between items-center">
               <h2 class="text-lg font-medium mb-3 mt-2">
                 ${msg("All Organizations")}
               </h2>
@@ -296,7 +300,7 @@ export class Home extends LiteElement {
         body: JSON.stringify(params),
       });
 
-      this.fetchOrgs();
+      void this.fetchOrgs();
       this.notify({
         message: msg(str`Created new org named "${params.name}".`),
         variant: "success",
@@ -304,9 +308,9 @@ export class Home extends LiteElement {
         duration: 8000,
       });
       this.isAddingOrg = false;
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
-        message: e.isApiError
+        message: isApiError(e)
           ? e.message
           : msg("Sorry, couldn't create organization at this time."),
         variant: "danger",

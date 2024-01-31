@@ -6,6 +6,7 @@ import type { OrgData } from "../utils/orgs";
 import LiteElement, { html } from "../utils/LiteElement";
 
 import type { SlInput } from "@shoelace-style/shoelace";
+import { type TemplateResult } from "lit";
 
 @localized()
 @customElement("btrix-orgs-list")
@@ -125,8 +126,8 @@ export class OrgsList extends LiteElement {
     return stop;
   }
 
-  private renderOrg = (org: OrgData) => {
-    let defaultLabel: any;
+  private readonly renderOrg = (org: OrgData) => {
+    let defaultLabel: TemplateResult | undefined;
     if (this.defaultOrg && org.id === this.defaultOrg.id) {
       defaultLabel = html`<sl-tag size="small" variant="primary" class="mr-2"
         >${msg("Default")}</sl-tag
@@ -172,7 +173,7 @@ export class OrgsList extends LiteElement {
   private makeOnOrgClick(org: OrgData) {
     const navigate = () => this.navTo(`/orgs/${org.slug}`);
 
-    if (typeof window.getSelection !== undefined) {
+    if (typeof window.getSelection !== "undefined") {
       return () => {
         // Prevent navigation on user text selection
         if (window.getSelection()?.type === "Range") {

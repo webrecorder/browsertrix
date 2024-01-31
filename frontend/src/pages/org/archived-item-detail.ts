@@ -1,4 +1,4 @@
-import type { TemplateResult } from "lit";
+import type { PropertyValues, TemplateResult } from "lit";
 import { state, property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -17,6 +17,7 @@ import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 
 import capitalize from "lodash/fp/capitalize";
+import { isApiError } from "@/utils/api";
 
 const SECTIONS = [
   "overview",
@@ -95,7 +96,7 @@ export class CrawlDetail extends LiteElement {
   }
 
   // TODO localize
-  private numberFormatter = new Intl.NumberFormat();
+  private readonly numberFormatter = new Intl.NumberFormat();
 
   private get isActive(): boolean | null {
     if (!this.crawl) return null;
@@ -116,14 +117,14 @@ export class CrawlDetail extends LiteElement {
     return this.crawl.resources.length > 0;
   }
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("crawlId") && this.crawlId) {
-      this.fetchCrawl();
-      this.fetchCrawlLogs();
-      this.fetchSeeds();
+      void this.fetchCrawl();
+      void this.fetchCrawlLogs();
+      void this.fetchSeeds();
     }
     if (changedProperties.has("workflowId") && this.workflowId) {
-      this.fetchWorkflow();
+      void this.fetchWorkflow();
     }
   }
 
@@ -309,7 +310,7 @@ export class CrawlDetail extends LiteElement {
       icon,
     }: {
       section: SectionName;
-      label: any;
+      label: string;
       iconLibrary: "app" | "default";
       icon: string;
     }) => {
@@ -502,8 +503,8 @@ export class CrawlDetail extends LiteElement {
 
   private renderPanel(
     heading: string | TemplateResult,
-    content: any,
-    classes: any = {}
+    content: TemplateResult | undefined,
+    classes: Record<string, boolean> = {}
   ) {
     const headingIsTitle = typeof heading === "string";
     return html`
@@ -878,7 +879,7 @@ ${this.crawl?.description}
     `;
   }
 
-  private renderLoading = () =>
+  private readonly renderLoading = () =>
     html`<div class="w-full flex items-center justify-center my-24 text-3xl">
       <sl-spinner></sl-spinner>
     </div>`;
@@ -985,7 +986,7 @@ ${this.crawl?.description}
       );
 
       if (data.success === true) {
-        this.fetchCrawl();
+        void this.fetchCrawl();
       } else {
         this.notify({
           message: msg("Sorry, couldn't cancel crawl at this time."),
@@ -1007,7 +1008,7 @@ ${this.crawl?.description}
       );
 
       if (data.success === true) {
-        this.fetchCrawl();
+        void this.fetchCrawl();
       } else {
         this.notify({
           message: msg("Sorry, couldn't stop crawl at this time."),
@@ -1055,11 +1056,11 @@ ${this.crawl?.description}
         variant: "success",
         icon: "check2-circle",
       });
-    } catch (e: any) {
+    } catch (e) {
       let message = msg(
         str`Sorry, couldn't delete archived item at this time.`
       );
-      if (e.isApiError) {
+      if (isApiError(e)) {
         if (e.details == "not_allowed") {
           message = msg(
             str`Only org owners can delete other users' archived items.`
@@ -1080,7 +1081,7 @@ ${this.crawl?.description}
   private _crawlDone() {
     if (!this.crawl) return;
 
-    this.fetchCrawlLogs();
+    void this.fetchCrawlLogs();
 
     this.notify({
       message: msg(html`Done crawling <strong>${this.renderName()}</strong>.`),
@@ -1100,7 +1101,7 @@ ${this.crawl?.description}
    */
   private async _enterFullscreen(id: string) {
     try {
-      document.getElementById(id)!.requestFullscreen({
+      void document.getElementById(id)!.requestFullscreen({
         // Show browser navigation controls
         navigationUI: "show",
       });

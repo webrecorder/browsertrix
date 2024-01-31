@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "lit";
+import { LitElement, html, css, type PropertyValues } from "lit";
 import { localized } from "@lit/localize";
 import { property, state, customElement } from "lit/decorators.js";
 
@@ -131,30 +131,32 @@ export class Screencast extends LitElement {
   crawlId?: string;
 
   @property({ type: Number })
-  scale: number = 1;
+  scale = 1;
 
   // List of browser screens
   @state()
-  private dataMap: { [index: string]: ScreencastMessage | null } = {};
+  private dataMap: { [index: string | number]: ScreencastMessage | null } = {};
 
   @state()
   private focusedScreenData?: ScreencastMessage;
 
   // Websocket connections
-  private wsMap: Map<number, WebSocket> = new Map();
+  private readonly wsMap = new Map<number, WebSocket>();
   // Number of available browsers.
   // Multiply by scale to get available browser window count
   private browsersCount = 1;
   private screenWidth = 640;
   private screenHeight = 480;
-  private timerIds: number[] = [];
+  private readonly timerIds: number[] = [];
 
   protected firstUpdated() {
     // Connect to websocket server
     this.connectAll();
   }
 
-  async updated(changedProperties: Map<string, any>) {
+  async updated(
+    changedProperties: PropertyValues<this> & Map<string, unknown>
+  ) {
     if (
       changedProperties.get("orgId") ||
       changedProperties.get("crawlId") ||
@@ -224,7 +226,7 @@ export class Screencast extends LitElement {
     `;
   }
 
-  private renderScreen = (id: string) => {
+  private readonly renderScreen = (id: string) => {
     const pageData = this.dataMap[id];
     return html` <figure
       class="screen"
@@ -303,7 +305,7 @@ export class Screencast extends LitElement {
     message: InitMessage | ScreencastMessage | CloseMessage
   ) {
     if (message.msg === "init") {
-      const dataMap: any = {};
+      const dataMap: Record<number, null> = {};
       for (let i = 0; i < message.browsers * this.scale; i++) {
         dataMap[i] = null;
       }
@@ -344,8 +346,10 @@ export class Screencast extends LitElement {
       }/${index}/ws?auth_bearer=${this.authToken || ""}`
     );
 
-    ws.addEventListener("message", ({ data }) => {
-      this.handleMessage(JSON.parse(data));
+    ws.addEventListener("message", ({ data }: MessageEvent<string>) => {
+      this.handleMessage(
+        JSON.parse(data) as InitMessage | ScreencastMessage | CloseMessage
+      );
     });
 
     return ws;

@@ -5,9 +5,10 @@ import { createMachine, interpret, assign } from "@xstate/fsm";
 
 import type { ViewState } from "@/utils/APIRouter";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { LoggedInEventDetail } from "@/utils/AuthService";
 import AuthService from "@/utils/AuthService";
 import { ROUTES } from "@/routes";
+import { isApiError } from "@/utils/api";
+import { type PropertyValues } from "lit";
 
 type FormContext = {
   successMessage?: string;
@@ -146,7 +147,7 @@ export class LogInPage extends LiteElement {
   @property({ type: String })
   redirectUrl: string = ROUTES.home;
 
-  private formStateService = interpret(machine);
+  private readonly formStateService = interpret(machine);
 
   @state()
   private formState = machine.initialState;
@@ -158,7 +159,7 @@ export class LogInPage extends LiteElement {
     });
 
     this.formStateService.start();
-    this.checkBackendInitialized();
+    void this.checkBackendInitialized();
   }
 
   disconnectedCallback() {
@@ -167,7 +168,7 @@ export class LogInPage extends LiteElement {
     super.disconnectedCallback();
   }
 
-  async updated(changedProperties: any) {
+  async updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.get("viewState")) {
       await this.updateComplete;
 
@@ -370,8 +371,8 @@ export class LogInPage extends LiteElement {
 
       // no state update here, since "btrix-logged-in" event
       // will result in a route change
-    } catch (e: any) {
-      if (e.isApiError) {
+    } catch (e) {
+      if (isApiError(e)) {
         let message = msg("Sorry, invalid username or password");
         if (e.statusCode === 429) {
           message = msg(

@@ -6,6 +6,8 @@ import { msg, localized, str } from "@lit/localize";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { Profile } from "./types";
+import { isApiError } from "@/utils/api";
+import { type SlDropdown } from "@shoelace-style/shoelace";
 
 /**
  * Usage:
@@ -55,12 +57,12 @@ export class BrowserProfilesDetail extends LiteElement {
 
   disconnectedCallback() {
     if (this.browserId) {
-      this.deleteBrowser(this.browserId);
+      void this.deleteBrowser(this.browserId);
     }
   }
 
   firstUpdated() {
-    this.fetchProfile();
+    void this.fetchProfile();
   }
 
   render() {
@@ -227,7 +229,7 @@ export class BrowserProfilesDetail extends LiteElement {
       </btrix-dialog> `;
   }
 
-  private renderVisitedSites = () => {
+  private readonly renderVisitedSites = () => {
     return html`
       <section class="flex-grow-1 lg:w-80 lg:pl-6 flex flex-col">
         <header class="flex-0 mb-2">
@@ -283,8 +285,10 @@ export class BrowserProfilesDetail extends LiteElement {
           <li
             class="p-2 hover:bg-zinc-100 cursor-pointer"
             role="menuitem"
-            @click=${(e: any) => {
-              e.target.closest("sl-dropdown").hide();
+            @click=${(e: Event) => {
+              void (e.target as HTMLElement)
+                .closest<SlDropdown>("sl-dropdown")!
+                .hide();
               this.isEditDialogOpen = true;
             }}
           >
@@ -314,7 +318,7 @@ export class BrowserProfilesDetail extends LiteElement {
             class="p-2 text-danger hover:bg-danger hover:text-white cursor-pointer"
             role="menuitem"
             @click=${() => {
-              this.deleteProfile();
+              void this.deleteProfile();
             }}
           >
             <sl-icon
@@ -385,7 +389,7 @@ export class BrowserProfilesDetail extends LiteElement {
 
       this.browserId = data.browserid;
       this.isBrowserLoading = false;
-    } catch (e: any) {
+    } catch (e) {
       this.isBrowserLoading = false;
 
       this.notify({
@@ -405,7 +409,7 @@ export class BrowserProfilesDetail extends LiteElement {
     if (prevBrowserId) {
       try {
         await this.deleteBrowser(prevBrowserId);
-      } catch (e: any) {
+      } catch (e) {
         // TODO Investigate DELETE is returning 404
         console.debug(e);
       }
@@ -437,7 +441,7 @@ export class BrowserProfilesDetail extends LiteElement {
           this.profile.description || ""
         )}&profileId=${window.encodeURIComponent(this.profile.id)}&navigateUrl=`
       );
-    } catch (e: any) {
+    } catch (e) {
       this.isBrowserLoading = false;
 
       this.notify({
@@ -632,10 +636,10 @@ export class BrowserProfilesDetail extends LiteElement {
       } else {
         throw data;
       }
-    } catch (e: any) {
+    } catch (e) {
       let message = msg("Sorry, couldn't save browser profile at this time.");
 
-      if (e.isApiError && e.statusCode === 403) {
+      if (isApiError(e) && e.statusCode === 403) {
         if (e.details === "storage_quota_reached") {
           message = msg(
             "Your org does not have enough storage to save this browser profile."

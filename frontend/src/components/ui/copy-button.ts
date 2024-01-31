@@ -35,12 +35,12 @@ export class CopyButton extends LitElement {
   hoist = false;
 
   @state()
-  private isCopied: boolean = false;
+  private isCopied = false;
 
   timeoutId?: number;
 
   static copyToClipboard(value: string) {
-    navigator.clipboard.writeText(value);
+    void navigator.clipboard.writeText(value);
   }
 
   disconnectedCallback() {

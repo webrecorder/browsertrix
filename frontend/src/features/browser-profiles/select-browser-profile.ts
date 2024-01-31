@@ -7,6 +7,14 @@ import type { AuthState } from "@/utils/AuthService";
 import LiteElement from "@/utils/LiteElement";
 import type { Profile } from "@/pages/org/types";
 import type { APIPaginatedList } from "@/types/api";
+import { type SlSelect } from "@shoelace-style/shoelace";
+
+type SelectBrowserProfileChangeDetail = {
+  value: Profile | undefined;
+};
+
+export type SelectBrowserProfileChangeEvent =
+  CustomEvent<SelectBrowserProfileChangeDetail>;
 
 /**
  * Browser profile select dropdown
@@ -41,7 +49,7 @@ export class SelectBrowserProfile extends LiteElement {
   private browserProfiles?: Profile[];
 
   protected firstUpdated() {
-    this.fetchBrowserProfiles();
+    void this.fetchBrowserProfiles();
   }
 
   render() {
@@ -57,7 +65,7 @@ export class SelectBrowserProfile extends LiteElement {
         @sl-change=${this.onChange}
         @sl-focus=${() => {
           // Refetch to keep list up to date
-          this.fetchBrowserProfiles();
+          void this.fetchBrowserProfiles();
         }}
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
@@ -89,9 +97,7 @@ export class SelectBrowserProfile extends LiteElement {
           : ""}
       </sl-select>
 
-      ${this.browserProfiles && this.browserProfiles.length
-        ? this.renderSelectedProfileInfo()
-        : ""}
+      ${this.browserProfiles?.length ? this.renderSelectedProfileInfo() : ""}
     `;
   }
 
@@ -134,11 +140,15 @@ export class SelectBrowserProfile extends LiteElement {
           href=${`${this.orgBasePath}/browser-profiles?new`}
           class="font-medium text-primary hover:text-indigo-500"
           target="_blank"
-          @click=${(e: any) => {
-            const select = e.target.closest("sl-select");
+          @click=${(e: Event) => {
+            const select = (e.target as HTMLElement).closest<SlSelect>(
+              "sl-select"
+            );
             if (select) {
               select.blur();
-              select.dropdown?.hide();
+              // TODO what is this? why isn't it documented in Shoelace?
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (select as any).dropdown?.hide();
             }
           }}
           ><span class="inline-block align-middle"
@@ -153,13 +163,13 @@ export class SelectBrowserProfile extends LiteElement {
     `;
   }
 
-  private onChange(e: any) {
+  private onChange(e: Event) {
     this.selectedProfile = this.browserProfiles?.find(
-      ({ id }) => id === e.target.value
+      ({ id }) => id === (e.target as SlSelect | null)!.value
     );
 
     this.dispatchEvent(
-      new CustomEvent("on-change", {
+      new CustomEvent<SelectBrowserProfileChangeDetail>("on-change", {
         detail: {
           value: this.selectedProfile,
         },

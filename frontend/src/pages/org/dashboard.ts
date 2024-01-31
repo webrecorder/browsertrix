@@ -9,10 +9,7 @@ import LiteElement, { html } from "@/utils/LiteElement";
 import type { AuthState } from "@/utils/AuthService";
 import type { OrgData } from "@/utils/orgs";
 import type { SelectNewDialogEvent } from "./index";
-import {
-  humanizeExecutionSeconds,
-  humanizeSeconds,
-} from "@/utils/executionTimeFormatter";
+import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
 type Metrics = {
   storageUsedBytes: number;
@@ -63,7 +60,7 @@ export class Dashboard extends LiteElement {
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("orgId")) {
-      this.fetchMetrics();
+      void this.fetchMetrics();
     }
   }
 
@@ -98,9 +95,9 @@ export class Dashboard extends LiteElement {
             placement="bottom-end"
             @sl-select=${(e: SlSelectEvent) => {
               this.dispatchEvent(
-                <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                new CustomEvent("select-new-dialog", {
                   detail: e.detail.item.value,
-                })
+                }) as SelectNewDialogEvent
               );
             }}
           >
@@ -357,7 +354,7 @@ export class Dashboard extends LiteElement {
   private renderCrawlingMeter(_metrics: Metrics) {
     let quotaSeconds = 0;
 
-    if (this.org!.quotas && this.org!.quotas.maxExecMinutesPerMonth) {
+    if (this.org!.quotas?.maxExecMinutesPerMonth) {
       quotaSeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
     }
 
@@ -466,7 +463,7 @@ export class Dashboard extends LiteElement {
       quota: number,
       label: string,
       color: string,
-      divided: boolean = true
+      divided = true
     ) => {
       if (divided) {
         return html` <btrix-divided-meter-bar
@@ -669,7 +666,7 @@ export class Dashboard extends LiteElement {
     `;
   }
 
-  private renderCardSkeleton = () =>
+  private readonly renderCardSkeleton = () =>
     html`
       <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
       <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
@@ -677,12 +674,14 @@ export class Dashboard extends LiteElement {
       <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
     `;
 
-  private hasMonthlyTime = () =>
+  private readonly hasMonthlyTime = () =>
     Object.keys(this.org!.monthlyExecSeconds).length;
 
-  private hasExtraTime = () => Object.keys(this.org!.extraExecSeconds).length;
+  private readonly hasExtraTime = () =>
+    Object.keys(this.org!.extraExecSeconds).length;
 
-  private hasGiftedTime = () => Object.keys(this.org!.giftedExecSeconds).length;
+  private readonly hasGiftedTime = () =>
+    Object.keys(this.org!.giftedExecSeconds).length;
 
   private renderUsageHistory() {
     if (!this.org) return;
@@ -834,7 +833,7 @@ export class Dashboard extends LiteElement {
       );
 
       this.metrics = data;
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve org metrics at this time."),
         variant: "danger",

@@ -32,13 +32,13 @@ export class Button extends LitElement {
   raised = false;
 
   @property({ type: Boolean })
-  disabled: boolean = false;
+  disabled = false;
 
   @property({ type: Boolean })
-  loading: boolean = false;
+  loading = false;
 
   @property({ type: Boolean })
-  icon: boolean = false;
+  icon = false;
 
   // postcss-lit-disable-next-line
   static styles = css`
@@ -152,8 +152,7 @@ export class Button extends LitElement {
   }
 
   private submit() {
-    const form = (this.closest("form") ||
-      this.closest("form")) as HTMLFormElement;
+    const form = (this.closest("form") || this.closest("form"))!;
 
     if (form) {
       form.submit();

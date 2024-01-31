@@ -4,7 +4,7 @@ import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import { guard } from "lit/directives/guard.js";
 import queryString from "query-string";
-import { nothing, type TemplateResult } from "lit";
+import { nothing, type PropertyValues, type TemplateResult } from "lit";
 import type { SlCheckbox } from "@shoelace-style/shoelace";
 import { repeat } from "lit/directives/repeat.js";
 
@@ -65,11 +65,14 @@ export class CollectionDetail extends LiteElement {
   private getArchivedItemsController: AbortController | null = null;
 
   // TODO localize
-  private numberFormatter = new Intl.NumberFormat(undefined, {
+  private readonly numberFormatter = new Intl.NumberFormat(undefined, {
     notation: "compact",
   });
 
-  private readonly tabLabels: Record<Tab, { icon: any; text: string }> = {
+  private readonly tabLabels: Record<
+    Tab,
+    { icon: { name: string; library: string }; text: string }
+  > = {
     replay: {
       icon: { name: "link-replay", library: "app" },
       text: msg("Replay"),
@@ -80,19 +83,21 @@ export class CollectionDetail extends LiteElement {
     },
   };
 
-  protected async willUpdate(changedProperties: Map<string, any>) {
+  protected async willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("orgId")) {
       this.collection = undefined;
-      this.fetchCollection();
+      void this.fetchCollection();
     }
     if (changedProperties.has("collectionId")) {
-      this.fetchArchivedItems({ page: 1 });
+      void this.fetchArchivedItems({ page: 1 });
     }
   }
 
-  protected async updated(changedProperties: Map<string, any>) {
+  protected async updated(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
     if (changedProperties.has("collection") && this.collection) {
-      this.checkTruncateDescription();
+      void this.checkTruncateDescription();
     }
   }
 
@@ -118,17 +123,16 @@ export class CollectionDetail extends LiteElement {
         </div>
         ${when(
           this.isCrawler || (!this.isCrawler && this.collection?.isPublic),
-          () =>
-            html`
-              <sl-button
-                variant=${this.collection?.crawlCount ? "primary" : "default"}
-                size="small"
-                @click=${() => (this.showShareInfo = true)}
-              >
-                <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
-                ${msg("Share")}
-              </sl-button>
-            `
+          () => html`
+            <sl-button
+              variant=${this.collection?.crawlCount ? "primary" : "default"}
+              size="small"
+              @click=${() => (this.showShareInfo = true)}
+            >
+              <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+              ${msg("Share")}
+            </sl-button>
+          `,
         )}
         ${when(this.isCrawler, this.renderActions)}
       </header>
@@ -151,7 +155,7 @@ export class CollectionDetail extends LiteElement {
               <sl-icon name="ui-checks" slot="prefix"></sl-icon>
               ${msg("Select Items")}
             </sl-button>
-          `
+          `,
         )}
       </div>
       ${choose(
@@ -164,7 +168,7 @@ export class CollectionDetail extends LiteElement {
           ],
         ],
 
-        () => html`<btrix-not-found></btrix-not-found>`
+        () => html`<btrix-not-found></btrix-not-found>`,
       )}
       <div class="my-7">${this.renderDescription()}</div>
 
@@ -175,7 +179,7 @@ export class CollectionDetail extends LiteElement {
       >
         ${msg(
           html`Are you sure you want to delete
-            <strong>${this.collection?.name}</strong>?`
+            <strong>${this.collection?.name}</strong>?`,
         )}
         <div slot="footer" class="flex justify-between">
           <sl-button
@@ -204,8 +208,8 @@ export class CollectionDetail extends LiteElement {
         ?open=${this.openDialogName === "editItems"}
         @sl-hide=${() => (this.openDialogName = undefined)}
         @btrix-collection-saved=${() => {
-          this.fetchCollection();
-          this.fetchArchivedItems();
+          void this.fetchCollection();
+          void this.fetchArchivedItems();
         }}
       >
       </btrix-collection-items-dialog>
@@ -221,7 +225,7 @@ export class CollectionDetail extends LiteElement {
             @btrix-collection-saved=${() => this.fetchCollection()}
           >
           </btrix-collection-metadata-dialog>
-        `
+        `,
       )}
       ${this.renderShareDialog()}`;
   }
@@ -229,7 +233,7 @@ export class CollectionDetail extends LiteElement {
   private getPublicReplayURL() {
     return new URL(
       `/api/orgs/${this.orgId}/collections/${this.collectionId}/public/replay.json`,
-      window.location.href
+      window.location.href,
     ).href;
   }
 
@@ -246,23 +250,22 @@ export class CollectionDetail extends LiteElement {
             ? ""
             : html`<p class="mb-3">
                 ${msg(
-                  "Make this collection shareable to enable a public viewing link."
+                  "Make this collection shareable to enable a public viewing link.",
                 )}
               </p>`
         }
         ${when(
           this.isCrawler,
-          () =>
-            html`
-              <div class="mb-5">
-                <sl-switch
-                  ?checked=${this.collection?.isPublic}
-                  @sl-change=${(e: CustomEvent) =>
-                    this.onTogglePublic((e.target as SlCheckbox).checked)}
-                  >${msg("Collection is Shareable")}</sl-switch
-                >
-              </div>
-            `
+          () => html`
+            <div class="mb-5">
+              <sl-switch
+                ?checked=${this.collection?.isPublic}
+                @sl-change=${(e: CustomEvent) =>
+                  this.onTogglePublic((e.target as SlCheckbox).checked)}
+                >${msg("Collection is Shareable")}</sl-switch
+              >
+            </div>
+          `,
         )}
         </div>
         ${when(this.collection?.isPublic, this.renderShareInfo)}
@@ -275,7 +278,7 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
-  private renderShareInfo = () => {
+  private readonly renderShareInfo = () => {
     const replaySrc = this.getPublicReplayURL();
     const encodedReplaySrc = encodeURIComponent(replaySrc);
     const publicReplayUrl = `https://replayweb.page?source=${encodedReplaySrc}`;
@@ -309,7 +312,7 @@ export class CollectionDetail extends LiteElement {
       <section class="mt-3">
         <p class="mb-3">
           ${msg(
-            html`Share this collection by embedding it into an existing webpage.`
+            html`Share this collection by embedding it into an existing webpage.`,
           )}
         </p>
         <p class="mb-3">
@@ -329,7 +332,7 @@ export class CollectionDetail extends LiteElement {
         <p class="mb-3">
           ${msg(
             html`Add the following JavaScript to your
-              <code class="text-[0.9em]">/replay/sw.js</code>:`
+              <code class="text-[0.9em]">/replay/sw.js</code>:`,
           )}
         </p>
         <div class="relative mb-5 border rounded p-3 pr-9 bg-slate-50">
@@ -353,13 +356,13 @@ export class CollectionDetail extends LiteElement {
               >
                 our embedding guide</a
               >
-              for more details.`
+              for more details.`,
           )}
         </p>
       </section>`;
   };
 
-  private renderHeader = () => html`
+  private readonly renderHeader = () => html`
     <nav class="mb-7">
       <a
         class="text-gray-600 hover:text-gray-800 text-sm font-medium"
@@ -374,7 +377,7 @@ export class CollectionDetail extends LiteElement {
     </nav>
   `;
 
-  private renderTabs = () => {
+  private readonly renderTabs = () => {
     return html`
       <nav class="flex gap-2">
         ${TABS.map((tabName) => {
@@ -399,7 +402,7 @@ export class CollectionDetail extends LiteElement {
     `;
   };
 
-  private renderActions = () => {
+  private readonly renderActions = () => {
     const authToken = this.authState!.headers.Authorization.split(" ")[1];
 
     return html`
@@ -452,7 +455,9 @@ export class CollectionDetail extends LiteElement {
             href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
             class="px-6 py-[0.6rem] flex gap-2 items-center whitespace-nowrap hover:bg-neutral-100"
             @click=${(e: MouseEvent) => {
-              (e.target as HTMLAnchorElement).closest("sl-dropdown")?.hide();
+              void (e.target as HTMLAnchorElement)
+                .closest("sl-dropdown")
+                ?.hide();
             }}
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
@@ -477,30 +482,32 @@ export class CollectionDetail extends LiteElement {
         ${this.renderDetailItem(msg("Archived Items"), (col) =>
           col.crawlCount === 1
             ? msg("1 item")
-            : msg(str`${this.numberFormatter.format(col.crawlCount)} items`)
+            : msg(str`${this.numberFormatter.format(col.crawlCount)} items`),
         )}
         ${this.renderDetailItem(
           msg("Total Size"),
-          (col) => html`<sl-format-bytes
-            value=${col.totalSize || 0}
-            display="narrow"
-          ></sl-format-bytes>`
+          (col) =>
+            html`<sl-format-bytes
+              value=${col.totalSize || 0}
+              display="narrow"
+            ></sl-format-bytes>`,
         )}
         ${this.renderDetailItem(msg("Total Pages"), (col) =>
           col.pageCount === 1
             ? msg("1 page")
-            : msg(str`${this.numberFormatter.format(col.pageCount)} pages`)
+            : msg(str`${this.numberFormatter.format(col.pageCount)} pages`),
         )}
         ${this.renderDetailItem(
           msg("Last Updated"),
-          (col) => html`<sl-format-date
-            date=${`${col.modified}Z`}
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-            hour="2-digit"
-            minute="2-digit"
-          ></sl-format-date>`
+          (col) =>
+            html`<sl-format-date
+              date=${`${col.modified}Z`}
+              month="2-digit"
+              day="2-digit"
+              year="2-digit"
+              hour="2-digit"
+              minute="2-digit"
+            ></sl-format-date>`,
         )}
       </btrix-desc-list>
     `;
@@ -508,14 +515,14 @@ export class CollectionDetail extends LiteElement {
 
   private renderDetailItem(
     label: string | TemplateResult,
-    renderContent: (collection: Collection) => any
+    renderContent: (collection: Collection) => TemplateResult | string,
   ) {
     return html`
       <btrix-desc-list-item label=${label}>
         ${when(
           this.collection,
           () => renderContent(this.collection!),
-          () => html`<sl-skeleton class="w-full"></sl-skeleton>`
+          () => html`<sl-skeleton class="w-full"></sl-skeleton>`,
         )}
       </btrix-desc-list-item>
     `;
@@ -530,15 +537,14 @@ export class CollectionDetail extends LiteElement {
           </h2>
           ${when(
             this.isCrawler,
-            () =>
-              html`
-                <sl-icon-button
-                  class="text-base"
-                  name="pencil"
-                  @click=${() => (this.openDialogName = "editMetadata")}
-                  label=${msg("Edit description")}
-                ></sl-icon-button>
-              `
+            () => html`
+              <sl-icon-button
+                class="text-base"
+                name="pencil"
+                @click=${() => (this.openDialogName = "editMetadata")}
+                label=${msg("Edit description")}
+              ></sl-icon-button>
+            `,
           )}
         </header>
         <main>
@@ -577,60 +583,62 @@ export class CollectionDetail extends LiteElement {
                     </div>`}
               </main>
             `,
-            () => html`<div
-              class="border rounded flex items-center justify-center text-3xl"
-              style=${`max-height: ${DESCRIPTION_MAX_HEIGHT_PX}px`}
-            >
-              <sl-spinner></sl-spinner>
-            </div>`
+            () =>
+              html`<div
+                class="border rounded flex items-center justify-center text-3xl"
+                style=${`max-height: ${DESCRIPTION_MAX_HEIGHT_PX}px`}
+              >
+                <sl-spinner></sl-spinner>
+              </div>`,
           )}
         </main>
       </section>
     `;
   }
 
-  private renderArchivedItems = () => html`<section>
-    ${when(
-      this.archivedItems,
-      () => {
-        const { items, page, total, pageSize } = this.archivedItems!;
-        const hasItems = items.length;
-        return html`
-          <section>
-            ${hasItems
-              ? this.renderArchivedItemsList()
-              : this.renderEmptyState()}
-          </section>
-          ${when(
-            hasItems || page > 1,
-            () => html`
-              <footer class="mt-6 flex justify-center">
-                <btrix-pagination
-                  page=${page}
-                  totalCount=${total}
-                  size=${pageSize}
-                  @page-change=${async (e: PageChangeEvent) => {
-                    await this.fetchArchivedItems({
-                      page: e.detail.page,
-                    });
+  private readonly renderArchivedItems = () =>
+    html`<section>
+      ${when(
+        this.archivedItems,
+        () => {
+          const { items, page, total, pageSize } = this.archivedItems!;
+          const hasItems = items.length;
+          return html`
+            <section>
+              ${hasItems
+                ? this.renderArchivedItemsList()
+                : this.renderEmptyState()}
+            </section>
+            ${when(
+              hasItems || page > 1,
+              () => html`
+                <footer class="mt-6 flex justify-center">
+                  <btrix-pagination
+                    page=${page}
+                    totalCount=${total}
+                    size=${pageSize}
+                    @page-change=${async (e: PageChangeEvent) => {
+                      await this.fetchArchivedItems({
+                        page: e.detail.page,
+                      });
 
-                    // Scroll to top of list
-                    // TODO once deep-linking is implemented, scroll to top of pushstate
-                    this.scrollIntoView({ behavior: "smooth" });
-                  }}
-                ></btrix-pagination>
-              </footer>
-            `
-          )}
-        `;
-      },
-      () => html`
-        <div class="w-full flex items-center justify-center my-12 text-2xl">
-          <sl-spinner></sl-spinner>
-        </div>
-      `
-    )}
-  </section>`;
+                      // Scroll to top of list
+                      // TODO once deep-linking is implemented, scroll to top of pushstate
+                      this.scrollIntoView({ behavior: "smooth" });
+                    }}
+                  ></btrix-pagination>
+                </footer>
+              `,
+            )}
+          `;
+        },
+        () => html`
+          <div class="w-full flex items-center justify-center my-12 text-2xl">
+            <sl-spinner></sl-spinner>
+          </div>
+        `,
+      )}
+    </section>`;
 
   private renderArchivedItemsList() {
     if (!this.archivedItems) return;
@@ -643,7 +651,7 @@ export class CollectionDetail extends LiteElement {
         ${repeat(
           this.archivedItems.items,
           ({ id }) => id,
-          this.renderArchivedItem
+          this.renderArchivedItem,
         )}
       </btrix-archived-item-list>
     `;
@@ -661,45 +669,47 @@ export class CollectionDetail extends LiteElement {
     `;
   }
 
-  private renderArchivedItem = (item: ArchivedItem, idx: number) =>
-    html`
-      <btrix-archived-item-list-item
-        href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
-        .item=${item}
-      >
-        <btrix-crawl-status
-          slot="namePrefix"
-          state=${item.state}
-          hideLabel
-          ?isUpload=${item.type === "upload"}
-        ></btrix-crawl-status>
-        ${this.isCrawler
-          ? html`
-              <btrix-table-cell slot="actionCell" class="px-1">
-                <btrix-overflow-dropdown
-                  @click=${(e: MouseEvent) => {
-                    // Prevent navigation to detail view
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                  }}
-                >
-                  <sl-menu>
-                    <sl-menu-item
-                      style="--sl-color-neutral-700: var(--warning)"
-                      @click=${() => this.removeArchivedItem(item.id, idx)}
-                    >
-                      <sl-icon name="folder-minus" slot="prefix"></sl-icon>
-                      ${msg("Remove from Collection")}
-                    </sl-menu-item>
-                  </sl-menu>
-                </btrix-overflow-dropdown>
-              </btrix-table-cell>
-            `
-          : nothing}
-      </btrix-archived-item-list-item>
-    `;
+  private readonly renderArchivedItem = (
+    item: ArchivedItem,
+    idx: number,
+  ) => html`
+    <btrix-archived-item-list-item
+      href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
+      .item=${item}
+    >
+      <btrix-crawl-status
+        slot="namePrefix"
+        state=${item.state}
+        hideLabel
+        ?isUpload=${item.type === "upload"}
+      ></btrix-crawl-status>
+      ${this.isCrawler
+        ? html`
+            <btrix-table-cell slot="actionCell" class="px-1">
+              <btrix-overflow-dropdown
+                @click=${(e: MouseEvent) => {
+                  // Prevent navigation to detail view
+                  e.preventDefault();
+                  e.stopImmediatePropagation();
+                }}
+              >
+                <sl-menu>
+                  <sl-menu-item
+                    style="--sl-color-neutral-700: var(--warning)"
+                    @click=${() => this.removeArchivedItem(item.id, idx)}
+                  >
+                    <sl-icon name="folder-minus" slot="prefix"></sl-icon>
+                    ${msg("Remove from Collection")}
+                  </sl-menu-item>
+                </sl-menu>
+              </btrix-overflow-dropdown>
+            </btrix-table-cell>
+          `
+        : nothing}
+    </btrix-archived-item-list-item>
+  `;
 
-  private renderReplay = () => {
+  private readonly renderReplay = () => {
     if (!this.collection?.crawlCount) {
       return this.renderEmptyState();
     }
@@ -726,15 +736,15 @@ export class CollectionDetail extends LiteElement {
   private async checkTruncateDescription() {
     await this.updateComplete;
     window.requestAnimationFrame(() => {
-      const description = this.querySelector(".description") as HTMLElement;
-      if (description?.scrollHeight > description?.clientHeight) {
+      const description = this.querySelector<HTMLElement>(".description");
+      if (description?.scrollHeight ?? 0 > (description?.clientHeight ?? 0)) {
         this.querySelector(".descriptionExpandBtn")?.classList.remove("hidden");
       }
     });
   }
 
-  private toggleTruncateDescription = () => {
-    const description = this.querySelector(".description") as HTMLElement;
+  private readonly toggleTruncateDescription = () => {
+    const description = this.querySelector<HTMLElement>(".description");
     if (!description) {
       console.debug("no .description");
       return;
@@ -757,7 +767,7 @@ export class CollectionDetail extends LiteElement {
       {
         method: "PATCH",
         body: JSON.stringify({ isPublic }),
-      }
+      },
     );
 
     if (res.updated && this.collection) {
@@ -765,7 +775,7 @@ export class CollectionDetail extends LiteElement {
     }
   }
 
-  private confirmDelete = () => {
+  private readonly confirmDelete = () => {
     this.openDialogName = "delete";
   };
 
@@ -779,7 +789,7 @@ export class CollectionDetail extends LiteElement {
         this.authState!,
         {
           method: "DELETE",
-        }
+        },
       );
 
       this.navTo(`${this.orgBasePath}/collections`);
@@ -801,7 +811,7 @@ export class CollectionDetail extends LiteElement {
   private async fetchCollection() {
     try {
       this.collection = await this.getCollection();
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve Collection at this time."),
         variant: "danger",
@@ -813,7 +823,7 @@ export class CollectionDetail extends LiteElement {
   private async getCollection() {
     const data = await this.apiFetch<Collection>(
       `/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`,
-      this.authState!
+      this.authState!,
     );
 
     return data;
@@ -826,8 +836,8 @@ export class CollectionDetail extends LiteElement {
     this.cancelInProgressGetArchivedItems();
     try {
       this.archivedItems = await this.getArchivedItems(params);
-    } catch (e: any) {
-      if (e.name === "AbortError") {
+    } catch (e) {
+      if ((e as Error).name === "AbortError") {
         console.debug("Fetch web captures aborted to throttle");
       } else {
         this.notify({
@@ -851,7 +861,7 @@ export class CollectionDetail extends LiteElement {
       state: CrawlState[];
     }> &
       APIPaginationQuery &
-      APISortQuery
+      APISortQuery,
   ) {
     const query = queryString.stringify(
       {
@@ -864,17 +874,17 @@ export class CollectionDetail extends LiteElement {
       },
       {
         arrayFormat: "comma",
-      }
+      },
     );
     const data = await this.apiFetch<APIPaginatedList<Crawl | Upload>>(
       `/orgs/${this.orgId}/all-crawls?collectionId=${this.collectionId}&${query}`,
-      this.authState!
+      this.authState!,
     );
 
     return data;
   }
 
-  private async removeArchivedItem(id: string, pageIndex: number) {
+  private async removeArchivedItem(id: string, _pageIndex: number) {
     try {
       await this.apiFetch(
         `/orgs/${this.orgId}/collections/${this.collectionId}/remove`,
@@ -882,7 +892,7 @@ export class CollectionDetail extends LiteElement {
         {
           method: "POST",
           body: JSON.stringify({ crawlIds: [id] }),
-        }
+        },
       );
 
       const { page, items } = this.archivedItems!;
@@ -892,16 +902,16 @@ export class CollectionDetail extends LiteElement {
         variant: "success",
         icon: "check2-circle",
       });
-      this.fetchCollection();
-      this.fetchArchivedItems({
+      void this.fetchCollection();
+      void this.fetchArchivedItems({
         // Update page if last item
         page: items.length === 1 && page > 1 ? page - 1 : page,
       });
-    } catch (e: any) {
-      console.debug(e?.message);
+    } catch (e) {
+      console.debug((e as Error)?.message);
       this.notify({
         message: msg(
-          "Sorry, couldn't remove item from Collection at this time."
+          "Sorry, couldn't remove item from Collection at this time.",
         ),
         variant: "danger",
         icon: "exclamation-octagon",
