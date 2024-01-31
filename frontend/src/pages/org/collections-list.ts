@@ -391,7 +391,7 @@ export class CollectionsList extends LiteElement {
     if (this.collections?.items.length) {
       return html`
         <btrix-table
-          style="--btrix-table-grid-auto-columns: min-content 24rem 1fr 1fr 1fr 12rem min-content"
+          style="grid-template-columns: min-content 24rem repeat(3, 1fr) 12rem min-content"
         >
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell>

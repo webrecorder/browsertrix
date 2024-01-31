@@ -16,20 +16,20 @@ import type { ArchivedItem } from "@/types/crawler";
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-metadata-editor
+ * <btrix-item-metadata-editor
  *   .authState=${this.authState}
  *   .crawl=${this.crawl}
  *   ?open=${this.open}
  *   @request-close=${this.requestClose}
  *   @updated=${this.updated}
- * ></btrix-crawl-metadata-editor>
+ * ></btrix-item-metadata-editor>
  * ```
  *
  * @event request-close
  * @event updated
  */
 @localized()
-@customElement("btrix-crawl-metadata-editor")
+@customElement("btrix-item-metadata-editor")
 export class CrawlMetadataEditor extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;

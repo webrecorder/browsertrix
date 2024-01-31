@@ -12,8 +12,6 @@ import { needLogin } from "@/utils/auth";
 import { activeCrawlStates } from "@/utils/crawler";
 import type { Crawl, CrawlState } from "@/types/crawler";
 import type { APIPaginationQuery, APIPaginatedList } from "@/types/api";
-import "./org/workflow-detail";
-import "./org/crawls-list";
 
 type SortField = "started" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
@@ -254,7 +252,7 @@ export class Crawls extends LiteElement {
     if (!this.crawls) return;
 
     return html`
-      <btrix-crawl-list itemType="crawl">
+      <btrix-crawl-list>
         ${this.crawls.items.map(this.renderCrawlItem)}
       </btrix-crawl-list>
     `;
@@ -280,21 +278,20 @@ export class Crawls extends LiteElement {
     `;
   }
 
-  private renderCrawlItem = (crawl: Crawl) =>
-    html`
-      <btrix-crawl-list-item
-        orgSlug=${this.slugLookup[crawl.oid]}
-        .crawl=${crawl}
-      >
+  private renderCrawlItem = (crawl: Crawl) => {
+    const crawlPath = `/orgs/${this.slugLookup[crawl.oid]}/items/crawl/${
+      crawl.id
+    }`;
+    return html`
+      <btrix-crawl-list-item href=${crawlPath} .crawl=${crawl}>
         <sl-menu slot="menu">
-          <sl-menu-item
-            @click=${() => this.navTo(`/crawls/crawl/${crawl.id}#settings`)}
-          >
+          <sl-menu-item @click=${() => this.navTo(`${crawlPath}#config`)}>
             ${msg("View Crawl Settings")}
           </sl-menu-item>
         </sl-menu>
       </btrix-crawl-list-item>
     `;
+  };
 
   private async fetchWorkflowId() {
     try {

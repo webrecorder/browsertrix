@@ -32,11 +32,11 @@ type SectionName = (typeof SECTIONS)[number];
 /**
  * Usage:
  * ```ts
- * <btrix-crawl-detail></btrix-crawl-detail>
+ * <btrix-archived-item-detail></btrix-archived-item-detail>
  * ```
  */
 @localized()
-@customElement("btrix-crawl-detail")
+@customElement("btrix-archived-item-detail")
 export class CrawlDetail extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
@@ -265,13 +265,13 @@ export class CrawlDetail extends LiteElement {
         </section>
       </main>
 
-      <btrix-crawl-metadata-editor
+      <btrix-item-metadata-editor
         .authState=${this.authState}
         .crawl=${this.crawl}
         ?open=${this.openDialogName === "metadata"}
         @request-close=${() => (this.openDialogName = undefined)}
         @updated=${() => this.fetchCrawl()}
-      ></btrix-crawl-metadata-editor>
+      ></btrix-item-metadata-editor>
     `;
   }
 

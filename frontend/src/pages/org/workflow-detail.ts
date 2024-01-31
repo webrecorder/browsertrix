@@ -856,47 +856,38 @@ export class WorkflowDetail extends LiteElement {
           </div>`
         )}
 
-        <btrix-crawl-list workflowId=${this.workflowId}>
-          <span slot="idCol">${msg("Start Time")}</span>
-          ${when(
-            this.crawls,
-            () =>
-              this.crawls!.items.map(
-                (crawl: Crawl) => html` <btrix-crawl-list-item
-                  orgSlug=${this.appState.orgSlug || ""}
-                  .crawl=${crawl}
-                >
-                  <sl-format-date
-                    slot="id"
-                    date=${`${crawl.started}Z`}
-                    month="2-digit"
-                    day="2-digit"
-                    year="2-digit"
-                    hour="2-digit"
-                    minute="2-digit"
-                  ></sl-format-date>
-                  ${when(
-                    this.isCrawler,
-                    () => html` <sl-menu slot="menu">
-                      <sl-menu-item
-                        style="--sl-color-neutral-700: var(--danger)"
-                        @click=${() => this.confirmDeleteCrawl(crawl)}
-                      >
-                        <sl-icon name="trash3" slot="prefix"></sl-icon>
-                        ${msg("Delete Crawl")}
-                      </sl-menu-item>
-                    </sl-menu>`
-                  )}</btrix-crawl-list-item
-                >`
-              ),
-            () => html`<div
-              class="w-full flex items-center justify-center my-24 text-3xl"
-            >
-              <sl-spinner></sl-spinner>
-            </div>`
-          )}
-        </btrix-crawl-list>
-
+        <div class="mx-2">
+          <btrix-crawl-list workflowId=${this.workflowId}>
+            ${when(
+              this.crawls,
+              () =>
+                this.crawls!.items.map(
+                  (crawl: Crawl) => html` <btrix-crawl-list-item
+                    href=${`/orgs/${this.appState.orgSlug}/items/crawl/${crawl.id}?workflowId=${this.workflowId}`}
+                    .crawl=${crawl}
+                  >
+                    ${when(
+                      this.isCrawler,
+                      () => html` <sl-menu slot="menu">
+                        <sl-menu-item
+                          style="--sl-color-neutral-700: var(--danger)"
+                          @click=${() => this.confirmDeleteCrawl(crawl)}
+                        >
+                          <sl-icon name="trash3" slot="prefix"></sl-icon>
+                          ${msg("Delete Crawl")}
+                        </sl-menu-item>
+                      </sl-menu>`
+                    )}</btrix-crawl-list-item
+                  >`
+                ),
+              () => html`<div
+                class="w-full flex items-center justify-center my-24 text-3xl"
+              >
+                <sl-spinner></sl-spinner>
+              </div>`
+            )}
+          </btrix-crawl-list>
+        </div>
         ${when(
           this.crawls && !this.crawls.items.length,
           () => html`

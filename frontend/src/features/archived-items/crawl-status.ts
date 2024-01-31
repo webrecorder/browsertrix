@@ -41,7 +41,7 @@ export class CrawlStatus extends LitElement {
       }
 
       .with-label sl-icon,
-      .icon-only {
+      :host:not(:last-child) .icon-only {
         margin-right: var(--sl-spacing-x-small);
       }
 
