@@ -119,7 +119,7 @@ export class BrowserProfilesList extends LiteElement {
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell
-          class="flex-col items-start justify-center"
+          class="flex-col items-start justify-center pl-0"
           rowClickTarget="a"
         >
           <a
