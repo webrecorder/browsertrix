@@ -6,8 +6,8 @@ import {
   queryAssignedElements,
 } from "lit/decorators.js";
 
-import { TailwindElement } from "@/classes/TailwindElement";
 import { type TableHead } from "./table-head";
+import "./table.css";
 
 /**
  * Low-level component for displaying content as a table.
@@ -46,7 +46,7 @@ import { type TableHead } from "./table-head";
  * @cssproperty --btrix-cell-padding-bottom
  */
 @customElement("btrix-table")
-export class Table extends TailwindElement {
+export class Table extends LitElement {
   static styles = css`
     :host {
       --btrix-cell-gap: 0;

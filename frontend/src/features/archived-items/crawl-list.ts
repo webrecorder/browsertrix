@@ -19,6 +19,7 @@ import {
   query,
   queryAssignedElements,
 } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
 
 import { RelativeDuration } from "@/components/ui/relative-duration";
@@ -94,7 +95,9 @@ export class CrawlListItem extends TailwindElement {
         </div>
       `;
       idCell = html`
-        <btrix-table-cell rowClickTarget=${this.href ? "a" : ""}>
+        <btrix-table-cell
+          rowClickTarget=${ifDefined(this.href ? "a" : undefined)}
+        >
           ${this.href
             ? html`<a href=${this.href} @click=${this.navigate.link}>
                 ${label}

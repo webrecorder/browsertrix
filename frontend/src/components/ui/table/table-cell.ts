@@ -1,4 +1,3 @@
-import { TailwindElement } from "@/classes/TailwindElement";
 import { LitElement, html, css, unsafeCSS, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
@@ -24,7 +23,7 @@ const ALLOWED_ROW_CLICK_TARGET_TAG = ["a", "label"] as const;
  * @cssproperty --btrix-cell-padding-bottom
  */
 @customElement("btrix-table-cell")
-export class TableCell extends TailwindElement {
+export class TableCell extends LitElement {
   static styles = css`
     :host {
       display: flex;
@@ -41,20 +40,10 @@ export class TableCell extends TailwindElement {
   role = "cell";
 
   @property({ type: String })
-  rowClickTarget?: (typeof ALLOWED_ROW_CLICK_TARGET_TAG)[number] | "" = "";
+  rowClickTarget?: (typeof ALLOWED_ROW_CLICK_TARGET_TAG)[number];
 
   render() {
-    return html`${this.rowClickTarget &&
-      ALLOWED_ROW_CLICK_TARGET_TAG.includes(this.rowClickTarget)
-        ? html`<style>
-            :host {
-              display: grid;
-              grid-template-columns: subgrid;
-              white-space: nowrap;
-              overflow: hidden;
-            }
-          </style>`
-        : nothing} <slot @slotchange=${this.handleSlotChange}></slot>`;
+    return html`<slot @slotchange=${this.handleSlotChange}></slot>`;
   }
 
   private handleSlotChange(e: Event) {
@@ -66,6 +55,7 @@ export class TableCell extends TailwindElement {
 
     if (!rowClickTarget) return;
 
+    // Styled in table.css
     rowClickTarget.classList.add("rowClickTarget");
   }
 }

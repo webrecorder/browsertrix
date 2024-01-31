@@ -6,13 +6,14 @@ import {
   queryAssignedElements,
   query,
 } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
+import { type SlCheckbox } from "@shoelace-style/shoelace";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { ArchivedItem } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
 import { NavigateController } from "@/controllers/navigate";
-import { type SlCheckbox } from "@shoelace-style/shoelace";
 
 export type CheckboxChangeEventDetail = {
   checked: boolean;
@@ -99,7 +100,9 @@ export class ArchivedItemListItem extends TailwindElement {
             `
           : nothing}
         <btrix-table-cell
-          rowClickTarget=${this.href ? "a" : this.checkbox ? "label" : ""}
+          rowClickTarget=${ifDefined(
+            this.href ? "a" : this.checkbox ? "label" : undefined
+          )}
         >
           ${this.href
             ? html`<a href=${this.href} @click=${this.navigate.link}>
