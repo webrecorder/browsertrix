@@ -15,6 +15,7 @@ import type { Collection, CollectionSearchValues } from "@/types/collection";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import noCollectionsImg from "~assets/images/no-collections-found.webp";
 import type { SelectNewDialogEvent } from "./index";
+import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 
 type Collections = APIPaginatedList<Collection>;
 type SearchFields = "name";
@@ -151,7 +152,9 @@ export class CollectionsList extends LiteElement {
               >
                 ${this.renderControls()}
               </div>
-              ${guard([this.collections], this.renderList)}
+              <div class="overflow-auto pb-1 px-2">
+                ${guard([this.collections], this.renderList)}
+              </div>
             `
           : this.renderLoading()
       )}
@@ -391,7 +394,7 @@ export class CollectionsList extends LiteElement {
     if (this.collections?.items.length) {
       return html`
         <btrix-table
-          style="grid-template-columns: min-content 24rem repeat(3, 1fr) 12rem min-content"
+          style="grid-template-columns: min-content [clickable-start] 60ch repeat(3, 1fr) 12rem [clickable-end] min-content"
         >
           <btrix-table-head class="mb-2">
             <btrix-table-header-cell>
@@ -485,7 +488,9 @@ export class CollectionsList extends LiteElement {
 
   private renderItem = (col: Collection) =>
     html`
-      <btrix-table-row class="border rounded">
+      <btrix-table-row
+        class="border rounded cursor-pointer select-none transition-all shadow hover:shadow-none hover:bg-neutral-50 focus-within:bg-neutral-50"
+      >
         <btrix-table-cell class="p-3">
           ${col?.isPublic
             ? html`
@@ -507,10 +512,10 @@ export class CollectionsList extends LiteElement {
                 </sl-tooltip>
               `}
         </btrix-table-cell>
-        <btrix-table-cell>
+        <btrix-table-cell rowClickTarget="a">
           <a
+            class="block py-2 truncate"
             href=${`${this.orgBasePath}/collections/view/${col.id}`}
-            class="block text-primary hover:text-indigo-500"
             @click=${this.navLink}
           >
             ${col.name}
@@ -542,7 +547,7 @@ export class CollectionsList extends LiteElement {
             minute="2-digit"
           ></sl-format-date>
         </btrix-table-cell>
-        <btrix-table-cell>
+        <btrix-table-cell class="px-1">
           ${this.isCrawler ? this.renderActions(col) : ""}
         </btrix-table-cell>
       </btrix-table-row>
@@ -552,10 +557,7 @@ export class CollectionsList extends LiteElement {
     const authToken = this.authState!.headers.Authorization.split(" ")[1];
 
     return html`
-      <sl-dropdown distance="4">
-        <btrix-button class="p-2" slot="trigger" label=${msg("Actions")} icon>
-          <sl-icon class="font-base" name="three-dots-vertical"></sl-icon>
-        </btrix-button>
+      <btrix-overflow-dropdown>
         <sl-menu>
           <sl-menu-item
             @click=${() => this.manageCollection(col, "editMetadata")}
@@ -602,7 +604,11 @@ export class CollectionsList extends LiteElement {
             class="px-6 py-[0.6rem] flex gap-2 items-center whitespace-nowrap hover:bg-neutral-100"
             download
             @click=${(e: MouseEvent) => {
-              (e.target as HTMLAnchorElement).closest("sl-dropdown")?.hide();
+              (
+                (e.target as HTMLAnchorElement).closest(
+                  "btrix-overflow-dropdown"
+                ) as OverflowDropdown
+              )?.hide();
             }}
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
@@ -617,7 +623,7 @@ export class CollectionsList extends LiteElement {
             ${msg("Delete Collection")}
           </sl-menu-item>
         </sl-menu>
-      </sl-dropdown>
+      </btrix-overflow-dropdown>
     `;
   };
 

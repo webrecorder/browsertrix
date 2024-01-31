@@ -40,23 +40,22 @@ export class TableCell extends LitElement {
   role = "cell";
 
   @property({ type: String })
-  rowClickTarget?: (typeof ALLOWED_ROW_CLICK_TARGET_TAG)[number] | "" = "";
+  rowClickTarget?: (typeof ALLOWED_ROW_CLICK_TARGET_TAG)[number];
 
   render() {
-    return html`${this.rowClickTarget &&
-      ALLOWED_ROW_CLICK_TARGET_TAG.includes(this.rowClickTarget)
-        ? html`<style>
-            :host {
-              display: grid;
-              grid-template-columns: subgrid;
-            }
+    return html`<slot @slotchange=${this.handleSlotChange}></slot>`;
+  }
 
-            ::slotted(${unsafeCSS(this.rowClickTarget)}) {
-              position: absolute;
-              inset: 0;
-              grid-column: clickable-start / clickable-end;
-            }
-          </style>`
-        : nothing} <slot></slot>`;
+  private handleSlotChange(e: Event) {
+    if (!this.rowClickTarget) return;
+    const elems = (e.target as HTMLSlotElement).assignedElements();
+    const rowClickTarget = elems.find(
+      (el) => el.tagName.toLowerCase() === this.rowClickTarget
+    );
+
+    if (!rowClickTarget) return;
+
+    // Styled in table.css
+    rowClickTarget.classList.add("rowClickTarget");
   }
 }

@@ -6,15 +6,14 @@ import {
   queryAssignedElements,
   query,
 } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized, str } from "@lit/localize";
+import { type SlCheckbox } from "@shoelace-style/shoelace";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { ArchivedItem } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
 import { NavigateController } from "@/controllers/navigate";
-import { type SlCheckbox } from "@shoelace-style/shoelace";
-
-const NAME_WIDTH_CSS = css`26rem`;
 
 export type CheckboxChangeEventDetail = {
   checked: boolean;
@@ -38,28 +37,7 @@ export class ArchivedItemListItem extends TailwindElement {
       border-radius: var(--btrix-border-radius-top, 0)
         var(--btrix-border-radius-to, 0) var(--btrix-border-radius-bottom, 0)
         var(--btrix-border-radius-bottom, 0);
-      position: relative;
       height: 2.5rem;
-    }
-
-    /*
-     * TODO consolidate data-table variations
-     * https://github.com/webrecorder/browsertrix-cloud/issues/1504
-     */
-    btrix-table-cell {
-      overflow: hidden;
-      white-space: nowrap;
-    }
-
-    .clickLabel {
-      width: ${NAME_WIDTH_CSS};
-      display: flex;
-      gap: var(--btrix-cell-gap, 0);
-      align-items: center;
-      height: 100%;
-      box-sizing: border-box;
-      padding: var(--btrix-cell-padding-top) var(--btrix-cell-padding-right)
-        var(--btrix-cell-padding-bottom) var(--btrix-cell-padding-left);
     }
   `;
 
@@ -87,7 +65,7 @@ export class ArchivedItemListItem extends TailwindElement {
     if (!this.item) return;
     const checkboxId = `${this.item.id}-checkbox`;
     const rowName = html`
-      <div class="clickLabel">
+      <div class="flex items-center gap-3">
         <slot name="namePrefix"></slot>
         ${renderName(this.item)}
       </div>
@@ -122,7 +100,9 @@ export class ArchivedItemListItem extends TailwindElement {
             `
           : nothing}
         <btrix-table-cell
-          rowClickTarget=${this.href ? "a" : this.checkbox ? "label" : ""}
+          rowClickTarget=${ifDefined(
+            this.href ? "a" : this.checkbox ? "label" : undefined
+          )}
         >
           ${this.href
             ? html`<a href=${this.href} @click=${this.navigate.link}>
@@ -225,7 +205,7 @@ export class ArchivedItemList extends TailwindElement {
         btrix-table {
           grid-template-columns: ${`${
             this.hasCheckboxCell ? "min-content" : ""
-          } [clickable-start] ${NAME_WIDTH_CSS} 12rem 1fr 1fr 1fr [clickable-end] ${
+          } [clickable-start] 60ch 12rem 1fr 1fr 30ch [clickable-end] ${
             this.hasActionCell ? "min-content" : ""
           }`.trim()};
         }
