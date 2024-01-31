@@ -20,6 +20,12 @@ export class ArchivedItemQA extends TailwindElement {
   static styles = css`
     :host {
       height: inherit;
+      display: flex;
+      flex-direction: column;
+    }
+
+    article {
+      flex-grow: 1;
       display: grid;
       grid-gap: 1rem;
       grid-template:
@@ -31,7 +37,7 @@ export class ArchivedItemQA extends TailwindElement {
     }
 
     @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
-      :host {
+      article {
         grid-template:
           "mainHeader pageListHeader"
           "main pageList";
@@ -88,49 +94,64 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   render() {
-    const baseUrl = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}/review`;
-
+    const crawlBaseUrl = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}`;
+    const itemName = this.item ? renderName(this.item) : nothing;
     return html`
-      <header class="mainHeader outline">
-        <h1>
-          ${msg("Review")} &mdash;
-          ${this.item ? renderName(this.item) : nothing}
-        </h1>
-      </header>
-      <section class="main outline">
-        <nav>
-          <btrix-button
-            id="screenshot-tab"
-            href=${`${baseUrl}/screenshots`}
-            variant=${this.tab === "screenshots" ? "primary" : "neutral"}
-            ?raised=${this.tab === "screenshots"}
-            @click=${this.navigate.link}
-            >${msg("Screenshots")}</btrix-button
-          >
-          <btrix-button
-            id="replay-tab"
-            href=${`${baseUrl}/replay`}
-            variant=${this.tab === "replay" ? "primary" : "neutral"}
-            ?raised=${this.tab === "replay"}
-            @click=${this.navigate.link}
-            >${msg("Replay")}</btrix-button
-          >
-        </nav>
-        <div role="region" aria-labelledby="${this.tab}-tab">
-          ${choose(
-            this.tab,
-            [
-              ["screenshots", this.renderScreenshots],
-              ["replay", this.renderReplay],
-            ],
-            () => html`<btrix-not-found></btrix-not-found>`
-          )}
-        </div>
-      </section>
-      <h2 class="pageListHeader outline">
-        ${msg("Pages List")} <sl-button>${msg("Finish Review")}</sl-button>
-      </h2>
-      <section class="pageList outline">[page list]</section>
+      <nav class="mb-7">
+        <a
+          class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
+          href=${`${crawlBaseUrl}`}
+          @click=${this.navigate.link}
+        >
+          <sl-icon
+            name="arrow-left"
+            class="inline-block align-middle"
+          ></sl-icon>
+          <span class="inline-block align-middle">
+            ${msg("Back to")} ${itemName}
+          </span>
+        </a>
+      </nav>
+
+      <article>
+        <header class="mainHeader outline">
+          <h1>${msg("Review")} &mdash; ${itemName}</h1>
+        </header>
+        <section class="main outline">
+          <nav>
+            <btrix-button
+              id="screenshot-tab"
+              href=${`${crawlBaseUrl}/review/screenshots`}
+              variant=${this.tab === "screenshots" ? "primary" : "neutral"}
+              ?raised=${this.tab === "screenshots"}
+              @click=${this.navigate.link}
+              >${msg("Screenshots")}</btrix-button
+            >
+            <btrix-button
+              id="replay-tab"
+              href=${`${crawlBaseUrl}/review/replay`}
+              variant=${this.tab === "replay" ? "primary" : "neutral"}
+              ?raised=${this.tab === "replay"}
+              @click=${this.navigate.link}
+              >${msg("Replay")}</btrix-button
+            >
+          </nav>
+          <div role="region" aria-labelledby="${this.tab}-tab">
+            ${choose(
+              this.tab,
+              [
+                ["screenshots", this.renderScreenshots],
+                ["replay", this.renderReplay],
+              ],
+              () => html`<btrix-not-found></btrix-not-found>`
+            )}
+          </div>
+        </section>
+        <h2 class="pageListHeader outline">
+          ${msg("Pages List")} <sl-button>${msg("Finish Review")}</sl-button>
+        </h2>
+        <section class="pageList outline">[page list]</section>
+      </article>
     `;
   }
 
