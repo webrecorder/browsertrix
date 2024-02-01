@@ -22,6 +22,9 @@ export class Badge extends TailwindElement {
     | "primary"
     | "high-contrast" = "neutral";
 
+  @property({ type: String, reflect: true })
+  role: string | null = "status";
+
   render() {
     return html`
       <span
