@@ -43,7 +43,7 @@ export class NewWorkflowDialog extends LitElement {
     .jobTypeButton {
       padding: 0.25rem;
       display: block;
-      width: min-content;
+      width: 16.5rem;
       cursor: pointer;
       background: none;
       text-align: left;
@@ -61,6 +61,8 @@ export class NewWorkflowDialog extends LitElement {
     }
 
     .jobTypeImg {
+      width: 100%;
+      max-height: 9rem;
       transition-property: transform;
       transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
       transition-duration: 150ms;
