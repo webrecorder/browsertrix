@@ -46,8 +46,8 @@ export class ResetPassword extends LiteElement {
     }
 
     return html`
-      <div class="w-full max-w-md grid gap-5">
-        <div class="md:bg-white md:border md:shadow-lg md:rounded-lg md:p-10">
+      <div class="grid w-full max-w-md gap-5">
+        <div class="md:rounded-lg md:border md:bg-white md:p-10 md:shadow-lg">
           <form @submit=${this.onSubmit} aria-describedby="formError">
             <div class="mb-5">
               <btrix-input
@@ -67,7 +67,7 @@ export class ResetPassword extends LiteElement {
               </btrix-input>
               <p class="mt-2 text-gray-500">
                 ${msg(
-                  str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`
+                  str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`,
                 )}
               </p>
               ${when(this.pwStrengthResults, this.renderPasswordStrength)}
@@ -147,11 +147,11 @@ export class ResetPassword extends LiteElement {
         if (detail === "reset_password_bad_token") {
           // TODO password validation details
           this.serverError = msg(
-            "Password reset email is not valid. Request a new password reset email"
+            "Password reset email is not valid. Request a new password reset email",
           );
         } else if (detail.code && detail.code === "invalid_password") {
           this.serverError = msg(
-            "Invalid password. Must be between 8 and 64 characters"
+            "Invalid password. Must be between 8 and 64 characters",
           );
         }
         break;

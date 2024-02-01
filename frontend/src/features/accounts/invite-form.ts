@@ -70,7 +70,7 @@ export class InviteForm extends LiteElement {
           <sl-select
             label=${msg("Organization")}
             value=${ifDefined(
-              this.defaultOrg ? this.defaultOrg.id : sortedOrgs[0]?.id
+              this.defaultOrg ? this.defaultOrg.id : sortedOrgs[0]?.id,
             )}
             @sl-change=${(e: Event) => {
               this.selectedOrgId = (e.target as HTMLSelectElement).value;
@@ -81,7 +81,7 @@ export class InviteForm extends LiteElement {
             ${sortedOrgs.map(
               (org) => html`
                 <sl-option value=${org.id}>${org.name}</sl-option>
-              `
+              `,
             )}
           </sl-select>
         </div>
@@ -138,7 +138,7 @@ export class InviteForm extends LiteElement {
             email: inviteEmail,
             role: 10,
           }),
-        }
+        },
       );
 
       this.dispatchEvent(
@@ -147,7 +147,7 @@ export class InviteForm extends LiteElement {
             inviteEmail,
             isExistingUser: data.invited === "existing_user",
           },
-        })
+        }),
       );
     } catch (e) {
       if (isApiError(e)) {

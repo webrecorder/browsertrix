@@ -36,7 +36,7 @@ export class BrowserProfilesList extends LiteElement {
 
   render() {
     return html`<header>
-        <div class="flex justify-between w-full h-8 mb-4">
+        <div class="mb-4 flex h-8 w-full justify-between">
           <h1 class="text-xl font-semibold">${msg("Browser Profiles")}</h1>
           <sl-button
             variant="primary"
@@ -45,7 +45,7 @@ export class BrowserProfilesList extends LiteElement {
               this.dispatchEvent(
                 new CustomEvent("select-new-dialog", {
                   detail: "browser-profile",
-                }) as SelectNewDialogEvent
+                }) as SelectNewDialogEvent,
               );
             }}
           >
@@ -54,7 +54,7 @@ export class BrowserProfilesList extends LiteElement {
           </sl-button>
         </div>
       </header>
-      <div class="overflow-auto pb-1 px-2">${this.renderTable()}</div>`;
+      <div class="overflow-auto px-2 pb-1">${this.renderTable()}</div>`;
   }
 
   private renderTable() {
@@ -92,7 +92,7 @@ export class BrowserProfilesList extends LiteElement {
       ${this.browserProfiles?.length
         ? nothing
         : html`
-            <div class="border-t border-b py-5">
+            <div class="border-b border-t py-5">
               <p class="text-center text-0-500">
                 ${msg("No browser profiles yet.")}
               </p>
@@ -105,7 +105,7 @@ export class BrowserProfilesList extends LiteElement {
     const isBackedUp = data.resource && data.resource.replicas.length > 0;
     return html`
       <btrix-table-row
-        class="border rounded cursor-pointer select-none transition-all shadow hover:shadow-none hover:bg-neutral-50 focus-within:bg-neutral-50"
+        class="cursor-pointer select-none rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
       >
         <btrix-table-cell class="p-3">
           <sl-tooltip
@@ -128,7 +128,7 @@ export class BrowserProfilesList extends LiteElement {
           >
             ${data.name}
           </a>
-          <div class="text-xs text-neutral-500 w-full">
+          <div class="w-full text-xs text-neutral-500">
             <div class="truncate">
               ${data.description} ${data.description} ${data.description}
               ${data.description} ${data.description} ${data.description}
@@ -196,10 +196,10 @@ export class BrowserProfilesList extends LiteElement {
         `${this.orgBasePath}/browser-profiles/profile/browser/${
           data.browserid
         }?name=${window.encodeURIComponent(
-          profile.name
+          profile.name,
         )}&description=${window.encodeURIComponent(
-          profile.description || ""
-        )}&profileId=${window.encodeURIComponent(profile.id)}&navigateUrl=`
+          profile.description || "",
+        )}&profileId=${window.encodeURIComponent(profile.id)}&navigateUrl=`,
       );
     } catch (e) {
       this.notify({
@@ -217,7 +217,7 @@ export class BrowserProfilesList extends LiteElement {
         this.authState!,
         {
           method: "DELETE",
-        }
+        },
       );
 
       if (data.error && data.crawlconfigs) {
@@ -226,7 +226,7 @@ export class BrowserProfilesList extends LiteElement {
             html`Could not delete <strong>${profile.name}</strong>, in use by
               <strong
                 >${data.crawlconfigs.map(({ name }) => name).join(", ")}</strong
-              >. Please remove browser profile from Workflow to continue.`
+              >. Please remove browser profile from Workflow to continue.`,
           ),
           variant: "warning",
           icon: "exclamation-triangle",
@@ -240,7 +240,7 @@ export class BrowserProfilesList extends LiteElement {
         });
 
         this.browserProfiles = this.browserProfiles!.filter(
-          (p) => p.id !== profile.id
+          (p) => p.id !== profile.id,
         );
       }
     } catch (e) {
@@ -263,7 +263,7 @@ export class BrowserProfilesList extends LiteElement {
       {
         method: "POST",
         body: JSON.stringify(params),
-      }
+      },
     );
   }
 
@@ -287,7 +287,7 @@ export class BrowserProfilesList extends LiteElement {
   private async getProfiles() {
     const data = await this.apiFetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles`,
-      this.authState!
+      this.authState!,
     );
 
     return data.items;

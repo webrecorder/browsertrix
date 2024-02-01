@@ -69,7 +69,7 @@ export class SignUpForm extends LiteElement {
                 <div style="font-size: var(--sl-input-label-font-size-medium)">
                   ${msg("Joining as")}
                 </div>
-                <div class="font-medium py-1">${this.email}</div>
+                <div class="py-1 font-medium">${this.email}</div>
                 <input
                   type="hidden"
                   id="email"
@@ -90,7 +90,7 @@ export class SignUpForm extends LiteElement {
                 </btrix-input>
               `}
         </div>
-        <div class="mb-5 list-">
+        <div class="list- mb-5">
           <btrix-input
             id="name"
             name="name"
@@ -105,7 +105,7 @@ export class SignUpForm extends LiteElement {
           </btrix-input>
           <p class="mt-2 text-gray-500">
             ${msg(
-              "Your full name, nickname, or another name that org collaborators can see."
+              "Your full name, nickname, or another name that org collaborators can see.",
             )}
           </p>
         </div>
@@ -126,7 +126,7 @@ export class SignUpForm extends LiteElement {
           </btrix-input>
           <p class="mt-2 text-gray-500">
             ${msg(
-              str`Choose a strong password between ${PASSWORD_MINLENGTH}–${PASSWORD_MAXLENGTH} characters.`
+              str`Choose a strong password between ${PASSWORD_MINLENGTH}–${PASSWORD_MAXLENGTH} characters.`,
             )}
           </p>
           ${when(this.pwStrengthResults, this.renderPasswordStrength)}
@@ -169,7 +169,7 @@ export class SignUpForm extends LiteElement {
     }
     this.pwStrengthResults = await PasswordService.checkStrength(
       value,
-      userInputs
+      userInputs,
     );
   });
 
@@ -233,7 +233,7 @@ export class SignUpForm extends LiteElement {
           shouldLogIn = true;
         } else if (detail.code && detail.code === "invalid_password") {
           this.serverError = msg(
-            "Invalid password. Must be between 8 and 64 characters"
+            "Invalid password. Must be between 8 and 64 characters",
           );
         } else {
           this.serverError = msg("Invalid email or password");

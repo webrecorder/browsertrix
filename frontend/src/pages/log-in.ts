@@ -135,7 +135,7 @@ const machine = createMachine<FormContext, FormEvent, FormTypestate>(
         ...(event as FormErrorEvent).detail,
       })),
     },
-  }
+  },
 );
 
 @localized()
@@ -215,10 +215,10 @@ export class LogInPage extends LiteElement {
     }
 
     return html`
-      <article class="w-full max-w-md grid gap-5">
+      <article class="grid w-full max-w-md gap-5">
         ${successMessage}
 
-        <main class="md:bg-white md:border md:shadow-lg md:rounded-lg p-10">
+        <main class="p-10 md:rounded-lg md:border md:bg-white md:shadow-lg">
           <div>${form}</div>
         </main>
         <footer class="text-center">${link}</footer>
@@ -289,7 +289,7 @@ export class LogInPage extends LiteElement {
           ? html` <div class="mt-3">
               <btrix-alert variant="warning" class="text-center"
                 >${msg(
-                  "Please wait while Browsertrix Cloud is initializing"
+                  "Please wait while Browsertrix Cloud is initializing",
                 )}</btrix-alert
               >
             </div>`
@@ -346,7 +346,7 @@ export class LogInPage extends LiteElement {
       this.formStateService.send("BACKEND_NOT_INITIALIZED");
       this.timerId = window.setTimeout(
         () => this.checkBackendInitialized(),
-        5000
+        5000,
       );
     }
   }
@@ -366,7 +366,7 @@ export class LogInPage extends LiteElement {
         AuthService.createLoggedInEvent({
           ...data,
           redirectUrl: this.redirectUrl,
-        })
+        }),
       );
 
       // no state update here, since "btrix-logged-in" event
@@ -376,7 +376,7 @@ export class LogInPage extends LiteElement {
         let message = msg("Sorry, invalid username or password");
         if (e.statusCode === 429) {
           message = msg(
-            "Sorry, too many failed login attempts. A reset password link has been sent to your email."
+            "Sorry, too many failed login attempts. A reset password link has been sent to your email.",
           );
         }
         this.formStateService.send({
@@ -416,7 +416,7 @@ export class LogInPage extends LiteElement {
         type: "SUCCESS",
         detail: {
           successMessage: msg(
-            "Successfully received your request. You will receive an email to reset your password if your email is found in our system."
+            "Successfully received your request. You will receive an email to reset your password if your email is found in our system.",
           ),
         },
       });

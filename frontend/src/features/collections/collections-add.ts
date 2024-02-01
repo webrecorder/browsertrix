@@ -94,7 +94,7 @@ export class CollectionsAdd extends LiteElement {
       <label class="form-label">
         ${this.label || msg("Collection Auto-Add")}
       </label>
-      <div class="mb-2 p-2 bg-neutral-50 border rounded-lg">
+      <div class="mb-2 rounded-lg border bg-neutral-50 p-2">
         ${this.renderSearch()}
       </div>
 
@@ -108,12 +108,12 @@ export class CollectionsAdd extends LiteElement {
               </div>
             `
           : this.emptyText
-          ? html`
-              <div class="mb-2">
-                <p class="text-center text-0-500">${this.emptyText}</p>
-              </div>
-            `
-          : ""
+            ? html`
+                <div class="mb-2">
+                  <p class="text-center text-0-500">${this.emptyText}</p>
+                </div>
+              `
+            : "",
       )}
     </div>`;
   }
@@ -132,7 +132,7 @@ export class CollectionsAdd extends LiteElement {
           const collId = item.dataset["key"];
           if (collId && this.collectionIds.indexOf(collId) === -1) {
             const coll = this.searchResults.find(
-              (collection) => collection.id === collId
+              (collection) => collection.id === collId,
             );
             if (coll) {
               const { id } = coll;
@@ -179,7 +179,7 @@ export class CollectionsAdd extends LiteElement {
 
     // Filter out stale search results from last debounce invocation
     const searchResults = this.searchResults.filter((res) =>
-      new RegExp(`^${this.searchByValue}`, "i").test(res.name)
+      new RegExp(`^${this.searchByValue}`, "i").test(res.name),
     );
 
     if (!searchResults.length) {
@@ -194,10 +194,10 @@ export class CollectionsAdd extends LiteElement {
       ${searchResults.map((item: Collection) => {
         return html`
           <sl-menu-item class="w-full" slot="menu-item" data-key=${item.id}>
-            <div class="flex w-full gap-2 items-center">
-              <div class="justify-self-stretch grow truncate">${item.name}</div>
+            <div class="flex w-full items-center gap-2">
+              <div class="grow justify-self-stretch truncate">${item.name}</div>
               <div
-                class="flex-auto text-right text-neutral-500 text-xs font-monostyle"
+                class="font-monostyle flex-auto text-right text-xs text-neutral-500"
               >
                 ${msg(str`${item.crawlCount} items`)}
               </div>
@@ -210,16 +210,16 @@ export class CollectionsAdd extends LiteElement {
 
   private renderCollectionItem(id: string) {
     const collection = this.collectionsData[id];
-    return html`<li class="mt-1 p-1 pl-3 border rounded-sm">
+    return html`<li class="mt-1 rounded-sm border p-1 pl-3">
       <div
-        class="flex flex-row gap-2 justify-between items-center transition-opacity delay-75 ${collection
+        class="${collection
           ? "opacity-100"
-          : "opacity-0"}"
+          : "opacity-0"} flex flex-row items-center justify-between gap-2 transition-opacity delay-75"
       >
-        <div class="justify-self-stretch grow truncate">
+        <div class="grow justify-self-stretch truncate">
           ${collection?.name}
         </div>
-        <div class="text-neutral-500 text-xs text-right font-monostyle">
+        <div class="font-monostyle text-right text-xs text-neutral-500">
           ${msg(str`${collection?.crawlCount || 0} items`)}
         </div>
         <sl-icon-button
@@ -293,14 +293,14 @@ export class CollectionsAdd extends LiteElement {
       namePrefix?: string;
     }> &
       APIPaginationQuery &
-      APISortQuery
+      APISortQuery,
   ) {
     const query = queryString.stringify(params || {}, {
       arrayFormat: "comma",
     });
     const data = await this.apiFetch<APIPaginatedList<Collection>>(
       `/orgs/${this.orgId}/collections?${query}`,
-      this.authState!
+      this.authState!,
     );
 
     return data;
@@ -322,7 +322,7 @@ export class CollectionsAdd extends LiteElement {
   private readonly getCollection = (collId: string): Promise<Collection> => {
     return this.apiFetch(
       `/orgs/${this.orgId}/collections/${collId}`,
-      this.authState!
+      this.authState!,
     );
   };
 
@@ -331,7 +331,7 @@ export class CollectionsAdd extends LiteElement {
     this.dispatchEvent(
       new CustomEvent("collections-change", {
         detail: { collections: this.collectionIds },
-      }) as CollectionsChangeEvent
+      }) as CollectionsChangeEvent,
     );
   }
 }

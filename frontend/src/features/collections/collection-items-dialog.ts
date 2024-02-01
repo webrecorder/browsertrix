@@ -219,14 +219,14 @@ export class CollectionItemsDialog extends TailwindElement {
     >
       <span slot="label">
         ${msg("Select Archived Items")}
-        <span class="text-neutral-500 font-normal"
+        <span class="font-normal text-neutral-500"
           >${msg(str`in ${this.collectionName}`)}</span
         >
       </span>
       <div class="dialogContent flex flex-col">
         ${when(this.isReady, this.renderContent)}
       </div>
-      <div slot="footer" class="flex gap-3 items-center justify-end">
+      <div slot="footer" class="flex items-center justify-end gap-3">
         <sl-button class="mr-auto" size="small" @click=${() => this.close()}
           >${msg("Cancel")}</sl-button
         >
@@ -293,7 +293,7 @@ export class CollectionItemsDialog extends TailwindElement {
   private readonly renderCrawls = () => {
     const data = this.showOnlyInCollection ? this.crawls : this.workflows;
     return html`
-      <header class="sticky top-0 bg-white z-20">
+      <header class="sticky top-0 z-20 bg-white">
         <div class="border-y bg-neutral-50 p-3">
           <btrix-item-list-controls
             .searchKeys=${searchKeys}
@@ -301,7 +301,7 @@ export class CollectionItemsDialog extends TailwindElement {
             .sortOptions=${crawlSortOptions}
             .sortBy=${this.sortCrawlsBy}
             @btrix-filter-change=${(
-              e: CustomEvent<FilterChangeEventDetail>
+              e: CustomEvent<FilterChangeEventDetail>,
             ) => {
               this.filterCrawlsBy = e.detail;
             }}
@@ -320,10 +320,10 @@ export class CollectionItemsDialog extends TailwindElement {
               () =>
                 this.showOnlyInCollection
                   ? msg(
-                      str`Crawls in Collection (${data!.total.toLocaleString()})`
+                      str`Crawls in Collection (${data!.total.toLocaleString()})`,
                     )
                   : msg(str`All Workflows (${data!.total.toLocaleString()})`),
-              () => msg("Loading...")
+              () => msg("Loading..."),
             )}
           </div>
         </btrix-section-heading>
@@ -331,7 +331,7 @@ export class CollectionItemsDialog extends TailwindElement {
       ${cache(
         this.showOnlyInCollection
           ? this.renderCollectionCrawls()
-          : this.renderOrgWorkflows()
+          : this.renderOrgWorkflows(),
       )}
     `;
   };
@@ -342,7 +342,7 @@ export class CollectionItemsDialog extends TailwindElement {
     }
 
     return html`
-      <header class="sticky top-0 bg-white z-20">
+      <header class="sticky top-0 z-20 bg-white">
         <div class="border-y bg-neutral-50 p-3">
           <btrix-item-list-controls
             .searchKeys=${searchKeys}
@@ -350,7 +350,7 @@ export class CollectionItemsDialog extends TailwindElement {
             .sortOptions=${uploadSortOptions}
             .sortBy=${this.sortUploadsBy}
             @btrix-filter-change=${(
-              e: CustomEvent<FilterChangeEventDetail>
+              e: CustomEvent<FilterChangeEventDetail>,
             ) => {
               this.filterUploadsBy = e.detail;
             }}
@@ -369,12 +369,12 @@ export class CollectionItemsDialog extends TailwindElement {
               () =>
                 this.showOnlyInCollection
                   ? msg(
-                      str`Uploads in Collection (${this.uploads!.total.toLocaleString()})`
+                      str`Uploads in Collection (${this.uploads!.total.toLocaleString()})`,
                     )
                   : msg(
-                      str`All Uploads (${this.uploads!.total.toLocaleString()})`
+                      str`All Uploads (${this.uploads!.total.toLocaleString()})`,
                     ),
-              () => msg("Loading...")
+              () => msg("Loading..."),
             )}
           </div>
         </btrix-section-heading>
@@ -391,7 +391,7 @@ export class CollectionItemsDialog extends TailwindElement {
           () =>
             html`<p class="p-5 text-center text-neutral-500">
               ${msg("No matching uploads found.")}
-            </p>`
+            </p>`,
         )}
       </section>
       <footer class="flex justify-center pb-3">
@@ -409,7 +409,7 @@ export class CollectionItemsDialog extends TailwindElement {
               }}
             >
             </btrix-pagination>
-          `
+          `,
         )}
       </footer>
     `;
@@ -434,7 +434,7 @@ export class CollectionItemsDialog extends TailwindElement {
           () =>
             html`<p class="p-5 text-center text-neutral-500">
               ${msg("No matching crawls found.")}
-            </p>`
+            </p>`,
         )}
       </section>
 
@@ -453,7 +453,7 @@ export class CollectionItemsDialog extends TailwindElement {
               }}
             >
             </btrix-pagination>
-          `
+          `,
         )}
       </footer>
     `;
@@ -480,7 +480,7 @@ export class CollectionItemsDialog extends TailwindElement {
           @btrix-auto-add-change=${(e: CustomEvent<AutoAddChangeDetail>) => {
             const { id, checked } = e.detail;
             const workflow = this.workflows?.items.find(
-              (workflow) => workflow.id === id
+              (workflow) => workflow.id === id,
             );
             if (workflow) {
               void this.saveAutoAdd({
@@ -509,7 +509,7 @@ export class CollectionItemsDialog extends TailwindElement {
               }}
             >
             </btrix-pagination>
-          `
+          `,
         )}
       </footer> `;
   };
@@ -547,7 +547,7 @@ export class CollectionItemsDialog extends TailwindElement {
         checkbox
         ?checked=${isInCollection}
         @btrix-checkbox-change=${(
-          e: CustomEvent<CheckboxChangeEventDetail>
+          e: CustomEvent<CheckboxChangeEventDetail>,
         ) => {
           this.selection = {
             ...this.selection,
@@ -572,14 +572,14 @@ export class CollectionItemsDialog extends TailwindElement {
         messages.push(
           addCount === 1
             ? msg(str`Adding 1 item`)
-            : msg(str`Adding ${addCount.toLocaleString()} items`)
+            : msg(str`Adding ${addCount.toLocaleString()} items`),
         );
       }
       if (removeCount) {
         messages.push(
           removeCount === 1
             ? msg(str`Removing 1 item`)
-            : msg(str`Removing ${removeCount.toLocaleString()} items`)
+            : msg(str`Removing ${removeCount.toLocaleString()} items`),
         );
       }
 
@@ -601,7 +601,7 @@ export class CollectionItemsDialog extends TailwindElement {
   };
 
   private readonly renderLoading = () => html`
-    <div class="w-full flex items-center justify-center my-24 text-3xl">
+    <div class="my-24 flex w-full items-center justify-center text-3xl">
       <sl-spinner></sl-spinner>
     </div>
   `;
@@ -663,8 +663,8 @@ export class CollectionItemsDialog extends TailwindElement {
           {
             method: "POST",
             body: JSON.stringify({ crawlIds: add }),
-          }
-        )
+          },
+        ),
       );
     }
     if (remove.length) {
@@ -675,8 +675,8 @@ export class CollectionItemsDialog extends TailwindElement {
           {
             method: "POST",
             body: JSON.stringify({ crawlIds: remove }),
-          }
-        )
+          },
+        ),
       );
     }
 
@@ -799,7 +799,7 @@ export class CollectionItemsDialog extends TailwindElement {
       collectionId?: string;
       firstSeed?: string;
     } & APIPaginationQuery &
-      APISortQuery = {}
+      APISortQuery = {},
   ) {
     const query = queryString.stringify(
       {
@@ -808,11 +808,11 @@ export class CollectionItemsDialog extends TailwindElement {
       },
       {
         arrayFormat: "comma",
-      }
+      },
     );
     const data = await this.api.fetch<APIPaginatedList<Crawl>>(
       `/orgs/${this.orgId}/crawls?${query}`,
-      this.authState!
+      this.authState!,
     );
 
     return data;
@@ -824,14 +824,14 @@ export class CollectionItemsDialog extends TailwindElement {
       name?: string;
       firstSeed?: string;
     } & APIPaginationQuery &
-      APISortQuery = {}
+      APISortQuery = {},
   ) {
     const query = queryString.stringify({
       ...params,
     });
     const data = await this.api.fetch<APIPaginatedList<Workflow>>(
       `/orgs/${this.orgId}/crawlconfigs?${query}`,
-      this.authState!
+      this.authState!,
     );
 
     return data;
@@ -843,7 +843,7 @@ export class CollectionItemsDialog extends TailwindElement {
       collectionId?: string;
       name?: string;
     } & APIPaginationQuery &
-      APISortQuery = {}
+      APISortQuery = {},
   ) {
     const query = queryString.stringify({
       state: "complete",
@@ -851,7 +851,7 @@ export class CollectionItemsDialog extends TailwindElement {
     });
     const data = await this.api.fetch<APIPaginatedList<Upload>>(
       `/orgs/${this.orgId}/uploads?${query}`,
-      this.authState!
+      this.authState!,
     );
 
     return data;
@@ -861,12 +861,12 @@ export class CollectionItemsDialog extends TailwindElement {
     if (searchType === "workflow") {
       return this.api.fetch<SearchValues>(
         `/orgs/${this.orgId}/crawlconfigs/search-values`,
-        this.authState!
+        this.authState!,
       );
     }
     return this.api.fetch<SearchValues>(
       `/orgs/${this.orgId}/all-crawls/search-values?crawlType=${searchType}`,
-      this.authState!
+      this.authState!,
     );
   }
 
@@ -883,7 +883,7 @@ export class CollectionItemsDialog extends TailwindElement {
           body: JSON.stringify({
             autoAddCollections: autoAddCollections,
           }),
-        }
+        },
       );
       this.notify.toast({
         message: msg(str`Updated.`),
@@ -895,7 +895,7 @@ export class CollectionItemsDialog extends TailwindElement {
       console.debug(e);
       this.notify.toast({
         message: msg(
-          "Something unexpected went wrong, couldn't save auto-add setting."
+          "Something unexpected went wrong, couldn't save auto-add setting.",
         ),
         variant: "warning",
         icon: "exclamation-circle",

@@ -108,7 +108,7 @@ export class Input extends LiteElement {
       const form = this.closest("form")!;
       if (form) {
         const submitButton = form.querySelector<HTMLButtonElement>(
-          'sl-button[type="submit"]'
+          'sl-button[type="submit"]',
         )!;
         if (submitButton) {
           submitButton.click();

@@ -42,7 +42,9 @@ export class Tag extends SLTag {
 
       .tag,
       .tag__remove {
-        transition: background-color 0.1s, color 0.1s;
+        transition:
+          background-color 0.1s,
+          color 0.1s;
       }
 
       .tag {
@@ -100,7 +102,7 @@ export class Tag extends SLTag {
     const template = super.render();
     return html`<span
       tabindex="${ifDefined(
-        this.tabindex != null ? Number(this.tabIndex) : undefined
+        this.tabindex != null ? Number(this.tabIndex) : undefined,
       )}"
       >${template}</span
     >`;

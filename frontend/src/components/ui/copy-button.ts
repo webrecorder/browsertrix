@@ -54,8 +54,8 @@ export class CopyButton extends LitElement {
         content=${this.isCopied
           ? msg("Copied to clipboard!")
           : this.content
-          ? this.content
-          : msg("Copy")}
+            ? this.content
+            : msg("Copy")}
         ?hoist=${this.hoist}
       >
         <sl-icon-button

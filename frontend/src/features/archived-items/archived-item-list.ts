@@ -91,8 +91,8 @@ export class ArchivedItemListItem extends TailwindElement {
                           detail: {
                             checked: (e.currentTarget as SlCheckbox).checked,
                           },
-                        }
-                      )
+                        },
+                      ),
                     );
                   }}
                 ></sl-checkbox>
@@ -101,7 +101,7 @@ export class ArchivedItemListItem extends TailwindElement {
           : nothing}
         <btrix-table-cell
           rowClickTarget=${ifDefined(
-            this.href ? "a" : this.checkbox ? "label" : undefined
+            this.href ? "a" : this.checkbox ? "label" : undefined,
           )}
         >
           ${this.href
@@ -109,17 +109,17 @@ export class ArchivedItemListItem extends TailwindElement {
                 ${rowName}
               </a>`
             : this.checkbox
-            ? html`<label
-                for=${checkboxId}
-                @click=${() => {
-                  // We need to simulate click anyway, since external label click
-                  // won't work with the shoelace checkbox
-                  this.checkboxEl?.click();
-                }}
-              >
-                ${rowName}
-              </label>`
-            : html`<div>${rowName}</div>`}
+              ? html`<label
+                  for=${checkboxId}
+                  @click=${() => {
+                    // We need to simulate click anyway, since external label click
+                    // won't work with the shoelace checkbox
+                    this.checkboxEl?.click();
+                  }}
+                >
+                  ${rowName}
+                </label>`
+              : html`<div>${rowName}</div>`}
         </btrix-table-cell>
         <btrix-table-cell>
           <sl-format-date
@@ -237,7 +237,7 @@ export class ArchivedItemList extends TailwindElement {
                   (e.target as HTMLSlotElement).assignedElements().length > 0)}
             ></slot>
           </btrix-table-head>
-          <btrix-table-body class="border rounded">
+          <btrix-table-body class="rounded border">
             <slot></slot>
           </btrix-table-body>
         </btrix-table>

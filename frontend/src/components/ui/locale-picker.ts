@@ -54,7 +54,7 @@ export class LocalePicker extends LitElement {
                 ?checked=${locale === selectedLocale}
               >
                 ${this.localeNames[locale]}
-              </sl-menu-item>`
+              </sl-menu-item>`,
           )}
         </sl-menu>
       </sl-dropdown>

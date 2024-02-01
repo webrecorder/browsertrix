@@ -58,7 +58,7 @@ export class NotifyController implements ReactiveController {
         bubbles: true,
         composed: true,
         detail,
-      })
+      }),
     );
   }
 }

@@ -184,7 +184,7 @@ export class CrawlLogs extends LitElement {
                 ? this.renderPre(value)
                 : value ?? "--"}
             </btrix-desc-list-item>
-          `
+          `,
         )}
       </btrix-desc-list>
     `;

@@ -32,7 +32,7 @@ export class OrgsList extends LiteElement {
     }
 
     return html`
-      <ul class="border rounded-lg overflow-hidden">
+      <ul class="overflow-hidden rounded-lg border">
         ${this.orgList?.map(this.renderOrg)} ${this.renderOrgQuotas()}
       </ul>
     `;
@@ -109,7 +109,7 @@ export class OrgsList extends LiteElement {
   private onSubmitQuotas() {
     if (this.currOrg) {
       this.dispatchEvent(
-        new CustomEvent("update-quotas", { detail: this.currOrg })
+        new CustomEvent("update-quotas", { detail: this.currOrg }),
       );
     }
     this.currOrg = null;
@@ -137,15 +137,15 @@ export class OrgsList extends LiteElement {
 
     return html`
       <li
-        class="p-3 bg-white border-t first:border-t-0 text-primary hover:text-indigo-400 flex items-center justify-between"
+        class="flex items-center justify-between border-t bg-white p-3 text-primary first:border-t-0 hover:text-indigo-400"
         role="button"
         @click=${this.makeOnOrgClick(org)}
       >
-        <div class="font-medium mr-2 transition-colors">
+        <div class="mr-2 font-medium transition-colors">
           ${defaultLabel}${org.name}
         </div>
         <div class="flex flex-row items-center">
-          <div class="text-s font-monostyle text-neutral-400 mr-4">
+          <div class="text-s font-monostyle mr-4 text-neutral-400">
             ${memberCount === 1
               ? msg(`1 member`)
               : msg(str`${memberCount} members`)}
@@ -162,8 +162,8 @@ export class OrgsList extends LiteElement {
 
   private renderSkeleton() {
     return html`
-      <div class="border rounded-lg overflow-hidden">
-        <div class="p-3 md:p-6 bg-white border-t first:border-t-0 text-primary">
+      <div class="overflow-hidden rounded-lg border">
+        <div class="border-t bg-white p-3 text-primary first:border-t-0 md:p-6">
           <sl-skeleton class="h-6 w-80"></sl-skeleton>
         </div>
       </div>

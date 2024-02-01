@@ -135,7 +135,7 @@ export class PasswordStrengthAlert extends LitElement {
         <div class="feedback">
           ${when(
             feedback.warning,
-            () => html` <p class="text">${feedback.warning}</p> `
+            () => html` <p class="text">${feedback.warning}</p> `,
           )}
           ${when(feedback.suggestions.length, () =>
             feedback.suggestions.length === 1
@@ -145,19 +145,19 @@ export class PasswordStrengthAlert extends LitElement {
               : html`<p class="text">${msg("Suggestions:")}</p>
                   <ul>
                     ${feedback.suggestions.map(
-                      (text) => html`<li>${text}</li>`
+                      (text) => html`<li>${text}</li>`,
                     )}
-                  </ul>`
+                  </ul>`,
           )}
           ${when(
             score >= this.min && score < this.optimal,
             () => html`
               <p class="text">
                 ${msg(
-                  "Tip: To generate very strong passwords, consider using a password manager."
+                  "Tip: To generate very strong passwords, consider using a password manager.",
                 )}
               </p>
-            `
+            `,
           )}
         </div>
       </sl-alert>

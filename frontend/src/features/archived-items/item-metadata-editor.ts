@@ -111,7 +111,7 @@ export class CrawlMetadataEditor extends LiteElement {
             `
           : ``}
         <sl-textarea
-          class="mb-3 with-max-help-text"
+          class="with-max-help-text mb-3"
           name="crawlDescription"
           label=${msg("Description")}
           value=${this.crawl.description || ""}
@@ -173,7 +173,7 @@ export class CrawlMetadataEditor extends LiteElement {
     try {
       const tags = await this.apiFetch<string[]>(
         `/orgs/${this.crawl.oid}/crawlconfigs/tags`,
-        this.authState!
+        this.authState!,
       );
 
       // Update search/filter collection
@@ -232,7 +232,7 @@ export class CrawlMetadataEditor extends LiteElement {
         {
           method: "PATCH",
           body: JSON.stringify(params),
-        }
+        },
       );
 
       if (!data.updated) {

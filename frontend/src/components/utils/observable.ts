@@ -42,7 +42,7 @@ export class Observable extends LitElement {
     this.dispatchEvent(
       new CustomEvent<IntersectionEventDetail>("intersect", {
         detail: { entry },
-      })
+      }),
     );
   };
 

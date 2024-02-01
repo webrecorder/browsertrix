@@ -82,7 +82,7 @@ export class ExclusionEditor extends LiteElement {
 
   render() {
     return html`
-      <div class="grid gap-6 grid-cols-1 lg:grid-cols-2">
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div class="col-span-1">${this.renderTable()}</div>
         <div class="col-span-1">
           ${this.isActiveCrawl && this.regex
@@ -106,7 +106,7 @@ export class ExclusionEditor extends LiteElement {
           >
           </btrix-queue-exclusion-table>`
         : html`
-            <div class="flex items-center justify-center my-9 text-xl">
+            <div class="my-9 flex items-center justify-center text-xl">
               <sl-spinner></sl-spinner>
             </div>
           `}
@@ -165,7 +165,7 @@ export class ExclusionEditor extends LiteElement {
         this.authState!,
         {
           method: "DELETE",
-        }
+        },
       );
 
       if (data.success) {
@@ -208,7 +208,7 @@ export class ExclusionEditor extends LiteElement {
       } else {
         this.notify({
           message: msg(
-            "Sorry, couldn't fetch pending exclusions at this time."
+            "Sorry, couldn't fetch pending exclusions at this time.",
           ),
           variant: "danger",
           icon: "exclamation-octagon",
@@ -226,7 +226,7 @@ export class ExclusionEditor extends LiteElement {
       `/orgs/${this.orgId}/crawls/${
         this.crawlId
       }/queueMatchAll?${params.toString()}`,
-      this.authState!
+      this.authState!,
     );
 
     return data;
@@ -257,7 +257,7 @@ export class ExclusionEditor extends LiteElement {
         this.authState!,
         {
           method: "POST",
-        }
+        },
       );
 
       if (data.success) {

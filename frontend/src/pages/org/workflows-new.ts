@@ -83,7 +83,7 @@ export class WorkflowsNew extends LiteElement {
     return html`
       <nav class="mb-5">
         <a
-          class="text-gray-600 hover:text-gray-800 text-sm font-medium"
+          class="text-sm font-medium text-gray-600 hover:text-gray-800"
           href=${href}
           @click=${(e: MouseEvent) => {
             this.navLink(e);
@@ -116,7 +116,7 @@ export class WorkflowsNew extends LiteElement {
     if (jobType) {
       return html`
         ${this.renderHeader()}
-        <h2 class="text-xl font-semibold mb-6">
+        <h2 class="mb-6 text-xl font-semibold">
           ${msg(html`New Crawl Workflow &mdash; ${jobTypeLabels[jobType]}`)}
         </h2>
         <btrix-workflow-editor
@@ -133,7 +133,7 @@ export class WorkflowsNew extends LiteElement {
             this.dispatchEvent(
               new CustomEvent("select-new-dialog", {
                 detail: "workflow",
-              }) as SelectNewDialogEvent
+              }) as SelectNewDialogEvent,
             );
           }}
         ></btrix-workflow-editor>

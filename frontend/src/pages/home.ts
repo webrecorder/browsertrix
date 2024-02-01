@@ -57,7 +57,7 @@ export class Home extends LiteElement {
   }
 
   async updated(
-    changedProperties: PropertyValues<this> & Map<string, unknown>
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     const orgListUpdated = changedProperties.has("orgList") && this.orgList;
     const userInfoUpdated = changedProperties.has("userInfo") && this.userInfo;
@@ -71,7 +71,7 @@ export class Home extends LiteElement {
   render() {
     if (!this.userInfo || !this.orgList) {
       return html`
-        <div class="flex items-center justify-center my-24 text-3xl">
+        <div class="my-24 flex items-center justify-center text-3xl">
           <sl-spinner></sl-spinner>
         </div>
       `;
@@ -93,13 +93,13 @@ export class Home extends LiteElement {
     return html`
       <div class="bg-white">
         <header
-          class="w-full max-w-screen-desktop mx-auto px-3 py-4 box-border md:py-8"
+          class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4 md:py-8"
         >
           <h1 class="text-xl font-medium">${title}</h1>
         </header>
         <hr />
       </div>
-      <main class="w-full max-w-screen-desktop mx-auto px-3 py-4 box-border">
+      <main class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4">
         ${content}
       </main>
     `;
@@ -107,7 +107,7 @@ export class Home extends LiteElement {
 
   private renderAdminOrgs() {
     return html`
-      <section class="border rounded-lg bg-white p-4 md:p-6 mb-5">
+      <section class="mb-5 rounded-lg border bg-white p-4 md:p-6">
         <form
           @submit=${(e: SubmitEvent) => {
             const formData = new FormData(e.target as HTMLFormElement);
@@ -117,18 +117,18 @@ export class Home extends LiteElement {
         >
           <div class="flex flex-wrap items-center">
             <div
-              class="w-full md:w-min grow-0 mr-8 text-lg font-medium whitespace-nowrap"
+              class="mr-8 w-full grow-0 whitespace-nowrap text-lg font-medium md:w-min"
             >
               ${msg("Go to Crawl")}
             </div>
-            <div class="grow mt-2 md:mt-0 md:mr-2">
+            <div class="mt-2 grow md:mr-2 md:mt-0">
               <sl-input
                 name="crawlId"
                 placeholder=${msg("Enter Crawl ID")}
                 required
               ></sl-input>
             </div>
-            <div class="grow-0 mt-2 md:mt-0 text-right">
+            <div class="mt-2 grow-0 text-right md:mt-0">
               <sl-button variant="neutral" type="submit">
                 <sl-icon slot="suffix" name="arrow-right"></sl-icon>
                 ${msg("Go")}</sl-button
@@ -141,8 +141,8 @@ export class Home extends LiteElement {
       <div class="grid grid-cols-5 gap-8">
         <div class="col-span-5 md:col-span-3">
           <section>
-            <header class="flex justify-between items-center">
-              <h2 class="text-lg font-medium mb-3 mt-2">
+            <header class="flex items-center justify-between">
+              <h2 class="mb-3 mt-2 text-lg font-medium">
                 ${msg("All Organizations")}
               </h2>
               <sl-button
@@ -158,15 +158,15 @@ export class Home extends LiteElement {
               .userInfo=${this.userInfo}
               .orgList=${this.orgList}
               .defaultOrg=${this.userInfo?.orgs.find(
-                (org) => org.default === true
+                (org) => org.default === true,
               )}
               @update-quotas=${this.onUpdateOrgQuotas}
             ></btrix-orgs-list>
           </section>
         </div>
         <div class="col-span-5 md:col-span-2">
-          <section class="md:border md:rounded-lg md:bg-white p-3 md:p-8">
-            <h2 class="text-lg font-medium mb-3">
+          <section class="p-3 md:rounded-lg md:border md:bg-white md:p-8">
+            <h2 class="mb-3 text-lg font-medium">
               ${msg("Invite User to Org")}
             </h2>
             ${this.renderInvite()}
@@ -234,8 +234,8 @@ export class Home extends LiteElement {
 
   private renderLoggedInNonAdmin() {
     if (this.orgList && !this.orgList.length) {
-      return html`<div class="border rounded-lg bg-white p-4 md:p-8">
-        <p class="text-neutral-400 text-center">
+      return html`<div class="rounded-lg border bg-white p-4 md:p-8">
+        <p class="text-center text-neutral-400">
           ${msg("You don't have any organizations.")}
         </p>
       </div>`;
@@ -260,7 +260,7 @@ export class Home extends LiteElement {
     }
 
     const defaultOrg = this.userInfo?.orgs.find(
-      (org) => org.default === true
+      (org) => org.default === true,
     ) || { name: "" };
     return html`
       <btrix-invite-form
@@ -279,7 +279,7 @@ export class Home extends LiteElement {
   private async getOrgs() {
     const data = await this.apiFetch<APIPaginatedList<OrgData>>(
       "/orgs",
-      this.authState!
+      this.authState!,
     );
 
     return data.items;
