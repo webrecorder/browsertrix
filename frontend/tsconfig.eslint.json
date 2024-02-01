@@ -4,5 +4,5 @@
     "noEmit": true
   },
   "extends": "./tsconfig.json",
-  "include": ["**/*.ts", "**/*.js"]
+  "include": ["**/*.ts", "**/*.js", "*.mjs"]
 }

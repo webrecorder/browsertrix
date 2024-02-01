@@ -34,7 +34,7 @@ export class NewBrowserProfileDialog extends LiteElement {
       .open=${this.open}
       @sl-initial-focus=${async (e: CustomEvent) => {
         const nameInput = (await this.form).querySelector<SlInput>(
-          'sl-input[name="url"]'
+          'sl-input[name="url"]',
         );
         if (nameInput) {
           e.preventDefault();
@@ -58,7 +58,7 @@ export class NewBrowserProfileDialog extends LiteElement {
 
             <div class="flex">
               <sl-select
-                class="grow-0 mr-1 max-w-[8rem]"
+                class="mr-1 max-w-[8rem] grow-0"
                 name="urlPrefix"
                 value="https://"
                 hoist
@@ -111,7 +111,7 @@ export class NewBrowserProfileDialog extends LiteElement {
             // incorrect getRootNode in Chrome
             const form = await this.form;
             const submitInput = form.querySelector<HTMLElement>(
-              'input[type="submit"]'
+              'input[type="submit"]',
             );
             form.requestSubmit(submitInput);
           }}
@@ -139,7 +139,7 @@ export class NewBrowserProfileDialog extends LiteElement {
     try {
       const data = await this.createBrowser({
         url: `${formData.get("urlPrefix")?.toString()}${url.substring(
-          url.indexOf(",") + 1
+          url.indexOf(",") + 1,
         )}`,
         crawlerChannel: this.crawlerChannel,
       });
@@ -154,8 +154,8 @@ export class NewBrowserProfileDialog extends LiteElement {
         `${this.orgBasePath}/browser-profiles/profile/browser/${
           data.browserid
         }?name=${window.encodeURIComponent(
-          "My Profile"
-        )}&description=&profileId=&crawlerChannel=${this.crawlerChannel}`
+          "My Profile",
+        )}&description=&profileId=&crawlerChannel=${this.crawlerChannel}`,
       );
     } catch (e) {
       this.notify({
@@ -185,7 +185,7 @@ export class NewBrowserProfileDialog extends LiteElement {
       {
         method: "POST",
         body: JSON.stringify(params),
-      }
+      },
     );
   }
 

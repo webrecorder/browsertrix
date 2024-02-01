@@ -78,7 +78,7 @@ export class ItemListControls extends TailwindElement {
   render() {
     return html`
       <div @sl-hide=${this.stopProp} @sl-after-hide=${this.stopProp}>
-        <div class="flex flex-wrap items-center md:justify-end gap-x-5 gap-y-3">
+        <div class="flex flex-wrap items-center gap-x-5 gap-y-3 md:justify-end">
           <div class="flex-1">${this.renderSearch()}</div>
           ${this.renderSort()}
         </div>
@@ -101,7 +101,7 @@ export class ItemListControls extends TailwindElement {
               new CustomEvent<FilterChangeEventDetail>("btrix-filter-change", {
                 detail: merge(this.filterBy, { [key]: value }),
                 composed: true,
-              })
+              }),
             );
           }
         }}
@@ -110,7 +110,7 @@ export class ItemListControls extends TailwindElement {
             new CustomEvent<FilterChangeEventDetail>("btrix-filter-change", {
               detail: {},
               composed: true,
-            })
+            }),
           );
         }}
       >
@@ -149,7 +149,7 @@ export class ItemListControls extends TailwindElement {
     return html`
       <div class="flex items-center gap-2">
         <div class="whitespace-nowrap text-neutral-500">${msg("Sort by:")}</div>
-        <div class="grow flex">
+        <div class="flex grow">
           <sl-select
             class="flex-1"
             size="small"
@@ -163,14 +163,14 @@ export class ItemListControls extends TailwindElement {
                     field: (e.target as SlSelect).value as string,
                   },
                   composed: true,
-                })
+                }),
               );
             }}
           >
             ${this.sortOptions.map(
               ({ field, label }) => html`
                 <sl-option value=${field}>${label}</sl-option>
-              `
+              `,
             )}
           </sl-select>
           <sl-icon-button
@@ -183,7 +183,7 @@ export class ItemListControls extends TailwindElement {
                     direction: this.sortBy ? this.sortBy.direction * -1 : -1,
                   },
                   composed: true,
-                })
+                }),
               );
             }}
           ></sl-icon-button>

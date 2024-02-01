@@ -63,7 +63,10 @@ export class Button extends LitElement {
       text-align: center;
       cursor: pointer;
       transform: translateY(0px);
-      transition: background-color 0.15s, box-shadow 0.15s, color 0.15s,
+      transition:
+        background-color 0.15s,
+        box-shadow 0.15s,
+        color 0.15s,
         transform 0.15s;
     }
 

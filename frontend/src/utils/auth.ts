@@ -18,7 +18,7 @@ import AuthService from "@/utils/AuthService";
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function needLogin<T extends { new (...args: any[]): LiteElement }>(
-  constructor: T
+  constructor: T,
 ) {
   return class extends constructor {
     authState?: AuthState;
@@ -36,7 +36,7 @@ export function needLogin<T extends { new (...args: any[]): LiteElement }>(
         this.dispatchEvent(
           AuthService.createNeedLoginEvent({
             redirectUrl: `${window.location.pathname}${window.location.search}${window.location.hash}`,
-          })
+          }),
         );
       }
     }

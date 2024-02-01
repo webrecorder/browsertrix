@@ -115,7 +115,7 @@ export class FileListItem extends LitElement {
         detail: {
           file: this.file,
         },
-      })
+      }),
     );
   };
 }

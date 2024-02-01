@@ -50,7 +50,7 @@ export class TableCell extends LitElement {
     if (!this.rowClickTarget) return;
     const elems = (e.target as HTMLSlotElement).assignedElements();
     const rowClickTarget = elems.find(
-      (el) => el.tagName.toLowerCase() === this.rowClickTarget
+      (el) => el.tagName.toLowerCase() === this.rowClickTarget,
     );
 
     if (!rowClickTarget) return;

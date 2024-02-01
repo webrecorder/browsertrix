@@ -140,7 +140,7 @@ export class QueueExclusionTable extends LiteElement {
           --sl-input-border-width: 0;
         }
       </style>
-      <div class="flex items-center justify-between mb-2 leading-tight">
+      <div class="mb-2 flex items-center justify-between leading-tight">
         <div class=${ifDefined(this.labelClassName)}>
           ${this.label ?? msg("Exclusions")}
         </div>
@@ -158,18 +158,18 @@ export class QueueExclusionTable extends LiteElement {
           : ""}
       </div>
       <table
-        class="w-full leading-none border-separate"
+        class="w-full border-separate leading-none"
         style="border-spacing: 0;"
       >
-        <thead class="text-xs font-mono text-neutral-600 uppercase">
+        <thead class="font-mono text-xs uppercase text-neutral-600">
           <tr class="h-10 text-left">
-            <th class="font-normal px-2 w-40 bg-slate-50 ${typeColClass}">
+            <th class="${typeColClass} w-40 bg-slate-50 px-2 font-normal">
               ${msg("Exclusion Type")}
             </th>
-            <th class="font-normal px-2 bg-slate-50 ${valueColClass}">
+            <th class="${valueColClass} bg-slate-50 px-2 font-normal">
               ${msg("Exclusion Value")}
             </th>
-            <th class="font-normal px-2 w-10 bg-slate-50 ${actionColClass}">
+            <th class="${actionColClass} w-10 bg-slate-50 px-2 font-normal">
               <span class="sr-only">Row actions</span>
             </th>
           </tr>
@@ -184,7 +184,7 @@ export class QueueExclusionTable extends LiteElement {
   private readonly renderItem = (
     exclusion: Exclusion,
     pageIndex: number,
-    arr: Exclusion[]
+    arr: Exclusion[],
   ) => {
     const index = (this.page - 1) * this.pageSize + pageIndex;
     const [typeColClass, valueColClass, actionColClass] =
@@ -192,17 +192,17 @@ export class QueueExclusionTable extends LiteElement {
 
     return html`
       <tr
-        class="h-10 ${this.exclusionToRemove === exclusion.value
+        class="${this.exclusionToRemove === exclusion.value
           ? "text-neutral-200"
-          : "text-neutral-600"}"
+          : "text-neutral-600"} h-10"
       >
-        <td class="whitespace-nowrap ${typeColClass}">
+        <td class="${typeColClass} whitespace-nowrap">
           ${this.renderType({ exclusion, index })}
         </td>
-        <td class="font-mono ${valueColClass}">
+        <td class="${valueColClass} font-mono">
           ${this.renderValue({ exclusion, index })}
         </td>
-        <td class="text-[1rem] text-center ${actionColClass}">
+        <td class="${actionColClass} text-center text-[1rem]">
           <btrix-button
             icon
             @click=${() => this.removeExclusion(exclusion, index)}
@@ -309,7 +309,7 @@ export class QueueExclusionTable extends LiteElement {
 
     if (exclusion.type === "regex") {
       value = staticHtml`<span class="regex">${unsafeStatic(
-        new RegexColorize().colorizeText(exclusion.value) as string
+        new RegexColorize().colorizeText(exclusion.value) as string,
       )}</span>`;
     }
 
@@ -319,7 +319,7 @@ export class QueueExclusionTable extends LiteElement {
   private getColumnClassNames(
     index: number,
     count: number,
-    isHeader?: boolean
+    isHeader?: boolean,
   ) {
     let typeColClass = "border-t border-x";
     let valueColClass = "border-t border-r";
@@ -381,7 +381,7 @@ export class QueueExclusionTable extends LiteElement {
       return;
     }
     const siblingValues = Array.from(siblingElems).map(
-      (elem) => (elem as SLInputElement).value
+      (elem) => (elem as SLInputElement).value,
     );
     const { type, value } = this.getCurrentValues(inputElem);
     const formattedValue = formatValue(type, value);
@@ -404,7 +404,7 @@ export class QueueExclusionTable extends LiteElement {
         new RegExp(value);
       } catch (err) {
         return msg(
-          "Please enter a valid Regular Expression constructor pattern"
+          "Please enter a valid Regular Expression constructor pattern",
         );
       }
     }
@@ -425,7 +425,7 @@ export class QueueExclusionTable extends LiteElement {
           (elem as SLInputElement).setCustomValidity(validityMessage);
           (elem as SLInputElement).reportValidity();
         }
-      }
+      },
     );
   }
 
@@ -438,7 +438,7 @@ export class QueueExclusionTable extends LiteElement {
           regex: formatValue(type, value),
           index,
         },
-      }) as ExclusionRemoveEvent
+      }) as ExclusionRemoveEvent,
     );
   }
 
@@ -457,7 +457,7 @@ export class QueueExclusionTable extends LiteElement {
           index,
           regex: formatValue(type, value),
         },
-      }) as ExclusionChangeEvent
+      }) as ExclusionChangeEvent,
     );
   }
 

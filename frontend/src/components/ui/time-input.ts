@@ -119,7 +119,7 @@ export class TimeInput extends LitElement {
                 if (input.value) {
                   const int = Math.min(
                     59,
-                    Math.max(0, +input.value.replace(/[^0-9]/g, ""))
+                    Math.max(0, +input.value.replace(/[^0-9]/g, "")),
                   );
                   input.value = int < 10 ? `0${int}` : `${int}`;
                 } else {
@@ -167,7 +167,7 @@ export class TimeInput extends LitElement {
           minute: this.minute,
           period: this.period,
         },
-      })
+      }),
     );
   }
 

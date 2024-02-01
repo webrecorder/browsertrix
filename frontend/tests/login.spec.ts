@@ -16,7 +16,7 @@ test("test", async ({ baseURL }) => {
     const devPassword = process.env.DEV_PASSWORD;
     if (!devPassword) {
       throw new Error(
-        "DEV_PASSWORD environment variable is not defined or null."
+        "DEV_PASSWORD environment variable is not defined or null.",
       );
     }
     await page.fill('input[name="password"]', devPassword);

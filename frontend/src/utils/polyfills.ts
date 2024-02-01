@@ -8,11 +8,11 @@
 if (!Object.fromEntries) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Object.fromEntries = function <T = any>(
-    entries: Iterable<readonly [PropertyKey, T]>
+    entries: Iterable<readonly [PropertyKey, T]>,
   ): { [k: string]: T } {
     if (!entries?.[Symbol.iterator]) {
       throw new Error(
-        "Object.fromEntries() requires a single iterable argument"
+        "Object.fromEntries() requires a single iterable argument",
       );
     }
     const obj: { [k: PropertyKey]: T } = {};

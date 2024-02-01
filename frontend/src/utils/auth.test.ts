@@ -15,14 +15,14 @@ describe("auth", () => {
       const Element = auth.needLogin(
         class TestElement extends LiteElementMock {
           authState = null;
-        } as unknown as { new (...args: unknown[]): LiteElement }
+        } as unknown as { new (...args: unknown[]): LiteElement },
       );
 
       const element = new Element();
       element.update(new Map());
 
       expect(dispatchEventSpy.getCall(0).firstArg.type).to.equal(
-        "btrix-need-login"
+        "btrix-need-login",
       );
     });
   });

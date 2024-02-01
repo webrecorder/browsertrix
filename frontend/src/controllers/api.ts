@@ -40,7 +40,7 @@ export class APIController implements ReactiveController {
   async fetch<T = unknown>(
     path: string,
     auth: Auth,
-    options?: RequestInit
+    options?: RequestInit,
   ): Promise<T> {
     const { headers, ...opts } = options || {};
     const resp = await fetch("/api" + path, {
@@ -62,7 +62,7 @@ export class APIController implements ReactiveController {
             detail: { reached: storageQuotaReached },
             bubbles: true,
             composed: true,
-          })
+          }),
         );
       }
       if (typeof executionMinutesQuotaReached === "boolean") {
@@ -73,8 +73,8 @@ export class APIController implements ReactiveController {
               detail: { reached: executionMinutesQuotaReached },
               bubbles: true,
               composed: true,
-            }
-          )
+            },
+          ),
         );
       }
 
@@ -103,7 +103,7 @@ export class APIController implements ReactiveController {
               detail: { reached: true },
               bubbles: true,
               composed: true,
-            })
+            }),
           );
           errorMessage = msg("Storage quota reached");
           break;
@@ -116,8 +116,8 @@ export class APIController implements ReactiveController {
                 detail: { reached: true },
                 bubbles: true,
                 composed: true,
-              }
-            )
+              },
+            ),
           );
           errorMessage = msg("Monthly execution minutes quota reached");
           break;

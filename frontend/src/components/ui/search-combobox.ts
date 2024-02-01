@@ -110,7 +110,7 @@ export class SearchCombobox<T> extends LitElement {
                 key: key ?? null,
                 value: item.value as T,
               },
-            })
+            }),
           );
         }}
       >
@@ -138,7 +138,7 @@ export class SearchCombobox<T> extends LitElement {
                 style="margin-left: var(--sl-spacing-3x-small)"
                 >${this.keyLabels![this.selectedKey!]}</sl-tag
               >`,
-            () => html`<sl-icon name="search" slot="prefix"></sl-icon>`
+            () => html`<sl-icon name="search" slot="prefix"></sl-icon>`,
           )}
         </sl-input>
         ${this.renderSearchResults()}
@@ -183,7 +183,7 @@ export class SearchCombobox<T> extends LitElement {
             `;
           }
           return nothing;
-        })
+        }),
       )}
     `;
   }

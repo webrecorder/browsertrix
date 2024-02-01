@@ -84,7 +84,7 @@ export class Table extends LitElement {
 
     this.style.setProperty(
       "--btrix-table-grid-column",
-      `span ${headEl.colCount}`
+      `span ${headEl.colCount}`,
     );
   }
 }

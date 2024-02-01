@@ -82,9 +82,10 @@ export class SelectCrawler extends LiteElement {
         @sl-after-hide=${this.stopProp}
       >
         ${this.crawlerChannels?.map(
-          (crawler) => html` <sl-option value=${crawler.id}>
-            ${capitalize(crawler.id)}
-          </sl-option>`
+          (crawler) =>
+            html` <sl-option value=${crawler.id}>
+              ${capitalize(crawler.id)}
+            </sl-option>`,
         )}
         ${this.selectedCrawler
           ? html`
@@ -104,7 +105,7 @@ export class SelectCrawler extends LiteElement {
     this.stopProp(e);
 
     this.selectedCrawler = this.crawlerChannels?.find(
-      ({ id }) => id === (e.target as SlSelect).value
+      ({ id }) => id === (e.target as SlSelect).value,
     );
 
     this.dispatchEvent(
@@ -112,7 +113,7 @@ export class SelectCrawler extends LiteElement {
         detail: {
           value: this.selectedCrawler?.id,
         },
-      })
+      }),
     );
   }
 
@@ -126,7 +127,7 @@ export class SelectCrawler extends LiteElement {
 
       if (this.crawlerChannel && !this.selectedCrawler) {
         this.selectedCrawler = this.crawlerChannels.find(
-          ({ id }) => id === this.crawlerChannel
+          ({ id }) => id === this.crawlerChannel,
         );
       }
 
@@ -137,10 +138,10 @@ export class SelectCrawler extends LiteElement {
             detail: {
               value: "default",
             },
-          })
+          }),
         );
         this.selectedCrawler = this.crawlerChannels.find(
-          ({ id }) => id === this.crawlerChannel
+          ({ id }) => id === this.crawlerChannel,
         );
       }
 
@@ -149,7 +150,7 @@ export class SelectCrawler extends LiteElement {
           detail: {
             show: this.crawlerChannels.length > 1,
           },
-        })
+        }),
       );
     } catch (e) {
       this.notify({
@@ -164,7 +165,7 @@ export class SelectCrawler extends LiteElement {
     const data: CrawlerChannelsAPIResponse =
       await this.apiFetch<CrawlerChannelsAPIResponse>(
         `/orgs/${this.orgId}/crawlconfigs/crawler-channels`,
-        this.authState!
+        this.authState!,
       );
 
     return data.channels;

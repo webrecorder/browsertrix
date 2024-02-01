@@ -59,7 +59,7 @@ export class Tab extends TailwindElement {
   render() {
     return html`
       <li
-        class="py-4 px-3 leading-tight font-semibold text-neutral-500 transition-colors duration-fast aria-selected:text-blue-600 cursor-pointer aria-disabled:cursor-default"
+        class="cursor-pointer px-3 py-4 font-semibold leading-tight text-neutral-500 transition-colors duration-fast aria-disabled:cursor-default aria-selected:text-blue-600"
         role="tab"
         aria-selected=${this.active}
         aria-controls=${ifDefined(this.name)}
@@ -265,7 +265,7 @@ export class TabList extends LitElement {
       .querySelector<HTMLSlotElement>(".content slot:not([name])")!
       .assignedElements();
     return ([...slotElems] as TabPanelElement[]).filter(
-      (el) => el.tagName.toLowerCase() === "btrix-tab-panel"
+      (el) => el.tagName.toLowerCase() === "btrix-tab-panel",
     );
   }
 
@@ -274,7 +274,7 @@ export class TabList extends LitElement {
       .querySelector<HTMLSlotElement>("slot[name='nav']")!
       .assignedElements();
     return ([...slotElems] as TabElement[]).filter(
-      (el) => el.tagName.toLowerCase() === "btrix-tab"
+      (el) => el.tagName.toLowerCase() === "btrix-tab",
     );
   }
 
@@ -286,7 +286,7 @@ export class TabList extends LitElement {
 
   private onProgressChange(isFirstChange: boolean) {
     const progressTab = this.getTabs().find(
-      (el) => el.name === this.progressPanel
+      (el) => el.name === this.progressPanel,
     );
     if (progressTab) {
       void this.repositionIndicator(progressTab, !isFirstChange);

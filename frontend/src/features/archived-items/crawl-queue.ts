@@ -117,7 +117,7 @@ export class CrawlQueue extends LiteElement {
     if (!this.queue) return;
 
     return html`
-      <btrix-numbered-list class="text-xs break-all" aria-live="polite">
+      <btrix-numbered-list class="break-all text-xs" aria-live="polite">
         ${this.queue.results.map((url, idx) => {
           const isMatch = this.queue!.matched.some((v) => v === url);
           const isExcluded = !isMatch && this.isExcluded(url);
@@ -130,8 +130,8 @@ export class CrawlQueue extends LiteElement {
                 class="${isMatch
                   ? "text-red-500 hover:text-red-400"
                   : isExcluded
-                  ? "text-gray-500 hover:text-gray-400 line-through"
-                  : "text-blue-500 hover:text-blue-400"}"
+                    ? "text-gray-500 hover:text-gray-400 line-through"
+                    : "text-blue-500 hover:text-blue-400"}"
                 href=${url}
                 target="_blank"
                 rel="noopener noreferrer nofollow"
@@ -146,7 +146,7 @@ export class CrawlQueue extends LiteElement {
         ${when(
           this.queue.total === this.queue.results.length,
           () =>
-            html`<div class="text-xs text-neutral-400 py-3">
+            html`<div class="py-3 text-xs text-neutral-400">
               ${msg("End of queue")}
             </div>`,
           () => html`
@@ -159,7 +159,7 @@ export class CrawlQueue extends LiteElement {
                 ></sl-icon-button>
               </div>
             </btrix-observable>
-          `
+          `,
         )}
       </footer>
     `;
@@ -240,7 +240,7 @@ export class CrawlQueue extends LiteElement {
     const params = new URLSearchParams({ offset, count, regex });
     const data: ResponseData = await this.apiFetch(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/queue?${params.toString()}`,
-      this.authState!
+      this.authState!,
     );
 
     return data;

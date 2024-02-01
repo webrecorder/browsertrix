@@ -118,7 +118,7 @@ export class CrawlsList extends LiteElement {
 
   private get selectedSearchFilterKey() {
     return Object.keys(CrawlsList.FieldLabels).find((key) =>
-      Boolean((this.filterBy as Record<string, unknown>)[key])
+      Boolean((this.filterBy as Record<string, unknown>)[key]),
     );
   }
 
@@ -130,7 +130,7 @@ export class CrawlsList extends LiteElement {
   }
 
   protected willUpdate(
-    changedProperties: PropertyValues<this> & Map<string, unknown>
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
       changedProperties.has("filterByCurrentUser") ||
@@ -155,7 +155,7 @@ export class CrawlsList extends LiteElement {
       if (changedProperties.has("filterByCurrentUser")) {
         window.sessionStorage.setItem(
           FILTER_BY_CURRENT_USER_STORAGE_KEY,
-          this.filterByCurrentUser.toString()
+          this.filterByCurrentUser.toString(),
         );
       }
     }
@@ -195,8 +195,8 @@ export class CrawlsList extends LiteElement {
     return html`
       <main>
         <header class="contents">
-          <div class="flex justify-between gap-2 pb-3 mb-3 border-b">
-            <h1 class="text-xl font-semibold leading-8 mb-2 md:mb-0">
+          <div class="mb-3 flex justify-between gap-2 border-b pb-3">
+            <h1 class="mb-2 text-xl font-semibold leading-8 md:mb-0">
               ${msg("Archived Items")}
             </h1>
             ${when(
@@ -216,10 +216,10 @@ export class CrawlsList extends LiteElement {
                     ${msg("Upload WACZ")}
                   </sl-button>
                 </sl-tooltip>
-              `
+              `,
             )}
           </div>
-          <div class="flex gap-2 mb-3">
+          <div class="mb-3 flex gap-2">
             ${listTypes.map(({ label, itemType, icon }) => {
               const isSelected = itemType === this.itemType;
               return html` <btrix-button
@@ -237,7 +237,7 @@ export class CrawlsList extends LiteElement {
             })}
           </div>
           <div
-            class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg"
+            class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4"
           >
             ${this.renderControls()}
           </div>
@@ -272,15 +272,15 @@ export class CrawlsList extends LiteElement {
                       }}
                     ></btrix-pagination>
                   </footer>
-                `
+                `,
               )}
             `;
           },
           () => html`
-            <div class="w-full flex items-center justify-center my-12 text-2xl">
+            <div class="my-12 flex w-full items-center justify-center text-2xl">
               <sl-spinner></sl-spinner>
             </div>
-          `
+          `,
         )}
       </main>
       ${when(
@@ -299,7 +299,7 @@ export class CrawlsList extends LiteElement {
               }
             }}
           ></btrix-file-uploader>
-        `
+        `,
       )}
     `;
   }
@@ -310,13 +310,13 @@ export class CrawlsList extends LiteElement {
 
     return html`
       <div
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)] gap-x-2 gap-y-2 items-center"
+        class="grid grid-cols-1 items-center gap-x-2 gap-y-2 md:grid-cols-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)_fit-content(100%)]"
       >
         <div class="col-span-1 md:col-span-2 lg:col-span-1">
           ${this.renderSearch()}
         </div>
         <div class="flex items-center">
-          <div class="text-neutral-500 mx-2">${msg("Status:")}</div>
+          <div class="mx-2 text-neutral-500">${msg("Status:")}</div>
           <sl-select
             id="stateSelect"
             class="flex-1 md:w-[14.5rem]"
@@ -339,17 +339,17 @@ export class CrawlsList extends LiteElement {
         </div>
 
         <div class="flex items-center">
-          <div class="whitespace-nowrap text-neutral-500 mx-2">
+          <div class="mx-2 whitespace-nowrap text-neutral-500">
             ${msg("Sort by:")}
           </div>
-          <div class="grow flex">${this.renderSortControl()}</div>
+          <div class="flex grow">${this.renderSortControl()}</div>
         </div>
       </div>
 
       ${this.userId
-        ? html` <div class="h-6 mt-2 flex justify-end">
+        ? html` <div class="mt-2 flex h-6 justify-end">
             <label>
-              <span class="text-neutral-500 text-xs mr-1"
+              <span class="mr-1 text-xs text-neutral-500"
                 >${msg("Show Only Mine")}</span
               >
               <sl-switch
@@ -367,7 +367,7 @@ export class CrawlsList extends LiteElement {
     const options = Object.entries(sortableFields).map(
       ([value, { label }]) => html`
         <sl-option value=${value}>${label}</sl-option>
-      `
+      `,
     );
     return html`
       <sl-select
@@ -409,8 +409,8 @@ export class CrawlsList extends LiteElement {
         placeholder=${this.itemType === "upload"
           ? msg("Search all uploads by name")
           : this.itemType === "crawl"
-          ? msg("Search all crawls by name or Crawl Start URL")
-          : msg("Search all items by name or Crawl Start URL")}
+            ? msg("Search all crawls by name or Crawl Start URL")
+            : msg("Search all items by name or Crawl Start URL")}
         @on-select=${(e: CustomEvent) => {
           const { key, value } = e.detail;
           this.filterBy = {
@@ -465,8 +465,8 @@ export class CrawlsList extends LiteElement {
         ${msg("This item will be removed from any Collection it is a part of.")}
         ${when(this.itemToDelete?.type === "crawl", () =>
           msg(
-            "All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow."
-          )
+            "All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow.",
+          ),
         )}
         <div slot="footer" class="flex justify-between">
           <sl-button size="small" .autofocus=${true}
@@ -486,7 +486,7 @@ export class CrawlsList extends LiteElement {
                 this.itemToDelete?.type === "upload"
                   ? msg("Upload")
                   : msg("Crawl")
-              }`
+              }`,
             )}</sl-button
           >
         </div>
@@ -537,7 +537,7 @@ export class CrawlsList extends LiteElement {
             ${msg("Edit Metadata")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-        `
+        `,
       )}
       ${item.type === "crawl"
         ? html`
@@ -576,7 +576,7 @@ export class CrawlsList extends LiteElement {
             <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${msg("Delete Item")}
           </sl-menu-item>
-        `
+        `,
       )}
     `;
 
@@ -589,13 +589,13 @@ export class CrawlsList extends LiteElement {
   private renderEmptyState() {
     if (Object.keys(this.filterBy).length) {
       return html`
-        <div class="border rounded-lg bg-neutral-50 p-4">
+        <div class="rounded-lg border bg-neutral-50 p-4">
           <p class="text-center">
             <span class="text-neutral-400"
               >${msg("No matching items found.")}</span
             >
             <button
-              class="text-neutral-500 font-medium underline hover:no-underline"
+              class="font-medium text-neutral-500 underline hover:no-underline"
               @click=${() => {
                 this.filterBy = {};
                 if (this.stateSelect) {
@@ -615,7 +615,7 @@ export class CrawlsList extends LiteElement {
 
     if (this.archivedItems?.page && this.archivedItems?.page > 1) {
       return html`
-        <div class="border-t border-b py-5">
+        <div class="border-b border-t py-5">
           <p class="text-center text-neutral-500">
             ${msg("Could not find page.")}
           </p>
@@ -624,7 +624,7 @@ export class CrawlsList extends LiteElement {
     }
 
     return html`
-      <div class="border-t border-b py-5">
+      <div class="border-b border-t py-5">
         <p class="text-center text-neutral-500">
           ${msg("No archived items yet.")}
         </p>
@@ -660,7 +660,7 @@ export class CrawlsList extends LiteElement {
   }
 
   private async getArchivedItems(
-    queryParams?: APIPaginationQuery & { state?: CrawlState[] }
+    queryParams?: APIPaginationQuery & { state?: CrawlState[] },
   ): Promise<ArchivedItems> {
     const query = queryString.stringify(
       {
@@ -680,7 +680,7 @@ export class CrawlsList extends LiteElement {
       },
       {
         arrayFormat: "comma",
-      }
+      },
     );
 
     this.getArchivedItemsController = new AbortController();
@@ -689,7 +689,7 @@ export class CrawlsList extends LiteElement {
       this.authState!,
       {
         signal: this.getArchivedItemsController.signal,
-      }
+      },
     );
 
     this.getArchivedItemsController = null;
@@ -709,7 +709,7 @@ export class CrawlsList extends LiteElement {
         firstSeeds: string[];
       } = await this.apiFetch(
         `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
-        this.authState!
+        this.authState!,
       );
 
       // Update search/filter collection
@@ -754,7 +754,7 @@ export class CrawlsList extends LiteElement {
           body: JSON.stringify({
             crawl_ids: [item.id],
           }),
-        }
+        },
       );
       const { items, ...crawlsData } = this.archivedItems!;
       this.itemToDelete = null;
@@ -773,12 +773,12 @@ export class CrawlsList extends LiteElement {
         this.confirmDeleteItem(this.itemToDelete);
       }
       let message = msg(
-        str`Sorry, couldn't delete archived item at this time.`
+        str`Sorry, couldn't delete archived item at this time.`,
       );
       if (isApiError(e)) {
         if (e.details == "not_allowed") {
           message = msg(
-            str`Only org owners can delete other users' archived items.`
+            str`Only org owners can delete other users' archived items.`,
           );
         } else if (e.message) {
           message = e.message;
@@ -795,7 +795,7 @@ export class CrawlsList extends LiteElement {
   async getWorkflow(crawl: Crawl): Promise<Workflow> {
     const data: Workflow = await this.apiFetch(
       `/orgs/${crawl.oid}/crawlconfigs/${crawl.cid}`,
-      this.authState!
+      this.authState!,
     );
 
     return data;

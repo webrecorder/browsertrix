@@ -40,7 +40,7 @@ export class MarkdownViewer extends LitElement {
       micromark(this.value, {
         extensions: [gfmStrikethrough()],
         htmlExtensions: [gfmStrikethroughHtml()],
-      })
+      }),
     )}`;
   }
 }

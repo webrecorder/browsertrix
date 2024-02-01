@@ -126,7 +126,7 @@ export class App extends LiteElement {
       window.history.replaceState(this.viewState, "", this.viewState.pathname);
     } else {
       this.viewState = this.router.match(
-        `${window.location.pathname}${window.location.search}`
+        `${window.location.pathname}${window.location.search}`,
       );
     }
   }
@@ -165,7 +165,7 @@ export class App extends LiteElement {
       if ((err as Error)?.message === "Unauthorized") {
         console.debug(
           "Unauthorized with authState:",
-          this.authService.authState
+          this.authService.authState,
         );
         this.clearUser();
         this.navigate(ROUTES.login);
@@ -194,7 +194,7 @@ export class App extends LiteElement {
       url = new URL(newViewPath);
     } else {
       url = new URL(
-        `${window.location.origin}/${newViewPath.replace(/^\//, "")}`
+        `${window.location.origin}/${newViewPath.replace(/^\//, "")}`,
       );
     }
 
@@ -215,15 +215,15 @@ export class App extends LiteElement {
       "",
       `${this.viewState.pathname.replace(url.search, "")}${url.hash}${
         url.search
-      }`
+      }`,
     );
   }
 
   render() {
     return html`
-      <div class="min-w-screen min-h-screen flex flex-col">
+      <div class="min-w-screen flex min-h-screen flex-col">
         ${this.renderNavBar()}
-        <main class="relative flex-auto flex">${this.renderPage()}</main>
+        <main class="relative flex flex-auto">${this.renderPage()}</main>
         <div class="border-t border-neutral-100">${this.renderFooter()}</div>
       </div>
 
@@ -247,11 +247,11 @@ export class App extends LiteElement {
     return html`
       <div class="border-b">
         <nav
-          class="max-w-screen-desktop mx-auto pl-3 box-border h-12 flex items-center justify-between"
+          class="mx-auto box-border flex h-12 max-w-screen-desktop items-center justify-between pl-3"
         >
           <div>
             <a
-              class="text-sm hover:text-neutral-400 font-medium"
+              class="text-sm font-medium hover:text-neutral-400"
               href=${homeHref}
               @click=${(e: MouseEvent) => {
                 if (isAdmin) {
@@ -267,10 +267,10 @@ export class App extends LiteElement {
           ${isAdmin
             ? html`
                 <div
-                  class="text-xs md:text-sm grid grid-flow-col gap-3 md:gap-5 items-center"
+                  class="grid grid-flow-col items-center gap-3 text-xs md:gap-5 md:text-sm"
                 >
                   <a
-                    class="text-neutral-500 hover:text-neutral-400 font-medium"
+                    class="font-medium text-neutral-500 hover:text-neutral-400"
                     href="/"
                     @click=${(e: MouseEvent) => {
                       this.clearSelectedOrg();
@@ -279,7 +279,7 @@ export class App extends LiteElement {
                     >${msg("Dashboard")}</a
                   >
                   <a
-                    class="text-neutral-500 hover:text-neutral-400 font-medium"
+                    class="font-medium text-neutral-500 hover:text-neutral-400"
                     href="/crawls"
                     @click=${this.navLink}
                     >${msg("Running Crawls")}</a
@@ -289,7 +289,7 @@ export class App extends LiteElement {
               `
             : ""}
 
-          <div class="grid grid-flow-col auto-cols-max gap-3 items-center">
+          <div class="grid auto-cols-max grid-flow-col items-center gap-3">
             ${this.authService.authState
               ? html` ${this.renderOrgs()}
                   <sl-dropdown placement="bottom-end">
@@ -353,7 +353,7 @@ export class App extends LiteElement {
     if (!selectedOption) {
       console.debug(
         `Could't find organization with slug ${this.appState.orgSlug}`,
-        orgs
+        orgs,
       );
       return;
     }
@@ -389,7 +389,7 @@ export class App extends LiteElement {
                 >${msg("All Organizations")}</sl-menu-item
               >
               <sl-divider></sl-divider>
-            `
+            `,
           )}
           ${this.appState.userInfo?.orgs.map(
             (org) => html`
@@ -399,7 +399,7 @@ export class App extends LiteElement {
                 ?checked=${org.slug === selectedOption.slug}
                 >${org.name.slice(0, orgNameLength)}</sl-menu-item
               >
-            `
+            `,
           )}
         </sl-menu>
       </sl-dropdown>
@@ -418,7 +418,7 @@ export class App extends LiteElement {
         <div class="font-medium text-neutral-700">
           ${this.appState.userInfo?.name}
         </div>
-        <div class="text-xs text-neutral-500 whitespace-nowrap">
+        <div class="whitespace-nowrap text-xs text-neutral-500">
           ${this.appState.userInfo?.email}
         </div>
       `;
@@ -427,9 +427,9 @@ export class App extends LiteElement {
     const orgs = this.appState.userInfo?.orgs;
     if (orgs?.length === 1) {
       return html`
-        <div class="font-medium text-neutral-700 my-1">${orgs[0].name}</div>
+        <div class="my-1 font-medium text-neutral-700">${orgs[0].name}</div>
         <div class="text-neutral-500">${this.appState.userInfo?.name}</div>
-        <div class="text-xs text-neutral-500 whitespace-nowrap">
+        <div class="whitespace-nowrap text-xs text-neutral-500">
           ${this.appState.userInfo?.email}
         </div>
       `;
@@ -439,7 +439,7 @@ export class App extends LiteElement {
       <div class="font-medium text-neutral-700">
         ${this.appState.userInfo?.name}
       </div>
-      <div class="text-xs text-neutral-500 whitespace-nowrap">
+      <div class="whitespace-nowrap text-xs text-neutral-500">
         ${this.appState.userInfo?.email}
       </div>
     `;
@@ -448,7 +448,7 @@ export class App extends LiteElement {
   private renderFooter() {
     return html`
       <footer
-        class="w-full max-w-screen-desktop mx-auto p-3 box-border flex flex-col gap-4 md:flex-row justify-between"
+        class="mx-auto box-border flex w-full max-w-screen-desktop flex-col justify-between gap-4 p-3 md:flex-row"
       >
         <!-- <div> -->
         <!-- TODO re-enable when translations are added -->
@@ -456,7 +456,7 @@ export class App extends LiteElement {
         <!-- </div> -->
         <div class="flex items-center justify-center">
           <a
-            class="text-neutral-400 flex items-center gap-2 hover:text-primary"
+            class="flex items-center gap-2 text-neutral-400 hover:text-primary"
             href="https://github.com/webrecorder/browsertrix-cloud"
             target="_blank"
             rel="noopener"
@@ -470,7 +470,7 @@ export class App extends LiteElement {
         </div>
         <div class="flex items-center justify-center">
           <a
-            class="text-neutral-400 flex items-center gap-2 hover:text-primary"
+            class="flex items-center gap-2 text-neutral-400 hover:text-primary"
             href="https://docs.browsertrix.cloud"
             target="_blank"
             rel="noopener"
@@ -491,7 +491,7 @@ export class App extends LiteElement {
                   content=${msg("Copy Version Code")}
                 ></btrix-copy-button>
                 <span
-                  class="inline-block align-middle font-monostyle text-xs text-neutral-400"
+                  class="font-monostyle inline-block align-middle text-xs text-neutral-400"
                 >
                   ${this.version}
                 </span>
@@ -507,12 +507,12 @@ export class App extends LiteElement {
       case "signUp": {
         if (!this.isAppSettingsLoaded) {
           return html`<div
-            class="w-full md:bg-neutral-50 flex items-center justify-center"
+            class="flex w-full items-center justify-center md:bg-neutral-50"
           ></div>`;
         }
         if (this.isRegistrationEnabled) {
           return html`<btrix-sign-up
-            class="w-full md:bg-neutral-50 flex items-center justify-center"
+            class="flex w-full items-center justify-center md:bg-neutral-50"
             .authState="${this.authService.authState}"
           ></btrix-sign-up>`;
         } else {
@@ -522,7 +522,7 @@ export class App extends LiteElement {
 
       case "verify":
         return html`<btrix-verify
-          class="w-full md:bg-neutral-50 flex items-center justify-center"
+          class="flex w-full items-center justify-center md:bg-neutral-50"
           token="${this.viewState.params.token}"
           @user-info-change="${this.onUserInfoChange}"
           .authState="${this.authService.authState}"
@@ -530,14 +530,14 @@ export class App extends LiteElement {
 
       case "join":
         return html`<btrix-join
-          class="w-full md:bg-neutral-50 flex items-center justify-center"
+          class="flex w-full items-center justify-center md:bg-neutral-50"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
         ></btrix-join>`;
 
       case "acceptInvite":
         return html`<btrix-accept-invite
-          class="w-full md:bg-neutral-50 flex items-center justify-center"
+          class="flex w-full items-center justify-center md:bg-neutral-50"
           .authState="${this.authService.authState}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
@@ -547,7 +547,7 @@ export class App extends LiteElement {
       case "loginWithRedirect":
       case "forgotPassword":
         return html`<btrix-log-in
-          class="w-full md:bg-neutral-50 flex items-center justify-center"
+          class="flex w-full items-center justify-center md:bg-neutral-50"
           @navigate=${this.onNavigateTo}
           .viewState=${this.viewState}
           redirectUrl=${this.viewState.params.redirectUrl ||
@@ -556,7 +556,7 @@ export class App extends LiteElement {
 
       case "resetPassword":
         return html`<btrix-reset-password
-          class="w-full md:bg-neutral-50 flex items-center justify-center"
+          class="flex w-full items-center justify-center md:bg-neutral-50"
           @navigate=${this.onNavigateTo}
           .viewState=${this.viewState}
         ></btrix-reset-password>`;
@@ -608,7 +608,7 @@ export class App extends LiteElement {
 
       case "accountSettings":
         return html`<btrix-account-settings
-          class="w-full max-w-screen-desktop mx-auto p-2 md:py-8 box-border"
+          class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
           @update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
             void this.updateUserInfo();
@@ -621,7 +621,7 @@ export class App extends LiteElement {
         if (this.appState.userInfo) {
           if (this.appState.userInfo.isAdmin) {
             return html`<btrix-users-invite
-              class="w-full max-w-screen-desktop mx-auto p-2 md:py-8 box-border"
+              class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
               .authState="${this.authService.authState}"
               .userInfo="${this.appState.userInfo}"
             ></btrix-users-invite>`;
@@ -671,7 +671,7 @@ export class App extends LiteElement {
 
   private renderSpinner() {
     return html`
-      <div class="w-full flex items-center justify-center text-3xl">
+      <div class="flex w-full items-center justify-center text-3xl">
         <sl-spinner></sl-spinner>
       </div>
     `;
@@ -679,7 +679,7 @@ export class App extends LiteElement {
 
   private renderNotFoundPage() {
     return html`<btrix-not-found
-      class="w-full md:bg-neutral-50 flex items-center justify-center"
+      class="flex w-full items-center justify-center md:bg-neutral-50"
     ></btrix-not-found>`;
   }
 
@@ -696,7 +696,7 @@ export class App extends LiteElement {
       >
         <button
           slot="trigger"
-          class="text-primary hover:text-indigo-400 font-medium"
+          class="font-medium text-primary hover:text-indigo-400"
         >
           ${msg("Jump to Crawl")}
         </button>
@@ -706,14 +706,14 @@ export class App extends LiteElement {
             @submit=${(e: SubmitEvent) => {
               e.preventDefault();
               const id = new FormData(e.target as HTMLFormElement).get(
-                "crawlId"
+                "crawlId",
               ) as string;
               this.navigate(`/crawls/crawl/${id}#watch`);
               void (e.target as HTMLFormElement).closest("sl-dropdown")?.hide();
             }}
           >
             <div class="flex flex-wrap items-center">
-              <div class="mr-2 w-90">
+              <div class="w-90 mr-2">
                 <sl-input
                   size="small"
                   name="crawlId"
@@ -829,7 +829,7 @@ export class App extends LiteElement {
         ${title ? html`<strong>${title}</strong>` : ""}
         ${message ? html`<div>${message}</div>` : ""}
       `,
-      container
+      container,
     );
     document.body.append(alert);
     void alert.toast();
@@ -865,12 +865,14 @@ export class App extends LiteElement {
           </p>
 
           <p>
-            ${msg(html`A confirmation email was sent to: <br />
-              <strong>${email}</strong>.`)}
-          </p>
-          <p class="max-w-xs mx-auto">
             ${msg(
-              "Click the link in your email to confirm your email address."
+              html`A confirmation email was sent to: <br />
+                <strong>${email}</strong>.`,
+            )}
+          </p>
+          <p class="mx-auto max-w-xs">
+            ${msg(
+              "Click the link in your email to confirm your email address.",
             )}
           </p>
         </div>
@@ -900,7 +902,7 @@ export class App extends LiteElement {
             }
           }
         }
-      }
+      },
     );
   }
 

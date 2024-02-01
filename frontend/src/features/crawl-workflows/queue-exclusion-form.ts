@@ -58,7 +58,7 @@ export class QueueExclusionForm extends LiteElement {
   private isRegexInvalid = false;
 
   async willUpdate(
-    changedProperties: PropertyValues<this> & Map<string, unknown>
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
       changedProperties.get("selectValue") ||
@@ -80,7 +80,7 @@ export class QueueExclusionForm extends LiteElement {
     return html`
       <fieldset>
         <div class="flex">
-          <div class="px-1 flex-0 w-40">
+          <div class="flex-0 w-40 px-1">
             <sl-select
               placeholder=${msg("Select Type")}
               size="small"
@@ -97,8 +97,8 @@ export class QueueExclusionForm extends LiteElement {
               <sl-option value="regex">${msg("Regex")}</sl-option>
             </sl-select>
           </div>
-          <div class="pl-1 flex-1 flex">
-            <div class="flex-1 mr-1 mb-2 md:mb-0">
+          <div class="flex flex-1 pl-1">
+            <div class="mb-2 mr-1 flex-1 md:mb-0">
               <sl-input
                 class=${this.fieldErrorMessage ? "invalid" : ""}
                 size="small"
@@ -122,7 +122,7 @@ export class QueueExclusionForm extends LiteElement {
                               <p class="text-danger">
                                 ${msg(
                                   html`Regular Expression syntax error:
-                                    <code>${this.fieldErrorMessage}</code>`
+                                    <code>${this.fieldErrorMessage}</code>`,
                                 )}
                               </p>
                               <p>
@@ -135,7 +135,7 @@ export class QueueExclusionForm extends LiteElement {
                                       target="_blank"
                                       rel="noopener noreferrer nofollow"
                                       ><code>RegExp</code> docs</a
-                                    >.`
+                                    >.`,
                                 )}
                               </p>
                             `
@@ -211,7 +211,7 @@ export class QueueExclusionForm extends LiteElement {
               : this.inputValue,
           valid: !this.isRegexInvalid,
         },
-      }) as ExclusionChangeEvent
+      }) as ExclusionChangeEvent,
     );
   }
 
@@ -233,7 +233,7 @@ export class QueueExclusionForm extends LiteElement {
             this.inputValue = "";
           },
         },
-      }) as ExclusionAddEvent
+      }) as ExclusionAddEvent,
     );
   }
 

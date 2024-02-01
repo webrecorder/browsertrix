@@ -60,7 +60,7 @@ export class CrawlStatus extends LitElement {
   // instead of separate utility function?
   static getContent(
     state?: CrawlState,
-    isUpload?: boolean
+    isUpload?: boolean,
   ): {
     icon: TemplateResult;
     label: string;

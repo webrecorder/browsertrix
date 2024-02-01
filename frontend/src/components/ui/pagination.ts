@@ -274,7 +274,7 @@ export class Pagination extends LitElement {
       if (currentPageIdx > middleVisible) {
         middlePages = pages.slice(
           Math.min(currentPageIdx - middlePad, this.pages - middleEnd),
-          Math.min(currentPageIdx + middlePad + 1, this.pages - endsVisible)
+          Math.min(currentPageIdx + middlePad + 1, this.pages - endsVisible),
         );
       }
 
@@ -282,12 +282,12 @@ export class Pagination extends LitElement {
         ${firstPages.map(this.renderPageButton)}
         ${when(
           middlePages[0] > firstPages[firstPages.length - 1] + 1,
-          () => html`...`
+          () => html`...`,
         )}
         ${middlePages.map(this.renderPageButton)}
         ${when(
           lastPages[0] > middlePages[middlePages.length - 1] + 1,
-          () => html`...`
+          () => html`...`,
         )}
         ${lastPages.map(this.renderPageButton)}
       `;
@@ -322,7 +322,7 @@ export class Pagination extends LitElement {
       new CustomEvent<PageChangeDetail>("page-change", {
         detail: { page: page, pages: this.pages },
         composed: true,
-      })
+      }),
     );
   }
 

@@ -263,7 +263,7 @@ export class TagInput extends LitElement {
                       <sl-menu-item role="option" value=${tag}
                         >${tag}</sl-menu-item
                       >
-                    `
+                    `,
                   )}
                 ${this.tagOptions.length ? html`<sl-divider></sl-divider>` : ""}
 
@@ -437,7 +437,7 @@ export class TagInput extends LitElement {
     this.dispatchEvent(
       new CustomEvent<TagInputEventDetail>("tag-input", {
         detail: { value: input.value },
-      })
+      }),
     );
   });
 
@@ -510,7 +510,7 @@ export class TagInput extends LitElement {
     this.dispatchEvent(
       new CustomEvent<TagsChangeEventDetail>("tags-change", {
         detail: { tags: this.tags },
-      })
+      }),
     );
   }
 }

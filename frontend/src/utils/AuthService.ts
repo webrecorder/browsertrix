@@ -95,7 +95,7 @@ export default class AuthService {
   }
 
   static createLoggedInEvent = (
-    detail?: LoggedInEventDetail
+    detail?: LoggedInEventDetail,
   ): CustomEvent<LoggedInEventDetail> =>
     new CustomEvent<LoggedInEventDetail>(AuthService.loggedInEvent, {
       bubbles: true,
@@ -104,7 +104,7 @@ export default class AuthService {
     });
 
   static createLogOutEvent = (
-    detail?: LogOutEventDetail
+    detail?: LogOutEventDetail,
   ): CustomEvent<LogOutEventDetail> =>
     new CustomEvent<LogOutEventDetail>(AuthService.logOutEvent, {
       bubbles: true,
@@ -113,7 +113,7 @@ export default class AuthService {
     });
 
   static createNeedLoginEvent = (
-    detail?: NeedLoginEventDetail
+    detail?: NeedLoginEventDetail,
   ): CustomEvent<NeedLoginEventDetail> =>
     new CustomEvent<NeedLoginEventDetail>(AuthService.needLoginEvent, {
       bubbles: true,
@@ -203,7 +203,7 @@ export default class AuthService {
             auth: AuthService.getCurrentTabAuth(),
           } as AuthResponseEventDetail);
         }
-      }
+      },
     );
 
     return authState;
@@ -256,7 +256,7 @@ export default class AuthService {
       (error) => {
         console.debug(error);
         return null;
-      }
+      },
     );
   }
 

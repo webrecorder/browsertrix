@@ -42,7 +42,7 @@ export class Code extends TailwindElement {
       language: this.language,
     }).value;
     return html`<pre
-      class="whitespace-pre-wrap text-neutral-800 m-0 font-monospace"
+      class="font-monospace m-0 whitespace-pre-wrap text-neutral-800"
     ><code>${staticHtml`${unsafeStatic(htmlStr)}`}</code></pre>`;
   }
 }

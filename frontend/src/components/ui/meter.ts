@@ -238,7 +238,7 @@ export class Meter extends LitElement {
       const entry = entries[0];
       const trackWidth = entry.contentBoxSize[0].inlineSize;
       this.repositionLabels(trackWidth);
-    }
+    },
   );
 
   private repositionLabels(trackWidth?: number) {

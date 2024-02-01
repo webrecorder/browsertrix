@@ -28,7 +28,7 @@ describe("browsertrix-app", () => {
         headers: { Authorization: "_fake_headers_" },
         tokenExpiresAt: 0,
         username: "test-auth@example.com",
-      })
+      }),
     );
     const el = await fixture("<browsertrix-app></browsertrix-app>");
     expect(el).lightDom.descendants("btrix-home");
@@ -86,7 +86,7 @@ describe("browsertrix-app", () => {
             giftedExecSecondsAvailable: {},
           },
         ],
-      } as APIUser)
+      } as APIUser),
     );
     stub(AuthService.prototype, "startFreshnessCheck");
     stub(window.sessionStorage, "getItem").callsFake((key) => {

@@ -212,20 +212,20 @@ function getLocalizedWeekDays() {
   // TODO accept locale from locale-picker
   const { format } = new Intl.DateTimeFormat(undefined, { weekday: "short" });
   return Array.from({ length: 7 }).map((x, day) =>
-    format(Date.now() - (now.getDay() - day) * 86400000)
+    format(Date.now() - (now.getDay() - day) * 86400000),
   );
 }
 
 function validURL(url: string) {
   return /((((https?):(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w\-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[.!/\\\w]*))?)/.test(
-    url
+    url,
   );
 }
 
 const trimArray = flow(uniq, compact);
 const urlListToArray = flow(
   (str: string) => (str.length ? str.trim().split(/\s+/g) : []),
-  trimArray
+  trimArray,
 );
 const mapSeedToUrl = (arr: Seed[]) =>
   arr.map((seed) => (typeof seed === "string" ? seed : seed.url));
@@ -378,7 +378,7 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   async willUpdate(
-    changedProperties: PropertyValues<this> & Map<string, unknown>
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (changedProperties.has("jobType") && this.jobType) {
       this.initializeEditor();
@@ -417,7 +417,7 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   async updated(
-    changedProperties: PropertyValues<this> & Map<string, unknown>
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (changedProperties.get("progressState") && this.progressState) {
       if (
@@ -429,7 +429,7 @@ export class CrawlConfigEditor extends LiteElement {
         // Focus on first field in section
         (await this.activeTabPanel)
           ?.querySelector<HTMLElement>(
-            "sl-input, sl-textarea, sl-select, sl-radio-group"
+            "sl-input, sl-textarea, sl-select, sl-radio-group",
           )
           ?.focus();
       }
@@ -440,7 +440,7 @@ export class CrawlConfigEditor extends LiteElement {
     // Focus on first field in section
     (await this.activeTabPanel)
       ?.querySelector<HTMLElement>(
-        "sl-input, sl-textarea, sl-select, sl-radio-group"
+        "sl-input, sl-textarea, sl-select, sl-radio-group",
       )
       ?.focus();
 
@@ -519,7 +519,7 @@ export class CrawlConfigEditor extends LiteElement {
     if (this.initialWorkflow.schedule) {
       formState.scheduleType = "cron";
       formState.scheduleFrequency = getScheduleInterval(
-        this.initialWorkflow.schedule
+        this.initialWorkflow.schedule,
       );
       const nextDate = getNextDate(this.initialWorkflow.schedule)!;
       formState.scheduleDayOfMonth = nextDate.getDate();
@@ -559,11 +559,11 @@ export class CrawlConfigEditor extends LiteElement {
       customIncludeUrlList: defaultFormState.customIncludeUrlList,
       crawlTimeoutMinutes: secondsToMinutes(
         this.initialWorkflow.crawlTimeout,
-        defaultFormState.crawlTimeoutMinutes
+        defaultFormState.crawlTimeoutMinutes,
       ),
       maxCrawlSizeGB: bytesToGB(
         this.initialWorkflow.maxCrawlSize,
-        defaultFormState.maxCrawlSizeGB
+        defaultFormState.maxCrawlSizeGB,
       ),
       behaviorTimeoutSeconds:
         seedsConfig.behaviorTimeout ?? defaultFormState.behaviorTimeoutSeconds,
@@ -618,7 +618,7 @@ export class CrawlConfigEditor extends LiteElement {
       confirmSettings: msg("Review Settings"),
     };
     let orderedTabNames = STEPS.filter(
-      (stepName) => defaultProgressState.tabs[stepName as StepName]
+      (stepName) => defaultProgressState.tabs[stepName as StepName],
     );
 
     if (this.configId) {
@@ -640,26 +640,26 @@ export class CrawlConfigEditor extends LiteElement {
           progressPanel=${ifDefined(
             this.configId
               ? undefined
-              : `newJobConfig-${this.progressState.activeTab}`
+              : `newJobConfig-${this.progressState.activeTab}`,
           )}
         >
-          <header slot="header" class="flex justify-between items-baseline">
+          <header slot="header" class="flex items-baseline justify-between">
             <h3 class="font-semibold">
               ${tabLabels[this.progressState.activeTab]}
             </h3>
-            <p class="text-xs text-neutral-500 font-normal">
+            <p class="text-xs font-normal text-neutral-500">
               ${msg(
                 html`Fields marked with
                   <span style="color:var(--sl-input-required-content-color)"
                     >*</span
                   >
-                  are required`
+                  are required`,
               )}
             </p>
           </header>
 
           ${orderedTabNames.map((tabName) =>
-            this.renderNavItem(tabName, tabLabels[tabName])
+            this.renderNavItem(tabName, tabLabels[tabName]),
           )}
 
           <btrix-tab-panel name="newJobConfig-crawlSetup" class="scroll-m-3">
@@ -668,13 +668,13 @@ export class CrawlConfigEditor extends LiteElement {
                 ${when(this.jobType === "url-list", this.renderUrlListSetup)}
                 ${when(
                   this.jobType === "seed-crawl",
-                  this.renderSeededCrawlSetup
+                  this.renderSeededCrawlSetup,
                 )}
                 ${when(this.jobType === "custom", () =>
-                  this.renderUrlListSetup(true)
+                  this.renderUrlListSetup(true),
                 )}
               `,
-              { isFirst: true }
+              { isFirst: true },
             )}
           </btrix-tab-panel>
           <btrix-tab-panel name="newJobConfig-crawlLimits" class="scroll-m-3">
@@ -745,7 +745,7 @@ export class CrawlConfigEditor extends LiteElement {
           <sl-icon
             name=${iconProps.name}
             library=${iconProps.library}
-            class="inline-block align-middle mr-1 text-base ${iconProps.class}"
+            class="${iconProps.class} mr-1 inline-block align-middle text-base"
           ></sl-icon>
         </sl-tooltip>
       `;
@@ -760,9 +760,9 @@ export class CrawlConfigEditor extends LiteElement {
       >
         ${icon}
         <span
-          class="inline-block align-middle whitespace-normal${this.configId
+          class="whitespace-normal${this.configId
             ? " ml-1"
-            : ""}"
+            : ""} inline-block align-middle"
         >
           ${content}
         </span>
@@ -772,16 +772,16 @@ export class CrawlConfigEditor extends LiteElement {
 
   private renderPanelContent(
     content: TemplateResult,
-    { isFirst = false, isLast = false } = {}
+    { isFirst = false, isLast = false } = {},
   ) {
     return html`
-      <div class="flex flex-col h-full min-h-[21rem]">
+      <div class="flex h-full min-h-[21rem] flex-col">
         <div
-          class="flex-1 p-6 grid grid-cols-5 gap-4 border rounded-lg border-b-0 rounded-b-none"
+          class="grid flex-1 grid-cols-5 gap-4 rounded-lg rounded-b-none border border-b-0 p-6"
         >
           ${content}
           ${when(this.serverError, () =>
-            this.renderErrorAlert(this.serverError!)
+            this.renderErrorAlert(this.serverError!),
           )}
         </div>
 
@@ -794,7 +794,7 @@ export class CrawlConfigEditor extends LiteElement {
     if (this.configId) {
       return html`
         <footer
-          class="px-6 py-4 flex gap-2 items-center justify-end border rounded-b-lg sticky bottom-0 bg-white z-50"
+          class="sticky bottom-0 z-50 flex items-center justify-end gap-2 rounded-b-lg border bg-white px-6 py-4"
         >
           <div class="mr-auto">${this.renderRunNowToggle()}</div>
           <aside class="text-xs text-neutral-500">
@@ -816,7 +816,7 @@ export class CrawlConfigEditor extends LiteElement {
     if (!this.configId) {
       return html`
         <footer
-          class="px-6 py-4 flex gap-2 items-center justify-end border sticky bottom-0 bg-white rounded-b-lg z-50"
+          class="sticky bottom-0 z-50 flex items-center justify-end gap-2 rounded-b-lg border bg-white px-6 py-4"
         >
           ${this.renderSteppedFooterButtons({ isFirst, isLast })}
         </footer>
@@ -824,7 +824,7 @@ export class CrawlConfigEditor extends LiteElement {
     }
 
     return html`
-      <div class="px-6 py-4 border-t flex gap-2 items-center justify-end">
+      <div class="flex items-center justify-end gap-2 border-t px-6 py-4">
         ${when(
           this.configId,
           () => html`
@@ -839,7 +839,7 @@ export class CrawlConfigEditor extends LiteElement {
               ${msg("Save Changes")}
             </sl-button>
           `,
-          () => this.renderSteppedFooterButtons({ isFirst, isLast })
+          () => this.renderSteppedFooterButtons({ isFirst, isLast }),
         )}
       </div>
     `;
@@ -920,7 +920,7 @@ export class CrawlConfigEditor extends LiteElement {
             {
               runNow: (e.target as SlSwitch).checked,
             },
-            true
+            true,
           );
         }}
       >
@@ -943,8 +943,8 @@ export class CrawlConfigEditor extends LiteElement {
 
   private renderHelpTextCol(content: TemplateResult | string, padTop = true) {
     return html`
-      <div class="col-span-5 md:col-span-2 flex${padTop ? " pt-6" : ""}">
-        <div class="text-base mr-2">
+      <div class="flex${padTop ? " pt-6" : ""} col-span-5 md:col-span-2">
+        <div class="mr-2 text-base">
           <sl-icon name="info-circle"></sl-icon>
         </div>
         <div class="mt-0.5 text-xs text-neutral-500">${content}</div>
@@ -1001,7 +1001,7 @@ https://example.com/path`}
       `)}
       ${this.renderHelpTextCol(
         msg(str`The crawler will visit and record each URL listed in the order
-        defined here. You can enter a maximum of ${URL_LIST_MAX_URLS.toLocaleString()} URLs, separated by a new line.`)
+        defined here. You can enter a maximum of ${URL_LIST_MAX_URLS.toLocaleString()} URLs, separated by a new line.`),
       )}
       ${when(
         isCustom,
@@ -1041,32 +1041,36 @@ https://example.com/path`}
             </sl-select>
           `)}
           ${this.renderHelpTextCol(
-            msg(`Tells the crawler which pages it can visit.`)
+            msg(`Tells the crawler which pages it can visit.`),
           )}
-        `
+        `,
       )}
-      ${this.renderFormCol(html`<sl-checkbox
-        name="includeLinkedPages"
-        ?checked=${this.formState.includeLinkedPages}
-      >
-        ${msg("Include any linked page")}
-      </sl-checkbox>`)}
+      ${this.renderFormCol(
+        html`<sl-checkbox
+          name="includeLinkedPages"
+          ?checked=${this.formState.includeLinkedPages}
+        >
+          ${msg("Include any linked page")}
+        </sl-checkbox>`,
+      )}
       ${this.renderHelpTextCol(
         msg(`If checked, the crawler will visit pages one link away from a Crawl
         URL.`),
-        false
+        false,
       )}
-      ${this.renderFormCol(html`<sl-checkbox
-        name="failOnFailedSeed"
-        ?checked=${this.formState.failOnFailedSeed}
-      >
-        ${msg("Fail crawl on failed URL")}
-      </sl-checkbox>`)}
+      ${this.renderFormCol(
+        html`<sl-checkbox
+          name="failOnFailedSeed"
+          ?checked=${this.formState.failOnFailedSeed}
+        >
+          ${msg("Fail crawl on failed URL")}
+        </sl-checkbox>`,
+      )}
       ${this.renderHelpTextCol(
         msg(
-          `If checked, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled.`
+          `If checked, the crawler will fail the entire crawl if any of the provided URLs are invalid or unsuccessfully crawled.`,
         ),
-        false
+        false,
       )}
       ${when(
         this.formState.includeLinkedPages || this.jobType === "custom",
@@ -1081,7 +1085,7 @@ https://example.com/path`}
               @on-change=${this.handleChangeRegex}
             ></btrix-queue-exclusion-table>
             <sl-button
-              class="w-full mt-1"
+              class="mt-1 w-full"
               @click=${() =>
                 this.updateFormState({
                   exclusions: [""],
@@ -1093,9 +1097,9 @@ https://example.com/path`}
           `)}
           ${this.renderHelpTextCol(
             msg(`Specify exclusion rules for what pages should not be visited.
-            Exclusions apply to all URLs.`)
+            Exclusions apply to all URLs.`),
           )}
-        `
+        `,
       )}
     `;
   };
@@ -1121,52 +1125,52 @@ https://example.com/path`}
       case "prefix":
         helpText = msg(
           html`Will crawl all pages and paths in the same directory, e.g.
-            <span class="text-blue-500 break-word break-word"
+            <span class="break-word break-word text-blue-500"
               >${exampleDomain}</span
-            ><span class="text-blue-500 font-medium break-word"
+            ><span class="break-word font-medium text-blue-500"
               >${examplePathname.slice(
                 0,
-                examplePathname.lastIndexOf("/")
+                examplePathname.lastIndexOf("/"),
               )}/</span
-            >`
+            >`,
         );
         break;
       case "host":
         helpText = msg(
           html`Will crawl all pages on
             <span class="text-blue-500">${exampleHost}</span> and ignore pages
-            on any subdomains.`
+            on any subdomains.`,
         );
         break;
       case "domain":
         helpText = msg(
           html`Will crawl all pages on
             <span class="text-blue-500">${exampleHost}</span> and
-            <span class="text-blue-500">subdomain.${exampleHost}</span>.`
+            <span class="text-blue-500">subdomain.${exampleHost}</span>.`,
         );
         break;
       case "page-spa":
         helpText = msg(
           html`Will only visit
-            <span class="text-blue-500 break-word"
+            <span class="break-word text-blue-500"
               >${exampleDomain}${examplePathname}</span
             >
             hash anchor links, e.g.
-            <span class="text-blue-500 break-word"
+            <span class="break-word text-blue-500"
               >${exampleDomain}${examplePathname}</span
-            ><span class="text-blue-500 font-medium break-word"
+            ><span class="break-word font-medium text-blue-500"
               >#example-page</span
-            >`
+            >`,
         );
         break;
       case "custom":
         helpText = msg(
           html`Will crawl all page URLs that begin with
-            <span class="text-blue-500 break-word"
+            <span class="break-word text-blue-500"
               >${exampleDomain}${examplePathname}</span
             >
             or any URL that begins with those specified in
-            <em>Extra URL Prefixes in Scope</em>`
+            <em>Extra URL Prefixes in Scope</em>`,
         );
         break;
       default:
@@ -1194,7 +1198,7 @@ https://example.com/path`}
               {
                 primarySeedUrl: inputEl.value,
               },
-              true
+              true,
             );
             if (!inputEl.checkValidity() && validURL(inputEl.value)) {
               inputEl.setCustomValidity("");
@@ -1241,7 +1245,7 @@ https://example.com/path`}
         </sl-select>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Tells the crawler which pages it can visit.`)
+        msg(`Tells the crawler which pages it can visit.`),
       )}
       ${when(
         DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType),
@@ -1253,7 +1257,7 @@ https://example.com/path`}
               value=${ifDefined(
                 this.formState.maxScopeDepth === null
                   ? undefined
-                  : this.formState.maxScopeDepth
+                  : this.formState.maxScopeDepth,
               )}
               placeholder=${msg("Default: Unlimited")}
               min="0"
@@ -1265,10 +1269,10 @@ https://example.com/path`}
           `)}
           ${this.renderHelpTextCol(
             msg(
-              `Limits how many hops away the crawler can visit while staying within the Start URL Scope.`
-            )
+              `Limits how many hops away the crawler can visit while staying within the Start URL Scope.`,
+            ),
           )}
-        `
+        `,
       )}
       ${when(
         this.formState.scopeType === "custom",
@@ -1288,9 +1292,9 @@ https://example.net`}
           `)}
           ${this.renderHelpTextCol(
             msg(`If the crawler finds pages outside of the Start URL Scope they
-            will only be saved if they begin with URLs listed here.`)
+            will only be saved if they begin with URLs listed here.`),
           )}
-        `
+        `,
       )}
       ${this.renderFormCol(html`
         <sl-checkbox
@@ -1303,7 +1307,7 @@ https://example.net`}
       ${this.renderHelpTextCol(
         msg(`If checked, the crawler will visit pages one link away outside of
         Start URL Scope.`),
-        false
+        false,
       )}
       ${this.renderFormCol(html`
         <sl-checkbox name="useSitemap" ?checked=${this.formState.useSitemap}>
@@ -1312,9 +1316,9 @@ https://example.net`}
       `)}
       ${this.renderHelpTextCol(
         msg(
-          `If checked, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if present.`
+          `If checked, the crawler will check for a sitemap at /sitemap.xml and use it to discover pages to crawl if present.`,
         ),
-        false
+        false,
       )}
       <div class="col-span-5">
         <btrix-details ?open=${exclusions.length > 0}>
@@ -1336,7 +1340,7 @@ https://example.net`}
                 @on-change=${this.handleChangeRegex}
               ></btrix-queue-exclusion-table>
               <sl-button
-                class="w-full mt-1"
+                class="mt-1 w-full"
                 @click=${() =>
                   this.updateFormState({
                     exclusions: [""],
@@ -1348,8 +1352,8 @@ https://example.net`}
             `)}
             ${this.renderHelpTextCol(
               msg(
-                `Specify exclusion rules for what pages should not be visited.`
-              )
+                `Specify exclusion rules for what pages should not be visited.`,
+              ),
             )}
           </div></btrix-details
         >
@@ -1381,7 +1385,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                     if (!inputEl.value) return;
                     const { isValid, helpText } = this.validateUrlList(
                       inputEl.value,
-                      maxAdditionalURls
+                      maxAdditionalURls,
                     );
                     inputEl.helpText = helpText;
                     if (isValid) {
@@ -1402,7 +1406,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   if (!inputEl.value) return;
                   const { isValid, helpText } = this.validateUrlList(
                     inputEl.value,
-                    maxAdditionalURls
+                    maxAdditionalURls,
                   );
                   inputEl.helpText = helpText;
                   if (isValid) {
@@ -1415,7 +1419,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             `)}
             ${this.renderHelpTextCol(
               msg(str`The crawler will visit and record each URL listed here. Other
-              links on these pages will not be crawled. You can enter up to ${maxAdditionalURls.toLocaleString()} URLs.`)
+              links on these pages will not be crawled. You can enter up to ${maxAdditionalURls.toLocaleString()} URLs.`),
             )}
           </div>
         </btrix-details>
@@ -1428,7 +1432,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const minPages = Math.max(
       1,
       urlListToArray(this.formState.urlList).length +
-        (this.jobType === "seed-crawl" ? 1 : 0)
+        (this.jobType === "seed-crawl" ? 1 : 0),
     );
     const onInputMinMax = async (e: CustomEvent) => {
       const inputEl = e.target as SlInput;
@@ -1440,11 +1444,11 @@ https://archiveweb.page/images/${"logo.svg"}`}
         const max = inputEl.max;
         if (min && value < +min) {
           helpText = msg(
-            str`Must be more than minimum of ${(+min).toLocaleString()}`
+            str`Must be more than minimum of ${(+min).toLocaleString()}`,
           );
         } else if (max && value > +max) {
           helpText = msg(
-            str`Must be less than maximum of ${(+max).toLocaleString()}`
+            str`Must be less than maximum of ${(+max).toLocaleString()}`,
           );
         }
       }
@@ -1478,13 +1482,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
               this.orgDefaults?.maxPagesPerCrawl &&
                 this.orgDefaults.maxPagesPerCrawl < Infinity
                 ? this.orgDefaults.maxPagesPerCrawl
-                : undefined
+                : undefined,
             )}
             placeholder=${this.orgDefaults?.maxPagesPerCrawl
               ? this.orgDefaults.maxPagesPerCrawl === Infinity
                 ? msg("Default: Unlimited")
                 : msg(
-                    str`Default: ${this.orgDefaults.maxPagesPerCrawl.toLocaleString()}`
+                    str`Default: ${this.orgDefaults.maxPagesPerCrawl.toLocaleString()}`,
                   )
               : ""}
             @sl-input=${onInputMinMax}
@@ -1495,7 +1499,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(`Adds a hard limit on the number of pages
-      that will be crawled.`)
+      that will be crawled.`),
       )}
       ${this.renderFormCol(html`
         <sl-input
@@ -1511,7 +1515,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Gracefully stop the crawler after a specified time limit.`)
+        msg(`Gracefully stop the crawler after a specified time limit.`),
       )}
       ${this.renderFormCol(html`
         <sl-input
@@ -1527,7 +1531,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Gracefully stop the crawler after a specified size limit.`)
+        msg(`Gracefully stop the crawler after a specified size limit.`),
       )}
       ${this.renderFormCol(html`
         <sl-radio-group
@@ -1546,7 +1550,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(`Increasing parallel crawler instances can speed up crawls, but may
-        increase the chances of getting rate limited.`)
+        increase the chances of getting rate limited.`),
       )}
       ${this.renderSectionHeading(msg("Per-Page Limits"))}
       ${this.renderFormCol(html`
@@ -1557,7 +1561,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           label=${msg("Page Load Timeout")}
           placeholder=${this.orgDefaults?.pageLoadTimeoutSeconds
             ? msg(
-                str`Default: ${this.orgDefaults.pageLoadTimeoutSeconds.toLocaleString()}`
+                str`Default: ${this.orgDefaults.pageLoadTimeoutSeconds.toLocaleString()}`,
               )
             : "Default: Unlimited"}
           value=${ifDefined(this.formState.pageLoadTimeoutSeconds ?? undefined)}
@@ -1569,8 +1573,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(
-          `Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.`
-        )
+          `Limits amount of time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.`,
+        ),
       )}
       ${this.renderFormCol(html`
         <sl-input
@@ -1580,7 +1584,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           label=${msg("Behavior Timeout")}
           placeholder=${this.orgDefaults?.behaviorTimeoutSeconds
             ? msg(
-                str`Default: ${this.orgDefaults.behaviorTimeoutSeconds.toLocaleString()}`
+                str`Default: ${this.orgDefaults.behaviorTimeoutSeconds.toLocaleString()}`,
               )
             : msg("Unlimited")}
           value=${ifDefined(this.formState.behaviorTimeoutSeconds ?? undefined)}
@@ -1591,19 +1595,21 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Limits how long behaviors can run on each page.`)
+        msg(`Limits how long behaviors can run on each page.`),
       )}
-      ${this.renderFormCol(html`<sl-checkbox
-        name="autoscrollBehavior"
-        ?checked=${this.formState.autoscrollBehavior}
-      >
-        ${msg("Auto-scroll behavior")}
-      </sl-checkbox>`)}
+      ${this.renderFormCol(
+        html`<sl-checkbox
+          name="autoscrollBehavior"
+          ?checked=${this.formState.autoscrollBehavior}
+        >
+          ${msg("Auto-scroll behavior")}
+        </sl-checkbox>`,
+      )}
       ${this.renderHelpTextCol(
         msg(
-          `When enabled the browser will automatically scroll to the end of the page.`
+          `When enabled the browser will automatically scroll to the end of the page.`,
         ),
-        false
+        false,
       )}
       ${this.renderFormCol(html`
         <sl-input
@@ -1620,8 +1626,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(
-          `Waits on the page after behaviors are complete before moving onto the next page. Can be helpful for rate limiting.`
-        )
+          `Waits on the page after behaviors are complete before moving onto the next page. Can be helpful for rate limiting.`,
+        ),
       )}
     `;
   }
@@ -1642,7 +1648,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(`Choose a custom profile to make use of saved cookies and logged-in
-        accounts.`)
+        accounts.`),
       )}
       ${this.renderFormCol(html`
         <btrix-select-crawler
@@ -1660,8 +1666,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${this.showCrawlerChannels
         ? this.renderHelpTextCol(
             msg(
-              `Choose a Browsertrix Crawler Release Channel. If available, other versions may provide new/experimental crawling features.`
-            )
+              `Choose a Browsertrix Crawler Release Channel. If available, other versions may provide new/experimental crawling features.`,
+            ),
           )
         : html``}
       ${this.renderFormCol(html`
@@ -1670,15 +1676,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-checkbox>
       `)}
       ${this.renderHelpTextCol(
-        msg(html`Blocks advertising content from being loaded. Uses
-          <a
-            href="https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
-            class="text-blue-600 hover:text-blue-500"
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            >Steven Black’s Hosts file</a
-          >.`),
-        false
+        msg(
+          html`Blocks advertising content from being loaded. Uses
+            <a
+              href="https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
+              class="text-blue-600 hover:text-blue-500"
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              >Steven Black’s Hosts file</a
+            >.`,
+        ),
+        false,
       )}
       ${this.renderFormCol(html`
         <sl-input
@@ -1691,15 +1699,17 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-input>
       `)}
       ${this.renderHelpTextCol(
-        msg(html`Set custom user agent for crawler browsers to use in requests.
-          For common user agents see
-          <a
-            href="https://www.useragents.me/"
-            class="text-blue-600 hover:text-blue-500"
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            >Useragents.me</a
-          >.`)
+        msg(
+          html`Set custom user agent for crawler browsers to use in requests.
+            For common user agents see
+            <a
+              href="https://www.useragents.me/"
+              class="text-blue-600 hover:text-blue-500"
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              >Useragents.me</a
+            >.`,
+        ),
       )}
       ${this.renderFormCol(html`
         <btrix-language-select
@@ -1715,7 +1725,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(`Websites that observe the browser’s language setting may serve
-        content in that language if available.`)
+        content in that language if available.`),
       )}
     `;
   }
@@ -1739,8 +1749,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(
-          `Configure crawls to run every day, week, or month at a specified time.`
-        )
+          `Configure crawls to run every day, week, or month at a specified time.`,
+        ),
       )}
       ${when(this.formState.scheduleType === "cron", this.renderScheduleCron)}
     `;
@@ -1773,7 +1783,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         </sl-select>
       `)}
       ${this.renderHelpTextCol(
-        msg(`Limit the frequency for how often a crawl will run.`)
+        msg(`Limit the frequency for how often a crawl will run.`),
       )}
       ${when(
         this.formState.scheduleFrequency === "weekly",
@@ -1790,14 +1800,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
             >
               ${this.daysOfWeek.map(
                 (label, day) =>
-                  html`<sl-radio-button value=${day}>${label}</sl-radio-button>`
+                  html`<sl-radio-button value=${day}
+                    >${label}</sl-radio-button
+                  >`,
               )}
             </sl-radio-group>
           `)}
           ${this.renderHelpTextCol(
-            msg(`What day of the week should a crawl run on?`)
+            msg(`What day of the week should a crawl run on?`),
           )}
-        `
+        `,
       )}
       ${when(
         this.formState.scheduleFrequency === "monthly",
@@ -1816,9 +1828,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
             </sl-input>
           `)}
           ${this.renderHelpTextCol(
-            msg(`What day of the month should a crawl run on?`)
+            msg(`What day of the month should a crawl run on?`),
           )}
-        `
+        `,
       )}
       ${this.renderFormCol(html`
         <btrix-time-input
@@ -1833,7 +1845,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         >
           <span slot="label">${msg("Start Time")}</span>
         </btrix-time-input>
-        <div class="text-xs text-neutral-500 mt-3">
+        <div class="mt-3 text-xs text-neutral-500">
           <p class="mb-1">
             ${msg(
               html`Schedule:
@@ -1841,7 +1853,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   >${utcSchedule
                     ? humanizeSchedule(utcSchedule)
                     : msg("Invalid date")}</span
-                >.`
+                >.`,
             )}
           </p>
           <p>
@@ -1851,13 +1863,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   >${utcSchedule
                     ? humanizeNextDate(utcSchedule)
                     : msg("Invalid date")}</span
-                >.`
+                >.`,
             )}
           </p>
         </div>
       `)}
       ${this.renderHelpTextCol(
-        msg(`A crawl will run at this time in your current timezone.`)
+        msg(`A crawl will run at this time in your current timezone.`),
       )}
     `;
   };
@@ -1878,7 +1890,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(`Customize this Workflow's name. Workflows are named after
-        the first Crawl URL by default.`)
+        the first Crawl URL by default.`),
       )}
       ${this.renderFormCol(html`
         <sl-textarea
@@ -1889,55 +1901,51 @@ https://archiveweb.page/images/${"logo.svg"}`}
           value=${ifDefined(
             this.formState.description === null
               ? undefined
-              : this.formState.description
+              : this.formState.description,
           )}
           help-text=${this.validateDescriptionMax.helpText}
           @sl-input=${this.validateDescriptionMax.validate}
         ></sl-textarea>
       `)}
       ${this.renderHelpTextCol(msg(`Provide details about this Workflow.`))}
-      ${this.renderFormCol(
-        html`
-          <btrix-tag-input
-            .initialTags=${this.formState.tags}
-            .tagOptions=${this.tagOptions}
-            @tag-input=${this.onTagInput}
-            @tags-change=${(e: TagsChangeEvent) =>
-              this.updateFormState(
-                {
-                  tags: e.detail.tags,
-                },
-                true
-              )}
-          ></btrix-tag-input>
-        `
-      )}
+      ${this.renderFormCol(html`
+        <btrix-tag-input
+          .initialTags=${this.formState.tags}
+          .tagOptions=${this.tagOptions}
+          @tag-input=${this.onTagInput}
+          @tags-change=${(e: TagsChangeEvent) =>
+            this.updateFormState(
+              {
+                tags: e.detail.tags,
+              },
+              true,
+            )}
+        ></btrix-tag-input>
+      `)}
       ${this.renderHelpTextCol(
         msg(`Create or assign this crawl (and its outputs) to one or more tags
-        to help organize your archived items.`)
+        to help organize your archived items.`),
       )}
-      ${this.renderFormCol(
-        html`
-          <btrix-collections-add
-            .authState=${this.authState}
-            .initialCollections=${this.formState.autoAddCollections}
-            .orgId=${this.orgId}
-            .configId=${this.configId}
-            emptyText=${msg("Search for a Collection to auto-add crawls")}
-            @collections-change=${(e: CollectionsChangeEvent) =>
-              this.updateFormState(
-                {
-                  autoAddCollections: e.detail.collections,
-                },
-                true
-              )}
-          ></btrix-collections-add>
-        `
-      )}
+      ${this.renderFormCol(html`
+        <btrix-collections-add
+          .authState=${this.authState}
+          .initialCollections=${this.formState.autoAddCollections}
+          .orgId=${this.orgId}
+          .configId=${this.configId}
+          emptyText=${msg("Search for a Collection to auto-add crawls")}
+          @collections-change=${(e: CollectionsChangeEvent) =>
+            this.updateFormState(
+              {
+                autoAddCollections: e.detail.collections,
+              },
+              true,
+            )}
+        ></btrix-collections-add>
+      `)}
       ${this.renderHelpTextCol(
         msg(`Automatically add crawls from this workflow to one or more collections
           as soon as they complete.
-          Individual crawls can be selected from within the collection later.`)
+          Individual crawls can be selected from within the collection later.`),
       )}
     `;
   }
@@ -1955,14 +1963,18 @@ https://archiveweb.page/images/${"logo.svg"}`}
       const crawlSetupUrl = `${window.location.href.split("#")[0]}#crawlSetup`;
       const errorMessage = this.hasRequiredFields()
         ? msg(
-            "There are issues with this Workflow. Please go through previous steps and fix all issues to continue."
+            "There are issues with this Workflow. Please go through previous steps and fix all issues to continue.",
           )
-        : msg(html`There is an issue with this Crawl Workflow:<br /><br />Crawl
-            URL(s) required in
-            <a href="${crawlSetupUrl}" class="bold underline hover:no-underline"
-              >Crawl Setup</a
-            >. <br /><br />
-            Please fix to continue.`);
+        : msg(
+            html`There is an issue with this Crawl Workflow:<br /><br />Crawl
+              URL(s) required in
+              <a
+                href="${crawlSetupUrl}"
+                class="bold underline hover:no-underline"
+                >Crawl Setup</a
+              >. <br /><br />
+              Please fix to continue.`,
+          );
 
       return this.renderErrorAlert(errorMessage);
     });
@@ -2043,7 +2055,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         {
           exclusions: this.formState.exclusions,
         },
-        true
+        true,
       );
     } else {
       const { exclusions: exclude } = this.formState;
@@ -2051,7 +2063,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         {
           exclusions: [...exclude.slice(0, index), ...exclude.slice(index + 1)],
         },
-        true
+        true,
       );
     }
 
@@ -2071,7 +2083,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       {
         exclusions: nextExclusions,
       },
-      true
+      true,
     );
   }
 
@@ -2199,7 +2211,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     const currentTab = this.progressState.activeTab as StepName;
     const activePanel = this.formElem.querySelector(
-      `btrix-tab-panel[name="newJobConfig-${currentTab}"]`
+      `btrix-tab-panel[name="newJobConfig-${currentTab}"]`,
     );
     const invalidElems = [...activePanel!.querySelectorAll("[data-invalid]")];
 
@@ -2259,7 +2271,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             {
               method: "PATCH",
               body: JSON.stringify(config),
-            }
+            },
           )
         : this.apiFetch<CrawlConfigResponse>(
             `/orgs/${this.orgId}/crawlconfigs/`,
@@ -2267,7 +2279,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             {
               method: "POST",
               body: JSON.stringify(config),
-            }
+            },
           ));
 
       const crawlId = data.run_now_job || data.started || null;
@@ -2292,7 +2304,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           crawlId && !storageQuotaReached && !executionMinutesQuotaReached
             ? "#watch"
             : ""
-        }`
+        }`,
       );
     } catch (e) {
       if (isApiError(e)) {
@@ -2300,7 +2312,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           this.notify({
             title: msg("Workflow saved without starting crawl."),
             message: msg(
-              "Could not run crawl with new workflow settings due to already running crawl."
+              "Could not run crawl with new workflow settings due to already running crawl.",
             ),
             variant: "warning",
             icon: "exclamation-circle",
@@ -2332,7 +2344,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
    */
   private formatConfigServerError(details: Detail[]): TemplateResult {
     const detailsWithoutDictError = details.filter(
-      ({ type }) => type !== "type_error.dict"
+      ({ type }) => type !== "type_error.dict",
     );
 
     const renderDetail = ({ loc, msg: detailMsg }: Detail) => html`
@@ -2347,9 +2359,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
     return html`
       ${msg(
-        "Couldn't save Workflow. Please fix the following Workflow issues:"
+        "Couldn't save Workflow. Please fix the following Workflow issues:",
       )}
-      <ul class="list-disc w-fit pl-4">
+      <ul class="w-fit list-disc pl-4">
         ${detailsWithoutDictError.map(renderDetail)}
       </ul>
     `;
@@ -2357,7 +2369,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
 
   private validateUrlList(
     value: string,
-    max = URL_LIST_MAX_URLS
+    max = URL_LIST_MAX_URLS,
   ): { isValid: boolean; helpText: string } {
     const urlList = urlListToArray(value);
     let isValid = true;
@@ -2368,14 +2380,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
     if (urlList.length > max) {
       isValid = false;
       helpText = msg(
-        str`Please shorten list to ${max.toLocaleString()} or fewer URLs.`
+        str`Please shorten list to ${max.toLocaleString()} or fewer URLs.`,
       );
     } else {
       const invalidUrl = urlList.find((url) => !validURL(url));
       if (invalidUrl) {
         isValid = false;
         helpText = msg(
-          str`Please remove or fix the following invalid URL: ${invalidUrl}`
+          str`Please remove or fix the following invalid URL: ${invalidUrl}`,
         );
       }
     }
@@ -2393,7 +2405,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     try {
       const tags = await this.apiFetch<string[]>(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
-        this.authState!
+        this.authState!,
       );
 
       // Update search/filter collection
@@ -2507,7 +2519,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         [K in StepName]?: Partial<TabState>;
       };
     },
-    shallowMerge = false
+    shallowMerge = false,
   ) {
     if (shallowMerge) {
       this.progressState = {

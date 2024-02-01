@@ -132,7 +132,7 @@ export class FileUploader extends TailwindElement {
         style="--width: ${uploadInProgress ? 40 : 60}rem;"
       >
         ${when(this.isDialogVisible, () =>
-          uploadInProgress ? this.renderUploading() : this.renderForm()
+          uploadInProgress ? this.renderUploading() : this.renderForm(),
         )}
       </btrix-dialog>
     `;
@@ -145,18 +145,18 @@ export class FileUploader extends TailwindElement {
         @submit=${this.onSubmit}
         @reset=${this.tryRequestClose}
       >
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
           <section class="col-span-1 flex flex-col gap-3">
-            <h3 class="flex-0 text-lg leading-none font-semibold">
+            <h3 class="flex-0 text-lg font-semibold leading-none">
               ${msg("File to Upload")}
             </h3>
-            <main class="flex-1 border rounded p-3">${this.renderFiles()}</main>
+            <main class="flex-1 rounded border p-3">${this.renderFiles()}</main>
           </section>
           <section class="col-span-1 flex flex-col gap-3">
-            <h3 class="flex-0 text-lg leading-none font-semibold">
+            <h3 class="flex-0 text-lg font-semibold leading-none">
               ${msg("Metadata")}
             </h3>
-            <main class="flex-1 border rounded py-3 px-4">
+            <main class="flex-1 rounded border px-4 py-3">
               ${this.renderMetadata()}
             </main>
           </section>
@@ -183,7 +183,7 @@ export class FileUploader extends TailwindElement {
             // incorrect getRootNode in Chrome
             const form = await this.form;
             const submitInput = form.querySelector<HTMLInputElement>(
-              'input[type="submit"]'
+              'input[type="submit"]',
             )!;
             form.requestSubmit(submitInput);
           }}
@@ -196,7 +196,7 @@ export class FileUploader extends TailwindElement {
   private renderFiles() {
     if (!this.fileList.length) {
       return html`
-        <div class="h-full flex flex-col gap-3 items-center justify-center p-5">
+        <div class="flex h-full flex-col items-center justify-center gap-3 p-5">
           <label>
             <input
               class="sr-only"
@@ -226,10 +226,11 @@ export class FileUploader extends TailwindElement {
     return html`
       <btrix-file-list>
         ${Array.from(this.fileList).map(
-          (file) => html`<btrix-file-list-item
-            .file=${file}
-            @on-remove=${this.handleRemoveFile}
-          ></btrix-file-list-item>`
+          (file) =>
+            html`<btrix-file-list-item
+              .file=${file}
+              @on-remove=${this.handleRemoveFile}
+            ></btrix-file-list-item>`,
         )}
       </btrix-file-list>
     `;
@@ -242,7 +243,7 @@ export class FileUploader extends TailwindElement {
         <sl-input label="Name" name="name" required></sl-input>
       </div>
       <sl-textarea
-        class="mb-3 with-max-help-text"
+        class="with-max-help-text mb-3"
         name="description"
         label=${msg("Description")}
         rows="3"
@@ -275,18 +276,19 @@ export class FileUploader extends TailwindElement {
   private renderUploading() {
     if (this.isConfirmingCancel) {
       return html`
-        <div class="p-5 flex flex-col items-center gap-5">
-          <p class="text-lg leading-none font-semibold">
+        <div class="flex flex-col items-center gap-5 p-5">
+          <p class="text-lg font-semibold leading-none">
             ${msg("Cancel this upload?")}
           </p>
           <div class="w-full">
             <btrix-file-list>
               ${Array.from(this.fileList).map(
-                (file) => html`<btrix-file-list-item
-                  .file=${file}
-                  progressValue=${this.progress}
-                  @on-remove=${this.handleRemoveFile}
-                ></btrix-file-list-item>`
+                (file) =>
+                  html`<btrix-file-list-item
+                    .file=${file}
+                    progressValue=${this.progress}
+                    @on-remove=${this.handleRemoveFile}
+                  ></btrix-file-list-item>`,
               )}
             </btrix-file-list>
           </div>
@@ -313,7 +315,7 @@ export class FileUploader extends TailwindElement {
     }
     return html`
       <section class="flex flex-col gap-3">
-        <h4 class="flex-0 text-lg leading-none font-semibold">
+        <h4 class="flex-0 text-lg font-semibold leading-none">
           ${msg("Uploading File")}
         </h4>
         <p class="text-neutral-500">
@@ -322,11 +324,12 @@ export class FileUploader extends TailwindElement {
         <main class="flex-1 overflow-auto">
           <btrix-file-list>
             ${Array.from(this.fileList).map(
-              (file) => html`<btrix-file-list-item
-                .file=${file}
-                progressValue=${this.progress}
-                @on-remove=${this.handleRemoveFile}
-              ></btrix-file-list-item>`
+              (file) =>
+                html`<btrix-file-list-item
+                  .file=${file}
+                  progressValue=${this.progress}
+                  @on-remove=${this.handleRemoveFile}
+                ></btrix-file-list-item>`,
             )}
           </btrix-file-list>
         </main>
@@ -373,7 +376,7 @@ export class FileUploader extends TailwindElement {
 
   private requestClose() {
     this.dispatchEvent(
-      new CustomEvent("request-close") as FileUploaderRequestCloseEvent
+      new CustomEvent("request-close") as FileUploaderRequestCloseEvent,
     );
   }
 
@@ -387,7 +390,7 @@ export class FileUploader extends TailwindElement {
     try {
       const tags = await this.api.fetch<never>(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
-        this.authState!
+        this.authState!,
       );
 
       // Update search/filter collection
@@ -414,7 +417,7 @@ export class FileUploader extends TailwindElement {
           fileName: file.name,
           fileSize: file.size,
         },
-      }) as FileUploaderUploadedEvent
+      }) as FileUploaderUploadedEvent,
     );
 
     const { name, description } = serialize(formEl);
@@ -429,7 +432,7 @@ export class FileUploader extends TailwindElement {
 
       const data = await this.upload(
         `orgs/${this.orgId}/uploads/stream?${query}`,
-        file
+        file,
       );
 
       this.uploadRequest = null;
@@ -440,7 +443,7 @@ export class FileUploader extends TailwindElement {
           new CustomEvent("btrix-storage-quota-update", {
             detail: { reached: true },
             bubbles: true,
-          })
+          }),
         );
       }
 
@@ -451,18 +454,19 @@ export class FileUploader extends TailwindElement {
               fileName: file.name,
               fileSize: file.size,
             },
-          }) as FileUploaderUploadedEvent
+          }) as FileUploaderUploadedEvent,
         );
         this.requestClose();
         this.notify.toast({
-          message: msg(html`Successfully uploaded
-            <strong>${name}</strong>.<br />
-            <a
-              class="underline hover:no-underline"
-              href="${this.navigate.orgBasePath}/items/upload/${data.id}"
-              @click="${this.navigate.link}"
-              >View Item</a
-            > `),
+          message: msg(
+            html`Successfully uploaded <strong>${name}</strong>.<br />
+              <a
+                class="underline hover:no-underline"
+                href="${this.navigate.orgBasePath}/items/upload/${data.id}"
+                @click="${this.navigate.link}"
+                >View Item</a
+              > `,
+          ),
           variant: "success",
           icon: "check2-circle",
         });
@@ -477,13 +481,13 @@ export class FileUploader extends TailwindElement {
         console.debug(err);
         if (err === AbortReason.QuotaReached) {
           message = msg(
-            "Your org does not have enough storage to upload this file."
+            "Your org does not have enough storage to upload this file.",
           );
           this.dispatchEvent(
             new CustomEvent("btrix-storage-quota-update", {
               detail: { reached: true },
               bubbles: true,
-            })
+            }),
           );
         }
         this.notify.toast({
@@ -499,7 +503,7 @@ export class FileUploader extends TailwindElement {
   // Use XHR to get upload progress
   private upload(
     url: string,
-    file: File
+    file: File,
   ): Promise<{ id: string; added: boolean; storageQuotaReached: boolean }> {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -516,7 +520,7 @@ export class FileUploader extends TailwindElement {
               id: string;
               added: boolean;
               storageQuotaReached: boolean;
-            }
+            },
           );
         }
         if (xhr.status === 403) {
@@ -528,7 +532,7 @@ export class FileUploader extends TailwindElement {
           new APIError({
             message: xhr.statusText,
             status: xhr.status,
-          })
+          }),
         );
       });
       xhr.addEventListener("abort", () => {
