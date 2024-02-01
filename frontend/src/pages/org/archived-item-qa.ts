@@ -86,7 +86,7 @@ export class ArchivedItemQA extends TailwindElement {
   private readonly notify = new NotifyController(this);
 
   protected willUpdate(
-    changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>
+    changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
   ): void {
     if (changedProperties.has("itemId") && this.itemId) {
       void this.fetchArchivedItem();
@@ -99,7 +99,7 @@ export class ArchivedItemQA extends TailwindElement {
     return html`
       <nav class="mb-7">
         <a
-          class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
+          class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
           href=${`${crawlBaseUrl}`}
           @click=${this.navigate.link}
         >
@@ -143,7 +143,7 @@ export class ArchivedItemQA extends TailwindElement {
                 ["screenshots", this.renderScreenshots],
                 ["replay", this.renderReplay],
               ],
-              () => html`<btrix-not-found></btrix-not-found>`
+              () => html`<btrix-not-found></btrix-not-found>`,
             )}
           </div>
         </section>
