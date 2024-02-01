@@ -90,7 +90,7 @@ export class SelectBrowserProfile extends LiteElement {
                   ></sl-format-date>
                 </div></div
             ></sl-option>
-          `
+          `,
         )}
         ${this.browserProfiles && !this.browserProfiles.length
           ? this.renderNoProfiles()
@@ -106,7 +106,7 @@ export class SelectBrowserProfile extends LiteElement {
 
     return html`
       <div
-        class="mt-2 border bg-neutral-50 rounded p-2 text-sm flex justify-between"
+        class="mt-2 flex justify-between rounded border bg-neutral-50 p-2 text-sm"
       >
         ${this.selectedProfile.description
           ? html`<em class="text-slate-500"
@@ -118,7 +118,7 @@ export class SelectBrowserProfile extends LiteElement {
           class="font-medium text-primary hover:text-indigo-500"
           target="_blank"
         >
-          <span class="inline-block align-middle mr-1"
+          <span class="mr-1 inline-block align-middle"
             >${msg("View profile")}</span
           >
           <sl-icon
@@ -142,7 +142,7 @@ export class SelectBrowserProfile extends LiteElement {
           target="_blank"
           @click=${(e: Event) => {
             const select = (e.target as HTMLElement).closest<SlSelect>(
-              "sl-select"
+              "sl-select",
             );
             if (select) {
               select.blur();
@@ -165,7 +165,7 @@ export class SelectBrowserProfile extends LiteElement {
 
   private onChange(e: Event) {
     this.selectedProfile = this.browserProfiles?.find(
-      ({ id }) => id === (e.target as SlSelect | null)!.value
+      ({ id }) => id === (e.target as SlSelect | null)!.value,
     );
 
     this.dispatchEvent(
@@ -173,7 +173,7 @@ export class SelectBrowserProfile extends LiteElement {
         detail: {
           value: this.selectedProfile,
         },
-      })
+      }),
     );
   }
 
@@ -185,12 +185,12 @@ export class SelectBrowserProfile extends LiteElement {
       const data = await this.getProfiles();
 
       this.browserProfiles = orderBy(["name", "created"])(["asc", "desc"])(
-        data
+        data,
       ) as Profile[];
 
       if (this.profileId && !this.selectedProfile) {
         this.selectedProfile = this.browserProfiles.find(
-          ({ id }) => id === this.profileId
+          ({ id }) => id === this.profileId,
         );
       }
     } catch (e) {
@@ -205,7 +205,7 @@ export class SelectBrowserProfile extends LiteElement {
   private async getProfiles() {
     const data = await this.apiFetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles`,
-      this.authState!
+      this.authState!,
     );
 
     return data.items;

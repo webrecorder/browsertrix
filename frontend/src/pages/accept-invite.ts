@@ -44,7 +44,7 @@ export class AcceptInvite extends LiteElement {
 
   private get isLoggedIn(): boolean {
     return Boolean(
-      this.authState && this.email && this.authState.username === this.email
+      this.authState && this.email && this.authState.username === this.email,
     );
   }
 
@@ -61,8 +61,8 @@ export class AcceptInvite extends LiteElement {
 
       this.navTo(
         `/log-in?redirectUrl=${encodeURIComponent(
-          `${window.location.pathname}${window.location.search}`
-        )}`
+          `${window.location.pathname}${window.location.search}`,
+        )}`,
       );
     }
   }
@@ -82,7 +82,7 @@ export class AcceptInvite extends LiteElement {
 
     const hasInviteInfo = Boolean(this.inviteInfo.inviterEmail);
     const placeholder = html`<span
-      class="inline-block bg-gray-100 rounded-full"
+      class="inline-block rounded-full bg-gray-100"
       style="width: 6em"
       >&nbsp;</span
     >`;
@@ -92,24 +92,24 @@ export class AcceptInvite extends LiteElement {
     }
 
     return html`
-      <article class="w-full p-5 grid gap-5 justify-center text-center">
+      <article class="grid w-full justify-center gap-5 p-5 text-center">
         ${serverError}
 
-        <main class="md:bg-white md:shadow-xl md:rounded-lg md:px-12 md:py-12">
+        <main class="md:rounded-lg md:bg-white md:px-12 md:py-12 md:shadow-xl">
           <div class="mb-3 text-sm text-gray-400">
             ${msg("Invited by ")}
             ${this.inviteInfo.inviterName ||
             this.inviteInfo.inviterEmail ||
             placeholder}
           </div>
-          <p class="text-xl font-semibold mb-5">
+          <p class="mb-5 text-xl font-semibold">
             ${msg(
               html`You've been invited to join
-                <span class="text-primary break-words"
+                <span class="break-words text-primary"
                   >${hasInviteInfo
                     ? this.inviteInfo.orgName || msg("Browsertrix Cloud")
                     : placeholder}</span
-                >`
+                >`,
             )}
           </p>
 
@@ -130,7 +130,7 @@ export class AcceptInvite extends LiteElement {
     try {
       const data = await this.apiFetch<InviteInfo>(
         `/users/me/invite/${this.token}`,
-        this.authState
+        this.authState,
       );
 
       this.inviteInfo = {

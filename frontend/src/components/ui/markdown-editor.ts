@@ -95,7 +95,7 @@ export class MarkdownEditor extends LitElement {
               }
             </style>
             <div class="markdown-editor font-sm"></div>
-          `
+          `,
         )}
         ${this.maxlength
           ? html`<div class="form-help-text">
@@ -113,7 +113,7 @@ export class MarkdownEditor extends LitElement {
       onChange: async () => {
         const value = editor.getMarkdown();
         const input = this.querySelector<HTMLTextAreaElement>(
-          `input[name=${this.name}]`
+          `input[name=${this.name}]`,
         );
         input!.value = value;
         this.value = value;
@@ -123,7 +123,7 @@ export class MarkdownEditor extends LitElement {
             detail: {
               value: value,
             },
-          })
+          }),
         );
       },
     });

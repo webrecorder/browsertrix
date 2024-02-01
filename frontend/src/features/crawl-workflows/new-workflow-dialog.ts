@@ -85,7 +85,7 @@ export class NewWorkflowDialog extends LitElement {
               this.dispatchEvent(
                 new CustomEvent("select-job-type", {
                   detail: "url-list",
-                }) as SelectJobTypeEvent
+                }) as SelectJobTypeEvent,
               );
             }}
           >
@@ -95,7 +95,7 @@ export class NewWorkflowDialog extends LitElement {
                 <div class="heading">${msg("URL List")}</div>
                 <p class="description">
                   ${msg(
-                    "The crawler visits every URL specified in a list, and optionally every URL linked on those pages."
+                    "The crawler visits every URL specified in a list, and optionally every URL linked on those pages.",
                   )}
                 </p>
               </figcaption>
@@ -108,7 +108,7 @@ export class NewWorkflowDialog extends LitElement {
               this.dispatchEvent(
                 new CustomEvent("select-job-type", {
                   detail: "seed-crawl",
-                }) as SelectJobTypeEvent
+                }) as SelectJobTypeEvent,
               );
             }}
           >
@@ -118,7 +118,7 @@ export class NewWorkflowDialog extends LitElement {
                 <div class="heading">${msg("Seeded Crawl")}</div>
                 <p class="description">
                   ${msg(
-                    "The crawler automatically discovers and archives pages starting from a single seed URL."
+                    "The crawler automatically discovers and archives pages starting from a single seed URL.",
                   )}
                 </p>
               </figcaption>

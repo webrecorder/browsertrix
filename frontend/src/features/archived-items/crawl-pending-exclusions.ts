@@ -38,7 +38,7 @@ export class CrawlPendingExclusions extends LiteElement {
 
     return this.matchedURLs.slice(
       (this.page - 1) * this.pageSize,
-      this.page * this.pageSize
+      this.page * this.pageSize,
     );
   }
 
@@ -84,13 +84,13 @@ export class CrawlPendingExclusions extends LiteElement {
         ${this.matchedURLs
           ? msg("No matching URLs found in queue.")
           : msg(
-              "Start typing an exclusion to view matching URLs in the queue."
+              "Start typing an exclusion to view matching URLs in the queue.",
             )}
       </p>`;
     }
 
     return html`
-      <btrix-numbered-list class="text-xs break-all" aria-live="polite">
+      <btrix-numbered-list class="break-all text-xs" aria-live="polite">
         ${this.pageResults.map(
           (url, idx) => html`
             <btrix-numbered-list-item>
@@ -105,7 +105,7 @@ export class CrawlPendingExclusions extends LiteElement {
                 >${url}</a
               >
             </btrix-numbered-list-item>
-          `
+          `,
         )}
       </btrix-numbered-list>
     `;

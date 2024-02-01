@@ -51,7 +51,7 @@ export class CollectionMetadataDialog extends LiteElement {
     >
       <form id="collectionForm" @reset=${this.onReset} @submit=${this.onSubmit}>
         <sl-input
-          class="mb-2 with-max-help-text"
+          class="with-max-help-text mb-2"
           id="collectionForm-name-input"
           name="name"
           label=${msg("Collection Name")}
@@ -81,7 +81,7 @@ export class CollectionMetadataDialog extends LiteElement {
               >
               <sl-tooltip
                 content=${msg(
-                  "Enable public access to make Collections shareable. Only people with the shared link can view your Collection."
+                  "Enable public access to make Collections shareable. Only people with the shared link can view your Collection.",
                 )}
                 hoist
                 @sl-hide=${this.stopProp}
@@ -92,12 +92,12 @@ export class CollectionMetadataDialog extends LiteElement {
                 ></sl-icon
               ></sl-tooltip>
             </label>
-          `
+          `,
         )}
 
         <input class="invisible h-0 w-0" type="submit" />
       </form>
-      <div slot="footer" class="flex gap-3 items-center justify-end">
+      <div slot="footer" class="flex items-center justify-end gap-3">
         <sl-button
           class="mr-auto"
           size="small"
@@ -114,7 +114,7 @@ export class CollectionMetadataDialog extends LiteElement {
             <aside class="text-xs text-neutral-500">
               ${msg("You can rename your collection later")}
             </aside>
-          `
+          `,
         )}
 
         <sl-button
@@ -127,7 +127,7 @@ export class CollectionMetadataDialog extends LiteElement {
             // incorrect getRootNode in Chrome
             const form = await this.form;
             const submitInput = form.querySelector<HTMLInputElement>(
-              'input[type="submit"]'
+              'input[type="submit"]',
             );
             form.requestSubmit(submitInput);
           }}
@@ -181,11 +181,11 @@ export class CollectionMetadataDialog extends LiteElement {
           detail: {
             id: this.collection?.id || data.id,
           },
-        }) as CollectionSavedEvent
+        }) as CollectionSavedEvent,
       );
       this.notify({
         message: msg(
-          str`Successfully saved "${data.name || name}" Collection.`
+          str`Successfully saved "${data.name || name}" Collection.`,
         ),
         variant: "success",
         icon: "check2-circle",

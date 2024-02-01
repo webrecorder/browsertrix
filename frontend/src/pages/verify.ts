@@ -95,7 +95,7 @@ export class Verify extends LiteElement {
             detail: {
               isVerified: data.is_verified,
             },
-          })
+          }),
         );
       }
 

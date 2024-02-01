@@ -47,7 +47,7 @@ export class RequestVerify extends LitElement {
   render() {
     if (this.requestSuccess) {
       return html`
-        <div class="text-sm text-gray-500 inline-flex items-center">
+        <div class="inline-flex items-center text-sm text-gray-500">
           <sl-icon class="mr-1" name="check-lg"></sl-icon> ${msg("Sent", {
             desc: "Status message after sending verification email",
           })}
@@ -116,7 +116,7 @@ export class AccountSettings extends LiteElement {
   private readonly passwordInput?: Promise<SlInput | null>;
 
   async updated(
-    changedProperties: PropertyValues<this> & Map<string, unknown>
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
       changedProperties.has("isChangingPassword") &&
@@ -133,18 +133,18 @@ export class AccountSettings extends LiteElement {
   render() {
     if (!this.userInfo) return;
     return html`
-      <div class="max-w-screen-sm mx-auto">
-        <h1 class="text-xl font-semibold leading-8 mb-7">
+      <div class="mx-auto max-w-screen-sm">
+        <h1 class="mb-7 text-xl font-semibold leading-8">
           ${msg("Account Settings")}
         </h1>
-        <form class="border rounded mb-5" @submit=${this.onSubmitName}>
+        <form class="mb-5 rounded border" @submit=${this.onSubmitName}>
           <div class="p-4">
-            <h2 class="text-lg font-semibold leading-none mb-4">
+            <h2 class="mb-4 text-lg font-semibold leading-none">
               ${msg("Display Name")}
             </h2>
             <p class="mb-2">
               ${msg(
-                "Enter your full name, or another name to display in the orgs you belong to."
+                "Enter your full name, or another name to display in the orgs you belong to.",
               )}
             </p>
             <sl-input
@@ -166,9 +166,9 @@ export class AccountSettings extends LiteElement {
             >
           </footer>
         </form>
-        <form class="border rounded mb-5" @submit=${this.onSubmitEmail}>
+        <form class="mb-5 rounded border" @submit=${this.onSubmitEmail}>
           <div class="p-4">
-            <h2 class="text-lg font-semibold leading-none mb-4">
+            <h2 class="mb-4 text-lg font-semibold leading-none">
               ${msg("Email")}
             </h2>
             <p class="mb-2">${msg("Update the email you use to log in.")}</p>
@@ -216,13 +216,13 @@ export class AccountSettings extends LiteElement {
             >
           </footer>
         </form>
-        <section class="border rounded mb-5">
+        <section class="mb-5 rounded border">
           ${when(
             this.isChangingPassword,
             () => html`
               <form @submit=${this.onSubmitPassword}>
                 <div class="p-4">
-                  <h2 class="text-lg font-semibold leading-none mb-4">
+                  <h2 class="mb-4 text-lg font-semibold leading-none">
                     ${msg("Password")}
                   </h2>
                   <sl-input
@@ -254,7 +254,7 @@ export class AccountSettings extends LiteElement {
                 >
                   <p class="mr-auto text-gray-500">
                     ${msg(
-                      str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`
+                      str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`,
                     )}
                   </p>
                   <sl-button
@@ -270,7 +270,7 @@ export class AccountSettings extends LiteElement {
               </form>
             `,
             () => html`
-              <div class="px-4 py-3 flex items-center justify-between">
+              <div class="flex items-center justify-between px-4 py-3">
                 <h2 class="text-lg font-semibold leading-none">
                   ${msg("Password")}
                 </h2>
@@ -280,7 +280,7 @@ export class AccountSettings extends LiteElement {
                   >${msg("Change Password")}</sl-button
                 >
               </div>
-            `
+            `,
           )}
         </section>
       </div>
@@ -309,7 +309,7 @@ export class AccountSettings extends LiteElement {
     }
     this.pwStrengthResults = await PasswordService.checkStrength(
       value,
-      userInputs
+      userInputs,
     );
   });
 

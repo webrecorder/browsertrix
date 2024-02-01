@@ -170,7 +170,7 @@ export class CollectionWorkflowList extends TailwindElement {
         this.dispatchEvent(
           new CustomEvent<SelectionChangeDetail>("btrix-selection-change", {
             detail: { selection },
-          })
+          }),
         );
       }}
     >
@@ -191,13 +191,13 @@ export class CollectionWorkflowList extends TailwindElement {
       <sl-tree-item
         class="workflow ${until(
           countAsync.then(({ total }) => (total > 0 ? "selectable" : "")),
-          ""
+          "",
         )}"
         ?selected=${until(
           countAsync.then(
-            ({ total, selected }) => selected > 0 && selected === total
+            ({ total, selected }) => selected > 0 && selected === total,
           ),
-          false
+          false,
         )}
         .indeterminate=${
           // NOTE `indeterminate` is not a documented public property,
@@ -205,14 +205,14 @@ export class CollectionWorkflowList extends TailwindElement {
           // doesn't work as of shoelace 2.8.0
           until(
             countAsync.then(
-              ({ total, selected }) => selected > 0 && selected < total
+              ({ total, selected }) => selected > 0 && selected < total,
             ),
-            false
+            false,
           )
         }
         ?disabled=${until(
           countAsync.then(({ total }) => total === 0),
-          true
+          true,
         )}
         @click=${(e: MouseEvent) => {
           void countAsync.then(({ total }) => {
@@ -223,21 +223,21 @@ export class CollectionWorkflowList extends TailwindElement {
           });
         }}
       >
-        <div class="flex-1 overflow-hidden flex items-center gap-2 md:gap-x-6">
+        <div class="flex flex-1 items-center gap-2 overflow-hidden md:gap-x-6">
           <div class="flex-1 overflow-hidden">${this.renderName(workflow)}</div>
           <div class="flex-none text-neutral-500 md:text-right">
             ${until(
               countAsync.then(({ total, selected }) =>
                 total === 1
                   ? msg(
-                      str`${selected.toLocaleString()} / ${total?.toLocaleString()} crawl`
+                      str`${selected.toLocaleString()} / ${total?.toLocaleString()} crawl`,
                     )
                   : total
-                  ? msg(
-                      str`${selected.toLocaleString()} / ${total?.toLocaleString()} crawls`
-                    )
-                  : msg("0 crawls")
-              )
+                    ? msg(
+                        str`${selected.toLocaleString()} / ${total?.toLocaleString()} crawls`,
+                      )
+                    : msg("0 crawls"),
+              ),
             )}
           </div>
           <div class="flex-none">
@@ -245,7 +245,7 @@ export class CollectionWorkflowList extends TailwindElement {
               class="flex"
               size="small"
               ?checked=${workflow.autoAddCollections.some(
-                (id) => id === this.collectionId
+                (id) => id === this.collectionId,
               )}
               @click=${(e: MouseEvent) => {
                 e.stopPropagation();
@@ -261,8 +261,8 @@ export class CollectionWorkflowList extends TailwindElement {
                         checked: (e.target as SlSwitch).checked,
                       },
                       composed: true,
-                    }
-                  )
+                    },
+                  ),
                 );
               }}
             >
@@ -283,7 +283,7 @@ export class CollectionWorkflowList extends TailwindElement {
         class="crawl"
         data-crawl-id=${crawl.id}
       >
-        <div class="flex-1 grid grid-cols-5 items-center">
+        <div class="grid flex-1 grid-cols-5 items-center">
           <div class="col-span-3 md:col-span-1">
             <sl-format-date
               date=${`${crawl.finished}Z`}
@@ -308,7 +308,7 @@ export class CollectionWorkflowList extends TailwindElement {
               ? msg(str`${pageCount.toLocaleString()} page`)
               : msg(str`${pageCount.toLocaleString()} pages`)}
           </div>
-          <div class="col-span-5 md:col-span-1 truncate">
+          <div class="col-span-5 truncate md:col-span-1">
             ${msg(str`Started by ${crawl.userName}`)}
           </div>
         </div>
@@ -325,8 +325,8 @@ export class CollectionWorkflowList extends TailwindElement {
         this.crawlsMap.set(
           workflow.id,
           this.getCrawls({ cid: workflow.id, pageSize: CRAWLS_PAGE_SIZE }).then(
-            ({ items }) => items
-          )
+            ({ items }) => items,
+          ),
         );
       });
     } catch (e: unknown) {
@@ -339,7 +339,7 @@ export class CollectionWorkflowList extends TailwindElement {
       cid: string;
     }> &
       APIPaginationQuery &
-      APISortQuery
+      APISortQuery,
   ) {
     if (!this.authState) throw new Error("Missing attribute `authState`");
     if (!this.orgId) throw new Error("Missing attribute `orgId`");
@@ -351,11 +351,11 @@ export class CollectionWorkflowList extends TailwindElement {
       },
       {
         arrayFormat: "comma",
-      }
+      },
     );
     const data = await this.api.fetch<APIPaginatedList<Crawl>>(
       `/orgs/${this.orgId}/crawls?${query}`,
-      this.authState
+      this.authState,
     );
 
     return data;
@@ -379,8 +379,8 @@ export class CollectionWorkflowList extends TailwindElement {
         }
       }
       return html`
-        <div class="overflow-hidden whitespace-nowrap flex">
-          <span class="truncate min-w-0">${workflow.firstSeed}</span>
+        <div class="flex overflow-hidden whitespace-nowrap">
+          <span class="min-w-0 truncate">${workflow.firstSeed}</span>
           <span>${nameSuffix}</span>
         </div>
       `;

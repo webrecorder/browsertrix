@@ -94,7 +94,7 @@ export class CollectionDetail extends LiteElement {
   }
 
   protected async updated(
-    changedProperties: PropertyValues<this> & Map<string, unknown>
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (changedProperties.has("collection") && this.collection) {
       void this.checkTruncateDescription();
@@ -103,8 +103,8 @@ export class CollectionDetail extends LiteElement {
 
   render() {
     return html`${this.renderHeader()}
-      <header class="md:flex items-center gap-2 pb-3">
-        <div class="flex items-center gap-2 w-full mb-2 md:mb-0">
+      <header class="items-center gap-2 pb-3 md:flex">
+        <div class="mb-2 flex w-full items-center gap-2 md:mb-0">
           ${this.collection?.isPublic
             ? html`
                 <sl-tooltip content=${msg("Shareable")}>
@@ -116,7 +116,7 @@ export class CollectionDetail extends LiteElement {
                   <sl-icon class="text-lg" name="eye-slash-fill"></sl-icon>
                 </sl-tooltip>
               `}
-          <h1 class="flex-1 min-w-0 text-xl font-semibold leading-7 truncate">
+          <h1 class="min-w-0 flex-1 truncate text-xl font-semibold leading-7">
             ${this.collection?.name ||
             html`<sl-skeleton class="w-96"></sl-skeleton>`}
           </h1>
@@ -132,14 +132,14 @@ export class CollectionDetail extends LiteElement {
               <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
               ${msg("Share")}
             </sl-button>
-          `
+          `,
         )}
         ${when(this.isCrawler, this.renderActions)}
       </header>
-      <div class="border rounded-lg py-2 px-4 mb-3">
+      <div class="mb-3 rounded-lg border px-4 py-2">
         ${this.renderInfoBar()}
       </div>
-      <div class="flex justify-between items-center mb-3">
+      <div class="mb-3 flex items-center justify-between">
         ${this.renderTabs()}
         ${when(
           this.isCrawler,
@@ -155,7 +155,7 @@ export class CollectionDetail extends LiteElement {
               <sl-icon name="ui-checks" slot="prefix"></sl-icon>
               ${msg("Select Items")}
             </sl-button>
-          `
+          `,
         )}
       </div>
       ${choose(
@@ -168,7 +168,7 @@ export class CollectionDetail extends LiteElement {
           ],
         ],
 
-        () => html`<btrix-not-found></btrix-not-found>`
+        () => html`<btrix-not-found></btrix-not-found>`,
       )}
       <div class="my-7">${this.renderDescription()}</div>
 
@@ -179,7 +179,7 @@ export class CollectionDetail extends LiteElement {
       >
         ${msg(
           html`Are you sure you want to delete
-            <strong>${this.collection?.name}</strong>?`
+            <strong>${this.collection?.name}</strong>?`,
         )}
         <div slot="footer" class="flex justify-between">
           <sl-button
@@ -225,7 +225,7 @@ export class CollectionDetail extends LiteElement {
             @btrix-collection-saved=${() => this.fetchCollection()}
           >
           </btrix-collection-metadata-dialog>
-        `
+        `,
       )}
       ${this.renderShareDialog()}`;
   }
@@ -233,7 +233,7 @@ export class CollectionDetail extends LiteElement {
   private getPublicReplayURL() {
     return new URL(
       `/api/orgs/${this.orgId}/collections/${this.collectionId}/public/replay.json`,
-      window.location.href
+      window.location.href,
     ).href;
   }
 
@@ -250,7 +250,7 @@ export class CollectionDetail extends LiteElement {
             ? ""
             : html`<p class="mb-3">
                 ${msg(
-                  "Make this collection shareable to enable a public viewing link."
+                  "Make this collection shareable to enable a public viewing link.",
                 )}
               </p>`
         }
@@ -265,7 +265,7 @@ export class CollectionDetail extends LiteElement {
                 >${msg("Collection is Shareable")}</sl-switch
               >
             </div>
-          `
+          `,
         )}
         </div>
         ${when(this.collection?.isPublic, this.renderShareInfo)}
@@ -288,7 +288,7 @@ export class CollectionDetail extends LiteElement {
     return html` <btrix-section-heading
         >${msg("Link to Share")}</btrix-section-heading
       >
-      <section class="mt-3 mb-5">
+      <section class="mb-5 mt-3">
         <p class="mb-3">
           ${msg("This collection can be viewed by anyone with the link.")}
         </p>
@@ -312,16 +312,16 @@ export class CollectionDetail extends LiteElement {
       <section class="mt-3">
         <p class="mb-3">
           ${msg(
-            html`Share this collection by embedding it into an existing webpage.`
+            html`Share this collection by embedding it into an existing webpage.`,
           )}
         </p>
         <p class="mb-3">
           ${msg(html`Add the following embed code to your HTML page:`)}
         </p>
-        <div class="relative mb-5 border rounded p-3 pr-9 bg-slate-50">
+        <div class="relative mb-5 rounded border bg-slate-50 p-3 pr-9">
           <btrix-code value=${embedCode}></btrix-code>
           <div
-            class="absolute top-1.5 right-1.5 border rounded bg-white shadow-sm"
+            class="absolute right-1.5 top-1.5 rounded border bg-white shadow-sm"
           >
             <btrix-copy-button
               .getValue=${() => embedCode}
@@ -332,13 +332,13 @@ export class CollectionDetail extends LiteElement {
         <p class="mb-3">
           ${msg(
             html`Add the following JavaScript to your
-              <code class="text-[0.9em]">/replay/sw.js</code>:`
+              <code class="text-[0.9em]">/replay/sw.js</code>:`,
           )}
         </p>
-        <div class="relative mb-5 border rounded p-3 pr-9 bg-slate-50">
+        <div class="relative mb-5 rounded border bg-slate-50 p-3 pr-9">
           <btrix-code language="javascript" value=${importCode}></btrix-code>
           <div
-            class="absolute top-1.5 right-1.5 border rounded bg-white shadow-sm"
+            class="absolute right-1.5 top-1.5 rounded border bg-white shadow-sm"
           >
             <btrix-copy-button
               .getValue=${() => importCode}
@@ -356,7 +356,7 @@ export class CollectionDetail extends LiteElement {
               >
                 our embedding guide</a
               >
-              for more details.`
+              for more details.`,
           )}
         </p>
       </section>`;
@@ -365,7 +365,7 @@ export class CollectionDetail extends LiteElement {
   private readonly renderHeader = () => html`
     <nav class="mb-7">
       <a
-        class="text-gray-600 hover:text-gray-800 text-sm font-medium"
+        class="text-sm font-medium text-gray-600 hover:text-gray-800"
         href=${`${this.orgBasePath}/collections`}
         @click=${this.navLink}
       >
@@ -453,7 +453,7 @@ export class CollectionDetail extends LiteElement {
               see https://github.com/shoelace-style/shoelace/issues/1351 -->
           <a
             href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
-            class="px-6 py-[0.6rem] flex gap-2 items-center whitespace-nowrap hover:bg-neutral-100"
+            class="flex items-center gap-2 whitespace-nowrap px-6 py-[0.6rem] hover:bg-neutral-100"
             @click=${(e: MouseEvent) => {
               void (e.target as HTMLAnchorElement)
                 .closest("sl-dropdown")
@@ -482,7 +482,7 @@ export class CollectionDetail extends LiteElement {
         ${this.renderDetailItem(msg("Archived Items"), (col) =>
           col.crawlCount === 1
             ? msg("1 item")
-            : msg(str`${this.numberFormatter.format(col.crawlCount)} items`)
+            : msg(str`${this.numberFormatter.format(col.crawlCount)} items`),
         )}
         ${this.renderDetailItem(
           msg("Total Size"),
@@ -490,12 +490,12 @@ export class CollectionDetail extends LiteElement {
             html`<sl-format-bytes
               value=${col.totalSize || 0}
               display="narrow"
-            ></sl-format-bytes>`
+            ></sl-format-bytes>`,
         )}
         ${this.renderDetailItem(msg("Total Pages"), (col) =>
           col.pageCount === 1
             ? msg("1 page")
-            : msg(str`${this.numberFormatter.format(col.pageCount)} pages`)
+            : msg(str`${this.numberFormatter.format(col.pageCount)} pages`),
         )}
         ${this.renderDetailItem(
           msg("Last Updated"),
@@ -507,7 +507,7 @@ export class CollectionDetail extends LiteElement {
               year="2-digit"
               hour="2-digit"
               minute="2-digit"
-            ></sl-format-date>`
+            ></sl-format-date>`,
         )}
       </btrix-desc-list>
     `;
@@ -515,14 +515,14 @@ export class CollectionDetail extends LiteElement {
 
   private renderDetailItem(
     label: string | TemplateResult,
-    renderContent: (collection: Collection) => TemplateResult | string
+    renderContent: (collection: Collection) => TemplateResult | string,
   ) {
     return html`
       <btrix-desc-list-item label=${label}>
         ${when(
           this.collection,
           () => renderContent(this.collection!),
-          () => html`<sl-skeleton class="w-full"></sl-skeleton>`
+          () => html`<sl-skeleton class="w-full"></sl-skeleton>`,
         )}
       </btrix-desc-list-item>
     `;
@@ -532,7 +532,7 @@ export class CollectionDetail extends LiteElement {
     return html`
       <section>
         <header class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold leading-none h-8 min-h-fit mb-1">
+          <h2 class="mb-1 h-8 min-h-fit text-lg font-semibold leading-none">
             ${msg("Description")}
           </h2>
           ${when(
@@ -544,17 +544,17 @@ export class CollectionDetail extends LiteElement {
                 @click=${() => (this.openDialogName = "editMetadata")}
                 label=${msg("Edit description")}
               ></sl-icon-button>
-            `
+            `,
           )}
         </header>
         <main>
           ${when(
             this.collection,
             () => html`
-              <main class="border rounded-lg">
+              <main class="rounded-lg border">
                 ${this.collection?.description
                   ? html`<div
-                        class="description max-w-prose overflow-hidden mx-auto py-5 transition-all"
+                        class="description mx-auto max-w-prose overflow-hidden py-5 transition-all"
                         style=${`max-height: ${DESCRIPTION_MAX_HEIGHT_PX}px`}
                       >
                         <btrix-markdown-viewer
@@ -563,10 +563,10 @@ export class CollectionDetail extends LiteElement {
                       </div>
                       <div
                         role="button"
-                        class="descriptionExpandBtn hidden border-t p-2 text-right text-neutral-500 hover:bg-neutral-50 transition-colors font-medium"
+                        class="descriptionExpandBtn hidden border-t p-2 text-right font-medium text-neutral-500 transition-colors hover:bg-neutral-50"
                         @click=${this.toggleTruncateDescription}
                       >
-                        <span class="inline-block align-middle mr-1"
+                        <span class="mr-1 inline-block align-middle"
                           >${this.isDescriptionExpanded
                             ? msg("Less")
                             : msg("More")}</span
@@ -578,18 +578,18 @@ export class CollectionDetail extends LiteElement {
                             : "chevron-double-down"}
                         ></sl-icon>
                       </div> `
-                  : html`<div class="text-center text-neutral-400 p-5">
+                  : html`<div class="p-5 text-center text-neutral-400">
                       ${msg("No description added.")}
                     </div>`}
               </main>
             `,
             () =>
               html`<div
-                class="border rounded flex items-center justify-center text-3xl"
+                class="flex items-center justify-center rounded border text-3xl"
                 style=${`max-height: ${DESCRIPTION_MAX_HEIGHT_PX}px`}
               >
                 <sl-spinner></sl-spinner>
-              </div>`
+              </div>`,
           )}
         </main>
       </section>
@@ -628,15 +628,15 @@ export class CollectionDetail extends LiteElement {
                     }}
                   ></btrix-pagination>
                 </footer>
-              `
+              `,
             )}
           `;
         },
         () => html`
-          <div class="w-full flex items-center justify-center my-12 text-2xl">
+          <div class="my-12 flex w-full items-center justify-center text-2xl">
             <sl-spinner></sl-spinner>
           </div>
-        `
+        `,
       )}
     </section>`;
 
@@ -651,7 +651,7 @@ export class CollectionDetail extends LiteElement {
         ${repeat(
           this.archivedItems.items,
           ({ id }) => id,
-          this.renderArchivedItem
+          this.renderArchivedItem,
         )}
       </btrix-archived-item-list>
     `;
@@ -659,7 +659,7 @@ export class CollectionDetail extends LiteElement {
 
   private renderEmptyState() {
     return html`
-      <div class="border rounded p-5">
+      <div class="rounded border p-5">
         <p class="text-center text-neutral-500">
           ${this.archivedItems?.page && this.archivedItems?.page > 1
             ? msg("Page not found.")
@@ -671,7 +671,7 @@ export class CollectionDetail extends LiteElement {
 
   private readonly renderArchivedItem = (
     item: ArchivedItem,
-    idx: number
+    idx: number,
   ) => html`
     <btrix-archived-item-list-item
       href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
@@ -720,7 +720,7 @@ export class CollectionDetail extends LiteElement {
 
     return html`<section>
       <main>
-        <div class="aspect-4/3 border rounded-lg overflow-hidden">
+        <div class="aspect-4/3 overflow-hidden rounded-lg border">
           <replay-web-page
             source=${replaySource}
             replayBase="/replay/"
@@ -767,7 +767,7 @@ export class CollectionDetail extends LiteElement {
       {
         method: "PATCH",
         body: JSON.stringify({ isPublic }),
-      }
+      },
     );
 
     if (res.updated && this.collection) {
@@ -789,7 +789,7 @@ export class CollectionDetail extends LiteElement {
         this.authState!,
         {
           method: "DELETE",
-        }
+        },
       );
 
       this.navTo(`${this.orgBasePath}/collections`);
@@ -823,7 +823,7 @@ export class CollectionDetail extends LiteElement {
   private async getCollection() {
     const data = await this.apiFetch<Collection>(
       `/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`,
-      this.authState!
+      this.authState!,
     );
 
     return data;
@@ -861,7 +861,7 @@ export class CollectionDetail extends LiteElement {
       state: CrawlState[];
     }> &
       APIPaginationQuery &
-      APISortQuery
+      APISortQuery,
   ) {
     const query = queryString.stringify(
       {
@@ -874,11 +874,11 @@ export class CollectionDetail extends LiteElement {
       },
       {
         arrayFormat: "comma",
-      }
+      },
     );
     const data = await this.apiFetch<APIPaginatedList<Crawl | Upload>>(
       `/orgs/${this.orgId}/all-crawls?collectionId=${this.collectionId}&${query}`,
-      this.authState!
+      this.authState!,
     );
 
     return data;
@@ -892,7 +892,7 @@ export class CollectionDetail extends LiteElement {
         {
           method: "POST",
           body: JSON.stringify({ crawlIds: [id] }),
-        }
+        },
       );
 
       const { page, items } = this.archivedItems!;
@@ -911,7 +911,7 @@ export class CollectionDetail extends LiteElement {
       console.debug((e as Error)?.message);
       this.notify({
         message: msg(
-          "Sorry, couldn't remove item from Collection at this time."
+          "Sorry, couldn't remove item from Collection at this time.",
         ),
         variant: "danger",
         icon: "exclamation-octagon",

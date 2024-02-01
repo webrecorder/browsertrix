@@ -56,7 +56,7 @@ export default class PasswordService {
   static async checkStrength(
     password: string,
     // User input to check, e.g. emails
-    userInputs?: string[]
+    userInputs?: string[],
   ) {
     return zxcvbn(password, userInputs);
   }

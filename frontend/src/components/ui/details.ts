@@ -128,7 +128,7 @@ export class Details extends LitElement {
       this.dispatchEvent(
         new CustomEvent("on-toggle", {
           detail: { open: isOpen },
-        })
+        }),
       );
     }
   }

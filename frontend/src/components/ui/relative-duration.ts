@@ -84,7 +84,7 @@ export class RelativeDuration extends LitElement {
         compact: this.compact,
         verbose: this.verbose,
         unitCount: this.unitCount,
-      }
+      },
     );
   }
 }

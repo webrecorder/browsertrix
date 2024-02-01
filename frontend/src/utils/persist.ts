@@ -14,7 +14,7 @@ export const persist = (storage: Storage): StateOptions => ({
     storage.setItem(`${STORAGE_KEY_PREFIX}.${stateVar.key}`, JSON.stringify(v));
     stateVar.notifyObservers(
       `${STORAGE_KEY_PREFIX}.${stateVar.key}`,
-      stateVar.value
+      stateVar.value,
     );
   },
   get(stateVar: ReadonlyStateVar) {

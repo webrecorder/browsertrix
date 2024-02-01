@@ -144,11 +144,11 @@ export class Org extends LiteElement {
     super.connectedCallback();
     this.addEventListener(
       "btrix-execution-minutes-quota-update",
-      this.onExecutionMinutesQuotaUpdate
+      this.onExecutionMinutesQuotaUpdate,
     );
     this.addEventListener(
       "btrix-storage-quota-update",
-      this.onStorageQuotaUpdate
+      this.onStorageQuotaUpdate,
     );
     this.addEventListener("", () => {});
   }
@@ -156,11 +156,11 @@ export class Org extends LiteElement {
   disconnectedCallback() {
     this.removeEventListener(
       "btrix-execution-minutes-quota-update",
-      this.onExecutionMinutesQuotaUpdate
+      this.onExecutionMinutesQuotaUpdate,
     );
     this.removeEventListener(
       "btrix-storage-quota-update",
-      this.onStorageQuotaUpdate
+      this.onStorageQuotaUpdate,
     );
     super.disconnectedCallback();
   }
@@ -221,7 +221,7 @@ export class Org extends LiteElement {
         this.navTo(
           window.location.href
             .slice(window.location.origin.length)
-            .replace(this.slug, actualSlug)
+            .replace(this.slug, actualSlug),
         );
         return;
       }
@@ -283,7 +283,7 @@ export class Org extends LiteElement {
       ${this.renderOrgNavBar()}
       <main>
         <div
-          class="w-full max-w-screen-desktop mx-auto px-3 box-border py-7"
+          class="mx-auto box-border w-full max-w-screen-desktop px-3 py-7"
           aria-labelledby="${this.orgTab}-tab"
         >
           ${tabPanelContent}
@@ -296,11 +296,11 @@ export class Org extends LiteElement {
   private renderStorageAlert() {
     return html`
       <div
-        class="transition-all ${this.showStorageQuotaAlert
+        class="${this.showStorageQuotaAlert
           ? "bg-slate-100 border-b py-5"
-          : ""}"
+          : ""} transition-all"
       >
-        <div class="w-full max-w-screen-desktop mx-auto px-3 box-border">
+        <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
           <sl-alert
             variant="warning"
             closable
@@ -311,7 +311,7 @@ export class Org extends LiteElement {
             <strong>${msg("Your org has reached its storage limit")}</strong
             ><br />
             ${msg(
-              "To add archived items again, delete unneeded items and unused browser profiles to free up space, or contact us to upgrade your storage plan."
+              "To add archived items again, delete unneeded items and unused browser profiles to free up space, or contact us to upgrade your storage plan.",
             )}
           </sl-alert>
         </div>
@@ -322,11 +322,11 @@ export class Org extends LiteElement {
   private renderExecutionMinutesAlert() {
     return html`
       <div
-        class="transition-all ${this.showExecutionMinutesQuotaAlert
+        class="${this.showExecutionMinutesQuotaAlert
           ? "bg-slate-100 border-b py-5"
-          : ""}"
+          : ""} transition-all"
       >
-        <div class="w-full max-w-screen-desktop mx-auto px-3 box-border">
+        <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
           <sl-alert
             variant="warning"
             closable
@@ -337,11 +337,11 @@ export class Org extends LiteElement {
             <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
             <strong
               >${msg(
-                "Your org has reached its monthly execution minutes limit"
+                "Your org has reached its monthly execution minutes limit",
               )}</strong
             ><br />
             ${msg(
-              "To purchase additional monthly execution minutes, contact us to upgrade your plan."
+              "To purchase additional monthly execution minutes, contact us to upgrade your plan.",
             )}
           </sl-alert>
         </div>
@@ -351,7 +351,7 @@ export class Org extends LiteElement {
 
   private renderOrgNavBar() {
     return html`
-      <div class="w-full max-w-screen-desktop mx-auto px-3 box-border">
+      <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
         <nav class="-ml-3 flex items-end overflow-x-auto">
           ${this.renderNavTab({
             tabName: "home",
@@ -378,14 +378,14 @@ export class Org extends LiteElement {
               tabName: "browser-profiles",
               label: msg("Browser Profiles"),
               path: "browser-profiles",
-            })
+            }),
           )}
           ${when(this.isAdmin || this.userInfo?.isAdmin, () =>
             this.renderNavTab({
               tabName: "settings",
               label: msg("Org Settings"),
               path: "settings",
-            })
+            }),
           )}
         </nav>
       </div>
@@ -408,15 +408,15 @@ export class Org extends LiteElement {
     return html`
       <a
         id="${tabName}-tab"
-        class="block flex-shrink-0 px-3 hover:bg-neutral-50 rounded-t transition-colors"
+        class="block flex-shrink-0 rounded-t px-3 transition-colors hover:bg-neutral-50"
         href=${`${this.orgBasePath}${path ? `/${path}` : ""}`}
         aria-selected=${isActive}
         @click=${this.navLink}
       >
         <div
-          class="text-sm font-medium py-3 border-b-2 transition-colors ${isActive
+          class="${isActive
             ? "border-primary text-primary"
-            : "border-transparent text-neutral-500 hover:border-neutral-100 hover:text-neutral-900"}"
+            : "border-transparent text-neutral-500 hover:border-neutral-100 hover:text-neutral-900"} border-b-2 py-3 text-sm font-medium transition-colors"
         >
           ${label}
         </div>
@@ -477,7 +477,7 @@ export class Org extends LiteElement {
           @sl-hide=${() => (this.openDialogName = undefined)}
           @btrix-collection-saved=${(e: CollectionSavedEvent) => {
             this.navTo(
-              `${this.orgBasePath}/collections/view/${e.detail.id}/items`
+              `${this.orgBasePath}/collections/view/${e.detail.id}/items`,
             );
           }}
         >
@@ -625,7 +625,7 @@ export class Org extends LiteElement {
     const activePanel = this.params.settingsTab || "information";
     const isAddingMember = Object.prototype.hasOwnProperty.call(
       this.params,
-      "invite"
+      "invite",
     );
 
     return html`<btrix-org-settings
@@ -652,7 +652,7 @@ export class Org extends LiteElement {
   private async getOrg(orgId: string): Promise<OrgData> {
     const data = await this.apiFetch<OrgData>(
       `/orgs/${orgId}`,
-      this.authState!
+      this.authState!,
     );
 
     return data;
@@ -673,7 +673,7 @@ export class Org extends LiteElement {
       });
 
       await this.dispatchEvent(
-        new CustomEvent("update-user-info", { bubbles: true })
+        new CustomEvent("update-user-info", { bubbles: true }),
       );
       const newSlug = e.detail.slug;
       if (newSlug) {
@@ -707,7 +707,7 @@ export class Org extends LiteElement {
   }
 
   private async onExecutionMinutesQuotaUpdate(
-    e: CustomEvent<QuotaUpdateDetail>
+    e: CustomEvent<QuotaUpdateDetail>,
   ) {
     e.stopPropagation();
     const { reached } = e.detail;
@@ -731,7 +731,7 @@ export class Org extends LiteElement {
 
       this.notify({
         message: msg(
-          str`Successfully updated role for ${user.name || user.email}.`
+          str`Successfully updated role for ${user.name || user.email}.`,
         ),
         variant: "success",
         icon: "check2-circle",
@@ -747,7 +747,7 @@ export class Org extends LiteElement {
             : msg(
                 str`Sorry, couldn't update role for ${
                   user.name || user.email
-                } at this time.`
+                } at this time.`,
               ),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -762,8 +762,8 @@ export class Org extends LiteElement {
       isSelf &&
       !window.confirm(
         msg(
-          str`Are you sure you want to remove yourself from ${this.org.name}?`
-        )
+          str`Are you sure you want to remove yourself from ${this.org.name}?`,
+        ),
       )
     ) {
       return;
@@ -781,7 +781,7 @@ export class Org extends LiteElement {
         message: msg(
           str`Successfully removed ${member.name || member.email} from ${
             this.org.name
-          }.`
+          }.`,
         ),
         variant: "success",
         icon: "check2-circle",
@@ -802,7 +802,7 @@ export class Org extends LiteElement {
             : msg(
                 str`Sorry, couldn't remove ${
                   member.name || member.email
-                } at this time.`
+                } at this time.`,
               ),
         variant: "danger",
         icon: "exclamation-octagon",

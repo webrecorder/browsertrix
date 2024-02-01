@@ -155,7 +155,7 @@ export class Screencast extends LitElement {
   }
 
   async updated(
-    changedProperties: PropertyValues<this> & Map<string, unknown>
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (
       changedProperties.get("orgId") ||
@@ -193,7 +193,7 @@ export class Screencast extends LitElement {
             : screenCount}, 1fr);"
         >
           ${Array.from({ length: screenCount }).map((_, i) =>
-            this.renderScreen(`${i}`)
+            this.renderScreen(`${i}`),
           )}
         </div>
       </div>
@@ -251,7 +251,7 @@ export class Screencast extends LitElement {
     this.timerIds.push(
       window.setTimeout(() => {
         this.connectAll();
-      }, 20 * 1000)
+      }, 20 * 1000),
     );
   }
 
@@ -284,7 +284,7 @@ export class Screencast extends LitElement {
             this.timerIds.push(
               window.setTimeout(() => {
                 this.retryConnectWs({ index: idx });
-              }, 10 * 1000)
+              }, 10 * 1000),
             );
           }
         });
@@ -302,7 +302,7 @@ export class Screencast extends LitElement {
   }
 
   private handleMessage(
-    message: InitMessage | ScreencastMessage | CloseMessage
+    message: InitMessage | ScreencastMessage | CloseMessage,
   ) {
     if (message.msg === "init") {
       const dataMap: Record<number, null> = {};
@@ -343,12 +343,12 @@ export class Screencast extends LitElement {
     const ws = new WebSocket(
       `${Screencast.baseUrl}/${this.orgId}/${
         this.crawlId
-      }/${index}/ws?auth_bearer=${this.authToken || ""}`
+      }/${index}/ws?auth_bearer=${this.authToken || ""}`,
     );
 
     ws.addEventListener("message", ({ data }: MessageEvent<string>) => {
       this.handleMessage(
-        JSON.parse(data) as InitMessage | ScreencastMessage | CloseMessage
+        JSON.parse(data) as InitMessage | ScreencastMessage | CloseMessage,
       );
     });
 
@@ -382,11 +382,11 @@ export class Screencast extends LitElement {
                 retries: retries + 1,
                 delaySec: delaySec * 2,
               });
-            }, delaySec * 1000)
+            }, delaySec * 1000),
           );
         } else {
           console.error(
-            `stopping websocket retries, tried ${Screencast.maxRetries} times with ${delaySec} second delay`
+            `stopping websocket retries, tried ${Screencast.maxRetries} times with ${delaySec} second delay`,
           );
         }
       }
