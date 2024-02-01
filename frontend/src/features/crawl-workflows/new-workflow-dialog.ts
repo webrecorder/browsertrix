@@ -41,9 +41,14 @@ export class NewWorkflowDialog extends LitElement {
     }
 
     .jobTypeButton {
+      padding: 0.25rem;
       display: block;
       width: min-content;
       cursor: pointer;
+      background: none;
+      text-align: left;
+      border: none;
+      border-radius: 0.75rem;
     }
 
     figure {
@@ -72,14 +77,13 @@ export class NewWorkflowDialog extends LitElement {
   render() {
     return html`
       <btrix-dialog
-        .label=${msg("Create a New Crawl Workflow")}
+        .label=${msg("Choose New Workflow Type")}
         .open=${this.open}
         style="--width: 46rem"
       >
-        <h3 class="title heading">${msg("Choose Crawl Type")}</h3>
         <div class="container">
-          <div
-            role="button"
+          <button
+            tabindex="2"
             class="jobTypeButton"
             @click=${() => {
               this.dispatchEvent(
@@ -100,9 +104,9 @@ export class NewWorkflowDialog extends LitElement {
                 </p>
               </figcaption>
             </figure>
-          </div>
-          <div
-            role="button"
+          </button>
+          <button
+            tabindex="1"
             class="jobTypeButton"
             @click=${() => {
               this.dispatchEvent(
@@ -124,7 +128,7 @@ export class NewWorkflowDialog extends LitElement {
               </figcaption>
             </figure>
           </div>
-        </div>
+        </button>
       </btrix-dialog>
     `;
   }
