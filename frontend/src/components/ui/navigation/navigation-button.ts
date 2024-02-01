@@ -1,6 +1,6 @@
 /* eslint-disable lit/binding-positions */
 /* eslint-disable lit/no-invalid-html */
-import { css } from "lit";
+import { type PropertyValueMap, css } from "lit";
 import { html, literal } from "lit/static-html.js";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -12,16 +12,16 @@ import { tw } from "@/utils/tailwind";
  *
  * Usage example:
  * ```ts
- * <btrix-button>Click me</btrix-button>
+ * <btrix-navigation-button>Click me</btrix-navigation-button>
  * ```
  */
-@customElement("btrix-button")
+@customElement("btrix-navigation-button")
 export class Button extends TailwindElement {
-  @property({ type: String })
-  type: "submit" | "button" = "button";
+  @property({ type: Boolean })
+  active = false;
 
   @property({ type: String })
-  variant: "primary" | "danger" | "neutral" = "neutral";
+  type: "submit" | "button" = "button";
 
   @property({ type: String })
   label?: string;
@@ -30,16 +30,19 @@ export class Button extends TailwindElement {
   href?: string;
 
   @property({ type: Boolean })
-  raised = false;
-
-  @property({ type: Boolean })
   disabled = false;
 
   @property({ type: Boolean })
-  loading = false;
-
-  @property({ type: Boolean })
   icon = false;
+
+  @property({ type: String, reflect: true })
+  role: ARIAMixin["role"] = "tab";
+
+  protected willUpdate(changedProperties: PropertyValueMap<this>) {
+    if (changedProperties.has("active")) {
+      this.ariaSelected = this.active ? "true" : null;
+    }
+  }
 
   static styles = css`
     :host {
@@ -57,14 +60,11 @@ export class Button extends TailwindElement {
     return html`<${tag}
       type=${this.type === "submit" ? "submit" : "button"}
       class=${[
-        tw`flex h-6 cursor-pointer items-center justify-center gap-2 rounded-sm text-center font-medium transition-all disabled:cursor-not-allowed disabled:text-neutral-300`,
-        this.icon ? tw`min-h-6 min-w-6 px-1` : tw`h-6 px-2`,
-        this.raised ? tw`shadow-sm` : "",
-        {
-          primary: tw`bg-blue-50 text-blue-600 shadow-blue-800/20 hover:bg-blue-100`,
-          danger: tw`shadow-danger-800/20 bg-danger-50 text-danger-600 hover:bg-danger-100`,
-          neutral: tw`text-neutral-600 hover:text-blue-600`,
-        }[this.variant],
+        tw`flex w-full cursor-pointer items-center justify-start gap-2 rounded-sm px-2 py-4 font-medium  outline-primary-600 transition hover:transition-none focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-1 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50`,
+        this.icon ? tw`min-h-6 min-w-6` : tw`h-6`,
+        this.active
+          ? tw`bg-blue-100 text-blue-600 shadow-sm shadow-blue-900/40 hover:bg-blue-100`
+          : tw`text-neutral-600 hover:bg-blue-50`,
       ]
         .filter(Boolean)
         .join(" ")}
@@ -73,12 +73,12 @@ export class Button extends TailwindElement {
       aria-label=${ifDefined(this.label)}
       @click=${this.handleClick}
     >
-      ${this.loading ? html`<sl-spinner></sl-spinner>` : html`<slot></slot>`}
+      <slot></slot>
     </${tag}>`;
   }
 
   private handleClick(e: MouseEvent) {
-    if (this.disabled || this.loading) {
+    if (this.disabled) {
       e.preventDefault();
       e.stopPropagation();
       return;
