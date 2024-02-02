@@ -52,6 +52,8 @@ data:
 
   PASSWORD_DISABLED: "{{ .Values.password_disabled | default 0 }}"
 
+  SSO_SUPERUSER_GROUPS: {{ .Values.sso_superuser_groups | default "browsertrix-admins" }}
+
   SSO_HEADER_ENABLED: "{{ .Values.sso_header_enabled | default 0 }}"
 
   SSO_HEADER_EMAIL_FIELD: {{ .Values.sso_header_email_field | default "x-remote-email" }}

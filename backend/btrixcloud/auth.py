@@ -41,6 +41,7 @@ RESET_VERIFY_TOKEN_LIFETIME_MINUTES = 60
 PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 PASSWORD_DISABLED = bool(int(os.environ.get("PASSWORD_DISABLED", 0)))
+SSO_SUPERUSER_GROUPS = os.environ.get("SSO_SUPERUSER_GROUPS", "browsertrix-admins").split(";")
 
 SSO_HEADER_ENABLED = bool(int(os.environ.get("SSO_HEADER_ENABLED", 0)))
 SSO_HEADER_GROUPS_SEPARATOR = os.environ.get("SSO_HEADER_GROUPS_SEPARATOR", ";")
@@ -204,6 +205,8 @@ if SSO_OIDC_ENABLED:
 
 # ============================================================================
 async def update_user_orgs(groups: [str], user, ops):
+    if user.is_superuser:
+        return
     orgs = await ops.get_org_slugs_by_ids()
     user_orgs, _ = await ops.get_orgs_for_user(user)
     for org_id, slug in orgs.items():
@@ -222,11 +225,23 @@ async def update_user_orgs(groups: [str], user, ops):
             del org.users[str(user.id)]
             await ops.update_users(org)
 
+async def update_user_role(groups: [str], user, user_manager):
+    """Update if user should be superuser"""
+    is_superuser = False
+    for group in groups:
+        if group in SSO_SUPERUSER_GROUPS:
+            is_superuser = True
+    if user.is_superuser != is_superuser:
+        query: dict[str, str] = {}
+        query["is_superuser"] = is_superuser
+        await user_manager.users.find_one_and_update({"id": user.id}, {"$set": query})
+
 async def process_sso_user_login(user_manager, login_email, login_name, groups) -> User:
     user = await user_manager.get_by_email(login_email)
     ops = user_manager.org_ops
 
     if user:
+        await update_user_role(groups, user, user_manager)
         await update_user_orgs(groups, user, ops)
         # User exist, and correct orgs have been set, proceed to login
         return user
@@ -235,6 +250,7 @@ async def process_sso_user_login(user_manager, login_email, login_name, groups) 
         await user_manager.create_non_super_user(login_email, None, login_name, is_sso=True)
         user = await user_manager.get_by_email(login_email)
         if user:
+            await update_user_role(groups, user, user_manager)
             await update_user_orgs(groups, user, ops)
             # User has been created and correct orgs have been set, proceed to login
             return user
