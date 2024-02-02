@@ -508,12 +508,22 @@ class UserManager:
 
         user = await self.get_by_id(user_uuid)
         if user:
+            if user.is_sso:
+                raise HTTPException(
+                    status_code=400,
+                    detail="external_user",
+                )
             await self._update_password(user, password)
 
     async def change_password(
         self, user_update: UserUpdatePassword, user: User
     ) -> None:
         """Change password after checking existing password"""
+        if user.is_sso:
+            raise HTTPException(
+                status_code=400,
+                detail="external_user",
+            )
         if not await self.check_password(user, user_update.password):
             raise HTTPException(status_code=400, detail="invalid_current_password")
 
@@ -523,6 +533,11 @@ class UserManager:
         self, user_update: UserUpdateEmailName, user: User
     ) -> None:
         """Change email and/or name, if specified, throw if neither is specified"""
+        if user.is_sso:
+            raise HTTPException(
+                status_code=400,
+                detail="external_user",
+            )
         if not user_update.email and not user_update.name:
             raise HTTPException(status_code=400, detail="no_updates_specified")
 
@@ -668,7 +683,7 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
         email: EmailStr = Body(..., embed=True),
     ):
         user = await user_manager.get_by_email(email)
-        if not user:
+        if not user or user.is_sso:
             return None
 
         await user_manager.forgot_password(user, request)
