@@ -11,6 +11,7 @@ export class TableRow extends LitElement {
       grid-column: var(--btrix-table-grid-column);
       display: grid;
       grid-template-columns: subgrid;
+      position: relative;
     }
   `;
 

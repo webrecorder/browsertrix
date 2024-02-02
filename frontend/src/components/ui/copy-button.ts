@@ -35,12 +35,12 @@ export class CopyButton extends LitElement {
   hoist = false;
 
   @state()
-  private isCopied: boolean = false;
+  private isCopied = false;
 
   timeoutId?: number;
 
   static copyToClipboard(value: string) {
-    navigator.clipboard.writeText(value);
+    void navigator.clipboard.writeText(value);
   }
 
   disconnectedCallback() {
@@ -54,8 +54,8 @@ export class CopyButton extends LitElement {
         content=${this.isCopied
           ? msg("Copied to clipboard!")
           : this.content
-          ? this.content
-          : msg("Copy")}
+            ? this.content
+            : msg("Copy")}
         ?hoist=${this.hoist}
       >
         <sl-icon-button

@@ -184,14 +184,13 @@ export class CrawlLogs extends LitElement {
                 ? this.renderPre(value)
                 : value ?? "--"}
             </btrix-desc-list-item>
-          `
+          `,
         )}
       </btrix-desc-list>
     `;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private renderPre(value: any) {
+  private renderPre(value: unknown) {
     let str = value;
     if (typeof value !== "string") {
       str = JSON.stringify(value, null, 2);

@@ -30,6 +30,12 @@ jobs:
         env:
           HUSKY: 0
         run: yarn install --frozen-lockfile
+      - name: Lint
+        working-directory: frontend
+        run: yarn lint:check
+      - name: Format
+        working-directory: frontend
+        run: yarn format:check
       - name: Unit tests
         working-directory: frontend
         run: yarn test

@@ -30,7 +30,7 @@ class AppState {
           ...acc,
           [org.id]: org.slug,
         }),
-        {}
+        {},
       );
       return slugLookup;
     }

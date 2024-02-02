@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 const { tailwindTransform } = require("postcss-lit");
 const Color = require("color");
 
@@ -105,8 +104,12 @@ function makeTheme() {
     aspectRatio: {
       "4/3": "4 / 3", // For Browsertrix watch/replay
     },
+    gridTemplateColumns: {
+      13: "repeat(13, minmax(0, 1fr))",
+      14: "repeat(14, minmax(0, 1fr))",
+    },
     screens: {
-      desktop: "82.5rem",
+      desktop: "82.5rem", // 14 4.5rem columns with 1.5rem gutter
       // Override default of:
       // => @media (min-width: 1024px) { ... }
     },

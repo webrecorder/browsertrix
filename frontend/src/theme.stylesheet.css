@@ -253,6 +253,8 @@
   .truncate {
     /* Fix tailwind clipping vertical */
     overflow: clip visible;
+    /* Fix for if flex item: */
+    min-width: 0;
   }
 
   .offscreen {

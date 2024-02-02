@@ -1,12 +1,11 @@
 import { TailwindElement } from "@/classes/TailwindElement";
-import { LitElement, html, css } from "lit";
+import { LitElement, html, css, type PropertyValues } from "lit";
 import { property, queryAsync, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 const DEFAULT_PANEL_ID = "default-panel";
-// Match witch tailwind 4xl max width
-// https://tailwindcss.com/docs/max-width
-const SCREEN_LG_PX = 896;
+// Breakpoint in pixels for 2-column layout
+const TWO_COL_SCREEN_MIN = 1032;
 
 /**
  * Tab list
@@ -60,7 +59,7 @@ export class Tab extends TailwindElement {
   render() {
     return html`
       <li
-        class="py-4 px-3 leading-tight font-semibold text-neutral-500 transition-colors duration-fast aria-selected:text-blue-600 cursor-pointer aria-disabled:cursor-default"
+        class="cursor-pointer px-3 py-4 font-semibold leading-tight text-neutral-500 transition-colors duration-fast aria-disabled:cursor-default aria-selected:text-blue-600"
         role="tab"
         aria-selected=${this.active}
         aria-controls=${ifDefined(this.name)}
@@ -90,15 +89,15 @@ export class TabList extends LitElement {
         "header"
         "main";
       grid-template-columns: 1fr;
-      grid-gap: 1rem;
+      grid-gap: 1.5rem;
     }
 
-    @media only screen and (min-width: ${SCREEN_LG_PX}px) {
+    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN}px) {
       .container {
         grid-template-areas:
           ". header"
           "menu main";
-        grid-template-columns: auto minmax(auto, 70rem);
+        grid-template-columns: 16.5rem 1fr;
       }
     }
 
@@ -106,7 +105,7 @@ export class TabList extends LitElement {
       grid-area: menu;
     }
 
-    @media only screen and (min-width: ${SCREEN_LG_PX}px) {
+    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN}px) {
       .navWrapper {
         overflow: initial;
       }
@@ -141,7 +140,7 @@ export class TabList extends LitElement {
       margin-left: var(--track-width);
     }
 
-    @media only screen and (min-width: ${SCREEN_LG_PX}px) {
+    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN}px) {
       .tablist {
         display: block;
       }
@@ -166,7 +165,7 @@ export class TabList extends LitElement {
       background-color: var(--sl-color-blue-500);
     }
 
-    @media only screen and (min-width: ${SCREEN_LG_PX}px) {
+    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN}px) {
       .tablist,
       .show-indicator .track,
       .show-indicator .indicator {
@@ -187,12 +186,12 @@ export class TabList extends LitElement {
   hideIndicator = false;
 
   @queryAsync(".track")
-  private trackElem!: HTMLElement;
+  private readonly trackElem!: HTMLElement;
 
   @queryAsync(".indicator")
-  private indicatorElem!: HTMLElement;
+  private readonly indicatorElem!: HTMLElement;
 
-  updated(changedProperties: Map<string, any>) {
+  updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("activePanel") && this.activePanel) {
       this.onActiveChange(!changedProperties.get("activePanel"));
     }
@@ -262,22 +261,20 @@ export class TabList extends LitElement {
   }
 
   private getPanels(): TabPanelElement[] {
-    const slotElems = (
-      this.renderRoot.querySelector(
-        ".content slot:not([name])"
-      ) as HTMLSlotElement
-    ).assignedElements();
+    const slotElems = this.renderRoot
+      .querySelector<HTMLSlotElement>(".content slot:not([name])")!
+      .assignedElements();
     return ([...slotElems] as TabPanelElement[]).filter(
-      (el) => el.tagName.toLowerCase() === "btrix-tab-panel"
+      (el) => el.tagName.toLowerCase() === "btrix-tab-panel",
     );
   }
 
   private getTabs(): TabElement[] {
-    const slotElems = (
-      this.renderRoot.querySelector("slot[name='nav']") as HTMLSlotElement
-    ).assignedElements();
+    const slotElems = this.renderRoot
+      .querySelector<HTMLSlotElement>("slot[name='nav']")!
+      .assignedElements();
     return ([...slotElems] as TabElement[]).filter(
-      (el) => el.tagName.toLowerCase() === "btrix-tab"
+      (el) => el.tagName.toLowerCase() === "btrix-tab",
     );
   }
 
@@ -289,10 +286,10 @@ export class TabList extends LitElement {
 
   private onProgressChange(isFirstChange: boolean) {
     const progressTab = this.getTabs().find(
-      (el) => el.name === this.progressPanel
+      (el) => el.name === this.progressPanel,
     );
     if (progressTab) {
-      this.repositionIndicator(progressTab, !isFirstChange);
+      void this.repositionIndicator(progressTab, !isFirstChange);
     }
   }
 
@@ -302,7 +299,7 @@ export class TabList extends LitElement {
         tab.active = true;
 
         if (!this.progressPanel) {
-          this.repositionIndicator(tab, !isFirstChange);
+          void this.repositionIndicator(tab, !isFirstChange);
         }
       } else {
         tab.active = false;

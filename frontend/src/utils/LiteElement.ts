@@ -11,9 +11,9 @@ export default class LiteElement extends LitElement {
   @use()
   appState = appState;
 
-  private apiController = new APIController(this);
-  private notifyController = new NotifyController(this);
-  private navigateController = new NavigateController(this);
+  private readonly apiController = new APIController(this);
+  private readonly notifyController = new NotifyController(this);
+  private readonly navigateController = new NavigateController(this);
 
   protected get orgBasePath() {
     return this.navigateController.orgBasePath;

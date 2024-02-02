@@ -55,7 +55,7 @@ export class DescListItem extends LitElement {
   `;
 
   @property({ type: String })
-  label: string = "";
+  label = "";
 
   render() {
     return html`<div class="item">

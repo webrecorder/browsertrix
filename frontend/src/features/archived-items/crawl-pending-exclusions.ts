@@ -2,6 +2,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 
 import LiteElement, { html } from "@/utils/LiteElement";
+import { type PageChangeEvent } from "@/components/ui/pagination";
 
 type URLs = string[];
 
@@ -22,10 +23,11 @@ export class CrawlPendingExclusions extends LiteElement {
   matchedURLs: URLs | null = null;
 
   @state()
-  private page: number = 1;
+  private page = 1;
 
-  @state()
-  private pageSize: number = 10;
+  private get pageSize() {
+    return 10;
+  }
 
   private get total(): number {
     return this.matchedURLs?.length || 0;
@@ -36,7 +38,7 @@ export class CrawlPendingExclusions extends LiteElement {
 
     return this.matchedURLs.slice(
       (this.page - 1) * this.pageSize,
-      this.page * this.pageSize
+      this.page * this.pageSize,
     );
   }
 
@@ -50,7 +52,7 @@ export class CrawlPendingExclusions extends LiteElement {
                 size=${this.pageSize}
                 totalCount=${this.total}
                 compact
-                @page-change=${(e: CustomEvent) => {
+                @page-change=${(e: PageChangeEvent) => {
                   this.page = e.detail.page;
                 }}
               >
@@ -82,13 +84,13 @@ export class CrawlPendingExclusions extends LiteElement {
         ${this.matchedURLs
           ? msg("No matching URLs found in queue.")
           : msg(
-              "Start typing an exclusion to view matching URLs in the queue."
+              "Start typing an exclusion to view matching URLs in the queue.",
             )}
       </p>`;
     }
 
     return html`
-      <btrix-numbered-list class="text-xs break-all" aria-live="polite">
+      <btrix-numbered-list class="break-all text-xs" aria-live="polite">
         ${this.pageResults.map(
           (url, idx) => html`
             <btrix-numbered-list-item>
@@ -103,7 +105,7 @@ export class CrawlPendingExclusions extends LiteElement {
                 >${url}</a
               >
             </btrix-numbered-list-item>
-          `
+          `,
         )}
       </btrix-numbered-list>
     `;

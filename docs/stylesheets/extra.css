@@ -108,6 +108,14 @@ code {
     font-weight: 600;
 }
 
+.badge-green {
+    background-color: hsl(142 76% 36%) !important;
+    border-color: hsl(142 76% 36%) !important;
+    color: white !important;
+    font-family: var(--md-text-font);
+    font-weight: 600;
+}
+
 .badge-orange {
     background-color: var(--wr-orange-primary) !important;
     border-color: var(--wr-orange-primary) !important;

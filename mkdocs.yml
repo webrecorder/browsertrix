@@ -19,6 +19,8 @@ theme:
     - navigation.footer
     - content.code.copy
     - content.action.edit
+    - content.tooltips
+    - search.suggest
   palette:
     scheme: webrecorder
   logo: assets/brand/btrix-logo.svg
@@ -77,8 +79,8 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
       options:
         custom_icons:
           - docs/overrides/.icons
@@ -102,3 +104,6 @@ extra:
     - icon: bootstrap/youtube
       link: https://www.youtube.com/@webrecorder
 copyright: "Creative Commons Attribution 4.0 International (CC BY 4.0)"
+
+plugins:
+  - search
