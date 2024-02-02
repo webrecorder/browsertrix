@@ -2,6 +2,7 @@
 import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { createMachine, interpret, assign } from "@xstate/fsm";
+import { when } from "lit/directives/when.js";
 
 import type { ViewState } from "@/utils/APIRouter";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -147,6 +148,9 @@ export class LogInPage extends LiteElement {
   redirectUrl: string = ROUTES.home;
 
   @property({ type: Boolean })
+  PasswordLoginEnabled: boolean = true;
+
+  @property({ type: Boolean })
   HeaderSSOEnabled: boolean = false;
 
   @property({ type: Boolean })
@@ -219,14 +223,9 @@ export class LogInPage extends LiteElement {
       `;
     }
 
-    var header_sso_component = html``
-    var oidc_sso_component = html``
-    if (this.HeaderSSOEnabled){
-      header_sso_component = html`<div style="margin-top: 20px">${this.renderLoginHeaderButton()}</div>`
-    }
-
-    if (this.OIDCSSOEnabled){
-      oidc_sso_component = html`<div style="margin-top: 20px">${this.renderLoginOIDCButton()}</div>`
+    if (!this.PasswordLoginEnabled){
+      form = '';
+      link = '';
     }
 
     return html`
@@ -236,8 +235,8 @@ export class LogInPage extends LiteElement {
         <main class="md:bg-white md:border md:shadow-lg md:rounded-lg p-10">
           <div>${this.renderFormError()}</div>
           <div>${form}</div>
-          ${header_sso_component}
-          ${oidc_sso_component}
+          ${when(this.HeaderSSOEnabled, () => html`<div style="margin-top: 20px">${this.renderLoginHeaderButton()}</div>`)}
+          ${when(this.OIDCSSOEnabled, () => html`<div style="margin-top: 20px">${this.renderLoginOIDCButton()}</div>`)}
         </main>
         <footer class="text-center">${link}</footer>
       </article>
@@ -414,6 +413,7 @@ export class LogInPage extends LiteElement {
     const resp = await fetch("/api/auth/jwt/login/methods");
     if (resp.status == 200) {
       const data = await resp.json();
+      this.PasswordLoginEnabled = data.login_methods.password;
       this.HeaderSSOEnabled = data.login_methods.sso_header;
       this.OIDCSSOEnabled = data.login_methods.sso_oidc;
     }

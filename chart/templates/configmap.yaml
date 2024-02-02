@@ -50,6 +50,8 @@ data:
 
   CRAWLER_CHANNELS_JSON: "/ops-configs/crawler_channels.json"
 
+  PASSWORD_DISABLED: "{{ .Values.sso_header_enabled | default 0 }}"
+
   SSO_HEADER_ENABLED: "{{ .Values.sso_header_enabled | default 0 }}"
 
   SSO_HEADER_EMAIL_FIELD: {{ .Values.sso_header_email_field | default "x-remote-email" }}

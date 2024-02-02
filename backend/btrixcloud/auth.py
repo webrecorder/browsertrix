@@ -40,6 +40,8 @@ RESET_VERIFY_TOKEN_LIFETIME_MINUTES = 60
 
 PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+PASSWORD_DISABLED = bool(int(os.environ.get("PASSWORD_DISABLED", 0)))
+
 SSO_HEADER_ENABLED = bool(int(os.environ.get("SSO_HEADER_ENABLED", 0)))
 SSO_HEADER_GROUPS_SEPARATOR = os.environ.get("SSO_HEADER_GROUPS_SEPARATOR", ";")
 SSO_HEADER_EMAIL_FIELD = os.environ.get("SSO_HEADER_EMAIL_FIELD", "x-remote-email")
@@ -281,6 +283,12 @@ def init_jwt_auth(user_manager):
         lock the user account and send an email to reset their password.
         On successful login when user is not already locked, reset count to 0.
         """
+        if PASSWORD_DISABLED:
+            raise HTTPException(
+                status_code=405,
+                detail="password_based_login_disabled",
+            )
+
         login_email = credentials.username
 
         failed_count = await user_manager.get_failed_logins_count(login_email)
@@ -400,6 +408,9 @@ def init_jwt_auth(user_manager):
             'sso_header': False,
             'sso_oidc': False
         }
+
+        if PASSWORD_DISABLED:
+            enabled_login_methods['password'] = False
 
         if SSO_HEADER_ENABLED:
             enabled_login_methods['sso_header'] = True
