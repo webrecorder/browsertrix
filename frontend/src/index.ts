@@ -59,6 +59,9 @@ export class App extends LiteElement {
   @property({ type: String })
   version?: string;
 
+  @property({ type: Boolean })
+  InvitesEnabled: boolean = true;
+
   private readonly router = new APIRouter(ROUTES);
   authService = new AuthService();
 
@@ -221,6 +224,10 @@ export class App extends LiteElement {
     );
   }
 
+  firstUpdated() {
+    this.checkEnabledInvites();
+  }
+
   render() {
     return html`
       <div class="min-w-screen flex min-h-screen flex-col">
@@ -311,7 +318,7 @@ export class App extends LiteElement {
                         <sl-icon slot="prefix" name="gear"></sl-icon>
                         ${msg("Account Settings")}
                       </sl-menu-item>
-                      ${this.appState.userInfo?.isAdmin
+                      ${this.appState.userInfo?.isAdmin && this.InvitesEnabled
                         ? html` <sl-menu-item
                             @click=${() => this.navigate(ROUTES.usersInvite)}
                           >
@@ -924,5 +931,13 @@ export class App extends LiteElement {
 
   private clearSelectedOrg() {
     AppStateService.updateOrgSlug(null);
+  }
+
+  async checkEnabledInvites() {
+    const resp = await fetch("/api/auth/jwt/login/methods");
+    if (resp.status == 200) {
+      const data = await resp.json();
+      this.InvitesEnabled = data.invites_enabled;
+    }
   }
 }
