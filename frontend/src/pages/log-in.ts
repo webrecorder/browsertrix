@@ -146,6 +146,12 @@ export class LogInPage extends LiteElement {
   @property({ type: String })
   redirectUrl: string = ROUTES.home;
 
+  @property({ type: Boolean })
+  HeaderSSOEnabled: boolean = false;
+
+  @property({ type: Boolean })
+  OIDCSSOEnabled: boolean = false;
+
   private formStateService = interpret(machine);
 
   @state()
@@ -213,6 +219,16 @@ export class LogInPage extends LiteElement {
       `;
     }
 
+    var header_sso_component = html``
+    var oidc_sso_component = html``
+    if (this.HeaderSSOEnabled){
+      header_sso_component = html`<div style="margin-top: 20px">${this.renderLoginHeaderButton()}</div>`
+    }
+
+    if (this.OIDCSSOEnabled){
+      oidc_sso_component = html`<div style="margin-top: 20px">${this.renderLoginOIDCButton()}</div>`
+    }
+
     return html`
       <article class="w-full max-w-md grid gap-5">
         ${successMessage}
@@ -220,8 +236,8 @@ export class LogInPage extends LiteElement {
         <main class="md:bg-white md:border md:shadow-lg md:rounded-lg p-10">
           <div>${this.renderFormError()}</div>
           <div>${form}</div>
-          <div style="margin-top: 20px">${this.renderLoginHeaderButton()}</div>
-          <div style="margin-top: 20px">${this.renderLoginOIDCButton()}</div>
+          ${header_sso_component}
+          ${oidc_sso_component}
         </main>
         <footer class="text-center">${link}</footer>
       </article>
@@ -256,6 +272,11 @@ export class LogInPage extends LiteElement {
 
   private renderLoginForm() {
 
+    var button_type = "primary"
+    if (this.HeaderSSOEnabled || this.OIDCSSOEnabled) {
+      button_type = "default"
+    }
+
     return html`
       <form @submit=${this.onSubmitLogIn} aria-describedby="formError">
         <div class="mb-5">
@@ -284,7 +305,7 @@ export class LogInPage extends LiteElement {
 
         <sl-button
           class="w-full"
-          variant="primary"
+          variant="${button_type}"
           ?loading=${this.formState.value === "signingIn"}
           ?disabled=${this.formState.value === "backendInitializing"}
           type="submit"
@@ -313,7 +334,7 @@ export class LogInPage extends LiteElement {
           ?loading=${this.formState.value === "signingIn"}
           ?disabled=${this.formState.value === "backendInitializing"}
           type="submit"
-          >${msg("Log In with Single Sign On (Header)")}</sl-button
+          >${msg("Log In with Single Sign On")}</sl-button
         >
       </form>
     `;
@@ -329,7 +350,7 @@ export class LogInPage extends LiteElement {
           ?loading=${this.formState.value === "signingIn"}
           ?disabled=${this.formState.value === "backendInitializing"}
           type="submit"
-          >${msg("Log In with Single Sign On (OIDC)")}</sl-button
+          >${msg("Log In with Single Sign On")}</sl-button
         >
       </form>
     `;
@@ -379,12 +400,22 @@ export class LogInPage extends LiteElement {
     const resp = await fetch("/api/settings");
     if (resp.status === 200) {
       this.formStateService.send("BACKEND_INITIALIZED");
+      this.checkEnabledSSOMethods();
     } else {
       this.formStateService.send("BACKEND_NOT_INITIALIZED");
       this.timerId = window.setTimeout(
         () => this.checkBackendInitialized(),
         5000
       );
+    }
+  }
+
+  async checkEnabledSSOMethods() {
+    const resp = await fetch("/api/auth/jwt/login/methods");
+    if (resp.status == 200) {
+      const data = await resp.json();
+      this.HeaderSSOEnabled = data.login_methods.sso_header;
+      this.OIDCSSOEnabled = data.login_methods.sso_oidc;
     }
   }
 
