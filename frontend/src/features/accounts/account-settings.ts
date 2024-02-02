@@ -133,6 +133,12 @@ export class AccountSettings extends LiteElement {
         <h1 class="text-xl font-semibold leading-8 mb-7">
           ${msg("Account Settings")}
         </h1>
+        ${when(this.userInfo.isSSO, () => 
+          html`
+            <btrix-alert variant="info">Some of the setting are managed by your organization and cannot be changed.</btrix-alert>
+            <br/>
+          `
+        )}
         <form class="border rounded mb-5" @submit=${this.onSubmitName}>
           <div class="p-4">
             <h2 class="text-lg font-semibold leading-none mb-4">
@@ -149,6 +155,7 @@ export class AccountSettings extends LiteElement {
               maxlength="40"
               minlength="2"
               required
+              ?disabled=${this.userInfo.isSSO}
               aria-label=${msg("Display name")}
             ></sl-input>
           </div>
@@ -158,6 +165,7 @@ export class AccountSettings extends LiteElement {
               size="small"
               variant="primary"
               ?loading=${this.sectionSubmitting === "name"}
+              ?disabled=${this.userInfo.isSSO}
               >${msg("Save")}</sl-button
             >
           </footer>
@@ -172,6 +180,7 @@ export class AccountSettings extends LiteElement {
               name="email"
               value=${this.userInfo.email}
               type="email"
+              ?disabled=${this.userInfo.isSSO}
               aria-label=${msg("Email")}
             >
               <div slot="suffix">
@@ -208,75 +217,89 @@ export class AccountSettings extends LiteElement {
               size="small"
               variant="primary"
               ?loading=${this.sectionSubmitting === "email"}
+              ?disabled=${this.userInfo.isSSO}
               >${msg("Save")}</sl-button
             >
           </footer>
         </form>
-        <section class="border rounded mb-5">
-          ${when(
-            this.isChangingPassword,
-            () => html`
-              <form @submit=${this.onSubmitPassword}>
-                <div class="p-4">
-                  <h2 class="text-lg font-semibold leading-none mb-4">
+        ${when(!this.userInfo.isSSO, () => html`
+          <section class="border rounded mb-5">
+            ${when(
+              this.isChangingPassword,
+              () => html`
+                <form @submit=${this.onSubmitPassword}>
+                  <div class="p-4">
+                    <h2 class="text-lg font-semibold leading-none mb-4">
+                      ${msg("Password")}
+                    </h2>
+                    <sl-input
+                      class="mb-3"
+                      name="password"
+                      label=${msg("Enter your current password")}
+                      type="password"
+                      autocomplete="current-password"
+                      password-toggle
+                      required
+                    ></sl-input>
+                    <sl-input
+                      name="newPassword"
+                      label=${msg("New password")}
+                      type="password"
+                      autocomplete="new-password"
+                      password-toggle
+                      minlength="8"
+                      required
+                      @input=${this.onPasswordInput}
+                    ></sl-input>
+
+                    ${when(this.pwStrengthResults, this.renderPasswordStrength)}
+                  </div>
+                  <footer
+                    class="flex items-center justify-end border-t px-4 py-3"
+                  >
+                    <p class="mr-auto text-gray-500">
+                      ${msg(
+                        str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`
+                      )}
+                    </p>
+                    <sl-button
+                      type="submit"
+                      size="small"
+                      variant="primary"
+                      ?loading=${this.sectionSubmitting === "password"}
+                      ?disabled=${!this.pwStrengthResults ||
+                      this.pwStrengthResults.score < PASSWORD_MIN_SCORE}
+                      >${msg("Save")}</sl-button
+                    >
+                  </footer>
+                </form>
+              `,
+              () => html`
+                <div class="px-4 py-3 flex items-center justify-between">
+                  <h2 class="text-lg font-semibold leading-none">
                     ${msg("Password")}
                   </h2>
-                  <sl-input
-                    class="mb-3"
-                    name="password"
-                    label=${msg("Enter your current password")}
-                    type="password"
-                    autocomplete="current-password"
-                    password-toggle
-                    required
-                  ></sl-input>
-                  <sl-input
-                    name="newPassword"
-                    label=${msg("New password")}
-                    type="password"
-                    autocomplete="new-password"
-                    password-toggle
-                    minlength="8"
-                    required
-                    @input=${this.onPasswordInput}
-                  ></sl-input>
-
-                  ${when(this.pwStrengthResults, this.renderPasswordStrength)}
-                </div>
-                <footer
-                  class="flex items-center justify-end border-t px-4 py-3"
-                >
-                  <p class="mr-auto text-gray-500">
-                    ${msg(
-                      str`Choose a strong password between ${PASSWORD_MINLENGTH}-${PASSWORD_MAXLENGTH} characters.`
-                    )}
-                  </p>
                   <sl-button
-                    type="submit"
                     size="small"
-                    variant="primary"
-                    ?loading=${this.sectionSubmitting === "password"}
-                    ?disabled=${!this.pwStrengthResults ||
-                    this.pwStrengthResults.score < PASSWORD_MIN_SCORE}
-                    >${msg("Save")}</sl-button
+                    @click=${() => (this.isChangingPassword = true)}
+                    >${msg("Change Password")}</sl-button
                   >
-                </footer>
-              </form>
-            `,
-            () => html`
-              <div class="px-4 py-3 flex items-center justify-between">
-                <h2 class="text-lg font-semibold leading-none">
-                  ${msg("Password")}
-                </h2>
-                <sl-button
-                  size="small"
-                  @click=${() => (this.isChangingPassword = true)}
-                  >${msg("Change Password")}</sl-button
-                >
-              </div>
-            `
-          )}
-        </section>
+                </div>
+              `
+            )}
+          </section>
+        `,
+        () => html`
+          <section class="border rounded mb-5">
+            <div class="p-4">
+              <h2 class="text-lg font-semibold leading-none mb-4">
+                ${msg("Password")}
+              </h2>
+              <p>Password change is disabled for external accounts. Please change the password in your organization portal.</p>
+            </div>
+          </section>
+        `
+        )}
       </div>
     `;
   }

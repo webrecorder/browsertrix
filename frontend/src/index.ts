@@ -49,6 +49,7 @@ export type APIUser = {
   is_verified: boolean;
   is_superuser: boolean;
   orgs: UserOrg[];
+  is_sso: boolean;
 };
 
 @localized()
@@ -150,6 +151,7 @@ export class App extends LiteElement {
         isVerified: userInfo.is_verified,
         isAdmin: userInfo.is_superuser,
         orgs: userInfo.orgs,
+        isSSO: userInfo.is_sso,
       });
       const orgs = userInfo.orgs;
       if (
