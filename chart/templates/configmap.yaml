@@ -50,7 +50,7 @@ data:
 
   CRAWLER_CHANNELS_JSON: "/ops-configs/crawler_channels.json"
 
-  PASSWORD_DISABLED: "{{ .Values.sso_header_enabled | default 0 }}"
+  PASSWORD_DISABLED: "{{ .Values.password_disabled | default 0 }}"
 
   SSO_HEADER_ENABLED: "{{ .Values.sso_header_enabled | default 0 }}"
 
