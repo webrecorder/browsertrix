@@ -1,6 +1,7 @@
 import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import { when } from "lit/directives/when.js";
 
 import type { AuthState } from "@/utils/AuthService";
 import type { CurrentUser } from "@/types/user";
@@ -20,6 +21,9 @@ export class Home extends LiteElement {
 
   @property({ type: String })
   slug?: string;
+
+  @property({ type: Boolean })
+  InvitesEnabled: boolean = true;
 
   @state()
   private isInviteComplete?: boolean;
@@ -44,6 +48,10 @@ export class Home extends LiteElement {
     } else {
       this.navTo("/log-in");
     }
+  }
+
+  firstUpdated() {
+    this.checkEnabledInvites();
   }
 
   willUpdate(changedProperties: Map<string, any>) {
@@ -160,14 +168,19 @@ export class Home extends LiteElement {
             ></btrix-orgs-list>
           </section>
         </div>
-        <div class="col-span-5 md:col-span-2">
-          <section class="md:border md:rounded-lg md:bg-white p-3 md:p-8">
-            <h2 class="text-lg font-medium mb-3">
-              ${msg("Invite User to Org")}
-            </h2>
-            ${this.renderInvite()}
-          </section>
-        </div>
+        ${when(this.InvitesEnabled, () => 
+          html`
+            <div class="col-span-5 md:col-span-2">
+              <section class="md:border md:rounded-lg md:bg-white p-3 md:p-8">
+                <h2 class="text-lg font-medium mb-3">
+                  ${msg("Invite User to Org")}
+                </h2>
+                ${this.renderInvite()}
+              </section>
+            </div>
+          `
+        )}
+        
       </div>
 
       <btrix-dialog
@@ -329,5 +342,13 @@ export class Home extends LiteElement {
   async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;
     return !formEl.querySelector("[data-invalid]");
+  }
+
+  async checkEnabledInvites() {
+    const resp = await fetch("/api/auth/jwt/login/methods");
+    if (resp.status == 200) {
+      const data = await resp.json();
+      this.InvitesEnabled = data.invites_enabled;
+    }
   }
 }

@@ -79,6 +79,9 @@ export class OrgSettings extends LiteElement {
   @property({ type: Boolean })
   isSavingOrgName = false;
 
+  @property({ type: Boolean })
+  InvitesEnabled: boolean = true;
+
   @state()
   pendingInvites: Invite[] = [];
 
@@ -99,6 +102,10 @@ export class OrgSettings extends LiteElement {
   }
 
   private validateOrgNameMax = maxLengthValidator(40);
+
+  firstUpdated() {
+    this.checkEnabledInvites();
+  }
 
   async willUpdate(changedProperties: Map<string, any>) {
     if (changedProperties.has("isAddingMember") && this.isAddingMember) {
@@ -123,20 +130,24 @@ export class OrgSettings extends LiteElement {
             this.activePanel === "members",
             () => html`
               <h3>${msg("Active Members")}</h3>
-              <sl-button
-                href=${`${this.orgBasePath}/settings/members?invite`}
-                variant="primary"
-                size="small"
-                @click=${this.navLink}
-              >
-                <sl-icon
-                  slot="prefix"
-                  name="person-add"
-                  aria-hidden="true"
-                  library="default"
-                ></sl-icon>
-                ${msg("Invite New Member")}</sl-button
-              >
+              ${when(this.InvitesEnabled, () => 
+                html`
+                  <sl-button
+                    href=${`${this.orgBasePath}/settings/members?invite`}
+                    variant="primary"
+                    size="small"
+                    @click=${this.navLink}
+                  >
+                    <sl-icon
+                      slot="prefix"
+                      name="person-add"
+                      aria-hidden="true"
+                      library="default"
+                    ></sl-icon>
+                    ${msg("Invite New Member")}</sl-button
+                  >
+                `
+              )}
             `,
             () => html` <h3>${this.tabLabels[this.activePanel]}</h3> `
           )}
@@ -309,15 +320,19 @@ export class OrgSettings extends LiteElement {
         `
       )}
 
-      <btrix-dialog
-        .label=${msg("Invite New Member")}
-        .open=${this.isAddingMember}
-        @sl-request-close=${this.hideInviteDialog}
-        @sl-show=${() => (this.isAddMemberFormVisible = true)}
-        @sl-after-hide=${() => (this.isAddMemberFormVisible = false)}
-      >
-        ${this.isAddMemberFormVisible ? this.renderInviteForm() : ""}
-      </btrix-dialog>
+      ${when(this.InvitesEnabled, () => 
+        html`
+          <btrix-dialog
+            .label=${msg("Invite New Member")}
+            .open=${this.isAddingMember}
+            @sl-request-close=${this.hideInviteDialog}
+            @sl-show=${() => (this.isAddMemberFormVisible = true)}
+            @sl-after-hide=${() => (this.isAddMemberFormVisible = false)}
+          >
+            ${this.isAddMemberFormVisible ? this.renderInviteForm() : ""}
+          </btrix-dialog>
+        `
+      )}
     `;
   }
 
@@ -584,6 +599,14 @@ export class OrgSettings extends LiteElement {
         variant: "danger",
         icon: "exclamation-octagon",
       });
+    }
+  }
+
+  async checkEnabledInvites() {
+    const resp = await fetch("/api/auth/jwt/login/methods");
+    if (resp.status == 200) {
+      const data = await resp.json();
+      this.InvitesEnabled = data.invites_enabled;
     }
   }
 }

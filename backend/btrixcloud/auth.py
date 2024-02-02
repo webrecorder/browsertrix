@@ -41,6 +41,7 @@ RESET_VERIFY_TOKEN_LIFETIME_MINUTES = 60
 PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 PASSWORD_DISABLED = bool(int(os.environ.get("PASSWORD_DISABLED", 0)))
+INVITES_ENABLED = not bool(int(os.environ.get("INVITES_DISABLED", 0)))  # Negation as Workaround for inability of setting a value to 0 in values.yml: https://github.com/helm/helm/issues/3164
 SSO_SUPERUSER_GROUPS = os.environ.get("SSO_SUPERUSER_GROUPS", "browsertrix-admins").split(";")
 
 SSO_HEADER_ENABLED = bool(int(os.environ.get("SSO_HEADER_ENABLED", 0)))
@@ -84,6 +85,7 @@ class BearerResponse(BaseModel):
 
 class LoginMethodsInquiryResponse(BaseModel):
     login_methods: dict
+    invites_enabled: bool
 
 class OIDCRedirectResponse(BaseModel):
     redirect_url: str
@@ -434,7 +436,7 @@ def init_jwt_auth(user_manager):
         if SSO_OIDC_ENABLED:
             enabled_login_methods['sso_oidc'] = True
 
-        return LoginMethodsInquiryResponse(login_methods=enabled_login_methods)
+        return LoginMethodsInquiryResponse(login_methods=enabled_login_methods, invites_enabled=INVITES_ENABLED)
 
     @auth_jwt_router.post("/refresh", response_model=BearerResponse)
     async def refresh_jwt(user=Depends(current_active_user)):
