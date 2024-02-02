@@ -230,7 +230,7 @@ async def process_sso_user_login(user_manager, login_email, login_name, groups) 
         return user
     else:
         # Create verified user
-        await user_manager.create_non_super_user(login_email, None, login_name)
+        await user_manager.create_non_super_user(login_email, None, login_name, is_sso=True)
         user = await user_manager.get_by_email(login_email)
         if user:
             await update_user_orgs(groups, user, ops)

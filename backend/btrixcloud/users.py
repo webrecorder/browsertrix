@@ -162,6 +162,7 @@ class UserManager:
             orgs=orgs,
             is_superuser=user.is_superuser,
             is_verified=user.is_verified,
+            is_sso=user.is_sso,
         )
 
     async def validate_password(self, password: str) -> None:
@@ -274,6 +275,7 @@ class UserManager:
         email: str,
         password: str,
         name: str = "New user",
+        is_sso: bool = False,
     ) -> None:
         """create a regular user with given credentials"""
         if not email:
@@ -291,6 +293,7 @@ class UserManager:
                 is_superuser=False,
                 newOrg=False,
                 is_verified=True,
+                is_sso=is_sso,
             )
 
             await self._create(user_create)
@@ -342,6 +345,7 @@ class UserManager:
         if isinstance(create, UserCreate):
             is_superuser = create.is_superuser
             is_verified = create.is_verified
+            is_sso = create.is_sso
         else:
             is_superuser = False
             is_verified = create.inviteToken is not None
@@ -355,6 +359,7 @@ class UserManager:
             hashed_password=hashed_password,
             is_superuser=is_superuser,
             is_verified=is_verified,
+            is_sso=is_sso,
         )
 
         try:
