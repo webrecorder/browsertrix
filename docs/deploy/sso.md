@@ -1,18 +1,6 @@
 
 
 # Deploying Single Sign On
-- [Deploying Single Sign On](#deploying-single-sign-on)
-  - [General Configuration](#general-configuration)
-  - [Deploying SSO with OIDC](#deploying-sso-with-oidc)
-    - [Requirements](#requirements)
-    - [Configuration of IDP](#configuration-of-idp)
-    - [Configuration of Browsertrix](#configuration-of-browsertrix)
-  - [Deploying SSO with Headers](#deploying-sso-with-headers)
-    - [Requirements](#requirements-1)
-    - [Configuration of Proxy](#configuration-of-proxy)
-    - [Configuration of Browsertrix](#configuration-of-browsertrix-1)
-
-
 Browsertrix allows for Single Sign On using either OIDC protocol or based on header values.
 
 Although it is technically possible to enable both OIDC and Header based SSO at the same time it is not suggested, to keep the user experience seamless.
@@ -56,7 +44,7 @@ sso_superuser_groups: browsertrix-admins;Domain Admins  # Semicolon separated li
       2. Type: Group Membership
       3. Name: isMemberOf
       4. Token Claim Name: isMemberOf
-         1. This should the value set in values.yml (default if not set: isMemberOf)
+         1. This should be the value set in values.yml (default if not set: isMemberOf)
       5. FullGroupPath: Off
       6. Add to ID token: On
       7. Add to access token: Off
@@ -118,6 +106,11 @@ sso_oidc_redirect_url: https://browsertrix.example.com/log-in/oidc
 ## Deploying SSO with Headers
 ### Requirements
 - Authenticating proxy. This guide will take Apache2 as an example configured with Shibboleth.
+
+!!! danger
+
+    Direct access to the ingress endpoint in the kubernetes cluster must be limited to only the proxy. If not restricted any user with direct access to the ingress would be able to manually set the required headers.
+
 
 ### Configuration of Proxy
 1. Configure proxy to authenticate users with your preferred Identity Provider. Ensure that username, email and group membership are provided to the proxy. Configuration of this step is outside of this guide scope.
