@@ -1,0 +1,21 @@
+{
+  "Tailwind Component": {
+    "scope": "javascript,typescript",
+    "prefix": ["component", "@customElement"],
+    "body": [
+      "import { TailwindElement } from \"@/classes/TailwindElement\";",
+      "import { localized } from \"@lit/localize\";",
+      "import { html } from \"lit\";",
+      "import { customElement } from \"lit/decorators.js\";",
+      "",
+      "@localized()",
+      "@customElement(\"btrix-${1:component}\")",
+      "export class ${2:Component} extends TailwindElement {",
+      "\trender() {",
+      "\t\treturn html``;",
+      "\t}",
+      "}",
+      ""
+    ]
+  }
+}
