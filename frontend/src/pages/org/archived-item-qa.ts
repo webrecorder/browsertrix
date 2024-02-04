@@ -12,6 +12,8 @@ import { NotifyController } from "@/controllers/notify";
 import { renderName } from "@/utils/crawler";
 import { type ArchivedItem } from "@/types/crawler";
 
+import("@/features/qa");
+
 export type QATab = "screenshots" | "replay";
 
 @localized()
@@ -150,7 +152,9 @@ export class ArchivedItemQA extends TailwindElement {
         <h2 class="pageListHeader outline">
           ${msg("Pages List")} <sl-button>${msg("Finish Review")}</sl-button>
         </h2>
-        <section class="pageList outline">[page list]</section>
+        <section class="pageList">
+          <btrix-qa-page-list></btrix-qa-page-list>
+        </section>
       </article>
     `;
   }
