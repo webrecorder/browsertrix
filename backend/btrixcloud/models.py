@@ -1394,6 +1394,7 @@ class Page(BaseMongoModel):
 
     # automated heuristics
     screenshot_comparison: Optional[Dict[str, int]] = {}
+    text_comparison: Optional[Dict[str, int]] = {}
 
     # manual review
     userid: Optional[UUID] = None
