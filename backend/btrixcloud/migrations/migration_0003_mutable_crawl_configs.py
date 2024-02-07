@@ -1,6 +1,7 @@
 """
 Migration 0003 - Mutable crawl configs and crawl revision history
 """
+
 from datetime import datetime
 
 from btrixcloud.models import Crawl, CrawlConfig

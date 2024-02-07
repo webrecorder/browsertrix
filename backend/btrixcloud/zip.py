@@ -1,6 +1,7 @@
 """
 Methods for interacting with zip/WACZ files
 """
+
 import io
 import struct
 import zipfile

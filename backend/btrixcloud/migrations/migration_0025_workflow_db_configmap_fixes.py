@@ -1,6 +1,7 @@
 """
 Migration 0025 -- fix workflow database and configmap issues.
 """
+
 from btrixcloud.crawlmanager import CrawlManager
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import CrawlConfig, UpdateCrawlConfig
