@@ -150,7 +150,7 @@ export class ProfileBrowser extends LiteElement {
           <sl-icon-button
             name="fullscreen-exit"
             label=${msg("Exit fullscreen")}
-            @click=${() => document.exitFullscreen()}
+            @click=${() => void document.exitFullscreen()}
           ></sl-icon-button>
         </div>
       `;
@@ -162,7 +162,7 @@ export class ProfileBrowser extends LiteElement {
         <sl-icon-button
           name="arrows-fullscreen"
           label=${msg("Enter fullscreen")}
-          @click=${() => this.enterFullscreen("interactive-browser")}
+          @click=${() => void this.enterFullscreen("interactive-browser")}
         ></sl-icon-button>
       </div>
     `;
@@ -295,7 +295,7 @@ export class ProfileBrowser extends LiteElement {
 
     if (result.detail === "waiting_for_browser") {
       this.pollTimerId = window.setTimeout(
-        () => this.checkBrowserStatus(),
+        () => void this.checkBrowserStatus(),
         POLL_INTERVAL_SECONDS * 1000,
       );
 
@@ -370,7 +370,7 @@ export class ProfileBrowser extends LiteElement {
     }
 
     this.pollTimerId = window.setTimeout(
-      () => this.pingBrowser(),
+      () => void this.pingBrowser(),
       POLL_INTERVAL_SECONDS * 1000,
     );
   }

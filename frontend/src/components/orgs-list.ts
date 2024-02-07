@@ -49,7 +49,7 @@ export class OrgsList extends LiteElement {
         .open=${!!this.currOrg}
         @sl-request-close=${() => (this.currOrg = null)}
       >
-        ${Object.entries(this.currOrg.quotas).map(([key, value]) => {
+        ${Object.entries(this.currOrg.quotas!).map(([key, value]) => {
           let label;
           switch (key) {
             case "maxConcurrentCrawls":

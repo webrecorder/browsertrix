@@ -252,7 +252,7 @@ export class BrowserProfilesList extends LiteElement {
     }
   }
 
-  private createBrowser({ url }: { url: string }) {
+  private async createBrowser({ url }: { url: string }) {
     const params = {
       url,
     };

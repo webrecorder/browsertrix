@@ -30,5 +30,5 @@ export class APIError extends Error {
 }
 
 export function isApiError(error: unknown): error is APIError {
-  return (error as APIError)?.isApiError;
+  return Boolean((error as APIError | undefined)?.isApiError);
 }

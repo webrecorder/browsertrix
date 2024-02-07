@@ -649,7 +649,7 @@ export class Org extends LiteElement {
     this.openDialogName = e.detail;
   }
 
-  private async getOrg(orgId: string): Promise<OrgData> {
+  private async getOrg(orgId: string): Promise<OrgData | undefined> {
     const data = await this.apiFetch<OrgData>(
       `/orgs/${orgId}`,
       this.authState!,

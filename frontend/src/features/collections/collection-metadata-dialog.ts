@@ -192,7 +192,7 @@ export class CollectionMetadataDialog extends LiteElement {
       });
       void this.hideDialog();
     } catch (e) {
-      let message = isApiError(e) && e?.message;
+      let message = isApiError(e) && e.message;
       if (message === "collection_name_taken") {
         message = msg("This name is already taken.");
       }

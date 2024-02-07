@@ -12,25 +12,25 @@ export type OrgData = {
   id: string;
   name: string;
   slug: string;
-  quotas: Record<string, number>;
+  quotas?: Record<string, number>;
   bytesStored: number;
   usage: {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
   } | null;
-  crawlExecSeconds: {
+  crawlExecSeconds?: {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
   };
-  monthlyExecSeconds: {
+  monthlyExecSeconds?: {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
   };
-  extraExecSeconds: {
+  extraExecSeconds?: {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
   };
-  giftedExecSeconds: {
+  giftedExecSeconds?: {
     // Keyed by {4-digit year}-{2-digit month}
     [key: string]: number;
   };

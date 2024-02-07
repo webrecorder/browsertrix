@@ -593,7 +593,7 @@ export class CollectionItemsDialog extends TailwindElement {
         size="small"
         ?disabled=${this.isSubmitting || !hasChange}
         ?loading=${this.isSubmitting}
-        @click=${() => this.save()}
+        @click=${() => void this.save()}
       >
         ${msg("Save Selection")}
       </sl-button>

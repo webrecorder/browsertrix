@@ -136,10 +136,10 @@ export class CollectionsAdd extends LiteElement {
             );
             if (coll) {
               const { id } = coll;
-              if (!this.collectionsData[id]) {
+              if (!(this.collectionsData[id] as Collection | undefined)) {
                 this.collectionsData = {
                   ...this.collectionsData,
-                  [id]: await this.getCollection(id),
+                  [id]: (await this.getCollection(id))!,
                 };
               }
               this.collectionIds = [...this.collectionIds, id];
@@ -209,7 +209,7 @@ export class CollectionsAdd extends LiteElement {
   }
 
   private renderCollectionItem(id: string) {
-    const collection = this.collectionsData[id];
+    const collection = this.collectionsData[id] as Collection | undefined;
     return html`<li class="mt-1 rounded-sm border p-1 pl-3">
       <div
         class="${collection
@@ -251,7 +251,7 @@ export class CollectionsAdd extends LiteElement {
   private readonly onSearchInput = debounce(200)(async (e: Event) => {
     this.searchByValue = (e.target as SlInput).value.trim();
 
-    if (this.searchResultsOpen === false && this.hasSearchStr) {
+    if (!this.searchResultsOpen && this.hasSearchStr) {
       this.searchResultsOpen = true;
     }
 
@@ -288,7 +288,7 @@ export class CollectionsAdd extends LiteElement {
   }
 
   private async getCollections(
-    params: Partial<{
+    params?: Partial<{
       oid?: string;
       namePrefix?: string;
     }> &
@@ -307,7 +307,6 @@ export class CollectionsAdd extends LiteElement {
   }
 
   private async initializeCollectionsFromIds() {
-    if (!this.collectionIds) return;
     this.collectionIds.forEach(async (id) => {
       const data = await this.getCollection(id);
       if (data) {
@@ -319,7 +318,9 @@ export class CollectionsAdd extends LiteElement {
     });
   }
 
-  private readonly getCollection = (collId: string): Promise<Collection> => {
+  private readonly getCollection = async (
+    collId: string,
+  ): Promise<Collection | undefined> => {
     return this.apiFetch(
       `/orgs/${this.orgId}/collections/${collId}`,
       this.authState!,

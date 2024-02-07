@@ -144,7 +144,7 @@ export class TagInput extends LitElement {
   private readonly dropdown!: HTMLDivElement;
 
   @query("sl-menu")
-  private readonly menu!: SlMenu;
+  private readonly menu?: SlMenu;
 
   @query("sl-popup")
   private readonly combobox!: SlPopup;
@@ -193,8 +193,8 @@ export class TagInput extends LitElement {
           tabindex="-1"
           @click=${this.onInputWrapperClick}
           @focusout=${(e: FocusEvent) => {
-            const currentTarget = e.currentTarget as SlMenuItem;
-            const relatedTarget = e.relatedTarget as HTMLElement;
+            const currentTarget = e.currentTarget as SlMenuItem | null;
+            const relatedTarget = e.relatedTarget as HTMLElement | null;
             if (
               this.dropdownIsOpen &&
               !currentTarget?.contains(relatedTarget)
@@ -304,7 +304,7 @@ export class TagInput extends LitElement {
           let focusTarget = el.nextElementSibling as HTMLElement | null;
           if (!focusTarget) return;
           if (focusTarget === this.combobox) {
-            focusTarget = this.input || null;
+            focusTarget = (this.input as HTMLInputElement | null) || null;
           }
           focusTarget?.focus();
           break;
@@ -362,7 +362,7 @@ export class TagInput extends LitElement {
   }
 
   private onBlur(e: FocusEvent) {
-    const relatedTarget = e.relatedTarget as HTMLElement;
+    const relatedTarget = e.relatedTarget as HTMLElement | null;
     if (relatedTarget) {
       if (this.menu?.contains(relatedTarget)) {
         // Keep focus on form control if moving to menu selection
@@ -386,7 +386,7 @@ export class TagInput extends LitElement {
     if (this.dropdownIsOpen && (e.key === "ArrowDown" || e.key === "Tab")) {
       e.preventDefault();
       const menuItem = this.menu?.querySelector("sl-menu-item");
-      if (menuItem) {
+      if (this.menu && menuItem) {
         // Reset roving tabindex set by shoelace
         this.menu.setCurrentItem(menuItem);
         menuItem.focus();

@@ -271,7 +271,7 @@ export class CrawlDetail extends LiteElement {
         .crawl=${this.crawl}
         ?open=${this.openDialogName === "metadata"}
         @request-close=${() => (this.openDialogName = undefined)}
-        @updated=${() => this.fetchCrawl()}
+        @updated=${() => void this.fetchCrawl()}
       ></btrix-item-metadata-editor>
     `;
   }
@@ -485,7 +485,7 @@ export class CrawlDetail extends LiteElement {
               <sl-divider></sl-divider>
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--danger)"
-                @click=${() => this.deleteCrawl()}
+                @click=${() => void this.deleteCrawl()}
               >
                 <sl-icon name="trash3" slot="prefix"></sl-icon>
                 ${msg("Delete Crawl")}
@@ -543,7 +543,7 @@ export class CrawlDetail extends LiteElement {
           ? html`<div id="replay-crawl" class="aspect-4/3 overflow-hidden">
               <replay-web-page
                 source="${replaySource}"
-                coll="${ifDefined(this.crawl?.id)}"
+                coll="${ifDefined(this.crawl.id)}"
                 config="${config}"
                 replayBase="/replay/"
                 noSandbox="true"
@@ -985,7 +985,7 @@ ${this.crawl?.description}
         },
       );
 
-      if (data.success === true) {
+      if (data.success) {
         void this.fetchCrawl();
       } else {
         this.notify({
@@ -1007,7 +1007,7 @@ ${this.crawl?.description}
         },
       );
 
-      if (data.success === true) {
+      if (data.success) {
         void this.fetchCrawl();
       } else {
         this.notify({

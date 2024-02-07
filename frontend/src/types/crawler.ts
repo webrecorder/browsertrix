@@ -9,7 +9,7 @@ type ScopeType =
 
 export type Seed = {
   url: string;
-  scopeType: ScopeType;
+  scopeType: ScopeType | undefined;
   include?: string[] | null;
   exclude?: string[] | null;
   limit?: number | null;
@@ -132,7 +132,7 @@ type ArchivedItemBase = {
   userid: string;
   userName: string;
   name: string;
-  description: string;
+  description: string | null;
   oid: string;
   started: string; // UTC ISO date
   finished?: string; // UTC ISO date

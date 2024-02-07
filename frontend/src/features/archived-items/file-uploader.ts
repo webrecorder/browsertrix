@@ -203,7 +203,7 @@ export class FileUploader extends TailwindElement {
               type="file"
               accept=".wacz"
               @change=${(e: Event) => {
-                const files = (e.target as HTMLInputElement).files!;
+                const files = (e.target as HTMLInputElement).files;
                 if (files?.length) {
                   this.fileList = Array.from(files);
                 }
@@ -501,7 +501,7 @@ export class FileUploader extends TailwindElement {
   }
 
   // Use XHR to get upload progress
-  private upload(
+  private async upload(
     url: string,
     file: File,
   ): Promise<{ id: string; added: boolean; storageQuotaReached: boolean }> {

@@ -85,7 +85,7 @@ export class BrowserProfilesDetail extends LiteElement {
       <header class="mb-3 items-center justify-between md:flex">
         <h2 class="mb-1 text-xl font-semibold md:h-9">
           ${this.profile?.name
-            ? html`${this.profile?.name}
+            ? html`${this.profile.name}
                 <sl-button
                   size="small"
                   variant="text"
@@ -303,7 +303,7 @@ export class BrowserProfilesDetail extends LiteElement {
           <li
             class="cursor-pointer p-2 hover:bg-zinc-100"
             role="menuitem"
-            @click=${() => this.duplicateProfile()}
+            @click=${() => void this.duplicateProfile()}
           >
             <sl-icon
               class="inline-block px-1 align-middle"
@@ -494,7 +494,7 @@ export class BrowserProfilesDetail extends LiteElement {
     }
   }
 
-  private createBrowser({ url }: { url: string }) {
+  private async createBrowser({ url }: { url: string }) {
     const params = {
       url,
       profileId: this.profile!.id,
@@ -510,7 +510,7 @@ export class BrowserProfilesDetail extends LiteElement {
     );
   }
 
-  private deleteBrowser(id: string) {
+  private async deleteBrowser(id: string) {
     return this.apiFetch(
       `/orgs/${this.orgId}/profiles/browser/${id}`,
       this.authState!,
@@ -576,7 +576,7 @@ export class BrowserProfilesDetail extends LiteElement {
         },
       );
 
-      if (data.updated === true) {
+      if (data.updated) {
         this.notify({
           message: msg("Successfully saved browser profile."),
           variant: "success",
@@ -621,7 +621,7 @@ export class BrowserProfilesDetail extends LiteElement {
         },
       );
 
-      if (data.updated === true) {
+      if (data.updated) {
         this.notify({
           message: msg("Successfully saved browser profile."),
           variant: "success",

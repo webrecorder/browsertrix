@@ -497,7 +497,7 @@ export class CollectionsList extends LiteElement {
       class="cursor-pointer select-none rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
     >
       <btrix-table-cell class="p-3">
-        ${col?.isPublic
+        ${col.isPublic
           ? html`
               <sl-tooltip content=${msg("Shareable")}>
                 <sl-icon
@@ -565,17 +565,17 @@ export class CollectionsList extends LiteElement {
       <btrix-overflow-dropdown>
         <sl-menu>
           <sl-menu-item
-            @click=${() => this.manageCollection(col, "editMetadata")}
+            @click=${() => void this.manageCollection(col, "editMetadata")}
           >
             <sl-icon name="pencil" slot="prefix"></sl-icon>
             ${msg("Edit Metadata")}
           </sl-menu-item>
           <sl-divider></sl-divider>
-          ${!col?.isPublic
+          ${!col.isPublic
             ? html`
                 <sl-menu-item
                   style="--sl-color-neutral-700: var(--success)"
-                  @click=${() => this.onTogglePublic(col, true)}
+                  @click=${() => void this.onTogglePublic(col, true)}
                 >
                   <sl-icon name="people-fill" slot="prefix"></sl-icon>
                   ${msg("Make Shareable")}
@@ -596,7 +596,7 @@ export class CollectionsList extends LiteElement {
                 </sl-menu-item>
                 <sl-menu-item
                   style="--sl-color-neutral-700: var(--warning)"
-                  @click=${() => this.onTogglePublic(col, false)}
+                  @click=${() => void this.onTogglePublic(col, false)}
                 >
                   <sl-icon name="eye-slash" slot="prefix"></sl-icon>
                   ${msg("Make Private")}
@@ -620,7 +620,7 @@ export class CollectionsList extends LiteElement {
           <sl-divider></sl-divider>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => this.manageCollection(col, "delete")}
+            @click=${() => void this.manageCollection(col, "delete")}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>
             ${msg("Delete Collection")}
@@ -641,7 +641,7 @@ export class CollectionsList extends LiteElement {
   private readonly onSearchInput = debounce(150)((e: Event) => {
     this.searchByValue = (e.target as SlInput).value.trim();
 
-    if (this.searchResultsOpen === false && this.hasSearchStr) {
+    if (!this.searchResultsOpen && this.hasSearchStr) {
       this.searchResultsOpen = true;
     }
 

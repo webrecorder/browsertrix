@@ -46,6 +46,11 @@ export type AuthStorageEventDetail = {
   value: string | null;
 };
 
+type AuthEventDetail =
+  | AuthRequestEventDetail
+  | AuthResponseEventDetail
+  | AuthStorageEventDetail;
+
 export interface AuthEventMap {
   "btrix-need-login": CustomEvent<NeedLoginEventDetail>;
   "btrix-logged-in": CustomEvent<LoggedInEventDetail>;
@@ -195,7 +200,7 @@ export default class AuthService {
 
     AuthService.broadcastChannel.addEventListener(
       "message",
-      ({ data }: { data: AuthRequestEventDetail | AuthStorageEventDetail }) => {
+      ({ data }: MessageEvent<AuthEventDetail>) => {
         if (data.name === "requesting_auth") {
           // A new tab/window opened and is requesting shared auth
           AuthService.broadcastChannel.postMessage({
@@ -229,7 +234,7 @@ export default class AuthService {
         name: "requesting_auth",
       } as AuthRequestEventDetail);
       // Wait for another tab to respond
-      const cb = ({ data }: MessageEvent<AuthResponseEventDetail>) => {
+      const cb = ({ data }: MessageEvent<AuthEventDetail>) => {
         if (data.name === "responding_auth") {
           AuthService.broadcastChannel.removeEventListener("message", cb);
           resolve(data.auth);

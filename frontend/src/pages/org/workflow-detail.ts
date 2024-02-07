@@ -165,7 +165,7 @@ export class WorkflowDetail extends LiteElement {
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (
       (changedProperties.has("workflowId") && this.workflowId) ||
-      (changedProperties.get("isEditing") === true && this.isEditing === false)
+      (changedProperties.get("isEditing") === true && !this.isEditing)
     ) {
       void this.fetchWorkflow();
       void this.fetchSeeds();
@@ -475,7 +475,7 @@ export class WorkflowDetail extends LiteElement {
         )}
       </h3>`;
     }
-    if (this.activePanel === "settings" && this.isCrawler == true) {
+    if (this.activePanel === "settings" && this.isCrawler) {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-icon-button
           name="gear"
@@ -487,7 +487,7 @@ export class WorkflowDetail extends LiteElement {
         >
         </sl-icon-button>`;
     }
-    if (this.activePanel === "watch" && this.isCrawler == true) {
+    if (this.activePanel === "watch" && this.isCrawler) {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-button
           size="small"
@@ -587,7 +587,7 @@ export class WorkflowDetail extends LiteElement {
 
     return html`
       ${when(
-        this.workflow?.isCrawlRunning,
+        this.workflow.isCrawlRunning,
         () => html`
           <sl-button-group class="mr-2">
             <sl-button
@@ -628,7 +628,7 @@ export class WorkflowDetail extends LiteElement {
               class="mr-2"
               ?disabled=${this.orgStorageQuotaReached ||
               this.orgExecutionMinutesQuotaReached}
-              @click=${() => this.runNow()}
+              @click=${() => void this.runNow()}
             >
               <sl-icon name="play" slot="prefix"></sl-icon>
               <span>${msg("Run Crawl")}</span>
@@ -643,7 +643,7 @@ export class WorkflowDetail extends LiteElement {
         >
         <sl-menu>
           ${when(
-            this.workflow?.isCrawlRunning,
+            this.workflow.isCrawlRunning,
             // HACK shoelace doesn't current have a way to override non-hover
             // color without resetting the --sl-color-neutral-700 variable
             () => html`
@@ -669,7 +669,7 @@ export class WorkflowDetail extends LiteElement {
                 style="--sl-color-neutral-700: var(--success)"
                 ?disabled=${this.orgStorageQuotaReached ||
                 this.orgExecutionMinutesQuotaReached}
-                @click=${() => this.runNow()}
+                @click=${() => void this.runNow()}
               >
                 <sl-icon name="play" slot="prefix"></sl-icon>
                 ${msg("Run Crawl")}
@@ -709,7 +709,7 @@ export class WorkflowDetail extends LiteElement {
             <sl-icon name="tags" slot="prefix"></sl-icon>
             ${msg("Copy Tags")}
           </sl-menu-item>
-          <sl-menu-item @click=${() => this.duplicateConfig()}>
+          <sl-menu-item @click=${() => void this.duplicateConfig()}>
             <sl-icon name="files" slot="prefix"></sl-icon>
             ${msg("Duplicate Workflow")}
           </sl-menu-item>
@@ -720,7 +720,9 @@ export class WorkflowDetail extends LiteElement {
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--danger)"
                 @click=${() =>
-                  shouldDeactivate ? this.deactivate() : this.delete()}
+                  shouldDeactivate
+                    ? void this.deactivate()
+                    : void this.delete()}
               >
                 <sl-icon name="trash3" slot="prefix"></sl-icon>
                 ${shouldDeactivate
@@ -1075,7 +1077,7 @@ export class WorkflowDetail extends LiteElement {
                   size="small"
                   ?disabled=${this.orgStorageQuotaReached ||
                   this.orgExecutionMinutesQuotaReached}
-                  @click=${() => this.runNow()}
+                  @click=${() => void this.runNow()}
                 >
                   <sl-icon name="play" slot="prefix"></sl-icon>
                   ${msg("Run Crawl")}
@@ -1166,7 +1168,7 @@ export class WorkflowDetail extends LiteElement {
               variant="primary"
               ?disabled=${this.orgStorageQuotaReached ||
               this.orgExecutionMinutesQuotaReached}
-              @click=${() => this.runNow()}
+              @click=${() => void this.runNow()}
             >
               <sl-icon name="play" slot="prefix"></sl-icon>
               ${msg("Run Crawl")}
@@ -1187,7 +1189,7 @@ export class WorkflowDetail extends LiteElement {
           ${msg("Error Logs")}
           <btrix-badge variant=${this.logs?.total ? "danger" : "neutral"}
             >${this.logs?.total
-              ? this.logs?.total.toLocaleString()
+              ? this.logs.total.toLocaleString()
               : 0}</btrix-badge
           >
         </h3>
@@ -1580,7 +1582,7 @@ export class WorkflowDetail extends LiteElement {
           method: "POST",
         },
       );
-      if (data.success === true) {
+      if (data.success) {
         void this.fetchWorkflow();
       } else {
         throw data;
@@ -1609,7 +1611,7 @@ export class WorkflowDetail extends LiteElement {
           method: "POST",
         },
       );
-      if (data.success === true) {
+      if (data.success) {
         void this.fetchWorkflow();
       } else {
         throw data;

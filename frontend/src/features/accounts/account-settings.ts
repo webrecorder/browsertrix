@@ -199,7 +199,7 @@ export class AccountSettings extends LiteElement {
             </sl-input>
           </div>
           <footer class="flex items-center justify-end border-t px-4 py-3">
-            ${this.userInfo && !this.userInfo.isVerified
+            ${!this.userInfo.isVerified
               ? html`
                   <btrix-request-verify
                     class="mr-auto"

@@ -80,12 +80,10 @@ export class Home extends LiteElement {
     let title: string | undefined;
     let content: TemplateResult<1> | undefined;
 
-    if (this.userInfo.isAdmin === true) {
+    if (this.userInfo.isAdmin) {
       title = msg("Welcome");
       content = this.renderAdminOrgs();
-    }
-
-    if (this.userInfo.isAdmin === false) {
+    } else {
       title = msg("Organizations");
       content = this.renderLoggedInNonAdmin();
     }
