@@ -1,5 +1,6 @@
 """crawl pages"""
 
+import json
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
 from uuid import UUID, uuid4
@@ -34,8 +35,17 @@ class PageOps:
         self.org_ops = org_ops
         self.storage_ops = storage_ops
 
-    async def add_crawl_pages_to_db(self, crawl_id: str, oid: UUID):
-        """Add pages to database"""
+    async def add_crawl_pages_to_db(self, crawl_id: str, oid: UUID, pages: List[str]):
+        """Add stringified pages from Redis to database"""
+        for page in pages:
+            if not page:
+                continue
+
+            page_dict = json.loads(page)
+            await self._add_page_to_db(page_dict, crawl_id, oid)
+
+    async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str, oid: UUID):
+        """Add pages to database from WACZ files"""
         org = await self.org_ops.get_org_by_id(oid)
         wacz_files = await self.crawl_ops.get_wacz_files(crawl_id, org)
         stream = await self.storage_ops.sync_stream_pages_from_wacz(org, wacz_files)
@@ -43,18 +53,35 @@ class PageOps:
             if not page_dict.get("url"):
                 continue
 
+            await self._add_page_to_db(page_dict, crawl_id, oid)
+
+    async def _add_page_to_db(
+        self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID
+    ):
+        """Add page to database"""
+        page_id = page_dict.get("id", uuid4())
+
+        try:
             page = Page(
-                id=page_dict.get("id", uuid4()),
+                id=page_id,
                 oid=oid,
                 crawl_id=crawl_id,
                 url=page_dict.get("url"),
                 title=page_dict.get("title"),
                 load_state=page_dict.get("loadState"),
                 timestamp=(
-                    from_k8s_date(page_dict.get("ts")) if page_dict.get("ts") else None
+                    from_k8s_date(page_dict.get("ts"))
+                    if page_dict.get("ts")
+                    else datetime.now()
                 ),
             )
             await self.pages.insert_one(page.to_dict())
+        # pylint: disable=broad-except
+        except Exception as err:
+            print(
+                f"Error adding page {page_id} from crawl {crawl_id} to db: {err}",
+                flush=True,
+            )
 
     async def get_page_raw(
         self,

@@ -1383,6 +1383,8 @@ class PageReviewUpdate(BaseModel):
 
 # ============================================================================
 class PageResource(BaseModel):
+    """Page resource"""
+
     url: AnyHttpUrl
     status: int
 
