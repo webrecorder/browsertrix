@@ -12,6 +12,7 @@ import { needLogin } from "@/utils/auth";
 import { activeCrawlStates } from "@/utils/crawler";
 import type { Crawl, CrawlState } from "@/types/crawler";
 import type { APIPaginationQuery, APIPaginatedList } from "@/types/api";
+import { type PropertyValues } from "lit";
 
 type SortField = "started" | "firstSeed" | "fileSize";
 type SortDirection = "asc" | "desc";
@@ -63,14 +64,16 @@ export class Crawls extends LiteElement {
   };
 
   @state()
-  private filterBy: Partial<Record<keyof Crawl, any>> = {
+  private filterBy: Partial<Record<keyof Crawl, unknown>> = {
     state: activeCrawlStates,
   };
 
   // Use to cancel requests
   private getCrawlsController: AbortController | null = null;
 
-  protected async willUpdate(changedProperties: Map<string, any>) {
+  protected async willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
     if (changedProperties.has("crawlId") && this.crawlId) {
       // Redirect to org crawl page
       await this.fetchWorkflowId();
@@ -81,13 +84,13 @@ export class Crawls extends LiteElement {
         changedProperties.has("filterBy") ||
         changedProperties.has("orderBy")
       ) {
-        this.fetchCrawls();
+        void this.fetchCrawls();
       }
     }
   }
 
   firstUpdated() {
-    this.fetchSlugLookup();
+    void this.fetchSlugLookup();
   }
 
   disconnectedCallback(): void {
@@ -97,7 +100,7 @@ export class Crawls extends LiteElement {
 
   render() {
     return html` <div
-      class="w-full max-w-screen-desktop mx-auto px-3 py-4 box-border"
+      class="mx-auto box-border w-full max-w-screen-desktop px-3 py-4"
     >
       ${this.crawlId
         ? // Render loading indicator while preparing to redirect
@@ -110,13 +113,13 @@ export class Crawls extends LiteElement {
     return html`
       <main>
         <header class="contents">
-          <div class="flex justify-between w-full pb-4 mb-3 border-b">
-            <h1 class="text-xl font-semibold h-8">
+          <div class="mb-3 flex w-full justify-between border-b pb-4">
+            <h1 class="h-8 text-xl font-semibold">
               ${msg("All Running Crawls")}
             </h1>
           </div>
           <div
-            class="sticky z-10 mb-3 top-2 p-4 bg-neutral-50 border rounded-lg"
+            class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-4"
           >
             ${this.renderControls()}
           </div>
@@ -152,18 +155,18 @@ export class Crawls extends LiteElement {
                       }}
                     ></btrix-pagination>
                   </footer>
-                `
+                `,
               )}
             `;
           },
-          this.renderLoading
+          this.renderLoading,
         )}
       </main>
     `;
   }
 
-  private renderLoading = () => html`
-    <div class="w-full flex items-center justify-center my-12 text-2xl">
+  private readonly renderLoading = () => html`
+    <div class="my-12 flex w-full items-center justify-center text-2xl">
       <sl-spinner></sl-spinner>
     </div>
   `;
@@ -172,9 +175,9 @@ export class Crawls extends LiteElement {
     const viewPlaceholder = msg("Any Active Status");
     const viewOptions = activeCrawlStates;
     return html`
-      <div class="flex gap-2 items-center justify-end">
+      <div class="flex items-center justify-end gap-2">
         <div class="flex items-center">
-          <div class="text-neutral-500 mx-2">${msg("View:")}</div>
+          <div class="mx-2 text-neutral-500">${msg("View:")}</div>
           <sl-select
             id="stateSelect"
             class="flex-1 md:w-[14.5rem]"
@@ -197,10 +200,10 @@ export class Crawls extends LiteElement {
         </div>
 
         <div class="flex items-center">
-          <div class="whitespace-nowrap text-neutral-500 mx-2">
+          <div class="mx-2 whitespace-nowrap text-neutral-500">
             ${msg("Sort by:")}
           </div>
-          <div class="grow flex">${this.renderSortControl()}</div>
+          <div class="flex grow">${this.renderSortControl()}</div>
         </div>
       </div>
     `;
@@ -210,7 +213,7 @@ export class Crawls extends LiteElement {
     const options = Object.entries(sortableFields).map(
       ([value, { label }]) => html`
         <sl-option value=${value}>${label}</sl-option>
-      `
+      `,
     );
     return html`
       <sl-select
@@ -242,7 +245,7 @@ export class Crawls extends LiteElement {
     `;
   }
 
-  private renderStatusMenuItem = (state: CrawlState) => {
+  private readonly renderStatusMenuItem = (state: CrawlState) => {
     const { icon, label } = CrawlStatus.getContent(state);
 
     return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
@@ -261,7 +264,7 @@ export class Crawls extends LiteElement {
   private renderEmptyState() {
     if (this.crawls?.page && this.crawls?.page > 1) {
       return html`
-        <div class="border-t border-b py-5">
+        <div class="border-b border-t py-5">
           <p class="text-center text-neutral-500">
             ${msg("Could not find page.")}
           </p>
@@ -270,7 +273,7 @@ export class Crawls extends LiteElement {
     }
 
     return html`
-      <div class="border-t border-b py-5">
+      <div class="border-b border-t py-5">
         <p class="text-center text-neutral-500">
           ${msg("No matching crawls found.")}
         </p>
@@ -278,7 +281,7 @@ export class Crawls extends LiteElement {
     `;
   }
 
-  private renderCrawlItem = (crawl: Crawl) => {
+  private readonly renderCrawlItem = (crawl: Crawl) => {
     const crawlPath = `/orgs/${this.slugLookup[crawl.oid]}/items/crawl/${
       crawl.id
     }`;
@@ -304,7 +307,7 @@ export class Crawls extends LiteElement {
   private async fetchSlugLookup() {
     try {
       this.slugLookup = await this.getSlugLookup();
-    } catch (e: any) {
+    } catch (e) {
       console.debug(e);
     }
   }
@@ -316,8 +319,8 @@ export class Crawls extends LiteElement {
     this.cancelInProgressGetCrawls();
     try {
       this.crawls = await this.getCrawls(params);
-    } catch (e: any) {
-      if (e.name === "AbortError") {
+    } catch (e) {
+      if ((e as Error).name === "AbortError") {
         console.debug("Fetch crawls aborted to throttle");
       } else {
         this.notify({
@@ -337,7 +340,7 @@ export class Crawls extends LiteElement {
   }
 
   private async getCrawls(
-    queryParams?: APIPaginationQuery & { state?: CrawlState[] }
+    queryParams?: APIPaginationQuery & { state?: CrawlState[] },
   ) {
     const query = queryString.stringify(
       {
@@ -350,7 +353,7 @@ export class Crawls extends LiteElement {
       },
       {
         arrayFormat: "comma",
-      }
+      },
     );
 
     this.getCrawlsController = new AbortController();
@@ -359,7 +362,7 @@ export class Crawls extends LiteElement {
       this.authState!,
       {
         signal: this.getCrawlsController.signal,
-      }
+      },
     );
     this.getCrawlsController = null;
 
@@ -369,7 +372,7 @@ export class Crawls extends LiteElement {
   private async getCrawl() {
     const data: Crawl = await this.apiFetch<Crawl>(
       `/orgs/all/crawls/${this.crawlId}/replay.json`,
-      this.authState!
+      this.authState!,
     );
 
     return data;
@@ -378,7 +381,7 @@ export class Crawls extends LiteElement {
   private async getSlugLookup() {
     const data = await this.apiFetch<Record<string, string>>(
       `/orgs/slug-lookup`,
-      this.authState!
+      this.authState!,
     );
 
     return data;

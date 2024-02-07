@@ -25,6 +25,6 @@ The frontend UI is implemented in TypeScript, using the Lit framework and Shoela
 
 The static build of the frontend is bundled with nginx, but the frontend can be deployed locally in dev mode against an existing backend.
 
-See [Running Frontend](./frontend-dev) for more details.
+See [Developing the Frontend UI](frontend-dev.md) for more details.
 
 <!-- *TODO Add additional info here* -->

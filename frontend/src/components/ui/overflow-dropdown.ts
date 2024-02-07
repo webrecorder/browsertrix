@@ -40,10 +40,10 @@ export class OverflowDropdown extends LitElement {
   private hasMenuItems?: boolean;
 
   @query("sl-dropdown")
-  private dropdown?: SlDropdown;
+  private readonly dropdown?: SlDropdown;
 
   @queryAssignedElements({ selector: "sl-menu", flatten: true })
-  private menu!: Array<SlMenu>;
+  private readonly menu!: SlMenu[];
 
   render() {
     return html`
@@ -64,6 +64,6 @@ export class OverflowDropdown extends LitElement {
   }
 
   hide() {
-    this.dropdown?.hide();
+    void this.dropdown?.hide();
   }
 }

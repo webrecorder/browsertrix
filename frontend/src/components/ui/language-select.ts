@@ -8,12 +8,12 @@ import type { LanguageCode } from "iso-639-1";
 import type { SlSelect } from "@shoelace-style/shoelace";
 
 const languages = sortBy("name")(
-  ISO6391.getLanguages(ISO6391.getAllCodes())
-) as unknown as Array<{
+  ISO6391.getLanguages(ISO6391.getAllCodes()),
+) as unknown as {
   code: LanguageCode;
   name: string;
   nativeName: string;
-}>;
+}[];
 
 /**
  * Choose language from dropdown.
@@ -62,7 +62,7 @@ export class LanguageSelect extends LitElement {
               detail: {
                 value: (e.target as SlSelect).value,
               },
-            })
+            }),
           );
         }}
       >
@@ -72,7 +72,7 @@ export class LanguageSelect extends LitElement {
             <sl-option value=${code}>
               ${name} <span class="secondaryText">(${nativeName})</span>
             </sl-option>
-          `
+          `,
         )}
       </sl-select>
     `;

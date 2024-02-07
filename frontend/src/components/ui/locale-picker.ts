@@ -16,7 +16,7 @@ export class LocalePicker extends LitElement {
   @state()
   private localeNames: LocaleNames = {} as LocaleNames;
 
-  private setLocaleName = (locale: LocaleCode) => {
+  private readonly setLocaleName = (locale: LocaleCode) => {
     this.localeNames[locale] = new Intl.DisplayNames([locale], {
       type: "language",
     }).of(locale)!;
@@ -54,7 +54,7 @@ export class LocalePicker extends LitElement {
                 ?checked=${locale === selectedLocale}
               >
                 ${this.localeNames[locale]}
-              </sl-menu-item>`
+              </sl-menu-item>`,
           )}
         </sl-menu>
       </sl-dropdown>
@@ -68,7 +68,7 @@ export class LocalePicker extends LitElement {
       const url = new URL(window.location.href);
       url.searchParams.set("locale", newLocale);
       window.history.pushState(null, "", url.toString());
-      setLocaleFromUrl();
+      void setLocaleFromUrl();
     }
   }
 }

@@ -70,10 +70,11 @@ export class WorkflowsNew extends LiteElement {
   get initialWorkflow(): WorkflowParams {
     return this._initialWorkflow;
   }
-  private _initialWorkflow: WorkflowParams = defaultValue;
   set initialWorkflow(val: Partial<WorkflowParams>) {
     this._initialWorkflow = mergeDeep(this._initialWorkflow, val);
   }
+
+  private _initialWorkflow: WorkflowParams = defaultValue;
 
   private renderHeader() {
     const href = `${this.orgBasePath}/workflows/crawls`;
@@ -82,9 +83,9 @@ export class WorkflowsNew extends LiteElement {
     return html`
       <nav class="mb-5">
         <a
-          class="text-gray-600 hover:text-gray-800 text-sm font-medium"
+          class="text-sm font-medium text-gray-600 hover:text-gray-800"
           href=${href}
-          @click=${(e: any) => {
+          @click=${(e: MouseEvent) => {
             this.navLink(e);
             this.jobType = undefined;
           }}
@@ -115,7 +116,7 @@ export class WorkflowsNew extends LiteElement {
     if (jobType) {
       return html`
         ${this.renderHeader()}
-        <h2 class="text-xl font-semibold mb-6">
+        <h2 class="mb-6 text-xl font-semibold">
           ${msg(html`New Crawl Workflow &mdash; ${jobTypeLabels[jobType]}`)}
         </h2>
         <btrix-workflow-editor
@@ -130,9 +131,9 @@ export class WorkflowsNew extends LiteElement {
           @reset=${async (e: Event) => {
             await (e.target as LitElement).updateComplete;
             this.dispatchEvent(
-              <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+              new CustomEvent("select-new-dialog", {
                 detail: "workflow",
-              })
+              }) as SelectNewDialogEvent,
             );
           }}
         ></btrix-workflow-editor>
@@ -142,7 +143,7 @@ export class WorkflowsNew extends LiteElement {
     return html``;
   }
 
-  private renderNoAccess = () => html`
+  private readonly renderNoAccess = () => html`
     <btrix-alert variant="danger">
       ${msg(`You don't have permission to create a new Workflow.`)}
     </btrix-alert>

@@ -1,6 +1,7 @@
 """
 Migration 0006 - Precomputing workflow crawl stats
 """
+
 from btrixcloud.crawlconfigs import stats_recompute_all
 from btrixcloud.migrations import BaseMigration
 

@@ -1,6 +1,7 @@
 """
 Migration 0021 - Profile filenames
 """
+
 from btrixcloud.crawlmanager import CrawlManager
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import CrawlConfig, Profile, UpdateCrawlConfig

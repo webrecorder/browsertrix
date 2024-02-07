@@ -22,7 +22,7 @@ describe("AuthService", () => {
           headers: { Authorization: "_fake_headers_" },
           tokenExpiresAt: "_fake_tokenExpiresAt_",
           username: "test-auth@example.com",
-        })
+        }),
       );
       const result = await AuthService.initSessionStorage();
       expect(result).to.deep.equal({

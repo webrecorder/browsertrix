@@ -1,3 +1,4 @@
+/* eslint-env node */
 import { esbuildPlugin } from "@web/dev-server-esbuild";
 import { importMapsPlugin } from "@web/dev-server-import-maps";
 import { typescriptPaths as typescriptPathsPlugin } from "rollup-plugin-typescript-paths";
@@ -13,7 +14,7 @@ const typescriptPaths = fromRollup(typescriptPathsPlugin);
 const cssImports = {};
 glob.sync("./src/**/*.css").forEach((filepath) => {
   cssImports[filepath] = fileURLToPath(
-    new URL("./src/__mocks__/css.js", import.meta.url)
+    new URL("./src/__mocks__/css.js", import.meta.url),
   );
 });
 
@@ -47,13 +48,13 @@ export default {
           imports: {
             ...cssImports,
             "./src/shoelace": fileURLToPath(
-              new URL("./src/__mocks__/shoelace.js", import.meta.url)
+              new URL("./src/__mocks__/shoelace.js", import.meta.url),
             ),
             "tailwindcss/tailwind.css": fileURLToPath(
-              new URL("./src/__mocks__/css.js", import.meta.url)
+              new URL("./src/__mocks__/css.js", import.meta.url),
             ),
             "@shoelace-style/shoelace/dist/themes/light.css": fileURLToPath(
-              new URL("./src/__mocks__/css.js", import.meta.url)
+              new URL("./src/__mocks__/css.js", import.meta.url),
             ),
             // FIXME: `@web/dev-server-esbuild` or its dependencies seem to be ignoring .js
             // extension and shoelace exports and switching it to .ts
@@ -64,11 +65,11 @@ export default {
             "@shoelace-style/shoelace/dist/utilities/form.js": fileURLToPath(
               new URL(
                 "./node_modules/@shoelace-style/shoelace/dist/utilities/form.js",
-                import.meta.url
-              )
+                import.meta.url,
+              ),
             ),
             color: fileURLToPath(
-              new URL("./src/__mocks__/color.js", import.meta.url)
+              new URL("./src/__mocks__/color.js", import.meta.url),
             ),
           },
         },

@@ -9,10 +9,7 @@ import LiteElement, { html } from "@/utils/LiteElement";
 import type { AuthState } from "@/utils/AuthService";
 import type { OrgData } from "@/utils/orgs";
 import type { SelectNewDialogEvent } from "./index";
-import {
-  humanizeExecutionSeconds,
-  humanizeSeconds,
-} from "@/utils/executionTimeFormatter";
+import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
 type Metrics = {
   storageUsedBytes: number;
@@ -63,7 +60,7 @@ export class Dashboard extends LiteElement {
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("orgId")) {
-      this.fetchMetrics();
+      void this.fetchMetrics();
     }
   }
 
@@ -75,9 +72,9 @@ export class Dashboard extends LiteElement {
       this.metrics.storageUsedBytes >= this.metrics.storageQuotaBytes;
 
     return html`<header
-        class="flex items-center justify-end gap-2 pb-3 mb-7 border-b"
+        class="mb-7 flex items-center justify-end gap-2 border-b pb-3"
       >
-        <h1 class="min-w-0 text-xl font-semibold leading-8 mr-auto">
+        <h1 class="mr-auto min-w-0 text-xl font-semibold leading-8">
           ${this.org?.name}
         </h1>
         ${when(
@@ -89,49 +86,50 @@ export class Dashboard extends LiteElement {
               name="gear"
               label="Edit org settings"
               @click=${this.navLink}
-            ></sl-icon-button>`
+            ></sl-icon-button>`,
         )}
         ${when(
           this.isCrawler,
-          () => html` <sl-dropdown
-            distance="4"
-            placement="bottom-end"
-            @sl-select=${(e: SlSelectEvent) => {
-              this.dispatchEvent(
-                <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
-                  detail: e.detail.item.value,
-                })
-              );
-            }}
-          >
-            <sl-button slot="trigger" size="small" variant="primary" caret>
-              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-              ${msg("Create New...")}
-            </sl-button>
-            <sl-menu>
-              <sl-menu-item value="workflow"
-                >${msg("Crawl Workflow")}</sl-menu-item
-              >
-              <sl-menu-item
-                value="upload"
-                ?disabled=${!this.metrics || quotaReached}
-                >${msg("Upload")}</sl-menu-item
-              >
-              <sl-menu-item value="collection">
-                ${msg("Collection")}
-              </sl-menu-item>
-              <sl-menu-item
-                value="browser-profile"
-                ?disabled=${!this.metrics || quotaReached}
-              >
-                ${msg("Browser Profile")}
-              </sl-menu-item>
-            </sl-menu>
-          </sl-dropdown>`
+          () =>
+            html` <sl-dropdown
+              distance="4"
+              placement="bottom-end"
+              @sl-select=${(e: SlSelectEvent) => {
+                this.dispatchEvent(
+                  new CustomEvent("select-new-dialog", {
+                    detail: e.detail.item.value,
+                  }) as SelectNewDialogEvent,
+                );
+              }}
+            >
+              <sl-button slot="trigger" size="small" variant="primary" caret>
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                ${msg("Create New...")}
+              </sl-button>
+              <sl-menu>
+                <sl-menu-item value="workflow"
+                  >${msg("Crawl Workflow")}</sl-menu-item
+                >
+                <sl-menu-item
+                  value="upload"
+                  ?disabled=${!this.metrics || quotaReached}
+                  >${msg("Upload")}</sl-menu-item
+                >
+                <sl-menu-item value="collection">
+                  ${msg("Collection")}
+                </sl-menu-item>
+                <sl-menu-item
+                  value="browser-profile"
+                  ?disabled=${!this.metrics || quotaReached}
+                >
+                  ${msg("Browser Profile")}
+                </sl-menu-item>
+              </sl-menu>
+            </sl-dropdown>`,
         )}
       </header>
       <main>
-        <div class="flex flex-col md:flex-row gap-6">
+        <div class="flex flex-col gap-6 md:flex-row">
           ${this.renderCard(
             msg("Storage"),
             (metrics) => html`
@@ -191,7 +189,7 @@ export class Dashboard extends LiteElement {
                   iconProps: { name: "file-zip-fill" },
                 })}
               </dl>
-            `
+            `,
           )}
           ${this.renderCard(
             msg("Crawling"),
@@ -224,7 +222,7 @@ export class Dashboard extends LiteElement {
                   iconProps: { name: "file-richtext-fill" },
                 })}
               </dl>
-            `
+            `,
           )}
           ${this.renderCard(
             msg("Collections"),
@@ -243,7 +241,7 @@ export class Dashboard extends LiteElement {
                   iconProps: { name: "people-fill", color: "emerald" },
                 })}
               </dl>
-            `
+            `,
           )}
         </div>
         <section class="mt-10">${this.renderUsageHistory()}</section>
@@ -269,11 +267,11 @@ export class Dashboard extends LiteElement {
       </btrix-meter-bar>
     `;
     return html`
-      <div class="font-semibold mb-1">
+      <div class="mb-1 font-semibold">
         ${when(
           isStorageFull,
           () => html`
-            <div class="flex gap-2 items-center">
+            <div class="flex items-center gap-2">
               <sl-icon
                 class="text-danger"
                 name="exclamation-triangle"
@@ -290,7 +288,7 @@ export class Dashboard extends LiteElement {
                   ></sl-format-bytes>
                   ${msg("Available")}
                 `
-              : ""
+              : "",
         )}
       </div>
       ${when(
@@ -306,22 +304,22 @@ export class Dashboard extends LiteElement {
                 renderBar(
                   metrics.storageUsedCrawls,
                   msg("Crawls"),
-                  this.colors.crawls
-                )
+                  this.colors.crawls,
+                ),
               )}
               ${when(metrics.storageUsedUploads, () =>
                 renderBar(
                   metrics.storageUsedUploads,
                   msg("Uploads"),
-                  this.colors.uploads
-                )
+                  this.colors.uploads,
+                ),
               )}
               ${when(metrics.storageUsedProfiles, () =>
                 renderBar(
                   metrics.storageUsedProfiles,
                   msg("Profiles"),
-                  this.colors.browserProfiles
-                )
+                  this.colors.browserProfiles,
+                ),
               )}
               <div slot="available" class="flex-1">
                 <sl-tooltip class="text-center">
@@ -330,11 +328,11 @@ export class Dashboard extends LiteElement {
                     <div class="text-xs opacity-80">
                       ${this.renderPercentage(
                         (metrics.storageQuotaBytes - metrics.storageUsedBytes) /
-                          metrics.storageQuotaBytes
+                          metrics.storageQuotaBytes,
                       )}
                     </div>
                   </div>
-                  <div class="w-full h-full"></div>
+                  <div class="h-full w-full"></div>
                 </sl-tooltip>
               </div>
               <sl-format-bytes
@@ -349,7 +347,7 @@ export class Dashboard extends LiteElement {
               ></sl-format-bytes>
             </btrix-meter>
           </div>
-        `
+        `,
       )}
     `;
   }
@@ -357,7 +355,7 @@ export class Dashboard extends LiteElement {
   private renderCrawlingMeter(_metrics: Metrics) {
     let quotaSeconds = 0;
 
-    if (this.org!.quotas && this.org!.quotas.maxExecMinutesPerMonth) {
+    if (this.org!.quotas?.maxExecMinutesPerMonth) {
       quotaSeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
     }
 
@@ -466,7 +464,7 @@ export class Dashboard extends LiteElement {
       quota: number,
       label: string,
       color: string,
-      divided: boolean = true
+      divided = true,
     ) => {
       if (divided) {
         return html` <btrix-divided-meter-bar
@@ -498,11 +496,11 @@ export class Dashboard extends LiteElement {
       }
     };
     return html`
-      <div class="font-semibold mb-1">
+      <div class="mb-1 font-semibold">
         ${when(
           isReached,
           () => html`
-            <div class="flex gap-2 items-center">
+            <div class="flex items-center gap-2">
               <sl-icon
                 class="text-danger"
                 name="exclamation-triangle"
@@ -519,12 +517,12 @@ export class Dashboard extends LiteElement {
                         usageSeconds +
                         this.org!.extraExecSecondsAvailable +
                         this.org!.giftedExecSecondsAvailable,
-                      { style: "short", round: "down" }
+                      { style: "short", round: "down" },
                     )}
                     <span class="ml-1">${msg("remaining")}</span>
                   </span>
                 `
-              : ""
+              : "",
         )}
       </div>
       ${when(
@@ -546,8 +544,8 @@ export class Dashboard extends LiteElement {
                   hasExtra ? quotaSeconds : quotaSecondsAllTypes,
                   msg("Monthly Execution Time Used"),
                   "green",
-                  hasExtra ? true : false
-                )
+                  hasExtra ? true : false,
+                ),
               )}
               ${when(
                 usageSecondsGifted || this.org!.giftedExecSecondsAvailable,
@@ -558,8 +556,8 @@ export class Dashboard extends LiteElement {
                       : usageSecondsGifted,
                     quotaSecondsGifted,
                     msg("Gifted Execution Time Used"),
-                    "blue"
-                  )
+                    "blue",
+                  ),
               )}
               ${when(
                 usageSecondsExtra || this.org!.extraExecSecondsAvailable,
@@ -570,8 +568,8 @@ export class Dashboard extends LiteElement {
                       : usageSecondsExtra,
                     quotaSecondsExtra,
                     msg("Extra Execution Time Used"),
-                    "red"
-                  )
+                    "red",
+                  ),
               )}
               <div slot="available" class="flex-1">
                 <sl-tooltip class="text-center">
@@ -583,11 +581,11 @@ export class Dashboard extends LiteElement {
                       })}
                       |
                       ${this.renderPercentage(
-                        (quotaSeconds - usageSeconds) / quotaSeconds
+                        (quotaSeconds - usageSeconds) / quotaSeconds,
                       )}
                     </div>
                   </div>
-                  <div class="w-full h-full"></div>
+                  <div class="h-full w-full"></div>
                 </sl-tooltip>
               </div>
               <span slot="valueLabel">
@@ -602,7 +600,7 @@ export class Dashboard extends LiteElement {
               </span>
             </btrix-meter>
           </div>
-        `
+        `,
       )}
     `;
   }
@@ -610,22 +608,22 @@ export class Dashboard extends LiteElement {
   private renderCard(
     title: string,
     renderContent: (metric: Metrics) => TemplateResult,
-    renderFooter?: (metric: Metrics) => TemplateResult
+    renderFooter?: (metric: Metrics) => TemplateResult,
   ) {
     return html`
-      <section class="flex-1 flex flex-col border rounded p-4">
-        <h2 class="text-lg font-semibold leading-none border-b pb-3 mb-3">
+      <section class="flex flex-1 flex-col rounded border p-4">
+        <h2 class="mb-3 border-b pb-3 text-lg font-semibold leading-none">
           ${title}
         </h2>
         <div class="flex-1">
           ${when(
             this.metrics,
             () => renderContent(this.metrics!),
-            this.renderCardSkeleton
+            this.renderCardSkeleton,
           )}
         </div>
         ${when(renderFooter && this.metrics, () =>
-          renderFooter!(this.metrics!)
+          renderFooter!(this.metrics!),
         )}
       </section>
     `;
@@ -640,10 +638,10 @@ export class Dashboard extends LiteElement {
   }) {
     const { value, iconProps } = stat;
     return html`
-      <div class="flex items-center justify-between mb-2 last:mb-0">
+      <div class="mb-2 flex items-center justify-between last:mb-0">
         <div class="flex items-center">
           <sl-icon
-            class="text-base text-neutral-500 mr-2"
+            class="mr-2 text-base text-neutral-500"
             name=${iconProps.name}
             library=${ifDefined(iconProps.library)}
             style="color:var(--sl-color-${iconProps.color ||
@@ -658,31 +656,31 @@ export class Dashboard extends LiteElement {
         </div>
         ${when(
           stat.secondaryValue,
-          () =>
-            html`
-              <div class="text-xs text-neutral-500 font-monostyle">
-                ${stat.secondaryValue}
-              </div>
-            `
+          () => html`
+            <div class="font-monostyle text-xs text-neutral-500">
+              ${stat.secondaryValue}
+            </div>
+          `,
         )}
       </div>
     `;
   }
 
-  private renderCardSkeleton = () =>
-    html`
-      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
-      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
-      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
-      <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
-    `;
+  private readonly renderCardSkeleton = () => html`
+    <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+    <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+    <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+    <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
+  `;
 
-  private hasMonthlyTime = () =>
+  private readonly hasMonthlyTime = () =>
     Object.keys(this.org!.monthlyExecSeconds).length;
 
-  private hasExtraTime = () => Object.keys(this.org!.extraExecSeconds).length;
+  private readonly hasExtraTime = () =>
+    Object.keys(this.org!.extraExecSeconds).length;
 
-  private hasGiftedTime = () => Object.keys(this.org!.giftedExecSeconds).length;
+  private readonly hasGiftedTime = () =>
+    Object.keys(this.org!.giftedExecSeconds).length;
 
   private renderUsageHistory() {
     if (!this.org) return;
@@ -702,7 +700,9 @@ export class Dashboard extends LiteElement {
         ${msg("Total Execution Time")}
         <sl-tooltip>
           <div slot="content" style="text-transform: initial">
-            ${msg("Total running time of all crawler instances")}
+            ${msg(
+              "Total billable time of all crawler instances this used month",
+            )}
           </div>
           <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
         </sl-tooltip>
@@ -710,31 +710,50 @@ export class Dashboard extends LiteElement {
     ];
 
     if (this.hasMonthlyTime()) {
-      usageTableCols.push(html`${msg("Execution: Monthly")}
-        <sl-tooltip>
-          <div slot="content" style="text-transform: initial">
-            ${msg("Monthly execution time used on crawls this month")}
-          </div>
-          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
-        </sl-tooltip>`);
+      usageTableCols.push(
+        html`${msg("Execution: Monthly")}
+          <sl-tooltip>
+            <div slot="content" style="text-transform: initial">
+              ${msg("Billable time used, included with monthly plan")}
+            </div>
+            <sl-icon
+              name="info-circle"
+              style="vertical-align: -.175em"
+            ></sl-icon>
+          </sl-tooltip>`,
+      );
     }
     if (this.hasExtraTime()) {
-      usageTableCols.push(html`${msg("Execution: Extra")}
-        <sl-tooltip>
-          <div slot="content" style="text-transform: initial">
-            ${msg("Billable rollover execution time used on crawls this month")}
-          </div>
-          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
-        </sl-tooltip>`);
+      usageTableCols.push(
+        html`${msg("Execution: Extra")}
+          <sl-tooltip>
+            <div slot="content" style="text-transform: initial">
+              ${msg(
+                "Additional units of billable time used, any extra minutes will roll over to next month",
+              )}
+            </div>
+            <sl-icon
+              name="info-circle"
+              style="vertical-align: -.175em"
+            ></sl-icon>
+          </sl-tooltip>`,
+      );
     }
     if (this.hasGiftedTime()) {
-      usageTableCols.push(html`${msg("Execution: Gifted")}
-        <sl-tooltip>
-          <div slot="content" style="text-transform: initial">
-            ${msg("Gifted execution time used on crawls this month")}
-          </div>
-          <sl-icon name="info-circle" style="vertical-align: -.175em"></sl-icon>
-        </sl-tooltip>`);
+      usageTableCols.push(
+        html`${msg("Execution: Gifted")}
+          <sl-tooltip>
+            <div slot="content" style="text-transform: initial">
+              ${msg(
+                "Usage of execution time added to your account free of charge",
+              )}
+            </div>
+            <sl-icon
+              name="info-circle"
+              style="vertical-align: -.175em"
+            ></sl-icon>
+          </sl-tooltip>`,
+      );
     }
 
     const rows = Object.entries(this.org.usage || {})
@@ -792,19 +811,21 @@ export class Dashboard extends LiteElement {
           tableRows.push(
             monthlySecondsUsed
               ? humanizeExecutionSeconds(monthlySecondsUsed)
-              : "--"
+              : "--",
           );
         }
         if (this.hasExtraTime()) {
           tableRows.push(
-            extraSecondsUsed ? humanizeExecutionSeconds(extraSecondsUsed) : "--"
+            extraSecondsUsed
+              ? humanizeExecutionSeconds(extraSecondsUsed)
+              : "--",
           );
         }
         if (this.hasGiftedTime()) {
           tableRows.push(
             giftedSecondsUsed
               ? humanizeExecutionSeconds(giftedSecondsUsed)
-              : "--"
+              : "--",
           );
         }
         return tableRows;
@@ -830,11 +851,11 @@ export class Dashboard extends LiteElement {
     try {
       const data = await this.apiFetch<Metrics | undefined>(
         `/orgs/${this.orgId}/metrics`,
-        this.authState!
+        this.authState!,
       );
 
       this.metrics = data;
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't retrieve org metrics at this time."),
         variant: "danger",

@@ -22,7 +22,7 @@ export class Verify extends LiteElement {
 
   firstUpdated() {
     if (this.token) {
-      this.verify();
+      void this.verify();
     }
   }
 
@@ -44,12 +44,16 @@ export class Verify extends LiteElement {
       }),
     });
 
-    const data = await resp.json();
+    const data = (await resp.json()) as {
+      email: string;
+      is_verified: boolean;
+      detail?: string;
+    };
 
     switch (resp.status) {
       case 200:
         return this.onVerificationComplete(data);
-      case 400:
+      case 400: {
         const { detail } = data;
         if (detail === "verify_user_bad_token") {
           this.serverError = msg("This verification email is not valid.");
@@ -59,6 +63,8 @@ export class Verify extends LiteElement {
         if (detail === "verify_user_already_verified") {
           return this.onVerificationComplete(data);
         }
+        // falls through
+      }
       default:
         this.serverError = msg("Something unexpected went wrong");
         break;
@@ -89,7 +95,7 @@ export class Verify extends LiteElement {
             detail: {
               isVerified: data.is_verified,
             },
-          })
+          }),
         );
       }
 

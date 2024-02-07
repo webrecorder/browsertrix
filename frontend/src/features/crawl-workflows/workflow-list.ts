@@ -211,9 +211,9 @@ export class WorkflowListItem extends LitElement {
   @query("btrix-overflow-dropdown")
   dropdownMenu!: OverflowDropdown;
 
-  private navigate = new NavigateController(this);
+  private readonly navigate = new NavigateController(this);
 
-  private numberFormatter = numberFormatter(undefined, {
+  private readonly numberFormatter = numberFormatter(undefined, {
     notation: "compact",
   });
 
@@ -250,8 +250,8 @@ export class WorkflowListItem extends LitElement {
                   {
                     length: "short",
                   },
-                  numberFormatter
-                )}`
+                  numberFormatter,
+                )}`,
               );
             }
             if (workflow.lastStartedByName) {
@@ -264,13 +264,12 @@ export class WorkflowListItem extends LitElement {
       <div class="col">
         <div class="detail">
           ${this.safeRender(
-            (workflow) =>
-              html`
-                <btrix-crawl-status
-                  state=${workflow.lastCrawlState || msg("No Crawls Yet")}
-                  ?stopping=${workflow.lastCrawlStopping}
-                ></btrix-crawl-status>
-              `
+            (workflow) => html`
+              <btrix-crawl-status
+                state=${workflow.lastCrawlState || msg("No Crawls Yet")}
+                ?stopping=${workflow.lastCrawlStopping}
+              ></btrix-crawl-status>
+            `,
           )}
         </div>
         <div class="desc duration">
@@ -288,8 +287,8 @@ export class WorkflowListItem extends LitElement {
                   str`in ${RelativeDuration.humanize(
                     new Date(`${workflow.lastCrawlTime}Z`).valueOf() -
                       new Date(`${workflow.lastCrawlStartTime}Z`).valueOf(),
-                    { compact: true }
-                  )}`
+                    { compact: true },
+                  )}`,
                 )}`;
             }
             if (workflow.lastCrawlStartTime) {
@@ -302,7 +301,7 @@ export class WorkflowListItem extends LitElement {
               return msg(
                 str`Running for ${RelativeDuration.humanize(diff, {
                   compact: true,
-                })}`
+                })}`,
               );
             }
             return notSpecified;
@@ -358,9 +357,9 @@ export class WorkflowListItem extends LitElement {
               ? msg(str`${workflow.crawlCount} crawl`)
               : msg(
                   str`${this.numberFormatter.format(
-                    workflow.crawlCount ?? 0
-                  )} crawls`
-                )
+                    workflow.crawlCount ?? 0,
+                  )} crawls`,
+                ),
           )}
         </div>
       </div>
@@ -368,7 +367,7 @@ export class WorkflowListItem extends LitElement {
         <div class="detail truncate">
           ${this.safeRender(
             (workflow) =>
-              html`<span class="userName">${workflow.modifiedByName}</span>`
+              html`<span class="userName">${workflow.modifiedByName}</span>`,
           )}
         </div>
         <div class="desc">
@@ -382,7 +381,7 @@ export class WorkflowListItem extends LitElement {
                 hour="2-digit"
                 minute="2-digit"
               ></sl-format-date>
-            `
+            `,
           )}
         </div>
       </div>
@@ -402,7 +401,7 @@ export class WorkflowListItem extends LitElement {
   }
 
   private safeRender(
-    render: (workflow: ListWorkflow) => string | TemplateResult<1>
+    render: (workflow: ListWorkflow) => string | TemplateResult<1>,
   ) {
     if (!this.workflow) {
       return html`<sl-skeleton></sl-skeleton>`;
@@ -483,7 +482,7 @@ export class WorkflowList extends LitElement {
   ];
 
   @queryAssignedElements({ selector: "btrix-workflow-list-item" })
-  listItems!: Array<HTMLElement>;
+  listItems!: HTMLElement[];
 
   render() {
     return html` <div class="listHeader row">

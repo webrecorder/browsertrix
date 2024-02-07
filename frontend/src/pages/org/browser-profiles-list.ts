@@ -1,6 +1,5 @@
 import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
-import { when } from "lit/directives/when.js";
 
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -32,21 +31,21 @@ export class BrowserProfilesList extends LiteElement {
   browserProfiles?: Profile[];
 
   firstUpdated() {
-    this.fetchBrowserProfiles();
+    void this.fetchBrowserProfiles();
   }
 
   render() {
     return html`<header>
-        <div class="flex justify-between w-full h-8 mb-4">
+        <div class="mb-4 flex h-8 w-full justify-between">
           <h1 class="text-xl font-semibold">${msg("Browser Profiles")}</h1>
           <sl-button
             variant="primary"
             size="small"
             @click=${() => {
               this.dispatchEvent(
-                <SelectNewDialogEvent>new CustomEvent("select-new-dialog", {
+                new CustomEvent("select-new-dialog", {
                   detail: "browser-profile",
-                })
+                }) as SelectNewDialogEvent,
               );
             }}
           >
@@ -55,7 +54,7 @@ export class BrowserProfilesList extends LiteElement {
           </sl-button>
         </div>
       </header>
-      <div class="overflow-auto pb-1 px-2">${this.renderTable()}</div>`;
+      <div class="overflow-auto px-2 pb-1">${this.renderTable()}</div>`;
   }
 
   private renderTable() {
@@ -93,7 +92,7 @@ export class BrowserProfilesList extends LiteElement {
       ${this.browserProfiles?.length
         ? nothing
         : html`
-            <div class="border-t border-b py-5">
+            <div class="border-b border-t py-5">
               <p class="text-center text-0-500">
                 ${msg("No browser profiles yet.")}
               </p>
@@ -102,11 +101,11 @@ export class BrowserProfilesList extends LiteElement {
     `;
   }
 
-  private renderItem = (data: Profile) => {
+  private readonly renderItem = (data: Profile) => {
     const isBackedUp = data.resource && data.resource.replicas.length > 0;
     return html`
       <btrix-table-row
-        class="border rounded cursor-pointer select-none transition-all shadow hover:shadow-none hover:bg-neutral-50 focus-within:bg-neutral-50"
+        class="cursor-pointer select-none rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
       >
         <btrix-table-cell class="p-3">
           <sl-tooltip
@@ -129,7 +128,7 @@ export class BrowserProfilesList extends LiteElement {
           >
             ${data.name}
           </a>
-          <div class="text-xs text-neutral-500 w-full">
+          <div class="w-full text-xs text-neutral-500">
             <div class="truncate">
               ${data.description} ${data.description} ${data.description}
               ${data.description} ${data.description} ${data.description}
@@ -160,8 +159,8 @@ export class BrowserProfilesList extends LiteElement {
       <btrix-overflow-dropdown @click=${(e: Event) => e.preventDefault()}>
         <sl-menu>
           <sl-menu-item
-            @click=${(e: any) => {
-              this.duplicateProfile(data);
+            @click=${() => {
+              void this.duplicateProfile(data);
             }}
           >
             <sl-icon slot="prefix" name="files"></sl-icon>
@@ -169,8 +168,8 @@ export class BrowserProfilesList extends LiteElement {
           </sl-menu-item>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
-            @click=${(e: any) => {
-              this.deleteProfile(data);
+            @click=${() => {
+              void this.deleteProfile(data);
             }}
           >
             <sl-icon slot="prefix" name="trash3"></sl-icon>
@@ -197,12 +196,12 @@ export class BrowserProfilesList extends LiteElement {
         `${this.orgBasePath}/browser-profiles/profile/browser/${
           data.browserid
         }?name=${window.encodeURIComponent(
-          profile.name
+          profile.name,
         )}&description=${window.encodeURIComponent(
-          profile.description || ""
-        )}&profileId=${window.encodeURIComponent(profile.id)}&navigateUrl=`
+          profile.description || "",
+        )}&profileId=${window.encodeURIComponent(profile.id)}&navigateUrl=`,
       );
-    } catch (e: any) {
+    } catch (e) {
       this.notify({
         message: msg("Sorry, couldn't create browser profile at this time."),
         variant: "danger",
@@ -218,7 +217,7 @@ export class BrowserProfilesList extends LiteElement {
         this.authState!,
         {
           method: "DELETE",
-        }
+        },
       );
 
       if (data.error && data.crawlconfigs) {
@@ -226,10 +225,8 @@ export class BrowserProfilesList extends LiteElement {
           message: msg(
             html`Could not delete <strong>${profile.name}</strong>, in use by
               <strong
-                >${data.crawlconfigs
-                  .map(({ name }: any) => name)
-                  .join(", ")}</strong
-              >. Please remove browser profile from Workflow to continue.`
+                >${data.crawlconfigs.map(({ name }) => name).join(", ")}</strong
+              >. Please remove browser profile from Workflow to continue.`,
           ),
           variant: "warning",
           icon: "exclamation-triangle",
@@ -243,7 +240,7 @@ export class BrowserProfilesList extends LiteElement {
         });
 
         this.browserProfiles = this.browserProfiles!.filter(
-          (p) => p.id !== profile.id
+          (p) => p.id !== profile.id,
         );
       }
     } catch (e) {
@@ -266,7 +263,7 @@ export class BrowserProfilesList extends LiteElement {
       {
         method: "POST",
         body: JSON.stringify(params),
-      }
+      },
     );
   }
 
@@ -290,7 +287,7 @@ export class BrowserProfilesList extends LiteElement {
   private async getProfiles() {
     const data = await this.apiFetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles`,
-      this.authState!
+      this.authState!,
     );
 
     return data.items;

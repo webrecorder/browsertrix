@@ -4,6 +4,7 @@ Migration 0007 - Workflows changes
 - Rename colls to autoAddCollections 
 - Re-calculate workflow crawl stats to populate crawlSuccessfulCount
 """
+
 from btrixcloud.crawlconfigs import stats_recompute_all
 from btrixcloud.migrations import BaseMigration
 

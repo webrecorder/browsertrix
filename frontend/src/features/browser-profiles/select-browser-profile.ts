@@ -7,6 +7,14 @@ import type { AuthState } from "@/utils/AuthService";
 import LiteElement from "@/utils/LiteElement";
 import type { Profile } from "@/pages/org/types";
 import type { APIPaginatedList } from "@/types/api";
+import { type SlSelect } from "@shoelace-style/shoelace";
+
+type SelectBrowserProfileChangeDetail = {
+  value: Profile | undefined;
+};
+
+export type SelectBrowserProfileChangeEvent =
+  CustomEvent<SelectBrowserProfileChangeDetail>;
 
 /**
  * Browser profile select dropdown
@@ -41,7 +49,7 @@ export class SelectBrowserProfile extends LiteElement {
   private browserProfiles?: Profile[];
 
   protected firstUpdated() {
-    this.fetchBrowserProfiles();
+    void this.fetchBrowserProfiles();
   }
 
   render() {
@@ -57,7 +65,7 @@ export class SelectBrowserProfile extends LiteElement {
         @sl-change=${this.onChange}
         @sl-focus=${() => {
           // Refetch to keep list up to date
-          this.fetchBrowserProfiles();
+          void this.fetchBrowserProfiles();
         }}
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
@@ -82,16 +90,14 @@ export class SelectBrowserProfile extends LiteElement {
                   ></sl-format-date>
                 </div></div
             ></sl-option>
-          `
+          `,
         )}
         ${this.browserProfiles && !this.browserProfiles.length
           ? this.renderNoProfiles()
           : ""}
       </sl-select>
 
-      ${this.browserProfiles && this.browserProfiles.length
-        ? this.renderSelectedProfileInfo()
-        : ""}
+      ${this.browserProfiles?.length ? this.renderSelectedProfileInfo() : ""}
     `;
   }
 
@@ -100,7 +106,7 @@ export class SelectBrowserProfile extends LiteElement {
 
     return html`
       <div
-        class="mt-2 border bg-neutral-50 rounded p-2 text-sm flex justify-between"
+        class="mt-2 flex justify-between rounded border bg-neutral-50 p-2 text-sm"
       >
         ${this.selectedProfile.description
           ? html`<em class="text-slate-500"
@@ -121,7 +127,7 @@ export class SelectBrowserProfile extends LiteElement {
           class="font-medium text-primary hover:text-indigo-500"
           target="_blank"
         >
-          <span class="inline-block align-middle mr-1"
+          <span class="mr-1 inline-block align-middle"
             >${msg("Check profile")}</span
           >
           <sl-icon
@@ -143,11 +149,15 @@ export class SelectBrowserProfile extends LiteElement {
           href=${`${this.orgBasePath}/browser-profiles?new`}
           class="font-medium text-primary hover:text-indigo-500"
           target="_blank"
-          @click=${(e: any) => {
-            const select = e.target.closest("sl-select");
+          @click=${(e: Event) => {
+            const select = (e.target as HTMLElement).closest<SlSelect>(
+              "sl-select",
+            );
             if (select) {
               select.blur();
-              select.dropdown?.hide();
+              // TODO what is this? why isn't it documented in Shoelace?
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (select as any).dropdown?.hide();
             }
           }}
           ><span class="inline-block align-middle"
@@ -162,17 +172,17 @@ export class SelectBrowserProfile extends LiteElement {
     `;
   }
 
-  private onChange(e: any) {
+  private onChange(e: Event) {
     this.selectedProfile = this.browserProfiles?.find(
-      ({ id }) => id === e.target.value
+      ({ id }) => id === (e.target as SlSelect | null)!.value,
     );
 
     this.dispatchEvent(
-      new CustomEvent("on-change", {
+      new CustomEvent<SelectBrowserProfileChangeDetail>("on-change", {
         detail: {
           value: this.selectedProfile,
         },
-      })
+      }),
     );
   }
 
@@ -184,12 +194,12 @@ export class SelectBrowserProfile extends LiteElement {
       const data = await this.getProfiles();
 
       this.browserProfiles = orderBy(["name", "created"])(["asc", "desc"])(
-        data
+        data,
       ) as Profile[];
 
       if (this.profileId && !this.selectedProfile) {
         this.selectedProfile = this.browserProfiles.find(
-          ({ id }) => id === this.profileId
+          ({ id }) => id === this.profileId,
         );
       }
     } catch (e) {
@@ -204,7 +214,7 @@ export class SelectBrowserProfile extends LiteElement {
   private async getProfiles() {
     const data = await this.apiFetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles`,
-      this.authState!
+      this.authState!,
     );
 
     return data.items;

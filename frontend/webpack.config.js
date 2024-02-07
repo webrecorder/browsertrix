@@ -15,7 +15,7 @@ const isDevServer = process.env.WEBPACK_SERVE;
 
 const dotEnvPath = path.resolve(
   process.cwd(),
-  `.env${isDevServer ? `.local` : ""}`
+  `.env${isDevServer ? `.local` : ""}`,
 );
 require("dotenv").config({
   path: dotEnvPath,
@@ -51,7 +51,7 @@ const commitHash =
 
 const shoelaceAssetsSrcPath = path.resolve(
   __dirname,
-  "node_modules/@shoelace-style/shoelace/dist/assets"
+  "node_modules/@shoelace-style/shoelace/dist/assets",
 );
 const shoelaceAssetsPublicPath = "shoelace/assets";
 
@@ -62,7 +62,9 @@ const version = (() => {
 
   try {
     return fs.readFileSync("../version.txt", { encoding: "utf-8" }).trim();
-  } catch (e) {}
+  } catch (e) {
+    /* empty */
+  }
 
   return packageJSON.version;
 })();

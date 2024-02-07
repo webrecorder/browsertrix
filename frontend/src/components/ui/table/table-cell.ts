@@ -1,4 +1,4 @@
-import { LitElement, html, css, unsafeCSS, nothing } from "lit";
+import { LitElement, html, css } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 const ALLOWED_ROW_CLICK_TARGET_TAG = ["a", "label"] as const;
@@ -50,7 +50,7 @@ export class TableCell extends LitElement {
     if (!this.rowClickTarget) return;
     const elems = (e.target as HTMLSlotElement).assignedElements();
     const rowClickTarget = elems.find(
-      (el) => el.tagName.toLowerCase() === this.rowClickTarget
+      (el) => el.tagName.toLowerCase() === this.rowClickTarget,
     );
 
     if (!rowClickTarget) return;

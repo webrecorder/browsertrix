@@ -12,7 +12,7 @@
  * ```
  */
 import type { TemplateResult } from "lit";
-import { LitElement, html, css, nothing } from "lit";
+import { html, css, nothing } from "lit";
 import {
   customElement,
   property,
@@ -67,11 +67,11 @@ export class CrawlListItem extends TailwindElement {
   dropdownMenu!: OverflowDropdown;
 
   // TODO localize
-  private numberFormatter = new Intl.NumberFormat(undefined, {
+  private readonly numberFormatter = new Intl.NumberFormat(undefined, {
     notation: "compact",
   });
 
-  private navigate = new NavigateController(this);
+  private readonly navigate = new NavigateController(this);
 
   render() {
     if (!this.crawl) return;
@@ -90,7 +90,7 @@ export class CrawlListItem extends TailwindElement {
                 hour="2-digit"
                 minute="2-digit"
               ></sl-format-date>
-            `
+            `,
           )}
         </div>
       `;
@@ -140,7 +140,7 @@ export class CrawlListItem extends TailwindElement {
                 state=${workflow.state}
                 hideLabel
               ></btrix-crawl-status>
-            `
+            `,
           )}
         </btrix-table-cell>
         ${idCell}
@@ -158,7 +158,7 @@ export class CrawlListItem extends TailwindElement {
                       hour="2-digit"
                       minute="2-digit"
                     ></sl-format-date>
-                  `
+                  `,
                 )}
               </btrix-table-cell>
             `}
@@ -177,7 +177,7 @@ export class CrawlListItem extends TailwindElement {
                 `
               : html`<span class="text-neutral-400" role="presentation"
                   >---</span
-                >`
+                >`,
           )}
         </btrix-table-cell>
         <btrix-table-cell>
@@ -186,8 +186,8 @@ export class CrawlListItem extends TailwindElement {
               (crawl.finished
                 ? new Date(`${crawl.finished}Z`)
                 : new Date()
-              ).valueOf() - new Date(`${crawl.started}Z`).valueOf()
-            )
+              ).valueOf() - new Date(`${crawl.started}Z`).valueOf(),
+            ),
           )}
         </btrix-table-cell>
         <btrix-table-cell>
@@ -208,13 +208,13 @@ export class CrawlListItem extends TailwindElement {
             return pagesFound === 1
               ? msg(
                   str`${this.numberFormatter.format(
-                    pagesComplete
-                  )} / ${this.numberFormatter.format(pagesFound)} page`
+                    pagesComplete,
+                  )} / ${this.numberFormatter.format(pagesFound)} page`,
                 )
               : msg(
                   str`${this.numberFormatter.format(
-                    pagesComplete
-                  )} / ${this.numberFormatter.format(pagesFound)} pages`
+                    pagesComplete,
+                  )} / ${this.numberFormatter.format(pagesFound)} pages`,
                 );
           })}
         </btrix-table-cell>
@@ -231,7 +231,7 @@ export class CrawlListItem extends TailwindElement {
   }
 
   private safeRender(
-    render: (crawl: Crawl) => string | TemplateResult<1> | undefined
+    render: (crawl: Crawl) => string | TemplateResult<1> | undefined,
   ) {
     if (!this.crawl) {
       return html`<sl-skeleton></sl-skeleton>`;
@@ -292,7 +292,7 @@ export class CrawlList extends TailwindElement {
   workflowId?: string;
 
   @queryAssignedElements({ selector: "btrix-crawl-list-item" })
-  listItems!: Array<HTMLElement>;
+  listItems!: HTMLElement[];
 
   render() {
     return html` <style>
@@ -336,7 +336,7 @@ export class CrawlList extends TailwindElement {
               <span class="sr-only">${msg("Row actions")}</span>
             </btrix-table-header-cell>
           </btrix-table-head>
-          <btrix-table-body class="border rounded">
+          <btrix-table-body class="rounded border">
             <slot @slotchange=${this.handleSlotchange}></slot>
           </btrix-table-body>
         </btrix-table>
@@ -346,14 +346,14 @@ export class CrawlList extends TailwindElement {
   private handleSlotchange() {
     const assignProp = (
       el: HTMLElement,
-      attr: { name: string; value: string }
+      attr: { name: string; value: string },
     ) => {
       if (!el.attributes.getNamedItem(attr.name)) {
         el.setAttribute(attr.name, attr.value);
       }
     };
 
-    this.listItems.forEach((item, i) => {
+    this.listItems.forEach((item) => {
       assignProp(item, {
         name: "collectionId",
         value: this.collectionId || "",
