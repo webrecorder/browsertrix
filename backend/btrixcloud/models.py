@@ -1396,7 +1396,8 @@ class Page(BaseMongoModel):
     url: AnyHttpUrl
     title: Optional[str] = None
     timestamp: Optional[datetime] = None
-    load_state: Optional[int]
+    load_state: Optional[int] = None
+    status: Optional[int] = None
 
     resources: Optional[List[PageResource]] = []
 
