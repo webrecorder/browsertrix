@@ -1382,6 +1382,12 @@ class PageReviewUpdate(BaseModel):
 
 
 # ============================================================================
+class PageResource(BaseModel):
+    url: AnyHttpUrl
+    status: int
+
+
+# ============================================================================
 class Page(BaseMongoModel):
     """Model for crawl pages"""
 
@@ -1392,9 +1398,12 @@ class Page(BaseMongoModel):
     timestamp: Optional[datetime] = None
     load_state: Optional[int]
 
-    # automated heuristics
+    resources: Optional[List[PageResource]] = []
+
+    # automated heuristics, keyed by QA run id
     screenshot_comparison: Optional[Dict[str, int]] = {}
     text_comparison: Optional[Dict[str, int]] = {}
+    qa_resources: Optional[Dict[str, List[PageResource]]] = {}
 
     # manual review
     userid: Optional[UUID] = None
