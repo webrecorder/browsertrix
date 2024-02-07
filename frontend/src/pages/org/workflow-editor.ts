@@ -1648,7 +1648,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(`Choose a custom profile to make use of saved cookies and logged-in
-        accounts.`),
+        accounts. Note that websites may log profiles out after a period of time.`),
       )}
       ${this.renderFormCol(html`
         <btrix-select-crawler
