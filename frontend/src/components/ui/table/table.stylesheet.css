@@ -5,11 +5,11 @@ btrix-table-cell[rowClickTarget] {
   overflow: hidden;
 }
 
-.rowClickTarget {
+btrix-table-cell .rowClickTarget {
   max-width: 100%;
 }
 
-.rowClickTarget::after {
+btrix-table-cell .rowClickTarget::after {
   content: "";
   display: block;
   position: absolute;
@@ -17,7 +17,7 @@ btrix-table-cell[rowClickTarget] {
   grid-column: clickable-start / clickable-end;
 }
 
-.rowClickTarget:focus-visible {
+btrix-table-cell .rowClickTarget:focus-visible {
   outline: var(--sl-focus-ring);
   outline-offset: -0.25rem;
   border-radius: 0.5rem;
