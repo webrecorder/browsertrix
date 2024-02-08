@@ -14,7 +14,7 @@ Browser Profiles are saved instances of a web browsing session that can be reuse
 
     - Due to nature of social media specifically, existing accounts may have personally identifiable information, even when accessing otherwise public content.
 
-    Of course, there are exceptions — such as when the goal is to archive personalized or private content accessible only from designated accounts.
+    Of course, there are exceptions — such as when the goal is to archive personalized or private content accessible only from designated accounts. In these instances we recommend changing the account's password after crawling is complete.
 
 ## Creating New Browser Profiles
 
