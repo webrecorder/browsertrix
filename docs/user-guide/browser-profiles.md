@@ -28,7 +28,7 @@ To crawl content as a logged in user, log into the website you wish to archive a
 
 ### Accepting Popups
 
-Some websites are required to get informed consent from users to track them, others require their users to verify their age before viewing adult content. While both of these could be handled with logins, often websites choose to use cookies — small pieces of configuration data stored in the browser. Interacting with popups that store the user's choices in a cookie will in turn store those cookies within the browser profile. Like everything else those cookie values will be used when crawling with the browser profile.
+Some websites are required to get informed consent from users to track them, others require their users to verify their age before viewing adult content. Websites often choose to use cookies — small pieces of configuration data stored in the browser — to store this information alongside other cookies such as a login session. Interacting with popups that store the user's choices in a cookie will in turn store those cookies within the browser profile. Like everything else those cookie values will be used when crawling with the browser profile.
 
 ### Changing Browser Settings
 
