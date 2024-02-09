@@ -205,7 +205,6 @@ const getDefaultFormState = (): FormState => ({
   userAgent: null,
   crawlerChannel: "default",
 });
-const defaultProgressState = getDefaultProgressState();
 
 function getLocalizedWeekDays() {
   const now = new Date();
@@ -594,7 +593,7 @@ export class CrawlConfigEditor extends LiteElement {
       scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
       exclusions: seedsConfig.exclude,
       includeLinkedPages:
-        Boolean(primarySeedConfig.extraHops || seedsConfig.extraHops) ?? true,
+        Boolean(primarySeedConfig.extraHops || seedsConfig.extraHops) || true,
       useSitemap: defaultFormState.useSitemap,
       failOnFailedSeed:
         seedsConfig.failOnFailedSeed ?? defaultFormState.failOnFailedSeed,
@@ -620,9 +619,7 @@ export class CrawlConfigEditor extends LiteElement {
       crawlMetadata: msg("Metadata"),
       confirmSettings: msg("Review Settings"),
     };
-    let orderedTabNames = STEPS.filter(
-      (stepName) => defaultProgressState.tabs[stepName],
-    );
+    let orderedTabNames = STEPS as readonly StepName[];
 
     if (this.configId) {
       // Remove review tab

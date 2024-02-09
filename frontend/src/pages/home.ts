@@ -264,7 +264,7 @@ export class Home extends LiteElement {
       <btrix-invite-form
         .authState=${this.authState}
         .orgs=${this.orgList}
-        .defaultOrg=${defaultOrg || null}
+        .defaultOrg=${defaultOrg}
         @success=${() => (this.isInviteComplete = true)}
       ></btrix-invite-form>
     `;

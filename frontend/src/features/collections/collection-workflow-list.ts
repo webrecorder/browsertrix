@@ -148,7 +148,7 @@ export class CollectionWorkflowList extends TailwindElement {
   private readonly api = new APIController(this);
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("workflows") && this.workflows) {
+    if (changedProperties.has("workflows")) {
       void this.fetchCrawls();
     }
   }

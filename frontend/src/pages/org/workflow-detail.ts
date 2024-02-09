@@ -26,6 +26,7 @@ import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 import { isApiError } from "@/utils/api";
 import { type IntersectEvent } from "@/components/utils/observable";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];
@@ -91,7 +92,7 @@ export class WorkflowDetail extends LiteElement {
   private lastCrawlStats?: Crawl["stats"];
 
   @state()
-  private activePanel: Tab = SECTIONS[0];
+  private activePanel: Tab | undefined = SECTIONS[0];
 
   @state()
   private isLoading = false;
@@ -419,7 +420,7 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private readonly renderTabList = () => html`
-    <btrix-tab-list activePanel=${this.activePanel} hideIndicator>
+    <btrix-tab-list activePanel=${ifDefined(this.activePanel)} hideIndicator>
       <btrix-observable
         slot="header"
         @intersect=${({ detail }: IntersectEvent) =>

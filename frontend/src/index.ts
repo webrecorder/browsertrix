@@ -20,10 +20,10 @@ import type {
   NeedLoginEventDetail,
   AuthState,
   Auth,
+  AuthEventDetail,
 } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser, UserOrg } from "./types/user";
-import type { AuthStorageEventDetail } from "./utils/AuthService";
 import { ROUTES } from "./routes";
 import "./shoelace";
 import "./components";
@@ -889,7 +889,7 @@ export class App extends LiteElement {
   private startSyncBrowserTabs() {
     AuthService.broadcastChannel.addEventListener(
       "message",
-      ({ data }: { data: AuthStorageEventDetail }) => {
+      ({ data }: { data: AuthEventDetail }) => {
         if (data.name === "auth_storage") {
           if (data.value !== AuthService.storage.getItem()) {
             if (data.value) {

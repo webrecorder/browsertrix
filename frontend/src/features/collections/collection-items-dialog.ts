@@ -469,7 +469,7 @@ export class CollectionItemsDialog extends TailwindElement {
           .authState=${this.authState}
           orgId=${this.orgId}
           collectionId=${this.collectionId}
-          .workflows=${this.workflows.items || []}
+          .workflows=${this.workflows.items}
           .selection=${this.selection}
           @btrix-selection-change=${(e: CustomEvent<SelectionChangeDetail>) => {
             this.selection = {

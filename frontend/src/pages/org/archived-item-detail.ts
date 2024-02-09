@@ -58,7 +58,7 @@ export class CrawlDetail extends LiteElement {
   orgId!: string;
 
   @property({ type: String })
-  crawlId!: string;
+  crawlId?: string;
 
   @property({ type: Boolean })
   isCrawler!: boolean;
@@ -235,11 +235,11 @@ export class CrawlDetail extends LiteElement {
     } else if (this.crawl) {
       if (this.crawl.type === "upload") {
         label = msg("Back to All Uploads");
-      } else if (this.crawl.type === "crawl") {
-        label = msg("Back to All Crawls");
       } else {
-        label = msg("Back to Archived Items");
+        label = msg("Back to All Crawls");
       }
+      // TODO have a "Back to Archived Items" link & label when we have the info to tell
+      // https://github.com/webrecorder/browsertrix-cloud/issues/1526
     }
 
     return html`

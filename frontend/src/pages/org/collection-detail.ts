@@ -122,7 +122,7 @@ export class CollectionDetail extends LiteElement {
           </h1>
         </div>
         ${when(
-          this.isCrawler || (!this.isCrawler && this.collection?.isPublic),
+          this.isCrawler || this.collection?.isPublic,
           () => html`
             <sl-button
               variant=${this.collection?.crawlCount ? "primary" : "default"}

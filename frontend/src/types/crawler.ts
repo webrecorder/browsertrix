@@ -29,7 +29,7 @@ export type SeedConfig = Expand<
     behaviors?: string | null;
     extraHops?: number | null;
     useSitemap: boolean;
-    failOnFailedSeed: boolean;
+    failOnFailedSeed?: boolean;
     depth?: number | null;
     userAgent?: string | null;
   }
@@ -72,7 +72,7 @@ export type Workflow = CrawlConfig & {
   lastCrawlId: string | null; // last finished or current crawl
   lastCrawlStartTime: string | null;
   lastCrawlTime: string | null; // when last crawl finished
-  lastCrawlState: CrawlState;
+  lastCrawlState: CrawlState | null;
   lastCrawlSize: number | null;
   lastStartedByName: string | null;
   lastCrawlStopping: boolean | null;
@@ -101,7 +101,7 @@ export type Profile = {
   profileId: string;
   baseProfileName: string;
   oid: string;
-  crawlconfigs: { id: string; name: string }[];
+  crawlconfigs?: { id: string; name: string }[];
   resource?: {
     name: string;
     path: string;

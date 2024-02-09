@@ -407,7 +407,7 @@ export class FileUploader extends TailwindElement {
     const formEl = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(formEl))) return;
 
-    const file = this.fileList[0];
+    const file = this.fileList[0] as File | undefined;
     if (!file) return;
 
     this.isUploading = true;

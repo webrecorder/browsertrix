@@ -46,7 +46,7 @@ export type AuthStorageEventDetail = {
   value: string | null;
 };
 
-type AuthEventDetail =
+export type AuthEventDetail =
   | AuthRequestEventDetail
   | AuthResponseEventDetail
   | AuthStorageEventDetail;
@@ -252,6 +252,7 @@ export default class AuthService {
 
     return Promise.race([broadcastPromise, timeoutPromise]).then(
       (value) => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (value?.username && value.headers && value.tokenExpiresAt) {
           return value;
         } else {

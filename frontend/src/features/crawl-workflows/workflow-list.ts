@@ -357,7 +357,7 @@ export class WorkflowListItem extends LitElement {
               ? msg(str`${workflow.crawlCount} crawl`)
               : msg(
                   str`${this.numberFormatter.format(
-                    workflow.crawlCount ?? 0,
+                    workflow.crawlCount || 0,
                   )} crawls`,
                 ),
           )}

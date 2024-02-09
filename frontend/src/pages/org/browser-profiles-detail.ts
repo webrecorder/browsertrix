@@ -151,7 +151,7 @@ export class BrowserProfilesDetail extends LiteElement {
             </dt>
             <dd>
               <ul class="text-sm font-medium">
-                ${this.profile?.crawlconfigs.map(
+                ${this.profile?.crawlconfigs?.map(
                   ({ id, name }) => html`
                     <li>
                       <a
