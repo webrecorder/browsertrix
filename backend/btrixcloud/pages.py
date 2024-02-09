@@ -8,7 +8,14 @@ from uuid import UUID, uuid4
 from fastapi import Depends, HTTPException
 import pymongo
 
-from .models import Page, PageReviewUpdate, Organization, PaginatedResponse, User
+from .models import (
+    Page,
+    PageResource,
+    PageReviewUpdate,
+    Organization,
+    PaginatedResponse,
+    User,
+)
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import from_k8s_date
 
@@ -82,6 +89,24 @@ class PageOps:
                 f"Error adding page {page_id} from crawl {crawl_id} to db: {err}",
                 flush=True,
             )
+
+    async def add_resources_to_page(self, page_id: UUID, resources: Dict[str, int]):
+        """Add resources to page in db"""
+        resource_list = []
+        for key, value in resources.items():
+            resource = PageResource(url=key, status=value)
+            resource_list.append(resource)
+
+        result = await self.pages.find_one_and_update(
+            {"_id": page_id},
+            {"$push": {"resources": {"$each": resource_list}}},
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+
+        if not result:
+            raise HTTPException(status_code=404, detail="page_not_found")
+
+        return {"updated": True}
 
     async def get_page_raw(
         self,
