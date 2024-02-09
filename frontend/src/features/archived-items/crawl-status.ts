@@ -11,8 +11,7 @@ import { animatePulse } from "@/utils/css";
 @customElement("btrix-crawl-status")
 export class CrawlStatus extends LitElement {
   @property({ type: String })
-  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  state?: CrawlState | string;
+  state?: CrawlState | AnyString;
 
   @property({ type: Boolean })
   hideLabel = false;
@@ -60,8 +59,7 @@ export class CrawlStatus extends LitElement {
   // TODO look into customizing sl-select multi-select
   // instead of separate utility function?
   static getContent(
-    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-    state?: CrawlState | string,
+    state?: CrawlState | AnyString,
     isUpload?: boolean,
   ): {
     icon: TemplateResult;
