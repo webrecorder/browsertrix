@@ -24,8 +24,9 @@ class Migration(BaseMigration):
         "profiles",
     ]
 
-    def __init__(self, mdb, migration_version=MIGRATION_VERSION):
-        super().__init__(mdb, migration_version)
+    # pylint: disable=unused-argument
+    def __init__(self, mdb, **kwargs):
+        super().__init__(mdb, migration_version=MIGRATION_VERSION)
 
     async def migrate_up(self):
         """Perform migration up."""

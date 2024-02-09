@@ -141,7 +141,9 @@ def main():
 
     crawls = init_crawls_api(*base_crawl_init)
 
-    init_pages_api(app, mdb, crawls, org_ops, storage_ops, current_active_user)
+    page_ops = init_pages_api(
+        app, mdb, crawls, org_ops, storage_ops, current_active_user
+    )
 
     init_uploads_api(*base_crawl_init)
 
@@ -163,6 +165,7 @@ def main():
                 coll_ops,
                 invites,
                 storage_ops,
+                page_ops,
                 db_inited,
             )
         )

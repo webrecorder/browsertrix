@@ -48,19 +48,22 @@ class PageOps:
             if not page:
                 continue
 
+            print(page, flush=True)
+
             page_dict = json.loads(page)
             await self._add_page_to_db(page_dict, crawl_id, oid)
 
-    async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str, oid: UUID):
+    async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str):
         """Add pages to database from WACZ files"""
-        org = await self.org_ops.get_org_by_id(oid)
+        crawl = await self.crawl_ops.get_crawl(crawl_id, None)
+        org = await self.org_ops.get_org_by_id(crawl.oid)
         wacz_files = await self.crawl_ops.get_wacz_files(crawl_id, org)
         stream = await self.storage_ops.sync_stream_pages_from_wacz(org, wacz_files)
         for page_dict in stream:
             if not page_dict.get("url"):
                 continue
 
-            await self._add_page_to_db(page_dict, crawl_id, oid)
+            await self._add_page_to_db(page_dict, crawl_id, crawl.oid)
 
     async def _add_page_to_db(
         self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID
