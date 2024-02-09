@@ -1,6 +1,7 @@
 """
 Migration 0024 -- crawlerChannel
 """
+
 from btrixcloud.crawlmanager import CrawlManager
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import CrawlConfig, UpdateCrawlConfig

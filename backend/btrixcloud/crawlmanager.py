@@ -96,9 +96,11 @@ class CrawlManager(K8sAPI):
             "replica_secret_name": replica_storage.get_storage_secret_name(oid),
             "replica_file_path": replica_file_path,
             "replica_endpoint": replica_endpoint,
-            "primary_secret_name": primary_storage.get_storage_secret_name(oid)
-            if primary_storage
-            else None,
+            "primary_secret_name": (
+                primary_storage.get_storage_secret_name(oid)
+                if primary_storage
+                else None
+            ),
             "primary_file_path": primary_file_path if primary_file_path else None,
             "primary_endpoint": primary_endpoint if primary_endpoint else None,
             "BgJobType": BgJobType,

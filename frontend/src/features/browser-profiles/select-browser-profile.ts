@@ -113,13 +113,22 @@ export class SelectBrowserProfile extends LiteElement {
               >${this.selectedProfile.description}</em
             >`
           : ""}
+        <span>
+          ${msg("Last edited:")}
+          <sl-format-date
+            date=${`${this.selectedProfile.created}Z` /** Z for UTC */}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+          ></sl-format-date>
+        </span>
         <a
           href=${`${this.orgBasePath}/browser-profiles/profile/${this.selectedProfile.id}`}
           class="font-medium text-primary hover:text-indigo-500"
           target="_blank"
         >
           <span class="mr-1 inline-block align-middle"
-            >${msg("View profile")}</span
+            >${msg("Check profile")}</span
           >
           <sl-icon
             class="inline-block align-middle"

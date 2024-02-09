@@ -1,6 +1,7 @@
 """
 Storage API
 """
+
 from typing import (
     Optional,
     Iterator,
@@ -11,7 +12,7 @@ from typing import (
     TYPE_CHECKING,
 )
 from urllib.parse import urlsplit
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import asynccontextmanager
 
 import asyncio
 import heapq
@@ -275,8 +276,10 @@ class StorageOps:
         ) as client:
             yield client, bucket, key
 
-    @contextmanager
-    def get_sync_client(self, org: Organization) -> Iterator[tuple[S3Client, str, str]]:
+    @asynccontextmanager
+    async def get_sync_client(
+        self, org: Organization
+    ) -> AsyncIterator[tuple[S3Client, str, str]]:
         """context manager for s3 client"""
         storage = self.get_org_primary_storage(org)
 
@@ -516,7 +519,7 @@ class StorageOps:
         contexts: List[str],
     ) -> Iterator[bytes]:
         """Return filtered stream of logs from specified WACZs sorted by timestamp"""
-        with self.get_sync_client(org) as (client, bucket, key):
+        async with self.get_sync_client(org) as (client, bucket, key):
             loop = asyncio.get_event_loop()
 
             resp = await loop.run_in_executor(
@@ -664,7 +667,7 @@ class StorageOps:
     ) -> Iterator[bytes]:
         """return an iter for downloading a stream nested wacz file
         from list of files"""
-        with self.get_sync_client(org) as (client, bucket, key):
+        async with self.get_sync_client(org) as (client, bucket, key):
             loop = asyncio.get_event_loop()
 
             resp = await loop.run_in_executor(

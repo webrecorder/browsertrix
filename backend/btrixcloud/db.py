@@ -1,6 +1,7 @@
 """
 Browsertrix API Mongo DB initialization
 """
+
 import importlib.util
 import os
 import urllib
