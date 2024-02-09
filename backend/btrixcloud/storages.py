@@ -518,8 +518,10 @@ class StorageOps:
         wacz_files: List[CrawlFile],
     ) -> Iterator[Dict[Any, Any]]:
         """Return stream of page dicts from last of WACZs"""
-        with self.get_sync_client(org) as (client, bucket, key):
-            stream = await asyncio.get_event_loop().run_in_executor(
+        async with self.get_sync_client(org) as (client, bucket, key):
+            loop = asyncio.get_event_loop()
+
+            stream = await loop.run_in_executor(
                 None,
                 self._sync_get_pages,
                 wacz_files,
