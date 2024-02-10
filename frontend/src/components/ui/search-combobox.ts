@@ -70,7 +70,7 @@ export class SearchCombobox<T> extends LitElement {
       this.onSearchInput.cancel();
       this.searchByValue = "";
     }
-    if (changedProperties.has("searchKeys") && this.searchKeys) {
+    if (changedProperties.has("searchKeys")) {
       this.onSearchInput.cancel();
       this.fuse = new Fuse<T>([], {
         ...(
@@ -189,9 +189,9 @@ export class SearchCombobox<T> extends LitElement {
   }
 
   private readonly onSearchInput = debounce(150)(() => {
-    this.searchByValue = this.input.value?.trim();
+    this.searchByValue = this.input.value.trim();
 
-    if (this.searchResultsOpen === false && this.hasSearchStr) {
+    if (!this.searchResultsOpen && this.hasSearchStr) {
       this.searchResultsOpen = true;
     }
 

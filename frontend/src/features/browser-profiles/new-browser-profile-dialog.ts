@@ -167,7 +167,7 @@ export class NewBrowserProfileDialog extends LiteElement {
     this.isSubmitting = false;
   }
 
-  private createBrowser({
+  private async createBrowser({
     url,
     crawlerChannel,
   }: {

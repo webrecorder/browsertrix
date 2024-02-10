@@ -78,7 +78,7 @@ export class Table extends LitElement {
   }
 
   private async onSlotChange() {
-    const headEl = this.head[0];
+    const headEl = this.head[0] as TableHead | undefined;
     if (!headEl) return;
     await headEl.updateComplete;
 

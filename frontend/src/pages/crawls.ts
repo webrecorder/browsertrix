@@ -262,7 +262,7 @@ export class Crawls extends LiteElement {
   }
 
   private renderEmptyState() {
-    if (this.crawls?.page && this.crawls?.page > 1) {
+    if (this.crawls?.page && this.crawls.page > 1) {
       return html`
         <div class="border-b border-t py-5">
           <p class="text-center text-neutral-500">

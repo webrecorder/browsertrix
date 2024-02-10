@@ -148,7 +148,7 @@ export class CollectionWorkflowList extends TailwindElement {
   private readonly api = new APIController(this);
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has("workflows") && this.workflows) {
+    if (changedProperties.has("workflows")) {
       void this.fetchCrawls();
     }
   }
@@ -182,7 +182,7 @@ export class CollectionWorkflowList extends TailwindElement {
 
   private readonly renderWorkflow = (workflow: Workflow) => {
     const crawlsAsync = this.crawlsMap.get(workflow.id) || Promise.resolve([]);
-    const countAsync = crawlsAsync?.then((crawls) => ({
+    const countAsync = crawlsAsync.then((crawls) => ({
       total: crawls.length,
       selected: crawls.filter(({ id }) => this.selection[id]).length,
     }));
@@ -230,11 +230,11 @@ export class CollectionWorkflowList extends TailwindElement {
               countAsync.then(({ total, selected }) =>
                 total === 1
                   ? msg(
-                      str`${selected.toLocaleString()} / ${total?.toLocaleString()} crawl`,
+                      str`${selected.toLocaleString()} / ${total.toLocaleString()} crawl`,
                     )
                   : total
                     ? msg(
-                        str`${selected.toLocaleString()} / ${total?.toLocaleString()} crawls`,
+                        str`${selected.toLocaleString()} / ${total.toLocaleString()} crawls`,
                       )
                     : msg("0 crawls"),
               ),
@@ -270,7 +270,7 @@ export class CollectionWorkflowList extends TailwindElement {
             </sl-switch>
           </div>
         </div>
-        ${until(crawlsAsync?.then((crawls) => crawls.map(this.renderCrawl)))}
+        ${until(crawlsAsync.then((crawls) => crawls.map(this.renderCrawl)))}
       </sl-tree-item>
     `;
   };

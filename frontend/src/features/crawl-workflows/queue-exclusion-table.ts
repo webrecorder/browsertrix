@@ -367,7 +367,7 @@ export class QueueExclusionTable extends LiteElement {
     const typeSelectElem = inputElem.closest("tr")?.querySelector("sl-select");
     const exclusionType = typeSelectElem?.value;
     return {
-      type: exclusionType as Exclusion["type"],
+      type: exclusionType as Exclusion["type"] | undefined,
       value: inputElem.value,
     };
   }
@@ -384,7 +384,7 @@ export class QueueExclusionTable extends LiteElement {
       (elem) => (elem as SLInputElement).value,
     );
     const { type, value } = this.getCurrentValues(inputElem);
-    const formattedValue = formatValue(type, value);
+    const formattedValue = formatValue(type!, value);
     if (siblingValues.includes(formattedValue)) {
       return msg("Exclusion already exists. Please edit or remove to continue");
     }
@@ -417,16 +417,14 @@ export class QueueExclusionTable extends LiteElement {
     // after fixing duplicate values
     const inputElem = e.target as HTMLInputElement;
     const table = inputElem.closest("table")!;
-    Array.from(table?.querySelectorAll("sl-input[data-invalid]")).map(
-      (elem) => {
-        if (elem !== inputElem) {
-          const validityMessage =
-            this.getInputDuplicateValidity(elem as SLInputElement) || "";
-          (elem as SLInputElement).setCustomValidity(validityMessage);
-          (elem as SLInputElement).reportValidity();
-        }
-      },
-    );
+    Array.from(table.querySelectorAll("sl-input[data-invalid]")).map((elem) => {
+      if (elem !== inputElem) {
+        const validityMessage =
+          this.getInputDuplicateValidity(elem as SLInputElement) || "";
+        (elem as SLInputElement).setCustomValidity(validityMessage);
+        (elem as SLInputElement).reportValidity();
+      }
+    });
   }
 
   private removeExclusion({ value, type }: Exclusion, index: number) {

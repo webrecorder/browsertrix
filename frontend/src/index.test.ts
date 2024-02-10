@@ -62,7 +62,7 @@ describe("browsertrix-app", () => {
   });
 
   it("sets user info", async () => {
-    stub(App.prototype, "getUserInfo").callsFake(() =>
+    stub(App.prototype, "getUserInfo").callsFake(async () =>
       Promise.resolve({
         id: "test_id",
         email: "test-user@example.com",

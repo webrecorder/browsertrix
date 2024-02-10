@@ -105,7 +105,7 @@ export class Combobox extends LitElement {
   }
 
   private async onFocusout(e: FocusEvent) {
-    const relatedTarget = e.relatedTarget as HTMLElement;
+    const relatedTarget = e.relatedTarget as HTMLElement | null;
     if (!this.open) {
       return;
     }

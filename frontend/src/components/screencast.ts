@@ -328,6 +328,7 @@ export class Screencast extends LitElement {
         }
 
         dataMap[id] = message;
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- TODO not sure if this condition can be skipped
       } else if (message.msg === "close") {
         dataMap[id] = null;
       }

@@ -27,8 +27,8 @@ export const inactiveCrawlStates: CrawlState[] = [
   "failed",
 ];
 
-export function isActive(state: CrawlState) {
-  return activeCrawlStates.includes(state);
+export function isActive(state: CrawlState | null) {
+  return state && activeCrawlStates.includes(state);
 }
 
 export function renderName(item: ArchivedItem | Workflow) {

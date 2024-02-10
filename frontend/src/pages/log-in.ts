@@ -344,10 +344,9 @@ export class LogInPage extends LiteElement {
       this.formStateService.send("BACKEND_INITIALIZED");
     } else {
       this.formStateService.send("BACKEND_NOT_INITIALIZED");
-      this.timerId = window.setTimeout(
-        () => this.checkBackendInitialized(),
-        5000,
-      );
+      this.timerId = window.setTimeout(() => {
+        void this.checkBackendInitialized();
+      }, 5000);
     }
   }
 

@@ -72,9 +72,7 @@ export class CrawlQueue extends LiteElement {
 
   protected updated(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("exclusions")) {
-      this.exclusionsRx = this.exclusions
-        ? this.exclusions.map((x) => new RegExp(x))
-        : [];
+      this.exclusionsRx = this.exclusions.map((x) => new RegExp(x));
     }
   }
 
@@ -113,8 +111,6 @@ export class CrawlQueue extends LiteElement {
         <p class="text-sm text-neutral-400">${msg("No pages queued.")}</p>
       `;
     }
-
-    if (!this.queue) return;
 
     return html`
       <btrix-numbered-list class="break-all text-xs" aria-live="polite">

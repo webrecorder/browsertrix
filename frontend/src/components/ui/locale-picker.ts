@@ -14,10 +14,10 @@ type LocaleNames = {
 @customElement("btrix-locale-picker")
 export class LocalePicker extends LitElement {
   @state()
-  private localeNames: LocaleNames = {} as LocaleNames;
+  private localeNames: LocaleNames | undefined = {} as LocaleNames;
 
   private readonly setLocaleName = (locale: LocaleCode) => {
-    this.localeNames[locale] = new Intl.DisplayNames([locale], {
+    this.localeNames![locale] = new Intl.DisplayNames([locale], {
       type: "language",
     }).of(locale)!;
   };
@@ -53,7 +53,7 @@ export class LocalePicker extends LitElement {
                 value=${locale}
                 ?checked=${locale === selectedLocale}
               >
-                ${this.localeNames[locale]}
+                ${this.localeNames![locale]}
               </sl-menu-item>`,
           )}
         </sl-menu>

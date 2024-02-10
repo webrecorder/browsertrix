@@ -73,8 +73,8 @@ export class CrawlMetadataEditor extends LiteElement {
     }
     if (changedProperties.has("crawl") && this.crawl) {
       this.includeName = this.crawl.type === "upload";
-      this.tagsToSave = this.crawl.tags || [];
-      this.collectionsToSave = this.crawl.collectionIds || [];
+      this.tagsToSave = this.crawl.tags;
+      this.collectionsToSave = this.crawl.collectionIds;
     }
   }
 

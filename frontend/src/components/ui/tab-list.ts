@@ -239,7 +239,7 @@ export class TabList extends LitElement {
   renderNav() {
     return html`
       <sl-resize-observer
-        @sl-resize=${() =>
+        @sl-resize=${async () =>
           this.repositionIndicator(this.getTab(this.progressPanel))}
       >
         <div
