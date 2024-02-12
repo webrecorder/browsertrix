@@ -353,6 +353,12 @@ export class Dashboard extends LiteElement {
   }
 
   private renderCrawlingMeter(_metrics: Metrics) {
+    let monthKey = (now.getUTCMonth() + 1).toString();
+    if (monthKey.length === 1) {
+      monthKey = `0${monthKey}`;
+    }
+    const currentMonthKey = `${now.getFullYear()}-${monthKey}`;
+
     let quotaSeconds = 0;
 
     if (this.org!.quotas?.maxExecMinutesPerMonth) {
@@ -377,10 +383,7 @@ export class Dashboard extends LiteElement {
 
     let usageSeconds = 0;
     if (this.org!.monthlyExecSeconds) {
-      const actualUsage =
-        this.org!.monthlyExecSeconds[
-          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
-        ];
+      const actualUsage = this.org!.monthlyExecSeconds[currentMonthKey];
       if (actualUsage) {
         usageSeconds = actualUsage;
       }
@@ -392,10 +395,7 @@ export class Dashboard extends LiteElement {
 
     let usageSecondsAllTypes = 0;
     if (this.org!.crawlExecSeconds) {
-      const actualUsage =
-        this.org!.crawlExecSeconds[
-          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
-        ];
+      const actualUsage = this.org!.crawlExecSeconds[currentMonthKey];
       if (actualUsage) {
         usageSecondsAllTypes = actualUsage;
       }
@@ -403,10 +403,7 @@ export class Dashboard extends LiteElement {
 
     let usageSecondsExtra = 0;
     if (this.org!.extraExecSeconds) {
-      const actualUsageExtra =
-        this.org!.extraExecSeconds[
-          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
-        ];
+      const actualUsageExtra = this.org!.extraExecSeconds[currentMonthKey];
       if (actualUsageExtra) {
         usageSecondsExtra = actualUsageExtra;
       }
@@ -424,10 +421,7 @@ export class Dashboard extends LiteElement {
 
     let usageSecondsGifted = 0;
     if (this.org!.giftedExecSeconds) {
-      const actualUsageGifted =
-        this.org!.giftedExecSeconds[
-          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
-        ];
+      const actualUsageGifted = this.org!.giftedExecSeconds[currentMonthKey];
       if (actualUsageGifted) {
         usageSecondsGifted = actualUsageGifted;
       }
