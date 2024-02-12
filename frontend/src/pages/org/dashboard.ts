@@ -194,7 +194,7 @@ export class Dashboard extends LiteElement {
           ${this.renderCard(
             msg("Crawling"),
             (metrics) => html`
-              ${this.renderCrawlingMeter(metrics)}
+              ${this.renderCrawlingMeter()}
               <dl>
                 ${this.renderStat({
                   value:
@@ -352,8 +352,11 @@ export class Dashboard extends LiteElement {
     `;
   }
 
-  private renderCrawlingMeter(_metrics: Metrics) {
+  private renderCrawlingMeter() {
     let quotaSeconds = 0;
+
+    console.log("Rendering crawling meter");
+    console.log(`Quotas: ${JSON.stringify(this.org!.quotas)}`);
 
     if (!this.org!.quotas) {
       return;
