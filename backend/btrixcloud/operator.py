@@ -65,7 +65,7 @@ METRICS = f"PodMetrics.{METRICS_API}"
 
 DEFAULT_TTL = 30
 
-REDIS_TTL = 60
+REDIS_TTL = 120
 
 # time in seconds before a crawl is deemed 'waiting' instead of 'starting'
 STARTING_TIME_SECS = 60

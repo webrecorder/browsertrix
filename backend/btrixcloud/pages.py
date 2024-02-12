@@ -48,8 +48,6 @@ class PageOps:
             if not page:
                 continue
 
-            print(page, flush=True)
-
             page_dict = json.loads(page)
             await self._add_page_to_db(page_dict, crawl_id, oid)
 
