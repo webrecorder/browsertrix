@@ -2,9 +2,9 @@
 Migration 0026 -- Crawl Pages
 """
 
-from btrixcloud.migrations import BaseMigration
-
 import asyncio
+
+from btrixcloud.migrations import BaseMigration
 
 
 MIGRATION_VERSION = "0026"
