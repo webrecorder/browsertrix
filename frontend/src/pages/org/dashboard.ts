@@ -355,6 +355,10 @@ export class Dashboard extends LiteElement {
   private renderCrawlingMeter(_metrics: Metrics) {
     let quotaSeconds = 0;
 
+    if (!this.org!.quotas) {
+      return;
+    }
+
     if (this.org!.quotas?.maxExecMinutesPerMonth) {
       quotaSeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
     }
@@ -416,7 +420,7 @@ export class Dashboard extends LiteElement {
         usageSecondsExtra = actualUsageExtra;
       }
     }
-    const maxExecSecsExtra = this.org!.quotas!.extraExecMinutes * 60;
+    const maxExecSecsExtra = this.org!.quotas?.extraExecMinutes * 60 || 0;
     // Cap usage at quota for display purposes
     if (usageSecondsExtra > maxExecSecsExtra) {
       usageSecondsExtra = maxExecSecsExtra;
@@ -438,7 +442,8 @@ export class Dashboard extends LiteElement {
         usageSecondsGifted = actualUsageGifted;
       }
     }
-    const maxExecSecsGifted = this.org!.quotas!.giftedExecMinutes * 60;
+
+    const maxExecSecsGifted = this.org!.quotas?.giftedExecMinutes * 60 || 0;
     // Cap usage at quota for display purposes
     if (usageSecondsGifted > maxExecSecsGifted) {
       usageSecondsGifted = maxExecSecsGifted;
