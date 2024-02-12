@@ -65,7 +65,7 @@ METRICS = f"PodMetrics.{METRICS_API}"
 
 DEFAULT_TTL = 30
 
-REDIS_TTL = 120
+REDIS_TTL = 60
 
 # time in seconds before a crawl is deemed 'waiting' instead of 'starting'
 STARTING_TIME_SECS = 60
@@ -298,6 +298,7 @@ class BtrixOperator(K8sAPI):
         self.config_file = "/config/config.yaml"
 
         self.done_key = "crawls-done"
+        self.pages_key = "pages"
 
         self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
@@ -1006,6 +1007,13 @@ class BtrixOperator(K8sAPI):
                 # get next file done
                 file_done = await redis.lpop(self.done_key)
 
+            page_crawled = await redis.lpop(f"{crawl.id}:{self.pages_key}")
+
+            while page_crawled:
+                page_dict = json.loads(page_crawled)
+                await self.page_ops.add_page_to_db(page_dict, crawl.id)
+                page_crawled = await redis.lpop(f"{crawl.id}:{self.pages_key}")
+
             # ensure filesAdded and filesAddedSize always set
             status.filesAdded = int(await redis.get("filesAdded") or 0)
             status.filesAddedSize = int(await redis.get("filesAddedSize") or 0)
@@ -1539,8 +1547,6 @@ class BtrixOperator(K8sAPI):
 
         await self.add_crawl_errors_to_db(crawl_id)
 
-        await self.add_crawl_pages_to_db(crawl_id, oid)
-
         # finally, delete job
         await self.delete_crawl_job(crawl_id)
 
@@ -1593,42 +1599,6 @@ class BtrixOperator(K8sAPI):
                 await self.crawl_ops.add_crawl_errors(crawl_id, errors)
 
                 if len(errors) < inc:
-                    # If we have fewer than inc errors, we can assume this is the
-                    # last page of data to add.
-                    break
-                index += 1
-        # pylint: disable=bare-except
-        except:
-            # likely redis has already been deleted, so nothing to do
-            pass
-        finally:
-            if redis:
-                await redis.close()
-
-    async def add_crawl_pages_to_db(self, crawl_id: str, oid: UUID, inc: int = 100):
-        """Pull crawl pages from redis and write to mongo db"""
-        index = 0
-        redis = None
-        try:
-            redis_url = self.get_redis_url(crawl_id)
-            redis = await self._get_redis(redis_url)
-            if not redis:
-                return
-
-            # ensure this only runs once
-            if not await redis.setnx("pages-exported", "1"):
-                return
-
-            while True:
-                skip = index * inc
-                upper_bound = skip + inc - 1
-                pages = await redis.lrange(f"{crawl_id}:pages", skip, upper_bound)
-                if not pages:
-                    break
-
-                await self.page_ops.add_crawl_pages_to_db(crawl_id, oid, pages)
-
-                if len(pages) < inc:
                     # If we have fewer than inc errors, we can assume this is the
                     # last page of data to add.
                     break

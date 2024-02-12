@@ -1,6 +1,5 @@
 """crawl pages"""
 
-import json
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
 from uuid import UUID, uuid4
@@ -42,15 +41,6 @@ class PageOps:
         self.org_ops = org_ops
         self.storage_ops = storage_ops
 
-    async def add_crawl_pages_to_db(self, crawl_id: str, oid: UUID, pages: List[str]):
-        """Add stringified pages from Redis to database"""
-        for page in pages:
-            if not page:
-                continue
-
-            page_dict = json.loads(page)
-            await self._add_page_to_db(page_dict, crawl_id, oid)
-
     async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str):
         """Add pages to database from WACZ files"""
         crawl = await self.crawl_ops.get_crawl(crawl_id, None)
@@ -61,13 +51,23 @@ class PageOps:
             if not page_dict.get("url"):
                 continue
 
-            await self._add_page_to_db(page_dict, crawl_id, crawl.oid)
+            await self.add_page_to_db(page_dict, crawl_id, crawl.oid)
 
-    async def _add_page_to_db(
-        self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID
+    async def add_page_to_db(
+        self, page_dict: Dict[str, Any], crawl_id: str, oid: Optional[UUID] = None
     ):
         """Add page to database"""
         page_id = page_dict.get("id", uuid4())
+
+        # If page already exists, don't try to add it again. This is needed because
+        # multiple operator processes might try to add the same page.
+        if await self.pages.find_one({"_id": page_id}):
+            return
+
+        if not oid:
+            crawl = await self.crawl_ops.get_crawl(crawl_id, None)
+            org = await self.org_ops.get_org_by_id(crawl.oid)
+            oid = org.id
 
         try:
             page = Page(
