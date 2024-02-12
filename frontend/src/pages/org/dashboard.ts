@@ -359,6 +359,8 @@ export class Dashboard extends LiteElement {
       quotaSeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
     }
 
+    console.log(`Monthly quota seconds: ${quotaSeconds}`);
+
     let quotaSecondsAllTypes = quotaSeconds;
 
     let quotaSecondsExtra = 0;
@@ -381,6 +383,7 @@ export class Dashboard extends LiteElement {
         this.org!.monthlyExecSeconds[
           `${now.getFullYear()}-${now.getUTCMonth() + 1}`
         ];
+      console.log(`Monthly usage: ${actualUsage}`);
       if (actualUsage) {
         usageSeconds = actualUsage;
       }
@@ -396,6 +399,7 @@ export class Dashboard extends LiteElement {
         this.org!.crawlExecSeconds[
           `${now.getFullYear()}-${now.getUTCMonth() + 1}`
         ];
+      console.log(`Total usage: ${actualUsage}`);
       if (actualUsage) {
         usageSecondsAllTypes = actualUsage;
       }
@@ -407,6 +411,7 @@ export class Dashboard extends LiteElement {
         this.org!.extraExecSeconds[
           `${now.getFullYear()}-${now.getUTCMonth() + 1}`
         ];
+      console.log(`Extra usage: ${actualUsageExtra}`);
       if (actualUsageExtra) {
         usageSecondsExtra = actualUsageExtra;
       }
@@ -428,6 +433,7 @@ export class Dashboard extends LiteElement {
         this.org!.giftedExecSeconds[
           `${now.getFullYear()}-${now.getUTCMonth() + 1}`
         ];
+      console.log(`Gifted usage: ${actualUsageGifted}`);
       if (actualUsageGifted) {
         usageSecondsGifted = actualUsageGifted;
       }
@@ -443,8 +449,15 @@ export class Dashboard extends LiteElement {
       quotaSecondsGifted += usageSecondsGifted;
     }
 
+    console.log(`Second stage, usage all types: ${usageSecondsAllTypes}`);
+    console.log(`Second stage, usage gifted: ${usageSecondsGifted}`);
+    console.log(`Second stage, usage extra: ${usageSecondsExtra}`);
+    console.log(`Second stage, quota all types: ${quotaSecondsAllTypes}`);
+
     const hasQuota = Boolean(quotaSecondsAllTypes);
     const isReached = hasQuota && usageSecondsAllTypes >= quotaSecondsAllTypes;
+
+    console.log(`isReached: ${isReached}`);
 
     const maxTotalTime = quotaSeconds + quotaSecondsExtra + quotaSecondsGifted;
     if (isReached) {
@@ -452,11 +465,20 @@ export class Dashboard extends LiteElement {
       quotaSecondsAllTypes = maxTotalTime;
     }
 
+    console.log(
+      `After isReached check, usage all types: ${usageSecondsAllTypes}`,
+    );
+    console.log(
+      `After isReached check, quota all types: ${quotaSecondsAllTypes}`,
+    );
+
     const hasExtra =
       usageSecondsExtra ||
       this.org!.extraExecSecondsAvailable ||
       usageSecondsGifted ||
       this.org!.giftedExecSecondsAvailable;
+
+    console.log(`Has extra: ${hasExtra}`);
 
     const renderBar = (
       /** Time in Seconds */
@@ -466,6 +488,8 @@ export class Dashboard extends LiteElement {
       color: string,
       divided = true,
     ) => {
+      console.log(`${label} used: ${used}`);
+      console.log(`${label} quota: ${used}`);
       if (divided) {
         return html` <btrix-divided-meter-bar
           value=${(used / quotaSecondsAllTypes) * 100}
