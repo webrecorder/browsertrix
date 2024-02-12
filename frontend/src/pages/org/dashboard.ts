@@ -489,7 +489,7 @@ export class Dashboard extends LiteElement {
       divided = true,
     ) => {
       console.log(`${label} used: ${used}`);
-      console.log(`${label} quota: ${used}`);
+      console.log(`${label} quota: ${quota}`);
       if (divided) {
         return html` <btrix-divided-meter-bar
           value=${(used / quotaSecondsAllTypes) * 100}
