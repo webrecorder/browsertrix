@@ -109,6 +109,20 @@ class PageOps:
 
         return {"updated": True}
 
+    async def delete_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
+        """Delete crawl pages from db"""
+        query: Dict[str, Union[str, UUID]] = {"crawl_id": crawl_id}
+        if oid:
+            query["oid"] = oid
+        try:
+            await self.pages.delete_many(query)
+        # pylint: disable=broad-except
+        except Exception as err:
+            print(
+                f"Error deleting pages from crawl {crawl_id}: {err}",
+                flush=True,
+            )
+
     async def get_page_raw(
         self,
         page_id: UUID,

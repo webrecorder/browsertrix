@@ -2,7 +2,7 @@
 
 import os
 from datetime import timedelta
-from typing import Optional, List, Union, Type, TYPE_CHECKING
+from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING
 from uuid import UUID
 import urllib.parse
 import contextlib
@@ -367,9 +367,9 @@ class BaseCrawlOps:
 
         return res.deleted_count, cids_to_update, quota_reached
 
-    async def _delete_crawl_files(self, crawl, org: Organization):
+    async def _delete_crawl_files(self, crawl_raw: Dict[str, Any], org: Organization):
         """Delete files associated with crawl from storage."""
-        crawl = BaseCrawl.from_dict(crawl)
+        crawl = BaseCrawl.from_dict(crawl_raw)
         size = 0
         for file_ in crawl.files:
             size += file_.size
@@ -380,6 +380,12 @@ class BaseCrawlOps:
             )
 
         return size
+
+    async def delete_crawl_files(self, crawl_id: str, oid: UUID):
+        """Delete crawl files"""
+        crawl_raw = await self.get_crawl_raw(crawl_id)
+        org = await self.orgs.get_org_by_id(oid)
+        return await self._delete_crawl_files(crawl_raw, org)
 
     async def _resolve_crawl_refs(
         self,

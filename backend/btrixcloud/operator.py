@@ -33,6 +33,7 @@ from .models import (
     RUNNING_AND_STARTING_ONLY,
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
+    FAILED_STATES,
     CrawlFile,
     CrawlCompleteIn,
     StorageRef,
@@ -1540,6 +1541,10 @@ class BtrixOperator(K8sAPI):
         if state in SUCCESSFUL_STATES and oid:
             await self.org_ops.inc_org_bytes_stored(oid, files_added_size, "crawl")
             await self.coll_ops.add_successful_crawl_to_collections(crawl_id, cid)
+
+        if state in FAILED_STATES:
+            await self.crawl_ops.delete_crawl_files(crawl_id, oid)
+            await self.page_ops.delete_crawl_pages(crawl_id, oid)
 
         await self.event_webhook_ops.create_crawl_finished_notification(
             crawl_id, oid, state
