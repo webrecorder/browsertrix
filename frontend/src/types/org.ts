@@ -1,3 +1,5 @@
+import type { Range } from "./utils";
+
 // From UserRole in backend
 export type UserRole = "viewer" | "crawler" | "owner" | "superadmin";
 
@@ -8,6 +10,8 @@ export const AccessCode: Record<UserRole, number> = {
   owner: 40,
 } as const;
 
+export type YearMonth = `${number}-${Range<0, 2>}${Range<0, 10>}`;
+
 export type OrgData = {
   id: string;
   name: string;
@@ -16,23 +20,23 @@ export type OrgData = {
   bytesStored: number;
   usage: {
     // Keyed by {4-digit year}-{2-digit month}
-    [key: string]: number;
+    [key: YearMonth]: number;
   } | null;
   crawlExecSeconds?: {
     // Keyed by {4-digit year}-{2-digit month}
-    [key: string]: number;
+    [key: YearMonth]: number;
   };
   monthlyExecSeconds?: {
     // Keyed by {4-digit year}-{2-digit month}
-    [key: string]: number;
+    [key: YearMonth]: number;
   };
   extraExecSeconds?: {
     // Keyed by {4-digit year}-{2-digit month}
-    [key: string]: number;
+    [key: YearMonth]: number;
   };
   giftedExecSeconds?: {
     // Keyed by {4-digit year}-{2-digit month}
-    [key: string]: number;
+    [key: YearMonth]: number;
   };
   extraExecSecondsAvailable: number;
   giftedExecSecondsAvailable: number;
