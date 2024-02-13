@@ -10,6 +10,7 @@ export const AccessCode: Record<UserRole, number> = {
   owner: 40,
 } as const;
 
+/** `${4-digit year}-${2-digit month}` */
 export type YearMonth = `${number}-${Range<0, 2>}${Range<0, 10>}`;
 
 export type OrgData = {
@@ -18,26 +19,11 @@ export type OrgData = {
   slug: string;
   quotas?: Record<string, number>;
   bytesStored: number;
-  usage: {
-    // Keyed by {4-digit year}-{2-digit month}
-    [key: YearMonth]: number;
-  } | null;
-  crawlExecSeconds?: {
-    // Keyed by {4-digit year}-{2-digit month}
-    [key: YearMonth]: number;
-  };
-  monthlyExecSeconds?: {
-    // Keyed by {4-digit year}-{2-digit month}
-    [key: YearMonth]: number;
-  };
-  extraExecSeconds?: {
-    // Keyed by {4-digit year}-{2-digit month}
-    [key: YearMonth]: number;
-  };
-  giftedExecSeconds?: {
-    // Keyed by {4-digit year}-{2-digit month}
-    [key: YearMonth]: number;
-  };
+  usage: { [key: YearMonth]: number } | null;
+  crawlExecSeconds?: { [key: YearMonth]: number };
+  monthlyExecSeconds?: { [key: YearMonth]: number };
+  extraExecSeconds?: { [key: YearMonth]: number };
+  giftedExecSeconds?: { [key: YearMonth]: number };
   extraExecSecondsAvailable: number;
   giftedExecSecondsAvailable: number;
   storageQuotaReached?: boolean;
