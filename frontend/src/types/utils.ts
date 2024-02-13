@@ -16,6 +16,7 @@ type Enumerate<
   ? Acc[number]
   : Enumerate<N, [...Acc, Acc["length"]]>;
 
+/** Number literal range from `F` to `T` (exclusive) */
 export type Range<F extends number, T extends number> = Exclude<
   Enumerate<T>,
   Enumerate<F>
