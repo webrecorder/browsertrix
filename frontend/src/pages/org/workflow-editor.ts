@@ -592,8 +592,9 @@ export class CrawlConfigEditor extends LiteElement {
         : defaultFormState.browserProfile,
       scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
       exclusions: seedsConfig.exclude,
-      includeLinkedPages:
-        Boolean(primarySeedConfig.extraHops || seedsConfig.extraHops) || true,
+      includeLinkedPages: Boolean(
+        primarySeedConfig.extraHops || seedsConfig.extraHops,
+      ),
       useSitemap: defaultFormState.useSitemap,
       failOnFailedSeed:
         seedsConfig.failOnFailedSeed ?? defaultFormState.failOnFailedSeed,
