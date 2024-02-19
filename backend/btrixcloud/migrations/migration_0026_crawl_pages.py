@@ -44,6 +44,4 @@ class Migration(BaseMigration):
             await gather_tasks_with_concurrency(*all_coroutines)
         # pylint: disable=broad-exception-caught, raise-missing-from
         except Exception as err:
-            print(
-                f"Error adding pages to db: {err}", flush=True
-            )
+            print(f"Error adding pages to db: {err}", flush=True)
