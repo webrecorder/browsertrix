@@ -26,7 +26,7 @@ class Migration(BaseMigration):
         crawls_mdb = self.mdb["crawls"]
         pages_mdb = self.mdb["pages"]
 
-        crawl_ids = await crawls_mdb.distinct("_id")
+        crawl_ids = await crawls_mdb.distinct("_id", {"type": "crawl"})
         crawl_ids_with_pages = await pages_mdb.distinct("crawl_id")
 
         crawl_ids_no_pages = list(set(crawl_ids) - set(crawl_ids_with_pages))
