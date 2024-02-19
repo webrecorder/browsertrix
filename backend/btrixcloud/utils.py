@@ -120,3 +120,14 @@ def stream_dict_list_as_csv(data: List[Dict[str, Union[str, int]]], filename: st
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment;filename={filename}"},
     )
+
+
+async def gather_tasks_with_concurrency(*tasks, n=5):
+    """Limit concurrency to n tasks at a time"""
+    semaphore = asyncio.Semaphore(n)
+
+    async def semaphore_task(task):
+        async with semaphore:
+            return await task
+
+    return await asyncio.gather(*(semaphore_task(task) for task in tasks))

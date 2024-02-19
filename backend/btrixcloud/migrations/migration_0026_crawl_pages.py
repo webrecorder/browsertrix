@@ -5,6 +5,7 @@ Migration 0026 -- Crawl Pages
 import asyncio
 
 from btrixcloud.migrations import BaseMigration
+from btrix.utils import gather_tasks_with_concurrency
 
 
 MIGRATION_VERSION = "0026"
@@ -33,17 +34,16 @@ class Migration(BaseMigration):
         if not crawl_ids_no_pages:
             return
 
+        all_coroutines = []
+
         for crawl_id in crawl_ids_no_pages:
-            try:
-                print(
-                    f"Starting async task to add pages from crawl {crawl_id} to db",
-                    flush=True,
-                )
-                asyncio.create_task(
-                    self.page_ops.add_crawl_pages_to_db_from_wacz(crawl_id)
-                )
-            # pylint: disable=broad-exception-caught, raise-missing-from
-            except Exception as err:
-                print(
-                    f"Error adding pages to db for crawl {crawl_id}: {err}", flush=True
-                )
+            current_coroutine = self.page_ops.add_crawl_pages_to_db_from_wacz(crawl_id)
+            all_coroutines.append(current_coroutine)
+
+        try:
+            await gather_tasks_with_concurrency(*all_coroutines)
+        # pylint: disable=broad-exception-caught, raise-missing-from
+        except Exception as err:
+            print(
+                f"Error adding pages to db: {err}", flush=True
+            )
