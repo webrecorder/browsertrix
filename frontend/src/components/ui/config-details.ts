@@ -55,7 +55,7 @@ export class ConfigDetails extends LiteElement {
   private collections: Collection[] = [];
 
   private readonly scopeTypeLabels: Record<
-    CrawlConfig["config"]["scopeType"],
+    NonNullable<CrawlConfig["config"]["scopeType"]>,
     string
   > = {
     prefix: msg("Path Begins with This URL"),
@@ -223,7 +223,7 @@ export class ConfigDetails extends LiteElement {
           ${this.renderSetting(
             msg("Crawler Channel (Exact Crawler Version)"),
             capitalize(crawlConfig?.crawlerChannel || "default") +
-              (crawlConfig?.image ? ` (${crawlConfig?.image})` : ""),
+              (crawlConfig?.image ? ` (${crawlConfig.image})` : ""),
           )}
           ${this.renderSetting(
             msg("Block Ads by Domain"),
@@ -232,13 +232,13 @@ export class ConfigDetails extends LiteElement {
           ${this.renderSetting(
             msg("User Agent"),
             crawlConfig?.config.userAgent
-              ? crawlConfig?.config.userAgent
+              ? crawlConfig.config.userAgent
               : msg("Default User Agent"),
           )}
           ${crawlConfig?.config.lang
             ? this.renderSetting(
                 msg("Language"),
-                ISO6391.getName(crawlConfig?.config.lang),
+                ISO6391.getName(crawlConfig.config.lang),
               )
             : nothing}
         </btrix-desc-list>
@@ -278,14 +278,14 @@ export class ConfigDetails extends LiteElement {
                   crawlConfig?.description
                     ? html`
                         <p class="max-w-prose font-sans">
-                          ${crawlConfig?.description}
+                          ${crawlConfig.description}
                         </p>
                       `
                     : undefined,
                 )}
                 ${this.renderSetting(
                   msg("Tags"),
-                  crawlConfig?.tags?.length
+                  crawlConfig?.tags.length
                     ? crawlConfig.tags.map(
                         (tag) =>
                           html`<btrix-tag class="mr-2 mt-1">${tag}</btrix-tag>`,
@@ -353,16 +353,16 @@ export class ConfigDetails extends LiteElement {
     const crawlConfig = this.crawlConfig!;
     const seedsConfig = crawlConfig.config;
     const additionalUrlList = this.seeds.slice(1);
-    const primarySeedConfig: SeedConfig | Seed | undefined = this.seeds[0];
-    const primarySeedUrl = primarySeedConfig.url;
+    const primarySeedConfig = this.seeds[0] as SeedConfig | Seed | undefined;
+    const primarySeedUrl = (primarySeedConfig as Seed | undefined)?.url;
     const includeUrlList =
-      primarySeedConfig.include || seedsConfig.include || [];
+      primarySeedConfig?.include || seedsConfig.include || [];
     return html`
       ${this.renderSetting(
         msg("Primary Seed URL"),
         html`<a
           class="text-primary hover:text-indigo-400"
-          href="${primarySeedUrl}"
+          href="${primarySeedUrl!}"
           target="_blank"
           rel="noreferrer"
           >${primarySeedUrl}</a
@@ -372,12 +372,12 @@ export class ConfigDetails extends LiteElement {
       ${this.renderSetting(
         msg("Crawl Scope"),
         this.scopeTypeLabels[
-          primarySeedConfig.scopeType || seedsConfig.scopeType
+          primarySeedConfig!.scopeType || seedsConfig.scopeType!
         ],
       )}
       ${this.renderSetting(
         msg("Extra URL Prefixes in Scope"),
-        includeUrlList?.length
+        includeUrlList.length
           ? html`
               <ul>
                 ${includeUrlList.map(
@@ -393,19 +393,19 @@ export class ConfigDetails extends LiteElement {
       )}
       ${when(
         ["host", "domain", "custom", "any"].includes(
-          primarySeedConfig.scopeType || seedsConfig.scopeType,
+          primarySeedConfig!.scopeType || seedsConfig.scopeType!,
         ),
         () =>
           this.renderSetting(
             msg("Max Depth"),
-            primarySeedConfig.depth
+            primarySeedConfig?.depth
               ? msg(str`${primarySeedConfig.depth} hop(s)`)
               : msg("None"),
           ),
       )}
       ${this.renderSetting(
         msg("Include Any Linked Page (“one hop out”)"),
-        Boolean(primarySeedConfig.extraHops ?? seedsConfig.extraHops),
+        Boolean(primarySeedConfig?.extraHops ?? seedsConfig.extraHops),
       )}
       ${this.renderSetting(
         msg("Check For Sitemap"),
@@ -413,7 +413,7 @@ export class ConfigDetails extends LiteElement {
       )}
       ${this.renderSetting(
         msg("List of Additional URLs"),
-        additionalUrlList?.length
+        additionalUrlList.length
           ? html`
               <ul>
                 ${additionalUrlList.map((seed) => {
@@ -482,7 +482,7 @@ export class ConfigDetails extends LiteElement {
 
     if (this.crawlConfig?.autoAddCollections && orgId) {
       for (const collectionId of this.crawlConfig.autoAddCollections) {
-        const data: Collection = await this.apiFetch(
+        const data = await this.apiFetch<Collection | undefined>(
           `/orgs/${orgId}/collections/${collectionId}`,
           this.authState!,
         );

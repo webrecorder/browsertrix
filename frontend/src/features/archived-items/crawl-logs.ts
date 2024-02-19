@@ -8,7 +8,7 @@ import type { APIPaginatedList } from "@/types/api";
 export type CrawlLog = {
   timestamp: string;
   logLevel: "error";
-  details: Record<string, string>;
+  details: Record<string, unknown>;
   context: string;
   message: string;
 };
@@ -138,9 +138,9 @@ export class CrawlLogs extends LitElement {
                   <span class="tag">${log.logLevel}</span>
                 </div>
                 <div class="message">${log.message}</div>
-                <div class="url" title="${log.details?.page}">
-                  <a target="_blank" href="${log.details?.page}"
-                    >${log.details?.page}</a
+                <div class="url" title="${log.details.page as string}">
+                  <a target="_blank" href="${log.details.page as string}"
+                    >${log.details.page}</a
                   >
                 </div>
               </div>
@@ -182,7 +182,7 @@ export class CrawlLogs extends LitElement {
               ${key === "stack" ||
               (typeof value !== "string" && typeof value !== "number")
                 ? this.renderPre(value)
-                : value ?? "--"}
+                : value || "--"}
             </btrix-desc-list-item>
           `,
         )}

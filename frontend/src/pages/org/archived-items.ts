@@ -613,7 +613,7 @@ export class CrawlsList extends LiteElement {
       `;
     }
 
-    if (this.archivedItems?.page && this.archivedItems?.page > 1) {
+    if (this.archivedItems?.page && this.archivedItems.page > 1) {
       return html`
         <div class="border-b border-t py-5">
           <p class="text-center text-neutral-500">

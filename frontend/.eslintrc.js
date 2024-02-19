@@ -29,6 +29,7 @@ module.exports = {
         fixStyle: "inline-type-imports",
       },
     ],
+    "@typescript-eslint/consistent-type-exports": "error",
     "@typescript-eslint/prefer-readonly": "warn",
     "@typescript-eslint/class-literal-property-style": ["warn", "getters"],
     "@typescript-eslint/consistent-generic-constructors": "error",
@@ -40,6 +41,13 @@ module.exports = {
     // "@typescript-eslint/prefer-nullish-coalescing": "warn",
     "@typescript-eslint/prefer-optional-chain": "warn",
     "@typescript-eslint/prefer-string-starts-ends-with": "error",
+    "@typescript-eslint/no-meaningless-void-operator": "error",
+    "@typescript-eslint/no-unnecessary-boolean-literal-compare": "warn",
+    "@typescript-eslint/no-unnecessary-condition": "warn",
+    "@typescript-eslint/no-unnecessary-qualifier": "warn",
+    "@typescript-eslint/no-unnecessary-type-arguments": "warn",
+    "@typescript-eslint/prefer-reduce-type-parameter": "warn",
+    "@typescript-eslint/promise-function-async": "warn",
     /* end stylistic rules */
 
     /* start recommended rules */
@@ -88,6 +96,7 @@ module.exports = {
     // "@typescript-eslint/require-await": "warn",
     "@typescript-eslint/restrict-template-expressions": "warn",
     "@typescript-eslint/unbound-method": "off",
+    "@typescript-eslint/method-signature-style": "error",
   },
   reportUnusedDisableDirectives: true,
   ignorePatterns: ["__generated__", "__mocks__", "dist"],

@@ -430,7 +430,7 @@ export class WorkflowsList extends LiteElement {
         // color without resetting the --sl-color-neutral-700 variable
         () => html`
           <sl-menu-item
-            @click=${() => this.stop(workflow.lastCrawlId)}
+            @click=${() => void this.stop(workflow.lastCrawlId)}
             ?disabled=${workflow.lastCrawlStopping}
           >
             <sl-icon name="dash-circle" slot="prefix"></sl-icon>
@@ -438,7 +438,7 @@ export class WorkflowsList extends LiteElement {
           </sl-menu-item>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
-            @click=${() => this.cancel(workflow.lastCrawlId)}
+            @click=${() => void this.cancel(workflow.lastCrawlId)}
           >
             <sl-icon name="x-octagon" slot="prefix"></sl-icon>
             ${msg("Cancel & Discard Crawl")}
@@ -452,7 +452,7 @@ export class WorkflowsList extends LiteElement {
             style="--sl-color-neutral-700: var(--success)"
             ?disabled=${this.orgStorageQuotaReached ||
             this.orgExecutionMinutesQuotaReached}
-            @click=${() => this.runNow(workflow)}
+            @click=${() => void this.runNow(workflow)}
           >
             <sl-icon name="play" slot="prefix"></sl-icon>
             ${msg("Run Crawl")}
@@ -516,7 +516,9 @@ export class WorkflowsList extends LiteElement {
       ${when(
         this.isCrawler,
         () =>
-          html` <sl-menu-item @click=${() => this.duplicateConfig(workflow)}>
+          html` <sl-menu-item
+            @click=${() => void this.duplicateConfig(workflow)}
+          >
             <sl-icon name="files" slot="prefix"></sl-icon>
             ${msg("Duplicate Workflow")}
           </sl-menu-item>`,
@@ -564,7 +566,7 @@ export class WorkflowsList extends LiteElement {
       `;
     }
 
-    if (this.workflows?.page && this.workflows?.page > 1) {
+    if (this.workflows?.page && this.workflows.page > 1) {
       return html`
         <div class="border-b border-t py-5">
           <p class="text-center text-neutral-500">
@@ -733,7 +735,7 @@ export class WorkflowsList extends LiteElement {
           method: "POST",
         },
       );
-      if (data.success === true) {
+      if (data.success) {
         void this.fetchWorkflows();
       } else {
         this.notify({
@@ -755,7 +757,7 @@ export class WorkflowsList extends LiteElement {
           method: "POST",
         },
       );
-      if (data.success === true) {
+      if (data.success) {
         void this.fetchWorkflows();
       } else {
         this.notify({

@@ -1,6 +1,7 @@
 """
 Migration 0018 - Store crawl and workflow userName directly in db
 """
+
 from btrixcloud.migrations import BaseMigration
 
 from btrixcloud.emailsender import EmailSender

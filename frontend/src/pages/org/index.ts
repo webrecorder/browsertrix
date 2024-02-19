@@ -35,7 +35,7 @@ import type { QATab } from "./archived-item-qa";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import { type TemplateResult } from "lit";
-import { APIError } from "@/utils/api";
+import { isApiError } from "@/utils/api";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
@@ -637,7 +637,9 @@ export class Org extends LiteElement {
         orgId=${this.orgId}
         userId=${this.userInfo!.id}
         collectionId=${params.collectionId}
-        collectionTab=${(params.collectionTab as CollectionTab) || "replay"}
+        collectionTab=${(params.collectionTab as
+          | CollectionTab
+          | undefined) || "replay"}
         ?isCrawler=${this.isCrawler}
       ></btrix-collection-detail>`;
     }
@@ -680,7 +682,7 @@ export class Org extends LiteElement {
     this.openDialogName = e.detail;
   }
 
-  private async getOrg(orgId: string): Promise<OrgData> {
+  private async getOrg(orgId: string): Promise<OrgData | undefined> {
     const data = await this.apiFetch<OrgData>(
       `/orgs/${orgId}`,
       this.authState!,
@@ -712,10 +714,9 @@ export class Org extends LiteElement {
       }
     } catch (e) {
       this.notify({
-        message:
-          e instanceof APIError && e.isApiError
-            ? e.message
-            : msg("Sorry, couldn't update organization at this time."),
+        message: isApiError(e)
+          ? e.message
+          : msg("Sorry, couldn't update organization at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -772,14 +773,13 @@ export class Org extends LiteElement {
       console.debug(e);
 
       this.notify({
-        message:
-          e instanceof APIError && e.isApiError
-            ? e.message
-            : msg(
-                str`Sorry, couldn't update role for ${
-                  user.name || user.email
-                } at this time.`,
-              ),
+        message: isApiError(e)
+          ? e.message
+          : msg(
+              str`Sorry, couldn't update role for ${
+                user.name || user.email
+              } at this time.`,
+            ),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -827,14 +827,13 @@ export class Org extends LiteElement {
       console.debug(e);
 
       this.notify({
-        message:
-          e instanceof APIError && e.isApiError
-            ? e.message
-            : msg(
-                str`Sorry, couldn't remove ${
-                  member.name || member.email
-                } at this time.`,
-              ),
+        message: isApiError(e)
+          ? e.message
+          : msg(
+              str`Sorry, couldn't remove ${
+                member.name || member.email
+              } at this time.`,
+            ),
         variant: "danger",
         icon: "exclamation-octagon",
       });

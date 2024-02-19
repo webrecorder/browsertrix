@@ -1216,27 +1216,27 @@ class BaseCollectionItemBody(WebhookNotificationBody):
 class CollectionItemAddedBody(BaseCollectionItemBody):
     """Webhook notification POST body for collection additions"""
 
-    event: Literal[
+    event: Literal[WebhookEventType.ADDED_TO_COLLECTION] = (
         WebhookEventType.ADDED_TO_COLLECTION
-    ] = WebhookEventType.ADDED_TO_COLLECTION
+    )
 
 
 # ============================================================================
 class CollectionItemRemovedBody(BaseCollectionItemBody):
     """Webhook notification POST body for collection removals"""
 
-    event: Literal[
+    event: Literal[WebhookEventType.REMOVED_FROM_COLLECTION] = (
         WebhookEventType.REMOVED_FROM_COLLECTION
-    ] = WebhookEventType.REMOVED_FROM_COLLECTION
+    )
 
 
 # ============================================================================
 class CollectionDeletedBody(WebhookNotificationBody):
     """Webhook notification base POST body for collection changes"""
 
-    event: Literal[
+    event: Literal[WebhookEventType.COLLECTION_DELETED] = (
         WebhookEventType.COLLECTION_DELETED
-    ] = WebhookEventType.COLLECTION_DELETED
+    )
     collectionId: str
 
 

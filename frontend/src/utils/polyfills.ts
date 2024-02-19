@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unnecessary-condition */
 // cSpell:disable
 /**
  * Object.entriesFrom() polyfill
@@ -6,7 +7,6 @@
  */
 
 if (!Object.fromEntries) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Object.fromEntries = function <T = any>(
     entries: Iterable<readonly [PropertyKey, T]>,
   ): { [k: string]: T } {

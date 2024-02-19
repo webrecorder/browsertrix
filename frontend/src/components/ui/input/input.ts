@@ -105,11 +105,11 @@ export class Input extends LiteElement {
   handleKeyDown(event: KeyboardEvent) {
     // Enable submit on enter when using <sl-button type="submit">
     if (event.key === "Enter") {
-      const form = this.closest("form")!;
+      const form = this.closest("form");
       if (form) {
         const submitButton = form.querySelector<HTMLButtonElement>(
           'sl-button[type="submit"]',
-        )!;
+        );
         if (submitButton) {
           submitButton.click();
         }

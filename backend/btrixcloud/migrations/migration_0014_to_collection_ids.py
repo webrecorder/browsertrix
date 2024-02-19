@@ -1,6 +1,7 @@
 """
 Migration 0014 - collections to collectionIDs
 """
+
 from btrixcloud.migrations import BaseMigration
 
 

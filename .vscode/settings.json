@@ -21,11 +21,14 @@
     "btrix",
     "Elems",
     "hoverable",
+    "micromark",
     "novnc",
     "profileid",
     "tailwindcss",
     "wacz",
     "Webrecorder",
+    "wysimark",
+    "xstate",
     "zxcvbn"
   ],
   "cSpell.languageSettings": [

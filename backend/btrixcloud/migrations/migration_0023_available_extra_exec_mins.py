@@ -1,6 +1,7 @@
 """
 Migration 0023 -- Available extra/gifted minutes
 """
+
 from btrixcloud.migrations import BaseMigration
 
 

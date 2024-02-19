@@ -1,4 +1,5 @@
 """ K8S API Access """
+
 import os
 import traceback
 
@@ -66,7 +67,10 @@ class K8sAPI:
     async def get_redis_client(self, redis_url):
         """return redis client with correct params for one-time use"""
         return aioredis.from_url(
-            redis_url, decode_responses=True, auto_close_connection_pool=True
+            redis_url,
+            decode_responses=True,
+            auto_close_connection_pool=True,
+            socket_timeout=20,
         )
 
     # pylint: disable=too-many-arguments, too-many-locals

@@ -942,8 +942,10 @@ class BtrixOperator(K8sAPI):
             if status.anyCrawlPodNewExit:
                 await self.log_crashes(crawl.id, status.podStatus, redis)
 
-            if not crawler_running:
+            if not crawler_running or not redis:
+                # if either crawler is not running or redis is inaccessible
                 if self.should_mark_waiting(status.state, crawl.started):
+                    # mark as waiting (if already running)
                     await self.set_state(
                         "waiting_capacity",
                         status,
@@ -951,25 +953,25 @@ class BtrixOperator(K8sAPI):
                         allowed_from=RUNNING_AND_STARTING_ONLY,
                     )
 
-                # for now, don't reset redis once inited
-                if status.lastActiveTime and (
-                    (dt_now() - from_k8s_date(status.lastActiveTime)).total_seconds()
-                    > REDIS_TTL
-                ):
-                    print(
-                        f"Pausing redis, no running crawler pods for >{REDIS_TTL} secs"
-                    )
-                    status.initRedis = False
+                if not crawler_running and redis:
+                    # if crawler running, but no redis, stop redis instance until crawler
+                    # is running
+                    if status.lastActiveTime and (
+                        (
+                            dt_now() - from_k8s_date(status.lastActiveTime)
+                        ).total_seconds()
+                        > REDIS_TTL
+                    ):
+                        print(
+                            f"Pausing redis, no running crawler pods for >{REDIS_TTL} secs"
+                        )
+                        status.initRedis = False
+                elif crawler_running and not redis:
+                    # if crawler is running, but no redis, init redis
+                    status.initRedis = True
+                    status.lastActiveTime = to_k8s_date(dt_now())
 
-                # if still running, resync after N seconds
-                status.resync_after = self.fast_retry_secs
-                return status
-
-            status.initRedis = True
-            status.lastActiveTime = to_k8s_date(dt_now())
-
-            if not redis:
-                # if still running, resync after N seconds
+                # if no crawler / no redis, resync after N seconds
                 status.resync_after = self.fast_retry_secs
                 return status
 
@@ -1182,7 +1184,16 @@ class BtrixOperator(K8sAPI):
                 max_duration = max(duration, max_duration)
 
         if exec_time:
-            await self.crawl_ops.inc_crawl_exec_time(crawl_id, exec_time)
+            if not await self.crawl_ops.inc_crawl_exec_time(
+                crawl_id, exec_time, status.lastUpdatedTime
+            ):
+                # if lastUpdatedTime is same as previous, something is wrong, don't update!
+                print(
+                    "Already updated for lastUpdatedTime, skipping execTime update!",
+                    flush=True,
+                )
+                return
+
             await self.org_ops.inc_org_time_stats(oid, exec_time, True)
             status.crawlExecTime += exec_time
             status.elapsedCrawlTime += max_duration

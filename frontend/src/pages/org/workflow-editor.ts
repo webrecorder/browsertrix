@@ -58,9 +58,9 @@ import type {
 } from "./types";
 import type { LanguageCode } from "iso-639-1";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
-import {
-  type SelectCrawlerChangeEvent,
-  type SelectCrawlerUpdateEvent,
+import type {
+  SelectCrawlerChangeEvent,
+  SelectCrawlerUpdateEvent,
 } from "@/components/ui/select-crawler";
 import { type Detail, isApiError } from "@/utils/api";
 
@@ -205,7 +205,6 @@ const getDefaultFormState = (): FormState => ({
   userAgent: null,
   crawlerChannel: "default",
 });
-const defaultProgressState = getDefaultProgressState();
 
 function getLocalizedWeekDays() {
   const now = new Date();
@@ -283,7 +282,7 @@ export class CrawlConfigEditor extends LiteElement {
   private isSubmitting = false;
 
   @state()
-  private progressState!: ProgressState;
+  private progressState?: ProgressState;
 
   @state()
   private orgDefaults?: {
@@ -310,7 +309,7 @@ export class CrawlConfigEditor extends LiteElement {
   private get formHasError() {
     return (
       !this.hasRequiredFields() ||
-      Object.values(this.progressState.tabs).some(({ error }) => error)
+      Object.values(this.progressState!.tabs).some(({ error }) => error)
     );
   }
 
@@ -328,7 +327,10 @@ export class CrawlConfigEditor extends LiteElement {
 
   private readonly daysOfWeek = getLocalizedWeekDays();
 
-  private readonly scopeTypeLabels: Record<FormState["scopeType"], string> = {
+  private readonly scopeTypeLabels: Record<
+    NonNullable<FormState["scopeType"]>,
+    string
+  > = {
     prefix: msg("Pages in the Same Directory"),
     host: msg("Pages on This Domain"),
     domain: msg("Pages on This Domain & Subdomains"),
@@ -358,7 +360,7 @@ export class CrawlConfigEditor extends LiteElement {
   };
 
   @query('form[name="newJobConfig"]')
-  formElem!: HTMLFormElement;
+  formElem?: HTMLFormElement;
 
   @queryAsync("btrix-tab-panel[aria-hidden=false]")
   activeTabPanel!: Promise<HTMLElement | null>;
@@ -534,11 +536,11 @@ export class CrawlConfigEditor extends LiteElement {
       formState.scheduleType = "none";
     }
 
-    if (this.initialWorkflow.tags?.length) {
+    if (this.initialWorkflow.tags.length) {
       formState.tags = this.initialWorkflow.tags;
     }
 
-    if (this.initialWorkflow.autoAddCollections?.length) {
+    if (this.initialWorkflow.autoAddCollections.length) {
       formState.autoAddCollections = this.initialWorkflow.autoAddCollections;
     }
 
@@ -590,8 +592,9 @@ export class CrawlConfigEditor extends LiteElement {
         : defaultFormState.browserProfile,
       scopeType: primarySeedConfig.scopeType as FormState["scopeType"],
       exclusions: seedsConfig.exclude,
-      includeLinkedPages:
-        Boolean(primarySeedConfig.extraHops || seedsConfig.extraHops) ?? true,
+      includeLinkedPages: Boolean(
+        primarySeedConfig.extraHops || seedsConfig.extraHops,
+      ),
       useSitemap: defaultFormState.useSitemap,
       failOnFailedSeed:
         seedsConfig.failOnFailedSeed ?? defaultFormState.failOnFailedSeed,
@@ -617,9 +620,7 @@ export class CrawlConfigEditor extends LiteElement {
       crawlMetadata: msg("Metadata"),
       confirmSettings: msg("Review Settings"),
     };
-    let orderedTabNames = STEPS.filter(
-      (stepName) => defaultProgressState.tabs[stepName as StepName],
-    );
+    let orderedTabNames = STEPS as readonly StepName[];
 
     if (this.configId) {
       // Remove review tab
@@ -636,16 +637,16 @@ export class CrawlConfigEditor extends LiteElement {
         @sl-change=${this.updateFormStateOnChange}
       >
         <btrix-tab-list
-          activePanel="newJobConfig-${this.progressState.activeTab}"
+          activePanel="newJobConfig-${this.progressState!.activeTab}"
           progressPanel=${ifDefined(
             this.configId
               ? undefined
-              : `newJobConfig-${this.progressState.activeTab}`,
+              : `newJobConfig-${this.progressState!.activeTab}`,
           )}
         >
           <header slot="header" class="flex items-baseline justify-between">
             <h3 class="font-semibold">
-              ${tabLabels[this.progressState.activeTab]}
+              ${tabLabels[this.progressState!.activeTab]}
             </h3>
             <p class="text-xs font-normal text-neutral-500">
               ${msg(
@@ -709,9 +710,9 @@ export class CrawlConfigEditor extends LiteElement {
   }
 
   private renderNavItem(tabName: StepName, content: TemplateResult | string) {
-    const isActive = tabName === this.progressState.activeTab;
+    const isActive = tabName === this.progressState!.activeTab;
     const isConfirmSettings = tabName === "confirmSettings";
-    const { error: isInvalid, completed } = this.progressState.tabs[tabName];
+    const { error: isInvalid, completed } = this.progressState!.tabs[tabName];
     let icon: TemplateResult = html``;
 
     if (!this.configId) {
@@ -1010,7 +1011,7 @@ https://example.com/path`}
             <sl-select
               name="scopeType"
               label=${msg("Crawl Scope")}
-              value=${this.formState.scopeType}
+              value=${this.formState.scopeType!}
               @sl-change=${(e: Event) =>
                 this.updateFormState({
                   scopeType: (e.target as HTMLSelectElement)
@@ -1221,7 +1222,7 @@ https://example.com/path`}
         <sl-select
           name="scopeType"
           label=${msg("Start URL Scope")}
-          value=${this.formState.scopeType}
+          value=${this.formState.scopeType!}
           @sl-change=${(e: Event) =>
             this.updateFormState({
               scopeType: (e.target as HTMLSelectElement)
@@ -1248,7 +1249,7 @@ https://example.com/path`}
         msg(`Tells the crawler which pages it can visit.`),
       )}
       ${when(
-        DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType),
+        DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType!),
         () => html`
           ${this.renderFormCol(html`
             <sl-input
@@ -1648,7 +1649,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(`Choose a custom profile to make use of saved cookies and logged-in
-        accounts.`),
+        accounts. Note that websites may log profiles out after a period of time.`),
       )}
       ${this.renderFormCol(html`
         <btrix-select-crawler
@@ -1983,7 +1984,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       ${errorAlert}
 
       <div class="col-span-5">
-        ${when(this.progressState.activeTab === "confirmSettings", () => {
+        ${when(this.progressState!.activeTab === "confirmSettings", () => {
           // Prevent parsing and rendering tab when not visible
           const crawlConfig = this.parseConfig();
           const profileName = this.formState.browserProfile?.name;
@@ -2014,7 +2015,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   }
 
   private async scrollToPanelTop() {
-    const activeTabPanel = (await this.activeTabPanel)!;
+    const activeTabPanel = await this.activeTabPanel;
     if (activeTabPanel && activeTabPanel.getBoundingClientRect().top < 0) {
       activeTabPanel.scrollIntoView({
         behavior: "smooth",
@@ -2098,16 +2099,16 @@ https://archiveweb.page/images/${"logo.svg"}`}
     await el.updateComplete;
     await this.updateComplete;
 
-    const currentTab = this.progressState.activeTab as StepName;
+    const currentTab = this.progressState!.activeTab as StepName;
     // Check [data-user-invalid] to validate only touched inputs
     if ("userInvalid" in el.dataset) {
-      if (this.progressState.tabs[currentTab].error) return;
+      if (this.progressState!.tabs[currentTab].error) return;
       this.updateProgressState({
         tabs: {
           [currentTab]: { error: true },
         },
       });
-    } else if (this.progressState.tabs[currentTab].error) {
+    } else if (this.progressState!.tabs[currentTab].error) {
       this.syncTabErrorState(el);
     }
   };
@@ -2119,13 +2120,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
       .replace("newJobConfig-", "") as StepName;
     const hasInvalid = panelEl.querySelector("[data-user-invalid]");
 
-    if (!hasInvalid && this.progressState.tabs[tabName].error) {
+    if (!hasInvalid && this.progressState!.tabs[tabName].error) {
       this.updateProgressState({
         tabs: {
           [tabName]: { error: false },
         },
       });
-    } else if (hasInvalid && !this.progressState.tabs[tabName].error) {
+    } else if (hasInvalid && !this.progressState!.tabs[tabName].error) {
       this.updateProgressState({
         tabs: {
           [tabName]: { error: true },
@@ -2181,7 +2182,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   };
 
   private backStep() {
-    const targetTabIdx = STEPS.indexOf(this.progressState.activeTab);
+    const targetTabIdx = STEPS.indexOf(this.progressState!.activeTab);
     if (targetTabIdx) {
       this.updateProgressState({
         activeTab: STEPS[targetTabIdx - 1] as StepName,
@@ -2193,7 +2194,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const isValid = this.checkCurrentPanelValidity();
 
     if (isValid) {
-      const { activeTab } = this.progressState;
+      const { activeTab } = this.progressState!;
       const nextTab = STEPS[STEPS.indexOf(activeTab) + 1] as StepName;
       this.updateProgressState({
         activeTab: nextTab,
@@ -2209,7 +2210,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private readonly checkCurrentPanelValidity = (): boolean => {
     if (!this.formElem) return false;
 
-    const currentTab = this.progressState.activeTab as StepName;
+    const currentTab = this.progressState!.activeTab as StepName;
     const activePanel = this.formElem.querySelector(
       `btrix-tab-panel[name="newJobConfig-${currentTab}"]`,
     );
@@ -2244,7 +2245,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
     if (
       key === "Enter" &&
-      this.progressState.activeTab !== STEPS[STEPS.length - 1]
+      this.progressState!.activeTab !== STEPS[STEPS.length - 1]
     ) {
       // Prevent submission by "Enter" keypress if not on last tab
       event.preventDefault();
@@ -2499,7 +2500,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
 
-    if (DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType)) {
+    if (DEPTH_SUPPORTED_SCOPES.includes(this.formState.scopeType!)) {
       primarySeed.depth = this.formState.maxScopeDepth;
     }
 
@@ -2523,7 +2524,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   ) {
     if (shallowMerge) {
       this.progressState = {
-        ...this.progressState,
+        ...this.progressState!,
         ...(nextState as Partial<ProgressState>),
       };
     } else {

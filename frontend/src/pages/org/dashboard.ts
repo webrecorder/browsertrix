@@ -7,7 +7,7 @@ import type { SlSelectEvent } from "@shoelace-style/shoelace";
 
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { AuthState } from "@/utils/AuthService";
-import type { OrgData } from "@/utils/orgs";
+import type { OrgData, YearMonth } from "@/utils/orgs";
 import type { SelectNewDialogEvent } from "./index";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
@@ -374,13 +374,13 @@ export class Dashboard extends LiteElement {
     }
 
     const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = String(now.getUTCMonth() + 1).padStart(2, "0");
+    const currentPeriod = `${currentYear}-${currentMonth}` as YearMonth;
 
     let usageSeconds = 0;
     if (this.org!.monthlyExecSeconds) {
-      const actualUsage =
-        this.org!.monthlyExecSeconds[
-          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
-        ];
+      const actualUsage = this.org!.monthlyExecSeconds[currentPeriod];
       if (actualUsage) {
         usageSeconds = actualUsage;
       }
@@ -392,10 +392,7 @@ export class Dashboard extends LiteElement {
 
     let usageSecondsAllTypes = 0;
     if (this.org!.crawlExecSeconds) {
-      const actualUsage =
-        this.org!.crawlExecSeconds[
-          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
-        ];
+      const actualUsage = this.org!.crawlExecSeconds[currentPeriod];
       if (actualUsage) {
         usageSecondsAllTypes = actualUsage;
       }
@@ -403,15 +400,12 @@ export class Dashboard extends LiteElement {
 
     let usageSecondsExtra = 0;
     if (this.org!.extraExecSeconds) {
-      const actualUsageExtra =
-        this.org!.extraExecSeconds[
-          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
-        ];
+      const actualUsageExtra = this.org!.extraExecSeconds[currentPeriod];
       if (actualUsageExtra) {
         usageSecondsExtra = actualUsageExtra;
       }
     }
-    const maxExecSecsExtra = this.org!.quotas.extraExecMinutes * 60;
+    const maxExecSecsExtra = this.org!.quotas!.extraExecMinutes * 60;
     // Cap usage at quota for display purposes
     if (usageSecondsExtra > maxExecSecsExtra) {
       usageSecondsExtra = maxExecSecsExtra;
@@ -424,15 +418,12 @@ export class Dashboard extends LiteElement {
 
     let usageSecondsGifted = 0;
     if (this.org!.giftedExecSeconds) {
-      const actualUsageGifted =
-        this.org!.giftedExecSeconds[
-          `${now.getFullYear()}-${now.getUTCMonth() + 1}`
-        ];
+      const actualUsageGifted = this.org!.giftedExecSeconds[currentPeriod];
       if (actualUsageGifted) {
         usageSecondsGifted = actualUsageGifted;
       }
     }
-    const maxExecSecsGifted = this.org!.quotas.giftedExecMinutes * 60;
+    const maxExecSecsGifted = this.org!.quotas!.giftedExecMinutes * 60;
     // Cap usage at quota for display purposes
     if (usageSecondsGifted > maxExecSecsGifted) {
       usageSecondsGifted = maxExecSecsGifted;
@@ -674,13 +665,13 @@ export class Dashboard extends LiteElement {
   `;
 
   private readonly hasMonthlyTime = () =>
-    Object.keys(this.org!.monthlyExecSeconds).length;
+    Object.keys(this.org!.monthlyExecSeconds!).length;
 
   private readonly hasExtraTime = () =>
-    Object.keys(this.org!.extraExecSeconds).length;
+    Object.keys(this.org!.extraExecSeconds!).length;
 
   private readonly hasGiftedTime = () =>
-    Object.keys(this.org!.giftedExecSeconds).length;
+    Object.keys(this.org!.giftedExecSeconds!).length;
 
   private renderUsageHistory() {
     if (!this.org) return;
@@ -756,13 +747,13 @@ export class Dashboard extends LiteElement {
       );
     }
 
-    const rows = Object.entries(this.org.usage || {})
+    const rows = (Object.entries(this.org.usage || {}) as [YearMonth, number][])
       // Sort latest
       .reverse()
       .map(([mY, crawlTime]) => {
         let monthlySecondsUsed = this.org!.monthlyExecSeconds?.[mY] || 0;
         let maxMonthlySeconds = 0;
-        if (this.org!.quotas.maxExecMinutesPerMonth) {
+        if (this.org!.quotas?.maxExecMinutesPerMonth) {
           maxMonthlySeconds = this.org!.quotas.maxExecMinutesPerMonth * 60;
         }
         if (monthlySecondsUsed > maxMonthlySeconds) {
@@ -771,7 +762,7 @@ export class Dashboard extends LiteElement {
 
         let extraSecondsUsed = this.org!.extraExecSeconds?.[mY] || 0;
         let maxExtraSeconds = 0;
-        if (this.org!.quotas.extraExecMinutes) {
+        if (this.org!.quotas?.extraExecMinutes) {
           maxExtraSeconds = this.org!.quotas.extraExecMinutes * 60;
         }
         if (extraSecondsUsed > maxExtraSeconds) {
@@ -780,7 +771,7 @@ export class Dashboard extends LiteElement {
 
         let giftedSecondsUsed = this.org!.giftedExecSeconds?.[mY] || 0;
         let maxGiftedSeconds = 0;
-        if (this.org!.quotas.giftedExecMinutes) {
+        if (this.org!.quotas?.giftedExecMinutes) {
           maxGiftedSeconds = this.org!.quotas.giftedExecMinutes * 60;
         }
         if (giftedSecondsUsed > maxGiftedSeconds) {

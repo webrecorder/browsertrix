@@ -122,7 +122,7 @@ export class CollectionDetail extends LiteElement {
           </h1>
         </div>
         ${when(
-          this.isCrawler || (!this.isCrawler && this.collection?.isPublic),
+          this.isCrawler || this.collection?.isPublic,
           () => html`
             <sl-button
               variant=${this.collection?.crawlCount ? "primary" : "default"}
@@ -222,7 +222,7 @@ export class CollectionDetail extends LiteElement {
             .collection=${this.collection!}
             ?open=${this.openDialogName === "editMetadata"}
             @sl-hide=${() => (this.openDialogName = undefined)}
-            @btrix-collection-saved=${() => this.fetchCollection()}
+            @btrix-collection-saved=${() => void this.fetchCollection()}
           >
           </btrix-collection-metadata-dialog>
         `,
@@ -261,7 +261,7 @@ export class CollectionDetail extends LiteElement {
               <sl-switch
                 ?checked=${this.collection?.isPublic}
                 @sl-change=${(e: CustomEvent) =>
-                  this.onTogglePublic((e.target as SlCheckbox).checked)}
+                  void this.onTogglePublic((e.target as SlCheckbox).checked)}
                 >${msg("Collection is Shareable")}</sl-switch
               >
             </div>
@@ -424,7 +424,7 @@ export class CollectionDetail extends LiteElement {
             ? html`
                 <sl-menu-item
                   style="--sl-color-neutral-700: var(--success)"
-                  @click=${() => this.onTogglePublic(true)}
+                  @click=${() => void this.onTogglePublic(true)}
                 >
                   <sl-icon name="people-fill" slot="prefix"></sl-icon>
                   ${msg("Make Shareable")}
@@ -443,7 +443,7 @@ export class CollectionDetail extends LiteElement {
                 </sl-menu-item>
                 <sl-menu-item
                   style="--sl-color-neutral-700: var(--warning)"
-                  @click=${() => this.onTogglePublic(false)}
+                  @click=${() => void this.onTogglePublic(false)}
                 >
                   <sl-icon name="eye-slash" slot="prefix"></sl-icon>
                   ${msg("Make Private")}
@@ -661,7 +661,7 @@ export class CollectionDetail extends LiteElement {
     return html`
       <div class="rounded border p-5">
         <p class="text-center text-neutral-500">
-          ${this.archivedItems?.page && this.archivedItems?.page > 1
+          ${this.archivedItems?.page && this.archivedItems.page > 1
             ? msg("Page not found.")
             : msg("This Collection doesn’t have any archived items, yet.")}
         </p>
@@ -696,7 +696,7 @@ export class CollectionDetail extends LiteElement {
                 <sl-menu>
                   <sl-menu-item
                     style="--sl-color-neutral-700: var(--warning)"
-                    @click=${() => this.removeArchivedItem(item.id, idx)}
+                    @click=${() => void this.removeArchivedItem(item.id, idx)}
                   >
                     <sl-icon name="folder-minus" slot="prefix"></sl-icon>
                     ${msg("Remove from Collection")}
@@ -908,7 +908,7 @@ export class CollectionDetail extends LiteElement {
         page: items.length === 1 && page > 1 ? page - 1 : page,
       });
     } catch (e) {
-      console.debug((e as Error)?.message);
+      console.debug((e as Error | undefined)?.message);
       this.notify({
         message: msg(
           "Sorry, couldn't remove item from Collection at this time.",

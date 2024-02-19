@@ -80,12 +80,10 @@ export class Home extends LiteElement {
     let title: string | undefined;
     let content: TemplateResult<1> | undefined;
 
-    if (this.userInfo.isAdmin === true) {
+    if (this.userInfo.isAdmin) {
       title = msg("Welcome");
       content = this.renderAdminOrgs();
-    }
-
-    if (this.userInfo.isAdmin === false) {
+    } else {
       title = msg("Organizations");
       content = this.renderLoggedInNonAdmin();
     }
@@ -266,7 +264,7 @@ export class Home extends LiteElement {
       <btrix-invite-form
         .authState=${this.authState}
         .orgs=${this.orgList}
-        .defaultOrg=${defaultOrg || null}
+        .defaultOrg=${defaultOrg}
         @success=${() => (this.isInviteComplete = true)}
       ></btrix-invite-form>
     `;

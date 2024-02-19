@@ -20,10 +20,10 @@ import type {
   NeedLoginEventDetail,
   AuthState,
   Auth,
+  AuthEventDetail,
 } from "./utils/AuthService";
 import type { ViewState } from "./utils/APIRouter";
 import type { CurrentUser, UserOrg } from "./types/user";
-import type { AuthStorageEventDetail } from "./utils/AuthService";
 import { ROUTES } from "./routes";
 import "./shoelace";
 import "./components";
@@ -162,7 +162,7 @@ export class App extends LiteElement {
         AppStateService.updateOrgSlug(firstOrg);
       }
     } catch (err) {
-      if ((err as Error)?.message === "Unauthorized") {
+      if ((err as Error | null | undefined)?.message === "Unauthorized") {
         console.debug(
           "Unauthorized with authState:",
           this.authService.authState,
@@ -229,10 +229,10 @@ export class App extends LiteElement {
 
       <sl-dialog
         id="globalDialog"
-        ?noHeader=${this.globalDialogContent?.noHeader === true}
-        label=${this.globalDialogContent?.label || msg("Message")}
+        ?noHeader=${this.globalDialogContent.noHeader === true}
+        label=${this.globalDialogContent.label || msg("Message")}
         @sl-after-hide=${() => (this.globalDialogContent = {})}
-        >${this.globalDialogContent?.body}</sl-dialog
+        >${this.globalDialogContent.body}</sl-dialog
       >
     `;
   }
@@ -391,7 +391,7 @@ export class App extends LiteElement {
               <sl-divider></sl-divider>
             `,
           )}
-          ${this.appState.userInfo?.orgs.map(
+          ${this.appState.userInfo.orgs.map(
             (org) => html`
               <sl-menu-item
                 type="checkbox"
@@ -416,31 +416,31 @@ export class App extends LiteElement {
           >
         </div>
         <div class="font-medium text-neutral-700">
-          ${this.appState.userInfo?.name}
+          ${this.appState.userInfo.name}
         </div>
         <div class="whitespace-nowrap text-xs text-neutral-500">
-          ${this.appState.userInfo?.email}
+          ${this.appState.userInfo.email}
         </div>
       `;
     }
 
-    const orgs = this.appState.userInfo?.orgs;
-    if (orgs?.length === 1) {
+    const orgs = this.appState.userInfo.orgs;
+    if (orgs.length === 1) {
       return html`
         <div class="my-1 font-medium text-neutral-700">${orgs[0].name}</div>
-        <div class="text-neutral-500">${this.appState.userInfo?.name}</div>
+        <div class="text-neutral-500">${this.appState.userInfo.name}</div>
         <div class="whitespace-nowrap text-xs text-neutral-500">
-          ${this.appState.userInfo?.email}
+          ${this.appState.userInfo.email}
         </div>
       `;
     }
 
     return html`
       <div class="font-medium text-neutral-700">
-        ${this.appState.userInfo?.name}
+        ${this.appState.userInfo.name}
       </div>
       <div class="whitespace-nowrap text-xs text-neutral-500">
-        ${this.appState.userInfo?.email}
+        ${this.appState.userInfo.email}
       </div>
     `;
   }
@@ -772,7 +772,7 @@ export class App extends LiteElement {
     e.stopPropagation();
 
     this.clearUser();
-    const redirectUrl = e.detail?.redirectUrl;
+    const redirectUrl = e.detail.redirectUrl;
     this.navigate(ROUTES.login, {
       redirectUrl,
     });
@@ -838,7 +838,7 @@ export class App extends LiteElement {
     void alert.toast();
   };
 
-  getUserInfo(): Promise<APIUser> {
+  async getUserInfo(): Promise<APIUser> {
     return this.apiFetch("/users/me", this.authService.authState!);
   }
 
@@ -892,7 +892,7 @@ export class App extends LiteElement {
   private startSyncBrowserTabs() {
     AuthService.broadcastChannel.addEventListener(
       "message",
-      ({ data }: { data: AuthStorageEventDetail }) => {
+      ({ data }: { data: AuthEventDetail }) => {
         if (data.name === "auth_storage") {
           if (data.value !== AuthService.storage.getItem()) {
             if (data.value) {
