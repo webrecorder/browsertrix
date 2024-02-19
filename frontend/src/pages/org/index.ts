@@ -637,9 +637,8 @@ export class Org extends LiteElement {
         orgId=${this.orgId}
         userId=${this.userInfo!.id}
         collectionId=${params.collectionId}
-        collectionTab=${(params.collectionTab as
-          | CollectionTab
-          | undefined) || "replay"}
+        collectionTab=${(params.collectionTab as CollectionTab | undefined) ||
+        "replay"}
         ?isCrawler=${this.isCrawler}
       ></btrix-collection-detail>`;
     }
