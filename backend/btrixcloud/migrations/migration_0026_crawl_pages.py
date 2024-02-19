@@ -2,8 +2,6 @@
 Migration 0026 -- Crawl Pages
 """
 
-import asyncio
-
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import gather_tasks_with_concurrency
 
