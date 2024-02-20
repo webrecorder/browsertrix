@@ -179,8 +179,6 @@ class PageOps:
             query.pop("text_comparison", None)
 
         query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
-        if user:
-            query["userid"] = user.id
 
         result = await self.pages.find_one_and_update(
             {"_id": page_id, "oid": oid},
