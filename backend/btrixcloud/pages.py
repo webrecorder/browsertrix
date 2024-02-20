@@ -179,6 +179,7 @@ class PageOps:
             query.pop("text_comparison", None)
 
         # TODO: Double check formatting of page resources from what crawler passes
+        # Should we add the original crawl's resources here too?
         resources = query.get("qa_resources")
         if resources:
             query[f"qa_resources.{qa_run_id}"] = [
