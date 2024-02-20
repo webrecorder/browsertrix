@@ -4,8 +4,7 @@ import { property, queryAsync, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 const DEFAULT_PANEL_ID = "default-panel";
-// Breakpoint in pixels for 2-column layout
-const TWO_COL_SCREEN_MIN = 1032;
+export const TWO_COL_SCREEN_MIN_CSS = css`64.5rem`;
 
 /**
  * Tab list
@@ -92,7 +91,7 @@ export class TabList extends LitElement {
       grid-gap: 1.5rem;
     }
 
-    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN}px) {
+    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
       .container {
         grid-template-areas:
           ". header"
@@ -105,7 +104,7 @@ export class TabList extends LitElement {
       grid-area: menu;
     }
 
-    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN}px) {
+    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
       .navWrapper {
         overflow: initial;
       }
@@ -140,7 +139,7 @@ export class TabList extends LitElement {
       margin-left: var(--track-width);
     }
 
-    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN}px) {
+    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
       .tablist {
         display: block;
       }
@@ -165,7 +164,7 @@ export class TabList extends LitElement {
       background-color: var(--sl-color-blue-500);
     }
 
-    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN}px) {
+    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
       .tablist,
       .show-indicator .track,
       .show-indicator .indicator {
