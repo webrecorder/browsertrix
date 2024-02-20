@@ -1400,6 +1400,8 @@ class Page(BaseMongoModel):
     timestamp: Optional[datetime] = None
     load_state: Optional[int] = None
     status: Optional[int] = None
+    mime: Optional[str] = None
+    type: Optional[str] = None
 
     resources: Optional[List[PageResource]] = []
 
@@ -1413,3 +1415,16 @@ class Page(BaseMongoModel):
     modified: Optional[datetime] = None
     approved: Optional[bool] = None
     notes: Optional[List[str]] = []
+
+
+# ============================================================================
+class PageQAUpdate(BaseModel):
+    """Model for updating pages from QA run"""
+
+    mime: Optional[str] = None
+    type: Optional[str] = None
+
+    # automated heuristics, keyed by QA run id
+    screenshot_comparison: Optional[int] = None
+    text_comparison: Optional[int] = None
+    qa_resources: Optional[List[PageResource]] = None

@@ -11,6 +11,7 @@ from .models import (
     Page,
     PageResource,
     PageReviewUpdate,
+    PageQAUpdate,
     Organization,
     PaginatedResponse,
     User,
@@ -153,18 +154,37 @@ class PageOps:
         page_raw = await self.get_page_raw(page_id, oid, crawl_id)
         return Page.from_dict(page_raw)
 
-    async def add_automated_heuristic(
+    async def update_page_qa(
         self,
         page_id: UUID,
         oid: UUID,
         qa_run_id: str,
-        comparison_score: int,
-        comparison_type: str = "screenshot_comparison",
+        update: PageQAUpdate,
     ) -> Dict[str, bool]:
-        """Add automated heuristic score to page"""
+        """Update page heuristics and mime/type from QA run"""
+        query = update.dict(exclude_unset=True)
+
+        if len(query) == 0:
+            raise HTTPException(status_code=400, detail="no_update_data")
+
+        # Reformat screenshot and text comparisons to be keyed by QA run ID
+        screenshot_score = query.get("screenshot_comparison")
+        if screenshot_score:
+            query[f"screenshot_comparison.{qa_run_id}"] = screenshot_score
+            query.pop("screenshot_comparison", None)
+
+        text_score = query.get("text_comparison")
+        if text_score:
+            query[f"text_comparison.{qa_run_id}"] = text_score
+            query.pop("text_comparison", None)
+
+        query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        if user:
+            query["userid"] = user.id
+
         result = await self.pages.find_one_and_update(
             {"_id": page_id, "oid": oid},
-            {"$set": {f"{comparison_type}.{qa_run_id}": comparison_score}},
+            {"$set": query},
             return_document=pymongo.ReturnDocument.AFTER,
         )
 
