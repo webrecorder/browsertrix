@@ -178,6 +178,14 @@ class PageOps:
             query[f"text_comparison.{qa_run_id}"] = text_score
             query.pop("text_comparison", None)
 
+        # TODO: Double check formatting of page resources from what crawler passes
+        resources = query.get("qa_resources")
+        if resources:
+            query[f"qa_resources.{qa_run_id}"] = [
+                PageResource(**res).dict() for res in resources
+            ]
+            query.pop("qa_resources", None)
+
         query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
         result = await self.pages.find_one_and_update(
