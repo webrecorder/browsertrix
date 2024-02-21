@@ -9,116 +9,219 @@ import { TailwindElement } from "@/classes/TailwindElement";
 @customElement("btrix-qa-rating")
 export class QARating extends TailwindElement {
   static styles = css`
-    sl-button {
-      width: 4rem;
+    :host {
+      --btrix-border: 1px solid var(--sl-color-neutral-300);
+      --btrix-border-radius: var(--sl-border-radius-large);
     }
 
-    sl-button::part(label) {
-      font-size: var(--font-size-base);
+    .group {
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      box-shadow: inset 0 0 0 1px var(--sl-color-neutral-300);
+      border-radius: var(--sl-input-height-small);
+      height: var(--sl-input-height-small);
+    }
+
+    .group.passed:not(.commented) {
+      background-color: var(--sl-color-success-500);
+    }
+
+    .group.failed:not(.commented) {
+      background-color: var(--sl-color-danger-500);
+    }
+
+    .group.commented {
+      background-color: var(--sl-color-blue-400);
+    }
+
+    .group.passed.commented {
+      background: linear-gradient(
+        to right,
+        var(--sl-color-success-500),
+        var(--sl-color-success-500) 33.3333%,
+        var(--sl-color-blue-400) 33.3333%,
+        var(--sl-color-blue-400)
+      );
+    }
+
+    .group.failed.commented {
+      background: linear-gradient(
+        to right,
+        var(--sl-color-neutral-0),
+        var(--sl-color-neutral-0) 66.6666%,
+        var(--sl-color-danger-500) 66.6666%,
+        var(--sl-color-danger-500)
+      );
+    }
+
+    button {
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-
-    sl-button::part(base) {
+      height: var(--sl-input-height-small);
+      width: 4rem;
+      border-top: var(--btrix-border);
+      border-bottom: var(--btrix-border);
+      box-shadow: var(--sl-shadow-x-small);
       transition:
         var(--sl-transition-x-fast) background-color,
-        var(--sl-transition-x-fast) color,
         var(--sl-transition-x-fast) border,
         var(--sl-transition-x-fast) box-shadow,
         var(--sl-transition-x-fast) transform;
     }
 
-    sl-button::part(base):hover {
-      border-color: var(--sl-color-neutral-300);
+    button:not(.active) {
+      background-color: var(--sl-color-neutral-0);
     }
 
-    sl-button.active::part(base) {
+    button:first-of-type {
+      border-left: var(--btrix-border);
+      border-start-start-radius: var(--sl-input-height-small);
+      border-end-start-radius: var(--sl-input-height-small);
+    }
+
+    button:last-of-type {
+      border-right: var(--btrix-border);
+      border-start-end-radius: var(--sl-input-height-small);
+      border-end-end-radius: var(--sl-input-height-small);
+    }
+
+    button:first-of-type {
+      border-start-end-radius: 0;
+      border-end-end-radius: 0;
+    }
+
+    button:last-of-type {
+      border-start-start-radius: 0;
+      border-end-start-radius: 0;
+    }
+
+    .vote.active {
       color: var(--sl-color-neutral-0);
     }
 
-    sl-button:first-of-type::part(base):hover {
-      border-start-end-radius: var(--sl-border-radius-medium);
-      border-end-end-radius: var(--sl-border-radius-medium);
+    .vote.active:hover {
+      background-color: rgba(255, 255, 255, 0.15);
     }
 
-    sl-button:last-of-type::part(base):hover {
-      border-start-start-radius: var(--sl-border-radius-medium);
-      border-end-start-radius: var(--sl-border-radius-medium);
+    .comment.active {
+      color: var(--sl-color-blue-500);
     }
 
-    .pass::part(base):hover,
-    .fail::part(base):hover {
-      background-color: var(--sl-color-neutral-0);
+    .comment.active:hover {
+      color: var(--sl-color-blue-300);
+    }
+
+    .vote:not(.active):hover {
+      border: var(--btrix-border);
       transform: scale(1.1);
     }
 
-    .pass::part(base):hover {
-      color: var(--sl-color-success-600);
+    .vote:first-of-type:not(.active):hover {
+      border-start-end-radius: var(--btrix-border-radius);
+      border-end-end-radius: var(--btrix-border-radius);
     }
 
-    .pass.active::part(base) {
-      background-color: var(--sl-color-success-500);
+    .vote:last-of-type:not(.active):hover {
+      border-start-start-radius: var(--btrix-border-radius);
+      border-end-start-radius: var(--btrix-border-radius);
     }
 
-    .fail.active::part(base) {
-      background-color: var(--sl-color-danger-500);
+    .pass:not(.active):hover sl-icon {
+      color: var(--sl-color-success-500);
     }
 
-    .fail::part(base):hover {
-      color: var(--sl-color-danger-600);
+    .fail:not(.active):hover sl-icon {
+      color: var(--sl-color-danger-500);
     }
 
-    .comment.active::part(base) {
-      background-color: var(--sl-color-blue-50);
-      color: var(--sl-color-blue-700);
+    .comment:not(.active):hover sl-icon {
+      transform: scale(1.1);
+      color: var(--sl-color-blue-400);
+    }
+
+    .flatStart {
+      border-left: var(--btrix-border);
+    }
+
+    .flatEnd {
+      border-right: var(--btrix-border);
+    }
+
+    .roundStart {
+      border-left: var(--btrix-border);
+      border-start-start-radius: var(--btrix-border-radius);
+      border-end-start-radius: var(--btrix-border-radius);
+    }
+
+    .roundEnd {
+      border-right: var(--btrix-border);
+      border-start-end-radius: var(--btrix-border-radius);
+      border-end-end-radius: var(--btrix-border-radius);
+    }
+
+    sl-icon {
+      font-size: var(--font-size-base);
+      transition:
+        var(--sl-transition-x-fast) color,
+        var(--sl-transition-x-fast) transform;
     }
   `;
 
   render() {
     const passed = false;
-    const commented = false;
-    const failed = false;
+    const commented = true;
+    const failed = true;
 
     return html`
-      <sl-button-group role="radiogroup" label=${msg("QA rating")}>
-        <sl-button
-          role="radio"
+      <div
+        class=${classMap({
+          group: true,
+          passed: passed,
+          commented: commented,
+          failed: failed,
+        })}
+        role="radiogroup"
+        aria-label=${msg("QA rating")}
+      >
+        <button
           class=${classMap({
+            vote: true,
             pass: true,
             active: passed,
+            flatEnd: !passed && !commented,
+            roundEnd: !passed && commented,
           })}
-          aria-checked=${passed}
-          size="small"
-          pill
+          role="radio"
         >
           <sl-icon name="hand-thumbs-up" label=${msg("Pass")}></sl-icon>
-        </sl-button>
-        <sl-button
+        </button>
+        <button
           role="checkbox"
           class=${classMap({
             comment: true,
             active: commented,
+            flatStart: passed && commented,
+            flatEnd: !passed || !commented,
+            roundStart: !commented && passed,
+            roundEnd: !commented && failed,
           })}
-          aria-checked=${commented}
-          size="small"
-          pill
         >
           <sl-icon name="chat-square-text" label=${msg("Comment")}></sl-icon>
-        </sl-button>
-        <sl-button
+        </button>
+        <button
           role="radio"
           class=${classMap({
+            vote: true,
             fail: true,
             active: failed,
+            roundStart: !failed && commented,
           })}
-          aria-checked=${failed}
-          size="small"
-          pill
         >
           <sl-icon name="hand-thumbs-down" label=${msg("Fail")}></sl-icon>
-        </sl-button>
-      </sl-button-group>
+        </button>
+      </div>
     `;
   }
 }
