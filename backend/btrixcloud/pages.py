@@ -9,7 +9,6 @@ import pymongo
 
 from .models import (
     Page,
-    PageResource,
     PageReviewUpdate,
     PageQAUpdate,
     Organization,
@@ -62,10 +61,11 @@ class PageOps:
         self, page_dict: Dict[str, Any], crawl_id: str, oid: Optional[UUID] = None
     ):
         """Add page to database"""
-        page_id = page_dict.get("id", uuid4())
+        page_id = page_dict.get("id")
+        if not page_id:
+            print(f'Page {page_dict.get("url")} has no id - assigning UUID', flush=True)
+            page_id = uuid4()
 
-        # If page already exists, don't try to add it again. This is needed because
-        # multiple operator processes might try to add the same page.
         if await self.pages.find_one({"_id": page_id}):
             return
 
@@ -95,24 +95,6 @@ class PageOps:
                 f"Error adding page {page_id} from crawl {crawl_id} to db: {err}",
                 flush=True,
             )
-
-    async def add_resources_to_page(self, page_id: UUID, resources: Dict[str, int]):
-        """Add resources to page in db"""
-        resource_list = []
-        for key, value in resources.items():
-            resource = PageResource(url=key, status=value)
-            resource_list.append(resource)
-
-        result = await self.pages.find_one_and_update(
-            {"_id": page_id},
-            {"$push": {"resources": {"$each": resource_list}}},
-            return_document=pymongo.ReturnDocument.AFTER,
-        )
-
-        if not result:
-            raise HTTPException(status_code=404, detail="page_not_found")
-
-        return {"updated": True}
 
     async def delete_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
         """Delete crawl pages from db"""
@@ -167,25 +149,21 @@ class PageOps:
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
 
-        # Reformat screenshot and text comparisons to be keyed by QA run ID
-        screenshot_score = query.get("screenshot_comparison")
+        # Reformat fields to be keyed by QA crawl id
+        screenshot_score = query.get("screenshotMatch")
         if screenshot_score:
-            query[f"screenshot_comparison.{qa_run_id}"] = screenshot_score
-            query.pop("screenshot_comparison", None)
+            query[f"screenshotMatch.{qa_run_id}"] = screenshot_score
+            query.pop("screenshotMatch", None)
 
-        text_score = query.get("text_comparison")
+        text_score = query.get("textMatch")
         if text_score:
-            query[f"text_comparison.{qa_run_id}"] = text_score
-            query.pop("text_comparison", None)
+            query[f"textMatch.{qa_run_id}"] = text_score
+            query.pop("textMatch", None)
 
-        # TODO: Double check formatting of page resources from what crawler passes
-        # Should we add the original crawl's resources here too?
-        resources = query.get("qa_resources")
-        if resources:
-            query[f"qa_resources.{qa_run_id}"] = [
-                PageResource(**res).dict() for res in resources
-            ]
-            query.pop("qa_resources", None)
+        resource_counts = query.get("resourceCounts")
+        if resource_counts:
+            query[f"resourceCounts.{qa_run_id}"] = resource_counts
+            query.pop("resourceCounts", None)
 
         query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 

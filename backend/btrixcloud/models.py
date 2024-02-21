@@ -1382,14 +1382,6 @@ class PageReviewUpdate(BaseModel):
 
 
 # ============================================================================
-class PageResource(BaseModel):
-    """Page resource"""
-
-    url: AnyHttpUrl
-    status: int
-
-
-# ============================================================================
 class Page(BaseMongoModel):
     """Model for crawl pages"""
 
@@ -1400,15 +1392,11 @@ class Page(BaseMongoModel):
     timestamp: Optional[datetime] = None
     load_state: Optional[int] = None
     status: Optional[int] = None
-    mime: Optional[str] = None
-    type: Optional[str] = None
-
-    resources: Optional[List[PageResource]] = []
 
     # automated heuristics, keyed by QA run id
-    screenshot_comparison: Optional[Dict[str, int]] = {}
-    text_comparison: Optional[Dict[str, int]] = {}
-    qa_resources: Optional[Dict[str, List[PageResource]]] = {}
+    screenshotMatch: Optional[Dict[str, float]] = {}
+    textMatch: Optional[Dict[str, float]] = {}
+    resourceCounts: Optional[Dict[str, Dict[str, int]]]
 
     # manual review
     userid: Optional[UUID] = None
@@ -1421,10 +1409,6 @@ class Page(BaseMongoModel):
 class PageQAUpdate(BaseModel):
     """Model for updating pages from QA run"""
 
-    mime: Optional[str] = None
-    type: Optional[str] = None
-
-    # automated heuristics, keyed by QA run id
-    screenshot_comparison: Optional[int] = None
-    text_comparison: Optional[int] = None
-    qa_resources: Optional[List[PageResource]] = None
+    screenshotMatch: Optional[int] = None
+    textMatch: Optional[int] = None
+    resourceCounts: Optional[Dict[str, Dict[str, int]]]
