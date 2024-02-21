@@ -11,7 +11,7 @@ export class QARating extends TailwindElement {
   static styles = css`
     :host {
       --btrix-border: 1px solid var(--sl-color-neutral-300);
-      --btrix-border-radius: var(--sl-border-radius-large);
+      --btrix-border-radius: var(--sl-border-radius-medium);
     }
 
     .group {
@@ -171,7 +171,7 @@ export class QARating extends TailwindElement {
 
   render() {
     const passed = false;
-    const commented = true;
+    const commented = false;
     const failed = true;
 
     return html`
