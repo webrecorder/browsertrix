@@ -7,3 +7,4 @@ import("./crawl-queue");
 import("./crawl-status");
 import("./file-uploader");
 import("./item-list-controls");
+import("./qa-rating");

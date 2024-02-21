@@ -180,7 +180,7 @@ export class ArchivedItemQA extends TailwindElement {
                 <sl-icon slot="prefix" name="arrow-left"></sl-icon>
                 ${msg("Previous Page")}
               </sl-button>
-              [btrix-page-qa-toolbar]
+              <btrix-qa-rating></btrix-qa-rating>
               <sl-button variant="primary" size="small">
                 <sl-icon slot="suffix" name="arrow-right"></sl-icon>
                 ${msg("Next Page")}
