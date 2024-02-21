@@ -538,6 +538,8 @@ class BtrixOperator(K8sAPI):
         params["storage_filename"] = configmap["STORE_FILENAME"]
         params["restart_time"] = spec.get("restartTime")
 
+        params["warc_prefix"] = spec.get("warcPrefix")
+
         params["redis_url"] = redis_url
 
         if spec.get("restartTime") != status.restartTime:
@@ -1651,26 +1653,10 @@ class BtrixOperator(K8sAPI):
 
         org = await self.org_ops.get_org_by_id(UUID(oid))
 
-        crawl_id, crawljob = self.new_crawl_job_yaml(
-            cid,
-            userid=userid,
-            oid=oid,
-            storage=org.storage,
-            crawler_channel=configmap.get("CRAWLER_CHANNEL", "default"),
-            scale=int(configmap.get("INITIAL_SCALE", 1)),
-            crawl_timeout=int(configmap.get("CRAWL_TIMEOUT", 0)),
-            max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),
-            manual=False,
-            crawl_id=crawl_id,
-        )
-
-        attachments = list(yaml.safe_load_all(crawljob))
-
-        if crawl_id in crawljobs:
-            attachments[0]["status"] = crawljobs[CJS][crawl_id]["status"]
+        warc_prefix = None
 
         if not actual_state:
-            # pylint: disable=duplicate-code
+            # cronjob doesn't exist yet
             crawlconfig = await self.crawl_config_ops.get_crawl_config(
                 UUID(cid), UUID(oid)
             )
@@ -1686,10 +1672,34 @@ class BtrixOperator(K8sAPI):
                 print(f"error: missing user for id {userid}")
                 return {"attachments": []}
 
+            warc_prefix = self.crawl_config_ops.get_warc_prefix(org, crawlconfig)
+
             await self.crawl_config_ops.add_new_crawl(
-                crawl_id, crawlconfig, user, manual=False
+                crawl_id,
+                crawlconfig,
+                user,
+                manual=False,
             )
             print("Scheduled Crawl Created: " + crawl_id)
+
+        crawl_id, crawljob = self.new_crawl_job_yaml(
+            cid,
+            userid=userid,
+            oid=oid,
+            storage=org.storage,
+            crawler_channel=configmap.get("CRAWLER_CHANNEL", "default"),
+            scale=int(configmap.get("INITIAL_SCALE", 1)),
+            crawl_timeout=int(configmap.get("CRAWL_TIMEOUT", 0)),
+            max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),
+            manual=False,
+            crawl_id=crawl_id,
+            warc_prefix=warc_prefix,
+        )
+
+        attachments = list(yaml.safe_load_all(crawljob))
+
+        if crawl_id in crawljobs:
+            attachments[0]["status"] = crawljobs[CJS][crawl_id]["status"]
 
         return {
             "attachments": attachments,
