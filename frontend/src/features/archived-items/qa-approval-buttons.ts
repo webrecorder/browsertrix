@@ -1,17 +1,19 @@
 import { css, html } from "lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, query, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { localized, msg } from "@lit/localize";
+import type { SlTextarea } from "@shoelace-style/shoelace";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import type { Dialog } from "@/components/ui/dialog";
 
 @localized()
-@customElement("btrix-qa-rating")
-export class QARating extends TailwindElement {
+@customElement("btrix-qa-approval-buttons")
+export class QaApprovalButtons extends TailwindElement {
   static styles = css`
     :host {
       --btrix-border: 1px solid var(--sl-color-neutral-300);
-      --btrix-border-radius: var(--sl-border-radius-medium);
+      --btrix-border-radius: var(--sl-border-radius-large);
     }
 
     .group {
@@ -23,11 +25,11 @@ export class QARating extends TailwindElement {
       height: var(--sl-input-height-small);
     }
 
-    .group.passed:not(.commented) {
+    .group.approved:not(.commented) {
       background-color: var(--sl-color-success-500);
     }
 
-    .group.failed:not(.commented) {
+    .group.rejected:not(.commented) {
       background-color: var(--sl-color-danger-500);
     }
 
@@ -35,7 +37,7 @@ export class QARating extends TailwindElement {
       background-color: var(--sl-color-blue-400);
     }
 
-    .group.passed.commented {
+    .group.approved.commented {
       background: linear-gradient(
         to right,
         var(--sl-color-success-500),
@@ -45,7 +47,7 @@ export class QARating extends TailwindElement {
       );
     }
 
-    .group.failed.commented {
+    .group.rejected.commented {
       background: linear-gradient(
         to right,
         var(--sl-color-neutral-0),
@@ -128,11 +130,11 @@ export class QARating extends TailwindElement {
       border-end-start-radius: var(--btrix-border-radius);
     }
 
-    .pass:not(.active):hover sl-icon {
+    .approve:not(.active):hover sl-icon {
       color: var(--sl-color-success-500);
     }
 
-    .fail:not(.active):hover sl-icon {
+    .reject:not(.active):hover sl-icon {
       color: var(--sl-color-danger-500);
     }
 
@@ -169,18 +171,27 @@ export class QARating extends TailwindElement {
     }
   `;
 
+  @state()
+  private isCommentOpen = false;
+
+  @query("btrix-dialog")
+  private dialog!: Dialog;
+
+  @query('sl-textarea[name="pageComment"]')
+  private textarea!: SlTextarea;
+
   render() {
-    const passed = false;
+    const approved = false;
     const commented = false;
-    const failed = true;
+    const rejected = true;
 
     return html`
       <div
         class=${classMap({
           group: true,
-          passed: passed,
+          approved: approved,
           commented: commented,
-          failed: failed,
+          rejected: rejected,
         })}
         role="radiogroup"
         aria-label=${msg("QA rating")}
@@ -188,25 +199,28 @@ export class QARating extends TailwindElement {
         <button
           class=${classMap({
             vote: true,
-            pass: true,
-            active: passed,
-            flatEnd: !passed && !commented,
-            roundEnd: !passed && commented,
+            approve: true,
+            active: approved,
+            flatEnd: !approved && !commented,
+            roundEnd: !approved && commented,
           })}
           role="radio"
+          aria-checked=${approved}
         >
-          <sl-icon name="hand-thumbs-up" label=${msg("Pass")}></sl-icon>
+          <sl-icon name="hand-thumbs-up" label=${msg("Approve")}></sl-icon>
         </button>
         <button
           role="checkbox"
           class=${classMap({
             comment: true,
             active: commented,
-            flatStart: passed && commented,
-            flatEnd: !passed || !commented,
-            roundStart: !commented && passed,
-            roundEnd: !commented && failed,
+            flatStart: approved && commented,
+            flatEnd: !approved || !commented,
+            roundStart: !commented && approved,
+            roundEnd: !commented && rejected,
           })}
+          aria-checked=${commented}
+          @click=${() => (this.isCommentOpen = true)}
         >
           <sl-icon name="chat-square-text" label=${msg("Comment")}></sl-icon>
         </button>
@@ -214,14 +228,50 @@ export class QARating extends TailwindElement {
           role="radio"
           class=${classMap({
             vote: true,
-            fail: true,
-            active: failed,
-            roundStart: !failed && commented,
+            reject: true,
+            active: rejected,
+            roundStart: !rejected && commented,
           })}
+          aria-checked=${rejected}
         >
-          <sl-icon name="hand-thumbs-down" label=${msg("Fail")}></sl-icon>
+          <sl-icon name="hand-thumbs-down" label=${msg("Reject")}></sl-icon>
         </button>
       </div>
+
+      <btrix-dialog
+        label=${msg("Page Review Comment")}
+        ?open=${this.isCommentOpen}
+        @sl-hide=${() => (this.isCommentOpen = false)}
+      >
+        <form @submit=${this.onSubmit}>
+          <sl-textarea
+            name="pageComment"
+            label=${msg("Comment")}
+            placeholder=${msg("Enter feedback on page")}
+          ></sl-textarea>
+        </form>
+        <p class="mt-4 text-neutral-500">
+          <sl-tag size="small" variant="primary" class="mr-1"
+            >${msg("Beta Feature")}</sl-tag
+          >
+          ${msg(
+            "We may assess anonymized text from this comment to improve this beta feature.",
+          )}
+        </p>
+        <sl-button
+          slot="footer"
+          size="small"
+          variant="primary"
+          @click=${() => this.dialog.submit()}
+        >
+          ${msg("Update Page Comment")}
+        </sl-button>
+      </btrix-dialog>
     `;
+  }
+
+  private onSubmit(e: SubmitEvent) {
+    e.preventDefault();
+    console.log("submit", e.target);
   }
 }
