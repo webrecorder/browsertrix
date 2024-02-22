@@ -19,6 +19,7 @@ import {
 import { when } from "lit/directives/when.js";
 import { msg, localized, str } from "@lit/localize";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { choose } from "lit/directives/choose.js";
 import compact from "lodash/fp/compact";
 import { mergeDeep } from "immutable";
 import flow from "lodash/fp/flow";
@@ -666,14 +667,11 @@ export class CrawlConfigEditor extends LiteElement {
           <btrix-tab-panel name="newJobConfig-crawlSetup" class="scroll-m-3">
             ${this.renderPanelContent(
               html`
-                ${when(this.jobType === "url-list", this.renderUrlListSetup)}
-                ${when(
-                  this.jobType === "seed-crawl",
-                  this.renderSeededCrawlSetup,
-                )}
-                ${when(this.jobType === "custom", () =>
-                  this.renderUrlListSetup(true),
-                )}
+                ${choose(this.jobType, [
+                  ["url-list", () => this.renderUrlListSetup(false)],
+                  ["seed-crawl", () => this.renderSeededCrawlSetup()],
+                  ["custom", () => this.renderUrlListSetup(true)],
+                ])}
               `,
               { isFirst: true },
             )}
