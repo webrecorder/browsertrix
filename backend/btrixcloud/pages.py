@@ -216,7 +216,7 @@ class PageOps:
         result = await self.pages.find_one_and_update(
             {"_id": page_id, "oid": oid, "crawl_id": crawl_id},
             {
-                "$push": {"notes": note.to_dict()},
+                "$push": {"notes": note.dict()},
                 "$set": {"modified": modified},
             },
             return_document=pymongo.ReturnDocument.AFTER,
@@ -239,11 +239,14 @@ class PageOps:
         page = await self.get_page_raw(page_id, oid)
         page_notes = page.get("notes", [])
 
-        matching_index = [
-            index for index, note in enumerate(page_notes) if note["id"] == note_in.id
-        ]
+        try:
+            matching_index = [
+                index
+                for index, note in enumerate(page_notes)
+                if note["id"] == note_in.id
+            ][0]
 
-        if not matching_index:
+        except IndexError:
             raise HTTPException(status_code=404, detail="page_note_not_found")
 
         new_note = PageNote(

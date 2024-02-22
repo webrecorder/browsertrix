@@ -1403,9 +1403,10 @@ class PageNoteDelete(BaseModel):
 
 
 # ============================================================================
-class PageNote(BaseMongoModel):
+class PageNote(BaseModel):
     """Model for page notes, tracking user and time"""
 
+    id: UUID
     text: str
     created: datetime = datetime.now()
     userid: UUID
@@ -1427,7 +1428,7 @@ class Page(BaseMongoModel):
     # automated heuristics, keyed by QA run id
     screenshotMatch: Optional[Dict[str, float]] = {}
     textMatch: Optional[Dict[str, float]] = {}
-    resourceCounts: Optional[Dict[str, Dict[str, int]]]
+    resourceCounts: Optional[Dict[str, Dict[str, int]]] = {}
 
     # manual review
     userid: Optional[UUID] = None
