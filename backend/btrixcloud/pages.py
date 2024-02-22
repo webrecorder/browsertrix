@@ -427,8 +427,8 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         """Edit page note"""
         return await ops.update_page_note(page_id, org.id, note, user, crawl_id)
 
-    @app.delete(
-        "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}/notes",
+    @app.post(
+        "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}/notes/delete",
         tags=["pages"],
     )
     async def delete_page_notes(

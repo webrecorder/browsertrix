@@ -527,8 +527,8 @@ def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id
     assert second_note_id
 
     # Delete both notes
-    r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}/notes",
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}/notes/delete",
         headers=crawler_auth_headers,
         json={"delete_list": [first_note_id, second_note_id]},
     )
