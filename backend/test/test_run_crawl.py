@@ -461,7 +461,7 @@ def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id
     assert r.status_code == 200
     data = r.json()
 
-    page_id = data.items[0]["id"]
+    page_id = data["items"][0]["id"]
     assert page_id
 
     note_text = "testing"
