@@ -16,6 +16,8 @@ wacz_hash = None
 
 wacz_content = None
 
+page_id = None
+
 
 def test_list_orgs(admin_auth_headers, default_org_id):
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
@@ -397,6 +399,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
         assert page["load_state"]
 
     # Test GET page endpoint
+    global page_id
     page_id = pages[0]["id"]
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
@@ -453,17 +456,6 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
 
 
 def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id):
-    # Get page ID
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages",
-        headers=crawler_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-
-    page_id = data["items"][0]["id"]
-    assert page_id
-
     note_text = "testing"
     updated_note_text = "updated"
     untouched_text = "untouched"
