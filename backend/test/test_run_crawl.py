@@ -420,12 +420,11 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page.get("modified") is None
     assert page.get("approved") is None
 
-    # Update page with review
+    # Update page with approval
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
         headers=crawler_auth_headers,
         json={
-            "notes": ["first note"],
             "approved": True,
         },
     )
@@ -451,6 +450,108 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page["userid"]
     assert page["modified"]
     assert page["approved"]
+
+
+def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id):
+    # Get page ID
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    page_id = data.items[0]["id"]
+    assert page_id
+
+    note_text = "testing"
+    updated_note_text = "updated"
+    untouched_text = "untouched"
+
+    # Add note
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}/notes",
+        headers=crawler_auth_headers,
+        json={"text": note_text},
+    )
+    assert r.status_code == 200
+    assert r.json()["added"]
+
+    # Check that note was added
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert len(data["notes"]) == 1
+
+    first_note = data["notes"][0]
+
+    first_note_id = first_note["id"]
+    assert first_note_id
+
+    assert first_note["created"]
+    assert first_note["userid"]
+    assert first_note["userName"]
+    assert first_note["text"] == note_text
+
+    # Add second note to test selective updates/deletes
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}/notes",
+        headers=crawler_auth_headers,
+        json={"text": untouched_text},
+    )
+    assert r.status_code == 200
+    assert r.json()["added"]
+
+    # Edit first note
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}/notes",
+        headers=crawler_auth_headers,
+        json={"text": updated_note_text, "id": first_note_id},
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # Verify notes look as expected
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    notes = data["notes"]
+
+    assert len(notes) == 2
+
+    updated_note = [note for note in notes if note["id"] == first_note_id][0]
+    assert updated_note["text"] == updated_note_text
+
+    second_note_id = [note["id"] for note in notes if note["text"] == "untouched_text"][
+        0
+    ]
+    assert second_note_id
+
+    # Delete both notes
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}/notes",
+        headers=crawler_auth_headers,
+        json={"delete_list": [first_note_id, second_note_id]},
+    )
+    assert r.status_code == 200
+    assert r.json()["deleted"]
+
+    # Verify notes were deleted
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    notes = data.get("notes")
+    assert notes == []
 
 
 def test_delete_crawls_crawler(

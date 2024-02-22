@@ -1375,10 +1375,41 @@ class AnyJob(BaseModel):
 
 # ============================================================================
 class PageReviewUpdate(BaseModel):
-    """Update model for page manual review"""
+    """Update model for page manual review/approval"""
 
-    notes: Optional[List[str]] = None
     approved: Optional[bool] = None
+
+
+# ============================================================================
+class PageNoteIn(BaseModel):
+    """Input model for adding page notes"""
+
+    text: str
+
+
+# ============================================================================
+class PageNoteEdit(BaseModel):
+    """Input model for editing page notes"""
+
+    id: UUID
+    text: str
+
+
+# ============================================================================
+class PageNoteDelete(BaseModel):
+    """Delete model for page notes"""
+
+    delete_list: List[UUID] = []
+
+
+# ============================================================================
+class PageNote(BaseMongoModel):
+    """Model for page notes, tracking user and time"""
+
+    text: str
+    created: datetime = datetime.now()
+    userid: UUID
+    userName: str
 
 
 # ============================================================================
@@ -1402,7 +1433,7 @@ class Page(BaseMongoModel):
     userid: Optional[UUID] = None
     modified: Optional[datetime] = None
     approved: Optional[bool] = None
-    notes: Optional[List[str]] = []
+    notes: List[PageNote] = []
 
 
 # ============================================================================

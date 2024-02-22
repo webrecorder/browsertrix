@@ -14,6 +14,10 @@ from .models import (
     Organization,
     PaginatedResponse,
     User,
+    PageNote,
+    PageNoteIn,
+    PageNoteEdit,
+    PageNoteDelete,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import from_k8s_date
@@ -169,20 +173,18 @@ class PageOps:
 
         return {"updated": True}
 
-    async def update_page_review(
+    async def update_page_approval(
         self,
         page_id: UUID,
         oid: UUID,
-        update: PageReviewUpdate,
+        approved: Optional[bool] = None,
         crawl_id: Optional[str] = None,
         user: Optional[User] = None,
     ) -> Dict[str, bool]:
         """Update page manual review"""
-        query = update.dict(exclude_unset=True)
-
-        if len(query) == 0:
-            raise HTTPException(status_code=400, detail="no_update_data")
-
+        query: Dict[str, Union[Optional[bool], str, datetime, UUID]] = {
+            "approved": approved
+        }
         query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
         if user:
             query["userid"] = user.id
@@ -197,6 +199,98 @@ class PageOps:
             raise HTTPException(status_code=404, detail="page_not_found")
 
         return {"updated": True}
+
+    async def add_page_note(
+        self,
+        page_id: UUID,
+        oid: UUID,
+        text: str,
+        user: User,
+        crawl_id: str,
+    ) -> Dict[str, bool]:
+        """Add note to page"""
+        note = PageNote(id=uuid4(), text=text, userid=user.id, userName=user.name)
+
+        modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+
+        result = await self.pages.find_one_and_update(
+            {"_id": page_id, "oid": oid, "crawl_id": crawl_id},
+            {
+                "$push": {"notes": note.to_dict()},
+                "$set": {"modified": modified},
+            },
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+
+        if not result:
+            raise HTTPException(status_code=404, detail="page_not_found")
+
+        return {"added": True}
+
+    async def update_page_note(
+        self,
+        page_id: UUID,
+        oid: UUID,
+        note_in: PageNoteEdit,
+        user: User,
+        crawl_id: str,
+    ) -> Dict[str, bool]:
+        """Update specific page note"""
+        page = await self.get_page_raw(page_id, oid)
+        page_notes = page.get("notes", [])
+
+        matching_index = [
+            index for index, note in enumerate(page_notes) if note["id"] == note_in.id
+        ]
+
+        if not matching_index:
+            raise HTTPException(status_code=404, detail="page_note_not_found")
+
+        new_note = PageNote(
+            id=note_in.id, text=note_in.text, userid=user.id, userName=user.name
+        )
+        page_notes[matching_index] = new_note.dict()
+
+        modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+
+        result = await self.pages.find_one_and_update(
+            {"_id": page_id, "oid": oid, "crawl_id": crawl_id},
+            {"$set": {"notes": page_notes, "modified": modified}},
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+
+        if not result:
+            raise HTTPException(status_code=404, detail="page_not_found")
+
+        return {"updated": True}
+
+    async def delete_page_notes(
+        self,
+        page_id: UUID,
+        oid: UUID,
+        delete: PageNoteDelete,
+        crawl_id: str,
+    ) -> Dict[str, bool]:
+        """Delete specific page notes"""
+        page = await self.get_page(page_id, oid)
+
+        remaining_notes = []
+        for note in page.notes:
+            if not note.id in delete.delete_list:
+                remaining_notes.append(note)
+
+        modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+
+        result = await self.pages.find_one_and_update(
+            {"_id": page_id, "oid": oid, "crawl_id": crawl_id},
+            {"$set": {"notes": remaining_notes, "modified": modified}},
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+
+        if not result:
+            raise HTTPException(status_code=404, detail="page_not_found")
+
+        return {"deleted": True}
 
     async def list_pages(
         self,
@@ -281,22 +375,65 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         page_id: UUID,
         org: Organization = Depends(org_crawl_dep),
     ):
-        """Retrieve paginated list of pages"""
+        """GET single page"""
         return await ops.get_page(page_id, org.id, crawl_id)
 
     @app.patch(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}",
         tags=["pages"],
     )
-    async def update_page_review(
+    async def update_page_approval(
         crawl_id: str,
         page_id: UUID,
         update: PageReviewUpdate,
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        """Retrieve paginated list of pages"""
-        return await ops.update_page_review(page_id, org.id, update, crawl_id, user)
+        """Update review for specific page"""
+        return await ops.update_page_approval(
+            page_id, org.id, update.approved, crawl_id, user
+        )
+
+    @app.post(
+        "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}/notes",
+        tags=["pages"],
+    )
+    async def add_page_note(
+        crawl_id: str,
+        page_id: UUID,
+        note: PageNoteIn,
+        org: Organization = Depends(org_crawl_dep),
+        user: User = Depends(user_dep),
+    ):
+        """Add note to page"""
+        return await ops.add_page_note(page_id, org.id, note.text, user, crawl_id)
+
+    @app.patch(
+        "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}/notes",
+        tags=["pages"],
+    )
+    async def edit_page_note(
+        crawl_id: str,
+        page_id: UUID,
+        note: PageNoteEdit,
+        org: Organization = Depends(org_crawl_dep),
+        user: User = Depends(user_dep),
+    ):
+        """Edit page note"""
+        return await ops.update_page_note(page_id, org.id, note, user, crawl_id)
+
+    @app.delete(
+        "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}/notes",
+        tags=["pages"],
+    )
+    async def delete_page_notes(
+        crawl_id: str,
+        page_id: UUID,
+        delete: PageNoteDelete,
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        """Edit page note"""
+        return await ops.delete_page_notes(page_id, org.id, delete, crawl_id)
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/pages",
