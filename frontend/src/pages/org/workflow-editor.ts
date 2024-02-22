@@ -666,7 +666,9 @@ export class CrawlConfigEditor extends LiteElement {
           <btrix-tab-panel name="newJobConfig-crawlSetup" class="scroll-m-3">
             ${this.renderPanelContent(
               html`
-                ${when(this.jobType === "url-list", this.renderUrlListSetup)}
+                ${when(this.jobType === "url-list", () =>
+                  this.renderUrlListSetup(false),
+                )}
                 ${when(
                   this.jobType === "seed-crawl",
                   this.renderSeededCrawlSetup,
