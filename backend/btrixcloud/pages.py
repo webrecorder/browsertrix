@@ -247,6 +247,7 @@ class PageOps:
             ][0]
 
         except IndexError:
+            # pylint: disable=raise-missing-from
             raise HTTPException(status_code=404, detail="page_note_not_found")
 
         new_note = PageNote(
