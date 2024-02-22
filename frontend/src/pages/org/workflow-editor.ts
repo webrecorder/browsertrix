@@ -172,7 +172,7 @@ const getDefaultFormState = (): FormState => ({
   primarySeedUrl: "",
   urlList: "",
   includeLinkedPages: false,
-  useSitemap: true,
+  useSitemap: false,
   failOnFailedSeed: false,
   customIncludeUrlList: "",
   crawlTimeoutMinutes: 0,
@@ -596,7 +596,7 @@ export class CrawlConfigEditor extends LiteElement {
       includeLinkedPages: Boolean(
         primarySeedConfig.extraHops || seedsConfig.extraHops,
       ),
-      useSitemap: defaultFormState.useSitemap,
+      useSitemap: seedsConfig.useSitemap ?? defaultFormState.useSitemap,
       failOnFailedSeed:
         seedsConfig.failOnFailedSeed ?? defaultFormState.failOnFailedSeed,
       pageLimit:
