@@ -149,21 +149,12 @@ class PageOps:
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
 
-        # Reformat fields to be keyed by QA crawl id
-        screenshot_score = query.get("screenshotMatch")
-        if screenshot_score:
-            query[f"screenshotMatch.{qa_run_id}"] = screenshot_score
-            query.pop("screenshotMatch", None)
-
-        text_score = query.get("textMatch")
-        if text_score:
-            query[f"textMatch.{qa_run_id}"] = text_score
-            query.pop("textMatch", None)
-
-        resource_counts = query.get("resourceCounts")
-        if resource_counts:
-            query[f"resourceCounts.{qa_run_id}"] = resource_counts
-            query.pop("resourceCounts", None)
+        keyed_fields = ("screenshotMatch", "textMatch", "resourceCounts")
+        for field in keyed_fields:
+            score = query.get(field)
+            if score:
+                query[f"{field}.{qa_run_id}"] = score
+                query.pop(field, None)
 
         query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
