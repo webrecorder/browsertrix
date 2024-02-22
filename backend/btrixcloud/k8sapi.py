@@ -86,6 +86,7 @@ class K8sAPI:
         max_crawl_size=0,
         manual=True,
         crawl_id=None,
+        warc_prefix="",
     ):
         """load job template from yaml"""
         if not crawl_id:
@@ -104,6 +105,7 @@ class K8sAPI:
             "storage_name": str(storage),
             "manual": "1" if manual else "0",
             "crawler_channel": crawler_channel,
+            "warc_prefix": warc_prefix,
         }
 
         data = self.templates.env.get_template("crawl_job.yaml").render(params)

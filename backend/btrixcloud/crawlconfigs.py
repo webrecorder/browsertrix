@@ -33,7 +33,7 @@ from .models import (
     CrawlerChannel,
     CrawlerChannels,
 )
-from .utils import dt_now
+from .utils import dt_now, slug_from_name
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -232,6 +232,7 @@ class CrawlConfigOps:
             run_now=run_now,
             out_filename=out_filename,
             profile_filename=profile_filename or "",
+            warc_prefix=self.get_warc_prefix(org, crawlconfig),
         )
 
         if crawl_id and run_now:
@@ -298,6 +299,7 @@ class CrawlConfigOps:
             run_now=False,
             out_filename=self.default_filename_template,
             profile_filename=profile_filename or "",
+            warc_prefix=self.get_warc_prefix(org, crawlconfig),
         )
 
     async def update_crawl_config(
@@ -841,7 +843,10 @@ class CrawlConfigOps:
 
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
-                crawlconfig, org.storage, userid=str(user.id)
+                crawlconfig,
+                org.storage,
+                userid=str(user.id),
+                warc_prefix=self.get_warc_prefix(org, crawlconfig),
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
             return crawl_id
@@ -896,6 +901,21 @@ class CrawlConfigOps:
     ) -> Optional[str]:
         """Get crawler image name by id"""
         return self.crawler_images_map.get(crawler_channel or "")
+
+    def get_warc_prefix(self, org: Organization, crawlconfig: CrawlConfig) -> str:
+        """Generate WARC prefix slug from org slug, name or url
+        if no name is provided, hostname is used from url, otherwise
+        url is ignored"""
+        name = crawlconfig.name
+        if not name:
+            if crawlconfig.config.seeds and len(crawlconfig.config.seeds):
+                url = crawlconfig.config.seeds[0].url
+                parts = urllib.parse.urlsplit(url)
+                name = parts.netloc
+
+        name = slug_from_name(name or "")
+        prefix = org.slug + "-" + name
+        return prefix[:80]
 
 
 # ============================================================================
