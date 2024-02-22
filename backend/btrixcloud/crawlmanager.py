@@ -177,6 +177,25 @@ class CrawlManager(K8sAPI):
             warc_prefix=warc_prefix,
         )
 
+    async def create_crawl_qa_job(
+        self,
+        oid: UUID,
+        crawl_id: str,
+        storage: StorageRef,
+        qa_source: str,
+        userid: str,
+        crawler_image: str,
+        profile_filename: str = None,
+    ) -> str:
+        """create new crawl qa job"""
+        storage_secret = storage.get_storage_secret_name(str(oid))
+
+        await self.has_storage_secret(storage_secret)
+
+        return await self.new_crawl_qa_job(
+            userid, crawl_id, oid, storage, qa_source, crawler_image, profile_filename
+        )
+
     async def update_crawl_config(
         self, crawlconfig: CrawlConfig, update: UpdateCrawlConfig, profile_filename=None
     ) -> bool:
@@ -293,14 +312,16 @@ class CrawlManager(K8sAPI):
         """Set the crawl scale (job parallelism) on the specified job"""
         return await self._patch_job(crawl_id, {"scale": scale})
 
-    async def shutdown_crawl(self, crawl_id: str, graceful=True) -> dict:
+    async def shutdown_crawl(
+        self, crawl_id: str, graceful=True, qa_crawl=False
+    ) -> dict:
         """Request a crawl cancelation or stop by calling an API
         on the job pod/container, returning the result"""
         if graceful:
             patch = {"stopping": True}
-            return await self._patch_job(crawl_id, patch)
+            return await self._patch_job(crawl_id, patch, qa_crawl=qa_crawl)
 
-        return await self.delete_crawl_job(crawl_id)
+        return await self.delete_crawl_job(crawl_id, qa_crawl=qa_crawl)
 
     async def delete_crawl_configs_for_org(self, org: str) -> None:
         """Delete all crawl configs for given org"""

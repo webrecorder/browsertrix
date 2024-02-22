@@ -1,0 +1,28 @@
+apiVersion: btrix.cloud/v1
+kind: CrawlJob
+metadata:
+  name: qa-crawljob-{{ id }}
+  labels:
+    id: "{{ id }}"
+    crawlId: "{{ crawl_id }}"
+    role: "job"
+    btrix.org: "{{ oid }}"
+    btrix.user: "{{ userid }}"
+    btrix.storage: "{{ storage_name }}"
+
+spec:
+  selector:
+    matchLabels:
+      qaCrawl: "{{ id }}"
+
+  id: "{{ id }}"
+  crawlId: "{{ crawl_id }}"
+  userid: "{{ userid }}"
+  oid: "{{ oid }}"
+  crawlerImage: "{{ crawler_image }}"
+  profileFilename: "{{ profile_filename }}"
+  qaSource: "{{ qa_source }}"
+  ttlSecondsAfterFinished: 30
+
+  storageName: "{{ storage_name }}"
+

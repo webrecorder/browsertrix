@@ -1,0 +1,171 @@
+# -------
+# PVC
+# -------
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qa-{{ name }}
+  namespace: {{ namespace }}
+  labels:
+    crawl-qa: {{ id }}
+    role: crawler
+
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: {{ crawler_storage }}
+
+  {% if volume_storage_class %}
+  storageClassName: {{ volume_storage_class }}
+  {% endif %}
+
+
+
+# -------
+# CRAWLER
+# -------
+{% if not do_restart %}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  labels:
+    crawl-qa: {{ id }}
+    role: crawler
+
+spec:
+  hostname: {{ name }}
+  subdomain: crawler
+
+  {% if priorityClassName %}
+  priorityClassName: {{ priorityClassName }}
+  {% endif %}
+
+  restartPolicy: OnFailure
+
+  terminationGracePeriodSeconds: {{ termination_grace_secs }}
+  volumes:
+    - name: crawl-data
+      persistentVolumeClaim:
+        claimName: {{ name }}
+
+  affinity:
+{% if crawler_node_type %}
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+            - key: nodeType
+              operator: In
+              values:
+                - "{{ crawler_node_type }}"
+{% endif %}
+
+    podAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 10
+          podAffinityTerm:
+            topologyKey: "kubernetes.io/hostname"
+            labelSelector:
+              matchExpressions:
+              - key: crawl
+                operator: In
+                values:
+                - {{ id }}
+
+  tolerations:
+    - key: nodeType
+      operator: Equal
+      value: crawling
+      effect: NoSchedule
+    - key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+      effect: NoExecute
+    - key: node.kubernetes.io/unreachable
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300
+
+  containers:
+    - name: crawler
+      image: {{ crawler_image }}
+      imagePullPolicy: {{ crawler_image_pull_policy }}
+      command:
+        - qa
+        - --qaSource
+        - {{ qa_source }}
+        - --redisStoreUrl
+        - {{ redis_url }}
+      {%- if profile_filename %}
+        - --profile
+        - "@{{ profile_filename }}"
+      {%- endif %}
+
+      volumeMounts:
+        - name: crawl-data
+          mountPath: /crawls
+
+      envFrom:
+        - configMapRef:
+            name: shared-crawler-config
+
+        - secretRef:
+            name: {{ storage_secret }}
+
+      {% if signing_secret %}
+        - secretRef:
+            name: {{ signing_secret }}
+      {% endif %}
+
+      env:
+        - name: CRAWL_QA_ID
+          value: "{{ id }}"
+
+        - name: WEBHOOK_URL
+          value: "{{ redis_url }}/crawls-done"
+
+        - name: STORE_PATH
+          value: "{{ storage_path }}"
+
+        - name: STORE_FILENAME
+          value: "{{ storage_filename }}"
+
+        - name: STORE_USER
+          value: "{{ userid }}"
+
+    {% if crawler_socks_proxy_host %}
+        - name: SOCKS_HOST
+          value: "{{ crawler_socks_proxy_host }}"
+      {% if crawler_socks_proxy_port %}
+        - name: SOCKS_PORT
+          value: "{{ crawler_socks_proxy_port }}"
+      {% endif %}
+    {% endif %}
+
+      resources:
+        limits:
+          memory: "{{ memory }}"
+
+        requests:
+          cpu: "{{ cpu }}"
+          memory: "{{ memory }}"
+
+      {% if crawler_liveness_port and crawler_liveness_port != '0' %}
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: {{ crawler_liveness_port }}
+
+        initialDelaySeconds: 15
+        periodSeconds: 120
+        failureThreshold: 3
+      {% endif %}
+
+{% endif %}

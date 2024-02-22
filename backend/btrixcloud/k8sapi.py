@@ -2,6 +2,7 @@
 
 import os
 import traceback
+from uuid import uuid4
 
 import yaml
 
@@ -120,6 +121,36 @@ class K8sAPI:
 
         return crawl_id
 
+    # pylint: disable=too-many-arguments, too-many-locals
+    def new_crawl_qa_job_yaml(
+        self, userid, crawl_id, oid, storage, qa_source, crawler_image, profile_filename
+    ):
+        """load job template from yaml"""
+        qa_crawl_id = uuid4()
+
+        params = {
+            "id": str(qa_crawl_id),
+            "crawl_id": crawl_id,
+            "oid": oid,
+            "userid": userid,
+            "storage_name": str(storage),
+            "crawler_image": crawler_image,
+            "profile_filename": profile_filename,
+            "qa_source": qa_source,
+        }
+
+        data = self.templates.env.get_template("crawl_qa_job.yaml").render(params)
+        return qa_crawl_id, data
+
+    async def new_crawl_qa_job(self, *args, **kwargs) -> str:
+        """load and init qa crawl job via k8s api"""
+        qa_crawl_id, data = self.new_qa_crawl_job_yaml(*args, **kwargs)
+
+        # create job directly
+        await self.create_from_yaml(data)
+
+        return qa_crawl_id
+
     async def create_from_yaml(self, doc, namespace=None):
         """init k8s objects from yaml"""
         yml_document_all = yaml.safe_load_all(doc)
@@ -170,15 +201,19 @@ class K8sAPI:
                 status_code=400, detail="invalid_config_missing_storage_secret"
             )
 
-    async def delete_crawl_job(self, crawl_id):
+    async def delete_crawl_job(self, crawl_id, qa_crawl=False):
         """delete custom crawljob object"""
         try:
+            name = f"crawljob-{crawl_id}"
+            if qa_crawl:
+                name = f"qa-{name}"
+
             await self.custom_api.delete_namespaced_custom_object(
                 group="btrix.cloud",
                 version="v1",
                 namespace=self.namespace,
                 plural="crawljobs",
-                name=f"crawljob-{crawl_id}",
+                name=name,
                 grace_period_seconds=0,
                 # delete as background to allow operator to do proper cleanup
                 propagation_policy="Background",
@@ -215,7 +250,9 @@ class K8sAPI:
             name=f"profilejob-{browserid}",
         )
 
-    async def _patch_job(self, crawl_id, body, pluraltype="crawljobs") -> dict:
+    async def _patch_job(
+        self, crawl_id, body, pluraltype="crawljobs", qa_crawl=False
+    ) -> dict:
         content_type = self.api_client.default_headers.get("Content-Type")
 
         try:
@@ -223,12 +260,16 @@ class K8sAPI:
                 "Content-Type", "application/merge-patch+json"
             )
 
+            name = f"{pluraltype[:-1]}-{crawl_id}"
+            if qa_crawl:
+                name = f"qa-{name}"
+
             await self.custom_api.patch_namespaced_custom_object(
                 group="btrix.cloud",
                 version="v1",
                 namespace=self.namespace,
                 plural=pluraltype,
-                name=f"{pluraltype[:-1]}-{crawl_id}",
+                name=name,
                 body={"spec": body},
             )
             return {"success": True}

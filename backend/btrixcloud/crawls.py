@@ -5,6 +5,7 @@
 import json
 import re
 import urllib.parse
+from datetime import datetime
 from uuid import UUID
 
 from typing import Optional, List, Dict, Union
@@ -31,6 +32,8 @@ from .models import (
     PaginatedResponse,
     RUNNING_AND_STARTING_STATES,
     ALL_CRAWL_STATES,
+    QACrawl,
+    QACrawlIn,
 )
 
 
@@ -553,6 +556,76 @@ class CrawlOps(BaseCrawlOps):
 
         return crawls_data
 
+    async def add_new_qa_crawl(self, qa_crawl_id, crawl_id, user):
+        """Add QA crawl subdoc to crawl document"""
+        qa_crawl = QACrawl(
+            id=qa_crawl_id,
+            started=datetime.now(),
+            userid=user.id,
+            userName=user.name,
+            state="starting",
+            image=crawler_image,
+        )
+        try:
+            await self.crawls.update_one(
+                {"_id": "crawl_id"}, {"$push": {"qa": qa_crawl.dict()}}
+            )
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            print(
+                f"Error adding QA Crawl {qa_crawl_id} to crawl doc {crawl_id}",
+                flush=True,
+            )
+
+    async def start_crawl_qa_job(
+        self, qa_crawl_in: QACrawlIn, crawl_id: str, org: Organization, user: User
+    ):
+        """Start crawl QA job
+
+        TODO: Do we need a configmap here?"""
+        crawler_image = self.crawl_configs.get_channel_crawler_image(
+            qa_crawl_in.crawlerChannel
+        )
+        if not crawler_image:
+            raise HTTPException(status_code=404, detail="crawler_image_not_found")
+
+        if await self.orgs.storage_quota_reached(org.id):
+            raise HTTPException(status_code=403, detail="storage_quota_reached")
+
+        if await self.orgs.exec_mins_quota_reached(org.id):
+            raise HTTPException(status_code=403, detail="exec_minutes_quota_reached")
+
+        crawl = await self.get_crawl(crawl_id, org)
+        if not crawl.files:
+            raise HTTPException(status_code=404, detail="crawl_files_not_found")
+
+        # TODO: For now, let's just use the first WACZ. Eventually we'll want to
+        # pass them all in as an array or a multi-WACZ
+        qa_source = crawl.files[0]
+
+        try:
+            qa_crawl_id = await self.crawl_manager.create_crawl_qa_job(
+                org.id,
+                crawl_id,
+                org.storage,
+                qa_source.filename,
+                str(user.id),
+                crawler_image,
+                qa_crawl_in.profileFilename,
+            )
+            await self.add_new_qa_crawl(qa_crawl_id, crawl_id, user, crawler_image)
+            return qa_crawl_id
+
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(
+                status_code=500, detail=f"Error starting QA crawl: {exc}"
+            )
+
+    async def stop_crawl_qa_job(self, qa_crawl_id: str, org: Organization):
+        """Stop crawl QA job"""
+        return await self.crawl_manager.shutdown_crawl(qa_crawl_id)
+
 
 # ============================================================================
 async def recompute_crawl_file_count_and_size(crawls, crawl_id):
@@ -737,6 +810,20 @@ def init_crawls_api(app, user_dep, *args):
     )
     async def get_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl(crawl_id, org, "crawl")
+
+    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/start", tags=["crawls", "qa"])
+    async def start_crawl_qa_job(
+        qa_crawl_in: QACrawlIn,
+        crawl_id: str,
+        org: Organization = Depends(org_crawl_dep),
+        user: User = Depends(user_dep),
+    ):
+        qa_crawl_id = await ops.start_crawl_qa_job(qa_crawl_in, crawl_id, org, user)
+        return {"started": qa_crawl_id}
+
+    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/stop", tags=["crawls", "qa"])
+    async def stop_crawl_qa_job(crawl_id, org: Organization = Depends(org_crawl_dep)):
+        return await ops.stop_crawl_qa_job(crawl_id, org)
 
     @app.get(
         "/orgs/all/crawls/{crawl_id}",

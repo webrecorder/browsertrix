@@ -656,6 +656,35 @@ class CrawlScale(BaseModel):
 
 
 # ============================================================================
+class QACrawl(BaseModel):
+    """Subdocument to track QA runs for given crawl"""
+
+    id: UUID
+    started: datetime
+    finished: Optional[datetime] = None
+
+    userid: UUID
+    userName: Optional[str]
+
+    state: str
+    stopping: Optional[bool] = False
+
+    image: Optional[str] = None
+
+    crawlExecSeconds: int = 0
+
+    files: Optional[List[CrawlFile]] = []
+
+
+# ============================================================================
+class QACrawlIn(BaseModel):
+    """Input model for QA crawls"""
+
+    crawlerChannel: str = "default"
+    profileFilename: Optional[str] = None
+
+
+# ============================================================================
 class Crawl(BaseCrawl, CrawlConfigCore):
     """Store State of a Crawl (Finished or Running)"""
 
@@ -675,6 +704,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     crawlExecSeconds: int = 0
 
     image: Optional[str]
+
+    qa: Optional[List[QACrawl]] = []
 
 
 # ============================================================================
