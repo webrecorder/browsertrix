@@ -416,7 +416,9 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page.get("title") or page.get("title") is None
     assert page["load_state"]
 
-    assert page["screenshot_comparison"] == {}
+    assert page["screenshotMatch"] == {}
+    assert page["textMatch"] == {}
+    assert page["resourceCounts"] == {}
 
     assert page["notes"] == []
     assert page.get("userid") is None
@@ -449,7 +451,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page.get("title") or page.get("title") is None
     assert page["load_state"]
 
-    assert page["notes"] == ["first note"]
+    assert page["notes"] == []
     assert page["userid"]
     assert page["modified"]
     assert page["approved"]
@@ -480,6 +482,7 @@ def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id
     assert len(data["notes"]) == 1
 
     first_note = data["notes"][0]
+    print(first_note, flush=True)
 
     first_note_id = first_note["id"]
     assert first_note_id
