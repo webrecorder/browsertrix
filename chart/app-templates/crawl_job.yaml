@@ -24,6 +24,7 @@ spec:
   manual: {{ manual }}
   crawlerChannel: "{{ crawler_channel }}"
   ttlSecondsAfterFinished: 30
+  warcPrefix: "{{ warc_prefix }}"
 
   storageName: "{{ storage_name }}"
 
