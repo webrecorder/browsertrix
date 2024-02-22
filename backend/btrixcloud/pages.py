@@ -272,11 +272,12 @@ class PageOps:
         crawl_id: str,
     ) -> Dict[str, bool]:
         """Delete specific page notes"""
-        page = await self.get_page(page_id, oid)
+        page = await self.get_page_raw(page_id, oid)
+        page_notes = page.get("notes", [])
 
         remaining_notes = []
-        for note in page.notes:
-            if not note.id in delete.delete_list:
+        for note in page_notes:
+            if not note.get("id") in delete.delete_list:
                 remaining_notes.append(note)
 
         modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
