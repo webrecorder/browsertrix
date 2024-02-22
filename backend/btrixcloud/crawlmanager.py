@@ -4,6 +4,7 @@ import os
 import asyncio
 import secrets
 import json
+from uuid import UUID
 
 from typing import Optional, Dict
 from datetime import timedelta

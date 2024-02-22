@@ -144,7 +144,7 @@ class K8sAPI:
 
     async def new_crawl_qa_job(self, *args, **kwargs) -> str:
         """load and init qa crawl job via k8s api"""
-        qa_crawl_id, data = self.new_qa_crawl_job_yaml(*args, **kwargs)
+        qa_crawl_id, data = self.new_crawl_qa_job_yaml(*args, **kwargs)
 
         # create job directly
         await self.create_from_yaml(data)
