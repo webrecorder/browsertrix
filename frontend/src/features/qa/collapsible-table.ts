@@ -3,6 +3,10 @@ import { localized } from "@lit/localize";
 import { type TemplateResult, html, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
+export const remainder = Symbol("remaining ungrouped data");
+
+const defaultLabelRenderer = (value: unknown) => html`${value}`;
+
 type ColumnConfig<T extends object, C extends keyof T> = {
   value: C;
   label?: string;
@@ -14,8 +18,11 @@ type ColumnConfig<T extends object, C extends keyof T> = {
   ) => TemplateResult<1> | string;
 };
 
+type GroupKey<T extends object, G extends keyof T> = T[G] | typeof remainder;
+
 type GroupConfig<T extends object, G extends keyof T> = {
-  value: G;
+  /** Value of the group in the source data */
+  value: GroupKey<T, G>;
   label?: string;
   collapsible?: boolean;
   startCollapsed?: boolean;
@@ -41,7 +48,7 @@ type GroupConfig<T extends object, G extends keyof T> = {
 @customElement("btrix-data-driven-table")
 export class DataDrivenTable<
   const T extends object,
-  const G extends keyof T & string,
+  const G extends keyof T,
 > extends TailwindElement {
   @property({ attribute: false })
   data: T[] = [];
@@ -50,7 +57,7 @@ export class DataDrivenTable<
   sort?: { by: keyof T; direction: "asc" | "desc" };
 
   @property({ attribute: false })
-  group?: G | T[G][] | { value: G; groups: GroupConfig<T, G>[] };
+  group?: G | { value: G; groups?: GroupConfig<T, G>[] };
 
   @property({ attribute: false })
   columns?: false | { [k in keyof T]?: boolean | ColumnConfig<T, k> };
@@ -70,6 +77,7 @@ export class DataDrivenTable<
       changedProperties.has("sort") ||
       changedProperties.has("group")
     ) {
+      console.log(changedProperties);
       this.recalculateData();
     }
   }
@@ -80,31 +88,56 @@ export class DataDrivenTable<
       return;
     }
     let groupKey: G;
-    if (typeof this.group === "string") {
-      groupKey = this.group;
-    } else if (Array.isArray(this.group)) {
-      // TODO
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    if (typeof this.group === "object") {
       groupKey = this.group.value;
+    } else {
+      groupKey = this.group;
     }
-    // const d = Object.groupBy();
-    // const groupMap = this.data.reduce(
-    //   (entryMap, e) =>
-    //     entryMap.set(e[groupKey], [...(entryMap.get(e[groupKey]) || []), e]),
-    //   new Map<T[G], T[]>(),
-    // );
 
-    // const groups = typeof this.group === "string" ? ;
-    // this.#groups = Array.from(
-    //   this.data.reduce(
-    //     (entryMap, e) =>
-    //       entryMap.set(e[groupKey], {
-    //         data: [...(entryMap.get(e.id) || []), e],
-    //       }),
-    //     new Map<T[G], T>(),
-    //   ),
-    // );
+    const dataMap = new Map<GroupKey<T, G>, T[]>();
+    const configMap = new Map<GroupKey<T, G>, GroupConfig<T, G>>();
+
+    // Ensure that defined group configs are ordered before the remainder group,
+    // if it gets created
+    if (typeof this.group === "object" && this.group.groups) {
+      for (const groupConfig of this.group.groups) {
+        configMap.set(groupConfig.value, groupConfig);
+      }
+    }
+
+    // If groups are explicitly listed, sort everything not in these into the
+    // `remainder` group; otherwise, create whatever the groups we need
+    const allowedKeys =
+      typeof this.group === "object"
+        ? this.group.groups?.map((group) => group.value)
+        : undefined;
+
+    // Iterate through data and sort it into groups
+    for (const datum of this.data) {
+      const shouldUseKey = allowedKeys?.includes(datum[groupKey]) ?? true;
+      const key = shouldUseKey ? datum[groupKey] : remainder;
+
+      if (!configMap.has(key)) {
+        configMap.set(key, {
+          // Defaults
+          value: key,
+          collapsible: false,
+          renderLabel: defaultLabelRenderer,
+
+          // Overrides from config
+          ...(typeof this.group === "object" &&
+            this.group.groups?.find((group) => group.value === key)),
+        });
+      }
+
+      const dataForGroup = dataMap.get(key) ?? [];
+      dataMap.set(key, [...dataForGroup, datum]);
+    }
+
+    this.#groups = Array.from(configMap).map(([key, config]) => ({
+      data: dataMap.get(key)!,
+      group: config,
+    }));
   };
 
   render() {

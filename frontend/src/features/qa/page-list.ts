@@ -77,6 +77,15 @@ export class PageList extends TailwindElement {
         >
         </btrix-search-combobox>
       </div>
+      <btrix-data-driven-table
+        .data=${[
+          { in: 0, a: "1", b: "a1", c: 3 },
+          { in: 1, a: "1", b: "a2", c: 3 },
+          { in: 2, a: "1", b: "a3", c: 3 },
+          { in: 3, a: "1", b: "a2", c: 3 },
+        ]}
+        .group=${{ value: "b", groups: [{ value: "a2" }] }}
+      ></btrix-data-driven-table>
     `;
   }
 }
