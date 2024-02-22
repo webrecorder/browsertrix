@@ -218,3 +218,9 @@ export type ArchivedItemPage = {
   approved?: boolean;
   notes?: ArchivedItemPageComment[];
 };
+
+export type PageComment = {
+  date: string;
+  user: string;
+  body: string;
+};

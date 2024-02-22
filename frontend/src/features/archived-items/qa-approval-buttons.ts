@@ -1,11 +1,16 @@
 import { css, html } from "lit";
-import { customElement, query, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
+import { keyed } from "lit/directives/keyed.js";
 import { localized, msg } from "@lit/localize";
 import type { SlTextarea } from "@shoelace-style/shoelace";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { Dialog } from "@/components/ui/dialog";
+import { APIController } from "@/controllers/api";
+import { NotifyController } from "@/controllers/notify";
+import { type AuthState } from "@/utils/AuthService";
+import type { PageComment } from "@/types/crawler";
 
 @localized()
 @customElement("btrix-qa-approval-buttons")
@@ -33,7 +38,7 @@ export class QaApprovalButtons extends TailwindElement {
       background-color: var(--sl-color-danger-500);
     }
 
-    .group.commented {
+    .group.commented:not(.approved):not(.rejected) {
       background-color: var(--sl-color-blue-400);
     }
 
@@ -50,8 +55,8 @@ export class QaApprovalButtons extends TailwindElement {
     .group.rejected.commented {
       background: linear-gradient(
         to right,
-        var(--sl-color-neutral-0),
-        var(--sl-color-neutral-0) 66.6666%,
+        var(--sl-color-blue-400),
+        var(--sl-color-blue-400) 66.6666%,
         var(--sl-color-danger-500) 66.6666%,
         var(--sl-color-danger-500)
       );
@@ -99,20 +104,12 @@ export class QaApprovalButtons extends TailwindElement {
       border-end-start-radius: 0;
     }
 
-    .vote.active {
+    button.active {
       color: var(--sl-color-neutral-0);
     }
 
-    .vote.active:hover {
+    button.active:hover {
       background-color: rgba(255, 255, 255, 0.15);
-    }
-
-    .comment.active {
-      color: var(--sl-color-blue-500);
-    }
-
-    .comment.active:hover {
-      color: var(--sl-color-blue-300);
     }
 
     .vote:not(.active):hover {
@@ -143,33 +140,63 @@ export class QaApprovalButtons extends TailwindElement {
       color: var(--sl-color-blue-400);
     }
 
-    .flatStart {
-      border-left: var(--btrix-border);
-    }
-
-    .flatEnd {
-      border-right: var(--btrix-border);
-    }
-
-    .roundStart {
-      border-left: var(--btrix-border);
+    button.roundStart {
       border-start-start-radius: var(--btrix-border-radius);
       border-end-start-radius: var(--btrix-border-radius);
     }
 
-    .roundEnd {
-      border-right: var(--btrix-border);
+    button.roundEnd {
       border-start-end-radius: var(--btrix-border-radius);
       border-end-end-radius: var(--btrix-border-radius);
     }
 
-    sl-icon {
+    button sl-icon {
       font-size: var(--font-size-base);
       transition:
         var(--sl-transition-x-fast) color,
         var(--sl-transition-x-fast) transform;
     }
   `;
+
+  @property({ type: Object })
+  authState?: AuthState;
+
+  @property({ type: String })
+  orgId?: string;
+
+  @property({ type: String })
+  itemId?: string;
+
+  @property({ type: Array })
+  comments: PageComment[] = [
+    { date: "1/1/2024", user: "test@example.com", body: "test comment" },
+    {
+      date: "1/1/2024",
+      user: "test@example.com",
+      body: "test longer comment test longer comment test longer comment test longer comment test longer comment",
+    },
+    { date: "1/1/2024", user: "test@example.com", body: "test comment" },
+    {
+      date: "1/1/2024",
+      user: "test@example.com",
+      body: "test longer comment test longer comment test longer comment test longer comment test longer comment",
+    },
+    { date: "1/1/2024", user: "test@example.com", body: "test comment" },
+    {
+      date: "1/1/2024",
+      user: "test@example.com",
+      body: "test longer comment test longer comment test longer comment test longer comment test longer comment",
+    },
+    { date: "1/1/2024", user: "test@example.com", body: "test comment" },
+    {
+      date: "1/1/2024",
+      user: "test@example.com",
+      body: "test longer comment test longer\n\ncomment test longer comment test longer comment test longer comment",
+    },
+  ];
+
+  @state()
+  private reviewStatus: "approved" | "rejected" | null = null;
 
   @state()
   private isCommentOpen = false;
@@ -180,10 +207,13 @@ export class QaApprovalButtons extends TailwindElement {
   @query('sl-textarea[name="pageComment"]')
   private textarea!: SlTextarea;
 
+  private api = new APIController(this);
+  private notify = new NotifyController(this);
+
   render() {
-    const approved = false;
-    const commented = false;
-    const rejected = true;
+    const approved = this.reviewStatus === "approved";
+    const commented = this.comments.length > 0;
+    const rejected = this.reviewStatus === "rejected";
 
     return html`
       <div
@@ -201,11 +231,11 @@ export class QaApprovalButtons extends TailwindElement {
             vote: true,
             approve: true,
             active: approved,
-            flatEnd: !approved && !commented,
             roundEnd: !approved && commented,
           })}
           role="radio"
           aria-checked=${approved}
+          @click=${() => this.submitReview({ status: "approved" })}
         >
           <sl-icon name="hand-thumbs-up" label=${msg("Approve")}></sl-icon>
         </button>
@@ -214,8 +244,6 @@ export class QaApprovalButtons extends TailwindElement {
           class=${classMap({
             comment: true,
             active: commented,
-            flatStart: approved && commented,
-            flatEnd: !approved || !commented,
             roundStart: !commented && approved,
             roundEnd: !commented && rejected,
           })}
@@ -233,29 +261,34 @@ export class QaApprovalButtons extends TailwindElement {
             roundStart: !rejected && commented,
           })}
           aria-checked=${rejected}
+          @click=${() => this.submitReview({ status: "rejected" })}
         >
           <sl-icon name="hand-thumbs-down" label=${msg("Reject")}></sl-icon>
         </button>
       </div>
 
       <btrix-dialog
-        label=${msg("Page Review Comment")}
+        label=${msg("Page Review Comments")}
         ?open=${this.isCommentOpen}
         @sl-hide=${() => (this.isCommentOpen = false)}
       >
-        <form @submit=${this.onSubmit}>
-          <sl-textarea
-            name="pageComment"
-            label=${msg("Comment")}
-            placeholder=${msg("Enter feedback on page")}
-          ></sl-textarea>
-        </form>
+        ${keyed(
+          this.isCommentOpen,
+          html`<form @submit=${this.onSubmitComment}>
+            <sl-textarea
+              name="pageComment"
+              label=${msg("Comment")}
+              placeholder=${msg("Enter page feedback")}
+            ></sl-textarea>
+          </form>`,
+        )}
+
         <p class="mt-4 text-neutral-500">
           <sl-tag size="small" variant="primary" class="mr-1"
             >${msg("Beta Feature")}</sl-tag
           >
           ${msg(
-            "We may assess anonymized text from this comment to improve this beta feature.",
+            "We may analyze anonymized text from your comments to improve this beta feature.",
           )}
         </p>
         <sl-button
@@ -264,14 +297,72 @@ export class QaApprovalButtons extends TailwindElement {
           variant="primary"
           @click=${() => this.dialog.submit()}
         >
-          ${msg("Update Page Comment")}
+          ${msg("Update Comment")}
         </sl-button>
       </btrix-dialog>
     `;
   }
 
-  private onSubmit(e: SubmitEvent) {
+  private async submitReview({
+    status,
+  }: {
+    status: QaApprovalButtons["reviewStatus"];
+  }) {
+    // TODO
+    // const pageId = "";
+    this.reviewStatus = status;
+
+    // try {
+    //   const data = await this.api.fetch(
+    //     `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
+    //     this.authState!,
+    //     {
+    //       method: "PATCH",
+    //       body: JSON.stringify({ approved: status === "approved" }),
+    //     },
+    //   );
+    // } catch (e: unknown) {
+    //   console.debug(e);
+
+    //   this.notify.toast({
+    //     message: msg("Sorry, couldn't submit page review at this time."),
+    //     variant: "danger",
+    //     icon: "exclamation-octagon",
+    //   });
+    // }
+  }
+
+  private async onSubmitComment(e: SubmitEvent) {
     e.preventDefault();
-    console.log("submit", e.target);
+    const value = this.textarea.value;
+
+    // TODO
+    const pageId = "";
+
+    try {
+      const data = await this.api.fetch(
+        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
+        this.authState!,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ notes: [value] }),
+        },
+      );
+      console.log(data);
+
+      this.notify.toast({
+        message: msg("Updated page comments."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: unknown) {
+      console.debug(e);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't add comment at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 }
