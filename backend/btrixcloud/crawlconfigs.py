@@ -914,7 +914,8 @@ class CrawlConfigOps:
                 name = parts.netloc
 
         name = slug_from_name(name or "")
-        return org.slug + "-" + name
+        prefix = org.slug + "-" + name
+        return prefix[:80]
 
 
 # ============================================================================
