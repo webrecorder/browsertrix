@@ -5,7 +5,9 @@ import { customElement, property } from "lit/decorators.js";
 
 export const remainder = Symbol("remaining ungrouped data");
 
-const defaultLabelRenderer = (value: unknown) => html`${value}`;
+const defaultLabelRenderer = <T extends object, G extends keyof T>(
+  group: GroupConfig<T, G>,
+) => html`${group.value === remainder ? "ungrouped" : group.value}`;
 
 type ColumnConfig<T extends object, C extends keyof T> = {
   value: C;
@@ -26,7 +28,10 @@ type GroupConfig<T extends object, G extends keyof T> = {
   label?: string;
   collapsible?: boolean;
   startCollapsed?: boolean;
-  renderLabel?: (value: G, collapsed: boolean) => TemplateResult<1> | string;
+  renderLabel?: (
+    value: GroupConfig<T, G>,
+    collapsed: boolean,
+  ) => TemplateResult<1> | string;
 };
 
 // export type TableViewProps<T extends object, G extends keyof T> = {
@@ -70,6 +75,7 @@ export class DataDrivenTable<
   ) => TemplateResult<1> | null;
 
   #groups: null | { group: GroupConfig<T, G> | null; data: T[] }[] = null;
+  // #columns: { [k in keyof T]?: boolean | ColumnConfig<T, k> };
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     if (
@@ -141,6 +147,25 @@ export class DataDrivenTable<
   };
 
   render() {
+    if (this.#groups) {
+      return html`${this.#groups.map(
+        (group) =>
+          html`<details>
+            <summary>
+              ${group.group?.renderLabel?.(group.group, false) ??
+              group.group?.label ??
+              group.group?.value}
+            </summary>
+            <ul>
+              ${group.data.map(
+                (datum, index) =>
+                  this.renderItem?.(datum, [], index) ??
+                  html`<li>${JSON.stringify(datum)}</li>`,
+              )}
+            </ul>
+          </details>`,
+      )}`;
+    }
     return html``;
   }
 }

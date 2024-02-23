@@ -79,12 +79,13 @@ export class PageList extends TailwindElement {
       </div>
       <btrix-data-driven-table
         .data=${[
-          { in: 0, a: "1", b: "a1", c: 3 },
+          { title: "Example page with resource errors" },
           { in: 1, a: "1", b: "a2", c: 3 },
           { in: 2, a: "1", b: "a3", c: 3 },
           { in: 3, a: "1", b: "a2", c: 3 },
         ]}
         .group=${{ value: "b", groups: [{ value: "a2" }] }}
+        .renderItem=${() => null}
       ></btrix-data-driven-table>
     `;
   }
