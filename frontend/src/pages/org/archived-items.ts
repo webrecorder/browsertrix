@@ -195,7 +195,7 @@ export class CrawlsList extends LiteElement {
     return html`
       <main>
         <header class="contents">
-          <div class="mb-3 flex justify-between gap-2 border-b pb-3">
+          <div class="mb-3 flex flex-wrap justify-between gap-2 border-b pb-3">
             <h1 class="mb-2 text-xl font-semibold leading-8 md:mb-0">
               ${msg("Archived Items")}
             </h1>
