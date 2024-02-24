@@ -35,10 +35,14 @@ jobs:
           path: "browsertrix-cloud-ops"
           ssh-key: ${{ secrets.DEPLOY_KEY_OPS_REPO }}
           sparse-checkout: |
+            scripts/decrypt-values.py
             values/btrix-dev-values.yml
             poetry.lock
             pyproject.toml
           sparse-checkout-cone-mode: false
+
+      - name: Install poetry
+        run: pipx install poetry
 
       - uses: actions/setup-python@v5
         with:
@@ -48,7 +52,6 @@ jobs:
       - name: Install vault decryption dependencies
         working-directory: browsertrix-cloud-ops
         run: |
-          pipx install poetry
           poetry install
 
       - name: Build Backend
