@@ -17,6 +17,8 @@ import {
   customElement,
 } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import { map } from "lit/directives/map.js";
+import { range } from "lit/directives/range.js";
 import { msg, localized, str } from "@lit/localize";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { choose } from "lit/directives/choose.js";
@@ -49,13 +51,14 @@ import type {
   TagsChangeEvent,
 } from "@/components/ui/tag-input";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
-import type {
-  WorkflowParams,
-  Profile,
-  JobType,
-  Seed,
-  SeedConfig,
-  CrawlConfig,
+import {
+  type WorkflowParams,
+  type Profile,
+  type JobType,
+  type Seed,
+  type SeedConfig,
+  type CrawlConfig,
+  DEFAULT_MAX_SCALE,
 } from "./types";
 import type { LanguageCode } from "iso-639-1";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
@@ -297,6 +300,8 @@ export class CrawlConfigEditor extends LiteElement {
 
   @state()
   private serverError?: TemplateResult | string;
+
+  private maxScale = DEFAULT_MAX_SCALE;
 
   // For fuzzy search:
   private readonly fuse = new Fuse<string>([], {
@@ -1542,9 +1547,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
               scale: +(e.target as SlCheckbox).value,
             })}
         >
-          <sl-radio-button value="1" size="small">1×</sl-radio-button>
-          <sl-radio-button value="2" size="small">2×</sl-radio-button>
-          <sl-radio-button value="3" size="small">3×</sl-radio-button>
+          ${map(
+            range(this.maxScale),
+            (i: number) =>
+              html` <sl-radio-button value="${i + 1}" size="small"
+                >${i + 1}×</sl-radio-button
+              >`,
+          )}
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
@@ -2561,6 +2570,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }
       if (data.maxPagesPerCrawl > 0) {
         orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
+      }
+      if (data.maxScale) {
+        this.maxScale = data.maxScale;
       }
       this.orgDefaults = orgDefaults;
     } catch (e) {

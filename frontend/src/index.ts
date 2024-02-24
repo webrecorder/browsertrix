@@ -33,6 +33,7 @@ import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
 import { theme } from "@/theme";
+import { DEFAULT_MAX_SCALE } from "./types/crawler";
 
 // Make theme CSS available in document
 document.adoptedStyleSheets = [theme];
@@ -78,6 +79,8 @@ export class App extends LiteElement {
 
   @state()
   private isRegistrationEnabled?: boolean;
+
+  private maxScale = DEFAULT_MAX_SCALE;
 
   async connectedCallback() {
     let authState: AuthState = null;
@@ -136,6 +139,7 @@ export class App extends LiteElement {
 
     if (settings) {
       this.isRegistrationEnabled = settings.registrationEnabled;
+      this.maxScale = settings.maxScale;
     }
 
     this.isAppSettingsLoaded = true;
@@ -173,13 +177,19 @@ export class App extends LiteElement {
     }
   }
 
-  async getAppSettings(): Promise<{ registrationEnabled: boolean } | void> {
+  async getAppSettings(): Promise<{
+    registrationEnabled: boolean;
+    maxScale: number;
+  } | void> {
     const resp = await fetch("/api/settings", {
       headers: { "Content-Type": "application/json" },
     });
 
     if (resp.status === 200) {
-      const body = (await resp.json()) as { registrationEnabled: boolean };
+      const body = (await resp.json()) as {
+        registrationEnabled: boolean;
+        maxScale: number;
+      };
 
       return body;
     } else {
@@ -600,6 +610,7 @@ export class App extends LiteElement {
           .userInfo=${this.appState.userInfo ?? undefined}
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
+          .maxScale=${this.maxScale}
           slug=${slug}
           orgPath=${orgPath.split(slug)[1]}
           orgTab=${orgTab as OrgTab}

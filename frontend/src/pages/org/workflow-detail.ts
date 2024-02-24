@@ -10,12 +10,13 @@ import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { RelativeDuration } from "@/components/ui/relative-duration";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type {
-  Crawl,
-  CrawlState,
-  Workflow,
-  WorkflowParams,
-  Seed,
+import {
+  type Crawl,
+  type CrawlState,
+  type Workflow,
+  type WorkflowParams,
+  type Seed,
+  DEFAULT_MAX_SCALE,
 } from "./types";
 import { humanizeSchedule } from "@/utils/cron";
 import type { APIPaginatedList } from "@/types/api";
@@ -69,6 +70,9 @@ export class WorkflowDetail extends LiteElement {
 
   @property({ type: String })
   initialActivePanel?: Tab;
+
+  @property({ type: Number })
+  maxScale = DEFAULT_MAX_SCALE;
 
   @state()
   private workflow?: Workflow;
@@ -1261,20 +1265,13 @@ export class WorkflowDetail extends LiteElement {
   private renderEditScale() {
     if (!this.workflow) return;
 
-    const scaleOptions = [
-      {
-        value: 1,
-        label: "1×",
-      },
-      {
-        value: 2,
-        label: "2×",
-      },
-      {
-        value: 3,
-        label: "3×",
-      },
-    ];
+    const scaleOptions = [];
+    for (let value = 1; value <= this.maxScale; value++) {
+      scaleOptions.push({
+        value,
+        label: `${value}×`,
+      });
+    }
 
     return html`
       <div>

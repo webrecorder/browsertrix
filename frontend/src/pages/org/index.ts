@@ -6,7 +6,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import type { ViewState } from "@/utils/APIRouter";
 import type { AuthState } from "@/utils/AuthService";
 import type { CurrentUser } from "@/types/user";
-import type { Crawl, JobType } from "@/types/crawler";
+import { DEFAULT_MAX_SCALE, type Crawl, type JobType } from "@/types/crawler";
 import type { OrgData } from "@/utils/orgs";
 import { isAdmin, isCrawler } from "@/utils/orgs";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -103,6 +103,9 @@ export class Org extends LiteElement {
 
   @property({ type: String })
   orgTab: OrgTab = defaultTab;
+
+  @property({ type: Number })
+  maxScale: number = DEFAULT_MAX_SCALE;
 
   @state()
   private orgStorageQuotaReached = false;
@@ -572,6 +575,7 @@ export class Org extends LiteElement {
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
+          .maxScale=${this.maxScale}
         ></btrix-workflow-detail>
       `;
     }

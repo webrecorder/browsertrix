@@ -66,6 +66,7 @@ def main():
             os.environ.get("DEFAULT_PAGE_LOAD_TIME_SECONDS", 120)
         ),
         "maxPagesPerCrawl": int(os.environ.get("MAX_PAGES_PER_CRAWL", 0)),
+        "maxScale": int(os.environ.get("MAX_CRAWL_SCALE", 3))
     }
 
     invites = init_invites(mdb, email)
