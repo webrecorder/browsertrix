@@ -1,8 +1,16 @@
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type ArchivedItem } from "@/types/crawler";
 import { localized, msg } from "@lit/localize";
-import { html } from "lit";
+import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { DataTable, remainder } from "./collapsible-table";
+
+import {
+  calculateSeverityFromDatum,
+  errorsFromDatum,
+  testData,
+} from "./test-data";
+import { tw } from "@/utils/tailwind";
 
 type SearchFields = "name" | "issues";
 
@@ -23,6 +31,16 @@ export class PageList extends TailwindElement {
 
   @property({ attribute: false })
   item!: ArchivedItem;
+
+  static styles = css`
+    sl-tree-item::part(label) {
+      flex: 1 1 auto;
+    }
+    sl-tree-item::part(indentation),
+    sl-tree-item.is-leaf::part(expand-button) {
+      display: none;
+    }
+  `;
 
   render() {
     return html`
@@ -77,16 +95,44 @@ export class PageList extends TailwindElement {
         >
         </btrix-search-combobox>
       </div>
-      <btrix-data-driven-table
-        .data=${[
-          { title: "Example page with resource errors" },
-          { in: 1, a: "1", b: "a2", c: 3 },
-          { in: 2, a: "1", b: "a3", c: 3 },
-          { in: 3, a: "1", b: "a2", c: 3 },
-        ]}
-        .group=${{ value: "b", groups: [{ value: "a2" }] }}
-        .renderItem=${() => null}
-      ></btrix-data-driven-table>
+      ${DataTable({
+        data: testData,
+        renderItem: (datum) =>
+          html`<div class="my-1 flex-auto rounded border px-4 py-2 shadow-sm">
+            <h5 class=${tw` text-sm font-semibold`}>${datum.title}</h5>
+            <div class=${tw`text-xs text-blue-600`}>url goes here</div>
+          </div>`,
+        sortBy: (a, b) => errorsFromDatum(b) - errorsFromDatum(a),
+        groupBy: {
+          value: calculateSeverityFromDatum,
+          groups: [
+            {
+              value: "severe",
+              renderLabel: ({ data }) =>
+                html`Severe
+                  <btrix-badge class="ml-2" .variant=${"danger"}
+                    >${data.length}</btrix-badge
+                  >`,
+            },
+            {
+              value: "moderate",
+              renderLabel: ({ data }) =>
+                html`Possible Issues
+                  <btrix-badge class="ml-2" .variant=${"warning"}
+                    >${data.length}</btrix-badge
+                  >`,
+            },
+            {
+              value: remainder,
+              renderLabel: ({ data }) =>
+                html`Likely Good
+                  <btrix-badge class="ml-2" .variant=${"success"}
+                    >${data.length}</btrix-badge
+                  >`,
+            },
+          ],
+        },
+      })}
     `;
   }
 }

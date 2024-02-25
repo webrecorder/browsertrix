@@ -1,112 +1,106 @@
-import { TailwindElement } from "@/classes/TailwindElement";
-import { localized } from "@lit/localize";
-import { type TemplateResult, html, type PropertyValues } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { type TemplateResult, html } from "lit";
 
 export const remainder = Symbol("remaining ungrouped data");
 
-const defaultLabelRenderer = <T extends object, G extends keyof T>(
-  group: GroupConfig<T, G>,
-) => html`${group.value === remainder ? "ungrouped" : group.value}`;
+// type ColumnConfig<T extends object, C extends keyof T> = {
+//   value: C;
+//   label?: string;
+//   priority?: number;
+//   renderCell?: (
+//     value: T,
+//     column: C,
+//     rowIndex: number,
+//   ) => TemplateResult<1> | string;
+// };
 
-type ColumnConfig<T extends object, C extends keyof T> = {
-  value: C;
-  label?: string;
-  priority?: number;
-  renderCell?: (
-    value: T,
-    column: C,
-    rowIndex: number,
-  ) => TemplateResult<1> | string;
-};
+type GroupFunctionReturn = string | number | boolean;
 
-type GroupKey<T extends object, G extends keyof T> = T[G] | typeof remainder;
+type GroupFunction<T extends object> = (datum: T) => GroupFunctionReturn;
 
-type GroupConfig<T extends object, G extends keyof T> = {
+type GroupResolvable<
+  T extends object,
+  G extends keyof T,
+  GR extends G | GroupFunction<T>,
+> = GR extends (datum: T) => infer K ? (datum: T) => K : G;
+
+type GroupKey<
+  T extends object,
+  G extends keyof T,
+  GR extends G | GroupFunction<T>,
+> = (GR extends (datum: T) => infer K ? K : T[G]) | typeof remainder;
+
+type GroupConfig<
+  T extends object,
+  G extends keyof T,
+  GR extends G | GroupFunction<T>,
+> = {
   /** Value of the group in the source data */
-  value: GroupKey<T, G>;
+  value: GroupKey<T, G, GR>;
   label?: string;
   collapsible?: boolean;
   startCollapsed?: boolean;
-  renderLabel?: (
-    value: GroupConfig<T, G>,
-    collapsed: boolean,
-  ) => TemplateResult<1> | string;
+  renderLabel?: (group: {
+    group: GroupConfig<T, G, GR> | null;
+    data: T[];
+  }) => TemplateResult<1> | string;
 };
 
-// export type TableViewProps<T extends object, G extends keyof T> = {
-//   data: T[];
-//   sort?: { by: keyof T; direction: "asc" | "desc" };
-//   group?:
-//     | G[]
-//     | GroupConfig<T, G>[]
-//     | { value: G[] | GroupConfig<T, G>[]; collapsible?: boolean };
-//   columns?: false | { [k in keyof T]?: boolean | ColumnConfig<T, k> };
-//   renderItem?: (
-//     item: T,
-//     columns: ColumnConfig<T, keyof T>[],
-//     index: number,
-//   ) => TemplateResult<1> | null;
-// };
+type Comparator<T> = (a: T, b: T) => number;
 
-@localized()
-@customElement("btrix-data-driven-table")
-export class DataDrivenTable<
+const defaultLabelRenderer = <
+  T extends object,
+  G extends keyof T,
+  GR extends G | GroupFunction<T>,
+>({
+  group,
+  data,
+}: {
+  group: GroupConfig<T, G, GR> | null;
+  data: T[];
+}) =>
+  html`${group?.value === remainder ? "ungrouped" : group?.value}
+  (${data.length})`;
+
+export function DataTable<
   const T extends object,
   const G extends keyof T,
-> extends TailwindElement {
-  @property({ attribute: false })
-  data: T[] = [];
-
-  @property({ attribute: false })
-  sort?: { by: keyof T; direction: "asc" | "desc" };
-
-  @property({ attribute: false })
-  group?: G | { value: G; groups?: GroupConfig<T, G>[] };
-
-  @property({ attribute: false })
-  columns?: false | { [k in keyof T]?: boolean | ColumnConfig<T, k> };
-
-  @property({ attribute: false })
+  const GR extends GroupResolvable<T, G, G | GroupFunction<T>>,
+>({
+  data,
+  sortBy,
+  groupBy,
+  // columns,
+  renderItem,
+}: {
+  data: T[];
+  sortBy?: { by: keyof T; direction: "asc" | "desc" } | Comparator<T>;
+  groupBy?: GR | { value: GR; groups?: GroupConfig<T, G, GR>[] };
+  // columns?: false | { [k in keyof T]?: boolean | ColumnConfig<T, k> };
   renderItem?: (
     item: T,
-    columns: ColumnConfig<T, keyof T>[],
+    // columns: ColumnConfig<T, keyof T>[],
     index: number,
   ) => TemplateResult<1> | null;
+}) {
+  // Grouping
 
-  #groups: null | { group: GroupConfig<T, G> | null; data: T[] }[] = null;
-  // #columns: { [k in keyof T]?: boolean | ColumnConfig<T, k> };
-
-  protected willUpdate(changedProperties: PropertyValues<this>): void {
-    if (
-      changedProperties.has("data") ||
-      changedProperties.has("sort") ||
-      changedProperties.has("group")
-    ) {
-      console.log(changedProperties);
-      this.recalculateData();
-    }
-  }
-
-  private readonly recalculateData = () => {
-    if (!this.group) {
-      this.#groups = null;
-      return;
-    }
-    let groupKey: G;
-    if (typeof this.group === "object") {
-      groupKey = this.group.value;
+  let groups: null | { group: GroupConfig<T, G, GR> | null; data: T[] }[] =
+    null;
+  if (groupBy) {
+    let groupKey: GR;
+    if (typeof groupBy === "object") {
+      groupKey = groupBy.value;
     } else {
-      groupKey = this.group;
+      groupKey = groupBy;
     }
 
-    const dataMap = new Map<GroupKey<T, G>, T[]>();
-    const configMap = new Map<GroupKey<T, G>, GroupConfig<T, G>>();
+    const dataMap = new Map<GroupKey<T, G, GR>, T[]>();
+    const configMap = new Map<GroupKey<T, G, GR>, GroupConfig<T, G, GR>>();
 
     // Ensure that defined group configs are ordered before the remainder group,
     // if it gets created
-    if (typeof this.group === "object" && this.group.groups) {
-      for (const groupConfig of this.group.groups) {
+    if (typeof groupBy === "object" && groupBy.groups) {
+      for (const groupConfig of groupBy.groups) {
         configMap.set(groupConfig.value, groupConfig);
       }
     }
@@ -114,14 +108,19 @@ export class DataDrivenTable<
     // If groups are explicitly listed, sort everything not in these into the
     // `remainder` group; otherwise, create whatever the groups we need
     const allowedKeys =
-      typeof this.group === "object"
-        ? this.group.groups?.map((group) => group.value)
+      typeof groupBy === "object"
+        ? groupBy.groups?.map((group) => group.value)
         : undefined;
 
     // Iterate through data and sort it into groups
-    for (const datum of this.data) {
-      const shouldUseKey = allowedKeys?.includes(datum[groupKey]) ?? true;
-      const key = shouldUseKey ? datum[groupKey] : remainder;
+    for (const datum of data) {
+      const resolvedKey = (
+        typeof groupKey === "function"
+          ? groupKey(datum)
+          : datum[groupKey as unknown as G]
+      ) as GroupKey<T, G, GR>;
+      const shouldUseKey = allowedKeys?.includes(resolvedKey) ?? true;
+      const key = shouldUseKey ? resolvedKey : remainder;
 
       if (!configMap.has(key)) {
         configMap.set(key, {
@@ -131,8 +130,8 @@ export class DataDrivenTable<
           renderLabel: defaultLabelRenderer,
 
           // Overrides from config
-          ...(typeof this.group === "object" &&
-            this.group.groups?.find((group) => group.value === key)),
+          ...(typeof groupBy === "object" &&
+            groupBy.groups?.find((group) => group.value === key)),
         });
       }
 
@@ -140,32 +139,69 @@ export class DataDrivenTable<
       dataMap.set(key, [...dataForGroup, datum]);
     }
 
-    this.#groups = Array.from(configMap).map(([key, config]) => ({
-      data: dataMap.get(key)!,
+    groups = Array.from(configMap).map(([key, config]) => ({
+      data: dataMap.get(key) ?? [],
       group: config,
     }));
-  };
+  }
 
-  render() {
-    if (this.#groups) {
-      return html`${this.#groups.map(
-        (group) =>
-          html`<details>
-            <summary>
-              ${group.group?.renderLabel?.(group.group, false) ??
+  // Sorting
+
+  let sortFunction: Comparator<T> | null = null;
+
+  if (sortBy) {
+    if (typeof sortBy === "function") {
+      sortFunction = sortBy;
+    } else {
+      // Default slightly-less-naïve-than-default sort function (does a
+      // locale-aware comparison on the stringified values)
+      sortFunction = (a: T, b: T) => {
+        const [itemA, itemB] = [a[sortBy.by], b[sortBy.by]];
+        let cmp = String(itemA).localeCompare(String(itemB));
+        if (sortBy.direction === "desc") {
+          cmp *= -1;
+        }
+        return cmp;
+      };
+    }
+    if (groups) {
+      for (const group of groups) {
+        group.data.sort(sortFunction);
+      }
+    } else {
+      data.sort(sortFunction);
+    }
+  }
+
+  // Render
+
+  return html`<sl-tree selection="leaf">
+    ${groups
+      ? groups.map(
+          (group) =>
+            html`<sl-tree-item expanded>
+              ${group.group?.renderLabel?.(group) ??
               group.group?.label ??
               group.group?.value}
-            </summary>
-            <ul>
-              ${group.data.map(
-                (datum, index) =>
-                  this.renderItem?.(datum, [], index) ??
-                  html`<li>${JSON.stringify(datum)}</li>`,
+              ${group.data.map((datum, index) =>
+                renderItem
+                  ? html`<sl-tree-item class="is-leaf"
+                      >${renderItem(datum, index)}</sl-tree-item
+                    >`
+                  : html`<sl-tree-item class="is-leaf"
+                      >${JSON.stringify(datum)}</sl-tree-item
+                    >`,
               )}
-            </ul>
-          </details>`,
-      )}`;
-    }
-    return html``;
-  }
+            </sl-tree-item>`,
+        )
+      : data.map((datum, index) =>
+          renderItem
+            ? html`<sl-tree-item class="is-leaf"
+                >${renderItem(datum, index)}</sl-tree-item
+              >`
+            : html`<sl-tree-item class="is-leaf"
+                >${JSON.stringify(datum)}</sl-tree-item
+              >`,
+        )}
+  </sl-tree>`;
 }
