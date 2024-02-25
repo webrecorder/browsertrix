@@ -260,8 +260,14 @@ export class CrawlDetail extends LiteElement {
       <div class="mb-4">${this.renderHeader()}</div>
 
       <main>
-        <section class="grid grid-cols-14 gap-6">
-          <div class="col-span-14 md:col-span-3">${this.renderNav()}</div>
+        <section class="grid gap-6 md:grid-cols-14">
+          <div class="col-span-14 grid border-b md:col-span-3 md:border-b-0 ">
+            <div
+              class="-mx-3 box-border flex overflow-x-auto px-3 md:mx-0 md:block md:px-0"
+            >
+              ${this.renderNav()}
+            </div>
+          </div>
           <div class="col-span-14 md:col-span-11">${sectionContent}</div>
         </section>
       </main>
@@ -317,83 +323,79 @@ export class CrawlDetail extends LiteElement {
       const isActive = section === this.sectionName;
       const baseUrl = window.location.pathname.split("#")[0];
       return html`
-        <li class="relative grow" role="menuitem" aria-selected="${isActive}">
-          <a
-            class="${isActive
-              ? "text-blue-600 bg-blue-100 shadow-sm shadow-blue-800/20"
-              : "text-neutral-600 hover:bg-blue-50"} flex h-full flex-col items-center gap-2 rounded-md p-2 font-semibold md:flex-row"
-            href=${`${baseUrl}${window.location.search}#${section}`}
-            @click=${() => (this.sectionName = section)}
-          >
-            <sl-icon
-              class="h-4 w-4 shrink-0"
-              name=${icon}
-              aria-hidden="true"
-              library=${iconLibrary}
-            ></sl-icon>
-            ${label}
-          </a>
-        </li>
+        <btrix-navigation-button
+          class="whitespace-nowrap md:whitespace-normal"
+          .active=${isActive}
+          href=${`${baseUrl}${window.location.search}#${section}`}
+          @click=${() => {
+            this.sectionName = section;
+          }}
+          ><sl-icon
+            class="h-4 w-4 shrink-0"
+            name=${icon}
+            aria-hidden="true"
+            library=${iconLibrary}
+          ></sl-icon>
+          ${label}</btrix-navigation-button
+        >
       `;
     };
     return html`
-      <nav class="sticky top-0 border-b pb-4 md:mt-10 md:border-b-0">
-        <ul
-          class="flex flex-row gap-2 text-center md:flex-col md:text-start"
-          role="menu"
-        >
-          ${renderNavItem({
-            section: "overview",
-            iconLibrary: "default",
-            icon: "info-circle-fill",
-            label: msg("Overview"),
-          })}
-          ${renderNavItem({
-            section: "replay",
-            iconLibrary: "app",
-            icon: "link-replay",
-            label: msg("Replay"),
-          })}
-          ${renderNavItem({
-            section: "files",
-            iconLibrary: "default",
-            icon: "folder-fill",
-            label: msg("Files"),
-          })}
-          ${when(
-            this.itemType === "crawl",
-            () => html`
-              ${renderNavItem({
-                section: "logs",
-                iconLibrary: "default",
-                icon: "terminal-fill",
-                label: msg("Error Logs"),
-              })}
-              ${renderNavItem({
-                section: "config",
-                iconLibrary: "default",
-                icon: "file-code-fill",
-                label: msg("Crawl Settings"),
-              })}
-            `,
-          )}
-        </ul>
+      <nav
+        class="sticky top-0 flex flex-row gap-2 pb-4 text-center md:mt-10 md:flex-col md:text-start"
+        role="menu"
+      >
+        ${renderNavItem({
+          section: "overview",
+          iconLibrary: "default",
+          icon: "info-circle-fill",
+          label: msg("Overview"),
+        })}
+        ${renderNavItem({
+          section: "replay",
+          iconLibrary: "app",
+          icon: "link-replay",
+          label: msg("Replay"),
+        })}
+        ${renderNavItem({
+          section: "files",
+          iconLibrary: "default",
+          icon: "folder-fill",
+          label: msg("Files"),
+        })}
+        ${when(
+          this.itemType === "crawl",
+          () => html`
+            ${renderNavItem({
+              section: "logs",
+              iconLibrary: "default",
+              icon: "terminal-fill",
+              label: msg("Error Logs"),
+            })}
+            ${renderNavItem({
+              section: "config",
+              iconLibrary: "default",
+              icon: "file-code-fill",
+              label: msg("Crawl Settings"),
+            })}
+          `,
+        )}
       </nav>
     `;
   }
 
   private renderHeader() {
     return html`
-      <header class="mb-3 items-center gap-2 border-b pb-3 md:flex">
+      <header class="mb-3 flex flex-wrap items-center gap-2 border-b pb-3">
         <h1
-          class="mb-2 grid min-w-0 flex-1 truncate text-xl font-semibold leading-7 md:mb-0"
+          class="grid min-w-0 flex-auto truncate text-xl font-semibold leading-7"
         >
           ${this.renderName()}
         </h1>
         <div
           class="${this.isActive
             ? "justify-between"
-            : "justify-end"} grid grid-flow-col gap-2"
+            : "justify-end ml-auto"} grid grid-flow-col gap-2"
         >
           ${this.isActive
             ? html`
