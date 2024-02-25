@@ -1,6 +1,38 @@
 import { shuffle } from "lodash";
 
+let counter = 0;
+
+const getRandomData = () => {
+  const resourceCount = Math.ceil(Math.random() * 1000);
+  return {
+    title: `Randomly generated page ${counter++}`,
+    screenshotMatch: Math.max(
+      Math.floor(Math.pow(Math.random(), 0.2) * 150),
+      100,
+    ),
+    textMatch: Math.max(Math.floor(Math.pow(Math.random(), 0.2) * 150), 100),
+    crawlResources: [
+      Math.random() > 0.9
+        ? Math.floor(resourceCount * Math.random())
+        : resourceCount,
+      resourceCount,
+    ],
+    replayResources: [
+      Math.random() > 0.9
+        ? Math.floor(resourceCount * Math.random())
+        : resourceCount,
+      resourceCount,
+    ],
+  };
+};
+
+const randomArray = Array.from(
+  { length: Math.ceil(Math.random() * 100) },
+  getRandomData,
+);
+
 export const testData = shuffle([
+  ...randomArray,
   {
     title: "Example page with resource errors",
     screenshotMatch: 1,
