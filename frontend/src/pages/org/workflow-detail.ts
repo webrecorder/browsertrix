@@ -530,17 +530,12 @@ export class WorkflowDetail extends LiteElement {
 
   private renderTab(tabName: Tab, { disabled = false } = {}) {
     const isActive = tabName === this.activePanel;
-    let className = "text-neutral-600 hover:bg-neutral-50";
-    if (isActive) {
-      className = "text-blue-600 bg-blue-50 shadow-sm shadow-blue-800/20";
-    } else if (disabled) {
-      className = "text-neutral-300 cursor-not-allowed";
-    }
     return html`
-      <a
+      <btrix-navigation-button
         slot="nav"
         href=${`${window.location.pathname}#${tabName}`}
-        class="${className} mb-2 block rounded-sm p-2 font-medium transition-all"
+        .active=${isActive}
+        .disabled=${disabled}
         aria-selected=${isActive}
         aria-disabled=${disabled}
         @click=${(e: MouseEvent) => {
@@ -548,7 +543,7 @@ export class WorkflowDetail extends LiteElement {
         }}
       >
         ${this.tabLabels[tabName]}
-      </a>
+      </btrix-navigation-button>
     `;
   }
 
