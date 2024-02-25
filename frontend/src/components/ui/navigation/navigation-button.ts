@@ -38,6 +38,9 @@ export class Button extends TailwindElement {
   @property({ type: String, reflect: true })
   role: ARIAMixin["role"] = "tab";
 
+  @property({ type: String })
+  size: "small" | "medium" | "large" = "medium";
+
   protected willUpdate(changedProperties: PropertyValueMap<this>) {
     if (changedProperties.has("active")) {
       this.ariaSelected = this.active ? "true" : null;
@@ -60,8 +63,9 @@ export class Button extends TailwindElement {
     return html`<${tag}
       type=${this.type === "submit" ? "submit" : "button"}
       class=${[
-        tw`flex w-full cursor-pointer items-center justify-start gap-2 rounded-sm px-2 py-4 font-medium  outline-primary-600 transition hover:transition-none focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-1 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50`,
-        this.icon ? tw`min-h-6 min-w-6` : tw`h-6`,
+        tw`flex w-full cursor-pointer items-center justify-start gap-2 rounded-sm px-2 font-medium outline-primary-600 transition hover:transition-none focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-1 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50`,
+        this.icon ? tw`min-h-6 min-w-6` : tw``,
+        { small: tw`py-0`, medium: tw`py-2`, large: tw`py-4` }[this.size],
         this.active
           ? tw`bg-blue-100 text-blue-600 shadow-sm shadow-blue-900/40 hover:bg-blue-100`
           : tw`text-neutral-600 hover:bg-blue-50`,
