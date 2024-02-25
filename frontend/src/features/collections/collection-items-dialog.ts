@@ -274,10 +274,10 @@ export class CollectionItemsDialog extends TailwindElement {
     const { icon, label } = this.tabLabels[tab];
 
     return html`
-      <btrix-button
+      <btrix-navigation-button
         @click=${() => (this.activeTab = tab)}
-        variant=${isSelected ? "primary" : "neutral"}
-        ?raised=${isSelected}
+        .active=${isSelected}
+        size="small"
         aria-selected="${isSelected}"
         role="tab"
         aria-controls="tabPanel-${tab}"
@@ -286,7 +286,7 @@ export class CollectionItemsDialog extends TailwindElement {
       >
         <sl-icon name=${icon}></sl-icon>
         <span>${label}</span>
-      </btrix-button>
+      </btrix-navigation-button>
     `;
   };
 

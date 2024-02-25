@@ -159,17 +159,15 @@ export class OrgSettings extends LiteElement {
   private renderTab(name: Tab, path: string) {
     const isActive = name === this.activePanel;
     return html`
-      <a
+      <btrix-navigation-button
         slot="nav"
         href=${`${this.orgBasePath}/${path}`}
-        class="${isActive
-          ? "text-blue-600 bg-blue-50 shadow-sm shadow-blue-800/20"
-          : "text-neutral-600 hover:bg-neutral-50"} mb-2 block rounded-sm p-2 font-medium transition-all"
+        .active=${isActive}
         @click=${this.navLink}
         aria-selected=${isActive}
       >
         ${this.tabLabels[name]}
-      </a>
+      </btrix-navigation-button>
     `;
   }
 

@@ -134,6 +134,7 @@ export class TabList extends LitElement {
       margin: 0;
       list-style: none;
       padding: 0;
+      gap: 0.5rem;
     }
 
     .show-indicator .tablist {
@@ -142,7 +143,7 @@ export class TabList extends LitElement {
 
     @media only screen and (min-width: ${TWO_COL_SCREEN_MIN}px) {
       .tablist {
-        display: block;
+        flex-direction: column;
       }
     }
 
@@ -165,8 +166,7 @@ export class TabList extends LitElement {
       background-color: var(--sl-color-blue-500);
     }
 
-    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN}px) {
-      .tablist,
+    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
       .show-indicator .track,
       .show-indicator .indicator {
         display: block;
