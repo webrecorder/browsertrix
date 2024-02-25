@@ -163,7 +163,6 @@ export class OrgSettings extends LiteElement {
         slot="nav"
         href=${`${this.orgBasePath}/${path}`}
         .active=${isActive}
-        size="small"
         @click=${this.navLink}
         aria-selected=${isActive}
       >

@@ -142,7 +142,7 @@ export class TabList extends LitElement {
 
     @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
       .tablist {
-        display: block;
+        flex-direction: column;
       }
     }
 
@@ -166,7 +166,6 @@ export class TabList extends LitElement {
     }
 
     @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
-      .tablist,
       .show-indicator .track,
       .show-indicator .indicator {
         display: block;
