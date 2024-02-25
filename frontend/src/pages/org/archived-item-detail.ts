@@ -261,7 +261,13 @@ export class CrawlDetail extends LiteElement {
 
       <main>
         <section class="grid gap-6 md:grid-cols-14">
-          <div class="col-span-14 md:col-span-3">${this.renderNav()}</div>
+          <div class="col-span-14 grid border-b md:col-span-3 md:border-b-0 ">
+            <div
+              class="-mx-3 box-border flex overflow-x-auto px-3 md:mx-0 md:block md:px-0"
+            >
+              ${this.renderNav()}
+            </div>
+          </div>
           <div class="col-span-14 md:col-span-11">${sectionContent}</div>
         </section>
       </main>
@@ -318,6 +324,7 @@ export class CrawlDetail extends LiteElement {
       const baseUrl = window.location.pathname.split("#")[0];
       return html`
         <btrix-navigation-button
+          class="whitespace-nowrap"
           .active=${isActive}
           href=${`${baseUrl}${window.location.search}#${section}`}
           @click=${() => {
@@ -335,7 +342,7 @@ export class CrawlDetail extends LiteElement {
     };
     return html`
       <nav
-        class="sticky top-0 -mx-3 flex flex-row gap-2 overflow-x-auto border-b px-3 pb-4 text-center md:mt-10 md:flex-col md:border-b-0 md:text-start"
+        class="sticky top-0 flex flex-row gap-2 pb-4 text-center md:mt-10 md:flex-col md:text-start"
         role="menu"
       >
         ${renderNavItem({
