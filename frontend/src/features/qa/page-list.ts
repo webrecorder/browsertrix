@@ -33,12 +33,21 @@ export class PageList extends TailwindElement {
   item!: ArchivedItem;
 
   static styles = css`
+    sl-tree-item::part(item) {
+      border-inline-start: none;
+    }
     sl-tree-item::part(label) {
       flex: 1 1 auto;
     }
     sl-tree-item::part(indentation),
     sl-tree-item.is-leaf::part(expand-button) {
       display: none;
+    }
+    sl-tree-item.is-leaf::part(item--selected) {
+      background: none;
+    }
+    sl-tree-item.is-leaf::part(item--selected) {
+      outline: 2px solid blue;
     }
   `;
 
@@ -110,25 +119,25 @@ export class PageList extends TailwindElement {
               value: "severe",
               renderLabel: ({ data }) =>
                 html`Severe
-                  <btrix-badge class="ml-2" .variant=${"danger"}
-                    >${data.length}</btrix-badge
-                  >`,
+                  <btrix-badge class="ml-2" .variant=${"danger"}>
+                    ${data.length}
+                  </btrix-badge>`,
             },
             {
               value: "moderate",
               renderLabel: ({ data }) =>
                 html`Possible Issues
-                  <btrix-badge class="ml-2" .variant=${"warning"}
-                    >${data.length}</btrix-badge
-                  >`,
+                  <btrix-badge class="ml-2" .variant=${"warning"}>
+                    ${data.length}
+                  </btrix-badge>`,
             },
             {
               value: remainder,
               renderLabel: ({ data }) =>
                 html`Likely Good
-                  <btrix-badge class="ml-2" .variant=${"success"}
-                    >${data.length}</btrix-badge
-                  >`,
+                  <btrix-badge class="ml-2" .variant=${"success"}>
+                    ${data.length}
+                  </btrix-badge>`,
             },
           ],
         },
