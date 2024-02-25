@@ -77,6 +77,9 @@ const defaultLabelRenderer = <
     : group?.label ?? group?.value}
   (${data.length})`;
 
+const defaultGroupHeaderRenderer = (contents: TemplateResult<1>) =>
+  html`<sl-tree-item expanded>${contents}</sl-tree-item>`;
+
 /**
  * A generic optionally-grouped list
  */
@@ -93,6 +96,7 @@ export function GroupedList<
   groupBy,
   // columns,
   renderItem,
+  renderGroupHeader = defaultGroupHeaderRenderer,
 }: {
   data: T[];
   sortBy?: { by: keyof T; direction: "asc" | "desc" } | Comparator<T>;
@@ -103,14 +107,13 @@ export function GroupedList<
     // columns: ColumnConfig<T, keyof T>[],
     index: number,
   ) => TemplateResult<1> | null;
+  renderGroupHeader?: (contents: TemplateResult<1>) => TemplateResult<1>;
 }) {
   // Utility functions
   const renderData = (d: T[]) =>
     d.map((datum, index) =>
       renderItem
-        ? html`<sl-tree-item class="is-leaf"
-            >${renderItem(datum, index)}</sl-tree-item
-          >`
+        ? renderItem(datum, index)
         : html`<sl-tree-item class="is-leaf"
             >${JSON.stringify(datum)}</sl-tree-item
           >`,
@@ -210,14 +213,13 @@ export function GroupedList<
   // Render
   return html`<sl-tree selection="leaf">
     ${groups
-      ? groups.map(
-          (group) =>
-            html`<sl-tree-item expanded>
-              ${group.group?.renderLabel?.(group) ??
-              group.group?.label ??
-              group.group?.value}
-              ${renderData(group.data)}
-            </sl-tree-item>`,
+      ? groups.map((group) =>
+          renderGroupHeader(html`
+            ${group.group?.renderLabel?.(group) ??
+            group.group?.label ??
+            group.group?.value}
+            ${renderData(group.data)}
+          `),
         )
       : renderData(data)}
   </sl-tree>`;
