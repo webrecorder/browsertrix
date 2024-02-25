@@ -66,7 +66,7 @@ export class Button extends TailwindElement {
     return html`<${tag}
       type=${this.type === "submit" ? "submit" : "button"}
       class=${[
-        tw`flex w-full cursor-pointer items-center gap-2 rounded-sm font-medium leading-[16px] outline-primary-600 transition hover:transition-none focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-1 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50`,
+        tw`flex w-full cursor-pointer items-center gap-2 rounded font-medium leading-[16px] outline-primary-600 transition hover:transition-none focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-1 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-50`,
         this.icon ? tw`min-h-6 min-w-6` : tw``,
         {
           small: this.icon ? tw`min-h-6 p-0` : tw`min-h-6 px-2 py-0`,
@@ -79,7 +79,7 @@ export class Button extends TailwindElement {
           right: "justify-end",
         }[this.align],
         this.active
-          ? tw`bg-blue-100 text-blue-600 shadow-sm shadow-blue-900/40 hover:bg-blue-100`
+          ? tw`bg-blue-100 text-blue-600 shadow-sm shadow-blue-900/20 hover:bg-blue-100`
           : tw`text-neutral-600 hover:bg-blue-50`,
       ]
         .filter(Boolean)
