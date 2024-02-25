@@ -10,7 +10,6 @@ import {
   errorsFromDatum,
   testData,
 } from "./test-data";
-import { tw } from "@/utils/tailwind";
 
 type SearchFields = "name" | "issues";
 
@@ -35,9 +34,14 @@ export class PageList extends TailwindElement {
   static styles = css`
     sl-tree-item::part(item) {
       border-inline-start: none;
+      background: none;
+    }
+    sl-tree-item.is-leaf::part(item) {
+      display: block;
     }
     sl-tree-item::part(label) {
       flex: 1 1 auto;
+      display: block;
     }
     sl-tree-item::part(indentation),
     sl-tree-item.is-leaf::part(expand-button) {
@@ -45,9 +49,6 @@ export class PageList extends TailwindElement {
     }
     sl-tree-item.is-leaf::part(item--selected) {
       background: none;
-    }
-    sl-tree-item.is-leaf::part(item--selected) {
-      outline: 2px solid blue;
     }
   `;
 
@@ -107,10 +108,30 @@ export class PageList extends TailwindElement {
       ${GroupedList({
         data: testData,
         renderItem: (datum) =>
-          html`<div class="my-1 flex-auto rounded border px-4 py-2 shadow-sm">
-            <h5 class=${tw` text-sm font-semibold`}>${datum.title}</h5>
-            <div class=${tw`text-xs text-blue-600`}>url goes here</div>
-          </div>`,
+          html`<sl-tree-item
+            class="is-leaf my-1 ml-4 block flex-auto rounded border px-4 py-2 pl-5 shadow-sm transition-shadow aria-selected:border-blue-500 aria-selected:bg-blue-50 aria-selected:shadow-md aria-selected:shadow-blue-800/20 aria-selected:transition-none"
+          >
+            <div
+              class="absolute -left-9 top-[50%] flex w-8 translate-y-[-50%] flex-col place-items-center gap-1 rounded-full border bg-neutral-0 p-2 shadow-sm"
+            >
+              ${{
+                severe: html`<sl-icon
+                  name="exclamation-triangle-fill"
+                  class="text-red-600"
+                ></sl-icon>`,
+                moderate: html`<sl-icon
+                  name="dash-square-fill"
+                  class="text-yellow-600"
+                ></sl-icon>`,
+                good: html`<sl-icon
+                  name="check-circle-fill"
+                  class="text-green-600"
+                ></sl-icon>`,
+              }[calculateSeverityFromDatum(datum)]}
+            </div>
+            <h5 class="truncate text-sm font-semibold">${datum.title}</h5>
+            <div class="text-xs text-blue-600">url goes here</div>
+          </sl-tree-item>`,
         sortBy: (a, b) => errorsFromDatum(b) - errorsFromDatum(a),
         groupBy: {
           value: calculateSeverityFromDatum,
