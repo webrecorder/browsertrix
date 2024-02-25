@@ -119,21 +119,21 @@ export class ArchivedItemQA extends TailwindElement {
         </header>
         <section class="main outline">
           <nav>
-            <btrix-button
+            <btrix-navigation-button
               id="screenshot-tab"
               href=${`${crawlBaseUrl}/review/screenshots`}
-              variant=${this.tab === "screenshots" ? "primary" : "neutral"}
-              ?raised=${this.tab === "screenshots"}
+              .active=${this.tab === "screenshots"}
+              size="small"
               @click=${this.navigate.link}
-              >${msg("Screenshots")}</btrix-button
+              >${msg("Screenshots")}</btrix-navigation-button
             >
-            <btrix-button
+            <btrix-navigation-button
               id="replay-tab"
               href=${`${crawlBaseUrl}/review/replay`}
-              variant=${this.tab === "replay" ? "primary" : "neutral"}
-              ?raised=${this.tab === "replay"}
+              .active=${this.tab === "replay"}
+              size="small"
               @click=${this.navigate.link}
-              >${msg("Replay")}</btrix-button
+              >${msg("Replay")}</btrix-navigation-button
             >
           </nav>
           <div role="region" aria-labelledby="${this.tab}-tab">

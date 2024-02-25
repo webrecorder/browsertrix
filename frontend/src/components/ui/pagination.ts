@@ -298,13 +298,14 @@ export class Pagination extends LitElement {
   private readonly renderPageButton = (page: number) => {
     const isCurrent = page === this.page;
     return html`<li aria-current=${ifDefined(isCurrent ? "page" : undefined)}>
-      <btrix-button
+      <btrix-navigation-button
         icon
-        variant=${isCurrent ? "primary" : "neutral"}
-        ?raised=${isCurrent}
+        .active=${isCurrent}
+        .size=${"small"}
+        .align=${"center"}
         @click=${() => this.onPageChange(page)}
         aria-disabled=${isCurrent}
-        >${page}</btrix-button
+        >${page}</btrix-navigation-button
       >
     </li>`;
   };

@@ -324,7 +324,7 @@ export class CrawlDetail extends LiteElement {
       const baseUrl = window.location.pathname.split("#")[0];
       return html`
         <btrix-navigation-button
-          class="whitespace-nowrap"
+          class="whitespace-nowrap md:whitespace-normal"
           .active=${isActive}
           href=${`${baseUrl}${window.location.search}#${section}`}
           @click=${() => {

@@ -133,6 +133,7 @@ export class TabList extends LitElement {
       margin: 0;
       list-style: none;
       padding: 0;
+      gap: 0.5rem;
     }
 
     .show-indicator .tablist {

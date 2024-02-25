@@ -383,9 +383,8 @@ export class CollectionDetail extends LiteElement {
         ${TABS.map((tabName) => {
           const isSelected = tabName === this.collectionTab;
           return html`
-            <btrix-button
-              variant=${isSelected ? "primary" : "neutral"}
-              ?raised=${isSelected}
+            <btrix-navigation-button
+              .active=${isSelected}
               aria-selected="${isSelected}"
               href=${`${this.orgBasePath}/collections/view/${this.collectionId}/${tabName}`}
               @click=${this.navLink}
@@ -394,7 +393,7 @@ export class CollectionDetail extends LiteElement {
                 name=${this.tabLabels[tabName].icon.name}
                 library=${this.tabLabels[tabName].icon.library}
               ></sl-icon>
-              ${this.tabLabels[tabName].text}</btrix-button
+              ${this.tabLabels[tabName].text}</btrix-navigation-button
             >
           `;
         })}

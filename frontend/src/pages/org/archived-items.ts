@@ -222,18 +222,18 @@ export class CrawlsList extends LiteElement {
           <div class="mb-3 flex gap-2">
             ${listTypes.map(({ label, itemType, icon }) => {
               const isSelected = itemType === this.itemType;
-              return html` <btrix-button
-                variant=${isSelected ? "primary" : "neutral"}
-                ?raised=${isSelected}
+              return html` <btrix-navigation-button
+                .active=${isSelected}
                 aria-selected="${isSelected}"
                 href=${`${this.orgBasePath}/items${
                   itemType ? `/${itemType}` : ""
                 }`}
                 @click=${this.navLink}
+                size="small"
               >
                 ${icon ? html`<sl-icon name=${icon}></sl-icon>` : ""}
                 <span>${label}</span>
-              </btrix-button>`;
+              </btrix-navigation-button>`;
             })}
           </div>
           <div
