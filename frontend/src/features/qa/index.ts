@@ -1,2 +1,2 @@
 export * from "./page-list";
-export * from "./collapsible-table";
+export * from "./grouped-list";

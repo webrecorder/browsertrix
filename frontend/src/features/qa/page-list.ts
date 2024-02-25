@@ -3,7 +3,7 @@ import { type ArchivedItem } from "@/types/crawler";
 import { localized, msg } from "@lit/localize";
 import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { DataTable, remainder } from "./collapsible-table";
+import { GroupedList, remainder } from "./grouped-list";
 
 import {
   calculateSeverityFromDatum,
@@ -104,7 +104,7 @@ export class PageList extends TailwindElement {
         >
         </btrix-search-combobox>
       </div>
-      ${DataTable({
+      ${GroupedList({
         data: testData,
         renderItem: (datum) =>
           html`<div class="my-1 flex-auto rounded border px-4 py-2 shadow-sm">

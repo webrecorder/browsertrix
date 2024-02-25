@@ -13,16 +13,25 @@ export const remainder = Symbol("remaining ungrouped data");
 //   ) => TemplateResult<1> | string;
 // };
 
+/** Types acceptable as map keys. */
 type GroupFunctionReturn = string | number | boolean;
 
 type GroupFunction<T extends object> = (datum: T) => GroupFunctionReturn;
 
+/** Either a key of T, or a function deriving a value from T. */
 type GroupResolvable<
   T extends object,
   G extends keyof T,
   GR extends G | GroupFunction<T>,
 > = GR extends (datum: T) => infer K ? (datum: T) => K : G;
 
+/**
+ * Either a value of T, or a derived value from T.
+ *
+ * Typing `GR` as generic allows us to infer the return type, which means if our
+ * deriving function return type is a union of literals, we can restrict the
+ * group configs to only those matching the return types.
+ */
 type GroupKey<
   T extends object,
   G extends keyof T,
@@ -34,7 +43,12 @@ type GroupConfig<
   G extends keyof T,
   GR extends G | GroupFunction<T>,
 > = {
-  /** Value of the group in the source data */
+  /**
+   * Value of the group in either the source data, or returned by the deriving
+   * function. This is distinct from the `value` field in the main function's
+   * `groupBy` option, which is either a key used as an accessor for T, or a
+   * function deriving a value from T.
+   */
   value: GroupKey<T, G, GR>;
   label?: string;
   collapsible?: boolean;
@@ -58,12 +72,20 @@ const defaultLabelRenderer = <
   group: GroupConfig<T, G, GR> | null;
   data: T[];
 }) =>
-  html`${group?.value === remainder ? "ungrouped" : group?.value}
+  html`${group?.value === remainder
+    ? "ungrouped"
+    : group?.label ?? group?.value}
   (${data.length})`;
 
-export function DataTable<
+/**
+ * A generic optionally-grouped list
+ */
+export function GroupedList<
+  /** The type of a single datum */
   const T extends object,
+  /** A single key of T, used for grouping */
   const G extends keyof T,
+  /** Either a single key of T, or a function taking T and returning a value */
   const GR extends GroupResolvable<T, G, G | GroupFunction<T>>,
 >({
   data,
@@ -82,8 +104,22 @@ export function DataTable<
     index: number,
   ) => TemplateResult<1> | null;
 }) {
+  // Utility functions
+  const renderData = (d: T[]) =>
+    d.map((datum, index) =>
+      renderItem
+        ? html`<sl-tree-item class="is-leaf"
+            >${renderItem(datum, index)}</sl-tree-item
+          >`
+        : html`<sl-tree-item class="is-leaf"
+            >${JSON.stringify(datum)}</sl-tree-item
+          >`,
+    );
+
   // Grouping
 
+  // TODO (emma, 2024-02-25) look into performance with larger datasets, and
+  // maybe memoize some of the calculations if need be
   let groups: null | { group: GroupConfig<T, G, GR> | null; data: T[] }[] =
     null;
   if (groupBy) {
@@ -106,7 +142,7 @@ export function DataTable<
     }
 
     // If groups are explicitly listed, sort everything not in these into the
-    // `remainder` group; otherwise, create whatever the groups we need
+    // remainder group; otherwise, create whatever the groups we need
     const allowedKeys =
       typeof groupBy === "object"
         ? groupBy.groups?.map((group) => group.value)
@@ -146,10 +182,8 @@ export function DataTable<
   }
 
   // Sorting
-
-  let sortFunction: Comparator<T> | null = null;
-
   if (sortBy) {
+    let sortFunction: Comparator<T>;
     if (typeof sortBy === "function") {
       sortFunction = sortBy;
     } else {
@@ -174,7 +208,6 @@ export function DataTable<
   }
 
   // Render
-
   return html`<sl-tree selection="leaf">
     ${groups
       ? groups.map(
@@ -183,25 +216,9 @@ export function DataTable<
               ${group.group?.renderLabel?.(group) ??
               group.group?.label ??
               group.group?.value}
-              ${group.data.map((datum, index) =>
-                renderItem
-                  ? html`<sl-tree-item class="is-leaf"
-                      >${renderItem(datum, index)}</sl-tree-item
-                    >`
-                  : html`<sl-tree-item class="is-leaf"
-                      >${JSON.stringify(datum)}</sl-tree-item
-                    >`,
-              )}
+              ${renderData(group.data)}
             </sl-tree-item>`,
         )
-      : data.map((datum, index) =>
-          renderItem
-            ? html`<sl-tree-item class="is-leaf"
-                >${renderItem(datum, index)}</sl-tree-item
-              >`
-            : html`<sl-tree-item class="is-leaf"
-                >${JSON.stringify(datum)}</sl-tree-item
-              >`,
-        )}
+      : renderData(data)}
   </sl-tree>`;
 }
