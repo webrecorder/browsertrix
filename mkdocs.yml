@@ -59,7 +59,6 @@ nav:
       - develop/local-dev-setup.md
       - develop/frontend-dev.md
       - develop/docs.md
-      - develop/api.md
   - User Guide:
       - user-guide/index.md
       - user-guide/signup.md
