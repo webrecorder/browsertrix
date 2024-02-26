@@ -220,7 +220,8 @@ export type ArchivedItemPage = {
 };
 
 export type PageComment = {
-  date: string;
-  user: string;
-  body: string;
+  created: string;
+  modified: string;
+  userName: string;
+  text: string;
 };

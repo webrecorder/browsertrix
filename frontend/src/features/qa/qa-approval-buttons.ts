@@ -2,7 +2,7 @@ import { css, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { keyed } from "lit/directives/keyed.js";
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type { SlTextarea } from "@shoelace-style/shoelace";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -169,29 +169,17 @@ export class QaApprovalButtons extends TailwindElement {
 
   @property({ type: Array })
   comments: PageComment[] = [
-    { date: "1/1/2024", user: "test@example.com", body: "test comment" },
     {
-      date: "1/1/2024",
-      user: "test@example.com",
-      body: "test longer comment test longer comment test longer comment test longer comment test longer comment",
+      created: new Date().toString(),
+      modified: new Date().toString(),
+      userName: "Example User Name",
+      text: "test comment",
     },
-    { date: "1/1/2024", user: "test@example.com", body: "test comment" },
     {
-      date: "1/1/2024",
-      user: "test@example.com",
-      body: "test longer comment test longer comment test longer comment test longer comment test longer comment",
-    },
-    { date: "1/1/2024", user: "test@example.com", body: "test comment" },
-    {
-      date: "1/1/2024",
-      user: "test@example.com",
-      body: "test longer comment test longer comment test longer comment test longer comment test longer comment",
-    },
-    { date: "1/1/2024", user: "test@example.com", body: "test comment" },
-    {
-      date: "1/1/2024",
-      user: "test@example.com",
-      body: "test longer comment test longer\n\ncomment test longer comment test longer comment test longer comment",
+      created: new Date().toString(),
+      modified: new Date().toString(),
+      userName: "Example User Name",
+      text: "test longer comment test longer\n\ncomment test longer comment test longer comment test longer comment",
     },
   ];
 
@@ -211,8 +199,9 @@ export class QaApprovalButtons extends TailwindElement {
   private notify = new NotifyController(this);
 
   render() {
+    const comment = this.comments[this.comments.length - 1];
     const approved = this.reviewStatus === "approved";
-    const commented = this.comments.length > 0;
+    const commented = !!comment;
     const rejected = this.reviewStatus === "rejected";
 
     return html`
@@ -279,16 +268,25 @@ export class QaApprovalButtons extends TailwindElement {
               name="pageComment"
               label=${msg("Comment")}
               placeholder=${msg("Enter page feedback")}
+              value=${comment?.text || ""}
+              help-text=${comment
+                ? msg(
+                    str`Updated by ${comment.userName} on ${new Date(comment.modified).toLocaleDateString()}`,
+                  )
+                : ""}
             ></sl-textarea>
           </form>`,
         )}
 
-        <p class="mt-4 text-neutral-500">
+        <p
+          slot="footer"
+          class="mb-2 rounded border border-slate-200 bg-slate-50 p-2 text-left text-neutral-500"
+        >
           <sl-tag size="small" variant="primary" class="mr-1"
-            >${msg("Beta Feature")}</sl-tag
+            >${msg("Beta Notice")}</sl-tag
           >
           ${msg(
-            "We may analyze anonymized text from your comments to improve this beta feature.",
+            "We may analyze anonymized text from this comment to improve the beta QA feature.",
           )}
         </p>
         <sl-button
