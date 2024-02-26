@@ -846,7 +846,7 @@ def init_crawls_api(app, user_dep, *args):
         tags=["crawls"],
         response_model=QACrawlWithResources,
     )
-    async def get_qa_crawl_admin(crawl_id, user: User = Depends(user_dep)):
+    async def get_qa_crawl_admin(crawl_id, qa_crawl_id, user: User = Depends(user_dep)):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
@@ -857,7 +857,9 @@ def init_crawls_api(app, user_dep, *args):
         tags=["crawls"],
         response_model=QACrawlWithResources,
     )
-    async def get_qa_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
+    async def get_qa_crawl(
+        crawl_id, qa_crawl_id, org: Organization = Depends(org_viewer_dep)
+    ):
         return await ops.get_qa_crawl(crawl_id, qa_crawl_id, org)
 
     @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/start", tags=["crawls", "qa"])
@@ -870,9 +872,14 @@ def init_crawls_api(app, user_dep, *args):
         qa_crawl_id = await ops.start_crawl_qa_job(qa_crawl_in, crawl_id, org, user)
         return {"started": qa_crawl_id}
 
-    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/stop", tags=["crawls", "qa"])
-    async def stop_crawl_qa_job(crawl_id, org: Organization = Depends(org_crawl_dep)):
-        return await ops.stop_crawl_qa_job(crawl_id)
+    @app.post(
+        "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_crawl_id}/stop", tags=["crawls", "qa"]
+    )
+    async def stop_crawl_qa_job(
+        crawl_id, qa_crawl_id, org: Organization = Depends(org_crawl_dep)
+    ):
+        # pylint: disable=unused-argument
+        return await ops.stop_crawl_qa_job(qa_crawl_id)
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa",
