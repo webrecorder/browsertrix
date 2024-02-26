@@ -632,29 +632,28 @@ class CrawlOps(BaseCrawlOps):
     ) -> List[QACrawl]:
         """Return list of QA crawls"""
         crawl = await self.get_crawl(crawl_id, org, "crawl")
-        if not crawl.qa:
-            raise HTTPException(status_code=404, detail="crawl_qa_not_found")
-        return crawl.qa
+        return crawl.qa or []
 
     async def get_qa_crawl(
         self, crawl_id: str, qa_crawl_id: str, org: Optional[Organization] = None
     ) -> QACrawlWithResources:
         """Fetch QA Crawl with resources for replay.json"""
         crawl_raw = await self.get_crawl_raw(crawl_id, org, "crawl")
-        qa_crawl = None
+
+        qa_dict = None
         for qa_run in crawl_raw.get("qa", []):
             if qa_run.get("id") == qa_crawl_id:
-                qa_crawl = qa_run
+                qa_dict = qa_run
 
-        if not qa_crawl:
+        if not qa_dict:
             raise HTTPException(status_code=404, detail="crawl_qa_not_found")
 
-        qa_crawl["resources"] = await self._files_to_resources(
-            qa_crawl.get("files"), org, None, qa=True
+        qa_dict["resources"] = await self._files_to_resources(
+            qa_dict.get("files"), org, None, qa=True
         )
-        qa_crawl.pop("files", None)
+        qa_dict.pop("files", None)
 
-        return QACrawlWithResources(**qa_crawl)
+        return QACrawlWithResources(**qa_dict)
 
 
 # ============================================================================
