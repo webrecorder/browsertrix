@@ -320,7 +320,6 @@ export class ArchivedItemQA extends TailwindElement {
 
   private readonly renderReplay = () => {
     if (!this.itemId) return;
-
     const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
