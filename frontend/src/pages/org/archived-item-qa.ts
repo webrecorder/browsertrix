@@ -319,7 +319,22 @@ export class ArchivedItemQA extends TailwindElement {
   };
 
   private readonly renderReplay = () => {
-    return html`[replay]`;
+    if (!this.itemId) return;
+
+    const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}/replay.json`;
+    const headers = this.authState?.headers;
+    const config = JSON.stringify({ headers });
+
+    return html`<div id="replay-crawl" class="aspect-4/3 overflow-hidden">
+      <replay-web-page
+        source="${replaySource}"
+        coll="${this.itemId}"
+        config="${config}"
+        replayBase="/replay/"
+        noSandbox="true"
+        noCache="true"
+      ></replay-web-page>
+    </div>`;
   };
 
   private async fetchCrawl(): Promise<void> {
