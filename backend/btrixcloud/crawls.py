@@ -627,11 +627,20 @@ class CrawlOps(BaseCrawlOps):
         """Stop crawl QA job"""
         return await self.crawl_manager.shutdown_crawl(qa_crawl_id)
 
+    async def get_qa_crawls(
+        self, crawl_id: str, org: Optional[Organization] = None
+    ) -> List[QACrawl]:
+        """Return list of QA crawls"""
+        crawl = await self.get_crawl(crawl_id, org, "crawl")
+        if not crawl.qa:
+            raise HTTPException(status_code=404, detail="crawl_qa_not_found")
+        return crawl.qa
+
     async def get_qa_crawl(
         self, crawl_id: str, qa_crawl_id: str, org: Optional[Organization] = None
     ) -> QACrawlWithResources:
         """Fetch QA Crawl"""
-        crawl_raw = await self.get_crawl(crawl_id, org, "crawl")
+        crawl_raw = await self.get_crawl_raw(crawl_id, org, "crawl")
         qa_crawl = None
         for qa_run in crawl_raw.get("qa", []):
             if qa_run.get("id") == qa_crawl_id:
@@ -864,6 +873,14 @@ def init_crawls_api(app, user_dep, *args):
     @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/stop", tags=["crawls", "qa"])
     async def stop_crawl_qa_job(crawl_id, org: Organization = Depends(org_crawl_dep)):
         return await ops.stop_crawl_qa_job(crawl_id)
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/qa",
+        tags=["crawls"],
+        response_model=List[QACrawl],
+    )
+    async def get_qa_crawls(crawl_id, org: Organization = Depends(org_viewer_dep)):
+        return await ops.get_qa_crawls(crawl_id, org)
 
     @app.get(
         "/orgs/all/crawls/{crawl_id}",
