@@ -639,7 +639,7 @@ class CrawlOps(BaseCrawlOps):
     async def get_qa_crawl(
         self, crawl_id: str, qa_crawl_id: str, org: Optional[Organization] = None
     ) -> QACrawlWithResources:
-        """Fetch QA Crawl"""
+        """Fetch QA Crawl with resources for replay.json"""
         crawl_raw = await self.get_crawl_raw(crawl_id, org, "crawl")
         qa_crawl = None
         for qa_run in crawl_raw.get("qa", []):
