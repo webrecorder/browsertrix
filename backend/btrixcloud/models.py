@@ -677,6 +677,13 @@ class QACrawl(BaseModel):
 
 
 # ============================================================================
+class QACrawlWithResources(QACrawl):
+    """QA crawl output model including resources"""
+
+    resources: Optional[List[CrawlFileOut]] = []
+
+
+# ============================================================================
 class QACrawlIn(BaseModel):
     """Input model for QA crawls"""
 

@@ -34,6 +34,7 @@ from .models import (
     ALL_CRAWL_STATES,
     QACrawl,
     QACrawlIn,
+    QACrawlWithResources,
 )
 
 
@@ -626,6 +627,26 @@ class CrawlOps(BaseCrawlOps):
         """Stop crawl QA job"""
         return await self.crawl_manager.shutdown_crawl(qa_crawl_id)
 
+    async def get_qa_crawl(
+        self, crawl_id: str, qa_crawl_id: str, org: Optional[Organization] = None
+    ) -> QACrawlWithResources:
+        """Fetch QA Crawl"""
+        crawl_raw = await self.get_crawl(crawl_id, org, "crawl")
+        qa_crawl = None
+        for qa_run in crawl_raw.get("qa", []):
+            if qa_run.get("id") == qa_crawl_id:
+                qa_crawl = qa_run
+
+        if not qa_crawl:
+            raise HTTPException(status_code=404, detail="crawl_qa_not_found")
+
+        qa_crawl["resources"] = await self._files_to_resources(
+            qa_crawl.get("files"), org, None, qa=True
+        )
+        qa_crawl.pop("files", None)
+
+        return QACrawlWithResources(**qa_crawl)
+
 
 # ============================================================================
 async def recompute_crawl_file_count_and_size(crawls, crawl_id):
@@ -810,6 +831,25 @@ def init_crawls_api(app, user_dep, *args):
     )
     async def get_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl(crawl_id, org, "crawl")
+
+    @app.get(
+        "/orgs/all/crawls/{crawl_id}/qa/{qa_crawl_id}/replay.json",
+        tags=["crawls"],
+        response_model=QACrawlWithResources,
+    )
+    async def get_qa_crawl_admin(crawl_id, user: User = Depends(user_dep)):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return await ops.get_qa_crawl(crawl_id, qa_crawl_id)
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_crawl_id}/replay.json",
+        tags=["crawls"],
+        response_model=QACrawlWithResources,
+    )
+    async def get_qa_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
+        return await ops.get_qa_crawl(crawl_id, qa_crawl_id, org)
 
     @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/start", tags=["crawls", "qa"])
     async def start_crawl_qa_job(

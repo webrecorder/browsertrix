@@ -124,12 +124,12 @@ class BaseCrawlOps:
 
         return res
 
-    async def _files_to_resources(self, files, org, crawlid):
+    async def _files_to_resources(self, files, org, crawlid, qa: bool = False):
         if not files:
             return []
 
         crawl_files = [CrawlFile(**data) for data in files]
-        return await self._resolve_signed_urls(crawl_files, org, crawlid)
+        return await self._resolve_signed_urls(crawl_files, org, qa, crawlid)
 
     async def get_crawl(
         self,
@@ -432,7 +432,11 @@ class BaseCrawlOps:
         return crawl
 
     async def _resolve_signed_urls(
-        self, files: List[CrawlFile], org: Organization, crawl_id: Optional[str] = None
+        self,
+        files: List[CrawlFile],
+        org: Organization,
+        qa: bool = False,
+        crawl_id: Optional[str] = None,
     ):
         if not files:
             print("no files")
@@ -451,12 +455,17 @@ class BaseCrawlOps:
                 presigned_url = await self.storage_ops.get_presigned_url(
                     org, file_, self.presign_duration_seconds
                 )
+
+                prefix = "files"
+                if qa:
+                    prefix = f"qa.{prefix}"
+
                 await self.crawls.find_one_and_update(
-                    {"files.filename": file_.filename},
+                    {f"{prefix}.filename": file_.filename},
                     {
                         "$set": {
-                            "files.$.presignedUrl": presigned_url,
-                            "files.$.expireAt": exp,
+                            f"{prefix}.$.presignedUrl": presigned_url,
+                            f"{prefix}.$.expireAt": exp,
                         }
                     },
                 )
