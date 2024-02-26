@@ -2,7 +2,6 @@
 
 import os
 import traceback
-from uuid import uuid4
 
 import yaml
 
@@ -126,7 +125,9 @@ class K8sAPI:
         self, userid, crawl_id, oid, storage, qa_source, crawler_image, profile_filename
     ):
         """load job template from yaml"""
-        qa_crawl_id = uuid4()
+
+        ts_now = dt_now().strftime("%Y%m%d%H%M%S")
+        qa_crawl_id = f"qa-{crawl_id}-{ts_now}"
 
         params = {
             "id": str(qa_crawl_id),

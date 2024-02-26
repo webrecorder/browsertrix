@@ -600,8 +600,8 @@ class CrawlOps(BaseCrawlOps):
         if not crawl.files:
             raise HTTPException(status_code=404, detail="crawl_files_not_found")
 
-        # TODO: For now, let's just use the first WACZ. Eventually we'll want to
-        # pass them all in as an array or a multi-WACZ
+        # TODO: Give this the crawl's replay.json endpoint instead?
+        # For now, only passing the first WACZ for initial testing
         qa_source = crawl.files[0]
 
         try:

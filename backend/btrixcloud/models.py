@@ -659,7 +659,7 @@ class CrawlScale(BaseModel):
 class QACrawl(BaseModel):
     """Subdocument to track QA runs for given crawl"""
 
-    id: UUID
+    id: str
     started: datetime
     finished: Optional[datetime] = None
 
