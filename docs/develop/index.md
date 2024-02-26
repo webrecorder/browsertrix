@@ -1,6 +1,6 @@
 ---
 hide:
-    - toc
+  - toc
 ---
 
 # Developing Browsertrix Cloud
@@ -13,7 +13,7 @@ The deployment can then be [further customized for local development](./local-de
 
 ### Backend
 
-The backend is an API-only system, using the FastAPI framework. The latest API reference is available under ./api of a running cluster.
+The backend is an API-only system, using the FastAPI framework. Latest API docs can be viewed in the browser by adding `/api/redoc` to the URL of a running cluster (ex: `http://localhost:30870/api/redoc` when running locally on port `30870`.)
 
 At this time, the backend must be deployed in the Kubernetes cluster.
 
