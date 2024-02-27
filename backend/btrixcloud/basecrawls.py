@@ -2,7 +2,7 @@
 
 import os
 from datetime import timedelta
-from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING
+from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING, cast
 from uuid import UUID
 import urllib.parse
 import contextlib
