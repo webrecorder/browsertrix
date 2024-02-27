@@ -12,7 +12,7 @@ The ``superuser`` setting is used to set the username and password for a deploym
 
 ## Crawler Channels
 
-The ``crawler_channels`` setting is used to specify the crawler versions available to users via dropdown menus in workflows and browser profiles. Each crawler channel has an id as well as a Docker image. These channels are modifiable with the restriction that there must always be one channel with the id ``default``. By default this is the only channel available on deployments:
+The ``crawler_channels`` setting is used to specify the crawler versions available to users via dropdown menus in workflows and browser profiles. Each crawler channel has an id as well as a Docker image tag. These channels are modifiable with the restriction that there must always be one channel with the id ``default``. By default this is the only channel available on deployments:
 
 ```yaml
 crawler_channels:
