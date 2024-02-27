@@ -139,7 +139,7 @@ export class AccountSettings extends LiteElement {
         </h1>
         ${when(this.userInfo.isSSO, () => 
           html`
-            <btrix-alert variant="info">Some of the setting are managed by your organization and cannot be changed.</btrix-alert>
+            <btrix-alert variant="info">${msg("Some settings are managed by your organization and cannot be changed.")}</btrix-alert>
             <br/>
           `
         )}

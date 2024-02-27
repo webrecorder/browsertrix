@@ -1,29 +1,29 @@
 
 
-# Deploying Single Sign On
-Browsertrix allows for Single Sign On using either OIDC protocol or based on header values.
+# Deploying Single Sign-On
+Browsertrix supports Single Sign-On (SSO) using either the OIDC protocol or based on header values.
 
 Although it is technically possible to enable both OIDC and Header based SSO at the same time it is not suggested, to keep the user experience seamless.
 
-Single Logout is not supported as of now.
+Single Logout is not supported.
 
 ## General Configuration
-When using SSO for login to Browsertrix the users' organizations are assigned and removed dynamically based on users' group memberships provided by the IDP/Proxy.
+When using SSO, user organization membership within Browsertrix is assigned and removed dynamically based on a user's group membership status provided by the IDP/Proxy.
 
 This can result in two conflicts with the invite functionality:
 - Users org membership will be reset as soon as an user logs in with SSO, therefore any manual assignement will be lost.
-- Users supposed to login with SSO are able to create accounts with password login if invited manually.
+- Users that are supposed to login with SSO are able to create accounts with password login if invited manually.
 
-If this is a problem for the insitution deploying Browsertrix it is possible to disable either functionality by setting the following variables in the local values.yml file:
+If this is a problem, it is possible to disable either function by setting the following variables in the local values.yml file:
 
 ```yaml
 password_disabled: 1
 invites_disabled: 1
 ```
 
-If disabling password altogether it is recommended to assign some users superuser privileges by adding them to "browsertrix-admins" group on the authentication backend.
+If disabling passwords altogether, it is recommended to assign some users superuser privileges by adding them to the `browsertrix-admins` group on the authentication backend.
 
-The superuser group can be changed by setting the __sso_superuser_groups__ variable in values.yml
+The superuser group can be changed by setting the `sso_superuser_groups` variable in values.yml
 
 eg.
 ```yaml
@@ -32,11 +32,11 @@ sso_superuser_groups: browsertrix-admins;Domain Admins  # Semicolon separated li
 
 ## Deploying SSO with OIDC
 ### Requirements
-- IDP supporting OIDC. This guide will take Keycloak as an example.
+- IDP supporting OIDC. This guide uses [Keycloak](https://www.keycloak.org/) as an example.
 
 ### Configuration of IDP
 1. Create a new client scope
-   1. Set a pertinent name, eg. browsertrix-authorization
+   1. Set a pertinent name, eg. `browsertrix-authorization`
    2. Type: None
    3. Protocol OpenID Connect
    4. In the Mappers
@@ -63,7 +63,7 @@ sso_superuser_groups: browsertrix-admins;Domain Admins  # Semicolon separated li
    1. Add client scope, select previously created scope
    2. Set assigned type to Default
    
-When Browsertrix processes the OIDC login it is expected that the userinfo token has the following fields set, if your IDP uses different names ensure that it is reflected in the values.yml config.
+When Browsertrix processes the OIDC login, it is expected that the userinfo token has the following fields set, if your IDP uses different names ensure that it is reflected in the values.yml config.
 - preferred_username
   - string
   - will be used as the user display name
@@ -82,7 +82,7 @@ Evaluate with a test user and verify that in user info the following is correct:
   3. isMemberOf is present and set to a LIST of groups the user belongs to.
 
 ### Configuration of Browsertrix
-When configuring Broswertrix with OIDC as SSO protocol the following variables have to be set and match the previously configured settings in the IDP client.
+When configuring SSO with the OIDC protocol, the following variables must be set and match the previously configured settings in the IDP client.
 
 sso_oidc_auth_endpoint, sso_oidc_token_endpoint, sso_oidc_userinfo_endpoint can be found in the .well-known configuration for OIDC (eg. https://idp.example.com/auth/realms/example/.well-known/openid-configuration)
 
@@ -105,16 +105,16 @@ sso_oidc_redirect_url: https://browsertrix.example.com/log-in/oidc
 
 ## Deploying SSO with Headers
 ### Requirements
-- Authenticating proxy. This guide will take Apache2 as an example configured with Shibboleth.
+- Authenticating proxy. This guide uses Apache2 as an example configured with Shibboleth.
 
 !!! danger
 
-    Direct access to the ingress endpoint in the kubernetes cluster must be limited to only the proxy. If not restricted any user with direct access to the ingress would be able to manually set the required headers.
+    Direct access to the ingress endpoint in the Kubernetes cluster must only be limited to the proxy. If not restricted, any user with direct access to the ingress would be able to manually set the required headers.
 
 
 ### Configuration of Proxy
 1. Configure proxy to authenticate users with your preferred Identity Provider. Ensure that username, email and group membership are provided to the proxy. Configuration of this step is outside of this guide scope.
-2. Create virtual host for browsertrix
+2. Create virtual host for Browsertrix
 3. Protect the following paths behind authentication
     - /log-in/header 
     - /api/auth/jwt/login/header
@@ -170,7 +170,7 @@ sso_oidc_redirect_url: https://browsertrix.example.com/log-in/oidc
 
 
 ### Configuration of Browsertrix
-When configuring Broswertrix with Header Auth as SSO protocol the following variables have to be set and match the previously configured settings in the IDP client.
+When configuring SSO with Header Auth, the following variables must be set and match the previously configured settings in the IDP client.
 
 ```yaml
 # Header SSO

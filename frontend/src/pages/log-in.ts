@@ -334,7 +334,7 @@ export class LogInPage extends LiteElement {
           ?loading=${this.formState.value === "signingIn"}
           ?disabled=${this.formState.value === "backendInitializing"}
           type="submit"
-          >${msg("Log In with Single Sign On")}</sl-button
+          >${msg("Log In with Single Sign-On")}</sl-button
         >
       </form>
     `;
@@ -350,7 +350,7 @@ export class LogInPage extends LiteElement {
           ?loading=${this.formState.value === "signingIn"}
           ?disabled=${this.formState.value === "backendInitializing"}
           type="submit"
-          >${msg("Log In with Single Sign On")}</sl-button
+          >${msg("Log In with Single Sign-On")}</sl-button
         >
       </form>
     `;

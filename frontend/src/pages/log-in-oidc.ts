@@ -79,7 +79,7 @@ export class LoginSsoOidc extends LiteElement {
     }
     catch (e: any) {
       if (e.isApiError) {
-        let message = msg("Sorry, an error occurred while attempting Single Sign On");
+        let message = msg("Sorry, an error occurred while attempting single sign-on");
         this.serverError = message;
       } else {
         let message = msg("Something went wrong, couldn't sign you in");
@@ -103,7 +103,7 @@ export class LoginSsoOidc extends LiteElement {
       // will result in a route change
     } catch (e: any) {
       if (e.isApiError) {
-        let message = msg("Sorry, an error occurred while attempting Single Sign On");
+        let message = msg("Sorry, an error occurred while attempting single sign-on");
         this.serverError = message;
       } else {
         let message = msg("Something went wrong, couldn't sign you in");
