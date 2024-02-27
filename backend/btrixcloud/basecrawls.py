@@ -37,9 +37,10 @@ if TYPE_CHECKING:
     from .storages import StorageOps
     from .webhooks import EventWebhookOps
     from .background_jobs import BackgroundJobOps
+    from .pages import PageOps
 
 else:
-    CrawlConfigOps = UserManager = OrgOps = CollectionOps = object
+    CrawlConfigOps = UserManager = OrgOps = CollectionOps = PageOps = object
     CrawlManager = StorageOps = EventWebhookOps = BackgroundJobOps = object
 
 # Presign duration must be less than 604800 seconds (one week),
@@ -63,6 +64,7 @@ class BaseCrawlOps:
     storage_ops: StorageOps
     event_webhook_ops: EventWebhookOps
     background_job_ops: BackgroundJobOps
+    page_ops: PageOps
 
     def __init__(
         self,
@@ -85,6 +87,7 @@ class BaseCrawlOps:
         self.storage_ops = storage_ops
         self.event_webhook_ops = event_webhook_ops
         self.background_job_ops = background_job_ops
+        self.page_ops = cast(PageOps, None)
 
         presign_duration_minutes = int(
             os.environ.get("PRESIGN_DURATION_MINUTES") or PRESIGN_MINUTES_DEFAULT
