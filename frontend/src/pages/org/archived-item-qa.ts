@@ -36,6 +36,11 @@ export class ArchivedItemQA extends TailwindElement {
         "pageListHeader"
         "pageList";
       grid-template-rows: repeat(4, max-content);
+      min-height: 0;
+    }
+
+    article > * {
+      min-height: 0;
     }
 
     @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
@@ -152,8 +157,10 @@ export class ArchivedItemQA extends TailwindElement {
         <h2 class="pageListHeader outline">
           ${msg("Pages List")} <sl-button>${msg("Finish Review")}</sl-button>
         </h2>
-        <section class="pageList">
-          <btrix-qa-page-list></btrix-qa-page-list>
+        <section class="pageList grid">
+          <btrix-qa-page-list
+            class="grid min-h-0 content-start justify-stretch"
+          ></btrix-qa-page-list>
         </section>
       </article>
     `;
