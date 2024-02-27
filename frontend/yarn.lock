@@ -826,6 +826,11 @@
   dependencies:
     defer-to-connect "^2.0.0"
 
+"@tailwindcss/container-queries@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@tailwindcss/container-queries/-/container-queries-0.1.1.tgz#9a759ce2cb8736a4c6a0cb93aeb740573a731974"
+  integrity sha512-p18dswChx6WnTSaJCSGx6lTmrGzNNvm2FtXmiO6AuA1V4U5REyoqwmT6kgAsIMdjo07QdAfYXHJ4hnMtfHzWgA==
+
 "@thesunny/assert-type@^0.1.13":
   version "0.1.13"
   resolved "https://registry.yarnpkg.com/@thesunny/assert-type/-/assert-type-0.1.13.tgz#d893351218cfa044329f8f2d5a5f8188d1698bf1"
