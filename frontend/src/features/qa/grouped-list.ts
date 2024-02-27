@@ -61,6 +61,9 @@ type GroupConfig<
 
 type Comparator<T> = (a: T, b: T) => number;
 
+const defaultWrapperRenderer = (contents: TemplateResult<1>) =>
+  html`<sl-tree selection="leaf">${contents}</sl-tree>`;
+
 const defaultLabelRenderer = <
   T extends object,
   G extends keyof T,
@@ -77,8 +80,13 @@ const defaultLabelRenderer = <
     : group?.label ?? group?.value}
   (${data.length})`;
 
-const defaultGroupHeaderRenderer = (contents: TemplateResult<1>) =>
-  html`<sl-tree-item expanded>${contents}</sl-tree-item>`;
+const defaultGroupRenderer = (
+  header: TemplateResult<1>,
+  items: (TemplateResult<1> | null)[],
+) => html`<sl-tree-item expanded>${header}${items}</sl-tree-item>`;
+
+const defaultItemRenderer = (item: unknown) =>
+  html`<sl-tree-item>${JSON.stringify(item)}</sl-tree-item>`;
 
 /**
  * A generic optionally-grouped list
@@ -95,29 +103,28 @@ export function GroupedList<
   sortBy,
   groupBy,
   // columns,
-  renderItem,
-  renderGroupHeader = defaultGroupHeaderRenderer,
+  renderWrapper = defaultWrapperRenderer,
+  renderItem = defaultItemRenderer,
+  renderGroup = defaultGroupRenderer,
 }: {
   data: T[];
   sortBy?: { by: keyof T; direction: "asc" | "desc" } | Comparator<T>;
   groupBy?: GR | { value: GR; groups?: GroupConfig<T, G, GR>[] };
   // columns?: false | { [k in keyof T]?: boolean | ColumnConfig<T, k> };
+  renderWrapper?: (contents: TemplateResult<1>) => TemplateResult<1>;
   renderItem?: (
     item: T,
     // columns: ColumnConfig<T, keyof T>[],
     index: number,
   ) => TemplateResult<1> | null;
-  renderGroupHeader?: (contents: TemplateResult<1>) => TemplateResult<1>;
+  renderGroup?: (
+    header: TemplateResult<1>,
+    items: (TemplateResult<1> | null)[],
+  ) => TemplateResult<1>;
 }) {
   // Utility functions
   const renderData = (d: T[]) =>
-    d.map((datum, index) =>
-      renderItem
-        ? renderItem(datum, index)
-        : html`<sl-tree-item class="is-leaf"
-            >${JSON.stringify(datum)}</sl-tree-item
-          >`,
-    );
+    d.map((datum, index) => renderItem(datum, index));
 
   // Grouping
 
@@ -211,16 +218,16 @@ export function GroupedList<
   }
 
   // Render
-  return html`<sl-tree selection="leaf">
-    ${groups
+  return renderWrapper(
+    html`${groups
       ? groups.map((group) =>
-          renderGroupHeader(html`
-            ${group.group?.renderLabel?.(group) ??
+          renderGroup(
+            html`${group.group?.renderLabel?.(group) ??
             group.group?.label ??
-            group.group?.value}
-            ${renderData(group.data)}
-          `),
+            group.group?.value}`,
+            renderData(group.data),
+          ),
         )
-      : renderData(data)}
-  </sl-tree>`;
+      : renderData(data)}`,
+  );
 }

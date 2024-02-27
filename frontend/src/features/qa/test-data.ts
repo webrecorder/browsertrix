@@ -4,8 +4,19 @@ let counter = 0;
 
 const getRandomData = () => {
   const resourceCount = Math.ceil(Math.random() * 1000);
+  const isReviewed = Math.random() > 0.5;
+  const comment =
+    isReviewed && Math.random() > 0.5
+      ? { comment: "this page has a comment" }
+      : undefined;
+  const reviewStatus =
+    isReviewed && Math.random() > 0.5
+      ? { reviewStatus: Math.random() > 0.5 ? "approved" : "rejected" }
+      : undefined;
+
   return {
     title: `Randomly generated page ${counter++}`,
+    url: "https://example.com/path/path/path/path/path/path/path/path/path",
     screenshotMatch: Math.max(
       Math.floor(Math.pow(Math.random(), 0.2) * 150),
       100,
@@ -23,6 +34,8 @@ const getRandomData = () => {
         : resourceCount,
       resourceCount,
     ],
+    ...comment,
+    ...reviewStatus,
   };
 };
 
@@ -35,6 +48,7 @@ export const testData = shuffle([
   ...randomArray,
   {
     title: "Example page with resource errors",
+    url: "https://example.com/path/path/path/path/path/path/path/path/path",
     screenshotMatch: 1,
     textMatch: 5,
     crawlResources: [6, 7],
@@ -42,6 +56,7 @@ export const testData = shuffle([
   },
   {
     title: "Example page with 4 error stats",
+    url: "https://example.com/path/path/path/path/path/path/path/path/path",
     screenshotMatch: 1,
     textMatch: 5,
     crawlResources: [6, 7],
@@ -49,6 +64,7 @@ export const testData = shuffle([
   },
   {
     title: "Example page with 2 error stats",
+    url: "https://example.com/path/path/path/path/path/path/path/path/path",
     screenshotMatch: 1,
     textMatch: 5,
     crawlResources: [6, 7],
@@ -57,6 +73,7 @@ export const testData = shuffle([
   {
     title:
       "Example page, possible issues, 2 warnings, etc etc, extremely long title",
+    url: "https://example.com/path/path/path/path/path/path/path/path/path",
     screenshotMatch: 90,
     textMatch: 90,
     crawlResources: [12, 12],
@@ -64,6 +81,7 @@ export const testData = shuffle([
   },
   {
     title: "Example page, possible issues",
+    url: "https://example.com/path/path/path/path/path/path/path/path/path",
     screenshotMatch: 97,
     textMatch: 100,
     crawlResources: [12, 12],
@@ -71,6 +89,7 @@ export const testData = shuffle([
   },
   {
     title: "Example page, likely good",
+    url: "https://example.com/path/path/path/path/path/path/path/path/path",
     screenshotMatch: 100,
     textMatch: 100,
     crawlResources: [12, 12],
@@ -78,6 +97,7 @@ export const testData = shuffle([
   },
   {
     title: "Example page, likely good",
+    url: "https://example.com/path/path/path/path/path/path/path/path/path",
     screenshotMatch: 100,
     textMatch: 100,
     crawlResources: [12, 12],
