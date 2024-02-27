@@ -1012,7 +1012,7 @@ class BtrixOperator(K8sAPI):
 
             while page_crawled:
                 page_dict = json.loads(page_crawled)
-                await self.page_ops.add_page_to_db(page_dict, crawl.id)
+                await self.page_ops.add_page_to_db(page_dict, crawl.id, crawl.oid)
                 page_crawled = await redis.lpop(f"{crawl.id}:{self.pages_key}")
 
             # ensure filesAdded and filesAddedSize always set

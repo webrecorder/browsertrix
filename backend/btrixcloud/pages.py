@@ -61,9 +61,7 @@ class PageOps:
         except Exception as err:
             print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
 
-    async def add_page_to_db(
-        self, page_dict: Dict[str, Any], crawl_id: str, oid: Optional[UUID] = None
-    ):
+    async def add_page_to_db(self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID):
         """Add page to database"""
         page_id = page_dict.get("id")
         if not page_id:
@@ -72,11 +70,6 @@ class PageOps:
 
         if await self.pages.find_one({"_id": page_id}):
             return
-
-        if not oid:
-            crawl = await self.crawl_ops.get_crawl(crawl_id, None)
-            org = await self.org_ops.get_org_by_id(crawl.oid)
-            oid = org.id
 
         try:
             page = Page(
