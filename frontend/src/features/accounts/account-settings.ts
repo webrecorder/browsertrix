@@ -301,7 +301,7 @@ export class AccountSettings extends LiteElement {
               <h2 class="text-lg font-semibold leading-none mb-4">
                 ${msg("Password")}
               </h2>
-              <p>Password change is disabled for external accounts. Please change the password in your organization portal.</p>
+              <p>${msg("Password changes are disabled for external accounts. Please change your password in your organization's portal.")}</p>
             </div>
           </section>
         `
