@@ -8,7 +8,7 @@ The ``default_org`` setting is used to specify the name for the default organiza
 
 ## Superuser
 
-The ``superuser`` setting is used to set the username and password for a deployment's superuser. If ``password`` is left blank, the application will auto-generate a secret password for the superuser.
+The ``superuser`` setting is used to set the username and password for a deployment's superuser. If ``password`` is left blank, the application will auto-generate a secure password for the superuser.
 
 ## Crawler Channels
 
