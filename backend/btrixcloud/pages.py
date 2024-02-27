@@ -68,9 +68,6 @@ class PageOps:
             print(f'Page {page_dict.get("url")} has no id - assigning UUID', flush=True)
             page_id = uuid4()
 
-        if await self.pages.find_one({"_id": page_id}):
-            return
-
         try:
             page = Page(
                 id=page_id,
@@ -86,6 +83,8 @@ class PageOps:
                 ),
             )
             await self.pages.insert_one(page.to_dict())
+        except pymongo.errors.DuplicateKeyError:
+            return
         # pylint: disable=broad-except
         except Exception as err:
             print(
