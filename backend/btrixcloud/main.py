@@ -146,8 +146,6 @@ def main():
     )
 
     base_crawl_ops.set_page_ops(page_ops)
-
-    # Might be unnecessary
     crawls.set_page_ops(page_ops)
 
     init_uploads_api(*base_crawl_init)
