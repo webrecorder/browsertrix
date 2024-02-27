@@ -37,13 +37,20 @@ export class Button extends TailwindElement {
   icon = false;
 
   @property({ type: String, reflect: true })
-  role: ARIAMixin["role"] = "tab";
+  role: ARIAMixin["role"] = null;
 
   @property({ type: String })
   size: "small" | "medium" | "large" = "medium";
 
   @property({ type: String })
   align: "left" | "center" | "right" = "left";
+
+  connectedCallback(): void {
+    if (!this.role && !this.href) {
+      this.role = "tab";
+    }
+    super.connectedCallback();
+  }
 
   protected willUpdate(changedProperties: PropertyValueMap<this>) {
     if (changedProperties.has("active")) {
@@ -89,6 +96,7 @@ export class Button extends TailwindElement {
       href=${ifDefined(this.href)}
       aria-label=${ifDefined(this.label)}
       @click=${this.handleClick}
+      
     >
       <slot></slot>
     </${tag}>`;

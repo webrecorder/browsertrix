@@ -315,16 +315,55 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private readonly renderScreenshots = () => {
-    return html`[screenshots]`;
+    if (!this.itemId) return;
+
+    const url = `/replay/w/manual-20240226234726-051ed881-37e/:fbc91e679056dc8da1528376ddbc7e5c931ca9b03a0d0f65430c5ee2a76c94c2/20240226234908mp_/urn:view:${window.encodeURI("http://example.com/")}`;
+
+    return html` <div class="flex gap-3">
+      <div class="flex-1">
+        <h3>${msg("Crawl Screenshot")}</h3>
+      </div>
+      <div class="flex-1">
+        <h3>${msg("Replay Screenshot")}</h3>
+        <div class="bold text-xl">img:</div>
+        <img class="outline" src="${url}?img" loading="lazy" />
+        <div class="bold text-xl">object:</div>
+        <object class="outline" type="image/png" data="${url}"></object>
+        <div class="bold text-xl">iframe:</div>
+        <iframe
+          src="${url}"
+          class="aspect-video w-full overflow-hidden bg-yellow-300 outline"
+          @load=${(e: Event) => {
+            const iframe = e.currentTarget as HTMLIFrameElement;
+
+            const { height, width } = iframe.getBoundingClientRect();
+            const img = iframe.contentDocument?.body.querySelector("img");
+            if (img) {
+              img.style.height = `${height}px`;
+              img.style.width = `${width}px`;
+            }
+            console.log(height, width);
+            // const { scrollHeight, scrollWidth } =
+            //   iframe.contentDocument?.body || {};
+            // if (scrollHeight) {
+            //   iframe.style.height = `${scrollHeight}px`;
+            // }
+            // if (scrollWidth) {
+            //   iframe.style.width = `${scrollWidth}px`;
+            // }
+          }}
+        ></iframe>
+      </div>
+    </div>`;
   };
 
-  private readonly renderReplay = () => {
+  private readonly renderReplay = (crawlId?: string) => {
     if (!this.itemId) return;
-    const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}/replay.json`;
+    const replaySource = `/api/orgs/${this.orgId}/crawls/${crawlId || this.itemId}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
-    return html`<div id="replay-crawl" class="aspect-4/3 overflow-hidden">
+    return html`<div class="aspect-4/3 overflow-hidden">
       <replay-web-page
         source="${replaySource}"
         coll="${this.itemId}"
