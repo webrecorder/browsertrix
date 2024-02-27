@@ -4,7 +4,7 @@ Local and production deployments alike can be customized by modifying the ``char
 
 ## Default Organization
 
-The ``default_org`` setting is used to specify the name for the default organization created in a Browsertrix Cloud deployment. A slug will be auto-generated based on this value and can be modified in Org Settings within the application.
+The ``default_org`` setting is used to specify the name for the default organization created in a Browsertrix deployment. A slug will be auto-generated based on this value and can be modified in [Org Settings](../user-guide/org-settings.md) within the application.
 
 ## Superuser
 
@@ -12,7 +12,7 @@ The ``superuser`` setting is used to set the username and password for a deploym
 
 ## Crawler Channels
 
-The ``crawler_channels`` setting is used to specify the crawler versions available to users via dropdown menus in workflows and browser profiles. Each crawler channel has an id as well as a Docker image tag. These channels are modifiable with the restriction that there must always be one channel with the id ``default``. By default this is the only channel available on deployments:
+The ``crawler_channels`` setting is used to specify the [_Crawler Release Channel_](../user-guide/workflow-setup.md#crawler-release-channel) option available to users via dropdown menus in workflows and browser profiles. Each crawler channel has an id and a Docker image tag. These channels are modifiable with the restriction that there must always be one channel with the id ``default``. By default this is the only channel available on deployments:
 
 ```yaml
 crawler_channels:
@@ -32,7 +32,7 @@ crawler_channels:
 
 ## Storage
 
-The ``storage`` setting is used to specify primary and replica storage for a Browsertrix Cloud deployment. All configured storage options must be S3-compatible buckets. At minimum, there must be one configured storage option, as can be seen in the default configuration:
+The ``storage`` setting is used to specify primary and replica storage for a Browsertrix deployment. All configured storage options must be S3-compatible buckets. At minimum, there must be one configured storage option, as can be seen in the default configuration:
 
 ```yaml
 storages:
@@ -80,8 +80,8 @@ storages:
 
 ## Email / SMTP Server
 
-Browsertrix Cloud sends user invitations, password resets, background job failure notifications, and other important messages via email. The ``email`` setting can be used to configure the SMTP server used to send emails. To avoid email messages from Browsertrix Cloud being flagged as spam, be sure to use the same domain for ``sender_email`` and ``reply_to_email``.
+Browsertrix sends user invitations, password resets, background job failure notifications, and other important messages via email. The ``email`` setting can be used to configure the SMTP server used to send emails. To avoid email messages from Browsertrix being flagged as spam, be sure to use the same domain for ``sender_email`` and ``reply_to_email``.
 
 ## Signing WACZ files
 
-Browsertrix Cloud has the ability to cryptographically sign WACZ files with [Authsign](https://github.com/webrecorder/authsign). The ``signer`` setting can be used to enable this feature and configure Authsign.
+Browsertrix has the ability to cryptographically sign WACZ files with [Authsign](https://github.com/webrecorder/authsign). The ``signer`` setting can be used to enable this feature and configure Authsign.
