@@ -90,6 +90,8 @@ def main():
 
     page_ops = PageOps(mdb, crawl_ops, org_ops, storage_ops)
 
+    crawl_ops.set_page_ops(page_ops)
+
     background_job_ops.set_ops(crawl_ops, profile_ops)
 
     return init_operator_api(
