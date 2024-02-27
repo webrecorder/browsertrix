@@ -559,6 +559,14 @@ def test_delete_crawls_crawler(
     data = r.json()
     assert data["detail"] == "not_allowed"
 
+    # Check that pages exist for crawl
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] > 0
+
     # Test that crawler user can delete own crawl
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
@@ -570,12 +578,22 @@ def test_delete_crawls_crawler(
     assert data["deleted"] == 1
     assert data["storageQuotaReached"] is False
 
+    time.sleep(5)
+
     # Test that crawl is not found after deleting
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 404
+
+    # Test that associated pages are also deleted
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] == 0
 
 
 def test_delete_crawls_org_owner(

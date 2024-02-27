@@ -94,6 +94,10 @@ class BaseCrawlOps:
             min(presign_duration_minutes, PRESIGN_MINUTES_MAX) * 60
         )
 
+    def set_page_ops(self, page_ops):
+        """set page ops reference"""
+        self.page_ops = page_ops
+
     async def get_crawl_raw(
         self,
         crawlid: str,
@@ -333,6 +337,9 @@ class BaseCrawlOps:
                     raise HTTPException(
                         status_code=400, detail=f"Error Stopping Crawl: {exc}"
                     )
+
+            if type_ == "crawl":
+                await self.page_ops.delete_crawl_pages(crawl_id, org.id)
 
             crawl_size = await self._delete_crawl_files(crawl, org)
             size += crawl_size

@@ -145,6 +145,8 @@ def main():
         app, mdb, crawls, org_ops, storage_ops, current_active_user
     )
 
+    base_crawl_ops.set_page_ops(page_ops)
+
     init_uploads_api(*base_crawl_init)
 
     user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
