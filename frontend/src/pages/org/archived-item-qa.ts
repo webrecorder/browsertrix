@@ -109,16 +109,11 @@ export class ArchivedItemQA extends TailwindElement {
   private qaRuns?: QARun[];
 
   @state()
-  private replaySWReady = false;
+  private screenshotIframesReady: 0 | 1 | 2 = 0;
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
-
-  connectedCallback(): void {
-    super.connectedCallback();
-    this.registerSw();
-  }
 
   protected willUpdate(
     changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
@@ -325,20 +320,38 @@ export class ArchivedItemQA extends TailwindElement {
   private readonly renderScreenshots = () => {
     if (!this.itemId) return;
 
-    const url = `/w/manual-20240226234726-051ed881-37e/:fbc91e679056dc8da1528376ddbc7e5c931ca9b03a0d0f65430c5ee2a76c94c2/20240226234908mp_/urn:view:http://example.com/`;
+    const url = `/replay/w/manual-20240226234726-051ed881-37e/:fbc91e679056dc8da1528376ddbc7e5c931ca9b03a0d0f65430c5ee2a76c94c2/20240226234908mp_/urn:view:http://example.com/`;
 
-    return html` <div class="flex gap-3">
-      <div class="flex-1">
-        <h3>${msg("Crawl Screenshot")}</h3>
+    return html`
+      <div class="mb-2 flex justify-between text-base font-medium">
+        <h3 id="crawlScreenshotHeading">${msg("Crawl Screenshot")}</h3>
+        <h3 id="replayScreenshotHeading">${msg("Replay Screenshot")}</h3>
       </div>
-      <div class="flex-1">
-        <h3>${msg("Replay Screenshot")}</h3>
-        ${when(
-          this.replaySWReady,
-          () => html` <img class="outline" src="${url}" /> `,
-        )}
+      <div class="overflow-hidden rounded border bg-slate-50">
+        <sl-image-comparer
+          class="${this.screenshotIframesReady === 2
+            ? "visible"
+            : "invisible"} w-full"
+        >
+          <iframe
+            slot="before"
+            name="crawlScreenshot"
+            src="${url}"
+            class="aspect-video w-full"
+            aria-labelledby="crawlScreenshotHeading"
+            @load=${this.onScreenshotLoad}
+          ></iframe>
+          <iframe
+            slot="after"
+            name="replayScreenshot"
+            src="${url}"
+            class="aspect-video w-full"
+            aria-labelledby="replayScreenshotHeading"
+            @load=${this.onScreenshotLoad}
+          ></iframe>
+        </sl-image-comparer>
       </div>
-    </div>`;
+    `;
   };
 
   private readonly renderReplay = (crawlId?: string) => {
@@ -357,6 +370,17 @@ export class ArchivedItemQA extends TailwindElement {
         noCache="true"
       ></replay-web-page>
     </div>`;
+  };
+
+  private readonly onScreenshotLoad = (e: Event) => {
+    const iframe = e.currentTarget as HTMLIFrameElement;
+    const img = iframe.contentDocument?.body.querySelector("img");
+    // Make image fill iframe container
+    if (img) {
+      img.style.height = "auto";
+      img.style.width = "100%";
+    }
+    this.screenshotIframesReady += 1;
   };
 
   private async fetchCrawl(): Promise<void> {
@@ -438,6 +462,7 @@ export class ArchivedItemQA extends TailwindElement {
       this.authState!,
     );
   }
+<<<<<<< HEAD
 
   private async getQARuns(): Promise<QARun[]> {
     return this.api.fetch<QARun[]>(
@@ -475,4 +500,6 @@ export class ArchivedItemQA extends TailwindElement {
       console.error(`Registration failed with ${error}`);
     }
   }
+=======
+>>>>>>> 79085356 (use iframes with image comparer)
 }
