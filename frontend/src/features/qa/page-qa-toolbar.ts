@@ -1,17 +1,21 @@
-import { css, html } from "lit";
+import { type PropertyValues, css, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { keyed } from "lit/directives/keyed.js";
 import { localized, msg, str } from "@lit/localize";
 import type { SlTextarea } from "@shoelace-style/shoelace";
+import { merge } from "immutable";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
 import { type AuthState } from "@/utils/AuthService";
-import type { PageComment } from "@/types/crawler";
+import type { ArchivedItemPage } from "@/types/crawler";
 
+/**
+ * Manage crawl QA page assessment
+ */
 @localized()
 @customElement("btrix-page-qa-toolbar")
 export class PageQAToolbar extends TailwindElement {
@@ -167,24 +171,11 @@ export class PageQAToolbar extends TailwindElement {
   @property({ type: String })
   itemId?: string;
 
-  @property({ type: Array })
-  comments: PageComment[] = [
-    {
-      created: new Date().toString(),
-      modified: new Date().toString(),
-      userName: "Example User Name",
-      text: "test comment",
-    },
-    {
-      created: new Date().toString(),
-      modified: new Date().toString(),
-      userName: "Example User Name",
-      text: "test longer comment test longer\n\ncomment test longer comment test longer comment test longer comment",
-    },
-  ];
+  @property({ type: String })
+  pageId?: string;
 
   @state()
-  private reviewStatus: "approved" | "rejected" | null = null;
+  private page?: ArchivedItemPage;
 
   @state()
   private isCommentOpen = false;
@@ -198,11 +189,20 @@ export class PageQAToolbar extends TailwindElement {
   private api = new APIController(this);
   private notify = new NotifyController(this);
 
+  protected willUpdate(
+    changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
+  ): void {
+    if (changedProperties.has("pageId") && this.pageId) {
+      void this.fetchPage();
+    }
+  }
+
   render() {
-    const comment = this.comments[this.comments.length - 1];
-    const approved = this.reviewStatus === "approved";
-    const commented = !!comment;
-    const rejected = this.reviewStatus === "rejected";
+    const comments = this.page?.notes || [];
+    const latestComment = comments[0];
+    const approved = this.page?.approved === true;
+    const rejected = this.page?.approved === false;
+    const commented = !!latestComment;
 
     return html`
       <div
@@ -224,7 +224,9 @@ export class PageQAToolbar extends TailwindElement {
           })}
           role="radio"
           aria-checked=${approved}
-          @click=${() => this.submitReview({ status: "approved" })}
+          ?disabled=${!this.page}
+          @click=${() =>
+            this.submitReview({ approved: approved ? null : true })}
         >
           <sl-icon name="hand-thumbs-up" label=${msg("Approve")}></sl-icon>
         </button>
@@ -237,6 +239,7 @@ export class PageQAToolbar extends TailwindElement {
             roundEnd: !commented && rejected,
           })}
           aria-checked=${commented}
+          ?disabled=${!this.page}
           @click=${() => (this.isCommentOpen = true)}
         >
           <sl-icon name="chat-square-text" label=${msg("Comment")}></sl-icon>
@@ -250,7 +253,9 @@ export class PageQAToolbar extends TailwindElement {
             roundStart: !rejected && commented,
           })}
           aria-checked=${rejected}
-          @click=${() => this.submitReview({ status: "rejected" })}
+          ?disabled=${!this.page}
+          @click=${() =>
+            this.submitReview({ approved: rejected ? null : false })}
         >
           <sl-icon name="hand-thumbs-down" label=${msg("Reject")}></sl-icon>
         </button>
@@ -268,10 +273,10 @@ export class PageQAToolbar extends TailwindElement {
               name="pageComment"
               label=${msg("Comment")}
               placeholder=${msg("Enter page feedback")}
-              value=${comment?.text || ""}
-              help-text=${comment
+              value=${latestComment?.text || ""}
+              help-text=${latestComment
                 ? msg(
-                    str`Updated by ${comment.userName} on ${new Date(comment.modified).toLocaleDateString()}`,
+                    str`Updated by ${latestComment.userName} on ${new Date(latestComment.modified).toLocaleDateString()}`,
                   )
                 : ""}
             ></sl-textarea>
@@ -302,32 +307,36 @@ export class PageQAToolbar extends TailwindElement {
   }
 
   private async submitReview({
-    status,
+    approved,
   }: {
-    status: PageQAToolbar["reviewStatus"];
+    approved: ArchivedItemPage["approved"];
   }) {
-    // TODO
-    // const pageId = "";
-    this.reviewStatus = status;
+    if (!this.page) return;
 
-    // try {
-    //   const data = await this.api.fetch(
-    //     `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
-    //     this.authState!,
-    //     {
-    //       method: "PATCH",
-    //       body: JSON.stringify({ approved: status === "approved" }),
-    //     },
-    //   );
-    // } catch (e: unknown) {
-    //   console.debug(e);
+    try {
+      await this.api.fetch(
+        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.page?.id}`,
+        this.authState!,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ approved }),
+        },
+      );
+      this.page = merge<ArchivedItemPage>(this.page, { approved });
 
-    //   this.notify.toast({
-    //     message: msg("Sorry, couldn't submit page review at this time."),
-    //     variant: "danger",
-    //     icon: "exclamation-octagon",
-    //   });
-    // }
+      this.notify.toast({
+        message: msg("Updated page assessment."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: unknown) {
+      console.debug(e);
+      this.notify.toast({
+        message: msg("Sorry, couldn't submit page review at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 
   private async onSubmitComment(e: SubmitEvent) {
@@ -338,7 +347,7 @@ export class PageQAToolbar extends TailwindElement {
     const pageId = "";
 
     try {
-      const data = await this.api.fetch(
+      await this.api.fetch(
         `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
         this.authState!,
         {
@@ -346,7 +355,6 @@ export class PageQAToolbar extends TailwindElement {
           body: JSON.stringify({ notes: [value] }),
         },
       );
-      console.log(data);
 
       this.notify.toast({
         message: msg("Updated page comments."),
@@ -362,5 +370,24 @@ export class PageQAToolbar extends TailwindElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+  private async fetchPage(): Promise<void> {
+    if (!this.pageId) return;
+    try {
+      this.page = await this.getPage(this.pageId);
+    } catch {
+      this.notify.toast({
+        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getPage(pageId: string): Promise<ArchivedItemPage> {
+    return this.api.fetch<ArchivedItemPage>(
+      `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
+      this.authState!,
+    );
   }
 }

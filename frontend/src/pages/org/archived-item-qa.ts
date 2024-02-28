@@ -184,6 +184,7 @@ export class ArchivedItemQA extends TailwindElement {
                 .authState=${this.authState}
                 .orgId=${this.orgId}
                 .itemId=${this.itemId}
+                .pageId=${this.itemPageId}
               ></btrix-page-qa-toolbar>
               <sl-button variant="primary" size="small">
                 <sl-icon slot="suffix" name="arrow-right"></sl-icon>
