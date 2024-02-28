@@ -189,10 +189,18 @@ def main():
     async def openapi() -> JSONResponse:
         return JSONResponse(app_root.openapi())
 
-    @app_root.get("/healthz", include_in_schema=False)
-    async def healthz():
+    # Used for startup
+    # Returns 200 only when db is available + migrations are done
+    @app_root.get("/healthzStartup", include_in_schema=False)
+    async def healthz_startup():
         if not db_inited.get("inited"):
             raise HTTPException(status_code=503, detail="not_ready_yet")
+        return {}
+
+    # Used for readiness + liveness
+    # Always returns 200 while running
+    @app_root.get("/healthz", include_in_schema=False)
+    async def healthz():
         return {}
 
     app_root.include_router(app, prefix=API_PREFIX)
