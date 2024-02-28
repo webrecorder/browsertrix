@@ -171,11 +171,11 @@ spec:
 
           startupProbe:
             httpGet:
-              path: /healthzStarted
+              path: /healthz
               port: {{ .Values.opPort }}
             initialDelaySeconds: 5
             periodSeconds: 5
-            failureThreshold: 30
+            failureThreshold: 5
             successThreshold: 1
 
           readinessProbe:
@@ -193,7 +193,7 @@ spec:
               port: {{ .Values.opPort }}
             initialDelaySeconds: 5
             periodSeconds: 30
-            failureThreshold: 5
+            failureThreshold: 15
             successThreshold: 1
 
 
