@@ -300,6 +300,7 @@ class BtrixOperator(K8sAPI):
 
         self.done_key = "crawls-done"
         self.pages_key = "pages"
+        self.errors_key = "e"
 
         self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
@@ -999,7 +1000,6 @@ class BtrixOperator(K8sAPI):
                     )
 
             file_done = await redis.lpop(self.done_key)
-
             while file_done:
                 msg = json.loads(file_done)
                 # add completed file
@@ -1011,11 +1011,15 @@ class BtrixOperator(K8sAPI):
                 file_done = await redis.lpop(self.done_key)
 
             page_crawled = await redis.lpop(f"{crawl.id}:{self.pages_key}")
-
             while page_crawled:
                 page_dict = json.loads(page_crawled)
                 await self.page_ops.add_page_to_db(page_dict, crawl.id, crawl.oid)
                 page_crawled = await redis.lpop(f"{crawl.id}:{self.pages_key}")
+
+            crawl_error = await redis.lpop(f"{crawl.id}:{self.errors_key}")
+            while crawl_error:
+                await self.crawl_ops.add_crawl_error(crawl.id, crawl_error)
+                crawl_error = await redis.lpop(f"{crawl.id}:{self.errors_key}")
 
             # ensure filesAdded and filesAddedSize always set
             status.filesAdded = int(await redis.get("filesAdded") or 0)
@@ -1552,8 +1556,6 @@ class BtrixOperator(K8sAPI):
             crawl_id, oid, state
         )
 
-        await self.add_crawl_errors_to_db(crawl_id)
-
         # finally, delete job
         await self.delete_crawl_job(crawl_id)
 
@@ -1578,42 +1580,6 @@ class BtrixOperator(K8sAPI):
 
             await redis.set(f"{crawl_id}:canceled", "1")
             return True
-        finally:
-            if redis:
-                await redis.close()
-
-    async def add_crawl_errors_to_db(self, crawl_id, inc=100):
-        """Pull crawl errors from redis and write to mongo db"""
-        index = 0
-        redis = None
-        try:
-            redis_url = self.get_redis_url(crawl_id)
-            redis = await self._get_redis(redis_url)
-            if not redis:
-                return
-
-            # ensure this only runs once
-            if not await redis.setnx("errors-exported", "1"):
-                return
-
-            while True:
-                skip = index * inc
-                upper_bound = skip + inc - 1
-                errors = await redis.lrange(f"{crawl_id}:e", skip, upper_bound)
-                if not errors:
-                    break
-
-                await self.crawl_ops.add_crawl_errors(crawl_id, errors)
-
-                if len(errors) < inc:
-                    # If we have fewer than inc errors, we can assume this is the
-                    # last page of data to add.
-                    break
-                index += 1
-        # pylint: disable=bare-except
-        except:
-            # likely redis has already been deleted, so nothing to do
-            pass
         finally:
             if redis:
                 await redis.close()

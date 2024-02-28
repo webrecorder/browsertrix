@@ -384,26 +384,6 @@ class CrawlOps(BaseCrawlOps):
 
         return {"total": total, "matched": matched, "nextOffset": next_offset}
 
-    async def get_errors_from_redis(
-        self, crawl_id: str, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
-    ):
-        """Get crawl errors from Redis and optionally store in mongodb."""
-        # Zero-index page for query
-        page = page - 1
-        skip = page * page_size
-        upper_bound = skip + page_size - 1
-
-        async with self.get_redis(crawl_id) as redis:
-            try:
-                errors = await redis.lrange(f"{crawl_id}:e", skip, upper_bound)
-                total = await redis.llen(f"{crawl_id}:e")
-            except exceptions.ConnectionError:
-                # pylint: disable=raise-missing-from
-                raise HTTPException(status_code=503, detail="error_logs_not_available")
-
-        parsed_errors = parse_jsonl_error_messages(errors)
-        return parsed_errors, total
-
     async def add_or_remove_exclusion(self, crawl_id, regex, org, user, add):
         """add new exclusion to config or remove exclusion from config
         for given crawl_id, update config on crawl"""
@@ -470,10 +450,10 @@ class CrawlOps(BaseCrawlOps):
             return None, None
         return res.get("state"), res.get("finished")
 
-    async def add_crawl_errors(self, crawl_id, errors):
-        """add crawl errors from redis to mongodb errors field"""
+    async def add_crawl_error(self, crawl_id: str, error: str):
+        """add crawl error from redis to mongodb errors field"""
         await self.crawls.find_one_and_update(
-            {"_id": crawl_id}, {"$push": {"errors": {"$each": errors}}}
+            {"_id": crawl_id}, {"$push": {"errors": error}}
         )
 
     async def add_crawl_file(self, crawl_id, crawl_file, size):
@@ -931,15 +911,11 @@ def init_crawls_api(app, user_dep, *args):
         crawl_raw = await ops.get_crawl_raw(crawl_id, org)
         crawl = Crawl.from_dict(crawl_raw)
 
-        if crawl.finished:
-            skip = (page - 1) * pageSize
-            upper_bound = skip + pageSize
-            errors = crawl.errors[skip:upper_bound]
-            parsed_errors = parse_jsonl_error_messages(errors)
-            total = len(crawl.errors)
-            return paginated_format(parsed_errors, total, page, pageSize)
+        skip = (page - 1) * pageSize
+        upper_bound = skip + pageSize
 
-        errors, total = await ops.get_errors_from_redis(crawl_id, pageSize, page)
-        return paginated_format(errors, total, page, pageSize)
+        errors = crawl.errors[skip:upper_bound]
+        parsed_errors = parse_jsonl_error_messages(errors)
+        return paginated_format(parsed_errors, len(crawl.errors), page, pageSize)
 
     return ops
