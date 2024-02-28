@@ -14,18 +14,19 @@ from typing import (
 )
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
+from itertools import chain
 
 import asyncio
 import heapq
 import zlib
 import json
-import itertools
 import os
 
 from datetime import datetime
 
 from fastapi import Depends, HTTPException
 from stream_zip import stream_zip, NO_COMPRESSION_64
+from remotezip import RemoteZip
 
 import aiobotocore.session
 import boto3
@@ -512,25 +513,15 @@ class StorageOps:
 
         return status_code == 204
 
-    async def sync_stream_pages_from_wacz(
-        self,
-        org: Organization,
-        wacz_files: List[CrawlFile],
+    async def sync_stream_wacz_pages(
+        self, wacz_files: List[CrawlFileOut]
     ) -> Iterator[Dict[Any, Any]]:
-        """Return stream of page dicts from last of WACZs"""
-        async with self.get_sync_client(org) as (client, bucket, key):
-            loop = asyncio.get_event_loop()
+        """Return stream of pages specified WACZ"""
+        loop = asyncio.get_event_loop()
 
-            stream = await loop.run_in_executor(
-                None,
-                self._sync_get_pages,
-                wacz_files,
-                client,
-                bucket,
-                key,
-            )
+        resp = await loop.run_in_executor(None, self._sync_get_pages, wacz_files)
 
-            return stream
+        return resp
 
     async def sync_stream_wacz_logs(
         self,
@@ -636,7 +627,7 @@ class StorageOps:
                         )
                     )
 
-            log_generators.append(itertools.chain(*wacz_log_streams))
+            log_generators.append(chain(*wacz_log_streams))
 
         heap_iter = heapq.merge(*log_generators, key=lambda entry: entry["timestamp"])
 
@@ -644,50 +635,54 @@ class StorageOps:
 
     def _sync_get_pages(
         self,
-        wacz_files: List[CrawlFile],
-        client,
-        bucket: str,
-        key: str,
+        wacz_files: List[CrawlFileOut],
     ) -> Iterator[Dict[Any, Any]]:
         """Generate stream of page dicts from specified WACZs"""
 
         # pylint: disable=too-many-function-args
         def stream_page_lines(
-            wacz_key, wacz_filename, cd_start, pagefile_zipinfo
+            pagefile_zipinfo, wacz_url: str, wacz_filename: str
         ) -> Iterator[Dict[Any, Any]]:
             """Pass lines as json objects"""
+            filename = pagefile_zipinfo.filename
+
             print(
-                f"Fetching JSON lines from {pagefile_zipinfo.filename} in {wacz_filename}",
+                f"Fetching JSON lines from {filename} in {wacz_filename}",
                 flush=True,
             )
 
-            line_iter: Iterator[bytes] = sync_get_filestream(
-                client, bucket, wacz_key, pagefile_zipinfo, cd_start
-            )
+            line_iter: Iterator[bytes] = self._sync_get_filestream(wacz_url, filename)
             for line in line_iter:
                 yield _parse_json(line.decode("utf-8", errors="ignore"))
 
         page_generators: List[Iterator[Dict[Any, Any]]] = []
 
         for wacz_file in wacz_files:
-            wacz_key = key + wacz_file.filename
-            cd_start, zip_file = sync_get_zip_file(client, bucket, wacz_key)
+            wacz_url = wacz_file.path
+            if wacz_url.startswith("/data"):
+                wacz_url = f"http://host.docker.internal:30870{wacz_url}"
 
-            page_files = [
-                f
-                for f in zip_file.filelist
-                if f.filename.startswith("pages/")
-                and f.filename.endswith(".jsonl")
-                and not f.is_dir()
-            ]
-            for pagefile_zipinfo in page_files:
-                page_generators.append(
-                    stream_page_lines(
-                        wacz_key, wacz_file.filename, cd_start, pagefile_zipinfo
+            with RemoteZip(wacz_url) as remote_zip:
+                page_files = [
+                    f
+                    for f in remote_zip.infolist()
+                    if f.filename.startswith("pages/")
+                    and f.filename.endswith(".jsonl")
+                    and not f.is_dir()
+                ]
+                for pagefile_zipinfo in page_files:
+                    page_generators.append(
+                        stream_page_lines(pagefile_zipinfo, wacz_url, wacz_file.name)
                     )
-                )
 
-        return itertools.chain(*page_generators)
+        return chain.from_iterable(page_generators)
+
+    def _sync_get_filestream(self, wacz_url: str, filename: str) -> Iterator[bytes]:
+        """Return iterator of lines in remote file as bytes"""
+        with RemoteZip(wacz_url) as remote_zip:
+            with remote_zip.open(filename) as file_stream:
+                for line in file_stream:
+                    yield line
 
     def _sync_dl(
         self, all_files: List[CrawlFileOut], client: S3Client, bucket: str, key: str

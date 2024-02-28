@@ -59,48 +59,6 @@ def sync_iter_lines(chunk_iter, decompress=False, keepends=True):
         yield pending.splitlines(keepends)[0]
 
 
-async def get_zip_file(client, bucket, key):
-    """Fetch enough of the WACZ file be able to read the zip filelist"""
-    file_size = await get_file_size(client, bucket, key)
-    eocd_record = await fetch(
-        client, bucket, key, file_size - EOCD_RECORD_SIZE, EOCD_RECORD_SIZE
-    )
-
-    if file_size <= MAX_STANDARD_ZIP_SIZE:
-        cd_start, cd_size = get_central_directory_metadata_from_eocd(eocd_record)
-        central_directory = await fetch(client, bucket, key, cd_start, cd_size)
-        return (
-            cd_start,
-            zipfile.ZipFile(io.BytesIO(central_directory + eocd_record)),
-        )
-
-    zip64_eocd_record = await fetch(
-        client,
-        bucket,
-        key,
-        file_size
-        - (EOCD_RECORD_SIZE + ZIP64_EOCD_LOCATOR_SIZE + ZIP64_EOCD_RECORD_SIZE),
-        ZIP64_EOCD_RECORD_SIZE,
-    )
-    zip64_eocd_locator = await fetch(
-        client,
-        bucket,
-        key,
-        file_size - (EOCD_RECORD_SIZE + ZIP64_EOCD_LOCATOR_SIZE),
-        ZIP64_EOCD_LOCATOR_SIZE,
-    )
-    cd_start, cd_size = get_central_directory_metadata_from_eocd64(zip64_eocd_record)
-    central_directory = await fetch(client, bucket, key, cd_start, cd_size)
-    return (
-        cd_start,
-        zipfile.ZipFile(
-            io.BytesIO(
-                central_directory + zip64_eocd_record + zip64_eocd_locator + eocd_record
-            )
-        ),
-    )
-
-
 def sync_get_zip_file(client, bucket, key):
     """Fetch enough of the WACZ file be able to read the zip filelist"""
     file_size = sync_get_file_size(client, bucket, key)
@@ -139,25 +97,10 @@ def sync_get_zip_file(client, bucket, key):
         return (cd_start, zip_file)
 
 
-async def get_file_size(client, bucket, key):
-    """Get WACZ file size from HEAD request"""
-    head_response = await client.head_object(Bucket=bucket, Key=key)
-    return head_response["ContentLength"]
-
-
 def sync_get_file_size(client, bucket, key):
     """Get WACZ file size from HEAD request"""
     head_response = client.head_object(Bucket=bucket, Key=key)
     return head_response["ContentLength"]
-
-
-async def fetch(client, bucket, key, start, length):
-    """Fetch a byte range from a file in object storage"""
-    end = start + length - 1
-    response = await client.get_object(
-        Bucket=bucket, Key=key, Range=f"bytes={start}-{end}"
-    )
-    return await response["Body"].read()
 
 
 def sync_fetch(client, bucket, key, start, length):
