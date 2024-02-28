@@ -1438,6 +1438,13 @@ class Page(BaseMongoModel):
 
 
 # ============================================================================
+class PageOut(Page):
+    """Model for pages output"""
+
+    status: Optional[int] = 200
+
+
+# ============================================================================
 class PageQAUpdate(BaseModel):
     """Model for updating pages from QA run"""
 

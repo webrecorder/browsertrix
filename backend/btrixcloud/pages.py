@@ -9,6 +9,7 @@ import pymongo
 
 from .models import (
     Page,
+    PageOut,
     PageReviewUpdate,
     PageQAUpdate,
     Organization,
@@ -82,7 +83,11 @@ class PageOps:
                     else datetime.now()
                 ),
             )
-            await self.pages.insert_one(page.to_dict())
+            await self.pages.insert_one(
+                page.to_dict(
+                    exclude_unset=True, exclude_none=True, exclude_defaults=True
+                )
+            )
         except pymongo.errors.DuplicateKeyError:
             return
         # pylint: disable=broad-except
@@ -347,7 +352,7 @@ class PageOps:
         except (IndexError, ValueError):
             total = 0
 
-        pages = [Page.from_dict(data) for data in items]
+        pages = [PageOut.from_dict(data) for data in items]
 
         return pages, total
 
