@@ -108,6 +108,9 @@ export class ArchivedItemQA extends TailwindElement {
   @state()
   private qaRuns?: QARun[];
 
+  @state()
+  private replayReady = false;
+
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
@@ -330,7 +333,10 @@ export class ArchivedItemQA extends TailwindElement {
       </div>
       <div class="flex-1">
         <h3>${msg("Replay Screenshot")}</h3>
-        <img class="outline" src="${url}" />
+        ${when(
+          this.replayReady,
+          () => html` <img class="outline" src="${url}" /> `,
+        )}
       </div>
     </div>`;
   };
@@ -445,18 +451,25 @@ export class ArchivedItemQA extends TailwindElement {
    */
   private async registerSw() {
     try {
-      const registration = await navigator.serviceWorker.register(
-        "/replay/sw.js",
-        {
-          scope: "/w/",
-        },
-      );
-      if (registration.installing) {
-        console.debug("Service worker installing!");
-      } else if (registration.waiting) {
-        console.debug("Service worker waiting!");
-      } else if (registration.active) {
-        console.debug("Service worker active!");
+      const reg = await navigator.serviceWorker.register("/replay/sw.js", {
+        scope: "/",
+      });
+      const sw = reg.installing || reg.waiting || reg.active;
+      console.log("archived-item-qa sw state:", sw?.state);
+      if (sw) {
+        if (sw.state !== "activated") {
+          await new Promise((resolve) => {
+            sw.addEventListener("statechange", () => {
+              if (sw.state === "activated") {
+                resolve(null);
+              }
+            });
+          });
+        }
+        this.replayReady = true;
+      } else {
+        this.replayReady = false;
+        console.debug("no sw");
       }
     } catch (error) {
       console.error(`Registration failed with ${error}`);
