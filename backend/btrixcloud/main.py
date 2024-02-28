@@ -191,7 +191,7 @@ def main():
     # Used for startup probe
     # Always returns 200 while running to account for migration work
     @app_root.get("/healthzStartup", include_in_schema=False)
-    async def healthzStartup():
+    async def healthz_startup():
         return {}
 
     app_root.include_router(app, prefix=API_PREFIX)
