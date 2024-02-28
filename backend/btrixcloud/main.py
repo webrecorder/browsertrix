@@ -180,10 +180,18 @@ def main():
     async def openapi() -> JSONResponse:
         return JSONResponse(app_root.openapi())
 
+    # Used for readiness + liveness probe
+    # Returns 200 only when migrations are done
     @app_root.get("/healthz", include_in_schema=False)
     async def healthz():
         if not db_inited.get("inited"):
             raise HTTPException(status_code=503, detail="not_ready_yet")
+        return {}
+
+    # Used for startup probe
+    # Always returns 200 while running to account for migration work
+    @app_root.get("/healthzStartup", include_in_schema=False)
+    async def healthzStartup():
         return {}
 
     app_root.include_router(app, prefix=API_PREFIX)
