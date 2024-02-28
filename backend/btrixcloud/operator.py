@@ -33,6 +33,7 @@ from .models import (
     RUNNING_AND_STARTING_ONLY,
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
+    FAILED_STATES,
     CrawlFile,
     CrawlCompleteIn,
     StorageRef,
@@ -47,10 +48,11 @@ if TYPE_CHECKING:
     from .webhooks import EventWebhookOps
     from .users import UserManager
     from .background_jobs import BackgroundJobOps
+    from .pages import PageOps
     from redis.asyncio.client import Redis
 else:
     CrawlConfigOps = CrawlOps = OrgOps = CollectionOps = Redis = object
-    StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = object
+    StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = PageOps = object
 
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
@@ -268,6 +270,7 @@ class BtrixOperator(K8sAPI):
     event_webhook_ops: EventWebhookOps
     background_job_ops: BackgroundJobOps
     user_ops: UserManager
+    page_ops: PageOps
 
     def __init__(
         self,
@@ -278,6 +281,7 @@ class BtrixOperator(K8sAPI):
         storage_ops,
         event_webhook_ops,
         background_job_ops,
+        page_ops,
     ):
         super().__init__()
 
@@ -288,12 +292,14 @@ class BtrixOperator(K8sAPI):
         self.storage_ops = storage_ops
         self.background_job_ops = background_job_ops
         self.event_webhook_ops = event_webhook_ops
+        self.page_ops = page_ops
 
         self.user_ops = crawl_config_ops.user_manager
 
         self.config_file = "/config/config.yaml"
 
         self.done_key = "crawls-done"
+        self.pages_key = "pages"
 
         self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
@@ -1004,6 +1010,13 @@ class BtrixOperator(K8sAPI):
                 # get next file done
                 file_done = await redis.lpop(self.done_key)
 
+            page_crawled = await redis.lpop(f"{crawl.id}:{self.pages_key}")
+
+            while page_crawled:
+                page_dict = json.loads(page_crawled)
+                await self.page_ops.add_page_to_db(page_dict, crawl.id, crawl.oid)
+                page_crawled = await redis.lpop(f"{crawl.id}:{self.pages_key}")
+
             # ensure filesAdded and filesAddedSize always set
             status.filesAdded = int(await redis.get("filesAdded") or 0)
             status.filesAddedSize = int(await redis.get("filesAddedSize") or 0)
@@ -1531,11 +1544,14 @@ class BtrixOperator(K8sAPI):
             await self.org_ops.inc_org_bytes_stored(oid, files_added_size, "crawl")
             await self.coll_ops.add_successful_crawl_to_collections(crawl_id, cid)
 
+        if state in FAILED_STATES:
+            await self.crawl_ops.delete_crawl_files(crawl_id, oid)
+            await self.page_ops.delete_crawl_pages(crawl_id, oid)
+
         await self.event_webhook_ops.create_crawl_finished_notification(
             crawl_id, oid, state
         )
 
-        # add crawl errors to db
         await self.add_crawl_errors_to_db(crawl_id)
 
         # finally, delete job

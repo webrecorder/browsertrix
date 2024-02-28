@@ -1366,3 +1366,88 @@ class AnyJob(BaseModel):
     """Union of all job types, for response model"""
 
     __root__: Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob]
+
+
+# ============================================================================
+
+### PAGES ###
+
+
+# ============================================================================
+class PageReviewUpdate(BaseModel):
+    """Update model for page manual review/approval"""
+
+    approved: Optional[bool] = None
+
+
+# ============================================================================
+class PageNoteIn(BaseModel):
+    """Input model for adding page notes"""
+
+    text: str
+
+
+# ============================================================================
+class PageNoteEdit(BaseModel):
+    """Input model for editing page notes"""
+
+    id: UUID
+    text: str
+
+
+# ============================================================================
+class PageNoteDelete(BaseModel):
+    """Delete model for page notes"""
+
+    delete_list: List[UUID] = []
+
+
+# ============================================================================
+class PageNote(BaseModel):
+    """Model for page notes, tracking user and time"""
+
+    id: UUID
+    text: str
+    created: datetime = datetime.now()
+    userid: UUID
+    userName: str
+
+
+# ============================================================================
+class Page(BaseMongoModel):
+    """Model for crawl pages"""
+
+    oid: UUID
+    crawl_id: str
+    url: AnyHttpUrl
+    title: Optional[str] = None
+    timestamp: Optional[datetime] = None
+    load_state: Optional[int] = None
+    status: Optional[int] = None
+
+    # automated heuristics, keyed by QA run id
+    screenshotMatch: Optional[Dict[str, float]] = {}
+    textMatch: Optional[Dict[str, float]] = {}
+    resourceCounts: Optional[Dict[str, Dict[str, int]]] = {}
+
+    # manual review
+    userid: Optional[UUID] = None
+    modified: Optional[datetime] = None
+    approved: Optional[bool] = None
+    notes: List[PageNote] = []
+
+
+# ============================================================================
+class PageOut(Page):
+    """Model for pages output"""
+
+    status: Optional[int] = 200
+
+
+# ============================================================================
+class PageQAUpdate(BaseModel):
+    """Model for updating pages from QA run"""
+
+    screenshotMatch: Optional[int] = None
+    textMatch: Optional[int] = None
+    resourceCounts: Optional[Dict[str, Dict[str, int]]]

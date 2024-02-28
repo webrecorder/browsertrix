@@ -29,6 +29,7 @@ from .crawls import init_crawls_api
 from .basecrawls import init_base_crawls_api
 from .webhooks import init_event_webhooks_api
 from .background_jobs import init_background_jobs_api
+from .pages import init_pages_api
 
 from .crawlmanager import CrawlManager
 from .utils import run_once_lock, register_exit_handler, is_bool
@@ -140,6 +141,13 @@ def main():
 
     crawls = init_crawls_api(*base_crawl_init)
 
+    page_ops = init_pages_api(
+        app, mdb, crawls, org_ops, storage_ops, current_active_user
+    )
+
+    base_crawl_ops.set_page_ops(page_ops)
+    crawls.set_page_ops(page_ops)
+
     init_uploads_api(*base_crawl_init)
 
     user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)
@@ -160,6 +168,7 @@ def main():
                 coll_ops,
                 invites,
                 storage_ops,
+                page_ops,
                 db_inited,
             )
         )

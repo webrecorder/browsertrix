@@ -16,6 +16,8 @@ wacz_hash = None
 
 wacz_content = None
 
+page_id = None
+
 
 def test_list_orgs(admin_auth_headers, default_org_id):
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
@@ -374,6 +376,176 @@ def test_crawl_stats(crawler_auth_headers, default_org_id):
             assert row["avg_page_time"] or row["avg_page_time"] == 0
 
 
+def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
+    # Test GET list endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] >= 0
+
+    pages = data["items"]
+    assert pages
+
+    for page in pages:
+        assert page["id"]
+        assert page["oid"]
+        assert page["crawl_id"]
+        assert page["url"]
+        assert page["timestamp"]
+        assert page.get("title") or page.get("title") is None
+        assert page["load_state"]
+
+    # Test GET page endpoint
+    global page_id
+    page_id = pages[0]["id"]
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    page = r.json()
+
+    assert page["id"] == page_id
+    assert page["oid"]
+    assert page["crawl_id"]
+    assert page["url"]
+    assert page["timestamp"]
+    assert page.get("title") or page.get("title") is None
+    assert page["load_state"]
+
+    assert page["screenshotMatch"] == {}
+    assert page["textMatch"] == {}
+    assert page["resourceCounts"] == {}
+
+    assert page["notes"] == []
+    assert page.get("userid") is None
+    assert page.get("modified") is None
+    assert page.get("approved") is None
+
+    # Update page with approval
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+        json={
+            "approved": True,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    page = r.json()
+
+    assert page["id"] == page_id
+    assert page["oid"]
+    assert page["crawl_id"]
+    assert page["url"]
+    assert page["timestamp"]
+    assert page.get("title") or page.get("title") is None
+    assert page["load_state"]
+
+    assert page["notes"] == []
+    assert page["userid"]
+    assert page["modified"]
+    assert page["approved"]
+
+
+def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id):
+    note_text = "testing"
+    updated_note_text = "updated"
+    untouched_text = "untouched"
+
+    # Add note
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}/notes",
+        headers=crawler_auth_headers,
+        json={"text": note_text},
+    )
+    assert r.status_code == 200
+    assert r.json()["added"]
+
+    # Check that note was added
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert len(data["notes"]) == 1
+
+    first_note = data["notes"][0]
+
+    first_note_id = first_note["id"]
+    assert first_note_id
+
+    assert first_note["created"]
+    assert first_note["userid"]
+    assert first_note["userName"]
+    assert first_note["text"] == note_text
+
+    # Add second note to test selective updates/deletes
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}/notes",
+        headers=crawler_auth_headers,
+        json={"text": untouched_text},
+    )
+    assert r.status_code == 200
+    assert r.json()["added"]
+
+    # Edit first note
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}/notes",
+        headers=crawler_auth_headers,
+        json={"text": updated_note_text, "id": first_note_id},
+    )
+    assert r.status_code == 200
+    assert r.json()["updated"]
+
+    # Verify notes look as expected
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    notes = data["notes"]
+
+    assert len(notes) == 2
+
+    updated_note = [note for note in notes if note["id"] == first_note_id][0]
+    assert updated_note["text"] == updated_note_text
+
+    second_note_id = [note["id"] for note in notes if note["text"] == untouched_text][0]
+    assert second_note_id
+
+    # Delete both notes
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}/notes/delete",
+        headers=crawler_auth_headers,
+        json={"delete_list": [first_note_id, second_note_id]},
+    )
+    assert r.status_code == 200
+    assert r.json()["deleted"]
+
+    # Verify notes were deleted
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    notes = data.get("notes")
+    assert notes == []
+
+
 def test_delete_crawls_crawler(
     crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id
 ):
@@ -387,6 +559,14 @@ def test_delete_crawls_crawler(
     data = r.json()
     assert data["detail"] == "not_allowed"
 
+    # Check that pages exist for crawl
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] > 0
+
     # Test that crawler user can delete own crawl
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
@@ -398,12 +578,22 @@ def test_delete_crawls_crawler(
     assert data["deleted"] == 1
     assert data["storageQuotaReached"] is False
 
+    time.sleep(5)
+
     # Test that crawl is not found after deleting
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 404
+
+    # Test that associated pages are also deleted
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] == 0
 
 
 def test_delete_crawls_org_owner(

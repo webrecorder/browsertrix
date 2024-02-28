@@ -21,6 +21,7 @@ from .profiles import ProfileOps
 from .storages import init_storages_api
 from .webhooks import EventWebhookOps
 from .background_jobs import BackgroundJobOps
+from .pages import PageOps
 
 app_root = FastAPI()
 
@@ -87,6 +88,10 @@ def main():
         background_job_ops,
     )
 
+    page_ops = PageOps(mdb, crawl_ops, org_ops, storage_ops)
+
+    crawl_ops.set_page_ops(page_ops)
+
     background_job_ops.set_ops(crawl_ops, profile_ops)
 
     return init_operator_api(
@@ -98,6 +103,7 @@ def main():
         storage_ops,
         event_webhook_ops,
         background_job_ops,
+        page_ops,
     )
 
 

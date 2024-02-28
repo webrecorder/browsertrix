@@ -10,6 +10,7 @@ from typing import (
     Dict,
     AsyncIterator,
     TYPE_CHECKING,
+    Any,
 )
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
@@ -44,7 +45,7 @@ from .models import (
 )
 from .zip import (
     sync_get_zip_file,
-    sync_get_log_stream,
+    sync_get_filestream,
 )
 
 from .utils import is_bool, slug_from_name
@@ -511,6 +512,26 @@ class StorageOps:
 
         return status_code == 204
 
+    async def sync_stream_pages_from_wacz(
+        self,
+        org: Organization,
+        wacz_files: List[CrawlFile],
+    ) -> Iterator[Dict[Any, Any]]:
+        """Return stream of page dicts from last of WACZs"""
+        async with self.get_sync_client(org) as (client, bucket, key):
+            loop = asyncio.get_event_loop()
+
+            stream = await loop.run_in_executor(
+                None,
+                self._sync_get_pages,
+                wacz_files,
+                client,
+                bucket,
+                key,
+            )
+
+            return stream
+
     async def sync_stream_wacz_logs(
         self,
         org: Organization,
@@ -556,7 +577,7 @@ class StorageOps:
                 f"Fetching log {log_zipinfo.filename} from {wacz_filename}", flush=True
             )
 
-            line_iter: Iterator[bytes] = sync_get_log_stream(
+            line_iter: Iterator[bytes] = sync_get_filestream(
                 client, bucket, wacz_key, log_zipinfo, cd_start
             )
 
@@ -620,6 +641,53 @@ class StorageOps:
         heap_iter = heapq.merge(*log_generators, key=lambda entry: entry["timestamp"])
 
         return stream_json_lines(heap_iter, log_levels, contexts)
+
+    def _sync_get_pages(
+        self,
+        wacz_files: List[CrawlFile],
+        client,
+        bucket: str,
+        key: str,
+    ) -> Iterator[Dict[Any, Any]]:
+        """Generate stream of page dicts from specified WACZs"""
+
+        # pylint: disable=too-many-function-args
+        def stream_page_lines(
+            wacz_key, wacz_filename, cd_start, pagefile_zipinfo
+        ) -> Iterator[Dict[Any, Any]]:
+            """Pass lines as json objects"""
+            print(
+                f"Fetching JSON lines from {pagefile_zipinfo.filename} in {wacz_filename}",
+                flush=True,
+            )
+
+            line_iter: Iterator[bytes] = sync_get_filestream(
+                client, bucket, wacz_key, pagefile_zipinfo, cd_start
+            )
+            for line in line_iter:
+                yield _parse_json(line.decode("utf-8", errors="ignore"))
+
+        page_generators: List[Iterator[Dict[Any, Any]]] = []
+
+        for wacz_file in wacz_files:
+            wacz_key = key + wacz_file.filename
+            cd_start, zip_file = sync_get_zip_file(client, bucket, wacz_key)
+
+            page_files = [
+                f
+                for f in zip_file.filelist
+                if f.filename.startswith("pages/")
+                and f.filename.endswith(".jsonl")
+                and not f.is_dir()
+            ]
+            for pagefile_zipinfo in page_files:
+                page_generators.append(
+                    stream_page_lines(
+                        wacz_key, wacz_file.filename, cd_start, pagefile_zipinfo
+                    )
+                )
+
+        return itertools.chain(*page_generators)
 
     def _sync_dl(
         self, all_files: List[CrawlFileOut], client: S3Client, bucket: str, key: str
