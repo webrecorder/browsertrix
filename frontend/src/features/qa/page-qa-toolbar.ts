@@ -25,28 +25,31 @@ export class PageQAToolbar extends TailwindElement {
       --btrix-border-radius: var(--sl-border-radius-large);
     }
 
-    .group {
+    .btnGroup {
       display: flex;
       align-items: stretch;
       justify-content: stretch;
-      box-shadow: inset 0 0 0 1px var(--sl-color-neutral-300);
+      box-shadow:
+        inset 0 0 0 1px var(--sl-color-neutral-300),
+        var(--sl-shadow-x-small);
       border-radius: var(--sl-input-height-small);
       height: var(--sl-input-height-small);
+      transition: var(--sl-transition-x-fast) background;
     }
 
-    .group.approved:not(.commented) {
+    .btnGroup.approved:not(.commented) {
       background-color: var(--sl-color-success-500);
     }
 
-    .group.rejected:not(.commented) {
+    .btnGroup.rejected:not(.commented) {
       background-color: var(--sl-color-danger-500);
     }
 
-    .group.commented:not(.approved):not(.rejected) {
+    .btnGroup.commented:not(.approved):not(.rejected) {
       background-color: var(--sl-color-blue-400);
     }
 
-    .group.approved.commented {
+    .btnGroup.approved.commented {
       background: linear-gradient(
         to right,
         var(--sl-color-success-500),
@@ -56,7 +59,7 @@ export class PageQAToolbar extends TailwindElement {
       );
     }
 
-    .group.rejected.commented {
+    .btnGroup.rejected.commented {
       background: linear-gradient(
         to right,
         var(--sl-color-blue-400),
@@ -66,7 +69,7 @@ export class PageQAToolbar extends TailwindElement {
       );
     }
 
-    button {
+    .btnGroup button {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -74,59 +77,56 @@ export class PageQAToolbar extends TailwindElement {
       width: 4rem;
       border-top: var(--btrix-border);
       border-bottom: var(--btrix-border);
-      box-shadow: var(--sl-shadow-x-small);
       transition:
         var(--sl-transition-x-fast) background-color,
         var(--sl-transition-x-fast) border,
+        var(--sl-transition-x-fast) border-radius,
         var(--sl-transition-x-fast) box-shadow,
         var(--sl-transition-x-fast) transform;
     }
 
-    button:not(.active) {
+    .btnGroup button:not(.active) {
       background-color: var(--sl-color-neutral-0);
     }
 
-    button:first-of-type {
+    .btnGroup button:first-of-type {
       border-left: var(--btrix-border);
+      border-right: 1px solid transparent;
       border-start-start-radius: var(--sl-input-height-small);
       border-end-start-radius: var(--sl-input-height-small);
     }
 
-    button:last-of-type {
+    .btnGroup button:nth-of-type(2) {
+      border-left: 1px solid transparent;
+      border-right: 1px solid transparent;
+    }
+
+    .btnGroup button:last-of-type {
+      border-left: 1px solid transparent;
       border-right: var(--btrix-border);
       border-start-end-radius: var(--sl-input-height-small);
       border-end-end-radius: var(--sl-input-height-small);
     }
 
-    button:first-of-type {
-      border-start-end-radius: 0;
-      border-end-end-radius: 0;
-    }
-
-    button:last-of-type {
-      border-start-start-radius: 0;
-      border-end-start-radius: 0;
-    }
-
-    button.active {
+    .btnGroup button.active {
       color: var(--sl-color-neutral-0);
     }
 
-    button.active:hover {
+    .btnGroup button.active:hover {
       background-color: rgba(255, 255, 255, 0.15);
     }
 
-    .vote:not(.active):hover {
+    .rate:not(.active):hover {
       border: var(--btrix-border);
       transform: scale(1.1);
     }
 
-    .vote:first-of-type:not(.active):hover {
+    .rate:first-of-type:not(.active):hover {
       border-start-end-radius: var(--btrix-border-radius);
       border-end-end-radius: var(--btrix-border-radius);
     }
 
-    .vote:last-of-type:not(.active):hover {
+    .rate:last-of-type:not(.active):hover {
       border-start-start-radius: var(--btrix-border-radius);
       border-end-start-radius: var(--btrix-border-radius);
     }
@@ -144,17 +144,35 @@ export class PageQAToolbar extends TailwindElement {
       color: var(--sl-color-blue-400);
     }
 
-    button.roundStart {
+    .btnGroup:has(button.active:first-of-type)
+      button:nth-of-type(2):not(.active),
+    .btnGroup:has(button.active:nth-of-type(2))
+      button:last-of-type:not(.active) {
+      border-left: var(--btrix-border);
       border-start-start-radius: var(--btrix-border-radius);
       border-end-start-radius: var(--btrix-border-radius);
     }
 
-    button.roundEnd {
+    .btnGroup:has(button.active:nth-of-type(2))
+      button:first-of-type:not(.active),
+    .btnGroup:has(button.active:last-of-type)
+      button:nth-of-type(2):not(.active) {
+      border-right: var(--btrix-border);
       border-start-end-radius: var(--btrix-border-radius);
       border-end-end-radius: var(--btrix-border-radius);
     }
 
-    button sl-icon {
+    .btnGroup:has(button:first-of-type:not(:active))
+      button:nth-of-type(2):not(.active) {
+      border-left: var(--btrix-border);
+    }
+
+    .btnGroup:has(button:last-of-type:not(.active))
+      button:nth-of-type(2):not(.active) {
+      border-right: var(--btrix-border);
+    }
+
+    .btnGroup sl-icon {
       font-size: var(--font-size-base);
       transition:
         var(--sl-transition-x-fast) color,
@@ -205,24 +223,21 @@ export class PageQAToolbar extends TailwindElement {
     const commented = !!latestComment;
 
     return html`
-      <div
+      <fieldset
         class=${classMap({
-          group: true,
+          btnGroup: true,
           approved: approved,
           commented: commented,
           rejected: rejected,
         })}
-        role="radiogroup"
         aria-label=${msg("QA rating")}
       >
         <button
           class=${classMap({
-            vote: true,
+            rate: true,
             approve: true,
             active: approved,
-            roundEnd: !approved && commented,
           })}
-          role="radio"
           aria-checked=${approved}
           ?disabled=${!this.page}
           @click=${() =>
@@ -235,8 +250,6 @@ export class PageQAToolbar extends TailwindElement {
           class=${classMap({
             comment: true,
             active: commented,
-            roundStart: !commented && approved,
-            roundEnd: !commented && rejected,
           })}
           aria-checked=${commented}
           ?disabled=${!this.page}
@@ -245,12 +258,10 @@ export class PageQAToolbar extends TailwindElement {
           <sl-icon name="chat-square-text" label=${msg("Comment")}></sl-icon>
         </button>
         <button
-          role="radio"
           class=${classMap({
-            vote: true,
+            rate: true,
             reject: true,
             active: rejected,
-            roundStart: !rejected && commented,
           })}
           aria-checked=${rejected}
           ?disabled=${!this.page}
@@ -259,7 +270,7 @@ export class PageQAToolbar extends TailwindElement {
         >
           <sl-icon name="hand-thumbs-down" label=${msg("Reject")}></sl-icon>
         </button>
-      </div>
+      </fieldset>
 
       <btrix-dialog
         label=${msg("Page Review Comments")}
