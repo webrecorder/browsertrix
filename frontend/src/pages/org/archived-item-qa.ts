@@ -347,7 +347,7 @@ export class ArchivedItemQA extends TailwindElement {
         coll="${this.itemId}"
         config="${config}"
         replayBase="/replay/"
-        noSandbox="true"
+        embed="replayonly"
         noCache="true"
       ></replay-web-page>
     </div>`;
