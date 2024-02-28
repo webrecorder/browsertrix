@@ -33,7 +33,7 @@ import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
 import { theme } from "@/theme";
-import { DEFAULT_MAX_SCALE } from "./types/crawler";
+import { DEFAULT_MAX_SCALE } from "./utils/crawler";
 
 // Make theme CSS available in document
 document.adoptedStyleSheets = [theme];

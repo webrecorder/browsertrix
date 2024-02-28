@@ -52,8 +52,6 @@ export type WorkflowParams = {
   crawlerChannel: string;
 };
 
-export const DEFAULT_MAX_SCALE = 3;
-
 export type CrawlConfig = WorkflowParams & {
   oid: string;
   profileName: string | null;

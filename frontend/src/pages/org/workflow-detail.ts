@@ -10,17 +10,20 @@ import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { RelativeDuration } from "@/components/ui/relative-duration";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import {
-  type Crawl,
-  type CrawlState,
-  type Workflow,
-  type WorkflowParams,
-  type Seed,
-  DEFAULT_MAX_SCALE,
+import type {
+  Crawl,
+  CrawlState,
+  Workflow,
+  WorkflowParams,
+  Seed,
 } from "./types";
 import { humanizeSchedule } from "@/utils/cron";
 import type { APIPaginatedList } from "@/types/api";
-import { inactiveCrawlStates, isActive } from "@/utils/crawler";
+import {
+  DEFAULT_MAX_SCALE,
+  inactiveCrawlStates,
+  isActive,
+} from "@/utils/crawler";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";

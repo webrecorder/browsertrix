@@ -27,6 +27,8 @@ export const inactiveCrawlStates: CrawlState[] = [
   "failed",
 ];
 
+export const DEFAULT_MAX_SCALE = 3;
+
 export function isActive(state: CrawlState | null) {
   return state && activeCrawlStates.includes(state);
 }

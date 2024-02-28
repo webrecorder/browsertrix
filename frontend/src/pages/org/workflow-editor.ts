@@ -39,6 +39,7 @@ import {
   getNextDate,
 } from "@/utils/cron";
 import { maxLengthValidator } from "@/utils/form";
+import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import type { Tab } from "@/components/ui/tab-list";
 import type {
   ExclusionRemoveEvent,
@@ -51,14 +52,13 @@ import type {
   TagsChangeEvent,
 } from "@/components/ui/tag-input";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
-import {
-  type WorkflowParams,
-  type Profile,
-  type JobType,
-  type Seed,
-  type SeedConfig,
-  type CrawlConfig,
-  DEFAULT_MAX_SCALE,
+import type {
+  WorkflowParams,
+  Profile,
+  JobType,
+  Seed,
+  SeedConfig,
+  CrawlConfig,
 } from "./types";
 import type { LanguageCode } from "iso-639-1";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
