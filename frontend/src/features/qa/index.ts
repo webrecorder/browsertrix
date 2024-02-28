@@ -1,1 +1,1 @@
-import("./qa-approval-buttons");
+import("./page-qa-toolbar");

@@ -13,8 +13,8 @@ import { type AuthState } from "@/utils/AuthService";
 import type { PageComment } from "@/types/crawler";
 
 @localized()
-@customElement("btrix-qa-approval-buttons")
-export class QaApprovalButtons extends TailwindElement {
+@customElement("btrix-page-qa-toolbar")
+export class PageQAToolbar extends TailwindElement {
   static styles = css`
     :host {
       --btrix-border: 1px solid var(--sl-color-neutral-300);
@@ -304,7 +304,7 @@ export class QaApprovalButtons extends TailwindElement {
   private async submitReview({
     status,
   }: {
-    status: QaApprovalButtons["reviewStatus"];
+    status: PageQAToolbar["reviewStatus"];
   }) {
     // TODO
     // const pageId = "";
