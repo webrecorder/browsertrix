@@ -112,6 +112,11 @@ export class ArchivedItemQA extends TailwindElement {
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
 
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.registerSw();
+  }
+
   protected willUpdate(
     changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
   ): void {
@@ -317,7 +322,7 @@ export class ArchivedItemQA extends TailwindElement {
   private readonly renderScreenshots = () => {
     if (!this.itemId) return;
 
-    const url = `/replay/w/manual-20240226234726-051ed881-37e/:fbc91e679056dc8da1528376ddbc7e5c931ca9b03a0d0f65430c5ee2a76c94c2/20240226234908mp_/urn:view:${window.encodeURI("http://example.com/")}`;
+    const url = `/w/manual-20240226234726-051ed881-37e/:fbc91e679056dc8da1528376ddbc7e5c931ca9b03a0d0f65430c5ee2a76c94c2/20240226234908mp_/urn:view:http://example.com/`;
 
     return html` <div class="flex gap-3">
       <div class="flex-1">
@@ -325,34 +330,7 @@ export class ArchivedItemQA extends TailwindElement {
       </div>
       <div class="flex-1">
         <h3>${msg("Replay Screenshot")}</h3>
-        <div class="bold text-xl">img:</div>
-        <img class="outline" src="${url}?img" loading="lazy" />
-        <div class="bold text-xl">object:</div>
-        <object class="outline" type="image/png" data="${url}"></object>
-        <div class="bold text-xl">iframe:</div>
-        <iframe
-          src="${url}"
-          class="aspect-video w-full overflow-hidden bg-yellow-300 outline"
-          @load=${(e: Event) => {
-            const iframe = e.currentTarget as HTMLIFrameElement;
-
-            const { height, width } = iframe.getBoundingClientRect();
-            const img = iframe.contentDocument?.body.querySelector("img");
-            if (img) {
-              img.style.height = `${height}px`;
-              img.style.width = `${width}px`;
-            }
-            console.log(height, width);
-            // const { scrollHeight, scrollWidth } =
-            //   iframe.contentDocument?.body || {};
-            // if (scrollHeight) {
-            //   iframe.style.height = `${scrollHeight}px`;
-            // }
-            // if (scrollWidth) {
-            //   iframe.style.width = `${scrollWidth}px`;
-            // }
-          }}
-        ></iframe>
+        <img class="outline" src="${url}" />
       </div>
     </div>`;
   };
@@ -460,5 +438,28 @@ export class ArchivedItemQA extends TailwindElement {
       `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
       this.authState!,
     );
+  }
+
+  /**
+   * Register ReplayWeb.Page service worker to enable routing to screenshot image
+   */
+  private async registerSw() {
+    try {
+      const registration = await navigator.serviceWorker.register(
+        "/replay/sw.js",
+        {
+          scope: "/w/",
+        },
+      );
+      if (registration.installing) {
+        console.debug("Service worker installing!");
+      } else if (registration.waiting) {
+        console.debug("Service worker waiting!");
+      } else if (registration.active) {
+        console.debug("Service worker active!");
+      }
+    } catch (error) {
+      console.error(`Registration failed with ${error}`);
+    }
   }
 }
