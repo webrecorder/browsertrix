@@ -104,7 +104,7 @@ class CronJobOperator(BaseOperator):
             )
             print("Scheduled Crawl Created: " + crawl_id)
 
-        crawl_id, crawljob = self.new_crawl_job_yaml(
+        crawl_id, crawljob = self.k8s.new_crawl_job_yaml(
             cid,
             userid=userid,
             oid=oid,

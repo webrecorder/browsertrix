@@ -30,11 +30,11 @@ class ProfileOperator(BaseOperator):
         browserid = spec.get("id")
 
         if dt_now() >= expire_time:
-            self.run_task(self.delete_profile_browser(browserid))
+            self.run_task(self.k8s.delete_profile_browser(browserid))
             return {"status": {}, "children": []}
 
         params = {}
-        params.update(self.shared_params)
+        params.update(self.k8s.shared_params)
         params["id"] = browserid
         params["userid"] = spec.get("userid", "")
 

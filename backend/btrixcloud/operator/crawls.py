@@ -77,40 +77,6 @@ class CrawlOperator(BaseOperator):
 
         self.log_failed_crawl_lines = int(os.environ.get("LOG_FAILED_CRAWL_LINES") or 0)
 
-        self._has_pod_metrics = False
-        self.compute_crawler_resources()
-
-    def compute_crawler_resources(self):
-        """compute memory / cpu resources for crawlers"""
-        p = self.shared_params
-        num = max(int(p["crawler_browser_instances"]) - 1, 0)
-        if not p.get("crawler_cpu"):
-            base = parse_quantity(p["crawler_cpu_base"])
-            extra = parse_quantity(p["crawler_extra_cpu_per_browser"])
-
-            # cpu is a floating value of cpu cores
-            p["crawler_cpu"] = float(base + num * extra)
-
-            print(f"cpu = {base} + {num} * {extra} = {p['crawler_cpu']}")
-        else:
-            print(f"cpu = {p['crawler_cpu']}")
-
-        if not p.get("crawler_memory"):
-            base = parse_quantity(p["crawler_memory_base"])
-            extra = parse_quantity(p["crawler_extra_memory_per_browser"])
-
-            # memory is always an int
-            p["crawler_memory"] = int(base + num * extra)
-
-            print(f"memory = {base} + {num} * {extra} = {p['crawler_memory']}")
-        else:
-            print(f"memory = {p['crawler_memory']}")
-
-    async def async_init(self):
-        """perform any async init here"""
-        self._has_pod_metrics = await self.is_pod_metrics_available()
-        print("Pod Metrics Available:", self._has_pod_metrics)
-
     def init_routes(self, app):
         """init routes for this operator"""
 
@@ -137,10 +103,10 @@ class CrawlOperator(BaseOperator):
         cid = spec["cid"]
         oid = spec["oid"]
 
-        redis_url = self.get_redis_url(crawl_id)
+        redis_url = self.k8s.get_redis_url(crawl_id)
 
         params = {}
-        params.update(self.shared_params)
+        params.update(self.k8s.shared_params)
         params["id"] = crawl_id
         params["cid"] = cid
         params["userid"] = spec.get("userid", "")
@@ -174,7 +140,7 @@ class CrawlOperator(BaseOperator):
             print(
                 f"warn crawl {crawl_id} finished but not deleted, post-finish taking too long?"
             )
-            self.run_task(self.delete_crawl_job(crawl_id))
+            self.run_task(self.k8s.delete_crawl_job(crawl_id))
             return await self.finalize_response(
                 crawl_id,
                 UUID(oid),
@@ -210,7 +176,7 @@ class CrawlOperator(BaseOperator):
         # shouldn't get here, crawl should already be finalizing when canceled
         # just in case, handle canceled-but-not-finalizing here
         if status.state == "canceled":
-            await self.delete_crawl_job(crawl.id)
+            await self.k8s.delete_crawl_job(crawl.id)
             return {"status": status.dict(exclude_none=True), "children": []}
 
         # first, check storage quota, and fail immediately if quota reached
@@ -485,7 +451,7 @@ class CrawlOperator(BaseOperator):
             },
         ]
 
-        if self._has_pod_metrics:
+        if self.k8s.has_pod_metrics:
             related_resources.append(
                 {
                     "apiVersion": METRICS_API,
@@ -594,7 +560,7 @@ class CrawlOperator(BaseOperator):
             print(f"============== POD STATUS: {name} ==============")
             pprint(pods[name]["status"])
 
-        self.run_task(self.print_pod_logs(pod_names, self.log_failed_crawl_lines))
+        self.run_task(self.k8s.print_pod_logs(pod_names, self.log_failed_crawl_lines))
 
         return True
 
@@ -654,7 +620,7 @@ class CrawlOperator(BaseOperator):
         """init redis, ensure connectivity"""
         redis = None
         try:
-            redis = await self.get_redis_client(redis_url)
+            redis = await self.k8s.get_redis_client(redis_url)
             # test connection
             await redis.ping()
             return redis
@@ -984,7 +950,7 @@ class CrawlOperator(BaseOperator):
             pod_info.used.storage = storage
 
             # if no pod metrics, get memory estimate from redis itself
-            if not self._has_pod_metrics:
+            if not self.k8s.has_pod_metrics:
                 stats = await redis.info("memory")
                 pod_info.used.memory = int(stats.get("used_memory_rss", 0))
 
@@ -1295,7 +1261,7 @@ class CrawlOperator(BaseOperator):
         )
 
         # finally, delete job
-        await self.delete_crawl_job(crawl_id)
+        await self.k8s.delete_crawl_job(crawl_id)
 
     async def inc_crawl_complete_stats(self, crawl, finished):
         """Increment Crawl Stats"""
@@ -1311,7 +1277,7 @@ class CrawlOperator(BaseOperator):
     async def mark_for_cancelation(self, crawl_id):
         """mark crawl as canceled in redis"""
         try:
-            redis_url = self.get_redis_url(crawl_id)
+            redis_url = self.k8s.get_redis_url(crawl_id)
             redis = await self._get_redis(redis_url)
             if not redis:
                 return False

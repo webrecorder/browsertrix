@@ -4,6 +4,7 @@ from .profiles import ProfileOperator
 from .bgjobs import BgJobOperator
 from .cronjobs import CronJobOperator
 from .crawls import CrawlOperator
+from .baseoperator import K8sOpAPI
 
 operator_classes = [ProfileOperator, BgJobOperator, CronJobOperator, CrawlOperator]
 
@@ -12,9 +13,11 @@ operator_classes = [ProfileOperator, BgJobOperator, CronJobOperator, CrawlOperat
 def init_operator_api(app, *args):
     """regsiters webhook handlers for metacontroller"""
 
+    k8s = K8sOpAPI()
+
     operators = []
     for cls in operator_classes:
-        oper = cls(*args)
+        oper = cls(k8s, *args)
         oper.init_routes(app)
         operators.append(oper)
 
@@ -22,4 +25,4 @@ def init_operator_api(app, *args):
     async def healthz():
         return {}
 
-    return operators
+    return k8s

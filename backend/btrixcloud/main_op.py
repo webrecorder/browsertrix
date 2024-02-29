@@ -112,6 +112,5 @@ def main():
 async def startup():
     """init on startup"""
     register_exit_handler()
-    operators = main()
-    for oper in operators:
-        await oper.async_init()
+    settings = main()
+    await settings.async_init()

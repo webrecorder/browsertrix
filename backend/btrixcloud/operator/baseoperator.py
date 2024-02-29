@@ -2,6 +2,7 @@
 
 import asyncio
 from typing import TYPE_CHECKING
+from kubernetes.utils import parse_quantity
 
 import yaml
 from btrixcloud.k8sapi import K8sAPI
@@ -23,11 +24,57 @@ else:
     StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = PageOps = object
 
 
+# ============================================================================
+class K8sOpAPI(K8sAPI):
+    """Additional k8s api for operators"""
+
+    def __init__(self):
+        super().__init__()
+        self.config_file = "/config/config.yaml"
+        with open(self.config_file, encoding="utf-8") as fh_config:
+            self.shared_params = yaml.safe_load(fh_config)
+
+        self.has_pod_metrics = False
+        self.compute_crawler_resources()
+
+    def compute_crawler_resources(self):
+        """compute memory / cpu resources for crawlers"""
+        p = self.shared_params
+        num = max(int(p["crawler_browser_instances"]) - 1, 0)
+        if not p.get("crawler_cpu"):
+            base = parse_quantity(p["crawler_cpu_base"])
+            extra = parse_quantity(p["crawler_extra_cpu_per_browser"])
+
+            # cpu is a floating value of cpu cores
+            p["crawler_cpu"] = float(base + num * extra)
+
+            print(f"cpu = {base} + {num} * {extra} = {p['crawler_cpu']}")
+        else:
+            print(f"cpu = {p['crawler_cpu']}")
+
+        if not p.get("crawler_memory"):
+            base = parse_quantity(p["crawler_memory_base"])
+            extra = parse_quantity(p["crawler_extra_memory_per_browser"])
+
+            # memory is always an int
+            p["crawler_memory"] = int(base + num * extra)
+
+            print(f"memory = {base} + {num} * {extra} = {p['crawler_memory']}")
+        else:
+            print(f"memory = {p['crawler_memory']}")
+
+    async def async_init(self):
+        """perform any async init here"""
+        self.has_pod_metrics = await self.is_pod_metrics_available()
+        print("Pod Metrics Available:", self.has_pod_metrics)
+
+
 # pylint: disable=too-many-instance-attributes, too-many-arguments
 # ============================================================================
-class BaseOperator(K8sAPI):
+class BaseOperator:
     """BaseOperator"""
 
+    k8s: K8sOpAPI
     crawl_config_ops: CrawlConfigOps
     crawl_ops: CrawlOps
     orgs_ops: OrgOps
@@ -40,6 +87,7 @@ class BaseOperator(K8sAPI):
 
     def __init__(
         self,
+        k8s,
         crawl_config_ops,
         crawl_ops,
         org_ops,
@@ -49,8 +97,7 @@ class BaseOperator(K8sAPI):
         background_job_ops,
         page_ops,
     ):
-        super().__init__()
-
+        self.k8s = k8s
         self.crawl_config_ops = crawl_config_ops
         self.crawl_ops = crawl_ops
         self.org_ops = org_ops
@@ -62,19 +109,12 @@ class BaseOperator(K8sAPI):
 
         self.user_ops = crawl_config_ops.user_manager
 
-        self.config_file = "/config/config.yaml"
-        with open(self.config_file, encoding="utf-8") as fh_config:
-            self.shared_params = yaml.safe_load(fh_config)
-
         # to avoid background tasks being garbage collected
         # see: https://stackoverflow.com/a/74059981
         self.bg_tasks = set()
 
     def init_routes(self, app):
         """init routes for this operator"""
-
-    async def async_init(self):
-        """perform any async init necessary"""
 
     def run_task(self, func):
         """add bg tasks to set to avoid premature garbage collection"""
@@ -85,5 +125,7 @@ class BaseOperator(K8sAPI):
     def load_from_yaml(self, filename, params):
         """load and parse k8s template from yaml file"""
         return list(
-            yaml.safe_load_all(self.templates.env.get_template(filename).render(params))
+            yaml.safe_load_all(
+                self.k8s.templates.env.get_template(filename).render(params)
+            )
         )
