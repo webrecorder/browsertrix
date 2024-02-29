@@ -30,44 +30,20 @@ export class PageQAToolbar extends TailwindElement {
       display: flex;
       align-items: stretch;
       justify-content: stretch;
-      box-shadow:
-        inset 0 0 0 1px var(--sl-color-neutral-300),
-        var(--sl-shadow-x-small);
+      outline: var(--btrix-border);
+      outline-offset: -1px;
+      box-shadow: var(--sl-shadow-x-small);
       border-radius: var(--sl-input-height-small);
       height: var(--sl-input-height-small);
-      transition: var(--sl-transition-x-fast) background;
+      transition: var(--sl-transition-x-fast) background-color;
     }
 
-    .btnGroup.approved:not(.commented) {
+    .btnGroup.approved {
       background-color: var(--sl-color-success-500);
     }
 
-    .btnGroup.rejected:not(.commented) {
+    .btnGroup.rejected {
       background-color: var(--sl-color-danger-500);
-    }
-
-    .btnGroup.commented:not(.approved):not(.rejected) {
-      background-color: var(--sl-color-blue-400);
-    }
-
-    .btnGroup.approved.commented {
-      background: linear-gradient(
-        to right,
-        var(--sl-color-success-500),
-        var(--sl-color-success-500) 33.3333%,
-        var(--sl-color-blue-400) 33.3333%,
-        var(--sl-color-blue-400)
-      );
-    }
-
-    .btnGroup.rejected.commented {
-      background: linear-gradient(
-        to right,
-        var(--sl-color-blue-400),
-        var(--sl-color-blue-400) 66.6666%,
-        var(--sl-color-danger-500) 66.6666%,
-        var(--sl-color-danger-500)
-      );
     }
 
     .btnGroup button {
@@ -82,12 +58,7 @@ export class PageQAToolbar extends TailwindElement {
         var(--sl-transition-x-fast) background-color,
         var(--sl-transition-x-fast) border,
         var(--sl-transition-x-fast) border-radius,
-        var(--sl-transition-x-fast) box-shadow,
         var(--sl-transition-x-fast) transform;
-    }
-
-    .btnGroup button:not(.active) {
-      background-color: var(--sl-color-neutral-0);
     }
 
     .btnGroup button:first-of-type {
@@ -109,12 +80,17 @@ export class PageQAToolbar extends TailwindElement {
       border-end-end-radius: var(--sl-input-height-small);
     }
 
-    .btnGroup button.active {
+    .rate.active {
       color: var(--sl-color-neutral-0);
     }
 
-    .btnGroup button.active:hover {
+    .rate.active:hover {
       background-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .rate:not(.active),
+    .comment {
+      background-color: var(--sl-color-neutral-0);
     }
 
     .rate:not(.active):hover {
@@ -140,36 +116,29 @@ export class PageQAToolbar extends TailwindElement {
       color: var(--sl-color-danger-500);
     }
 
-    .comment:not(.active):hover sl-icon {
+    .comment:hover sl-icon {
       transform: scale(1.1);
-      color: var(--sl-color-blue-400);
+      color: var(--sl-color-blue-500);
     }
 
-    .btnGroup:has(button.active:first-of-type)
-      button:nth-of-type(2):not(.active),
-    .btnGroup:has(button.active:nth-of-type(2))
-      button:last-of-type:not(.active) {
+    .comment.active sl-icon {
+      color: var(--sl-color-blue-500);
+    }
+
+    .btnGroup:has(button.active:first-of-type) button:nth-of-type(2) {
       border-left: var(--btrix-border);
       border-start-start-radius: var(--btrix-border-radius);
       border-end-start-radius: var(--btrix-border-radius);
     }
 
-    .btnGroup:has(button.active:nth-of-type(2))
-      button:first-of-type:not(.active),
-    .btnGroup:has(button.active:last-of-type)
-      button:nth-of-type(2):not(.active) {
+    .btnGroup:has(button.active:last-of-type) button:nth-of-type(2) {
       border-right: var(--btrix-border);
       border-start-end-radius: var(--btrix-border-radius);
       border-end-end-radius: var(--btrix-border-radius);
     }
 
-    .btnGroup:has(button:first-of-type:not(:active))
-      button:nth-of-type(2):not(.active) {
+    .btnGroup button:nth-of-type(2) {
       border-left: var(--btrix-border);
-    }
-
-    .btnGroup:has(button:last-of-type:not(.active))
-      button:nth-of-type(2):not(.active) {
       border-right: var(--btrix-border);
     }
 
