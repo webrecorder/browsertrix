@@ -2,6 +2,7 @@ import { type PropertyValues, css, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { keyed } from "lit/directives/keyed.js";
+import { when } from "lit/directives/when.js";
 import { localized, msg, str } from "@lit/localize";
 import type { SlTextarea } from "@shoelace-style/shoelace";
 import { merge } from "immutable";
@@ -22,7 +23,7 @@ export class PageQAToolbar extends TailwindElement {
   static styles = css`
     :host {
       --btrix-border: 1px solid var(--sl-color-neutral-300);
-      --btrix-border-radius: var(--sl-border-radius-large);
+      --btrix-border-radius: var(--sl-border-radius-medium);
     }
 
     .btnGroup {
@@ -196,7 +197,7 @@ export class PageQAToolbar extends TailwindElement {
   private page?: ArchivedItemPage;
 
   @state()
-  private isCommentOpen = false;
+  private showComments = false;
 
   @query("btrix-dialog")
   private dialog!: Dialog;
@@ -216,11 +217,9 @@ export class PageQAToolbar extends TailwindElement {
   }
 
   render() {
-    const comments = this.page?.notes || [];
-    const latestComment = comments[0];
     const approved = this.page?.approved === true;
     const rejected = this.page?.approved === false;
-    const commented = !!latestComment;
+    const commented = Boolean(this.page?.notes.length);
 
     return html`
       <fieldset
@@ -253,7 +252,7 @@ export class PageQAToolbar extends TailwindElement {
           })}
           aria-checked=${commented}
           ?disabled=${!this.page}
-          @click=${() => (this.isCommentOpen = true)}
+          @click=${() => (this.showComments = true)}
         >
           <sl-icon name="chat-square-text" label=${msg("Comment")}></sl-icon>
         </button>
@@ -274,26 +273,11 @@ export class PageQAToolbar extends TailwindElement {
 
       <btrix-dialog
         label=${msg("Page Review Comments")}
-        ?open=${this.isCommentOpen}
-        @sl-hide=${() => (this.isCommentOpen = false)}
+        ?open=${this.showComments}
+        @sl-hide=${() => (this.showComments = false)}
+        @sl-after-hide=${() => this.fetchPage()}
       >
-        ${keyed(
-          this.isCommentOpen,
-          html`<form @submit=${this.onSubmitComment}>
-            <sl-textarea
-              name="pageComment"
-              label=${msg("Comment")}
-              placeholder=${msg("Enter page feedback")}
-              value=${latestComment?.text || ""}
-              help-text=${latestComment
-                ? msg(
-                    str`Updated by ${latestComment.userName} on ${new Date(latestComment.modified).toLocaleDateString()}`,
-                  )
-                : ""}
-            ></sl-textarea>
-          </form>`,
-        )}
-
+        ${keyed(this.showComments, this.renderComments())}
         <p
           slot="footer"
           class="mb-2 rounded border border-slate-200 bg-slate-50 p-2 text-left text-neutral-500"
@@ -311,9 +295,67 @@ export class PageQAToolbar extends TailwindElement {
           variant="primary"
           @click=${() => this.dialog.submit()}
         >
-          ${msg("Update Comment")}
+          ${msg("Submit Comment")}
         </sl-button>
       </btrix-dialog>
+    `;
+  }
+
+  private renderComments() {
+    const comments = this.page?.notes || [];
+    return html`
+      ${when(
+        comments.length,
+        () => html`
+          <btrix-details>
+            <span slot="title"
+              >${msg(str`Comments (${comments.length.toLocaleString()})`)}</span
+            >
+            ${when(
+              this.page?.notes,
+              (notes) => html`
+                <ul>
+                  ${notes.map(
+                    (comment) =>
+                      html`<li class="mb-3">
+                        <div
+                          class="flex items-center justify-between rounded-t border bg-neutral-50 text-xs leading-none text-neutral-600"
+                        >
+                          <div class="p-2">
+                            ${msg(
+                              str`${comment.userName} commented on ${new Date(comment.created + "Z").toLocaleDateString()}:`,
+                            )}
+                          </div>
+                          <sl-icon-button
+                            name="trash3"
+                            @click=${() => this.deleteComment(comment.id)}
+                          ></sl-icon-button>
+                        </div>
+                        <div class="rounded-b border-b border-l border-r p-2">
+                          ${comment.text}
+                        </div>
+                      </li> `,
+                  )}
+                </ul>
+              `,
+              () => html`
+                <p class="text-neutral-500">
+                  ${msg("This page doesn't have any comments.")}
+                </p>
+              `,
+            )}
+          </btrix-details>
+        `,
+      )}
+      <form @submit=${this.onSubmitComment}>
+        <sl-textarea
+          name="pageComment"
+          label=${msg("Add a comment")}
+          placeholder=${msg("Enter page feedback")}
+          minlength="1"
+          maxlength="500"
+        ></sl-textarea>
+      </form>
     `;
   }
 
@@ -354,21 +396,22 @@ export class PageQAToolbar extends TailwindElement {
     e.preventDefault();
     const value = this.textarea.value;
 
-    // TODO
-    const pageId = "";
+    if (!value) return;
 
     try {
       await this.api.fetch(
-        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
+        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.pageId}/notes`,
         this.authState!,
         {
-          method: "PATCH",
-          body: JSON.stringify({ notes: [value] }),
+          method: "POST",
+          body: JSON.stringify({ text: value }),
         },
       );
 
+      this.showComments = false;
+
       this.notify.toast({
-        message: msg("Updated page comments."),
+        message: msg("Updated comments."),
         variant: "success",
         icon: "check2-circle",
       });
@@ -382,6 +425,34 @@ export class PageQAToolbar extends TailwindElement {
       });
     }
   }
+
+  private async deleteComment(commentId: string): Promise<void> {
+    try {
+      await this.api.fetch(
+        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.pageId}/notes/delete`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({ delete_list: [commentId] }),
+        },
+      );
+
+      this.fetchPage();
+
+      this.notify.toast({
+        message: msg("Successfully deleted comment."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch {
+      this.notify.toast({
+        message: msg("Sorry, couldn't delete comment at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
   private async fetchPage(): Promise<void> {
     if (!this.pageId) return;
     try {
