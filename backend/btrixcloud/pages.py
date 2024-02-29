@@ -70,6 +70,9 @@ class PageOps:
             page_id = uuid4()
 
         try:
+            status = page_dict.get("status")
+            if not status and page_dict.get("loadState"):
+                status = 200
             page = Page(
                 id=page_id,
                 oid=oid,
@@ -77,6 +80,7 @@ class PageOps:
                 url=page_dict.get("url"),
                 title=page_dict.get("title"),
                 load_state=page_dict.get("loadState"),
+                status=status,
                 timestamp=(
                     from_k8s_date(page_dict.get("ts"))
                     if page_dict.get("ts")
