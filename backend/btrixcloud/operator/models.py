@@ -150,6 +150,7 @@ class PodInfo(BaseModel):
 
 
 # ============================================================================
+# pylint: disable=invalid-name
 class CrawlStatus(BaseModel):
     """status from k8s CrawlJob object"""
 

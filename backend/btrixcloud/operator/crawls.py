@@ -127,7 +127,6 @@ class CrawlOperator(BaseOperator):
         async def mc_related(data: MCBaseRequest):
             return self.get_related(data)
 
-    # pylint: disable=invalid-name
     async def sync_crawls(self, data: MCSyncData):
         """sync crawls"""
 
@@ -267,7 +266,6 @@ class CrawlOperator(BaseOperator):
 
         else:
             status.scale = crawl.scale
-            # pylint: disable=invalid-name
             status.lastUpdatedTime = to_k8s_date(dt_now())
 
         children = self._load_redis(params, status, data.children)
