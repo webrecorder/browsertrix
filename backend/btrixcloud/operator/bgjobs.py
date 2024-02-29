@@ -12,7 +12,6 @@ from .models import MCDecoratorSyncData
 from .baseoperator import BaseOperator
 
 
-
 # ============================================================================
 class BgJobOperator(BaseOperator):
     """BgJobOperator"""

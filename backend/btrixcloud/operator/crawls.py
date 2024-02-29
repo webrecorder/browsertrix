@@ -1,31 +1,20 @@
-""" btrixjob operator (working for metacontroller) """
+""" CrawlOperator """
 
-from operator.profileoperator import ProfileOperator
-
-import asyncio
 import traceback
 import os
 from pprint import pprint
-from typing import Optional, DefaultDict, TYPE_CHECKING
+from typing import Optional
 
 import json
 from uuid import UUID
 from fastapi import HTTPException
 
-import yaml
 import humanize
 
 from kubernetes.utils import parse_quantity
 from redis import asyncio as exceptions
 
-from .utils import (
-    from_k8s_date,
-    to_k8s_date,
-    dt_now,
-)
-from .k8sapi import K8sAPI
-
-from .models import (
+from btrixcloud.models import (
     NON_RUNNING_STATES,
     RUNNING_STATES,
     RUNNING_AND_STARTING_ONLY,
@@ -37,63 +26,48 @@ from .models import (
     StorageRef,
 )
 
-if TYPE_CHECKING:
-    from .crawlconfigs import CrawlConfigOps
-    from .crawls import CrawlOps
-    from .orgs import OrgOps
-    from .colls import CollectionOps
-    from .storages import StorageOps
-    from .webhooks import EventWebhookOps
-    from .users import UserManager
-    from .background_jobs import BackgroundJobOps
-    from .pages import PageOps
-    from redis.asyncio.client import Redis
-else:
-    CrawlConfigOps = CrawlOps = OrgOps = CollectionOps = Redis = object
-    StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = PageOps = object
+from btrixcloud.utils import (
+    from_k8s_date,
+    to_k8s_date,
+    dt_now,
+)
+
+from .baseoperator import BaseOperator, Redis
+from .models import (
+    CrawlSpec,
+    CrawlStatus,
+    MCBaseRequest,
+    MCSyncData,
+    POD,
+    CMAP,
+    PVC,
+    CJS,
+    BTRIX_API,
+)
 
 
+METRICS_API = "metrics.k8s.io/v1beta1"
+METRICS = f"PodMetrics.{METRICS_API}"
+
+DEFAULT_TTL = 30
+
+REDIS_TTL = 60
+
+# time in seconds before a crawl is deemed 'waiting' instead of 'starting'
+STARTING_TIME_SECS = 60
+
+# how often to update execution time seconds
+EXEC_TIME_UPDATE_SECS = 60
+
+
+# pylint: disable=too-many-public-methods, too-many-locals, too-many-branches, too-many-statements
+# pylint: disable=invalid-name, too-many-lines, too-many-return-statements
 # ============================================================================
-# pylint: disable=too-many-statements, too-many-public-methods, too-many-branches, too-many-nested-blocks
-# pylint: disable=too-many-instance-attributes, too-many-locals, too-many-lines, too-many-arguments
-class BtrixOperator(K8sAPI):
-    """BtrixOperator Handler"""
+class CrawlOperator(BaseOperator):
+    """CrawlOperator Handler"""
 
-    crawl_config_ops: CrawlConfigOps
-    crawl_ops: CrawlOps
-    orgs_ops: OrgOps
-    coll_ops: CollectionOps
-    storage_ops: StorageOps
-    event_webhook_ops: EventWebhookOps
-    background_job_ops: BackgroundJobOps
-    user_ops: UserManager
-    page_ops: PageOps
-
-    def __init__(
-        self,
-        crawl_config_ops,
-        crawl_ops,
-        org_ops,
-        coll_ops,
-        storage_ops,
-        event_webhook_ops,
-        background_job_ops,
-        page_ops,
-    ):
-        super().__init__()
-
-        self.crawl_config_ops = crawl_config_ops
-        self.crawl_ops = crawl_ops
-        self.org_ops = org_ops
-        self.coll_ops = coll_ops
-        self.storage_ops = storage_ops
-        self.background_job_ops = background_job_ops
-        self.event_webhook_ops = event_webhook_ops
-        self.page_ops = page_ops
-
-        self.user_ops = crawl_config_ops.user_manager
-
-        self.config_file = "/config/config.yaml"
+    def __init__(self, *args):
+        super().__init__(*args)
 
         self.done_key = "crawls-done"
         self.pages_key = "pages"
@@ -103,19 +77,11 @@ class BtrixOperator(K8sAPI):
 
         self.log_failed_crawl_lines = int(os.environ.get("LOG_FAILED_CRAWL_LINES") or 0)
 
-        with open(self.config_file, encoding="utf-8") as fh_config:
-            self.shared_params = yaml.safe_load(fh_config)
-
         self._has_pod_metrics = False
         self.compute_crawler_resources()
 
-        # to avoid background tasks being garbage collected
-        # see: https://stackoverflow.com/a/74059981
-        self.bg_tasks = set()
-
     def compute_crawler_resources(self):
         """compute memory / cpu resources for crawlers"""
-        # pylint: disable=invalid-name
         p = self.shared_params
         num = max(int(p["crawler_browser_instances"]) - 1, 0)
         if not p.get("crawler_cpu"):
@@ -145,7 +111,23 @@ class BtrixOperator(K8sAPI):
         self._has_pod_metrics = await self.is_pod_metrics_available()
         print("Pod Metrics Available:", self._has_pod_metrics)
 
-    # pylint: disable=too-many-return-statements, invalid-name
+    def init_routes(self, app):
+        """init routes for this operator"""
+
+        @app.post("/op/crawls/sync")
+        async def mc_sync_crawls(data: MCSyncData):
+            return await self.sync_crawls(data)
+
+        # reuse sync path, but distinct endpoint for better logging
+        @app.post("/op/crawls/finalize")
+        async def mc_sync_finalize(data: MCSyncData):
+            return await self.sync_crawls(data)
+
+        @app.post("/op/crawls/customize")
+        async def mc_related(data: MCBaseRequest):
+            return self.get_related(data)
+
+    # pylint: disable=invalid-name
     async def sync_crawls(self, data: MCSyncData):
         """sync crawls"""
 
@@ -285,6 +267,7 @@ class BtrixOperator(K8sAPI):
 
         else:
             status.scale = crawl.scale
+            # pylint: disable=invalid-name
             status.lastUpdatedTime = to_k8s_date(dt_now())
 
         children = self._load_redis(params, status, data.children)
@@ -484,12 +467,6 @@ class BtrixOperator(K8sAPI):
                 f"Not setting state: {status.state} -> {state}, {crawl_id} not allowed"
             )
         return False
-
-    def load_from_yaml(self, filename, params):
-        """load and parse k8s template from yaml file"""
-        return list(
-            yaml.safe_load_all(self.templates.env.get_template(filename).render(params))
-        )
 
     def get_related(self, data: MCBaseRequest):
         """return objects related to crawl pods"""

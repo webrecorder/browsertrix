@@ -3,8 +3,10 @@
 from .profiles import ProfileOperator
 from .bgjobs import BgJobOperator
 from .cronjobs import CronJobOperator
+from .crawls import CrawlOperator
 
-operator_classes = [ProfileOperator, BgJobOperator, CronJobOperator]
+operator_classes = [ProfileOperator, BgJobOperator, CronJobOperator, CrawlOperator]
+
 
 # ============================================================================
 def init_operator_api(app, *args):

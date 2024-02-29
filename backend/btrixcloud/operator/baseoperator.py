@@ -71,10 +71,10 @@ class BaseOperator(K8sAPI):
         self.bg_tasks = set()
 
     def init_routes(self, app):
-        """ init routes for this operator """
+        """init routes for this operator"""
 
     async def async_init(self):
-        """ perform any async init necessary """
+        """perform any async init necessary"""
 
     def run_task(self, func):
         """add bg tasks to set to avoid premature garbage collection"""

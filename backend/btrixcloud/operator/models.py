@@ -1,30 +1,19 @@
 """ Operator Models """
 
 from collections import defaultdict
+from uuid import UUID
 from typing import Optional, DefaultDict
 from pydantic import BaseModel, Field
 from kubernetes.utils import parse_quantity
+from btrixcloud.models import StorageRef
 
+
+BTRIX_API = "btrix.cloud/v1"
 
 CMAP = "ConfigMap.v1"
 PVC = "PersistentVolumeClaim.v1"
 POD = "Pod.v1"
-
-BTRIX_API = "btrix.cloud/v1"
 CJS = f"CrawlJob.{BTRIX_API}"
-
-METRICS_API = "metrics.k8s.io/v1beta1"
-METRICS = f"PodMetrics.{METRICS_API}"
-
-DEFAULT_TTL = 30
-
-REDIS_TTL = 60
-
-# time in seconds before a crawl is deemed 'waiting' instead of 'starting'
-STARTING_TIME_SECS = 60
-
-# how often to update execution time seconds
-EXEC_TIME_UPDATE_SECS = 60
 
 
 # ============================================================================
@@ -54,6 +43,23 @@ class MCDecoratorSyncData(BaseModel):
     attachments: dict
     related: dict
     finalizing: bool = False
+
+
+# ============================================================================
+class CrawlSpec(BaseModel):
+    """spec from k8s CrawlJob object"""
+
+    id: str
+    cid: UUID
+    oid: UUID
+    scale: int = 1
+    storage: StorageRef
+    started: str
+    crawler_channel: str
+    stopping: bool = False
+    scheduled: bool = False
+    timeout: int = 0
+    max_crawl_size: int = 0
 
 
 # ============================================================================
