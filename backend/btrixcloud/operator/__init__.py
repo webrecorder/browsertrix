@@ -11,7 +11,7 @@ operator_classes = [ProfileOperator, BgJobOperator, CronJobOperator, CrawlOperat
 
 # ============================================================================
 def init_operator_api(app, *args):
-    """regsiters webhook handlers for metacontroller"""
+    """registers webhook handlers for metacontroller"""
 
     k8s = K8sOpAPI()
 
