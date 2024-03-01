@@ -106,7 +106,7 @@ export class Button extends TailwindElement {
   }
 
   private submit() {
-    const form = (this.closest("form") || this.closest("form"))!;
+    const form = this.closest("form");
 
     if (form) {
       form.submit();
