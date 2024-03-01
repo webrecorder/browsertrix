@@ -25,7 +25,6 @@
     "broadcastchannel-polyfill": "^1.0.1",
     "color": "^4.0.1",
     "copy-webpack-plugin": "^9.1.0",
-    "core-js": "^3.35.1",
     "css-loader": "^6.3.0",
     "del-cli": "^4.0.1",
     "dotenv": "^10.0.0",
@@ -93,7 +92,6 @@
   },
   "devDependencies": {
     "@lit/localize-tools": "^0.7.1",
-    "@types/core-js": "^2.5.8",
     "@web/dev-server-esbuild": "^0.3.3",
     "@web/dev-server-import-maps": "^0.0.6",
     "@web/dev-server-rollup": "^0.3.21",

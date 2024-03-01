@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unnecessary-condition */
 // cSpell:disable
 
-import "core-js/proposals/array-grouping-v2";
-
 /**
  * Object.entriesFrom() polyfill
  * @author Chris Ferdinandi
