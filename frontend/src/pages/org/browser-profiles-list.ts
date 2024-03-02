@@ -112,7 +112,7 @@ export class BrowserProfilesList extends LiteElement {
             content=${isBackedUp ? msg("Backed up") : msg("Not backed up")}
           >
             <sl-icon
-              name=${isBackedUp ? "clouds" : "cloud-slash"}
+              name=${isBackedUp ? "clouds-fill" : "cloud-slash-fill"}
               class="${isBackedUp ? "text-success" : "text-neutral-500"}"
             ></sl-icon>
           </sl-tooltip>

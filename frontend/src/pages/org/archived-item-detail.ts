@@ -401,7 +401,7 @@ export class CrawlDetail extends LiteElement {
             ? html`
                 <sl-button-group>
                   <sl-button size="small" @click=${this.stop}>
-                    <sl-icon name="slash-circle" slot="prefix"></sl-icon>
+                    <sl-icon name="dash-square" slot="prefix"></sl-icon>
                     <span> ${msg("Stop")} </span>
                   </sl-button>
                   <sl-button size="small" @click=${this.cancel}>
@@ -809,7 +809,7 @@ ${this.crawl?.description}
                         () =>
                           html` <sl-tooltip content=${msg("Backed up")}>
                             <sl-icon
-                              name="clouds"
+                              name="clouds-fill"
                               class="mr-2 h-4 w-4 shrink-0 align-text-bottom text-success"
                             ></sl-icon>
                           </sl-tooltip>`,

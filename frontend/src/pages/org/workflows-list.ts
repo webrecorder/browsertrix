@@ -433,7 +433,7 @@ export class WorkflowsList extends LiteElement {
             @click=${() => void this.stop(workflow.lastCrawlId)}
             ?disabled=${workflow.lastCrawlStopping}
           >
-            <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+            <sl-icon name="dash-square" slot="prefix"></sl-icon>
             ${msg("Stop Crawl")}
           </sl-menu-item>
           <sl-menu-item

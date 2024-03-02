@@ -503,6 +503,7 @@ export class CollectionsList extends LiteElement {
                 <sl-icon
                   class="inline-block align-middle"
                   name="people-fill"
+                  style="color: var(--success)"
                   label=${msg("Shareable Collection")}
                 ></sl-icon>
               </sl-tooltip>
