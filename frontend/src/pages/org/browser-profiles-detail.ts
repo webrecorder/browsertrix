@@ -297,7 +297,7 @@ export class BrowserProfilesDetail extends LiteElement {
               name="pencil"
             ></sl-icon>
             <span class="inline-block pr-2 align-middle"
-              >${msg("Edit name & description")}</span
+              >${msg("Edit Name & Description")}</span
             >
           </li>
           <li
@@ -310,7 +310,7 @@ export class BrowserProfilesDetail extends LiteElement {
               name="files"
             ></sl-icon>
             <span class="inline-block pr-2 align-middle"
-              >${msg("Duplicate profile")}</span
+              >${msg("Duplicate Profile")}</span
             >
           </li>
           <hr />

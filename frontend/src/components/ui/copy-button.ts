@@ -59,7 +59,7 @@ export class CopyButton extends LitElement {
         ?hoist=${this.hoist}
       >
         <sl-icon-button
-          name=${this.isCopied ? "check-lg" : this.name ? this.name : "files"}
+          name=${this.isCopied ? "check-lg" : this.name ? this.name : "copy"}
           label=${msg("Copy to clipboard")}
           @click=${this.onClick}
           ?disabled=${!this.value && !this.getValue}
