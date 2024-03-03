@@ -451,12 +451,13 @@ class CrawlOps(BaseCrawlOps):
         query = {"_id": crawl_id, "type": "crawl", "state": "running"}
         return await self.crawls.find_one_and_update(query, {"$set": {"stats": stats}})
 
-    async def inc_crawl_exec_time(self, crawl_id, exec_time):
+    async def inc_crawl_exec_time(self, crawl_id, exec_time, last_updated_time):
         """increment exec time"""
         return await self.crawls.find_one_and_update(
-            {"_id": crawl_id, "type": "crawl"},
+            {"_id": crawl_id, "type": "crawl", "_lut": {"$ne": last_updated_time}},
             {
                 "$inc": {"crawlExecSeconds": exec_time},
+                "$set": {"_lut": last_updated_time},
             },
         )
 
@@ -466,12 +467,6 @@ class CrawlOps(BaseCrawlOps):
             {"_id": crawl_id, "type": "crawl"}, projection=["_lut"]
         )
         return res and res.get("_lut")
-
-    async def set_crawl_exec_last_update_time(self, crawl_id, last_update_time):
-        """set crawl last update time"""
-        return await self.crawls.find_one_and_update(
-            {"_id": crawl_id, "type": "crawl"}, {"$set": {"_lut": last_update_time}}
-        )
 
     async def get_crawl_state(self, crawl_id):
         """return current crawl state of a crawl"""
