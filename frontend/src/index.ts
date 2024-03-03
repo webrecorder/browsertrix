@@ -50,6 +50,7 @@ export type APIUser = {
   is_verified: boolean;
   is_superuser: boolean;
   orgs: UserOrg[];
+  is_sso: boolean;
 };
 
 @localized()
@@ -57,6 +58,9 @@ export type APIUser = {
 export class App extends LiteElement {
   @property({ type: String })
   version?: string;
+
+  @property({ type: Boolean })
+  InvitesEnabled: boolean = true;
 
   private readonly router = new APIRouter(ROUTES);
   authService = new AuthService();
@@ -151,6 +155,7 @@ export class App extends LiteElement {
         isVerified: userInfo.is_verified,
         isAdmin: userInfo.is_superuser,
         orgs: userInfo.orgs,
+        isSSO: userInfo.is_sso,
       });
       const orgs = userInfo.orgs;
       if (
@@ -217,6 +222,10 @@ export class App extends LiteElement {
         url.search
       }`,
     );
+  }
+
+  firstUpdated() {
+    this.checkEnabledInvites();
   }
 
   render() {
@@ -309,7 +318,7 @@ export class App extends LiteElement {
                         <sl-icon slot="prefix" name="gear"></sl-icon>
                         ${msg("Account Settings")}
                       </sl-menu-item>
-                      ${this.appState.userInfo?.isAdmin
+                      ${this.appState.userInfo?.isAdmin && this.InvitesEnabled
                         ? html` <sl-menu-item
                             @click=${() => this.navigate(ROUTES.usersInvite)}
                           >
@@ -553,6 +562,20 @@ export class App extends LiteElement {
           redirectUrl=${this.viewState.params.redirectUrl ||
           this.viewState.data?.redirectUrl}
         ></btrix-log-in>`;
+
+      case "loginSsoHeader":
+        return html`<btrix-log-in-header
+          class="w-full md:bg-neutral-50 flex items-center justify-center"
+          @navigate=${this.onNavigateTo}
+          .viewState=${this.viewState}
+        ></btrix-log-in-header>`;
+
+      case "loginSsoOidc":
+        return html`<btrix-log-in-oidc
+          class="w-full md:bg-neutral-50 flex items-center justify-center"
+          @navigate=${this.onNavigateTo}
+          .viewState=${this.viewState}
+        ></btrix-log-in-oidc>`;
 
       case "resetPassword":
         return html`<btrix-reset-password
@@ -911,5 +934,13 @@ export class App extends LiteElement {
 
   private clearSelectedOrg() {
     AppStateService.updateOrgSlug(null);
+  }
+
+  async checkEnabledInvites() {
+    const resp = await fetch("/api/auth/jwt/login/methods");
+    if (resp.status == 200) {
+      const data = await resp.json();
+      this.InvitesEnabled = data.invites_enabled;
+    }
   }
 }

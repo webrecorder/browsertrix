@@ -17,11 +17,16 @@ from fastapi import (
     Depends,
     WebSocket,
     APIRouter,
+    Header,
 )
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from .models import User
+from typing import Dict, Any 
+from fastapi_sso.sso.generic import create_provider
+from fastapi_sso.sso.base import OpenID
+
+from .models import User, UserRole
 
 
 # ============================================================================
@@ -34,6 +39,29 @@ ALGORITHM = "HS256"
 RESET_VERIFY_TOKEN_LIFETIME_MINUTES = 60
 
 PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+PASSWORD_DISABLED = bool(int(os.environ.get("PASSWORD_DISABLED", 0)))
+INVITES_ENABLED = not bool(int(os.environ.get("INVITES_DISABLED", 0)))  # Negation as Workaround for inability of setting a value to 0 in values.yml: https://github.com/helm/helm/issues/3164
+SSO_SUPERUSER_GROUPS = os.environ.get("SSO_SUPERUSER_GROUPS", "browsertrix-admins").split(";")
+
+SSO_HEADER_ENABLED = bool(int(os.environ.get("SSO_HEADER_ENABLED", 0)))
+SSO_HEADER_GROUPS_SEPARATOR = os.environ.get("SSO_HEADER_GROUPS_SEPARATOR", ";")
+SSO_HEADER_EMAIL_FIELD = os.environ.get("SSO_HEADER_EMAIL_FIELD", "x-remote-email")
+SSO_HEADER_USERNAME_FIELD = os.environ.get("SSO_HEADER_USERNAME_FIELD", "x-remote-user")
+SSO_HEADER_GROUPS_FIELD = os.environ.get("SSO_HEADER_GROUPS_FIELD", "x-remote-groups")
+
+
+SSO_OIDC_ENABLED = bool(int(os.environ.get("SSO_OIDC_ENABLED", 0)))
+SSO_OIDC_AUTH_ENDPOINT = os.environ.get("SSO_OIDC_AUTH_ENDPOINT", "")
+SSO_OIDC_TOKEN_ENDPOINT = os.environ.get("SSO_OIDC_TOKEN_ENDPOINT", "")
+SSO_OIDC_USERINFO_ENDPOINT = os.environ.get("SSO_OIDC_USERINFO_ENDPOINT", "")
+SSO_OIDC_CLIENT_ID = os.environ.get("SSO_OIDC_CLIENT_ID", "")
+SSO_OIDC_CLIENT_SECRET = os.environ.get("SSO_OIDC_CLIENT_SECRET", "")
+SSO_OIDC_REDIRECT_URL = os.environ.get("SSO_OIDC_REDIRECT_URL", "")
+SSO_OIDC_ALLOW_HTTP_INSECURE = bool(int(os.environ.get("SSO_OIDC_ALLOW_HTTP_INSECURE", 0)))
+SSO_OIDC_USERINFO_EMAIL_FIELD = os.environ.get("SSO_OIDC_USERINFO_EMAIL_FIELD", "email")
+SSO_OIDC_USERINFO_USERNAME_FIELD = os.environ.get("SSO_OIDC_USERINFO_USERNAME_FIELD", "preferred_username")
+SSO_OIDC_USERINFO_GROUPS_FIELD = os.environ.get("SSO_OIDC_USERINFO_GROUPS_FIELD", "isMemberOf")
 
 # Audiences
 AUTH_AUD = "btrix:auth"
@@ -55,6 +83,12 @@ class BearerResponse(BaseModel):
     access_token: str
     token_type: str
 
+class LoginMethodsInquiryResponse(BaseModel):
+    login_methods: dict
+    invites_enabled: bool
+
+class OIDCRedirectResponse(BaseModel):
+    redirect_url: str
 
 # ============================================================================
 # pylint: disable=too-few-public-methods
@@ -138,6 +172,97 @@ def generate_password() -> str:
 
 
 # ============================================================================
+def openid_convertor(response: Dict[str, Any], session = None) -> OpenID:
+    
+    email = response.get(SSO_OIDC_USERINFO_EMAIL_FIELD, None)
+    username = response.get(SSO_OIDC_USERINFO_USERNAME_FIELD, None)
+    groups = response.get(SSO_OIDC_USERINFO_GROUPS_FIELD, None)
+
+    if email is None or username is None or groups is None or not isinstance(groups, list):
+        raise HTTPException(
+                status_code=500,
+                detail="error_processing_sso_response",
+            )
+
+    return OpenID(
+        email=email,
+        display_name=username,  # Abusing variable names to match what we need
+        id=";".join(groups)     # Abusing variable names to match what we need
+    )
+
+if SSO_OIDC_ENABLED:
+    discovery = {
+        "authorization_endpoint": SSO_OIDC_AUTH_ENDPOINT,
+        "token_endpoint": SSO_OIDC_TOKEN_ENDPOINT,
+        "userinfo_endpoint": SSO_OIDC_USERINFO_ENDPOINT,
+    }
+
+    SSOProvider = create_provider(name="oidc", discovery_document=discovery, response_convertor=openid_convertor)
+    sso = SSOProvider(
+        client_id=SSO_OIDC_CLIENT_ID,
+        client_secret=SSO_OIDC_CLIENT_SECRET,
+        redirect_uri=SSO_OIDC_REDIRECT_URL,
+        allow_insecure_http=SSO_OIDC_ALLOW_HTTP_INSECURE
+    )
+
+# ============================================================================
+async def update_user_orgs(groups: [str], user, ops):
+    if user.is_superuser:
+        return
+    orgs = await ops.get_org_slugs_by_ids()
+    user_orgs, _ = await ops.get_orgs_for_user(user)
+    for org_id, slug in orgs.items():
+        if slug.lower() in groups:
+            already_in_org = False
+            for user_org in user_orgs:
+                if user_org.slug == slug:
+                    # User is already in org, no need to add
+                    already_in_org = True
+            if not already_in_org:
+                org = await ops.get_org_by_id(org_id)
+                await ops.add_user_to_org(org, user.id, UserRole.CRAWLER)
+
+    for org in user_orgs:
+        if org.slug.lower() not in groups:
+            del org.users[str(user.id)]
+            await ops.update_users(org)
+
+async def update_user_role(groups: [str], user, user_manager):
+    """Update if user should be superuser"""
+    is_superuser = False
+    for group in groups:
+        if group in SSO_SUPERUSER_GROUPS:
+            is_superuser = True
+    if user.is_superuser != is_superuser:
+        query: dict[str, str] = {}
+        query["is_superuser"] = is_superuser
+        await user_manager.users.find_one_and_update({"id": user.id}, {"$set": query})
+
+async def process_sso_user_login(user_manager, login_email, login_name, groups) -> User:
+    user = await user_manager.get_by_email(login_email)
+    ops = user_manager.org_ops
+
+    if user:
+        await update_user_role(groups, user, user_manager)
+        await update_user_orgs(groups, user, ops)
+        # User exist, and correct orgs have been set, proceed to login
+        return user
+    else:
+        # Create verified user
+        await user_manager.create_non_super_user(login_email, None, login_name, is_sso=True)
+        user = await user_manager.get_by_email(login_email)
+        if user:
+            await update_user_role(groups, user, user_manager)
+            await update_user_orgs(groups, user, ops)
+            # User has been created and correct orgs have been set, proceed to login
+            return user
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="user_creation_failed",
+            )
+
+# ============================================================================
 # pylint: disable=raise-missing-from
 def init_jwt_auth(user_manager):
     """init jwt auth router + current_active_user dependency"""
@@ -176,6 +301,12 @@ def init_jwt_auth(user_manager):
         lock the user account and send an email to reset their password.
         On successful login when user is not already locked, reset count to 0.
         """
+        if PASSWORD_DISABLED:
+            raise HTTPException(
+                status_code=405,
+                detail="password_based_login_disabled",
+            )
+
         login_email = credentials.username
 
         failed_count = await user_manager.get_failed_logins_count(login_email)
@@ -227,6 +358,85 @@ def init_jwt_auth(user_manager):
         # successfully logged in, reset failed logins, return user
         await user_manager.reset_failed_logins(login_email)
         return get_bearer_response(user)
+    
+    @auth_jwt_router.get("/login/header", response_model=BearerResponse)
+    async def login_header(
+        request: Request
+    ) -> BearerResponse:
+
+        x_remote_email = request.headers.get(SSO_HEADER_EMAIL_FIELD, None)
+        x_remote_user = request.headers.get(SSO_HEADER_USERNAME_FIELD, None)
+        x_remote_groups = request.headers.get(SSO_HEADER_GROUPS_FIELD, None)
+
+        if not SSO_HEADER_ENABLED:
+            raise HTTPException(
+                status_code=405,
+                detail="sso_is_disabled",
+            )
+
+        if not (x_remote_user is not None and x_remote_email is not None and x_remote_groups is not None):
+            raise HTTPException(
+                status_code=500,
+                detail="invalid_parameters_for_login",
+            )
+
+        login_email = x_remote_email
+        login_name = x_remote_user
+        groups = [group.lower() for group in x_remote_groups.split(SSO_HEADER_GROUPS_SEPARATOR)] 
+
+        user = await process_sso_user_login(user_manager, login_email, login_name, groups)
+        return get_bearer_response(user)
+
+    @auth_jwt_router.get("/login/oidc", response_model=OIDCRedirectResponse)
+    async def login_oidc() -> OIDCRedirectResponse:
+        if not SSO_OIDC_ENABLED:
+            raise HTTPException(
+                status_code=405,
+                detail="sso_is_disabled",
+            )
+        
+        """Redirect the user to the OIDC login page."""
+        with sso:
+            redirect_url = await sso.get_login_url()
+            return OIDCRedirectResponse(redirect_url=redirect_url)
+    
+    @auth_jwt_router.get("/login/oidc/callback", response_model=BearerResponse)
+    async def login_oidc_callback(request: Request) -> BearerResponse:
+        if not SSO_OIDC_ENABLED:
+            raise HTTPException(
+                status_code=405,
+                detail="sso_is_disabled",
+            )
+
+        with sso:
+            openid = await sso.verify_and_process(request)
+            if not openid:
+                raise HTTPException(status_code=401, detail="Authentication failed")
+            login_email = openid.email
+            login_name = openid.display_name                                # Abusing variable names, see openid convertor above
+            groups = [group.lower() for group in openid.id.split(";")]      # Abusing variable names, see openid convertor above
+
+            user = await process_sso_user_login(user_manager, login_email, login_name, groups)
+            return get_bearer_response(user)
+    
+    @auth_jwt_router.get("/login/methods", response_model=LoginMethodsInquiryResponse)
+    async def login_methods() -> LoginMethodsInquiryResponse:
+        enabled_login_methods = {
+            'password': True,
+            'sso_header': False,
+            'sso_oidc': False
+        }
+
+        if PASSWORD_DISABLED:
+            enabled_login_methods['password'] = False
+
+        if SSO_HEADER_ENABLED:
+            enabled_login_methods['sso_header'] = True
+
+        if SSO_OIDC_ENABLED:
+            enabled_login_methods['sso_oidc'] = True
+
+        return LoginMethodsInquiryResponse(login_methods=enabled_login_methods, invites_enabled=INVITES_ENABLED)
 
     @auth_jwt_router.post("/refresh", response_model=BearerResponse)
     async def refresh_jwt(user=Depends(current_active_user)):

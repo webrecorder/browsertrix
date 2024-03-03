@@ -19,6 +19,10 @@ export class UsersInvite extends LiteElement {
   @state()
   private invitedEmail?: string;
 
+  firstUpdated() {
+    this.checkEnabledInvites();
+  }
+
   render() {
     let successMessage;
 
@@ -57,5 +61,15 @@ export class UsersInvite extends LiteElement {
 
   private onSuccess(event: CustomEvent<{ inviteEmail: string }>) {
     this.invitedEmail = event.detail.inviteEmail;
+  }
+
+  async checkEnabledInvites() {
+    const resp = await fetch("/api/auth/jwt/login/methods");
+    if (resp.status == 200) {
+      const data = await resp.json();
+      if (!data.invites_enabled){
+        this.navTo(`/`);
+      }
+    }
   }
 }

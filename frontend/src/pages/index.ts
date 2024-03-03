@@ -2,6 +2,8 @@ import "./home";
 
 import(/* webpackChunkName: "sign-up" */ "./sign-up");
 import(/* webpackChunkName: "log-in" */ "./log-in");
+import(/* webpackChunkName: "log-in-header" */ "./log-in-header");
+import(/* webpackChunkName: "log-in-header" */ "./log-in-oidc");
 import(/* webpackChunkName: "orgs" */ "./orgs");
 import(/* webpackChunkName: "org" */ "./org");
 import(/* webpackChunkName: "crawls" */ "./crawls");

@@ -2,6 +2,7 @@
 import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { createMachine, interpret, assign } from "@xstate/fsm";
+import { when } from "lit/directives/when.js";
 
 import type { ViewState } from "@/utils/APIRouter";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -147,6 +148,15 @@ export class LogInPage extends LiteElement {
   @property({ type: String })
   redirectUrl: string = ROUTES.home;
 
+  @property({ type: Boolean })
+  PasswordLoginEnabled: boolean = true;
+
+  @property({ type: Boolean })
+  HeaderSSOEnabled: boolean = false;
+
+  @property({ type: Boolean })
+  OIDCSSOEnabled: boolean = false;
+
   private readonly formStateService = interpret(machine);
 
   @state()
@@ -214,12 +224,20 @@ export class LogInPage extends LiteElement {
       `;
     }
 
+    if (!this.PasswordLoginEnabled){
+      form = '';
+      link = '';
+    }
+
     return html`
       <article class="grid w-full max-w-md gap-5">
         ${successMessage}
 
         <main class="p-10 md:rounded-lg md:border md:bg-white md:shadow-lg">
+          <div>${this.renderFormError()}</div>
           <div>${form}</div>
+          ${when(this.HeaderSSOEnabled, () => html`<div style="margin-top: 20px">${this.renderLoginHeaderButton()}</div>`)}
+          ${when(this.OIDCSSOEnabled, () => html`<div style="margin-top: 20px">${this.renderLoginOIDCButton()}</div>`)}
         </main>
         <footer class="text-center">${link}</footer>
       </article>
@@ -236,7 +254,7 @@ export class LogInPage extends LiteElement {
     }
   }
 
-  private renderLoginForm() {
+  private renderFormError() {
     let formError;
 
     if (this.formState.context.serverError) {
@@ -247,6 +265,16 @@ export class LogInPage extends LiteElement {
           >
         </div>
       `;
+    }
+
+    return formError
+  }
+
+  private renderLoginForm() {
+
+    var button_type = "primary"
+    if (this.HeaderSSOEnabled || this.OIDCSSOEnabled) {
+      button_type = "default"
     }
 
     return html`
@@ -275,11 +303,9 @@ export class LogInPage extends LiteElement {
           </btrix-input>
         </div>
 
-        ${formError}
-
         <sl-button
           class="w-full"
-          variant="primary"
+          variant="${button_type}"
           ?loading=${this.formState.value === "signingIn"}
           ?disabled=${this.formState.value === "backendInitializing"}
           type="submit"
@@ -294,6 +320,38 @@ export class LogInPage extends LiteElement {
               >
             </div>`
           : ""}
+      </form>
+    `;
+  }
+
+  private renderLoginHeaderButton() {
+
+    return html`
+      <form @submit=${this.onSubmitLogInHeader}>
+        <sl-button
+          class="w-full"
+          variant="primary"
+          ?loading=${this.formState.value === "signingIn"}
+          ?disabled=${this.formState.value === "backendInitializing"}
+          type="submit"
+          >${msg("Log In with Single Sign-On")}</sl-button
+        >
+      </form>
+    `;
+  }
+
+  private renderLoginOIDCButton() {
+
+    return html`
+      <form @submit=${this.onSubmitLogInOIDC}>
+        <sl-button
+          class="w-full"
+          variant="primary"
+          ?loading=${this.formState.value === "signingIn"}
+          ?disabled=${this.formState.value === "backendInitializing"}
+          type="submit"
+          >${msg("Log In with Single Sign-On")}</sl-button
+        >
       </form>
     `;
   }
@@ -342,11 +400,22 @@ export class LogInPage extends LiteElement {
     const resp = await fetch("/api/settings");
     if (resp.status === 200) {
       this.formStateService.send("BACKEND_INITIALIZED");
+      this.checkEnabledSSOMethods();
     } else {
       this.formStateService.send("BACKEND_NOT_INITIALIZED");
       this.timerId = window.setTimeout(() => {
         void this.checkBackendInitialized();
       }, 5000);
+    }
+  }
+
+  async checkEnabledSSOMethods() {
+    const resp = await fetch("/api/auth/jwt/login/methods");
+    if (resp.status == 200) {
+      const data = await resp.json();
+      this.PasswordLoginEnabled = data.login_methods.password;
+      this.HeaderSSOEnabled = data.login_methods.sso_header;
+      this.OIDCSSOEnabled = data.login_methods.sso_oidc;
     }
   }
 
@@ -393,6 +462,16 @@ export class LogInPage extends LiteElement {
         });
       }
     }
+  }
+
+  async onSubmitLogInHeader(event: SubmitEvent) {
+    event.preventDefault();
+    window.location.href = "/log-in/header";
+  }
+
+  async onSubmitLogInOIDC(event: SubmitEvent) {
+    event.preventDefault();
+    window.location.href = "/log-in/oidc";
   }
 
   async onSubmitResetPassword(event: SubmitEvent) {

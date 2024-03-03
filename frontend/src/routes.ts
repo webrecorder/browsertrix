@@ -5,6 +5,8 @@ export const ROUTES = {
   acceptInvite: "/invite/accept/:token",
   verify: "/verify",
   login: "/log-in",
+  loginSsoHeader: "/log-in/header",
+  loginSsoOidc: "/log-in/oidc",
   loginWithRedirect: "/log-in?redirectUrl",
   forgotPassword: "/log-in/forgot-password",
   resetPassword: "/reset-password",

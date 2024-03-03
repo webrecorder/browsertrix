@@ -125,6 +125,12 @@ class InviteOps:
 
         :returns: is_new_user (bool), invite token (str)
         """
+        if bool(int(os.environ.get("INVITES_DISABLED", 0))):
+            raise HTTPException(
+                status_code=405,
+                detail="invites_are_disabled",
+            )
+
         invite_code = uuid4().hex
 
         if org:

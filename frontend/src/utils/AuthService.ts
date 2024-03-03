@@ -166,6 +166,73 @@ export default class AuthService {
     };
   }
 
+  static async login_header({}: {
+  }): Promise<Auth> {
+    const resp = await fetch("/api/auth/jwt/login/header");
+
+    if (resp.status !== 200) {
+      throw new APIError({
+        message: resp.statusText,
+        status: resp.status,
+      });
+    }
+
+    const data = await resp.json();
+    const token = AuthService.decodeToken(data.access_token);
+    const authHeaders = AuthService.parseAuthHeaders(data);
+
+    return {
+      username: "placeholder",
+      headers: authHeaders,
+      tokenExpiresAt: token.exp * 1000,
+    };
+  }
+
+  static async login_oidc({}: {
+  }): Promise<string> {
+    const resp = await fetch("/api/auth/jwt/login/oidc");
+
+    if (resp.status !== 200) {
+      throw new APIError({
+        message: resp.statusText,
+        status: resp.status,
+      });
+    }
+
+    const data = await resp.json();
+
+    return data.redirect_url
+  }
+
+  static async login_oidc_callback({
+    session_state,
+    code,
+  }: {
+    session_state: string,
+    code: string
+  }): Promise<Auth> {
+    const params = "?session_state=" + session_state + "&code=" + code
+    const resp = await fetch("/api/auth/jwt/login/oidc/callback" + params);
+
+    if (resp.status !== 200) {
+      throw new APIError({
+        message: resp.statusText,
+        status: resp.status,
+      });
+    }
+
+    const data = await resp.json();
+    const token = AuthService.decodeToken(data.access_token);
+    const authHeaders = AuthService.parseAuthHeaders(data);
+
+    return {
+      username: "placeholder",
+      headers: authHeaders,
+      tokenExpiresAt: token.exp * 1000,
+    };
+  }
+
+
   /**
    * Decode JSON web token returned as access token
    */

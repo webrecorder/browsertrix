@@ -83,6 +83,36 @@ superuser:
 # Set name for default organization created with superuser
 default_org: "My Organization"
 
+# SSO Configuration
+# =========================================
+# Header SSO
+
+# Enabled: 1, Disabled 0 (Default)
+# sso_header_enabled: 0
+# sso_header_email_field: x-remote-email
+# sso_header_username_field: x-remote-user
+# sso_header_groups_field: x-remote-groups
+# sso_header_groups_separator: ';'
+
+# Open ID Connect SSO
+
+# sso_oidc_enabled: 0
+# sso_oidc_auth_endpoint: https://localhost/auth/realms/example/protocol/openid-connect/auth
+# sso_oidc_token_endpoint: https://localhost/auth/realms/example/protocol/openid-connect/token
+# sso_oidc_userinfo_endpoint: https://localhost/auth/realms/example/protocol/openid-connect/userinfo
+# sso_oidc_client_id: yourclientid
+# sso_oidc_client_secret: yourclientsecret
+# sso_oidc_redirect_url: http://localhost:30870/log-in/oidc
+# sso_oidc_allow_http_insecure: 0
+# sso_oidc_userinfo_email_field: email
+# sso_oidc_userinfo_username_field: preferred_username
+# sso_oidc_userinfo_groups_field: isMemberOf
+
+# Additional SSO Options
+# sso_superuser_groups: browsertrix-admins  # Semicolon separated list of groups whose users should be promoted to superadmins
+# Optionally completely disable password based login
+# password_disabled: 0
+# invites_disabled: 0
 
 # API Image
 # =========================================

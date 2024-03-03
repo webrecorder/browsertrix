@@ -12,4 +12,5 @@ export type CurrentUser = {
   isVerified: boolean;
   isAdmin: boolean;
   orgs: UserOrg[];
+  isSSO: boolean;
 };

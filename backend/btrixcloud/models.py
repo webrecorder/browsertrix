@@ -94,6 +94,8 @@ class User(BaseModel):
     email: EmailStr
     is_superuser: bool = False
     is_verified: bool = False
+    
+    is_sso: bool = False
 
     invites: Dict[str, InvitePending] = {}
     hashed_password: str
@@ -144,6 +146,7 @@ class UserOut(BaseModel):
     email: EmailStr
     is_superuser: bool = False
     is_verified: bool = False
+    is_sso: bool = False
 
     orgs: List[UserOrgInfoOut]
 
@@ -1151,6 +1154,7 @@ class UserCreate(UserCreateIn):
 
     is_superuser: Optional[bool] = False
     is_verified: Optional[bool] = False
+    is_sso: Optional[bool] = False
 
 
 # ============================================================================
