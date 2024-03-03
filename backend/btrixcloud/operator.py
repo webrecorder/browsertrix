@@ -1191,9 +1191,10 @@ class BtrixOperator(K8sAPI):
             ):
                 # if lastUpdatedTime is same as previous, something is wrong, don't update!
                 print(
-                    "Already updated for lastUpdatedTime, skipping execTime update!",
+                    f"Already updated for lastUpdatedTime {status.lastUpdatedTime}, skipping execTime update!",
                     flush=True,
                 )
+                status.lastUpdatedTime = to_k8s_date(now)
                 return
 
             await self.org_ops.inc_org_time_stats(oid, exec_time, True)
