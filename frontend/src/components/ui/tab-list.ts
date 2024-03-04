@@ -4,6 +4,7 @@ import { property, queryAsync, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 const DEFAULT_PANEL_ID = "default-panel";
+// postcss-lit-disable-next-line
 export const TWO_COL_SCREEN_MIN_CSS = css`64.5rem`;
 
 /**
