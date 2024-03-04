@@ -21,12 +21,12 @@ const getRandomData = (): ArchivedItemPage => {
         }
       : undefined;
   const reviewStatus =
-    isReviewed && Math.random() > 0.5
+    isReviewed && Math.random() > 0.2
       ? { approved: Math.random() > 0.5 }
       : undefined;
 
   const screenshot =
-    Math.random() > 0.5
+    Math.random() > 0.2
       ? {
           screenshotMatch: {
             "": Math.min(Math.floor(Math.pow(Math.random(), 0.2) * 110), 100),
@@ -35,7 +35,7 @@ const getRandomData = (): ArchivedItemPage => {
       : undefined;
 
   const text =
-    Math.random() > 0.5
+    Math.random() > 0.2
       ? {
           textMatch: {
             "": Math.min(Math.floor(Math.pow(Math.random(), 0.2) * 110), 100),
@@ -48,7 +48,7 @@ const getRandomData = (): ArchivedItemPage => {
   const replayBad =
     Math.random() > 0.5 ? Math.floor(resourceCount * Math.random()) : 0;
   const crawlCount =
-    Math.random() > 0.5
+    Math.random() > 0.2
       ? {
           crawlBad,
           crawlGood: resourceCount - crawlBad,
@@ -56,7 +56,7 @@ const getRandomData = (): ArchivedItemPage => {
       : undefined;
 
   const replayCount =
-    Math.random() > 0.5
+    Math.random() > 0.2
       ? {
           replayBad,
           replayGood: resourceCount - replayBad,
@@ -82,7 +82,7 @@ const getRandomData = (): ArchivedItemPage => {
 };
 
 const randomArray = Array.from(
-  { length: Math.ceil(Math.random() * 100) },
+  { length: 500 },
   // { length: 50 },
   getRandomData,
 );

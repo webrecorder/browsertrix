@@ -13,6 +13,16 @@ import {
 import { pageDetails } from "./page-details";
 import type { SlTreeItem } from "@shoelace-style/shoelace";
 
+// import { setDefaultAnimation } from "@shoelace-style/shoelace/dist/utilities/animation-registry.js";
+
+// // Change the default animation for all dialogs
+// setDefaultAnimation("tree-item.collapse", {
+//   keyframes: [],
+//   options: {
+//     duration: 0,
+//   },
+// });
+
 type SearchFields = "name" | "issues";
 
 enum Tab {
