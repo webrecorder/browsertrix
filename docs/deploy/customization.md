@@ -1,4 +1,4 @@
-# Helm Chart Customization
+# Customizing Browsertrix Deployment
 
 Local and production deployments alike can be customized by modifying the `chart/values.yaml` Helm chart file or a local override. For more on using local overrides, see the [Local Deployment Guide](local.md). The remainder of this guide covers some of the customization options available in the Helm chart.
 
