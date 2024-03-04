@@ -153,25 +153,48 @@ export class PageList extends TailwindElement {
               @sl-selection-change=${(
                 e: CustomEvent<{ selection: SlTreeItem[] }>,
               ) => {
+                console.log(e);
                 if (e.detail.selection[0].classList.contains("is-group")) {
-                  e.preventDefault();
+                  if (this.previousSelection) {
+                    this.previousSelection.selected = true;
+                  } else {
+                    const leaf =
+                      e.detail.selection[0].querySelector<SlTreeItem>(
+                        ".is-leaf",
+                      );
+                    if (leaf) leaf.selected = true;
+                  }
                 }
                 if (e.detail.selection[0].classList.contains("is-leaf")) {
-                  e.detail.selection[0].expanded = true;
+                  const leaf = e.detail.selection[0];
+                  leaf.expanded = true;
                   if (this.previousSelection)
                     this.previousSelection.expanded = false;
-                  this.previousSelection = e.detail.selection[0];
+                  this.previousSelection = leaf;
+                  leaf.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                  });
                 }
                 if (e.detail.selection[0].classList.contains("is-detail")) {
-                  e.detail.selection[0].closest<SlTreeItem>(
+                  const leaf = e.detail.selection[0].closest<SlTreeItem>(
                     "sl-tree-item.is-leaf",
-                  )!.selected = true;
+                  )!;
+                  leaf.selected = true;
+                  leaf.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                  });
                 }
               }}
               >${contents}</sl-tree
             >`,
           renderGroup: (header, items) =>
-            html`<sl-tree-item expanded class="is-group bg-neutral-0">
+            html`<sl-tree-item
+              expanded
+              class="is-group bg-neutral-0"
+              .selectable=${false}
+            >
               <div class="tree-item__expand-button">${header}</div>
               ${items}
             </sl-tree-item>`,
@@ -214,7 +237,7 @@ export class PageList extends TailwindElement {
               </div>
               <h5 class="truncate text-sm font-semibold">${datum.title}</h5>
               <div class="truncate text-xs text-blue-600">${datum.url}</div>
-              <sl-tree-item class="is-detail"
+              <sl-tree-item class="is-detail" .selectable=${false}
                 >${pageDetails(datum, this.qaRunId)}</sl-tree-item
               >
             </sl-tree-item>`,
