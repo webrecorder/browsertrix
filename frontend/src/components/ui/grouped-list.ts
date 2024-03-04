@@ -61,8 +61,7 @@ type GroupConfig<
 
 type Comparator<T> = (a: T, b: T) => number;
 
-const defaultWrapperRenderer = (contents: TemplateResult<1>) =>
-  html`<sl-tree selection="leaf">${contents}</sl-tree>`;
+const defaultWrapperRenderer = (contents: TemplateResult<1>) => contents;
 
 const defaultLabelRenderer = <
   T extends object,
@@ -83,10 +82,13 @@ const defaultLabelRenderer = <
 const defaultGroupRenderer = (
   header: TemplateResult<1>,
   items: (TemplateResult<1> | null)[],
-) => html`<sl-tree-item expanded>${header}${items}</sl-tree-item>`;
+) =>
+  html`<details open>
+    <summary>${header}</summary>
+    ${items}
+  </details>`;
 
-const defaultItemRenderer = (item: unknown) =>
-  html`<sl-tree-item>${JSON.stringify(item)}</sl-tree-item>`;
+const defaultItemRenderer = (item: unknown) => html`${JSON.stringify(item)}`;
 
 /**
  * A generic optionally-grouped list

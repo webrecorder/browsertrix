@@ -1,0 +1,233 @@
+import type { ArchivedItemPage } from "@/types/crawler";
+import { shuffle } from "lodash";
+
+let counter = 0;
+
+const getRandomData = (): ArchivedItemPage => {
+  const resourceCount = Math.ceil(Math.random() * 1000);
+  const isReviewed = Math.random() > 0.5;
+  const notes =
+    isReviewed && Math.random() > 0.5
+      ? {
+          notes: [
+            {
+              id: "",
+              created: "",
+              modified: "",
+              userName: "",
+              text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore...",
+            },
+          ],
+        }
+      : undefined;
+  const reviewStatus =
+    isReviewed && Math.random() > 0.5
+      ? { approved: Math.random() > 0.5 }
+      : undefined;
+
+  const screenshot =
+    Math.random() > 0.5
+      ? {
+          screenshotMatch: {
+            "": Math.min(Math.floor(Math.pow(Math.random(), 0.2) * 110), 100),
+          },
+        }
+      : undefined;
+
+  const text =
+    Math.random() > 0.5
+      ? {
+          textMatch: {
+            "": Math.min(Math.floor(Math.pow(Math.random(), 0.2) * 110), 100),
+          },
+        }
+      : undefined;
+
+  const crawlBad =
+    Math.random() > 0.5 ? Math.floor(resourceCount * Math.random()) : 0;
+  const replayBad =
+    Math.random() > 0.5 ? Math.floor(resourceCount * Math.random()) : 0;
+  const crawlCount =
+    Math.random() > 0.5
+      ? {
+          crawlBad,
+          crawlGood: resourceCount - crawlBad,
+        }
+      : undefined;
+
+  const replayCount =
+    Math.random() > 0.5
+      ? {
+          replayBad,
+          replayGood: resourceCount - replayBad,
+        }
+      : undefined;
+
+  return {
+    oid: "",
+    crawl_id: "",
+    title: `Randomly generated page ${counter++}`,
+    url: "https://example.com/path/path/path/path/path/path/path/path/path",
+    ...screenshot,
+    ...text,
+    resourceCounts: {
+      "": {
+        ...crawlCount,
+        ...replayCount,
+      },
+    },
+    ...notes,
+    ...reviewStatus,
+  };
+};
+
+const randomArray = Array.from(
+  { length: Math.ceil(Math.random() * 100) },
+  // { length: 50 },
+  getRandomData,
+);
+
+export const testData = shuffle([
+  ...randomArray,
+  // {
+  //   title: "Example page with resource errors",
+  //   url: "https://example.com/path/path/path/path/path/path/path/path/path",
+  //   screenshotMatch: 1,
+  //   textMatch: 5,
+  //   crawlResources: [6, 7],
+  //   replayResources: [4, 7],
+  // },
+  // {
+  //   title: "Example page with 4 error stats",
+  //   url: "https://example.com/path/path/path/path/path/path/path/path/path",
+  //   screenshotMatch: 1,
+  //   textMatch: 5,
+  //   crawlResources: [6, 7],
+  //   replayResources: [4, 7],
+  // },
+  // {
+  //   title: "Example page with 2 error stats",
+  //   url: "https://example.com/path/path/path/path/path/path/path/path/path",
+  //   screenshotMatch: 1,
+  //   textMatch: 5,
+  //   crawlResources: [6, 7],
+  //   replayResources: [7, 7],
+  // },
+  // {
+  //   title:
+  //     "Example page, possible issues, 2 warnings, etc etc, extremely long title",
+  //   url: "https://example.com/path/path/path/path/path/path/path/path/path",
+  //   screenshotMatch: 90,
+  //   textMatch: 90,
+  //   crawlResources: [12, 12],
+  //   replayResources: [12, 12],
+  // },
+  // {
+  //   title: "Example page, possible issues",
+  //   url: "https://example.com/path/path/path/path/path/path/path/path/path",
+  //   screenshotMatch: 97,
+  //   textMatch: 100,
+  //   crawlResources: [12, 12],
+  //   replayResources: [12, 12],
+  // },
+  // {
+  //   title: "Example page, likely good",
+  //   url: "https://example.com/path/path/path/path/path/path/path/path/path",
+  //   screenshotMatch: 100,
+  //   textMatch: 100,
+  //   crawlResources: [12, 12],
+  //   replayResources: [12, 12],
+  // },
+  // {
+  //   title: "Example page, likely good",
+  //   url: "https://example.com/path/path/path/path/path/path/path/path/path",
+  //   screenshotMatch: 100,
+  //   textMatch: 100,
+  //   crawlResources: [12, 12],
+  //   replayResources: [12, 12],
+  // },
+]);
+
+export function calculateSeverityFromDatum(
+  datum: ArchivedItemPage,
+  runId: string,
+): "severe" | "moderate" | "good" {
+  // Severe
+  if (
+    (datum.screenshotMatch?.[runId] && datum.screenshotMatch[runId] < 50) ||
+    (datum.textMatch?.[runId] && datum.textMatch[runId] < 50) ||
+    (datum.resourceCounts?.[runId]?.crawlBad != null &&
+      datum.resourceCounts[runId].crawlGood != null &&
+      datum.resourceCounts[runId].crawlBad! <
+        datum.resourceCounts[runId].crawlBad! - 2) ||
+    (datum.resourceCounts?.[runId]?.replayBad != null &&
+      datum.resourceCounts[runId].replayGood != null &&
+      datum.resourceCounts[runId].replayBad! <
+        datum.resourceCounts[runId].replayBad! - 2)
+  ) {
+    return "severe";
+  }
+
+  // Moderate
+  if (
+    (datum.screenshotMatch?.[runId] && datum.screenshotMatch[runId] < 100) ||
+    (datum.textMatch?.[runId] && datum.textMatch[runId] < 100) ||
+    (datum.resourceCounts?.[runId]?.crawlBad != null &&
+      datum.resourceCounts[runId].crawlGood != null &&
+      datum.resourceCounts[runId].crawlBad! <
+        datum.resourceCounts[runId].crawlBad!) ||
+    (datum.resourceCounts?.[runId]?.replayBad != null &&
+      datum.resourceCounts[runId].replayGood != null &&
+      datum.resourceCounts[runId].replayBad! <
+        datum.resourceCounts[runId].replayBad!)
+  ) {
+    return "moderate";
+  }
+
+  return "good";
+}
+
+export function errorsFromDatum(datum: ArchivedItemPage, runId: string) {
+  let severeErrors = 0,
+    moderateErrors = 0;
+  if (datum.screenshotMatch?.[runId] && datum.screenshotMatch[runId] < 50)
+    severeErrors++;
+  if (datum.textMatch?.[runId] && datum.textMatch[runId] < 50) severeErrors++;
+  if (
+    datum.resourceCounts?.[runId]?.crawlBad != null &&
+    datum.resourceCounts[runId].crawlGood != null &&
+    datum.resourceCounts[runId].crawlBad! <
+      datum.resourceCounts[runId].crawlBad! - 2
+  )
+    severeErrors++;
+  if (
+    datum.resourceCounts?.[runId]?.replayBad != null &&
+    datum.resourceCounts[runId].replayGood != null &&
+    datum.resourceCounts[runId].replayBad! <
+      datum.resourceCounts[runId].replayBad! - 2
+  )
+    severeErrors++;
+  if (severeErrors > 1) {
+    return { severeErrors, moderateErrors: 0 };
+  }
+  if (datum.screenshotMatch?.[runId] && datum.screenshotMatch[runId] < 100)
+    moderateErrors++;
+  if (datum.textMatch?.[runId] && datum.textMatch[runId] < 100)
+    moderateErrors++;
+  if (
+    datum.resourceCounts?.[runId]?.crawlBad != null &&
+    datum.resourceCounts[runId].crawlGood != null &&
+    datum.resourceCounts[runId].crawlBad! <
+      datum.resourceCounts[runId].crawlBad!
+  )
+    moderateErrors++;
+  if (
+    datum.resourceCounts?.[runId]?.replayBad != null &&
+    datum.resourceCounts[runId].replayGood != null &&
+    datum.resourceCounts[runId].replayBad! <
+      datum.resourceCounts[runId].replayBad!
+  )
+    moderateErrors++;
+
+  return { moderateErrors, severeErrors: 0 };
+}

@@ -23,6 +23,7 @@
     "autoprefixer": "^10.4.2",
     "axios": "^0.22.0",
     "broadcastchannel-polyfill": "^1.0.1",
+    "clsx": "^2.1.0",
     "color": "^4.0.1",
     "copy-webpack-plugin": "^9.1.0",
     "css-loader": "^6.3.0",

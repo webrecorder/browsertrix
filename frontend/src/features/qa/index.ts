@@ -1,2 +1,2 @@
 export * from "./page-list";
-export * from "./grouped-list";
+export * from "../../components/ui/grouped-list";
