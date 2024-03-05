@@ -52,7 +52,6 @@ class PageOps:
         try:
             crawl = await self.crawl_ops.get_crawl(crawl_id, None)
             stream = await self.storage_ops.sync_stream_wacz_pages(crawl.resources)
-            print(f"Stream type: {type(stream)}", flush=True)
             for page_dict in stream:
                 if not page_dict.get("url"):
                     continue
