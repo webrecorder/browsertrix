@@ -51,6 +51,7 @@ export type OrgParams = {
   items: {
     itemType?: Crawl["type"];
     itemId?: string;
+    itemPageId?: string;
     qaTab?: QATab;
     workflowId?: string;
     collectionId?: string;
@@ -525,6 +526,7 @@ export class Org extends LiteElement {
           .authState=${this.authState!}
           orgId=${this.orgId}
           itemId=${params.itemId}
+          itemPageId=${ifDefined(params.itemPageId)}
           tab=${params.qaTab}
           ?isCrawler=${this.isCrawler}
         ></btrix-archived-item-qa>`;
