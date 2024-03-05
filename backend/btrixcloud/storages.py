@@ -606,7 +606,7 @@ class StorageOps:
                     ]
                     log_files.sort(key=lambda log_zipinfo: log_zipinfo.filename)
 
-                    for log_zipinfo in page_files:
+                    for log_zipinfo in log_files:
                         wacz_log_streams.append(
                             stream_log_lines(log_zipinfo, wacz_url, wacz_file.name)
                         )
@@ -665,8 +665,7 @@ class StorageOps:
         """Return iterator of lines in remote file as bytes"""
         with RemoteZip(wacz_url) as remote_zip:
             with remote_zip.open(filename) as file_stream:
-                for line in file_stream:
-                    yield line
+                yield from file_stream
 
     def _sync_dl(
         self, all_files: List[CrawlFileOut], client: S3Client, bucket: str, key: str
