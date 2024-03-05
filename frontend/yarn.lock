@@ -6287,10 +6287,22 @@ proxy-addr@~2.0.7:
     forwarded "0.2.0"
     ipaddr.js "1.9.1"
 
+proxy-compare@2.6.0:
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/proxy-compare/-/proxy-compare-2.6.0.tgz#5e8c8b5c3af7e7f17e839bf6cf1435bcc4d315b0"
+  integrity sha512-8xuCeM3l8yqdmbPoYeLbrAXCBWu19XEYc5/F28f5qOaoAIMyfmBUkl5axiK+x9olUvRlcekvnm98AP9RDngOIw==
+
 proxy-from-env@1.1.0:
   version "1.1.0"
   resolved "https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-1.1.0.tgz"
   integrity sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==
+
+proxy-memoize@^2.0.5:
+  version "2.0.5"
+  resolved "https://registry.yarnpkg.com/proxy-memoize/-/proxy-memoize-2.0.5.tgz#9ecdbf032e95599c09ffcc275a099c314fcd756c"
+  integrity sha512-EeD3Fn6s7qVHCWPlbWFf0P2OcXww2MCWkFpnWMVYl8uF02zR0WvXqkoOUVb1z5QVAI3ptq40U0xlqGVzy/Iomg==
+  dependencies:
+    proxy-compare "2.6.0"
 
 pump@^3.0.0:
   version "3.0.0"

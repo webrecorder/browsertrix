@@ -5,23 +5,15 @@ import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { GroupedList, remainder } from "../../../components/ui/grouped-list";
 
-import {
-  calculateSeverityFromDatum,
-  errorsFromDatum,
-  testData,
-} from "./test-data";
+import { testData } from "./test-data";
 import { pageDetails } from "./page-details";
 import type { SlTreeItem } from "@shoelace-style/shoelace";
-
-// import { setDefaultAnimation } from "@shoelace-style/shoelace/dist/utilities/animation-registry.js";
-
-// // Change the default animation for all dialogs
-// setDefaultAnimation("tree-item.collapse", {
-//   keyframes: [],
-//   options: {
-//     duration: 0,
-//   },
-// });
+import {
+  composeWithRunId,
+  issueCounts,
+  maxSeverity,
+  severityIcon,
+} from "./helpers";
 
 type SearchFields = "name" | "issues";
 
@@ -199,36 +191,23 @@ export class PageList extends TailwindElement {
               ${items}
             </sl-tree-item>`,
           renderItem: (datum) =>
-            html`<sl-tree-item class="is-leaf my-4">
+            html`<sl-tree-item
+              class="is-leaf -my-4 py-4 [contain:content] [content-visibility:auto] first-of-type:mt-0 last-of-type:mb-0"
+            >
               <div
                 class="absolute -left-4 top-[50%] flex w-8 translate-y-[-50%] flex-col place-items-center gap-1 rounded-full border border-gray-300 bg-neutral-0 p-2 shadow-sm"
               >
-                ${{
-                  severe: html`<sl-icon
-                    name="exclamation-triangle-fill"
-                    class="text-red-600"
-                  ></sl-icon>`,
-                  moderate: html`<sl-icon
-                    name="dash-square-fill"
-                    class="text-yellow-600"
-                  ></sl-icon>`,
-                  good: html`<sl-icon
-                    name="check-circle-fill"
-                    class="text-green-600"
-                  ></sl-icon>`,
-                }[calculateSeverityFromDatum(datum, this.qaRunId)]}
-                ${errorsFromDatum(datum, this.qaRunId).severeErrors > 1
+                ${severityIcon(maxSeverity(datum, this.qaRunId))}
+                ${issueCounts(datum, this.qaRunId).severe > 1
                   ? html`<span class="text-[10px] font-semibold text-red-600"
-                      >+${errorsFromDatum(datum, this.qaRunId).severeErrors -
-                      1}</span
+                      >+${issueCounts(datum, this.qaRunId).severe - 1}</span
                     >`
-                  : nothing}
-                ${errorsFromDatum(datum, this.qaRunId).moderateErrors > 1
-                  ? html`<span class="text-[10px] font-semibold text-yellow-600"
-                      >+${errorsFromDatum(datum, this.qaRunId).moderateErrors -
-                      1}</span
-                    >`
-                  : nothing}
+                  : issueCounts(datum, this.qaRunId).moderate > 1
+                    ? html`<span
+                        class="text-[10px] font-semibold text-yellow-600"
+                        >+${issueCounts(datum, this.qaRunId).moderate - 1}</span
+                      >`
+                    : nothing}
                 ${datum.notes?.[0] &&
                 html`<sl-icon
                   name="chat-square-text-fill"
@@ -242,12 +221,12 @@ export class PageList extends TailwindElement {
               >
             </sl-tree-item>`,
           sortBy: (a, b) =>
-            errorsFromDatum(b, this.qaRunId).severeErrors -
-              errorsFromDatum(a, this.qaRunId).severeErrors ||
-            errorsFromDatum(b, this.qaRunId).moderateErrors -
-              errorsFromDatum(a, this.qaRunId).moderateErrors,
+            issueCounts(b, this.qaRunId).severe -
+              issueCounts(a, this.qaRunId).severe ||
+            issueCounts(b, this.qaRunId).moderate -
+              issueCounts(a, this.qaRunId).moderate,
           groupBy: {
-            value: (d) => calculateSeverityFromDatum(d, this.qaRunId),
+            value: composeWithRunId(maxSeverity, this.qaRunId),
             groups: [
               {
                 value: "severe",
