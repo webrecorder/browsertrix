@@ -11,7 +11,7 @@ import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
 import { renderName } from "@/utils/crawler";
 import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
-import type { APIPaginatedList } from "@/types/api";
+import { type APIPaginatedList } from "@/types/api";
 
 export type QATab = "screenshots" | "replay";
 
@@ -113,6 +113,10 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   render() {
+    if (!this.pages) {
+      return html`loading pages...`;
+    }
+
     const crawlBaseUrl = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}`;
     const itemName = this.item ? renderName(this.item) : nothing;
     return html`
@@ -137,23 +141,36 @@ export class ArchivedItemQA extends TailwindElement {
           <h1>${msg("Review")} &mdash; ${itemName}</h1>
         </header>
         <section class="main outline">
-          <nav>
-            <btrix-navigation-button
-              id="screenshot-tab"
-              href=${`${crawlBaseUrl}/review/screenshots`}
-              .active=${this.tab === "screenshots"}
-              size="small"
-              @click=${this.navigate.link}
-              >${msg("Screenshots")}</btrix-navigation-button
-            >
-            <btrix-navigation-button
-              id="replay-tab"
-              href=${`${crawlBaseUrl}/review/replay`}
-              .active=${this.tab === "replay"}
-              size="small"
-              @click=${this.navigate.link}
-              >${msg("Replay")}</btrix-navigation-button
-            >
+          <nav class="flex items-center justify-between p-2">
+            <div class="flex gap-4">
+              <btrix-navigation-button
+                id="screenshot-tab"
+                href=${`${crawlBaseUrl}/review/screenshots`}
+                ?active=${this.tab === "screenshots"}
+                @click=${this.navigate.link}
+              >
+                ${msg("Screenshots")}
+              </btrix-navigation-button>
+              <btrix-navigation-button
+                id="replay-tab"
+                href=${`${crawlBaseUrl}/review/replay`}
+                ?active=${this.tab === "replay"}
+                @click=${this.navigate.link}
+              >
+                ${msg("Replay")}
+              </btrix-navigation-button>
+            </div>
+            <div class="flex gap-4">
+              <sl-button size="small">
+                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+                ${msg("Previous Page")}
+              </sl-button>
+              [btrix-page-qa-toolbar]
+              <sl-button variant="primary" size="small">
+                <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+                ${msg("Next Page")}
+              </sl-button>
+            </div>
           </nav>
           <div role="region" aria-labelledby="${this.tab}-tab">
             ${choose(
@@ -169,7 +186,27 @@ export class ArchivedItemQA extends TailwindElement {
         <h2 class="pageListHeader outline">
           ${msg("Pages List")} <sl-button>${msg("Finish Review")}</sl-button>
         </h2>
-        <section class="pageList outline">[page list]</section>
+        <section class="pageList outline">
+          <ul>
+            ${this.pages?.items.map(
+              (page) => html`
+                <li>
+                  <a
+                    class="underline"
+                    href="${window.location.pathname}?itemPageId=${page.id}"
+                    @click=${this.navigate.link}
+                  >
+                    id: ${page.id}</a
+                  >
+                </li>
+              `,
+            )}
+          </ul>
+          pg ${this.pages?.page} of
+          ${this.pages
+            ? Math.ceil(this.pages.total / this.pages.pageSize)
+            : "unknown"}
+        </section>
       </article>
     `;
   }
