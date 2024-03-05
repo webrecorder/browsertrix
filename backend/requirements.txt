@@ -28,5 +28,4 @@ types_aiobotocore_s3
 types-redis
 types-python-slugify
 types-pyYAML
-aiostream
 remotezip
