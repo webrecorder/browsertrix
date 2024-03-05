@@ -882,7 +882,7 @@ def init_crawls_api(app, user_dep, *args):
         # If crawl is finished, stream logs from WACZ files using presigned urls
         if crawl.finished:
             resp = await ops.storage_ops.sync_stream_wacz_logs(
-                org, crawl.resources, log_levels, contexts
+                crawl.resources, log_levels, contexts
             )
             return StreamingResponse(
                 resp,

@@ -579,7 +579,7 @@ class StorageOps:
             waczs_groups: Dict[str, List[CrawlFileOut]] = {}
             for file in wacz_files:
                 instance_number = file.name[
-                    file.filename.rfind("-") + 1 : file.filename.rfind(".")
+                    file.name.rfind("-") + 1 : file.name.rfind(".")
                 ]
                 if instance_number in waczs_groups:
                     waczs_groups[instance_number].append(file)
