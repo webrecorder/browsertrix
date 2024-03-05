@@ -35,7 +35,6 @@ class Migration(BaseMigration):
             return
 
         for crawl_id in crawl_ids_no_pages:
-            print(f"Adding pages for crawl {crawl_id}", flush=True)
             try:
                 await self.page_ops.add_crawl_pages_to_db_from_wacz(crawl_id)
                 print(

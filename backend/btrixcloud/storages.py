@@ -23,6 +23,7 @@ import json
 import os
 
 from datetime import datetime
+from zipfile import ZipInfo
 
 from fastapi import Depends, HTTPException
 from stream_zip import stream_zip, NO_COMPRESSION_64
@@ -548,7 +549,7 @@ class StorageOps:
 
         # pylint: disable=too-many-function-args
         def stream_log_lines(
-            log_zipinfo, wacz_url: str, wacz_filename: str
+            log_zipinfo: ZipInfo, wacz_url: str, wacz_filename: str
         ) -> Iterator[dict]:
             """Pass lines as json objects"""
             filename = log_zipinfo.filename
@@ -599,7 +600,7 @@ class StorageOps:
                     wacz_url = f"http://host.docker.internal:30870{wacz_url}"
 
                 with RemoteZip(wacz_url) as remote_zip:
-                    log_files = [
+                    log_files: List[ZipInfo] = [
                         f
                         for f in remote_zip.infolist()
                         if f.filename.startswith("logs/") and not f.is_dir()
@@ -625,7 +626,7 @@ class StorageOps:
 
         # pylint: disable=too-many-function-args
         def stream_page_lines(
-            pagefile_zipinfo, wacz_url: str, wacz_filename: str
+            pagefile_zipinfo: ZipInfo, wacz_url: str, wacz_filename: str
         ) -> Iterator[Dict[Any, Any]]:
             """Pass lines as json objects"""
             filename = pagefile_zipinfo.filename
@@ -647,7 +648,7 @@ class StorageOps:
                 wacz_url = f"http://host.docker.internal:30870{wacz_url}"
 
             with RemoteZip(wacz_url) as remote_zip:
-                page_files = [
+                page_files: List[ZipInfo] = [
                     f
                     for f in remote_zip.infolist()
                     if f.filename.startswith("pages/")
