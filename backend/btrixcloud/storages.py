@@ -44,10 +44,6 @@ from .models import (
     S3StorageIn,
     OrgStorageRefs,
 )
-from .zip import (
-    sync_get_zip_file,
-    sync_get_filestream,
-)
 
 from .utils import is_bool, slug_from_name
 
@@ -525,53 +521,41 @@ class StorageOps:
 
     async def sync_stream_wacz_logs(
         self,
-        org: Organization,
-        wacz_files: List[CrawlFile],
+        wacz_files: List[CrawlFileOut],
         log_levels: List[str],
         contexts: List[str],
     ) -> Iterator[bytes]:
         """Return filtered stream of logs from specified WACZs sorted by timestamp"""
-        async with self.get_sync_client(org) as (client, bucket, key):
-            loop = asyncio.get_event_loop()
+        loop = asyncio.get_event_loop()
 
-            resp = await loop.run_in_executor(
-                None,
-                self._sync_get_logs,
-                wacz_files,
-                log_levels,
-                contexts,
-                client,
-                bucket,
-                key,
-            )
+        resp = await loop.run_in_executor(
+            None,
+            self._sync_get_logs,
+            wacz_files,
+            log_levels,
+            contexts,
+        )
 
-            return resp
+        return resp
 
     def _sync_get_logs(
         self,
-        wacz_files: List[CrawlFile],
+        wacz_files: List[CrawlFileOut],
         log_levels: List[str],
         contexts: List[str],
-        client,
-        bucket: str,
-        key: str,
     ) -> Iterator[bytes]:
         """Generate filtered stream of logs from specified WACZs sorted by timestamp"""
 
         # pylint: disable=too-many-function-args
         def stream_log_lines(
-            wacz_key, wacz_filename, cd_start, log_zipinfo
+            log_zipinfo, wacz_url: str, wacz_filename: str
         ) -> Iterator[dict]:
             """Pass lines as json objects"""
+            filename = log_zipinfo.filename
 
-            print(
-                f"Fetching log {log_zipinfo.filename} from {wacz_filename}", flush=True
-            )
+            print(f"Fetching log {filename} from {wacz_filename}", flush=True)
 
-            line_iter: Iterator[bytes] = sync_get_filestream(
-                client, bucket, wacz_key, log_zipinfo, cd_start
-            )
-
+            line_iter: Iterator[bytes] = self._sync_get_filestream(wacz_url, filename)
             for line in line_iter:
                 yield _parse_json(line.decode("utf-8", errors="ignore"))
 
@@ -588,13 +572,13 @@ class StorageOps:
                 yield json_str.encode("utf-8")
 
         def organize_based_on_instance_number(
-            wacz_files: List[CrawlFile],
-        ) -> List[List[CrawlFile]]:
+            wacz_files: List[CrawlFileOut],
+        ) -> List[List[CrawlFileOut]]:
             """Place wacz_files into their own list based on instance number"""
-            wacz_files.sort(key=lambda file: file.filename)
-            waczs_groups: Dict[str, List[CrawlFile]] = {}
+            wacz_files.sort(key=lambda file: file.name)
+            waczs_groups: Dict[str, List[CrawlFileOut]] = {}
             for file in wacz_files:
-                instance_number = file.filename[
+                instance_number = file.name[
                     file.filename.rfind("-") + 1 : file.filename.rfind(".")
                 ]
                 if instance_number in waczs_groups:
@@ -610,22 +594,22 @@ class StorageOps:
             wacz_log_streams: List[Iterator[dict]] = []
 
             for wacz_file in instance_list:
-                wacz_key = key + wacz_file.filename
-                cd_start, zip_file = sync_get_zip_file(client, bucket, wacz_key)
+                wacz_url = wacz_file.path
+                if wacz_url.startswith("/data"):
+                    wacz_url = f"http://host.docker.internal:30870{wacz_url}"
 
-                log_files = [
-                    f
-                    for f in zip_file.filelist
-                    if f.filename.startswith("logs/") and not f.is_dir()
-                ]
-                log_files.sort(key=lambda log_zipinfo: log_zipinfo.filename)
+                with RemoteZip(wacz_url) as remote_zip:
+                    log_files = [
+                        f
+                        for f in remote_zip.infolist()
+                        if f.filename.startswith("logs/") and not f.is_dir()
+                    ]
+                    log_files.sort(key=lambda log_zipinfo: log_zipinfo.filename)
 
-                for log_zipinfo in log_files:
-                    wacz_log_streams.append(
-                        stream_log_lines(
-                            wacz_key, wacz_file.filename, cd_start, log_zipinfo
+                    for log_zipinfo in page_files:
+                        wacz_log_streams.append(
+                            stream_log_lines(log_zipinfo, wacz_url, wacz_file.name)
                         )
-                    )
 
             log_generators.append(chain(*wacz_log_streams))
 
