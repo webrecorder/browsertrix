@@ -24,7 +24,7 @@
     --font-size-base: 1rem;
 
     /* Custom screen widths */
-    --btrix-screen-lg: 1124px; /* Should match tailwind.config.screens.lg */
+    --btrix-screen-desktop: 82.5rem; /* Should match tailwind.config.screens.desktop */
 
     /*
      * Shoelace Theme Tokens
@@ -253,6 +253,8 @@
   .truncate {
     /* Fix tailwind clipping vertical */
     overflow: clip visible;
+    /* Fix for if flex item: */
+    min-width: 0;
   }
 
   .offscreen {

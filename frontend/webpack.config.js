@@ -15,7 +15,7 @@ const isDevServer = process.env.WEBPACK_SERVE;
 
 const dotEnvPath = path.resolve(
   process.cwd(),
-  `.env${isDevServer ? `.local` : ""}`
+  `.env${isDevServer ? `.local` : ""}`,
 );
 require("dotenv").config({
   path: dotEnvPath,
@@ -51,7 +51,7 @@ const commitHash =
 
 const shoelaceAssetsSrcPath = path.resolve(
   __dirname,
-  "node_modules/@shoelace-style/shoelace/dist/assets"
+  "node_modules/@shoelace-style/shoelace/dist/assets",
 );
 const shoelaceAssetsPublicPath = "shoelace/assets";
 
@@ -62,7 +62,9 @@ const version = (() => {
 
   try {
     return fs.readFileSync("../version.txt", { encoding: "utf-8" }).trim();
-  } catch (e) {}
+  } catch (e) {
+    /* empty */
+  }
 
   return packageJSON.version;
 })();
@@ -104,13 +106,14 @@ const main = {
         exclude: /node_modules/,
       },
       {
-        // Non-theme styles and assets like fonts and Shoelace
+        // Global styles and assets, like fonts and Shoelace,
+        // that get added to document styles
         test: /\.css$/,
         include: [
           path.resolve(__dirname, "src"),
           path.resolve(__dirname, "node_modules/@shoelace-style/shoelace"),
         ],
-        exclude: [path.resolve(__dirname, "src/theme.css")],
+        exclude: /\.stylesheet\.css$/,
         use: [
           "style-loader",
           { loader: "css-loader", options: { importLoaders: 1 } },
@@ -118,8 +121,8 @@ const main = {
         ],
       },
       {
-        // Theme CSS loaded as raw string and used as a CSSStyleSheet
-        test: /theme\.css$/,
+        // CSS loaded as raw string and used as a CSSStyleSheet
+        test: /\.stylesheet\.css$/,
         type: "asset/source",
         include: [path.resolve(__dirname, "src")],
         use: ["postcss-loader"],
@@ -152,7 +155,11 @@ const main = {
     }),
 
     new ForkTsCheckerWebpackPlugin({
-      typescript: { configOverwrite: { exclude: ["**/*.test.ts"] } },
+      typescript: {
+        configOverwrite: {
+          exclude: ["**/*.test.ts", "tests/**/*.ts", "playwright.config.ts"],
+        },
+      },
     }),
 
     new HtmlWebpackPlugin({

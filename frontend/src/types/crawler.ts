@@ -9,7 +9,7 @@ type ScopeType =
 
 export type Seed = {
   url: string;
-  scopeType: ScopeType;
+  scopeType: ScopeType | undefined;
   include?: string[] | null;
   exclude?: string[] | null;
   limit?: number | null;
@@ -29,8 +29,9 @@ export type SeedConfig = Expand<
     behaviors?: string | null;
     extraHops?: number | null;
     useSitemap: boolean;
-    failOnFailedSeed: boolean;
+    failOnFailedSeed?: boolean;
     depth?: number | null;
+    userAgent?: string | null;
   }
 >;
 
@@ -48,11 +49,13 @@ export type WorkflowParams = {
   maxCrawlSize: number | null;
   description: string | null;
   autoAddCollections: string[];
+  crawlerChannel: string;
 };
 
 export type CrawlConfig = WorkflowParams & {
   oid: string;
   profileName: string | null;
+  image: string | null;
 };
 
 export type Workflow = CrawlConfig & {
@@ -69,7 +72,7 @@ export type Workflow = CrawlConfig & {
   lastCrawlId: string | null; // last finished or current crawl
   lastCrawlStartTime: string | null;
   lastCrawlTime: string | null; // when last crawl finished
-  lastCrawlState: CrawlState;
+  lastCrawlState: CrawlState | null;
   lastCrawlSize: number | null;
   lastStartedByName: string | null;
   lastCrawlStopping: boolean | null;
@@ -98,7 +101,7 @@ export type Profile = {
   profileId: string;
   baseProfileName: string;
   oid: string;
-  crawlconfigs: { id: string; name: string }[];
+  crawlconfigs?: { id: string; name: string }[];
   resource?: {
     name: string;
     path: string;
@@ -124,49 +127,94 @@ export type CrawlState =
   | "stopped_by_user"
   | "stopped_quota_reached";
 
-export type Crawl = CrawlConfig & {
+type ArchivedItemBase = {
   id: string;
   userid: string;
   userName: string;
+  name: string;
+  description: string | null;
   oid: string;
-  cid: string;
-  schedule: string;
-  manual: boolean;
   started: string; // UTC ISO date
   finished?: string; // UTC ISO date
   state: CrawlState;
-  scale: number;
-  stats: { done: string; found: string; size: string } | null;
-  resources?: {
-    name: string;
-    path: string;
-    hash: string;
-    size: number;
-    numReplicas: number;
-  }[];
   fileCount?: number;
   fileSize?: number;
-  completions?: number;
-  description: string | null;
-  firstSeed: string;
-  seedCount: number;
-  stopping: boolean;
   collectionIds: string[];
   collections: { id: string; name: string }[];
-  type?: "crawl" | "upload" | null;
+  stats: { done: string; found: string; size: string } | null;
+  firstSeed: string | null;
+  seedCount: number | null;
+  tags: string[];
   crawlExecSeconds: number;
 };
 
-export type Upload = Omit<
-  Crawl,
-  | "cid"
-  | "stats"
-  | "schedule"
-  | "manual"
-  | "stopping"
-  | "firstSeed"
-  | "seedCount"
-  | "crawlExecSeconds"
-> & {
+export type Crawl = ArchivedItemBase &
+  CrawlConfig & {
+    type: "crawl";
+    cid: string;
+    schedule: string;
+    manual: boolean;
+    scale: number;
+    resources?: {
+      name: string;
+      path: string;
+      hash: string;
+      size: number;
+      numReplicas: number;
+    }[];
+    completions?: number;
+    description: string | null;
+    stopping: boolean;
+  };
+
+export type Upload = ArchivedItemBase & {
   type: "upload";
+  resources: undefined;
+  crawlerChannel: "default";
+  image: null;
+  manual: true;
+};
+
+export type CrawlerChannel = {
+  id: string;
+  image: string;
+};
+
+export type ArchivedItem = Crawl | Upload;
+
+export type ArchivedItemPageComment = {
+  id: string;
+  created: string;
+  modified: string;
+  userName: string;
+  text: string;
+};
+
+export type ArchivedItemPage = {
+  id?: string;
+  oid: string;
+  crawl_id: string;
+  url: string;
+  title?: string;
+  timestamp?: string; // Date
+  load_state?: number;
+  status?: number;
+  /** screenshot match percent, keyed by QA run ID */
+  screenshotMatch?: Record<string, number>;
+  /** text match percent, keyed by QA run ID */
+  textMatch?: Record<string, number>;
+  /** resource counts, keyed by QA run ID */
+  resourceCounts?: Record<
+    string,
+    {
+      crawlGood?: number;
+      crawlBad?: number;
+      replayGood?: number;
+      replayBad?: number;
+    }
+  >;
+  userid?: string;
+  modified?: string;
+  approved?: boolean;
+  notes?: ArchivedItemPageComment[];
 };

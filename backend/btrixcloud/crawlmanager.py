@@ -33,6 +33,7 @@ class CrawlManager(K8sAPI):
         oid: str,
         url: str,
         storage: StorageRef,
+        crawler_image: str,
         baseprofile: str = "",
         profile_filename: str = "",
     ) -> str:
@@ -55,6 +56,7 @@ class CrawlManager(K8sAPI):
             "url": url,
             "vnc_password": secrets.token_hex(16),
             "expire_time": to_k8s_date(dt_now() + timedelta(seconds=30)),
+            "crawler_image": crawler_image,
         }
 
         data = self.templates.env.get_template("profile_job.yaml").render(params)
@@ -94,9 +96,11 @@ class CrawlManager(K8sAPI):
             "replica_secret_name": replica_storage.get_storage_secret_name(oid),
             "replica_file_path": replica_file_path,
             "replica_endpoint": replica_endpoint,
-            "primary_secret_name": primary_storage.get_storage_secret_name(oid)
-            if primary_storage
-            else None,
+            "primary_secret_name": (
+                primary_storage.get_storage_secret_name(oid)
+                if primary_storage
+                else None
+            ),
             "primary_file_path": primary_file_path if primary_file_path else None,
             "primary_endpoint": primary_endpoint if primary_endpoint else None,
             "BgJobType": BgJobType,
@@ -115,6 +119,7 @@ class CrawlManager(K8sAPI):
         run_now: bool,
         out_filename: str,
         profile_filename: str,
+        warc_prefix: str,
     ) -> Optional[str]:
         """add new crawl, store crawl config in configmap"""
 
@@ -128,13 +133,17 @@ class CrawlManager(K8sAPI):
             INITIAL_SCALE=str(crawlconfig.scale),
             CRAWL_TIMEOUT=str(crawlconfig.crawlTimeout or 0),
             MAX_CRAWL_SIZE=str(crawlconfig.maxCrawlSize or 0),
+            CRAWLER_CHANNEL=crawlconfig.crawlerChannel,
         )
 
         crawl_id = None
 
         if run_now:
             crawl_id = await self.create_crawl_job(
-                crawlconfig, storage, str(crawlconfig.modifiedBy)
+                crawlconfig,
+                storage,
+                str(crawlconfig.modifiedBy),
+                warc_prefix,
             )
 
         await self._update_scheduled_job(crawlconfig)
@@ -146,6 +155,7 @@ class CrawlManager(K8sAPI):
         crawlconfig: CrawlConfig,
         storage: StorageRef,
         userid: str,
+        warc_prefix: str,
     ) -> str:
         """create new crawl job from config"""
         cid = str(crawlconfig.id)
@@ -159,10 +169,12 @@ class CrawlManager(K8sAPI):
             userid,
             crawlconfig.oid,
             storage,
+            crawlconfig.crawlerChannel,
             crawlconfig.scale,
             crawlconfig.crawlTimeout,
             crawlconfig.maxCrawlSize,
             manual=True,
+            warc_prefix=warc_prefix,
         )
 
     async def update_crawl_config(
@@ -175,17 +187,20 @@ class CrawlManager(K8sAPI):
         has_timeout_update = update.crawlTimeout is not None
         has_max_crawl_size_update = update.maxCrawlSize is not None
         has_config_update = update.config is not None
+        has_crawlerid_update = update.crawlerChannel is not None
 
         if has_sched_update:
             # crawlconfig here has already been updated
             await self._update_scheduled_job(crawlconfig)
 
+        # pylint: disable=too-many-boolean-expressions
         if (
             has_scale_update
             or has_config_update
             or has_timeout_update
             or profile_filename is not None
             or has_max_crawl_size_update
+            or has_crawlerid_update
         ):
             await self._update_config_map(
                 crawlconfig,
@@ -403,6 +418,9 @@ class CrawlManager(K8sAPI):
 
         if update.crawlFilenameTemplate is not None:
             config_map.data["STORE_FILENAME"] = update.crawlFilenameTemplate
+
+        if update.crawlerChannel is not None:
+            config_map.data["CRAWLER_CHANNEL"] = update.crawlerChannel
 
         if profile_filename is not None:
             config_map.data["PROFILE_FILENAME"] = profile_filename

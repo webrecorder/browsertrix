@@ -149,6 +149,9 @@ spec:
         - name: STORE_USER
           value: "{{ userid }}"
 
+        - name: WARC_PREFIX
+          value: "{{ warc_prefix }}"
+
     {% if crawler_socks_proxy_host %}
         - name: SOCKS_HOST
           value: "{{ crawler_socks_proxy_host }}"

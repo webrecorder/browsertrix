@@ -10,11 +10,9 @@ export type ScheduleInterval = "daily" | "weekly" | "monthly";
 /**
  * Parse interval from cron expression
  **/
-export function getScheduleInterval(
-  schedule: string
-): "daily" | "weekly" | "monthly" {
-  const [_minute, _hour, dayofMonth, _month, dayOfWeek] = schedule.split(" ");
-  if (dayofMonth === "*") {
+export function getScheduleInterval(schedule: string): ScheduleInterval {
+  const [_minute, _hour, dayOfMonth, _month, dayOfWeek] = schedule.split(" ");
+  if (dayOfMonth === "*") {
     if (dayOfWeek === "*") {
       return "daily";
     }
@@ -29,7 +27,7 @@ export function getScheduleInterval(
  **/
 export function humanizeNextDate(
   schedule: string,
-  options: { length?: "short" } = {}
+  options: { length?: "short" } = {},
 ): string {
   const nextDate = parseCron.nextDate(schedule);
 
@@ -63,7 +61,7 @@ export function humanizeNextDate(
 export function humanizeSchedule(
   schedule: string,
   options: { length?: "short" } = {},
-  numberFormatter: any = numberUtils.numberFormatter
+  numberFormatter = numberUtils.numberFormatter,
 ): string {
   const interval = getScheduleInterval(schedule);
   const parsed = parseCron(schedule);
@@ -77,7 +75,7 @@ export function humanizeSchedule(
     weekday: "long",
   });
 
-  let intervalMsg: any = "";
+  let intervalMsg = "";
 
   if (options.length === "short") {
     switch (interval) {
@@ -95,7 +93,7 @@ export function humanizeSchedule(
       case "monthly": {
         const { format } = numberFormatter();
         intervalMsg = msg(
-          str`Monthly on the ${format(days[0], { ordinal: true })}`
+          str`Monthly on the ${format(days[0], { ordinal: true })}`,
         );
 
         break;
@@ -118,12 +116,12 @@ export function humanizeSchedule(
       case "weekly":
         intervalMsg = msg(
           str`Every ${formattedWeekDay}
-            at ${formattedTime}`
+            at ${formattedTime}`,
         );
         break;
       case "monthly":
         intervalMsg = msg(
-          str`On day ${days[0]} of the month at ${formattedTime}`
+          str`On day ${nextDate.getDate()} of the month at ${formattedTime}`,
         );
         break;
       default:
@@ -168,9 +166,15 @@ export function getUTCSchedule({
 
   localDate.setHours(+hour + periodOffset);
   localDate.setMinutes(+minute);
-  const date =
-    interval === "monthly" ? dayOfMonth || localDate.getUTCDate() : "*";
-  const day = interval === "weekly" ? dayOfWeek || localDate.getUTCDay() : "*";
+
+  if (interval === "monthly" && dayOfMonth) {
+    localDate.setDate(dayOfMonth);
+  } else if (interval == "weekly" && dayOfWeek) {
+    localDate.setDate(localDate.getDate() + dayOfWeek - localDate.getDay());
+  }
+
+  const date = interval === "monthly" ? localDate.getUTCDate() : "*";
+  const day = interval === "weekly" ? localDate.getUTCDay() : "*";
   const month = "*";
 
   const schedule = `${localDate.getUTCMinutes()} ${localDate.getUTCHours()} ${date} ${month} ${day}`;

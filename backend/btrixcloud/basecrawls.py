@@ -2,7 +2,7 @@
 
 import os
 from datetime import timedelta
-from typing import Optional, List, Union, Type, TYPE_CHECKING
+from typing import Optional, List, Union, Dict, Any, Type, TYPE_CHECKING, cast
 from uuid import UUID
 import urllib.parse
 import contextlib
@@ -37,9 +37,10 @@ if TYPE_CHECKING:
     from .storages import StorageOps
     from .webhooks import EventWebhookOps
     from .background_jobs import BackgroundJobOps
+    from .pages import PageOps
 
 else:
-    CrawlConfigOps = UserManager = OrgOps = CollectionOps = object
+    CrawlConfigOps = UserManager = OrgOps = CollectionOps = PageOps = object
     CrawlManager = StorageOps = EventWebhookOps = BackgroundJobOps = object
 
 # Presign duration must be less than 604800 seconds (one week),
@@ -63,6 +64,7 @@ class BaseCrawlOps:
     storage_ops: StorageOps
     event_webhook_ops: EventWebhookOps
     background_job_ops: BackgroundJobOps
+    page_ops: PageOps
 
     def __init__(
         self,
@@ -85,6 +87,7 @@ class BaseCrawlOps:
         self.storage_ops = storage_ops
         self.event_webhook_ops = event_webhook_ops
         self.background_job_ops = background_job_ops
+        self.page_ops = cast(PageOps, None)
 
         presign_duration_minutes = int(
             os.environ.get("PRESIGN_DURATION_MINUTES") or PRESIGN_MINUTES_DEFAULT
@@ -93,6 +96,10 @@ class BaseCrawlOps:
         self.presign_duration_seconds = (
             min(presign_duration_minutes, PRESIGN_MINUTES_MAX) * 60
         )
+
+    def set_page_ops(self, page_ops):
+        """set page ops reference"""
+        self.page_ops = page_ops
 
     async def get_crawl_raw(
         self,
@@ -334,6 +341,9 @@ class BaseCrawlOps:
                         status_code=400, detail=f"Error Stopping Crawl: {exc}"
                     )
 
+            if type_ == "crawl":
+                await self.page_ops.delete_crawl_pages(crawl_id, org.id)
+
             crawl_size = await self._delete_crawl_files(crawl, org)
             size += crawl_size
 
@@ -367,9 +377,9 @@ class BaseCrawlOps:
 
         return res.deleted_count, cids_to_update, quota_reached
 
-    async def _delete_crawl_files(self, crawl, org: Organization):
+    async def _delete_crawl_files(self, crawl_raw: Dict[str, Any], org: Organization):
         """Delete files associated with crawl from storage."""
-        crawl = BaseCrawl.from_dict(crawl)
+        crawl = BaseCrawl.from_dict(crawl_raw)
         size = 0
         for file_ in crawl.files:
             size += file_.size
@@ -380,6 +390,12 @@ class BaseCrawlOps:
             )
 
         return size
+
+    async def delete_crawl_files(self, crawl_id: str, oid: UUID):
+        """Delete crawl files"""
+        crawl_raw = await self.get_crawl_raw(crawl_id)
+        org = await self.orgs.get_org_by_id(oid)
+        return await self._delete_crawl_files(crawl_raw, org)
 
     async def _resolve_crawl_refs(
         self,

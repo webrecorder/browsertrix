@@ -12,11 +12,13 @@ However, if you are developing locally, you will need to use your local images i
 
 We recommend the following setup:
 
-1. Copy the provided `./chart/examples/local-config.yaml` Helm configuration file to a separate file `local.yaml`,
-so that local changes to it will not be accidentally committed to git. From the root directory:
-```sh
-cp ./chart/examples/local-config.yaml ./chart/local.yaml
-```
+1. Copy the provided `./chart/examples/local-config.yaml` Helm configuration file to a separate file `local.yaml`, so that local changes to it will not be accidentally committed to git. 
+
+    From the root directory:
+
+    ```sh
+    cp ./chart/examples/local-config.yaml ./chart/local.yaml
+    ```
 
 2. Uncomment `backend_image`, `frontend_image`, and pull policies in `./chart/local.yaml`, which will ensure the local images are used:
 ```yaml
@@ -43,7 +45,7 @@ frontend_pull_policy: 'Never'
 
     ??? info "Docker Desktop"
 
-        Rebuild the local images by running `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` scripts to build the images in the local Docker.
+        Rebuild the local images by running `#!shell ./scripts/build-backend.sh` and/or `#!shell ./scripts/build-frontend.sh` scripts to build the images in the local Docker.
 
     ??? info "MicroK8S"
 
@@ -51,7 +53,7 @@ frontend_pull_policy: 'Never'
 
         1. Ensure the registry add-on is enabled by running `microk8s enable registry`
 
-        2. Set `export REGISTRY=localhost:32000/` and then run `./scripts/build-backend.sh` and/or `./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry.
+        2. Set `export REGISTRY=localhost:32000/` and then run `#!shell ./scripts/build-backend.sh` and/or `#!shell ./scripts/build-frontend.sh` to rebuild the images into the MicroK8S registry.
 
         3. In `./chart/local.yaml`, also uncomment the following lines to use the local images:
         ```yaml
@@ -93,23 +95,20 @@ frontend_pull_policy: 'Never'
         k3s ctr images import --base-name webrecorder/browsertrix-frontend:latest ./frontend.tar
         ```
 
-4. If you'd like to change other options, you can uncomment them as needed in `./chart/local.yaml`
-or add additional overrides from `./chart/values.yaml`
+4. To change other options, uncomment them as needed in `./chart/local.yaml` or add additional overrides from `./chart/values.yaml`. 
 
     For example, to set a superuser email to `my_super_user_email@example.com` and password to `MySecretPassword!`, uncomment that block and set:
-```yaml
-superuser:
-  # set this to enable a superuser admin
-  email: my_super_user_email@example.com
+    ```yaml
+    superuser:
+    # set this to enable a superuser admin
+    email: my_super_user_email@example.com
 
-  # optional: if not set, automatically generated
-  # change or remove this
-  password: MySecretPassword!
-```
+    # optional: if not set, automatically generated
+    # change or remove this
+    password: MySecretPassword!
+    ```
 
-5. Once the images have been built and config changes made in `./chart/local.yaml`, 
-
-    the cluster can be re-deployed by running:
+5. Once the images have been built and config changes made in `./chart/local.yaml`, the cluster can be re-deployed by running:
 ```sh
 helm upgrade --install -f ./chart/values.yaml \
 -f ./chart/local.yaml btrix ./chart/

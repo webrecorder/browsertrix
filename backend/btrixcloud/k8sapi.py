@@ -1,4 +1,5 @@
 """ K8S API Access """
+
 import os
 import traceback
 
@@ -66,7 +67,10 @@ class K8sAPI:
     async def get_redis_client(self, redis_url):
         """return redis client with correct params for one-time use"""
         return aioredis.from_url(
-            redis_url, decode_responses=True, auto_close_connection_pool=True
+            redis_url,
+            decode_responses=True,
+            auto_close_connection_pool=True,
+            socket_timeout=20,
         )
 
     # pylint: disable=too-many-arguments, too-many-locals
@@ -76,11 +80,13 @@ class K8sAPI:
         userid,
         oid,
         storage,
+        crawler_channel,
         scale=1,
         crawl_timeout=0,
         max_crawl_size=0,
         manual=True,
         crawl_id=None,
+        warc_prefix="",
     ):
         """load job template from yaml"""
         if not crawl_id:
@@ -98,6 +104,8 @@ class K8sAPI:
             "max_crawl_size": max_crawl_size or 0,
             "storage_name": str(storage),
             "manual": "1" if manual else "0",
+            "crawler_channel": crawler_channel,
+            "warc_prefix": warc_prefix,
         }
 
         data = self.templates.env.get_template("crawl_job.yaml").render(params)

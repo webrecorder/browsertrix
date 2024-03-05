@@ -4,6 +4,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { isApiError } from "@/utils/api";
 
 /**
  * Usage:
@@ -41,6 +42,7 @@ export class BrowserProfilesNew extends LiteElement {
     description: string;
     navigateUrl: string;
     profileId: string | null;
+    crawlerChannel: string;
   }> = {};
 
   firstUpdated() {
@@ -52,6 +54,7 @@ export class BrowserProfilesNew extends LiteElement {
       description: params.get("description") || "",
       navigateUrl: params.get("navigateUrl") || "",
       profileId: profileId || null,
+      crawlerChannel: params.get("crawlerChannel") || "default",
     };
   }
 
@@ -59,7 +62,7 @@ export class BrowserProfilesNew extends LiteElement {
     return html`
       <div class="mb-7">
         <a
-          class="text-neutral-500 hover:text-neutral-600 text-sm font-medium"
+          class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
           href=${this.params.profileId
             ? `${this.orgBasePath}/browser-profiles/profile/${this.params.profileId}`
             : `${this.orgBasePath}/browser-profiles`}
@@ -82,20 +85,20 @@ export class BrowserProfilesNew extends LiteElement {
             <div class="mb-2">
               <btrix-alert class="text-sm" variant="info"
                 >${msg(
-                  html`Extending <strong>${this.params.name}</strong>`
+                  html`Extending <strong>${this.params.name}</strong>`,
                 )}</btrix-alert
               >
             </div>
           `
         : ""}
 
-      <div class="h-screen flex flex-col">
+      <div class="flex h-screen flex-col">
         <div
-          class="flex-0 flex items-center justify-between mb-3 p-2 bg-slate-100 rounded-lg"
+          class="flex-0 mb-3 flex items-center justify-between rounded-lg bg-slate-100 p-2"
         >
-          <p class="text-sm text-slate-600 mr-3 p-1">
+          <p class="mr-3 p-1 text-sm text-slate-600">
             ${msg(
-              "Interact with the browsing tool to record your browser profile. It is highly recommended to create dedicated accounts to use when crawling. For details refer to the best practices on the "
+              "Interact with the browsing tool to record your browser profile. It is highly recommended to create dedicated accounts to use when crawling. For details refer to the best practices on the ",
             )}
             <a
               class="text-primary hover:text-indigo-400"
@@ -115,7 +118,7 @@ export class BrowserProfilesNew extends LiteElement {
         </div>
 
         <btrix-profile-browser
-          class="flex-1 border rounded-lg overflow-hidden"
+          class="flex-1 overflow-hidden rounded-lg border"
           .authState=${this.authState}
           orgId=${this.orgId}
           browserId=${this.browserId}
@@ -193,6 +196,7 @@ export class BrowserProfilesNew extends LiteElement {
       browserid: this.browserId,
       name: formData.get("name"),
       description: formData.get("description"),
+      crawlerChannel: this.params.crawlerChannel,
     };
 
     try {
@@ -202,7 +206,7 @@ export class BrowserProfilesNew extends LiteElement {
         {
           method: "POST",
           body: JSON.stringify(params),
-        }
+        },
       );
 
       this.notify({
@@ -212,19 +216,19 @@ export class BrowserProfilesNew extends LiteElement {
       });
 
       this.navTo(`${this.orgBasePath}/browser-profiles/profile/${data.id}`);
-    } catch (e: any) {
+    } catch (e) {
       this.isSubmitting = false;
 
       let message = msg("Sorry, couldn't create browser profile at this time.");
 
-      if (e.isApiError && e.statusCode === 403) {
+      if (isApiError(e) && e.statusCode === 403) {
         if (e.details === "storage_quota_reached") {
           message = msg(
-            "Your org does not have enough storage to save this browser profile."
+            "Your org does not have enough storage to save this browser profile.",
           );
         } else {
           message = msg(
-            "You do not have permission to create browser profiles."
+            "You do not have permission to create browser profiles.",
           );
         }
       }

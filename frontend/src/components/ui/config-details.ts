@@ -13,6 +13,9 @@ import { humanizeSchedule } from "@/utils/cron";
 import { RelativeDuration } from "./relative-duration";
 import { nothing } from "lit";
 
+import capitalize from "lodash/fp/capitalize";
+import { isApiError } from "@/utils/api";
+
 /**
  * Usage:
  * ```ts
@@ -37,9 +40,9 @@ export class ConfigDetails extends LiteElement {
   @property({ type: Boolean })
   anchorLinks = false;
 
-  // Hide tag field, e.g. if embedded in crawl detail view
+  // Hide metadata section, e.g. if embedded in crawl detail view
   @property({ type: Boolean })
-  hideTags = false;
+  hideMetadata = false;
 
   @state()
   private orgDefaults?: {
@@ -52,7 +55,7 @@ export class ConfigDetails extends LiteElement {
   private collections: Collection[] = [];
 
   private readonly scopeTypeLabels: Record<
-    CrawlConfig["config"]["scopeType"],
+    NonNullable<CrawlConfig["config"]["scopeType"]>,
     string
   > = {
     prefix: msg("Path Begins with This URL"),
@@ -66,7 +69,7 @@ export class ConfigDetails extends LiteElement {
 
   async connectedCallback() {
     super.connectedCallback();
-    this.fetchAPIDefaults();
+    void this.fetchAPIDefaults();
     await this.fetchCollections();
   }
 
@@ -74,10 +77,10 @@ export class ConfigDetails extends LiteElement {
     const crawlConfig = this.crawlConfig;
     const seedsConfig = crawlConfig?.config;
     const exclusions = seedsConfig?.exclude || [];
-    const maxPages = (this.seeds && this.seeds[0]?.limit) ?? seedsConfig?.limit;
+    const maxPages = this.seeds?.[0]?.limit ?? seedsConfig?.limit;
     const renderTimeLimit = (
       valueSeconds?: number | null,
-      fallbackValue?: number
+      fallbackValue?: number,
     ) => {
       if (valueSeconds) {
         return RelativeDuration.humanize(valueSeconds * 1000, {
@@ -123,7 +126,7 @@ export class ConfigDetails extends LiteElement {
           ${when(
             crawlConfig?.jobType === "seed-crawl",
             this.renderConfirmSeededSettings,
-            this.renderConfirmUrlListSettings
+            this.renderConfirmUrlListSettings,
           )}
           ${when(
             exclusions.length,
@@ -136,7 +139,7 @@ export class ConfigDetails extends LiteElement {
                 </btrix-queue-exclusion-table>
               </div>
             `,
-            () => this.renderSetting(msg("Exclusions"), msg("None"))
+            () => this.renderSetting(msg("Exclusions"), msg("None")),
           )}
           ${this.renderSetting(
             msg("Max Pages"),
@@ -147,26 +150,26 @@ export class ConfigDetails extends LiteElement {
                 this.orgDefaults?.maxPagesPerCrawl
                   ? html`<span class="text-neutral-400"
                       >${msg(
-                        str`${this.orgDefaults.maxPagesPerCrawl.toLocaleString()} pages`
+                        str`${this.orgDefaults.maxPagesPerCrawl.toLocaleString()} pages`,
                       )}
                       ${msg("(default)")}</span
                     >`
-                  : undefined
-            )
+                  : undefined,
+            ),
           )}
           ${this.renderSetting(
             msg("Page Load Timeout"),
             renderTimeLimit(
               crawlConfig?.config.pageLoadTimeout,
-              this.orgDefaults?.pageLoadTimeoutSeconds ?? Infinity
-            )
+              this.orgDefaults?.pageLoadTimeoutSeconds ?? Infinity,
+            ),
           )}
           ${this.renderSetting(
             msg("Page Behavior Timeout"),
             renderTimeLimit(
               crawlConfig?.config.behaviorTimeout,
-              this.orgDefaults?.behaviorTimeoutSeconds ?? Infinity
-            )
+              this.orgDefaults?.behaviorTimeoutSeconds ?? Infinity,
+            ),
           )}
           ${this.renderSetting(
             msg("Auto-Scroll Behavior"),
@@ -175,23 +178,23 @@ export class ConfigDetails extends LiteElement {
               ? msg("Disabled")
               : html`<span class="text-neutral-400"
                   >${msg("Enabled (default)")}</span
-                >`
+                >`,
           )}
           ${this.renderSetting(
             msg("Delay Before Next Page"),
-            renderTimeLimit(crawlConfig?.config.pageExtraDelay, 0)
+            renderTimeLimit(crawlConfig?.config.pageExtraDelay, 0),
           )}
           ${this.renderSetting(
             msg("Crawl Time Limit"),
-            renderTimeLimit(crawlConfig?.crawlTimeout, Infinity)
+            renderTimeLimit(crawlConfig?.crawlTimeout, Infinity),
           )}
           ${this.renderSetting(
             msg("Crawl Size Limit"),
-            renderSize(crawlConfig?.maxCrawlSize)
+            renderSize(crawlConfig?.maxCrawlSize),
           )}
           ${this.renderSetting(
             msg("Crawler Instances"),
-            crawlConfig?.scale ? `${crawlConfig.scale}×` : ""
+            crawlConfig?.scale ? `${crawlConfig.scale}×` : "",
           )}
         </btrix-desc-list>
       </section>
@@ -204,26 +207,38 @@ export class ConfigDetails extends LiteElement {
             msg("Browser Profile"),
             when(
               crawlConfig?.profileid,
-              () => html`<a
-                class="text-blue-500 hover:text-blue-600"
-                href=${`/orgs/${crawlConfig!.oid}/browser-profiles/profile/${
-                  crawlConfig!.profileid
-                }`}
-                @click=${this.navLink}
-              >
-                ${crawlConfig?.profileName}
-              </a>`,
-              () => msg("Default Profile")
-            )
+              () =>
+                html`<a
+                  class="text-blue-500 hover:text-blue-600"
+                  href=${`/orgs/${crawlConfig!.oid}/browser-profiles/profile/${
+                    crawlConfig!.profileid
+                  }`}
+                  @click=${this.navLink}
+                >
+                  ${crawlConfig?.profileName}
+                </a>`,
+              () => crawlConfig?.profileName || msg("Default Profile"),
+            ),
+          )}
+          ${this.renderSetting(
+            msg("Crawler Channel (Exact Crawler Version)"),
+            capitalize(crawlConfig?.crawlerChannel || "default") +
+              (crawlConfig?.image ? ` (${crawlConfig.image})` : ""),
           )}
           ${this.renderSetting(
             msg("Block Ads by Domain"),
-            crawlConfig?.config.blockAds
+            crawlConfig?.config.blockAds,
+          )}
+          ${this.renderSetting(
+            msg("User Agent"),
+            crawlConfig?.config.userAgent
+              ? crawlConfig.config.userAgent
+              : msg("Default User Agent"),
           )}
           ${crawlConfig?.config.lang
             ? this.renderSetting(
                 msg("Language"),
-                ISO6391.getName(crawlConfig?.config.lang)
+                ISO6391.getName(crawlConfig.config.lang),
               )
             : nothing}
         </btrix-desc-list>
@@ -237,61 +252,67 @@ export class ConfigDetails extends LiteElement {
             msg("Crawl Schedule Type"),
             crawlConfig?.schedule
               ? msg("Run on a Recurring Basis")
-              : msg("No Schedule")
+              : msg("No Schedule"),
           )}
           ${when(crawlConfig?.schedule, () =>
             this.renderSetting(
               msg("Schedule"),
               crawlConfig?.schedule
                 ? humanizeSchedule(crawlConfig.schedule)
-                : undefined
-            )
+                : undefined,
+            ),
           )}
         </btrix-desc-list>
       </section>
-      <section id="crawl-metadata" class="mb-8">
-        <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
-          <h4>${msg("Crawl Metadata")}</h4>
-        </btrix-section-heading>
-        <btrix-desc-list>
-          ${this.renderSetting(msg("Name"), crawlConfig?.name)}
-          ${this.renderSetting(
-            msg("Description"),
-            html`
-              <p class="font-sans max-w-prose">${crawlConfig?.description}</p>
-            `
-          )}
-          ${this.hideTags
-            ? ""
-            : this.renderSetting(
-                msg("Tags"),
-                crawlConfig?.tags?.length
-                  ? crawlConfig.tags.map(
-                      (tag) =>
-                        html`<btrix-tag class="mt-1 mr-2">${tag}</btrix-tag>`
-                    )
-                  : undefined
-              )}
-          ${this.renderSetting(
-            msg("Collections"),
-            this.collections.length
-              ? this.collections.map(
-                  (coll) =>
-                    html`<sl-tag class="mt-1 mr-2" variant="neutral">
-                      ${coll.name}
-                      <span class="pl-1 font-monostyle text-xs">
-                        (${msg(str`${coll.crawlCount} items`)})
-                      </span>
-                    </sl-tag>`
-                )
-              : undefined
-          )}
-        </btrix-desc-list>
-      </section>
+      ${this.hideMetadata
+        ? nothing
+        : html`
+            <section id="crawl-metadata" class="mb-8">
+              <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+                <h4>${msg("Metadata")}</h4>
+              </btrix-section-heading>
+              <btrix-desc-list>
+                ${this.renderSetting(msg("Name"), crawlConfig?.name)}
+                ${this.renderSetting(
+                  msg("Description"),
+                  crawlConfig?.description
+                    ? html`
+                        <p class="max-w-prose font-sans">
+                          ${crawlConfig.description}
+                        </p>
+                      `
+                    : undefined,
+                )}
+                ${this.renderSetting(
+                  msg("Tags"),
+                  crawlConfig?.tags.length
+                    ? crawlConfig.tags.map(
+                        (tag) =>
+                          html`<btrix-tag class="mr-2 mt-1">${tag}</btrix-tag>`,
+                      )
+                    : [],
+                )}
+                ${this.renderSetting(
+                  msg("Collections"),
+                  this.collections.length
+                    ? this.collections.map(
+                        (coll) =>
+                          html`<sl-tag class="mr-2 mt-1" variant="neutral">
+                            ${coll.name}
+                            <span class="font-monostyle pl-1 text-xs">
+                              (${msg(str`${coll.crawlCount} items`)})
+                            </span>
+                          </sl-tag>`,
+                      )
+                    : undefined,
+                )}
+              </btrix-desc-list>
+            </section>
+          `}
     `;
   }
 
-  private renderConfirmUrlListSettings = () => {
+  private readonly renderConfirmUrlListSettings = () => {
     const crawlConfig = this.crawlConfig;
 
     return html`
@@ -300,100 +321,99 @@ export class ConfigDetails extends LiteElement {
         html`
           <ul>
             ${this.seeds?.map(
-              (seed: Seed) =>
-                html`
-                  <li>
-                    <a
-                      class="text-primary hover:text-indigo-400"
-                      href="${seed.url}"
-                      target="_blank"
-                      rel="noreferrer"
-                      >${seed.url}</a
-                    >
-                  </li>
-                `
+              (seed: Seed) => html`
+                <li>
+                  <a
+                    class="text-primary hover:text-indigo-400"
+                    href="${seed.url}"
+                    target="_blank"
+                    rel="noreferrer"
+                    >${seed.url}</a
+                  >
+                </li>
+              `,
             )}
           </ul>
         `,
-        true
+        true,
       )}
       ${this.renderSetting(
         msg("Include Any Linked Page"),
-        Boolean(crawlConfig?.config.extraHops)
+        Boolean(crawlConfig?.config.extraHops),
       )}
       ${this.renderSetting(
         msg("Fail Crawl On Failed URL"),
-        Boolean(crawlConfig?.config.failOnFailedSeed)
+        Boolean(crawlConfig?.config.failOnFailedSeed),
       )}
     `;
   };
 
-  private renderConfirmSeededSettings = () => {
+  private readonly renderConfirmSeededSettings = () => {
     if (!this.seeds) return;
     const crawlConfig = this.crawlConfig!;
     const seedsConfig = crawlConfig.config;
     const additionalUrlList = this.seeds.slice(1);
-    const primarySeedConfig: SeedConfig | Seed | undefined = this.seeds[0];
-    const primarySeedUrl = primarySeedConfig.url;
+    const primarySeedConfig = this.seeds[0] as SeedConfig | Seed | undefined;
+    const primarySeedUrl = (primarySeedConfig as Seed | undefined)?.url;
     const includeUrlList =
-      primarySeedConfig.include || seedsConfig.include || [];
+      primarySeedConfig?.include || seedsConfig.include || [];
     return html`
       ${this.renderSetting(
         msg("Primary Seed URL"),
         html`<a
           class="text-primary hover:text-indigo-400"
-          href="${primarySeedUrl}"
+          href="${primarySeedUrl!}"
           target="_blank"
           rel="noreferrer"
           >${primarySeedUrl}</a
         >`,
-        true
+        true,
       )}
       ${this.renderSetting(
         msg("Crawl Scope"),
         this.scopeTypeLabels[
-          primarySeedConfig.scopeType || seedsConfig.scopeType
-        ]
+          primarySeedConfig!.scopeType || seedsConfig.scopeType!
+        ],
       )}
       ${this.renderSetting(
         msg("Extra URL Prefixes in Scope"),
-        includeUrlList?.length
+        includeUrlList.length
           ? html`
               <ul>
                 ${includeUrlList.map(
                   (url: string) =>
                     staticHtml`<li class="regex">${unsafeStatic(
-                      new RegexColorize().colorizeText(url)
-                    )}</li>`
+                      new RegexColorize().colorizeText(url) as string,
+                    )}</li>`,
                 )}
               </ul>
             `
           : msg("None"),
-        true
+        true,
       )}
       ${when(
         ["host", "domain", "custom", "any"].includes(
-          primarySeedConfig.scopeType || seedsConfig.scopeType
+          primarySeedConfig!.scopeType || seedsConfig.scopeType!,
         ),
         () =>
           this.renderSetting(
             msg("Max Depth"),
-            primarySeedConfig.depth
+            primarySeedConfig?.depth
               ? msg(str`${primarySeedConfig.depth} hop(s)`)
-              : msg("None")
-          )
+              : msg("None"),
+          ),
       )}
       ${this.renderSetting(
         msg("Include Any Linked Page (“one hop out”)"),
-        Boolean(primarySeedConfig.extraHops ?? seedsConfig.extraHops)
+        Boolean(primarySeedConfig?.extraHops ?? seedsConfig.extraHops),
       )}
       ${this.renderSetting(
         msg("Check For Sitemap"),
-        Boolean(seedsConfig.useSitemap)
+        Boolean(seedsConfig.useSitemap),
       )}
       ${this.renderSetting(
         msg("List of Additional URLs"),
-        additionalUrlList?.length
+        additionalUrlList.length
           ? html`
               <ul>
                 ${additionalUrlList.map((seed) => {
@@ -411,18 +431,20 @@ export class ConfigDetails extends LiteElement {
               </ul>
             `
           : msg("None"),
-        true
+        true,
       )}
     `;
   };
 
-  private renderSetting(label: string, value: any, breakAll?: boolean) {
+  private renderSetting(label: string, value: unknown, breakAll?: boolean) {
     let content = value;
 
     if (!this.crawlConfig) {
       content = html` <sl-skeleton></sl-skeleton> `;
     } else if (typeof value === "boolean") {
       content = value ? msg("Yes") : msg("No");
+    } else if (Array.isArray(value) && !value.length) {
+      content = html`<span class="text-neutral-400">${msg("None")}</span>`;
     } else if (typeof value !== "number" && !value) {
       content = html`<span class="text-neutral-400"
         >${msg("Not specified")}</span
@@ -439,13 +461,13 @@ export class ConfigDetails extends LiteElement {
     if (this.crawlConfig?.autoAddCollections) {
       try {
         await this.getCollections();
-      } catch (e: any) {
+      } catch (e) {
         this.notify({
           message:
-            e.statusCode === 404
+            isApiError(e) && e.statusCode === 404
               ? msg("Collections not found.")
               : msg(
-                  "Sorry, couldn't retrieve Collection details at this time."
+                  "Sorry, couldn't retrieve Collection details at this time.",
                 ),
           variant: "danger",
           icon: "exclamation-octagon",
@@ -459,11 +481,10 @@ export class ConfigDetails extends LiteElement {
     const orgId = this.crawlConfig?.oid;
 
     if (this.crawlConfig?.autoAddCollections && orgId) {
-      for (let i = 0; i < this.crawlConfig.autoAddCollections.length; i++) {
-        const collectionId = this.crawlConfig.autoAddCollections[i];
-        const data: Collection = await this.apiFetch(
+      for (const collectionId of this.crawlConfig.autoAddCollections) {
+        const data = await this.apiFetch<Collection | undefined>(
           `/orgs/${orgId}/collections/${collectionId}`,
-          this.authState!
+          this.authState!,
         );
         if (data) {
           collections.push(data);
@@ -485,7 +506,11 @@ export class ConfigDetails extends LiteElement {
       const orgDefaults = {
         ...this.orgDefaults,
       };
-      const data = await resp.json();
+      const data = (await resp.json()) as {
+        defaultBehaviorTimeSeconds: number;
+        defaultPageLoadTimeSeconds: number;
+        maxPagesPerCrawl: number;
+      };
       if (data.defaultBehaviorTimeSeconds > 0) {
         orgDefaults.behaviorTimeoutSeconds = data.defaultBehaviorTimeSeconds;
       }
@@ -496,7 +521,7 @@ export class ConfigDetails extends LiteElement {
         orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
       }
       this.orgDefaults = orgDefaults;
-    } catch (e: any) {
+    } catch (e) {
       console.debug(e);
     }
   }

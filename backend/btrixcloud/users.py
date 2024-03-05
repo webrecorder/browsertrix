@@ -213,6 +213,13 @@ class UserManager:
         )
         return await cursor.to_list(length=1000)
 
+    async def get_user_emails_by_ids(self):
+        """return dict of user emails keyed by id"""
+        email_id_map = {}
+        async for user in self.users.find({}):
+            email_id_map[user["id"]] = user["email"]
+        return email_id_map
+
     async def get_superuser(self) -> Optional[User]:
         """return current superuser, if any"""
         user_data = await self.users.find_one({"is_superuser": True})

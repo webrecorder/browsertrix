@@ -3,7 +3,7 @@ import { msg, localized } from "@lit/localize";
 
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { AuthState, LoggedInEventDetail } from "@/utils/AuthService";
-import AuthService, { type LogOutEventDetail } from "@/utils/AuthService";
+import AuthService from "@/utils/AuthService";
 
 @localized()
 @customElement("btrix-sign-up")
@@ -16,24 +16,24 @@ export class SignUp extends LiteElement {
 
   render() {
     return html`
-      <article class="w-full max-w-md grid gap-5">
-        <main class="md:bg-white md:border md:shadow-lg md:rounded-lg p-10">
+      <article class="grid w-full max-w-md gap-5">
+        <main class="p-10 md:rounded-lg md:border md:bg-white md:shadow-lg">
           ${this.isSignedUpWithoutAuth
             ? html`
                 <div
-                  class="text-xl font-semibold mb-5 text-primary"
+                  class="mb-5 text-xl font-semibold text-primary"
                   role="alert"
                 >
                   ${msg("Successfully signed up")}
                 </div>
                 <p class="text-lg">
                   ${msg(
-                    "Click the link in the verification email we sent you to log in."
+                    "Click the link in the verification email we sent you to log in.",
                   )}
                 </p>
               `
             : html`
-                <h1 class="text-2xl font-semibold mb-5">${msg("Sign up")}</h1>
+                <h1 class="mb-5 text-2xl font-semibold">${msg("Sign up")}</h1>
 
                 <btrix-sign-up-form
                   @submit=${this.onSubmit}
@@ -57,7 +57,7 @@ export class SignUp extends LiteElement {
       AuthService.createLoggedInEvent({
         ...event.detail,
         firstLogin: true,
-      })
+      }),
     );
   }
 

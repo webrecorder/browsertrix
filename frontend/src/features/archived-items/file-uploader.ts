@@ -1,3 +1,4 @@
+import { type PropertyValues, html } from "lit";
 import { state, property, queryAsync, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { when } from "lit/directives/when.js";
@@ -13,10 +14,14 @@ import type {
   TagsChangeEvent,
 } from "@/components/ui/tag-input";
 import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { APIError } from "@/utils/api";
 import { maxLengthValidator } from "@/utils/form";
 import type { FileRemoveEvent } from "@/components/ui/file-list";
+import { TailwindElement } from "@/classes/TailwindElement";
+import { APIController } from "@/controllers/api";
+import { NotifyController } from "@/controllers/notify";
+import { NavigateController } from "@/controllers/navigate";
+import { type CollectionsChangeEvent } from "../collections/collections-add";
 
 export type FileUploaderRequestCloseEvent = CustomEvent<NonNullable<unknown>>;
 export type FileUploaderUploadStartEvent = CustomEvent<{
@@ -28,8 +33,10 @@ export type FileUploaderUploadedEvent = CustomEvent<{
   fileSize: number;
 }>;
 
-const ABORT_REASON_USER_CANCEL = "user-canceled";
-const ABORT_REASON_QUOTA_REACHED = "storage_quota_reached";
+enum AbortReason {
+  UserCancel = "user-canceled",
+  QuotaReached = "storage_quota_reached",
+}
 
 /**
  * Usage:
@@ -48,7 +55,7 @@ const ABORT_REASON_QUOTA_REACHED = "storage_quota_reached";
  */
 @localized()
 @customElement("btrix-file-uploader")
-export class FileUploader extends LiteElement {
+export class FileUploader extends TailwindElement {
   @property({ type: String })
   orgId!: string;
 
@@ -59,13 +66,13 @@ export class FileUploader extends LiteElement {
   open = false;
 
   @state()
-  private isUploading: boolean = false;
+  private isUploading = false;
 
   @state()
-  private isDialogVisible: boolean = false;
+  private isDialogVisible = false;
 
   @state()
-  private isConfirmingCancel: boolean = false;
+  private isConfirmingCancel = false;
 
   @state()
   private collectionIds: string[] = [];
@@ -80,25 +87,29 @@ export class FileUploader extends LiteElement {
   private fileList: File[] = [];
 
   @state()
-  private progress: number = 0;
+  private progress = 0;
 
   @queryAsync("#fileUploadForm")
-  private form!: Promise<HTMLFormElement>;
+  private readonly form!: Promise<HTMLFormElement>;
+
+  private readonly api = new APIController(this);
+  private readonly navigate = new NavigateController(this);
+  private readonly notify = new NotifyController(this);
 
   // For fuzzy search:
-  private fuse = new Fuse([], {
+  private readonly fuse = new Fuse([], {
     shouldSort: false,
     threshold: 0.2, // stricter; default is 0.6
   });
 
-  private validateDescriptionMax = maxLengthValidator(500);
+  private readonly validateDescriptionMax = maxLengthValidator(500);
 
   // Use to cancel requests
   private uploadRequest: XMLHttpRequest | null = null;
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (changedProperties.has("open") && this.open) {
-      this.fetchTags();
+      void this.fetchTags();
 
       if (changedProperties.get("open") === undefined) {
         this.isDialogVisible = true;
@@ -121,7 +132,7 @@ export class FileUploader extends LiteElement {
         style="--width: ${uploadInProgress ? 40 : 60}rem;"
       >
         ${when(this.isDialogVisible, () =>
-          uploadInProgress ? this.renderUploading() : this.renderForm()
+          uploadInProgress ? this.renderUploading() : this.renderForm(),
         )}
       </btrix-dialog>
     `;
@@ -134,18 +145,18 @@ export class FileUploader extends LiteElement {
         @submit=${this.onSubmit}
         @reset=${this.tryRequestClose}
       >
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
           <section class="col-span-1 flex flex-col gap-3">
-            <h3 class="flex-0 text-lg leading-none font-semibold">
+            <h3 class="flex-0 text-lg font-semibold leading-none">
               ${msg("File to Upload")}
             </h3>
-            <main class="flex-1 border rounded p-3">${this.renderFiles()}</main>
+            <main class="flex-1 rounded border p-3">${this.renderFiles()}</main>
           </section>
           <section class="col-span-1 flex flex-col gap-3">
-            <h3 class="flex-0 text-lg leading-none font-semibold">
+            <h3 class="flex-0 text-lg font-semibold leading-none">
               ${msg("Metadata")}
             </h3>
-            <main class="flex-1 border rounded py-3 px-4">
+            <main class="flex-1 rounded border px-4 py-3">
               ${this.renderMetadata()}
             </main>
           </section>
@@ -171,9 +182,9 @@ export class FileUploader extends LiteElement {
             // Using submit method instead of type="submit" fixes
             // incorrect getRootNode in Chrome
             const form = await this.form;
-            const submitInput = form.querySelector(
-              'input[type="submit"]'
-            ) as HTMLInputElement;
+            const submitInput = form.querySelector<HTMLInputElement>(
+              'input[type="submit"]',
+            )!;
             form.requestSubmit(submitInput);
           }}
           >${msg("Upload File")}</sl-button
@@ -185,14 +196,14 @@ export class FileUploader extends LiteElement {
   private renderFiles() {
     if (!this.fileList.length) {
       return html`
-        <div class="h-full flex flex-col gap-3 items-center justify-center p-5">
+        <div class="flex h-full flex-col items-center justify-center gap-3 p-5">
           <label>
             <input
               class="sr-only"
               type="file"
               accept=".wacz"
               @change=${(e: Event) => {
-                const files = (e.target as HTMLInputElement).files as FileList;
+                const files = (e.target as HTMLInputElement).files;
                 if (files?.length) {
                   this.fileList = Array.from(files);
                 }
@@ -215,10 +226,11 @@ export class FileUploader extends LiteElement {
     return html`
       <btrix-file-list>
         ${Array.from(this.fileList).map(
-          (file) => html`<btrix-file-list-item
-            .file=${file}
-            @on-remove=${this.handleRemoveFile}
-          ></btrix-file-list-item>`
+          (file) =>
+            html`<btrix-file-list-item
+              .file=${file}
+              @on-remove=${this.handleRemoveFile}
+            ></btrix-file-list-item>`,
         )}
       </btrix-file-list>
     `;
@@ -231,7 +243,7 @@ export class FileUploader extends LiteElement {
         <sl-input label="Name" name="name" required></sl-input>
       </div>
       <sl-textarea
-        class="mb-3 with-max-help-text"
+        class="with-max-help-text mb-3"
         name="description"
         label=${msg("Description")}
         rows="3"
@@ -253,7 +265,7 @@ export class FileUploader extends LiteElement {
           .orgId=${this.orgId}
           .configId=${"temp"}
           label=${msg("Add to Collection")}
-          @collections-change=${(e: CustomEvent) =>
+          @collections-change=${(e: CollectionsChangeEvent) =>
             (this.collectionIds = e.detail.collections)}
         >
         </btrix-collections-add>
@@ -264,18 +276,19 @@ export class FileUploader extends LiteElement {
   private renderUploading() {
     if (this.isConfirmingCancel) {
       return html`
-        <div class="p-5 flex flex-col items-center gap-5">
-          <p class="text-lg leading-none font-semibold">
+        <div class="flex flex-col items-center gap-5 p-5">
+          <p class="text-lg font-semibold leading-none">
             ${msg("Cancel this upload?")}
           </p>
           <div class="w-full">
             <btrix-file-list>
               ${Array.from(this.fileList).map(
-                (file) => html`<btrix-file-list-item
-                  .file=${file}
-                  progressValue=${this.progress}
-                  @on-remove=${this.handleRemoveFile}
-                ></btrix-file-list-item>`
+                (file) =>
+                  html`<btrix-file-list-item
+                    .file=${file}
+                    progressValue=${this.progress}
+                    @on-remove=${this.handleRemoveFile}
+                  ></btrix-file-list-item>`,
               )}
             </btrix-file-list>
           </div>
@@ -302,7 +315,7 @@ export class FileUploader extends LiteElement {
     }
     return html`
       <section class="flex flex-col gap-3">
-        <h4 class="flex-0 text-lg leading-none font-semibold">
+        <h4 class="flex-0 text-lg font-semibold leading-none">
           ${msg("Uploading File")}
         </h4>
         <p class="text-neutral-500">
@@ -311,11 +324,12 @@ export class FileUploader extends LiteElement {
         <main class="flex-1 overflow-auto">
           <btrix-file-list>
             ${Array.from(this.fileList).map(
-              (file) => html`<btrix-file-list-item
-                .file=${file}
-                progressValue=${this.progress}
-                @on-remove=${this.handleRemoveFile}
-              ></btrix-file-list-item>`
+              (file) =>
+                html`<btrix-file-list-item
+                  .file=${file}
+                  progressValue=${this.progress}
+                  @on-remove=${this.handleRemoveFile}
+                ></btrix-file-list-item>`,
             )}
           </btrix-file-list>
         </main>
@@ -328,7 +342,7 @@ export class FileUploader extends LiteElement {
     `;
   }
 
-  private handleRemoveFile = (e: FileRemoveEvent) => {
+  private readonly handleRemoveFile = (e: FileRemoveEvent) => {
     this.cancelUpload();
     const idx = this.fileList.indexOf(e.detail.file);
     if (idx === -1) return;
@@ -362,11 +376,11 @@ export class FileUploader extends LiteElement {
 
   private requestClose() {
     this.dispatchEvent(
-      <FileUploaderRequestCloseEvent>new CustomEvent("request-close")
+      new CustomEvent("request-close") as FileUploaderRequestCloseEvent,
     );
   }
 
-  private onTagInput = (e: TagInputEvent) => {
+  private readonly onTagInput = (e: TagInputEvent) => {
     const { value } = e.detail;
     if (!value) return;
     this.tagOptions = this.fuse.search(value).map(({ item }) => item);
@@ -374,9 +388,9 @@ export class FileUploader extends LiteElement {
 
   private async fetchTags() {
     try {
-      const tags = await this.apiFetch<never>(
+      const tags = await this.api.fetch<never>(
         `/orgs/${this.orgId}/crawlconfigs/tags`,
-        this.authState!
+        this.authState!,
       );
 
       // Update search/filter collection
@@ -393,17 +407,17 @@ export class FileUploader extends LiteElement {
     const formEl = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(formEl))) return;
 
-    const file = this.fileList[0];
+    const file = this.fileList[0] as File | undefined;
     if (!file) return;
 
     this.isUploading = true;
     this.dispatchEvent(
-      <FileUploaderUploadedEvent>new CustomEvent("upload-start", {
+      new CustomEvent("upload-start", {
         detail: {
           fileName: file.name,
           fileSize: file.size,
         },
-      })
+      }) as FileUploaderUploadedEvent,
     );
 
     const { name, description } = serialize(formEl);
@@ -418,7 +432,7 @@ export class FileUploader extends LiteElement {
 
       const data = await this.upload(
         `orgs/${this.orgId}/uploads/stream?${query}`,
-        file
+        file,
       );
 
       this.uploadRequest = null;
@@ -429,53 +443,54 @@ export class FileUploader extends LiteElement {
           new CustomEvent("btrix-storage-quota-update", {
             detail: { reached: true },
             bubbles: true,
-          })
+          }),
         );
       }
 
       if (data.id && data.added) {
         this.dispatchEvent(
-          <FileUploaderUploadedEvent>new CustomEvent("uploaded", {
+          new CustomEvent("uploaded", {
             detail: {
               fileName: file.name,
               fileSize: file.size,
             },
-          })
+          }) as FileUploaderUploadedEvent,
         );
         this.requestClose();
-        this.notify({
-          message: msg(html`Successfully uploaded
-            <strong>${name}</strong>.<br />
-            <a
-              class="underline hover:no-underline"
-              href="${this.orgBasePath}/items/upload/${data.id}"
-              @click="${this.navLink.bind(this)}"
-              >View Item</a
-            > `),
+        this.notify.toast({
+          message: msg(
+            html`Successfully uploaded <strong>${name}</strong>.<br />
+              <a
+                class="underline hover:no-underline"
+                href="${this.navigate.orgBasePath}/items/upload/${data.id}"
+                @click="${this.navigate.link}"
+                >View Item</a
+              > `,
+          ),
           variant: "success",
           icon: "check2-circle",
         });
       } else {
         throw data;
       }
-    } catch (err: any) {
-      if (err === ABORT_REASON_USER_CANCEL) {
+    } catch (err) {
+      if (err === AbortReason.UserCancel) {
         console.debug("Upload aborted to user cancel");
       } else {
         let message = msg("Sorry, couldn't upload file at this time.");
         console.debug(err);
-        if (err === ABORT_REASON_QUOTA_REACHED) {
+        if (err === AbortReason.QuotaReached) {
           message = msg(
-            "Your org does not have enough storage to upload this file."
+            "Your org does not have enough storage to upload this file.",
           );
           this.dispatchEvent(
             new CustomEvent("btrix-storage-quota-update", {
               detail: { reached: true },
               bubbles: true,
-            })
+            }),
           );
         }
-        this.notify({
+        this.notify.toast({
           message: message,
           variant: "danger",
           icon: "exclamation-octagon",
@@ -486,9 +501,9 @@ export class FileUploader extends LiteElement {
   }
 
   // Use XHR to get upload progress
-  private upload(
+  private async upload(
     url: string,
-    file: File
+    file: File,
   ): Promise<{ id: string; added: boolean; storageQuotaReached: boolean }> {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -500,10 +515,16 @@ export class FileUploader extends LiteElement {
       });
       xhr.addEventListener("load", () => {
         if (xhr.status === 200) {
-          resolve(JSON.parse(xhr.response));
+          resolve(
+            JSON.parse(xhr.response as string) as {
+              id: string;
+              added: boolean;
+              storageQuotaReached: boolean;
+            },
+          );
         }
         if (xhr.status === 403) {
-          reject(ABORT_REASON_QUOTA_REACHED);
+          reject(AbortReason.QuotaReached);
         }
       });
       xhr.addEventListener("error", () => {
@@ -511,11 +532,11 @@ export class FileUploader extends LiteElement {
           new APIError({
             message: xhr.statusText,
             status: xhr.status,
-          })
+          }),
         );
       });
       xhr.addEventListener("abort", () => {
-        reject(ABORT_REASON_USER_CANCEL);
+        reject(AbortReason.UserCancel);
       });
       xhr.upload.addEventListener("progress", this.onUploadProgress);
 
@@ -525,7 +546,7 @@ export class FileUploader extends LiteElement {
     });
   }
 
-  private onUploadProgress = throttle(100)((e: ProgressEvent) => {
+  private readonly onUploadProgress = throttle(100)((e: ProgressEvent) => {
     this.progress = (e.loaded / e.total) * 100;
   });
 

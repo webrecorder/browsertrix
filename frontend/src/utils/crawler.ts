@@ -1,4 +1,8 @@
-import type { CrawlState } from "@/types/crawler";
+import { type TemplateResult, html } from "lit";
+import { msg, str } from "@lit/localize";
+
+import type { ArchivedItem, CrawlState, Workflow } from "@/types/crawler";
+
 export const activeCrawlStates: CrawlState[] = [
   "starting",
   "waiting_org_limit",
@@ -23,6 +27,35 @@ export const inactiveCrawlStates: CrawlState[] = [
   "failed",
 ];
 
-export function isActive(state: CrawlState) {
-  return activeCrawlStates.includes(state);
+export function isActive(state: CrawlState | null) {
+  return state && activeCrawlStates.includes(state);
+}
+
+export function renderName(item: ArchivedItem | Workflow) {
+  if (item.name) return html`<span class="truncate">${item.name}</span>`;
+  if (item.firstSeed && item.seedCount) {
+    const remainder = item.seedCount - 1;
+    let nameSuffix: string | TemplateResult<1> = "";
+    if (remainder) {
+      if (remainder === 1) {
+        nameSuffix = html`<span class="ml-1"
+          >${msg(str`+${remainder} URL`)}</span
+        >`;
+      } else {
+        nameSuffix = html`<span class="ml-1"
+          >${msg(str`+${remainder} URLs`)}</span
+        >`;
+      }
+    }
+    return html`
+      <div class="flex overflow-hidden whitespace-nowrap">
+        <span class="min-w-0 truncate">${item.firstSeed}</span>
+        <span>${nameSuffix}</span>
+      </div>
+    `;
+  }
+
+  return html`<span class="truncate text-neutral-500"
+    >${msg("(unnamed item)")}</span
+  >`;
 }

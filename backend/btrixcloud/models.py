@@ -255,6 +255,8 @@ class RawCrawlConfig(BaseModel):
     logging: Optional[str] = None
     behaviors: Optional[str] = "autoscroll,autoplay,autofetch,siteSpecific"
 
+    userAgent: Optional[str] = None
+
 
 # ============================================================================
 class CrawlConfigIn(BaseModel):
@@ -272,6 +274,7 @@ class CrawlConfigIn(BaseModel):
     jobType: Optional[JobType] = JobType.CUSTOM
 
     profileid: Union[UUID, EmptyStr, None]
+    crawlerChannel: str = "default"
 
     autoAddCollections: Optional[List[UUID]] = []
     tags: Optional[List[str]] = []
@@ -294,6 +297,7 @@ class ConfigRevision(BaseMongoModel):
     config: RawCrawlConfig
 
     profileid: Optional[UUID]
+    crawlerChannel: Optional[str]
 
     crawlTimeout: Optional[int] = 0
     maxCrawlSize: Optional[int] = 0
@@ -323,6 +327,7 @@ class CrawlConfigCore(BaseMongoModel):
     oid: UUID
 
     profileid: Optional[UUID]
+    crawlerChannel: Optional[str] = None
 
 
 # ============================================================================
@@ -413,11 +418,32 @@ class UpdateCrawlConfig(BaseModel):
     # crawl data: revision tracked
     schedule: Optional[str] = None
     profileid: Union[UUID, EmptyStr, None] = None
+    crawlerChannel: Optional[str] = None
     crawlTimeout: Optional[int] = None
     maxCrawlSize: Optional[int] = None
     scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)] = None  # type: ignore
     crawlFilenameTemplate: Optional[str] = None
     config: Optional[RawCrawlConfig] = None
+
+
+# ============================================================================
+
+### CRAWLER VERSIONS ###
+
+
+# ============================================================================
+class CrawlerChannel(BaseModel):
+    """Crawler version available to use in workflows"""
+
+    id: str
+    image: str
+
+
+# ============================================================================
+class CrawlerChannels(BaseModel):
+    """List of CrawlerChannel instances for API"""
+
+    channels: List[CrawlerChannel] = []
 
 
 # ============================================================================
@@ -551,6 +577,8 @@ class CrawlOut(BaseMongoModel):
     userName: Optional[str]
     oid: UUID
 
+    profileid: Optional[UUID]
+
     name: Optional[str]
     description: Optional[str]
 
@@ -581,9 +609,13 @@ class CrawlOut(BaseMongoModel):
     stopping: Optional[bool]
     manual: Optional[bool]
     cid_rev: Optional[int]
+    scale: Optional[conint(ge=1, le=MAX_CRAWL_SCALE)]  # type: ignore
 
     storageQuotaReached: Optional[bool]
     execMinutesQuotaReached: Optional[bool]
+
+    crawlerChannel: str = "default"
+    image: Optional[str]
 
 
 # ============================================================================
@@ -641,6 +673,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     stopping: Optional[bool] = False
 
     crawlExecSeconds: int = 0
+
+    image: Optional[str]
 
 
 # ============================================================================
@@ -1036,6 +1070,7 @@ class Profile(BaseMongoModel):
 
     created: Optional[datetime]
     baseid: Optional[UUID] = None
+    crawlerChannel: Optional[str]
 
 
 # ============================================================================
@@ -1057,6 +1092,7 @@ class ProfileLaunchBrowserIn(UrlIn):
     """Request to launch new browser for creating profile"""
 
     profileId: Optional[UUID] = None
+    crawlerChannel: str = "default"
 
 
 # ============================================================================
@@ -1073,6 +1109,7 @@ class ProfileCreate(BaseModel):
     browserid: str
     name: str
     description: Optional[str] = ""
+    crawlerChannel: str = "default"
 
 
 # ============================================================================
@@ -1179,27 +1216,27 @@ class BaseCollectionItemBody(WebhookNotificationBody):
 class CollectionItemAddedBody(BaseCollectionItemBody):
     """Webhook notification POST body for collection additions"""
 
-    event: Literal[
+    event: Literal[WebhookEventType.ADDED_TO_COLLECTION] = (
         WebhookEventType.ADDED_TO_COLLECTION
-    ] = WebhookEventType.ADDED_TO_COLLECTION
+    )
 
 
 # ============================================================================
 class CollectionItemRemovedBody(BaseCollectionItemBody):
     """Webhook notification POST body for collection removals"""
 
-    event: Literal[
+    event: Literal[WebhookEventType.REMOVED_FROM_COLLECTION] = (
         WebhookEventType.REMOVED_FROM_COLLECTION
-    ] = WebhookEventType.REMOVED_FROM_COLLECTION
+    )
 
 
 # ============================================================================
 class CollectionDeletedBody(WebhookNotificationBody):
     """Webhook notification base POST body for collection changes"""
 
-    event: Literal[
+    event: Literal[WebhookEventType.COLLECTION_DELETED] = (
         WebhookEventType.COLLECTION_DELETED
-    ] = WebhookEventType.COLLECTION_DELETED
+    )
     collectionId: str
 
 
@@ -1329,3 +1366,88 @@ class AnyJob(BaseModel):
     """Union of all job types, for response model"""
 
     __root__: Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob]
+
+
+# ============================================================================
+
+### PAGES ###
+
+
+# ============================================================================
+class PageReviewUpdate(BaseModel):
+    """Update model for page manual review/approval"""
+
+    approved: Optional[bool] = None
+
+
+# ============================================================================
+class PageNoteIn(BaseModel):
+    """Input model for adding page notes"""
+
+    text: str
+
+
+# ============================================================================
+class PageNoteEdit(BaseModel):
+    """Input model for editing page notes"""
+
+    id: UUID
+    text: str
+
+
+# ============================================================================
+class PageNoteDelete(BaseModel):
+    """Delete model for page notes"""
+
+    delete_list: List[UUID] = []
+
+
+# ============================================================================
+class PageNote(BaseModel):
+    """Model for page notes, tracking user and time"""
+
+    id: UUID
+    text: str
+    created: datetime = datetime.now()
+    userid: UUID
+    userName: str
+
+
+# ============================================================================
+class Page(BaseMongoModel):
+    """Model for crawl pages"""
+
+    oid: UUID
+    crawl_id: str
+    url: AnyHttpUrl
+    title: Optional[str] = None
+    timestamp: Optional[datetime] = None
+    load_state: Optional[int] = None
+    status: Optional[int] = None
+
+    # automated heuristics, keyed by QA run id
+    screenshotMatch: Optional[Dict[str, float]] = {}
+    textMatch: Optional[Dict[str, float]] = {}
+    resourceCounts: Optional[Dict[str, Dict[str, int]]] = {}
+
+    # manual review
+    userid: Optional[UUID] = None
+    modified: Optional[datetime] = None
+    approved: Optional[bool] = None
+    notes: List[PageNote] = []
+
+
+# ============================================================================
+class PageOut(Page):
+    """Model for pages output"""
+
+    status: Optional[int] = 200
+
+
+# ============================================================================
+class PageQAUpdate(BaseModel):
+    """Model for updating pages from QA run"""
+
+    screenshotMatch: Optional[int] = None
+    textMatch: Optional[int] = None
+    resourceCounts: Optional[Dict[str, Dict[str, int]]]

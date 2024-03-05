@@ -10,4 +10,4 @@ The main requirements for Browsertrix Cloud are:
 - [Helm 3](https://helm.sh/) (package manager for Kubernetes)
 
 
-We have prepared a [Local Deployment Guide](./local) which covers several options for testing Browsertrix Cloud locally on a single machine, as well as a [Production (Self-Hosted and Cloud) Deployment](./production) guides to help with setting up Browsertrix Cloud for different production scenarios.
+We have prepared a [Local Deployment Guide](local.md) which covers several options for testing Browsertrix Cloud locally on a single machine, as well as a [Production (Self-Hosted and Cloud) Deployment](remote.md) guide to help with setting up Browsertrix Cloud in different production scenarios. Information about configuring storage, crawler channels, and other details in local or production deployments is in the [Customizing Browsertrix Deployment Guide](customization.md).

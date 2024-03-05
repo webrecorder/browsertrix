@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 const { tailwindTransform } = require("postcss-lit");
 const Color = require("color");
 
@@ -41,11 +40,23 @@ function makeTheme() {
   // Map color grading:
   const colorGrades = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
 
+  /**
+   * @param {string} color
+   * @returns {Record<string, string>}
+   */
   const makeColorPalette = (color) =>
-    colorGrades.reduce((acc, v) => ({
-      ...acc,
-      [v]: `var(--sl-color-${color}-${v})`,
-    }));
+    colorGrades.reduce(
+      /**
+       * @param {Record<string, string>} acc
+       * @param {number} v
+       * @returns
+       */
+      (acc, v) => ({
+        ...acc,
+        [v]: `var(--sl-color-${color}-${v})`,
+      }),
+      {},
+    );
 
   return {
     // https://github.com/tailwindlabs/tailwindcss/blob/52ab3154392ba3d7a05cae643694384e72dc24b2/stubs/defaultConfig.stub.js
@@ -53,9 +64,9 @@ function makeTheme() {
       current: "currentColor",
       ...colors.map(makeColorPalette),
       primary,
-      success: `var(--success)`,
-      warning: `var(--warning)`,
-      danger: `var(--danger)`,
+      success: { ...makeColorPalette("success"), DEFAULT: `var(--success)` },
+      warning: { ...makeColorPalette("warning"), DEFAULT: `var(--warning)` },
+      danger: { ...makeColorPalette("danger"), DEFAULT: `var(--danger)` },
       neutral: {
         ...makeColorPalette("neutral"),
         // Shoelace supports additional neutral variables:
@@ -105,8 +116,12 @@ function makeTheme() {
     aspectRatio: {
       "4/3": "4 / 3", // For Browsertrix watch/replay
     },
+    gridTemplateColumns: {
+      13: "repeat(13, minmax(0, 1fr))",
+      14: "repeat(14, minmax(0, 1fr))",
+    },
     screens: {
-      lg: "1124px", // Should match --btrix-screen-lg
+      desktop: "82.5rem", // 14 4.5rem columns with 1.5rem gutter
       // Override default of:
       // => @media (min-width: 1024px) { ... }
     },
@@ -116,6 +131,12 @@ function makeTheme() {
       medium: "var(--sl-transition-medium)",
       fast: "var(--sl-transition-fast)",
       "x-fast": "var(--sl-transition-x-fast)",
+    },
+    outlineWidth: {
+      3: "3px",
+    },
+    outlineOffset: {
+      3: "3px",
     },
   };
 }

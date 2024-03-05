@@ -8,9 +8,9 @@ This playbook provides an easy way to install Browsertrix Cloud on a Linux box (
 
 To run this ansible playbook, you need to:
 
-* Have a server / VPS where browsertrix will run.
+* Have a server / VPS where Browsertrix will run.
 * Configure a DNS A Record to point at your server's IP address.
-* Make sure you can ssh to it, with a sudo user: ssh <your-user>@<your-domain>
+* Make sure SSH is working, with a sudo user: `#!shell ssh your-user@your-domain`
 * Install Ansible on your local machine (the control machine).
 
 

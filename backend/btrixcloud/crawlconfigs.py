@@ -1,11 +1,13 @@
 """
 Crawl Config API handling
 """
+
 # pylint: disable=too-many-lines
 
 from typing import List, Union, Optional, Tuple, TYPE_CHECKING, cast
 
 import asyncio
+import json
 import re
 import os
 from datetime import datetime
@@ -28,8 +30,10 @@ from .models import (
     User,
     PaginatedResponse,
     FAILED_STATES,
+    CrawlerChannel,
+    CrawlerChannels,
 )
-from .utils import dt_now
+from .utils import dt_now, slug_from_name
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -66,6 +70,9 @@ class CrawlConfigOps:
     crawl_ops: CrawlOps
     coll_ops: CollectionOps
 
+    crawler_channels: CrawlerChannels
+    crawler_images_map: dict[str, str]
+
     def __init__(
         self,
         dbclient,
@@ -96,6 +103,20 @@ class CrawlConfigOps:
         )
 
         self._file_rx = re.compile("\\W+")
+
+        self.crawler_images_map = {}
+        channels = []
+        with open(os.environ["CRAWLER_CHANNELS_JSON"], encoding="utf-8") as fh:
+            crawler_list: list[dict] = json.loads(fh.read())
+            for channel_data in crawler_list:
+                channel = CrawlerChannel(**channel_data)
+                channels.append(channel)
+                self.crawler_images_map[channel.id] = channel.image
+
+            self.crawler_channels = CrawlerChannels(channels=channels)
+
+        if "default" not in self.crawler_images_map:
+            raise TypeError("The channel list must include a 'default' channel")
 
     def set_crawl_ops(self, ops):
         """set crawl ops reference"""
@@ -182,6 +203,9 @@ class CrawlConfigOps:
         if config.autoAddCollections:
             data["autoAddCollections"] = config.autoAddCollections
 
+        if not self.get_channel_crawler_image(config.crawlerChannel):
+            raise HTTPException(status_code=404, detail="crawler_not_found")
+
         result = await self.crawl_configs.insert_one(data)
 
         crawlconfig = CrawlConfig.from_dict(data)
@@ -208,6 +232,7 @@ class CrawlConfigOps:
             run_now=run_now,
             out_filename=out_filename,
             profile_filename=profile_filename or "",
+            warc_prefix=self.get_warc_prefix(org, crawlconfig),
         )
 
         if crawl_id and run_now:
@@ -265,12 +290,16 @@ class CrawlConfigOps:
         if profile_filename is None:
             _, profile_filename = await self._lookup_profile(crawlconfig.profileid, org)
 
+        if not self.get_channel_crawler_image(crawlconfig.crawlerChannel):
+            raise HTTPException(status_code=404, detail="crawler_not_found")
+
         await self.crawl_manager.add_crawl_config(
             crawlconfig=crawlconfig,
             storage=org.storage,
             run_now=False,
             out_filename=self.default_filename_template,
             profile_filename=profile_filename or "",
+            warc_prefix=self.get_warc_prefix(org, crawlconfig),
         )
 
     async def update_crawl_config(
@@ -306,6 +335,10 @@ class CrawlConfigOps:
             update.profileid is not None
             and update.profileid != orig_crawl_config.profileid
             and ((not update.profileid) != (not orig_crawl_config.profileid))
+        )
+
+        changed = changed or self.check_attr_changed(
+            orig_crawl_config, update, "crawlerChannel"
         )
 
         metadata_changed = self.check_attr_changed(orig_crawl_config, update, "name")
@@ -810,7 +843,10 @@ class CrawlConfigOps:
 
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
-                crawlconfig, org.storage, userid=str(user.id)
+                crawlconfig,
+                org.storage,
+                userid=str(user.id),
+                warc_prefix=self.get_warc_prefix(org, crawlconfig),
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
             return crawl_id
@@ -859,6 +895,27 @@ class CrawlConfigOps:
         # pylint: disable=broad-exception-caught
         except Exception:
             return [], 0
+
+    def get_channel_crawler_image(
+        self, crawler_channel: Optional[str]
+    ) -> Optional[str]:
+        """Get crawler image name by id"""
+        return self.crawler_images_map.get(crawler_channel or "")
+
+    def get_warc_prefix(self, org: Organization, crawlconfig: CrawlConfig) -> str:
+        """Generate WARC prefix slug from org slug, name or url
+        if no name is provided, hostname is used from url, otherwise
+        url is ignored"""
+        name = crawlconfig.name
+        if not name:
+            if crawlconfig.config.seeds and len(crawlconfig.config.seeds):
+                url = crawlconfig.config.seeds[0].url
+                parts = urllib.parse.urlsplit(url)
+                name = parts.netloc
+
+        name = slug_from_name(name or "")
+        prefix = org.slug + "-" + name
+        return prefix[:80]
 
 
 # ============================================================================
@@ -1007,6 +1064,13 @@ def init_crawl_config_api(
         org: Organization = Depends(org_viewer_dep),
     ):
         return await ops.get_crawl_config_search_values(org)
+
+    @router.get("/crawler-channels", response_model=CrawlerChannels)
+    async def get_crawler_channels(
+        # pylint: disable=unused-argument
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        return ops.crawler_channels
 
     @router.get("/{cid}/seeds", response_model=PaginatedResponse)
     async def get_crawl_config_seeds(

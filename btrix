@@ -2,13 +2,14 @@
 
 # ./btrix: Browsertrix Cloud dev environment utility
 #
-# Note: btrix helper expects a local.yaml file to exist in
-# the chart directory alongside values.yaml.
-#
 # Test commands require installing pytest first, e.g.:
 # python3 -m pip install pytest
 #
 # Usage:
+#
+# $ ./btrix setup
+# Copy local config to expected location
+# Local config must exist for other commands to work
 #
 # $ ./btrix bootstrap
 # Build frontend and backend and upgrade
@@ -104,9 +105,29 @@ runNightlyTests() {
     python3 -m pytest backend/test_nightly/test_*.py
 }
 
+setupLocalConfig() {
+    if [ -f ./chart/local.yaml ]; then
+        echo "Local config file already exists at ./chart/local.yaml"
+        exit 1
+    fi
+    echo "Copying local example config to ./chart/local.yaml"
+    cp ./chart/examples/local-config.yaml ./chart/local.yaml
+    echo "Local config file created. Edit ./chart/local.yaml to set local overrides"
+    exit 0
+}
+
 CONTEXT=$(cat ~/.kube/config | grep "current-context:" | sed "s/current-context: //")
 MICROK8S="-microk8s"
 WAIT="-wait"
+
+if [[ $1 = "setup" ]]; then
+    setupLocalConfig
+fi
+
+if [ ! -f ./chart/local.yaml ]; then
+    echo "Local config file not found. Run './btrix setup' to configure"
+    exit 1
+fi
 
 # bootstrap: build frontend and backend, upgrade and wait until ready
 if [[ $1 = "bootstrap" ]]; then

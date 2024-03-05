@@ -30,12 +30,21 @@ jobs:
         env:
           HUSKY: 0
         run: yarn install --frozen-lockfile
+      - name: Lint
+        working-directory: frontend
+        run: yarn lint:check
+      - name: Format
+        working-directory: frontend
+        run: yarn format:check
       - name: Unit tests
         working-directory: frontend
         run: yarn test
       - name: Localization build
         working-directory: frontend
         run: yarn localize:prepare
+      - name: Remove non-production dependencies
+        working-directory: frontend
+        run: yarn install --frozen-lockfile --ignore-optional --production
       - name: Webpack build
         working-directory: frontend
         run: yarn build

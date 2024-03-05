@@ -1,6 +1,7 @@
-import type { TemplateResult } from "lit";
-import { LitElement, html, css } from "lit";
+import { html, css, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
+
+import { TailwindElement } from "@/classes/TailwindElement";
 
 type CellContent = string | TemplateResult<1>;
 
@@ -21,60 +22,15 @@ type CellContent = string | TemplateResult<1>;
  * ```
  */
 @customElement("btrix-data-table")
-export class DataTable extends LitElement {
+export class DataTable extends TailwindElement {
   // postcss-lit-disable-next-line
   static styles = css`
-    :host {
-      display: contents;
-    }
-
-    .table {
-      display: table;
-      table-layout: fixed;
-      font-family: var(--font-monostyle-family);
-      font-variation-settings: var(--font-monostyle-variation);
-      width: 100%;
-    }
-
-    .thead {
-      display: table-header-group;
-    }
-
-    .tbody {
-      display: table-row-group;
-    }
-
-    .row {
-      display: table-row;
-    }
-
-    .cell {
-      display: table-cell;
-      vertical-align: middle;
-    }
-
-    .cell:nth-of-type(n + 2) {
-      border-left: 1px solid var(--sl-panel-border-color);
-    }
-
-    .cell[role="cell"] {
-      border-top: 1px solid var(--sl-panel-border-color);
-    }
-
-    .cell.padSmall {
-      padding: var(--sl-spacing-2x-small);
-    }
-
-    .cell.padded {
-      padding: var(--sl-spacing-x-small);
-    }
-
-    .thead .row {
-      background-color: var(--sl-color-neutral-50);
-      color: var(--sl-color-neutral-700);
-      font-size: var(--sl-font-size-x-small);
-      line-height: 1rem;
-      text-transform: uppercase;
+    btrix-table {
+      --btrix-cell-gap: var(--sl-spacing-x-small);
+      --btrix-cell-padding-top: var(--sl-spacing-x-small);
+      --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
+      --btrix-cell-padding-left: var(--sl-spacing-x-small);
+      --btrix-cell-padding-right: var(--sl-spacing-x-small);
     }
   `;
 
@@ -82,53 +38,56 @@ export class DataTable extends LitElement {
   columns: CellContent[] = [];
 
   @property({ type: Array })
-  rows: Array<CellContent[]> = [];
+  rows: CellContent[][] = [];
 
-  // Array of CSS widths
+  /**
+   * Array of CSS grid track widths
+   * https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-columns#values
+   */
   @property({ type: Array })
   columnWidths: string[] = [];
 
+  /**
+   * Table border style
+   */
+  @property({ type: String })
+  border?: "grid" | "horizontal";
+
   render() {
+    const gridAutoColumnsStyle = `grid-template-columns: ${
+      this.columnWidths.length
+        ? this.columnWidths.join(" ")
+        : "minmax(max-content, auto)"
+    }`;
     return html`
-      <div role="table" class="table">
-        <div role="rowgroup" class="thead">
-          <div role="row" class="row">
-            ${this.columns.map(this.renderColumnHeader)}
-          </div>
-        </div>
-        <div role="rowgroup" class="tbody">
-          ${this.rows.map(this.renderRow)}
-        </div>
-      </div>
+      <btrix-table
+        class="overflow-auto rounded border"
+        style=${gridAutoColumnsStyle}
+      >
+        <btrix-table-head class="rounded-t border-b bg-neutral-50">
+          ${this.columns.map(
+            (content, i) => html`
+              <btrix-table-header-cell class=${i > 0 ? "border-l" : ""}>
+                ${content}
+              </btrix-table-header-cell>
+            `,
+          )}
+        </btrix-table-head>
+        <btrix-table-body>
+          ${this.rows.map(
+            (cells, i) => html`
+              <btrix-table-row class=${i > 0 ? "border-t" : ""}>
+                ${cells.map(
+                  (content, ii) =>
+                    html`<btrix-table-cell class=${ii > 0 ? "border-l" : ""}
+                      >${content}</btrix-table-cell
+                    >`,
+                )}
+              </btrix-table-row>
+            `,
+          )}
+        </btrix-table-body>
+      </btrix-table>
     `;
   }
-
-  private renderColumnHeader = (cell: CellContent, index: number) => html`
-    <div
-      role="columnheader"
-      class="cell padded"
-      style=${this.columnWidths[index]
-        ? `width: ${this.columnWidths[index]}`
-        : ""}
-    >
-      ${cell}
-    </div>
-  `;
-
-  private renderRow = (cells: CellContent[]) => html`
-    <div role="row" class="row">${cells.map(this.renderCell)}</div>
-  `;
-
-  private renderCell = (cell: CellContent) => {
-    const shouldPadSmall =
-      typeof cell === "string"
-        ? false
-        : // TODO better logic to check template component
-          cell.strings[0].startsWith("<sl-");
-    return html`
-      <div role="cell" class="cell ${shouldPadSmall ? "padSmall" : "padded"}">
-        ${cell}
-      </div>
-    `;
-  };
 }

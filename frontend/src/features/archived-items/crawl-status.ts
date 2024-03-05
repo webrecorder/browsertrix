@@ -11,7 +11,7 @@ import { animatePulse } from "@/utils/css";
 @customElement("btrix-crawl-status")
 export class CrawlStatus extends LitElement {
   @property({ type: String })
-  state?: CrawlState;
+  state?: CrawlState | AnyString;
 
   @property({ type: Boolean })
   hideLabel = false;
@@ -41,7 +41,7 @@ export class CrawlStatus extends LitElement {
       }
 
       .with-label sl-icon,
-      .icon-only {
+      :host:not(:last-child) .icon-only {
         margin-right: var(--sl-spacing-x-small);
       }
 
@@ -59,8 +59,8 @@ export class CrawlStatus extends LitElement {
   // TODO look into customizing sl-select multi-select
   // instead of separate utility function?
   static getContent(
-    state?: CrawlState,
-    isUpload?: boolean
+    state?: CrawlState | AnyString,
+    isUpload?: boolean,
   ): {
     icon: TemplateResult;
     label: string;
@@ -209,7 +209,7 @@ export class CrawlStatus extends LitElement {
         break;
 
       default:
-        if (typeof state === "string" && (state as string).length) {
+        if (typeof state === "string" && state.length) {
           // Handle unknown status
           label = startCase(state);
         }

@@ -1,13 +1,14 @@
 import { LitElement, html, css } from "lit";
 import { property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
-import type { SlInput } from "@shoelace-style/shoelace";
+import type { SlInput, SlSelect } from "@shoelace-style/shoelace";
 
-export type TimeInputChangeEvent = CustomEvent<{
+type TimeInputChangeDetail = {
   hour: number;
   minute: number;
   period: "AM" | "PM";
-}>;
+};
+export type TimeInputChangeEvent = CustomEvent<TimeInputChangeDetail>;
 
 /**
  * Usage:
@@ -65,7 +66,7 @@ export class TimeInput extends LitElement {
   hour: number = new Date().getHours() % 12 || 12;
 
   @property({ type: Number })
-  minute: number = 0;
+  minute = 0;
 
   @property({ type: String })
   period: "AM" | "PM" = new Date().getHours() > 11 ? "PM" : "AM";
@@ -86,7 +87,8 @@ export class TimeInput extends LitElement {
               value=${this.hour}
               ?disabled=${this.disabled}
               required
-              @keyup=${(e: KeyboardEvent) => {
+              @sl-change=${async (e: Event) => {
+                e.stopPropagation();
                 const input = e.target as SlInput;
                 if (input.value) {
                   const int = +input.value.replace(/[^0-9]/g, "");
@@ -94,13 +96,10 @@ export class TimeInput extends LitElement {
                 } else {
                   input.value = "12";
                 }
-              }}
-              @sl-change=${async (e: Event) => {
-                e.stopPropagation();
-                const input = e.target as SlInput;
+
                 await input.updateComplete;
                 this.hour = +input.value;
-                this.dispatchChange();
+                void this.dispatchChange();
               }}
             >
             </sl-input>
@@ -114,21 +113,22 @@ export class TimeInput extends LitElement {
                 : this.minute}
               ?disabled=${this.disabled}
               required
-              @keyup=${(e: KeyboardEvent) => {
-                const input = e.target as SlInput;
-                if (input.value) {
-                  const int = +input.value.replace(/[^0-9]/g, "");
-                  input.value = `${Math.min(59, Math.max(0, int))}`;
-                } else {
-                  input.value = "00";
-                }
-              }}
               @sl-change=${async (e: Event) => {
                 e.stopPropagation();
                 const input = e.target as SlInput;
+                if (input.value) {
+                  const int = Math.min(
+                    59,
+                    Math.max(0, +input.value.replace(/[^0-9]/g, "")),
+                  );
+                  input.value = int < 10 ? `0${int}` : `${int}`;
+                } else {
+                  input.value = "00";
+                }
+
                 await input.updateComplete;
                 this.minute = +input.value;
-                this.dispatchChange();
+                void this.dispatchChange();
               }}
             >
             </sl-input>
@@ -140,10 +140,10 @@ export class TimeInput extends LitElement {
             hoist
             @sl-hide=${this.stopProp}
             @sl-after-hide=${this.stopProp}
-            @sl-change=${(e: any) => {
+            @sl-change=${(e: Event) => {
               e.stopPropagation();
-              this.period = e.target.value;
-              this.dispatchChange();
+              this.period = (e.target as SlSelect).value as "AM" | "PM";
+              void this.dispatchChange();
             }}
           >
             <sl-option value="AM"
@@ -161,13 +161,13 @@ export class TimeInput extends LitElement {
   private async dispatchChange() {
     await this.updateComplete;
     this.dispatchEvent(
-      <TimeInputChangeEvent>new CustomEvent("time-change", {
+      new CustomEvent<TimeInputChangeDetail>("time-change", {
         detail: {
           hour: this.hour,
           minute: this.minute,
           period: this.period,
         },
-      })
+      }),
     );
   }
 

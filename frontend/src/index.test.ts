@@ -28,7 +28,7 @@ describe("browsertrix-app", () => {
         headers: { Authorization: "_fake_headers_" },
         tokenExpiresAt: 0,
         username: "test-auth@example.com",
-      })
+      }),
     );
     const el = await fixture("<browsertrix-app></browsertrix-app>");
     expect(el).lightDom.descendants("btrix-home");
@@ -52,7 +52,7 @@ describe("browsertrix-app", () => {
         });
       return null;
     });
-    const el = (await fixture("<browsertrix-app></browsertrix-app>")) as App;
+    const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
 
     expect(el.authService.authState).to.eql({
       headers: "_fake_headers_",
@@ -62,7 +62,7 @@ describe("browsertrix-app", () => {
   });
 
   it("sets user info", async () => {
-    stub(App.prototype, "getUserInfo").callsFake(() =>
+    stub(App.prototype, "getUserInfo").callsFake(async () =>
       Promise.resolve({
         id: "test_id",
         email: "test-user@example.com",
@@ -86,7 +86,7 @@ describe("browsertrix-app", () => {
             giftedExecSecondsAvailable: {},
           },
         ],
-      } as APIUser)
+      } as APIUser),
     );
     stub(AuthService.prototype, "startFreshnessCheck");
     stub(window.sessionStorage, "getItem").callsFake((key) => {
@@ -96,7 +96,7 @@ describe("browsertrix-app", () => {
         });
       return null;
     });
-    const el = (await fixture("<browsertrix-app></browsertrix-app>")) as App;
+    const el = await fixture<App>("<browsertrix-app></browsertrix-app>");
 
     expect(el.appState.userInfo).to.eql({
       id: "test_id",

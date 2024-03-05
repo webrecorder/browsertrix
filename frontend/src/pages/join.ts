@@ -37,7 +37,7 @@ export class Join extends LiteElement {
   }
 
   firstUpdated() {
-    this.getInviteInfo();
+    void this.getInviteInfo();
   }
 
   render() {
@@ -49,37 +49,37 @@ export class Join extends LiteElement {
 
     const hasInviteInfo = Boolean(this.inviteInfo.inviterEmail);
     const placeholder = html`<span
-      class="inline-block bg-gray-100 rounded-full"
+      class="inline-block rounded-full bg-gray-100"
       style="width: 6em"
       >&nbsp;</span
     >`;
 
     return html`
-      <article class="w-full p-5 flex flex-col md:flex-row justify-center">
-        <div class="max-w-sm md:mt-12 md:mr-12">
+      <article class="flex w-full flex-col justify-center p-5 md:flex-row">
+        <div class="max-w-sm md:mr-12 md:mt-12">
           <div class="mb-3 text-gray-500">
             ${msg(
               str`Invited by ${
                 this.inviteInfo.inviterName ||
                 this.inviteInfo.inviterEmail ||
                 placeholder
-              }`
+              }`,
             )}
           </div>
-          <p class="text-xl md:text-2xl font-semibold mb-5">
+          <p class="mb-5 text-xl font-semibold md:text-2xl">
             ${msg(
               html`You’ve been invited to join
-                <span class="text-primary break-words"
+                <span class="break-words text-primary"
                   >${hasInviteInfo
                     ? this.inviteInfo.orgName || msg("Browsertrix")
                     : placeholder}</span
-                >.`
+                >.`,
             )}
           </p>
         </div>
 
         <main
-          class="max-w-md md:bg-white md:border md:shadow-lg md:rounded-lg md:p-10"
+          class="max-w-md md:rounded-lg md:border md:bg-white md:p-10 md:shadow-lg"
         >
           <btrix-sign-up-form
             email=${this.email!}
@@ -93,11 +93,15 @@ export class Join extends LiteElement {
 
   private async getInviteInfo() {
     const resp = await fetch(
-      `/api/users/invite/${this.token}?email=${encodeURIComponent(this.email!)}`
+      `/api/users/invite/${this.token}?email=${encodeURIComponent(this.email!)}`,
     );
 
     if (resp.status === 200) {
-      const body = await resp.json();
+      const body = (await resp.json()) as {
+        inviterEmail: string;
+        inviterName: string;
+        orgName: string;
+      };
 
       this.inviteInfo = {
         inviterEmail: body.inviterEmail,
@@ -106,7 +110,7 @@ export class Join extends LiteElement {
       };
     } else if (resp.status === 404) {
       this.serverError = msg(
-        "This invite doesn't exist or has expired. Please ask the organization administrator to resend an invitation."
+        "This invite doesn't exist or has expired. Please ask the organization administrator to resend an invitation.",
       );
     } else {
       this.serverError = msg("This invitation is not valid");
@@ -119,7 +123,7 @@ export class Join extends LiteElement {
         ...event.detail,
         // TODO separate logic for confirmation message
         // firstLogin: true,
-      })
+      }),
     );
   }
 }
