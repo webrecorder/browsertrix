@@ -282,6 +282,7 @@ def test_update_crawl(
     assert data["description"] == UPDATED_DESC
     assert data["name"] == UPDATED_NAME
     assert data["collectionIds"] == UPDATED_COLLECTION_IDS
+    assert data.get("reviewStatus") is None
 
     # Update reviewStatus and verify
     r = requests.patch(
