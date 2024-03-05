@@ -188,7 +188,7 @@ export class PageQAToolbar extends TailwindElement {
   render() {
     const approved = this.page?.approved === true;
     const rejected = this.page?.approved === false;
-    const commented = Boolean(this.page?.notes.length);
+    const commented = Boolean(this.page?.notes?.length);
 
     return html`
       <fieldset
