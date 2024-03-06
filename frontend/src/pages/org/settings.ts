@@ -232,7 +232,7 @@ export class OrgSettings extends LiteElement {
             </div>
             <div class="mt-0.5 text-xs text-neutral-500">
               ${msg(
-                "Customize your organization's web address for accessing Browsertrix Cloud.",
+                "Customize your organization's web address for accessing Browsertrix.",
               )}
             </div>
           </div>
