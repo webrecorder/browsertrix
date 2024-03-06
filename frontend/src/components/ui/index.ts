@@ -14,6 +14,7 @@ import("./desc-list");
 import("./details");
 import("./dialog");
 import("./file-list");
+import("./inline-input");
 import("./input");
 import("./language-select");
 import("./locale-picker");
