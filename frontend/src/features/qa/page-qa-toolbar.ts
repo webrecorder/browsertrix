@@ -15,7 +15,7 @@ import { type AuthState } from "@/utils/AuthService";
 import type { ArchivedItemPage } from "@/types/crawler";
 
 /**
- * Manage crawl QA page assessment
+ * Manage crawl QA page review
  */
 @localized()
 @customElement("btrix-page-qa-toolbar")
@@ -58,6 +58,7 @@ export class PageQAToolbar extends TailwindElement {
         var(--sl-transition-x-fast) background-color,
         var(--sl-transition-x-fast) border,
         var(--sl-transition-x-fast) border-radius,
+        var(--sl-transition-x-fast) box-shadow,
         var(--sl-transition-x-fast) transform;
     }
 
@@ -95,17 +96,18 @@ export class PageQAToolbar extends TailwindElement {
 
     .rate:not(.active):hover {
       border: var(--btrix-border);
+      box-shadow: var(--sl-shadow-x-small);
       transform: scale(1.1);
     }
 
     .rate:first-of-type:not(.active):hover {
-      border-start-end-radius: var(--btrix-border-radius);
-      border-end-end-radius: var(--btrix-border-radius);
+      border-start-end-radius: var(--sl-border-radius-large);
+      border-end-end-radius: var(--sl-border-radius-large);
     }
 
     .rate:last-of-type:not(.active):hover {
-      border-start-start-radius: var(--btrix-border-radius);
-      border-end-start-radius: var(--btrix-border-radius);
+      border-start-start-radius: var(--sl-border-radius-large);
+      border-end-start-radius: var(--sl-border-radius-large);
     }
 
     .approve:not(.active):hover sl-icon {
@@ -347,7 +349,7 @@ export class PageQAToolbar extends TailwindElement {
       this.page = merge<ArchivedItemPage>(this.page, { approved });
 
       this.notify.toast({
-        message: msg("Updated page assessment."),
+        message: msg("Updated page review."),
         variant: "success",
         icon: "check2-circle",
       });
