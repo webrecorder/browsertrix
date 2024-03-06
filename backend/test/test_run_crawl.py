@@ -282,6 +282,43 @@ def test_update_crawl(
     assert data["description"] == UPDATED_DESC
     assert data["name"] == UPDATED_NAME
     assert data["collectionIds"] == UPDATED_COLLECTION_IDS
+    assert data.get("reviewStatus") is None
+
+    # Update reviewStatus and verify
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        headers=admin_auth_headers,
+        json={
+            "reviewStatus": "good",
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["updated"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["reviewStatus"] == "good"
+
+    # Try to update to invalid reviewStatus
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        headers=admin_auth_headers,
+        json={
+            "reviewStatus": "invalid",
+        },
+    )
+    assert r.status_code == 422
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["reviewStatus"] == "good"
 
     # Verify deleting works as well
     r = requests.patch(

@@ -523,6 +523,15 @@ class CrawlFileOut(BaseModel):
 
 
 # ============================================================================
+class ReviewStatus(str, Enum):
+    """QA review statuses"""
+
+    GOOD = "good"
+    ACCEPTABLE = "acceptable"
+    FAILURE = "failure"
+
+
+# ============================================================================
 class BaseCrawl(BaseMongoModel):
     """Base Crawl object (representing crawls, uploads and manual sessions)"""
 
@@ -553,6 +562,8 @@ class BaseCrawl(BaseMongoModel):
 
     fileSize: int = 0
     fileCount: int = 0
+
+    reviewStatus: Optional[ReviewStatus] = None
 
 
 # ============================================================================
@@ -617,6 +628,8 @@ class CrawlOut(BaseMongoModel):
     crawlerChannel: str = "default"
     image: Optional[str]
 
+    reviewStatus: Optional[ReviewStatus] = None
+
 
 # ============================================================================
 class CrawlOutWithResources(CrawlOut):
@@ -634,6 +647,7 @@ class UpdateCrawl(BaseModel):
     description: Optional[str]
     tags: Optional[List[str]]
     collectionIds: Optional[List[UUID]]
+    reviewStatus: Optional[ReviewStatus]
 
 
 # ============================================================================
