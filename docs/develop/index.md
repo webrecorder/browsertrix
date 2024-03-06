@@ -3,11 +3,11 @@ hide:
   - toc
 ---
 
-# Developing Browsertrix Cloud
+# Developing Browsertrix
 
-Browsertrix Cloud consists of a Python-based backend and TypeScript-based frontend.
+Browsertrix consists of a Python-based backend and TypeScript-based frontend.
 
-To develop Browsertrix Cloud, the system must [first be deployed locally](../deploy/local.md) in a Kubernetes cluster.
+To develop Browsertrix, the system must [first be deployed locally](../deploy/local.md) in a Kubernetes cluster.
 
 The deployment can then be [further customized for local development](./local-dev-setup.md).
 
