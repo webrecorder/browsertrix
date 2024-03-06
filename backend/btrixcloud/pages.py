@@ -1,5 +1,6 @@
 """crawl pages"""
 
+import asyncio
 import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
@@ -43,6 +44,7 @@ class PageOps:
 
     def __init__(self, mdb, crawl_ops, org_ops, storage_ops):
         self.pages = mdb["pages"]
+        self.crawls = mdb["crawls"]
         self.crawl_ops = crawl_ops
         self.org_ops = org_ops
         self.storage_ops = storage_ops
@@ -57,6 +59,7 @@ class PageOps:
                     continue
 
                 await self.add_page_to_db(page_dict, crawl_id, crawl.oid)
+            print(f"Added pages for crawl {crawl_id} to db", flush=True)
         # pylint: disable=broad-exception-caught, raise-missing-from
         except Exception as err:
             traceback.print_exc()
@@ -360,6 +363,20 @@ class PageOps:
 
         return pages, total
 
+    async def re_add_crawl_pages(self, crawl_id: str, oid: UUID):
+        """Delete existing pages for crawl and re-add from WACZs."""
+        await self.delete_crawl_pages(crawl_id, oid)
+        print(f"Deleted pages for crawl {crawl_id}", flush=True)
+        await self.add_crawl_pages_to_db_from_wacz(crawl_id)
+
+    async def re_add_all_crawl_pages(self, oid: UUID):
+        """Re-add pages for all crawls in org"""
+        crawl_ids = await self.crawls.distinct(
+            "_id", {"type": "crawl", "finished": {"$ne": None}}
+        )
+        for crawl_id in crawl_ids:
+            await self.re_add_crawl_pages(crawl_id, oid)
+
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
@@ -370,6 +387,25 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     ops = PageOps(mdb, crawl_ops, org_ops, storage_ops)
 
     org_crawl_dep = org_ops.org_crawl_dep
+
+    @app.post("/orgs/{oid}/crawls/all/pages/reAdd", tags=["pages"])
+    async def re_add_all_crawl_pages(
+        org: Organization = Depends(org_crawl_dep), user: User = Depends(user_dep)
+    ):
+        """Re-add pages for all crawls in org (superuser only)"""
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        asyncio.create_task(ops.re_add_all_crawl_pages(org.id))
+        return {"started": True}
+
+    @app.post("/orgs/{oid}/crawls/{crawl_id}/pages/reAdd", tags=["pages"])
+    async def re_add_crawl_pages(
+        crawl_id: str, org: Organization = Depends(org_crawl_dep)
+    ):
+        """Re-add pages for crawl"""
+        asyncio.create_task(ops.re_add_crawl_pages(crawl_id, org.id))
+        return {"started": True}
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}",
