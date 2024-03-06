@@ -49,6 +49,7 @@ export class CrawlPendingExclusions extends LiteElement {
           <div>${msg("Pending Exclusions")} ${this.renderBadge()}</div>
           ${this.total && this.total > this.pageSize
             ? html`<btrix-pagination
+                page=${this.page}
                 size=${this.pageSize}
                 totalCount=${this.total}
                 compact
