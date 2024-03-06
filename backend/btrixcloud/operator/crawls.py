@@ -232,7 +232,9 @@ class CrawlOperator(BaseOperator):
 
         else:
             status.scale = crawl.scale
-            status.lastUpdatedTime = to_k8s_date(dt_now())
+            now = dt_now()
+            await self.crawl_ops.inc_crawl_exec_time(crawl_id, 0, now)
+            status.lastUpdatedTime = to_k8s_date(now)
 
         children = self._load_redis(params, status, data.children)
 
@@ -828,11 +830,14 @@ class CrawlOperator(BaseOperator):
         """inc exec time tracking"""
         now = dt_now()
 
-        if not status.lastUpdatedTime:
+        update_start_time = await self.crawl_ops.get_crawl_exec_last_update_time(
+            crawl_id
+        )
+
+        if not update_start_time:
+            await self.crawl_ops.inc_crawl_exec_time(crawl_id, 0, now)
             status.lastUpdatedTime = to_k8s_date(now)
             return
-
-        update_start_time = from_k8s_date(status.lastUpdatedTime)
 
         reason = None
         update_duration = (now - update_start_time).total_seconds()
@@ -907,16 +912,6 @@ class CrawlOperator(BaseOperator):
                 max_duration = max(duration, max_duration)
 
         if exec_time:
-            if not await self.crawl_ops.inc_crawl_exec_time(
-                crawl_id, exec_time, status.lastUpdatedTime
-            ):
-                # if lastUpdatedTime is same as previous, something is wrong, don't update!
-                print(
-                    "Already updated for lastUpdatedTime, skipping execTime update!",
-                    flush=True,
-                )
-                return
-
             await self.org_ops.inc_org_time_stats(oid, exec_time, True)
             status.crawlExecTime += exec_time
             status.elapsedCrawlTime += max_duration
@@ -926,6 +921,7 @@ class CrawlOperator(BaseOperator):
             flush=True,
         )
 
+        await self.crawl_ops.inc_crawl_exec_time(crawl_id, exec_time, now)
         status.lastUpdatedTime = to_k8s_date(now)
 
     def should_mark_waiting(self, state, started):
