@@ -49,8 +49,9 @@ class PageOps:
         self.org_ops = org_ops
         self.storage_ops = storage_ops
 
-    async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str):
+    async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str, batch_size=100):
         """Add pages to database from WACZ files"""
+        pages_buffer: List[Page] = []
         try:
             crawl = await self.crawl_ops.get_crawl(crawl_id, None)
             stream = await self.storage_ops.sync_stream_wacz_pages(crawl.resources)
@@ -58,38 +59,67 @@ class PageOps:
                 if not page_dict.get("url"):
                     continue
 
-                await self.add_page_to_db(page_dict, crawl_id, crawl.oid)
+                if len(pages_buffer) > batch_size:
+                    await self._add_pages_to_db(pages_buffer)
+
+                pages_buffer.append(
+                    self._get_page_from_dict(page_dict, crawl_id, crawl.oid)
+                )
+
+            # Add any remaining pages in buffer to db
+            if pages_buffer:
+                await self._add_pages_to_db(pages_buffer)
+
             print(f"Added pages for crawl {crawl_id} to db", flush=True)
         # pylint: disable=broad-exception-caught, raise-missing-from
         except Exception as err:
             traceback.print_exc()
             print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
 
-    async def add_page_to_db(self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID):
-        """Add page to database"""
+    def _get_page_from_dict(self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID):
+        """Return Page object from dict"""
         page_id = page_dict.get("id")
         if not page_id:
             print(f'Page {page_dict.get("url")} has no id - assigning UUID', flush=True)
             page_id = uuid4()
 
+        status = page_dict.get("status")
+        if not status and page_dict.get("loadState"):
+            status = 200
+
+        return Page(
+            id=page_id,
+            oid=oid,
+            crawl_id=crawl_id,
+            url=page_dict.get("url"),
+            title=page_dict.get("title"),
+            load_state=page_dict.get("loadState"),
+            status=status,
+            timestamp=(
+                from_k8s_date(page_dict.get("ts"))
+                if page_dict.get("ts")
+                else datetime.now()
+            ),
+        )
+
+    async def _add_pages_to_db(self, pages: List[Page]):
+        """Add batch of pages to db in one insert"""
+        result = await self.pages.insert_many(
+            [
+                page.to_dict(
+                    exclude_unset=True, exclude_none=True, exclude_defaults=True
+                )
+                for page in pages
+            ]
+        )
+        if not len(result.inserted_ids):
+            raise Exception("No pages inserted")
+
+    async def add_page_to_db(self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID):
+        """Add page to database"""
+        page = self._get_page_from_dict(page_dict, crawl_id, oid)
+
         try:
-            status = page_dict.get("status")
-            if not status and page_dict.get("loadState"):
-                status = 200
-            page = Page(
-                id=page_id,
-                oid=oid,
-                crawl_id=crawl_id,
-                url=page_dict.get("url"),
-                title=page_dict.get("title"),
-                load_state=page_dict.get("loadState"),
-                status=status,
-                timestamp=(
-                    from_k8s_date(page_dict.get("ts"))
-                    if page_dict.get("ts")
-                    else datetime.now()
-                ),
-            )
             await self.pages.insert_one(
                 page.to_dict(
                     exclude_unset=True, exclude_none=True, exclude_defaults=True
