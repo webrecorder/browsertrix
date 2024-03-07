@@ -112,7 +112,8 @@ class PageOps:
                 for page in pages
             ]
         )
-        if not len(result.inserted_ids):
+        if not result.inserted_ids:
+            # pylint: disable=broad-exception-raised
             raise Exception("No pages inserted")
 
     async def add_page_to_db(self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID):
@@ -130,7 +131,7 @@ class PageOps:
         # pylint: disable=broad-except
         except Exception as err:
             print(
-                f"Error adding page {page_id} from crawl {crawl_id} to db: {err}",
+                f"Error adding page {page.id} from crawl {crawl_id} to db: {err}",
                 flush=True,
             )
 
