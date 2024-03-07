@@ -1,7 +1,7 @@
 # Hosted Config (eg. for microk8s)
 # --------------------------------
 #
-# This config can be used to run Browsertrix Cloud hosted on a remote server.
+# This config can be used to run Browsertrix hosted on a remote server.
 # This requires setting the hostname and signing hostname.
 #
 #
@@ -54,7 +54,7 @@ signer:
 #mongo_auth:
   # username: root
   # password: PASSWORD!
-  
+
 
 # optionally, set these to custom values
 

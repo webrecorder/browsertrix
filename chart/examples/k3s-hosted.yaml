@@ -1,7 +1,7 @@
 # Hosted Config (eg. for k3s)
 # --------------------------------
 #
-# This config can be used to run Browsertrix Cloud hosted on a remote server.
+# This config can be used to run Browsertrix hosted on a remote server.
 # This requires setting the hostname and signing hostname.
 #
 #
@@ -14,14 +14,14 @@
 #
 # Make sure to disable traefik on your k3s cluster by adding `--no-deploy traefik` to the systemd unit that starts k3s _before_ starting your server. One way to check that traefik is not running your cluster is with `kubectl get deployments -n kube-system` and see if traefik shows up in the output
 #
-# Once traefik has been disabled, you must install `nginx-ingress` which can be installed by: 
+# Once traefik has been disabled, you must install `nginx-ingress` which can be installed by:
 # helm upgrade --install nginx ingress-nginx/ingress-nginx -n ingress-nginx --create-namespace
 #
-# You'll also need to install cert-manager. Browsertrix cloud recommends installing cert-manager through jetpack with the following command: 
+# You'll also need to install cert-manager. Browsertrix cloud recommends installing cert-manager through jetpack with the following command:
 #
 # helm repo add jetstack https://charts.jetstack.io
 # helm repo update
-# 
+#
 # helm repo update jetstack
 # helm upgrade --install \
 #   cert-manager jetstack/cert-manager \
@@ -69,7 +69,7 @@ signer:
 #mongo_auth:
   # username: root
   # password: PASSWORD!
-  
+
 
 # optionally, set these to custom values
 
