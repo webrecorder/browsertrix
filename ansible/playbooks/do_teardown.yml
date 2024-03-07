@@ -1,5 +1,5 @@
 ---
-- name: teardown browsertrix on digital ocean
+- name: teardown browsertrix cloud on digital ocean
   hosts: localhost
   connection: local
   gather_facts: false
@@ -132,7 +132,7 @@
       register: domain_info
       changed_when: true
 
-    - name: d_ocean | dns | remove the dns for browsertrix
+    - name: d_ocean | dns | remove the dns for browsertrix cloud
       ansible.builtin.command: "doctl compute domain records rm {{ domain }} {{ item }} -f"
       loop: "{{ domain_info.stdout | from_json | json_query(name_query) }}"
       vars:

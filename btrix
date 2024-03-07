@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# ./btrix: Browsertrix dev environment utility
+# ./btrix: Browsertrix Cloud dev environment utility
 #
 # Test commands require installing pytest first, e.g.:
 # python3 -m pip install pytest
@@ -34,7 +34,8 @@
 # $ ./btrix nightly
 # Run nightly backend tests
 
-bootstrap() {
+
+bootstrap(){
     echo "Building backend..."
     ./scripts/build-backend.sh
 
@@ -45,7 +46,7 @@ bootstrap() {
     helm upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
 }
 
-bootstrapMicrok8s() {
+bootstrapMicrok8s(){
     echo "Building backend..."
     ./scripts/build-backend.sh
 
@@ -56,17 +57,17 @@ bootstrapMicrok8s() {
     microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/local.yaml btrix ./chart
 }
 
-waitUntilReady() {
+waitUntilReady(){
     echo "Waiting until ready..."
     kubectl wait --for=condition=ready pod --all --timeout=300s
 }
 
-waitUntilReadyMicrok8s() {
+waitUntilReadyMicrok8s(){
     echo "Waiting until ready..."
     microk8s kubectl wait --for=condition=ready pod --all --timeout=300s
 }
 
-reset() {
+reset(){
     echo "Stopping all crawls & profile browsers"
     kubectl delete cjs -n crawlers --all
     kubectl delete pjs -n crawlers --all
@@ -80,7 +81,7 @@ reset() {
     kubectl delete configmap -n crawlers -l btrix.crawlconfig
 }
 
-resetMicrok8s() {
+resetMicrok8s(){
     echo "Stopping all crawls & profile browsers"
     microk8s kubectl delete cjs -n crawlers --all
     microk8s kubectl delete pjs -n crawlers --all
@@ -133,24 +134,22 @@ if [[ $1 = "bootstrap" ]]; then
 
     echo "Current context: $CONTEXT"
     echo "Are you sure you want to update this context?"
-    if [[ "$(
-        read -e -p '[y/N] > '
-        echo $REPLY
-    )" == [Yy]* ]]; then
+    if [[ "$(read -e -p '[y/N] > '; echo $REPLY)" == [Yy]* ]] ; then
         echo Continuing
     else
         echo Stopping
         exit 1
     fi
 
-    if [[ $2 = "$MICROK8S" || $3 = "$MICROK8S" ]]; then
+    if [[ $2 = "$MICROK8S" || $3 = "$MICROK8S" ]] ; then
         bootstrapMicrok8s
     else
         bootstrap
     fi
 
+    
     if [[ $2 = "$WAIT" || $3 = "$WAIT" ]]; then
-        if [[ $2 = "$MICROK8S" || $3 = "$MICROK8S" ]]; then
+        if [[ $2 = "$MICROK8S" || $3 = "$MICROK8S" ]] ; then
             waitUntilReadyMicrok8s
         else
             waitUntilReady
@@ -160,20 +159,17 @@ fi
 
 # reset: uninstall, delete data, then bootstrap
 if [[ $1 = "reset" ]]; then
-
+    
     echo "Current context: $CONTEXT"
     echo "Resetting k8s cluster will delete the database. All running crawls will first be canceled. Are you sure you want to do this?"
-    if [[ "$(
-        read -e -p '[y/N] > '
-        echo $REPLY
-    )" == [Yy]* ]]; then
+    if [[ "$(read -e -p '[y/N] > '; echo $REPLY)" == [Yy]* ]] ; then
         echo Continuing
     else
         echo Stopping
         exit 1
     fi
 
-    if [[ $2 = "$MICROK8S" || $3 = "$MICROK8S" ]]; then
+    if [[ $2 = "$MICROK8S" || $3 = "$MICROK8S" ]] ; then
         resetMicrok8s
         bootstrapMicrok8s
     else
@@ -181,8 +177,8 @@ if [[ $1 = "reset" ]]; then
         bootstrap
     fi
 
-    if [[ $2 = "$WAIT" || $3 = "$WAIT" ]]; then
-        if [[ $2 = "$MICROK8S" || $3 = "$MICROK8S" ]]; then
+    if [[ $2 = "$WAIT" || $3 = "$WAIT" ]] ; then
+        if [[ $2 = "$MICROK8S" || $3 = "$MICROK8S" ]] ; then
             waitUntilReadyMicrok8s
         else
             waitUntilReady
@@ -200,9 +196,9 @@ if [[ $1 = "nightly" ]]; then
     runNightlyTests
 fi
 
-# down: stop and uninstall browsertrix
+# down: stop and uninstall browsertrix cloud
 if [[ $1 = "down" ]]; then
-    if [[ $2 = "$MICROK8S" ]]; then
+    if [[ $2 = "$MICROK8S" ]] ; then
         resetMicrok8s
     else
         reset

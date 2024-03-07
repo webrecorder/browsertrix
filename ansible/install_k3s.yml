@@ -21,7 +21,7 @@
 #   roles:
 #     - role: k3s/node
 
-# Ansible controller to install browsertrix
+# Ansible controller to install browsertrix cloud
 - hosts: 127.0.0.1
   connection: local
   become: yes # Can be removed if not using the btrix/prereq role

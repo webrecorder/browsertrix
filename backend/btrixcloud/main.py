@@ -48,7 +48,7 @@ db_inited = {"inited": False}
 # ============================================================================
 # pylint: disable=too-many-locals, duplicate-code
 def main():
-    """init browsertrix api"""
+    """init browsertrix cloud api"""
 
     app = APIRouter()
 
@@ -82,7 +82,7 @@ def main():
     # pylint: disable=import-outside-toplevel
     if not os.environ.get("KUBERNETES_SERVICE_HOST"):
         print(
-            "Sorry, the Browsertrix Backend must be run inside a Kubernetes environment.\
+            "Sorry, the Browsertrix Cloud Backend must be run inside a Kubernetes environment.\
              Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
         )
         sys.exit(1)

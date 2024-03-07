@@ -198,7 +198,7 @@
   ansible.builtin.set_fact:
     lb_ip: "{{ loadbalancer_ip_result.stdout_lines[1] }}"
 
-- name: d_ocean | dns | register the dns for browsertrix
+- name: d_ocean | dns | register the dns for browsertrix cloud
   ansible.builtin.command: >-
       doctl compute domain records create --record-type A --record-name "{{ subdomain if subdomain else '@' }}" --record-data "{{ lb_ip }}" "{{ domain }}"
 
