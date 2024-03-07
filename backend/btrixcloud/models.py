@@ -670,7 +670,7 @@ class CrawlScale(BaseModel):
 
 
 # ============================================================================
-class QACrawl(BaseModel):
+class QARun(BaseModel):
     """Subdocument to track QA runs for given crawl"""
 
     id: str
@@ -691,18 +691,10 @@ class QACrawl(BaseModel):
 
 
 # ============================================================================
-class QACrawlWithResources(QACrawl):
+class QARunWithResources(QARun):
     """QA crawl output model including resources"""
 
     resources: Optional[List[CrawlFileOut]] = []
-
-
-# ============================================================================
-class QACrawlIn(BaseModel):
-    """Input model for QA crawls"""
-
-    crawlerChannel: str = "default"
-    profileFilename: Optional[str] = None
 
 
 # ============================================================================
@@ -726,7 +718,7 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     image: Optional[str]
 
-    qa: Optional[List[QACrawl]] = []
+    qa: Optional[Dict[str, QARun]] = {}
 
 
 # ============================================================================

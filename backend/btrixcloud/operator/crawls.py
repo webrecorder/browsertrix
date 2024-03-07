@@ -171,6 +171,7 @@ class CrawlOperator(BaseOperator):
             timeout=spec.get("timeout") or 0,
             max_crawl_size=int(spec.get("maxCrawlSize") or 0),
             scheduled=spec.get("manual") != "1",
+            qa_source_crawl_id=spec.get("qsSourceCrawlId")
         )
 
         # shouldn't get here, crawl should already be finalizing when canceled
@@ -241,7 +242,8 @@ class CrawlOperator(BaseOperator):
 
         params["storage_path"] = storage_path
         params["storage_secret"] = storage_secret
-        params["profile_filename"] = configmap["PROFILE_FILENAME"]
+        if not spec.qa_source_crawl_id:
+            params["profile_filename"] = configmap["PROFILE_FILENAME"]
 
         # only resolve if not already set
         # not automatically updating image for existing crawls
@@ -306,7 +308,12 @@ class CrawlOperator(BaseOperator):
         if params.get("do_restart"):
             print(f"Restart {name}")
 
-        params["priorityClassName"] = f"crawl-instance-{i}"
+        if spec.qa_source_crawl_id:
+            params["qa_source"] = self.get_crawl_replay_url()
+
+            params["priorityClassName"] = f"qa-crawl-instance-{i}"
+        else:
+            params["priorityClassName"] = f"crawl-instance-{i}"
 
         return self.load_from_yaml("crawler.yaml", params)
 

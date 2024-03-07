@@ -54,7 +54,6 @@ spec:
     - name: crawl-config
       configMap:
         name: crawl-config-{{ cid }}
-
     - name: crawl-data
       persistentVolumeClaim:
         claimName: {{ name }}
@@ -102,6 +101,7 @@ spec:
       image: {{ crawler_image }}
       imagePullPolicy: {{ crawler_image_pull_policy }}
       command:
+      {% if not qa_source %}
         - crawl
         - --config
         - /tmp/crawl-config.json
@@ -112,11 +112,18 @@ spec:
         - "@{{ profile_filename }}"
       {%- endif %}
 
+      {% else %}
+        - qa
+        - --qaSource
+        - {{ qa_source }}
+      {% endif %}
       volumeMounts:
+      {% if not qa_source %}
         - name: crawl-config
           mountPath: /tmp/crawl-config.json
           subPath: crawl-config.json
           readOnly: True
+      {% endif %}
 
         - name: crawl-data
           mountPath: /crawls

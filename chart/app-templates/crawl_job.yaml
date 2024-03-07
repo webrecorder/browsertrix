@@ -1,10 +1,10 @@
 apiVersion: btrix.cloud/v1
 kind: CrawlJob
 metadata:
-  name: crawljob-{{ id }}
+  name: {{ "qa-" if is_qa else "" }}crawljob-{{ id }}
   labels:
     crawl: "{{ id }}"
-    role: "job"
+    role: {{ "qa-job" if is_qa else "job" }}
     btrix.org: "{{ oid }}"
     btrix.user: "{{ userid }}"
     btrix.storage: "{{ storage_name }}"
@@ -19,8 +19,10 @@ spec:
   cid: "{{ cid }}"
   oid: "{{ oid }}"
   scale: {{ scale }}
-  maxCrawlSize: {{ max_crawl_size }}
-  timeout: {{ timeout }}
+
+  maxCrawlSize: {{ max_crawl_size if not is_qa else 0 }}
+  timeout: {{ timeout if not is_qa else 0 }}
+
   manual: {{ manual }}
   crawlerChannel: "{{ crawler_channel }}"
   ttlSecondsAfterFinished: 30
