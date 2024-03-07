@@ -171,7 +171,7 @@ class CrawlOperator(BaseOperator):
             timeout=spec.get("timeout") or 0,
             max_crawl_size=int(spec.get("maxCrawlSize") or 0),
             scheduled=spec.get("manual") != "1",
-            qa_source_crawl_id=spec.get("qsSourceCrawlId")
+            qa_source_crawl_id=spec.get("qaSourceCrawlId"),
         )
 
         # shouldn't get here, crawl should already be finalizing when canceled
@@ -269,6 +269,9 @@ class CrawlOperator(BaseOperator):
         else:
             params["force_restart"] = False
 
+        if spec.qa_source_crawl_id:
+            params["qa_source"] = ""  # self.get_crawl_replay_url()
+
         for i in range(0, status.scale):
             children.extend(self._load_crawler(params, i, status, data.children))
 
@@ -308,9 +311,7 @@ class CrawlOperator(BaseOperator):
         if params.get("do_restart"):
             print(f"Restart {name}")
 
-        if spec.qa_source_crawl_id:
-            params["qa_source"] = self.get_crawl_replay_url()
-
+        if params.get("qa_source"):
             params["priorityClassName"] = f"qa-crawl-instance-{i}"
         else:
             params["priorityClassName"] = f"crawl-instance-{i}"

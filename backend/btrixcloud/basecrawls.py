@@ -124,12 +124,14 @@ class BaseCrawlOps:
 
         return res
 
-    async def _files_to_resources(self, files, org, crawlid, qa: bool = False):
+    async def _files_to_resources(
+        self, files, org, crawlid, qa_run_id: Optional[str] = None
+    ):
         if not files:
             return []
 
         crawl_files = [CrawlFile(**data) for data in files]
-        return await self._resolve_signed_urls(crawl_files, org, qa, crawlid)
+        return await self._resolve_signed_urls(crawl_files, org, crawlid, qa_run_id)
 
     async def get_crawl(
         self,
@@ -435,8 +437,8 @@ class BaseCrawlOps:
         self,
         files: List[CrawlFile],
         org: Organization,
-        qa: bool = False,
         crawl_id: Optional[str] = None,
+        qa_run_id: Optional[str] = None,
     ):
         if not files:
             print("no files")
@@ -457,8 +459,8 @@ class BaseCrawlOps:
                 )
 
                 prefix = "files"
-                if qa:
-                    prefix = f"qa.{prefix}"
+                if qa_run_id:
+                    prefix = f"qa.{qa_run_id}.{prefix}"
 
                 await self.crawls.find_one_and_update(
                     {f"{prefix}.filename": file_.filename},

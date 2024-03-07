@@ -4,7 +4,6 @@ import os
 import asyncio
 import secrets
 import json
-from uuid import UUID
 
 from typing import Optional, Dict
 from datetime import timedelta
@@ -178,23 +177,35 @@ class CrawlManager(K8sAPI):
             warc_prefix=warc_prefix,
         )
 
-    async def create_crawl_qa_job(
+    async def create_qa_crawl_job(
         self,
-        oid: UUID,
-        crawl_id: str,
+        crawlconfig: CrawlConfig,
         storage: StorageRef,
-        qa_source: str,
         userid: str,
-        crawler_image: str,
-        profile_filename: str = None,
+        qa_source: str,
     ) -> str:
-        """create new crawl qa job"""
-        storage_secret = storage.get_storage_secret_name(str(oid))
+        """create new QA Run crawl job with qa source crawl id"""
+        cid = str(crawlconfig.id)
+
+        storage_secret = storage.get_storage_secret_name(str(crawlconfig.oid))
 
         await self.has_storage_secret(storage_secret)
 
-        return await self.new_crawl_qa_job(
-            userid, crawl_id, oid, storage, qa_source, crawler_image, profile_filename
+        ts_now = dt_now().strftime("%Y%m%d%H%M%S")
+        crawl_id = f"qa-{ts_now}-{cid[:12]}"
+
+        return await self.new_crawl_job(
+            cid,
+            userid,
+            crawlconfig.oid,
+            storage,
+            crawlconfig.crawlerChannel,
+            1,
+            0,
+            0,
+            warc_prefix="qa",
+            crawl_id=crawl_id,
+            qa_source=qa_source,
         )
 
     async def update_crawl_config(
@@ -313,16 +324,14 @@ class CrawlManager(K8sAPI):
         """Set the crawl scale (job parallelism) on the specified job"""
         return await self._patch_job(crawl_id, {"scale": scale})
 
-    async def shutdown_crawl(
-        self, crawl_id: str, graceful=True, qa_crawl=False
-    ) -> dict:
+    async def shutdown_crawl(self, crawl_id: str, graceful=True) -> dict:
         """Request a crawl cancelation or stop by calling an API
         on the job pod/container, returning the result"""
         if graceful:
             patch = {"stopping": True}
-            return await self._patch_job(crawl_id, patch, qa_crawl=qa_crawl)
+            return await self._patch_job(crawl_id, patch)
 
-        return await self.delete_crawl_job(crawl_id, qa_crawl=qa_crawl)
+        return await self.delete_crawl_job(crawl_id)
 
     async def delete_crawl_configs_for_org(self, org: str) -> None:
         """Delete all crawl configs for given org"""

@@ -27,14 +27,13 @@ from .models import (
     Crawl,
     CrawlOut,
     CrawlOutWithResources,
+    QARun,
+    QARunWithResources,
     Organization,
     User,
     PaginatedResponse,
     RUNNING_AND_STARTING_STATES,
     ALL_CRAWL_STATES,
-    QACrawl,
-    QACrawlIn,
-    QACrawlWithResources,
 )
 
 
@@ -557,33 +556,107 @@ class CrawlOps(BaseCrawlOps):
 
         return crawls_data
 
-    async def get_qa_crawls(
-        self, crawl_id: str, org: Optional[Organization] = None
-    ) -> List[QACrawl]:
-        """Return list of QA crawls"""
+    async def start_crawl_qa_run(self, crawl_id: str, org: Organization, user: User):
+        """Start crawl QA run"""
+
         crawl = await self.get_crawl(crawl_id, org, "crawl")
-        return crawl.qa or []
 
-    async def get_qa_crawl(
-        self, crawl_id: str, qa_crawl_id: str, org: Optional[Organization] = None
-    ) -> QACrawlWithResources:
-        """Fetch QA Crawl with resources for replay.json"""
-        crawl_raw = await self.get_crawl_raw(crawl_id, org, "crawl")
+        if crawl.qa_active:
+            raise HTTPException(status_code=400, detail="qa_already_running")
 
-        qa_dict = None
-        for qa_run in crawl_raw.get("qa", []):
-            if qa_run.get("id") == qa_crawl_id:
-                qa_dict = qa_run
+        crawlconfig = await self.crawl_configs.prepare_for_run_crawl(crawl.cid, org)
 
-        if not qa_dict:
+        try:
+            qa_run_id = await self.crawl_manager.create_qa_crawl_job(
+                crawlconfig,
+                org.storage,
+                userid=str(user.id),
+                qa_source=crawl_id,
+            )
+
+            image = self.crawl_configs.get_channel_crawler_image(
+                crawlconfig.crawlerChannel
+            )
+
+            qa_run = QARun(
+                id=qa_run_id,
+                started=datetime.now(),
+                userid=user.id,
+                userName=user.name,
+                state="starting",
+                image=image,
+            )
+
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id},
+                {
+                    "$set": {
+                        "qa": {qa_run_id: qa_run.dict()},
+                        "qa_active": qa_run_id,
+                    }
+                },
+            )
+
+            return qa_run_id
+
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
+
+    async def stop_crawl_qa_run(self, crawl_id: str, org: Organization):
+        """Stop crawl QA run"""
+        crawl = await self.get_crawl(crawl_id, org, "crawl")
+
+        if not crawl.active_qa:
+            raise HTTPException(status_code=400, detail="invalid_qa_run_id")
+
+        try:
+            result = await self.crawl_manager.shutdown_crawl(
+                crawl.active_qa, graceful=True
+            )
+
+            if result.get("error") == "Not Found":
+                # treat as success, qa crawl no longer exists, so mark as no qa
+                result = {"success": True}
+
+            if result.get("success"):
+                await self.crawls.find_one_and_update(
+                    {"_id": crawl_id, "type": "crawl", "oid": org.id},
+                    {"$set": {"active_qa": None}},
+                )
+
+            return result
+
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            # if reached here, probably crawl doesn't exist anymore
+            raise HTTPException(
+                status_code=404, detail=f"crawl_not_found, (details: {exc})"
+            )
+
+    async def get_qa_runs(
+        self, crawl_id: str, org: Optional[Organization] = None
+    ) -> List[QARun]:
+        """Return list of QA runs"""
+        crawl = await self.get_crawl(crawl_id, org, "crawl")
+        return list(crawl.qa.values()) or []
+
+    async def get_qa_run_for_replay(
+        self, crawl_id: str, qa_run_id: str, org: Optional[Organization] = None
+    ) -> QARun:
+        """Fetch QA runs with resources for replay.json"""
+        crawl = await self.get_crawl(crawl_id, org, "crawl")
+
+        qa_run = crawl.qa.get(qa_run_id)
+        if not qa_run:
             raise HTTPException(status_code=404, detail="crawl_qa_not_found")
 
-        qa_dict["resources"] = await self._files_to_resources(
-            qa_dict.get("files"), org, None, qa=True
+        resources = await self._files_to_resources(
+            qa_run.files, org, crawlid=crawl_id, qa_run_id=qa_run_id
         )
-        qa_dict.pop("files", None)
+        qa_run.files = None
 
-        return QACrawlWithResources(**qa_dict)
+        return QARunWithResources(resources=resources, **qa_run.dict())
 
 
 # ============================================================================
@@ -770,53 +843,53 @@ def init_crawls_api(app, user_dep, *args):
     async def get_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl(crawl_id, org, "crawl")
 
+    # QA APIs
+    # ---------------------
+
     @app.get(
-        "/orgs/all/crawls/{crawl_id}/qa/{qa_crawl_id}/replay.json",
+        "/orgs/all/crawls/{crawl_id}/qa/{qa_run_id}/replay.json",
         tags=["crawls"],
-        response_model=QACrawlWithResources,
+        response_model=QARunWithResources,
     )
-    async def get_qa_crawl_admin(crawl_id, qa_crawl_id, user: User = Depends(user_dep)):
+    async def get_qa_crawl_admin(crawl_id, qa_run_id, user: User = Depends(user_dep)):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return await ops.get_qa_crawl(crawl_id, qa_crawl_id)
+        return await ops.get_qa_run_for_replay(crawl_id, qa_run_id)
 
     @app.get(
-        "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_crawl_id}/replay.json",
+        "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/replay.json",
         tags=["crawls"],
-        response_model=QACrawlWithResources,
+        response_model=QARunWithResources,
     )
     async def get_qa_crawl(
-        crawl_id, qa_crawl_id, org: Organization = Depends(org_viewer_dep)
+        crawl_id, qa_run_id, org: Organization = Depends(org_viewer_dep)
     ):
-        return await ops.get_qa_crawl(crawl_id, qa_crawl_id, org)
+        return await ops.get_qa_run_for_replay(crawl_id, qa_run_id, org)
 
     @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/start", tags=["crawls", "qa"])
-    async def start_crawl_qa_job(
-        qa_crawl_in: QACrawlIn,
+    async def start_crawl_qa_run(
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        qa_crawl_id = await ops.start_crawl_qa_job(qa_crawl_in, crawl_id, org, user)
-        return {"started": qa_crawl_id}
+        qa_run_id = await ops.start_crawl_qa_run(crawl_id, org, user)
+        return {"started": qa_run_id}
 
-    @app.post(
-        "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_crawl_id}/stop", tags=["crawls", "qa"]
-    )
-    async def stop_crawl_qa_job(
-        crawl_id, qa_crawl_id, org: Organization = Depends(org_crawl_dep)
+    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/stop", tags=["crawls", "qa"])
+    async def stop_crawl_qa_run(
+        crawl_id: str, org: Organization = Depends(org_crawl_dep)
     ):
         # pylint: disable=unused-argument
-        return await ops.stop_crawl_qa_job(qa_crawl_id)
+        return await ops.stop_crawl_qa_run(crawl_id, org)
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa",
         tags=["crawls"],
-        response_model=List[QACrawl],
+        response_model=List[QARun],
     )
-    async def get_qa_crawls(crawl_id, org: Organization = Depends(org_viewer_dep)):
-        return await ops.get_qa_crawls(crawl_id, org)
+    async def get_qa_runs(crawl_id, org: Organization = Depends(org_viewer_dep)):
+        return await ops.get_qa_runs(crawl_id, org)
 
     @app.get(
         "/orgs/all/crawls/{crawl_id}",

@@ -718,6 +718,7 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     image: Optional[str]
 
+    active_qa: Optional[str]
     qa: Optional[Dict[str, QARun]] = {}
 
 

@@ -87,6 +87,7 @@ class K8sAPI:
         manual=True,
         crawl_id=None,
         warc_prefix="",
+        qa_source="",
     ):
         """load job template from yaml"""
         if not crawl_id:
@@ -106,6 +107,7 @@ class K8sAPI:
             "manual": "1" if manual else "0",
             "crawler_channel": crawler_channel,
             "warc_prefix": warc_prefix,
+            "qa_source": qa_source,
         }
 
         data = self.templates.env.get_template("crawl_job.yaml").render(params)
@@ -119,38 +121,6 @@ class K8sAPI:
         await self.create_from_yaml(data)
 
         return crawl_id
-
-    # pylint: disable=too-many-arguments, too-many-locals
-    def new_crawl_qa_job_yaml(
-        self, userid, crawl_id, oid, storage, qa_source, crawler_image, profile_filename
-    ):
-        """load job template from yaml"""
-
-        ts_now = dt_now().strftime("%Y%m%d%H%M%S")
-        qa_crawl_id = f"qa-{crawl_id}-{ts_now}"
-
-        params = {
-            "id": str(qa_crawl_id),
-            "crawl_id": crawl_id,
-            "oid": oid,
-            "userid": userid,
-            "storage_name": str(storage),
-            "crawler_image": crawler_image,
-            "profile_filename": profile_filename,
-            "qa_source": qa_source,
-        }
-
-        data = self.templates.env.get_template("crawl_qa_job.yaml").render(params)
-        return qa_crawl_id, data
-
-    async def new_crawl_qa_job(self, *args, **kwargs) -> str:
-        """load and init qa crawl job via k8s api"""
-        qa_crawl_id, data = self.new_crawl_qa_job_yaml(*args, **kwargs)
-
-        # create job directly
-        await self.create_from_yaml(data)
-
-        return qa_crawl_id
 
     async def create_from_yaml(self, doc, namespace=None):
         """init k8s objects from yaml"""
