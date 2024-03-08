@@ -11,7 +11,7 @@ from .models import (
     Page,
     PageOut,
     PageReviewUpdate,
-    PageQAUpdate,
+    PageQACompare,
     Organization,
     PaginatedResponse,
     User,
@@ -108,6 +108,17 @@ class PageOps:
                 f"Error adding page {page_id} from crawl {crawl_id} to db: {err}",
                 flush=True,
             )
+            return
+
+        # qa data
+        if qa_source_crawl_id:
+            compare_dict = page_dict.get("compare")
+            if compare_dict is None:
+                print("QA Run, but compare data missing!")
+                return
+
+            compare = PageQACompare(**compare_dict)
+            await self.add_qa_compare(page_id, oid, crawl_or_qa_run_id, compare)
 
     async def delete_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
         """Delete crawl pages from db"""
@@ -149,38 +160,23 @@ class PageOps:
         page_raw = await self.get_page_raw(page_id, oid, crawl_id)
         return Page.from_dict(page_raw)
 
-    async def update_page_qa(
-        self,
-        page_id: UUID,
-        oid: UUID,
-        qa_run_id: str,
-        update: PageQAUpdate,
+    async def add_qa_compare(
+        self, page_id: UUID, oid: UUID, qa_run_id: str, compare: PageQACompare
     ) -> Dict[str, bool]:
         """Update page heuristics and mime/type from QA run"""
-        query = update.dict(exclude_unset=True)
 
-        if len(query) == 0:
-            raise HTTPException(status_code=400, detail="no_update_data")
-
-        keyed_fields = ("screenshotMatch", "textMatch", "resourceCounts")
-        for field in keyed_fields:
-            score = query.get(field)
-            if score:
-                query[f"{field}.{qa_run_id}"] = score
-                query.pop(field, None)
-
-        query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        # modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
         result = await self.pages.find_one_and_update(
             {"_id": page_id, "oid": oid},
-            {"$set": query},
+            {"$set": {f"qa.{qa_run_id}", compare.dict()}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
 
         if not result:
             raise HTTPException(status_code=404, detail="page_not_found")
 
-        return {"updated": True}
+        return True
 
     async def update_page_approval(
         self,

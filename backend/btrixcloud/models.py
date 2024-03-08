@@ -1450,6 +1450,15 @@ class PageNote(BaseModel):
 
 
 # ============================================================================
+class PageQACompare(BaseModel):
+    """Model for updating pages from QA run"""
+
+    screenshotMatch: Optional[int] = None
+    textMatch: Optional[int] = None
+    resourceCounts: Optional[Dict[str, Dict[str, int]]]
+
+
+# ============================================================================
 class Page(BaseMongoModel):
     """Model for crawl pages"""
 
@@ -1462,9 +1471,7 @@ class Page(BaseMongoModel):
     status: Optional[int] = None
 
     # automated heuristics, keyed by QA run id
-    screenshotMatch: Optional[Dict[str, float]] = {}
-    textMatch: Optional[Dict[str, float]] = {}
-    resourceCounts: Optional[Dict[str, Dict[str, int]]] = {}
+    qa: Optional[Dict[str, PageQACompare]] = {}
 
     # manual review
     userid: Optional[UUID] = None
@@ -1478,12 +1485,3 @@ class PageOut(Page):
     """Model for pages output"""
 
     status: Optional[int] = 200
-
-
-# ============================================================================
-class PageQAUpdate(BaseModel):
-    """Model for updating pages from QA run"""
-
-    screenshotMatch: Optional[int] = None
-    textMatch: Optional[int] = None
-    resourceCounts: Optional[Dict[str, Dict[str, int]]]
