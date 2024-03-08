@@ -57,17 +57,25 @@ class PageOps:
                 if not page_dict.get("url"):
                     continue
 
-                await self.add_page_to_db(page_dict, crawl_id, crawl.oid)
+                await self.add_page_to_db(page_dict, crawl_id, "", crawl.oid)
         # pylint: disable=broad-exception-caught, raise-missing-from
         except Exception as err:
             print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
 
-    async def add_page_to_db(self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID):
+    async def add_page_to_db(
+        self,
+        page_dict: Dict[str, Any],
+        crawl_or_qa_run_id: str,
+        qa_source_crawl_id: str,
+        oid: UUID,
+    ):
         """Add page to database"""
         page_id = page_dict.get("id")
         if not page_id:
             print(f'Page {page_dict.get("url")} has no id - assigning UUID', flush=True)
             page_id = uuid4()
+
+        crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
 
         try:
             status = page_dict.get("status")

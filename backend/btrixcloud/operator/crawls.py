@@ -113,52 +113,6 @@ class CrawlOperator(BaseOperator):
 
         pods = data.children[POD]
 
-        # if finalizing, crawl is being deleted
-        if data.finalizing:
-            if not status.finished:
-                # if can't cancel, already finished
-                if not await self.cancel_crawl(
-                    crawl_id, UUID(cid), UUID(oid), status, data.children[POD]
-                ):
-                    # instead of fetching the state (that was already set)
-                    # return exception to ignore this request, keep previous
-                    # finished state
-                    raise HTTPException(status_code=400, detail="out_of_sync_status")
-
-            return await self.finalize_response(
-                crawl_id,
-                UUID(oid),
-                status,
-                spec,
-                data.children,
-                params,
-            )
-
-        # just in case, finished but not deleted, can only get here if
-        # do_crawl_finished_tasks() doesn't reach the end or taking too long
-        if status.finished:
-            print(
-                f"warn crawl {crawl_id} finished but not deleted, post-finish taking too long?"
-            )
-            self.run_task(self.k8s.delete_crawl_job(crawl_id))
-            return await self.finalize_response(
-                crawl_id,
-                UUID(oid),
-                status,
-                spec,
-                data.children,
-                params,
-            )
-
-        try:
-            configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
-        # pylint: disable=bare-except, broad-except
-        except:
-            # fail crawl if config somehow missing, shouldn't generally happen
-            await self.fail_crawl(crawl_id, UUID(cid), UUID(oid), status, pods)
-
-            return self._empty_response(status)
-
         crawl = CrawlSpec(
             id=crawl_id,
             cid=cid,
@@ -173,6 +127,48 @@ class CrawlOperator(BaseOperator):
             scheduled=spec.get("manual") != "1",
             qa_source_crawl_id=spec.get("qaSourceCrawlId"),
         )
+
+        # if finalizing, crawl is being deleted
+        if data.finalizing:
+            if not status.finished:
+                # if can't cancel, already finished
+                if not await self.cancel_crawl(crawl, status, data.children[POD]):
+                    # instead of fetching the state (that was already set)
+                    # return exception to ignore this request, keep previous
+                    # finished state
+                    raise HTTPException(status_code=400, detail="out_of_sync_status")
+
+            return await self.finalize_response(
+                crawl,
+                status,
+                spec,
+                data.children,
+                params,
+            )
+
+        # just in case, finished but not deleted, can only get here if
+        # do_crawl_finished_tasks() doesn't reach the end or taking too long
+        if status.finished:
+            print(
+                f"warn crawl {crawl_id} finished but not deleted, post-finish taking too long?"
+            )
+            self.run_task(self.k8s.delete_crawl_job(crawl.id))
+            return await self.finalize_response(
+                crawl,
+                status,
+                spec,
+                data.children,
+                params,
+            )
+
+        try:
+            configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
+        # pylint: disable=bare-except, broad-except
+        except:
+            # fail crawl if config somehow missing, shouldn't generally happen
+            await self.fail_crawl(crawl, status, pods)
+
+            return self._empty_response(status)
 
         # shouldn't get here, crawl should already be finalizing when canceled
         # just in case, handle canceled-but-not-finalizing here
@@ -189,9 +185,7 @@ class CrawlOperator(BaseOperator):
                 and not data.children[PVC]
                 and await self.org_ops.storage_quota_reached(crawl.oid)
             ):
-                await self.mark_finished(
-                    crawl.id, crawl.cid, crawl.oid, status, "skipped_quota_reached"
-                )
+                await self.mark_finished(crawl, status, "skipped_quota_reached")
                 return self._empty_response(status)
 
         if status.state in ("starting", "waiting_org_limit"):
@@ -199,7 +193,7 @@ class CrawlOperator(BaseOperator):
                 return self._empty_response(status)
 
             await self.set_state(
-                "starting", status, crawl.id, allowed_from=["waiting_org_limit"]
+                "starting", status, crawl, allowed_from=["waiting_org_limit"]
             )
 
         if len(pods):
@@ -219,8 +213,7 @@ class CrawlOperator(BaseOperator):
 
             if status.finished:
                 return await self.finalize_response(
-                    crawl_id,
-                    UUID(oid),
+                    crawl,
                     status,
                     spec,
                     data.children,
@@ -228,7 +221,7 @@ class CrawlOperator(BaseOperator):
                 )
 
             await self.increment_pod_exec_time(
-                pods, status, crawl.id, crawl.oid, EXEC_TIME_UPDATE_SECS
+                pods, crawl, status, EXEC_TIME_UPDATE_SECS
             )
 
         else:
@@ -388,7 +381,14 @@ class CrawlOperator(BaseOperator):
             src = pvc["spec"]["resources"]["requests"]
             resources.storage = int(parse_quantity(src.get("storage")))
 
-    async def set_state(self, state, status, crawl_id, allowed_from, **kwargs):
+    async def set_state(
+        self,
+        state: str,
+        status: CrawlStatus,
+        crawl: CrawlSpec,
+        allowed_from: list[str],
+        **kwargs,
+    ):
         """set status state and update db, if changed
         if allowed_from passed in, can only transition from allowed_from state,
         otherwise get current state from db and return
@@ -415,15 +415,21 @@ class CrawlOperator(BaseOperator):
         """
         if not allowed_from or status.state in allowed_from:
             res = await self.crawl_ops.update_crawl_state_if_allowed(
-                crawl_id, state=state, allowed_from=allowed_from, **kwargs
+                crawl.id,
+                crawl.qa_source_crawl_id,
+                state=state,
+                allowed_from=allowed_from,
+                **kwargs,
             )
             if res:
-                print(f"Setting state: {status.state} -> {state}, {crawl_id}")
+                print(f"Setting state: {status.state} -> {state}, {crawl.id}")
                 status.state = state
                 return True
 
             # get actual crawl state
-            actual_state, finished = await self.crawl_ops.get_crawl_state(crawl_id)
+            actual_state, finished = await self.crawl_ops.get_crawl_state(
+                crawl.id, crawl.qa_source_crawl_id
+            )
             if actual_state:
                 status.state = actual_state
             if finished:
@@ -436,7 +442,7 @@ class CrawlOperator(BaseOperator):
 
         if status.state != state:
             print(
-                f"Not setting state: {status.state} -> {state}, {crawl_id} not allowed"
+                f"Not setting state: {status.state} -> {state}, {crawl.id} not allowed"
             )
         return False
 
@@ -503,23 +509,21 @@ class CrawlOperator(BaseOperator):
             i += 1
 
         await self.set_state(
-            "waiting_org_limit", status, crawl.id, allowed_from=["starting"]
+            "waiting_org_limit", status, crawl, allowed_from=["starting"]
         )
         return False
 
     async def cancel_crawl(
         self,
-        crawl_id: str,
-        cid: UUID,
-        oid: UUID,
+        crawl: CrawlSpec,
         status: CrawlStatus,
         pods: dict,
     ) -> bool:
         """Mark crawl as canceled"""
-        if not await self.mark_finished(crawl_id, cid, oid, status, "canceled"):
+        if not await self.mark_finished(crawl, status, "canceled"):
             return False
 
-        await self.mark_for_cancelation(crawl_id)
+        await self.mark_for_cancelation(crawl.id)
 
         if not status.canceled:
             for name, pod in pods.items():
@@ -544,9 +548,7 @@ class CrawlOperator(BaseOperator):
 
     async def fail_crawl(
         self,
-        crawl_id: str,
-        cid: UUID,
-        oid: UUID,
+        crawl: CrawlSpec,
         status: CrawlStatus,
         pods: dict,
         stats=None,
@@ -554,9 +556,7 @@ class CrawlOperator(BaseOperator):
         """Mark crawl as failed, log crawl state and print crawl logs, if possible"""
         prev_state = status.state
 
-        if not await self.mark_finished(
-            crawl_id, cid, oid, status, "failed", stats=stats
-        ):
+        if not await self.mark_finished(crawl, status, "failed", stats=stats):
             return False
 
         if not self.log_failed_crawl_lines or prev_state == "failed":
@@ -581,8 +581,7 @@ class CrawlOperator(BaseOperator):
 
     async def finalize_response(
         self,
-        crawl_id: str,
-        oid: UUID,
+        crawl: CrawlSpec,
         status: CrawlStatus,
         spec: dict,
         children: dict,
@@ -590,7 +589,7 @@ class CrawlOperator(BaseOperator):
     ):
         """ensure crawl id ready for deletion"""
 
-        redis_pod = f"redis-{crawl_id}"
+        redis_pod = f"redis-{crawl.id}"
         new_children = []
 
         finalized = False
@@ -601,7 +600,7 @@ class CrawlOperator(BaseOperator):
             # if has other pods, keep redis pod until they are removed
             if len(pods) > 1:
                 new_children = self._load_redis(params, status, children)
-                await self.increment_pod_exec_time(pods, status, crawl_id, oid)
+                await self.increment_pod_exec_time(pods, crawl, status)
 
         # keep pvs until pods are removed
         if new_children:
@@ -613,7 +612,7 @@ class CrawlOperator(BaseOperator):
                 ttl = spec.get("ttlSecondsAfterFinished", DEFAULT_TTL)
                 finished = from_k8s_date(status.finished)
                 if (dt_now() - finished).total_seconds() > ttl > 0:
-                    print("CrawlJob expired, deleting: " + crawl_id)
+                    print("CrawlJob expired, deleting: " + crawl.id)
                     finalized = True
             else:
                 finalized = True
@@ -670,7 +669,7 @@ class CrawlOperator(BaseOperator):
                     await self.set_state(
                         "waiting_capacity",
                         status,
-                        crawl.id,
+                        crawl,
                         allowed_from=RUNNING_AND_STARTING_ONLY,
                     )
 
@@ -702,7 +701,7 @@ class CrawlOperator(BaseOperator):
                 if await self.set_state(
                     "running",
                     status,
-                    crawl.id,
+                    crawl,
                     allowed_from=["starting", "waiting_capacity"],
                 ):
                     self.run_task(
@@ -725,12 +724,16 @@ class CrawlOperator(BaseOperator):
             page_crawled = await redis.lpop(f"{crawl.id}:{self.pages_key}")
             while page_crawled:
                 page_dict = json.loads(page_crawled)
-                await self.page_ops.add_page_to_db(page_dict, crawl.id, crawl.oid)
+                await self.page_ops.add_page_to_db(
+                    page_dict, crawl.id, crawl.qa_source_crawl_id, crawl.oid
+                )
                 page_crawled = await redis.lpop(f"{crawl.id}:{self.pages_key}")
 
             crawl_error = await redis.lpop(f"{crawl.id}:{self.errors_key}")
             while crawl_error:
-                await self.crawl_ops.add_crawl_error(crawl.id, crawl_error)
+                await self.crawl_ops.add_crawl_error(
+                    crawl.id, crawl.qa_source_crawl_id, crawl_error
+                )
                 crawl_error = await redis.lpop(f"{crawl.id}:{self.errors_key}")
 
             # ensure filesAdded and filesAddedSize always set
@@ -828,9 +831,8 @@ class CrawlOperator(BaseOperator):
     async def increment_pod_exec_time(
         self,
         pods: dict[str, dict],
+        crawl: CrawlSpec,
         status: CrawlStatus,
-        crawl_id: str,
-        oid: UUID,
         min_duration=0,
     ) -> None:
         """inc exec time tracking"""
@@ -916,7 +918,7 @@ class CrawlOperator(BaseOperator):
 
         if exec_time:
             if not await self.crawl_ops.inc_crawl_exec_time(
-                crawl_id, exec_time, status.lastUpdatedTime
+                crawl.id, crawl.qa_source_crawl_id, exec_time, status.lastUpdatedTime
             ):
                 # if lastUpdatedTime is same as previous, something is wrong, don't update!
                 print(
@@ -925,7 +927,7 @@ class CrawlOperator(BaseOperator):
                 )
                 return
 
-            await self.org_ops.inc_org_time_stats(oid, exec_time, True)
+            await self.org_ops.inc_org_time_stats(crawl.oid, exec_time, True)
             status.crawlExecTime += exec_time
             status.elapsedCrawlTime += max_duration
 
@@ -1034,7 +1036,9 @@ class CrawlOperator(BaseOperator):
 
         await redis.incr("filesAddedSize", filecomplete.size)
 
-        await self.crawl_ops.add_crawl_file(crawl.id, crawl_file, filecomplete.size)
+        await self.crawl_ops.add_crawl_file(
+            crawl.id, crawl.qa_source_crawl_id, crawl_file, filecomplete.size
+        )
 
         try:
             await self.background_job_ops.create_replica_jobs(
@@ -1115,7 +1119,9 @@ class CrawlOperator(BaseOperator):
         status.size = stats["size"]
         status.sizeHuman = humanize.naturalsize(status.size)
 
-        await self.crawl_ops.update_running_crawl_stats(crawl.id, stats)
+        await self.crawl_ops.update_running_crawl_stats(
+            crawl.id, crawl.qa_source_crawl_id, stats
+        )
 
         for key, value in sizes.items():
             value = int(value)
@@ -1151,9 +1157,7 @@ class CrawlOperator(BaseOperator):
             # check if one-page crawls actually succeeded
             # if only one page found, and no files, assume failed
             if status.pagesFound == 1 and not status.filesAdded:
-                await self.fail_crawl(
-                    crawl.id, crawl.cid, crawl.oid, status, pods, stats
-                )
+                await self.fail_crawl(crawl, status, pods, stats)
                 return status
 
             if status.stopReason in ("stopped_by_user", "stopped_quota_reached"):
@@ -1161,21 +1165,15 @@ class CrawlOperator(BaseOperator):
             else:
                 state = "complete"
 
-            await self.mark_finished(
-                crawl.id, crawl.cid, crawl.oid, status, state, crawl, stats
-            )
+            await self.mark_finished(crawl, status, state, stats)
 
         # check if all crawlers failed
         elif status_count.get("failed", 0) >= crawl.scale:
             # if stopping, and no pages finished, mark as canceled
             if status.stopping and not status.pagesDone:
-                await self.mark_finished(
-                    crawl.id, crawl.cid, crawl.oid, status, "canceled", crawl, stats
-                )
+                await self.mark_finished(crawl, status, "canceled", stats)
             else:
-                await self.fail_crawl(
-                    crawl.id, crawl.cid, crawl.oid, status, pods, stats
-                )
+                await self.fail_crawl(crawl, status, pods, stats)
 
         # check for other statuses
         else:
@@ -1192,7 +1190,7 @@ class CrawlOperator(BaseOperator):
                 new_status = "pending-wait"
             if new_status:
                 await self.set_state(
-                    new_status, status, crawl.id, allowed_from=RUNNING_STATES
+                    new_status, status, crawl, allowed_from=RUNNING_STATES
                 )
 
         return status
@@ -1200,12 +1198,9 @@ class CrawlOperator(BaseOperator):
     # pylint: disable=too-many-arguments
     async def mark_finished(
         self,
-        crawl_id: str,
-        cid: UUID,
-        oid: UUID,
+        crawl: CrawlSpec,
         status: CrawlStatus,
         state: str,
-        crawl=None,
         stats=None,
     ) -> bool:
         """mark crawl as finished, set finished timestamp and final state"""
@@ -1223,7 +1218,7 @@ class CrawlOperator(BaseOperator):
 
         # if set_state returns false, already set to same status, return
         if not await self.set_state(
-            state, status, crawl_id, allowed_from=allowed_from, **kwargs
+            state, status, crawl, allowed_from=allowed_from, **kwargs
         ):
             print("already finished, ignoring mark_finished")
             if not status.finished:
@@ -1233,14 +1228,15 @@ class CrawlOperator(BaseOperator):
 
         status.finished = to_k8s_date(finished)
 
-        if crawl and state in SUCCESSFUL_STATES:
-            await self.inc_crawl_complete_stats(crawl, finished)
+        if not crawl.qa_source_crawl_id:
+            if crawl and state in SUCCESSFUL_STATES:
+                await self.inc_crawl_complete_stats(crawl, finished)
 
-        self.run_task(
-            self.do_crawl_finished_tasks(
-                crawl_id, cid, oid, status.filesAddedSize, state
+            self.run_task(
+                self.do_crawl_finished_tasks(
+                    crawl.id, crawl.cid, crawl.oid, status.filesAddedSize, state
+                )
             )
-        )
 
         return True
 

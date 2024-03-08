@@ -8,7 +8,7 @@ import urllib.parse
 from datetime import datetime
 from uuid import UUID
 
-from typing import Optional, List, Dict, Union
+from typing import Optional, List, Dict, Union, Any
 
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -419,53 +419,103 @@ class CrawlOps(BaseCrawlOps):
         return {"success": True}
 
     async def update_crawl_state_if_allowed(
-        self, crawl_id, state, allowed_from, **kwargs
+        self,
+        crawl_or_qa_run_id: str,
+        qa_source_crawl_id: str,
+        state: str,
+        allowed_from: List[str],
+        **kwargs,
     ):
         """update crawl state and other properties in db if state has changed"""
+        crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
+
         kwargs["state"] = state
-        query = {"_id": crawl_id, "type": "crawl"}
+        if qa_source_crawl_id:
+            kwargs = {f"qa.{crawl_or_qa_run_id}": kwargs}
+
+        query: Dict[str, Any] = {"_id": crawl_id, "type": "crawl"}
         if allowed_from:
             query["state"] = {"$in": allowed_from}
 
         return await self.crawls.find_one_and_update(query, {"$set": kwargs})
 
-    async def update_running_crawl_stats(self, crawl_id, stats):
+    async def update_running_crawl_stats(
+        self, crawl_or_qa_run_id: str, qa_source_crawl_id: str, stats
+    ):
         """update running crawl stats"""
+        crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
+        field = "stats" if not qa_source_crawl_id else f"qa.{crawl_or_qa_run_id}.stats"
         query = {"_id": crawl_id, "type": "crawl", "state": "running"}
-        return await self.crawls.find_one_and_update(query, {"$set": {"stats": stats}})
+        return await self.crawls.find_one_and_update(query, {"$set": {field: stats}})
 
-    async def inc_crawl_exec_time(self, crawl_id, exec_time, last_updated_time):
+    async def inc_crawl_exec_time(
+        self,
+        crawl_or_qa_run_id: str,
+        qa_source_crawl_id: str,
+        exec_time,
+        last_updated_time,
+    ):
         """increment exec time"""
+        crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
+        prefix = "" if not qa_source_crawl_id else f"qa.{crawl_or_qa_run_id}."
+
         return await self.crawls.find_one_and_update(
-            {"_id": crawl_id, "type": "crawl", "_lut": {"$ne": last_updated_time}},
             {
-                "$inc": {"crawlExecSeconds": exec_time},
-                "$set": {"_lut": last_updated_time},
+                "_id": crawl_id,
+                "type": "crawl",
+                f"{prefix}_lut": {"$ne": last_updated_time},
+            },
+            {
+                "$inc": {f"{prefix}crawlExecSeconds": exec_time},
+                "$set": {f"{prefix}_lut": last_updated_time},
             },
         )
 
-    async def get_crawl_state(self, crawl_id):
+    async def get_crawl_state(
+        self, crawl_or_qa_run_id: str, qa_source_crawl_id: Optional[str] = None
+    ):
         """return current crawl state of a crawl"""
+        crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
+        state = "state" if not qa_source_crawl_id else f"$qa.{qa_source_crawl_id}.state"
+        finished = (
+            "finished"
+            if not qa_source_crawl_id
+            else f"$qa.{qa_source_crawl_id}.finished"
+        )
+
         res = await self.crawls.find_one(
-            {"_id": crawl_id}, projection=["state", "finished"]
+            {"_id": crawl_id}, projection={"state": state, "finished": finished}
         )
         if not res:
             return None, None
         return res.get("state"), res.get("finished")
 
-    async def add_crawl_error(self, crawl_id: str, error: str):
+    async def add_crawl_error(
+        self,
+        crawl_or_qa_run_id: str,
+        qa_source_crawl_id: str,
+        error: str,
+    ):
         """add crawl error from redis to mongodb errors field"""
+        crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
+        field = "errors" if not qa_source_crawl_id else "qa.{crawl_or_qa_run_id}.errors"
+
         await self.crawls.find_one_and_update(
-            {"_id": crawl_id}, {"$push": {"errors": error}}
+            {"_id": crawl_id}, {"$push": {field: error}}
         )
 
-    async def add_crawl_file(self, crawl_id, crawl_file, size):
+    async def add_crawl_file(
+        self, crawl_or_qa_run_id, qa_source_crawl_id, crawl_file, size
+    ):
         """add new crawl file to crawl"""
+        crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
+        prefix = "" if not qa_source_crawl_id else "qa.{crawl_or_qa_run_id}."
+
         await self.crawls.find_one_and_update(
             {"_id": crawl_id},
             {
-                "$push": {"files": crawl_file.dict()},
-                "$inc": {"fileCount": 1, "fileSize": size},
+                "$push": {f"{prefix}files": crawl_file.dict()},
+                "$inc": {f"{prefix}fileCount": 1, f"{prefix}fileSize": size},
             },
         )
 

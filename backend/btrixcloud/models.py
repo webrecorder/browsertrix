@@ -532,36 +532,49 @@ class ReviewStatus(str, Enum):
 
 
 # ============================================================================
-class BaseCrawl(BaseMongoModel):
-    """Base Crawl object (representing crawls, uploads and manual sessions)"""
+class CoreCrawlable:
+    # pylint: disable=too-few-public-methods
+    """Core properties for crawlable run (crawl or qa run)"""
 
     id: str
 
-    type: str
-
     userid: UUID
     userName: Optional[str]
-    oid: UUID
 
     started: datetime
     finished: Optional[datetime] = None
 
-    name: Optional[str] = ""
-
     state: str
+
+    crawlExecSeconds: int = 0
+
+    image: Optional[str]
+
+    stopping: Optional[bool] = False
 
     stats: Optional[Dict[str, int]] = None
 
     files: Optional[List[CrawlFile]] = []
 
-    description: Optional[str] = ""
+    fileSize: int = 0
+    fileCount: int = 0
 
     errors: Optional[List[str]] = []
 
-    collectionIds: Optional[List[UUID]] = []
 
-    fileSize: int = 0
-    fileCount: int = 0
+# ============================================================================
+class BaseCrawl(CoreCrawlable, BaseMongoModel):
+    """Base Crawl object (representing crawls, uploads and manual sessions)"""
+
+    type: str
+
+    oid: UUID
+
+    name: Optional[str] = ""
+
+    description: Optional[str] = ""
+
+    collectionIds: Optional[List[UUID]] = []
 
     reviewStatus: Optional[ReviewStatus] = None
 
@@ -670,24 +683,8 @@ class CrawlScale(BaseModel):
 
 
 # ============================================================================
-class QARun(BaseModel):
+class QARun(CoreCrawlable, BaseModel):
     """Subdocument to track QA runs for given crawl"""
-
-    id: str
-    started: datetime
-    finished: Optional[datetime] = None
-
-    userid: UUID
-    userName: Optional[str]
-
-    state: str
-    stopping: Optional[bool] = False
-
-    image: Optional[str] = None
-
-    crawlExecSeconds: int = 0
-
-    files: Optional[List[CrawlFile]] = []
 
 
 # ============================================================================
@@ -711,12 +708,6 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     # schedule: Optional[str]
     manual: Optional[bool]
-
-    stopping: Optional[bool] = False
-
-    crawlExecSeconds: int = 0
-
-    image: Optional[str]
 
     active_qa: Optional[str]
     qa: Optional[Dict[str, QARun]] = {}

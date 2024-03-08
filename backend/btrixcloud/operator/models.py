@@ -60,7 +60,7 @@ class CrawlSpec(BaseModel):
     scheduled: bool = False
     timeout: int = 0
     max_crawl_size: int = 0
-    qa_source_crawl_id: Optional[str]
+    qa_source_crawl_id: str = ""
 
 
 # ============================================================================
