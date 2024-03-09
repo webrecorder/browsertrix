@@ -126,10 +126,10 @@ def main():
     base_crawl_init = (
         app,
         current_active_user,
+        # to basecrawls
         mdb,
         user_manager,
         org_ops,
-        crawl_manager,
         crawl_config_ops,
         coll_ops,
         storage_ops,
@@ -139,7 +139,7 @@ def main():
 
     base_crawl_ops = init_base_crawls_api(*base_crawl_init)
 
-    crawls = init_crawls_api(*base_crawl_init)
+    crawls = init_crawls_api(crawl_manager, *base_crawl_init)
 
     page_ops = init_pages_api(
         app, mdb, crawls, org_ops, storage_ops, current_active_user

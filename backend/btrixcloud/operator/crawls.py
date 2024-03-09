@@ -7,7 +7,6 @@ from typing import Optional
 
 import json
 from uuid import UUID
-from fastapi import HTTPException
 
 import humanize
 
@@ -133,10 +132,10 @@ class CrawlOperator(BaseOperator):
             if not status.finished:
                 # if can't cancel, already finished
                 await self.cancel_crawl(crawl, status, data.children[POD])
-                    # instead of fetching the state (that was already set)
-                    # return exception to ignore this request, keep previous
-                    # finished state
-                    # raise HTTPException(status_code=400, detail="out_of_sync_status")
+                # instead of fetching the state (that was already set)
+                # return exception to ignore this request, keep previous
+                # finished state
+                # raise HTTPException(status_code=400, detail="out_of_sync_status")
 
             return await self.finalize_response(
                 crawl,
@@ -266,7 +265,7 @@ class CrawlOperator(BaseOperator):
             params["force_restart"] = False
 
         if crawl.qa_source_crawl_id:
-            params["qa_source"] = ""  # self.get_crawl_replay_url()
+            params["qa_source_json"] = self.get_crawl_replay_json(crawl.qs_source_crawl_id) if len(pods) else ""
 
         for i in range(0, status.scale):
             children.extend(self._load_crawler(params, i, status, data.children))
@@ -313,6 +312,10 @@ class CrawlOperator(BaseOperator):
             params["priorityClassName"] = f"crawl-instance-{i}"
 
         return self.load_from_yaml("crawler.yaml", params)
+
+    async def _get_crawl_replay_json(self, crawl_id):
+        crawl = await self.crawl_ops.get_crawl_out(crawl_id)
+        return json.dumps(crawl.dict())
 
     # pylint: disable=too-many-arguments
     async def _resolve_scale(
@@ -1043,6 +1046,10 @@ class CrawlOperator(BaseOperator):
             crawl.id, crawl.qa_source_crawl_id, crawl_file, filecomplete.size
         )
 
+        # no replicas for QA for now
+        if crawl.qa_source_crawl_id:
+            return True
+
         try:
             await self.background_job_ops.create_replica_jobs(
                 crawl.oid, crawl_file, crawl.id, "crawl"
@@ -1231,6 +1238,7 @@ class CrawlOperator(BaseOperator):
 
         status.finished = to_k8s_date(finished)
 
+        # Regular Crawl Finished
         if not crawl.qa_source_crawl_id:
             if crawl and state in SUCCESSFUL_STATES:
                 await self.inc_crawl_complete_stats(crawl, finished)
@@ -1240,6 +1248,10 @@ class CrawlOperator(BaseOperator):
                     crawl.id, crawl.cid, crawl.oid, status.filesAddedSize, state
                 )
             )
+
+        # QA Run Finished
+        else:
+            await self.k8s.delete_crawl_job(crawl.id)
 
         return True
 

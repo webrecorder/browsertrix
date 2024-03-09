@@ -115,8 +115,11 @@ spec:
       {% else %}
         - qa
         - --qaSource
-        - {{ qa_source }}
-      {% endif %}
+        - /tmp/
+        - --redisStoreUrl
+        - {{ redis_url }}
+        - --writePagesToRedis
+       {% endif %}
       volumeMounts:
       {% if not qa_source %}
         - name: crawl-config

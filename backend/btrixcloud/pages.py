@@ -4,6 +4,8 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
 from uuid import UUID, uuid4
 
+from pprint import pprint
+
 from fastapi import Depends, HTTPException
 import pymongo
 
@@ -49,7 +51,7 @@ class PageOps:
     async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str):
         """Add pages to database from WACZ files"""
         try:
-            crawl = await self.crawl_ops.get_crawl(crawl_id, None)
+            crawl = await self.crawl_ops.get_crawl_out(crawl_id, None)
             org = await self.org_ops.get_org_by_id(crawl.oid)
             wacz_files = await self.crawl_ops.get_wacz_files(crawl_id, org)
             stream = await self.storage_ops.sync_stream_pages_from_wacz(org, wacz_files)
@@ -76,6 +78,9 @@ class PageOps:
             page_id = uuid4()
 
         crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
+
+        print("Adding Page Data")
+        pprint(page_dict)
 
         try:
             status = page_dict.get("status")
@@ -162,7 +167,7 @@ class PageOps:
 
     async def add_qa_compare(
         self, page_id: UUID, oid: UUID, qa_run_id: str, compare: PageQACompare
-    ) -> Dict[str, bool]:
+    ) -> bool:
         """Update page heuristics and mime/type from QA run"""
 
         # modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)

@@ -4,6 +4,7 @@
 
 import json
 import re
+import contextlib
 import urllib.parse
 from datetime import datetime
 from uuid import UUID
@@ -18,6 +19,7 @@ import pymongo
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now, parse_jsonl_error_messages, stream_dict_list_as_csv
 from .basecrawls import BaseCrawlOps
+from .crawlmanager import CrawlManager
 from .models import (
     UpdateCrawl,
     DeleteCrawlList,
@@ -42,13 +44,15 @@ DEFAULT_RANGE_LIMIT = 50
 
 
 # ============================================================================
+# pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
 class CrawlOps(BaseCrawlOps):
     """Crawl Ops"""
 
-    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-many-public-methods
+    crawl_manager: CrawlManager
 
-    def __init__(self, *args):
+    def __init__(self, crawl_manager: CrawlManager, *args):
         super().__init__(*args)
+        self.crawl_manager = crawl_manager
         self.crawl_configs.set_crawl_ops(self)
         self.colls.set_crawl_ops(self)
         self.event_webhook_ops.set_crawl_ops(self)
@@ -78,6 +82,28 @@ class CrawlOps(BaseCrawlOps):
         await self.crawls.create_index([("cid", pymongo.HASHED)])
         await self.crawls.create_index([("state", pymongo.HASHED)])
         await self.crawls.create_index([("fileSize", pymongo.DESCENDING)])
+
+    async def get_crawl(
+        self,
+        crawlid: str,
+        org: Optional[Organization] = None,
+        project: Optional[dict[str, bool]] = None,
+    ) -> Crawl:
+        """Get crawl data for internal use"""
+        res = await self.get_crawl_raw(crawlid, org, "crawl", project)
+        return Crawl.from_dict(res)
+
+    @contextlib.asynccontextmanager
+    async def get_redis(self, crawl_id):
+        """get redis url for crawl id"""
+        redis_url = self.crawl_manager.get_redis_url(crawl_id)
+
+        redis = await self.crawl_manager.get_redis_client(redis_url)
+
+        try:
+            yield redis
+        finally:
+            await redis.close()
 
     async def list_crawls(
         self,
@@ -225,16 +251,6 @@ class CrawlOps(BaseCrawlOps):
 
         return {"deleted": True, "storageQuotaReached": quota_reached}
 
-    async def get_wacz_files(self, crawl_id: str, org: Organization):
-        """Return list of WACZ files associated with crawl."""
-        wacz_files = []
-        crawl_raw = await self.get_crawl_raw(crawl_id, org)
-        crawl = Crawl.from_dict(crawl_raw)
-        for file_ in crawl.files:
-            if file_.filename.endswith(".wacz"):
-                wacz_files.append(file_)
-        return wacz_files
-
     # pylint: disable=too-many-arguments
     async def add_new_crawl(
         self,
@@ -288,9 +304,9 @@ class CrawlOps(BaseCrawlOps):
         self, crawl_id: str, org: Organization, crawl_scale: CrawlScale, user: User
     ):
         """Update crawl scale in the db"""
-        crawl = await self.get_crawl_raw(crawl_id, org)
+        crawl = await self.get_crawl(crawl_id, org)
         update = UpdateCrawlConfig(scale=crawl_scale.scale)
-        await self.crawl_configs.update_crawl_config(crawl["cid"], org, user, update)
+        await self.crawl_configs.update_crawl_config(crawl.cid, org, user, update)
 
         result = await self.crawls.find_one_and_update(
             {"_id": crawl_id, "type": "crawl", "oid": org.id},
@@ -391,11 +407,11 @@ class CrawlOps(BaseCrawlOps):
         """add new exclusion to config or remove exclusion from config
         for given crawl_id, update config on crawl"""
 
-        crawl_raw = await self.get_crawl_raw(crawl_id, org, project={"cid": True})
+        crawl = await self.get_crawl(crawl_id, org, project={"cid": True})
 
-        cid = crawl_raw.get("cid")
+        cid = crawl.cid
 
-        scale = crawl_raw.get("scale", 1)
+        scale = crawl.scale or 1
 
         async with self.get_redis(crawl_id) as redis:
             query = {
@@ -498,7 +514,9 @@ class CrawlOps(BaseCrawlOps):
     ):
         """add crawl error from redis to mongodb errors field"""
         crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
-        field = "errors" if not qa_source_crawl_id else "qa.{crawl_or_qa_run_id}.errors"
+        field = (
+            "errors" if not qa_source_crawl_id else f"qa.{crawl_or_qa_run_id}.errors"
+        )
 
         await self.crawls.find_one_and_update(
             {"_id": crawl_id}, {"$push": {field: error}}
@@ -509,7 +527,7 @@ class CrawlOps(BaseCrawlOps):
     ):
         """add new crawl file to crawl"""
         crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
-        prefix = "" if not qa_source_crawl_id else "qa.{crawl_or_qa_run_id}."
+        prefix = "" if not qa_source_crawl_id else f"qa.{crawl_or_qa_run_id}."
 
         await self.crawls.find_one_and_update(
             {"_id": crawl_id},
@@ -530,9 +548,10 @@ class CrawlOps(BaseCrawlOps):
         skip = (page - 1) * page_size
         upper_bound = skip + page_size
 
-        crawl_raw = await self.get_crawl_raw(crawl_id, org)
+        crawl = await self.get_crawl(crawl_id, org)
+        if not crawl.config or not crawl.config.seeds:
+            return [], 0
         try:
-            crawl = Crawl.from_dict(crawl_raw)
             return crawl.config.seeds[skip:upper_bound], len(crawl.config.seeds)
         # pylint: disable=broad-exception-caught
         except Exception:
@@ -606,13 +625,62 @@ class CrawlOps(BaseCrawlOps):
 
         return crawls_data
 
+    async def shutdown_crawl(
+        self, crawl_id: str, org: Organization, graceful: bool
+    ) -> Dict[str, bool]:
+        """stop or cancel specified crawl"""
+        crawl = await self.get_base_crawl(crawl_id, org)
+        if crawl and crawl.type != "crawl":
+            raise HTTPException(status_code=400, detail="not_a_crawl")
+
+        result = None
+        try:
+            result = await self.crawl_manager.shutdown_crawl(
+                crawl_id, graceful=graceful
+            )
+
+            if result.get("success"):
+                if graceful:
+                    await self.crawls.find_one_and_update(
+                        {"_id": crawl_id, "type": "crawl", "oid": org.id},
+                        {"$set": {"stopping": True}},
+                    )
+                return result
+
+        except Exception as exc:
+            # pylint: disable=raise-missing-from
+            # if reached here, probably crawl doesn't exist anymore
+            raise HTTPException(
+                status_code=404, detail=f"crawl_not_found, (details: {exc})"
+            )
+
+        # if job no longer running, canceling is considered success,
+        # but graceful stoppage is not possible, so would be a failure
+        if result.get("error") == "Not Found":
+            if not graceful:
+                await self.update_crawl_state(crawl_id, "canceled")
+                crawl = await self.get_crawl(crawl_id, org)
+                if not await self.crawl_configs.stats_recompute_last(crawl.cid, 0, -1):
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"crawl_config_not_found: {crawl.cid}",
+                    )
+
+                return {"success": True}
+
+        # return whatever detail may be included in the response
+        raise HTTPException(status_code=400, detail=result)
+
     async def start_crawl_qa_run(self, crawl_id: str, org: Organization, user: User):
         """Start crawl QA run"""
 
-        crawl = await self.get_crawl(crawl_id, org, "crawl")
+        crawl = await self.get_crawl(crawl_id, org)
 
         if crawl.qa_active:
             raise HTTPException(status_code=400, detail="qa_already_running")
+
+        if not crawl.cid:
+            raise HTTPException(status_code=400, detail="invalid_crawl_for_qa")
 
         crawlconfig = await self.crawl_configs.prepare_for_run_crawl(crawl.cid, org)
 
@@ -655,14 +723,14 @@ class CrawlOps(BaseCrawlOps):
 
     async def stop_crawl_qa_run(self, crawl_id: str, org: Organization):
         """Stop crawl QA run"""
-        crawl = await self.get_crawl(crawl_id, org, "crawl")
+        crawl = await self.get_crawl(crawl_id, org)
 
-        if not crawl.active_qa:
+        if not crawl.qa_active:
             raise HTTPException(status_code=400, detail="invalid_qa_run_id")
 
         try:
             result = await self.crawl_manager.shutdown_crawl(
-                crawl.active_qa, graceful=True
+                crawl.qa_active, graceful=True
             )
 
             if result.get("error") == "Not Found":
@@ -688,23 +756,24 @@ class CrawlOps(BaseCrawlOps):
         self, crawl_id: str, org: Optional[Organization] = None
     ) -> List[QARun]:
         """Return list of QA runs"""
-        crawl = await self.get_crawl(crawl_id, org, "crawl")
-        return list(crawl.qa.values()) or []
+        crawl = await self.get_crawl(crawl_id, org)
+        return list(crawl.qa.values()) if crawl.qa else []
 
     async def get_qa_run_for_replay(
         self, crawl_id: str, qa_run_id: str, org: Optional[Organization] = None
     ) -> QARun:
         """Fetch QA runs with resources for replay.json"""
-        crawl = await self.get_crawl(crawl_id, org, "crawl")
+        crawl = await self.get_crawl(crawl_id, org)
+        qa = crawl.qa or {}
+        qa_run = qa.get(qa_run_id)
 
-        qa_run = crawl.qa.get(qa_run_id)
         if not qa_run:
             raise HTTPException(status_code=404, detail="crawl_qa_not_found")
 
         resources = await self._files_to_resources(
             qa_run.files, org, crawlid=crawl_id, qa_run_id=qa_run_id
         )
-        qa_run.files = None
+        qa_run.files = []
 
         return QARunWithResources(resources=resources, **qa_run.dict())
 
@@ -729,11 +798,11 @@ async def recompute_crawl_file_count_and_size(crawls, crawl_id):
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, too-many-statements
-def init_crawls_api(app, user_dep, *args):
+def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     """API for crawl management, including crawl done callback"""
     # pylint: disable=invalid-name, duplicate-code
 
-    ops = CrawlOps(*args)
+    ops = CrawlOps(crawl_manager, *args)
 
     org_viewer_dep = ops.orgs.org_viewer_dep
     org_crawl_dep = ops.orgs.org_crawl_dep
@@ -883,15 +952,15 @@ def init_crawls_api(app, user_dep, *args):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return await ops.get_crawl(crawl_id, None, "crawl")
+        return await ops.get_crawl_out(crawl_id, None, "crawl")
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/replay.json",
         tags=["crawls"],
         response_model=CrawlOutWithResources,
     )
-    async def get_crawl(crawl_id, org: Organization = Depends(org_viewer_dep)):
-        return await ops.get_crawl(crawl_id, org, "crawl")
+    async def get_crawl_out(crawl_id, org: Organization = Depends(org_viewer_dep)):
+        return await ops.get_crawl_out(crawl_id, org, "crawl")
 
     # QA APIs
     # ---------------------
@@ -1076,7 +1145,7 @@ def init_crawls_api(app, user_dep, *args):
         logLevel: Optional[str] = None,
         context: Optional[str] = None,
     ):
-        crawl = await ops.get_crawl(crawl_id, org, "crawl")
+        crawl = await ops.get_crawl(crawl_id, org)
 
         log_levels = []
         contexts = []
@@ -1111,14 +1180,13 @@ def init_crawls_api(app, user_dep, *args):
         page: int = 1,
         org: Organization = Depends(org_viewer_dep),
     ):
-        crawl_raw = await ops.get_crawl_raw(crawl_id, org)
-        crawl = Crawl.from_dict(crawl_raw)
+        crawl = await ops.get_crawl(crawl_id, org)
 
         skip = (page - 1) * pageSize
         upper_bound = skip + pageSize
 
-        errors = crawl.errors[skip:upper_bound]
+        errors = crawl.errors[skip:upper_bound] if crawl.errors else []
         parsed_errors = parse_jsonl_error_messages(errors)
-        return paginated_format(parsed_errors, len(crawl.errors), page, pageSize)
+        return paginated_format(parsed_errors, len(crawl.errors or []), page, pageSize)
 
     return ops

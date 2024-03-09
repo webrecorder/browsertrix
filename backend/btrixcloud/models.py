@@ -532,7 +532,7 @@ class ReviewStatus(str, Enum):
 
 
 # ============================================================================
-class CoreCrawlable:
+class CoreCrawlable(BaseModel):
     # pylint: disable=too-few-public-methods
     """Core properties for crawlable run (crawl or qa run)"""
 
@@ -554,7 +554,7 @@ class CoreCrawlable:
 
     stats: Optional[Dict[str, int]] = None
 
-    files: Optional[List[CrawlFile]] = []
+    files: List[CrawlFile] = []
 
     fileSize: int = 0
     fileCount: int = 0
@@ -569,6 +569,7 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
     type: str
 
     oid: UUID
+    cid: Optional[UUID] = None
 
     name: Optional[str] = ""
 
@@ -709,7 +710,7 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     # schedule: Optional[str]
     manual: Optional[bool]
 
-    active_qa: Optional[str]
+    qa_active: Optional[str]
     qa: Optional[Dict[str, QARun]] = {}
 
 
