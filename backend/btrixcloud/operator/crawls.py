@@ -132,11 +132,11 @@ class CrawlOperator(BaseOperator):
         if data.finalizing:
             if not status.finished:
                 # if can't cancel, already finished
-                if not await self.cancel_crawl(crawl, status, data.children[POD]):
+                await self.cancel_crawl(crawl, status, data.children[POD])
                     # instead of fetching the state (that was already set)
                     # return exception to ignore this request, keep previous
                     # finished state
-                    raise HTTPException(status_code=400, detail="out_of_sync_status")
+                    # raise HTTPException(status_code=400, detail="out_of_sync_status")
 
             return await self.finalize_response(
                 crawl,
@@ -233,10 +233,13 @@ class CrawlOperator(BaseOperator):
         storage_path = crawl.storage.get_storage_extra_path(oid)
         storage_secret = crawl.storage.get_storage_secret_name(oid)
 
+        if not crawl.qa_source_crawl_id:
+            params["profile_filename"] = configmap["PROFILE_FILENAME"]
+        else:
+            storage_path += "qa/"
+
         params["storage_path"] = storage_path
         params["storage_secret"] = storage_secret
-        if not spec.qa_source_crawl_id:
-            params["profile_filename"] = configmap["PROFILE_FILENAME"]
 
         # only resolve if not already set
         # not automatically updating image for existing crawls
@@ -262,7 +265,7 @@ class CrawlOperator(BaseOperator):
         else:
             params["force_restart"] = False
 
-        if spec.qa_source_crawl_id:
+        if crawl.qa_source_crawl_id:
             params["qa_source"] = ""  # self.get_crawl_replay_url()
 
         for i in range(0, status.scale):

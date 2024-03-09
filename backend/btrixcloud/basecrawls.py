@@ -156,6 +156,8 @@ class BaseCrawlOps:
         res.pop("files", None)
         res.pop("errors", None)
 
+        print("RES", res)
+
         crawl = cls_type.from_dict(res)
 
         if crawl.type == "crawl":
