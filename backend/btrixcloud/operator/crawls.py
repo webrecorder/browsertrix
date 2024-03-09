@@ -3,7 +3,8 @@
 import traceback
 import os
 from pprint import pprint
-from typing import Optional
+from typing import Optional, Any
+from datetime import datetime
 
 import json
 from uuid import UUID
@@ -265,7 +266,8 @@ class CrawlOperator(BaseOperator):
             params["force_restart"] = False
 
         if crawl.qa_source_crawl_id:
-            params["qa_source_json"] = self.get_crawl_replay_json(crawl.qs_source_crawl_id) if len(pods) else ""
+            params["qa_source_crawl_id"] = crawl.qa_source_crawl_id
+            children.extend(await self._load_qa_configmap(params, data.children))
 
         for i in range(0, status.scale):
             children.extend(self._load_crawler(params, i, status, data.children))
@@ -292,6 +294,20 @@ class CrawlOperator(BaseOperator):
 
         return self.load_from_yaml("redis.yaml", params)
 
+    async def _load_qa_configmap(self, params, children):
+        qa_source_crawl_id = params["qa_source_crawl_id"]
+        name = f"qa-replay-{qa_source_crawl_id}"
+
+        if name in children[CMAP]:
+            return [children[CMAP][name]]
+
+        crawl_replay = await self.crawl_ops.get_internal_crawl_out(qa_source_crawl_id)
+
+        params["name"] = name
+        params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})
+
+        return self.load_from_yaml("qa_configmap.yaml", params)
+
     def _load_crawler(self, params, i, status, children):
         name = f"crawl-{params['id']}-{i}"
         has_pod = name in children[POD]
@@ -306,16 +322,12 @@ class CrawlOperator(BaseOperator):
         if params.get("do_restart"):
             print(f"Restart {name}")
 
-        if params.get("qa_source"):
+        if params.get("qa_source_crawl_id"):
             params["priorityClassName"] = f"qa-crawl-instance-{i}"
         else:
             params["priorityClassName"] = f"crawl-instance-{i}"
 
         return self.load_from_yaml("crawler.yaml", params)
-
-    async def _get_crawl_replay_json(self, crawl_id):
-        crawl = await self.crawl_ops.get_crawl_out(crawl_id)
-        return json.dumps(crawl.dict())
 
     # pylint: disable=too-many-arguments
     async def _resolve_scale(
@@ -393,7 +405,8 @@ class CrawlOperator(BaseOperator):
         status: CrawlStatus,
         crawl: CrawlSpec,
         allowed_from: list[str],
-        **kwargs,
+        finished: Optional[datetime] = None,
+        stats: Optional[dict[str, Any]] = None,
     ):
         """set status state and update db, if changed
         if allowed_from passed in, can only transition from allowed_from state,
@@ -425,7 +438,8 @@ class CrawlOperator(BaseOperator):
                 crawl.qa_source_crawl_id,
                 state=state,
                 allowed_from=allowed_from,
-                **kwargs,
+                finished=finished,
+                stats=stats,
             )
             if res:
                 print(f"Setting state: {status.state} -> {state}, {crawl.id}")
@@ -557,7 +571,7 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         pods: dict,
-        stats=None,
+        stats: Optional[dict[str, Any]] = None,
     ) -> bool:
         """Mark crawl as failed, log crawl state and print crawl logs, if possible"""
         prev_state = status.state
@@ -1211,15 +1225,11 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         state: str,
-        stats=None,
+        stats: Optional[dict[str, Any]] = None,
     ) -> bool:
         """mark crawl as finished, set finished timestamp and final state"""
 
         finished = dt_now()
-
-        kwargs = {"finished": finished}
-        if stats:
-            kwargs["stats"] = stats
 
         if state in SUCCESSFUL_STATES:
             allowed_from = RUNNING_STATES
@@ -1228,7 +1238,12 @@ class CrawlOperator(BaseOperator):
 
         # if set_state returns false, already set to same status, return
         if not await self.set_state(
-            state, status, crawl, allowed_from=allowed_from, **kwargs
+            state,
+            status,
+            crawl,
+            allowed_from=allowed_from,
+            finished=finished,
+            stats=stats,
         ):
             print("already finished, ignoring mark_finished")
             if not status.finished:

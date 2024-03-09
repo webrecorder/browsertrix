@@ -30,7 +30,9 @@ class K8sAPI:
         self.namespace = os.environ.get("CRAWLER_NAMESPACE") or "crawlers"
         self.custom_resources = {}
 
-        self.templates = Jinja2Templates(directory=get_templates_dir())
+        self.templates = Jinja2Templates(
+            directory=get_templates_dir(), autoescape=False
+        )
 
         config.load_incluster_config()
         self.client = client
@@ -172,12 +174,10 @@ class K8sAPI:
                 status_code=400, detail="invalid_config_missing_storage_secret"
             )
 
-    async def delete_crawl_job(self, crawl_id, qa_crawl=False):
+    async def delete_crawl_job(self, crawl_id):
         """delete custom crawljob object"""
         try:
             name = f"crawljob-{crawl_id}"
-            if qa_crawl:
-                name = f"qa-{name}"
 
             await self.custom_api.delete_namespaced_custom_object(
                 group="btrix.cloud",
@@ -221,9 +221,7 @@ class K8sAPI:
             name=f"profilejob-{browserid}",
         )
 
-    async def _patch_job(
-        self, crawl_id, body, pluraltype="crawljobs", qa_crawl=False
-    ) -> dict:
+    async def _patch_job(self, crawl_id, body, pluraltype="crawljobs") -> dict:
         content_type = self.api_client.default_headers.get("Content-Type")
 
         try:
@@ -232,8 +230,6 @@ class K8sAPI:
             )
 
             name = f"{pluraltype[:-1]}-{crawl_id}"
-            if qa_crawl:
-                name = f"qa-{name}"
 
             await self.custom_api.patch_namespaced_custom_object(
                 group="btrix.cloud",

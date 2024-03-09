@@ -121,7 +121,7 @@ class BaseCrawlOps:
 
     async def _files_to_resources(
         self, files, org, crawlid, qa_run_id: Optional[str] = None
-    ):
+    ) -> List[CrawlFileOut]:
         if not files:
             return []
 
@@ -184,15 +184,15 @@ class BaseCrawlOps:
 
         return crawl
 
-    async def get_resource_resolved_raw_crawl(
-        self, crawlid: str, org: Organization, type_=None
-    ):
-        """return single base crawl with resources resolved"""
-        res = await self.get_crawl_raw(crawlid=crawlid, type_=type_, org=org)
-        res["resources"] = await self._files_to_resources(
-            res.get("files"), org, res["_id"]
-        )
-        return res
+    async def get_internal_crawl_out(self, crawl_id):
+        """add internal prefix for relative paths"""
+        crawl_out = await self.get_crawl_out(crawl_id)
+        resources = crawl_out.resources or []
+        for file_ in resources:
+            if file_.path.startswith("/"):
+                file_.path = "http://browsertrix-cloud-frontend.default" + file_.path
+
+        return crawl_out
 
     async def _update_crawl_collections(
         self, crawl_id: str, org: Organization, collection_ids: List[UUID]
@@ -409,10 +409,10 @@ class BaseCrawlOps:
         org: Organization,
         crawl_id: Optional[str] = None,
         qa_run_id: Optional[str] = None,
-    ):
+    ) -> List[CrawlFileOut]:
         if not files:
             print("no files")
-            return
+            return []
 
         delta = timedelta(seconds=self.presign_duration_seconds)
 

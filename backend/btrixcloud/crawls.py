@@ -440,20 +440,25 @@ class CrawlOps(BaseCrawlOps):
         qa_source_crawl_id: str,
         state: str,
         allowed_from: List[str],
-        **kwargs,
+        finished: Optional[datetime] = None,
+        stats: Optional[Dict[str, Any]] = None,
     ):
         """update crawl state and other properties in db if state has changed"""
         crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
 
-        kwargs["state"] = state
-        if qa_source_crawl_id:
-            kwargs = {f"qa.{crawl_or_qa_run_id}": kwargs}
+        prefix = "" if not qa_source_crawl_id else f"qa.{crawl_or_qa_run_id}."
+
+        update: Dict[str, Any] = {f"{prefix}state": state}
+        if finished:
+            update[f"{prefix}finished"] = finished
+        if stats:
+            update[f"{prefix}stats"] = stats
 
         query: Dict[str, Any] = {"_id": crawl_id, "type": "crawl"}
         if allowed_from:
-            query["state"] = {"$in": allowed_from}
+            query[f"{prefix}state"] = {"$in": allowed_from}
 
-        return await self.crawls.find_one_and_update(query, {"$set": kwargs})
+        return await self.crawls.find_one_and_update(query, {"$set": update})
 
     async def update_running_crawl_stats(
         self, crawl_or_qa_run_id: str, qa_source_crawl_id: str, stats
@@ -492,9 +497,11 @@ class CrawlOps(BaseCrawlOps):
     ):
         """return current crawl state of a crawl"""
         crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
-        state = "state" if not qa_source_crawl_id else f"$qa.{qa_source_crawl_id}.state"
+        state = (
+            "$state" if not qa_source_crawl_id else f"$qa.{qa_source_crawl_id}.state"
+        )
         finished = (
-            "finished"
+            "$finished"
             if not qa_source_crawl_id
             else f"$qa.{qa_source_crawl_id}.finished"
         )
@@ -504,6 +511,7 @@ class CrawlOps(BaseCrawlOps):
         )
         if not res:
             return None, None
+        print("get_crawl_state", res)
         return res.get("state"), res.get("finished")
 
     async def add_crawl_error(
@@ -676,8 +684,8 @@ class CrawlOps(BaseCrawlOps):
 
         crawl = await self.get_crawl(crawl_id, org)
 
-        if crawl.qa_active:
-            raise HTTPException(status_code=400, detail="qa_already_running")
+        # if crawl.qa_active:
+        #    raise HTTPException(status_code=400, detail="qa_already_running")
 
         if not crawl.cid:
             raise HTTPException(status_code=400, detail="invalid_crawl_for_qa")
@@ -709,7 +717,7 @@ class CrawlOps(BaseCrawlOps):
                 {"_id": crawl_id},
                 {
                     "$set": {
-                        "qa": {qa_run_id: qa_run.dict()},
+                        f"qa.{qa_run_id}": qa_run.dict(),
                         "qa_active": qa_run_id,
                     }
                 },

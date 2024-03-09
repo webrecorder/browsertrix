@@ -16,7 +16,7 @@ description: "Priority for crawl instance #{{ . }}"
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:
-  name: crawl-qa-instance-{{ . }}
+  name: qa-crawl-instance-{{ . }}
 value: -{{ add 100 . }}
 globalDefault: false
 description: "Priority for QA crawl instance #{{ . }}"
