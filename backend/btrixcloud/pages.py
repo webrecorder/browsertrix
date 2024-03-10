@@ -49,7 +49,7 @@ class PageOps:
     async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str):
         """Add pages to database from WACZ files"""
         try:
-            crawl = await self.crawl_ops.get_crawl_out(crawl_id, None)
+            crawl = await self.crawl_ops.get_crawl(crawl_id)
             org = await self.org_ops.get_org_by_id(crawl.oid)
             wacz_files = await self.crawl_ops.get_wacz_files(crawl_id, org)
             stream = await self.storage_ops.sync_stream_pages_from_wacz(org, wacz_files)
@@ -74,7 +74,6 @@ class PageOps:
         if not page_id:
             print(f'Page {page_dict.get("url")} has no id - assigning UUID', flush=True)
 
-        print("Adding Page Data")
         page = None
 
         try:
@@ -175,18 +174,15 @@ class PageOps:
         )
 
         if not result:
-            print("*** page_id:", page_id, "oid:", oid, flush=True)
             raise HTTPException(status_code=404, detail="page_not_found")
 
         return True
 
     async def delete_qa_run_from_pages(self, crawl_id: str, qa_run_id: str):
         """delete pages"""
-        print("delete qa run")
         result = await self.pages.update_many(
             {"crawl_id": crawl_id}, {"$unset": {f"qa.{qa_run_id}": ""}}
         )
-        print(result)
         return result
 
     async def update_page_approval(

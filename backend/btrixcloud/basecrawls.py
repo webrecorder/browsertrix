@@ -120,7 +120,11 @@ class BaseCrawlOps:
         return res
 
     async def _files_to_resources(
-        self, files, org, crawlid, qa_run_id: Optional[str] = None
+        self,
+        files: List[Dict],
+        org: Organization,
+        crawlid: str,
+        qa_run_id: Optional[str] = None,
     ) -> List[CrawlFileOut]:
         if not files:
             return []
@@ -159,21 +163,17 @@ class BaseCrawlOps:
         res = await self.get_crawl_raw(crawlid, org, type_)
 
         if not skip_resources:
-            res["resources"] = await self._files_to_resources(
-                res.get("files"), org, crawlid
-            )
-
             coll_ids = res.get("collectionIds")
             if coll_ids:
                 res["collections"] = await self.colls.get_collection_names(coll_ids)
 
-        res.pop("files", None)
+        files = res.pop("files", None)
         res.pop("errors", None)
 
         crawl = CrawlOutWithResources.from_dict(res)
 
-        if crawl.type == "crawl":
-            crawl = await self._resolve_crawl_refs(crawl, org)
+        if crawl.type == "crawl" and not skip_resources:
+            crawl = await self._resolve_crawl_refs(crawl, org, files)
             if crawl.config and crawl.config.seeds:
                 crawl.config.seeds = None
 
@@ -383,6 +383,12 @@ class BaseCrawlOps:
             config = await self.crawl_configs.get_crawl_config(
                 crawl.cid, org.id if org else None, active_only=False
             )
+
+        if not org:
+            org = await self.orgs.get_org_by_id(crawl.oid)
+            if not org:
+                raise HTTPException(status_code=400, detail="missing_org")
+
         if config and config.config.seeds:
             if add_first_seed:
                 first_seed = config.config.seeds[0]

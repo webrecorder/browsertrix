@@ -20,6 +20,7 @@ from btrixcloud.models import (
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
     FAILED_STATES,
+    CrawlStats,
     CrawlFile,
     CrawlCompleteIn,
     StorageRef,
@@ -405,7 +406,7 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         allowed_from: list[str],
         finished: Optional[datetime] = None,
-        stats: Optional[dict[str, Any]] = None,
+        stats: Optional[CrawlStats] = None,
     ):
         """set status state and update db, if changed
         if allowed_from passed in, can only transition from allowed_from state,
@@ -570,7 +571,7 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         pods: dict,
-        stats: Optional[dict[str, Any]] = None,
+        stats: Optional[CrawlStats] = None,
     ) -> bool:
         """Mark crawl as failed, log crawl state and print crawl logs, if possible"""
         prev_state = status.state
@@ -1110,7 +1111,9 @@ class CrawlOperator(BaseOperator):
 
         return None
 
-    async def get_redis_crawl_stats(self, redis: Redis, crawl_id: str):
+    async def get_redis_crawl_stats(
+        self, redis: Redis, crawl_id: str
+    ) -> tuple[CrawlStats, dict[str, Any]]:
         """get page stats"""
         try:
             # crawler >0.9.0, done key is a value
@@ -1123,7 +1126,7 @@ class CrawlOperator(BaseOperator):
         sizes = await redis.hgetall(f"{crawl_id}:size")
         archive_size = sum(int(x) for x in sizes.values())
 
-        stats = {"found": pages_found, "done": pages_done, "size": archive_size}
+        stats = CrawlStats(found=pages_found, done=pages_done, size=archive_size)
         return stats, sizes
 
     async def update_crawl_state(
@@ -1139,12 +1142,12 @@ class CrawlOperator(BaseOperator):
         stats, sizes = await self.get_redis_crawl_stats(redis, crawl.id)
 
         # need to add size of previously completed WACZ files as well!
-        stats["size"] += status.filesAddedSize
+        stats.size += status.filesAddedSize
 
         # update status
-        status.pagesDone = stats["done"]
-        status.pagesFound = stats["found"]
-        status.size = stats["size"]
+        status.pagesDone = stats.done
+        status.pagesFound = stats.found
+        status.size = stats.size
         status.sizeHuman = humanize.naturalsize(status.size)
 
         await self.crawl_ops.update_running_crawl_stats(
@@ -1229,7 +1232,7 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         state: str,
-        stats: Optional[dict[str, Any]] = None,
+        stats: Optional[CrawlStats] = None,
     ) -> bool:
         """mark crawl as finished, set finished timestamp and final state"""
 

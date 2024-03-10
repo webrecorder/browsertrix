@@ -481,11 +481,9 @@ class StorageOps:
                 and s3storage.access_endpoint_url
                 and s3storage.access_endpoint_url != s3storage.endpoint_url
             ):
-                print("PRE", presigned_url)
                 presigned_url = presigned_url.replace(
                     s3storage.endpoint_url, s3storage.access_endpoint_url
                 )
-                print("POST", presigned_url)
 
         return presigned_url
 

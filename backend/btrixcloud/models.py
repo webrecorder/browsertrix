@@ -532,6 +532,15 @@ class ReviewStatus(str, Enum):
 
 
 # ============================================================================
+class CrawlStats(BaseModel):
+    """Crawl Stats for pages and size"""
+
+    found: int = 0
+    done: int = 0
+    size: int = 0
+
+
+# ============================================================================
 class CoreCrawlable(BaseModel):
     # pylint: disable=too-few-public-methods
     """Core properties for crawlable run (crawl or qa run)"""
@@ -550,9 +559,7 @@ class CoreCrawlable(BaseModel):
 
     image: Optional[str]
 
-    stopping: Optional[bool] = False
-
-    stats: Optional[Dict[str, int]] = None
+    stats: CrawlStats = CrawlStats()
 
     files: List[CrawlFile] = []
 
@@ -612,7 +619,7 @@ class CrawlOut(BaseMongoModel):
 
     state: str
 
-    stats: Optional[Dict[str, int]]
+    stats: Optional[CrawlStats]
 
     fileSize: int = 0
     fileCount: int = 0
@@ -696,6 +703,20 @@ class QARunWithResources(QARun):
 
 
 # ============================================================================
+class QARunOut(BaseModel):
+    """QA Run Output"""
+
+    id: str
+
+    userName: Optional[str]
+
+    started: datetime
+    finished: datetime
+
+    stats: CrawlStats = CrawlStats()
+
+
+# ============================================================================
 class Crawl(BaseCrawl, CrawlConfigCore):
     """Store State of a Crawl (Finished or Running)"""
 
@@ -709,9 +730,10 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     # schedule: Optional[str]
     manual: Optional[bool]
+    stopping: Optional[bool] = False
 
     qa: Optional[QARun] = None
-    qa_finished: Optional[Dict[str, QARun]] = {}
+    qaFinished: Optional[Dict[str, QARun]] = {}
 
 
 # ============================================================================
