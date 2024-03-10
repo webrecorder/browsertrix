@@ -26,6 +26,7 @@ from .models import (
     CrawlConfig,
     UpdateCrawlConfig,
     CrawlScale,
+    CrawlFile,
     Crawl,
     CrawlOut,
     CrawlOutWithResources,
@@ -35,6 +36,7 @@ from .models import (
     User,
     PaginatedResponse,
     RUNNING_AND_STARTING_STATES,
+    SUCCESSFUL_STATES,
     ALL_CRAWL_STATES,
 )
 
@@ -436,17 +438,15 @@ class CrawlOps(BaseCrawlOps):
 
     async def update_crawl_state_if_allowed(
         self,
-        crawl_or_qa_run_id: str,
-        qa_source_crawl_id: str,
+        crawl_id: str,
+        is_qa: bool,
         state: str,
         allowed_from: List[str],
         finished: Optional[datetime] = None,
         stats: Optional[Dict[str, Any]] = None,
     ):
         """update crawl state and other properties in db if state has changed"""
-        crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
-
-        prefix = "" if not qa_source_crawl_id else f"qa.{crawl_or_qa_run_id}."
+        prefix = "" if not is_qa else "qa."
 
         update: Dict[str, Any] = {f"{prefix}state": state}
         if finished:
@@ -460,25 +460,23 @@ class CrawlOps(BaseCrawlOps):
 
         return await self.crawls.find_one_and_update(query, {"$set": update})
 
-    async def update_running_crawl_stats(
-        self, crawl_or_qa_run_id: str, qa_source_crawl_id: str, stats
-    ):
+    async def update_running_crawl_stats(self, crawl_id: str, is_qa: bool, stats):
         """update running crawl stats"""
-        crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
-        field = "stats" if not qa_source_crawl_id else f"qa.{crawl_or_qa_run_id}.stats"
+        prefix = "" if not is_qa else "qa."
         query = {"_id": crawl_id, "type": "crawl", "state": "running"}
-        return await self.crawls.find_one_and_update(query, {"$set": {field: stats}})
+        return await self.crawls.find_one_and_update(
+            query, {"$set": {f"{prefix}stats": stats}}
+        )
 
     async def inc_crawl_exec_time(
         self,
-        crawl_or_qa_run_id: str,
-        qa_source_crawl_id: str,
+        crawl_id: str,
+        is_qa: bool,
         exec_time,
         last_updated_time,
     ):
         """increment exec time"""
-        crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
-        prefix = "" if not qa_source_crawl_id else f"qa.{crawl_or_qa_run_id}."
+        prefix = "" if not is_qa else "qa."
 
         return await self.crawls.find_one_and_update(
             {
@@ -492,50 +490,36 @@ class CrawlOps(BaseCrawlOps):
             },
         )
 
-    async def get_crawl_state(
-        self, crawl_or_qa_run_id: str, qa_source_crawl_id: Optional[str] = None
-    ):
+    async def get_crawl_state(self, crawl_id: str, is_qa: bool):
         """return current crawl state of a crawl"""
-        crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
-        state = (
-            "$state" if not qa_source_crawl_id else f"$qa.{qa_source_crawl_id}.state"
-        )
-        finished = (
-            "$finished"
-            if not qa_source_crawl_id
-            else f"$qa.{qa_source_crawl_id}.finished"
-        )
+        prefix = "" if not is_qa else "qa."
 
         res = await self.crawls.find_one(
-            {"_id": crawl_id}, projection={"state": state, "finished": finished}
+            {"_id": crawl_id},
+            projection={"state": f"${prefix}state", "finished": f"${prefix}finished"},
         )
         if not res:
             return None, None
-        print("get_crawl_state", res)
         return res.get("state"), res.get("finished")
 
     async def add_crawl_error(
         self,
-        crawl_or_qa_run_id: str,
-        qa_source_crawl_id: str,
+        crawl_id: str,
+        is_qa: bool,
         error: str,
     ):
         """add crawl error from redis to mongodb errors field"""
-        crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
-        field = (
-            "errors" if not qa_source_crawl_id else f"qa.{crawl_or_qa_run_id}.errors"
-        )
+        prefix = "" if not is_qa else "qa."
 
         await self.crawls.find_one_and_update(
-            {"_id": crawl_id}, {"$push": {field: error}}
+            {"_id": crawl_id}, {"$push": {f"{prefix}errors": error}}
         )
 
     async def add_crawl_file(
-        self, crawl_or_qa_run_id, qa_source_crawl_id, crawl_file, size
+        self, crawl_id: str, is_qa: bool, crawl_file: CrawlFile, size: int
     ):
         """add new crawl file to crawl"""
-        crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
-        prefix = "" if not qa_source_crawl_id else f"qa.{crawl_or_qa_run_id}."
+        prefix = "" if not is_qa else "qa."
 
         await self.crawls.find_one_and_update(
             {"_id": crawl_id},
@@ -684,8 +668,8 @@ class CrawlOps(BaseCrawlOps):
 
         crawl = await self.get_crawl(crawl_id, org)
 
-        # if crawl.qa_active:
-        #    raise HTTPException(status_code=400, detail="qa_already_running")
+        if crawl.qa:
+            raise HTTPException(status_code=400, detail="qa_already_running")
 
         if not crawl.cid:
             raise HTTPException(status_code=400, detail="invalid_crawl_for_qa")
@@ -717,8 +701,7 @@ class CrawlOps(BaseCrawlOps):
                 {"_id": crawl_id},
                 {
                     "$set": {
-                        f"qa.{qa_run_id}": qa_run.dict(),
-                        "qa_active": qa_run_id,
+                        "qa": qa_run.dict(),
                     }
                 },
             )
@@ -730,26 +713,18 @@ class CrawlOps(BaseCrawlOps):
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
 
     async def stop_crawl_qa_run(self, crawl_id: str, org: Organization):
-        """Stop crawl QA run"""
+        """Stop crawl QA run, QA run removed when actually finished"""
         crawl = await self.get_crawl(crawl_id, org)
 
-        if not crawl.qa_active:
-            raise HTTPException(status_code=400, detail="invalid_qa_run_id")
+        if not crawl.qa:
+            raise HTTPException(status_code=400, detail="qa_not_running")
 
         try:
-            result = await self.crawl_manager.shutdown_crawl(
-                crawl.qa_active, graceful=True
-            )
+            result = await self.crawl_manager.shutdown_crawl(crawl.qa.id, graceful=True)
 
             if result.get("error") == "Not Found":
                 # treat as success, qa crawl no longer exists, so mark as no qa
                 result = {"success": True}
-
-            if result.get("success"):
-                await self.crawls.find_one_and_update(
-                    {"_id": crawl_id, "type": "crawl", "oid": org.id},
-                    {"$set": {"active_qa": None}},
-                )
 
             return result
 
@@ -760,20 +735,59 @@ class CrawlOps(BaseCrawlOps):
                 status_code=404, detail=f"crawl_not_found, (details: {exc})"
             )
 
+    async def delete_crawl_qa_run(self, crawl_id: str, qa_run_id: str):
+        """delete specified finished QA run"""
+
+        res = await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "type": "crawl"},
+            {"$unset": {f"qa_finished.{qa_run_id}": ""}},
+        )
+
+        await self.page_ops.delete_qa_run_from_pages(crawl_id, qa_run_id)
+
+        return res
+
+    async def qa_run_clear(self, crawl_id: str):
+        """remove any active qa run, if set"""
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "type": "crawl"}, {"$set": {"qa": None}}
+        )
+
+    async def qa_run_finished(self, crawl_id: str):
+        """add qa run to finished list, if successful"""
+        crawl = await self.get_crawl(crawl_id)
+
+        if not crawl.qa:
+            return False
+
+        if crawl.qa.finished and crawl.qa.state in SUCCESSFUL_STATES:
+            query = {f"qa_finished.{crawl.qa.id}": crawl.qa.dict()}
+
+        if await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "type": "crawl"}, {"$set": query}
+        ):
+            return True
+
+        return False
+
     async def get_qa_runs(
         self, crawl_id: str, org: Optional[Organization] = None
     ) -> List[QARun]:
         """Return list of QA runs"""
         crawl = await self.get_crawl(crawl_id, org)
-        return list(crawl.qa.values()) if crawl.qa else []
+        all_qa = list(crawl.qa_finished.values()) if crawl.qa_finished else []
+        all_qa.sort(key=lambda x: x.finished or dt_now(), reverse=True)
+        # if crawl.qa and (len(all_qa) == 0 or crawl.qa.id != all_qa[0].id):
+        #    all_qa.insert(0, crawl.qa)
+        return all_qa
 
     async def get_qa_run_for_replay(
         self, crawl_id: str, qa_run_id: str, org: Optional[Organization] = None
     ) -> QARun:
         """Fetch QA runs with resources for replay.json"""
         crawl = await self.get_crawl(crawl_id, org)
-        qa = crawl.qa or {}
-        qa_run = qa.get(qa_run_id)
+        qa_finished = crawl.qa_finished or {}
+        qa_run = qa_finished.get(qa_run_id)
 
         if not qa_run:
             raise HTTPException(status_code=404, detail="crawl_qa_not_found")
@@ -975,7 +989,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
 
     @app.get(
         "/orgs/all/crawls/{crawl_id}/qa/{qa_run_id}/replay.json",
-        tags=["crawls"],
+        tags=["qa"],
         response_model=QARunWithResources,
     )
     async def get_qa_crawl_admin(crawl_id, qa_run_id, user: User = Depends(user_dep)):
@@ -986,7 +1000,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/replay.json",
-        tags=["crawls"],
+        tags=["qa"],
         response_model=QARunWithResources,
     )
     async def get_qa_crawl(
@@ -994,7 +1008,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     ):
         return await ops.get_qa_run_for_replay(crawl_id, qa_run_id, org)
 
-    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/start", tags=["crawls", "qa"])
+    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/start", tags=["qa"])
     async def start_crawl_qa_run(
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
@@ -1003,20 +1017,29 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         qa_run_id = await ops.start_crawl_qa_run(crawl_id, org, user)
         return {"started": qa_run_id}
 
-    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/stop", tags=["crawls", "qa"])
+    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/stop", tags=["qa"])
     async def stop_crawl_qa_run(
         crawl_id: str, org: Organization = Depends(org_crawl_dep)
     ):
         # pylint: disable=unused-argument
         return await ops.stop_crawl_qa_run(crawl_id, org)
 
+    @app.delete("/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}", tags=["qa"])
+    async def delete_crawl_qa_run(
+        crawl_id: str, qa_run_id: str, org: Organization = Depends(org_crawl_dep)
+    ):
+        # pylint: disable=unused-argument
+        return await ops.delete_crawl_qa_run(crawl_id, qa_run_id)
+
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa",
-        tags=["crawls"],
+        tags=["qa"],
         response_model=List[QARun],
     )
     async def get_qa_runs(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_qa_runs(crawl_id, org)
+
+    # ----
 
     @app.get(
         "/orgs/all/crawls/{crawl_id}",

@@ -4,8 +4,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
 from uuid import UUID, uuid4
 
-from pprint import pprint
-
 from fastapi import Depends, HTTPException
 import pymongo
 
@@ -59,7 +57,7 @@ class PageOps:
                 if not page_dict.get("url"):
                     continue
 
-                await self.add_page_to_db(page_dict, crawl_id, "", crawl.oid)
+                await self.add_page_to_db(page_dict, crawl_id, None, crawl.oid)
         # pylint: disable=broad-exception-caught, raise-missing-from
         except Exception as err:
             print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
@@ -67,27 +65,24 @@ class PageOps:
     async def add_page_to_db(
         self,
         page_dict: Dict[str, Any],
-        crawl_or_qa_run_id: str,
-        qa_source_crawl_id: str,
+        crawl_id: str,
+        qa_run_id: Optional[str],
         oid: UUID,
     ):
         """Add page to database"""
-        page_id = page_dict.get("id")
+        page_id: Optional[str] = page_dict.get("id")
         if not page_id:
             print(f'Page {page_dict.get("url")} has no id - assigning UUID', flush=True)
-            page_id = uuid4()
-
-        crawl_id = qa_source_crawl_id or crawl_or_qa_run_id
 
         print("Adding Page Data")
-        pprint(page_dict)
+        page = None
 
         try:
             status = page_dict.get("status")
             if not status and page_dict.get("loadState"):
                 status = 200
             page = Page(
-                id=page_id,
+                id=page_id or uuid4(),
                 oid=oid,
                 crawl_id=crawl_id,
                 url=page_dict.get("url"),
@@ -106,7 +101,8 @@ class PageOps:
                 )
             )
         except pymongo.errors.DuplicateKeyError:
-            return
+            pass
+
         # pylint: disable=broad-except
         except Exception as err:
             print(
@@ -116,14 +112,14 @@ class PageOps:
             return
 
         # qa data
-        if qa_source_crawl_id:
-            compare_dict = page_dict.get("compare")
+        if qa_run_id and page:
+            compare_dict = page_dict.get("comparison")
             if compare_dict is None:
                 print("QA Run, but compare data missing!")
                 return
 
             compare = PageQACompare(**compare_dict)
-            await self.add_qa_compare(page_id, oid, crawl_or_qa_run_id, compare)
+            await self.add_qa_run_for_page(page.id, oid, qa_run_id, compare)
 
     async def delete_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
         """Delete crawl pages from db"""
@@ -165,7 +161,7 @@ class PageOps:
         page_raw = await self.get_page_raw(page_id, oid, crawl_id)
         return Page.from_dict(page_raw)
 
-    async def add_qa_compare(
+    async def add_qa_run_for_page(
         self, page_id: UUID, oid: UUID, qa_run_id: str, compare: PageQACompare
     ) -> bool:
         """Update page heuristics and mime/type from QA run"""
@@ -174,14 +170,24 @@ class PageOps:
 
         result = await self.pages.find_one_and_update(
             {"_id": page_id, "oid": oid},
-            {"$set": {f"qa.{qa_run_id}", compare.dict()}},
+            {"$set": {f"qa.{qa_run_id}": compare.dict()}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
 
         if not result:
+            print("*** page_id:", page_id, "oid:", oid, flush=True)
             raise HTTPException(status_code=404, detail="page_not_found")
 
         return True
+
+    async def delete_qa_run_from_pages(self, crawl_id: str, qa_run_id: str):
+        """delete pages"""
+        print("delete qa run")
+        result = await self.pages.update_many(
+            {"crawl_id": crawl_id}, {"$unset": {f"qa.{qa_run_id}": ""}}
+        )
+        print(result)
+        return result
 
     async def update_page_approval(
         self,

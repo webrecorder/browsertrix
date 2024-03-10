@@ -710,8 +710,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     # schedule: Optional[str]
     manual: Optional[bool]
 
-    qa_active: Optional[str]
-    qa: Optional[Dict[str, QARun]] = {}
+    qa: Optional[QARun] = None
+    qa_finished: Optional[Dict[str, QARun]] = {}
 
 
 # ============================================================================
@@ -1456,12 +1456,14 @@ class PageQACompare(BaseModel):
 
     screenshotMatch: Optional[int] = None
     textMatch: Optional[int] = None
-    resourceCounts: Optional[Dict[str, Dict[str, int]]]
+    resourceCounts: Optional[Dict[str, int]]
 
 
 # ============================================================================
 class Page(BaseMongoModel):
     """Model for crawl pages"""
+
+    id: UUID
 
     oid: UUID
     crawl_id: str

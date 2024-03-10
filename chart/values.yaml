@@ -17,8 +17,8 @@ disk_utilization_threshold: 90
 # crawler logging flags
 crawler_logging_opts: "stats,behaviors,debug"
 
-# to enable, set to a value other than 'false'
-crawler_extract_full_text: false
+# to enable, set to one or more comma separate values: to-warc,to-pages,final-to-warc
+crawler_extract_full_text: to-warc
 
 # max pages per crawl
 # set to non-zero value to enforce global max pages per crawl limit

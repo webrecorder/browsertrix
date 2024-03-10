@@ -62,6 +62,16 @@ class CrawlSpec(BaseModel):
     max_crawl_size: int = 0
     qa_source_crawl_id: str = ""
 
+    @property
+    def db_crawl_id(self) -> str:
+        """return actual crawl_id for db, if qa run"""
+        return self.qa_source_crawl_id or self.id
+
+    @property
+    def is_qa(self) -> bool:
+        """return true if qa run"""
+        return bool(self.qa_source_crawl_id)
+
 
 # ============================================================================
 class PodResourcePercentage(BaseModel):

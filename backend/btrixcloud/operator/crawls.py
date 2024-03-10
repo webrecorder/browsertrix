@@ -7,7 +7,6 @@ from typing import Optional, Any
 from datetime import datetime
 
 import json
-from uuid import UUID
 
 import humanize
 
@@ -233,7 +232,7 @@ class CrawlOperator(BaseOperator):
         storage_path = crawl.storage.get_storage_extra_path(oid)
         storage_secret = crawl.storage.get_storage_secret_name(oid)
 
-        if not crawl.qa_source_crawl_id:
+        if not crawl.is_qa:
             params["profile_filename"] = configmap["PROFILE_FILENAME"]
         else:
             storage_path += "qa/"
@@ -434,8 +433,8 @@ class CrawlOperator(BaseOperator):
         """
         if not allowed_from or status.state in allowed_from:
             res = await self.crawl_ops.update_crawl_state_if_allowed(
-                crawl.id,
-                crawl.qa_source_crawl_id,
+                crawl.db_crawl_id,
+                crawl.is_qa,
                 state=state,
                 allowed_from=allowed_from,
                 finished=finished,
@@ -448,7 +447,7 @@ class CrawlOperator(BaseOperator):
 
             # get actual crawl state
             actual_state, finished = await self.crawl_ops.get_crawl_state(
-                crawl.id, crawl.qa_source_crawl_id
+                crawl.db_crawl_id, crawl.is_qa
             )
             if actual_state:
                 status.state = actual_state
@@ -637,6 +636,9 @@ class CrawlOperator(BaseOperator):
             else:
                 finalized = True
 
+        if finalized and crawl.is_qa:
+            await self.crawl_ops.qa_run_clear(crawl.db_crawl_id)
+
         return {
             "status": status.dict(exclude_none=True),
             "children": new_children,
@@ -742,17 +744,19 @@ class CrawlOperator(BaseOperator):
                 file_done = await redis.lpop(self.done_key)
 
             page_crawled = await redis.lpop(f"{crawl.id}:{self.pages_key}")
+            qa_run_id = crawl.id if crawl.is_qa else None
+
             while page_crawled:
                 page_dict = json.loads(page_crawled)
                 await self.page_ops.add_page_to_db(
-                    page_dict, crawl.id, crawl.qa_source_crawl_id, crawl.oid
+                    page_dict, crawl.db_crawl_id, qa_run_id, crawl.oid
                 )
                 page_crawled = await redis.lpop(f"{crawl.id}:{self.pages_key}")
 
             crawl_error = await redis.lpop(f"{crawl.id}:{self.errors_key}")
             while crawl_error:
                 await self.crawl_ops.add_crawl_error(
-                    crawl.id, crawl.qa_source_crawl_id, crawl_error
+                    crawl.db_crawl_id, crawl.is_qa, crawl_error
                 )
                 crawl_error = await redis.lpop(f"{crawl.id}:{self.errors_key}")
 
@@ -938,7 +942,7 @@ class CrawlOperator(BaseOperator):
 
         if exec_time:
             if not await self.crawl_ops.inc_crawl_exec_time(
-                crawl.id, crawl.qa_source_crawl_id, exec_time, status.lastUpdatedTime
+                crawl.db_crawl_id, crawl.is_qa, exec_time, status.lastUpdatedTime
             ):
                 # if lastUpdatedTime is same as previous, something is wrong, don't update!
                 print(
@@ -1057,11 +1061,11 @@ class CrawlOperator(BaseOperator):
         await redis.incr("filesAddedSize", filecomplete.size)
 
         await self.crawl_ops.add_crawl_file(
-            crawl.id, crawl.qa_source_crawl_id, crawl_file, filecomplete.size
+            crawl.db_crawl_id, crawl.is_qa, crawl_file, filecomplete.size
         )
 
         # no replicas for QA for now
-        if crawl.qa_source_crawl_id:
+        if crawl.is_qa:
             return True
 
         try:
@@ -1144,7 +1148,7 @@ class CrawlOperator(BaseOperator):
         status.sizeHuman = humanize.naturalsize(status.size)
 
         await self.crawl_ops.update_running_crawl_stats(
-            crawl.id, crawl.qa_source_crawl_id, stats
+            crawl.db_crawl_id, crawl.is_qa, stats
         )
 
         for key, value in sizes.items():
@@ -1254,50 +1258,64 @@ class CrawlOperator(BaseOperator):
         status.finished = to_k8s_date(finished)
 
         # Regular Crawl Finished
-        if not crawl.qa_source_crawl_id:
-            if crawl and state in SUCCESSFUL_STATES:
-                await self.inc_crawl_complete_stats(crawl, finished)
-
-            self.run_task(
-                self.do_crawl_finished_tasks(
-                    crawl.id, crawl.cid, crawl.oid, status.filesAddedSize, state
-                )
-            )
+        if not crawl.is_qa:
+            self.run_task(self.do_crawl_finished_tasks(crawl, status, finished, state))
 
         # QA Run Finished
         else:
-            await self.k8s.delete_crawl_job(crawl.id)
+            self.run_task(self.do_qa_run_finished_tasks(crawl, state))
 
         return True
 
     # pylint: disable=too-many-arguments
     async def do_crawl_finished_tasks(
         self,
-        crawl_id: str,
-        cid: UUID,
-        oid: UUID,
-        files_added_size: int,
+        crawl: CrawlSpec,
+        status: CrawlStatus,
+        finished: datetime,
         state: str,
     ) -> None:
         """Run tasks after crawl completes in asyncio.task coroutine."""
-        await self.crawl_config_ops.stats_recompute_last(cid, files_added_size, 1)
+        await self.crawl_config_ops.stats_recompute_last(
+            crawl.cid, status.filesAddedSize, 1
+        )
 
-        if state in SUCCESSFUL_STATES and oid:
-            await self.org_ops.inc_org_bytes_stored(oid, files_added_size, "crawl")
-            await self.coll_ops.add_successful_crawl_to_collections(crawl_id, cid)
+        if state in SUCCESSFUL_STATES and crawl.oid:
+            await self.inc_crawl_complete_stats(crawl, finished)
+            await self.org_ops.inc_org_bytes_stored(
+                crawl.oid, status.filesAddedSize, "crawl"
+            )
+            await self.coll_ops.add_successful_crawl_to_collections(crawl.id, crawl.cid)
 
         if state in FAILED_STATES:
-            await self.crawl_ops.delete_crawl_files(crawl_id, oid)
-            await self.page_ops.delete_crawl_pages(crawl_id, oid)
+            await self.crawl_ops.delete_crawl_files(crawl.id, crawl.oid)
+            await self.page_ops.delete_crawl_pages(crawl.id, crawl.oid)
 
         await self.event_webhook_ops.create_crawl_finished_notification(
-            crawl_id, oid, state
+            crawl.id, crawl.oid, state
         )
 
         # finally, delete job
-        await self.k8s.delete_crawl_job(crawl_id)
+        await self.k8s.delete_crawl_job(crawl.id)
 
-    async def inc_crawl_complete_stats(self, crawl, finished):
+    # pylint: disable=too-many-arguments
+    async def do_qa_run_finished_tasks(
+        self,
+        crawl: CrawlSpec,
+        state: str,
+    ) -> None:
+        """Run tasks after qa run completes in asyncio.task coroutine."""
+
+        if state in SUCCESSFUL_STATES:
+            await self.crawl_ops.qa_run_finished(crawl.db_crawl_id)
+
+        if state in FAILED_STATES:
+            await self.page_ops.delete_qa_run_from_pages(crawl.db_crawl_id, crawl.id)
+
+        # finally, delete job
+        await self.k8s.delete_crawl_job(crawl.id)
+
+    async def inc_crawl_complete_stats(self, crawl: CrawlSpec, finished: datetime):
         """Increment Crawl Stats"""
 
         started = from_k8s_date(crawl.started)
