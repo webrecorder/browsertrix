@@ -162,17 +162,17 @@ class BaseCrawlOps:
         """Get crawl data for api output"""
         res = await self.get_crawl_raw(crawlid, org, type_)
 
+        files = res.pop("files", None)
+        res.pop("errors", None)
+
         if not skip_resources:
             coll_ids = res.get("collectionIds")
             if coll_ids:
                 res["collections"] = await self.colls.get_collection_names(coll_ids)
 
-        files = res.pop("files", None)
-        res.pop("errors", None)
-
         crawl = CrawlOutWithResources.from_dict(res)
 
-        if crawl.type == "crawl" and not skip_resources:
+        if not skip_resources:
             crawl = await self._resolve_crawl_refs(crawl, org, files)
             if crawl.config and crawl.config.seeds:
                 crawl.config.seeds = None
@@ -288,9 +288,9 @@ class BaseCrawlOps:
         delete_list: DeleteCrawlList,
         type_: str,
         user: Optional[User] = None,
-    ):
+    ) -> tuple[int, dict[UUID, dict[str, int]], bool]:
         """Delete a list of crawls by id for given org"""
-        cids_to_update: dict[str, dict[str, int]] = {}
+        cids_to_update: dict[UUID, dict[str, int]] = {}
 
         size = 0
 
@@ -320,7 +320,7 @@ class BaseCrawlOps:
             crawl_size = await self._delete_crawl_files(crawl, org)
             size += crawl_size
 
-            cid = str(crawl.cid)
+            cid = crawl.cid
             if cid:
                 if cids_to_update.get(cid):
                     cids_to_update[cid]["inc"] += 1
@@ -373,8 +373,8 @@ class BaseCrawlOps:
         self,
         crawl: Union[CrawlOut, CrawlOutWithResources],
         org: Optional[Organization],
+        files: Optional[list[dict]],
         add_first_seed: bool = True,
-        files: Optional[list[dict]] = None,
     ):
         """Resolve running crawl data"""
         # pylint: disable=too-many-branches

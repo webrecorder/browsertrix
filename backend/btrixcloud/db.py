@@ -8,7 +8,7 @@ import urllib
 import asyncio
 from uuid import UUID
 
-from typing import Optional, Union
+from typing import Optional, Union, TypeVar, Type
 
 import motor.motor_asyncio
 from pydantic import BaseModel
@@ -199,6 +199,10 @@ async def create_indexes(
 
 
 # ============================================================================
+T = TypeVar("T")
+
+
+# ============================================================================
 class BaseMongoModel(BaseModel):
     """Base pydantic model that is also a mongo doc"""
 
@@ -210,10 +214,10 @@ class BaseMongoModel(BaseModel):
         return str(self.id)
 
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls: Type[T], data: dict) -> T:
         """convert dict from mongo to a class"""
         if not data:
-            return None
+            return cls()
         data["id"] = data.pop("_id")
         return cls(**data)
 

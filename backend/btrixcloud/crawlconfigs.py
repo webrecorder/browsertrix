@@ -24,6 +24,7 @@ from .models import (
     CrawlConfig,
     CrawlConfigOut,
     CrawlConfigIdNameOut,
+    CrawlOut,
     EmptyStr,
     UpdateCrawlConfig,
     Organization,
@@ -559,7 +560,9 @@ class CrawlConfigOps:
         results = [CrawlConfigIdNameOut.from_dict(res) for res in results]
         return results
 
-    async def get_running_crawl(self, crawlconfig: CrawlConfig):
+    async def get_running_crawl(
+        self, crawlconfig: Union[CrawlConfig, CrawlConfigOut]
+    ) -> Optional[CrawlOut]:
         """Return the id of currently running crawl for this config, if any"""
         # crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
         crawls, _ = await self.crawl_ops.list_crawls(
@@ -619,13 +622,15 @@ class CrawlConfigOps:
 
         return result is not None
 
-    def _add_curr_crawl_stats(self, crawlconfig, crawl):
+    def _add_curr_crawl_stats(
+        self, crawlconfig: CrawlConfigOut, crawl: Optional[CrawlOut]
+    ):
         """Add stats from current running crawl, if any"""
         if not crawl:
             return
 
         crawlconfig.lastCrawlState = crawl.state
-        crawlconfig.lastCrawlSize = crawl.stats.get("size", 0) if crawl.stats else 0
+        crawlconfig.lastCrawlSize = crawl.stats.size if crawl.stats else 0
         crawlconfig.lastCrawlStopping = crawl.stopping
 
     async def get_crawl_config_out(self, cid: UUID, org: Organization):

@@ -387,6 +387,8 @@ class CrawlConfig(CrawlConfigCore, CrawlConfigAdditional):
 class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     """Crawl Config Output"""
 
+    id: UUID
+
     lastCrawlStopping: Optional[bool] = False
     profileName: Optional[str]
     firstSeed: Optional[str]
@@ -580,7 +582,11 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
 
     name: Optional[str] = ""
 
+    stopping: Optional[bool] = False
+
     description: Optional[str] = ""
+
+    tags: Optional[List[str]] = []
 
     collectionIds: Optional[List[UUID]] = []
 
@@ -730,7 +736,6 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     # schedule: Optional[str]
     manual: Optional[bool]
-    stopping: Optional[bool] = False
 
     qa: Optional[QARun] = None
     qaFinished: Optional[Dict[str, QARun]] = {}
@@ -762,8 +767,6 @@ class UploadedCrawl(BaseCrawl):
     """Store State of a Crawl Upload"""
 
     type: Literal["upload"] = "upload"
-
-    tags: Optional[List[str]] = []
 
 
 # ============================================================================

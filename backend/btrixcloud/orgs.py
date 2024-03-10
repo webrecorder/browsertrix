@@ -20,6 +20,7 @@ from .models import (
     SUCCESSFUL_STATES,
     RUNNING_STATES,
     STARTING_STATES,
+    BaseCrawl,
     Organization,
     StorageRef,
     OrgQuotas,
@@ -608,14 +609,14 @@ class OrgOps:
         upload_count = 0
         page_count = 0
 
-        async for item in self.crawls_db.find({"oid": org.id}):
-            if item["state"] not in SUCCESSFUL_STATES:
+        async for item_data in self.crawls_db.find({"oid": org.id}):
+            item = BaseCrawl.from_dict(item_data)
+            if item.state not in SUCCESSFUL_STATES:
                 continue
             archived_item_count += 1
-            type_ = item.get("type")
-            if type_ == "crawl":
+            if item.type == "crawl":
                 crawl_count += 1
-            if type_ == "upload":
+            if item.type == "upload":
                 upload_count += 1
             page_count += item.stats.done
 

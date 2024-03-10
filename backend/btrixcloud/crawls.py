@@ -226,7 +226,7 @@ class CrawlOps(BaseCrawlOps):
             crawl = cls.from_dict(result)
             files = result.get("files") if resources else None
             crawl = await self._resolve_crawl_refs(
-                crawl, org, add_first_seed=False, files=files
+                crawl, org, files=files, add_first_seed=False
             )
             crawls.append(crawl)
 
@@ -566,42 +566,38 @@ class CrawlOps(BaseCrawlOps):
         if org:
             query["oid"] = org.id
 
-        async for crawl in self.crawls.find(query):
+        async for crawl_raw in self.crawls.find(query):
+            crawl = Crawl.from_dict(crawl_raw)
             data: Dict[str, Union[str, int]] = {}
-            data["id"] = str(crawl.get("_id"))
+            data["id"] = crawl.id
 
-            oid = crawl.get("oid")
-            data["oid"] = str(oid)
-            data["org"] = org_slugs[oid]
+            data["oid"] = str(crawl.oid)
+            data["org"] = org_slugs[crawl.oid]
 
-            data["cid"] = str(crawl.get("cid"))
-            crawl_name = crawl.get("name")
-            data["name"] = f'"{crawl_name}"' if crawl_name else ""
-            data["state"] = crawl.get("state")
+            data["cid"] = crawl.id
+            data["name"] = f'"{crawl.name}"' if crawl.name else ""
+            data["state"] = crawl.state
 
-            userid = crawl.get("userid")
-            data["userid"] = str(userid)
-            data["user"] = user_emails.get(userid)
+            data["userid"] = str(crawl.userid)
+            data["user"] = user_emails.get(crawl.userid)
 
-            started = crawl.get("started")
-            finished = crawl.get("finished")
-
-            data["started"] = str(started)
-            data["finished"] = str(finished)
+            data["started"] = str(crawl.started)
+            data["finished"] = str(crawl.finished)
 
             data["duration"] = 0
-            if started and finished:
-                duration = finished - started
+            duration_seconds = 0
+            if crawl.started and crawl.finished:
+                duration = crawl.finished - crawl.started
                 duration_seconds = int(duration.total_seconds())
                 if duration_seconds:
                     data["duration"] = duration_seconds
 
             data["pages"] = crawl.stats.done
 
-            data["filesize"] = crawl.get("fileSize", 0)
+            data["filesize"] = crawl.fileSize
 
             data["avg_page_time"] = 0
-            if crawl.stats.done != 0 and started and finished and duration_seconds:
+            if crawl.stats.done != 0 and duration_seconds:
                 data["avg_page_time"] = int(duration_seconds / crawl.stats.done)
 
             crawls_data.append(data)
@@ -807,7 +803,10 @@ class CrawlOps(BaseCrawlOps):
 
         qa_run.files = []
 
-        return QARunWithResources(resources=resources, **qa_run.dict())
+        qa_run_dict = qa_run.dict()
+        qa_run_dict["resources"] = resources
+
+        return QARunWithResources(**qa_run_dict)
 
 
 # ============================================================================

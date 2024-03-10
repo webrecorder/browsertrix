@@ -317,7 +317,7 @@ class PageOps:
         page: int = 1,
         sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
-    ) -> Tuple[List[Page], int]:
+    ) -> Tuple[List[PageOut], int]:
         """List all pages in crawl"""
         # pylint: disable=duplicate-code, too-many-locals
         # Zero-index page for query
