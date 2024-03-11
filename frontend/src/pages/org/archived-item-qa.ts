@@ -8,6 +8,7 @@ import {
 import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { choose } from "lit/directives/choose.js";
+import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -244,16 +245,21 @@ export class ArchivedItemQA extends TailwindElement {
           class="mx-1.5 flex h-8 flex-1 items-center justify-between rounded border bg-neutral-0 px-2 text-sm leading-none"
         >
           <span>${this.page?.url || "http://"}</span>
-          <sl-format-date
-            class="font-monostyle text-xs text-neutral-500"
-            date=${this.page ? `${this.page.timestamp}Z` : new Date()}
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-            hour="2-digit"
-            minute="2-digit"
-          >
-          </sl-format-date>
+          ${when(
+            this.page,
+            (page) => html`
+              <sl-format-date
+                class="font-monostyle text-xs text-neutral-500"
+                date=${`${page.timestamp}Z`}
+                month="2-digit"
+                day="2-digit"
+                year="2-digit"
+                hour="2-digit"
+                minute="2-digit"
+              >
+              </sl-format-date>
+            `,
+          )}
         </div>
       </div>
     `;
