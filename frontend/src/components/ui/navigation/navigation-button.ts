@@ -101,15 +101,7 @@ export class Button extends TailwindElement {
     }
 
     if (this.type === "submit") {
-      this.submit();
-    }
-  }
-
-  private submit() {
-    const form = (this.closest("form") || this.closest("form"))!;
-
-    if (form) {
-      form.submit();
+      this.closest("form")?.submit();
     }
   }
 }
