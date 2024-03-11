@@ -17,6 +17,8 @@ import {
   customElement,
 } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import { map } from "lit/directives/map.js";
+import { range } from "lit/directives/range.js";
 import { msg, localized, str } from "@lit/localize";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { choose } from "lit/directives/choose.js";
@@ -37,6 +39,7 @@ import {
   getNextDate,
 } from "@/utils/cron";
 import { maxLengthValidator } from "@/utils/form";
+import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import type { Tab } from "@/components/ui/tab-list";
 import type {
   ExclusionRemoveEvent,
@@ -297,6 +300,8 @@ export class CrawlConfigEditor extends LiteElement {
 
   @state()
   private serverError?: TemplateResult | string;
+
+  private maxScale = DEFAULT_MAX_SCALE;
 
   // For fuzzy search:
   private readonly fuse = new Fuse<string>([], {
@@ -1542,9 +1547,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
               scale: +(e.target as SlCheckbox).value,
             })}
         >
-          <sl-radio-button value="1" size="small">1×</sl-radio-button>
-          <sl-radio-button value="2" size="small">2×</sl-radio-button>
-          <sl-radio-button value="3" size="small">3×</sl-radio-button>
+          ${map(
+            range(this.maxScale),
+            (i: number) =>
+              html` <sl-radio-button value="${i + 1}" size="small"
+                >${i + 1}×</sl-radio-button
+              >`,
+          )}
         </sl-radio-group>
       `)}
       ${this.renderHelpTextCol(
@@ -2561,6 +2570,9 @@ https://archiveweb.page/images/${"logo.svg"}`}
       }
       if (data.maxPagesPerCrawl > 0) {
         orgDefaults.maxPagesPerCrawl = data.maxPagesPerCrawl;
+      }
+      if (data.maxScale) {
+        this.maxScale = data.maxScale;
       }
       this.orgDefaults = orgDefaults;
     } catch (e) {

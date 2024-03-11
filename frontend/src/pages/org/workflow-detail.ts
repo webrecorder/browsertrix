@@ -19,7 +19,11 @@ import type {
 } from "./types";
 import { humanizeSchedule } from "@/utils/cron";
 import type { APIPaginatedList } from "@/types/api";
-import { inactiveCrawlStates, isActive } from "@/utils/crawler";
+import {
+  DEFAULT_MAX_SCALE,
+  inactiveCrawlStates,
+  isActive,
+} from "@/utils/crawler";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
@@ -69,6 +73,9 @@ export class WorkflowDetail extends LiteElement {
 
   @property({ type: String })
   initialActivePanel?: Tab;
+
+  @property({ type: Number })
+  maxScale = DEFAULT_MAX_SCALE;
 
   @state()
   private workflow?: Workflow;
@@ -1261,20 +1268,13 @@ export class WorkflowDetail extends LiteElement {
   private renderEditScale() {
     if (!this.workflow) return;
 
-    const scaleOptions = [
-      {
-        value: 1,
-        label: "1×",
-      },
-      {
-        value: 2,
-        label: "2×",
-      },
-      {
-        value: 3,
-        label: "3×",
-      },
-    ];
+    const scaleOptions = [];
+    for (let value = 1; value <= this.maxScale; value++) {
+      scaleOptions.push({
+        value,
+        label: `${value}×`,
+      });
+    }
 
     return html`
       <div>

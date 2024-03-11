@@ -11,6 +11,7 @@ import type { OrgData } from "@/utils/orgs";
 import { isAdmin, isCrawler } from "@/utils/orgs";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { needLogin } from "@/utils/auth";
+import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import "./workflow-detail";
 import "./workflows-list";
 import "./workflows-new";
@@ -103,6 +104,9 @@ export class Org extends LiteElement {
 
   @property({ type: String })
   orgTab: OrgTab = defaultTab;
+
+  @property({ type: Number })
+  maxScale: number = DEFAULT_MAX_SCALE;
 
   @state()
   private orgStorageQuotaReached = false;
@@ -572,6 +576,7 @@ export class Org extends LiteElement {
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
+          .maxScale=${this.maxScale}
         ></btrix-workflow-detail>
       `;
     }
