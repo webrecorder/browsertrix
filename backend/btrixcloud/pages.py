@@ -46,6 +46,10 @@ class PageOps:
         self.org_ops = org_ops
         self.storage_ops = storage_ops
 
+    async def init_index(self):
+        """init index for pages db collection"""
+        await self.pages.create_index([("crawl_id", pymongo.HASHED)])
+
     async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str):
         """Add pages to database from WACZ files"""
         try:
