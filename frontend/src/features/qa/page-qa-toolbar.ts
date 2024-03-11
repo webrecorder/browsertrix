@@ -46,6 +46,11 @@ export class PageQAToolbar extends TailwindElement {
       background-color: var(--sl-color-danger-500);
     }
 
+    .btnGroup.disabled button {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
     .btnGroup button {
       display: flex;
       align-items: center;
@@ -94,7 +99,7 @@ export class PageQAToolbar extends TailwindElement {
       background-color: var(--sl-color-neutral-0);
     }
 
-    .rate:not(.active):hover {
+    .btnGroup:not(.disabled) .rate:not(.active):hover {
       border: var(--btrix-border);
       box-shadow: var(--sl-shadow-x-small);
       transform: scale(1.1);
@@ -110,15 +115,15 @@ export class PageQAToolbar extends TailwindElement {
       border-end-start-radius: var(--sl-border-radius-large);
     }
 
-    .approve:not(.active):hover sl-icon {
+    .btnGroup:not(.disabled) .approve:not(.active):hover sl-icon {
       color: var(--sl-color-success-500);
     }
 
-    .reject:not(.active):hover sl-icon {
+    .btnGroup:not(.disabled) .reject:not(.active):hover sl-icon {
       color: var(--sl-color-danger-500);
     }
 
-    .comment:hover sl-icon {
+    .btnGroup:not(.disabled) .comment:hover sl-icon {
       transform: scale(1.1);
       color: var(--sl-color-blue-500);
     }
@@ -182,12 +187,14 @@ export class PageQAToolbar extends TailwindElement {
   protected willUpdate(
     changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
   ): void {
+    console.log(this.pageId);
     if (changedProperties.has("pageId") && this.pageId) {
       void this.fetchPage();
     }
   }
 
   render() {
+    const disabled = !this.page;
     const approved = this.page?.approved === true;
     const rejected = this.page?.approved === false;
     const commented = Boolean(this.page?.notes?.length);
@@ -199,8 +206,10 @@ export class PageQAToolbar extends TailwindElement {
           approved: approved,
           commented: commented,
           rejected: rejected,
+          disabled: disabled,
         })}
         aria-label=${msg("QA rating")}
+        ?disabled=${disabled}
       >
         <button
           class=${classMap({
@@ -209,7 +218,7 @@ export class PageQAToolbar extends TailwindElement {
             active: approved,
           })}
           aria-checked=${approved}
-          ?disabled=${!this.page}
+          ?disabled=${disabled}
           @click=${() =>
             this.submitReview({ approved: approved ? null : true })}
         >
@@ -222,7 +231,7 @@ export class PageQAToolbar extends TailwindElement {
             active: commented,
           })}
           aria-checked=${commented}
-          ?disabled=${!this.page}
+          ?disabled=${disabled}
           @click=${() => (this.showComments = true)}
         >
           <sl-icon name="chat-square-text" label=${msg("Comment")}></sl-icon>
@@ -234,7 +243,7 @@ export class PageQAToolbar extends TailwindElement {
             active: rejected,
           })}
           aria-checked=${rejected}
-          ?disabled=${!this.page}
+          ?disabled=${disabled}
           @click=${() =>
             this.submitReview({ approved: rejected ? null : false })}
         >
