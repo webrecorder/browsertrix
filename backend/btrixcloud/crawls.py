@@ -500,6 +500,13 @@ class CrawlOps(BaseCrawlOps):
             },
         )
 
+    async def get_crawl_exec_last_update_time(self, crawl_id):
+        """get crawl last updated time"""
+        res = await self.crawls.find_one(
+            {"_id": crawl_id, "type": "crawl"}, projection=["_lut"]
+        )
+        return res and res.get("_lut")
+
     async def get_crawl_state(self, crawl_id: str, is_qa: bool):
         """return current crawl state of a crawl"""
         prefix = "" if not is_qa else "qa."
