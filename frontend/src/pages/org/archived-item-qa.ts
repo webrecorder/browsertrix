@@ -219,30 +219,41 @@ export class ArchivedItemQA extends TailwindElement {
   private renderToolbar() {
     return html`
       <div
-        class="my-2 flex h-12 items-center rounded-md border bg-neutral-50 text-base"
+        class="${this.tab === "replay"
+          ? "rounded-t-lg"
+          : "rounded-lg"} my-2 flex h-12 items-center border bg-neutral-50 text-base"
       >
-        <div class="mx-1">
+        <div class="ml-1 flex">
           ${choose(this.tab, [
             [
               "replay",
               () => html`
-                <!-- <sl-icon-button name="arrow-clockwise"></sl-icon-button> -->
+                <sl-icon-button name="arrow-clockwise"></sl-icon-button>
               `,
             ],
             [
               "screenshots",
               () => html`
-                <!-- <sl-icon-button name="intersect"></sl-icon-button> -->
-                <!-- <sl-icon-button name="layout-split"></sl-icon-button> -->
-                <!-- <sl-icon-button name="vr"></sl-icon-button> -->
+                <sl-icon-button name="intersect"></sl-icon-button>
+                <sl-icon-button name="vr"></sl-icon-button>
               `,
             ],
           ])}
         </div>
         <div
-          class=" mx-1.5 flex-1 rounded border bg-neutral-0 p-2 text-sm leading-none"
+          class="mx-1.5 flex h-8 flex-1 items-center justify-between rounded border bg-neutral-0 px-2 text-sm leading-none"
         >
-          ${this.page?.url || "http://"}
+          <span>${this.page?.url || "http://"}</span>
+          <sl-format-date
+            class="font-monostyle text-xs text-neutral-500"
+            date=${this.page ? `${this.page.timestamp}Z` : new Date()}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+            hour="2-digit"
+            minute="2-digit"
+          >
+          </sl-format-date>
         </div>
       </div>
     `;
