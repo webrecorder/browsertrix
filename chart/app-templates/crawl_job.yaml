@@ -26,7 +26,7 @@ spec:
 
   manual: {{ manual }}
   crawlerChannel: "{{ crawler_channel }}"
-  ttlSecondsAfterFinished: 30
+  ttlSecondsAfterFinished: {{ 30 if not qa_source else 0 }}
   warcPrefix: "{{ warc_prefix }}"
 
   storageName: "{{ storage_name }}"

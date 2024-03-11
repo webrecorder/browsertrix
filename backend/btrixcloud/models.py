@@ -582,8 +582,6 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
 
     name: Optional[str] = ""
 
-    stopping: Optional[bool] = False
-
     description: Optional[str] = ""
 
     tags: Optional[List[str]] = []
@@ -736,6 +734,10 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     # schedule: Optional[str]
     manual: Optional[bool]
+
+    stopping: Optional[bool] = False
+
+    qaCrawlExecSeconds: int = 0
 
     qa: Optional[QARun] = None
     qaFinished: Optional[Dict[str, QARun]] = {}

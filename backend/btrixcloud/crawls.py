@@ -479,17 +479,24 @@ class CrawlOps(BaseCrawlOps):
         last_updated_time,
     ):
         """increment exec time"""
-        prefix = "" if not is_qa else "qa."
+        # update both crawl-shared qa exec seconds and per-qa run exec seconds
+        if is_qa:
+            inc_update = {
+                "qaCrawlExecSeconds": exec_time,
+                "qa.crawlExecSeconds": exec_time,
+            }
+        else:
+            inc_update = {"crawlExecSeconds": exec_time}
 
         return await self.crawls.find_one_and_update(
             {
                 "_id": crawl_id,
                 "type": "crawl",
-                f"{prefix}_lut": {"$ne": last_updated_time},
+                "_lut": {"$ne": last_updated_time},
             },
             {
-                "$inc": {f"{prefix}crawlExecSeconds": exec_time},
-                "$set": {f"{prefix}_lut": last_updated_time},
+                "$inc": inc_update,
+                "$set": {"_lut": last_updated_time},
             },
         )
 
@@ -744,21 +751,17 @@ class CrawlOps(BaseCrawlOps):
 
         return res
 
-    async def qa_run_clear(self, crawl_id: str):
-        """remove any active qa run, if set"""
-        await self.crawls.find_one_and_update(
-            {"_id": crawl_id, "type": "crawl"}, {"$set": {"qa": None}}
-        )
-
     async def qa_run_finished(self, crawl_id: str):
-        """add qa run to finished list, if successful"""
+        """clear active qa, add qa run to finished list, if successful"""
         crawl = await self.get_crawl(crawl_id)
 
         if not crawl.qa:
             return False
 
+        query: Dict[str, Any] = {"qa": None}
+
         if crawl.qa.finished and crawl.qa.state in SUCCESSFUL_STATES:
-            query = {f"qaFinished.{crawl.qa.id}": crawl.qa.dict()}
+            query[f"qaFinished.{crawl.qa.id}"] = crawl.qa.dict()
 
         if await self.crawls.find_one_and_update(
             {"_id": crawl_id, "type": "crawl"}, {"$set": query}

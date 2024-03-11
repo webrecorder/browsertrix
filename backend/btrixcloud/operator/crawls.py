@@ -631,14 +631,14 @@ class CrawlOperator(BaseOperator):
             if status.finished:
                 ttl = spec.get("ttlSecondsAfterFinished", DEFAULT_TTL)
                 finished = from_k8s_date(status.finished)
-                if (dt_now() - finished).total_seconds() > ttl > 0:
+                if (dt_now() - finished).total_seconds() > ttl >= 0:
                     print("CrawlJob expired, deleting: " + crawl.id)
                     finalized = True
             else:
                 finalized = True
 
         if finalized and crawl.is_qa:
-            await self.crawl_ops.qa_run_clear(crawl.db_crawl_id)
+            await self.crawl_ops.qa_run_finished(crawl.db_crawl_id)
 
         return {
             "status": status.dict(exclude_none=True),
@@ -1309,8 +1309,9 @@ class CrawlOperator(BaseOperator):
     ) -> None:
         """Run tasks after qa run completes in asyncio.task coroutine."""
 
-        if state in SUCCESSFUL_STATES:
-            await self.crawl_ops.qa_run_finished(crawl.db_crawl_id)
+        # now done in finalizer
+        # if state in SUCCESSFUL_STATES:
+        #    await self.crawl_ops.qa_run_finished(crawl.db_crawl_id)
 
         if state in FAILED_STATES:
             await self.page_ops.delete_qa_run_from_pages(crawl.db_crawl_id, crawl.id)
