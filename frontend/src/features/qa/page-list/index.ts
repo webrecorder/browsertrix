@@ -220,11 +220,11 @@ export class PageList extends TailwindElement {
                 >${pageDetails(datum, this.qaRunId)}</sl-tree-item
               >
             </sl-tree-item>`,
-          sortBy: (a, b) =>
-            issueCounts(b, this.qaRunId).severe -
-              issueCounts(a, this.qaRunId).severe ||
-            issueCounts(b, this.qaRunId).moderate -
-              issueCounts(a, this.qaRunId).moderate,
+          // sortBy: (a, b) =>
+          //   issueCounts(b, this.qaRunId).severe -
+          //     issueCounts(a, this.qaRunId).severe ||
+          //   issueCounts(b, this.qaRunId).moderate -
+          //     issueCounts(a, this.qaRunId).moderate,
           groupBy: {
             value: composeWithRunId(maxSeverity, this.qaRunId),
             groups: [

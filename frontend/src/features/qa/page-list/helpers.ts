@@ -5,6 +5,7 @@ import type { ArchivedItemPage } from "@/types/crawler";
 import { cached } from "@/utils/weakCache";
 
 export type Severity = "severe" | "moderate" | "good" | null;
+export type SortBy = "screenshotMatch" | "textMatch"; // TODO add resource counts
 
 export const composeWithRunId = <T>(
   fn: (page: ArchivedItemPage, runId: string) => T,

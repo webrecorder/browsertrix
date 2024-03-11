@@ -53,6 +53,7 @@ type GroupConfig<
   label?: string;
   collapsible?: boolean;
   startCollapsed?: boolean;
+  displayIfEmpty?: boolean;
   renderLabel?: (group: {
     group: GroupConfig<T, G, GR> | null;
     data: T[];
@@ -223,12 +224,14 @@ export function GroupedList<
   return renderWrapper(
     html`${groups
       ? groups.map((group) =>
-          renderGroup(
-            html`${group.group?.renderLabel?.(group) ??
-            group.group?.label ??
-            group.group?.value}`,
-            renderData(group.data),
-          ),
+          group.data.length > 0 || group.group?.displayIfEmpty
+            ? renderGroup(
+                html`${group.group?.renderLabel?.(group) ??
+                group.group?.label ??
+                group.group?.value}`,
+                renderData(group.data),
+              )
+            : null,
         )
       : renderData(data)}`,
   );
