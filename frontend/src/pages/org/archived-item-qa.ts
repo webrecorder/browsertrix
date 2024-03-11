@@ -8,6 +8,7 @@ import {
 import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { choose } from "lit/directives/choose.js";
+import queryString from "query-string";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type AuthState } from "@/utils/AuthService";
@@ -17,7 +18,7 @@ import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
 import { renderName } from "@/utils/crawler";
 import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
-import { type APIPaginatedList } from "@/types/api";
+import type { APIPaginationQuery, APIPaginatedList } from "@/types/api";
 
 const TABS = ["screenshots", "replay"] as const;
 export type QATab = (typeof TABS)[number];
@@ -96,7 +97,7 @@ export class ArchivedItemQA extends TailwindElement {
   private pages?: APIPaginatedList<ArchivedItemPage>;
 
   @state()
-  private screenshotIframesReady: 0 | 1 | 2 = 0;
+  private page?: ArchivedItemPage;
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
@@ -108,13 +109,16 @@ export class ArchivedItemQA extends TailwindElement {
     if (changedProperties.has("itemId") && this.itemId) {
       void this.initItem();
     }
+    if (changedProperties.has("itemPageId") && this.itemPageId) {
+      void this.fetchPage();
+    }
   }
 
   private async initItem() {
     void this.fetchCrawl();
-    await this.fetchPages();
-
+    await this.fetchPages({ page: 1 });
     const firstPage = this.pages?.items[0];
+
     if (!this.itemPageId && firstPage) {
       this.navigate.to(
         `${window.location.pathname}?itemPageId=${firstPage.id}`,
@@ -238,7 +242,7 @@ export class ArchivedItemQA extends TailwindElement {
         <div
           class=" mx-1.5 flex-1 rounded border bg-neutral-0 p-2 text-sm leading-none"
         >
-          https://example.com
+          ${this.page?.url || "http://"}
         </div>
       </div>
     `;
@@ -293,9 +297,9 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
-  private async fetchPages(): Promise<void> {
+  private async fetchPages(params?: APIPaginationQuery): Promise<void> {
     try {
-      this.pages = await this.getPages();
+      this.pages = await this.getPages(params);
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve archived item at this time."),
@@ -312,9 +316,38 @@ export class ArchivedItemQA extends TailwindElement {
     );
   }
 
-  private async getPages(): Promise<APIPaginatedList<ArchivedItemPage>> {
+  private async getPages(
+    params?: APIPaginationQuery,
+  ): Promise<APIPaginatedList<ArchivedItemPage>> {
+    const query = queryString.stringify(
+      {
+        ...params,
+      },
+      {
+        arrayFormat: "comma",
+      },
+    );
     return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}/pages`,
+      `/orgs/${this.orgId}/crawls/${this.itemId}/pages?${query}`,
+      this.authState!,
+    );
+  }
+  private async fetchPage(): Promise<void> {
+    if (!this.itemPageId) return;
+    try {
+      this.page = await this.getPage(this.itemPageId);
+    } catch {
+      this.notify.toast({
+        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getPage(pageId: string): Promise<ArchivedItemPage> {
+    return this.api.fetch<ArchivedItemPage>(
+      `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
       this.authState!,
     );
   }
