@@ -1,4 +1,10 @@
-import { html, css, nothing, type PropertyValues } from "lit";
+import {
+  html,
+  css,
+  nothing,
+  type PropertyValues,
+  type TemplateResult,
+} from "lit";
 import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { choose } from "lit/directives/choose.js";
@@ -13,7 +19,8 @@ import { renderName } from "@/utils/crawler";
 import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
 import { type APIPaginatedList } from "@/types/api";
 
-export type QATab = "screenshots" | "replay";
+const TABS = ["screenshots", "replay"] as const;
+export type QATab = (typeof TABS)[number];
 
 @localized()
 @customElement("btrix-archived-item-qa")
@@ -87,6 +94,9 @@ export class ArchivedItemQA extends TailwindElement {
 
   @state()
   private pages?: APIPaginatedList<ArchivedItemPage>;
+
+  @state()
+  private screenshotIframesReady: 0 | 1 | 2 = 0;
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
@@ -172,16 +182,7 @@ export class ArchivedItemQA extends TailwindElement {
               </sl-button>
             </div>
           </nav>
-          <div role="region" aria-labelledby="${this.tab}-tab">
-            ${choose(
-              this.tab,
-              [
-                ["screenshots", this.renderScreenshots],
-                ["replay", this.renderReplay],
-              ],
-              () => html`<btrix-not-found></btrix-not-found>`,
-            )}
-          </div>
+          ${this.renderToolbar()} ${this.renderSections()}
         </section>
         <h2 class="pageListHeader outline">
           ${msg("Pages List")} <sl-button>${msg("Finish Review")}</sl-button>
@@ -208,6 +209,67 @@ export class ArchivedItemQA extends TailwindElement {
             : "unknown"}
         </section>
       </article>
+    `;
+  }
+
+  private renderToolbar() {
+    return html`
+      <div
+        class="my-2 flex h-12 items-center rounded-md border bg-neutral-50 text-base"
+      >
+        <div class="mx-1">
+          ${choose(this.tab, [
+            [
+              "replay",
+              () => html`
+                <!-- <sl-icon-button name="arrow-clockwise"></sl-icon-button> -->
+              `,
+            ],
+            [
+              "screenshots",
+              () => html`
+                <!-- <sl-icon-button name="intersect"></sl-icon-button> -->
+                <!-- <sl-icon-button name="layout-split"></sl-icon-button> -->
+                <!-- <sl-icon-button name="vr"></sl-icon-button> -->
+              `,
+            ],
+          ])}
+        </div>
+        <div
+          class=" mx-1.5 flex-1 rounded border bg-neutral-0 p-2 text-sm leading-none"
+        >
+          https://example.com
+        </div>
+      </div>
+    `;
+  }
+
+  private renderSections() {
+    const tabSection: Record<
+      QATab,
+      { render: () => TemplateResult<1> | undefined }
+    > = {
+      screenshots: {
+        render: this.renderScreenshots,
+      },
+      replay: {
+        render: this.renderReplay,
+      },
+    };
+    return html`
+      ${TABS.map((tab) => {
+        const section = tabSection[tab];
+        const isActive = tab === this.tab;
+        return html`
+          <section
+            class="${isActive ? "" : "invisible absolute -top-full -left-full"}"
+            aria-labelledby="${this.tab}-tab"
+            aria-hidden=${!isActive}
+          >
+            ${section.render()}
+          </section>
+        `;
+      })}
     `;
   }
 
