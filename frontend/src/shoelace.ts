@@ -7,6 +7,7 @@ import { registerIconLibrary } from "@shoelace-style/shoelace/dist/utilities/ico
 import "@shoelace-style/shoelace/dist/themes/light.css";
 import "@shoelace-style/shoelace/dist/components/alert/alert";
 import "@shoelace-style/shoelace/dist/components/button/button";
+import "@shoelace-style/shoelace/dist/components/icon/icon";
 import "@shoelace-style/shoelace/dist/components/input/input";
 import "@shoelace-style/shoelace/dist/components/checkbox/checkbox";
 import "@shoelace-style/shoelace/dist/components/details/details";
@@ -22,6 +23,7 @@ import "@shoelace-style/shoelace/dist/components/switch/switch";
 import "@shoelace-style/shoelace/dist/components/textarea/textarea";
 import "@shoelace-style/shoelace/dist/components/mutation-observer/mutation-observer";
 import "@shoelace-style/shoelace/dist/components/progress-bar/progress-bar";
+
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/dialog/dialog"
 );
@@ -33,9 +35,6 @@ import(
 );
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/format-date/format-date"
-);
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/icon/icon"
 );
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/menu/menu"

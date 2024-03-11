@@ -181,3 +181,40 @@ export type CrawlerChannel = {
 };
 
 export type ArchivedItem = Crawl | Upload;
+
+export type ArchivedItemPageComment = {
+  id: string;
+  created: string;
+  modified: string;
+  userName: string;
+  text: string;
+};
+
+export type ArchivedItemPage = {
+  id?: string;
+  oid: string;
+  crawl_id: string;
+  url: string;
+  title?: string;
+  timestamp?: string; // Date
+  load_state?: number;
+  status?: number;
+  /** screenshot match percent, keyed by QA run ID */
+  screenshotMatch?: Record<string, number>;
+  /** text match percent, keyed by QA run ID */
+  textMatch?: Record<string, number>;
+  /** resource counts, keyed by QA run ID */
+  resourceCounts?: Record<
+    string,
+    {
+      crawlGood?: number;
+      crawlBad?: number;
+      replayGood?: number;
+      replayBad?: number;
+    }
+  >;
+  userid?: string;
+  modified?: string;
+  approved?: boolean;
+  notes?: ArchivedItemPageComment[];
+};
