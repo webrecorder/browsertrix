@@ -187,7 +187,6 @@ export class PageQAToolbar extends TailwindElement {
   protected willUpdate(
     changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
   ): void {
-    console.log(this.pageId);
     if (changedProperties.has("pageId") && this.pageId) {
       void this.fetchPage();
     }
