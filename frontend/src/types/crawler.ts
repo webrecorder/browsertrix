@@ -215,6 +215,6 @@ export type ArchivedItemPage = {
   >;
   userid?: string;
   modified?: string;
-  approved?: boolean;
+  approved?: boolean | null;
   notes?: ArchivedItemPageComment[];
 };

@@ -48,7 +48,7 @@ export function renderName(item: ArchivedItem | Workflow) {
       }
     }
     return html`
-      <div class="flex overflow-hidden whitespace-nowrap">
+      <div class="inline-flex overflow-hidden whitespace-nowrap">
         <span class="min-w-0 truncate">${item.firstSeed}</span>
         <span>${nameSuffix}</span>
       </div>
