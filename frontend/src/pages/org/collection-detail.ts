@@ -109,9 +109,8 @@ export class CollectionDetail extends LiteElement {
             ? html`
                 <sl-tooltip content=${msg("Shareable")}>
                   <sl-icon
-                    class="text-lg"
+                    class="text-lg text-success-600"
                     name="people-fill"
-                    style="color: var(--success)"
                   ></sl-icon>
                 </sl-tooltip>
               `
