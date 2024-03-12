@@ -270,7 +270,7 @@ export class App extends LiteElement {
                 this.navLink(e);
               }}
             >
-              ${msg("Browsertrix Cloud")}
+              ${msg("Browsertrix")}
             </a>
           </div>
 
@@ -870,12 +870,12 @@ export class App extends LiteElement {
 
   private onFirstLogin({ email }: { email: string }) {
     this.showDialog({
-      label: "Welcome to Browsertrix Cloud",
+      label: "Welcome to Browsertrix",
       noHeader: true,
       body: html`
         <div class="grid gap-4 text-center">
           <p class="mt-8 text-xl font-medium">
-            ${msg("Welcome to Browsertrix Cloud!")}
+            ${msg("Welcome to Browsertrix!")}
           </p>
 
           <p>

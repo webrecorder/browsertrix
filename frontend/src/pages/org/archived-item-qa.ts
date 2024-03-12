@@ -1,7 +1,15 @@
-import { html, css, nothing, type PropertyValues } from "lit";
+import {
+  html,
+  css,
+  nothing,
+  type PropertyValues,
+  type TemplateResult,
+} from "lit";
 import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { choose } from "lit/directives/choose.js";
+import { when } from "lit/directives/when.js";
+import queryString from "query-string";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type AuthState } from "@/utils/AuthService";
@@ -10,11 +18,11 @@ import { NavigateController } from "@/controllers/navigate";
 import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
 import { renderName } from "@/utils/crawler";
-import { type ArchivedItem } from "@/types/crawler";
+import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
+import type { APIPaginationQuery, APIPaginatedList } from "@/types/api";
 
-import("@/features/qa");
-
-export type QATab = "screenshots" | "replay";
+const TABS = ["screenshots", "replay"] as const;
+export type QATab = (typeof TABS)[number];
 
 @localized()
 @customElement("btrix-archived-item-qa")
@@ -35,6 +43,7 @@ export class ArchivedItemQA extends TailwindElement {
         "main"
         "pageListHeader"
         "pageList";
+      grid-template-columns: 100%;
       grid-template-rows: repeat(4, max-content);
       min-height: 0;
     }
@@ -48,7 +57,7 @@ export class ArchivedItemQA extends TailwindElement {
         grid-template:
           "mainHeader pageListHeader"
           "main pageList";
-        grid-template-columns: 1fr 24rem;
+        grid-template-columns: 75% 1fr;
         grid-template-rows: min-content 1fr;
       }
     }
@@ -79,6 +88,9 @@ export class ArchivedItemQA extends TailwindElement {
   @property({ type: String })
   itemId?: string;
 
+  @property({ type: String })
+  itemPageId?: string;
+
   @property({ type: Boolean })
   isCrawler = false;
 
@@ -88,6 +100,12 @@ export class ArchivedItemQA extends TailwindElement {
   @state()
   private item?: ArchivedItem;
 
+  @state()
+  private pages?: APIPaginatedList<ArchivedItemPage>;
+
+  @state()
+  private page?: ArchivedItemPage;
+
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
@@ -96,15 +114,34 @@ export class ArchivedItemQA extends TailwindElement {
     changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
   ): void {
     if (changedProperties.has("itemId") && this.itemId) {
-      void this.fetchArchivedItem();
+      void this.initItem();
+    }
+    if (changedProperties.has("itemPageId") && this.itemPageId) {
+      void this.fetchPage();
+    }
+  }
+
+  private async initItem() {
+    void this.fetchCrawl();
+    await this.fetchPages({ page: 1 });
+    const firstPage = this.pages?.items[0];
+
+    if (!this.itemPageId && firstPage) {
+      this.navigate.to(
+        `${window.location.pathname}?itemPageId=${firstPage.id}`,
+      );
     }
   }
 
   render() {
+    if (!this.pages) {
+      return html`loading pages...`;
+    }
+
     const crawlBaseUrl = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}`;
     const itemName = this.item ? renderName(this.item) : nothing;
     return html`
-      <nav class="mb-7">
+      <nav class="mb-7 text-success-600">
         <a
           class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
           href=${`${crawlBaseUrl}`}
@@ -125,34 +162,43 @@ export class ArchivedItemQA extends TailwindElement {
           <h1>${msg("Review")} &mdash; ${itemName}</h1>
         </header>
         <section class="main outline">
-          <nav>
-            <btrix-navigation-button
-              id="screenshot-tab"
-              href=${`${crawlBaseUrl}/review/screenshots`}
-              .active=${this.tab === "screenshots"}
-              size="small"
-              @click=${this.navigate.link}
-              >${msg("Screenshots")}</btrix-navigation-button
-            >
-            <btrix-navigation-button
-              id="replay-tab"
-              href=${`${crawlBaseUrl}/review/replay`}
-              .active=${this.tab === "replay"}
-              size="small"
-              @click=${this.navigate.link}
-              >${msg("Replay")}</btrix-navigation-button
-            >
+          <nav class="flex items-center justify-between p-2">
+            <div class="flex gap-4">
+              <btrix-navigation-button
+                id="screenshot-tab"
+                href=${`${crawlBaseUrl}/review/screenshots`}
+                ?active=${this.tab === "screenshots"}
+                @click=${this.navigate.link}
+              >
+                ${msg("Screenshots")}
+              </btrix-navigation-button>
+              <btrix-navigation-button
+                id="replay-tab"
+                href=${`${crawlBaseUrl}/review/replay`}
+                ?active=${this.tab === "replay"}
+                @click=${this.navigate.link}
+              >
+                ${msg("Replay")}
+              </btrix-navigation-button>
+            </div>
+            <div class="flex gap-4">
+              <sl-button size="small">
+                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+                ${msg("Previous Page")}
+              </sl-button>
+              <btrix-page-qa-toolbar
+                .authState=${this.authState}
+                .orgId=${this.orgId}
+                .itemId=${this.itemId}
+                .pageId=${this.itemPageId}
+              ></btrix-page-qa-toolbar>
+              <sl-button variant="primary" size="small">
+                <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+                ${msg("Next Page")}
+              </sl-button>
+            </div>
           </nav>
-          <div role="region" aria-labelledby="${this.tab}-tab">
-            ${choose(
-              this.tab,
-              [
-                ["screenshots", this.renderScreenshots],
-                ["replay", this.renderReplay],
-              ],
-              () => html`<btrix-not-found></btrix-not-found>`,
-            )}
-          </div>
+          ${this.renderToolbar()} ${this.renderSections()}
         </section>
         <h2 class="pageListHeader outline">
           ${msg("Pages List")} <sl-button>${msg("Finish Review")}</sl-button>
@@ -166,6 +212,85 @@ export class ArchivedItemQA extends TailwindElement {
     `;
   }
 
+  private renderToolbar() {
+    return html`
+      <div
+        class="${this.tab === "replay"
+          ? "rounded-t-lg"
+          : "rounded-lg"} my-2 flex h-12 items-center border bg-neutral-50 text-base"
+      >
+        <div class="ml-1 flex">
+          ${choose(this.tab, [
+            [
+              "replay",
+              () => html`
+                <sl-icon-button name="arrow-clockwise"></sl-icon-button>
+              `,
+            ],
+            [
+              "screenshots",
+              () => html`
+                <sl-icon-button name="intersect"></sl-icon-button>
+                <sl-icon-button name="vr"></sl-icon-button>
+              `,
+            ],
+          ])}
+        </div>
+        <div
+          class="mx-1.5 flex h-8 min-w-0 flex-1 items-center justify-between gap-2 overflow-hidden whitespace-nowrap rounded border bg-neutral-0 px-2 text-sm"
+        >
+          <div class="fade-out-r scrollbar-hidden flex-1 overflow-x-scroll">
+            <span class="pr-2">${this.page?.url || "http://"}</span>
+          </div>
+          ${when(
+            this.page,
+            (page) => html`
+              <sl-format-date
+                class="font-monostyle text-xs text-neutral-500"
+                date=${`${page.timestamp}Z`}
+                month="2-digit"
+                day="2-digit"
+                year="2-digit"
+                hour="2-digit"
+                minute="2-digit"
+              >
+              </sl-format-date>
+            `,
+          )}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderSections() {
+    const tabSection: Record<
+      QATab,
+      { render: () => TemplateResult<1> | undefined }
+    > = {
+      screenshots: {
+        render: this.renderScreenshots,
+      },
+      replay: {
+        render: this.renderReplay,
+      },
+    };
+    return html`
+      ${TABS.map((tab) => {
+        const section = tabSection[tab];
+        const isActive = tab === this.tab;
+        return html`
+          <section
+            class="${isActive ? "" : "invisible absolute -top-full -left-full"}"
+            aria-labelledby="${this.tab}-tab"
+            aria-hidden=${!isActive}
+          >
+            ${section.render()}
+          </section>
+        `;
+      })}
+    `;
+  }
+
   private readonly renderScreenshots = () => {
     return html`[screenshots]`;
   };
@@ -174,9 +299,9 @@ export class ArchivedItemQA extends TailwindElement {
     return html`[replay]`;
   };
 
-  private async fetchArchivedItem(): Promise<void> {
+  private async fetchCrawl(): Promise<void> {
     try {
-      this.item = await this.getArchivedItem();
+      this.item = await this.getCrawl();
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve archived item at this time."),
@@ -186,8 +311,58 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
-  private async getArchivedItem(): Promise<ArchivedItem> {
-    const apiPath = `/orgs/${this.orgId}/all-crawls/${this.itemId}`;
-    return this.api.fetch<ArchivedItem>(apiPath, this.authState!);
+  private async fetchPages(params?: APIPaginationQuery): Promise<void> {
+    try {
+      this.pages = await this.getPages(params);
+    } catch {
+      this.notify.toast({
+        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getCrawl(): Promise<ArchivedItem> {
+    return this.api.fetch<ArchivedItem>(
+      `/orgs/${this.orgId}/crawls/${this.itemId}`,
+      this.authState!,
+    );
+  }
+
+  private async getPages(
+    params?: APIPaginationQuery,
+  ): Promise<APIPaginatedList<ArchivedItemPage>> {
+    const query = queryString.stringify(
+      {
+        ...params,
+      },
+      {
+        arrayFormat: "comma",
+      },
+    );
+    return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
+      `/orgs/${this.orgId}/crawls/${this.itemId}/pages?${query}`,
+      this.authState!,
+    );
+  }
+  private async fetchPage(): Promise<void> {
+    if (!this.itemPageId) return;
+    try {
+      this.page = await this.getPage(this.itemPageId);
+    } catch {
+      this.notify.toast({
+        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getPage(pageId: string): Promise<ArchivedItemPage> {
+    return this.api.fetch<ArchivedItemPage>(
+      `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
+      this.authState!,
+    );
   }
 }
