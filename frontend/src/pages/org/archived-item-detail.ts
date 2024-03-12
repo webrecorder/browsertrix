@@ -324,11 +324,13 @@ export class CrawlDetail extends LiteElement {
       label,
       iconLibrary,
       icon,
+      detail,
     }: {
       section: SectionName;
       label: string;
       iconLibrary: "app" | "default";
       icon: string;
+      detail?: TemplateResult<1>;
     }) => {
       const isActive = section === this.sectionName;
       const baseUrl = window.location.pathname.split("#")[0];
@@ -346,7 +348,7 @@ export class CrawlDetail extends LiteElement {
             aria-hidden="true"
             library=${iconLibrary}
           ></sl-icon>
-          ${label}</btrix-navigation-button
+          ${label}${detail}</btrix-navigation-button
         >
       `;
     };
@@ -369,6 +371,9 @@ export class CrawlDetail extends LiteElement {
               iconLibrary: "default",
               icon: "clipboard2-data-fill",
               label: msg("QA"),
+              detail: html`
+                <btrix-badge variant="primary">${msg("Ready")}</btrix-badge>
+              `,
             })}
           `,
         )}
