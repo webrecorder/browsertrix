@@ -133,7 +133,7 @@ Renders to: `#!python range()`
 
 `Paid Feature`{ .badge-green }
 
-Some features of Browsertrix Cloud only pertain to those paying for the software on a hosted plan. Denote these with the following:
+Some features of Browsertrix only pertain to those paying for the software on a hosted plan. Denote these with the following:
 
 ```markdown
 `Paid Feature`{ .badge-green }

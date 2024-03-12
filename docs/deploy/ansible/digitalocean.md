@@ -2,7 +2,7 @@
 
 *Playbook Path: [ansible/playbooks/install_microk8s.yml](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/playbooks/do_setup.yml)*
 
-This playbook provides an easy way to install Browsertrix Cloud on DigitalOcean. It automatically sets up Browsertrix with LetsEncrypt certificates.
+This playbook provides an easy way to install Browsertrix on DigitalOcean. It automatically sets up Browsertrix with LetsEncrypt certificates.
 
 ### Requirements
 

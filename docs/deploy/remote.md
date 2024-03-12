@@ -94,15 +94,15 @@ mongo_auth:
 
 ## Cloud Deployment
 
-There are also many ways to deploy Browsertrix Cloud on various cloud providers.
+There are also many ways to deploy Browsertrix on various cloud providers.
 
-To simplify this process, we are working on Ansible playbooks for setting up Browsertrix Cloud on commonly used infrastructure.
+To simplify this process, we are working on Ansible playbooks for setting up Browsertrix on commonly used infrastructure.
 
 ### Ansible Deployment
 
-[Ansible](https://ansible.com) makes the initial setup and configuration of your Browsertrix Cloud instance automated and repeatable. 
+[Ansible](https://ansible.com) makes the initial setup and configuration of your Browsertrix instance automated and repeatable. 
 
-To use, you will need to [install Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#control-node-requirements) on your control computer and then you can use these to deploy to Browsertrix Cloud on remote and cloud environments.
+To use, you will need to [install Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#control-node-requirements) on your control computer and then you can use these to deploy to Browsertrix on remote and cloud environments.
 
 Currently, we provide playbooks for the following tested environments:
 
