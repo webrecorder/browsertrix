@@ -370,7 +370,7 @@ export class Org extends LiteElement {
   private renderOrgNavBar() {
     return html`
       <div
-        class="mx-auto box-border w-full max-w-screen-desktop overflow-x-hidden"
+        class="mx-auto box-border w-full max-w-screen-desktop overflow-x-hidden overscroll-contain"
       >
         <nav class="-mx-3 flex items-end overflow-x-auto px-3">
           ${this.renderNavTab({
@@ -525,7 +525,7 @@ export class Org extends LiteElement {
     if (params.itemId) {
       if (params.qaTab) {
         return html` <btrix-archived-item-qa
-          class="max-h-[100vh] flex-1"
+          class="max-h-[100vh] min-h-[100vh] flex-1"
           .authState=${this.authState!}
           orgId=${this.orgId}
           itemId=${params.itemId}

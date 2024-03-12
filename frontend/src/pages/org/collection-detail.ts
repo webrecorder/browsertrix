@@ -623,7 +623,7 @@ export class CollectionDetail extends LiteElement {
 
                       // Scroll to top of list
                       // TODO once deep-linking is implemented, scroll to top of pushstate
-                      this.scrollIntoView({ behavior: "smooth" });
+                      this.scrollInView({ behavior: "smooth" });
                     }}
                   ></btrix-pagination>
                 </footer>
@@ -753,7 +753,7 @@ export class CollectionDetail extends LiteElement {
       description.style.maxHeight = `${description.scrollHeight}px`;
     } else {
       description.style.maxHeight = `${DESCRIPTION_MAX_HEIGHT_PX}px`;
-      description.closest("section")?.scrollIntoView({
+      description.closest("section")?.scrollInView({
         behavior: "smooth",
       });
     }

@@ -2024,7 +2024,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
   private async scrollToPanelTop() {
     const activeTabPanel = await this.activeTabPanel;
     if (activeTabPanel && activeTabPanel.getBoundingClientRect().top < 0) {
-      activeTabPanel.scrollIntoView({
+      activeTabPanel.scrollInView({
         behavior: "smooth",
       });
     }

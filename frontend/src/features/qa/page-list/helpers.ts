@@ -3,15 +3,18 @@ import { html } from "lit";
 import { clsx } from "clsx";
 import type { ArchivedItemPage } from "@/types/crawler";
 import { cached } from "@/utils/weakCache";
+import type { OrderBy } from ".";
+import { remainder } from "..";
 
 export type Severity = "severe" | "moderate" | "good" | null;
 export type SortBy = "screenshotMatch" | "textMatch"; // TODO add resource counts
 
 export const composeWithRunId = <T>(
-  fn: (page: ArchivedItemPage, runId: string) => T,
+  fn: (page: ArchivedItemPage, runId: string, order: OrderBy) => T,
   runId: string,
+  order: OrderBy,
 ) => {
-  return (page: ArchivedItemPage) => fn(page, runId);
+  return (page: ArchivedItemPage) => fn(page, runId, order);
 };
 
 export const severityFromMatch = cached(
@@ -93,11 +96,19 @@ export const issueCounts = cached((page: ArchivedItemPage, runId: string) => {
   return { severe, moderate };
 });
 
-export const maxSeverity = cached(
-  (page: ArchivedItemPage, runId: string): NonNullable<Severity> => {
-    const { severe, moderate } = issueCounts(page, runId);
-    if (severe > 0) return "severe";
-    if (moderate > 0) return "moderate";
-    return "good";
+export const groupBy = cached(
+  (
+    page: ArchivedItemPage,
+    runId: string,
+    order: OrderBy,
+  ): NonNullable<Severity> | typeof remainder => {
+    switch (order.field) {
+      case "screenshotMatch":
+        return severityFromMatch(page.screenshotMatch?.[runId]) ?? "good";
+      case "textMatch":
+        return severityFromMatch(page.textMatch?.[runId]) ?? "good";
+      default:
+        return remainder;
+    }
   },
 );

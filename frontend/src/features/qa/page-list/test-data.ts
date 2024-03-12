@@ -66,6 +66,7 @@ const getRandomData = (): ArchivedItemPage => {
   return {
     oid: "",
     crawl_id: "",
+    id: `${Math.random()}`,
     title: `Randomly generated page ${counter++}`,
     url: "https://example.com/path/path/path/path/path/path/path/path/path",
     ...screenshot,
@@ -82,7 +83,7 @@ const getRandomData = (): ArchivedItemPage => {
 };
 
 const randomArray = Array.from(
-  { length: 500 },
+  { length: 1000 },
   // { length: 50 },
   getRandomData,
 );

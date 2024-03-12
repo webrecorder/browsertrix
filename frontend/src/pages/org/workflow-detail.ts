@@ -192,7 +192,7 @@ export class WorkflowDetail extends LiteElement {
     ) {
       if (!this.isPanelHeaderVisible) {
         // Scroll panel header into view
-        this.querySelector("btrix-tab-list")?.scrollIntoView({
+        this.querySelector("btrix-tab-list")?.scrollInView({
           behavior: "smooth",
         });
       }
@@ -1130,7 +1130,7 @@ export class WorkflowDetail extends LiteElement {
                       page: e.detail.page,
                     });
                     // Scroll to top of list
-                    this.scrollIntoView();
+                    this.scrollInView();
                   }}
                 ></btrix-crawl-logs>`
               : html`

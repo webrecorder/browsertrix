@@ -47,7 +47,7 @@ export class WeakRefMap<K, V> {
     this.cacheMap.set(key, ref);
     this.finalizer.register(objVal, key, objVal);
 
-    return value;
+    return isWrapped(objVal) ? objVal[WeakRefMapInnerValue] : (objVal as V);
   }
 
   get(key: K): V | undefined {
@@ -76,13 +76,7 @@ export function cached<
     [InnerCache]: WeakRefMap<Key, Result>;
   } = (...args: Args) => {
     const k = serializer(args) as Key;
-    if (cache.has(k)) {
-      return cache.get(k)!;
-    } else {
-      const value = fn(...args);
-      cache.set(k, value);
-      return value;
-    }
+    return cache.get(k) ?? cache.set(k, fn(...args));
   };
   cachedFn[InnerCache] = cache;
   return cachedFn;

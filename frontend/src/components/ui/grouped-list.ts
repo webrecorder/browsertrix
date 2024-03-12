@@ -1,4 +1,5 @@
 import { type TemplateResult, html } from "lit";
+import { repeat } from "lit/directives/repeat.js";
 
 export const remainder = Symbol("remaining ungrouped data");
 
@@ -14,7 +15,7 @@ export const remainder = Symbol("remaining ungrouped data");
 // };
 
 /** Types acceptable as map keys. */
-type GroupFunctionReturn = string | number | boolean;
+type GroupFunctionReturn = string | number | boolean | typeof remainder;
 
 type GroupFunction<T extends object> = (datum: T) => GroupFunctionReturn;
 
@@ -109,6 +110,7 @@ export function GroupedList<
   renderWrapper = defaultWrapperRenderer,
   renderItem = defaultItemRenderer,
   renderGroup = defaultGroupRenderer,
+  key,
 }: {
   data: T[];
   sortBy?: { by: keyof T; direction: "asc" | "desc" } | Comparator<T>;
@@ -124,10 +126,13 @@ export function GroupedList<
     header: TemplateResult<1>,
     items: (TemplateResult<1> | null)[],
   ) => TemplateResult<1>;
+  key?: keyof T;
 }) {
   // Utility functions
   const renderData = (d: T[]) =>
-    d.map((datum, index) => renderItem(datum, index));
+    key
+      ? (repeat(d, (v) => v[key], renderItem) as (TemplateResult<1> | null)[])
+      : d.map((datum, index) => renderItem(datum, index));
 
   // Grouping
 
