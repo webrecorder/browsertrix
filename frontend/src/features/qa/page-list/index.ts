@@ -1,7 +1,7 @@
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type ArchivedItem } from "@/types/crawler";
 import { localized, msg } from "@lit/localize";
-import { css, html, nothing } from "lit";
+import { html, nothing, unsafeCSS } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { GroupedList, remainder } from "../../../components/ui/grouped-list";
 
@@ -14,6 +14,8 @@ import {
   maxSeverity,
   severityIcon,
 } from "./helpers";
+
+import pageListCSS from "./page-list.stylesheet.css";
 
 type SearchFields = "name" | "issues";
 
@@ -39,49 +41,7 @@ export class PageList extends TailwindElement {
 
   previousSelection: SlTreeItem | null = null;
 
-  static styles = css`
-    @tailwind base;
-    @tailwind components;
-    @tailwind utilities;
-
-    @layer components {
-      sl-tree-item::part(item) {
-        border-inline-start: none;
-        background: none;
-      }
-      sl-tree-item.is-group::part(item) {
-        position: sticky;
-        top: 0;
-        border-bottom: 1px solid var(--sl-color-neutral-200);
-        @apply z-30 bg-gradient-to-b from-white to-white/85 backdrop-blur-sm;
-      }
-
-      sl-tree-item::part(label) {
-        flex: 1 1 auto;
-        display: block;
-      }
-      sl-tree-item::part(indentation),
-      sl-tree-item.is-leaf::part(expand-button),
-      sl-tree-item.is-detail::part(expand-button) {
-        display: none;
-      }
-      sl-tree-item.is-leaf::part(item--selected) {
-        background: none;
-      }
-      sl-tree-item.is-leaf::part(item) {
-        @apply block;
-      }
-      sl-tree-item.is-leaf:focus-visible::part(item) {
-        @apply z-20;
-      }
-      sl-tree-item.is-leaf::part(label) {
-        @apply relative z-20 ml-4 block flex-auto overflow-visible rounded border border-solid border-gray-300 bg-white px-4 py-2 pl-5 shadow-sm transition-shadow aria-selected:border-blue-500 aria-selected:bg-blue-50 aria-selected:shadow-md aria-selected:shadow-blue-800/20 aria-selected:transition-none;
-      }
-      sl-tree-item.is-detail::part(label) {
-        @apply z-10 -mt-2 ml-6 mr-2 rounded-b-lg border border-solid border-gray-200 bg-neutral-0 px-4 pb-1 pt-4;
-      }
-    }
-  `;
+  static styles = unsafeCSS(pageListCSS);
 
   render() {
     return html`
@@ -145,7 +105,6 @@ export class PageList extends TailwindElement {
               @sl-selection-change=${(
                 e: CustomEvent<{ selection: SlTreeItem[] }>,
               ) => {
-                console.log(e);
                 if (e.detail.selection[0].classList.contains("is-group")) {
                   if (this.previousSelection) {
                     this.previousSelection.selected = true;
