@@ -287,7 +287,15 @@
   }
 }
 
+/* Following styles won't work with layers */
+
 .sl-toast-stack {
   bottom: 0;
   top: auto;
+}
+
+/* Ensure buttons in shadow dom inherit hover color */
+[class^="hover\:text-"]::part(base):hover,
+[class*=" hover\:text-"]::part(base):hover {
+  color: inherit;
 }

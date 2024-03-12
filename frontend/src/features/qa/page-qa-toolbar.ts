@@ -296,6 +296,7 @@ export class PageQAToolbar extends TailwindElement {
                             )}
                           </div>
                           <sl-icon-button
+                            class="hover:text-danger"
                             name="trash3"
                             @click=${() => this.deleteComment(comment.id)}
                           ></sl-icon-button>
