@@ -1,14 +1,40 @@
-export class WeakRefMap<K, V extends object | string | null> {
-  private readonly cacheMap = new Map<
-    K,
-    WeakRef<NonNullable<V>> | null | string
-  >();
+export const WeakRefMapInnerValue = Symbol("inner value");
+
+type WeakRefValue<T> = T extends object
+  ? T & object
+  : { [WeakRefMapInnerValue]: T };
+
+const isWrapped = <V>(
+  cache: (V & object) | { [WeakRefMapInnerValue]: V } | undefined,
+): cache is { [WeakRefMapInnerValue]: V } => {
+  return Object.prototype.hasOwnProperty.call(
+    cache ?? {},
+    WeakRefMapInnerValue,
+  );
+};
+
+const isObj = (v: unknown): v is object => typeof v === "object" && v !== null;
+
+const wrapValue = <V>(value: V) =>
+  (isObj(value) ? value : { [WeakRefMapInnerValue]: value }) as WeakRefValue<V>;
+
+const unwrapValue = <V>(val: WeakRef<WeakRefValue<V>> | undefined) => {
+  const cache = val?.deref();
+  return isWrapped(cache) ? cache[WeakRefMapInnerValue] : (cache as V);
+};
+
+/**
+ * Maps arbitrary keys to values, using {@linkcode WeakRef}s for the values and a {@linkcode FinalizationRegistry} so that data is deleted when a cached value is garbage-collected. This is sort of the inverse of a {@linkcode WeakMap}.
+ *
+ * Adapted from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Memory_management#weakrefs_and_finalizationregistry and https://stackoverflow.com/a/72896692
+ */
+export class WeakRefMap<K, V> {
+  readonly cacheMap = new Map<K, WeakRef<WeakRefValue<V>>>();
   private readonly finalizer = new FinalizationRegistry((key: K) => {
-    // this.cacheMap.delete(key);
-    console.log("deleting key", key);
+    this.cacheMap.delete(key);
   });
 
-  add(key: K, value: V): V {
+  set(key: K, value: V): V {
     const cache = this.get(key);
     if (cache) {
       if (cache === value) return value;
@@ -16,46 +42,48 @@ export class WeakRefMap<K, V extends object | string | null> {
         this.finalizer.unregister(cache);
       }
     }
-    this.cacheMap.set(
-      key,
-      typeof value === "object" && value !== null ? new WeakRef(value) : value,
-    );
-    if (typeof value === "object" && value !== null) {
-      this.finalizer.register(value, key, value);
-    }
+    const objVal = wrapValue(value);
+    const ref = new WeakRef(objVal);
+    this.cacheMap.set(key, ref);
+    this.finalizer.register(objVal, key, objVal);
 
     return value;
   }
 
-  get(key: K): V | null {
-    const cache = this.cacheMap.get(key);
-    if (typeof cache === "string" || cache === null) {
-      return cache as V;
-    } else {
-      const val = cache?.deref() ?? null;
-      return val;
-    }
+  get(key: K): V | undefined {
+    return unwrapValue(this.cacheMap.get(key));
+  }
+
+  has(key: K): boolean {
+    return this.cacheMap.has(key);
   }
 }
 
-export const innerCache = Symbol("Inner cache");
+export const InnerCache = Symbol("Inner cache");
 
-export function cached<K extends unknown[], V extends {} | null>(
-  getter: (...keys: K) => V,
+export function cached<
+  Args extends unknown[],
+  Result,
+  Serializer extends (args: Args) => unknown = (args: Args) => string,
+>(
+  fn: (...args: Args) => Result,
+  serializer: Serializer = JSON.stringify as Serializer,
 ) {
-  const cache = new WeakMap<K, V>();
-  const fn: { (...keys: K): V; [innerCache]: WeakMap<K, V> } = (...keys: K) => {
-    if (cache.has(keys)) {
-      console.log("found key");
-      return cache.get(keys)!;
+  type Key = ReturnType<Serializer>;
+  const cache = new WeakRefMap<Key, Result>();
+  const cachedFn: {
+    (...args: Args): Result;
+    [InnerCache]: WeakRefMap<Key, Result>;
+  } = (...args: Args) => {
+    const k = serializer(args) as Key;
+    if (cache.has(k)) {
+      return cache.get(k)!;
     } else {
-      const value = getter(...keys);
-      // console.log("computed value");
-      cache.set(keys, value);
-      // console.log("set keys");
+      const value = fn(...args);
+      cache.set(k, value);
       return value;
     }
   };
-  fn[innerCache] = cache;
-  return fn;
+  cachedFn[InnerCache] = cache;
+  return cachedFn;
 }
