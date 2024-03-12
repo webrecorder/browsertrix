@@ -204,12 +204,12 @@ export class QueueExclusionTable extends LiteElement {
           ${this.renderValue({ exclusion, index })}
         </td>
         <td class="${actionColClass} text-center text-[1rem]">
-          <btrix-button
-            icon
+          <sl-icon-button
+            label="Remove exclusion"
+            class="text-base hover:text-danger"
+            name="trash3"
             @click=${() => this.removeExclusion(exclusion, index)}
-          >
-            <sl-icon name="trash3"></sl-icon>
-          </btrix-button>
+          ></sl-icon-button>
         </td>
       </tr>
     `;
