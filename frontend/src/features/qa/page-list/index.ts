@@ -3,14 +3,12 @@ export * from "./ui";
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
 import { localized, msg } from "@lit/localize";
-import { html, nothing } from "lit";
+import { type PropertyValues, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { GroupedList, remainder } from "../../../components/ui/grouped-list";
 
-import { testData } from "./test-data";
 import { pageDetails } from "./page-details";
 import {
-  composeWithRunId,
   groupBy,
   issueCounts,
   severityFromMatch,
@@ -19,6 +17,7 @@ import {
 
 import { type Ref, createRef, ref } from "lit/directives/ref.js";
 import { type QaPage } from "./ui";
+import type { APIPaginatedList } from "@/types/api";
 
 type SortField = ("textMatch" | "screenshotMatch") & keyof ArchivedItemPage;
 type SortDirection = "asc" | "desc";
@@ -51,7 +50,10 @@ export class PageList extends TailwindElement {
   @property({ type: String }) tab: Tab = Tab.Queued;
 
   @property({ attribute: false })
-  item!: ArchivedItem;
+  item?: ArchivedItem;
+
+  @property({ attribute: false })
+  pages?: APIPaginatedList<ArchivedItemPage>;
 
   @state()
   orderBy: OrderBy = {
@@ -59,22 +61,40 @@ export class PageList extends TailwindElement {
     direction: "asc",
   };
 
-  @property({ type: String, reflect: true })
-  currentPage: string | undefined;
-
-  @property({ type: String }) qaRunId = "";
+  @property({ type: String }) itemPageId?: string;
 
   currentPageElement: Ref<QaPage> = createRef();
 
-  connectedCallback() {
-    super.connectedCallback();
-    if (!this.currentPage) {
-      this.currentPage =
-        testData.find(
-          (d) =>
-            severityFromMatch(d[this.orderBy.field]?.[this.qaRunId]) ===
-            "severe",
-        )?.id ?? testData[0].id;
+  private queuedCount = 0;
+  private reviewedCount = 0;
+  private filteredPages = this.pages?.items ?? [];
+
+  protected willUpdate(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has("pages") || changedProperties.has("tab")) {
+      // Queued counts
+      this.queuedCount = 0;
+      this.reviewedCount = 0;
+
+      // Filtered data
+      this.filteredPages = [];
+
+      this.pages?.items.forEach((page) => {
+        page.approved == null ? this.queuedCount++ : this.reviewedCount++;
+        if ((this.tab === Tab.Queued) === (page.approved == null)) {
+          this.filteredPages.push(page);
+        }
+      });
+
+      this.dispatchEvent(
+        new CustomEvent<string | undefined>("qa-page-select", {
+          detail: this.filteredPages[0]?.id,
+          composed: true,
+          bubbles: true,
+        }),
+      );
+    }
+    if (changedProperties.has("itemPageId")) {
+      console.log(this.itemPageId);
     }
   }
 
@@ -89,12 +109,14 @@ export class PageList extends TailwindElement {
         >
           ${msg("Queued")}
           <btrix-badge
-            variant="primary"
+            variant=${this.queuedCount > 0 || this.tab === Tab.Queued
+              ? "primary"
+              : "neutral"}
             aria-label=${
               "4 pages" // TODO properly localize plurals
             }
           >
-            4
+            ${this.queuedCount}
           </btrix-badge>
         </btrix-navigation-button>
         <btrix-navigation-button
@@ -105,12 +127,14 @@ export class PageList extends TailwindElement {
         >
           ${msg("Reviewed")}
           <btrix-badge
-            variant="primary"
+            variant=${this.reviewedCount > 0 || this.tab === Tab.Reviewed
+              ? "primary"
+              : "neutral"}
             aria-label=${
               "4 pages" // TODO properly localize plurals
             }
           >
-            4
+            ${this.reviewedCount}
           </btrix-badge>
         </btrix-navigation-button>
       </div>
@@ -121,7 +145,7 @@ export class PageList extends TailwindElement {
         <btrix-search-combobox
           class="grow"
           .searchKeys=${["textMatch", "screenshotMatch"]}
-          .searchOptions=${testData}
+          .searchOptions=${this.pages?.items ?? []}
           .selectedKey=${undefined}
           .placeholder=${msg("Search all crawls by name or Crawl Start URL")}
           @on-select=${() => {}}
@@ -178,105 +202,118 @@ export class PageList extends TailwindElement {
         </div>
       </div>
       <div class="-mx-2 overflow-y-auto px-2">
-        ${GroupedList({
-          data: testData,
-          renderWrapper: (contents) =>
-            html`<div
-              class="@container"
-              @qa-page-select=${async (e: CustomEvent<string | undefined>) => {
-                this.currentPage = e.detail;
-                await this.updateComplete;
-                this.currentPageElement.value?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "nearest",
-                });
-              }}
-            >
-              ${contents}
-            </div>`,
-          renderGroup: (header, items) =>
-            html`<btrix-qa-page-group expanded class="is-group bg-neutral-0">
-              <div slot="header">${header}</div>
-              <div slot="content" class="py-2">${items}</div>
-            </btrix-qa-page-group>`,
-          renderItem: (datum) =>
-            html`<btrix-qa-page
-              class="is-leaf -my-4 scroll-my-8 py-4 [contain-intrinsic-height:auto_70px] [contain:strict] [content-visibility:auto] first-of-type:mt-0 last-of-type:mb-0"
-              .selected=${this.currentPage === datum.id}
-              .pageId=${datum.id}
-              ${this.currentPage === datum.id
-                ? ref(this.currentPageElement)
-                : nothing}
-            >
-              <div
-                class="absolute -left-4 top-[50%] flex w-8 translate-y-[-50%] flex-col place-items-center gap-1 rounded-full border border-gray-300 bg-neutral-0 p-2 leading-[14px] shadow-sm"
-              >
-                ${severityIcon(
-                  severityFromMatch(datum[this.orderBy.field]?.[this.qaRunId]),
-                )}
-                ${issueCounts(datum, this.qaRunId).severe > 1
-                  ? html`<span class="text-[10px] font-semibold text-red-600"
-                      >+${issueCounts(datum, this.qaRunId).severe - 1}</span
-                    >`
-                  : issueCounts(datum, this.qaRunId).moderate > 1
-                    ? html`<span
-                        class="text-[10px] font-semibold text-yellow-600"
-                        >+${issueCounts(datum, this.qaRunId).moderate - 1}</span
-                      >`
+        ${this.filteredPages.length > 0
+          ? GroupedList({
+              data: this.filteredPages,
+              renderWrapper: (contents) =>
+                html`<div class="@container">${contents}</div>`,
+              renderGroup: (header, items, group) =>
+                html`<btrix-qa-page-group
+                  expanded
+                  class="is-group bg-neutral-0"
+                  .isRemainderGroup=${group?.value === remainder}
+                >
+                  <div slot="header">${header}</div>
+                  <div slot="content" class="py-2">${items}</div>
+                </btrix-qa-page-group>`,
+              renderItem: (datum) =>
+                html`<btrix-qa-page
+                  class="is-leaf -my-4 scroll-my-8 py-4 [contain-intrinsic-height:auto_70px] [contain:strict] [content-visibility:auto] first-of-type:mt-0 last-of-type:mb-0"
+                  .selected=${this.itemPageId === datum.id}
+                  .pageId=${datum.id}
+                  ${this.itemPageId === datum.id
+                    ? ref(this.currentPageElement)
                     : nothing}
-                ${datum.notes?.[0] &&
-                html`<sl-icon
-                  name="chat-square-text-fill"
-                  class="text-blue-600"
-                ></sl-icon>`}
-              </div>
-              <h5 class="truncate text-sm font-semibold text-black">
-                ${datum.title}
-              </h5>
-              <div class="truncate text-xs leading-4 text-blue-600">
-                ${datum.url}
-              </div>
-              <div
-                slot="content"
-                class="z-10 -mt-2 ml-6 mr-2 rounded-b-lg border border-solid border-gray-200 bg-neutral-0 px-4 pb-1 pt-4"
-              >
-                ${pageDetails(datum, this.qaRunId)}
-              </div>
-            </btrix-qa-page>`,
-          sortBy: (a, b) =>
-            ((b[this.orderBy.field]?.[this.qaRunId] ?? 0) -
-              (a[this.orderBy.field]?.[this.qaRunId] ?? 0)) *
-            (this.orderBy.direction === "asc" ? 1 : -1),
-          groupBy: {
-            value: composeWithRunId(groupBy, this.qaRunId, this.orderBy),
-            groups: [
-              {
-                value: "severe",
-                renderLabel: ({ data }) =>
-                  html`Severe
-                    <btrix-badge class="ml-2" .variant=${"danger"}>
-                      ${data.length}
-                    </btrix-badge>`,
+                >
+                  <div
+                    class="absolute -left-4 top-[50%] flex w-8 translate-y-[-50%] flex-col place-items-center gap-1 rounded-full border border-gray-300 bg-neutral-0 p-2 leading-[14px] shadow-sm"
+                  >
+                    ${severityIcon(
+                      severityFromMatch(
+                        datum[this.orderBy.field]?.[this.itemPageId!],
+                      ),
+                    )}
+                    ${issueCounts(datum, this.itemPageId!).severe > 1
+                      ? html`<span
+                          class="text-[10px] font-semibold text-red-600"
+                          >+${issueCounts(datum, this.itemPageId!).severe -
+                          1}</span
+                        >`
+                      : issueCounts(datum, this.itemPageId!).moderate > 1
+                        ? html`<span
+                            class="text-[10px] font-semibold text-yellow-600"
+                            >+${issueCounts(datum, this.itemPageId!).moderate -
+                            1}</span
+                          >`
+                        : nothing}
+                    ${datum.notes?.[0] &&
+                    html`<sl-icon
+                      name="chat-square-text-fill"
+                      class="text-blue-600"
+                    ></sl-icon>`}
+                  </div>
+                  <h5 class="truncate text-sm font-semibold text-black">
+                    ${datum.title}
+                  </h5>
+                  <div class="truncate text-xs leading-4 text-blue-600">
+                    ${datum.url}
+                  </div>
+                  <div
+                    slot="content"
+                    class="z-10 -mt-2 ml-6 mr-2 rounded-b-lg border border-solid border-gray-200 bg-neutral-0 px-4 pb-1 pt-4"
+                  >
+                    ${pageDetails(datum, this.itemPageId!)}
+                  </div>
+                </btrix-qa-page>`,
+              sortBy: (a, b) =>
+                ((b[this.orderBy.field]?.[this.itemPageId!] ?? 0) -
+                  (a[this.orderBy.field]?.[this.itemPageId!] ?? 0)) *
+                (this.orderBy.direction === "asc" ? 1 : -1),
+              groupBy: {
+                value: (datum) =>
+                  groupBy(datum, this.itemPageId ?? "", this.orderBy),
+                groups: [
+                  {
+                    value: "severe",
+                    renderLabel: ({ data }) =>
+                      html`Severe
+                        <btrix-badge class="ml-2" .variant=${"danger"}>
+                          ${data.length}
+                        </btrix-badge>`,
+                  },
+                  {
+                    value: "moderate",
+                    renderLabel: ({ data }) =>
+                      html`Possible Issues
+                        <btrix-badge class="ml-2" .variant=${"warning"}>
+                          ${data.length}
+                        </btrix-badge>`,
+                  },
+                  {
+                    value: "good",
+                    renderLabel: ({ data }) =>
+                      html`Likely Good
+                        <btrix-badge class="ml-2" .variant=${"success"}>
+                          ${data.length}
+                        </btrix-badge>`,
+                  },
+                  {
+                    value: remainder,
+                    renderLabel: ({ data }) =>
+                      html`No QA Data
+                        <btrix-badge class="ml-2" .variant=${"high-contrast"}>
+                          ${data.length}
+                        </btrix-badge>`,
+                  },
+                ],
               },
-              {
-                value: "moderate",
-                renderLabel: ({ data }) =>
-                  html`Possible Issues
-                    <btrix-badge class="ml-2" .variant=${"warning"}>
-                      ${data.length}
-                    </btrix-badge>`,
-              },
-              {
-                value: remainder,
-                renderLabel: ({ data }) =>
-                  html`Likely Good
-                    <btrix-badge class="ml-2" .variant=${"success"}>
-                      ${data.length}
-                    </btrix-badge>`,
-              },
-            ],
-          },
-        })}
+            })
+          : html`<div
+              class="flex flex-col items-center justify-center gap-4 py-8 text-xs text-gray-600"
+            >
+              <sl-icon name="dash-circle" class="h-4 w-4"></sl-icon>
+              ${msg("No pages")}
+            </div>`}
       </div>
     `;
   }

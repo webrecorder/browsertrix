@@ -18,7 +18,11 @@ import { NavigateController } from "@/controllers/navigate";
 import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
 import { renderName } from "@/utils/crawler";
-import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
+import type {
+  ArchivedItem,
+  ArchivedItemPage,
+  ArchivedItemQaRun,
+} from "@/types/crawler";
 import type { APIPaginationQuery, APIPaginatedList } from "@/types/api";
 
 const TABS = ["screenshots", "replay"] as const;
@@ -91,6 +95,9 @@ export class ArchivedItemQA extends TailwindElement {
   @property({ type: String })
   itemPageId?: string;
 
+  @property({ type: String })
+  qaRunId?: string;
+
   @property({ type: Boolean })
   isCrawler = false;
 
@@ -123,6 +130,7 @@ export class ArchivedItemQA extends TailwindElement {
 
   private async initItem() {
     void this.fetchCrawl();
+    await this.fetchQaRuns();
     await this.fetchPages({ page: 1 });
     const firstPage = this.pages?.items[0];
 
@@ -205,7 +213,13 @@ export class ArchivedItemQA extends TailwindElement {
         </h2>
         <section class="pageList grid">
           <btrix-qa-page-list
+            .item=${this.item}
+            .itemPageId=${this.itemPageId}
+            .pages=${this.pages}
             class="grid min-h-0 content-start justify-stretch"
+            @qa-page-select=${(e: CustomEvent<string | undefined>) => {
+              this.itemPageId = e.detail;
+            }}
           ></btrix-qa-page-list>
         </section>
       </article>
@@ -323,6 +337,25 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
+  private async fetchQaRuns(): Promise<void> {
+    try {
+      this.qaRunId = (await this.getQaRuns())[0]?.id;
+    } catch {
+      this.notify.toast({
+        message: msg("Sorry, couldn't retrieve QA data at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getQaRuns(): Promise<ArchivedItemQaRun[]> {
+    return this.api.fetch<ArchivedItemQaRun[]>(
+      `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
+      this.authState!,
+    );
+  }
+
   private async getCrawl(): Promise<ArchivedItem> {
     return this.api.fetch<ArchivedItem>(
       `/orgs/${this.orgId}/crawls/${this.itemId}`,
@@ -342,14 +375,26 @@ export class ArchivedItemQA extends TailwindElement {
       },
     );
     return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}/pages?${query}`,
+      this.qaRunId
+        ? `/orgs/${this.orgId}/crawls/${this.itemId}/qa/${this.qaRunId}/pages?${query}`
+        : `/orgs/${this.orgId}/crawls/${this.itemId}/pages?${query}`,
       this.authState!,
     );
   }
   private async fetchPage(): Promise<void> {
     if (!this.itemPageId) return;
+    // Capturing the ID here in case it changes between now and when `getPage` returns
+    const id = this.itemPageId;
+    const cachedPage = this.pages?.items.find((page) => page.id === id);
+    if (cachedPage) {
+      this.page = cachedPage;
+    }
     try {
       this.page = await this.getPage(this.itemPageId);
+      if (this.pages) {
+        const pageIndex = this.pages.items.findIndex((page) => page.id === id);
+        this.pages.items[pageIndex] = this.page;
+      }
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve archived item at this time."),

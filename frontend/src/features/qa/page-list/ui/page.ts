@@ -18,7 +18,7 @@ export class QaPage extends TailwindElement {
 
   contentContainer: Ref<HTMLElement> = createRef();
 
-  handleClick = () => {
+  select = () => {
     this.dispatchEvent(
       new CustomEvent<string | undefined>("qa-page-select", {
         detail: this.pageId,
@@ -26,6 +26,7 @@ export class QaPage extends TailwindElement {
         bubbles: true,
       }),
     );
+    this.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
   animateExpand = async () => {
@@ -81,9 +82,9 @@ export class QaPage extends TailwindElement {
     if (changedProperties.has("selected")) {
       if (changedProperties.get("selected")) {
         void this.animateCollapse();
-        this.focus();
       } else {
         void this.animateExpand();
+        this.focus();
       }
     }
   }
@@ -101,7 +102,7 @@ export class QaPage extends TailwindElement {
       <div class="py-2 text-sm text-gray-600">
         <div
           class="relative z-20 ml-4 block flex-auto cursor-pointer select-none overflow-visible rounded border border-solid border-gray-300 bg-white px-4 py-2 pl-5 shadow-sm transition-shadow aria-selected:border-blue-500 aria-selected:bg-blue-50 aria-selected:shadow-md aria-selected:shadow-blue-800/20 aria-selected:transition-none"
-          @click=${this.handleClick}
+          @click=${this.select}
           tabindex="0"
           aria-selected=${this.selected}
         >

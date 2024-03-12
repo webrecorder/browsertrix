@@ -7,15 +7,7 @@ import type { OrderBy } from ".";
 import { remainder } from "..";
 
 export type Severity = "severe" | "moderate" | "good" | null;
-export type SortBy = "screenshotMatch" | "textMatch"; // TODO add resource counts
-
-export const composeWithRunId = <T>(
-  fn: (page: ArchivedItemPage, runId: string, order: OrderBy) => T,
-  runId: string,
-  order: OrderBy,
-) => {
-  return (page: ArchivedItemPage) => fn(page, runId, order);
-};
+export type SortBy = "screenshotMatch" | "textMatch"; // TODO add resource counts, timestamps, etc
 
 export const severityFromMatch = cached(
   (match: number | undefined | null): Severity => {
@@ -104,9 +96,9 @@ export const groupBy = cached(
   ): NonNullable<Severity> | typeof remainder => {
     switch (order.field) {
       case "screenshotMatch":
-        return severityFromMatch(page.screenshotMatch?.[runId]) ?? "good";
+        return severityFromMatch(page.screenshotMatch?.[runId]) ?? remainder;
       case "textMatch":
-        return severityFromMatch(page.textMatch?.[runId]) ?? "good";
+        return severityFromMatch(page.textMatch?.[runId]) ?? remainder;
       default:
         return remainder;
     }
