@@ -360,7 +360,7 @@ class PageOps:
             # Sorting options to add:
             # - automated heuristics like screenshot_comparison (dict keyed by QA run id)
             # - Ensure notes sorting works okay with notes in list
-            sort_fields = ("url", "title", "notes", "approved", "notes")
+            sort_fields = ("url", "title", "notes", "approved")
             qa_sort_fields = ("screenshotMatch", "textMatch")
             if sort_by not in sort_fields and sort_by not in qa_sort_fields:
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
