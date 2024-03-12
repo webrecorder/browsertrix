@@ -618,7 +618,8 @@ class OrgOps:
                 crawl_count += 1
             if item.type == "upload":
                 upload_count += 1
-            page_count += item.stats.done
+            if item.stats:
+                page_count += item.stats.done
 
         profile_count = await self.profiles_db.count_documents({"oid": org.id})
         workflows_running_count = await self.crawls_db.count_documents(
