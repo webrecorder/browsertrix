@@ -302,7 +302,7 @@ export class PageQAToolbar extends TailwindElement {
                         >
                           <div class="p-2">
                             ${msg(
-                              str`${comment.userName} commented on ${new Date(comment.created + "Z").toLocaleDateString()}:`,
+                              str`${comment.userName} commented on ${new Date(comment.created + "Z").toLocaleDateString()}`,
                             )}
                           </div>
                           <sl-icon-button
