@@ -17,7 +17,7 @@ apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:
   name: qa-crawl-instance-{{ . }}
-value: -{{ add 100 . }}
+value: -{{ add 50 . }}
 globalDefault: false
 description: "Priority for QA crawl instance #{{ . }}"
 
@@ -29,7 +29,7 @@ apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:
   name: bg-jobs
-value: -1000
+value: -100
 globalDefault: false
 description: "Priority for background jobs"
 
