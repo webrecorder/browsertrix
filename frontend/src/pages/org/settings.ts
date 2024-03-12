@@ -363,8 +363,9 @@ export class OrgSettings extends LiteElement {
         disableButton = true;
       }
     }
-    return html`<btrix-button
-      icon
+    return html`<sl-icon-button
+      class="text-base hover:text-danger"
+      name="trash3"
       ?disabled=${disableButton}
       aria-details=${ifDefined(
         disableButton ? msg("Cannot remove only admin member") : undefined,
@@ -375,9 +376,7 @@ export class OrgSettings extends LiteElement {
             detail: { member },
           }) as OrgRemoveMemberEvent,
         )}
-    >
-      <sl-icon name="trash3"></sl-icon>
-    </btrix-button>`;
+    ></sl-icon-button>`;
   }
 
   private renderRemoveInviteButton(invite: Invite) {
