@@ -550,7 +550,9 @@ export class CrawlDetail extends LiteElement {
   private renderQA() {
     return html`
       <section class="mb-5 rounded-lg border p-4">[summary]</section>
-      <section class="rounded-lg border p-4">[stats]</section>
+      <section class="mb-7 rounded-lg border p-4">[stats]</section>
+      <h4 class="text-lg font-semibold">${msg("Pages")}</h4>
+      <section>[pages]</section>
     `;
   }
 
