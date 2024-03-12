@@ -339,7 +339,8 @@ class CollectionOps:
             files = crawl.files or []
             for file in files:
                 total_size += file.size
-            page_count += crawl.stats.done
+            if crawl.stats:
+                page_count += crawl.stats.done
             if crawl.tags:
                 tags.extend(crawl.tags)
 

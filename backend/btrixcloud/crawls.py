@@ -606,12 +606,13 @@ class CrawlOps(BaseCrawlOps):
                 if duration_seconds:
                     data["duration"] = duration_seconds
 
-            data["pages"] = crawl.stats.done
+            if crawl.stats:
+                data["pages"] = crawl.stats.done
 
             data["filesize"] = crawl.fileSize
 
             data["avg_page_time"] = 0
-            if crawl.stats.done != 0 and duration_seconds:
+            if crawl.stats and crawl.stats.done != 0 and duration_seconds:
                 data["avg_page_time"] = int(duration_seconds / crawl.stats.done)
 
             crawls_data.append(data)
