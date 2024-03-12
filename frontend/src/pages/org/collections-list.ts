@@ -444,7 +444,7 @@ export class CollectionsList extends LiteElement {
 
                   // Scroll to top of list
                   // TODO once deep-linking is implemented, scroll to top of pushstate
-                  this.scrollInView({ behavior: "smooth" });
+                  this.scrollIntoView({ behavior: "smooth" });
                 }}
               ></btrix-pagination>
             </footer>

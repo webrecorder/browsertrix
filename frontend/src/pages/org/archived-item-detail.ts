@@ -845,7 +845,7 @@ ${this.crawl?.description}
                       page: e.detail.page,
                     });
                     // Scroll to top of list
-                    this.scrollInView();
+                    this.scrollIntoView();
                   }}
                 ></btrix-crawl-logs>
               `
