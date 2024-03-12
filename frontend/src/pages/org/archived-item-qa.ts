@@ -135,7 +135,7 @@ export class ArchivedItemQA extends TailwindElement {
     const crawlBaseUrl = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}`;
     const itemName = this.item ? renderName(this.item) : nothing;
     return html`
-      <nav class="mb-7">
+      <nav class="mb-7 text-success-600">
         <a
           class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
           href=${`${crawlBaseUrl}`}

@@ -257,16 +257,6 @@ export class PageQAToolbar extends TailwindElement {
         @sl-after-hide=${() => this.fetchPage()}
       >
         ${keyed(this.showComments, this.renderComments())}
-        <p
-          slot="footer"
-          class="mb-2 rounded border border-slate-200 bg-slate-50 p-2 text-left text-neutral-500"
-        >
-          <sl-tag size="small" variant="primary" class="mr-1"
-            >${msg("Beta Notice")}</sl-tag
-          >
-          ${msg(
-            "We may analyze anonymized text from this comment to improve the beta QA feature.",
-          )}
         </p>
         <sl-button
           slot="footer"
