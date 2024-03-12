@@ -600,7 +600,7 @@ export class WorkflowDetail extends LiteElement {
               this.isCancelingOrStoppingCrawl ||
               this.workflow?.lastCrawlStopping}
             >
-              <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+              <sl-icon name="dash-square" slot="prefix"></sl-icon>
               <span>${msg("Stop")}</span>
             </sl-button>
             <sl-button
@@ -655,7 +655,7 @@ export class WorkflowDetail extends LiteElement {
                 ?disabled=${workflow.lastCrawlStopping ||
                 this.isCancelingOrStoppingCrawl}
               >
-                <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+                <sl-icon name="dash-square" slot="prefix"></sl-icon>
                 ${msg("Stop Crawl")}
               </sl-menu-item>
               <sl-menu-item

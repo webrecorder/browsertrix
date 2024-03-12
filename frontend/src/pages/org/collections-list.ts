@@ -501,7 +501,7 @@ export class CollectionsList extends LiteElement {
           ? html`
               <sl-tooltip content=${msg("Shareable")}>
                 <sl-icon
-                  class="inline-block align-middle"
+                  class="inline-block align-middle text-success-600"
                   name="people-fill"
                   label=${msg("Shareable Collection")}
                 ></sl-icon>

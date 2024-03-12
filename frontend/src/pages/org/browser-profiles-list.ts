@@ -112,7 +112,7 @@ export class BrowserProfilesList extends LiteElement {
             content=${isBackedUp ? msg("Backed up") : msg("Not backed up")}
           >
             <sl-icon
-              name=${isBackedUp ? "clouds" : "cloud-slash"}
+              name=${isBackedUp ? "clouds-fill" : "cloud-slash-fill"}
               class="${isBackedUp ? "text-success" : "text-neutral-500"}"
             ></sl-icon>
           </sl-tooltip>
@@ -164,7 +164,7 @@ export class BrowserProfilesList extends LiteElement {
             }}
           >
             <sl-icon slot="prefix" name="files"></sl-icon>
-            ${msg("Duplicate profile")}
+            ${msg("Duplicate Profile")}
           </sl-menu-item>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
