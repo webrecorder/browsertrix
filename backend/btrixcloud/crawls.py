@@ -791,6 +791,16 @@ class CrawlOps(BaseCrawlOps):
         #    all_qa.insert(0, crawl.qa)
         return all_qa
 
+    async def get_active_qa(
+        self, crawl_id: str, org: Optional[Organization] = None
+    ) -> Optional[QARunOut]:
+        """return just the active QA, if any"""
+        crawl_data = await self.get_crawl_raw(
+            crawl_id, org, "crawl", project={"qa": True}
+        )
+        qa = crawl_data.get("qa")
+        return QARunOut(**qa) if qa else None
+
     async def get_qa_run_for_replay(
         self, crawl_id: str, qa_run_id: str, org: Optional[Organization] = None
     ) -> QARunWithResources:
@@ -1005,7 +1015,6 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
 
     # QA APIs
     # ---------------------
-
     @app.get(
         "/orgs/all/crawls/{crawl_id}/qa/{qa_run_id}/replay.json",
         tags=["qa"],
@@ -1057,6 +1066,14 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     )
     async def get_qa_runs(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_qa_runs(crawl_id, org)
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/qa/activeQA",
+        tags=["qa"],
+        response_model=Dict[str, Optional[QARunOut]],
+    )
+    async def get_active_qa(crawl_id, org: Organization = Depends(org_viewer_dep)):
+        return {"qa": await ops.get_active_qa(crawl_id, org)}
 
     # ----
 

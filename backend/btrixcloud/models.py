@@ -1481,27 +1481,26 @@ class PageNote(BaseModel):
 class PageQACompare(BaseModel):
     """Model for updating pages from QA run"""
 
-    screenshotMatch: Optional[int] = None
-    textMatch: Optional[int] = None
+    screenshotMatch: Optional[float] = None
+    textMatch: Optional[float] = None
     resourceCounts: Optional[Dict[str, int]]
 
 
 # ============================================================================
 class Page(BaseMongoModel):
-    """Model for crawl pages"""
+    """Core page data, no QA"""
 
     id: UUID
 
     oid: UUID
     crawl_id: str
+
+    # core page data
     url: AnyHttpUrl
     title: Optional[str] = None
     timestamp: Optional[datetime] = None
     load_state: Optional[int] = None
     status: Optional[int] = None
-
-    # automated heuristics, keyed by QA run id
-    qa: Optional[Dict[str, PageQACompare]] = {}
 
     # manual review
     userid: Optional[UUID] = None
@@ -1511,7 +1510,30 @@ class Page(BaseMongoModel):
 
 
 # ============================================================================
+class PageWithAllQA(Page):
+    """Model for core page data + qa"""
+
+    # automated heuristics, keyed by QA run id
+    qa: Optional[Dict[str, PageQACompare]] = {}
+
+
+# ============================================================================
 class PageOut(Page):
-    """Model for pages output"""
+    """Model for pages output, no QA"""
 
     status: Optional[int] = 200
+
+
+# ============================================================================
+class PageOutWithSingleQA(Page):
+    """Page out with single QA entry"""
+
+    qa: Optional[PageQACompare] = None
+
+
+# ============================================================================
+class PagesAndResources(BaseModel):
+    """moage for qa configmap data, pages + resources"""
+
+    resources: List[CrawlFileOut] = []
+    pages: List[PageOut] = []
