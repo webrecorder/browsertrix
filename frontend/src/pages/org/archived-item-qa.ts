@@ -43,6 +43,7 @@ export class ArchivedItemQA extends TailwindElement {
         "main"
         "pageListHeader"
         "pageList";
+      grid-template-columns: 100%;
       grid-template-rows: repeat(4, max-content);
     }
 
@@ -51,7 +52,7 @@ export class ArchivedItemQA extends TailwindElement {
         grid-template:
           "mainHeader pageListHeader"
           "main pageList";
-        grid-template-columns: 1fr 24rem;
+        grid-template-columns: 75% 1fr;
         grid-template-rows: min-content 1fr;
       }
     }
@@ -242,9 +243,11 @@ export class ArchivedItemQA extends TailwindElement {
           ])}
         </div>
         <div
-          class="mx-1.5 flex h-8 flex-1 items-center justify-between rounded border bg-neutral-0 px-2 text-sm leading-none"
+          class="mx-1.5 flex h-8 min-w-0 flex-1 items-center justify-between gap-2 overflow-hidden whitespace-nowrap rounded border bg-neutral-0 px-2 text-sm"
         >
-          <span>${this.page?.url || "http://"}</span>
+          <div class="fade-out-r scrollbar-hidden flex-1 overflow-x-scroll">
+            <span class="pr-2">${this.page?.url || "http://"}</span>
+          </div>
           ${when(
             this.page,
             (page) => html`

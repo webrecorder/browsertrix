@@ -264,6 +264,22 @@
     visibility: hidden;
     clip: rect(0 0 0 0);
   }
+
+  .scrollbar-hidden {
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+
+  .fade-out-r {
+    mask-image: linear-gradient(
+      to right,
+      var(--sl-panel-background-color) calc(100% - 1rem),
+      transparent
+    );
+  }
 }
 
 @layer components {
