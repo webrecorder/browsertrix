@@ -360,7 +360,7 @@ export class WorkflowDetail extends LiteElement {
           >
           <sl-button
             size="small"
-            variant="primary"
+            variant="danger"
             ?loading=${this.isCancelingOrStoppingCrawl}
             @click=${async () => {
               await this.cancel();
