@@ -561,7 +561,7 @@ class CoreCrawlable(BaseModel):
 
     image: Optional[str]
 
-    stats: CrawlStats = CrawlStats()
+    stats: Optional[CrawlStats] = CrawlStats()
 
     files: List[CrawlFile] = []
 
