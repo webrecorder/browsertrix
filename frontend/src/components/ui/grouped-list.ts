@@ -125,6 +125,7 @@ export function GroupedList<
   renderGroup?: (
     header: TemplateResult<1>,
     items: (TemplateResult<1> | null)[],
+    group: GroupConfig<T, G, GR> | null,
   ) => TemplateResult<1>;
   key?: keyof T;
 }) {
@@ -235,6 +236,7 @@ export function GroupedList<
                 group.group?.label ??
                 group.group?.value}`,
                 renderData(group.data),
+                group.group,
               )
             : null,
         )
