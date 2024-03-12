@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unnecessary-condition */
 // cSpell:disable
-
 /**
  * Object.entriesFrom() polyfill
  * @author Chris Ferdinandi

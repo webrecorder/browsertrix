@@ -24,21 +24,18 @@ const MAX_SEARCH_RESULTS = 10;
  */
 @localized()
 @customElement("btrix-search-combobox")
-export class SearchCombobox<
-  T extends object,
-  K extends keyof T & string,
-> extends LitElement {
+export class SearchCombobox<T> extends LitElement {
   @property({ type: Array })
   searchOptions: T[] = [];
 
   @property({ type: Array })
-  searchKeys: K[] = [];
+  searchKeys: string[] = [];
 
   @property({ type: Object })
-  keyLabels?: Record<K & string, string>;
+  keyLabels?: { [key: string]: string };
 
-  @property({ attribute: false })
-  selectedKey?: K;
+  @property({ type: String })
+  selectedKey?: string;
 
   @property({ type: String })
   placeholder: string = msg("Start typing to search");
@@ -108,10 +105,10 @@ export class SearchCombobox<
           this.searchByValue = item.value;
           await this.updateComplete;
           this.dispatchEvent(
-            new CustomEvent<SelectEventDetail<K>>("btrix-select", {
+            new CustomEvent<SelectEventDetail<T>>("btrix-select", {
               detail: {
                 key: key ?? null,
-                value: item.value as K,
+                value: item.value as T,
               },
             }),
           );
@@ -173,7 +170,7 @@ export class SearchCombobox<
       ${searchResults.map(({ matches }) =>
         matches?.map(({ key, value }) => {
           if (!!key && !!value) {
-            const keyLabel = this.keyLabels?.[key as K];
+            const keyLabel = this.keyLabels?.[key];
             return html`
               <sl-menu-item slot="menu-item" data-key=${key} value=${value}>
                 ${keyLabel
