@@ -176,13 +176,13 @@ export class PageQAToolbar extends TailwindElement {
   private showComments = false;
 
   @query("btrix-dialog")
-  private dialog!: Dialog;
+  private readonly dialog!: Dialog;
 
   @query('sl-textarea[name="pageComment"]')
-  private textarea!: SlTextarea;
+  private readonly textarea!: SlTextarea;
 
-  private api = new APIController(this);
-  private notify = new NotifyController(this);
+  private readonly api = new APIController(this);
+  private readonly notify = new NotifyController(this);
 
   protected willUpdate(
     changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
@@ -218,7 +218,7 @@ export class PageQAToolbar extends TailwindElement {
           })}
           aria-checked=${approved}
           ?disabled=${disabled}
-          @click=${() =>
+          @click=${async () =>
             this.submitReview({ approved: approved ? null : true })}
         >
           <sl-icon name="hand-thumbs-up" label=${msg("Approve")}></sl-icon>
@@ -243,7 +243,7 @@ export class PageQAToolbar extends TailwindElement {
           })}
           aria-checked=${rejected}
           ?disabled=${disabled}
-          @click=${() =>
+          @click=${async () =>
             this.submitReview({ approved: rejected ? null : false })}
         >
           <sl-icon name="hand-thumbs-down" label=${msg("Reject")}></sl-icon>
@@ -254,7 +254,7 @@ export class PageQAToolbar extends TailwindElement {
         label=${msg("Page Review Comments")}
         ?open=${this.showComments}
         @sl-hide=${() => (this.showComments = false)}
-        @sl-after-hide=${() => this.fetchPage()}
+        @sl-after-hide=${async () => this.fetchPage()}
       >
         ${keyed(this.showComments, this.renderComments())}
         </p>
@@ -298,7 +298,7 @@ export class PageQAToolbar extends TailwindElement {
                           <sl-icon-button
                             class="hover:text-danger"
                             name="trash3"
-                            @click=${() => this.deleteComment(comment.id)}
+                            @click=${async () => this.deleteComment(comment.id)}
                           ></sl-icon-button>
                         </div>
                         <div class="rounded-b border-b border-l border-r p-2">
@@ -338,7 +338,7 @@ export class PageQAToolbar extends TailwindElement {
 
     try {
       await this.api.fetch(
-        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.page?.id}`,
+        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.page.id}`,
         this.authState!,
         {
           method: "PATCH",

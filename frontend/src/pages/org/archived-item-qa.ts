@@ -200,7 +200,7 @@ export class ArchivedItemQA extends TailwindElement {
         </h2>
         <section class="pageList outline">
           <ul>
-            ${this.pages?.items.map(
+            ${this.pages.items.map(
               (page) => html`
                 <li>
                   <a
@@ -214,7 +214,7 @@ export class ArchivedItemQA extends TailwindElement {
               `,
             )}
           </ul>
-          pg ${this.pages?.page} of
+          pg ${this.pages.page} of
           ${this.pages
             ? Math.ceil(this.pages.total / this.pages.pageSize)
             : "unknown"}
