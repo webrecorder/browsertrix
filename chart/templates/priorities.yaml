@@ -28,8 +28,8 @@ description: "Priority for QA crawl instance #{{ . }}"
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:
-  name: bg-jobs
-value: -100
+  name: bg-job
+value: -1000
 globalDefault: false
 description: "Priority for background jobs"
 
