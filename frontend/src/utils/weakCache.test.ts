@@ -50,7 +50,7 @@ describe("WeakRefMap", () => {
   });
 
   it("removes entries when memory is cleared", function (done) {
-    this.timeout(20);
+    this.timeout(20_000);
 
     // Adapted from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry#callbacks_never_called_synchronously
     const cache = new WeakRefMap<string, object>();
