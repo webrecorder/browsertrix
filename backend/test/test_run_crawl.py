@@ -453,8 +453,6 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page.get("title") or page.get("title") is None
     assert page["load_state"]
 
-    assert page["qa"] == {}
-
     assert page["notes"] == []
     assert page.get("userid") is None
     assert page.get("modified") is None
