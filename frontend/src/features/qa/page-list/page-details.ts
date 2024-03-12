@@ -79,7 +79,7 @@ export const pageDetails = (page: ArchivedItemPage, run: string) =>
         </span>
       </li>
     </ul>
-    ${page.notes
+    ${page.notes?.[0]
       ? html` <sl-divider
             class="[--color:theme(colors.gray.200)] [--spacing:theme(spacing.3)]"
           ></sl-divider>
