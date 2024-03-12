@@ -21,6 +21,7 @@ import { isApiError } from "@/utils/api";
 
 const SECTIONS = [
   "overview",
+  "qa",
   "watch",
   "replay",
   "files",
@@ -142,6 +143,15 @@ export class CrawlDetail extends LiteElement {
     let sectionContent: string | TemplateResult = "";
 
     switch (this.sectionName) {
+      case "qa":
+        sectionContent = this.renderPanel(
+          html`${this.renderTitle(msg("Crawl Analysis"))}
+            <sl-button size="small" @click=${() => console.log("TODO")}>
+              ${msg("Reanalyze Crawl")}
+            </sl-button>`,
+          this.renderQA(),
+        );
+        break;
       case "replay":
         sectionContent = this.renderPanel(msg("Replay"), this.renderReplay(), {
           "overflow-hidden": true,
@@ -314,11 +324,13 @@ export class CrawlDetail extends LiteElement {
       label,
       iconLibrary,
       icon,
+      detail,
     }: {
       section: SectionName;
       label: string;
       iconLibrary: "app" | "default";
       icon: string;
+      detail?: TemplateResult<1>;
     }) => {
       const isActive = section === this.sectionName;
       const baseUrl = window.location.pathname.split("#")[0];
@@ -336,7 +348,7 @@ export class CrawlDetail extends LiteElement {
             aria-hidden="true"
             library=${iconLibrary}
           ></sl-icon>
-          ${label}</btrix-navigation-button
+          ${label}${detail}</btrix-navigation-button
         >
       `;
     };
@@ -351,6 +363,20 @@ export class CrawlDetail extends LiteElement {
           icon: "info-circle-fill",
           label: msg("Overview"),
         })}
+        ${when(
+          this.itemType === "crawl",
+          () => html`
+            ${renderNavItem({
+              section: "qa",
+              iconLibrary: "default",
+              icon: "clipboard2-data-fill",
+              label: msg("QA"),
+              detail: html`
+                <btrix-badge variant="primary">${msg("Ready")}</btrix-badge>
+              `,
+            })}
+          `,
+        )}
         ${renderNavItem({
           section: "replay",
           iconLibrary: "app",
@@ -523,6 +549,15 @@ export class CrawlDetail extends LiteElement {
       >
         ${content}
       </div>
+    `;
+  }
+
+  private renderQA() {
+    return html`
+      <section class="mb-5 rounded-lg border p-4">[summary]</section>
+      <section class="mb-7 rounded-lg border p-4">[stats]</section>
+      <h4 class="text-lg font-semibold">${msg("Pages")}</h4>
+      <section>[pages]</section>
     `;
   }
 
