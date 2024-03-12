@@ -404,7 +404,7 @@ export class WorkflowsList extends LiteElement {
 
                 // Scroll to top of list
                 // TODO once deep-linking is implemented, scroll to top of pushstate
-                this.scrollInView({ behavior: "smooth" });
+                this.scrollIntoView({ behavior: "smooth" });
               }}
             ></btrix-pagination>
           </footer>
@@ -797,7 +797,7 @@ export class WorkflowsList extends LiteElement {
 
       await this.fetchWorkflows();
       // Scroll to top of list
-      this.scrollInView({ behavior: "smooth" });
+      this.scrollIntoView({ behavior: "smooth" });
     } catch (e) {
       let message = msg("Sorry, couldn't run crawl at this time.");
       if (isApiError(e) && e.statusCode === 403) {
