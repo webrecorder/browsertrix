@@ -142,8 +142,9 @@ def test_run_qa_not_running(crawler_crawl_id, crawler_auth_headers, default_org_
 
 
 def test_delete_qa_run(crawler_crawl_id, crawler_auth_headers, default_org_id):
-    r = requests.delete(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}",
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/delete",
+        json={"qa_run_ids": [qa_run_id]},
         headers=crawler_auth_headers,
     )
 

@@ -34,6 +34,7 @@ from .models import (
     QARun,
     QARunOut,
     QARunWithResources,
+    DeleteQARunList,
     Organization,
     User,
     PaginatedResponse,
@@ -747,20 +748,22 @@ class CrawlOps(BaseCrawlOps):
                 status_code=404, detail=f"crawl_not_found, (details: {exc})"
             )
 
-    async def delete_crawl_qa_run(self, crawl_id: str, qa_run_id: str):
+    async def delete_crawl_qa_runs(self, crawl_id: str, delete_list: DeleteQARunList):
         """delete specified finished QA run"""
 
-        res = await self.crawls.find_one_and_update(
-            {"_id": crawl_id, "type": "crawl"},
-            {"$unset": {f"qaFinished.{qa_run_id}": ""}},
-        )
+        count = 0
+        for qa_run_id in delete_list.qa_run_ids:
+            res = await self.crawls.find_one_and_update(
+                {"_id": crawl_id, "type": "crawl"},
+                {"$unset": {f"qaFinished.{qa_run_id}": ""}},
+            )
 
-        if not res:
-            return {"deleted": False}
+            if res:
+                count += 1
 
-        await self.page_ops.delete_qa_run_from_pages(crawl_id, qa_run_id)
+            await self.page_ops.delete_qa_run_from_pages(crawl_id, qa_run_id)
 
-        return {"deleted": True}
+        return {"deleted": count}
 
     async def qa_run_finished(self, crawl_id: str):
         """clear active qa, add qa run to finished list, if successful"""
@@ -1057,12 +1060,14 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         # pylint: disable=unused-argument
         return await ops.stop_crawl_qa_run(crawl_id, org)
 
-    @app.delete("/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}", tags=["qa"])
-    async def delete_crawl_qa_run(
-        crawl_id: str, qa_run_id: str, org: Organization = Depends(org_crawl_dep)
+    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/delete", tags=["qa"])
+    async def delete_crawl_qa_runs(
+        crawl_id: str,
+        qa_run_ids: DeleteQARunList,
+        org: Organization = Depends(org_crawl_dep),
     ):
         # pylint: disable=unused-argument
-        return await ops.delete_crawl_qa_run(crawl_id, qa_run_id)
+        return await ops.delete_crawl_qa_runs(crawl_id, qa_run_ids)
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa",

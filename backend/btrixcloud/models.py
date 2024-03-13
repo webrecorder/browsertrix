@@ -683,6 +683,13 @@ class DeleteCrawlList(BaseModel):
 
 
 # ============================================================================
+class DeleteQARunList(BaseModel):
+    """delete qa run list POST body"""
+
+    qa_run_ids: List[str]
+
+
+# ============================================================================
 
 ### AUTOMATED CRAWLS ###
 
