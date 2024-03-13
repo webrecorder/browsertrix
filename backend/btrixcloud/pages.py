@@ -321,9 +321,11 @@ class PageOps:
         crawl_id: str,
         org: Optional[Organization] = None,
         qa_run_id: Optional[str] = None,
-        qa_range_field: Optional[str] = None,
-        qa_range_field_gte: Optional[float] = None,
-        qa_range_field_lte: Optional[float] = None,
+        qa_filter_by: Optional[str] = None,
+        qa_gte: Optional[float] = None,
+        qa_gt: Optional[float] = None,
+        qa_lte: Optional[float] = None,
+        qa_lt: Optional[float] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: Optional[str] = None,
@@ -344,15 +346,22 @@ class PageOps:
         if qa_run_id:
             query["qa"] = {"$exists": qa_run_id}
 
-            range_match = {}
+            range_filter = {}
 
-            if qa_range_field_gte:
-                range_match["$gte"] = qa_range_field_gte
-            if qa_range_field_lte:
-                range_match["$lte"] = qa_range_field_lte
+            if qa_gte:
+                range_filter["$gte"] = qa_gte
+            if qa_lte:
+                range_filter["$lte"] = qa_lte
+            if qa_gt:
+                range_filter["$gt"] = qa_gt
+            if qa_lt:
+                range_filter["$lt"] = qa_lt
 
-            if qa_range_field:
-                query[f"qa.{qa_run_id}.{qa_range_field}"] = range_match
+            if qa_filter_by:
+                if not range_filter:
+                    raise HTTPException(status_code=400, detail="range_missing")
+
+                query[f"qa.{qa_run_id}.{qa_filter_by}"] = range_filter
 
         aggregate = [{"$match": query}]
 
@@ -377,8 +386,9 @@ class PageOps:
 
             aggregate.extend([{"$sort": {sort_by: sort_direction}}])
 
-            if qa_run_id:
-                aggregate.extend([{"$set": {"qa": f"qa.{qa_run_id}"}}])
+        if qa_run_id:
+            aggregate.extend([{"$set": {"qa": f"$qa.{qa_run_id}"}}])
+            # aggregate.extend([{"$project": {"qa": f"$qa.{qa_run_id}"}}])
 
         aggregate.extend(
             [
@@ -523,9 +533,11 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     async def get_pages_list_with_qa(
         crawl_id: str,
         qa_run_id: str,
-        qa_range_field: Optional[str] = None,
-        qa_range_field_gte: Optional[float] = None,
-        qa_range_field_lte: Optional[float] = None,
+        filterBy: Optional[str] = None,
+        gte: Optional[float] = None,
+        gt: Optional[float] = None,
+        lte: Optional[float] = None,
+        lt: Optional[float] = None,
         org: Organization = Depends(org_crawl_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -537,9 +549,11 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
             crawl_id=crawl_id,
             org=org,
             qa_run_id=qa_run_id,
-            qa_range_field=qa_range_field,
-            qa_range_field_gte=qa_range_field_gte,
-            qa_range_field_lte=qa_range_field_lte,
+            qa_filter_by=filterBy,
+            qa_gte=gte,
+            qa_gt=gt,
+            qa_lte=lte,
+            qa_lt=lt,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,

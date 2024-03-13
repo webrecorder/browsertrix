@@ -466,7 +466,7 @@ class CrawlOps(BaseCrawlOps):
     ):
         """update running crawl stats"""
         prefix = "" if not is_qa else "qa."
-        query = {"_id": crawl_id, "type": "crawl", "state": "running"}
+        query = {"_id": crawl_id, "type": "crawl", f"{prefix}state": "running"}
         return await self.crawls.find_one_and_update(
             query, {"$set": {f"{prefix}stats": stats.dict()}}
         )
@@ -783,13 +783,14 @@ class CrawlOps(BaseCrawlOps):
     ) -> List[QARunOut]:
         """Return list of QA runs"""
         crawl_data = await self.get_crawl_raw(
-            crawl_id, org, "crawl", project={"qaFinished": True}
+            crawl_id, org, "crawl", project={"qaFinished": True, "qa": True}
         )
         qa_finished = crawl_data.get("qaFinished") or {}
         all_qa = [QARunOut(**qa_run_data) for qa_run_data in qa_finished.values()]
-        all_qa.sort(key=lambda x: x.finished, reverse=True)
-        # if crawl.qa and (len(all_qa) == 0 or crawl.qa.id != all_qa[0].id):
-        #    all_qa.insert(0, crawl.qa)
+        all_qa.sort(key=lambda x: x.finished or dt_now(), reverse=True)
+        qa = crawl_data.get("qa")
+        if qa:
+            all_qa.insert(0, QARunOut(**qa))
         return all_qa
 
     async def get_active_qa(

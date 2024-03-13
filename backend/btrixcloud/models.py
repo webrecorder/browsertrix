@@ -715,7 +715,11 @@ class QARunOut(BaseModel):
     userName: Optional[str]
 
     started: datetime
-    finished: datetime
+    finished: Optional[datetime] = None
+
+    state: str
+
+    crawlExecSeconds: int = 0
 
     stats: CrawlStats = CrawlStats()
 
