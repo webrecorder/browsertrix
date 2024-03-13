@@ -1,2 +1,2 @@
-export { QaPageGroup } from "./page-group";
-export { QaPage } from "./page";
+import "./page-group";
+import "./page";

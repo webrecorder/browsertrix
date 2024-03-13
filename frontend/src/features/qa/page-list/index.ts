@@ -1,11 +1,11 @@
-export * from "./ui";
+import "./ui";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
 import { localized, msg } from "@lit/localize";
 import { type PropertyValues, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { GroupedList, remainder } from "../../../components/ui/grouped-list";
+import { GroupedList, remainder } from "@/components/utils/grouped-list";
 
 import { pageDetails } from "./page-details";
 import {
@@ -16,7 +16,7 @@ import {
 } from "./helpers";
 
 import { type Ref, createRef, ref } from "lit/directives/ref.js";
-import { type QaPage } from "./ui";
+import { type QaPage } from "./ui/page";
 import type { APIPaginatedList } from "@/types/api";
 
 type SortField = ("textMatch" | "screenshotMatch") & keyof ArchivedItemPage;
