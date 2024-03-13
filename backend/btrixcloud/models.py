@@ -964,8 +964,15 @@ class OrgOut(BaseMongoModel):
     storageQuotaReached: Optional[bool]
     execMinutesQuotaReached: Optional[bool]
 
+    # total usage and exec time
     usage: Optional[Dict[str, int]]
     crawlExecSeconds: Dict[str, int] = {}
+
+    # qa only usage + exec time
+    qausage: Optional[Dict[str, int]] = {}
+    qacrawlExecSeconds: Dict[str, int] = {}
+
+    # exec time limits
     monthlyExecSeconds: Dict[str, int] = {}
     extraExecSeconds: Dict[str, int] = {}
     giftedExecSeconds: Dict[str, int] = {}
@@ -999,8 +1006,15 @@ class Organization(BaseMongoModel):
     bytesStoredUploads: int = 0
     bytesStoredProfiles: int = 0
 
+    # total usage + exec time
     usage: Dict[str, int] = {}
     crawlExecSeconds: Dict[str, int] = {}
+
+    # qa only usage + exec time
+    qausage: Dict[str, int] = {}
+    qacrawlExecSeconds: Dict[str, int] = {}
+
+    # exec time limits
     monthlyExecSeconds: Dict[str, int] = {}
     extraExecSeconds: Dict[str, int] = {}
     giftedExecSeconds: Dict[str, int] = {}

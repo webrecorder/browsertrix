@@ -499,18 +499,21 @@ class OrgOps:
             {"_id": org.id}, {"$set": {"origin": origin}}
         )
 
-    async def inc_org_time_stats(self, oid, duration, is_exec_time=False):
+    async def inc_org_time_stats(self, oid, duration, is_exec_time=False, is_qa=False):
         """inc crawl duration stats for org
 
         Overage is applied only to crawlExecSeconds - monthlyExecSeconds,
         giftedExecSeconds, and extraExecSeconds are added to only up to quotas
+
+        If is_qa is true, also update seperate qa only counter
         """
-        # pylint: disable=too-many-return-statements
+        # pylint: disable=too-many-return-statements, too-many-locals
         key = "crawlExecSeconds" if is_exec_time else "usage"
         yymm = datetime.utcnow().strftime("%Y-%m")
-        await self.orgs.find_one_and_update(
-            {"_id": oid}, {"$inc": {f"{key}.{yymm}": duration}}
-        )
+        inc_query = {f"{key}.{yymm}": duration}
+        if is_qa:
+            inc_query[f"qa{key}.{yymm}"] = duration
+        await self.orgs.find_one_and_update({"_id": oid}, {"$inc": inc_query})
 
         if not is_exec_time:
             return

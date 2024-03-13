@@ -959,7 +959,9 @@ class CrawlOperator(BaseOperator):
                 max_duration = max(duration, max_duration)
 
         if exec_time:
-            await self.org_ops.inc_org_time_stats(crawl.oid, exec_time, True)
+            await self.org_ops.inc_org_time_stats(
+                crawl.oid, exec_time, True, crawl.is_qa
+            )
             status.crawlExecTime += exec_time
             status.elapsedCrawlTime += max_duration
 
@@ -1338,7 +1340,7 @@ class CrawlOperator(BaseOperator):
 
         print(f"Duration: {duration}", flush=True)
 
-        await self.org_ops.inc_org_time_stats(crawl.oid, duration)
+        await self.org_ops.inc_org_time_stats(crawl.oid, duration, False, crawl.is_qa)
 
     async def mark_for_cancelation(self, crawl_id):
         """mark crawl as canceled in redis"""
