@@ -755,9 +755,12 @@ class CrawlOps(BaseCrawlOps):
             {"$unset": {f"qaFinished.{qa_run_id}": ""}},
         )
 
+        if not res:
+            return {"deleted": False}
+
         await self.page_ops.delete_qa_run_from_pages(crawl_id, qa_run_id)
 
-        return res
+        return {"deleted": True}
 
     async def qa_run_finished(self, crawl_id: str):
         """clear active qa, add qa run to finished list, if successful"""

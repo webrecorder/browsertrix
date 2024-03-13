@@ -344,7 +344,7 @@ class PageOps:
             query["oid"] = org.id
 
         if qa_run_id:
-            query["qa"] = {"$exists": qa_run_id}
+            query[f"qa.{qa_run_id}"] = {"$exists": True}
 
             range_filter = {}
 

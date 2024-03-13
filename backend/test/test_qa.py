@@ -113,7 +113,13 @@ def test_qa_page_data(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert page["url"] == "https://webrecorder.net/"
     assert page["qa"]["textMatch"] == 1.0
     assert page["qa"]["screenshotMatch"] == 1.0
-    assert page["qa"]["resourceCounts"] == {"crawlGood": 15, "crawlBad": 0, "replayGood": 15, "replayBad": 1}
+    assert page["qa"]["resourceCounts"] == {
+        "crawlGood": 15,
+        "crawlBad": 0,
+        "replayGood": 15,
+        "replayBad": 1,
+    }
+
 
 def test_qa_replay(crawler_crawl_id, crawler_auth_headers, default_org_id):
     r = requests.get(
@@ -135,3 +141,26 @@ def test_run_qa_not_running(crawler_crawl_id, crawler_auth_headers, default_org_
     assert r.json()["detail"] == "qa_not_running"
 
 
+def test_delete_qa_run(crawler_crawl_id, crawler_auth_headers, default_org_id):
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}",
+        headers=crawler_auth_headers,
+    )
+
+    assert r.status_code == 200
+    assert r.json()["deleted"] == True
+
+    # deleted from finished qa list
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
+        headers=crawler_auth_headers,
+    )
+
+    assert len(r.json()) == 0
+
+    # deleted from pages
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/pages",
+        headers=crawler_auth_headers,
+    )
+    assert len(r.json()["items"]) == 0
