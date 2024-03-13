@@ -1,5 +1,5 @@
 name: Feature / Change Request
-description: If new things should be added or something that is working as intended should be changed, please file this type of issue!
+description: Request a new feature or change to an existing feature of the app.
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
