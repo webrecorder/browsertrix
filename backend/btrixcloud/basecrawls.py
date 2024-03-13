@@ -436,7 +436,7 @@ class BaseCrawlOps:
 
                 prefix = "files"
                 if qa_run_id:
-                    prefix = f"qa.{qa_run_id}.{prefix}"
+                    prefix = f"qaFinished.{qa_run_id}.{prefix}"
 
                 await self.crawls.find_one_and_update(
                     {f"{prefix}.filename": file_.filename},
