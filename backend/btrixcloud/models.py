@@ -1502,8 +1502,8 @@ class Page(BaseMongoModel):
     # core page data
     url: AnyHttpUrl
     title: Optional[str] = None
-    timestamp: Optional[datetime] = None
-    load_state: Optional[int] = None
+    ts: Optional[datetime] = None
+    loadState: Optional[int] = None
     status: Optional[int] = None
 
     # manual review
