@@ -1,4 +1,8 @@
-<div align="center" style="padding: 2.5rem 0rem;"><img alt="Browsertrix Logo" src="assets/browsertrix-lockup-color-dynamic.svg" width="90%"></div>
+<div align="center">
+    <img alt="Browsertrix Logo" src="assets/browsertrix-lockup-color-dynamic.svg" width="90%">
+</div>
+
+&nbsp;
 
 Browsertrix is an open-source cloud-native high-fidelity browser-based crawling service designed
 to make web archiving easier and more accessible for everyone.
