@@ -597,7 +597,7 @@ class StorageOps:
             for wacz_file in instance_list:
                 wacz_url = wacz_file.path
                 if wacz_url.startswith("/data"):
-                    wacz_url = f"http://host.docker.internal:30870{wacz_url}"
+                    wacz_url = f"http://browsertrix-cloud-frontend.default{wacz_url}"
 
                 with RemoteZip(wacz_url) as remote_zip:
                     log_files: List[ZipInfo] = [
@@ -645,7 +645,7 @@ class StorageOps:
         for wacz_file in wacz_files:
             wacz_url = wacz_file.path
             if wacz_url.startswith("/data"):
-                wacz_url = f"http://host.docker.internal:30870{wacz_url}"
+                wacz_url = f"http://browsertrix-cloud-frontend.default{wacz_url}"
 
             with RemoteZip(wacz_url) as remote_zip:
                 page_files: List[ZipInfo] = [
