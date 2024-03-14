@@ -1,6 +1,6 @@
 import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
-import { html } from "lit";
+import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 /**
@@ -24,6 +24,12 @@ export class Badge extends TailwindElement {
 
   @property({ type: String, reflect: true })
   role: string | null = "status";
+
+  static styles = css`
+    :host {
+      display: inline-flex;
+    }
+  `;
 
   render() {
     return html`

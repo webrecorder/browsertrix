@@ -213,7 +213,7 @@ export class PageList extends TailwindElement {
                   class="is-group bg-neutral-0"
                   .isRemainderGroup=${group?.value === remainder}
                 >
-                  <div slot="header">${header}</div>
+                  <div slot="header" class="flex items-center">${header}</div>
                   <div slot="content" class="py-2">${items}</div>
                 </btrix-qa-page-group>`,
               renderItem: (datum) =>
