@@ -25,7 +25,6 @@ export class QaPageGroup extends TailwindElement {
 
   animateExpand = async () => {
     if (this.contentContainer.value == null) return;
-    this.contentContainer.value.classList.remove(tw`h-0`);
     await animateTo(
       this.contentContainer.value,
       shimKeyframesHeightAuto(
@@ -42,8 +41,6 @@ export class QaPageGroup extends TailwindElement {
       ),
       { duration: 250, easing: "cubic-bezier(0.4, 0.0, 0.2, 1)" },
     );
-
-    this.contentContainer.value.classList.add(tw`h-auto`);
   };
 
   animateCollapse = async () => {
@@ -68,8 +65,6 @@ export class QaPageGroup extends TailwindElement {
       ),
       { duration: 200, easing: "cubic-bezier(0.4, 0.0, 0.2, 1)" },
     );
-    this.contentContainer.value.classList.remove(tw`h-auto`);
-    this.contentContainer.value.classList.add(tw`h-0`);
   };
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
@@ -116,7 +111,9 @@ export class QaPageGroup extends TailwindElement {
           <slot name="header"></slot>
         </div>
         <div
-          class="h-auto overflow-hidden [content-visibility:auto] [contain:content]"
+          class="${this.expanded
+            ? "h-auto"
+            : "h-0"} overflow-hidden [contain:content] [content-visibility:auto]"
           ${ref(this.contentContainer)}
         >
           <slot name="content"></slot>

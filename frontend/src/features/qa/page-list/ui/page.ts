@@ -31,7 +31,6 @@ export class QaPage extends TailwindElement {
 
   animateExpand = async () => {
     if (this.contentContainer.value == null) return;
-    this.contentContainer.value.classList.remove(tw`h-0`);
     await animateTo(
       this.contentContainer.value,
       shimKeyframesHeightAuto(
@@ -42,14 +41,17 @@ export class QaPage extends TailwindElement {
             overflow: "hidden",
             transform: `translateY(-2px)`,
           },
-          { height: "auto", opacity: "1", overflow: "hidden" },
+          {
+            height: "auto",
+            opacity: "1",
+            overflow: "hidden",
+            transform: `translateY(0)`,
+          },
         ],
         this.contentContainer.value.scrollHeight,
       ),
       { duration: 250, easing: "cubic-bezier(0.4, 0.0, 0.2, 1)" },
     );
-
-    this.contentContainer.value.classList.add(tw`h-auto`);
   };
 
   animateCollapse = async () => {
@@ -62,6 +64,7 @@ export class QaPage extends TailwindElement {
             height: "auto",
             opacity: "1",
             overflow: "hidden",
+            transform: `translateY(0)`,
           },
           {
             height: "0",
@@ -74,8 +77,6 @@ export class QaPage extends TailwindElement {
       ),
       { duration: 250, easing: "cubic-bezier(0.4, 0.0, 0.2, 1)" },
     );
-    this.contentContainer.value.classList.remove(tw`h-auto`);
-    this.contentContainer.value.classList.add(tw`h-0`);
   };
 
   protected async willUpdate(changedProperties: PropertyValues<this>) {
@@ -109,7 +110,9 @@ export class QaPage extends TailwindElement {
           <slot></slot>
         </div>
         <div
-          class="overflow-hidden [content-visibility:auto] [contain:content]"
+          class="${this.selected
+            ? "h-auto"
+            : "h-0"} overflow-hidden [contain:content] [content-visibility:auto]"
           ${ref(this.contentContainer)}
         >
           <slot name="content"></slot>
