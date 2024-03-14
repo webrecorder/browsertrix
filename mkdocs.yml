@@ -24,7 +24,7 @@ theme:
   palette:
     scheme: webrecorder
   logo: assets/brand/browsertrix-icon-white.svg
-  favicon: assets/brand/browsertrix-icon-color-dynamic.svg
+  favicon: assets/brand/favicon.svg
 
   icon:
     admonition:
