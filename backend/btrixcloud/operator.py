@@ -304,6 +304,7 @@ class BtrixOperator(K8sAPI):
 
         self._has_pod_metrics = False
         self.compute_crawler_resources()
+        self.compute_profile_resources()
 
         # to avoid background tasks being garbage collected
         # see: https://stackoverflow.com/a/74059981
@@ -335,6 +336,23 @@ class BtrixOperator(K8sAPI):
             print(f"memory = {base} + {num} * {extra} = {p['crawler_memory']}")
         else:
             print(f"memory = {p['crawler_memory']}")
+
+    def compute_profile_resources(self):
+        """compute memory /cpu resources for a single profile browser"""
+        p = self.shared_params
+        # if no profile specific options provided, default to crawler base for one browser
+        profile_cpu = parse_quantity(
+            p.get("profile_browser_cpu") or p["crawler_cpu_base"]
+        )
+        profile_memory = parse_quantity(
+            p.get("profile_browser_memory") or p["crawler_memory_base"]
+        )
+        p["profile_cpu"] = profile_cpu
+        p["profile_memory"] = profile_memory
+
+        print("profile browser resources")
+        print(f"cpu = {profile_cpu}")
+        print(f"memory = {profile_memory}")
 
     async def async_init(self):
         """perform any async init here"""
