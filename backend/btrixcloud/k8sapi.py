@@ -216,13 +216,7 @@ class K8sAPI:
         )
 
     async def _patch_job(self, crawl_id, body, pluraltype="crawljobs") -> dict:
-        content_type = self.api_client.default_headers.get("Content-Type")
-
         try:
-            self.api_client.set_default_header(
-                "Content-Type", "application/merge-patch+json"
-            )
-
             await self.custom_api.patch_namespaced_custom_object(
                 group="btrix.cloud",
                 version="v1",
@@ -230,18 +224,13 @@ class K8sAPI:
                 plural=pluraltype,
                 name=f"{pluraltype[:-1]}-{crawl_id}",
                 body={"spec": body},
+                _content_type="application/merge-patch+json",
             )
             return {"success": True}
         # pylint: disable=broad-except
         except Exception as exc:
             traceback.print_exc()
             return {"error": str(exc)}
-
-        finally:
-            if content_type:
-                self.api_client.set_default_header("Content-Type", content_type)
-            else:
-                del self.api_client.default_headers["Content-Type"]
 
     async def print_pod_logs(self, pod_names, lines=100):
         """print pod logs"""

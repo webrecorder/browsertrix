@@ -9,7 +9,7 @@ email-validator
 #fastapi-users[mongodb]==9.2.2
 loguru
 aiofiles
-kubernetes-asyncio==25.11.0
+kubernetes-asyncio==29.0.0
 kubernetes
 aiobotocore
 redis>=5.0.0
