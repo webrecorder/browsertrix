@@ -500,7 +500,7 @@ class StorageOps:
 
         s3storage = self.get_org_storage_by_ref(org, storage)
 
-        async with self.get_s3_client(s3storage, s3storage.use_access_for_presign) as (
+        async with self.get_s3_client(s3storage) as (
             client,
             bucket,
             key,
