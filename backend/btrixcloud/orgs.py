@@ -512,7 +512,8 @@ class OrgOps:
         yymm = datetime.utcnow().strftime("%Y-%m")
         inc_query = {f"{key}.{yymm}": duration}
         if is_qa:
-            inc_query[f"qa{key}.{yymm}"] = duration
+            qa_key = "qaCrawlExecSeconds" if is_exec_time else "qaUsage"
+            inc_query[f"{qa_key}.{yymm}"] = duration
         await self.orgs.find_one_and_update({"_id": oid}, {"$inc": inc_query})
 
         if not is_exec_time:
