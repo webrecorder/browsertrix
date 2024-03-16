@@ -301,6 +301,18 @@ export class ProfileBrowser extends LiteElement {
 
       return;
     } else if (result.url) {
+      // check that the browser is actually available
+      // if not, continue waiting
+      // (will not work with local frontend due to CORS)
+      try {
+        const resp = await fetch(result.url, { method: "HEAD" });
+        if (!resp.ok) {
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+
       if (this.initialNavigateUrl) {
         await this.navigateBrowser({ url: this.initialNavigateUrl });
       }

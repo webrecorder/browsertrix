@@ -36,11 +36,13 @@ class K8sOpAPI(K8sAPI):
 
         self.has_pod_metrics = False
         self.compute_crawler_resources()
+        self.compute_profile_resources()
 
     def compute_crawler_resources(self):
         """compute memory / cpu resources for crawlers"""
         p = self.shared_params
         num = max(int(p["crawler_browser_instances"]) - 1, 0)
+        print("crawler resources")
         if not p.get("crawler_cpu"):
             base = parse_quantity(p["crawler_cpu_base"])
             extra = parse_quantity(p["crawler_extra_cpu_per_browser"])
@@ -62,6 +64,23 @@ class K8sOpAPI(K8sAPI):
             print(f"memory = {base} + {num} * {extra} = {p['crawler_memory']}")
         else:
             print(f"memory = {p['crawler_memory']}")
+
+    def compute_profile_resources(self):
+        """compute memory /cpu resources for a single profile browser"""
+        p = self.shared_params
+        # if no profile specific options provided, default to crawler base for one browser
+        profile_cpu = parse_quantity(
+            p.get("profile_browser_cpu") or p["crawler_cpu_base"]
+        )
+        profile_memory = parse_quantity(
+            p.get("profile_browser_memory") or p["crawler_memory_base"]
+        )
+        p["profile_cpu"] = profile_cpu
+        p["profile_memory"] = profile_memory
+
+        print("profile browser resources")
+        print(f"cpu = {profile_cpu}")
+        print(f"memory = {profile_memory}")
 
     async def async_init(self):
         """perform any async init here"""
