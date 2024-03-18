@@ -9,13 +9,13 @@ module.exports = {
   extends: [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
-    "plugin:import/recommended",
-    "plugin:import/typescript",
+    "plugin:import-x/recommended",
+    "plugin:import-x/typescript",
     "plugin:wc/recommended",
     "plugin:lit/recommended",
     "prettier",
   ],
-  plugins: ["@typescript-eslint", "lit", "import"],
+  plugins: ["@typescript-eslint", "lit", "import-x"],
   parserOptions: {
     project: ["./tsconfig.eslint.json"],
     tsconfigRootDir: __dirname,
@@ -102,8 +102,8 @@ module.exports = {
     /* end recommended rules */
 
     /* start import rules */
-    "import/no-duplicates": ["error", { "prefer-inline": true }],
-    "import/order": [
+    "import-x/no-duplicates": ["error", { "prefer-inline": true }],
+    "import-x/order": [
       "error",
       {
         "newlines-between": "always",
@@ -124,21 +124,21 @@ module.exports = {
         },
       },
     ],
-    "import/no-relative-packages": "error",
-    "import/no-useless-path-segments": [
+    "import-x/no-relative-packages": "error",
+    "import-x/no-useless-path-segments": [
       "error",
       {
         noUselessIndex: true,
       },
     ],
-    "import/no-cycle": "error",
+    "import-x/no-cycle": "error",
   },
   reportUnusedDisableDirectives: true,
   settings: {
-    "import/parsers": {
+    "import-x/parsers": {
       "@typescript-eslint/parser": [".ts", ".tsx"],
     },
-    "import/resolver": {
+    "import-x/resolver": {
       typescript: {
         alwaysTryTypes: true,
       },
