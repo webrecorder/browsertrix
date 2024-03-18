@@ -102,22 +102,36 @@ module.exports = {
     /* end recommended rules */
 
     /* start import rules */
+    "import/no-duplicates": ["error", { "prefer-inline": true }],
     "import/order": [
       "error",
       {
         "newlines-between": "always",
-        groups: [
-          "builtin",
-          "external",
-          "internal",
-          "parent",
-          "sibling",
-          "index",
-          "object",
-          "type",
+        pathGroups: [
+          {
+            pattern: "@/*",
+            group: "internal",
+          },
+          {
+            pattern: "~assets/*",
+            group: "internal",
+          },
         ],
+        distinctGroup: false,
+        alphabetize: {
+          order: "asc",
+          caseInsensitive: true,
+        },
       },
     ],
+    "import/no-relative-packages": "error",
+    "import/no-useless-path-segments": [
+      "error",
+      {
+        noUselessIndex: true,
+      },
+    ],
+    "import/no-cycle": "error",
   },
   reportUnusedDisableDirectives: true,
   settings: {
