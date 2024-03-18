@@ -2,17 +2,17 @@ import type { ArchivedItemPage } from "@/types/crawler";
 import { tw } from "@/utils/tailwind";
 import { msg } from "@lit/localize";
 import { html, nothing } from "lit";
+import { crawlCounts } from "../helpers/crawlCounts";
 import {
-  severityIcon,
   severityFromMatch,
   severityFromResourceCounts,
-  crawlCounts,
-} from "./helpers";
+} from "../helpers/severity";
+import { iconFor } from "../helpers/iconFor";
 
 export const pageDetails = (page: ArchivedItemPage, run: string) =>
   html`<ul class="text-xs leading-4">
       <li class="my-3 flex">
-        ${severityIcon(
+        ${iconFor(
           severityFromMatch(page.screenshotMatch?.[run]),
           tw`mr-2 flex-none`,
         )}
@@ -24,10 +24,7 @@ export const pageDetails = (page: ArchivedItemPage, run: string) =>
         </span>
       </li>
       <li class="my-3 flex">
-        ${severityIcon(
-          severityFromMatch(page.textMatch?.[run]),
-          tw`mr-2 flex-none`,
-        )}
+        ${iconFor(severityFromMatch(page.textMatch?.[run]), tw`mr-2 flex-none`)}
         <span class="inline-block">
           ${page.textMatch?.[run] != null
             ? html`<span class="font-bold">${page.textMatch[run]}%</span> ${msg(
@@ -37,15 +34,15 @@ export const pageDetails = (page: ArchivedItemPage, run: string) =>
         </span>
       </li>
       <li class="my-3 flex">
-        ${severityIcon(
+        ${iconFor(
           severityFromResourceCounts(
-            page.resourceCounts?.[run].crawlBad,
-            page.resourceCounts?.[run].crawlGood,
+            page.resourceCounts?.[run]?.crawlBad,
+            page.resourceCounts?.[run]?.crawlGood,
           ),
           tw`mr-2 flex-none`,
         )}
         <span class="inline-block">
-          ${page.resourceCounts?.[run].crawlBad != null &&
+          ${page.resourceCounts?.[run]?.crawlBad != null &&
           page.resourceCounts[run].crawlGood != null
             ? html`<span class="font-bold"
                   >${crawlCounts(
@@ -58,15 +55,15 @@ export const pageDetails = (page: ArchivedItemPage, run: string) =>
         </span>
       </li>
       <li class="my-3 flex">
-        ${severityIcon(
+        ${iconFor(
           severityFromResourceCounts(
-            page.resourceCounts?.[run].replayBad,
-            page.resourceCounts?.[run].replayGood,
+            page.resourceCounts?.[run]?.replayBad,
+            page.resourceCounts?.[run]?.replayGood,
           ),
           tw`mr-2 flex-none`,
         )}
         <span class="inline-block">
-          ${page.resourceCounts?.[run].replayBad != null &&
+          ${page.resourceCounts?.[run]?.replayBad != null &&
           page.resourceCounts[run].replayGood != null
             ? html`<span class="font-bold"
                   >${crawlCounts(

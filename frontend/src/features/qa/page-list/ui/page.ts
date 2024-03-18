@@ -16,12 +16,12 @@ export class QaPage extends TailwindElement {
   @property({ type: Boolean, reflect: true })
   selected = false;
 
-  contentContainer: Ref<HTMLElement> = createRef();
+  private readonly contentContainer: Ref<HTMLElement> = createRef();
 
   select = () => {
     this.dispatchEvent(
-      new CustomEvent<string | undefined>("qa-page-select", {
-        detail: this.pageId,
+      new CustomEvent<QaPage>("qa-page-select", {
+        detail: this,
         composed: true,
         bubbles: true,
       }),

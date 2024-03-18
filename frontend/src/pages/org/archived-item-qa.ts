@@ -24,6 +24,7 @@ import type {
   ArchivedItemQaRun,
 } from "@/types/crawler";
 import type { APIPaginationQuery, APIPaginatedList } from "@/types/api";
+import { testData } from "@/features/qa/page-list/test-data";
 
 const TABS = ["screenshots", "replay"] as const;
 export type QATab = (typeof TABS)[number];
@@ -214,7 +215,7 @@ export class ArchivedItemQA extends TailwindElement {
         <section class="pageList grid">
           <btrix-qa-page-list
             .item=${this.item}
-            .itemPageId=${this.itemPageId}
+            .itemPageId=${this.itemPageId!}
             .pages=${this.pages}
             class="grid min-h-0 content-start justify-stretch"
             @qa-page-select=${(e: CustomEvent<string | undefined>) => {
@@ -327,7 +328,9 @@ export class ArchivedItemQA extends TailwindElement {
 
   private async fetchPages(params?: APIPaginationQuery): Promise<void> {
     try {
-      this.pages = await this.getPages(params);
+      // this.pages = await this.getPages(params);
+      console.log(params);
+      this.pages = { items: testData, total: 1000, page: 1, pageSize: 1000 };
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve archived item at this time."),
@@ -350,10 +353,23 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private async getQaRuns(): Promise<ArchivedItemQaRun[]> {
-    return this.api.fetch<ArchivedItemQaRun[]>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
-      this.authState!,
-    );
+    // return this.api.fetch<ArchivedItemQaRun[]>(
+    //   `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
+    //   this.authState!,
+    // );
+    return [
+      {
+        id: "test",
+        userName: "",
+        started: "",
+        finished: "",
+        stats: {
+          found: 0,
+          done: 0,
+          size: 0,
+        },
+      },
+    ];
   }
 
   private async getCrawl(): Promise<ArchivedItem> {

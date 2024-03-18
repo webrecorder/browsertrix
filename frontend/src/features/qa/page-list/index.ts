@@ -3,40 +3,48 @@ import "./ui";
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
 import { localized, msg } from "@lit/localize";
-import { type PropertyValues, html, nothing } from "lit";
+import { type PropertyValues, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { GroupedList, remainder } from "@/components/utils/grouped-list";
 
-import { pageDetails } from "./page-details";
-import {
-  groupBy,
-  issueCounts,
-  severityFromMatch,
-  severityIcon,
-} from "./helpers";
+import { pageIsReviewed } from "./helpers";
+import { groupBy } from "./helpers/groupBy";
 
-import { type Ref, createRef, ref } from "lit/directives/ref.js";
 import { type QaPage } from "./ui/page";
 import type { APIPaginatedList } from "@/types/api";
+import { renderItem } from "./ui/render-item";
+import { sortBy } from "./helpers/sortBy";
 
-type SortField = ("textMatch" | "screenshotMatch") & keyof ArchivedItemPage;
 type SortDirection = "asc" | "desc";
-export type OrderBy = {
-  field: SortField;
-  direction: SortDirection;
+type SortableFields = {
+  [k in keyof ArchivedItemPage]?: {
+    label: string;
+    defaultDirection?: SortDirection;
+  };
 };
-const sortableFields: Record<
-  SortField,
-  { label: string; defaultDirection?: SortDirection }
-> = {
+const sortableFields = {
   textMatch: {
     label: msg("Text Match"),
     defaultDirection: "asc",
   },
   screenshotMatch: {
     label: msg("Screenshot Match"),
-    defaultDirection: "asc",
+    defaultDirection: "desc",
   },
+  approved: {
+    label: msg("Review Status"),
+    // defaultDirection: "asc",
+  },
+  // timestamp: {
+  //   label: msg("Time"),
+  //   defaultDirection: "asc",
+  // },
+} satisfies SortableFields;
+
+type SortField = keyof typeof sortableFields;
+export type OrderBy = {
+  field: SortField;
+  direction: SortDirection;
 };
 
 enum Tab {
@@ -61,9 +69,18 @@ export class PageList extends TailwindElement {
     direction: "asc",
   };
 
-  @property({ type: String }) itemPageId?: string;
+  #_itemPageId = "";
 
-  currentPageElement: Ref<QaPage> = createRef();
+  @property({ type: String })
+  set itemPageId(val: string | undefined) {
+    this.#_itemPageId = val ?? "";
+  }
+
+  get itemPageId(): string {
+    return this.#_itemPageId;
+  }
+
+  currentPageElement: QaPage | null = null;
 
   private queuedCount = 0;
   private reviewedCount = 0;
@@ -79,8 +96,9 @@ export class PageList extends TailwindElement {
       this.filteredPages = [];
 
       this.pages?.items.forEach((page) => {
-        page.approved == null ? this.queuedCount++ : this.reviewedCount++;
-        if ((this.tab === Tab.Queued) === (page.approved == null)) {
+        const isReviewed = pageIsReviewed(page);
+        isReviewed ? this.reviewedCount++ : this.queuedCount++;
+        if ((this.tab === Tab.Reviewed) === isReviewed) {
           this.filteredPages.push(page);
         }
       });
@@ -166,12 +184,12 @@ export class PageList extends TailwindElement {
               this.orderBy = {
                 field: field,
                 direction:
-                  sortableFields[field].defaultDirection ||
-                  this.orderBy.direction,
+                  (sortableFields[field] as SortableFields[SortField])
+                    ?.defaultDirection ?? this.orderBy.direction,
               };
               await this.updateComplete;
-              this.currentPageElement.value?.focus();
-              this.currentPageElement.value?.scrollIntoView({
+              this.currentPageElement?.focus();
+              this.currentPageElement?.scrollIntoView({
                 block: "nearest",
                 behavior: "smooth",
               });
@@ -192,8 +210,8 @@ export class PageList extends TailwindElement {
                 direction: this.orderBy.direction === "asc" ? "desc" : "asc",
               };
               await this.updateComplete;
-              this.currentPageElement.value?.focus();
-              this.currentPageElement.value?.scrollIntoView({
+              this.currentPageElement?.focus();
+              this.currentPageElement?.scrollIntoView({
                 block: "nearest",
                 behavior: "smooth",
               });
@@ -201,7 +219,12 @@ export class PageList extends TailwindElement {
           ></sl-icon-button>
         </div>
       </div>
-      <div class="-mx-2 overflow-y-auto px-2">
+      <div
+        class="-mx-2 overflow-y-auto px-2"
+        @qa-page-select=${(e: CustomEvent<QaPage>) => {
+          this.currentPageElement = e.detail;
+        }}
+      >
         ${this.filteredPages.length > 0
           ? GroupedList({
               data: this.filteredPages,
@@ -216,62 +239,10 @@ export class PageList extends TailwindElement {
                   <div slot="header" class="flex items-center">${header}</div>
                   <div slot="content" class="py-2">${items}</div>
                 </btrix-qa-page-group>`,
-              renderItem: (datum) =>
-                html`<btrix-qa-page
-                  class="is-leaf -my-4 scroll-my-8 py-4 [contain-intrinsic-height:auto_70px] [contain:strict] [content-visibility:auto] first-of-type:mt-0 last-of-type:mb-0"
-                  .selected=${this.itemPageId === datum.id}
-                  .pageId=${datum.id}
-                  ${this.itemPageId === datum.id
-                    ? ref(this.currentPageElement)
-                    : nothing}
-                >
-                  <div
-                    class="absolute -left-4 top-[50%] flex w-8 translate-y-[-50%] flex-col place-items-center gap-1 rounded-full border border-gray-300 bg-neutral-0 p-2 leading-[14px] shadow-sm"
-                  >
-                    ${severityIcon(
-                      severityFromMatch(
-                        datum[this.orderBy.field]?.[this.itemPageId!],
-                      ),
-                    )}
-                    ${issueCounts(datum, this.itemPageId!).severe > 1
-                      ? html`<span
-                          class="text-[10px] font-semibold text-red-600"
-                          >+${issueCounts(datum, this.itemPageId!).severe -
-                          1}</span
-                        >`
-                      : issueCounts(datum, this.itemPageId!).moderate > 1
-                        ? html`<span
-                            class="text-[10px] font-semibold text-yellow-600"
-                            >+${issueCounts(datum, this.itemPageId!).moderate -
-                            1}</span
-                          >`
-                        : nothing}
-                    ${datum.notes?.[0] &&
-                    html`<sl-icon
-                      name="chat-square-text-fill"
-                      class="text-blue-600"
-                    ></sl-icon>`}
-                  </div>
-                  <h5 class="truncate text-sm font-semibold text-black">
-                    ${datum.title}
-                  </h5>
-                  <div class="truncate text-xs leading-4 text-blue-600">
-                    ${datum.url}
-                  </div>
-                  <div
-                    slot="content"
-                    class="z-10 -mt-2 ml-6 mr-2 rounded-b-lg border border-solid border-gray-200 bg-neutral-0 px-4 pb-1 pt-4"
-                  >
-                    ${pageDetails(datum, this.itemPageId!)}
-                  </div>
-                </btrix-qa-page>`,
-              sortBy: (a, b) =>
-                ((b[this.orderBy.field]?.[this.itemPageId!] ?? 0) -
-                  (a[this.orderBy.field]?.[this.itemPageId!] ?? 0)) *
-                (this.orderBy.direction === "asc" ? 1 : -1),
+              renderItem: renderItem(this),
+              sortBy: sortBy(this),
               groupBy: {
-                value: (datum) =>
-                  groupBy(datum, this.itemPageId ?? "", this.orderBy),
+                value: (datum) => groupBy(datum, this.itemPageId, this.orderBy),
                 groups: [
                   {
                     value: "severe",

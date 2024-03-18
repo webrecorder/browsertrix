@@ -29,7 +29,7 @@ const getRandomData = (): ArchivedItemPage => {
     Math.random() > 0.2
       ? {
           screenshotMatch: {
-            "": Math.min(Math.floor(Math.pow(Math.random(), 0.2) * 110), 100),
+            test: Math.min(Math.floor(Math.pow(Math.random(), 0.2) * 110), 100),
           },
         }
       : undefined;
@@ -38,7 +38,7 @@ const getRandomData = (): ArchivedItemPage => {
     Math.random() > 0.2
       ? {
           textMatch: {
-            "": Math.min(Math.floor(Math.pow(Math.random(), 0.2) * 110), 100),
+            test: Math.min(Math.floor(Math.pow(Math.random(), 0.2) * 110), 100),
           },
         }
       : undefined;
@@ -72,7 +72,7 @@ const getRandomData = (): ArchivedItemPage => {
     ...screenshot,
     ...text,
     resourceCounts: {
-      "": {
+      test: {
         ...crawlCount,
         ...replayCount,
       },
