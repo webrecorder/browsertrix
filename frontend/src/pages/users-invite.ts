@@ -1,10 +1,10 @@
-import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import { state, property, customElement } from "lit/decorators.js";
 
+import type { CurrentUser } from "@/types/user";
+import { needLogin } from "@/utils/auth";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { needLogin } from "@/utils/auth";
-import type { CurrentUser } from "@/types/user";
 
 @localized()
 @customElement("btrix-users-invite")

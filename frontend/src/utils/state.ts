@@ -3,8 +3,9 @@
  */
 import { use, locked, options } from "lit-shared-state";
 
-import type { CurrentUser } from "@/types/user";
 import { persist } from "./persist";
+
+import type { CurrentUser } from "@/types/user";
 
 export { use };
 

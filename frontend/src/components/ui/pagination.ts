@@ -1,14 +1,14 @@
+import { msg, localized, str } from "@lit/localize";
+import { type SlInput } from "@shoelace-style/shoelace";
 import { LitElement, html, css, type PropertyValues } from "lit";
 import { property, state, customElement } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
 import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { msg, localized, str } from "@lit/localize";
+import { when } from "lit/directives/when.js";
 
+import { srOnly } from "@/utils/css";
 import chevronLeft from "~assets/icons/chevron-left.svg";
 import chevronRight from "~assets/icons/chevron-right.svg";
-import { srOnly } from "@/utils/css";
-import { type SlInput } from "@shoelace-style/shoelace";
 
 type PageChangeDetail = {
   page: number;

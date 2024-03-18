@@ -1,8 +1,8 @@
+import SLTag from "@shoelace-style/shoelace/dist/components/tag/tag.js";
+import tagStyles from "@shoelace-style/shoelace/dist/components/tag/tag.styles.js";
 import { css, html } from "lit";
 import { property, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import SLTag from "@shoelace-style/shoelace/dist/components/tag/tag.js";
-import tagStyles from "@shoelace-style/shoelace/dist/components/tag/tag.styles.js";
 
 /**
  * Customized <sl-tag>

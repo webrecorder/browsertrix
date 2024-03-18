@@ -1,9 +1,9 @@
-import { property, state, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import { type PropertyValues } from "lit";
+import { property, state, query, customElement } from "lit/decorators.js";
 
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { type PropertyValues } from "lit";
 
 const POLL_INTERVAL_SECONDS = 2;
 const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];

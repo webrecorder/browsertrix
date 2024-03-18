@@ -1,12 +1,12 @@
-import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
+import { state, property, customElement } from "lit/decorators.js";
 
-import type { AuthState } from "@/utils/AuthService";
-import type { CurrentUser } from "@/types/user";
-import type { OrgData } from "@/utils/orgs";
-import LiteElement, { html } from "@/utils/LiteElement";
-import { needLogin } from "@/utils/auth";
 import type { APIPaginatedList } from "@/types/api";
+import type { CurrentUser } from "@/types/user";
+import { needLogin } from "@/utils/auth";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
+import type { OrgData } from "@/utils/orgs";
 
 @localized()
 @customElement("btrix-orgs")

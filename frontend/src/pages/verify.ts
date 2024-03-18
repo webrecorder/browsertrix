@@ -1,9 +1,8 @@
-import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
+import { state, property, customElement } from "lit/decorators.js";
 
-import type { AuthState } from "@/utils/AuthService";
+import AuthService, { type AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import AuthService from "@/utils/AuthService";
 
 /**
  * @fires user-info-change

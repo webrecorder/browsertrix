@@ -1,11 +1,3 @@
-import {
-  LitElement,
-  html,
-  css,
-  type CSSResultGroup,
-  type PropertyValues,
-} from "lit";
-import { state, property, query, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
 import type {
   SlMenu,
@@ -14,10 +6,18 @@ import type {
   SlTag,
 } from "@shoelace-style/shoelace";
 import inputCss from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
+import {
+  LitElement,
+  html,
+  css,
+  type CSSResultGroup,
+  type PropertyValues,
+} from "lit";
+import { state, property, query, customElement } from "lit/decorators.js";
 import debounce from "lodash/fp/debounce";
 
-import { dropdown } from "@/utils/css";
 import type { UnderlyingFunction } from "@/types/utils";
+import { dropdown } from "@/utils/css";
 
 export type Tags = string[];
 type TagsChangeEventDetail = {

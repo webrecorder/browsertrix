@@ -1,15 +1,16 @@
-import type { PropertyValues, TemplateResult } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { msg, localized } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
+import type { PropertyValues, TemplateResult } from "lit";
+import { state, property, customElement } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 
-import LiteElement, { html } from "@/utils/LiteElement";
+import type { SelectNewDialogEvent } from ".";
+
 import type { AuthState } from "@/utils/AuthService";
-import type { OrgData, YearMonth } from "@/utils/orgs";
-import type { SelectNewDialogEvent } from "./index";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import LiteElement, { html } from "@/utils/LiteElement";
+import type { OrgData, YearMonth } from "@/utils/orgs";
 
 type Metrics = {
   storageUsedBytes: number;

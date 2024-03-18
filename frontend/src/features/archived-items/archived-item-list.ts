@@ -1,3 +1,5 @@
+import { msg, localized } from "@lit/localize";
+import { type SlCheckbox } from "@shoelace-style/shoelace";
 import { html, css, nothing } from "lit";
 import {
   customElement,
@@ -7,13 +9,11 @@ import {
   query,
 } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { msg, localized } from "@lit/localize";
-import { type SlCheckbox } from "@shoelace-style/shoelace";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { NavigateController } from "@/controllers/navigate";
 import type { ArchivedItem } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
-import { NavigateController } from "@/controllers/navigate";
 
 export type CheckboxChangeEventDetail = {
   checked: boolean;

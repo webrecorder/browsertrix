@@ -1,5 +1,5 @@
-import { type TemplateResult, html } from "lit";
 import { msg, str } from "@lit/localize";
+import { type TemplateResult, html } from "lit";
 
 import type { ArchivedItem, CrawlState, Workflow } from "@/types/crawler";
 

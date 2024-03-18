@@ -11,8 +11,8 @@
  * </btrix-crawl-list>
  * ```
  */
-import type { TemplateResult } from "lit";
-import { html, css, nothing } from "lit";
+import { msg, localized, str } from "@lit/localize";
+import { html, css, nothing, type TemplateResult } from "lit";
 import {
   customElement,
   property,
@@ -20,14 +20,13 @@ import {
   queryAssignedElements,
 } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { msg, localized, str } from "@lit/localize";
 
-import { RelativeDuration } from "@/components/ui/relative-duration";
-import type { Crawl } from "@/types/crawler";
-import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
-import { renderName } from "@/utils/crawler";
 import { TailwindElement } from "@/classes/TailwindElement";
+import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
+import { RelativeDuration } from "@/components/ui/relative-duration";
 import { NavigateController } from "@/controllers/navigate";
+import type { Crawl } from "@/types/crawler";
+import { renderName } from "@/utils/crawler";
 
 /**
  * @slot menu

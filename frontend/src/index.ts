@@ -1,30 +1,31 @@
-import type { TemplateResult } from "lit";
-import { render } from "lit";
-import { property, state, query, customElement } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
 import { msg, localized } from "@lit/localize";
-import { ifDefined } from "lit/directives/if-defined.js";
 import type { SlDialog } from "@shoelace-style/shoelace";
+import { render, type TemplateResult } from "lit";
+import { property, state, query, customElement } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import "broadcastchannel-polyfill";
 
 import "./utils/polyfills";
-import appState, { use, AppStateService } from "./utils/state";
 import type { OrgTab } from "./pages/org";
+import { ROUTES } from "./routes";
+import type { CurrentUser, UserOrg } from "./types/user";
+import APIRouter, { type ViewState } from "./utils/APIRouter";
+import AuthService, {
+  type LoggedInEventDetail,
+  type NeedLoginEventDetail,
+  type AuthState,
+  type Auth,
+  type AuthEventDetail,
+} from "./utils/AuthService";
+import { DEFAULT_MAX_SCALE } from "./utils/crawler";
+import LiteElement, { html } from "./utils/LiteElement";
+import appState, { use, AppStateService } from "./utils/state";
+
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
-import LiteElement, { html } from "./utils/LiteElement";
-import APIRouter from "./utils/APIRouter";
-import AuthService from "./utils/AuthService";
-import type {
-  LoggedInEventDetail,
-  NeedLoginEventDetail,
-  AuthState,
-  Auth,
-  AuthEventDetail,
-} from "./utils/AuthService";
-import type { ViewState } from "./utils/APIRouter";
-import type { CurrentUser, UserOrg } from "./types/user";
-import { ROUTES } from "./routes";
+import { theme } from "@/theme";
+
 import "./shoelace";
 import "./components";
 import "./features";
@@ -32,8 +33,6 @@ import "./pages";
 import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
-import { theme } from "@/theme";
-import { DEFAULT_MAX_SCALE } from "./utils/crawler";
 
 // Make theme CSS available in document
 document.adoptedStyleSheets = [theme];

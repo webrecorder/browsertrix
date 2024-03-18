@@ -1,3 +1,4 @@
+import type { SlMenu, SlMenuItem, SlPopup } from "@shoelace-style/shoelace";
 import { LitElement, html, css, type PropertyValues } from "lit";
 import {
   state,
@@ -6,7 +7,6 @@ import {
   queryAssignedElements,
   customElement,
 } from "lit/decorators.js";
-import type { SlMenu, SlMenuItem, SlPopup } from "@shoelace-style/shoelace";
 
 import { dropdown } from "@/utils/css";
 

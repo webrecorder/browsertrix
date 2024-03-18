@@ -1,6 +1,6 @@
+import { msg, localized } from "@lit/localize";
 import { LitElement, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
 
 /**
  * Copy text to clipboard on click

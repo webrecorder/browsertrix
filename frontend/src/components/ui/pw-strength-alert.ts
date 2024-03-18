@@ -1,8 +1,8 @@
-import { LitElement, html, css } from "lit";
 import { msg, localized } from "@lit/localize";
+import type { Score, ZxcvbnResult } from "@zxcvbn-ts/core";
+import { LitElement, html, css } from "lit";
 import { property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
-import type { Score, ZxcvbnResult } from "@zxcvbn-ts/core";
 
 /**
  * Show results of password strength estimate

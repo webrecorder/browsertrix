@@ -1,5 +1,5 @@
-import { spy } from "sinon";
 import { expect } from "@esm-bundle/chai";
+import { spy } from "sinon";
 
 import * as auth from "./auth";
 import type LiteElement from "./LiteElement";

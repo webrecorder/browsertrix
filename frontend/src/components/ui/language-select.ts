@@ -1,11 +1,10 @@
+import { localized, msg } from "@lit/localize";
+import type { SlSelect } from "@shoelace-style/shoelace";
+import ISO6391, { type LanguageCode } from "iso-639-1";
 import { LitElement, html, css } from "lit";
 import { property, customElement } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { localized, msg } from "@lit/localize";
 import sortBy from "lodash/fp/sortBy";
-import ISO6391 from "iso-639-1";
-import type { LanguageCode } from "iso-639-1";
-import type { SlSelect } from "@shoelace-style/shoelace";
 
 const languages = sortBy("name")(
   ISO6391.getLanguages(ISO6391.getAllCodes()),

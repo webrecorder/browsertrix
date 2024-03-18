@@ -1,7 +1,7 @@
-import { css } from "lit";
-import { customElement, property } from "lit/decorators.js";
 import SlBadge from "@shoelace-style/shoelace/dist/components/badge/badge.component.js";
 import badgeStyles from "@shoelace-style/shoelace/dist/components/badge/badge.styles.js";
+import { css } from "lit";
+import { customElement, property } from "lit/decorators.js";
 
 /**
  * Show numeric value in a label

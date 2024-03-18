@@ -1,8 +1,8 @@
-import { customElement, property, state } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import { customElement, property, state } from "lit/decorators.js";
 
-import LiteElement, { html } from "@/utils/LiteElement";
 import { type PageChangeEvent } from "@/components/ui/pagination";
+import LiteElement, { html } from "@/utils/LiteElement";
 
 type URLs = string[];
 

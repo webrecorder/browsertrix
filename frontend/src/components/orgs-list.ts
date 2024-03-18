@@ -1,12 +1,11 @@
-import { customElement, property } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
-
-import type { CurrentUser, UserOrg } from "../types/user";
-import type { OrgData } from "../utils/orgs";
-import LiteElement, { html } from "../utils/LiteElement";
-
 import type { SlInput } from "@shoelace-style/shoelace";
 import { type TemplateResult } from "lit";
+import { customElement, property } from "lit/decorators.js";
+
+import type { CurrentUser, UserOrg } from "@/types/user";
+import LiteElement, { html } from "@/utils/LiteElement";
+import type { OrgData } from "@/utils/orgs";
 
 @localized()
 @customElement("btrix-orgs-list")

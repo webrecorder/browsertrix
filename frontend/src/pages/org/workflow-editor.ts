@@ -1,4 +1,4 @@
-import type { LitElement, PropertyValues, TemplateResult } from "lit";
+import { msg, localized, str } from "@lit/localize";
 import type {
   SlChangeEvent,
   SlCheckbox,
@@ -9,6 +9,10 @@ import type {
   SlSwitch,
   SlTextarea,
 } from "@shoelace-style/shoelace";
+import Fuse from "fuse.js";
+import { mergeDeep } from "immutable";
+import type { LanguageCode } from "iso-639-1";
+import type { LitElement, PropertyValues, TemplateResult } from "lit";
 import {
   state,
   property,
@@ -16,42 +20,15 @@ import {
   queryAsync,
   customElement,
 } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
+import { choose } from "lit/directives/choose.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { map } from "lit/directives/map.js";
 import { range } from "lit/directives/range.js";
-import { msg, localized, str } from "@lit/localize";
-import { ifDefined } from "lit/directives/if-defined.js";
-import { choose } from "lit/directives/choose.js";
+import { when } from "lit/directives/when.js";
 import compact from "lodash/fp/compact";
-import { mergeDeep } from "immutable";
 import flow from "lodash/fp/flow";
 import uniq from "lodash/fp/uniq";
-import Fuse from "fuse.js";
 
-import LiteElement, { html } from "@/utils/LiteElement";
-import { regexEscape, regexUnescape } from "@/utils/string";
-import type { AuthState } from "@/utils/AuthService";
-import {
-  getUTCSchedule,
-  humanizeSchedule,
-  humanizeNextDate,
-  getScheduleInterval,
-  getNextDate,
-} from "@/utils/cron";
-import { maxLengthValidator } from "@/utils/form";
-import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
-import type { Tab } from "@/components/ui/tab-list";
-import type {
-  ExclusionRemoveEvent,
-  ExclusionChangeEvent,
-} from "@/features/crawl-workflows/queue-exclusion-table";
-import type { TimeInputChangeEvent } from "@/components/ui/time-input";
-import type {
-  TagInputEvent,
-  Tags,
-  TagsChangeEvent,
-} from "@/components/ui/tag-input";
-import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type {
   WorkflowParams,
   Profile,
@@ -60,13 +37,37 @@ import type {
   SeedConfig,
   CrawlConfig,
 } from "./types";
-import type { LanguageCode } from "iso-639-1";
-import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
+
 import type {
   SelectCrawlerChangeEvent,
   SelectCrawlerUpdateEvent,
 } from "@/components/ui/select-crawler";
+import type { Tab } from "@/components/ui/tab-list";
+import type {
+  TagInputEvent,
+  Tags,
+  TagsChangeEvent,
+} from "@/components/ui/tag-input";
+import type { TimeInputChangeEvent } from "@/components/ui/time-input";
+import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
+import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
+import type {
+  ExclusionRemoveEvent,
+  ExclusionChangeEvent,
+} from "@/features/crawl-workflows/queue-exclusion-table";
 import { type Detail, isApiError } from "@/utils/api";
+import type { AuthState } from "@/utils/AuthService";
+import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
+import {
+  getUTCSchedule,
+  humanizeSchedule,
+  humanizeNextDate,
+  getScheduleInterval,
+  getNextDate,
+} from "@/utils/cron";
+import { maxLengthValidator } from "@/utils/form";
+import LiteElement, { html } from "@/utils/LiteElement";
+import { regexEscape, regexUnescape } from "@/utils/string";
 
 type NewCrawlConfigParams = WorkflowParams & {
   runNow: boolean;

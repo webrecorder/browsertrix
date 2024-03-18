@@ -1,27 +1,27 @@
-import { type PropertyValues, html } from "lit";
-import { state, property, queryAsync, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
-import { when } from "lit/directives/when.js";
+import type { SlButton } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
-import queryString from "query-string";
+import { type PropertyValues, html } from "lit";
+import { state, property, queryAsync, customElement } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 import throttle from "lodash/fp/throttle";
-import type { SlButton } from "@shoelace-style/shoelace";
+import queryString from "query-string";
 
+import { TailwindElement } from "@/classes/TailwindElement";
+import type { FileRemoveEvent } from "@/components/ui/file-list";
 import type {
   Tags,
   TagInputEvent,
   TagsChangeEvent,
 } from "@/components/ui/tag-input";
-import type { AuthState } from "@/utils/AuthService";
-import { APIError } from "@/utils/api";
-import { maxLengthValidator } from "@/utils/form";
-import type { FileRemoveEvent } from "@/components/ui/file-list";
-import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
-import { NotifyController } from "@/controllers/notify";
 import { NavigateController } from "@/controllers/navigate";
-import { type CollectionsChangeEvent } from "../collections/collections-add";
+import { NotifyController } from "@/controllers/notify";
+import { type CollectionsChangeEvent } from "@/features/collections/collections-add";
+import { APIError } from "@/utils/api";
+import type { AuthState } from "@/utils/AuthService";
+import { maxLengthValidator } from "@/utils/form";
 
 export type FileUploaderRequestCloseEvent = CustomEvent<NonNullable<unknown>>;
 export type FileUploaderUploadStartEvent = CustomEvent<{

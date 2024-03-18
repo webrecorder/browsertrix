@@ -1,19 +1,19 @@
-import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
+import { state, property, customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
-import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 import queryString from "query-string";
 
-import type { AuthState } from "@/utils/AuthService";
-import type { Collection } from "@/types/collection";
-import LiteElement, { html } from "@/utils/LiteElement";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
+import type { Collection } from "@/types/collection";
 import type { UnderlyingFunction } from "@/types/utils";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
 
 const INITIAL_PAGE_SIZE = 10;
 const MIN_SEARCH_LENGTH = 2;

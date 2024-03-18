@@ -1,18 +1,18 @@
+import { localized, msg, str } from "@lit/localize";
+import type { SlTextarea } from "@shoelace-style/shoelace";
+import { merge } from "immutable";
 import { type PropertyValues, css, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { keyed } from "lit/directives/keyed.js";
 import { when } from "lit/directives/when.js";
-import { localized, msg, str } from "@lit/localize";
-import type { SlTextarea } from "@shoelace-style/shoelace";
-import { merge } from "immutable";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
-import { type AuthState } from "@/utils/AuthService";
 import type { ArchivedItemPage } from "@/types/crawler";
+import { type AuthState } from "@/utils/AuthService";
 
 /**
  * Manage crawl QA page review

@@ -1,4 +1,5 @@
 import { html, nothing } from "lit";
+
 import { getLocale } from "./localization";
 
 /**

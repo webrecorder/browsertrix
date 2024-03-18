@@ -1,6 +1,4 @@
-import type { UnderlyingFunction } from "@/types/utils";
-import type { PropertyValues } from "lit";
-import { LitElement, html, css } from "lit";
+import { LitElement, html, css, type PropertyValues } from "lit";
 import {
   property,
   query,
@@ -11,6 +9,8 @@ import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
+
+import type { UnderlyingFunction } from "@/types/utils";
 
 @customElement("btrix-meter-bar")
 export class MeterBar extends LitElement {

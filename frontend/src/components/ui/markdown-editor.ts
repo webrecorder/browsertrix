@@ -1,9 +1,9 @@
 // cSpell:words wysimark
 
+import { createWysimark } from "@wysimark/standalone";
 import { LitElement, type PropertyValues, html } from "lit";
 import { state, property, customElement } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
-import { createWysimark } from "@wysimark/standalone";
 
 import { getHelpText } from "@/utils/form";
 

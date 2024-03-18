@@ -1,18 +1,18 @@
-import { state, property, customElement } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
+import { state, property, customElement } from "lit/decorators.js";
 
 import type {
   Tags,
   TagInputEvent,
   TagsChangeEvent,
 } from "@/components/ui/tag-input";
-import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
-import { maxLengthValidator } from "@/utils/form";
-import type { ArchivedItem } from "@/types/crawler";
 import { type CollectionsChangeEvent } from "@/features/collections/collections-add";
+import type { ArchivedItem } from "@/types/crawler";
+import type { AuthState } from "@/utils/AuthService";
+import { maxLengthValidator } from "@/utils/form";
+import LiteElement, { html } from "@/utils/LiteElement";
 
 /**
  * Usage:

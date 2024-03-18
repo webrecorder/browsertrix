@@ -1,15 +1,12 @@
+import { msg, localized, str } from "@lit/localize";
+import type { SlSelect } from "@shoelace-style/shoelace";
 import type { PropertyValues, TemplateResult } from "lit";
 import { state, property, customElement } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
-import { msg, localized, str } from "@lit/localize";
+import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import { CopyButton } from "@/components/ui/copy-button";
-import { CrawlStatus } from "@/features/archived-items/crawl-status";
-import { RelativeDuration } from "@/components/ui/relative-duration";
-import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 import type {
   Crawl,
   CrawlState,
@@ -17,20 +14,24 @@ import type {
   WorkflowParams,
   Seed,
 } from "./types";
-import { humanizeSchedule } from "@/utils/cron";
+
+import { CopyButton } from "@/components/ui/copy-button";
+import type { PageChangeEvent } from "@/components/ui/pagination";
+import { RelativeDuration } from "@/components/ui/relative-duration";
+import { type IntersectEvent } from "@/components/utils/observable";
+import type { CrawlLog } from "@/features/archived-items/crawl-logs";
+import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import type { APIPaginatedList } from "@/types/api";
+import { isApiError } from "@/utils/api";
+import type { AuthState } from "@/utils/AuthService";
 import {
   DEFAULT_MAX_SCALE,
   inactiveCrawlStates,
   isActive,
 } from "@/utils/crawler";
-import type { SlSelect } from "@shoelace-style/shoelace";
-import type { PageChangeEvent } from "@/components/ui/pagination";
-import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
-import type { CrawlLog } from "@/features/archived-items/crawl-logs";
-import { isApiError } from "@/utils/api";
-import { type IntersectEvent } from "@/components/utils/observable";
-import { ifDefined } from "lit/directives/if-defined.js";
+import { humanizeSchedule } from "@/utils/cron";
+import LiteElement, { html } from "@/utils/LiteElement";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];

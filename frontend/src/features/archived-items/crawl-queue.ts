@@ -1,11 +1,11 @@
-import { customElement, property, state } from "lit/decorators.js";
 import { msg, localized, str } from "@lit/localize";
+import type { PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import throttle from "lodash/fp/throttle";
 
-import LiteElement, { html } from "@/utils/LiteElement";
 import type { AuthState } from "@/utils/AuthService";
-import type { PropertyValues } from "lit";
+import LiteElement, { html } from "@/utils/LiteElement";
 
 type Pages = string[];
 type ResponseData = {

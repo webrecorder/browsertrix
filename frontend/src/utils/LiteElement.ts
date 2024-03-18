@@ -1,9 +1,10 @@
 import { LitElement, html } from "lit";
 
-import { APIController } from "@/controllers/api";
-import { NotifyController } from "@/controllers/notify";
-import { NavigateController } from "@/controllers/navigate";
 import appState, { use } from "./state";
+
+import { APIController } from "@/controllers/api";
+import { NavigateController } from "@/controllers/navigate";
+import { NotifyController } from "@/controllers/notify";
 
 export { html };
 

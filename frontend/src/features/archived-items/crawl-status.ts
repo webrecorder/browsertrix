@@ -1,7 +1,6 @@
-import type { TemplateResult } from "lit";
-import { LitElement, html, css } from "lit";
-import { customElement, property } from "lit/decorators.js";
 import { msg, localized } from "@lit/localize";
+import { LitElement, html, css, type TemplateResult } from "lit";
+import { customElement, property } from "lit/decorators.js";
 import startCase from "lodash/fp/startCase";
 
 import type { CrawlState } from "@/types/crawler";
