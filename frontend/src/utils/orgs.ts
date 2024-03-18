@@ -1,4 +1,5 @@
 import { AccessCode, type UserRole } from "@/types/org";
+
 export * from "@/types/org";
 
 export function isOwner(accessCode?: (typeof AccessCode)[UserRole]): boolean {

@@ -1,11 +1,11 @@
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
-import { state, property, customElement } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 
 import type {
-  Tags,
   TagInputEvent,
+  Tags,
   TagsChangeEvent,
 } from "@/components/ui/tag-input";
 import { type CollectionsChangeEvent } from "@/features/collections/collections-add";

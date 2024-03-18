@@ -1,6 +1,6 @@
 import { localized } from "@lit/localize";
-import { LitElement, html } from "lit";
-import { state, customElement } from "lit/decorators.js";
+import { html, LitElement } from "lit";
+import { customElement, state } from "lit/decorators.js";
 
 import { allLocales } from "@/__generated__/locale-codes";
 import { getLocale, setLocaleFromUrl } from "@/utils/localization";

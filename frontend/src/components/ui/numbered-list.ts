@@ -10,11 +10,11 @@
  * </btrix-numbered-list>
  * ```
  */
-import { LitElement, html, css } from "lit";
+import { css, html, LitElement } from "lit";
 import {
+  customElement,
   property,
   queryAssignedElements,
-  customElement,
 } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 

@@ -1,7 +1,7 @@
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import type { Score, ZxcvbnResult } from "@zxcvbn-ts/core";
-import { LitElement, html, css } from "lit";
-import { property, customElement } from "lit/decorators.js";
+import { css, html, LitElement } from "lit";
+import { customElement, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 /**

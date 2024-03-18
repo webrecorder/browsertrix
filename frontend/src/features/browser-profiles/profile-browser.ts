@@ -1,6 +1,6 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { type PropertyValues } from "lit";
-import { property, state, query, customElement } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";

@@ -1,7 +1,7 @@
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { type SlInput, type SlSelect } from "@shoelace-style/shoelace";
 import { type PropertyValues } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import debounce from "lodash/fp/debounce";
 
 import type { UnderlyingFunction } from "@/types/utils";

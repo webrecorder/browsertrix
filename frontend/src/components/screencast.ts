@@ -1,6 +1,6 @@
 import { localized } from "@lit/localize";
-import { LitElement, html, css, type PropertyValues } from "lit";
-import { property, state, customElement } from "lit/decorators.js";
+import { css, html, LitElement, type PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 
 type Message = {
   id: number; // page ID

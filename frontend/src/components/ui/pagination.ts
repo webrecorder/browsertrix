@@ -1,7 +1,7 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { type SlInput } from "@shoelace-style/shoelace";
-import { LitElement, html, css, type PropertyValues } from "lit";
-import { property, state, customElement } from "lit/decorators.js";
+import { css, html, LitElement, type PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";

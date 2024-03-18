@@ -1,6 +1,6 @@
-import { msg, localized, str } from "@lit/localize";
-import { type TemplateResult, type PropertyValues } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
+import { localized, msg, str } from "@lit/localize";
+import { type PropertyValues, type TemplateResult } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 import RegexColorize from "regex-colorize";

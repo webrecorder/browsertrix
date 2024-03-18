@@ -1,6 +1,6 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type { SlSwitch, SlTreeItem } from "@shoelace-style/shoelace";
-import { type TemplateResult, type PropertyValues, html, css } from "lit";
+import { css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, queryAll } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import { until } from "lit/directives/until.js";
@@ -14,7 +14,7 @@ import type {
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import type { Workflow, Crawl } from "@/types/crawler";
+import type { Crawl, Workflow } from "@/types/crawler";
 import { type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates } from "@/utils/crawler";
 

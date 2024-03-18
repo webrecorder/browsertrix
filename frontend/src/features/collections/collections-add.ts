@@ -1,6 +1,6 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
-import { state, property, customElement } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import queryString from "query-string";

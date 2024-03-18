@@ -1,6 +1,6 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { type TemplateResult } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
@@ -9,8 +9,8 @@ import type { Tab as CollectionTab } from "./collection-detail";
 import type {
   Member,
   OrgInfoChangeEvent,
-  UserRoleChangeEvent,
   OrgRemoveMemberEvent,
+  UserRoleChangeEvent,
 } from "./settings";
 
 import type { QuotaUpdateDetail } from "@/controllers/api";
@@ -25,6 +25,7 @@ import type { AuthState } from "@/utils/AuthService";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
+
 import "./workflow-detail";
 import "./workflows-list";
 import "./workflows-new";

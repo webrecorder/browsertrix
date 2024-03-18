@@ -1,4 +1,4 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";

@@ -1,5 +1,5 @@
-import { msg, localized } from "@lit/localize";
-import { LitElement, html } from "lit";
+import { localized, msg } from "@lit/localize";
+import { html, LitElement } from "lit";
 import { customElement } from "lit/decorators.js";
 
 @customElement("btrix-not-found")

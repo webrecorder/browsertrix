@@ -1,7 +1,7 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { type TemplateResult, type PropertyValues } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
+import { type PropertyValues, type TemplateResult } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 
 import type { APIPaginatedList } from "@/types/api";
 import type { CurrentUser } from "@/types/user";

@@ -1,26 +1,27 @@
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
 import { render, type TemplateResult } from "lit";
-import { property, state, query, customElement } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import "broadcastchannel-polyfill";
 
+import "broadcastchannel-polyfill";
 import "./utils/polyfills";
+
 import type { OrgTab } from "./pages/org";
 import { ROUTES } from "./routes";
 import type { CurrentUser, UserOrg } from "./types/user";
 import APIRouter, { type ViewState } from "./utils/APIRouter";
 import AuthService, {
-  type LoggedInEventDetail,
-  type NeedLoginEventDetail,
-  type AuthState,
   type Auth,
   type AuthEventDetail,
+  type AuthState,
+  type LoggedInEventDetail,
+  type NeedLoginEventDetail,
 } from "./utils/AuthService";
 import { DEFAULT_MAX_SCALE } from "./utils/crawler";
 import LiteElement, { html } from "./utils/LiteElement";
-import appState, { use, AppStateService } from "./utils/state";
+import appState, { AppStateService, use } from "./utils/state";
 
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";

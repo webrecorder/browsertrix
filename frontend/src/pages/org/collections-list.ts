@@ -1,8 +1,8 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
 import Fuse from "fuse.js";
 import { type PropertyValues } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";

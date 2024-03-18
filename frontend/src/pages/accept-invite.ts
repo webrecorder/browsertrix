@@ -1,5 +1,5 @@
-import { msg, str, localized } from "@lit/localize";
-import { state, property, customElement } from "lit/decorators.js";
+import { localized, msg, str } from "@lit/localize";
+import { customElement, property, state } from "lit/decorators.js";
 
 import { ROUTES } from "@/routes";
 import { isApiError } from "@/utils/api";

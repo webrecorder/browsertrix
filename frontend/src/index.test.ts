@@ -1,5 +1,5 @@
-import { fixture, expect } from "@open-wc/testing";
-import { stub, restore } from "sinon";
+import { expect, fixture } from "@open-wc/testing";
+import { restore, stub } from "sinon";
 
 import AuthService from "./utils/AuthService";
 

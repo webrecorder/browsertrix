@@ -1,12 +1,12 @@
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import {
-  html,
   css,
+  html,
   nothing,
   type PropertyValues,
   type TemplateResult,
 } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -16,7 +16,7 @@ import { TWO_COL_SCREEN_MIN_CSS } from "@/components/ui/tab-list";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
-import type { APIPaginationQuery, APIPaginatedList } from "@/types/api";
+import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
 import { type AuthState } from "@/utils/AuthService";
 import { renderName } from "@/utils/crawler";

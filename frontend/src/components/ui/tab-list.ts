@@ -1,5 +1,5 @@
-import { LitElement, html, css, type PropertyValues } from "lit";
-import { property, queryAsync, customElement } from "lit/decorators.js";
+import { css, html, LitElement, type PropertyValues } from "lit";
+import { customElement, property, queryAsync } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";

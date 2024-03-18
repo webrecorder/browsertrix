@@ -1,6 +1,6 @@
 /* eslint-disable lit/binding-positions */
 /* eslint-disable lit/no-invalid-html */
-import { type PropertyValueMap, css } from "lit";
+import { css, type PropertyValueMap } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { html, literal } from "lit/static-html.js";

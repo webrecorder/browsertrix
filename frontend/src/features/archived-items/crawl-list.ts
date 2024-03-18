@@ -11,8 +11,8 @@
  * </btrix-crawl-list>
  * ```
  */
-import { msg, localized, str } from "@lit/localize";
-import { html, css, nothing, type TemplateResult } from "lit";
+import { localized, msg, str } from "@lit/localize";
+import { css, html, nothing, type TemplateResult } from "lit";
 import {
   customElement,
   property,

@@ -1,7 +1,7 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import type { PropertyValues, TemplateResult } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
@@ -10,9 +10,9 @@ import queryString from "query-string";
 import type {
   Crawl,
   CrawlState,
+  Seed,
   Workflow,
   WorkflowParams,
-  Seed,
 } from "./types";
 
 import { CopyButton } from "@/components/ui/copy-button";

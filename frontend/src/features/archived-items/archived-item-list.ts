@@ -1,12 +1,12 @@
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { type SlCheckbox } from "@shoelace-style/shoelace";
-import { html, css, nothing } from "lit";
+import { css, html, nothing } from "lit";
 import {
   customElement,
   property,
-  state,
-  queryAssignedElements,
   query,
+  queryAssignedElements,
+  state,
 } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 

@@ -1,4 +1,4 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type {
   SlMenu,
   SlMenuItem,
@@ -7,13 +7,13 @@ import type {
 } from "@shoelace-style/shoelace";
 import inputCss from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
 import {
-  LitElement,
-  html,
   css,
+  html,
+  LitElement,
   type CSSResultGroup,
   type PropertyValues,
 } from "lit";
-import { state, property, query, customElement } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import debounce from "lodash/fp/debounce";
 
 import type { UnderlyingFunction } from "@/types/utils";

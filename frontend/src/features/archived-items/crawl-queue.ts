@@ -1,4 +1,4 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type { PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";

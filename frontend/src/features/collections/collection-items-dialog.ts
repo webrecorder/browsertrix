@@ -1,7 +1,7 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { merge } from "immutable";
-import { type PropertyValues, css, html } from "lit";
-import { state, property, query, customElement } from "lit/decorators.js";
+import { css, html, type PropertyValues } from "lit";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
@@ -22,12 +22,12 @@ import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
 import { type CheckboxChangeEventDetail } from "@/features/archived-items/archived-item-list";
 import type {
-  SortChangeEventDetail,
+  FilterBy,
   FilterChangeEventDetail,
   SearchValues,
-  SortOptions,
   SortBy,
-  FilterBy,
+  SortChangeEventDetail,
+  SortOptions,
 } from "@/features/archived-items/item-list-controls";
 import type {
   APIPaginatedList,

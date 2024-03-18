@@ -1,5 +1,5 @@
-import { msg, localized } from "@lit/localize";
-import { state, property, customElement } from "lit/decorators.js";
+import { localized, msg } from "@lit/localize";
+import { customElement, property, state } from "lit/decorators.js";
 
 import type { APIPaginatedList } from "@/types/api";
 import type { CurrentUser } from "@/types/user";

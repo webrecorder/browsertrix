@@ -1,8 +1,8 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { type PropertyValues } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import slugify from "slugify";
@@ -13,7 +13,7 @@ import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { isAdmin, isCrawler, AccessCode, type OrgData } from "@/utils/orgs";
+import { AccessCode, isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
 
 type Tab = "information" | "members";
 type User = {

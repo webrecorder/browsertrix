@@ -1,5 +1,5 @@
-import { msg, localized } from "@lit/localize";
-import { LitElement, html, css, type TemplateResult } from "lit";
+import { localized, msg } from "@lit/localize";
+import { css, html, LitElement, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import startCase from "lodash/fp/startCase";
 

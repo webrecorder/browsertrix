@@ -1,7 +1,7 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type { SlCheckbox, SlSelect } from "@shoelace-style/shoelace";
-import { type PropertyValues, nothing } from "lit";
-import { state, property, query, customElement } from "lit/decorators.js";
+import { nothing, type PropertyValues } from "lit";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -14,7 +14,7 @@ import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
-import { isActive, finishedCrawlStates } from "@/utils/crawler";
+import { finishedCrawlStates, isActive } from "@/utils/crawler";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;

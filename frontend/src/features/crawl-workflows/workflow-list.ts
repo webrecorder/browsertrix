@@ -11,13 +11,13 @@
  * </btrix-workflow-list>
  * ```
  */
-import { msg, localized, str } from "@lit/localize";
-import { LitElement, html, css, type TemplateResult } from "lit";
+import { localized, msg, str } from "@lit/localize";
+import { css, html, LitElement, type TemplateResult } from "lit";
 import {
+  customElement,
   property,
   query,
   queryAssignedElements,
-  customElement,
 } from "lit/decorators.js";
 
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";

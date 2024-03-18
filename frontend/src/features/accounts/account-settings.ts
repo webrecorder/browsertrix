@@ -1,9 +1,9 @@
-import { msg, str, localized } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 import { LitElement, type PropertyValues } from "lit";
-import { state, queryAsync, property, customElement } from "lit/decorators.js";
+import { customElement, property, queryAsync, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 

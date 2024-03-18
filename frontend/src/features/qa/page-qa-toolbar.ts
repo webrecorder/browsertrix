@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlTextarea } from "@shoelace-style/shoelace";
 import { merge } from "immutable";
-import { type PropertyValues, css, html } from "lit";
+import { css, html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { keyed } from "lit/directives/keyed.js";

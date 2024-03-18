@@ -1,4 +1,4 @@
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 

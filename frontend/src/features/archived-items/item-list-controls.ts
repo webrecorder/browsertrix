@@ -1,8 +1,8 @@
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
 import { merge } from "immutable";
-import { html, css, type PropertyValues } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
+import { css, html, type PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";

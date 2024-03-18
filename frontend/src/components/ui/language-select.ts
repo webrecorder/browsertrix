@@ -1,8 +1,8 @@
 import { localized, msg } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import ISO6391, { type LanguageCode } from "iso-639-1";
-import { LitElement, html, css } from "lit";
-import { property, customElement } from "lit/decorators.js";
+import { css, html, LitElement } from "lit";
+import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import sortBy from "lodash/fp/sortBy";
 

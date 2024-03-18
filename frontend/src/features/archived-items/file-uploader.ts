@@ -1,9 +1,9 @@
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import type { SlButton } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import Fuse from "fuse.js";
-import { type PropertyValues, html } from "lit";
-import { state, property, queryAsync, customElement } from "lit/decorators.js";
+import { html, type PropertyValues } from "lit";
+import { customElement, property, queryAsync, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import throttle from "lodash/fp/throttle";
 import queryString from "query-string";
@@ -11,8 +11,8 @@ import queryString from "query-string";
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { FileRemoveEvent } from "@/components/ui/file-list";
 import type {
-  Tags,
   TagInputEvent,
+  Tags,
   TagsChangeEvent,
 } from "@/components/ui/tag-input";
 import { APIController } from "@/controllers/api";

@@ -1,6 +1,6 @@
 import { localized } from "@lit/localize";
 import { LitElement } from "lit";
-import { property, state, customElement } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import humanizeDuration from "pretty-ms";
 
 export type HumanizeOptions = {

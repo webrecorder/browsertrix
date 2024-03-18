@@ -1,7 +1,7 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type { SlCheckbox } from "@shoelace-style/shoelace";
 import { nothing, type PropertyValues, type TemplateResult } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { repeat } from "lit/directives/repeat.js";

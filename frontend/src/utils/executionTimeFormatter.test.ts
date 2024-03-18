@@ -1,8 +1,8 @@
 import { expect, fixture } from "@open-wc/testing";
 
 import {
-  humanizeSeconds,
   humanizeExecutionSeconds,
+  humanizeSeconds,
 } from "./executionTimeFormatter";
 
 describe("formatHours", () => {

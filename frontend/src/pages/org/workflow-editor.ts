@@ -1,4 +1,4 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type {
   SlChangeEvent,
   SlCheckbox,
@@ -14,11 +14,11 @@ import { mergeDeep } from "immutable";
 import type { LanguageCode } from "iso-639-1";
 import type { LitElement, PropertyValues, TemplateResult } from "lit";
 import {
-  state,
+  customElement,
   property,
   query,
   queryAsync,
-  customElement,
+  state,
 } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -30,12 +30,12 @@ import flow from "lodash/fp/flow";
 import uniq from "lodash/fp/uniq";
 
 import type {
-  WorkflowParams,
-  Profile,
+  CrawlConfig,
   JobType,
+  Profile,
   Seed,
   SeedConfig,
-  CrawlConfig,
+  WorkflowParams,
 } from "./types";
 
 import type {
@@ -52,18 +52,18 @@ import type { TimeInputChangeEvent } from "@/components/ui/time-input";
 import { type SelectBrowserProfileChangeEvent } from "@/features/browser-profiles/select-browser-profile";
 import type { CollectionsChangeEvent } from "@/features/collections/collections-add";
 import type {
-  ExclusionRemoveEvent,
   ExclusionChangeEvent,
+  ExclusionRemoveEvent,
 } from "@/features/crawl-workflows/queue-exclusion-table";
-import { type Detail, isApiError } from "@/utils/api";
+import { isApiError, type Detail } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import {
-  getUTCSchedule,
-  humanizeSchedule,
-  humanizeNextDate,
-  getScheduleInterval,
   getNextDate,
+  getScheduleInterval,
+  getUTCSchedule,
+  humanizeNextDate,
+  humanizeSchedule,
 } from "@/utils/cron";
 import { maxLengthValidator } from "@/utils/form";
 import LiteElement, { html } from "@/utils/LiteElement";

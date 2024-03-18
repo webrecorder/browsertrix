@@ -1,7 +1,7 @@
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
 import type { PropertyValues, TemplateResult } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 

@@ -1,4 +1,4 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { type PageChangeEvent } from "@/components/ui/pagination";

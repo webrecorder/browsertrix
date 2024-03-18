@@ -1,7 +1,7 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { type SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { state, property, queryAsync, customElement } from "lit/decorators.js";
+import { customElement, property, queryAsync, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import type { Dialog } from "@/components/ui/dialog";

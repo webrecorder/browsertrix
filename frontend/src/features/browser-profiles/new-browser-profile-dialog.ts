@@ -1,6 +1,6 @@
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { type SlInput } from "@shoelace-style/shoelace";
-import { state, property, queryAsync, customElement } from "lit/decorators.js";
+import { customElement, property, queryAsync, state } from "lit/decorators.js";
 
 import type { Dialog } from "@/components/ui/dialog";
 import { type SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";

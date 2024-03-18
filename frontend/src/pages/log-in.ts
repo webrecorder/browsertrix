@@ -1,8 +1,8 @@
 // cSpell:words xstate
-import { msg, localized } from "@lit/localize";
-import { createMachine, interpret, assign } from "@xstate/fsm";
+import { localized, msg } from "@lit/localize";
+import { assign, createMachine, interpret } from "@xstate/fsm";
 import { type PropertyValues } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 
 import { ROUTES } from "@/routes";
 import { isApiError } from "@/utils/api";

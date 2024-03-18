@@ -1,7 +1,7 @@
 import hljs from "highlight.js/lib/core";
 import javascript from "highlight.js/lib/languages/javascript";
 import xml from "highlight.js/lib/languages/xml";
-import { html, css } from "lit";
+import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
 
