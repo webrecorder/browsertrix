@@ -82,7 +82,7 @@ class StorageOps:
             "FRONTEND_ALIAS", "http://browsertrix-cloud-frontend"
         )
         self.default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
-        self.frontend_url = f"{self.frontend_namespace}.{self.default_namespace}"
+        self.frontend_url = f"{self.frontend_alias}.{self.default_namespace}"
 
         with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
