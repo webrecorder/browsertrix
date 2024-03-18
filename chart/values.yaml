@@ -130,6 +130,8 @@ frontend_memory: "64Mi"
 # if using ingress, this value is ignored
 local_service_port: 30870
 
+frontend_alias: "http://browsertrix-cloud-frontend"
+
 
 # MongoDB Image
 # =========================================

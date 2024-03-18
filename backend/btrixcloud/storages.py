@@ -78,6 +78,12 @@ class StorageOps:
 
         self.is_local_minio = is_bool(os.environ.get("IS_LOCAL_MINIO"))
 
+        self.frontend_alias = os.environ.get(
+            "FRONTEND_ALIAS", "http://browsertrix-cloud-frontend"
+        )
+        self.default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
+        self.frontend_url = f"{self.frontend_namespace}.{self.default_namespace}"
+
         with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
 
@@ -597,7 +603,7 @@ class StorageOps:
             for wacz_file in instance_list:
                 wacz_url = wacz_file.path
                 if wacz_url.startswith("/data"):
-                    wacz_url = f"http://browsertrix-cloud-frontend.default{wacz_url}"
+                    wacz_url = f"{self.frontend_url}{wacz_url}"
 
                 with RemoteZip(wacz_url) as remote_zip:
                     log_files: List[ZipInfo] = [
@@ -645,7 +651,7 @@ class StorageOps:
         for wacz_file in wacz_files:
             wacz_url = wacz_file.path
             if wacz_url.startswith("/data"):
-                wacz_url = f"http://browsertrix-cloud-frontend.default{wacz_url}"
+                wacz_url = f"{self.frontend_url}{wacz_url}"
 
             with RemoteZip(wacz_url) as remote_zip:
                 page_files: List[ZipInfo] = [
