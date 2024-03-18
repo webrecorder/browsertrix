@@ -9,11 +9,13 @@ module.exports = {
   extends: [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:import/recommended",
+    "plugin:import/typescript",
     "plugin:wc/recommended",
     "plugin:lit/recommended",
     "prettier",
   ],
-  plugins: ["@typescript-eslint", "lit"],
+  plugins: ["@typescript-eslint", "lit", "import"],
   parserOptions: {
     project: ["./tsconfig.eslint.json"],
     tsconfigRootDir: __dirname,
@@ -97,8 +99,38 @@ module.exports = {
     "@typescript-eslint/restrict-template-expressions": "warn",
     "@typescript-eslint/unbound-method": "off",
     "@typescript-eslint/method-signature-style": "error",
+    /* end recommended rules */
+
+    /* start import rules */
+    "import/order": [
+      "error",
+      {
+        "newlines-between": "always",
+        groups: [
+          "builtin",
+          "external",
+          "internal",
+          "parent",
+          "sibling",
+          "index",
+          "object",
+          "type",
+        ],
+      },
+    ],
   },
   reportUnusedDisableDirectives: true,
+  settings: {
+    "import/parsers": {
+      "@typescript-eslint/parser": [".ts", ".tsx"],
+    },
+    "import/resolver": {
+      typescript: {
+        alwaysTryTypes: true,
+      },
+      node: true,
+    },
+  },
   ignorePatterns: ["__generated__", "__mocks__", "dist"],
   overrides: [
     {
