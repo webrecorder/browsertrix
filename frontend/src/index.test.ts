@@ -37,7 +37,7 @@ describe("browsertrix-app", () => {
   it("renders when `AuthService.initSessionStorage` rejects", async () => {
     stub(AuthService, "initSessionStorage").returns(Promise.reject());
     const el = await fixture("<browsertrix-app></browsertrix-app>");
-    expect(el).lightDom.descendants("btrix-home");
+    expect(el).lightDom.descendants("btrix-log-in");
   });
 
   // TODO move tests to AuthService
