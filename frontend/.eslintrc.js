@@ -10,12 +10,11 @@ module.exports = {
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:import-x/recommended",
-    "plugin:import-x/typescript",
     "plugin:wc/recommended",
     "plugin:lit/recommended",
     "prettier",
   ],
-  plugins: ["@typescript-eslint", "lit", "import-x"],
+  plugins: ["@typescript-eslint", "lit"],
   parserOptions: {
     project: ["./tsconfig.eslint.json"],
     tsconfigRootDir: __dirname,
@@ -135,14 +134,8 @@ module.exports = {
   },
   reportUnusedDisableDirectives: true,
   settings: {
-    "import-x/parsers": {
-      "@typescript-eslint/parser": [".ts", ".tsx"],
-    },
     "import-x/resolver": {
-      typescript: {
-        alwaysTryTypes: true,
-      },
-      node: true,
+      typescript: true,
     },
   },
   ignorePatterns: ["__generated__", "__mocks__", "dist"],
