@@ -201,6 +201,16 @@ const main = {
           from: path.resolve(__dirname, "src/assets/icons"),
           to: path.resolve(__dirname, "dist", "assets/icons"),
         },
+        // Copy favicons to root
+        {
+          from: path.resolve(__dirname, "src/assets/favicons"),
+          to: path.resolve(__dirname, "dist"),
+        },
+        // Copy app manifest
+        {
+          from: path.resolve(__dirname, "src/manifest.webmanifest"),
+          to: path.resolve(__dirname, "dist"),
+        },
       ],
     }),
     ...(process.env.BUNDLE_ANALYZER

@@ -118,7 +118,7 @@
       "prettier --write",
       "eslint --fix --quiet"
     ],
-    "*.{html,css,json}": "prettier --write"
+    "*.{html,css,json,webmanifest}": "prettier --write"
   },
   "husky": {
     "hooks": {
