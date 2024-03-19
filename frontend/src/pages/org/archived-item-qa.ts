@@ -16,7 +16,6 @@ import { TWO_COL_SCREEN_MIN_CSS } from "@/components/ui/tab-list";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
-import { testData } from "@/features/qa/page-list/test-data";
 import { type QaPage } from "@/features/qa/page-list/ui/page";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type {
@@ -330,9 +329,7 @@ export class ArchivedItemQA extends TailwindElement {
 
   private async fetchPages(params?: APIPaginationQuery): Promise<void> {
     try {
-      // this.pages = await this.getPages(params);
-      console.log(params);
-      this.pages = { items: testData, total: 1000, page: 1, pageSize: 1000 };
+      this.pages = await this.getPages(params);
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve archived item at this time."),
@@ -355,23 +352,10 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private async getQaRuns(): Promise<ArchivedItemQaRun[]> {
-    // return this.api.fetch<ArchivedItemQaRun[]>(
-    //   `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
-    //   this.authState!,
-    // );
-    return [
-      {
-        id: "test",
-        userName: "",
-        started: "",
-        finished: "",
-        stats: {
-          found: 0,
-          done: 0,
-          size: 0,
-        },
-      },
-    ];
+    return this.api.fetch<ArchivedItemQaRun[]>(
+      `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
+      this.authState!,
+    );
   }
 
   private async getCrawl(): Promise<ArchivedItem> {
