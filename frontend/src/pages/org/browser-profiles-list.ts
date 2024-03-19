@@ -1,13 +1,15 @@
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
+import { nothing } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 
+import type { Profile } from "./types";
+
+import type { SelectNewDialogEvent } from ".";
+
+import type { APIPaginatedList } from "@/types/api";
+import type { Browser } from "@/types/browser";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { Profile } from "./types";
-import type { APIPaginatedList } from "@/types/api";
-import type { SelectNewDialogEvent } from "./index";
-import type { Browser } from "@/types/browser";
-import { nothing } from "lit";
 
 /**
  * Usage:

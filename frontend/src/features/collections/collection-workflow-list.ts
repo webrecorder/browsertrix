@@ -1,21 +1,21 @@
-import { type TemplateResult, type PropertyValues, html, css } from "lit";
-import { customElement, property, queryAll } from "lit/decorators.js";
-import { until } from "lit/directives/until.js";
-import { repeat } from "lit/directives/repeat.js";
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type { SlSwitch, SlTreeItem } from "@shoelace-style/shoelace";
-import queryString from "query-string";
+import { css, html, type PropertyValues, type TemplateResult } from "lit";
+import { customElement, property, queryAll } from "lit/decorators.js";
+import { repeat } from "lit/directives/repeat.js";
+import { until } from "lit/directives/until.js";
 import isEqual from "lodash/fp/isEqual";
+import queryString from "query-string";
 
+import { TailwindElement } from "@/classes/TailwindElement";
+import { APIController } from "@/controllers/api";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import { APIController } from "@/controllers/api";
-import type { Workflow, Crawl } from "@/types/crawler";
+import type { Crawl, Workflow } from "@/types/crawler";
 import { type AuthState } from "@/utils/AuthService";
-import { TailwindElement } from "@/classes/TailwindElement";
 import { finishedCrawlStates } from "@/utils/crawler";
 
 export type SelectionChangeDetail = {

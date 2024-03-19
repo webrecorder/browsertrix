@@ -11,23 +11,22 @@
  * </btrix-workflow-list>
  * ```
  */
-import type { TemplateResult } from "lit";
-import { LitElement, html, css } from "lit";
+import { localized, msg, str } from "@lit/localize";
+import { css, html, LitElement, type TemplateResult } from "lit";
 import {
+  customElement,
   property,
   query,
   queryAssignedElements,
-  customElement,
 } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
 
-import { NavigateController } from "@/controllers/navigate";
-import { RelativeDuration } from "@/components/ui/relative-duration";
-import type { ListWorkflow } from "@/types/crawler";
-import { srOnly, truncate } from "@/utils/css";
-import { humanizeSchedule } from "@/utils/cron";
-import { numberFormatter } from "@/utils/number";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
+import { RelativeDuration } from "@/components/ui/relative-duration";
+import { NavigateController } from "@/controllers/navigate";
+import type { ListWorkflow } from "@/types/crawler";
+import { humanizeSchedule } from "@/utils/cron";
+import { srOnly, truncate } from "@/utils/css";
+import { numberFormatter } from "@/utils/number";
 
 // postcss-lit-disable-next-line
 const mediumBreakpointCss = css`30rem`;

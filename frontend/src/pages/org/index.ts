@@ -1,43 +1,41 @@
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
-import { when } from "lit/directives/when.js";
+import { localized, msg, str } from "@lit/localize";
+import { type TemplateResult } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 
-import type { ViewState } from "@/utils/APIRouter";
-import type { AuthState } from "@/utils/AuthService";
-import type { CurrentUser } from "@/types/user";
+import type { QATab } from "./archived-item-qa";
+import type { Tab as CollectionTab } from "./collection-detail";
+import type {
+  Member,
+  OrgInfoChangeEvent,
+  OrgRemoveMemberEvent,
+  UserRoleChangeEvent,
+} from "./settings";
+
+import type { QuotaUpdateDetail } from "@/controllers/api";
+import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
+import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import type { Crawl, JobType } from "@/types/crawler";
-import type { OrgData } from "@/utils/orgs";
-import { isAdmin, isCrawler } from "@/utils/orgs";
-import LiteElement, { html } from "@/utils/LiteElement";
+import type { CurrentUser } from "@/types/user";
+import { isApiError } from "@/utils/api";
+import type { ViewState } from "@/utils/APIRouter";
 import { needLogin } from "@/utils/auth";
+import type { AuthState } from "@/utils/AuthService";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
+import LiteElement, { html } from "@/utils/LiteElement";
+import { isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
+
 import "./workflow-detail";
 import "./workflows-list";
 import "./workflows-new";
 import "./archived-item-detail";
 import "./archived-items";
-import "./archived-item-qa";
 import "./collections-list";
-import "./collection-detail";
 import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./browser-profiles-new";
-import "./settings";
 import "./dashboard";
-import type {
-  Member,
-  OrgInfoChangeEvent,
-  UserRoleChangeEvent,
-  OrgRemoveMemberEvent,
-} from "./settings";
-import type { Tab as CollectionTab } from "./collection-detail";
-import type { QATab } from "./archived-item-qa";
-import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import type { QuotaUpdateDetail } from "@/controllers/api";
-import { type TemplateResult } from "lit";
-import { isApiError } from "@/utils/api";
-import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];

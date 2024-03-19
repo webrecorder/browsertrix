@@ -1,14 +1,14 @@
-import { html, css, type PropertyValues } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
+import { merge } from "immutable";
+import { css, html, type PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { finishedCrawlStates } from "@/utils/crawler";
-import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { type SelectEvent } from "@/components/ui/search-combobox";
-import { merge } from "immutable";
+import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { finishedCrawlStates } from "@/utils/crawler";
 
 export type FilterBy = Partial<Record<string, string>>;
 export type SearchValues = {

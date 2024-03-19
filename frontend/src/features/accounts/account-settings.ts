@@ -1,19 +1,19 @@
-import { LitElement, type PropertyValues } from "lit";
-import { state, queryAsync, property, customElement } from "lit/decorators.js";
-import { msg, str, localized } from "@lit/localize";
-import debounce from "lodash/fp/debounce";
-import { when } from "lit/directives/when.js";
-import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
+import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
+import { LitElement, type PropertyValues } from "lit";
+import { customElement, property, queryAsync, state } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
+import debounce from "lodash/fp/debounce";
 
 import type { CurrentUser } from "@/types/user";
-import LiteElement, { html } from "@/utils/LiteElement";
+import type { UnderlyingFunction } from "@/types/utils";
+import { isApiError } from "@/utils/api";
 import { needLogin } from "@/utils/auth";
 import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
 import PasswordService from "@/utils/PasswordService";
-import { isApiError } from "@/utils/api";
-import type { UnderlyingFunction } from "@/types/utils";
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;

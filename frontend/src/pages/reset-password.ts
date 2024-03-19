@@ -1,14 +1,14 @@
-import { state, property, customElement } from "lit/decorators.js";
-import { str, msg, localized } from "@lit/localize";
-import debounce from "lodash/fp/debounce";
-import { when } from "lit/directives/when.js";
+import { localized, msg, str } from "@lit/localize";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
+import { customElement, property, state } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
+import debounce from "lodash/fp/debounce";
 
+import type { Input as BtrixInput } from "@/components/ui/input";
+import type { UnderlyingFunction } from "@/types/utils";
 import type { ViewState } from "@/utils/APIRouter";
 import LiteElement, { html } from "@/utils/LiteElement";
 import PasswordService from "@/utils/PasswordService";
-import type { Input as BtrixInput } from "@/components/ui/input";
-import type { UnderlyingFunction } from "@/types/utils";
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;

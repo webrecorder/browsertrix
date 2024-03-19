@@ -1,8 +1,9 @@
-import {
-  humanizeSeconds,
-  humanizeExecutionSeconds,
-} from "./executionTimeFormatter";
 import { expect, fixture } from "@open-wc/testing";
+
+import {
+  humanizeExecutionSeconds,
+  humanizeSeconds,
+} from "./executionTimeFormatter";
 
 describe("formatHours", () => {
   it("returns a time in hours and minutes when given a time over an hour", () => {

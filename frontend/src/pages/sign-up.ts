@@ -1,9 +1,11 @@
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
+import { customElement, property, state } from "lit/decorators.js";
 
+import AuthService, {
+  type AuthState,
+  type LoggedInEventDetail,
+} from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { AuthState, LoggedInEventDetail } from "@/utils/AuthService";
-import AuthService from "@/utils/AuthService";
 
 @localized()
 @customElement("btrix-sign-up")
