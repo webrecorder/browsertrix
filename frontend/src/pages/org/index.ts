@@ -31,10 +31,13 @@ import "./workflows-list";
 import "./workflows-new";
 import "./archived-item-detail";
 import "./archived-items";
+import "./archived-item-qa";
 import "./collections-list";
+import "./collection-detail";
 import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./browser-profiles-new";
+import "./settings";
 import "./dashboard";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
