@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "lit";
+import { css, html, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 const ALLOWED_ROW_CLICK_TARGET_TAG = ["a", "label"] as const;

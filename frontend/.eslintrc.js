@@ -9,6 +9,7 @@ module.exports = {
   extends: [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:import-x/recommended",
     "plugin:wc/recommended",
     "plugin:lit/recommended",
     "prettier",
@@ -97,8 +98,46 @@ module.exports = {
     "@typescript-eslint/restrict-template-expressions": "warn",
     "@typescript-eslint/unbound-method": "off",
     "@typescript-eslint/method-signature-style": "error",
+    /* end recommended rules */
+
+    /* start import rules */
+    "import-x/no-duplicates": ["error", { "prefer-inline": true }],
+    "import-x/order": [
+      "error",
+      {
+        "newlines-between": "always",
+        pathGroups: [
+          {
+            pattern: "@/*",
+            group: "internal",
+          },
+          {
+            pattern: "~assets/*",
+            group: "internal",
+          },
+        ],
+        distinctGroup: false,
+        alphabetize: {
+          order: "asc",
+          caseInsensitive: true,
+        },
+      },
+    ],
+    "import-x/no-relative-packages": "error",
+    "import-x/no-useless-path-segments": [
+      "error",
+      {
+        noUselessIndex: true,
+      },
+    ],
+    "import-x/no-cycle": "error",
   },
   reportUnusedDisableDirectives: true,
+  settings: {
+    "import-x/resolver": {
+      typescript: true,
+    },
+  },
   ignorePatterns: ["__generated__", "__mocks__", "dist"],
   overrides: [
     {

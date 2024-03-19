@@ -1,5 +1,5 @@
-const { tailwindTransform } = require("postcss-lit");
 const Color = require("color");
+const { tailwindTransform } = require("postcss-lit");
 
 const PRIMARY_COLOR = "#4876ff";
 const primaryColor = Color(PRIMARY_COLOR);

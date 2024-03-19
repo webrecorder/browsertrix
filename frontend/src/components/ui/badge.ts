@@ -1,7 +1,8 @@
-import { TailwindElement } from "@/classes/TailwindElement";
-import { tw } from "@/utils/tailwind";
 import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+
+import { TailwindElement } from "@/classes/TailwindElement";
+import { tw } from "@/utils/tailwind";
 
 /**
  * Show numeric value in a label

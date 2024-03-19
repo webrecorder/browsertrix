@@ -1,23 +1,23 @@
+import { localized, msg, str } from "@lit/localize";
 import type { PropertyValues, TemplateResult } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
-import { ifDefined } from "lit/directives/if-defined.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
-import { msg, localized, str } from "@lit/localize";
+import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
+import capitalize from "lodash/fp/capitalize";
 
+import type { ArchivedItem, Crawl, CrawlConfig, Seed, Workflow } from "./types";
+
+import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { RelativeDuration } from "@/components/ui/relative-duration";
-import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
-import { isActive } from "@/utils/crawler";
-import { CopyButton } from "@/components/ui/copy-button";
-import type { ArchivedItem, Crawl, CrawlConfig, Seed, Workflow } from "./types";
-import type { APIPaginatedList } from "@/types/api";
-import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
-
-import capitalize from "lodash/fp/capitalize";
+import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
+import type { AuthState } from "@/utils/AuthService";
+import { isActive } from "@/utils/crawler";
+import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import LiteElement, { html } from "@/utils/LiteElement";
 
 const SECTIONS = [
   "overview",

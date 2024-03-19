@@ -1,11 +1,12 @@
 /* eslint-env node */
+import { fileURLToPath } from "url";
+
+import commonjsPlugin from "@rollup/plugin-commonjs";
 import { esbuildPlugin } from "@web/dev-server-esbuild";
 import { importMapsPlugin } from "@web/dev-server-import-maps";
-import { typescriptPaths as typescriptPathsPlugin } from "rollup-plugin-typescript-paths";
-import commonjsPlugin from "@rollup/plugin-commonjs";
 import { fromRollup } from "@web/dev-server-rollup";
-import { fileURLToPath } from "url";
 import glob from "glob";
+import { typescriptPaths as typescriptPathsPlugin } from "rollup-plugin-typescript-paths";
 
 const commonjs = fromRollup(commonjsPlugin);
 const typescriptPaths = fromRollup(typescriptPathsPlugin);

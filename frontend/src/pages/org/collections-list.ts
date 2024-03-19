@@ -1,24 +1,25 @@
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
-import { when } from "lit/directives/when.js";
-import { guard } from "lit/directives/guard.js";
-import queryString from "query-string";
-import Fuse from "fuse.js";
-import debounce from "lodash/fp/debounce";
+import { localized, msg, str } from "@lit/localize";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
+import Fuse from "fuse.js";
+import { type PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
+import { guard } from "lit/directives/guard.js";
+import { when } from "lit/directives/when.js";
+import debounce from "lodash/fp/debounce";
+import queryString from "query-string";
 
+import type { SelectNewDialogEvent } from ".";
+
+import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
+import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Collection, CollectionSearchValues } from "@/types/collection";
-import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
-import noCollectionsImg from "~assets/images/no-collections-found.webp";
-import type { SelectNewDialogEvent } from "./index";
-import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
-import { isApiError } from "@/utils/api";
-import { type PropertyValues } from "lit";
 import type { UnderlyingFunction } from "@/types/utils";
+import { isApiError } from "@/utils/api";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
+import noCollectionsImg from "~assets/images/no-collections-found.webp";
 
 type Collections = APIPaginatedList<Collection>;
 type SearchFields = "name";

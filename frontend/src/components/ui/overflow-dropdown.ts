@@ -1,12 +1,12 @@
-import { LitElement, html, css } from "lit";
+import { localized, msg } from "@lit/localize";
+import type { SlDropdown, SlMenu } from "@shoelace-style/shoelace";
+import { css, html, LitElement } from "lit";
 import {
   customElement,
-  state,
-  queryAssignedElements,
   query,
+  queryAssignedElements,
+  state,
 } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
-import type { SlDropdown, SlMenu } from "@shoelace-style/shoelace";
 
 /**
  * Dropdown for additional actions.

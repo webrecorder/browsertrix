@@ -1,13 +1,14 @@
-import { state, property, customElement } from "lit/decorators.js";
+import { localized, msg, str } from "@lit/localize";
+import { type SlDropdown } from "@shoelace-style/shoelace";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import { msg, localized, str } from "@lit/localize";
 
+import type { Profile } from "./types";
+
+import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { Profile } from "./types";
-import { isApiError } from "@/utils/api";
-import { type SlDropdown } from "@shoelace-style/shoelace";
 
 /**
  * Usage:

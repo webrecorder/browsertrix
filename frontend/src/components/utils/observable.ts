@@ -1,5 +1,5 @@
-import { LitElement, html } from "lit";
-import { query, customElement } from "lit/decorators.js";
+import { html, LitElement } from "lit";
+import { customElement, query } from "lit/decorators.js";
 
 type IntersectionEventDetail = {
   entry: IntersectionObserverEntry;

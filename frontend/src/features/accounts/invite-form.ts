@@ -1,13 +1,13 @@
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
+import { type PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import sortBy from "lodash/fp/sortBy";
 
+import type { OrgData } from "@/types/org";
+import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { OrgData } from "@/types/org";
-import { ifDefined } from "lit/directives/if-defined.js";
-import { isApiError } from "@/utils/api";
-import { type PropertyValues } from "lit";
 
 const sortByName = sortBy("name");
 

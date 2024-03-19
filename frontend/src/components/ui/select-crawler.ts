@@ -1,13 +1,12 @@
-import { html } from "lit";
-import { property, state, customElement } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
-
-import type { AuthState } from "../../utils/AuthService";
-import type { CrawlerChannel } from "../../pages/org/types";
-
-import LiteElement from "@/utils/LiteElement";
-import capitalize from "lodash/fp/capitalize";
+import { localized, msg } from "@lit/localize";
 import { type SlSelect } from "@shoelace-style/shoelace";
+import { html } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
+import capitalize from "lodash/fp/capitalize";
+
+import type { CrawlerChannel } from "@/pages/org/types";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement from "@/utils/LiteElement";
 
 type SelectCrawlerChangeDetail = {
   value: string | undefined;
