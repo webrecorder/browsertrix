@@ -1,7 +1,5 @@
 import type { ArchivedItemPage } from "@/types/crawler";
 
-export type SortBy = "screenshotMatch" | "textMatch"; // TODO add resource counts, timestamps, etc
-
 export const pageIsReviewed = (page: ArchivedItemPage) =>
   page.approved != null || !!page.notes?.length;
 
