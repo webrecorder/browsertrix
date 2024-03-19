@@ -1,4 +1,4 @@
-import type { OrderBy } from "..";
+import { type OrderBy } from "../page-list";
 
 import { severityFromMatch } from "./severity";
 

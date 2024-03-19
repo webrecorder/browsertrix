@@ -1,9 +1,9 @@
 import { html, nothing } from "lit";
 
-import type { PageList } from "..";
 import { iconFor } from "../helpers/iconFor";
 import { issueCounts, maxSeverity } from "../helpers/issueCounts";
 import { severityFromMatch } from "../helpers/severity";
+import type { PageList } from "../page-list";
 
 import { pageDetails } from "./page-details";
 

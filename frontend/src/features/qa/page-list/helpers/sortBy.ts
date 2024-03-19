@@ -1,4 +1,4 @@
-import type { PageList } from "..";
+import type { PageList } from "../page-list";
 
 import type { ArchivedItemPage } from "@/types/crawler";
 
