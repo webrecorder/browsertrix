@@ -20,6 +20,16 @@ export class QaPageGroup extends TailwindElement {
 
   contentContainer: Ref<HTMLElement> = createRef();
 
+  selectFirst = <ElementType extends Element = Element>(
+    query: string,
+  ): ElementType | null => {
+    const slot =
+      this.shadowRoot?.querySelector<HTMLSlotElement>("slot[name=content]");
+    return (
+      slot?.assignedElements()[0]?.querySelector<ElementType>(query) ?? null
+    );
+  };
+
   handleClick = () => {
     if (!this.isRemainderGroup) this.expanded = !this.expanded;
   };

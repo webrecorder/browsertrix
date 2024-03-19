@@ -6,6 +6,7 @@ import { pageIsReviewed } from "./helpers";
 import { groupBy } from "./helpers/groupBy";
 import { sortBy } from "./helpers/sortBy";
 import { type QaPage } from "./ui/page";
+import { type QaPageGroup } from "./ui/page-group";
 import { renderItem } from "./ui/render-item";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -87,7 +88,7 @@ export class PageList extends TailwindElement {
   private reviewedCount = 0;
   private filteredPages = this.pages?.items ?? [];
 
-  protected willUpdate(changedProperties: PropertyValues<this>): void {
+  protected async willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("pages") || changedProperties.has("tab")) {
       // Queued counts
       this.queuedCount = 0;
@@ -103,6 +104,13 @@ export class PageList extends TailwindElement {
           this.filteredPages.push(page);
         }
       });
+
+      await this.updateComplete;
+      console.log(this);
+      this.shadowRoot
+        ?.querySelector<QaPageGroup>("btrix-qa-page-group")
+        ?.selectFirst<QaPage>("btrix-qa-page")
+        ?.select({ animate: false });
     }
     if (changedProperties.has("itemPageId")) {
       console.log(this.itemPageId);
@@ -221,6 +229,7 @@ export class PageList extends TailwindElement {
         ${this.filteredPages.length > 0
           ? GroupedList({
               data: this.filteredPages,
+              key: "id",
               renderWrapper: (contents) =>
                 html`<div class="@container">${contents}</div>`,
               renderGroup: (header, items, group) =>
