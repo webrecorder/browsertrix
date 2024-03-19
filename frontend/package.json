@@ -97,8 +97,8 @@
   "devDependencies": {
     "@lit/localize-tools": "^0.7.1",
     "@web/dev-server-esbuild": "^0.3.3",
-    "@web/dev-server-import-maps": "^0.0.6",
-    "@web/dev-server-rollup": "^0.3.21",
+    "@web/dev-server-import-maps": "^0.2.0",
+    "@web/dev-server-rollup": "^0.6.1",
     "husky": "^8.0.3",
     "lint-staged": "^13.1.0",
     "prettier-plugin-tailwindcss": "^0.5.11",
@@ -129,11 +129,14 @@
     }
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "resolutions": {
     "**/playwright": "1.32.1",
     "**/lit": "3.1.1",
     "@web/dev-server-esbuild/esbuild": "^0.19.5"
-  }
+  },
+  "browserslist": [
+    "defaults"
+  ]
 }

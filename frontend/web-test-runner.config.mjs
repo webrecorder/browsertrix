@@ -11,11 +11,19 @@ import { typescriptPaths as typescriptPathsPlugin } from "rollup-plugin-typescri
 const commonjs = fromRollup(commonjsPlugin);
 const typescriptPaths = fromRollup(typescriptPathsPlugin);
 
-// Map all css imports to mock file
-const cssImports = {};
+// Map css and assert imports to mock file
+const emptyImports = {};
 glob.sync("./src/**/*.css").forEach((filepath) => {
-  cssImports[filepath] = fileURLToPath(
-    new URL("./src/__mocks__/css.js", import.meta.url),
+  emptyImports[filepath] = fileURLToPath(
+    new URL("./src/__mocks__/_empty.js", import.meta.url),
+  );
+});
+glob.sync("./src/assets/**/*").forEach((filepath) => {
+  // Enable "~assets" imports, which doesn't work with `rollup-plugin-typescript-paths`
+  const aliasedImportPath = filepath.replace("./src/", "~");
+
+  emptyImports[aliasedImportPath] = fileURLToPath(
+    new URL("./src/__mocks__/_empty.js", import.meta.url),
   );
 });
 
@@ -47,27 +55,15 @@ export default {
       inject: {
         importMap: {
           imports: {
-            ...cssImports,
+            ...emptyImports,
             "./src/shoelace": fileURLToPath(
               new URL("./src/__mocks__/shoelace.js", import.meta.url),
             ),
             "tailwindcss/tailwind.css": fileURLToPath(
-              new URL("./src/__mocks__/css.js", import.meta.url),
+              new URL("./src/__mocks__/_empty.js", import.meta.url),
             ),
             "@shoelace-style/shoelace/dist/themes/light.css": fileURLToPath(
-              new URL("./src/__mocks__/css.js", import.meta.url),
-            ),
-            // FIXME: `@web/dev-server-esbuild` or its dependencies seem to be ignoring .js
-            // extension and shoelace exports and switching it to .ts
-            // Needs a better solution than import mapping individual files.
-            // Maybe related:
-            // - https://github.com/modernweb-dev/web/issues/1929
-            // - https://github.com/modernweb-dev/web/issues/224
-            "@shoelace-style/shoelace/dist/utilities/form.js": fileURLToPath(
-              new URL(
-                "./node_modules/@shoelace-style/shoelace/dist/utilities/form.js",
-                import.meta.url,
-              ),
+              new URL("./src/__mocks__/_empty.js", import.meta.url),
             ),
             color: fileURLToPath(
               new URL("./src/__mocks__/color.js", import.meta.url),

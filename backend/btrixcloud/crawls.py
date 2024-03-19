@@ -222,16 +222,6 @@ class CrawlOps(BaseCrawlOps):
 
         return {"deleted": True, "storageQuotaReached": quota_reached}
 
-    async def get_wacz_files(self, crawl_id: str, org: Organization):
-        """Return list of WACZ files associated with crawl."""
-        wacz_files = []
-        crawl_raw = await self.get_crawl_raw(crawl_id, org)
-        crawl = Crawl.from_dict(crawl_raw)
-        for file_ in crawl.files:
-            if file_.filename.endswith(".wacz"):
-                wacz_files.append(file_)
-        return wacz_files
-
     # pylint: disable=too-many-arguments
     async def add_new_crawl(
         self,
@@ -889,11 +879,10 @@ def init_crawls_api(app, user_dep, *args):
         if context:
             contexts = context.split(",")
 
-        # If crawl is finished, stream logs from WACZ files
+        # If crawl is finished, stream logs from WACZ files using presigned urls
         if crawl.finished:
-            wacz_files = await ops.get_wacz_files(crawl_id, org)
             resp = await ops.storage_ops.sync_stream_wacz_logs(
-                org, wacz_files, log_levels, contexts
+                crawl.resources, log_levels, contexts
             )
             return StreamingResponse(
                 resp,
