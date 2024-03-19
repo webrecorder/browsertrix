@@ -22,8 +22,6 @@ module.exports = {
     "^@/(.*)$",
     "^~assets/(.*)",
     "",
-    // "^\\./(.*)$",
-    // "",
   ],
   importOrderParserPlugins: ["typescript", "decorators-legacy"],
   importOrderTypeScriptVersion: "5.0.0",
