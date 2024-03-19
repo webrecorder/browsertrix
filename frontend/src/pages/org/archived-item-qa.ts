@@ -318,9 +318,15 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private readonly renderScreenshots = () => {
-    if (!this.itemId) return;
+    if (!this.page) return; // TODO loading indicator
 
-    const url = `/replay/w/manual-20240226234726-051ed881-37e/:fbc91e679056dc8da1528376ddbc7e5c931ca9b03a0d0f65430c5ee2a76c94c2/20240226234908mp_/urn:view:http://example.com/`;
+    console.log(this.page);
+
+    // const url = `/replay/w/manual-20240226234726-051ed881-37e/:fbc91e679056dc8da1528376ddbc7e5c931ca9b03a0d0f65430c5ee2a76c94c2/20240226234908mp_/urn:view:http://example.com/`;
+    const timestamp = this.page.ts?.split(".")[0].replace(/\D/g, "");
+    const crawlUrl = `/replay/w/${this.itemId}/:${this.itemPageId}/${timestamp}mp_/urn:view:${window.encodeURIComponent(this.page.url)}`;
+    const qaUrl = `/replay/w/${this.qaRunId}/:${this.itemPageId}/${timestamp}mp_/urn:view:${window.encodeURIComponent(this.page.url)}`;
+    console.log(crawlUrl);
 
     return html`
       <div class="mb-2 flex justify-between text-base font-medium">
@@ -336,7 +342,7 @@ export class ArchivedItemQA extends TailwindElement {
           <iframe
             slot="before"
             name="crawlScreenshot"
-            src="${url}"
+            src="${crawlUrl}"
             class="aspect-video w-full"
             aria-labelledby="crawlScreenshotHeading"
             @load=${this.onScreenshotLoad}
@@ -344,7 +350,7 @@ export class ArchivedItemQA extends TailwindElement {
           <iframe
             slot="after"
             name="replayScreenshot"
-            src="${url}"
+            src="${qaUrl}"
             class="aspect-video w-full"
             aria-labelledby="replayScreenshotHeading"
             @load=${this.onScreenshotLoad}
@@ -462,7 +468,6 @@ export class ArchivedItemQA extends TailwindElement {
       this.authState!,
     );
   }
-<<<<<<< HEAD
 
   private async getQARuns(): Promise<QARun[]> {
     return this.api.fetch<QARun[]>(
@@ -470,36 +475,4 @@ export class ArchivedItemQA extends TailwindElement {
       this.authState!,
     );
   }
-
-  /**
-   * Register ReplayWeb.Page service worker to enable routing to screenshot image
-   */
-  private async registerSw() {
-    try {
-      const reg = await navigator.serviceWorker.register("/replay/sw.js", {
-        scope: "/",
-      });
-      const sw = reg.installing || reg.waiting || reg.active;
-      console.log("archived-item-qa sw state:", sw?.state);
-      if (sw) {
-        if (sw.state !== "activated") {
-          await new Promise((resolve) => {
-            sw.addEventListener("statechange", () => {
-              if (sw.state === "activated") {
-                resolve(null);
-              }
-            });
-          });
-        }
-        this.replaySWReady = true;
-      } else {
-        this.replaySWReady = false;
-        console.debug("no sw");
-      }
-    } catch (error) {
-      console.error(`Registration failed with ${error}`);
-    }
-  }
-=======
->>>>>>> 79085356 (use iframes with image comparer)
 }
