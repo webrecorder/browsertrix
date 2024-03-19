@@ -101,7 +101,7 @@ module.exports = {
     /* end recommended rules */
 
     /* start import rules */
-    "import-x/no-duplicates": ["error", { "prefer-inline": true }],
+    // "import-x/no-duplicates": ["error", { "prefer-inline": true }],
     "import-x/order": [
       "error",
       {
