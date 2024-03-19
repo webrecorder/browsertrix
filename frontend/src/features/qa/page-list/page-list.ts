@@ -89,6 +89,13 @@ export class PageList extends TailwindElement {
   private filteredPages = this.pages?.items ?? [];
 
   protected async willUpdate(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("tab") && this.tab === Tab.Reviewed) {
+      // When switching to the "reviewed" tab, order by review status by default
+      this.orderBy = {
+        field: "approved",
+        direction: "asc",
+      };
+    }
     if (changedProperties.has("pages") || changedProperties.has("tab")) {
       // Queued counts
       this.queuedCount = 0;
@@ -128,9 +135,11 @@ export class PageList extends TailwindElement {
         >
           ${msg("Queued")}
           <btrix-badge
-            variant=${this.queuedCount > 0 || this.tab === Tab.Queued
-              ? "primary"
-              : "neutral"}
+            variant=${
+              this.queuedCount > 0 || this.tab === Tab.Queued
+                ? "primary"
+                : "neutral"
+            }
             aria-label=${
               "4 pages" // TODO properly localize plurals
             }
@@ -146,9 +155,11 @@ export class PageList extends TailwindElement {
         >
           ${msg("Reviewed")}
           <btrix-badge
-            variant=${this.reviewedCount > 0 || this.tab === Tab.Reviewed
-              ? "primary"
-              : "neutral"}
+            variant=${
+              this.reviewedCount > 0 || this.tab === Tab.Reviewed
+                ? "primary"
+                : "neutral"
+            }
             aria-label=${
               "4 pages" // TODO properly localize plurals
             }
@@ -161,15 +172,18 @@ export class PageList extends TailwindElement {
       <div
         class="z-10 mb-3 flex flex-wrap items-center gap-2 rounded-lg border bg-neutral-50 p-4"
       >
-        <btrix-search-combobox
-          class="grow"
-          .searchKeys=${["textMatch", "screenshotMatch"]}
-          .searchOptions=${this.pages?.items ?? []}
-          .selectedKey=${undefined}
-          .placeholder=${msg("Search all crawls by name or Crawl Start URL")}
-          @on-select=${() => {}}
-          @on-clear=${() => {}}
-        >
+        ${
+          // <btrix-search-combobox
+          //   class="grow"
+          //   .searchKeys=${["textMatch", "screenshotMatch"]}
+          //   .searchOptions=${this.pages?.items ?? []}
+          //   .selectedKey=${undefined}
+          //   .placeholder=${msg("Search all crawls by name or Crawl Start URL")}
+          //   @on-select=${() => {}}
+          //   @on-clear=${() => {}}
+          // >
+          null
+        }
         </btrix-search-combobox>
         <div class="flex w-full grow items-center md:w-fit">
           <div class="mr-2 whitespace-nowrap text-sm text-0-500">
@@ -226,92 +240,94 @@ export class PageList extends TailwindElement {
           this.currentPageElement = e.detail;
         }}
       >
-        ${this.filteredPages.length > 0
-          ? GroupedList({
-              data: this.filteredPages,
-              key: "id",
-              renderWrapper: (contents) =>
-                html`<div class="@container">${contents}</div>`,
-              renderGroup: (header, items, group) =>
-                html`<btrix-qa-page-group
-                  expanded
-                  class="is-group bg-neutral-0"
-                  .isRemainderGroup=${group?.value === remainder}
-                >
-                  <div slot="header" class="flex items-center">${header}</div>
-                  <div slot="content" class="py-2">${items}</div>
-                </btrix-qa-page-group>`,
-              renderItem: renderItem(this),
-              sortBy: sortBy(this),
-              groupBy: {
-                value: (page) =>
-                  groupBy(page, this.qaRunId ?? "", this.orderBy),
-                groups: [
-                  {
-                    value: "severe",
-                    renderLabel: ({ data }) =>
-                      html`${msg("Severe")}
-                        <btrix-badge class="ml-2" .variant=${"danger"}>
-                          ${data.length}
-                        </btrix-badge>`,
-                  },
-                  {
-                    value: "moderate",
-                    renderLabel: ({ data }) =>
-                      html`${msg("Possible Issues")}
-                        <btrix-badge class="ml-2" .variant=${"warning"}>
-                          ${data.length}
-                        </btrix-badge>`,
-                  },
-                  {
-                    value: "good",
-                    renderLabel: ({ data }) =>
-                      html`${msg("Likely Good")}
-                        <btrix-badge class="ml-2" .variant=${"success"}>
-                          ${data.length}
-                        </btrix-badge>`,
-                  },
-                  {
-                    value: "commentOnly",
-                    renderLabel: ({ data }) =>
-                      html`${msg("Comments Only")}
-                        <btrix-badge class="ml-2" .variant=${"primary"}>
-                          ${data.length}
-                        </btrix-badge>`,
-                  },
-                  {
-                    value: "approved",
-                    renderLabel: ({ data }) =>
-                      html`${msg("Approved")}
-                        <btrix-badge class="ml-2" .variant=${"success"}>
-                          ${data.length}
-                        </btrix-badge>`,
-                  },
-                  {
-                    value: "rejected",
-                    renderLabel: ({ data }) =>
-                      html`${msg("Rejected")}
-                        <btrix-badge class="ml-2" .variant=${"danger"}>
-                          ${data.length}
-                        </btrix-badge>`,
-                  },
-                  {
-                    value: remainder,
-                    renderLabel: ({ data }) =>
-                      html`${msg("No QA Data")}
-                        <btrix-badge class="ml-2" .variant=${"high-contrast"}>
-                          ${data.length}
-                        </btrix-badge>`,
-                  },
-                ],
-              },
-            })
-          : html`<div
-              class="flex flex-col items-center justify-center gap-4 py-8 text-xs text-gray-600"
-            >
-              <sl-icon name="dash-circle" class="h-4 w-4"></sl-icon>
-              ${msg("No pages")}
-            </div>`}
+        ${
+          this.filteredPages.length > 0
+            ? GroupedList({
+                data: this.filteredPages,
+                key: "id",
+                renderWrapper: (contents) =>
+                  html`<div class="@container">${contents}</div>`,
+                renderGroup: (header, items, group) =>
+                  html`<btrix-qa-page-group
+                    expanded
+                    class="is-group bg-neutral-0"
+                    .isRemainderGroup=${group?.value === remainder}
+                  >
+                    <div slot="header" class="flex items-center">${header}</div>
+                    <div slot="content" class="py-2">${items}</div>
+                  </btrix-qa-page-group>`,
+                renderItem: renderItem(this),
+                sortBy: sortBy(this),
+                groupBy: {
+                  value: (page) =>
+                    groupBy(page, this.qaRunId ?? "", this.orderBy),
+                  groups: [
+                    {
+                      value: "severe",
+                      renderLabel: ({ data }) =>
+                        html`${msg("Severe")}
+                          <btrix-badge class="ml-2" .variant=${"danger"}>
+                            ${data.length}
+                          </btrix-badge>`,
+                    },
+                    {
+                      value: "moderate",
+                      renderLabel: ({ data }) =>
+                        html`${msg("Possible Issues")}
+                          <btrix-badge class="ml-2" .variant=${"warning"}>
+                            ${data.length}
+                          </btrix-badge>`,
+                    },
+                    {
+                      value: "good",
+                      renderLabel: ({ data }) =>
+                        html`${msg("Likely Good")}
+                          <btrix-badge class="ml-2" .variant=${"success"}>
+                            ${data.length}
+                          </btrix-badge>`,
+                    },
+                    {
+                      value: "commentOnly",
+                      renderLabel: ({ data }) =>
+                        html`${msg("Comments Only")}
+                          <btrix-badge class="ml-2" .variant=${"primary"}>
+                            ${data.length}
+                          </btrix-badge>`,
+                    },
+                    {
+                      value: "approved",
+                      renderLabel: ({ data }) =>
+                        html`${msg("Approved")}
+                          <btrix-badge class="ml-2" .variant=${"success"}>
+                            ${data.length}
+                          </btrix-badge>`,
+                    },
+                    {
+                      value: "rejected",
+                      renderLabel: ({ data }) =>
+                        html`${msg("Rejected")}
+                          <btrix-badge class="ml-2" .variant=${"danger"}>
+                            ${data.length}
+                          </btrix-badge>`,
+                    },
+                    {
+                      value: remainder,
+                      renderLabel: ({ data }) =>
+                        html`${msg("No QA Data")}
+                          <btrix-badge class="ml-2" .variant=${"high-contrast"}>
+                            ${data.length}
+                          </btrix-badge>`,
+                    },
+                  ],
+                },
+              })
+            : html`<div
+                class="flex flex-col items-center justify-center gap-4 py-8 text-xs text-gray-600"
+              >
+                <sl-icon name="dash-circle" class="h-4 w-4"></sl-icon>
+                ${msg("No pages")}
+              </div>`
+        }
       </div>
     `;
   }
