@@ -75,7 +75,14 @@ export function cached<
     (...args: Args): Result;
     [InnerCache]: WeakRefMap<Key, Result>;
   } = (...args: Args) => {
-    const k = serializer(args) as Key;
+    let k;
+    try {
+      k = serializer(args) as Key;
+    } catch (e) {
+      throw new Error(
+        "Unable to serialize function arguments successfully - ensure your serializer function is able to handle the args you're passing in",
+      );
+    }
     return cache.get(k) ?? cache.set(k, fn(...args));
   };
   cachedFn[InnerCache] = cache;
