@@ -2,6 +2,7 @@
 import { fileURLToPath } from "url";
 
 import commonjsPlugin from "@rollup/plugin-commonjs";
+import imagePlugin from "@rollup/plugin-image";
 import { esbuildPlugin } from "@web/dev-server-esbuild";
 import { importMapsPlugin } from "@web/dev-server-import-maps";
 import { fromRollup } from "@web/dev-server-rollup";
@@ -9,6 +10,7 @@ import glob from "glob";
 import { typescriptPaths as typescriptPathsPlugin } from "rollup-plugin-typescript-paths";
 
 const commonjs = fromRollup(commonjsPlugin);
+const image = fromRollup(imagePlugin);
 const typescriptPaths = fromRollup(typescriptPathsPlugin);
 
 // Map all css imports to mock file
@@ -42,6 +44,9 @@ export default {
         // include umd/commonjs modules here:
         "node_modules/url-pattern/**/*",
       ],
+    }),
+    image({
+      include: ["./src/assets/**/*"],
     }),
     importMapsPlugin({
       inject: {

@@ -94,9 +94,10 @@
   },
   "devDependencies": {
     "@lit/localize-tools": "^0.7.1",
+    "@rollup/plugin-image": "^3.0.3",
     "@web/dev-server-esbuild": "^0.3.3",
-    "@web/dev-server-import-maps": "^0.0.6",
-    "@web/dev-server-rollup": "^0.3.21",
+    "@web/dev-server-import-maps": "^0.2.0",
+    "@web/dev-server-rollup": "^0.6.1",
     "husky": "^8.0.3",
     "lint-staged": "^13.1.0",
     "prettier-plugin-tailwindcss": "^0.5.11",
