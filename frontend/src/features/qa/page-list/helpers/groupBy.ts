@@ -1,9 +1,12 @@
-import type { ArchivedItemPage } from "@/types/crawler";
-import { cached } from "@/utils/weakCache";
 import type { OrderBy } from "..";
 import { remainder } from "../..";
-import type { Severity } from ".";
+
 import { severityFromMatch } from "./severity";
+
+import type { Severity } from ".";
+
+import type { ArchivedItemPage } from "@/types/crawler";
+import { cached } from "@/utils/weakCache";
 
 export const groupBy = cached(
   (

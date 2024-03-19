@@ -1,11 +1,11 @@
-import type { ArchivedItemPage } from "@/types/crawler";
-import { cached } from "@/utils/weakCache";
-
 import {
-  type Severity,
   severityFromMatch,
   severityFromResourceCounts,
+  type Severity,
 } from "./severity";
+
+import type { ArchivedItemPage } from "@/types/crawler";
+import { cached } from "@/utils/weakCache";
 
 export const issueCounts = cached((page: ArchivedItemPage, runId: string) => {
   const severities = [

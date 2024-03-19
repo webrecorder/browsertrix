@@ -1,5 +1,6 @@
-import type { ArchivedItemPage } from "@/types/crawler";
 import { shuffle } from "lodash";
+
+import type { ArchivedItemPage } from "@/types/crawler";
 
 let counter = 0;
 

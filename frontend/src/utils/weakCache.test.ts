@@ -1,6 +1,8 @@
-import { fake } from "sinon";
-import { WeakRefMap, cached, WeakRefMapInnerValue } from "./weakCache";
 import { expect } from "@open-wc/testing";
+import { fake } from "sinon";
+
+import { cached, WeakRefMap, WeakRefMapInnerValue } from "./weakCache";
+
 describe("WeakRefMap", () => {
   it("works with objects", () => {
     const cache = new WeakRefMap<object, object>();

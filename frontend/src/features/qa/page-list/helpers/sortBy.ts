@@ -1,5 +1,6 @@
-import type { ArchivedItemPage } from "@/types/crawler";
 import type { PageList } from "..";
+
+import type { ArchivedItemPage } from "@/types/crawler";
 
 export const sortBy =
   (pageList: PageList) =>

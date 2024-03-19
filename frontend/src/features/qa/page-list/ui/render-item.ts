@@ -1,11 +1,13 @@
 import { html, nothing } from "lit";
 
-import { severityFromMatch } from "../helpers/severity";
-import { issueCounts, maxSeverity } from "../helpers/issueCounts";
-import { iconFor } from "../helpers/iconFor";
 import type { PageList } from "..";
-import type { ArchivedItemPage } from "@/types/crawler";
+import { iconFor } from "../helpers/iconFor";
+import { issueCounts, maxSeverity } from "../helpers/issueCounts";
+import { severityFromMatch } from "../helpers/severity";
+
 import { pageDetails } from "./page-details";
+
+import type { ArchivedItemPage } from "@/types/crawler";
 
 export const renderItem = (pageList: PageList) => (datum: ArchivedItemPage) =>
   pageList.itemPageId

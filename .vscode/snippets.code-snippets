@@ -3,10 +3,11 @@
     "scope": "javascript,typescript",
     "prefix": ["component", "@customElement"],
     "body": [
-      "import { TailwindElement } from \"@/classes/TailwindElement\";",
       "import { localized } from \"@lit/localize\";",
       "import { html } from \"lit\";",
       "import { customElement } from \"lit/decorators.js\";",
+      "",
+      "import { TailwindElement } from \"@/classes/TailwindElement\";",
       "",
       "@localized()",
       "@customElement(\"btrix-${1:component}\")",

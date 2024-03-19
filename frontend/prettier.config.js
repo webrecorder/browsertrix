@@ -10,7 +10,12 @@ module.exports = {
     "",
     "<THIRD_PARTY_MODULES>",
     "",
-    "^(\\./)(.*)",
+    // Parent directory items
+    "^\\.\\.$",
+    "^\\.\\.(/.+)$",
+    "",
+    // This directory items
+    "^\\.(/.+)$",
     "",
     "^\\.$",
     "",

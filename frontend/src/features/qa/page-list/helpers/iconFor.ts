@@ -1,8 +1,10 @@
-import { tw } from "@/utils/tailwind";
-import { html } from "lit";
 import { clsx } from "clsx";
-import { cached } from "@/utils/weakCache";
+import { html } from "lit";
+
 import type { Severity } from "./severity";
+
+import { tw } from "@/utils/tailwind";
+import { cached } from "@/utils/weakCache";
 
 export type Approval = boolean | null;
 

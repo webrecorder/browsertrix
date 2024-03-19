@@ -1,13 +1,15 @@
-import type { ArchivedItemPage } from "@/types/crawler";
-import { tw } from "@/utils/tailwind";
 import { msg } from "@lit/localize";
 import { html, nothing } from "lit";
+
 import { crawlCounts } from "../helpers/crawlCounts";
+import { iconFor } from "../helpers/iconFor";
 import {
   severityFromMatch,
   severityFromResourceCounts,
 } from "../helpers/severity";
-import { iconFor } from "../helpers/iconFor";
+
+import type { ArchivedItemPage } from "@/types/crawler";
+import { tw } from "@/utils/tailwind";
 
 export const pageDetails = (page: ArchivedItemPage, run: string) =>
   html`<ul class="text-xs leading-4">

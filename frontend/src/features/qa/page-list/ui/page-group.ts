@@ -1,11 +1,12 @@
-import { TailwindElement } from "@/classes/TailwindElement";
 import { localized } from "@lit/localize";
 import clsx from "clsx";
-import { type PropertyValues, html } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { type Ref, createRef, ref } from "lit/directives/ref.js";
+import { createRef, ref, type Ref } from "lit/directives/ref.js";
 
 import { animateTo, shimKeyframesHeightAuto } from "./animate";
+
+import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
 
 @localized()

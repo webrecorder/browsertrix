@@ -1,4 +1,4 @@
-import { type TemplateResult, html } from "lit";
+import { html, type TemplateResult } from "lit";
 import { repeat } from "lit/directives/repeat.js";
 
 export const remainder = Symbol("remaining ungrouped data");
