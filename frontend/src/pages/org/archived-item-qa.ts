@@ -215,9 +215,7 @@ export class ArchivedItemQA extends TailwindElement {
             )}
           </ul>
           pg ${this.pages.page} of
-          ${this.pages
-            ? Math.ceil(this.pages.total / this.pages.pageSize)
-            : "unknown"}
+          ${Math.ceil(this.pages.total / this.pages.pageSize)}
         </section>
       </article>
     `;

@@ -407,7 +407,7 @@ export class PageQAToolbar extends TailwindElement {
         },
       );
 
-      this.fetchPage();
+      void this.fetchPage();
 
       this.notify.toast({
         message: msg("Successfully deleted comment."),

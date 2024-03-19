@@ -66,9 +66,6 @@ export class Dialog extends SlDialog {
    * TODO refactor dialog instances that self implements `form.requestSubmit`
    */
   submit = () => {
-    const form = this.formElems[0];
-    if (!form) return;
-
-    form.requestSubmit();
+    this.formElems[0]?.requestSubmit();
   };
 }
