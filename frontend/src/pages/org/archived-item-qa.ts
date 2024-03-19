@@ -18,6 +18,7 @@ import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
+import type { QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
 import { renderName } from "@/utils/crawler";
 
@@ -86,6 +87,9 @@ export class ArchivedItemQA extends TailwindElement {
   @property({ type: String })
   itemPageId?: string;
 
+  @property({ type: String })
+  qaRunId?: string;
+
   @property({ type: Boolean })
   isCrawler = false;
 
@@ -100,6 +104,9 @@ export class ArchivedItemQA extends TailwindElement {
 
   @state()
   private page?: ArchivedItemPage;
+
+  @state()
+  private qaRuns?: QARun[];
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
@@ -118,12 +125,16 @@ export class ArchivedItemQA extends TailwindElement {
 
   private async initItem() {
     void this.fetchCrawl();
+    void this.fetchQARuns();
     await this.fetchPages({ page: 1 });
     const firstPage = this.pages?.items[0];
 
-    if (!this.itemPageId && firstPage) {
+    if (!this.itemPageId && firstPage?.id) {
+      const searchParams = new URLSearchParams(window.location.search);
+
+      searchParams.set("itemPageId", firstPage.id);
       this.navigate.to(
-        `${window.location.pathname}?itemPageId=${firstPage.id}`,
+        `${window.location.pathname}?${searchParams.toString()}`,
       );
     }
   }
@@ -155,6 +166,7 @@ export class ArchivedItemQA extends TailwindElement {
       <article>
         <header class="mainHeader outline">
           <h1>${msg("Review")} &mdash; ${itemName}</h1>
+          <code>qa run id: ${this.qaRunId}</code>
         </header>
         <section class="main outline">
           <nav class="flex items-center justify-between p-2">
@@ -256,7 +268,7 @@ export class ArchivedItemQA extends TailwindElement {
             (page) => html`
               <sl-format-date
                 class="font-monostyle text-xs text-neutral-500"
-                date=${`${page.timestamp}Z`}
+                date=${`${page.ts}Z`}
                 month="2-digit"
                 day="2-digit"
                 year="2-digit"
@@ -332,6 +344,19 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
+  private async fetchQARuns(): Promise<void> {
+    try {
+      this.qaRuns = await this.getQARuns();
+      console.log(this.qaRuns);
+    } catch {
+      this.notify.toast({
+        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
   private async getCrawl(): Promise<ArchivedItem> {
     return this.api.fetch<ArchivedItem>(
       `/orgs/${this.orgId}/crawls/${this.itemId}`,
@@ -371,6 +396,13 @@ export class ArchivedItemQA extends TailwindElement {
   private async getPage(pageId: string): Promise<ArchivedItemPage> {
     return this.api.fetch<ArchivedItemPage>(
       `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
+      this.authState!,
+    );
+  }
+
+  private async getQARuns(): Promise<QARun[]> {
+    return this.api.fetch<QARun[]>(
+      `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
       this.authState!,
     );
   }
