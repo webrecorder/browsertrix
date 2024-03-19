@@ -69,6 +69,9 @@ export class PageList extends TailwindElement {
     direction: "asc",
   };
 
+  @property({ type: String })
+  qaRunId?: string;
+
   #_itemPageId = "";
 
   @property({ type: String })
@@ -102,14 +105,6 @@ export class PageList extends TailwindElement {
           this.filteredPages.push(page);
         }
       });
-
-      this.dispatchEvent(
-        new CustomEvent<string | undefined>("qa-page-select", {
-          detail: this.filteredPages[0]?.id,
-          composed: true,
-          bubbles: true,
-        }),
-      );
     }
     if (changedProperties.has("itemPageId")) {
       console.log(this.itemPageId);
@@ -242,12 +237,13 @@ export class PageList extends TailwindElement {
               renderItem: renderItem(this),
               sortBy: sortBy(this),
               groupBy: {
-                value: (datum) => groupBy(datum, this.itemPageId, this.orderBy),
+                value: (datum) =>
+                  groupBy(datum, this.qaRunId ?? "", this.orderBy),
                 groups: [
                   {
                     value: "severe",
                     renderLabel: ({ data }) =>
-                      html`Severe
+                      html`${msg("Severe")}
                         <btrix-badge class="ml-2" .variant=${"danger"}>
                           ${data.length}
                         </btrix-badge>`,
@@ -255,7 +251,7 @@ export class PageList extends TailwindElement {
                   {
                     value: "moderate",
                     renderLabel: ({ data }) =>
-                      html`Possible Issues
+                      html`${msg("Possible Issues")}
                         <btrix-badge class="ml-2" .variant=${"warning"}>
                           ${data.length}
                         </btrix-badge>`,
@@ -263,15 +259,31 @@ export class PageList extends TailwindElement {
                   {
                     value: "good",
                     renderLabel: ({ data }) =>
-                      html`Likely Good
+                      html`${msg("Likely Good")}
                         <btrix-badge class="ml-2" .variant=${"success"}>
+                          ${data.length}
+                        </btrix-badge>`,
+                  },
+                  {
+                    value: true,
+                    renderLabel: ({ data }) =>
+                      html`${msg("Approved")}
+                        <btrix-badge class="ml-2" .variant=${"success"}>
+                          ${data.length}
+                        </btrix-badge>`,
+                  },
+                  {
+                    value: false,
+                    renderLabel: ({ data }) =>
+                      html`${msg("Rejected")}
+                        <btrix-badge class="ml-2" .variant=${"danger"}>
                           ${data.length}
                         </btrix-badge>`,
                   },
                   {
                     value: remainder,
                     renderLabel: ({ data }) =>
-                      html`No QA Data
+                      html`${msg("No QA Data")}
                         <btrix-badge class="ml-2" .variant=${"high-contrast"}>
                           ${data.length}
                         </btrix-badge>`,

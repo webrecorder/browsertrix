@@ -29,12 +29,17 @@ export const issueCounts = cached((page: ArchivedItemPage, runId: string) => {
       moderate++;
     }
   }
-  return { severe, moderate };
+  return {
+    severe,
+    moderate,
+    noData: severities.every((value) => value === null),
+  };
 });
 
 export const maxSeverity = cached(
   (page: ArchivedItemPage, runId: string): Severity => {
-    const { severe, moderate } = issueCounts(page, runId);
+    const { severe, moderate, noData } = issueCounts(page, runId);
+    if (noData) return null;
     if (severe) {
       return "severe";
     } else if (moderate) {

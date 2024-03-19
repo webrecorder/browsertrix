@@ -17,6 +17,7 @@ import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import { testData } from "@/features/qa/page-list/test-data";
+import { type QaPage } from "@/features/qa/page-list/ui/page";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type {
   ArchivedItem,
@@ -216,10 +217,11 @@ export class ArchivedItemQA extends TailwindElement {
           <btrix-qa-page-list
             .item=${this.item}
             .itemPageId=${this.itemPageId!}
+            .qaRunId=${this.qaRunId}
             .pages=${this.pages}
             class="grid min-h-0 content-start justify-stretch"
-            @qa-page-select=${(e: CustomEvent<string | undefined>) => {
-              this.itemPageId = e.detail;
+            @qa-page-select=${(e: CustomEvent<QaPage>) => {
+              this.itemPageId = e.detail.pageId;
             }}
           ></btrix-qa-page-list>
         </section>
