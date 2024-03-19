@@ -235,8 +235,8 @@ export class PageList extends TailwindElement {
               renderItem: renderItem(this),
               sortBy: sortBy(this),
               groupBy: {
-                value: (datum) =>
-                  groupBy(datum, this.qaRunId ?? "", this.orderBy),
+                value: (page) =>
+                  groupBy(page, this.qaRunId ?? "", this.orderBy),
                 groups: [
                   {
                     value: "severe",
@@ -263,7 +263,15 @@ export class PageList extends TailwindElement {
                         </btrix-badge>`,
                   },
                   {
-                    value: true,
+                    value: "commentOnly",
+                    renderLabel: ({ data }) =>
+                      html`${msg("Comments Only")}
+                        <btrix-badge class="ml-2" .variant=${"primary"}>
+                          ${data.length}
+                        </btrix-badge>`,
+                  },
+                  {
+                    value: "approved",
                     renderLabel: ({ data }) =>
                       html`${msg("Approved")}
                         <btrix-badge class="ml-2" .variant=${"success"}>
@@ -271,7 +279,7 @@ export class PageList extends TailwindElement {
                         </btrix-badge>`,
                   },
                   {
-                    value: false,
+                    value: "rejected",
                     renderLabel: ({ data }) =>
                       html`${msg("Rejected")}
                         <btrix-badge class="ml-2" .variant=${"danger"}>

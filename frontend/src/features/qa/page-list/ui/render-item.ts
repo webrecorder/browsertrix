@@ -2,6 +2,7 @@ import { html, nothing } from "lit";
 
 import { iconFor } from "../helpers/iconFor";
 import { issueCounts, maxSeverity } from "../helpers/issueCounts";
+import { approvalFromPage } from "../helpers/reviewStatus";
 import { severityFromMatch } from "../helpers/severity";
 import type { PageList } from "../page-list";
 
@@ -11,18 +12,17 @@ import type { ArchivedItemPage } from "@/types/crawler";
 import { cached } from "@/utils/weakCache";
 
 export const renderItem = (pageList: PageList) =>
-  cached((datum: ArchivedItemPage) => {
+  cached((page: ArchivedItemPage) => {
     const runId = pageList.qaRunId ?? "";
 
-    let { severe, moderate } = issueCounts(datum, runId);
+    let { severe, moderate } = issueCounts(page, runId);
 
     const statusIcon =
-      datum.approved ??
+      approvalFromPage(page) ??
       {
-        screenshotMatch: severityFromMatch(datum.screenshotMatch?.[runId]),
-        textMatch: severityFromMatch(datum.textMatch?.[runId]),
-        approved:
-          datum.approved == null ? maxSeverity(datum, runId) : datum.approved,
+        screenshotMatch: severityFromMatch(page.screenshotMatch?.[runId]),
+        textMatch: severityFromMatch(page.textMatch?.[runId]),
+        approved: approvalFromPage(page) ?? maxSeverity(page, runId),
       }[pageList.orderBy.field];
 
     if (statusIcon === "severe") severe--;
@@ -30,8 +30,8 @@ export const renderItem = (pageList: PageList) =>
 
     return html`<btrix-qa-page
       class="is-leaf -my-4 scroll-my-8 py-4 [contain-intrinsic-height:auto_70px] [contain:strict] [content-visibility:auto] first-of-type:mt-0 last-of-type:mb-0"
-      .selected=${pageList.itemPageId === datum.id}
-      .pageId=${datum.id}
+      .selected=${pageList.itemPageId === page.id}
+      .pageId=${page.id}
     >
       <div
         class="absolute -left-4 top-[50%] flex w-8 translate-y-[-50%] flex-col place-items-center gap-1 rounded-full border border-gray-300 bg-neutral-0 p-2 leading-[14px] shadow-sm"
@@ -46,19 +46,19 @@ export const renderItem = (pageList: PageList) =>
                 >+${moderate}</span
               >`
             : nothing}
-        ${datum.notes?.[0] &&
+        ${page.notes?.[0] &&
         html`<sl-icon
           name="chat-square-text-fill"
           class="text-blue-600"
         ></sl-icon>`}
       </div>
-      <h5 class="truncate text-sm font-semibold text-black">${datum.title}</h5>
-      <div class="truncate text-xs leading-4 text-blue-600">${datum.url}</div>
+      <h5 class="truncate text-sm font-semibold text-black">${page.title}</h5>
+      <div class="truncate text-xs leading-4 text-blue-600">${page.url}</div>
       <div
         slot="content"
         class="z-10 -mt-2 ml-6 mr-2 rounded-b-lg border border-solid border-gray-200 bg-neutral-0 px-4 pb-1 pt-4"
       >
-        ${pageDetails(datum, runId)}
+        ${pageDetails(page, runId)}
       </div>
     </btrix-qa-page>`;
   });

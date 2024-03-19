@@ -1,8 +1,7 @@
 import { type OrderBy } from "../page-list";
 
-import { severityFromMatch } from "./severity";
-
-import type { Severity } from ".";
+import { approvalFromPage, type ReviewStatus } from "./reviewStatus";
+import { severityFromMatch, type Severity } from "./severity";
 
 import { remainder } from "@/components/utils/grouped-list";
 import type { ArchivedItemPage } from "@/types/crawler";
@@ -13,14 +12,14 @@ export const groupBy = cached(
     page: ArchivedItemPage,
     runId: string,
     order: OrderBy,
-  ): NonNullable<Severity> | boolean | typeof remainder => {
+  ): Extract<Severity | ReviewStatus, string> | typeof remainder => {
     switch (order.field) {
       case "screenshotMatch":
         return severityFromMatch(page.screenshotMatch?.[runId]) ?? remainder;
       case "textMatch":
         return severityFromMatch(page.textMatch?.[runId]) ?? remainder;
       case "approved":
-        return page.approved ?? remainder;
+        return approvalFromPage(page) ?? remainder;
       default:
         return remainder;
     }
