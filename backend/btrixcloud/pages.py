@@ -600,7 +600,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     async def get_pages_list_with_qa(
         crawl_id: str,
         qa_run_id: str,
-        filterBy: Optional[str] = None,
+        filterQABy: Optional[str] = None,
         gte: Optional[float] = None,
         gt: Optional[float] = None,
         lte: Optional[float] = None,
@@ -616,7 +616,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
             crawl_id=crawl_id,
             org=org,
             qa_run_id=qa_run_id,
-            qa_filter_by=filterBy,
+            qa_filter_by=filterQABy,
             qa_gte=gte,
             qa_gt=gt,
             qa_lte=lte,
