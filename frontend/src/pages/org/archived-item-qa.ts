@@ -206,7 +206,8 @@ export class ArchivedItemQA extends TailwindElement {
           ${this.renderToolbar()} ${this.renderSections()}
         </section>
         <h2 class="pageListHeader outline">
-          ${msg("Pages List")} <sl-button>${msg("Finish Review")}</sl-button>
+          ${msg("Pages")}
+          <sl-button>${msg("Finish Crawl Review")}</sl-button>
         </h2>
         <section class="pageList grid">
           <btrix-qa-page-list

@@ -158,7 +158,7 @@ export class PageList extends TailwindElement {
             this.tab = Tab.Queued;
           }}
         >
-          ${msg("Queued")}
+          ${msg("To Review")}
           <btrix-badge
             variant=${
               queuedCount > 0 || this.tab === Tab.Queued ? "primary" : "neutral"
@@ -352,7 +352,11 @@ export class PageList extends TailwindElement {
                   class="flex flex-col items-center justify-center gap-4 py-8 text-xs text-gray-600"
                 >
                   <sl-icon name="dash-circle" class="h-4 w-4"></sl-icon>
-                  ${msg("No pages")}
+                  ${this.tab === Tab.Reviewed
+                    ? msg("No reviewed pages, yet")
+                    : this.groupedFilteredPages.reviewed.length
+                      ? msg("All pages reviewed. Woohoo!")
+                      : msg("No pages to review")}
                 </div>`,
         )}
       </div>
