@@ -1,8 +1,9 @@
+import { localized } from "@lit/localize";
 import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { localized } from "@lit/localize";
-import { TailwindElement } from "@/classes/TailwindElement";
 import { classMap } from "lit/directives/class-map.js";
+
+import { TailwindElement } from "@/classes/TailwindElement";
 
 /**
  * Copy text to clipboard on click

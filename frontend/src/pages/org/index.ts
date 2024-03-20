@@ -1,16 +1,31 @@
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
-import { when } from "lit/directives/when.js";
+import { localized, msg, str } from "@lit/localize";
+import { type TemplateResult } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 
-import type { ViewState } from "@/utils/APIRouter";
-import type { AuthState } from "@/utils/AuthService";
-import type { CurrentUser } from "@/types/user";
+import type { QATab } from "./archived-item-qa";
+import type { Tab as CollectionTab } from "./collection-detail";
+import type {
+  Member,
+  OrgInfoChangeEvent,
+  OrgRemoveMemberEvent,
+  UserRoleChangeEvent,
+} from "./settings";
+
+import type { QuotaUpdateDetail } from "@/controllers/api";
+import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
+import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import type { Crawl, JobType } from "@/types/crawler";
-import type { OrgData } from "@/utils/orgs";
-import { isAdmin, isCrawler } from "@/utils/orgs";
-import LiteElement, { html } from "@/utils/LiteElement";
+import type { CurrentUser } from "@/types/user";
+import { isApiError } from "@/utils/api";
+import type { ViewState } from "@/utils/APIRouter";
 import { needLogin } from "@/utils/auth";
+import type { AuthState } from "@/utils/AuthService";
+import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
+import LiteElement, { html } from "@/utils/LiteElement";
+import { isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
+
 import "./workflow-detail";
 import "./workflows-list";
 import "./workflows-new";
@@ -24,19 +39,6 @@ import "./browser-profiles-list";
 import "./browser-profiles-new";
 import "./settings";
 import "./dashboard";
-import type {
-  Member,
-  OrgInfoChangeEvent,
-  UserRoleChangeEvent,
-  OrgRemoveMemberEvent,
-} from "./settings";
-import type { Tab as CollectionTab } from "./collection-detail";
-import type { QATab } from "./archived-item-qa";
-import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
-import type { QuotaUpdateDetail } from "@/controllers/api";
-import { type TemplateResult } from "lit";
-import { isApiError } from "@/utils/api";
-import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -51,6 +53,7 @@ export type OrgParams = {
   items: {
     itemType?: Crawl["type"];
     itemId?: string;
+    itemPageId?: string;
     qaTab?: QATab;
     workflowId?: string;
     collectionId?: string;
@@ -103,6 +106,9 @@ export class Org extends LiteElement {
 
   @property({ type: String })
   orgTab: OrgTab = defaultTab;
+
+  @property({ type: Number })
+  maxScale: number = DEFAULT_MAX_SCALE;
 
   @state()
   private orgStorageQuotaReached = false;
@@ -525,6 +531,7 @@ export class Org extends LiteElement {
           .authState=${this.authState!}
           orgId=${this.orgId}
           itemId=${params.itemId}
+          itemPageId=${ifDefined(params.itemPageId)}
           tab=${params.qaTab}
           ?isCrawler=${this.isCrawler}
         ></btrix-archived-item-qa>`;
@@ -572,6 +579,7 @@ export class Org extends LiteElement {
           openDialogName=${this.viewStateData?.dialog}
           ?isEditing=${isEditing}
           ?isCrawler=${this.isCrawler}
+          .maxScale=${this.maxScale}
         ></btrix-workflow-detail>
       `;
     }

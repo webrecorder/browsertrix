@@ -1,32 +1,37 @@
+import { localized, msg, str } from "@lit/localize";
+import type { SlSelect } from "@shoelace-style/shoelace";
 import type { PropertyValues, TemplateResult } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
+import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
-import { msg, localized, str } from "@lit/localize";
+import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import { CopyButton } from "@/components/ui/copy-button";
-import { CrawlStatus } from "@/features/archived-items/crawl-status";
-import { RelativeDuration } from "@/components/ui/relative-duration";
-import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 import type {
   Crawl,
   CrawlState,
+  Seed,
   Workflow,
   WorkflowParams,
-  Seed,
 } from "./types";
-import { humanizeSchedule } from "@/utils/cron";
-import type { APIPaginatedList } from "@/types/api";
-import { inactiveCrawlStates, isActive } from "@/utils/crawler";
-import type { SlSelect } from "@shoelace-style/shoelace";
+
+import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
-import type { CrawlLog } from "@/features/archived-items/crawl-logs";
-import { isApiError } from "@/utils/api";
+import { RelativeDuration } from "@/components/ui/relative-duration";
 import { type IntersectEvent } from "@/components/utils/observable";
-import { ifDefined } from "lit/directives/if-defined.js";
+import type { CrawlLog } from "@/features/archived-items/crawl-logs";
+import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
+import type { APIPaginatedList } from "@/types/api";
+import { isApiError } from "@/utils/api";
+import type { AuthState } from "@/utils/AuthService";
+import {
+  DEFAULT_MAX_SCALE,
+  inactiveCrawlStates,
+  isActive,
+} from "@/utils/crawler";
+import { humanizeSchedule } from "@/utils/cron";
+import LiteElement, { html } from "@/utils/LiteElement";
 
 const SECTIONS = ["crawls", "watch", "settings", "logs"] as const;
 type Tab = (typeof SECTIONS)[number];
@@ -69,6 +74,9 @@ export class WorkflowDetail extends LiteElement {
 
   @property({ type: String })
   initialActivePanel?: Tab;
+
+  @property({ type: Number })
+  maxScale = DEFAULT_MAX_SCALE;
 
   @state()
   private workflow?: Workflow;
@@ -593,7 +601,7 @@ export class WorkflowDetail extends LiteElement {
               this.isCancelingOrStoppingCrawl ||
               this.workflow?.lastCrawlStopping}
             >
-              <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+              <sl-icon name="dash-square" slot="prefix"></sl-icon>
               <span>${msg("Stop")}</span>
             </sl-button>
             <sl-button
@@ -648,7 +656,7 @@ export class WorkflowDetail extends LiteElement {
                 ?disabled=${workflow.lastCrawlStopping ||
                 this.isCancelingOrStoppingCrawl}
               >
-                <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+                <sl-icon name="dash-square" slot="prefix"></sl-icon>
                 ${msg("Stop Crawl")}
               </sl-menu-item>
               <sl-menu-item
@@ -1261,20 +1269,13 @@ export class WorkflowDetail extends LiteElement {
   private renderEditScale() {
     if (!this.workflow) return;
 
-    const scaleOptions = [
-      {
-        value: 1,
-        label: "1×",
-      },
-      {
-        value: 2,
-        label: "2×",
-      },
-      {
-        value: 3,
-        label: "3×",
-      },
-    ];
+    const scaleOptions = [];
+    for (let value = 1; value <= this.maxScale; value++) {
+      scaleOptions.push({
+        value,
+        label: `${value}×`,
+      });
+    }
 
     return html`
       <div>

@@ -1,15 +1,17 @@
 // cSpell:ignore glitchtip
 // webpack.config.js
-const path = require("path");
-const webpack = require("webpack");
-const ESLintPlugin = require("eslint-webpack-plugin");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const CopyPlugin = require("copy-webpack-plugin");
-const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
-const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const childProcess = require("child_process");
-const packageJSON = require("./package.json");
 const fs = require("fs");
+const path = require("path");
+
+const CopyPlugin = require("copy-webpack-plugin");
+const ESLintPlugin = require("eslint-webpack-plugin");
+const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
+const webpack = require("webpack");
+
+const packageJSON = require("./package.json");
 
 const isDevServer = process.env.WEBPACK_SERVE;
 
@@ -200,6 +202,16 @@ const main = {
         {
           from: path.resolve(__dirname, "src/assets/icons"),
           to: path.resolve(__dirname, "dist", "assets/icons"),
+        },
+        // Copy favicons to root
+        {
+          from: path.resolve(__dirname, "src/assets/favicons"),
+          to: path.resolve(__dirname, "dist"),
+        },
+        // Copy app manifest
+        {
+          from: path.resolve(__dirname, "src/manifest.webmanifest"),
+          to: path.resolve(__dirname, "dist"),
         },
       ],
     }),

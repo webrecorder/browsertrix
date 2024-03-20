@@ -1,7 +1,7 @@
-import { LitElement, html, css } from "lit";
-import { property, customElement } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import type { SlInput, SlSelect } from "@shoelace-style/shoelace";
+import { css, html, LitElement } from "lit";
+import { customElement, property } from "lit/decorators.js";
 
 type TimeInputChangeDetail = {
   hour: number;

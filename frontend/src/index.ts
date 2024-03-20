@@ -1,30 +1,32 @@
-import type { TemplateResult } from "lit";
-import { render } from "lit";
-import { property, state, query, customElement } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
-import { msg, localized } from "@lit/localize";
-import { ifDefined } from "lit/directives/if-defined.js";
+import { localized, msg } from "@lit/localize";
 import type { SlDialog } from "@shoelace-style/shoelace";
-import "broadcastchannel-polyfill";
+import { render, type TemplateResult } from "lit";
+import { customElement, property, query, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 
+import "broadcastchannel-polyfill";
 import "./utils/polyfills";
-import appState, { use, AppStateService } from "./utils/state";
+
 import type { OrgTab } from "./pages/org";
+import { ROUTES } from "./routes";
+import type { CurrentUser, UserOrg } from "./types/user";
+import APIRouter, { type ViewState } from "./utils/APIRouter";
+import AuthService, {
+  type Auth,
+  type AuthEventDetail,
+  type AuthState,
+  type LoggedInEventDetail,
+  type NeedLoginEventDetail,
+} from "./utils/AuthService";
+import { DEFAULT_MAX_SCALE } from "./utils/crawler";
+import LiteElement, { html } from "./utils/LiteElement";
+import appState, { AppStateService, use } from "./utils/state";
+
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
-import LiteElement, { html } from "./utils/LiteElement";
-import APIRouter from "./utils/APIRouter";
-import AuthService from "./utils/AuthService";
-import type {
-  LoggedInEventDetail,
-  NeedLoginEventDetail,
-  AuthState,
-  Auth,
-  AuthEventDetail,
-} from "./utils/AuthService";
-import type { ViewState } from "./utils/APIRouter";
-import type { CurrentUser, UserOrg } from "./types/user";
-import { ROUTES } from "./routes";
+import { theme } from "@/theme";
+
 import "./shoelace";
 import "./components";
 import "./features";
@@ -32,7 +34,6 @@ import "./pages";
 import "./assets/fonts/Inter/inter.css";
 import "./assets/fonts/Recursive/recursive.css";
 import "./styles.css";
-import { theme } from "@/theme";
 
 // Make theme CSS available in document
 document.adoptedStyleSheets = [theme];
@@ -78,6 +79,8 @@ export class App extends LiteElement {
 
   @state()
   private isRegistrationEnabled?: boolean;
+
+  private maxScale = DEFAULT_MAX_SCALE;
 
   async connectedCallback() {
     let authState: AuthState = null;
@@ -136,6 +139,7 @@ export class App extends LiteElement {
 
     if (settings) {
       this.isRegistrationEnabled = settings.registrationEnabled;
+      this.maxScale = settings.maxScale;
     }
 
     this.isAppSettingsLoaded = true;
@@ -173,13 +177,19 @@ export class App extends LiteElement {
     }
   }
 
-  async getAppSettings(): Promise<{ registrationEnabled: boolean } | void> {
+  async getAppSettings(): Promise<{
+    registrationEnabled: boolean;
+    maxScale: number;
+  } | void> {
     const resp = await fetch("/api/settings", {
       headers: { "Content-Type": "application/json" },
     });
 
     if (resp.status === 200) {
-      const body = (await resp.json()) as { registrationEnabled: boolean };
+      const body = (await resp.json()) as {
+        registrationEnabled: boolean;
+        maxScale: number;
+      };
 
       return body;
     } else {
@@ -260,7 +270,7 @@ export class App extends LiteElement {
                 this.navLink(e);
               }}
             >
-              ${msg("Browsertrix Cloud")}
+              ${msg("Browsertrix")}
             </a>
           </div>
 
@@ -600,6 +610,7 @@ export class App extends LiteElement {
           .userInfo=${this.appState.userInfo ?? undefined}
           .viewStateData=${this.viewState.data}
           .params=${this.viewState.params}
+          .maxScale=${this.maxScale}
           slug=${slug}
           orgPath=${orgPath.split(slug)[1]}
           orgTab=${orgTab as OrgTab}
@@ -859,12 +870,12 @@ export class App extends LiteElement {
 
   private onFirstLogin({ email }: { email: string }) {
     this.showDialog({
-      label: "Welcome to Browsertrix Cloud",
+      label: "Welcome to Browsertrix",
       noHeader: true,
       body: html`
         <div class="grid gap-4 text-center">
           <p class="mt-8 text-xl font-medium">
-            ${msg("Welcome to Browsertrix Cloud!")}
+            ${msg("Welcome to Browsertrix!")}
           </p>
 
           <p>

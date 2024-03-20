@@ -1,5 +1,5 @@
-import { chromium } from "playwright";
 import { test } from "@playwright/test";
+import { chromium } from "playwright";
 
 test("test", async ({ baseURL }) => {
   const browser = await chromium.launch({ headless: true });

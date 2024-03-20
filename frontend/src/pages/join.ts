@@ -1,9 +1,8 @@
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, str, localized } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
+import { customElement, property, state } from "lit/decorators.js";
 
+import AuthService, { type LoggedInEventDetail } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { LoggedInEventDetail } from "@/utils/AuthService";
-import AuthService from "@/utils/AuthService";
 
 @localized()
 @customElement("btrix-join")
@@ -71,7 +70,7 @@ export class Join extends LiteElement {
               html`You’ve been invited to join
                 <span class="break-words text-primary"
                   >${hasInviteInfo
-                    ? this.inviteInfo.orgName || msg("Browsertrix Cloud")
+                    ? this.inviteInfo.orgName || msg("Browsertrix")
                     : placeholder}</span
                 >.`,
             )}

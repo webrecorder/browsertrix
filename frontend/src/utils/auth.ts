@@ -1,6 +1,5 @@
+import AuthService, { type AuthState } from "@/utils/AuthService";
 import type LiteElement from "@/utils/LiteElement";
-import type { AuthState } from "@/utils/AuthService";
-import AuthService from "@/utils/AuthService";
 
 /**
  * Block rendering and dispatch event if user is not logged in.

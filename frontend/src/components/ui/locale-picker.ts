@@ -1,9 +1,9 @@
-import { LitElement, html } from "lit";
-import { state, customElement } from "lit/decorators.js";
+import { localized } from "@lit/localize";
+import { html, LitElement } from "lit";
+import { customElement, state } from "lit/decorators.js";
 
 import { allLocales } from "@/__generated__/locale-codes";
 import { getLocale, setLocaleFromUrl } from "@/utils/localization";
-import { localized } from "@lit/localize";
 
 type LocaleCode = (typeof allLocales)[number];
 type LocaleNames = {

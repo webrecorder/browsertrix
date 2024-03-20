@@ -1,13 +1,13 @@
+import { localized, msg } from "@lit/localize";
+import { type SlSelect } from "@shoelace-style/shoelace";
 import { html } from "lit";
-import { property, state, customElement } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { customElement, property, state } from "lit/decorators.js";
 import orderBy from "lodash/fp/orderBy";
 
-import type { AuthState } from "@/utils/AuthService";
-import LiteElement from "@/utils/LiteElement";
 import type { Profile } from "@/pages/org/types";
 import type { APIPaginatedList } from "@/types/api";
-import { type SlSelect } from "@shoelace-style/shoelace";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement from "@/utils/LiteElement";
 
 type SelectBrowserProfileChangeDetail = {
   value: Profile | undefined;

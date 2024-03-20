@@ -12,6 +12,8 @@ data:
 
   DEFAULT_NAMESPACE: {{ .Release.Namespace }}
 
+  FRONTEND_ALIAS: {{ .Values.frontend_alias | default "http://browsertrix-cloud-frontend" }}
+
   CRAWLER_FQDN_SUFFIX: ".{{ .Values.crawler_namespace }}.svc.cluster.local"
 
   DEFAULT_ORG: "{{ .Values.default_org }}"

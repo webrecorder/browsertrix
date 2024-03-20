@@ -434,6 +434,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
         assert page["ts"]
         assert page.get("title") or page.get("title") is None
         assert page["loadState"]
+        assert page["status"]
 
     # Test GET page endpoint
     global page_id
@@ -488,6 +489,46 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page["userid"]
     assert page["modified"]
     assert page["approved"]
+
+
+def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
+    # Re-add pages and verify they were correctly added
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/reAdd",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["started"]
+
+    time.sleep(10)
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] >= 0
+
+    pages = data["items"]
+    assert pages
+
+    for page in pages:
+        assert page["id"]
+        assert page["oid"]
+        assert page["crawl_id"]
+        assert page["url"]
+        assert page["timestamp"]
+        assert page.get("title") or page.get("title") is None
+        assert page["load_state"]
+        assert page["status"]
+
+    # Ensure only superuser can re-add pages for all crawls in an org
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/all/pages/reAdd",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 403
 
 
 def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id):

@@ -130,6 +130,8 @@ frontend_memory: "64Mi"
 # if using ingress, this value is ignored
 local_service_port: 30870
 
+frontend_alias: "http://browsertrix-cloud-frontend"
+
 
 # MongoDB Image
 # =========================================
@@ -219,6 +221,11 @@ crawler_extra_memory_per_browser: 768Mi
 # if not set, defaults to the following, but can be overridden directly:
 # crawler_memory = crawler_memory_base + crawler_memory_per_extra_browser * (crawler_browser_instances - 1)
 # crawler_memory:
+
+# optional: defaults to crawler_memory_base and crawler_cpu_base if not set
+# profile_browser_memory:
+#
+# profile_browser_cpu:
 
 # Other Crawler Settings
 # ----------------------

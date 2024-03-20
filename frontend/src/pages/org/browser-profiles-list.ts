@@ -1,13 +1,15 @@
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
+import { nothing } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 
+import type { Profile } from "./types";
+
+import type { SelectNewDialogEvent } from ".";
+
+import type { APIPaginatedList } from "@/types/api";
+import type { Browser } from "@/types/browser";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { Profile } from "./types";
-import type { APIPaginatedList } from "@/types/api";
-import type { SelectNewDialogEvent } from "./index";
-import type { Browser } from "@/types/browser";
-import { nothing } from "lit";
 
 /**
  * Usage:
@@ -112,7 +114,7 @@ export class BrowserProfilesList extends LiteElement {
             content=${isBackedUp ? msg("Backed up") : msg("Not backed up")}
           >
             <sl-icon
-              name=${isBackedUp ? "clouds" : "cloud-slash"}
+              name=${isBackedUp ? "clouds-fill" : "cloud-slash-fill"}
               class="${isBackedUp ? "text-success" : "text-neutral-500"}"
             ></sl-icon>
           </sl-tooltip>
@@ -164,7 +166,7 @@ export class BrowserProfilesList extends LiteElement {
             }}
           >
             <sl-icon slot="prefix" name="files"></sl-icon>
-            ${msg("Duplicate profile")}
+            ${msg("Duplicate Profile")}
           </sl-menu-item>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"

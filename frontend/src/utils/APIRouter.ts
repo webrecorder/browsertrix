@@ -1,5 +1,5 @@
-import UrlPattern from "url-pattern";
 import queryString from "query-string";
+import UrlPattern from "url-pattern";
 
 type Routes = { [key: string]: UrlPattern };
 type Paths = { [key: string]: string };

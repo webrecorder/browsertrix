@@ -28,7 +28,7 @@ export type SeedConfig = Expand<
     pageExtraDelay: number | null;
     behaviors?: string | null;
     extraHops?: number | null;
-    useSitemap: boolean;
+    useSitemap?: boolean;
     failOnFailedSeed?: boolean;
     depth?: number | null;
     userAgent?: string | null;
@@ -215,6 +215,6 @@ export type ArchivedItemPage = {
   >;
   userid?: string;
   modified?: string;
-  approved?: boolean;
+  approved?: boolean | null;
   notes?: ArchivedItemPageComment[];
 };

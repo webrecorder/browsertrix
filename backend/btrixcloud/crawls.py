@@ -1231,11 +1231,10 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         if context:
             contexts = context.split(",")
 
-        # If crawl is finished, stream logs from WACZ files
+        # If crawl is finished, stream logs from WACZ files using presigned urls
         if crawl.finished:
-            wacz_files = await ops.get_wacz_files(crawl_id, org)
             resp = await ops.storage_ops.sync_stream_wacz_logs(
-                org, wacz_files, log_levels, contexts
+                crawl.resources, log_levels, contexts
             )
             return StreamingResponse(
                 resp,

@@ -1,20 +1,19 @@
-import { state, property, customElement } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
-import { msg, localized, str } from "@lit/localize";
-import { when } from "lit/directives/when.js";
-import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import slugify from "slugify";
+import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
-
-import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
-import { isAdmin, isCrawler, AccessCode } from "@/utils/orgs";
-import type { OrgData } from "@/utils/orgs";
-import type { CurrentUser } from "@/types/user";
-import type { APIPaginatedList } from "@/types/api";
-import { maxLengthValidator } from "@/utils/form";
-import { isApiError } from "@/utils/api";
+import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { type PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
+import slugify from "slugify";
+
+import type { APIPaginatedList } from "@/types/api";
+import type { CurrentUser } from "@/types/user";
+import { isApiError } from "@/utils/api";
+import type { AuthState } from "@/utils/AuthService";
+import { maxLengthValidator } from "@/utils/form";
+import LiteElement, { html } from "@/utils/LiteElement";
+import { AccessCode, isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
 
 type Tab = "information" | "members";
 type User = {
@@ -232,7 +231,7 @@ export class OrgSettings extends LiteElement {
             </div>
             <div class="mt-0.5 text-xs text-neutral-500">
               ${msg(
-                "Customize your organization's web address for accessing Browsertrix Cloud.",
+                "Customize your organization's web address for accessing Browsertrix.",
               )}
             </div>
           </div>

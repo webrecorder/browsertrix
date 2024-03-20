@@ -1,5 +1,6 @@
-import { ROUTES } from "@/routes";
 import { APIError } from "./api";
+
+import { ROUTES } from "@/routes";
 
 export type Auth = {
   username: string;

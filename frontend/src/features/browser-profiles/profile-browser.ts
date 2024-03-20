@@ -1,9 +1,9 @@
-import { property, state, query, customElement } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
+import { type PropertyValues } from "lit";
+import { customElement, property, query, state } from "lit/decorators.js";
 
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { type PropertyValues } from "lit";
 
 const POLL_INTERVAL_SECONDS = 2;
 const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];
@@ -301,6 +301,18 @@ export class ProfileBrowser extends LiteElement {
 
       return;
     } else if (result.url) {
+      // check that the browser is actually available
+      // if not, continue waiting
+      // (will not work with local frontend due to CORS)
+      try {
+        const resp = await fetch(result.url, { method: "HEAD" });
+        if (!resp.ok) {
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+
       if (this.initialNavigateUrl) {
         await this.navigateBrowser({ url: this.initialNavigateUrl });
       }

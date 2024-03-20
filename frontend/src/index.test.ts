@@ -1,9 +1,9 @@
-import { stub, restore } from "sinon";
-import { fixture, expect } from "@open-wc/testing";
+import { expect, fixture } from "@open-wc/testing";
+import { restore, stub } from "sinon";
 
 import AuthService from "./utils/AuthService";
-import type { APIUser } from "./index";
-import { App } from "./index";
+
+import { App, type APIUser } from ".";
 
 describe("browsertrix-app", () => {
   beforeEach(() => {
@@ -37,7 +37,7 @@ describe("browsertrix-app", () => {
   it("renders when `AuthService.initSessionStorage` rejects", async () => {
     stub(AuthService, "initSessionStorage").returns(Promise.reject());
     const el = await fixture("<browsertrix-app></browsertrix-app>");
-    expect(el).lightDom.descendants("btrix-home");
+    expect(el).lightDom.descendants("btrix-log-in");
   });
 
   // TODO move tests to AuthService

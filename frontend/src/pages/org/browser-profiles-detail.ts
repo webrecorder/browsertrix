@@ -1,13 +1,14 @@
-import { state, property, customElement } from "lit/decorators.js";
+import { localized, msg, str } from "@lit/localize";
+import { type SlDropdown } from "@shoelace-style/shoelace";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import { msg, localized, str } from "@lit/localize";
 
+import type { Profile } from "./types";
+
+import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { Profile } from "./types";
-import { isApiError } from "@/utils/api";
-import { type SlDropdown } from "@shoelace-style/shoelace";
 
 /**
  * Usage:
@@ -297,7 +298,7 @@ export class BrowserProfilesDetail extends LiteElement {
               name="pencil"
             ></sl-icon>
             <span class="inline-block pr-2 align-middle"
-              >${msg("Edit name & description")}</span
+              >${msg("Edit Name & Description")}</span
             >
           </li>
           <li
@@ -310,7 +311,7 @@ export class BrowserProfilesDetail extends LiteElement {
               name="files"
             ></sl-icon>
             <span class="inline-block pr-2 align-middle"
-              >${msg("Duplicate profile")}</span
+              >${msg("Duplicate Profile")}</span
             >
           </li>
           <hr />

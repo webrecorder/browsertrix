@@ -1,10 +1,10 @@
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, str, localized } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
+import { customElement, property, state } from "lit/decorators.js";
 
-import LiteElement, { html } from "@/utils/LiteElement";
-import type { AuthState } from "@/utils/AuthService";
 import { ROUTES } from "@/routes";
 import { isApiError } from "@/utils/api";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
 
 type InviteInfo = {
   inviterEmail: string;
@@ -107,7 +107,7 @@ export class AcceptInvite extends LiteElement {
               html`You've been invited to join
                 <span class="break-words text-primary"
                   >${hasInviteInfo
-                    ? this.inviteInfo.orgName || msg("Browsertrix Cloud")
+                    ? this.inviteInfo.orgName || msg("Browsertrix")
                     : placeholder}</span
                 >`,
             )}

@@ -1,13 +1,14 @@
-import { LitElement, css, html } from "lit";
+import { css, html, LitElement } from "lit";
 import {
   customElement,
   property,
   queryAssignedElements,
 } from "lit/decorators.js";
 
-import { theme } from "@/theme";
-import tableCSS from "./table.stylesheet.css";
 import { type TableHead } from "./table-head";
+import tableCSS from "./table.stylesheet.css";
+
+import { theme } from "@/theme";
 
 // Add table CSS to theme CSS to make it available throughout the app,
 // to both shadow and light dom components.

@@ -1,20 +1,21 @@
-import { state, property, query, customElement } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
-import { msg, localized, str } from "@lit/localize";
-import { when } from "lit/directives/when.js";
+import { localized, msg, str } from "@lit/localize";
 import type { SlCheckbox, SlSelect } from "@shoelace-style/shoelace";
+import { nothing, type PropertyValues } from "lit";
+import { customElement, property, query, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import { CopyButton } from "@/components/ui/copy-button";
-import { CrawlStatus } from "@/features/archived-items/crawl-status";
-import type { PageChangeEvent } from "@/components/ui/pagination";
-import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 import type { ArchivedItem, Crawl, CrawlState, Workflow } from "./types";
+
+import { CopyButton } from "@/components/ui/copy-button";
+import type { PageChangeEvent } from "@/components/ui/pagination";
+import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import { isActive, finishedCrawlStates } from "@/utils/crawler";
-import { type PropertyValues, nothing } from "lit";
 import { isApiError } from "@/utils/api";
+import type { AuthState } from "@/utils/AuthService";
+import { finishedCrawlStates, isActive } from "@/utils/crawler";
+import LiteElement, { html } from "@/utils/LiteElement";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;
 type SearchFields = "name" | "firstSeed";
@@ -549,11 +550,11 @@ export class CrawlsList extends LiteElement {
               ${msg("Go to Workflow")}
             </sl-menu-item>
             <sl-menu-item @click=${() => CopyButton.copyToClipboard(item.cid)}>
-              <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
+              <sl-icon name="copy" slot="prefix"></sl-icon>
               ${msg("Copy Workflow ID")}
             </sl-menu-item>
             <sl-menu-item @click=${() => CopyButton.copyToClipboard(item.id)}>
-              <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
+              <sl-icon name="copy" slot="prefix"></sl-icon>
               ${msg("Copy Crawl ID")}
             </sl-menu-item>
           `

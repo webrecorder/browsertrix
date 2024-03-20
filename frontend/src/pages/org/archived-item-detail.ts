@@ -1,26 +1,27 @@
+import { localized, msg, str } from "@lit/localize";
 import type { PropertyValues, TemplateResult } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
-import { ifDefined } from "lit/directives/if-defined.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
-import { msg, localized, str } from "@lit/localize";
+import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
+import capitalize from "lodash/fp/capitalize";
 
+import type { ArchivedItem, Crawl, CrawlConfig, Seed, Workflow } from "./types";
+
+import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { RelativeDuration } from "@/components/ui/relative-duration";
-import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
-import { isActive } from "@/utils/crawler";
-import { CopyButton } from "@/components/ui/copy-button";
-import type { ArchivedItem, Crawl, CrawlConfig, Seed, Workflow } from "./types";
-import type { APIPaginatedList } from "@/types/api";
-import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
-
-import capitalize from "lodash/fp/capitalize";
+import type { APIPaginatedList } from "@/types/api";
 import { isApiError } from "@/utils/api";
+import type { AuthState } from "@/utils/AuthService";
+import { isActive } from "@/utils/crawler";
+import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import LiteElement, { html } from "@/utils/LiteElement";
 
 const SECTIONS = [
   "overview",
+  "qa",
   "watch",
   "replay",
   "files",
@@ -142,6 +143,15 @@ export class CrawlDetail extends LiteElement {
     let sectionContent: string | TemplateResult = "";
 
     switch (this.sectionName) {
+      case "qa":
+        sectionContent = this.renderPanel(
+          html`${this.renderTitle(msg("Crawl Analysis"))}
+            <sl-button size="small" @click=${() => console.log("TODO")}>
+              ${msg("Reanalyze Crawl")}
+            </sl-button>`,
+          this.renderQA(),
+        );
+        break;
       case "replay":
         sectionContent = this.renderPanel(msg("Replay"), this.renderReplay(), {
           "overflow-hidden": true,
@@ -314,11 +324,13 @@ export class CrawlDetail extends LiteElement {
       label,
       iconLibrary,
       icon,
+      detail,
     }: {
       section: SectionName;
       label: string;
       iconLibrary: "app" | "default";
       icon: string;
+      detail?: TemplateResult<1>;
     }) => {
       const isActive = section === this.sectionName;
       const baseUrl = window.location.pathname.split("#")[0];
@@ -336,7 +348,7 @@ export class CrawlDetail extends LiteElement {
             aria-hidden="true"
             library=${iconLibrary}
           ></sl-icon>
-          ${label}</btrix-navigation-button
+          ${label}${detail}</btrix-navigation-button
         >
       `;
     };
@@ -351,6 +363,21 @@ export class CrawlDetail extends LiteElement {
           icon: "info-circle-fill",
           label: msg("Overview"),
         })}
+        ${when(
+          this.itemType === "crawl",
+          () => {},
+          // html`
+          //   ${renderNavItem({
+          //     section: "qa",
+          //     iconLibrary: "default",
+          //     icon: "clipboard2-data-fill",
+          //     label: msg("QA"),
+          //     detail: html`
+          //       <btrix-badge variant="primary">${msg("Ready")}</btrix-badge>
+          //     `,
+          //   })}
+          // `,
+        )}
         ${renderNavItem({
           section: "replay",
           iconLibrary: "app",
@@ -401,7 +428,7 @@ export class CrawlDetail extends LiteElement {
             ? html`
                 <sl-button-group>
                   <sl-button size="small" @click=${this.stop}>
-                    <sl-icon name="slash-circle" slot="prefix"></sl-icon>
+                    <sl-icon name="dash-square" slot="prefix"></sl-icon>
                     <span> ${msg("Stop")} </span>
                   </sl-button>
                   <sl-button size="small" @click=${this.cancel}>
@@ -468,7 +495,7 @@ export class CrawlDetail extends LiteElement {
                 @click=${() =>
                   CopyButton.copyToClipboard((this.crawl as Crawl).cid)}
               >
-                <sl-icon name="copy-code" library="app" slot="prefix"></sl-icon>
+                <sl-icon name="copy" slot="prefix"></sl-icon>
                 ${msg("Copy Workflow ID")}
               </sl-menu-item>
             `,
@@ -523,6 +550,15 @@ export class CrawlDetail extends LiteElement {
       >
         ${content}
       </div>
+    `;
+  }
+
+  private renderQA() {
+    return html`
+      <section class="mb-5 rounded-lg border p-4">[summary]</section>
+      <section class="mb-7 rounded-lg border p-4">[stats]</section>
+      <h4 class="text-lg font-semibold">${msg("Pages")}</h4>
+      <section>[pages]</section>
     `;
   }
 
@@ -809,7 +845,7 @@ ${this.crawl?.description}
                         () =>
                           html` <sl-tooltip content=${msg("Backed up")}>
                             <sl-icon
-                              name="clouds"
+                              name="clouds-fill"
                               class="mr-2 h-4 w-4 shrink-0 align-text-bottom text-success"
                             ></sl-icon>
                           </sl-tooltip>`,

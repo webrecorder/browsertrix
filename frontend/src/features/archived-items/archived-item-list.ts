@@ -1,19 +1,19 @@
-import { html, css, nothing } from "lit";
+import { localized, msg } from "@lit/localize";
+import { type SlCheckbox } from "@shoelace-style/shoelace";
+import { css, html, nothing } from "lit";
 import {
   customElement,
   property,
-  state,
-  queryAssignedElements,
   query,
+  queryAssignedElements,
+  state,
 } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { msg, localized } from "@lit/localize";
-import { type SlCheckbox } from "@shoelace-style/shoelace";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { NavigateController } from "@/controllers/navigate";
 import type { ArchivedItem } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
-import { NavigateController } from "@/controllers/navigate";
 
 export type CheckboxChangeEventDetail = {
   checked: boolean;

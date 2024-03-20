@@ -1,7 +1,6 @@
-import type { TemplateResult } from "lit";
-import { LitElement, html, css } from "lit";
+import { localized, msg } from "@lit/localize";
+import { css, html, LitElement, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
 import startCase from "lodash/fp/startCase";
 
 import type { CrawlState } from "@/types/crawler";
@@ -156,7 +155,7 @@ export class CrawlStatus extends LitElement {
 
       case "complete":
         icon = html`<sl-icon
-          name=${isUpload ? "upload" : "check-circle"}
+          name=${isUpload ? "upload" : "check-circle-fill"}
           slot="prefix"
           style="color: var(--success)"
         ></sl-icon>`;
@@ -165,7 +164,7 @@ export class CrawlStatus extends LitElement {
 
       case "failed":
         icon = html`<sl-icon
-          name=${isUpload ? "upload" : "exclamation-triangle"}
+          name=${isUpload ? "upload" : "exclamation-triangle-fill"}
           slot="prefix"
           style="color: var(--danger)"
         ></sl-icon>`;
@@ -174,7 +173,7 @@ export class CrawlStatus extends LitElement {
 
       case "skipped_quota_reached":
         icon = html`<sl-icon
-          name="exclamation-triangle"
+          name="exclamation-triangle-fill"
           slot="prefix"
           style="color: var(--danger)"
         ></sl-icon>`;
@@ -183,7 +182,7 @@ export class CrawlStatus extends LitElement {
 
       case "stopped_by_user":
         icon = html`<sl-icon
-          name="dash-circle"
+          name="dash-square-fill"
           slot="prefix"
           style="color: var(--warning)"
         ></sl-icon>`;
@@ -192,7 +191,7 @@ export class CrawlStatus extends LitElement {
 
       case "stopped_quota_reached":
         icon = html`<sl-icon
-          name="dash-circle"
+          name="exclamation-square-fill"
           slot="prefix"
           style="color: var(--warning)"
         ></sl-icon>`;
@@ -201,9 +200,9 @@ export class CrawlStatus extends LitElement {
 
       case "canceled":
         icon = html`<sl-icon
-          name="x-octagon"
+          name="x-octagon-fill"
           slot="prefix"
-          style="color: var(--danger)"
+          style="color: var(--sl-color-orange-600)"
         ></sl-icon>`;
         label = msg("Canceled");
         break;

@@ -1,20 +1,22 @@
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized, str } from "@lit/localize";
-import { when } from "lit/directives/when.js";
+import { localized, msg, str } from "@lit/localize";
+import type { SlCheckbox } from "@shoelace-style/shoelace";
+import { type PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import type { ListWorkflow, Seed, Workflow, WorkflowParams } from "./types";
+
+import type { SelectNewDialogEvent } from ".";
+
+import { CopyButton } from "@/components/ui/copy-button";
+import type { PageChangeEvent } from "@/components/ui/pagination";
+import { type SelectEvent } from "@/components/ui/search-combobox";
+import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import type { ListWorkflow, Seed, Workflow, WorkflowParams } from "./types";
-import { CopyButton } from "@/components/ui/copy-button";
-import type { SlCheckbox } from "@shoelace-style/shoelace";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { PageChangeEvent } from "@/components/ui/pagination";
-import type { SelectNewDialogEvent } from "./index";
-import { type SelectEvent } from "@/components/ui/search-combobox";
-import { isApiError } from "@/utils/api";
-import { type PropertyValues } from "lit";
 
 type SearchFields = "name" | "firstSeed";
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
@@ -433,7 +435,7 @@ export class WorkflowsList extends LiteElement {
             @click=${() => void this.stop(workflow.lastCrawlId)}
             ?disabled=${workflow.lastCrawlStopping}
           >
-            <sl-icon name="dash-circle" slot="prefix"></sl-icon>
+            <sl-icon name="dash-square" slot="prefix"></sl-icon>
             ${msg("Stop Crawl")}
           </sl-menu-item>
           <sl-menu-item

@@ -1,5 +1,5 @@
-const { tailwindTransform } = require("postcss-lit");
 const Color = require("color");
+const { tailwindTransform } = require("postcss-lit");
 
 const PRIMARY_COLOR = "#4876ff";
 const primaryColor = Color(PRIMARY_COLOR);
@@ -36,6 +36,7 @@ function makeTheme() {
     "indigo",
     "purple",
     "pink",
+    "orange",
   ];
   // Map color grading:
   const colorGrades = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900];

@@ -1,5 +1,7 @@
 """crawl pages"""
 
+import asyncio
+import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
 from uuid import UUID, uuid4
@@ -43,6 +45,7 @@ class PageOps:
 
     def __init__(self, mdb, crawl_ops, org_ops, storage_ops):
         self.pages = mdb["pages"]
+        self.crawls = mdb["crawls"]
         self.crawl_ops = crawl_ops
         self.org_ops = org_ops
         self.storage_ops = storage_ops
@@ -51,21 +54,73 @@ class PageOps:
         """init index for pages db collection"""
         await self.pages.create_index([("crawl_id", pymongo.HASHED)])
 
-    async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str):
+    async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str, batch_size=100):
         """Add pages to database from WACZ files"""
+        pages_buffer: List[Page] = []
         try:
-            crawl = await self.crawl_ops.get_crawl(crawl_id)
-            org = await self.org_ops.get_org_by_id(crawl.oid)
-            wacz_files = await self.crawl_ops.get_wacz_files(crawl_id, org)
-            stream = await self.storage_ops.sync_stream_pages_from_wacz(org, wacz_files)
+            crawl = await self.crawl_ops.get_crawl_out(crawl_id)
+            stream = await self.storage_ops.sync_stream_wacz_pages(
+                crawl.resources or []
+            )
             for page_dict in stream:
                 if not page_dict.get("url"):
                     continue
 
-                await self.add_page_to_db(page_dict, crawl_id, None, crawl.oid)
+                if len(pages_buffer) > batch_size:
+                    await self._add_pages_to_db(pages_buffer)
+
+                pages_buffer.append(
+                    self._get_page_from_dict(page_dict, crawl_id, crawl.oid)
+                )
+
+            # Add any remaining pages in buffer to db
+            if pages_buffer:
+                await self._add_pages_to_db(pages_buffer)
+
+            print(f"Added pages for crawl {crawl_id} to db", flush=True)
         # pylint: disable=broad-exception-caught, raise-missing-from
         except Exception as err:
+            traceback.print_exc()
             print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
+
+    def _get_page_from_dict(self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID):
+        """Return Page object from dict"""
+        page_id = page_dict.get("id")
+        if not page_id:
+            print(f'Page {page_dict.get("url")} has no id - assigning UUID', flush=True)
+
+        status = page_dict.get("status")
+        if not status and page_dict.get("loadState"):
+            status = 200
+
+        return Page(
+            id=page_id,
+            oid=oid,
+            crawl_id=crawl_id,
+            url=page_dict.get("url"),
+            title=page_dict.get("title"),
+            load_state=page_dict.get("loadState"),
+            status=status,
+            timestamp=(
+                from_k8s_date(page_dict.get("ts"))
+                if page_dict.get("ts")
+                else datetime.now()
+            ),
+        )
+
+    async def _add_pages_to_db(self, pages: List[Page]):
+        """Add batch of pages to db in one insert"""
+        result = await self.pages.insert_many(
+            [
+                page.to_dict(
+                    exclude_unset=True, exclude_none=True, exclude_defaults=True
+                )
+                for page in pages
+            ]
+        )
+        if not result.inserted_ids:
+            # pylint: disable=broad-exception-raised
+            raise Exception("No pages inserted")
 
     async def add_page_to_db(
         self,
@@ -75,30 +130,9 @@ class PageOps:
         oid: UUID,
     ):
         """Add page to database"""
-        page_id: Optional[str] = page_dict.get("id")
-        if not page_id:
-            print(f'Page {page_dict.get("url")} has no id - assigning UUID', flush=True)
-
-        page = None
+        page = self._get_page_from_dict(page_dict, crawl_id, oid)
 
         try:
-            status = page_dict.get("status")
-            if not status and page_dict.get("loadState"):
-                status = 200
-            page = Page(
-                id=page_id or uuid4(),
-                oid=oid,
-                crawl_id=crawl_id,
-                url=page_dict.get("url"),
-                title=page_dict.get("title"),
-                loadState=page_dict.get("loadState"),
-                status=status,
-                ts=(
-                    from_k8s_date(page_dict.get("ts"))
-                    if page_dict.get("ts")
-                    else datetime.now()
-                ),
-            )
             await self.pages.insert_one(
                 page.to_dict(
                     exclude_unset=True, exclude_none=True, exclude_defaults=True
@@ -110,11 +144,10 @@ class PageOps:
         # pylint: disable=broad-except
         except Exception as err:
             print(
-                f"Error adding page {page_id} from crawl {crawl_id} to db: {err}",
+                f"Error adding page {page.id} from crawl {crawl_id} to db: {err}",
                 flush=True,
             )
             return
-
         # qa data
         if qa_run_id and page:
             compare_dict = page_dict.get("comparison")
@@ -420,6 +453,20 @@ class PageOps:
 
         return [PageOut.from_dict(data) for data in items], total
 
+    async def re_add_crawl_pages(self, crawl_id: str, oid: UUID):
+        """Delete existing pages for crawl and re-add from WACZs."""
+        await self.delete_crawl_pages(crawl_id, oid)
+        print(f"Deleted pages for crawl {crawl_id}", flush=True)
+        await self.add_crawl_pages_to_db_from_wacz(crawl_id)
+
+    async def re_add_all_crawl_pages(self, oid: UUID):
+        """Re-add pages for all crawls in org"""
+        crawl_ids = await self.crawls.distinct(
+            "_id", {"type": "crawl", "finished": {"$ne": None}}
+        )
+        for crawl_id in crawl_ids:
+            await self.re_add_crawl_pages(crawl_id, oid)
+
 
 # ============================================================================
 # pylint: disable=too-many-arguments, too-many-locals, invalid-name, fixme
@@ -430,6 +477,25 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     ops = PageOps(mdb, crawl_ops, org_ops, storage_ops)
 
     org_crawl_dep = org_ops.org_crawl_dep
+
+    @app.post("/orgs/{oid}/crawls/all/pages/reAdd", tags=["pages"])
+    async def re_add_all_crawl_pages(
+        org: Organization = Depends(org_crawl_dep), user: User = Depends(user_dep)
+    ):
+        """Re-add pages for all crawls in org (superuser only)"""
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        asyncio.create_task(ops.re_add_all_crawl_pages(org.id))
+        return {"started": True}
+
+    @app.post("/orgs/{oid}/crawls/{crawl_id}/pages/reAdd", tags=["pages"])
+    async def re_add_crawl_pages(
+        crawl_id: str, org: Organization = Depends(org_crawl_dep)
+    ):
+        """Re-add pages for crawl"""
+        asyncio.create_task(ops.re_add_crawl_pages(crawl_id, org.id))
+        return {"started": True}
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}",
