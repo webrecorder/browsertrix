@@ -1,25 +1,36 @@
 import { localized } from "@lit/localize";
-import { html, type PropertyValues } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { createRef, ref, type Ref } from "lit/directives/ref.js";
+import { css, html, type PropertyValues } from "lit";
+import { customElement, property, query } from "lit/decorators.js";
 
 import { animateTo, shimKeyframesHeightAuto } from "./animate";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { tw } from "@/utils/tailwind";
 
 @localized()
 @customElement("btrix-qa-page")
 export class QaPage extends TailwindElement {
+  static styles = css`
+    :host {
+      /* Chrome-only, improve render perf of long page lists */
+      content-visibility: auto;
+    }
+  `;
+
   @property({ type: String })
   pageId?: string;
 
-  @property({ type: Boolean, reflect: true })
+  @property({ type: Boolean })
   selected = false;
 
-  private readonly contentContainer: Ref<HTMLElement> = createRef();
+  @query(".anchor")
+  anchor?: HTMLElement;
 
-  select = () => {
+  @query(".contentContainer")
+  contentContainer?: HTMLElement;
+
+  private select = async () => {
+    if (this.selected) return;
+
     this.dispatchEvent(
       new CustomEvent<string>("btrix-qa-page-select", {
         detail: this.pageId,
@@ -27,13 +38,14 @@ export class QaPage extends TailwindElement {
         bubbles: true,
       }),
     );
+    await this.animateExpand();
     this.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
-  animateExpand = async () => {
-    if (this.contentContainer.value == null) return;
+  private animateExpand = async () => {
+    if (!this.contentContainer) return;
     await animateTo(
-      this.contentContainer.value,
+      this.contentContainer,
       shimKeyframesHeightAuto(
         [
           {
@@ -49,16 +61,16 @@ export class QaPage extends TailwindElement {
             transform: `translateY(0)`,
           },
         ],
-        this.contentContainer.value.scrollHeight,
+        this.contentContainer.scrollHeight,
       ),
       { duration: 250, easing: "cubic-bezier(0.4, 0.0, 0.2, 1)" },
     );
   };
 
-  animateCollapse = async () => {
-    if (this.contentContainer.value == null) return;
+  private animateCollapse = async () => {
+    if (!this.contentContainer) return;
     await animateTo(
-      this.contentContainer.value,
+      this.contentContainer,
       shimKeyframesHeightAuto(
         [
           {
@@ -74,36 +86,35 @@ export class QaPage extends TailwindElement {
             transform: `translateY(-2px)`,
           },
         ],
-        this.contentContainer.value.scrollHeight,
+        this.contentContainer.scrollHeight,
       ),
       { duration: 250, easing: "cubic-bezier(0.4, 0.0, 0.2, 1)" },
     );
   };
 
-  protected async willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("selected")) {
-      if (this.selected) {
-        void this.animateExpand();
-        this.focus();
-      } else {
-        void this.animateCollapse();
-      }
+  protected async firstUpdated() {
+    if (this.selected) {
+      this.anchor?.focus();
+      this.scrollIntoView();
     }
   }
 
-  async connectedCallback() {
-    super.connectedCallback();
-    await this.updateComplete;
-    this.contentContainer.value?.classList.add(
-      this.selected ? tw`h-auto` : tw`h-0`,
-    );
+  protected async updated(changedProperties: PropertyValues<this>) {
+    if (
+      changedProperties.has("selected") &&
+      changedProperties.get("selected") === true &&
+      this.selected === false
+    ) {
+      // Close if deselected
+      void this.animateCollapse();
+    }
   }
 
   render() {
     return html`
       <div class="py-2 text-sm text-gray-600">
         <div
-          class="relative z-20 ml-4 block flex-auto cursor-pointer select-none overflow-visible rounded border border-solid border-gray-300 bg-white px-4 py-2 pl-5 shadow-sm transition-shadow aria-selected:border-blue-500 aria-selected:bg-blue-50 aria-selected:shadow-md aria-selected:shadow-blue-800/20 aria-selected:transition-none"
+          class="anchor relative z-20 ml-4 block flex-auto cursor-pointer select-none overflow-visible rounded border border-solid border-gray-300 bg-white px-4 py-2 pl-5 shadow-sm outline-none transition-shadow  aria-selected:border-blue-500 aria-selected:bg-blue-50 aria-selected:shadow-md aria-selected:shadow-blue-800/20 aria-selected:transition-none"
           @click=${this.select}
           tabindex="0"
           aria-selected=${this.selected}
@@ -111,10 +122,9 @@ export class QaPage extends TailwindElement {
           <slot></slot>
         </div>
         <div
-          class="${this.selected
+          class="contentContainer ${this.selected
             ? "h-auto"
             : "h-0"} overflow-hidden [contain:content] [content-visibility:auto]"
-          ${ref(this.contentContainer)}
         >
           <slot name="content"></slot>
         </div>

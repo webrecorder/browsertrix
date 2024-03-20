@@ -134,8 +134,8 @@ export class ArchivedItemQA extends TailwindElement {
 
   private async initItem() {
     void this.fetchCrawl();
-    await this.fetchQaRuns();
-    await this.fetchPages({ page: 1 });
+    void this.fetchQaRuns();
+    void this.fetchPages({ page: 1 });
   }
 
   render() {
@@ -395,7 +395,7 @@ export class ArchivedItemQA extends TailwindElement {
       }
     } catch {
       this.notify.toast({
-        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        message: msg("Sorry, couldn't retrieve page at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });

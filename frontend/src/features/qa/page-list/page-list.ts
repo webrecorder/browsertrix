@@ -84,56 +84,72 @@ export class PageList extends TailwindElement {
 
   currentPageElement: QaPage | null = null;
 
-  private queuedCount = 0;
-  private reviewedCount = 0;
-
   @state()
-  filteredPages = this.pages?.items ?? [];
+  private groupedFilteredPages: Record<Tab, ArchivedItemPage[]> = {
+    [Tab.Queued]: [],
+    [Tab.Reviewed]: [],
+  };
 
   protected async willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("tab") && this.tab === Tab.Reviewed) {
-      // When switching to the "reviewed" tab, order by review status by default
-      this.orderBy = {
-        field: "approved",
-        direction: "asc",
-      };
-    }
-    if (changedProperties.has("pages") || changedProperties.has("tab")) {
-      // Queued counts
-      this.queuedCount = 0;
-      this.reviewedCount = 0;
-
+      this.onSetReviewedTab();
+    } else if (changedProperties.has("pages")) {
       // Filtered data
-      const filteredPages: ArchivedItemPage[] = [];
+      const groupedFilteredPages: PageList["groupedFilteredPages"] = {
+        queued: [],
+        reviewed: [],
+      };
+
+      let currentPage: ArchivedItemPage | null = null;
 
       this.pages?.items.forEach((page) => {
         const isReviewed = pageIsReviewed(page);
-        isReviewed ? this.reviewedCount++ : this.queuedCount++;
-        if ((this.tab === Tab.Reviewed) === isReviewed) {
-          filteredPages.push(page);
+        if (isReviewed) {
+          groupedFilteredPages[Tab.Reviewed].push(page);
+        } else {
+          groupedFilteredPages[Tab.Queued].push(page);
+        }
+        if (page.id === this.itemPageId) {
+          currentPage = page;
         }
       });
-      this.filteredPages = filteredPages;
-    }
-    if (
-      changedProperties.has("filteredPages") &&
-      this.filteredPages.length > 0
-    ) {
-      this.dispatchEvent(
-        new CustomEvent<string>("btrix-qa-page-select", {
-          detail: this.filteredPages[0].id,
-          bubbles: true,
-          composed: true,
-        }),
-      );
-      this.itemPageId = this.filteredPages[0].id;
-    }
-    if (changedProperties.has("itemPageId")) {
-      console.log(this.itemPageId);
+
+      this.groupedFilteredPages = groupedFilteredPages;
+      if (currentPage) {
+        const isReviewed = pageIsReviewed(currentPage);
+        if (isReviewed) {
+          this.tab = Tab.Reviewed;
+          this.onSetReviewedTab();
+        } else {
+          this.tab = Tab.Queued;
+        }
+      } else {
+        // Select first item by default
+        const firstPage = this.groupedFilteredPages[this.tab][0];
+        if (!firstPage) return;
+        this.dispatchEvent(
+          new CustomEvent<string>("btrix-qa-page-select", {
+            detail: firstPage.id,
+            bubbles: true,
+            composed: true,
+          }),
+        );
+        this.itemPageId = firstPage.id;
+      }
     }
   }
 
+  private onSetReviewedTab() {
+    // When switching to the "reviewed" tab, order by review status by default
+    this.orderBy = {
+      field: "approved",
+      direction: "asc",
+    };
+  }
+
   render() {
+    const queuedCount = this.groupedFilteredPages[Tab.Queued].length;
+    const reviewedCount = this.groupedFilteredPages[Tab.Reviewed].length;
     return html`
       <div class="mb-2 flex gap-2 *:flex-auto">
         <btrix-navigation-button
@@ -145,15 +161,13 @@ export class PageList extends TailwindElement {
           ${msg("Queued")}
           <btrix-badge
             variant=${
-              this.queuedCount > 0 || this.tab === Tab.Queued
-                ? "primary"
-                : "neutral"
+              queuedCount > 0 || this.tab === Tab.Queued ? "primary" : "neutral"
             }
             aria-label=${
               "4 pages" // TODO properly localize plurals
             }
           >
-            ${this.queuedCount}
+            ${queuedCount.toLocaleString()}
           </btrix-badge>
         </btrix-navigation-button>
         <btrix-navigation-button
@@ -165,7 +179,7 @@ export class PageList extends TailwindElement {
           ${msg("Reviewed")}
           <btrix-badge
             variant=${
-              this.reviewedCount > 0 || this.tab === Tab.Reviewed
+              reviewedCount > 0 || this.tab === Tab.Reviewed
                 ? "primary"
                 : "neutral"
             }
@@ -173,7 +187,7 @@ export class PageList extends TailwindElement {
               "4 pages" // TODO properly localize plurals
             }
           >
-            ${this.reviewedCount}
+            ${reviewedCount}
           </btrix-badge>
         </btrix-navigation-button>
       </div>
@@ -235,11 +249,17 @@ export class PageList extends TailwindElement {
         class="-mx-2 overflow-y-auto px-2"
       >
         ${guard(
-          [this.filteredPages, this.qaRunId, this.orderBy, this.itemPageId],
+          [
+            this.tab,
+            this.groupedFilteredPages,
+            this.qaRunId,
+            this.orderBy,
+            this.itemPageId,
+          ],
           () =>
-            this.filteredPages.length > 0
+            this.groupedFilteredPages[this.tab].length > 0
               ? GroupedList({
-                  data: this.filteredPages,
+                  data: this.groupedFilteredPages[this.tab],
                   key: "id",
                   renderWrapper: (contents) =>
                     html`<div class="@container">${contents}</div>`,
