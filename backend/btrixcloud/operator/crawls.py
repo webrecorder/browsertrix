@@ -1272,9 +1272,12 @@ class CrawlOperator(BaseOperator):
 
         status.finished = to_k8s_date(finished)
 
+        if state in SUCCESSFUL_STATES:
+            await self.inc_crawl_complete_stats(crawl, finished)
+
         # Regular Crawl Finished
         if not crawl.is_qa:
-            self.run_task(self.do_crawl_finished_tasks(crawl, status, finished, state))
+            self.run_task(self.do_crawl_finished_tasks(crawl, status, state))
 
         # QA Run Finished
         else:
@@ -1287,7 +1290,6 @@ class CrawlOperator(BaseOperator):
         self,
         crawl: CrawlSpec,
         status: CrawlStatus,
-        finished: datetime,
         state: str,
     ) -> None:
         """Run tasks after crawl completes in asyncio.task coroutine."""
@@ -1296,7 +1298,6 @@ class CrawlOperator(BaseOperator):
         )
 
         if state in SUCCESSFUL_STATES and crawl.oid:
-            await self.inc_crawl_complete_stats(crawl, finished)
             await self.org_ops.inc_org_bytes_stored(
                 crawl.oid, status.filesAddedSize, "crawl"
             )
@@ -1320,10 +1321,6 @@ class CrawlOperator(BaseOperator):
         state: str,
     ) -> None:
         """Run tasks after qa run completes in asyncio.task coroutine."""
-
-        # now done in finalizer
-        # if state in SUCCESSFUL_STATES:
-        #    await self.crawl_ops.qa_run_finished(crawl.db_crawl_id)
 
         if state in FAILED_STATES:
             await self.page_ops.delete_qa_run_from_pages(crawl.db_crawl_id, crawl.id)

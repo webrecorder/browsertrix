@@ -635,6 +635,7 @@ class CrawlOut(BaseMongoModel):
     collectionIds: Optional[List[UUID]] = []
 
     crawlExecSeconds: int = 0
+    qaCrawlExecSeconds: int = 0
 
     # automated crawl fields
     config: Optional[RawCrawlConfig]

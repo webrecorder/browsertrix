@@ -1,6 +1,7 @@
 from .conftest import API_PREFIX, HOST_PREFIX
 import requests
 import time
+from datetime import datetime
 
 qa_run_id = None
 
@@ -98,6 +99,26 @@ def test_qa_completed(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert qa["finished"]
     assert qa["stats"]["found"] == 1
     assert qa["stats"]["done"] == 1
+    assert qa["crawlExecSeconds"] > 0
+
+
+def test_qa_org_stats(crawler_crawl_id, crawler_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
+        headers=crawler_auth_headers,
+    )
+    crawl_stats = r.json()
+    assert crawl_stats["qaCrawlExecSeconds"] > 0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}",
+        headers=crawler_auth_headers,
+    )
+    org_stats = r.json()
+
+    yymm = datetime.utcnow().strftime("%Y-%m")
+    assert org_stats["qaCrawlExecSeconds"][yymm] > 0
+    assert org_stats["qaUsage"][yymm] > 0
 
 
 def test_qa_page_data(crawler_crawl_id, crawler_auth_headers, default_org_id):
@@ -106,7 +127,6 @@ def test_qa_page_data(crawler_crawl_id, crawler_auth_headers, default_org_id):
         headers=crawler_auth_headers,
     )
     data = r.json()
-    print(data)
     assert len(data["items"]) == 1
     page = data["items"][0]
     assert page["title"] == "Webrecorder"
