@@ -1,22 +1,25 @@
-import type { PageList } from "../page-list";
+import type { OrderBy } from "../page-list";
 
 import type { ArchivedItemPage } from "@/types/crawler";
 
-export const sortBy =
-  (pageList: PageList) =>
-  (a: ArchivedItemPage, b: ArchivedItemPage): number => {
-    const getValue = () => {
-      switch (pageList.orderBy.field) {
-        case "screenshotMatch":
-        case "textMatch":
-          return (
-            (b[pageList.orderBy.field]?.[pageList.itemPageId] ?? 0) -
-            (a[pageList.orderBy.field]?.[pageList.itemPageId] ?? 0)
-          );
+export const sortBy = (
+  a: ArchivedItemPage,
+  b: ArchivedItemPage,
+  orderBy: OrderBy,
+  itemPageId: string,
+): number => {
+  const getValue = () => {
+    switch (orderBy.field) {
+      case "screenshotMatch":
+      case "textMatch":
+        return (
+          (b[orderBy.field]?.[itemPageId] ?? 0) -
+          (a[orderBy.field]?.[itemPageId] ?? 0)
+        );
 
-        case "approved":
-          return Number(b.approved) - Number(a.approved);
-      }
-    };
-    return getValue() * (pageList.orderBy.direction === "asc" ? 1 : -1);
+      case "approved":
+        return Number(b.approved) - Number(a.approved);
+    }
   };
+  return getValue() * (orderBy.direction === "asc" ? 1 : -1);
+};

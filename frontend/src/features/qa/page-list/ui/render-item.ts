@@ -4,33 +4,36 @@ import { iconFor } from "../helpers/iconFor";
 import { issueCounts, maxSeverity } from "../helpers/issueCounts";
 import { approvalFromPage } from "../helpers/reviewStatus";
 import { severityFromMatch } from "../helpers/severity";
-import type { PageList } from "../page-list";
+import { type OrderBy } from "../page-list";
 
 import { pageDetails } from "./page-details";
 
 import type { ArchivedItemPage } from "@/types/crawler";
 import { cached } from "@/utils/weakCache";
 
-export const renderItem = (pageList: PageList) =>
-  cached((page: ArchivedItemPage) => {
-    const runId = pageList.qaRunId ?? "";
-
-    let { severe, moderate } = issueCounts(page, runId);
+export const renderItem = cached(
+  (
+    page: ArchivedItemPage,
+    qaRunId: string,
+    orderBy: OrderBy,
+    itemPageId: string,
+  ) => {
+    let { severe, moderate } = issueCounts(page, qaRunId);
 
     const statusIcon =
       approvalFromPage(page) ??
       {
-        screenshotMatch: severityFromMatch(page.screenshotMatch?.[runId]),
-        textMatch: severityFromMatch(page.textMatch?.[runId]),
-        approved: approvalFromPage(page) ?? maxSeverity(page, runId),
-      }[pageList.orderBy.field];
+        screenshotMatch: severityFromMatch(page.screenshotMatch?.[qaRunId]),
+        textMatch: severityFromMatch(page.textMatch?.[qaRunId]),
+        approved: approvalFromPage(page) ?? maxSeverity(page, qaRunId),
+      }[orderBy.field];
 
     if (statusIcon === "severe") severe--;
     if (statusIcon === "moderate") moderate--;
 
     return html`<btrix-qa-page
-      class="is-leaf -my-4 scroll-my-8 py-4 [content-visibility:auto] [contain-intrinsic-height:auto_70px] [contain:strict] first-of-type:mt-0 last-of-type:mb-0"
-      .selected=${pageList.itemPageId === page.id}
+      class="is-leaf -my-4 scroll-my-8 py-4 [contain-intrinsic-height:auto_70px] [contain:strict] [content-visibility:auto] first-of-type:mt-0 last-of-type:mb-0"
+      .selected=${itemPageId === page.id}
       .pageId=${page.id}
     >
       <div
@@ -58,7 +61,8 @@ export const renderItem = (pageList: PageList) =>
         slot="content"
         class="z-10 -mt-2 ml-6 mr-2 rounded-b-lg border border-solid border-gray-200 bg-neutral-0 px-4 pb-1 pt-4"
       >
-        ${pageDetails(page, runId)}
+        ${pageDetails(page, qaRunId)}
       </div>
     </btrix-qa-page>`;
-  });
+  },
+);

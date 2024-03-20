@@ -1,6 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { guard } from "lit/directives/guard.js";
 
 import { pageIsReviewed } from "./helpers";
 import { groupBy } from "./helpers/groupBy";
@@ -202,7 +203,7 @@ export class PageList extends TailwindElement {
             size="small"
             pill
             value=${this.orderBy.field}
-            @sl-change=${async (e: Event) => {
+            @sl-change=${(e: Event) => {
               const field = (e.target as HTMLSelectElement).value as SortField;
               this.orderBy = {
                 field: field,
@@ -210,12 +211,6 @@ export class PageList extends TailwindElement {
                   (sortableFields[field] as SortableFields[SortField])
                     ?.defaultDirection ?? this.orderBy.direction,
               };
-              await this.updateComplete;
-              this.currentPageElement?.focus();
-              this.currentPageElement?.scrollIntoView({
-                block: "nearest",
-                behavior: "smooth",
-              });
             }}
           >
             ${Object.entries(sortableFields).map(
@@ -227,115 +222,119 @@ export class PageList extends TailwindElement {
           <sl-icon-button
             name="arrow-down-up"
             label=${msg("Reverse sort")}
-            @click=${async () => {
+            @click=${() => {
               this.orderBy = {
                 ...this.orderBy,
                 direction: this.orderBy.direction === "asc" ? "desc" : "asc",
               };
-              await this.updateComplete;
-              this.currentPageElement?.focus();
-              this.currentPageElement?.scrollIntoView({
-                block: "nearest",
-                behavior: "smooth",
-              });
             }}
           ></sl-icon-button>
         </div>
       </div>
       <div
         class="-mx-2 overflow-y-auto px-2"
-        @btrix-qa-page-select=${(e: CustomEvent<string>) => {
-          this.currentPageElement = e.detail;
-        }}
       >
-        ${
-          this.filteredPages.length > 0
-            ? GroupedList({
-                data: this.filteredPages,
-                key: "id",
-                renderWrapper: (contents) =>
-                  html`<div class="@container">${contents}</div>`,
-                renderGroup: (header, items, group) =>
-                  html`<btrix-qa-page-group
-                    expanded
-                    class="is-group bg-neutral-0"
-                    .isRemainderGroup=${group?.value === remainder}
-                  >
-                    <div slot="header" class="flex items-center">${header}</div>
-                    <div slot="content" class="py-2">${items}</div>
-                  </btrix-qa-page-group>`,
-                renderItem: renderItem(this),
-                sortBy: sortBy(this),
-                groupBy: {
-                  value: (page) =>
-                    groupBy(page, this.qaRunId ?? "", this.orderBy),
-                  groups: [
-                    {
-                      value: "severe",
-                      renderLabel: ({ data }) =>
-                        html`${msg("Severe")}
-                          <btrix-badge class="ml-2" .variant=${"danger"}>
-                            ${data.length}
-                          </btrix-badge>`,
-                    },
-                    {
-                      value: "moderate",
-                      renderLabel: ({ data }) =>
-                        html`${msg("Possible Issues")}
-                          <btrix-badge class="ml-2" .variant=${"warning"}>
-                            ${data.length}
-                          </btrix-badge>`,
-                    },
-                    {
-                      value: "good",
-                      renderLabel: ({ data }) =>
-                        html`${msg("Likely Good")}
-                          <btrix-badge class="ml-2" .variant=${"success"}>
-                            ${data.length}
-                          </btrix-badge>`,
-                    },
-                    {
-                      value: "commentOnly",
-                      renderLabel: ({ data }) =>
-                        html`${msg("Comments Only")}
-                          <btrix-badge class="ml-2" .variant=${"primary"}>
-                            ${data.length}
-                          </btrix-badge>`,
-                    },
-                    {
-                      value: "approved",
-                      renderLabel: ({ data }) =>
-                        html`${msg("Approved")}
-                          <btrix-badge class="ml-2" .variant=${"success"}>
-                            ${data.length}
-                          </btrix-badge>`,
-                    },
-                    {
-                      value: "rejected",
-                      renderLabel: ({ data }) =>
-                        html`${msg("Rejected")}
-                          <btrix-badge class="ml-2" .variant=${"danger"}>
-                            ${data.length}
-                          </btrix-badge>`,
-                    },
-                    {
-                      value: remainder,
-                      renderLabel: ({ data }) =>
-                        html`${msg("No QA Data")}
-                          <btrix-badge class="ml-2" .variant=${"high-contrast"}>
-                            ${data.length}
-                          </btrix-badge>`,
-                    },
-                  ],
-                },
-              })
-            : html`<div
-                class="flex flex-col items-center justify-center gap-4 py-8 text-xs text-gray-600"
-              >
-                <sl-icon name="dash-circle" class="h-4 w-4"></sl-icon>
-                ${msg("No pages")}
-              </div>`
-        }
+        ${guard(
+          [this.filteredPages, this.qaRunId, this.orderBy, this.itemPageId],
+          () =>
+            this.filteredPages.length > 0
+              ? GroupedList({
+                  data: this.filteredPages,
+                  key: "id",
+                  renderWrapper: (contents) =>
+                    html`<div class="@container">${contents}</div>`,
+                  renderGroup: (header, items, group) =>
+                    html`<btrix-qa-page-group
+                      expanded
+                      class="is-group bg-neutral-0"
+                      .isRemainderGroup=${group?.value === remainder}
+                    >
+                      <div slot="header" class="flex items-center">
+                        ${header}
+                      </div>
+                      <div slot="content" class="py-2">${items}</div>
+                    </btrix-qa-page-group>`,
+                  renderItem: (page) =>
+                    renderItem(
+                      page,
+                      this.qaRunId ?? "",
+                      this.orderBy,
+                      this.itemPageId,
+                    ),
+                  sortBy: (a, b) => sortBy(a, b, this.orderBy, this.itemPageId),
+                  groupBy: {
+                    value: (page) =>
+                      groupBy(page, this.qaRunId ?? "", this.orderBy),
+                    groups: [
+                      {
+                        value: "severe",
+                        renderLabel: ({ data }) =>
+                          html`${msg("Severe")}
+                            <btrix-badge class="ml-2" .variant=${"danger"}>
+                              ${data.length}
+                            </btrix-badge>`,
+                      },
+                      {
+                        value: "moderate",
+                        renderLabel: ({ data }) =>
+                          html`${msg("Possible Issues")}
+                            <btrix-badge class="ml-2" .variant=${"warning"}>
+                              ${data.length}
+                            </btrix-badge>`,
+                      },
+                      {
+                        value: "good",
+                        renderLabel: ({ data }) =>
+                          html`${msg("Likely Good")}
+                            <btrix-badge class="ml-2" .variant=${"success"}>
+                              ${data.length}
+                            </btrix-badge>`,
+                      },
+                      {
+                        value: "commentOnly",
+                        renderLabel: ({ data }) =>
+                          html`${msg("Comments Only")}
+                            <btrix-badge class="ml-2" .variant=${"primary"}>
+                              ${data.length}
+                            </btrix-badge>`,
+                      },
+                      {
+                        value: "approved",
+                        renderLabel: ({ data }) =>
+                          html`${msg("Approved")}
+                            <btrix-badge class="ml-2" .variant=${"success"}>
+                              ${data.length}
+                            </btrix-badge>`,
+                      },
+                      {
+                        value: "rejected",
+                        renderLabel: ({ data }) =>
+                          html`${msg("Rejected")}
+                            <btrix-badge class="ml-2" .variant=${"danger"}>
+                              ${data.length}
+                            </btrix-badge>`,
+                      },
+                      {
+                        value: remainder,
+                        renderLabel: ({ data }) =>
+                          html`${msg("No QA Data")}
+                            <btrix-badge
+                              class="ml-2"
+                              .variant=${"high-contrast"}
+                            >
+                              ${data.length}
+                            </btrix-badge>`,
+                      },
+                    ],
+                  },
+                })
+              : html`<div
+                  class="flex flex-col items-center justify-center gap-4 py-8 text-xs text-gray-600"
+                >
+                  <sl-icon name="dash-circle" class="h-4 w-4"></sl-icon>
+                  ${msg("No pages")}
+                </div>`,
+        )}
       </div>
     `;
   }
