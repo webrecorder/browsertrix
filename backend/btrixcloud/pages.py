@@ -99,9 +99,9 @@ class PageOps:
             crawl_id=crawl_id,
             url=page_dict.get("url"),
             title=page_dict.get("title"),
-            load_state=page_dict.get("loadState"),
+            loadState=page_dict.get("loadState"),
             status=status,
-            timestamp=(
+            ts=(
                 from_k8s_date(page_dict.get("ts"))
                 if page_dict.get("ts")
                 else datetime.now()
@@ -148,6 +148,7 @@ class PageOps:
                 flush=True,
             )
             return
+
         # qa data
         if qa_run_id and page:
             compare_dict = page_dict.get("comparison")
