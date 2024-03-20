@@ -63,6 +63,8 @@ class BaseCrawlOps:
     background_job_ops: BackgroundJobOps
     page_ops: PageOps
 
+    presign_duration: int
+
     def __init__(
         self,
         mdb,
@@ -189,8 +191,7 @@ class BaseCrawlOps:
         crawl_out = await self.get_crawl_out(crawl_id)
         resources = crawl_out.resources or []
         for file_ in resources:
-            if file_.path.startswith("/"):
-                file_.path = "http://browsertrix-cloud-frontend.default" + file_.path
+            file_.path = self.storage_ops.resolve_internal_access_path(file_.path)
 
         return crawl_out
 
