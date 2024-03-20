@@ -16,7 +16,6 @@ import { TWO_COL_SCREEN_MIN_CSS } from "@/components/ui/tab-list";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
-import { type QaPage } from "@/features/qa/page-list/ui/page";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type {
   ArchivedItem,
@@ -129,17 +128,14 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
+  private navToPage(pageId: string) {
+    this.navigate.to(`${window.location.pathname}?itemPageId=${pageId}`);
+  }
+
   private async initItem() {
     void this.fetchCrawl();
     await this.fetchQaRuns();
     await this.fetchPages({ page: 1 });
-    const firstPage = this.pages?.items[0];
-
-    if (!this.itemPageId && firstPage) {
-      this.navigate.to(
-        `${window.location.pathname}?itemPageId=${firstPage.id}`,
-      );
-    }
   }
 
   render() {
@@ -219,8 +215,8 @@ export class ArchivedItemQA extends TailwindElement {
             .qaRunId=${this.qaRunId}
             .pages=${this.pages}
             class="grid min-h-0 content-start justify-stretch"
-            @qa-page-select=${(e: CustomEvent<QaPage>) => {
-              this.itemPageId = e.detail.pageId;
+            @btrix-qa-page-select=${(e: CustomEvent<string>) => {
+              this.navToPage(e.detail);
             }}
           ></btrix-qa-page-list>
         </section>

@@ -6,7 +6,6 @@ import { pageIsReviewed } from "./helpers";
 import { groupBy } from "./helpers/groupBy";
 import { sortBy } from "./helpers/sortBy";
 import { type QaPage } from "./ui/page";
-import { type QaPageGroup } from "./ui/page-group";
 import { renderItem } from "./ui/render-item";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -86,7 +85,9 @@ export class PageList extends TailwindElement {
 
   private queuedCount = 0;
   private reviewedCount = 0;
-  private filteredPages = this.pages?.items ?? [];
+
+  @state()
+  filteredPages = this.pages?.items ?? [];
 
   protected async willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("tab") && this.tab === Tab.Reviewed) {
@@ -102,22 +103,29 @@ export class PageList extends TailwindElement {
       this.reviewedCount = 0;
 
       // Filtered data
-      this.filteredPages = [];
+      const filteredPages: ArchivedItemPage[] = [];
 
       this.pages?.items.forEach((page) => {
         const isReviewed = pageIsReviewed(page);
         isReviewed ? this.reviewedCount++ : this.queuedCount++;
         if ((this.tab === Tab.Reviewed) === isReviewed) {
-          this.filteredPages.push(page);
+          filteredPages.push(page);
         }
       });
-
-      await this.updateComplete;
-      console.log(this);
-      this.shadowRoot
-        ?.querySelector<QaPageGroup>("btrix-qa-page-group")
-        ?.selectFirst<QaPage>("btrix-qa-page")
-        ?.select({ animate: false });
+      this.filteredPages = filteredPages;
+    }
+    if (
+      changedProperties.has("filteredPages") &&
+      this.filteredPages.length > 0
+    ) {
+      this.dispatchEvent(
+        new CustomEvent<string>("btrix-qa-page-select", {
+          detail: this.filteredPages[0].id,
+          bubbles: true,
+          composed: true,
+        }),
+      );
+      this.itemPageId = this.filteredPages[0].id;
     }
     if (changedProperties.has("itemPageId")) {
       console.log(this.itemPageId);
@@ -236,7 +244,7 @@ export class PageList extends TailwindElement {
       </div>
       <div
         class="-mx-2 overflow-y-auto px-2"
-        @qa-page-select=${(e: CustomEvent<QaPage>) => {
+        @btrix-qa-page-select=${(e: CustomEvent<string>) => {
           this.currentPageElement = e.detail;
         }}
       >

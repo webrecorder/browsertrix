@@ -19,13 +19,10 @@ export class QaPage extends TailwindElement {
 
   private readonly contentContainer: Ref<HTMLElement> = createRef();
 
-  private animateNext = true;
-
-  select = ({ animate = true }: { animate?: boolean }) => {
-    this.animateNext = animate;
+  select = () => {
     this.dispatchEvent(
-      new CustomEvent<QaPage>("qa-page-select", {
-        detail: this,
+      new CustomEvent<string>("btrix-qa-page-select", {
+        detail: this.pageId,
         composed: true,
         bubbles: true,
       }),
@@ -35,10 +32,6 @@ export class QaPage extends TailwindElement {
 
   animateExpand = async () => {
     if (this.contentContainer.value == null) return;
-    if (!this.animateNext) {
-      this.animateNext = true;
-      return;
-    }
     await animateTo(
       this.contentContainer.value,
       shimKeyframesHeightAuto(
@@ -60,14 +53,9 @@ export class QaPage extends TailwindElement {
       ),
       { duration: 250, easing: "cubic-bezier(0.4, 0.0, 0.2, 1)" },
     );
-    this.animateNext = true;
   };
 
   animateCollapse = async () => {
-    if (!this.animateNext) {
-      this.animateNext = true;
-      return;
-    }
     if (this.contentContainer.value == null) return;
     await animateTo(
       this.contentContainer.value,
@@ -90,16 +78,15 @@ export class QaPage extends TailwindElement {
       ),
       { duration: 250, easing: "cubic-bezier(0.4, 0.0, 0.2, 1)" },
     );
-    this.animateNext = true;
   };
 
   protected async willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("selected")) {
-      if (changedProperties.get("selected")) {
-        void this.animateCollapse();
-      } else {
+      if (this.selected) {
         void this.animateExpand();
         this.focus();
+      } else {
+        void this.animateCollapse();
       }
     }
   }
