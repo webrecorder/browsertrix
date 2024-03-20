@@ -1222,7 +1222,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         logLevel: Optional[str] = None,
         context: Optional[str] = None,
     ):
-        crawl = await ops.get_crawl(crawl_id, org)
+        crawl = await ops.get_crawl_out(crawl_id, org)
 
         log_levels = []
         contexts = []
@@ -1234,7 +1234,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         # If crawl is finished, stream logs from WACZ files using presigned urls
         if crawl.finished:
             resp = await ops.storage_ops.sync_stream_wacz_logs(
-                crawl.resources, log_levels, contexts
+                crawl.resources or [], log_levels, contexts
             )
             return StreamingResponse(
                 resp,
