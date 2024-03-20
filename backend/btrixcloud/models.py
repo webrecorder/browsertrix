@@ -976,8 +976,8 @@ class OrgOut(BaseMongoModel):
     crawlExecSeconds: Dict[str, int] = {}
 
     # qa only usage + exec time
-    qausage: Optional[Dict[str, int]] = {}
-    qacrawlExecSeconds: Dict[str, int] = {}
+    qaUsage: Optional[Dict[str, int]] = {}
+    qaCrawlExecSeconds: Dict[str, int] = {}
 
     # exec time limits
     monthlyExecSeconds: Dict[str, int] = {}
@@ -1018,8 +1018,8 @@ class Organization(BaseMongoModel):
     crawlExecSeconds: Dict[str, int] = {}
 
     # qa only usage + exec time
-    qausage: Dict[str, int] = {}
-    qacrawlExecSeconds: Dict[str, int] = {}
+    qaUsage: Dict[str, int] = {}
+    qaCrawlExecSeconds: Dict[str, int] = {}
 
     # exec time limits
     monthlyExecSeconds: Dict[str, int] = {}
