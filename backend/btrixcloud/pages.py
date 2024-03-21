@@ -360,13 +360,17 @@ class PageOps:
         qa_gt: Optional[float] = None,
         qa_lte: Optional[float] = None,
         qa_lt: Optional[float] = None,
+        reviewed: Optional[bool] = None,
+        approved: Optional[bool] = None,
+        any_approval: Optional[bool] = None,
+        has_notes: Optional[bool] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
     ) -> Tuple[Union[List[PageOut], List[PageOutWithSingleQA]], int]:
         """List all pages in crawl"""
-        # pylint: disable=duplicate-code, too-many-locals, too-many-branches
+        # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
         # Zero-index page for query
         page = page - 1
         skip = page_size * page
@@ -376,6 +380,30 @@ class PageOps:
         }
         if org:
             query["oid"] = org.id
+
+        if reviewed:
+            query["$or"] = [
+                {"approved": {"$ne": None}},
+                {"notes.0": {"$exists": True}},
+            ]
+
+        if reviewed is False:
+            query["$and"] = [
+                {"approved": {"$eq": None}},
+                {"notes.0": {"$exists": False}},
+            ]
+
+        if approved is not None:
+            query["approved"] = approved
+
+        if any_approval:
+            query["approved"] = {"$ne": None}
+
+        if any_approval is False:
+            query["approved"] = {"$eq": None}
+
+        if has_notes is not None:
+            query["notes.0"] = {"$exists": has_notes}
 
         if qa_run_id:
             query[f"qa.{qa_run_id}"] = {"$exists": True}
@@ -576,6 +604,10 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     async def get_pages_list(
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
+        reviewed: Optional[bool] = None,
+        approved: Optional[bool] = None,
+        anyApproval: Optional[bool] = None,
+        hasNotes: Optional[bool] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: Optional[str] = None,
@@ -585,6 +617,10 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         pages, total = await ops.list_pages(
             crawl_id=crawl_id,
             org=org,
+            reviewed=reviewed,
+            approved=approved,
+            any_approval=anyApproval,
+            has_notes=hasNotes,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
@@ -605,6 +641,10 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         gt: Optional[float] = None,
         lte: Optional[float] = None,
         lt: Optional[float] = None,
+        reviewed: Optional[bool] = None,
+        approved: Optional[bool] = None,
+        anyApproval: Optional[bool] = None,
+        hasNotes: Optional[bool] = None,
         org: Organization = Depends(org_crawl_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -621,6 +661,10 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
             qa_gt=gt,
             qa_lte=lte,
             qa_lt=lt,
+            reviewed=reviewed,
+            approved=approved,
+            any_approval=anyApproval,
+            has_notes=hasNotes,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,
