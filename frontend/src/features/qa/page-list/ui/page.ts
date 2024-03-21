@@ -90,6 +90,7 @@ export class QaPage extends TailwindElement {
   }
 
   protected async updated(changedProperties: PropertyValues<this>) {
+    // TODO handle animation when previously selected item is moved to different tab
     if (changedProperties.has("selected")) {
       if (this.isFirstUpdate) {
         this.isFirstUpdate = false;

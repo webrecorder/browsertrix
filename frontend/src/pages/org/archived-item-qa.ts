@@ -17,6 +17,7 @@ import { TWO_COL_SCREEN_MIN_CSS } from "@/components/ui/tab-list";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
+import { pageIsReviewed } from "@/features/qa/page-list/helpers";
 import { type UpdateItemPageDetail } from "@/features/qa/page-qa-toolbar";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type {
@@ -201,7 +202,7 @@ export class ArchivedItemQA extends TailwindElement {
             <div class="flex gap-4">
               ${pageIdx !== -1 && this.pages?.total > 2
                 ? html`
-                    <sl-button size="small" @click=${this.onClickPreviousPage}>
+                    <sl-button size="small" @click=${this.navPrevPage}>
                       <sl-icon slot="prefix" name="arrow-left"></sl-icon>
                       ${msg("Previous Page")}
                     </sl-button>
@@ -220,7 +221,7 @@ export class ArchivedItemQA extends TailwindElement {
                     <sl-button
                       variant="primary"
                       size="small"
-                      @click=${this.onClickNextPage}
+                      @click=${this.navNextPage}
                     >
                       <sl-icon slot="suffix" name="arrow-right"></sl-icon>
                       ${msg("Next Page")}
@@ -338,13 +339,22 @@ export class ArchivedItemQA extends TailwindElement {
     return html`[replay]`;
   };
 
-  private onUpdateItemPage(e: CustomEvent<UpdateItemPageDetail>) {
+  private async onUpdateItemPage(e: CustomEvent<UpdateItemPageDetail>) {
     const updated = e.detail;
 
     if (!this.page || this.page.id !== updated.id) return;
 
+    const isReviewed = pageIsReviewed(this.page);
+
     this.page = merge<ArchivedItemPage>(this.page, updated);
-    this.fetchPage();
+
+    if (!isReviewed && this.pages && this.pages.total > 1) {
+      this.navNextPage();
+      await this.updateComplete;
+      this.syncPageList();
+    } else {
+      this.fetchPage();
+    }
   }
 
   private async fetchCrawl(): Promise<void> {
@@ -359,10 +369,11 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
-  private onClickNextPage() {
+  private navNextPage() {
     const pageIdx = this.getPageIndex();
     if (pageIdx === -1) return;
 
+    // TODO handle paginated
     const pageList = this.pages!.items;
     let nextPage: ArchivedItemPage | undefined;
 
@@ -377,10 +388,11 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
-  private onClickPreviousPage() {
+  private navPrevPage() {
     const pageIdx = this.getPageIndex();
     if (pageIdx === -1) return;
 
+    // TODO handle paginated
     const pageList = this.pages!.items;
     let prevPage: ArchivedItemPage | undefined;
 
@@ -392,6 +404,23 @@ export class ArchivedItemQA extends TailwindElement {
 
     if (prevPage) {
       this.navToPage(prevPage.id);
+    }
+  }
+
+  private syncPageList() {
+    if (!this.page) return;
+
+    // Update page list optimistically before next request to server
+    if (this.pages) {
+      const pageIdx = this.getPageIndex(this.page.id);
+      if (pageIdx !== -1) {
+        const items = this.pages.items;
+        items[pageIdx] = this.page;
+        this.pages = {
+          ...this.pages,
+          items,
+        };
+      }
     }
   }
 
@@ -456,18 +485,7 @@ export class ArchivedItemQA extends TailwindElement {
 
     try {
       this.page = await this.getPage(this.itemPageId);
-      // Update page list optimistically before next request to server
-      if (this.pages) {
-        const pageIdx = this.getPageIndex(this.page.id);
-        if (pageIdx !== -1) {
-          const items = this.pages.items;
-          items[pageIdx] = this.page;
-          this.pages = {
-            ...this.pages,
-            items,
-          };
-        }
-      }
+      this.syncPageList();
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve page at this time."),
