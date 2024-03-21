@@ -24,7 +24,7 @@ from .models import (
     PageNoteDelete,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import from_k8s_date
+from .utils import from_k8s_date, str_list_to_bools
 
 if TYPE_CHECKING:
     from .crawls import CrawlOps
@@ -361,8 +361,7 @@ class PageOps:
         qa_lte: Optional[float] = None,
         qa_lt: Optional[float] = None,
         reviewed: Optional[bool] = None,
-        approved: Optional[bool] = None,
-        any_approval: Optional[bool] = None,
+        approved: Optional[List[Union[bool, None]]] = None,
         has_notes: Optional[bool] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -393,14 +392,8 @@ class PageOps:
                 {"notes.0": {"$exists": False}},
             ]
 
-        if approved is not None:
-            query["approved"] = approved
-
-        if any_approval:
-            query["approved"] = {"$ne": None}
-
-        if any_approval is False:
-            query["approved"] = {"$eq": None}
+        if approved:
+            query["approved"] = {"$in": approved}
 
         if has_notes is not None:
             query["notes.0"] = {"$exists": has_notes}
@@ -605,8 +598,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
         reviewed: Optional[bool] = None,
-        approved: Optional[bool] = None,
-        anyApproval: Optional[bool] = None,
+        approved: Optional[str] = None,
         hasNotes: Optional[bool] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -614,12 +606,15 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         sortDirection: Optional[int] = -1,
     ):
         """Retrieve paginated list of pages"""
+        formatted_approved: Optional[List[Union[bool, None]]] = None
+        if approved:
+            formatted_approved = str_list_to_bools(approved.split(","))
+
         pages, total = await ops.list_pages(
             crawl_id=crawl_id,
             org=org,
             reviewed=reviewed,
-            approved=approved,
-            any_approval=anyApproval,
+            approved=formatted_approved,
             has_notes=hasNotes,
             page_size=pageSize,
             page=page,
@@ -642,8 +637,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         lte: Optional[float] = None,
         lt: Optional[float] = None,
         reviewed: Optional[bool] = None,
-        approved: Optional[bool] = None,
-        anyApproval: Optional[bool] = None,
+        approved: Optional[str] = None,
         hasNotes: Optional[bool] = None,
         org: Organization = Depends(org_crawl_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
@@ -652,6 +646,10 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         sortDirection: Optional[int] = -1,
     ):
         """Retrieve paginated list of pages"""
+        formatted_approved: Optional[List[Union[bool, None]]] = None
+        if approved:
+            formatted_approved = str_list_to_bools(approved.split(","))
+
         pages, total = await ops.list_pages(
             crawl_id=crawl_id,
             org=org,
@@ -662,8 +660,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
             qa_lte=lte,
             qa_lt=lt,
             reviewed=reviewed,
-            approved=approved,
-            any_approval=anyApproval,
+            approved=formatted_approved,
             has_notes=hasNotes,
             page_size=pageSize,
             page=page,

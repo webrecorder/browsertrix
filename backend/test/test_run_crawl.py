@@ -490,9 +490,9 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
-    page = r.json()
+    assert r.json()["approved"]
 
-    # Test approval and anyApproval filters
+    # Test approval filter
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?approved=True",
         headers=crawler_auth_headers,
@@ -508,14 +508,14 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert r.json()["total"] == 0
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?anyApproval=True",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?approved=True,False",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     assert r.json()["total"] == 1
 
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?anyApproval=False",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?approved=None",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
@@ -536,6 +536,13 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert r.status_code == 200
     assert r.json()["total"] == 1
 
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    page = r.json()
+
     assert page["id"] == page_id
     assert page["oid"]
     assert page["crawl_id"]
@@ -548,6 +555,44 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page["userid"]
     assert page["modified"]
     assert page["approved"]
+
+    # Set approved to False and test filter again
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+        json={
+            "approved": False,
+        },
+    )
+    assert r.status_code == 200
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?approved=True",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] == 0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?approved=False",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] == 1
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?approved=True,False",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] == 1
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?approved=None",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] == 0
 
 
 def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
@@ -624,7 +669,7 @@ def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id
     assert first_note["userName"]
     assert first_note["text"] == note_text
 
-    # Make sure page approval is set to None and re-test reviewed filter
+    # Make sure page approval is set to None and re-test filters
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages/{page_id}",
         headers=crawler_auth_headers,
@@ -634,6 +679,42 @@ def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id
     )
     assert r.status_code == 200
     assert r.json()["updated"]
+
+    # Test approved filter
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?approved=True",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] == 0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?approved=False",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] == 0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?approved=True,False",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] == 0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?approved=None",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] == 1
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?approved=true,false,none",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["total"] == 1
 
     # Test reviewed filter (page now has notes so should show up in True)
     r = requests.get(
