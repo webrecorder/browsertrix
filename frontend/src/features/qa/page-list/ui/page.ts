@@ -1,5 +1,5 @@
 import { localized } from "@lit/localize";
-import { css, html, type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 
 import { animateTo, shimKeyframesHeightAuto } from "./animate";
@@ -9,13 +9,6 @@ import { TailwindElement } from "@/classes/TailwindElement";
 @localized()
 @customElement("btrix-qa-page")
 export class QaPage extends TailwindElement {
-  static styles = css`
-    :host {
-      /* Chrome-only, improve render perf of long page lists */
-      content-visibility: auto;
-    }
-  `;
-
   @property({ type: String })
   pageId?: string;
 
@@ -28,6 +21,8 @@ export class QaPage extends TailwindElement {
   @query(".contentContainer")
   contentContainer?: HTMLElement;
 
+  private isFirstUpdate?: boolean;
+
   private select = async () => {
     if (this.selected) return;
 
@@ -38,8 +33,6 @@ export class QaPage extends TailwindElement {
         bubbles: true,
       }),
     );
-    await this.animateExpand();
-    this.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
   private animateExpand = async () => {
@@ -92,21 +85,26 @@ export class QaPage extends TailwindElement {
     );
   };
 
-  protected async firstUpdated() {
-    if (this.selected) {
-      this.anchor?.focus();
-      this.scrollIntoView();
-    }
+  firstUpdated() {
+    this.isFirstUpdate = true;
   }
 
   protected async updated(changedProperties: PropertyValues<this>) {
-    if (
-      changedProperties.has("selected") &&
-      changedProperties.get("selected") === true &&
-      this.selected === false
-    ) {
-      // Close if deselected
-      void this.animateCollapse();
+    if (changedProperties.has("selected")) {
+      if (this.isFirstUpdate) {
+        this.isFirstUpdate = false;
+
+        if (this.selected) {
+          this.scrollIntoView();
+        }
+      } else {
+        if (this.selected) {
+          await this.animateExpand();
+          this.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        } else if (changedProperties.get("selected") === true) {
+          void this.animateCollapse();
+        }
+      }
     }
   }
 
@@ -114,7 +112,7 @@ export class QaPage extends TailwindElement {
     return html`
       <div class="py-2 text-sm text-gray-600">
         <div
-          class="anchor relative z-20 ml-4 block flex-auto cursor-pointer select-none overflow-visible rounded border border-solid border-gray-300 bg-white px-4 py-2 pl-5 shadow-sm outline-none transition-shadow  aria-selected:border-blue-500 aria-selected:bg-blue-50 aria-selected:shadow-md aria-selected:shadow-blue-800/20 aria-selected:transition-none"
+          class="relative z-20 ml-4 block flex-auto cursor-pointer select-none overflow-visible rounded border border-solid border-gray-300 bg-white px-4 py-2 pl-5 shadow-sm outline-none transition-shadow  aria-selected:border-blue-500 aria-selected:bg-blue-50 aria-selected:shadow-md aria-selected:shadow-blue-800/20 aria-selected:transition-none"
           @click=${this.select}
           tabindex="0"
           aria-selected=${this.selected}

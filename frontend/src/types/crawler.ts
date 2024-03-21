@@ -191,7 +191,7 @@ export type ArchivedItemPageComment = {
 };
 
 export type ArchivedItemPage = {
-  id?: string;
+  id: string;
   oid: string;
   crawl_id: string;
   url: string;

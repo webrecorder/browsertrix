@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import { merge } from "immutable";
 import {
   css,
   html,
@@ -16,6 +17,7 @@ import { TWO_COL_SCREEN_MIN_CSS } from "@/components/ui/tab-list";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
+import { type UpdateItemPageDetail } from "@/features/qa/page-qa-toolbar";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type {
   ArchivedItem,
@@ -117,6 +119,11 @@ export class ArchivedItemQA extends TailwindElement {
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
 
+  private getPageIndex(pageId = this.itemPageId) {
+    if (!this.pages || !pageId) return -1;
+    return this.pages.items.findIndex((page) => page.id === pageId);
+  }
+
   protected willUpdate(
     changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
   ): void {
@@ -129,7 +136,11 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private navToPage(pageId: string) {
-    this.navigate.to(`${window.location.pathname}?itemPageId=${pageId}`);
+    this.navigate.to(
+      `${window.location.pathname}?itemPageId=${pageId}`,
+      undefined,
+      /* resetScroll: */ false,
+    );
   }
 
   private async initItem() {
@@ -145,6 +156,7 @@ export class ArchivedItemQA extends TailwindElement {
 
     const crawlBaseUrl = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}`;
     const itemName = this.item ? renderName(this.item) : nothing;
+    const pageIdx = this.getPageIndex();
     return html`
       <nav class="mb-7 text-success-600">
         <a
@@ -187,20 +199,34 @@ export class ArchivedItemQA extends TailwindElement {
               </btrix-navigation-button>
             </div>
             <div class="flex gap-4">
-              <sl-button size="small">
-                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
-                ${msg("Previous Page")}
-              </sl-button>
+              ${pageIdx !== -1 && this.pages?.total > 2
+                ? html`
+                    <sl-button size="small" @click=${this.onClickPreviousPage}>
+                      <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+                      ${msg("Previous Page")}
+                    </sl-button>
+                  `
+                : nothing}
               <btrix-page-qa-toolbar
                 .authState=${this.authState}
                 .orgId=${this.orgId}
                 .itemId=${this.itemId}
                 .pageId=${this.itemPageId}
+                .page=${this.page}
+                @btrix-update-item-page=${this.onUpdateItemPage}
               ></btrix-page-qa-toolbar>
-              <sl-button variant="primary" size="small">
-                <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-                ${msg("Next Page")}
-              </sl-button>
+              ${pageIdx !== -1 && this.pages?.total > 1
+                ? html`
+                    <sl-button
+                      variant="primary"
+                      size="small"
+                      @click=${this.onClickNextPage}
+                    >
+                      <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+                      ${msg("Next Page")}
+                    </sl-button>
+                  `
+                : nothing}
             </div>
           </nav>
           ${this.renderToolbar()} ${this.renderSections()}
@@ -312,6 +338,15 @@ export class ArchivedItemQA extends TailwindElement {
     return html`[replay]`;
   };
 
+  private onUpdateItemPage(e: CustomEvent<UpdateItemPageDetail>) {
+    const updated = e.detail;
+
+    if (!this.page || this.page.id !== updated.id) return;
+
+    this.page = merge<ArchivedItemPage>(this.page, updated);
+    this.fetchPage();
+  }
+
   private async fetchCrawl(): Promise<void> {
     try {
       this.item = await this.getCrawl();
@@ -321,6 +356,42 @@ export class ArchivedItemQA extends TailwindElement {
         variant: "danger",
         icon: "exclamation-octagon",
       });
+    }
+  }
+
+  private onClickNextPage() {
+    const pageIdx = this.getPageIndex();
+    if (pageIdx === -1) return;
+
+    const pageList = this.pages!.items;
+    let nextPage: ArchivedItemPage | undefined;
+
+    if (pageIdx === pageList.length - 1) {
+      nextPage = pageList[0];
+    } else {
+      nextPage = pageList[pageIdx + 1];
+    }
+
+    if (nextPage) {
+      this.navToPage(nextPage.id);
+    }
+  }
+
+  private onClickPreviousPage() {
+    const pageIdx = this.getPageIndex();
+    if (pageIdx === -1) return;
+
+    const pageList = this.pages!.items;
+    let prevPage: ArchivedItemPage | undefined;
+
+    if (pageIdx === 0) {
+      prevPage = pageList[pageList.length - 1];
+    } else {
+      prevPage = pageList[pageIdx - 1];
+    }
+
+    if (prevPage) {
+      this.navToPage(prevPage.id);
     }
   }
 
@@ -382,17 +453,20 @@ export class ArchivedItemQA extends TailwindElement {
   }
   private async fetchPage(): Promise<void> {
     if (!this.itemPageId) return;
-    // Capturing the ID here in case it changes between now and when `getPage` returns
-    const id = this.itemPageId;
-    const cachedPage = this.pages?.items.find((page) => page.id === id);
-    if (cachedPage) {
-      this.page = cachedPage;
-    }
+
     try {
       this.page = await this.getPage(this.itemPageId);
+      // Update page list optimistically before next request to server
       if (this.pages) {
-        const pageIndex = this.pages.items.findIndex((page) => page.id === id);
-        this.pages.items[pageIndex] = this.page;
+        const pageIdx = this.getPageIndex(this.page.id);
+        if (pageIdx !== -1) {
+          const items = this.pages.items;
+          items[pageIdx] = this.page;
+          this.pages = {
+            ...this.pages,
+            items,
+          };
+        }
       }
     } catch {
       this.notify.toast({
