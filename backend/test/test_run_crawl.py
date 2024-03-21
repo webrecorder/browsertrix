@@ -431,9 +431,9 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
         assert page["oid"]
         assert page["crawl_id"]
         assert page["url"]
-        assert page["timestamp"]
+        assert page["ts"]
         assert page.get("title") or page.get("title") is None
-        assert page["load_state"]
+        assert page["loadState"]
         assert page["status"]
 
     # Test GET page endpoint
@@ -450,13 +450,9 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page["oid"]
     assert page["crawl_id"]
     assert page["url"]
-    assert page["timestamp"]
+    assert page["ts"]
     assert page.get("title") or page.get("title") is None
-    assert page["load_state"]
-
-    assert page["screenshotMatch"] == {}
-    assert page["textMatch"] == {}
-    assert page["resourceCounts"] == {}
+    assert page["loadState"]
 
     assert page["notes"] == []
     assert page.get("userid") is None
@@ -485,9 +481,9 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page["oid"]
     assert page["crawl_id"]
     assert page["url"]
-    assert page["timestamp"]
+    assert page["ts"]
     assert page.get("title") or page.get("title") is None
-    assert page["load_state"]
+    assert page["loadState"]
 
     assert page["notes"] == []
     assert page["userid"]
@@ -522,9 +518,9 @@ def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_
         assert page["oid"]
         assert page["crawl_id"]
         assert page["url"]
-        assert page["timestamp"]
+        assert page["ts"]
         assert page.get("title") or page.get("title") is None
-        assert page["load_state"]
+        assert page["loadState"]
         assert page["status"]
 
     # Ensure only superuser can re-add pages for all crawls in an org
