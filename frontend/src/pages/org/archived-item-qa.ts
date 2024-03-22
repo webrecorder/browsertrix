@@ -116,6 +116,11 @@ export class ArchivedItemQA extends TailwindElement {
   @state()
   private page?: ArchivedItemPage;
 
+  @state()
+  filterBy: {
+    reviewed?: boolean;
+  } = {};
+
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
@@ -133,6 +138,9 @@ export class ArchivedItemQA extends TailwindElement {
     }
     if (changedProperties.has("itemPageId") && this.itemPageId) {
       void this.fetchPage();
+    }
+    if (changedProperties.has("filterBy") && this.filterBy) {
+      void this.fetchPages();
     }
   }
 
@@ -468,6 +476,9 @@ export class ArchivedItemQA extends TailwindElement {
     const query = queryString.stringify(
       {
         ...params,
+        reviewed: this.filterBy.reviewed,
+        // approved: true,
+        // hasNotes: true,
       },
       {
         arrayFormat: "comma",
