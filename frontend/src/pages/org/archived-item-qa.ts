@@ -368,15 +368,15 @@ export class ArchivedItemQA extends TailwindElement {
   };
 
   private readonly renderReplay = ({ isQA } = { isQA: false }) => {
-    if (!this.itemId) return;
+    if (!this.itemId || !this.qaRunId) return;
     const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${isQA ? `/qa/${this.qaRunId}` : ""}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
-    return html`<div class="aspect-4/3 overflow-hidden">
+    return html`<div class="aspect-4/3 overflow-hidden" style="display: none">
       <replay-web-page
         source="${replaySource}"
-        coll="${this.itemId}"
+        coll="${this.qaRunId}"
         config="${config}"
         replayBase="/replay/"
         embed="replayonly"
@@ -422,6 +422,9 @@ export class ArchivedItemQA extends TailwindElement {
   private async fetchQARuns(): Promise<void> {
     try {
       this.qaRuns = await this.getQARuns();
+      if (this.qaRuns.length) {
+        this.qaRunId = this.qaRuns[0].id;
+      }
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve archived item at this time."),
