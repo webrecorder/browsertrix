@@ -109,11 +109,19 @@ export class ArchivedItemQA extends TailwindElement {
   private qaRuns?: QARun[];
 
   @state()
-  private screenshotIframesReady: 0 | 1 | 2 = 0;
+  private replaySWReadyCount: 0 | 1 | 2 = 0;
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    window.addEventListener("message", () => {
+      // TODO better way of identifying source
+      this.replaySWReadyCount += 1;
+    });
+  }
 
   protected willUpdate(
     changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
@@ -320,12 +328,9 @@ export class ArchivedItemQA extends TailwindElement {
   private readonly renderScreenshots = () => {
     if (!this.page) return; // TODO loading indicator
 
-    console.log(this.page);
-
-    // const url = `/replay/w/manual-20240226234726-051ed881-37e/:fbc91e679056dc8da1528376ddbc7e5c931ca9b03a0d0f65430c5ee2a76c94c2/20240226234908mp_/urn:view:http://example.com/`;
     const timestamp = this.page.ts?.split(".")[0].replace(/\D/g, "");
-    const crawlUrl = `/replay/w/${this.itemId}/:${this.itemPageId}/${timestamp}mp_/urn:view:${window.encodeURIComponent(this.page.url)}`;
-    const qaUrl = `/replay/w/${this.qaRunId}/:${this.itemPageId}/${timestamp}mp_/urn:view:${window.encodeURIComponent(this.page.url)}`;
+    const crawlUrl = `/replay/w/${this.itemId}/${timestamp}mp_/urn:view:${this.page.url}`;
+    const qaUrl = `/replay/w/${this.qaRunId}/${timestamp}mp_/urn:view:${this.page.url}`;
     console.log(crawlUrl);
 
     return html`
@@ -333,36 +338,38 @@ export class ArchivedItemQA extends TailwindElement {
         <h3 id="crawlScreenshotHeading">${msg("Crawl Screenshot")}</h3>
         <h3 id="replayScreenshotHeading">${msg("Replay Screenshot")}</h3>
       </div>
-      <div class="overflow-hidden rounded border bg-slate-50">
-        <sl-image-comparer
-          class="${this.screenshotIframesReady === 2
-            ? "visible"
-            : "invisible"} w-full"
-        >
-          <iframe
-            slot="before"
-            name="crawlScreenshot"
-            src="${crawlUrl}"
-            class="aspect-video w-full"
-            aria-labelledby="crawlScreenshotHeading"
-            @load=${this.onScreenshotLoad}
-          ></iframe>
-          <iframe
-            slot="after"
-            name="replayScreenshot"
-            src="${qaUrl}"
-            class="aspect-video w-full"
-            aria-labelledby="replayScreenshotHeading"
-            @load=${this.onScreenshotLoad}
-          ></iframe>
-        </sl-image-comparer>
+      <div class="flex overflow-hidden rounded border bg-slate-50">
+        ${when(
+          this.replaySWReadyCount === 2,
+          () => html`
+            <iframe
+              slot="before"
+              name="crawlScreenshot"
+              src="${crawlUrl}"
+              class="aspect-video w-full outline -outline-offset-2 outline-yellow-400"
+              aria-labelledby="crawlScreenshotHeading"
+              @load=${this.onScreenshotLoad}
+            ></iframe>
+            <iframe
+              slot="after"
+              name="replayScreenshot"
+              src="${qaUrl}"
+              class="aspect-video w-full outline -outline-offset-2 outline-yellow-400"
+              aria-labelledby="replayScreenshotHeading"
+              @load=${this.onScreenshotLoad}
+            ></iframe>
+          `,
+        )}
+      </div>
+      <div class="outline-2 -outline-offset-2  outline-red-500">
+        TEMP: embedded replay of qa run: ${this.renderReplay({ isQA: true })}
       </div>
     `;
   };
 
-  private readonly renderReplay = (crawlId?: string) => {
+  private readonly renderReplay = ({ isQA } = { isQA: false }) => {
     if (!this.itemId) return;
-    const replaySource = `/api/orgs/${this.orgId}/crawls/${crawlId || this.itemId}/replay.json`;
+    const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${isQA ? `/qa/${this.qaRunId}` : ""}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
@@ -386,7 +393,6 @@ export class ArchivedItemQA extends TailwindElement {
       img.style.height = "auto";
       img.style.width = "100%";
     }
-    this.screenshotIframesReady += 1;
   };
 
   private async fetchCrawl(): Promise<void> {
@@ -416,7 +422,6 @@ export class ArchivedItemQA extends TailwindElement {
   private async fetchQARuns(): Promise<void> {
     try {
       this.qaRuns = await this.getQARuns();
-      console.log(this.qaRuns);
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve archived item at this time."),
