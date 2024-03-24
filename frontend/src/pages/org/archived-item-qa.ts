@@ -108,8 +108,14 @@ export class ArchivedItemQA extends TailwindElement {
   @state()
   private qaRuns?: QARun[];
 
+  //@state()
+  //private replaySWReadyCount: 0 | 1 | 2 = 0;
+
   @state()
-  private replaySWReadyCount: 0 | 1 | 2 = 0;
+  private crawlDataAvail = false;
+
+  @state()
+  private qaDataAvail = false;
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
@@ -117,9 +123,21 @@ export class ArchivedItemQA extends TailwindElement {
 
   connectedCallback(): void {
     super.connectedCallback();
-    window.addEventListener("message", () => {
+    window.addEventListener("message", (event) => {
       // TODO better way of identifying source
-      this.replaySWReadyCount += 1;
+      //this.replaySWReadyCount += 1;
+      const sourceLoc = (event.source as Window).location.href;
+
+      // ensure its an rwp frame
+      if (sourceLoc.indexOf("?source=") > 0) {
+        // check if has /qa/ in path, then QA
+        if (sourceLoc.indexOf("%2Fqa%2F") >= 0) {
+          this.qaDataAvail = true;
+          // otherwise main crawl replay
+        } else {
+          this.crawlDataAvail = true;
+        }
+      }
     });
   }
 
@@ -132,6 +150,10 @@ export class ArchivedItemQA extends TailwindElement {
     if (changedProperties.has("itemPageId") && this.itemPageId) {
       void this.fetchPage();
     }
+    // if ((changedProperties.has("itemId") && this.itemId) ||
+    //     (changedProperties.has("qaRunId") && this.qaRunId)) {
+    //   this.registerSW();
+    // }
   }
 
   private async initItem() {
@@ -340,7 +362,7 @@ export class ArchivedItemQA extends TailwindElement {
       </div>
       <div class="flex overflow-hidden rounded border bg-slate-50">
         ${when(
-          this.replaySWReadyCount === 2,
+          this.qaDataAvail && this.crawlDataAvail,
           () => html`
             <iframe
               slot="before"
@@ -362,25 +384,33 @@ export class ArchivedItemQA extends TailwindElement {
         )}
       </div>
       <div class="outline-2 -outline-offset-2  outline-red-500">
-        TEMP: embedded replay of qa run: ${this.renderReplay({ isQA: true })}
+        ${this.renderReplay({ isQA: false, hide: true })}
+        ${this.renderReplay({ isQA: true, hide: true })}
       </div>
     `;
   };
 
-  private readonly renderReplay = ({ isQA } = { isQA: false }) => {
-    if (!this.itemId || !this.qaRunId) return;
+  private readonly renderReplay = (
+    { isQA, hide } = { isQA: false, hide: false },
+  ) => {
+    if (!this.itemId) return;
+    const rwpId = isQA ? this.qaRunId : this.itemId;
+    if (!rwpId) {
+      return;
+    }
     const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${isQA ? `/qa/${this.qaRunId}` : ""}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
-    return html`<div class="aspect-4/3 overflow-hidden" style="display: none">
+    return html`<div class="${hide ? "hidden" : ""} aspect-4/3 overflow-hidden">
       <replay-web-page
         source="${replaySource}"
-        coll="${this.qaRunId}"
+        coll="${rwpId}"
         config="${config}"
         replayBase="/replay/"
         embed="replayonly"
         noCache="true"
+        url="urn:view:${this.page?.url}"
       ></replay-web-page>
     </div>`;
   };
