@@ -1,5 +1,7 @@
 """crawl pages"""
 
+import asyncio
+import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict, Any, Union
 from uuid import UUID, uuid4
@@ -10,8 +12,9 @@ import pymongo
 from .models import (
     Page,
     PageOut,
+    PageOutWithSingleQA,
     PageReviewUpdate,
-    PageQAUpdate,
+    PageQACompare,
     Organization,
     PaginatedResponse,
     User,
@@ -21,7 +24,7 @@ from .models import (
     PageNoteDelete,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import from_k8s_date
+from .utils import from_k8s_date, str_list_to_bools
 
 if TYPE_CHECKING:
     from .crawls import CrawlOps
@@ -42,64 +45,121 @@ class PageOps:
 
     def __init__(self, mdb, crawl_ops, org_ops, storage_ops):
         self.pages = mdb["pages"]
+        self.crawls = mdb["crawls"]
         self.crawl_ops = crawl_ops
         self.org_ops = org_ops
         self.storage_ops = storage_ops
 
-    async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str):
+    async def init_index(self):
+        """init index for pages db collection"""
+        await self.pages.create_index([("crawl_id", pymongo.HASHED)])
+
+    async def add_crawl_pages_to_db_from_wacz(self, crawl_id: str, batch_size=100):
         """Add pages to database from WACZ files"""
+        pages_buffer: List[Page] = []
         try:
-            crawl = await self.crawl_ops.get_crawl(crawl_id, None)
-            org = await self.org_ops.get_org_by_id(crawl.oid)
-            wacz_files = await self.crawl_ops.get_wacz_files(crawl_id, org)
-            stream = await self.storage_ops.sync_stream_pages_from_wacz(org, wacz_files)
+            crawl = await self.crawl_ops.get_crawl_out(crawl_id)
+            stream = await self.storage_ops.sync_stream_wacz_pages(
+                crawl.resources or []
+            )
             for page_dict in stream:
                 if not page_dict.get("url"):
                     continue
 
-                await self.add_page_to_db(page_dict, crawl_id, crawl.oid)
+                if len(pages_buffer) > batch_size:
+                    await self._add_pages_to_db(pages_buffer)
+
+                pages_buffer.append(
+                    self._get_page_from_dict(page_dict, crawl_id, crawl.oid)
+                )
+
+            # Add any remaining pages in buffer to db
+            if pages_buffer:
+                await self._add_pages_to_db(pages_buffer)
+
+            print(f"Added pages for crawl {crawl_id} to db", flush=True)
         # pylint: disable=broad-exception-caught, raise-missing-from
         except Exception as err:
+            traceback.print_exc()
             print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
 
-    async def add_page_to_db(self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID):
-        """Add page to database"""
+    def _get_page_from_dict(self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID):
+        """Return Page object from dict"""
         page_id = page_dict.get("id")
         if not page_id:
             print(f'Page {page_dict.get("url")} has no id - assigning UUID', flush=True)
-            page_id = uuid4()
+
+        status = page_dict.get("status")
+        if not status and page_dict.get("loadState"):
+            status = 200
+
+        return Page(
+            id=page_id,
+            oid=oid,
+            crawl_id=crawl_id,
+            url=page_dict.get("url"),
+            title=page_dict.get("title"),
+            loadState=page_dict.get("loadState"),
+            status=status,
+            ts=(
+                from_k8s_date(page_dict.get("ts"))
+                if page_dict.get("ts")
+                else datetime.now()
+            ),
+        )
+
+    async def _add_pages_to_db(self, pages: List[Page]):
+        """Add batch of pages to db in one insert"""
+        result = await self.pages.insert_many(
+            [
+                page.to_dict(
+                    exclude_unset=True, exclude_none=True, exclude_defaults=True
+                )
+                for page in pages
+            ]
+        )
+        if not result.inserted_ids:
+            # pylint: disable=broad-exception-raised
+            raise Exception("No pages inserted")
+
+    async def add_page_to_db(
+        self,
+        page_dict: Dict[str, Any],
+        crawl_id: str,
+        qa_run_id: Optional[str],
+        oid: UUID,
+    ):
+        """Add page to database"""
+        page = self._get_page_from_dict(page_dict, crawl_id, oid)
 
         try:
-            status = page_dict.get("status")
-            if not status and page_dict.get("loadState"):
-                status = 200
-            page = Page(
-                id=page_id,
-                oid=oid,
-                crawl_id=crawl_id,
-                url=page_dict.get("url"),
-                title=page_dict.get("title"),
-                load_state=page_dict.get("loadState"),
-                status=status,
-                timestamp=(
-                    from_k8s_date(page_dict.get("ts"))
-                    if page_dict.get("ts")
-                    else datetime.now()
-                ),
-            )
             await self.pages.insert_one(
                 page.to_dict(
                     exclude_unset=True, exclude_none=True, exclude_defaults=True
                 )
             )
         except pymongo.errors.DuplicateKeyError:
-            return
+            pass
+
         # pylint: disable=broad-except
         except Exception as err:
             print(
-                f"Error adding page {page_id} from crawl {crawl_id} to db: {err}",
+                f"Error adding page {page.id} from crawl {crawl_id} to db: {err}",
                 flush=True,
             )
+            return
+
+        # qa data
+        if qa_run_id and page:
+            compare_dict = page_dict.get("comparison")
+            if compare_dict is None:
+                print("QA Run, but compare data missing!")
+                return
+
+            compare = PageQACompare(**compare_dict)
+            print("Adding QA Run Data for Page", page_dict.get("url"), compare)
+
+            await self.add_qa_run_for_page(page.id, oid, qa_run_id, compare)
 
     async def delete_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
         """Delete crawl pages from db"""
@@ -141,38 +201,30 @@ class PageOps:
         page_raw = await self.get_page_raw(page_id, oid, crawl_id)
         return Page.from_dict(page_raw)
 
-    async def update_page_qa(
-        self,
-        page_id: UUID,
-        oid: UUID,
-        qa_run_id: str,
-        update: PageQAUpdate,
-    ) -> Dict[str, bool]:
+    async def add_qa_run_for_page(
+        self, page_id: UUID, oid: UUID, qa_run_id: str, compare: PageQACompare
+    ) -> bool:
         """Update page heuristics and mime/type from QA run"""
-        query = update.dict(exclude_unset=True)
 
-        if len(query) == 0:
-            raise HTTPException(status_code=400, detail="no_update_data")
-
-        keyed_fields = ("screenshotMatch", "textMatch", "resourceCounts")
-        for field in keyed_fields:
-            score = query.get(field)
-            if score:
-                query[f"{field}.{qa_run_id}"] = score
-                query.pop(field, None)
-
-        query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        # modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
         result = await self.pages.find_one_and_update(
             {"_id": page_id, "oid": oid},
-            {"$set": query},
+            {"$set": {f"qa.{qa_run_id}": compare.dict()}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
 
         if not result:
             raise HTTPException(status_code=404, detail="page_not_found")
 
-        return {"updated": True}
+        return True
+
+    async def delete_qa_run_from_pages(self, crawl_id: str, qa_run_id: str):
+        """delete pages"""
+        result = await self.pages.update_many(
+            {"crawl_id": crawl_id}, {"$unset": {f"qa.{qa_run_id}": ""}}
+        )
+        return result
 
     async def update_page_approval(
         self,
@@ -300,23 +352,71 @@ class PageOps:
 
     async def list_pages(
         self,
-        org: Organization,
         crawl_id: str,
+        org: Optional[Organization] = None,
+        qa_run_id: Optional[str] = None,
+        qa_filter_by: Optional[str] = None,
+        qa_gte: Optional[float] = None,
+        qa_gt: Optional[float] = None,
+        qa_lte: Optional[float] = None,
+        qa_lt: Optional[float] = None,
+        reviewed: Optional[bool] = None,
+        approved: Optional[List[Union[bool, None]]] = None,
+        has_notes: Optional[bool] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sort_by: Optional[str] = None,
         sort_direction: Optional[int] = -1,
-    ) -> Tuple[List[Page], int]:
+    ) -> Tuple[Union[List[PageOut], List[PageOutWithSingleQA]], int]:
         """List all pages in crawl"""
-        # pylint: disable=duplicate-code, too-many-locals
+        # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
         # Zero-index page for query
         page = page - 1
         skip = page_size * page
 
         query: dict[str, object] = {
-            "oid": org.id,
             "crawl_id": crawl_id,
         }
+        if org:
+            query["oid"] = org.id
+
+        if reviewed:
+            query["$or"] = [
+                {"approved": {"$ne": None}},
+                {"notes.0": {"$exists": True}},
+            ]
+
+        if reviewed is False:
+            query["$and"] = [
+                {"approved": {"$eq": None}},
+                {"notes.0": {"$exists": False}},
+            ]
+
+        if approved:
+            query["approved"] = {"$in": approved}
+
+        if has_notes is not None:
+            query["notes.0"] = {"$exists": has_notes}
+
+        if qa_run_id:
+            query[f"qa.{qa_run_id}"] = {"$exists": True}
+
+            range_filter = {}
+
+            if qa_gte:
+                range_filter["$gte"] = qa_gte
+            if qa_lte:
+                range_filter["$lte"] = qa_lte
+            if qa_gt:
+                range_filter["$gt"] = qa_gt
+            if qa_lt:
+                range_filter["$lt"] = qa_lt
+
+            if qa_filter_by:
+                if not range_filter:
+                    raise HTTPException(status_code=400, detail="range_missing")
+
+                query[f"qa.{qa_run_id}.{qa_filter_by}"] = range_filter
 
         aggregate = [{"$match": query}]
 
@@ -324,12 +424,26 @@ class PageOps:
             # Sorting options to add:
             # - automated heuristics like screenshot_comparison (dict keyed by QA run id)
             # - Ensure notes sorting works okay with notes in list
-            sort_fields = ("url", "title", "notes", "approved", "notes")
-            if sort_by not in sort_fields:
+            sort_fields = ("url", "title", "notes", "approved")
+            qa_sort_fields = ("screenshotMatch", "textMatch")
+            if sort_by not in sort_fields and sort_by not in qa_sort_fields:
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            if sort_by in qa_sort_fields:
+                if not qa_run_id:
+                    raise HTTPException(
+                        status_code=400, detail="qa_run_id_missing_for_qa_sort"
+                    )
+
+                sort_by = f"qa.{qa_run_id}.{sort_by}"
+
             aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+
+        if qa_run_id:
+            aggregate.extend([{"$set": {"qa": f"$qa.{qa_run_id}"}}])
+            # aggregate.extend([{"$project": {"qa": f"$qa.{qa_run_id}"}}])
 
         aggregate.extend(
             [
@@ -356,9 +470,24 @@ class PageOps:
         except (IndexError, ValueError):
             total = 0
 
-        pages = [PageOut.from_dict(data) for data in items]
+        if qa_run_id:
+            return [PageOutWithSingleQA.from_dict(data) for data in items], total
 
-        return pages, total
+        return [PageOut.from_dict(data) for data in items], total
+
+    async def re_add_crawl_pages(self, crawl_id: str, oid: UUID):
+        """Delete existing pages for crawl and re-add from WACZs."""
+        await self.delete_crawl_pages(crawl_id, oid)
+        print(f"Deleted pages for crawl {crawl_id}", flush=True)
+        await self.add_crawl_pages_to_db_from_wacz(crawl_id)
+
+    async def re_add_all_crawl_pages(self, oid: UUID):
+        """Re-add pages for all crawls in org"""
+        crawl_ids = await self.crawls.distinct(
+            "_id", {"type": "crawl", "finished": {"$ne": None}}
+        )
+        for crawl_id in crawl_ids:
+            await self.re_add_crawl_pages(crawl_id, oid)
 
 
 # ============================================================================
@@ -370,6 +499,25 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     ops = PageOps(mdb, crawl_ops, org_ops, storage_ops)
 
     org_crawl_dep = org_ops.org_crawl_dep
+
+    @app.post("/orgs/{oid}/crawls/all/pages/reAdd", tags=["pages"])
+    async def re_add_all_crawl_pages(
+        org: Organization = Depends(org_crawl_dep), user: User = Depends(user_dep)
+    ):
+        """Re-add pages for all crawls in org (superuser only)"""
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        asyncio.create_task(ops.re_add_all_crawl_pages(org.id))
+        return {"started": True}
+
+    @app.post("/orgs/{oid}/crawls/{crawl_id}/pages/reAdd", tags=["pages"])
+    async def re_add_crawl_pages(
+        crawl_id: str, org: Organization = Depends(org_crawl_dep)
+    ):
+        """Re-add pages for crawl"""
+        asyncio.create_task(ops.re_add_crawl_pages(crawl_id, org.id))
+        return {"started": True}
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}",
@@ -449,15 +597,71 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     async def get_pages_list(
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
+        reviewed: Optional[bool] = None,
+        approved: Optional[str] = None,
+        hasNotes: Optional[bool] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: Optional[str] = None,
         sortDirection: Optional[int] = -1,
     ):
         """Retrieve paginated list of pages"""
+        formatted_approved: Optional[List[Union[bool, None]]] = None
+        if approved:
+            formatted_approved = str_list_to_bools(approved.split(","))
+
         pages, total = await ops.list_pages(
-            org,
             crawl_id=crawl_id,
+            org=org,
+            reviewed=reviewed,
+            approved=formatted_approved,
+            has_notes=hasNotes,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+        )
+        return paginated_format(pages, total, page, pageSize)
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/pages",
+        tags=["pages", "qa"],
+        response_model=PaginatedResponse,
+    )
+    async def get_pages_list_with_qa(
+        crawl_id: str,
+        qa_run_id: str,
+        filterQABy: Optional[str] = None,
+        gte: Optional[float] = None,
+        gt: Optional[float] = None,
+        lte: Optional[float] = None,
+        lt: Optional[float] = None,
+        reviewed: Optional[bool] = None,
+        approved: Optional[str] = None,
+        hasNotes: Optional[bool] = None,
+        org: Organization = Depends(org_crawl_dep),
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sortBy: Optional[str] = None,
+        sortDirection: Optional[int] = -1,
+    ):
+        """Retrieve paginated list of pages"""
+        formatted_approved: Optional[List[Union[bool, None]]] = None
+        if approved:
+            formatted_approved = str_list_to_bools(approved.split(","))
+
+        pages, total = await ops.list_pages(
+            crawl_id=crawl_id,
+            org=org,
+            qa_run_id=qa_run_id,
+            qa_filter_by=filterQABy,
+            qa_gte=gte,
+            qa_gt=gt,
+            qa_lte=lte,
+            qa_lt=lt,
+            reviewed=reviewed,
+            approved=formatted_approved,
+            has_notes=hasNotes,
             page_size=pageSize,
             page=page,
             sort_by=sortBy,

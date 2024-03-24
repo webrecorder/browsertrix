@@ -24,6 +24,7 @@ from .models import (
     CrawlConfig,
     CrawlConfigOut,
     CrawlConfigIdNameOut,
+    CrawlOut,
     EmptyStr,
     UpdateCrawlConfig,
     Organization,
@@ -559,7 +560,9 @@ class CrawlConfigOps:
         results = [CrawlConfigIdNameOut.from_dict(res) for res in results]
         return results
 
-    async def get_running_crawl(self, crawlconfig: CrawlConfig):
+    async def get_running_crawl(
+        self, crawlconfig: Union[CrawlConfig, CrawlConfigOut]
+    ) -> Optional[CrawlOut]:
         """Return the id of currently running crawl for this config, if any"""
         # crawls = await self.crawl_manager.list_running_crawls(cid=crawlconfig.id)
         crawls, _ = await self.crawl_ops.list_crawls(
@@ -619,13 +622,15 @@ class CrawlConfigOps:
 
         return result is not None
 
-    def _add_curr_crawl_stats(self, crawlconfig, crawl):
+    def _add_curr_crawl_stats(
+        self, crawlconfig: CrawlConfigOut, crawl: Optional[CrawlOut]
+    ):
         """Add stats from current running crawl, if any"""
         if not crawl:
             return
 
         crawlconfig.lastCrawlState = crawl.state
-        crawlconfig.lastCrawlSize = crawl.stats.get("size", 0) if crawl.stats else 0
+        crawlconfig.lastCrawlSize = crawl.stats.size if crawl.stats else 0
         crawlconfig.lastCrawlStopping = crawl.stopping
 
     async def get_crawl_config_out(self, cid: UUID, org: Organization):
@@ -814,19 +819,15 @@ class CrawlConfigOps:
             "workflowIds": workflow_ids,
         }
 
-    async def run_now(self, cid: UUID, org: Organization, user: User):
-        """run specified crawlconfig now"""
+    async def prepare_for_run_crawl(self, cid: UUID, org: Organization) -> CrawlConfig:
+        """prepare for running a crawl, returning crawlconfig and
+        validating that running crawls is allowed"""
         crawlconfig = await self.get_crawl_config(cid, org.id)
 
         if not crawlconfig:
             raise HTTPException(
                 status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
-
-        if await self.get_running_crawl(crawlconfig):
-            raise HTTPException(status_code=400, detail="crawl_already_running")
-
-        crawl_id = None
 
         # ensure crawlconfig exists
         try:
@@ -840,6 +841,15 @@ class CrawlConfigOps:
 
         if await self.org_ops.exec_mins_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="exec_minutes_quota_reached")
+
+        return crawlconfig
+
+    async def run_now(self, cid: UUID, org: Organization, user: User):
+        """run specified crawlconfig now"""
+        crawlconfig = await self.prepare_for_run_crawl(cid, org)
+
+        if await self.get_running_crawl(crawlconfig):
+            raise HTTPException(status_code=400, detail="crawl_already_running")
 
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(

@@ -177,6 +177,37 @@ class CrawlManager(K8sAPI):
             warc_prefix=warc_prefix,
         )
 
+    async def create_qa_crawl_job(
+        self,
+        crawlconfig: CrawlConfig,
+        storage: StorageRef,
+        userid: str,
+        qa_source: str,
+    ) -> str:
+        """create new QA Run crawl job with qa source crawl id"""
+        cid = str(crawlconfig.id)
+
+        storage_secret = storage.get_storage_secret_name(str(crawlconfig.oid))
+
+        await self.has_storage_secret(storage_secret)
+
+        ts_now = dt_now().strftime("%Y%m%d%H%M%S")
+        crawl_id = f"qa-{ts_now}-{cid[:12]}"
+
+        return await self.new_crawl_job(
+            cid,
+            userid,
+            crawlconfig.oid,
+            storage,
+            crawlconfig.crawlerChannel,
+            1,
+            0,
+            0,
+            warc_prefix="qa",
+            crawl_id=crawl_id,
+            qa_source=qa_source,
+        )
+
     async def update_crawl_config(
         self, crawlconfig: CrawlConfig, update: UpdateCrawlConfig, profile_filename=None
     ) -> bool:

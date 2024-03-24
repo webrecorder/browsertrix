@@ -77,10 +77,10 @@ def main():
     coll_ops = CollectionOps(mdb, crawl_manager, org_ops, event_webhook_ops)
 
     crawl_ops = CrawlOps(
+        crawl_manager,
         mdb,
         user_manager,
         org_ops,
-        crawl_manager,
         crawl_config_ops,
         coll_ops,
         storage_ops,
