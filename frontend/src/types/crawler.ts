@@ -191,7 +191,7 @@ export type ArchivedItemPageComment = {
 };
 
 export type ArchivedItemPage = {
-  id?: string;
+  id: string;
   oid: string;
   crawl_id: string;
   url: string;
@@ -217,4 +217,16 @@ export type ArchivedItemPage = {
   modified?: string;
   approved?: boolean | null;
   notes?: ArchivedItemPageComment[];
+};
+
+export type ArchivedItemQaRun = {
+  id: string;
+  userName: string;
+  started: string;
+  finished: string;
+  stats: {
+    found: number;
+    done: number;
+    size: number;
+  };
 };

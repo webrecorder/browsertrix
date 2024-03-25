@@ -77,9 +77,6 @@ import(
 import(
   /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/tree-item/tree-item"
 );
-import(
-  /* webpackChunkName: "shoelace" */ "@shoelace-style/shoelace/dist/components/badge/badge"
-);
 
 setBasePath("/shoelace");
 registerIconLibrary("app", {

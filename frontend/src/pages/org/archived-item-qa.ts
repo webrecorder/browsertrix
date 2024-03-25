@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import { merge } from "immutable";
 import {
   css,
   html,
@@ -16,9 +17,14 @@ import { TWO_COL_SCREEN_MIN_CSS } from "@/components/ui/tab-list";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
+import { pageIsReviewed } from "@/features/qa/page-list/helpers";
+import { type UpdateItemPageDetail } from "@/features/qa/page-qa-toolbar";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
-import type { QARun } from "@/types/qa";
+import type {
+  ArchivedItem,
+  ArchivedItemPage,
+  ArchivedItemQaRun,
+} from "@/types/crawler";
 import { type AuthState } from "@/utils/AuthService";
 import { renderName } from "@/utils/crawler";
 
@@ -46,6 +52,11 @@ export class ArchivedItemQA extends TailwindElement {
         "pageList";
       grid-template-columns: 100%;
       grid-template-rows: repeat(4, max-content);
+      min-height: 0;
+    }
+
+    article > * {
+      min-height: 0;
     }
 
     @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
@@ -106,36 +117,17 @@ export class ArchivedItemQA extends TailwindElement {
   private page?: ArchivedItemPage;
 
   @state()
-  private qaRuns?: QARun[];
-
-  @state()
-  private crawlDataAvail = false;
-
-  @state()
-  private qaDataAvail = false;
+  filterBy: {
+    reviewed?: boolean;
+  } = {};
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
 
-  connectedCallback(): void {
-    super.connectedCallback();
-
-    // Check if replay-web-page is ready
-    window.addEventListener("message", (event) => {
-      const sourceLoc = (event.source as Window).location.href;
-
-      // ensure its an rwp frame
-      if (sourceLoc.indexOf("?source=") > 0) {
-        // check if has /qa/ in path, then QA
-        if (sourceLoc.indexOf("%2Fqa%2F") >= 0) {
-          this.qaDataAvail = true;
-          // otherwise main crawl replay
-        } else {
-          this.crawlDataAvail = true;
-        }
-      }
-    });
+  private getPageIndex(pageId = this.itemPageId) {
+    if (!this.pages || !pageId) return -1;
+    return this.pages.items.findIndex((page) => page.id === pageId);
   }
 
   protected willUpdate(
@@ -147,40 +139,23 @@ export class ArchivedItemQA extends TailwindElement {
     if (changedProperties.has("itemPageId") && this.itemPageId) {
       void this.fetchPage();
     }
+    if (changedProperties.has("filterBy") && this.filterBy) {
+      void this.fetchPages();
+    }
+  }
+
+  private navToPage(pageId: string) {
+    this.navigate.to(
+      `${window.location.pathname}?itemPageId=${pageId}`,
+      undefined,
+      /* resetScroll: */ false,
+    );
   }
 
   private async initItem() {
     void this.fetchCrawl();
-
-    if (this.qaRunId) {
-      void this.fetchQARuns();
-    } else {
-      await void this.fetchQARuns();
-    }
-    if (this.itemPageId) {
-      void this.fetchPages({ page: 1 });
-    } else {
-      await void this.fetchPages({ page: 1 });
-    }
-
-    const searchParams = this.getSearchParams();
-    this.navigate.to(`${window.location.pathname}?${searchParams}`);
-  }
-
-  private getSearchParams() {
-    const searchParams = new URLSearchParams(window.location.search);
-
-    const firstQaRunId = this.qaRuns?.[0]?.id;
-    const firstPageId = this.pages?.items[0]?.id;
-
-    if (!searchParams.get("qaRunId") && firstQaRunId) {
-      searchParams.set("qaRunId", firstQaRunId);
-    }
-    if (!searchParams.get("itemPageId") && firstPageId) {
-      searchParams.set("itemPageId", firstPageId);
-    }
-
-    return searchParams;
+    void this.fetchQaRuns();
+    void this.fetchPages({ page: 1 });
   }
 
   render() {
@@ -189,9 +164,8 @@ export class ArchivedItemQA extends TailwindElement {
     }
 
     const crawlBaseUrl = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}`;
-    const searchParams = this.getSearchParams();
-
     const itemName = this.item ? renderName(this.item) : nothing;
+    const pageIdx = this.getPageIndex();
     return html`
       <nav class="mb-7 text-success-600">
         <a
@@ -212,14 +186,13 @@ export class ArchivedItemQA extends TailwindElement {
       <article>
         <header class="mainHeader outline">
           <h1>${msg("Review")} &mdash; ${itemName}</h1>
-          <code>qa run id: ${this.qaRunId}</code>
         </header>
         <section class="main outline">
           <nav class="flex items-center justify-between p-2">
             <div class="flex gap-4">
               <btrix-navigation-button
                 id="screenshot-tab"
-                href=${`${crawlBaseUrl}/review/screenshots?${searchParams}`}
+                href=${`${crawlBaseUrl}/review/screenshots`}
                 ?active=${this.tab === "screenshots"}
                 @click=${this.navigate.link}
               >
@@ -227,7 +200,7 @@ export class ArchivedItemQA extends TailwindElement {
               </btrix-navigation-button>
               <btrix-navigation-button
                 id="replay-tab"
-                href=${`${crawlBaseUrl}/review/replay?${searchParams}`}
+                href=${`${crawlBaseUrl}/review/replay`}
                 ?active=${this.tab === "replay"}
                 @click=${this.navigate.link}
               >
@@ -235,47 +208,53 @@ export class ArchivedItemQA extends TailwindElement {
               </btrix-navigation-button>
             </div>
             <div class="flex gap-4">
-              <sl-button size="small">
-                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
-                ${msg("Previous Page")}
-              </sl-button>
+              ${pageIdx !== -1 && this.pages?.total > 2
+                ? html`
+                    <sl-button size="small" @click=${this.navPrevPage}>
+                      <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+                      ${msg("Previous Page")}
+                    </sl-button>
+                  `
+                : nothing}
               <btrix-page-qa-toolbar
                 .authState=${this.authState}
                 .orgId=${this.orgId}
                 .itemId=${this.itemId}
                 .pageId=${this.itemPageId}
+                .page=${this.page}
+                @btrix-update-item-page=${this.onUpdateItemPage}
               ></btrix-page-qa-toolbar>
-              <sl-button variant="primary" size="small">
-                <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-                ${msg("Next Page")}
-              </sl-button>
+              ${pageIdx !== -1 && this.pages?.total > 1
+                ? html`
+                    <sl-button
+                      variant="primary"
+                      size="small"
+                      @click=${this.navNextPage}
+                    >
+                      <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+                      ${msg("Next Page")}
+                    </sl-button>
+                  `
+                : nothing}
             </div>
           </nav>
           ${this.renderToolbar()} ${this.renderSections()}
         </section>
         <h2 class="pageListHeader outline">
-          ${msg("Pages List")} <sl-button>${msg("Finish Review")}</sl-button>
+          ${msg("Pages")}
+          <sl-button>${msg("Finish Crawl Review")}</sl-button>
         </h2>
-        <section class="pageList outline">
-          <ul>
-            ${this.pages.items.map((page) => {
-              const pageSearchParams = new URLSearchParams(searchParams);
-              pageSearchParams.set("itemPageId", page.id!);
-              return html`
-                <li>
-                  <a
-                    class="underline"
-                    href="${window.location.pathname}?${pageSearchParams}"
-                    @click=${this.navigate.link}
-                  >
-                    id: ${page.id}</a
-                  >
-                </li>
-              `;
-            })}
-          </ul>
-          pg ${this.pages.page} of
-          ${Math.ceil(this.pages.total / this.pages.pageSize)}
+        <section class="pageList grid">
+          <btrix-qa-page-list
+            .item=${this.item}
+            .itemPageId=${this.itemPageId!}
+            .qaRunId=${this.qaRunId}
+            .pages=${this.pages}
+            class="grid min-h-0 content-start justify-stretch"
+            @btrix-qa-page-select=${(e: CustomEvent<string>) => {
+              this.navToPage(e.detail);
+            }}
+          ></btrix-qa-page-list>
         </section>
       </article>
     `;
@@ -316,7 +295,7 @@ export class ArchivedItemQA extends TailwindElement {
             (page) => html`
               <sl-format-date
                 class="font-monostyle text-xs text-neutral-500"
-                date=${`${page.ts}Z`}
+                date=${`${page.timestamp}Z`}
                 month="2-digit"
                 day="2-digit"
                 year="2-digit"
@@ -343,19 +322,13 @@ export class ArchivedItemQA extends TailwindElement {
         render: this.renderReplay,
       },
     };
-
-    // All sections are rendered at page load to enable
-    // quick switching between tabs without reloading RWP.
-    //
-    // This also enables us to reuse the replay tab RWP
-    // embed to load the replay screenshot
     return html`
       ${TABS.map((tab) => {
         const section = tabSection[tab];
         const isActive = tab === this.tab;
         return html`
           <section
-            class="${isActive ? "" : "offscreen"}"
+            class="${isActive ? "" : "invisible absolute -top-full -left-full"}"
             aria-labelledby="${this.tab}-tab"
             aria-hidden=${!isActive}
           >
@@ -367,99 +340,30 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private readonly renderScreenshots = () => {
-    if (!this.page) return; // TODO loading indicator
-
-    const timestamp = this.page.ts?.split(".")[0].replace(/\D/g, "");
-    const crawlUrl = `/replay/w/${this.itemId}/${timestamp}mp_/urn:view:${this.page.url}`;
-    const qaUrl = `/replay/w/${this.qaRunId}/${timestamp}mp_/urn:view:${this.page.url}`;
-    const renderSpinner = () =>
-      html`<div class="flex h-full w-full items-center justify-center text-2xl">
-        <sl-spinner></sl-spinner>
-      </div>`;
-
-    return html`
-      <div class="mb-2 flex justify-between text-base font-medium">
-        <h3 id="crawlScreenshotHeading">${msg("Crawl Screenshot")}</h3>
-        <h3 id="replayScreenshotHeading">${msg("Replay Screenshot")}</h3>
-      </div>
-      <div class="flex overflow-hidden rounded border bg-slate-50">
-        <div
-          class="aspect-video flex-1 outline -outline-offset-2 outline-yellow-400"
-        >
-          ${when(
-            this.qaDataAvail,
-            () => html`
-              <iframe
-                slot="before"
-                name="crawlScreenshot"
-                src="${crawlUrl}"
-                class="h-full w-full"
-                aria-labelledby="crawlScreenshotHeading"
-                @load=${this.onScreenshotLoad}
-              ></iframe>
-            `,
-            renderSpinner,
-          )}
-        </div>
-        <div
-          class="aspect-video flex-1 outline -outline-offset-2 outline-green-400"
-        >
-          ${when(
-            this.crawlDataAvail,
-            () => html`
-              <iframe
-                slot="after"
-                name="replayScreenshot"
-                src="${qaUrl}"
-                class="h-full w-full"
-                aria-labelledby="replayScreenshotHeading"
-                @load=${this.onScreenshotLoad}
-              ></iframe>
-            `,
-            renderSpinner,
-          )}
-        </div>
-      </div>
-      <div class="offscreen" aria-hidden="true">
-        ${when(this.qaRunId, (id) =>
-          this.renderReplay(id, { qa: true, screenshot: true }),
-        )}
-      </div>
-    `;
+    return html`[screenshots]`;
   };
 
-  private readonly renderReplay = (
-    rwpId = this.itemId,
-    { qa, screenshot } = { qa: false, screenshot: false },
-  ) => {
-    if (!rwpId) return;
-
-    const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json`;
-    const headers = this.authState?.headers;
-    const config = JSON.stringify({ headers });
-
-    return html`<div class="aspect-4/3 w-full overflow-hidden">
-      <replay-web-page
-        source="${replaySource}"
-        coll="${rwpId}"
-        config="${config}"
-        replayBase="/replay/"
-        embed="replayonly"
-        noCache="true"
-        url="${screenshot ? "urn:view:" : ""}${this.page?.url}"
-      ></replay-web-page>
-    </div>`;
+  private readonly renderReplay = () => {
+    return html`[replay]`;
   };
 
-  private readonly onScreenshotLoad = (e: Event) => {
-    const iframe = e.currentTarget as HTMLIFrameElement;
-    const img = iframe.contentDocument?.body.querySelector("img");
-    // Make image fill iframe container
-    if (img) {
-      img.style.height = "auto";
-      img.style.width = "100%";
+  private async onUpdateItemPage(e: CustomEvent<UpdateItemPageDetail>) {
+    const updated = e.detail;
+
+    if (!this.page || this.page.id !== updated.id) return;
+
+    const isReviewed = pageIsReviewed(this.page);
+
+    this.page = merge<ArchivedItemPage>(this.page, updated);
+
+    if (!isReviewed && this.pages && this.pages.total > 1) {
+      this.navNextPage();
+      await this.updateComplete;
+      this.syncPageList();
+    } else {
+      this.fetchPage();
     }
-  };
+  }
 
   private async fetchCrawl(): Promise<void> {
     try {
@@ -470,6 +374,61 @@ export class ArchivedItemQA extends TailwindElement {
         variant: "danger",
         icon: "exclamation-octagon",
       });
+    }
+  }
+
+  private navNextPage() {
+    const pageIdx = this.getPageIndex();
+    if (pageIdx === -1) return;
+
+    // TODO handle paginated
+    const pageList = this.pages!.items;
+    let nextPage: ArchivedItemPage | undefined;
+
+    if (pageIdx === pageList.length - 1) {
+      nextPage = pageList[0];
+    } else {
+      nextPage = pageList[pageIdx + 1];
+    }
+
+    if (nextPage) {
+      this.navToPage(nextPage.id);
+    }
+  }
+
+  private navPrevPage() {
+    const pageIdx = this.getPageIndex();
+    if (pageIdx === -1) return;
+
+    // TODO handle paginated
+    const pageList = this.pages!.items;
+    let prevPage: ArchivedItemPage | undefined;
+
+    if (pageIdx === 0) {
+      prevPage = pageList[pageList.length - 1];
+    } else {
+      prevPage = pageList[pageIdx - 1];
+    }
+
+    if (prevPage) {
+      this.navToPage(prevPage.id);
+    }
+  }
+
+  private syncPageList() {
+    if (!this.page) return;
+
+    // Update page list optimistically before next request to server
+    if (this.pages) {
+      const pageIdx = this.getPageIndex(this.page.id);
+      if (pageIdx !== -1) {
+        const items = this.pages.items;
+        items[pageIdx] = this.page;
+        this.pages = {
+          ...this.pages,
+          items,
+        };
+      }
     }
   }
 
@@ -485,16 +444,23 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
-  private async fetchQARuns(): Promise<void> {
+  private async fetchQaRuns(): Promise<void> {
     try {
-      this.qaRuns = await this.getQARuns();
+      this.qaRunId = (await this.getQaRuns())[0]?.id;
     } catch {
       this.notify.toast({
-        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        message: msg("Sorry, couldn't retrieve QA data at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  private async getQaRuns(): Promise<ArchivedItemQaRun[]> {
+    return this.api.fetch<ArchivedItemQaRun[]>(
+      `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
+      this.authState!,
+    );
   }
 
   private async getCrawl(): Promise<ArchivedItem> {
@@ -510,23 +476,30 @@ export class ArchivedItemQA extends TailwindElement {
     const query = queryString.stringify(
       {
         ...params,
+        reviewed: this.filterBy.reviewed,
+        // approved: true,
+        // hasNotes: true,
       },
       {
         arrayFormat: "comma",
       },
     );
     return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}/pages?${query}`,
+      this.qaRunId
+        ? `/orgs/${this.orgId}/crawls/${this.itemId}/qa/${this.qaRunId}/pages?${query}`
+        : `/orgs/${this.orgId}/crawls/${this.itemId}/pages?${query}`,
       this.authState!,
     );
   }
   private async fetchPage(): Promise<void> {
     if (!this.itemPageId) return;
+
     try {
       this.page = await this.getPage(this.itemPageId);
+      this.syncPageList();
     } catch {
       this.notify.toast({
-        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        message: msg("Sorry, couldn't retrieve page at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -536,13 +509,6 @@ export class ArchivedItemQA extends TailwindElement {
   private async getPage(pageId: string): Promise<ArchivedItemPage> {
     return this.api.fetch<ArchivedItemPage>(
       `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
-      this.authState!,
-    );
-  }
-
-  private async getQARuns(): Promise<QARun[]> {
-    return this.api.fetch<QARun[]>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
       this.authState!,
     );
   }
