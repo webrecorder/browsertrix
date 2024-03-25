@@ -381,7 +381,7 @@ export class CrawlDetail extends LiteElement {
         ${renderNavItem({
           section: "replay",
           iconLibrary: "app",
-          icon: "link-replay",
+          icon: "replaywebpage",
           label: msg("Replay"),
         })}
         ${renderNavItem({

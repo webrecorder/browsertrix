@@ -1060,7 +1060,7 @@ export class WorkflowDetail extends LiteElement {
               >
                 <sl-icon
                   slot="prefix"
-                  name="link-replay"
+                  name="replaywebpage"
                   library="app"
                 ></sl-icon>
                 ${msg("Replay Latest Crawl")}</sl-button
