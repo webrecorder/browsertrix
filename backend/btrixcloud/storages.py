@@ -72,17 +72,20 @@ class StorageOps:
     org_ops: OrgOps
     crawl_manager: CrawlManager
 
+    is_local_minio: bool
+    frontend_origin: str
+
     def __init__(self, org_ops, crawl_manager) -> None:
         self.org_ops = org_ops
         self.crawl_manager = crawl_manager
 
         self.is_local_minio = is_bool(os.environ.get("IS_LOCAL_MINIO"))
 
-        self.frontend_alias = os.environ.get(
-            "FRONTEND_ALIAS", "http://browsertrix-cloud-frontend"
+        frontend_origin = os.environ.get(
+            "FRONTEND_ORIGIN", "http://browsertrix-cloud-frontend"
         )
-        self.default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
-        self.frontend_url = f"{self.frontend_alias}.{self.default_namespace}"
+        default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
+        self.frontend_origin = f"{frontend_origin}.{default_namespace}"
 
         with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
@@ -319,6 +322,12 @@ class StorageOps:
 
             resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
             assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+    def resolve_internal_access_path(self, path):
+        """Resolve relative path for internal access to minio bucket"""
+        if path.startswith("/"):
+            return self.frontend_origin + path
+        return path
 
     def get_org_relative_path(
         self, org: Organization, ref: StorageRef, file_path: str
@@ -601,10 +610,7 @@ class StorageOps:
             wacz_log_streams: List[Iterator[dict]] = []
 
             for wacz_file in instance_list:
-                wacz_url = wacz_file.path
-                if wacz_url.startswith("/data"):
-                    wacz_url = f"{self.frontend_url}{wacz_url}"
-
+                wacz_url = self.resolve_internal_access_path(wacz_file.path)
                 with RemoteZip(wacz_url) as remote_zip:
                     log_files: List[ZipInfo] = [
                         f
@@ -649,10 +655,7 @@ class StorageOps:
         page_generators: List[Iterator[Dict[Any, Any]]] = []
 
         for wacz_file in wacz_files:
-            wacz_url = wacz_file.path
-            if wacz_url.startswith("/data"):
-                wacz_url = f"{self.frontend_url}{wacz_url}"
-
+            wacz_url = self.resolve_internal_access_path(wacz_file.path)
             with RemoteZip(wacz_url) as remote_zip:
                 page_files: List[ZipInfo] = [
                     f

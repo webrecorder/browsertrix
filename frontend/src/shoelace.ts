@@ -13,6 +13,7 @@ import "@shoelace-style/shoelace/dist/components/input/input";
 import "@shoelace-style/shoelace/dist/components/checkbox/checkbox";
 import "@shoelace-style/shoelace/dist/components/details/details";
 import "@shoelace-style/shoelace/dist/components/button-group/button-group";
+import "@shoelace-style/shoelace/dist/components/image-comparer/image-comparer";
 import "@shoelace-style/shoelace/dist/components/radio/radio";
 import "@shoelace-style/shoelace/dist/components/radio-group/radio-group";
 import "@shoelace-style/shoelace/dist/components/radio-button/radio-button";

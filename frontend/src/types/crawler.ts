@@ -196,7 +196,7 @@ export type ArchivedItemPage = {
   crawl_id: string;
   url: string;
   title?: string;
-  timestamp?: string; // Date
+  ts?: string; // Date
   load_state?: number;
   status?: number;
   /** screenshot match percent, keyed by QA run ID */

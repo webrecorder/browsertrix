@@ -102,12 +102,14 @@ class Migration(BaseMigration):
         # Test migration
         async for config_dict in crawl_configs.find({}):
             config = CrawlConfig.from_dict(config_dict)
-            for seed in config.config.seeds:
+            seeds = config.config.seeds or []
+            for seed in seeds:
                 assert isinstance(seed, Seed)
                 assert seed.url
 
         async for crawl_dict in crawls.find({}):
             crawl = Crawl.from_dict(crawl_dict)
-            for seed in crawl.config.seeds:
+            seeds = crawl.config.seeds or []
+            for seed in seeds:
                 assert isinstance(seed, Seed)
                 assert seed.url

@@ -15,17 +15,20 @@ def test_crawl_timeout(admin_auth_headers, default_org_id, timeout_crawl):
     data = r.json()
     assert data["state"] in ("starting", "running")
 
-    # Wait some time to let crawl start, hit timeout, and gracefully stop
-    time.sleep(60)
+    attempts = 0
+    while True:
+        # Try for 2 minutes before failing
+        if attempts > 24:
+            assert False
 
-    # Verify crawl was stopped
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{timeout_crawl}/replay.json",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["state"] == "complete"
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{timeout_crawl}/replay.json",
+            headers=admin_auth_headers,
+        )
+        if r.json()["state"] == "complete":
+            break
+        time.sleep(10)
+        attempts += 1
 
 
 def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_crawl):
