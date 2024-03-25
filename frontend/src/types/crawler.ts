@@ -218,15 +218,3 @@ export type ArchivedItemPage = {
   approved?: boolean | null;
   notes?: ArchivedItemPageComment[];
 };
-
-export type ArchivedItemQaRun = {
-  id: string;
-  userName: string;
-  started: string;
-  finished: string;
-  stats: {
-    found: number;
-    done: number;
-    size: number;
-  };
-};

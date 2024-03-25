@@ -1,8 +1,8 @@
 export type QARun = {
   id: string;
   userName: string;
-  started: string;
-  finished: string;
+  started: string; // date
+  finished: string; // date
   state: string;
   crawlExecSeconds: number;
   stats: {

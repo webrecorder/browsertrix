@@ -20,11 +20,8 @@ import { NotifyController } from "@/controllers/notify";
 import { pageIsReviewed } from "@/features/qa/page-list/helpers";
 import { type UpdateItemPageDetail } from "@/features/qa/page-qa-toolbar";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
-import type {
-  ArchivedItem,
-  ArchivedItemPage,
-  ArchivedItemQaRun,
-} from "@/types/crawler";
+import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
+import { type QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
 import { renderName } from "@/utils/crawler";
 
@@ -111,6 +108,9 @@ export class ArchivedItemQA extends TailwindElement {
   private item?: ArchivedItem;
 
   @state()
+  private qaRuns: QARun[] = [];
+
+  @state()
   private pages?: APIPaginatedList<ArchivedItemPage>;
 
   @state()
@@ -121,9 +121,35 @@ export class ArchivedItemQA extends TailwindElement {
     reviewed?: boolean;
   } = {};
 
+  @state()
+  private crawlDataAvail = false;
+
+  @state()
+  private qaDataAvail = false;
+
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
+
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    // Check if replay-web-page is ready
+    window.addEventListener("message", (event) => {
+      const sourceLoc = (event.source as Window).location.href;
+
+      // ensure its an rwp frame
+      if (sourceLoc.indexOf("?source=") > 0) {
+        // check if has /qa/ in path, then QA
+        if (sourceLoc.indexOf("%2Fqa%2F") >= 0) {
+          this.qaDataAvail = true;
+          // otherwise main crawl replay
+        } else {
+          this.crawlDataAvail = true;
+        }
+      }
+    });
+  }
 
   private getPageIndex(pageId = this.itemPageId) {
     if (!this.pages || !pageId) return -1;
@@ -154,8 +180,32 @@ export class ArchivedItemQA extends TailwindElement {
 
   private async initItem() {
     void this.fetchCrawl();
-    void this.fetchQaRuns();
     void this.fetchPages({ page: 1 });
+
+    if (this.qaRunId) {
+      void this.fetchQaRuns();
+    } else {
+      await void this.fetchQaRuns();
+    }
+
+    const searchParams = this.getSearchParams();
+    this.navigate.to(`${window.location.pathname}?${searchParams}`);
+  }
+
+  private getSearchParams() {
+    const searchParams = new URLSearchParams(window.location.search);
+
+    const firstQaRunId = this.qaRuns?.[0]?.id;
+    const firstPageId = this.pages?.items[0]?.id;
+
+    if (!searchParams.get("qaRunId") && firstQaRunId) {
+      searchParams.set("qaRunId", firstQaRunId);
+    }
+    if (!searchParams.get("itemPageId") && firstPageId) {
+      searchParams.set("itemPageId", firstPageId);
+    }
+
+    return searchParams;
   }
 
   render() {
@@ -164,6 +214,8 @@ export class ArchivedItemQA extends TailwindElement {
     }
 
     const crawlBaseUrl = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}`;
+    const searchParams = this.getSearchParams();
+
     const itemName = this.item ? renderName(this.item) : nothing;
     const pageIdx = this.getPageIndex();
     return html`
@@ -192,7 +244,7 @@ export class ArchivedItemQA extends TailwindElement {
             <div class="flex gap-4">
               <btrix-navigation-button
                 id="screenshot-tab"
-                href=${`${crawlBaseUrl}/review/screenshots`}
+                href=${`${crawlBaseUrl}/review/screenshots?${searchParams}`}
                 ?active=${this.tab === "screenshots"}
                 @click=${this.navigate.link}
               >
@@ -200,7 +252,7 @@ export class ArchivedItemQA extends TailwindElement {
               </btrix-navigation-button>
               <btrix-navigation-button
                 id="replay-tab"
-                href=${`${crawlBaseUrl}/review/replay`}
+                href=${`${crawlBaseUrl}/review/replay?${searchParams}`}
                 ?active=${this.tab === "replay"}
                 @click=${this.navigate.link}
               >
@@ -295,7 +347,7 @@ export class ArchivedItemQA extends TailwindElement {
             (page) => html`
               <sl-format-date
                 class="font-monostyle text-xs text-neutral-500"
-                date=${`${page.timestamp}Z`}
+                date=${`${page.ts}Z`}
                 month="2-digit"
                 day="2-digit"
                 year="2-digit"
@@ -322,13 +374,19 @@ export class ArchivedItemQA extends TailwindElement {
         render: this.renderReplay,
       },
     };
+
+    // All sections are rendered at page load to enable
+    // quick switching between tabs without reloading RWP.
+    //
+    // This also enables us to reuse the replay tab RWP
+    // embed to load the replay screenshot
     return html`
       ${TABS.map((tab) => {
         const section = tabSection[tab];
         const isActive = tab === this.tab;
         return html`
           <section
-            class="${isActive ? "" : "invisible absolute -top-full -left-full"}"
+            class="${isActive ? "" : "offscreen"}"
             aria-labelledby="${this.tab}-tab"
             aria-hidden=${!isActive}
           >
@@ -340,11 +398,98 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private readonly renderScreenshots = () => {
-    return html`[screenshots]`;
+    if (!this.page) return; // TODO loading indicator
+
+    const timestamp = this.page.ts?.split(".")[0].replace(/\D/g, "");
+    const crawlUrl = `/replay/w/${this.itemId}/${timestamp}mp_/urn:view:${this.page.url}`;
+    const qaUrl = `/replay/w/${this.qaRunId}/${timestamp}mp_/urn:view:${this.page.url}`;
+    const renderSpinner = () =>
+      html`<div class="flex h-full w-full items-center justify-center text-2xl">
+        <sl-spinner></sl-spinner>
+      </div>`;
+
+    return html`
+      <div class="mb-2 flex justify-between text-base font-medium">
+        <h3 id="crawlScreenshotHeading">${msg("Crawl Screenshot")}</h3>
+        <h3 id="replayScreenshotHeading">${msg("Replay Screenshot")}</h3>
+      </div>
+      <div class="flex overflow-hidden rounded border bg-slate-50">
+        <div
+          class="aspect-video flex-1 outline -outline-offset-2 outline-yellow-400"
+        >
+          ${when(
+            this.qaDataAvail,
+            () => html`
+              <iframe
+                slot="before"
+                name="crawlScreenshot"
+                src="${crawlUrl}"
+                class="h-full w-full"
+                aria-labelledby="crawlScreenshotHeading"
+                @load=${this.onScreenshotLoad}
+              ></iframe>
+            `,
+            renderSpinner,
+          )}
+        </div>
+        <div
+          class="aspect-video flex-1 outline -outline-offset-2 outline-green-400"
+        >
+          ${when(
+            this.crawlDataAvail,
+            () => html`
+              <iframe
+                slot="after"
+                name="replayScreenshot"
+                src="${qaUrl}"
+                class="h-full w-full"
+                aria-labelledby="replayScreenshotHeading"
+                @load=${this.onScreenshotLoad}
+              ></iframe>
+            `,
+            renderSpinner,
+          )}
+        </div>
+      </div>
+      <div class="offscreen" aria-hidden="true">
+        ${when(this.qaRunId, (id) =>
+          this.renderReplay(id, { qa: true, screenshot: true }),
+        )}
+      </div>
+    `;
   };
 
-  private readonly renderReplay = () => {
-    return html`[replay]`;
+  private readonly renderReplay = (
+    rwpId = this.itemId,
+    { qa, screenshot } = { qa: false, screenshot: false },
+  ) => {
+    if (!rwpId) return;
+
+    const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json`;
+    const headers = this.authState?.headers;
+    const config = JSON.stringify({ headers });
+
+    return html`<div class="aspect-4/3 w-full overflow-hidden">
+      <replay-web-page
+        source="${replaySource}"
+        coll="${rwpId}"
+        config="${config}"
+        replayBase="/replay/"
+        embed="replayonly"
+        noCache="true"
+        url="${screenshot ? "urn:view:" : ""}${this.page?.url}"
+      ></replay-web-page>
+    </div>`;
+  };
+
+  private readonly onScreenshotLoad = (e: Event) => {
+    const iframe = e.currentTarget as HTMLIFrameElement;
+    const img = iframe.contentDocument?.body.querySelector("img");
+    // Make image fill iframe container
+    if (img) {
+      img.style.height = "auto";
+      img.style.width = "100%";
+    }
   };
 
   private async onUpdateItemPage(e: CustomEvent<UpdateItemPageDetail>) {
@@ -446,7 +591,7 @@ export class ArchivedItemQA extends TailwindElement {
 
   private async fetchQaRuns(): Promise<void> {
     try {
-      this.qaRunId = (await this.getQaRuns())[0]?.id;
+      this.qaRuns = await this.getQaRuns();
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve QA data at this time."),
@@ -456,8 +601,8 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
-  private async getQaRuns(): Promise<ArchivedItemQaRun[]> {
-    return this.api.fetch<ArchivedItemQaRun[]>(
+  private async getQaRuns(): Promise<QARun[]> {
+    return this.api.fetch<QARun[]>(
       `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
       this.authState!,
     );
