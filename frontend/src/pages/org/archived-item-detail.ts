@@ -388,18 +388,17 @@ export class CrawlDetail extends LiteElement {
         })}
         ${when(
           this.itemType === "crawl",
-          () => {},
-          // html`
-          //   ${renderNavItem({
-          //     section: "qa",
-          //     iconLibrary: "default",
-          //     icon: "clipboard2-data-fill",
-          //     label: msg("QA"),
-          //     detail: html`
-          //       <btrix-badge variant="primary">${msg("Ready")}</btrix-badge>
-          //     `,
-          //   })}
-          // `,
+          () => html`
+            ${renderNavItem({
+              section: "qa",
+              iconLibrary: "default",
+              icon: "clipboard2-data-fill",
+              label: msg("QA"),
+              detail: html`
+                <btrix-badge variant="primary">${msg("Ready")}</btrix-badge>
+              `,
+            })}
+          `,
         )}
         ${renderNavItem({
           section: "replay",
