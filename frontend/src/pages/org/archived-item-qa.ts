@@ -18,13 +18,20 @@ import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import {
+  type SortableFieldNames,
+  type SortDirection,
   type QaFilterChangeDetail,
   type QaPaginationChangeDetail,
+  type QaSortChangeDetail,
 } from "@/features/qa/page-list/page-list";
 import { type UpdateItemPageDetail } from "@/features/qa/page-qa-toolbar";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type {
+  APIPaginatedList,
+  APIPaginationQuery,
+  APISortQuery,
+} from "@/types/api";
 import type { ArchivedItem } from "@/types/crawler";
-import { type ArchivedItemQAPage, type QARun } from "@/types/qa";
+import type { ArchivedItemQAPage, QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
 import { renderName } from "@/utils/crawler";
 
@@ -65,7 +72,7 @@ export class ArchivedItemQA extends TailwindElement {
         grid-template:
           "mainHeader pageListHeader"
           "main pageList";
-        grid-template-columns: 75% 1fr;
+        grid-template-columns: 70% 1fr;
         grid-template-rows: min-content 1fr;
       }
     }
@@ -138,6 +145,12 @@ export class ArchivedItemQA extends TailwindElement {
     hasNotes?: boolean;
   } = {};
 
+  @state()
+  sortPagesBy: APISortQuery & { sortBy: SortableFieldNames } = {
+    sortBy: "screenshotMatch",
+    sortDirection: 1,
+  };
+
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
@@ -171,7 +184,10 @@ export class ArchivedItemQA extends TailwindElement {
     if (changedProperties.has("itemPageId") && this.itemPageId) {
       void this.fetchPage();
     }
-    if (changedProperties.get("filterPagesBy")) {
+    if (
+      changedProperties.get("filterPagesBy") ??
+      changedProperties.get("sortPagesBy")
+    ) {
       void this.fetchPages();
     }
   }
@@ -322,6 +338,12 @@ export class ArchivedItemQA extends TailwindElement {
             .qaRunId=${this.qaRunId}
             .itemPageId=${this.itemPageId}
             .pages=${this.pages}
+            .orderBy=${{
+              field: this.sortPagesBy.sortBy,
+              direction: (this.sortPagesBy.sortDirection === -1
+                ? "desc"
+                : "asc") as SortDirection,
+            }}
             totalPages=${+(this.item?.stats?.found || 0)}
             class="grid min-h-0 content-start justify-stretch"
             @btrix-qa-pagination-change=${(
@@ -341,10 +363,20 @@ export class ArchivedItemQA extends TailwindElement {
                 ...e.detail,
               };
             }}
+            @btrix-qa-sort-change=${(e: CustomEvent<QaSortChangeDetail>) => {
+              this.sortPagesBy = {
+                ...this.sortPagesBy,
+                ...e.detail,
+              };
+            }}
           ></btrix-qa-page-list>
         </section>
       </article>
     `;
+  }
+
+  private renderPageCard(page: ArchivedItemQAPage) {
+    return html` <div>${page}</div> `;
   }
 
   private renderToolbar() {
@@ -637,6 +669,8 @@ export class ArchivedItemQA extends TailwindElement {
   ): Promise<APIPaginatedList<ArchivedItemQAPage>> {
     const query = queryString.stringify(
       {
+        sortBy: this.sortPagesBy.sortBy,
+        sortDirection: this.sortPagesBy.sortDirection,
         ...(this.qaRunId ? this.filterPagesBy : {}),
         ...params,
       },

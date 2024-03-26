@@ -25,10 +25,9 @@ export const renderItem = cached(
 
     if (statusIcon === "severe") severe--;
     if (statusIcon === "moderate") moderate--;
-    console.log(page);
 
     return html`<btrix-qa-page
-      class="is-leaf -my-4 scroll-my-8 py-4 [contain-intrinsic-height:auto_70px] [contain:strict] [content-visibility:auto] first-of-type:mt-0 last-of-type:mb-0"
+      class="is-leaf -my-4 scroll-my-8 py-4 [content-visibility:auto] [contain-intrinsic-height:auto_70px] [contain:strict] first-of-type:mt-0 last-of-type:mb-0"
       .selected=${itemPageId === page.id}
       .pageId=${page.id}
     >

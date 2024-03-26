@@ -1,17 +1,17 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
 import { html } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 
 import { renderItem } from "./ui/render-item";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type PageChangeEvent } from "@/components/ui/pagination";
-import type { APIPaginatedList } from "@/types/api";
+import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import type { ArchivedItemQAPage } from "@/types/qa";
 
-type SortDirection = "asc" | "desc";
-type SortableFieldNames = "textMatch" | "screenshotMatch" | "approved";
+export type SortDirection = "asc" | "desc";
+export type SortableFieldNames = "textMatch" | "screenshotMatch" | "approved";
 type SortableFields = Record<
   SortableFieldNames,
   {
@@ -59,15 +59,12 @@ export type QaFilterChangeDetail = {
   approved: undefined | boolean;
   hasNotes: undefined | boolean;
 };
-export type QaSortChangeDetail = {
-  reviewed: undefined | boolean;
-  approved: undefined | boolean;
-  hasNotes: undefined | boolean;
-};
+export type QaSortChangeDetail = APISortQuery & { sortBy: SortableFieldNames };
 
 /**
  * @fires btrix-qa-pagination-change
  * @fires btrix-qa-filter-change
+ * @fires btrix-qa-sort-change
  */
 @localized()
 @customElement("btrix-qa-page-list")
@@ -84,52 +81,18 @@ export class PageList extends TailwindElement {
   @property({ type: Number })
   totalPages = 0;
 
-  @state()
+  @property({ type: Object })
   orderBy: OrderBy = {
-    field: "textMatch",
+    field: "screenshotMatch",
     direction: "asc",
   };
 
   render() {
     return html`
       <div
-        class="z-40 mb-1 flex flex-wrap items-center gap-2 rounded-lg border bg-neutral-50 p-4"
+        class="z-40 mb-1 flex flex-wrap items-center gap-2 rounded-lg border bg-neutral-50 p-2"
       >
-        <div class="flex w-full grow items-center md:w-fit">
-          <div class="mr-2 whitespace-nowrap text-xs">${msg("Sort by:")}</div>
-          <sl-select
-            class="flex-1 md:min-w-[9.2rem]"
-            size="small"
-            pill
-            value=${this.orderBy.field}
-            @sl-change=${(e: Event) => {
-              const field = (e.target as HTMLSelectElement).value as SortField;
-              this.orderBy = {
-                field: field,
-                direction:
-                  (sortableFields[field] as SortableFields[SortField])
-                    ?.defaultDirection ?? this.orderBy.direction,
-              };
-            }}
-          >
-            ${Object.entries(sortableFields).map(
-              ([value, { label }]) => html`
-                <sl-option value=${value}>${label}</sl-option>
-              `,
-            )}
-          </sl-select>
-          <sl-icon-button
-            name="arrow-down-up"
-            label=${msg("Reverse sort")}
-            @click=${() => {
-              this.orderBy = {
-                ...this.orderBy,
-                direction: this.orderBy.direction === "asc" ? "desc" : "asc",
-              };
-            }}
-          ></sl-icon-button>
-        </div>
-        ${this.renderFilterControl()}
+        ${this.renderSortControl()} ${this.renderFilterControl()}
       </div>
       <div class="-mx-2 overflow-y-auto px-2">
         ${this.pages?.total
@@ -137,7 +100,7 @@ export class PageList extends TailwindElement {
               <div
                 class="sticky top-0 z-30 bg-gradient-to-b from-white to-white/85 backdrop-blur-sm"
               >
-                <div class="ml-2 border-b px-2 py-1 text-xs text-neutral-500">
+                <div class="ml-2 border-b py-1 text-xs text-neutral-500">
                   ${this.pages.total === this.totalPages
                     ? msg(
                         str`Showing all ${this.totalPages.toLocaleString()} pages`,
@@ -181,11 +144,75 @@ export class PageList extends TailwindElement {
     `;
   }
 
+  private renderSortControl() {
+    return html`
+      <div class="flex w-full grow items-center md:w-fit">
+        <sl-select
+          class="label-same-line flex-1"
+          label=${msg("Sort by:")}
+          size="small"
+          pill
+          value="screenshotMatch"
+          @sl-change=${(e: Event) => {
+            const { value } = e.target as SlSelect;
+            const detail: QaSortChangeDetail = {
+              sortBy: this.orderBy.field,
+              sortDirection: this.orderBy.direction === "asc" ? 1 : -1,
+            };
+            switch (value) {
+              case "screenshotMatch":
+                detail.sortBy = "screenshotMatch";
+                detail.sortDirection = 1;
+                break;
+              case "textMatch":
+                detail.sortBy = "textMatch";
+                detail.sortDirection = 1;
+                break;
+              case "approved":
+                detail.sortBy = "approved";
+                detail.sortDirection = -1;
+                break;
+              case "notApproved":
+                detail.sortBy = "approved";
+                detail.sortDirection = 1;
+                break;
+              // case "url":
+              //   detail.sortBy = "url";
+              //   detail.sortDirection = 1;
+              //   break;
+              // case "title":
+              //   detail.sortBy = "title";
+              //   detail.sortDirection = 1;
+              //   break;
+              default:
+                break;
+            }
+            this.dispatchEvent(
+              new CustomEvent<QaSortChangeDetail>("btrix-qa-sort-change", {
+                detail,
+              }),
+            );
+          }}
+        >
+          <sl-option value="screenshotMatch"
+            >${msg("Worst screenshot match")}</sl-option
+          >
+          <sl-option value="textMatch"
+            >${msg("Worst extracted text match")}</sl-option
+          >
+          <sl-option value="approved">${msg("Recently approved")}</sl-option>
+          <sl-option value="notApproved">${msg("Not approved")}</sl-option>
+        </sl-select>
+      </div>
+    `;
+  }
+
   private renderFilterControl() {
     return html`
       <div class="w-full">
         <sl-select
-          label=${msg("Review state:")}
+          class="label-same-line"
+          label=${msg("Review status:")}
           @sl-change=${(e: SlChangeEvent) => {
             const { value } = e.target as SlSelect;
             const detail: QaFilterChangeDetail = {
@@ -222,7 +249,7 @@ export class PageList extends TailwindElement {
           size="small"
         >
           <sl-option value="">${msg("Any")}</sl-option>
-          <sl-option value="notReviewed">${msg("No Review")}</sl-option>
+          <sl-option value="notReviewed">${msg("No review")}</sl-option>
           <sl-option value="reviewed">${msg("Reviewed")}</sl-option>
           <sl-option value="approved">${msg("Reviewed as approved")}</sl-option>
           <sl-option value="rejected">${msg("Reviewed as rejected")}</sl-option>
