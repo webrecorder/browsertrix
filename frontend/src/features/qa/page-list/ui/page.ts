@@ -33,7 +33,7 @@ export class QaPage extends TailwindElement {
         bubbles: true,
       }),
     );
-    this.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // this.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
   private animateExpand = async () => {
@@ -91,18 +91,18 @@ export class QaPage extends TailwindElement {
   }
 
   protected async updated(changedProperties: PropertyValues<this>) {
-    // TODO handle animation when previously selected item is moved to different tab
+    // TODO handle animation when previously selected item is filtered in/out
     if (changedProperties.has("selected")) {
       if (this.isFirstUpdate) {
         this.isFirstUpdate = false;
 
         if (this.selected) {
-          // this.scrollIntoView();
+          this.scrollIntoView();
         }
       } else {
         if (this.selected) {
           await this.animateExpand();
-          // this.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          this.scrollIntoView({ behavior: "smooth", block: "nearest" });
         } else if (changedProperties.get("selected") === true) {
           void this.animateCollapse();
         }
