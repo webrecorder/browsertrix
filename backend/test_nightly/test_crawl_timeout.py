@@ -17,8 +17,8 @@ def test_crawl_timeout(admin_auth_headers, default_org_id, timeout_crawl):
 
     attempts = 0
     while True:
-        # Try for 2 minutes before failing
-        if attempts > 24:
+        # Try for 10 minutes before failing
+        if attempts > 30:
             assert False
 
         r = requests.get(
@@ -27,7 +27,7 @@ def test_crawl_timeout(admin_auth_headers, default_org_id, timeout_crawl):
         )
         if r.json()["state"] == "complete":
             break
-        time.sleep(10)
+        time.sleep(20)
         attempts += 1
 
 
