@@ -1,13 +1,14 @@
 import { localized, msg } from "@lit/localize";
-import { html, type PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { html } from "lit";
+import { customElement, property, queryAll, state } from "lit/decorators.js";
 
-import { type QaPage } from "./ui/page";
+import type { QaPage } from "./ui/page";
 import { renderItem } from "./ui/render-item";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { type PageChangeEvent } from "@/components/ui/pagination";
 import type { APIPaginatedList } from "@/types/api";
-import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
+import type { ArchivedItemPage } from "@/types/crawler";
 
 type SortDirection = "asc" | "desc";
 type SortableFields = {
@@ -40,15 +41,29 @@ export type OrderBy = {
   field: SortField;
   direction: SortDirection;
 };
+type GroupName = "notReviewed" | "reviewed";
+export type QaPaginationChangeDetail = {
+  page: number;
+  groupName: GroupName;
+};
 
+/**
+ * @fires btrix-qa-pagination-change
+ */
 @localized()
 @customElement("btrix-qa-page-list")
 export class PageList extends TailwindElement {
-  @property({ attribute: false })
-  item?: ArchivedItem;
+  @property({ type: String })
+  qaRunId?: string;
 
-  @property({ attribute: false })
-  pages?: APIPaginatedList<ArchivedItemPage>;
+  @property({ type: String })
+  itemPageId?: string;
+
+  @property({ type: Object })
+  notReviewedPages?: APIPaginatedList<ArchivedItemPage>;
+
+  @property({ type: Object })
+  reviewedPages?: APIPaginatedList<ArchivedItemPage>;
 
   @state()
   orderBy: OrderBy = {
@@ -56,53 +71,16 @@ export class PageList extends TailwindElement {
     direction: "asc",
   };
 
-  @property({ type: String })
-  qaRunId?: string;
+  @state()
+  filterBy: {
+    reviewed?: boolean;
+  } = {};
 
-  #_itemPageId = "";
-
-  @property({ type: String })
-  set itemPageId(val: string | undefined) {
-    this.#_itemPageId = val ?? "";
-  }
-
-  get itemPageId(): string {
-    return this.#_itemPageId;
-  }
-
-  currentPageElement: QaPage | null = null;
-
-  protected async willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("pages")) {
-      const hasPage = this.pages?.items.some(
-        ({ id }) => id === this.itemPageId,
-      );
-
-      if (!hasPage) {
-        // Select first item by default
-        const firstPage = this.pages?.items[0];
-        if (!firstPage) return;
-        this.dispatchEvent(
-          new CustomEvent<string>("btrix-qa-page-select", {
-            detail: firstPage.id,
-            bubbles: true,
-            composed: true,
-          }),
-        );
-        this.itemPageId = firstPage.id;
-      }
-    }
-  }
-
-  private onSetReviewedTab() {
-    // When switching to the "reviewed" tab, order by review status by default
-    this.orderBy = {
-      field: "approved",
-      direction: "asc",
-    };
-  }
+  @queryAll("btrix-qa-page")
+  pageElems!: QaPage[];
 
   render() {
+    console.log(this.pageElems);
     return html`
       <div
         class="z-10 mb-3 flex flex-wrap items-center gap-2 rounded-lg border bg-neutral-50 p-4"
@@ -163,15 +141,11 @@ export class PageList extends TailwindElement {
       >
       <div>
         ${
-          this.pages?.total
-            ? this.pages?.items.map((page) =>
-                renderItem(
-                  page,
-                  this.qaRunId ?? "",
-                  this.orderBy,
-                  this.itemPageId,
-                ),
-              )
+          this.notReviewedPages?.total || this.reviewedPages?.total
+            ? html`
+                ${this.renderGroup("notReviewed")}
+                ${this.renderGroup("reviewed")}
+              `
             : html`<div
                 class="flex flex-col items-center justify-center gap-4 py-8 text-xs text-gray-600"
               >
@@ -181,6 +155,58 @@ export class PageList extends TailwindElement {
         }
           </div>
       </div>
+    `;
+  }
+
+  private renderGroup(groupName: GroupName) {
+    let pages = this.notReviewedPages;
+    let heading = msg("Not Reviewed");
+    if (groupName === "reviewed") {
+      pages = this.reviewedPages;
+      heading = msg("Reviewed");
+    }
+
+    if (!pages?.total) return;
+
+    return html`
+      <btrix-qa-page-group expanded>
+        <div slot="header" class="flex items-center gap-2">
+          ${heading}
+          <btrix-badge>${pages.total.toLocaleString()}</btrix-badge>
+        </div>
+        <div class="py-2">
+          ${pages.items.map((page) =>
+            renderItem(
+              page,
+              this.qaRunId ?? "",
+              this.orderBy,
+              this.itemPageId ?? "",
+            ),
+          )}
+          <div class="my-2 flex justify-center">
+            <btrix-pagination
+              page=${pages.page}
+              totalCount=${pages.total}
+              size=${pages.pageSize}
+              compact
+              @page-change=${(e: PageChangeEvent) => {
+                this.dispatchEvent(
+                  new CustomEvent<QaPaginationChangeDetail>(
+                    "btrix-qa-pagination-change",
+                    {
+                      detail: {
+                        page: e.detail.page,
+                        groupName: groupName,
+                      },
+                    },
+                  ),
+                );
+              }}
+            >
+            </btrix-pagination>
+          </div>
+        </div>
+      </btrix-qa-page-group>
     `;
   }
 }

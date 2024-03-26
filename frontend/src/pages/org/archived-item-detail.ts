@@ -13,6 +13,7 @@ import type { PageChangeEvent } from "@/components/ui/pagination";
 import { RelativeDuration } from "@/components/ui/relative-duration";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
 import type { APIPaginatedList } from "@/types/api";
+import { type QARun } from "@/types/qa";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { isActive } from "@/utils/crawler";
@@ -77,6 +78,9 @@ export class CrawlDetail extends LiteElement {
   private logs?: APIPaginatedList<CrawlLog>;
 
   @state()
+  private qaRuns?: QARun[];
+
+  @state()
   private sectionName: SectionName = "overview";
 
   @state()
@@ -123,6 +127,7 @@ export class CrawlDetail extends LiteElement {
       void this.fetchCrawl();
       void this.fetchCrawlLogs();
       void this.fetchSeeds();
+      void this.fetchQARuns();
     }
     if (changedProperties.has("workflowId") && this.workflowId) {
       void this.fetchWorkflow();
@@ -141,14 +146,33 @@ export class CrawlDetail extends LiteElement {
   render() {
     const authToken = this.authState!.headers.Authorization.split(" ")[1];
     let sectionContent: string | TemplateResult = "";
+    console.log(this.qaRuns);
 
     switch (this.sectionName) {
       case "qa":
         sectionContent = this.renderPanel(
           html`${this.renderTitle(msg("Crawl Analysis"))}
-            <sl-button size="small" @click=${() => console.log("TODO")}>
-              ${msg("Reanalyze Crawl")}
-            </sl-button>`,
+            <div>
+              <sl-button
+                variant="primary"
+                size="small"
+                href="${this.orgBasePath}/items/crawl/${this
+                  .crawlId}/review/screenshots?qaRunId=${this.qaRuns?.[0]?.id ||
+                ""}"
+                @click=${this.navLink}
+              >
+                ${msg("Review Crawl")}
+              </sl-button>
+              <sl-button
+                size="small"
+                @click=${() => this.startQARun()}
+                ?loading=${!this.qaRuns}
+              >
+                ${this.qaRuns?.length
+                  ? msg("Reanalyze Crawl")
+                  : msg("Analyze Crawl")}
+              </sl-button>
+            </div>`,
           this.renderQA(),
         );
         break;
@@ -365,18 +389,17 @@ export class CrawlDetail extends LiteElement {
         })}
         ${when(
           this.itemType === "crawl",
-          () => {},
-          // html`
-          //   ${renderNavItem({
-          //     section: "qa",
-          //     iconLibrary: "default",
-          //     icon: "clipboard2-data-fill",
-          //     label: msg("QA"),
-          //     detail: html`
-          //       <btrix-badge variant="primary">${msg("Ready")}</btrix-badge>
-          //     `,
-          //   })}
-          // `,
+          () => html`
+            ${renderNavItem({
+              section: "qa",
+              iconLibrary: "default",
+              icon: "clipboard2-data-fill",
+              label: msg("QA"),
+              detail: html`
+                <btrix-badge variant="primary">${msg("Ready")}</btrix-badge>
+              `,
+            })}
+          `,
         )}
         ${renderNavItem({
           section: "replay",
@@ -1117,36 +1140,50 @@ ${this.crawl?.description}
     }
   }
 
-  /** Callback when crawl is no longer running */
-  private _crawlDone() {
-    if (!this.crawl) return;
+  private async startQARun() {
+    try {
+      const data = await this.apiFetch<{ started: string }>(
+        `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/start`,
+        this.authState!,
+        {
+          method: "POST",
+        },
+      );
 
-    void this.fetchCrawlLogs();
+      console.debug("qa run id: ", data.started);
 
-    this.notify({
-      message: msg(html`Done crawling <strong>${this.renderName()}</strong>.`),
-      variant: "success",
-      icon: "check2-circle",
-    });
+      this.notify({
+        message: msg("Started QA run."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: unknown) {
+      console.debug(e);
 
-    if (this.sectionName === "watch") {
-      // Show replay tab
-      this.sectionName = "replay";
+      this.notify({
+        message: msg("Sorry, couldn't start QA run at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
     }
   }
 
-  /**
-   * Enter fullscreen mode
-   * @param id ID of element to fullscreen
-   */
-  private async _enterFullscreen(id: string) {
+  private async fetchQARuns(): Promise<void> {
     try {
-      void document.getElementById(id)!.requestFullscreen({
-        // Show browser navigation controls
-        navigationUI: "show",
+      this.qaRuns = await this.getQARuns();
+    } catch {
+      this.notify({
+        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
       });
-    } catch (err) {
-      console.error(err);
     }
+  }
+
+  private async getQARuns(): Promise<QARun[]> {
+    return this.apiFetch<QARun[]>(
+      `/orgs/${this.orgId}/crawls/${this.crawlId}/qa`,
+      this.authState!,
+    );
   }
 }

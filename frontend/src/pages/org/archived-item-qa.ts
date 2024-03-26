@@ -17,7 +17,7 @@ import { TWO_COL_SCREEN_MIN_CSS } from "@/components/ui/tab-list";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
-import { pageIsReviewed } from "@/features/qa/page-list/helpers";
+import { type QaPaginationChangeDetail } from "@/features/qa/page-list/page-list";
 import { type UpdateItemPageDetail } from "@/features/qa/page-qa-toolbar";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
@@ -25,6 +25,7 @@ import { type QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
 import { renderName } from "@/utils/crawler";
 
+const DEFAULT_PAGE_SIZE = 10;
 const TABS = ["screenshots", "replay"] as const;
 export type QATab = (typeof TABS)[number];
 
@@ -111,15 +112,13 @@ export class ArchivedItemQA extends TailwindElement {
   private qaRuns: QARun[] = [];
 
   @state()
-  private pages?: APIPaginatedList<ArchivedItemPage>;
+  private notReviewedPages?: APIPaginatedList<ArchivedItemPage>;
+
+  @state()
+  private reviewedPages?: APIPaginatedList<ArchivedItemPage>;
 
   @state()
   private page?: ArchivedItemPage;
-
-  @state()
-  filterBy: {
-    reviewed?: boolean;
-  } = {};
 
   @state()
   private crawlDataAvail = false;
@@ -151,11 +150,6 @@ export class ArchivedItemQA extends TailwindElement {
     });
   }
 
-  private getPageIndex(pageId = this.itemPageId) {
-    if (!this.pages || !pageId) return -1;
-    return this.pages.items.findIndex((page) => page.id === pageId);
-  }
-
   protected willUpdate(
     changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
   ): void {
@@ -165,64 +159,77 @@ export class ArchivedItemQA extends TailwindElement {
     if (changedProperties.has("itemPageId") && this.itemPageId) {
       void this.fetchPage();
     }
-    if (changedProperties.has("filterBy") && this.filterBy) {
-      void this.fetchPages();
+  }
+
+  private async initItem() {
+    void this.fetchCrawl();
+
+    if (this.qaRunId) {
+      void this.fetchQARuns();
+    } else {
+      await this.fetchQARuns();
     }
+
+    if (this.itemPageId) {
+      void this.fetchNotReviewedPages({ page: 1 });
+      void this.fetchReviewedPages({ page: 1 });
+    } else {
+      await Promise.all([
+        this.fetchNotReviewedPages({ page: 1 }),
+        this.fetchReviewedPages({ page: 1 }),
+      ]);
+    }
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const firstQaRun = this.qaRuns?.[0];
+    const firstPage =
+      this.notReviewedPages?.items[0] || this.reviewedPages?.items[0];
+
+    if (!this.qaRunId && firstQaRun) {
+      searchParams.set("qaRunId", firstQaRun.id);
+    }
+    if (!this.itemPageId && firstPage) {
+      searchParams.set("itemPageId", firstPage.id);
+    }
+
+    this.navigate.to(`${window.location.pathname}?${searchParams}`);
+  }
+
+  /**
+   * Get current page position with previous and next items
+   */
+  private getPageListSliceByCurrent(
+    pageId = this.itemPageId,
+  ): ArchivedItemPage[] {
+    if (!pageId || !this.notReviewedPages || !this.reviewedPages) {
+      return [];
+    }
+
+    const pages = [...this.notReviewedPages.items, ...this.reviewedPages.items];
+    const idx = pages.findIndex(({ id }) => id === pageId);
+    return [pages[idx - 1], pages[idx], pages[idx + 1]];
   }
 
   private navToPage(pageId: string) {
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set("itemPageId", pageId);
     this.navigate.to(
-      `${window.location.pathname}?itemPageId=${pageId}`,
+      `${window.location.pathname}?${searchParams}`,
       undefined,
       /* resetScroll: */ false,
     );
   }
 
-  private async initItem() {
-    void this.fetchCrawl();
-    void this.fetchPages({ page: 1 });
-
-    if (this.qaRunId) {
-      void this.fetchQaRuns();
-    } else {
-      await void this.fetchQaRuns();
-    }
-
-    const searchParams = this.getSearchParams();
-    this.navigate.to(`${window.location.pathname}?${searchParams}`);
-  }
-
-  private getSearchParams() {
-    const searchParams = new URLSearchParams(window.location.search);
-
-    const firstQaRunId = this.qaRuns?.[0]?.id;
-    const firstPageId = this.pages?.items[0]?.id;
-
-    if (!searchParams.get("qaRunId") && firstQaRunId) {
-      searchParams.set("qaRunId", firstQaRunId);
-    }
-    if (!searchParams.get("itemPageId") && firstPageId) {
-      searchParams.set("itemPageId", firstPageId);
-    }
-
-    return searchParams;
-  }
-
   render() {
-    if (!this.pages) {
-      return html`loading pages...`;
-    }
-
     const crawlBaseUrl = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}`;
-    const searchParams = this.getSearchParams();
-
+    const searchParams = new URLSearchParams(window.location.search);
     const itemName = this.item ? renderName(this.item) : nothing;
-    const pageIdx = this.getPageIndex();
+    const [prevPage, , nextPage] = this.getPageListSliceByCurrent();
     return html`
       <nav class="mb-7 text-success-600">
         <a
           class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
-          href=${`${crawlBaseUrl}`}
+          href=${`${crawlBaseUrl}#qa`}
           @click=${this.navigate.link}
         >
           <sl-icon
@@ -230,7 +237,7 @@ export class ArchivedItemQA extends TailwindElement {
             class="inline-block align-middle"
           ></sl-icon>
           <span class="inline-block align-middle">
-            ${msg("Back to")} ${itemName}
+            ${msg("Back to QA Overview")}
           </span>
         </a>
       </nav>
@@ -260,7 +267,7 @@ export class ArchivedItemQA extends TailwindElement {
               </btrix-navigation-button>
             </div>
             <div class="flex gap-4">
-              ${pageIdx !== -1 && this.pages?.total > 2
+              ${prevPage
                 ? html`
                     <sl-button size="small" @click=${this.navPrevPage}>
                       <sl-icon slot="prefix" name="arrow-left"></sl-icon>
@@ -276,7 +283,7 @@ export class ArchivedItemQA extends TailwindElement {
                 .page=${this.page}
                 @btrix-update-item-page=${this.onUpdateItemPage}
               ></btrix-page-qa-toolbar>
-              ${pageIdx !== -1 && this.pages?.total > 1
+              ${nextPage
                 ? html`
                     <sl-button
                       variant="primary"
@@ -296,13 +303,23 @@ export class ArchivedItemQA extends TailwindElement {
           ${msg("Pages")}
           <sl-button>${msg("Finish Crawl Review")}</sl-button>
         </h2>
-        <section class="pageList grid">
+        <section class="pageList grid outline">
           <btrix-qa-page-list
-            .item=${this.item}
-            .itemPageId=${this.itemPageId!}
             .qaRunId=${this.qaRunId}
-            .pages=${this.pages}
+            .itemPageId=${this.itemPageId}
+            .notReviewedPages=${this.notReviewedPages}
+            .reviewedPages=${this.reviewedPages}
             class="grid min-h-0 content-start justify-stretch"
+            @btrix-qa-pagination-change=${(
+              e: CustomEvent<QaPaginationChangeDetail>,
+            ) => {
+              const { page, groupName } = e.detail;
+              if (groupName === "reviewed") {
+                this.fetchReviewedPages({ page });
+              } else {
+                this.fetchNotReviewedPages({ page });
+              }
+            }}
             @btrix-qa-page-select=${(e: CustomEvent<string>) => {
               this.navToPage(e.detail);
             }}
@@ -497,17 +514,16 @@ export class ArchivedItemQA extends TailwindElement {
 
     if (!this.page || this.page.id !== updated.id) return;
 
-    const isReviewed = pageIsReviewed(this.page);
+    const reviewStatusChanged =
+      this.page.approved !== updated.approved ||
+      this.page.notes?.length !== updated.notes?.length;
+
+    if (reviewStatusChanged) {
+      this.fetchNotReviewedPages();
+      this.fetchReviewedPages();
+    }
 
     this.page = merge<ArchivedItemPage>(this.page, updated);
-
-    if (!isReviewed && this.pages && this.pages.total > 1) {
-      this.navNextPage();
-      await this.updateComplete;
-      this.syncPageList();
-    } else {
-      this.fetchPage();
-    }
   }
 
   private async fetchCrawl(): Promise<void> {
@@ -523,75 +539,22 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private navNextPage() {
-    const pageIdx = this.getPageIndex();
-    if (pageIdx === -1) return;
-
-    // TODO handle paginated
-    const pageList = this.pages!.items;
-    let nextPage: ArchivedItemPage | undefined;
-
-    if (pageIdx === pageList.length - 1) {
-      nextPage = pageList[0];
-    } else {
-      nextPage = pageList[pageIdx + 1];
-    }
-
+    const [, , nextPage] = this.getPageListSliceByCurrent();
     if (nextPage) {
       this.navToPage(nextPage.id);
     }
   }
 
   private navPrevPage() {
-    const pageIdx = this.getPageIndex();
-    if (pageIdx === -1) return;
-
-    // TODO handle paginated
-    const pageList = this.pages!.items;
-    let prevPage: ArchivedItemPage | undefined;
-
-    if (pageIdx === 0) {
-      prevPage = pageList[pageList.length - 1];
-    } else {
-      prevPage = pageList[pageIdx - 1];
-    }
-
+    const [prevPage] = this.getPageListSliceByCurrent();
     if (prevPage) {
       this.navToPage(prevPage.id);
     }
   }
 
-  private syncPageList() {
-    if (!this.page) return;
-
-    // Update page list optimistically before next request to server
-    if (this.pages) {
-      const pageIdx = this.getPageIndex(this.page.id);
-      if (pageIdx !== -1) {
-        const items = this.pages.items;
-        items[pageIdx] = this.page;
-        this.pages = {
-          ...this.pages,
-          items,
-        };
-      }
-    }
-  }
-
-  private async fetchPages(params?: APIPaginationQuery): Promise<void> {
+  private async fetchQARuns(): Promise<void> {
     try {
-      this.pages = await this.getPages(params);
-    } catch {
-      this.notify.toast({
-        message: msg("Sorry, couldn't retrieve archived item at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  private async fetchQaRuns(): Promise<void> {
-    try {
-      this.qaRuns = await this.getQaRuns();
+      this.qaRuns = await this.getQARuns();
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve QA data at this time."),
@@ -601,7 +564,7 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
-  private async getQaRuns(): Promise<QARun[]> {
+  private async getQARuns(): Promise<QARun[]> {
     return this.api.fetch<QARun[]>(
       `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
       this.authState!,
@@ -615,33 +578,11 @@ export class ArchivedItemQA extends TailwindElement {
     );
   }
 
-  private async getPages(
-    params?: APIPaginationQuery,
-  ): Promise<APIPaginatedList<ArchivedItemPage>> {
-    const query = queryString.stringify(
-      {
-        ...params,
-        reviewed: this.filterBy.reviewed,
-        // approved: true,
-        // hasNotes: true,
-      },
-      {
-        arrayFormat: "comma",
-      },
-    );
-    return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
-      this.qaRunId
-        ? `/orgs/${this.orgId}/crawls/${this.itemId}/qa/${this.qaRunId}/pages?${query}`
-        : `/orgs/${this.orgId}/crawls/${this.itemId}/pages?${query}`,
-      this.authState!,
-    );
-  }
   private async fetchPage(): Promise<void> {
     if (!this.itemPageId) return;
 
     try {
       this.page = await this.getPage(this.itemPageId);
-      this.syncPageList();
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve page at this time."),
@@ -654,6 +595,64 @@ export class ArchivedItemQA extends TailwindElement {
   private async getPage(pageId: string): Promise<ArchivedItemPage> {
     return this.api.fetch<ArchivedItemPage>(
       `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
+      this.authState!,
+    );
+  }
+
+  private async fetchNotReviewedPages(
+    params?: APIPaginationQuery,
+  ): Promise<void> {
+    try {
+      this.notReviewedPages = await this.getPages({
+        page: params?.page ?? this.notReviewedPages?.page ?? 1,
+        pageSize:
+          params?.pageSize ??
+          this.notReviewedPages?.pageSize ??
+          DEFAULT_PAGE_SIZE,
+        reviewed: false,
+      });
+    } catch {
+      this.notify.toast({
+        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async fetchReviewedPages(params?: APIPaginationQuery): Promise<void> {
+    try {
+      this.reviewedPages = await this.getPages({
+        page: params?.page ?? this.reviewedPages?.page ?? 1,
+        pageSize:
+          params?.pageSize ?? this.reviewedPages?.pageSize ?? DEFAULT_PAGE_SIZE,
+        reviewed: true,
+      });
+    } catch {
+      this.notify.toast({
+        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getPages(
+    params?: APIPaginationQuery & { reviewed?: boolean },
+  ): Promise<APIPaginatedList<ArchivedItemPage>> {
+    const query = queryString.stringify(
+      {
+        ...params,
+        reviewed: params?.reviewed,
+      },
+      {
+        arrayFormat: "comma",
+      },
+    );
+    return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
+      this.qaRunId
+        ? `/orgs/${this.orgId}/crawls/${this.itemId}/qa/${this.qaRunId}/pages?${query}`
+        : `/orgs/${this.orgId}/crawls/${this.itemId}/pages?${query}`,
       this.authState!,
     );
   }
