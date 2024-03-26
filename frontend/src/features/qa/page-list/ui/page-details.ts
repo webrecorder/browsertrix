@@ -11,6 +11,13 @@ import {
 import type { ArchivedItemQAPage } from "@/types/qa";
 import { tw } from "@/utils/tailwind";
 
+function formatPercentage(n: number) {
+  if (Number.isNaN(n)) {
+    return "n/a";
+  }
+  return (n * 100).toFixed(2).replace(/[.,]00$/, "");
+}
+
 export const pageDetails = (page: ArchivedItemQAPage) =>
   html`<ul class="text-xs leading-4">
       <li class="my-3 flex">
@@ -21,7 +28,7 @@ export const pageDetails = (page: ArchivedItemQAPage) =>
         <span class="inline-block">
           ${page.qa.screenshotMatch != null
             ? html`<span class="font-bold"
-                  >${(page.qa.screenshotMatch * 100).toFixed(2)}%</span
+                  >${formatPercentage(page.qa.screenshotMatch)}%</span
                 >
                 ${msg("Screenshot Match")}`
             : msg("No Screenshot Diff")}
@@ -32,7 +39,7 @@ export const pageDetails = (page: ArchivedItemQAPage) =>
         <span class="inline-block">
           ${page.qa.textMatch != null
             ? html`<span class="font-bold"
-                  >${(page.qa.textMatch * 100).toFixed(2)}%</span
+                  >${formatPercentage(page.qa.textMatch)}%</span
                 >
                 ${msg("Extracted Text Match")}`
             : msg("No Extracted Text Diff")}
