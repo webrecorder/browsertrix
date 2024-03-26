@@ -8,28 +8,24 @@ import { type OrderBy } from "../page-list";
 
 import { pageDetails } from "./page-details";
 
-import type { ArchivedItemPage } from "@/types/crawler";
+import type { ArchivedItemQAPage } from "@/types/qa";
 import { cached } from "@/utils/weakCache";
 
 export const renderItem = cached(
-  (
-    page: ArchivedItemPage,
-    qaRunId: string,
-    orderBy: OrderBy,
-    itemPageId: string,
-  ) => {
-    let { severe, moderate } = issueCounts(page, qaRunId);
+  (page: ArchivedItemQAPage, orderBy: OrderBy, itemPageId: string) => {
+    let { severe, moderate } = issueCounts(page);
 
     const statusIcon =
       approvalFromPage(page) ??
       {
-        screenshotMatch: severityFromMatch(page.screenshotMatch?.[qaRunId]),
-        textMatch: severityFromMatch(page.textMatch?.[qaRunId]),
-        approved: approvalFromPage(page) ?? maxSeverity(page, qaRunId),
+        screenshotMatch: severityFromMatch(page.qa.screenshotMatch),
+        textMatch: severityFromMatch(page.qa.textMatch),
+        approved: approvalFromPage(page) ?? maxSeverity(page),
       }[orderBy.field];
 
     if (statusIcon === "severe") severe--;
     if (statusIcon === "moderate") moderate--;
+    console.log(page);
 
     return html`<btrix-qa-page
       class="is-leaf -my-4 scroll-my-8 py-4 [contain-intrinsic-height:auto_70px] [contain:strict] [content-visibility:auto] first-of-type:mt-0 last-of-type:mb-0"
@@ -61,7 +57,7 @@ export const renderItem = cached(
         slot="content"
         class="z-10 -mt-2 ml-6 mr-2 rounded-b-lg border border-solid border-gray-200 bg-neutral-0 px-4 pb-1 pt-4"
       >
-        ${pageDetails(page, qaRunId)}
+        ${pageDetails(page)}
       </div>
     </btrix-qa-page>`;
   },

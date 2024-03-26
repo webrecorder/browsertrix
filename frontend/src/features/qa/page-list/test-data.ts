@@ -1,10 +1,11 @@
 import { shuffle } from "lodash";
 
-import type { ArchivedItemPage } from "@/types/crawler";
+// import type { ArchivedItemQAPage } from "@/types/qa";
 
 let counter = 0;
 
-const getRandomData = (): ArchivedItemPage => {
+// FIXME update data
+const getRandomData = (): unknown => {
   const resourceCount = Math.ceil(Math.random() * 1000);
   const isReviewed = Math.random() > 0.5;
   const notes =

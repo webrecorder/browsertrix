@@ -4,20 +4,20 @@ import {
   type Severity,
 } from "./severity";
 
-import type { ArchivedItemPage } from "@/types/crawler";
+import type { ArchivedItemQAPage } from "@/types/qa";
 import { cached } from "@/utils/weakCache";
 
-export const issueCounts = cached((page: ArchivedItemPage, runId: string) => {
+export const issueCounts = cached((page: ArchivedItemQAPage) => {
   const severities = [
-    severityFromMatch(page.screenshotMatch?.[runId]),
-    severityFromMatch(page.textMatch?.[runId]),
+    severityFromMatch(page.qa.screenshotMatch),
+    severityFromMatch(page.qa.textMatch),
     severityFromResourceCounts(
-      page.resourceCounts?.[runId]?.crawlBad,
-      page.resourceCounts?.[runId]?.crawlGood,
+      page.qa.resourceCounts?.crawlBad,
+      page.qa.resourceCounts?.crawlGood,
     ),
     severityFromResourceCounts(
-      page.resourceCounts?.[runId]?.replayBad,
-      page.resourceCounts?.[runId]?.replayGood,
+      page.qa.resourceCounts?.replayBad,
+      page.qa.resourceCounts?.replayGood,
     ),
   ];
   let severe = 0,
@@ -36,15 +36,13 @@ export const issueCounts = cached((page: ArchivedItemPage, runId: string) => {
   };
 });
 
-export const maxSeverity = cached(
-  (page: ArchivedItemPage, runId: string): Severity => {
-    const { severe, moderate, noData } = issueCounts(page, runId);
-    if (noData) return null;
-    if (severe) {
-      return "severe";
-    } else if (moderate) {
-      return "moderate";
-    }
-    return "good";
-  },
-);
+export const maxSeverity = cached((page: ArchivedItemQAPage): Severity => {
+  const { severe, moderate, noData } = issueCounts(page);
+  if (noData) return null;
+  if (severe) {
+    return "severe";
+  } else if (moderate) {
+    return "moderate";
+  }
+  return "good";
+});

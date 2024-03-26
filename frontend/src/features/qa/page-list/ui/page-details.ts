@@ -8,48 +8,51 @@ import {
   severityFromResourceCounts,
 } from "../helpers/severity";
 
-import type { ArchivedItemPage } from "@/types/crawler";
+import type { ArchivedItemQAPage } from "@/types/qa";
 import { tw } from "@/utils/tailwind";
 
-export const pageDetails = (page: ArchivedItemPage, run: string) =>
+export const pageDetails = (page: ArchivedItemQAPage) =>
   html`<ul class="text-xs leading-4">
       <li class="my-3 flex">
         ${iconFor(
-          severityFromMatch(page.screenshotMatch?.[run]),
+          severityFromMatch(page.qa.screenshotMatch),
           tw`mr-2 flex-none`,
         )}
         <span class="inline-block">
-          ${page.screenshotMatch?.[run] != null
-            ? html`<span class="font-bold">${page.screenshotMatch[run]}%</span>
+          ${page.qa.screenshotMatch != null
+            ? html`<span class="font-bold"
+                  >${(page.qa.screenshotMatch * 100).toFixed(2)}%</span
+                >
                 ${msg("Screenshot Match")}`
             : msg("No Screenshot Diff")}
         </span>
       </li>
       <li class="my-3 flex">
-        ${iconFor(severityFromMatch(page.textMatch?.[run]), tw`mr-2 flex-none`)}
+        ${iconFor(severityFromMatch(page.qa.textMatch), tw`mr-2 flex-none`)}
         <span class="inline-block">
-          ${page.textMatch?.[run] != null
-            ? html`<span class="font-bold">${page.textMatch[run]}%</span> ${msg(
-                  "Extracted Text Match",
-                )}`
+          ${page.qa.textMatch != null
+            ? html`<span class="font-bold"
+                  >${(page.qa.textMatch * 100).toFixed(2)}%</span
+                >
+                ${msg("Extracted Text Match")}`
             : msg("No Extracted Text Diff")}
         </span>
       </li>
       <li class="my-3 flex">
         ${iconFor(
           severityFromResourceCounts(
-            page.resourceCounts?.[run]?.crawlBad,
-            page.resourceCounts?.[run]?.crawlGood,
+            page.qa.resourceCounts.crawlBad,
+            page.qa.resourceCounts.crawlGood,
           ),
           tw`mr-2 flex-none`,
         )}
         <span class="inline-block">
-          ${page.resourceCounts?.[run]?.crawlBad != null &&
-          page.resourceCounts[run].crawlGood != null
+          ${page.qa.resourceCounts.crawlBad != null &&
+          page.qa.resourceCounts.crawlGood != null
             ? html`<span class="font-bold"
                   >${crawlCounts(
-                    page.resourceCounts[run].crawlBad,
-                    page.resourceCounts[run].crawlGood,
+                    page.qa.resourceCounts.crawlBad,
+                    page.qa.resourceCounts.crawlGood,
                   )}</span
                 >
                 ${msg("Resources Loaded (Crawl)")}` // TODO pluralize
@@ -59,18 +62,18 @@ export const pageDetails = (page: ArchivedItemPage, run: string) =>
       <li class="my-3 flex">
         ${iconFor(
           severityFromResourceCounts(
-            page.resourceCounts?.[run]?.replayBad,
-            page.resourceCounts?.[run]?.replayGood,
+            page.qa.resourceCounts.replayBad,
+            page.qa.resourceCounts.replayGood,
           ),
           tw`mr-2 flex-none`,
         )}
         <span class="inline-block">
-          ${page.resourceCounts?.[run]?.replayBad != null &&
-          page.resourceCounts[run].replayGood != null
+          ${page.qa.resourceCounts.replayBad != null &&
+          page.qa.resourceCounts.replayGood != null
             ? html`<span class="font-bold"
                   >${crawlCounts(
-                    page.resourceCounts[run].replayBad,
-                    page.resourceCounts[run].replayGood,
+                    page.qa.resourceCounts.replayBad,
+                    page.qa.resourceCounts.replayGood,
                   )}</span
                 >
                 ${msg("Resources Loaded (Replay)")}` // TODO pluralize

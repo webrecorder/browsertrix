@@ -199,20 +199,6 @@ export type ArchivedItemPage = {
   ts?: string; // Date
   load_state?: number;
   status?: number;
-  /** screenshot match percent, keyed by QA run ID */
-  screenshotMatch?: Record<string, number>;
-  /** text match percent, keyed by QA run ID */
-  textMatch?: Record<string, number>;
-  /** resource counts, keyed by QA run ID */
-  resourceCounts?: Record<
-    string,
-    {
-      crawlGood?: number;
-      crawlBad?: number;
-      replayGood?: number;
-      replayBad?: number;
-    }
-  >;
   userid?: string;
   modified?: string;
   approved?: boolean | null;

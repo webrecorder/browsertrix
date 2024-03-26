@@ -6,8 +6,8 @@ export const severityFromMatch = cached(
   (match: number | undefined | null): Severity => {
     if (match == null) return null;
     // TODO extract configs for match thresholds
-    if (match < 50) return "severe";
-    if (match < 90) return "moderate";
+    if (match < 0.5) return "severe";
+    if (match < 0.9) return "moderate";
     return "good";
   },
 );

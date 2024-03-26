@@ -1,22 +1,24 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
+import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
 import { html } from "lit";
-import { customElement, property, queryAll, state } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 
-import type { QaPage } from "./ui/page";
 import { renderItem } from "./ui/render-item";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type PageChangeEvent } from "@/components/ui/pagination";
 import type { APIPaginatedList } from "@/types/api";
-import type { ArchivedItemPage } from "@/types/crawler";
+import type { ArchivedItemQAPage } from "@/types/qa";
 
 type SortDirection = "asc" | "desc";
-type SortableFields = {
-  [k in keyof ArchivedItemPage]?: {
+type SortableFieldNames = "textMatch" | "screenshotMatch" | "approved";
+type SortableFields = Record<
+  SortableFieldNames,
+  {
     label: string;
     defaultDirection?: SortDirection;
-  };
-};
+  }
+>;
 const sortableFields = {
   textMatch: {
     label: msg("Text Match"),
@@ -30,6 +32,14 @@ const sortableFields = {
     label: msg("Review Status"),
     // defaultDirection: "asc",
   },
+  // url: {
+  //   label: msg("Page URL"),
+  //   defaultDirection: "desc",
+  // },
+  // title: {
+  //   label: msg("Page Title"),
+  //   defaultDirection: "desc",
+  // },
   // timestamp: {
   //   label: msg("Time"),
   //   defaultDirection: "asc",
@@ -41,14 +51,23 @@ export type OrderBy = {
   field: SortField;
   direction: SortDirection;
 };
-type GroupName = "notReviewed" | "reviewed";
 export type QaPaginationChangeDetail = {
   page: number;
-  groupName: GroupName;
+};
+export type QaFilterChangeDetail = {
+  reviewed: undefined | boolean;
+  approved: undefined | boolean;
+  hasNotes: undefined | boolean;
+};
+export type QaSortChangeDetail = {
+  reviewed: undefined | boolean;
+  approved: undefined | boolean;
+  hasNotes: undefined | boolean;
 };
 
 /**
  * @fires btrix-qa-pagination-change
+ * @fires btrix-qa-filter-change
  */
 @localized()
 @customElement("btrix-qa-page-list")
@@ -60,10 +79,10 @@ export class PageList extends TailwindElement {
   itemPageId?: string;
 
   @property({ type: Object })
-  notReviewedPages?: APIPaginatedList<ArchivedItemPage>;
+  pages?: APIPaginatedList<ArchivedItemQAPage>;
 
-  @property({ type: Object })
-  reviewedPages?: APIPaginatedList<ArchivedItemPage>;
+  @property({ type: Number })
+  totalPages = 0;
 
   @state()
   orderBy: OrderBy = {
@@ -71,39 +90,14 @@ export class PageList extends TailwindElement {
     direction: "asc",
   };
 
-  @state()
-  filterBy: {
-    reviewed?: boolean;
-  } = {};
-
-  @queryAll("btrix-qa-page")
-  pageElems!: QaPage[];
-
   render() {
-    console.log(this.pageElems);
     return html`
       <div
-        class="z-10 mb-3 flex flex-wrap items-center gap-2 rounded-lg border bg-neutral-50 p-4"
+        class="z-40 mb-1 flex flex-wrap items-center gap-2 rounded-lg border bg-neutral-50 p-4"
       >
-        ${
-          // <btrix-search-combobox
-          //   class="grow"
-          //   .searchKeys=${["textMatch", "screenshotMatch"]}
-          //   .searchOptions=${this.pages?.items ?? []}
-          //   .selectedKey=${undefined}
-          //   .placeholder=${msg("Search all crawls by name or Crawl Start URL")}
-          //   @on-select=${() => {}}
-          //   @on-clear=${() => {}}
-          // >
-          null
-        }
-        </btrix-search-combobox>
         <div class="flex w-full grow items-center md:w-fit">
-          <div class="mr-2 whitespace-nowrap text-sm text-0-500">
-            ${msg("Sort by:")}
-          </div>
+          <div class="mr-2 whitespace-nowrap text-xs">${msg("Sort by:")}</div>
           <sl-select
-            disabled
             class="flex-1 md:min-w-[9.2rem]"
             size="small"
             pill
@@ -135,78 +129,108 @@ export class PageList extends TailwindElement {
             }}
           ></sl-icon-button>
         </div>
+        ${this.renderFilterControl()}
       </div>
-      <div
-        class="-mx-2 overflow-y-auto px-2"
-      >
-      <div>
-        ${
-          this.notReviewedPages?.total || this.reviewedPages?.total
-            ? html`
-                ${this.renderGroup("notReviewed")}
-                ${this.renderGroup("reviewed")}
-              `
-            : html`<div
-                class="flex flex-col items-center justify-center gap-4 py-8 text-xs text-gray-600"
+      <div class="-mx-2 overflow-y-auto px-2">
+        ${this.pages?.total
+          ? html`
+              <div
+                class="sticky top-0 z-30 bg-gradient-to-b from-white to-white/85 backdrop-blur-sm"
               >
-                <sl-icon name="dash-circle" class="h-4 w-4"></sl-icon>
-                ${msg("No pages to review")}
-              </div>`
-        }
-          </div>
+                <div class="ml-2 border-b px-2 py-1 text-xs text-neutral-500">
+                  ${this.pages.total === this.totalPages
+                    ? msg(
+                        str`Showing all ${this.totalPages.toLocaleString()} pages`,
+                      )
+                    : msg(
+                        str`Showing ${this.pages.total.toLocaleString()} of ${this.totalPages.toLocaleString()} pages`,
+                      )}
+                </div>
+              </div>
+              ${this.pages.items.map((page) =>
+                renderItem(page, this.orderBy, this.itemPageId ?? ""),
+              )}
+              <div class="my-2 flex justify-center">
+                <btrix-pagination
+                  page=${this.pages.page}
+                  totalCount=${this.pages.total}
+                  size=${this.pages.pageSize}
+                  compact
+                  @page-change=${(e: PageChangeEvent) => {
+                    e.stopPropagation();
+                    this.dispatchEvent(
+                      new CustomEvent<QaPaginationChangeDetail>(
+                        "btrix-qa-pagination-change",
+                        {
+                          detail: { page: e.detail.page },
+                        },
+                      ),
+                    );
+                  }}
+                >
+                </btrix-pagination>
+              </div>
+            `
+          : html`<div
+              class="flex flex-col items-center justify-center gap-4 py-8 text-xs text-gray-600"
+            >
+              <sl-icon name="dash-circle" class="h-4 w-4"></sl-icon>
+              ${msg("No matching pages found")}
+            </div>`}
       </div>
     `;
   }
 
-  private renderGroup(groupName: GroupName) {
-    let pages = this.notReviewedPages;
-    let heading = msg("Not Reviewed");
-    if (groupName === "reviewed") {
-      pages = this.reviewedPages;
-      heading = msg("Reviewed");
-    }
-
-    if (!pages?.total) return;
-
+  private renderFilterControl() {
     return html`
-      <btrix-qa-page-group expanded>
-        <div slot="header" class="flex items-center gap-2">
-          ${heading}
-          <btrix-badge>${pages.total.toLocaleString()}</btrix-badge>
-        </div>
-        <div class="py-2">
-          ${pages.items.map((page) =>
-            renderItem(
-              page,
-              this.qaRunId ?? "",
-              this.orderBy,
-              this.itemPageId ?? "",
-            ),
-          )}
-          <div class="my-2 flex justify-center">
-            <btrix-pagination
-              page=${pages.page}
-              totalCount=${pages.total}
-              size=${pages.pageSize}
-              compact
-              @page-change=${(e: PageChangeEvent) => {
-                this.dispatchEvent(
-                  new CustomEvent<QaPaginationChangeDetail>(
-                    "btrix-qa-pagination-change",
-                    {
-                      detail: {
-                        page: e.detail.page,
-                        groupName: groupName,
-                      },
-                    },
-                  ),
-                );
-              }}
-            >
-            </btrix-pagination>
-          </div>
-        </div>
-      </btrix-qa-page-group>
+      <div class="w-full">
+        <sl-select
+          label=${msg("Review state:")}
+          @sl-change=${(e: SlChangeEvent) => {
+            const { value } = e.target as SlSelect;
+            const detail: QaFilterChangeDetail = {
+              reviewed: undefined,
+              approved: undefined,
+              hasNotes: undefined,
+            };
+            switch (value) {
+              case "notReviewed":
+                detail.reviewed = false;
+                break;
+              case "reviewed":
+                detail.reviewed = true;
+                break;
+              case "approved":
+                detail.approved = true;
+                break;
+              case "rejected":
+                detail.approved = false;
+                break;
+              case "hasNotes":
+                detail.hasNotes = true;
+                break;
+              default:
+                break;
+            }
+            this.dispatchEvent(
+              new CustomEvent<QaFilterChangeDetail>("btrix-qa-filter-change", {
+                detail,
+              }),
+            );
+          }}
+          pill
+          size="small"
+        >
+          <sl-option value="">${msg("Any")}</sl-option>
+          <sl-option value="notReviewed">${msg("No Review")}</sl-option>
+          <sl-option value="reviewed">${msg("Reviewed")}</sl-option>
+          <sl-option value="approved">${msg("Reviewed as approved")}</sl-option>
+          <sl-option value="rejected">${msg("Reviewed as rejected")}</sl-option>
+          <sl-option value="hasNotes"
+            >${msg("Reviewed with comment")}</sl-option
+          >
+        </sl-select>
+      </div>
     `;
   }
 }
