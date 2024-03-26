@@ -18,12 +18,13 @@ import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import {
-  type SortableFieldNames,
-  type SortDirection,
   type QaFilterChangeDetail,
   type QaPaginationChangeDetail,
   type QaSortChangeDetail,
+  type SortableFieldNames,
+  type SortDirection,
 } from "@/features/qa/page-list/page-list";
+import { pageDetails } from "@/features/qa/page-list/ui/page-details";
 import { type UpdateItemPageDetail } from "@/features/qa/page-qa-toolbar";
 import type {
   APIPaginatedList,
@@ -254,7 +255,7 @@ export class ArchivedItemQA extends TailwindElement {
     const crawlBaseUrl = `${this.navigate.orgBasePath}/items/crawl/${this.itemId}`;
     const searchParams = new URLSearchParams(window.location.search);
     const itemName = this.item ? renderName(this.item) : nothing;
-    const [prevPage, , nextPage] = this.getPageListSliceByCurrent();
+    const [prevPage, currentPage, nextPage] = this.getPageListSliceByCurrent();
     return html`
       <nav class="mb-7 text-success-600">
         <a
@@ -329,11 +330,14 @@ export class ArchivedItemQA extends TailwindElement {
           </nav>
           ${this.renderToolbar()} ${this.renderSections()}
         </section>
-        <h2 class="pageListHeader outline">
-          ${msg("Pages")}
+        <div class="pageListHeader outline">
           <sl-button>${msg("Finish Crawl Review")}</sl-button>
-        </h2>
-        <section class="pageList grid outline">
+        </div>
+        <section class="pageList grid gap-3">
+          ${when(currentPage, this.renderPageCard)}
+          <h2 class="text-base font-semibold leading-none">
+            ${msg("Pages Crawled")}
+          </h2>
           <btrix-qa-page-list
             .qaRunId=${this.qaRunId}
             .itemPageId=${this.itemPageId}
@@ -376,7 +380,16 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private renderPageCard(page: ArchivedItemQAPage) {
-    return html` <div>${page}</div> `;
+    // NOTE can't use this.page here yet, since it's missing QA data
+    return html`
+      <div class="rounded-lg border p-3 shadow">
+        <div class="text-base font-semibold leading-tight">
+          ${msg("QA Analysis")}
+        </div>
+        <div>${pageDetails(page)}</div>
+      </div>
+      <hr />
+    `;
   }
 
   private renderToolbar() {
