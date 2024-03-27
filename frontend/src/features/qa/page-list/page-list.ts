@@ -4,8 +4,6 @@ import { html, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 
-import { type QaPage } from "./ui/page";
-
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type PageChangeEvent } from "@/components/ui/pagination";
 import type { APIPaginatedList, APISortQuery } from "@/types/api";
@@ -87,9 +85,6 @@ export class PageList extends TailwindElement {
     field: "screenshotMatch",
     direction: "asc",
   };
-
-  @query("btrix-qa-page[selected]")
-  private selectedPageElem?: QaPage | null;
 
   @query(".scrollContainer")
   private scrollContainer?: HTMLElement | null;

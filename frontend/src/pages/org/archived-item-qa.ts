@@ -52,6 +52,7 @@ export class ArchivedItemQA extends TailwindElement {
       grid-template:
         "mainHeader"
         "main"
+        "pageListHeader"
         "pageList";
       grid-template-columns: 100%;
       grid-template-rows: repeat(4, max-content);
@@ -65,7 +66,7 @@ export class ArchivedItemQA extends TailwindElement {
     @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
       article {
         grid-template:
-          "mainHeader mainHeader"
+          "mainHeader pageListHeader"
           "main pageList";
         grid-template-columns: 1fr 35rem;
         grid-template-rows: min-content 1fr;
@@ -248,13 +249,10 @@ export class ArchivedItemQA extends TailwindElement {
 
     return html`
       <article class="grid gap-x-4 gap-y-3">
-        <header
-          class="mainHeader flex items-center justify-between border-b py-3"
-        >
+        <header class="mainHeader flex items-center justify-between">
           <h1 class="text-lg font-semibold leading-tight">
             ${msg("Review")} &mdash; ${itemName}
           </h1>
-          <sl-button size="small">${msg("Finish Crawl Review")}</sl-button>
         </header>
         <section class="main">
           <nav class="mb-3 flex items-center justify-between">
@@ -330,11 +328,18 @@ export class ArchivedItemQA extends TailwindElement {
           </nav>
           ${this.renderToolbar()} ${this.renderSections()}
         </section>
-        <section class="pageList flex flex-col gap-3 border-t pt-3">
-          <h2 class="flex-grow-0 font-semibold leading-none">
-            ${msg("Browse Pages")}
-          </h2>
+        <div class="pageListHeader flex items-end justify-between">
+          <h2 class="text-lg font-semibold leading-none">${msg("Pages")}</h2>
+          <sl-button
+            size="small"
+            href=${`${crawlBaseUrl}#qa`}
+            @click=${this.navigate.link}
+            >${msg("Done Reviewing")}</sl-button
+          >
+        </div>
+        <section class="pageList">
           <btrix-qa-page-list
+            class="flex h-full flex-col"
             .qaRunId=${this.qaRunId}
             .itemPageId=${this.itemPageId}
             .pages=${this.pages}
@@ -345,7 +350,6 @@ export class ArchivedItemQA extends TailwindElement {
                 : "asc") as SortDirection,
             }}
             totalPages=${+(this.item?.stats?.found || 0)}
-            class="grid min-h-0 content-start justify-stretch"
             @btrix-qa-pagination-change=${(
               e: CustomEvent<QaPaginationChangeDetail>,
             ) => {
