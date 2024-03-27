@@ -1,14 +1,14 @@
 // cSpell:words xstate
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
-import { createMachine, interpret, assign } from "@xstate/fsm";
+import { localized, msg } from "@lit/localize";
+import { assign, createMachine, interpret } from "@xstate/fsm";
+import { type PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 
-import type { ViewState } from "@/utils/APIRouter";
-import LiteElement, { html } from "@/utils/LiteElement";
-import AuthService from "@/utils/AuthService";
 import { ROUTES } from "@/routes";
 import { isApiError } from "@/utils/api";
-import { type PropertyValues } from "lit";
+import type { ViewState } from "@/utils/APIRouter";
+import AuthService from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
 
 type FormContext = {
   successMessage?: string;

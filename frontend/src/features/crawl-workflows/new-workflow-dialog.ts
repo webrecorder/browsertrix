@@ -1,6 +1,6 @@
-import { LitElement, html, css } from "lit";
-import { property, customElement } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
+import { css, html, LitElement } from "lit";
+import { customElement, property } from "lit/decorators.js";
 
 import seededCrawlSvg from "~assets/images/new-crawl-config_Seeded-Crawl.svg";
 import urlListSvg from "~assets/images/new-crawl-config_URL-List.svg";

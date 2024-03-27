@@ -15,7 +15,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: '18'
           cache: 'yarn'
           cache-dependency-path: frontend/yarn.lock
       - name: Restore cache
@@ -35,7 +35,9 @@ jobs:
         run: yarn lint:check
       - name: Format
         working-directory: frontend
-        run: yarn format:check
+        # TODO Reenable when https://github.com/webrecorder/browsertrix-cloud/issues/1618 is addressed
+        # run: yarn format:check
+        run: yarn prettier --list-different .
       - name: Unit tests
         working-directory: frontend
         run: yarn test

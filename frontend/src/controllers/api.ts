@@ -1,9 +1,8 @@
-import type { ReactiveController, ReactiveControllerHost } from "lit";
 import { msg } from "@lit/localize";
+import type { ReactiveController, ReactiveControllerHost } from "lit";
 
-import type { Auth } from "@/utils/AuthService";
-import AuthService from "@/utils/AuthService";
 import { APIError, type Detail } from "@/utils/api";
+import AuthService, { type Auth } from "@/utils/AuthService";
 
 export type QuotaUpdateDetail = { reached: boolean };
 

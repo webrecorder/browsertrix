@@ -94,8 +94,28 @@ def parse_jsonl_error_messages(errors):
 def is_bool(stri: Optional[str]) -> bool:
     """Check if the string parameter is stringly true"""
     if stri:
-        return stri.lower() in ("true", "1", "yes")
+        return stri.lower() in ("true", "1", "yes", "on")
     return False
+
+
+def is_falsy_bool(stri: Optional[str]) -> bool:
+    """Check if the string parameter is stringly false"""
+    if stri:
+        return stri.lower() in ("false", "0", "no", "off")
+    return False
+
+
+def str_list_to_bools(str_list: List[str], allow_none=True) -> List[Union[bool, None]]:
+    """Return version of input string list cast to bool or None, ignoring other values"""
+    output: List[Union[bool, None]] = []
+    for val in str_list:
+        if is_bool(val):
+            output.append(True)
+        if is_falsy_bool(val):
+            output.append(False)
+        if val.lower() in ("none", "null") and allow_none:
+            output.append(None)
+    return output
 
 
 def slug_from_name(name: str) -> str:
@@ -120,14 +140,3 @@ def stream_dict_list_as_csv(data: List[Dict[str, Union[str, int]]], filename: st
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment;filename={filename}"},
     )
-
-
-async def gather_tasks_with_concurrency(*tasks, n=5):
-    """Limit concurrency to n tasks at a time"""
-    semaphore = asyncio.Semaphore(n)
-
-    async def semaphore_task(task):
-        async with semaphore:
-            return await task
-
-    return await asyncio.gather(*(semaphore_task(task) for task in tasks))

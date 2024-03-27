@@ -60,6 +60,17 @@ class CrawlSpec(BaseModel):
     scheduled: bool = False
     timeout: int = 0
     max_crawl_size: int = 0
+    qa_source_crawl_id: Optional[str] = ""
+
+    @property
+    def db_crawl_id(self) -> str:
+        """return actual crawl_id for db, if qa run"""
+        return self.qa_source_crawl_id or self.id
+
+    @property
+    def is_qa(self) -> bool:
+        """return true if qa run"""
+        return bool(self.qa_source_crawl_id)
 
 
 # ============================================================================

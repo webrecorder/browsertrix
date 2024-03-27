@@ -14,18 +14,20 @@ from typing import (
 )
 from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
+from itertools import chain
 
 import asyncio
 import heapq
 import zlib
 import json
-import itertools
 import os
 
 from datetime import datetime
+from zipfile import ZipInfo
 
 from fastapi import Depends, HTTPException
 from stream_zip import stream_zip, NO_COMPRESSION_64
+from remotezip import RemoteZip
 
 import aiobotocore.session
 import boto3
@@ -42,10 +44,6 @@ from .models import (
     S3Storage,
     S3StorageIn,
     OrgStorageRefs,
-)
-from .zip import (
-    sync_get_zip_file,
-    sync_get_filestream,
 )
 
 from .utils import is_bool, slug_from_name
@@ -74,11 +72,20 @@ class StorageOps:
     org_ops: OrgOps
     crawl_manager: CrawlManager
 
+    is_local_minio: bool
+    frontend_origin: str
+
     def __init__(self, org_ops, crawl_manager) -> None:
         self.org_ops = org_ops
         self.crawl_manager = crawl_manager
 
         self.is_local_minio = is_bool(os.environ.get("IS_LOCAL_MINIO"))
+
+        frontend_origin = os.environ.get(
+            "FRONTEND_ORIGIN", "http://browsertrix-cloud-frontend"
+        )
+        default_namespace = os.environ.get("DEFAULT_NAMESPACE", "default")
+        self.frontend_origin = f"{frontend_origin}.{default_namespace}"
 
         with open(os.environ["STORAGES_JSON"], encoding="utf-8") as fh:
             storage_list = json.loads(fh.read())
@@ -316,6 +323,12 @@ class StorageOps:
             resp = await client.put_object(Bucket=bucket, Key=key, Body=data)
             assert resp["ResponseMetadata"]["HTTPStatusCode"] == 200
 
+    def resolve_internal_access_path(self, path):
+        """Resolve relative path for internal access to minio bucket"""
+        if path.startswith("/"):
+            return self.frontend_origin + path
+        return path
+
     def get_org_relative_path(
         self, org: Organization, ref: StorageRef, file_path: str
     ) -> str:
@@ -501,7 +514,7 @@ class StorageOps:
 
         s3storage = self.get_org_storage_by_ref(org, storage)
 
-        async with self.get_s3_client(s3storage, s3storage.use_access_for_presign) as (
+        async with self.get_s3_client(s3storage) as (
             client,
             bucket,
             key,
@@ -512,75 +525,53 @@ class StorageOps:
 
         return status_code == 204
 
-    async def sync_stream_pages_from_wacz(
-        self,
-        org: Organization,
-        wacz_files: List[CrawlFile],
+    async def sync_stream_wacz_pages(
+        self, wacz_files: List[CrawlFileOut]
     ) -> Iterator[Dict[Any, Any]]:
-        """Return stream of page dicts from last of WACZs"""
-        async with self.get_sync_client(org) as (client, bucket, key):
-            loop = asyncio.get_event_loop()
+        """Return stream of pages specified WACZ"""
+        loop = asyncio.get_event_loop()
 
-            stream = await loop.run_in_executor(
-                None,
-                self._sync_get_pages,
-                wacz_files,
-                client,
-                bucket,
-                key,
-            )
+        resp = await loop.run_in_executor(None, self._sync_get_pages, wacz_files)
 
-            return stream
+        return resp
 
     async def sync_stream_wacz_logs(
         self,
-        org: Organization,
-        wacz_files: List[CrawlFile],
+        wacz_files: List[CrawlFileOut],
         log_levels: List[str],
         contexts: List[str],
     ) -> Iterator[bytes]:
         """Return filtered stream of logs from specified WACZs sorted by timestamp"""
-        async with self.get_sync_client(org) as (client, bucket, key):
-            loop = asyncio.get_event_loop()
+        loop = asyncio.get_event_loop()
 
-            resp = await loop.run_in_executor(
-                None,
-                self._sync_get_logs,
-                wacz_files,
-                log_levels,
-                contexts,
-                client,
-                bucket,
-                key,
-            )
+        resp = await loop.run_in_executor(
+            None,
+            self._sync_get_logs,
+            wacz_files,
+            log_levels,
+            contexts,
+        )
 
-            return resp
+        return resp
 
     def _sync_get_logs(
         self,
-        wacz_files: List[CrawlFile],
+        wacz_files: List[CrawlFileOut],
         log_levels: List[str],
         contexts: List[str],
-        client,
-        bucket: str,
-        key: str,
     ) -> Iterator[bytes]:
         """Generate filtered stream of logs from specified WACZs sorted by timestamp"""
 
         # pylint: disable=too-many-function-args
         def stream_log_lines(
-            wacz_key, wacz_filename, cd_start, log_zipinfo
+            log_zipinfo: ZipInfo, wacz_url: str, wacz_filename: str
         ) -> Iterator[dict]:
             """Pass lines as json objects"""
+            filename = log_zipinfo.filename
 
-            print(
-                f"Fetching log {log_zipinfo.filename} from {wacz_filename}", flush=True
-            )
+            print(f"Fetching log {filename} from {wacz_filename}", flush=True)
 
-            line_iter: Iterator[bytes] = sync_get_filestream(
-                client, bucket, wacz_key, log_zipinfo, cd_start
-            )
-
+            line_iter: Iterator[bytes] = self._sync_get_filestream(wacz_url, filename)
             for line in line_iter:
                 yield _parse_json(line.decode("utf-8", errors="ignore"))
 
@@ -597,14 +588,14 @@ class StorageOps:
                 yield json_str.encode("utf-8")
 
         def organize_based_on_instance_number(
-            wacz_files: List[CrawlFile],
-        ) -> List[List[CrawlFile]]:
+            wacz_files: List[CrawlFileOut],
+        ) -> List[List[CrawlFileOut]]:
             """Place wacz_files into their own list based on instance number"""
-            wacz_files.sort(key=lambda file: file.filename)
-            waczs_groups: Dict[str, List[CrawlFile]] = {}
+            wacz_files.sort(key=lambda file: file.name)
+            waczs_groups: Dict[str, List[CrawlFileOut]] = {}
             for file in wacz_files:
-                instance_number = file.filename[
-                    file.filename.rfind("-") + 1 : file.filename.rfind(".")
+                instance_number = file.name[
+                    file.name.rfind("-") + 1 : file.name.rfind(".")
                 ]
                 if instance_number in waczs_groups:
                     waczs_groups[instance_number].append(file)
@@ -619,24 +610,21 @@ class StorageOps:
             wacz_log_streams: List[Iterator[dict]] = []
 
             for wacz_file in instance_list:
-                wacz_key = key + wacz_file.filename
-                cd_start, zip_file = sync_get_zip_file(client, bucket, wacz_key)
+                wacz_url = self.resolve_internal_access_path(wacz_file.path)
+                with RemoteZip(wacz_url) as remote_zip:
+                    log_files: List[ZipInfo] = [
+                        f
+                        for f in remote_zip.infolist()
+                        if f.filename.startswith("logs/") and not f.is_dir()
+                    ]
+                    log_files.sort(key=lambda log_zipinfo: log_zipinfo.filename)
 
-                log_files = [
-                    f
-                    for f in zip_file.filelist
-                    if f.filename.startswith("logs/") and not f.is_dir()
-                ]
-                log_files.sort(key=lambda log_zipinfo: log_zipinfo.filename)
-
-                for log_zipinfo in log_files:
-                    wacz_log_streams.append(
-                        stream_log_lines(
-                            wacz_key, wacz_file.filename, cd_start, log_zipinfo
+                    for log_zipinfo in log_files:
+                        wacz_log_streams.append(
+                            stream_log_lines(log_zipinfo, wacz_url, wacz_file.name)
                         )
-                    )
 
-            log_generators.append(itertools.chain(*wacz_log_streams))
+            log_generators.append(chain(*wacz_log_streams))
 
         heap_iter = heapq.merge(*log_generators, key=lambda entry: entry["timestamp"])
 
@@ -644,50 +632,50 @@ class StorageOps:
 
     def _sync_get_pages(
         self,
-        wacz_files: List[CrawlFile],
-        client,
-        bucket: str,
-        key: str,
+        wacz_files: List[CrawlFileOut],
     ) -> Iterator[Dict[Any, Any]]:
         """Generate stream of page dicts from specified WACZs"""
 
         # pylint: disable=too-many-function-args
         def stream_page_lines(
-            wacz_key, wacz_filename, cd_start, pagefile_zipinfo
+            pagefile_zipinfo: ZipInfo, wacz_url: str, wacz_filename: str
         ) -> Iterator[Dict[Any, Any]]:
             """Pass lines as json objects"""
+            filename = pagefile_zipinfo.filename
+
             print(
-                f"Fetching JSON lines from {pagefile_zipinfo.filename} in {wacz_filename}",
+                f"Fetching JSON lines from {filename} in {wacz_filename}",
                 flush=True,
             )
 
-            line_iter: Iterator[bytes] = sync_get_filestream(
-                client, bucket, wacz_key, pagefile_zipinfo, cd_start
-            )
+            line_iter: Iterator[bytes] = self._sync_get_filestream(wacz_url, filename)
             for line in line_iter:
                 yield _parse_json(line.decode("utf-8", errors="ignore"))
 
         page_generators: List[Iterator[Dict[Any, Any]]] = []
 
         for wacz_file in wacz_files:
-            wacz_key = key + wacz_file.filename
-            cd_start, zip_file = sync_get_zip_file(client, bucket, wacz_key)
-
-            page_files = [
-                f
-                for f in zip_file.filelist
-                if f.filename.startswith("pages/")
-                and f.filename.endswith(".jsonl")
-                and not f.is_dir()
-            ]
-            for pagefile_zipinfo in page_files:
-                page_generators.append(
-                    stream_page_lines(
-                        wacz_key, wacz_file.filename, cd_start, pagefile_zipinfo
+            wacz_url = self.resolve_internal_access_path(wacz_file.path)
+            with RemoteZip(wacz_url) as remote_zip:
+                page_files: List[ZipInfo] = [
+                    f
+                    for f in remote_zip.infolist()
+                    if f.filename.startswith("pages/")
+                    and f.filename.endswith(".jsonl")
+                    and not f.is_dir()
+                ]
+                for pagefile_zipinfo in page_files:
+                    page_generators.append(
+                        stream_page_lines(pagefile_zipinfo, wacz_url, wacz_file.name)
                     )
-                )
 
-        return itertools.chain(*page_generators)
+        return chain.from_iterable(page_generators)
+
+    def _sync_get_filestream(self, wacz_url: str, filename: str) -> Iterator[bytes]:
+        """Return iterator of lines in remote file as bytes"""
+        with RemoteZip(wacz_url) as remote_zip:
+            with remote_zip.open(filename) as file_stream:
+                yield from file_stream
 
     def _sync_dl(
         self, all_files: List[CrawlFileOut], client: S3Client, bucket: str, key: str

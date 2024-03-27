@@ -1,25 +1,25 @@
+import { localized, msg } from "@lit/localize";
 import {
-  html,
   css,
+  html,
   nothing,
   type PropertyValues,
   type TemplateResult,
 } from "lit";
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, localized } from "@lit/localize";
+import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { type AuthState } from "@/utils/AuthService";
 import { TWO_COL_SCREEN_MIN_CSS } from "@/components/ui/tab-list";
-import { NavigateController } from "@/controllers/navigate";
 import { APIController } from "@/controllers/api";
+import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
-import { renderName } from "@/utils/crawler";
+import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
-import type { APIPaginationQuery, APIPaginatedList } from "@/types/api";
+import { type AuthState } from "@/utils/AuthService";
+import { renderName } from "@/utils/crawler";
 
 const TABS = ["screenshots", "replay"] as const;
 export type QATab = (typeof TABS)[number];
@@ -215,9 +215,7 @@ export class ArchivedItemQA extends TailwindElement {
             )}
           </ul>
           pg ${this.pages.page} of
-          ${this.pages
-            ? Math.ceil(this.pages.total / this.pages.pageSize)
-            : "unknown"}
+          ${Math.ceil(this.pages.total / this.pages.pageSize)}
         </section>
       </article>
     `;

@@ -387,6 +387,8 @@ class CrawlConfig(CrawlConfigCore, CrawlConfigAdditional):
 class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
     """Crawl Config Output"""
 
+    id: UUID
+
     lastCrawlStopping: Optional[bool] = False
     profileName: Optional[str]
     firstSeed: Optional[str]
@@ -532,36 +534,59 @@ class ReviewStatus(str, Enum):
 
 
 # ============================================================================
-class BaseCrawl(BaseMongoModel):
-    """Base Crawl object (representing crawls, uploads and manual sessions)"""
+class CrawlStats(BaseModel):
+    """Crawl Stats for pages and size"""
+
+    found: int = 0
+    done: int = 0
+    size: int = 0
+
+
+# ============================================================================
+class CoreCrawlable(BaseModel):
+    # pylint: disable=too-few-public-methods
+    """Core properties for crawlable run (crawl or qa run)"""
 
     id: str
 
-    type: str
-
     userid: UUID
     userName: Optional[str]
-    oid: UUID
 
     started: datetime
     finished: Optional[datetime] = None
 
-    name: Optional[str] = ""
-
     state: str
 
-    stats: Optional[Dict[str, int]] = None
+    crawlExecSeconds: int = 0
 
-    files: Optional[List[CrawlFile]] = []
+    image: Optional[str]
 
-    description: Optional[str] = ""
+    stats: Optional[CrawlStats] = CrawlStats()
 
-    errors: Optional[List[str]] = []
-
-    collectionIds: Optional[List[UUID]] = []
+    files: List[CrawlFile] = []
 
     fileSize: int = 0
     fileCount: int = 0
+
+    errors: Optional[List[str]] = []
+
+
+# ============================================================================
+class BaseCrawl(CoreCrawlable, BaseMongoModel):
+    """Base Crawl object (representing crawls, uploads and manual sessions)"""
+
+    type: str
+
+    oid: UUID
+    cid: Optional[UUID] = None
+
+    name: Optional[str] = ""
+
+    description: Optional[str] = ""
+
+    tags: Optional[List[str]] = []
+
+    collectionIds: Optional[List[UUID]] = []
 
     reviewStatus: Optional[ReviewStatus] = None
 
@@ -598,7 +623,7 @@ class CrawlOut(BaseMongoModel):
 
     state: str
 
-    stats: Optional[Dict[str, int]]
+    stats: Optional[CrawlStats]
 
     fileSize: int = 0
     fileCount: int = 0
@@ -610,6 +635,7 @@ class CrawlOut(BaseMongoModel):
     collectionIds: Optional[List[UUID]] = []
 
     crawlExecSeconds: int = 0
+    qaCrawlExecSeconds: int = 0
 
     # automated crawl fields
     config: Optional[RawCrawlConfig]
@@ -658,6 +684,13 @@ class DeleteCrawlList(BaseModel):
 
 
 # ============================================================================
+class DeleteQARunList(BaseModel):
+    """delete qa run list POST body"""
+
+    qa_run_ids: List[str]
+
+
+# ============================================================================
 
 ### AUTOMATED CRAWLS ###
 
@@ -667,6 +700,36 @@ class CrawlScale(BaseModel):
     """scale the crawl to N parallel containers"""
 
     scale: conint(ge=1, le=MAX_CRAWL_SCALE) = 1  # type: ignore
+
+
+# ============================================================================
+class QARun(CoreCrawlable, BaseModel):
+    """Subdocument to track QA runs for given crawl"""
+
+
+# ============================================================================
+class QARunWithResources(QARun):
+    """QA crawl output model including resources"""
+
+    resources: Optional[List[CrawlFileOut]] = []
+
+
+# ============================================================================
+class QARunOut(BaseModel):
+    """QA Run Output"""
+
+    id: str
+
+    userName: Optional[str]
+
+    started: datetime
+    finished: Optional[datetime] = None
+
+    state: str
+
+    crawlExecSeconds: int = 0
+
+    stats: CrawlStats = CrawlStats()
 
 
 # ============================================================================
@@ -686,9 +749,10 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     stopping: Optional[bool] = False
 
-    crawlExecSeconds: int = 0
+    qaCrawlExecSeconds: int = 0
 
-    image: Optional[str]
+    qa: Optional[QARun] = None
+    qaFinished: Optional[Dict[str, QARun]] = {}
 
 
 # ============================================================================
@@ -717,8 +781,6 @@ class UploadedCrawl(BaseCrawl):
     """Store State of a Crawl Upload"""
 
     type: Literal["upload"] = "upload"
-
-    tags: Optional[List[str]] = []
 
 
 # ============================================================================
@@ -910,8 +972,15 @@ class OrgOut(BaseMongoModel):
     storageQuotaReached: Optional[bool]
     execMinutesQuotaReached: Optional[bool]
 
+    # total usage and exec time
     usage: Optional[Dict[str, int]]
     crawlExecSeconds: Dict[str, int] = {}
+
+    # qa only usage + exec time
+    qaUsage: Optional[Dict[str, int]] = {}
+    qaCrawlExecSeconds: Dict[str, int] = {}
+
+    # exec time limits
     monthlyExecSeconds: Dict[str, int] = {}
     extraExecSeconds: Dict[str, int] = {}
     giftedExecSeconds: Dict[str, int] = {}
@@ -945,8 +1014,15 @@ class Organization(BaseMongoModel):
     bytesStoredUploads: int = 0
     bytesStoredProfiles: int = 0
 
+    # total usage + exec time
     usage: Dict[str, int] = {}
     crawlExecSeconds: Dict[str, int] = {}
+
+    # qa only usage + exec time
+    qaUsage: Dict[str, int] = {}
+    qaCrawlExecSeconds: Dict[str, int] = {}
+
+    # exec time limits
     monthlyExecSeconds: Dict[str, int] = {}
     extraExecSeconds: Dict[str, int] = {}
     giftedExecSeconds: Dict[str, int] = {}
@@ -1428,21 +1504,29 @@ class PageNote(BaseModel):
 
 
 # ============================================================================
+class PageQACompare(BaseModel):
+    """Model for updating pages from QA run"""
+
+    screenshotMatch: Optional[float] = None
+    textMatch: Optional[float] = None
+    resourceCounts: Optional[Dict[str, int]]
+
+
+# ============================================================================
 class Page(BaseMongoModel):
-    """Model for crawl pages"""
+    """Core page data, no QA"""
+
+    id: UUID
 
     oid: UUID
     crawl_id: str
+
+    # core page data
     url: AnyHttpUrl
     title: Optional[str] = None
-    timestamp: Optional[datetime] = None
-    load_state: Optional[int] = None
+    ts: Optional[datetime] = None
+    loadState: Optional[int] = None
     status: Optional[int] = None
-
-    # automated heuristics, keyed by QA run id
-    screenshotMatch: Optional[Dict[str, float]] = {}
-    textMatch: Optional[Dict[str, float]] = {}
-    resourceCounts: Optional[Dict[str, Dict[str, int]]] = {}
 
     # manual review
     userid: Optional[UUID] = None
@@ -1452,16 +1536,30 @@ class Page(BaseMongoModel):
 
 
 # ============================================================================
+class PageWithAllQA(Page):
+    """Model for core page data + qa"""
+
+    # automated heuristics, keyed by QA run id
+    qa: Optional[Dict[str, PageQACompare]] = {}
+
+
+# ============================================================================
 class PageOut(Page):
-    """Model for pages output"""
+    """Model for pages output, no QA"""
 
     status: Optional[int] = 200
 
 
 # ============================================================================
-class PageQAUpdate(BaseModel):
-    """Model for updating pages from QA run"""
+class PageOutWithSingleQA(Page):
+    """Page out with single QA entry"""
 
-    screenshotMatch: Optional[int] = None
-    textMatch: Optional[int] = None
-    resourceCounts: Optional[Dict[str, Dict[str, int]]]
+    qa: Optional[PageQACompare] = None
+
+
+# ============================================================================
+class PagesAndResources(BaseModel):
+    """moage for qa configmap data, pages + resources"""
+
+    resources: List[CrawlFileOut] = []
+    pages: List[PageOut] = []

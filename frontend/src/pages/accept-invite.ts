@@ -1,10 +1,10 @@
-import { state, property, customElement } from "lit/decorators.js";
-import { msg, str, localized } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
+import { customElement, property, state } from "lit/decorators.js";
 
-import LiteElement, { html } from "@/utils/LiteElement";
-import type { AuthState } from "@/utils/AuthService";
 import { ROUTES } from "@/routes";
 import { isApiError } from "@/utils/api";
+import type { AuthState } from "@/utils/AuthService";
+import LiteElement, { html } from "@/utils/LiteElement";
 
 type InviteInfo = {
   inviterEmail: string;

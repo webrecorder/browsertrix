@@ -1,6 +1,6 @@
-import { css } from "lit";
 import SlDialog from "@shoelace-style/shoelace/dist/components/dialog/dialog.js";
 import dialogStyles from "@shoelace-style/shoelace/dist/components/dialog/dialog.styles.js";
+import { css } from "lit";
 import { customElement, queryAssignedElements } from "lit/decorators.js";
 
 /**
@@ -66,9 +66,6 @@ export class Dialog extends SlDialog {
    * TODO refactor dialog instances that self implements `form.requestSubmit`
    */
   submit = () => {
-    const form = this.formElems[0];
-    if (!form) return;
-
-    form.requestSubmit();
+    this.formElems[0]?.requestSubmit();
   };
 }

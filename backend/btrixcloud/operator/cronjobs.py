@@ -48,7 +48,9 @@ class CronJobOperator(BaseOperator):
         name = metadata.get("name")
         crawl_id = name
 
-        actual_state, finished = await self.crawl_ops.get_crawl_state(crawl_id)
+        actual_state, finished = await self.crawl_ops.get_crawl_state(
+            crawl_id, is_qa=False
+        )
         if finished:
             status = None
             # mark job as completed
