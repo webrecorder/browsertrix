@@ -772,8 +772,6 @@ class CrawlOperator(BaseOperator):
             qa_run_id = crawl.id if crawl.is_qa else None
 
             while page_crawled:
-                print("PAGE DATA", flush=True)
-                print(page_crawled, flush=True)
                 page_dict = json.loads(page_crawled)
                 await self.page_ops.add_page_to_db(
                     page_dict, crawl.db_crawl_id, qa_run_id, crawl.oid
