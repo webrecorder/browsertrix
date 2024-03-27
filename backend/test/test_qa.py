@@ -129,6 +129,27 @@ def test_qa_page_data(crawler_crawl_id, crawler_auth_headers, default_org_id):
     data = r.json()
     assert len(data["items"]) == 1
     page = data["items"][0]
+
+    page_id = page["id"]
+    assert page_id
+
+    assert page["title"] == "Webrecorder"
+    assert page["url"] == "https://webrecorder.net/"
+    assert page["qa"]["textMatch"] == 1.0
+    assert page["qa"]["screenshotMatch"] == 1.0
+    assert page["qa"]["resourceCounts"] == {
+        "crawlGood": 15,
+        "crawlBad": 0,
+        "replayGood": 15,
+        "replayBad": 1,
+    }
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/pages/{page_id}",
+        headers=crawler_auth_headers,
+    )
+    page = r.json()
+    assert page["id"]
     assert page["title"] == "Webrecorder"
     assert page["url"] == "https://webrecorder.net/"
     assert page["qa"]["textMatch"] == 1.0
