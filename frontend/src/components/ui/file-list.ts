@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "lit";
+import { html, css } from "lit";
 import {
   customElement,
   property,
@@ -6,6 +6,7 @@ import {
 } from "lit/decorators.js";
 
 import { truncate } from "@/utils/css";
+import { TailwindElement } from "@/classes/TailwindElement";
 
 type FileRemoveDetail = {
   file: File;
@@ -16,7 +17,7 @@ export type FileRemoveEvent = CustomEvent<FileRemoveDetail>;
  * @event on-remove FileRemoveEvent
  */
 @customElement("btrix-file-list-item")
-export class FileListItem extends LitElement {
+export class FileListItem extends TailwindElement {
   static styles = [
     truncate,
     css`
@@ -91,6 +92,7 @@ export class FileListItem extends LitElement {
             ? ""
             : html`<sl-icon-button
                 name="trash3"
+                class=${`text-base hover:text-danger`}
                 @click=${this.onRemove}
               ></sl-icon-button>`}
         </div>
@@ -121,7 +123,7 @@ export class FileListItem extends LitElement {
 }
 
 @customElement("btrix-file-list")
-export class FileList extends LitElement {
+export class FileList extends TailwindElement {
   static styles = [
     css`
       ::slotted(btrix-file-list-item) {
