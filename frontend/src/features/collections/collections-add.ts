@@ -224,6 +224,7 @@ export class CollectionsAdd extends LiteElement {
         </div>
         <sl-icon-button
           name="x-lg"
+          label=${msg("Remove from auto-add")}
           data-key=${id}
           ?disabled=${!collection}
           @click=${this.removeCollection}

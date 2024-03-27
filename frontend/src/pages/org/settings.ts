@@ -366,7 +366,7 @@ export class OrgSettings extends LiteElement {
     return html`<sl-icon-button
       class="text-base hover:text-danger"
       name="trash3"
-      label="Remove org member"
+      label=${msg("Remove org member")}
       ?disabled=${disableButton}
       aria-details=${ifDefined(
         disableButton ? msg("Cannot remove only admin member") : undefined,

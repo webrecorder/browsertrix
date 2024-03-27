@@ -205,7 +205,7 @@ export class QueueExclusionTable extends LiteElement {
         </td>
         <td class="${actionColClass} text-center text-[1rem]">
           <sl-icon-button
-            label="Remove exclusion"
+            label=${msg("Remove exclusion")}
             class="text-base hover:text-danger"
             name="trash3"
             @click=${() => this.removeExclusion(exclusion, index)}
