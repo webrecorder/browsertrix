@@ -12,6 +12,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { RelativeDuration } from "@/components/ui/relative-duration";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
+import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
 import type { APIPaginatedList } from "@/types/api";
 import { type QARun } from "@/types/qa";
 import { isApiError } from "@/utils/api";
@@ -79,6 +80,9 @@ export class CrawlDetail extends LiteElement {
 
   @state()
   private qaRuns?: QARun[];
+
+  @state()
+  private qaRunId?: string;
 
   @state()
   private sectionName: SectionName = "overview";
@@ -156,11 +160,10 @@ export class CrawlDetail extends LiteElement {
                 variant="primary"
                 size="small"
                 href="${this.orgBasePath}/items/crawl/${this
-                  .crawlId}/review/screenshots?qaRunId=${this.qaRuns?.[0]?.id ||
-                ""}"
+                  .crawlId}/review/screenshots?qaRunId=${this.qaRunId || ""}"
                 @click=${this.navLink}
               >
-                ${msg("Review Pages")}
+                ${msg("Review Crawl")}
               </sl-button>
               <sl-button
                 size="small"
@@ -576,20 +579,45 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderQA() {
+    const finishedQARuns = this.qaRuns
+      ? this.qaRuns.filter(({ finished }) => finished)
+      : [];
     return html`
+      <div class="outline">
+        TEMP running crawl:
+        <pre>
+${JSON.stringify(
+            this.qaRuns?.filter(({ finished }) => !finished),
+            null,
+            2,
+          )}
+      </pre
+        >
+      </div>
       <section class="mb-5 rounded-lg border p-4">[summary]</section>
       <btrix-tab-group>
         <btrix-tab-group-tab slot="nav" panel="pages">
-          ${msg("Page Reviews")}
+          ${msg("Review")}
         </btrix-tab-group-tab>
         <btrix-tab-group-tab slot="nav" panel="runs">
-          ${msg("QA Analysis Runs")}
+          ${msg("QA Runs")}
         </btrix-tab-group-tab>
 
         <btrix-tab-group-panel name="pages">
+          <div class="flex items-center gap-1">
+            <h4 class="text-base font-semibold leading-8">
+              ${msg("QA Analysis")}
+            </h4>
+            <btrix-qa-run-dropdown
+              .items=${finishedQARuns}
+              selectedId=${this.qaRunId || ""}
+              @btrix-select=${(e: CustomEvent<SelectDetail>) =>
+                (this.qaRunId = e.detail.item.id)}
+            ></btrix-qa-run-dropdown>
+          </div>
           <section class="mb-7 rounded-lg border p-4">[stats]</section>
-          <h4 class="mb-2 text-base font-semibold leading-tight">
-            ${msg("Pages")}
+          <h4 class="mb-2 text-base font-semibold leading-8">
+            ${msg("Page Reviews")}
           </h4>
           <section>[pages]</section>
         </btrix-tab-group-panel>
@@ -1166,9 +1194,10 @@ ${this.crawl?.description}
       );
 
       console.debug("qa run id: ", data.started);
+      this.fetchQARuns();
 
       this.notify({
-        message: msg("Started QA run."),
+        message: msg("Starting QA analysis..."),
         variant: "success",
         icon: "check2-circle",
       });
@@ -1186,6 +1215,7 @@ ${this.crawl?.description}
   private async fetchQARuns(): Promise<void> {
     try {
       this.qaRuns = await this.getQARuns();
+      this.qaRunId = this.qaRunId || this.qaRuns[0]?.id;
     } catch {
       this.notify({
         message: msg("Sorry, couldn't retrieve archived item at this time."),
