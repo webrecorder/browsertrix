@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
 import { merge } from "immutable";
 import {
   css,
@@ -249,10 +250,27 @@ export class ArchivedItemQA extends TailwindElement {
 
     return html`
       <article class="grid gap-x-4 gap-y-3">
-        <header class="mainHeader flex items-center justify-between">
+        <header class="mainHeader flex items-center gap-3">
           <h1 class="text-lg font-semibold leading-tight">
-            ${msg("Review")} &mdash; ${itemName}
+            ${msg("Crawl Review")} &mdash; ${itemName}
           </h1>
+          <sl-select
+            value=${this.qaRunId || ""}
+            size="small"
+            @sl-change=${(e: SlChangeEvent) => {
+              const { value } = e.target as SlSelect;
+              if (!value) return;
+              const params = new URLSearchParams(searchParams);
+              params.set("qaRunId", value as string);
+              this.navigate.to(`${window.location.pathname}?${params}`);
+            }}
+          >
+            ${this.qaRuns?.map(
+              (run) => html`
+                <sl-option value=${run.id}>${run.finished}</sl-option>
+              `,
+            )}
+          </sl-select>
         </header>
         <section class="main">
           <nav class="mb-3 flex items-center justify-between">
