@@ -11,7 +11,7 @@ import {
 import type { ArchivedItemQAPage } from "@/types/qa";
 import { tw } from "@/utils/tailwind";
 
-function formatPercentage(n: number) {
+export function formatPercentage(n: number) {
   if (Number.isNaN(n)) {
     return "n/a";
   }
@@ -19,7 +19,7 @@ function formatPercentage(n: number) {
 }
 
 export const pageDetails = (page: ArchivedItemQAPage) =>
-  html`<ul class="text-xs leading-4">
+  html`<ul class="leading-4">
       <li class="my-3 flex">
         ${iconFor(
           severityFromMatch(page.qa.screenshotMatch),

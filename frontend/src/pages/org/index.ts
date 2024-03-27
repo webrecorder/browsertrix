@@ -528,7 +528,7 @@ export class Org extends LiteElement {
     if (params.itemId) {
       if (params.qaTab) {
         return html` <btrix-archived-item-qa
-          class="max-h-[100vh] min-h-[100vh] flex-1"
+          class="flex-1"
           .authState=${this.authState!}
           orgId=${this.orgId}
           itemId=${params.itemId}

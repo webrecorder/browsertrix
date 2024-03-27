@@ -1,9 +1,10 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
-import { html } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { html, type PropertyValues } from "lit";
+import { customElement, property, query } from "lit/decorators.js";
+import { repeat } from "lit/directives/repeat.js";
 
-import { renderItem } from "./ui/render-item";
+import { type QaPage } from "./ui/page";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type PageChangeEvent } from "@/components/ui/pagination";
@@ -87,6 +88,22 @@ export class PageList extends TailwindElement {
     direction: "asc",
   };
 
+  @query("btrix-qa-page[selected]")
+  private selectedPageElem?: QaPage | null;
+
+  @query(".scrollContainer")
+  private scrollContainer?: HTMLElement | null;
+
+  protected async updated(changedProperties: PropertyValues<this>) {
+    if (
+      changedProperties.has("pages") &&
+      changedProperties.get("pages") &&
+      this.pages
+    ) {
+      this.scrollContainer?.scrollTo({ top: 0 });
+    }
+  }
+
   render() {
     return html`
       <div
@@ -94,13 +111,13 @@ export class PageList extends TailwindElement {
       >
         ${this.renderSortControl()} ${this.renderFilterControl()}
       </div>
-      <div class="-mx-2 overflow-y-auto px-2">
+      <div class="scrollContainer relative -mx-2 overflow-y-auto px-2">
         ${this.pages?.total
           ? html`
               <div
                 class="sticky top-0 z-30 bg-gradient-to-b from-white to-white/85 backdrop-blur-sm"
               >
-                <div class="ml-2 border-b py-1 text-xs text-neutral-500">
+                <div class="mb-0.5 ml-2 border-b py-1 text-xs text-neutral-500">
                   ${this.pages.total === this.totalPages
                     ? msg(
                         str`Showing all ${this.totalPages.toLocaleString()} pages`,
@@ -110,8 +127,18 @@ export class PageList extends TailwindElement {
                       )}
                 </div>
               </div>
-              ${this.pages.items.map((page) =>
-                renderItem(page, this.orderBy, this.itemPageId ?? ""),
+              ${repeat(
+                this.pages.items,
+                ({ id }) => id,
+                (page: ArchivedItemQAPage) => html`
+                  <btrix-qa-page
+                    class="is-leaf -my-4 scroll-my-8 py-4 first-of-type:mt-0 last-of-type:mb-0"
+                    .page=${page}
+                    statusField=${this.orderBy.field}
+                    ?selected=${page.id === this.itemPageId}
+                  >
+                  </btrix-qa-page>
+                `,
               )}
               <div class="my-2 flex justify-center">
                 <btrix-pagination
@@ -133,6 +160,10 @@ export class PageList extends TailwindElement {
                 >
                 </btrix-pagination>
               </div>
+
+              <div
+                class="sticky bottom-0 z-30 h-4 bg-gradient-to-t from-white to-white/0"
+              ></div>
             `
           : html`<div
               class="flex flex-col items-center justify-center gap-4 py-8 text-xs text-gray-600"

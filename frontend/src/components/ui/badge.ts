@@ -4,6 +4,14 @@ import { customElement, property } from "lit/decorators.js";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
 
+export type BadgeVariant =
+  | "success"
+  | "warning"
+  | "danger"
+  | "neutral"
+  | "primary"
+  | "high-contrast";
+
 /**
  * Show numeric value in a label
  *
@@ -15,13 +23,7 @@ import { tw } from "@/utils/tailwind";
 @customElement("btrix-badge")
 export class Badge extends TailwindElement {
   @property({ type: String })
-  variant:
-    | "success"
-    | "warning"
-    | "danger"
-    | "neutral"
-    | "primary"
-    | "high-contrast" = "neutral";
+  variant: BadgeVariant = "neutral";
 
   @property({ type: String, reflect: true })
   role: string | null = "status";

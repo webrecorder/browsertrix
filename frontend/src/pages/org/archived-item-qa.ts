@@ -13,10 +13,12 @@ import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import type { BadgeVariant } from "@/components/ui/badge";
 import { TWO_COL_SCREEN_MIN_CSS } from "@/components/ui/tab-list";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
+import { severityFromMatch } from "@/features/qa/page-list/helpers";
 import {
   type QaFilterChangeDetail,
   type QaPaginationChangeDetail,
@@ -24,7 +26,7 @@ import {
   type SortableFieldNames,
   type SortDirection,
 } from "@/features/qa/page-list/page-list";
-import { pageDetails } from "@/features/qa/page-list/ui/page-details";
+import { formatPercentage } from "@/features/qa/page-list/ui/page-details";
 import { type UpdateItemPageDetail } from "@/features/qa/page-qa-toolbar";
 import type {
   APIPaginatedList,
@@ -44,20 +46,12 @@ export type QATab = (typeof TABS)[number];
 @customElement("btrix-archived-item-qa")
 export class ArchivedItemQA extends TailwindElement {
   static styles = css`
-    :host {
-      height: inherit;
-      display: flex;
-      flex-direction: column;
-    }
-
     article {
-      flex-grow: 1;
-      display: grid;
-      grid-gap: 1rem;
+      /* TODO calculate screen space instead of hardcoding */
+      height: calc(100vh - 12rem);
       grid-template:
         "mainHeader"
         "main"
-        "pageListHeader"
         "pageList";
       grid-template-columns: 100%;
       grid-template-rows: repeat(4, max-content);
@@ -71,9 +65,9 @@ export class ArchivedItemQA extends TailwindElement {
     @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
       article {
         grid-template:
-          "mainHeader pageListHeader"
+          "mainHeader mainHeader"
           "main pageList";
-        grid-template-columns: 70% 1fr;
+        grid-template-columns: 1fr 35rem;
         grid-template-rows: min-content 1fr;
       }
     }
@@ -181,15 +175,14 @@ export class ArchivedItemQA extends TailwindElement {
   ): void {
     if (changedProperties.has("itemId") && this.itemId) {
       void this.initItem();
-    }
-    if (changedProperties.has("itemPageId") && this.itemPageId) {
-      void this.fetchPage();
-    }
-    if (
+    } else if (
       changedProperties.get("filterPagesBy") ??
       changedProperties.get("sortPagesBy")
     ) {
       void this.fetchPages();
+    }
+    if (changedProperties.has("itemPageId") && this.itemPageId) {
+      void this.fetchPage();
     }
   }
 
@@ -204,12 +197,8 @@ export class ArchivedItemQA extends TailwindElement {
 
     if (this.itemPageId) {
       void this.fetchPages({ page: 1 });
-      void this.fetchPages({ page: 1 });
     } else {
-      await Promise.all([
-        this.fetchPages({ page: 1 }),
-        this.fetchPages({ page: 1 }),
-      ]);
+      await this.fetchPages({ page: 1 });
     }
 
     const searchParams = new URLSearchParams(window.location.search);
@@ -256,30 +245,20 @@ export class ArchivedItemQA extends TailwindElement {
     const searchParams = new URLSearchParams(window.location.search);
     const itemName = this.item ? renderName(this.item) : nothing;
     const [prevPage, currentPage, nextPage] = this.getPageListSliceByCurrent();
-    return html`
-      <nav class="mb-7 text-success-600">
-        <a
-          class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
-          href=${`${crawlBaseUrl}#qa`}
-          @click=${this.navigate.link}
-        >
-          <sl-icon
-            name="arrow-left"
-            class="inline-block align-middle"
-          ></sl-icon>
-          <span class="inline-block align-middle">
-            ${msg("Back to QA Overview")}
-          </span>
-        </a>
-      </nav>
 
-      <article>
-        <header class="mainHeader outline">
-          <h1>${msg("Review")} &mdash; ${itemName}</h1>
+    return html`
+      <article class="grid gap-x-4 gap-y-3">
+        <header
+          class="mainHeader flex items-center justify-between border-b py-3"
+        >
+          <h1 class="text-lg font-semibold leading-tight">
+            ${msg("Review")} &mdash; ${itemName}
+          </h1>
+          <sl-button size="small">${msg("Finish Crawl Review")}</sl-button>
         </header>
-        <section class="main outline">
-          <nav class="flex items-center justify-between p-2">
-            <div class="flex gap-4">
+        <section class="main">
+          <nav class="mb-3 flex items-center justify-between">
+            <div class="flex gap-3">
               <btrix-navigation-button
                 id="screenshot-tab"
                 href=${`${crawlBaseUrl}/review/screenshots?${searchParams}`}
@@ -287,6 +266,30 @@ export class ArchivedItemQA extends TailwindElement {
                 @click=${this.navigate.link}
               >
                 ${msg("Screenshots")}
+                ${when(currentPage, (page) => {
+                  let variant: BadgeVariant = "neutral";
+                  switch (severityFromMatch(currentPage.qa.screenshotMatch)) {
+                    case "severe":
+                      variant = "danger";
+                      break;
+                    case "moderate":
+                      variant = "warning";
+                      break;
+                    case "good":
+                      variant = "success";
+                      break;
+                    default:
+                      break;
+                  }
+
+                  return html`
+                    <btrix-badge variant=${variant}
+                      >${formatPercentage(
+                        page.qa.screenshotMatch,
+                      )}%</btrix-badge
+                    >
+                  `;
+                })}
               </btrix-navigation-button>
               <btrix-navigation-button
                 id="replay-tab"
@@ -298,14 +301,14 @@ export class ArchivedItemQA extends TailwindElement {
               </btrix-navigation-button>
             </div>
             <div class="flex gap-4">
-              ${prevPage
-                ? html`
-                    <sl-button size="small" @click=${this.navPrevPage}>
-                      <sl-icon slot="prefix" name="arrow-left"></sl-icon>
-                      ${msg("Previous Page")}
-                    </sl-button>
-                  `
-                : nothing}
+              <sl-button
+                size="small"
+                @click=${this.navPrevPage}
+                ?disabled=${!prevPage}
+              >
+                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+                ${msg("Previous Page")}
+              </sl-button>
               <btrix-page-qa-toolbar
                 .authState=${this.authState}
                 .orgId=${this.orgId}
@@ -314,29 +317,22 @@ export class ArchivedItemQA extends TailwindElement {
                 .page=${this.page}
                 @btrix-update-item-page=${this.onUpdateItemPage}
               ></btrix-page-qa-toolbar>
-              ${nextPage
-                ? html`
-                    <sl-button
-                      variant="primary"
-                      size="small"
-                      @click=${this.navNextPage}
-                    >
-                      <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-                      ${msg("Next Page")}
-                    </sl-button>
-                  `
-                : nothing}
+              <sl-button
+                variant="primary"
+                size="small"
+                ?disabled=${!nextPage}
+                @click=${this.navNextPage}
+              >
+                <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+                ${msg("Next Page")}
+              </sl-button>
             </div>
           </nav>
           ${this.renderToolbar()} ${this.renderSections()}
         </section>
-        <div class="pageListHeader outline">
-          <sl-button>${msg("Finish Crawl Review")}</sl-button>
-        </div>
-        <section class="pageList grid gap-3">
-          ${when(currentPage, this.renderPageCard)}
-          <h2 class="text-base font-semibold leading-none">
-            ${msg("Pages Crawled")}
+        <section class="pageList flex flex-col gap-3 border-t pt-3">
+          <h2 class="flex-grow-0 font-semibold leading-none">
+            ${msg("Browse Pages")}
           </h2>
           <btrix-qa-page-list
             .qaRunId=${this.qaRunId}
@@ -379,25 +375,12 @@ export class ArchivedItemQA extends TailwindElement {
     `;
   }
 
-  private renderPageCard(page: ArchivedItemQAPage) {
-    // NOTE can't use this.page here yet, since it's missing QA data
-    return html`
-      <div class="rounded-lg border p-3 shadow">
-        <div class="text-base font-semibold leading-tight">
-          ${msg("QA Analysis")}
-        </div>
-        <div>${pageDetails(page)}</div>
-      </div>
-      <hr />
-    `;
-  }
-
   private renderToolbar() {
     return html`
       <div
         class="${this.tab === "replay"
-          ? "rounded-t-lg"
-          : "rounded-lg"} my-2 flex h-12 items-center border bg-neutral-50 text-base"
+          ? "rounded-t-lg m2-2"
+          : "rounded-lg my-2"} flex h-12 items-center border bg-neutral-50 text-base"
       >
         <div class="ml-1 flex">
           ${choose(this.tab, [
@@ -533,13 +516,21 @@ export class ArchivedItemQA extends TailwindElement {
       </div>
       <div class="offscreen" aria-hidden="true">
         ${when(this.qaRunId, (id) =>
-          this.renderReplay(id, { qa: true, screenshot: true }),
+          this.renderRWP(id, { qa: true, screenshot: true }),
         )}
       </div>
     `;
   };
 
-  private readonly renderReplay = (
+  private readonly renderReplay = () => {
+    return html`
+      <div class="overflow-hidden rounded-b-lg border-x border-b">
+        ${this.renderRWP()}
+      </div>
+    `;
+  };
+
+  private readonly renderRWP = (
     rwpId = this.itemId,
     { qa, screenshot } = { qa: false, screenshot: false },
   ) => {
@@ -549,7 +540,7 @@ export class ArchivedItemQA extends TailwindElement {
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
-    return html`<div class="aspect-4/3 w-full overflow-hidden">
+    return html`
       <replay-web-page
         source="${replaySource}"
         coll="${rwpId}"
@@ -559,7 +550,7 @@ export class ArchivedItemQA extends TailwindElement {
         noCache="true"
         url="${screenshot ? "urn:view:" : ""}${this.page?.url}"
       ></replay-web-page>
-    </div>`;
+    `;
   };
 
   private readonly onScreenshotLoad = (e: Event) => {
@@ -582,7 +573,6 @@ export class ArchivedItemQA extends TailwindElement {
       this.page.notes?.length !== updated.notes?.length;
 
     if (reviewStatusChanged) {
-      this.fetchPages();
       this.fetchPages();
     }
 
