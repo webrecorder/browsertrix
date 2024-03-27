@@ -5,8 +5,8 @@ import {
   queryAssignedElements,
 } from "lit/decorators.js";
 
-import { truncate } from "@/utils/css";
 import { TailwindElement } from "@/classes/TailwindElement";
+import { truncate } from "@/utils/css";
 
 type FileRemoveDetail = {
   file: File;
