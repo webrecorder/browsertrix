@@ -146,12 +146,11 @@ export class CrawlDetail extends LiteElement {
   render() {
     const authToken = this.authState!.headers.Authorization.split(" ")[1];
     let sectionContent: string | TemplateResult = "";
-    console.log(this.qaRuns);
 
     switch (this.sectionName) {
       case "qa":
         sectionContent = this.renderPanel(
-          html`${this.renderTitle(msg("Crawl Analysis"))}
+          html`${this.renderTitle(msg("Quality Assurance (QA)"))}
             <div>
               <sl-button
                 variant="primary"
@@ -161,7 +160,7 @@ export class CrawlDetail extends LiteElement {
                 ""}"
                 @click=${this.navLink}
               >
-                ${msg("Review Crawl")}
+                ${msg("Review Pages")}
               </sl-button>
               <sl-button
                 size="small"
@@ -169,8 +168,8 @@ export class CrawlDetail extends LiteElement {
                 ?loading=${!this.qaRuns}
               >
                 ${this.qaRuns?.length
-                  ? msg("Reanalyze Crawl")
-                  : msg("Analyze Crawl")}
+                  ? msg("Rerun QA Analysis")
+                  : msg("Run QA Analysis")}
               </sl-button>
             </div>`,
           this.renderQA(),
@@ -579,9 +578,25 @@ export class CrawlDetail extends LiteElement {
   private renderQA() {
     return html`
       <section class="mb-5 rounded-lg border p-4">[summary]</section>
-      <section class="mb-7 rounded-lg border p-4">[stats]</section>
-      <h4 class="text-lg font-semibold">${msg("Pages")}</h4>
-      <section>[pages]</section>
+      <btrix-tab-group>
+        <btrix-tab-group-tab slot="nav" panel="pages">
+          ${msg("Page Reviews")}
+        </btrix-tab-group-tab>
+        <btrix-tab-group-tab slot="nav" panel="runs">
+          ${msg("QA Analysis Runs")}
+        </btrix-tab-group-tab>
+
+        <btrix-tab-group-panel name="pages">
+          <section class="mb-7 rounded-lg border p-4">[stats]</section>
+          <h4 class="mb-2 text-base font-semibold leading-tight">
+            ${msg("Pages")}
+          </h4>
+          <section>[pages]</section>
+        </btrix-tab-group-panel>
+        <btrix-tab-group-panel name="runs">
+          <section>[runs]</section>
+        </btrix-tab-group-panel>
+      </btrix-tab-group>
     `;
   }
 
