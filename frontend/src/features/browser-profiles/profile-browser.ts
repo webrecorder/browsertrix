@@ -307,6 +307,10 @@ export class ProfileBrowser extends LiteElement {
       try {
         const resp = await fetch(result.url, { method: "HEAD" });
         if (!resp.ok) {
+          this.pollTimerId = window.setTimeout(
+            () => void this.checkBrowserStatus(),
+            POLL_INTERVAL_SECONDS * 1000,
+          );
           return;
         }
       } catch (e) {
