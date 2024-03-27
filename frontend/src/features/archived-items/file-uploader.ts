@@ -240,7 +240,12 @@ export class FileUploader extends TailwindElement {
     const { helpText, validate } = this.validateDescriptionMax;
     return html`
       <div class="mb-3">
-        <sl-input label="Name" name="name" required></sl-input>
+        <sl-input
+          label=${msg("Name")}
+          name="name"
+          placeholder=${msg("Our Website (example.com)")}
+          required
+        ></sl-input>
       </div>
       <sl-textarea
         class="with-max-help-text mb-3"
