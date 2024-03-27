@@ -1,3 +1,4 @@
+import { localized, msg } from "@lit/localize";
 import { css, html } from "lit";
 import {
   customElement,
@@ -16,6 +17,7 @@ export type FileRemoveEvent = CustomEvent<FileRemoveDetail>;
 /**
  * @event on-remove FileRemoveEvent
  */
+@localized()
 @customElement("btrix-file-list-item")
 export class FileListItem extends TailwindElement {
   static styles = [
@@ -92,7 +94,8 @@ export class FileListItem extends TailwindElement {
             ? ""
             : html`<sl-icon-button
                 name="trash3"
-                class=${`text-base hover:text-danger`}
+                class="text-base hover:text-danger"
+                label=${msg("Remove file")}
                 @click=${this.onRemove}
               ></sl-icon-button>`}
         </div>
