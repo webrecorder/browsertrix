@@ -1,5 +1,4 @@
 import { localized, msg } from "@lit/localize";
-import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
 import { merge } from "immutable";
 import {
   css,
@@ -29,6 +28,7 @@ import {
 } from "@/features/qa/page-list/page-list";
 import { formatPercentage } from "@/features/qa/page-list/ui/page-details";
 import { type UpdateItemPageDetail } from "@/features/qa/page-qa-toolbar";
+import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -247,30 +247,28 @@ export class ArchivedItemQA extends TailwindElement {
     const searchParams = new URLSearchParams(window.location.search);
     const itemName = this.item ? renderName(this.item) : nothing;
     const [prevPage, currentPage, nextPage] = this.getPageListSliceByCurrent();
+    const finishedQARuns = this.qaRuns
+      ? this.qaRuns.filter(({ finished }) => finished)
+      : [];
 
     return html`
       <article class="grid gap-x-4 gap-y-3">
-        <header class="mainHeader flex items-center gap-3">
-          <h1 class="text-lg font-semibold leading-tight">
-            ${msg("Crawl Review")} &mdash; ${itemName}
+        <header class="mainHeader flex items-center justify-between gap-1">
+          <h1 class="text-base font-semibold leading-tight">
+            ${msg("Reviewing")} ${itemName}
           </h1>
-          <sl-select
-            value=${this.qaRunId || ""}
-            size="small"
-            @sl-change=${(e: SlChangeEvent) => {
-              const { value } = e.target as SlSelect;
-              if (!value) return;
-              const params = new URLSearchParams(searchParams);
-              params.set("qaRunId", value as string);
-              this.navigate.to(`${window.location.pathname}?${params}`);
-            }}
-          >
-            ${this.qaRuns?.map(
-              (run) => html`
-                <sl-option value=${run.id}>${run.finished}</sl-option>
-              `,
-            )}
-          </sl-select>
+          <div class="flex items-center">
+            <span class="font-medium text-neutral-400">${msg("QA run:")}</span>
+            <btrix-qa-run-dropdown
+              .items=${finishedQARuns}
+              selectedId=${this.qaRunId || ""}
+              @btrix-select=${(e: CustomEvent<SelectDetail>) => {
+                const params = new URLSearchParams(searchParams);
+                params.set("qaRunId", e.detail.item.id);
+                this.navigate.to(`${window.location.pathname}?${params}`);
+              }}
+            ></btrix-qa-run-dropdown>
+          </div>
         </header>
         <section class="main">
           <nav class="mb-3 flex items-center justify-between">
@@ -346,8 +344,8 @@ export class ArchivedItemQA extends TailwindElement {
           </nav>
           ${this.renderToolbar()} ${this.renderSections()}
         </section>
-        <div class="pageListHeader flex items-end justify-between">
-          <h2 class="text-lg font-semibold leading-none">${msg("Pages")}</h2>
+        <div class="pageListHeader flex items-center justify-between">
+          <h2 class="text-base font-semibold leading-none">${msg("Pages")}</h2>
           <sl-button
             size="small"
             href=${`${crawlBaseUrl}#qa`}
