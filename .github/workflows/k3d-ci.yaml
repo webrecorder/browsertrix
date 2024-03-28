@@ -96,3 +96,7 @@ jobs:
       - name: Print Backend Logs (Operator)
         if: ${{ failure() }}
         run: kubectl logs svc/browsertrix-cloud-backend -c op
+
+      - name: Print K8S Events
+        if: ${{ failure() }}
+        run: kubectl events --all-namespaces
