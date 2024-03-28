@@ -12,9 +12,6 @@ spec:
   hostname: browser-{{ id }}
   subdomain: browser
 
-  {% set crawler_uid = crawler_uid|default(201400007) %}
-  {% set crawler_gid = crawler_gid|default(201400007) %}
-  {% set crawler_fsgroup = crawler_fsgroup|default(crawler_gid) %}
   securityContext:
     runAsNonRoot: true
     runAsUser: {{ crawler_uid}}
@@ -24,9 +21,9 @@ spec:
     readOnlyRootFilesystem: true
 
   volumes:
-    - name: browser-workdir
+    - name: crawler-workdir
       emptyDir:
-        sizeLimit: 2Gi
+        sizeLimit: {{ crawler_workdir_size }}
 
   {% if priorityClassName %}
   priorityClassName: {{ priorityClassName }}
@@ -77,8 +74,8 @@ spec:
       {%- endif %}
 
       volumeMounts:
-        - name: browser-workdir
-          mountPath: /work
+        - name: crawler-workdir
+          mountPath: /tmp
 
       envFrom:
         - secretRef:

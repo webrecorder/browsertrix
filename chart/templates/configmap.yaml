@@ -112,6 +112,12 @@ data:
     crawler_socks_proxy_host: "{{ .Values.crawler_socks_proxy_host }}"
     crawler_socks_proxy_port: "{{ .Values.crawler_socks_proxy_port }}"
 
+    crawler_uid: "{{ .Values.crawler_uid | default 201400007 }}"
+    crawler_gid: "{{ .Values.crawler_gid | default 201400007 }}"
+    crawler_fsgroup: "{{ .Values.crawler_fsgroup | default 201400007 }}"
+
+    crawler_workdir_size: "{{ .Values.crawler_workdir_size | default "10Gi" }}"
+
     crawler_node_type: "{{ .Values.crawler_node_type }}"
     redis_node_type: "{{ .Values.redis_node_type }}"
 
