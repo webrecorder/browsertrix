@@ -1,11 +1,11 @@
 import { msg } from "@lit/localize";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { when } from "lit/directives/when.js";
 
 import type { ArchivedItemDetail } from "../archived-item-detail";
 
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
-import type { ArchivedItem } from "@/types/crawler";
+import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
@@ -38,6 +38,19 @@ function renderAnalysis() {
       </btrix-card>
     </div>
   `;
+}
+
+function pageReviewStatus(page: ArchivedItemPage) {
+  if (page.approved === true) {
+    return msg("Approved");
+  }
+  if (page.approved === false) {
+    return msg("Rejected");
+  }
+  if (page.notes?.length) {
+    return msg("Reviewed with comment");
+  }
+  return msg("No review");
 }
 
 export function renderQA({
@@ -131,17 +144,26 @@ export function renderQA({
                     <div class="text-xs">${page.url}</div>
                   </btrix-table-cell>
                   <btrix-table-cell>
-                    ${page.approved === true
-                      ? msg("Approved")
-                      : page.approved === false
-                        ? msg("Rejected")
-                        : msg("No Review")}
+                    ${pageReviewStatus(page)}
                   </btrix-table-cell>
                 </btrix-table-row>
               `,
             )}
           </btrix-table-body>
         </btrix-table>
+        ${when(pages, (pages) =>
+          pages.total > pages.pageSize
+            ? html`
+                <footer class="mt-3 flex justify-center">
+                  <btrix-pagination
+                    page=${pages.page}
+                    size=${pages.pageSize}
+                    totalCount=${pages.total}
+                  ></btrix-pagination>
+                </footer>
+              `
+            : nothing,
+        )}
       </btrix-tab-group-panel>
       <btrix-tab-group-panel name="runs">
         <btrix-table class="qaPageList">
