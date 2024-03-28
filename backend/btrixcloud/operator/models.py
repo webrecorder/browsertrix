@@ -114,6 +114,7 @@ class PodInfo(BaseModel):
 
     newCpu: Optional[int] = None
     newMemory: Optional[int] = None
+    signalAtMem: Optional[int] = None
 
     def dict(self, *a, **kw):
         res = super().dict(*a, **kw)
@@ -180,7 +181,7 @@ class CrawlStatus(BaseModel):
     initRedis: bool = False
     crawlerImage: Optional[str] = None
     lastActiveTime: str = ""
-    podStatus: Optional[DefaultDict[str, PodInfo]] = defaultdict(
+    podStatus: DefaultDict[str, PodInfo] = defaultdict(
         lambda: PodInfo()  # pylint: disable=unnecessary-lambda
     )
     # placeholder for pydantic 2.0 -- will require this version
