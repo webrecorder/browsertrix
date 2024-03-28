@@ -488,7 +488,7 @@ export class WorkflowDetail extends LiteElement {
       return html` <h3>${this.tabLabels[this.activePanel]}</h3>
         <sl-icon-button
           name="gear"
-          label="Edit workflow settings"
+          label=${msg("Edit workflow settings")}
           @click=${() =>
             this.navTo(
               `/orgs/${this.appState.orgSlug}/workflows/crawl/${this.workflow?.id}?edit`,
