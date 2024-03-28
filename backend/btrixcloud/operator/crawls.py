@@ -39,6 +39,7 @@ from .models import (
     CrawlStatus,
     MCBaseRequest,
     MCSyncData,
+    PodInfo,
     POD,
     CMAP,
     PVC,
@@ -850,7 +851,7 @@ class CrawlOperator(BaseOperator):
 
         return crawler_running, redis_running, done
 
-    def handle_terminated_pod(self, name, role, status, terminated):
+    def handle_terminated_pod(self, name, role, status: CrawlStatus, terminated):
         """handle terminated pod state"""
         if not terminated:
             return
@@ -1000,7 +1001,9 @@ class CrawlOperator(BaseOperator):
 
         return False
 
-    async def add_used_stats(self, crawl_id, pod_status, redis, metrics):
+    async def add_used_stats(
+        self, crawl_id, pod_status: dict[str, PodInfo], redis, metrics
+    ):
         """load current usage stats"""
         if redis:
             stats = await redis.info("persistence")
@@ -1024,30 +1027,42 @@ class CrawlOperator(BaseOperator):
             pod_info.used.memory = int(parse_quantity(usage["memory"]))
             pod_info.used.cpu = float(parse_quantity(usage["cpu"]))
 
-    async def handle_auto_size(self, pod_status) -> None:
+    async def handle_auto_size(self, pod_status: dict[str, PodInfo]) -> None:
         """auto scale pods here, experimental"""
         for name, pod in pod_status.items():
             mem_usage = pod.get_percent_memory()
+            new_memory = int(float(pod.allocated.memory) * MEM_SCALE_UP)
+            send_sig = False
+
             # if pod is using >MEM_SCALE_UP_THRESHOLD of its memory, increase mem
             if mem_usage > MEM_SCALE_UP_THRESHOLD:
-                pod.newMemory = int(float(pod.allocated.memory) * MEM_SCALE_UP)
+                pod.newMemory = new_memory
                 print(
                     f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - Scale Up"
                 )
 
                 # if crawler pod is using its OOM threshold, attempt a soft OOM
                 # via a second SIGTERM
-                if mem_usage >= MEM_SOFT_OOM_THRESHOLD and name.startswith("crawl"):
-                    await self.k8s.send_signal_to_pod(name, "SIGTERM")
+                if (
+                    mem_usage >= MEM_SOFT_OOM_THRESHOLD
+                    and name.startswith("crawl")
+                    and pod.signalAtMem != pod.newMemory
+                ):
+                    send_sig = True
 
             # if any pod crashed due to OOM, increase mem
             elif pod.isNewExit and pod.reason == "oom":
-                pod.newMemory = int(float(pod.allocated.memory) * MEM_SCALE_UP)
+                pod.newMemory = new_memory
                 print(
                     f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - OOM Detected"
                 )
+                send_sig = True
 
-    async def log_crashes(self, crawl_id, pod_status, redis):
+            # avoid resending SIGTERM multiple times after it already succeeded
+            if send_sig and await self.k8s.send_signal_to_pod(name, "SIGTERM"):
+                pod.signalAtMem = pod.newMemory
+
+    async def log_crashes(self, crawl_id, pod_status: dict[str, PodInfo], redis):
         """report/log any pod crashes here"""
         for name, pod in pod_status.items():
             # log only unexpected exits as crashes
