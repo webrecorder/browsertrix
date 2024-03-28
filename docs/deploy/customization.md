@@ -78,6 +78,36 @@ storages:
     endpoint_url: "http://s3provider.example.com"
 ```
 
+## Horizontal Autoscaling
+
+Browsertrix also includes support for horizontal auto-scaling for both the backend and frontend pods.
+The auto-scaling will start a new pod when memory/cpu utilization reaches the thresholds.
+
+To use auto-scaling, the [metrics-server](https://github.com/kubernetes-sigs/metrics-server) cluster add-on is required.
+Many k8s provides include metrics server by default, others, like MicroK8S, make it available as an add-on.
+
+To enable auto-scaling, set `backend_max_replicas` and/or `frontend_max_replicas` to a value >1.
+
+```yaml
+backend_max_replicas: 2
+
+frontend_max_replicas: 2
+```
+
+By default, the auto-scaling uses the following thresholds for deciding when to start a new pod can also
+be modified. The default values are:
+
+```yaml
+backend_avg_cpu_threshold: 80
+
+backend_avg_memory_threshold: 95
+
+frontend_avg_cpu_threshold: 80
+
+frontend_avg_memory_threshold: 95
+```
+
+
 ## Email / SMTP Server
 
 Browsertrix sends user invitations, password resets, background job failure notifications, and other important messages via email. The `email` setting can be used to configure the SMTP server used to send emails. To avoid email messages from Browsertrix being flagged as spam, be sure to use the same domain for `sender_email` and `reply_to_email`.
