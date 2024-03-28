@@ -222,8 +222,10 @@ class CrawlOperator(BaseOperator):
                 data.related.get(METRICS, {}),
             )
 
-            # auto sizing handled here
-            await self.handle_auto_size(status.podStatus)
+            # auto-scaling not possible without pod metrics
+            if self.k8s.has_pod_metrics:
+                # auto sizing handled here
+                await self.handle_auto_size(status.podStatus)
 
             if status.finished:
                 return await self.finalize_response(
