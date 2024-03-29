@@ -67,7 +67,7 @@ DEFAULT_TTL = 30
 REDIS_TTL = 60
 
 # time in seconds before a crawl is deemed 'waiting' instead of 'starting'
-STARTING_TIME_SECS = 60
+STARTING_TIME_SECS = 150
 
 # how often to update execution time seconds
 EXEC_TIME_UPDATE_SECS = 60
@@ -1501,10 +1501,7 @@ class BtrixOperator(K8sAPI):
         if stats:
             kwargs["stats"] = stats
 
-        if state in SUCCESSFUL_STATES:
-            allowed_from = RUNNING_STATES
-        else:
-            allowed_from = RUNNING_AND_STARTING_STATES
+        allowed_from = RUNNING_AND_STARTING_STATES
 
         # if set_state returns false, already set to same status, return
         if not await self.set_state(
