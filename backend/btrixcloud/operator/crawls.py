@@ -40,6 +40,7 @@ from .baseoperator import BaseOperator, Redis
 from .models import (
     CrawlSpec,
     CrawlStatus,
+    StopReason,
     MCBaseRequest,
     MCSyncData,
     PodInfo,
@@ -1135,7 +1136,7 @@ class CrawlOperator(BaseOperator):
 
     async def is_crawl_stopping(
         self, crawl: CrawlSpec, status: CrawlStatus
-    ) -> Optional[str]:
+    ) -> Optional[StopReason]:
         """check if crawl is stopping and set reason"""
         # if user requested stop, then enter stopping phase
         if crawl.stopping:
