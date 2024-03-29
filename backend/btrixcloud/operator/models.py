@@ -5,7 +5,7 @@ from uuid import UUID
 from typing import Optional, DefaultDict
 from pydantic import BaseModel, Field
 from kubernetes.utils import parse_quantity
-from btrixcloud.models import StorageRef
+from btrixcloud.models import StorageRef, TYPE_ALL_CRAWL_STATES
 
 
 BTRIX_API = "btrix.cloud/v1"
@@ -166,7 +166,7 @@ class PodInfo(BaseModel):
 class CrawlStatus(BaseModel):
     """status from k8s CrawlJob object"""
 
-    state: str = "starting"
+    state: TYPE_ALL_CRAWL_STATES = "starting"
     pagesFound: int = 0
     pagesDone: int = 0
     size: int = 0
