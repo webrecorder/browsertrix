@@ -7,7 +7,7 @@ from enum import Enum, IntEnum
 from uuid import UUID
 import os
 
-from typing import Optional, List, Dict, Union, Literal, Any
+from typing import Optional, List, Dict, Union, Literal, Any, get_args
 from pydantic import (
     BaseModel,
     conint,
@@ -153,20 +153,31 @@ class UserOut(BaseModel):
 ### CRAWL STATES
 
 # ============================================================================
-RUNNING_STATES = ["running", "pending-wait", "generate-wacz", "uploading-wacz"]
+TYPE_RUNNING_STATES = Literal[
+    "running", "pending-wait", "generate-wacz", "uploading-wacz"
+]
+RUNNING_STATES = get_args(TYPE_RUNNING_STATES)
 
-STARTING_STATES = ["starting", "waiting_capacity", "waiting_org_limit"]
+TYPE_STARTING_STATES = Literal["starting", "waiting_capacity", "waiting_org_limit"]
+STARTING_STATES = get_args(TYPE_STARTING_STATES)
 
-FAILED_STATES = ["canceled", "failed", "skipped_quota_reached"]
+TYPE_FAILED_STATES = Literal["canceled", "failed", "skipped_quota_reached"]
+FAILED_STATES = get_args(TYPE_FAILED_STATES)
 
-SUCCESSFUL_STATES = ["complete", "stopped_by_user", "stopped_quota_reached"]
+TYPE_SUCCESSFUL_STATES = Literal["complete", "stopped_by_user", "stopped_quota_reached"]
+SUCCESSFUL_STATES = get_args(TYPE_SUCCESSFUL_STATES)
 
+TYPE_RUNNING_AND_STARTING_STATES = Literal[TYPE_STARTING_STATES, TYPE_RUNNING_STATES]
 RUNNING_AND_STARTING_STATES = [*STARTING_STATES, *RUNNING_STATES]
 
 RUNNING_AND_STARTING_ONLY = ["starting", *RUNNING_STATES]
 
+TYPE_NON_RUNNING_STATES = Literal[TYPE_FAILED_STATES, TYPE_SUCCESSFUL_STATES]
 NON_RUNNING_STATES = [*FAILED_STATES, *SUCCESSFUL_STATES]
 
+TYPE_ALL_CRAWL_STATES = Literal[
+    TYPE_RUNNING_AND_STARTING_STATES, TYPE_NON_RUNNING_STATES
+]
 ALL_CRAWL_STATES = [*RUNNING_AND_STARTING_STATES, *NON_RUNNING_STATES]
 
 
