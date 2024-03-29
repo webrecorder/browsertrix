@@ -124,11 +124,23 @@ export class ArchivedItemQA extends TailwindElement {
   @state()
   private page?: ArchivedItemQAPage;
 
-  @state()
-  private crawlDataAvail = false;
+  @property({ type: Boolean })
+  crawlDataAvail = false;
+
+  @property({ type: Boolean })
+  qaDataAvail = false;
+
+  @property({ type: String })
+  crawlDataUrl: string | null = null;
+
+  @property({ type: String })
+  qaDataUrl: string | null = null;
 
   @state()
-  private qaDataAvail = false;
+  crawlBlobUrl: string | null = null;
+
+  @state()
+  qaBlobUrl: string | null = null;
 
   @state()
   filterPagesBy: {
@@ -185,6 +197,15 @@ export class ArchivedItemQA extends TailwindElement {
     }
     if (changedProperties.has("itemPageId") && this.itemPageId) {
       void this.fetchPage();
+    }
+
+    if (
+      changedProperties.has("crawlDataUrl") ||
+      changedProperties.has("qaDataUrl") ||
+      changedProperties.has("crawlDataAvail") ||
+      changedProperties.has("qaDataAvail")
+    ) {
+      void this.fetchContent();
     }
   }
 
@@ -252,6 +273,7 @@ export class ArchivedItemQA extends TailwindElement {
       : [];
 
     return html`
+      <iframe class="hidden" id="replayframe" src="/replay/"></iframe>
       <article class="grid gap-x-4 gap-y-3">
         <header class="mainHeader flex items-center justify-between gap-1">
           <h1 class="text-base font-semibold leading-tight">
@@ -483,9 +505,6 @@ export class ArchivedItemQA extends TailwindElement {
   private readonly renderScreenshots = () => {
     if (!this.page) return; // TODO loading indicator
 
-    const timestamp = this.page.ts?.split(".")[0].replace(/\D/g, "");
-    const crawlUrl = `/replay/w/${this.itemId}/${timestamp}mp_/urn:view:${this.page.url}`;
-    const qaUrl = `/replay/w/${this.qaRunId}/${timestamp}mp_/urn:view:${this.page.url}`;
     const renderSpinner = () =>
       html`<div class="flex h-full w-full items-center justify-center text-2xl">
         <sl-spinner></sl-spinner>
@@ -501,16 +520,17 @@ export class ArchivedItemQA extends TailwindElement {
           class="aspect-video flex-1 outline -outline-offset-2 outline-yellow-400"
         >
           ${when(
-            this.qaDataAvail,
+            this.qaBlobUrl,
             () => html`
-              <iframe
+              <img
                 slot="before"
+                style="width: 100%; height: auto"
                 name="crawlScreenshot"
-                src="${crawlUrl}"
+                src="${this.qaBlobUrl || ""}"
                 class="h-full w-full"
                 aria-labelledby="crawlScreenshotHeading"
                 @load=${this.onScreenshotLoad}
-              ></iframe>
+              />
             `,
             renderSpinner,
           )}
@@ -519,25 +539,24 @@ export class ArchivedItemQA extends TailwindElement {
           class="aspect-video flex-1 outline -outline-offset-2 outline-green-400"
         >
           ${when(
-            this.crawlDataAvail,
+            this.crawlBlobUrl,
             () => html`
-              <iframe
+              <img
                 slot="after"
+                style="width: 100%; height: auto"
                 name="replayScreenshot"
-                src="${qaUrl}"
+                src="${this.crawlBlobUrl || ""}"
                 class="h-full w-full"
                 aria-labelledby="replayScreenshotHeading"
                 @load=${this.onScreenshotLoad}
-              ></iframe>
+              />
             `,
             renderSpinner,
           )}
         </div>
       </div>
       <div class="offscreen" aria-hidden="true">
-        ${when(this.qaRunId, (id) =>
-          this.renderRWP(id, { qa: true, screenshot: true }),
-        )}
+        ${when(this.qaRunId, (id) => this.renderRWP(id, { qa: true }))}
       </div>
     `;
   };
@@ -545,14 +564,14 @@ export class ArchivedItemQA extends TailwindElement {
   private readonly renderReplay = () => {
     return html`
       <div class="overflow-hidden rounded-b-lg border-x border-b">
-        ${this.renderRWP()}
+        ${this.renderRWP(this.itemId, { qa: false, url: this.page?.url || "" })}
       </div>
     `;
   };
 
   private readonly renderRWP = (
     rwpId = this.itemId,
-    { qa, screenshot } = { qa: false, screenshot: false },
+    { qa, url = "" } = { qa: false, url: "" },
   ) => {
     if (!rwpId) return;
 
@@ -568,19 +587,19 @@ export class ArchivedItemQA extends TailwindElement {
         replayBase="/replay/"
         embed="replayonly"
         noCache="true"
-        url="${screenshot ? "urn:view:" : ""}${this.page?.url}"
+        url="${url}"
       ></replay-web-page>
     `;
   };
 
-  private readonly onScreenshotLoad = (e: Event) => {
-    const iframe = e.currentTarget as HTMLIFrameElement;
-    const img = iframe.contentDocument?.body.querySelector("img");
-    // Make image fill iframe container
-    if (img) {
-      img.style.height = "auto";
-      img.style.width = "100%";
-    }
+  private readonly onScreenshotLoad = () => {
+    // const iframe = e.currentTarget as HTMLIFrameElement;
+    // const img = iframe.contentDocument?.body.querySelector("img");
+    // // Make image fill iframe container
+    // if (img) {
+    //   img.style.height = "auto";
+    //   img.style.width = "100%";
+    // }
   };
 
   private async onUpdateItemPage(e: CustomEvent<UpdateItemPageDetail>) {
@@ -662,6 +681,46 @@ export class ArchivedItemQA extends TailwindElement {
         variant: "danger",
         icon: "exclamation-octagon",
       });
+    }
+
+    if (this.page) {
+      const timestamp = this.page.ts?.split(".")[0].replace(/\D/g, "");
+      this.crawlDataUrl = `/replay/w/${this.itemId}/${timestamp}mp_/urn:view:${this.page.url}`;
+      this.qaDataUrl = `/replay/w/${this.qaRunId}/${timestamp}mp_/urn:view:${this.page.url}`;
+    } else {
+      this.crawlDataUrl = null;
+      this.qaDataUrl = null;
+    }
+  }
+
+  private async fetchContent(): Promise<void> {
+    if (this.qaBlobUrl) {
+      URL.revokeObjectURL(this.qaBlobUrl);
+      this.qaBlobUrl = null;
+    }
+
+    if (this.crawlBlobUrl) {
+      URL.revokeObjectURL(this.crawlBlobUrl);
+      this.crawlBlobUrl = null;
+    }
+
+    const frame = this.renderRoot.querySelector(
+      "#replayframe",
+    ) as HTMLIFrameElement | null;
+    if (!frame?.contentWindow) {
+      return;
+    }
+
+    if (this.crawlDataUrl /* && this.crawlDataAvail*/) {
+      const crawlResp = await frame.contentWindow.fetch(this.crawlDataUrl);
+      const crawlBlob = await crawlResp.blob();
+      this.crawlBlobUrl = URL.createObjectURL(crawlBlob);
+    }
+
+    if (this.qaDataUrl /* && this.qaDataAvail*/) {
+      const qaResp = await frame.contentWindow.fetch(this.qaDataUrl);
+      const qaBlob = await qaResp.blob();
+      this.qaBlobUrl = URL.createObjectURL(qaBlob);
     }
   }
 
