@@ -9,6 +9,7 @@ import {
 } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
@@ -40,8 +41,41 @@ import { type AuthState } from "@/utils/AuthService";
 import { renderName } from "@/utils/crawler";
 
 const DEFAULT_PAGE_SIZE = 100;
-const TABS = ["screenshots", "text", "replay"] as const;
+const TABS = ["screenshots", "text", "resources", "replay"] as const;
 export type QATab = (typeof TABS)[number];
+
+const tabToPrefix: Record<QATab, string> = {
+  screenshots: "view",
+  text: "text",
+  resources: "pageinfo",
+  replay: "",
+};
+
+type GoodBad = {
+  good: number;
+  bad: number;
+};
+
+const resourceTypes = [
+  "document",
+  "image",
+  "media",
+  "stylesheet",
+  "font",
+  "script",
+  "xhr",
+  "fetch",
+  "prefetch",
+  "eventsource",
+  "websocket",
+  "manifest",
+  "ping",
+  "cspviolationreport",
+  "preflight",
+  "signedexchange",
+  "texttrack",
+  "other",
+];
 
 @localized()
 @customElement("btrix-archived-item-qa")
@@ -298,8 +332,8 @@ export class ArchivedItemQA extends TailwindElement {
           </div>
         </header>
         <section class="main">
-          <nav class="mb-3 flex items-center justify-between">
-            <div class="flex gap-3">
+          <nav class="mb-3 flex flex-col-reverse">
+            <div class="mt-3 flex gap-8 self-start">
               <btrix-navigation-button
                 id="screenshot-tab"
                 href=${`${crawlBaseUrl}/review/screenshots?${searchParams}`}
@@ -341,6 +375,14 @@ export class ArchivedItemQA extends TailwindElement {
                 ${msg("Text")}
               </btrix-navigation-button>
               <btrix-navigation-button
+                id="text-tab"
+                href=${`${crawlBaseUrl}/review/resources?${searchParams}`}
+                ?active=${this.tab === "resources"}
+                @click=${this.navigate.link}
+              >
+                ${msg("Resources")}
+              </btrix-navigation-button>
+              <btrix-navigation-button
                 id="replay-tab"
                 href=${`${crawlBaseUrl}/review/replay?${searchParams}`}
                 ?active=${this.tab === "replay"}
@@ -349,7 +391,7 @@ export class ArchivedItemQA extends TailwindElement {
                 ${msg("Replay")}
               </btrix-navigation-button>
             </div>
-            <div class="flex gap-4">
+            <div class="flex gap-4 self-end">
               <sl-button
                 size="small"
                 @click=${this.navPrevPage}
@@ -491,6 +533,9 @@ export class ArchivedItemQA extends TailwindElement {
       text: {
         render: this.renderText,
       },
+      resources: {
+        render: this.renderResources,
+      },
       replay: {
         render: this.renderReplay,
       },
@@ -536,16 +581,15 @@ export class ArchivedItemQA extends TailwindElement {
           class="aspect-video flex-1 outline -outline-offset-2 outline-yellow-400"
         >
           ${when(
-            this.qaBlobUrl,
+            this.crawlBlobUrl,
             () => html`
               <img
                 slot="before"
                 style="width: 100%; height: auto"
                 name="crawlScreenshot"
-                src="${this.qaBlobUrl || ""}"
+                src="${this.crawlBlobUrl || ""}"
                 class="h-full w-full"
                 aria-labelledby="crawlScreenshotHeading"
-                @load=${this.onScreenshotLoad}
               />
             `,
             renderSpinner,
@@ -555,16 +599,15 @@ export class ArchivedItemQA extends TailwindElement {
           class="aspect-video flex-1 outline -outline-offset-2 outline-green-400"
         >
           ${when(
-            this.crawlBlobUrl,
+            this.qaBlobUrl,
             () => html`
               <img
                 slot="after"
                 style="width: 100%; height: auto"
                 name="replayScreenshot"
-                src="${this.crawlBlobUrl || ""}"
+                src="${this.qaBlobUrl || ""}"
                 class="h-full w-full"
                 aria-labelledby="replayScreenshotHeading"
-                @load=${this.onScreenshotLoad}
               />
             `,
             renderSpinner,
@@ -589,35 +632,78 @@ export class ArchivedItemQA extends TailwindElement {
       </div>
       <div class="flex rounded border bg-slate-50">
         <div
-          class="aspect-video h-full flex-1 overflow-auto whitespace-pre-line p-4 outline -outline-offset-2 outline-yellow-400"
+          class="aspect-video h-full flex-1 overflow-auto whitespace-pre-line p-4 outline -outline-offset-2 outline-green-400"
           style="max-width: 50%"
-          aria-labelledby="qaTextHeading"
+          name="crawlText"
+          aria-labelledby="crawlTextHeading"
         >
-          ${this.qaDataText ? this.qaDataText : renderSpinner()}
+          ${this.crawlDataText ? this.crawlDataText : renderSpinner()}
         </div>
         <div
-          class="aspect-video h-full flex-1 overflow-auto whitespace-pre-line p-4 outline -outline-offset-2 outline-green-400"
+          class="aspect-video h-full flex-1 overflow-auto whitespace-pre-line p-4 outline -outline-offset-2 outline-yellow-400"
           style="max-width: 50%"
           name="replayText"
           aria-labelledby="replayTextHeading"
         >
+          ${this.qaDataText ? this.qaDataText : renderSpinner()}
+        </div>
+      </div>
+    `;
+  };
+
+  private readonly renderResources = () => {
+    if (!this.page) return; // TODO loading indicator
+
+    const renderSpinner = () =>
+      html`<div class="flex h-full w-full items-center justify-center text-2xl">
+        <sl-spinner></sl-spinner>
+      </div>`;
+
+    return html`
+      <div class="mb-2 flex justify-between text-base font-medium">
+        <h3 id="crawlResourcesHeading">${msg("Crawl Resources")}</h3>
+        <h3 id="replayResourcesHeading">${msg("Replay Resources")}</h3>
+      </div>
+      <div class="flex rounded border bg-slate-50">
+        <div
+          class="aspect-video h-full flex-1 overflow-auto whitespace-pre-line p-4 outline -outline-offset-2 outline-green-400"
+          style="max-width: 50%"
+          name="crawlResources"
+          aria-labelledby="crawlResourcesHeading"
+        >
           ${this.crawlDataText ? this.crawlDataText : renderSpinner()}
+        </div>
+        <div
+          class="aspect-video h-full flex-1 overflow-auto whitespace-pre-line p-4 outline -outline-offset-2 outline-yellow-400"
+          style="max-width: 50%"
+          name="replayResources"
+          aria-labelledby="replayResourcesHeading"
+        >
+          ${this.qaDataText ? this.qaDataText : renderSpinner()}
         </div>
       </div>
     `;
   };
 
   private readonly renderReplay = () => {
+    // only set URL if actually showing replay, otherwise unneeded for other tabs
+    const url = this.tab === "replay" ? this.page?.url : undefined;
+
     return html`
-      <div class="overflow-hidden rounded-b-lg border-x border-b">
-        ${this.renderRWP(this.itemId, { qa: false, url: this.page?.url || "" })}
+      <div
+        class="${!url
+          ? "hidden"
+          : ""} overflow-hidden rounded-b-lg border-x border-b"
+        style="height: 500px"
+      >
+        ${this.renderRWP(this.itemId, { qa: false, url })}
       </div>
     `;
   };
 
   private readonly renderRWP = (
     rwpId = this.itemId,
-    { qa, url = "" } = { qa: false, url: "" },
+    { qa, url }: { qa: boolean; url?: string },
   ) => {
     if (!rwpId) return;
 
@@ -633,7 +719,7 @@ export class ArchivedItemQA extends TailwindElement {
         replayBase="/replay/"
         embed="replayonly"
         noCache="true"
-        url="${url}"
+        url="${ifDefined(url)}"
       ></replay-web-page>
     `;
   };
@@ -747,49 +833,95 @@ export class ArchivedItemQA extends TailwindElement {
       return;
     }
 
-    const frame = this.renderRoot.querySelector(
-      "#replayframe",
-    ) as HTMLIFrameElement | null;
-    if (!frame?.contentWindow) {
+    const frame = this.renderRoot.querySelector("#replayframe");
+    const frameWindow = (frame as HTMLIFrameElement | null)?.contentWindow;
+    if (!frameWindow) {
       return;
     }
 
-    let type = "";
-
-    switch (this.tab) {
-      case "screenshots":
-        type = "view";
-        break;
-
-      case "text":
-        type = "text";
-        break;
-    }
-
     const timestamp = this.page.ts?.split(".")[0].replace(/\D/g, "");
-    const crawlDataUrl = `/replay/w/${this.itemId}/${timestamp}mp_/urn:${type}:${this.page.url}`;
-    const qaDataUrl = `/replay/w/${this.qaRunId}/${timestamp}mp_/urn:${type}:${this.page.url}`;
+    const urlPart = `${timestamp}mp_/urn:${tabToPrefix[this.tab]}:${this.page.url}`;
+    const crawlDataUrl = `/replay/w/${this.itemId}/${urlPart}`;
+    const qaDataUrl = `/replay/w/${this.qaRunId}/${urlPart}`;
 
-    //if (this.crawlDataUrl /* && this.crawlDataAvail*/) {
-    const crawlResp = await frame.contentWindow.fetch(crawlDataUrl);
-    if (type === "view") {
-      const crawlBlob = await crawlResp.blob();
-      this.crawlBlobUrl = URL.createObjectURL(crawlBlob);
-    } else {
-      this.crawlDataText = await crawlResp.text();
-    }
+    const doLoad = async (
+      type: QATab,
+      win: Window,
+      url: string,
+    ): Promise<{ blobUrl?: string; text?: string }> => {
+      const resp = await win.fetch(url);
 
-    //}
+      if (type === "screenshots") {
+        const blob = await resp.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        return { blobUrl };
+      } else if (type === "text") {
+        const text = await resp.text();
+        return { text };
+      } else if (type === "resources") {
+        const json = await resp.json();
+        console.log(json);
 
-    //if (this.qaDataUrl /* && this.qaDataAvail*/) {
-    const qaResp = await frame.contentWindow.fetch(qaDataUrl);
-    if (type === "view") {
-      const qaBlob = await qaResp.blob();
-      this.qaBlobUrl = URL.createObjectURL(qaBlob);
-    } else {
-      this.qaDataText = await qaResp.text();
-    }
-    //}
+        const typeMap = new Map<string, GoodBad>();
+        resourceTypes.forEach((x) => typeMap.set(x, { good: 0, bad: 0 }));
+        let good = 0,
+          bad = 0;
+
+        for (const entry of Object.values(json.urls)) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { type: resType_, status } = entry as any;
+          const resType = (resType_ || "").toLowerCase();
+
+          if (typeMap.has(resType)) {
+            const count = typeMap.get(resType);
+            if (status < 400) {
+              count!.good++;
+              good++;
+            } else {
+              count!.bad++;
+              bad++;
+            }
+            typeMap.set(resType, count!);
+          }
+        }
+
+        // remove empty entries
+        resourceTypes.forEach((x) => {
+          if (!typeMap.get(x)) {
+            typeMap.delete(x);
+          }
+        });
+
+        typeMap.set("Total", { good, bad });
+
+        const text = JSON.stringify(
+          Object.fromEntries(typeMap.entries()),
+          null,
+          2,
+        );
+
+        return { text };
+      } else {
+        return {};
+      }
+    };
+
+    const { blobUrl: crawlBlobUrl, text: crawlDataText } = await doLoad(
+      this.tab,
+      frameWindow,
+      crawlDataUrl,
+    );
+
+    const { blobUrl: qaBlobUrl, text: qaDataText } = await doLoad(
+      this.tab,
+      frameWindow,
+      qaDataUrl,
+    );
+
+    this.crawlBlobUrl = crawlBlobUrl || null;
+    this.crawlDataText = crawlDataText || null;
+    this.qaBlobUrl = qaBlobUrl || null;
+    this.qaDataText = qaDataText || null;
   }
 
   private async getPage(pageId: string): Promise<ArchivedItemQAPage> {
