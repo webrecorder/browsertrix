@@ -40,7 +40,7 @@ import { type AuthState } from "@/utils/AuthService";
 import { renderName } from "@/utils/crawler";
 
 const DEFAULT_PAGE_SIZE = 100;
-const TABS = ["screenshots", "replay"] as const;
+const TABS = ["screenshots", "text", "replay"] as const;
 export type QATab = (typeof TABS)[number];
 
 @localized()
@@ -121,8 +121,8 @@ export class ArchivedItemQA extends TailwindElement {
   @state()
   private pages?: APIPaginatedList<ArchivedItemQAPage>;
 
-  @state()
-  private page?: ArchivedItemQAPage;
+  @property({ type: Object })
+  page?: ArchivedItemQAPage;
 
   @property({ type: Boolean })
   crawlDataAvail = false;
@@ -130,17 +130,17 @@ export class ArchivedItemQA extends TailwindElement {
   @property({ type: Boolean })
   qaDataAvail = false;
 
-  @property({ type: String })
-  crawlDataUrl: string | null = null;
-
-  @property({ type: String })
-  qaDataUrl: string | null = null;
+  @state()
+  private crawlBlobUrl: string | null = null;
 
   @state()
-  crawlBlobUrl: string | null = null;
+  private qaBlobUrl: string | null = null;
 
   @state()
-  qaBlobUrl: string | null = null;
+  private crawlDataText: string | null = null;
+
+  @state()
+  private qaDataText: string | null = null;
 
   @state()
   filterPagesBy: {
@@ -200,8 +200,8 @@ export class ArchivedItemQA extends TailwindElement {
     }
 
     if (
-      changedProperties.has("crawlDataUrl") ||
-      changedProperties.has("qaDataUrl") ||
+      changedProperties.has("page") ||
+      changedProperties.has("tab") ||
       changedProperties.has("crawlDataAvail") ||
       changedProperties.has("qaDataAvail")
     ) {
@@ -274,6 +274,11 @@ export class ArchivedItemQA extends TailwindElement {
 
     return html`
       <iframe class="hidden" id="replayframe" src="/replay/"></iframe>
+      <div class="offscreen" aria-hidden="true">
+        ${when(this.qaRunId && this.tab !== "replay", () =>
+          this.renderRWP(this.qaRunId, { qa: true }),
+        )}
+      </div>
       <article class="grid gap-x-4 gap-y-3">
         <header class="mainHeader flex items-center justify-between gap-1">
           <h1 class="text-base font-semibold leading-tight">
@@ -326,6 +331,14 @@ export class ArchivedItemQA extends TailwindElement {
                     >
                   `;
                 })}
+              </btrix-navigation-button>
+              <btrix-navigation-button
+                id="text-tab"
+                href=${`${crawlBaseUrl}/review/text?${searchParams}`}
+                ?active=${this.tab === "text"}
+                @click=${this.navigate.link}
+              >
+                ${msg("Text")}
               </btrix-navigation-button>
               <btrix-navigation-button
                 id="replay-tab"
@@ -475,6 +488,9 @@ export class ArchivedItemQA extends TailwindElement {
       screenshots: {
         render: this.renderScreenshots,
       },
+      text: {
+        render: this.renderText,
+      },
       replay: {
         render: this.renderReplay,
       },
@@ -555,8 +571,38 @@ export class ArchivedItemQA extends TailwindElement {
           )}
         </div>
       </div>
-      <div class="offscreen" aria-hidden="true">
-        ${when(this.qaRunId, (id) => this.renderRWP(id, { qa: true }))}
+    `;
+  };
+
+  private readonly renderText = () => {
+    if (!this.page) return; // TODO loading indicator
+
+    const renderSpinner = () =>
+      html`<div class="flex h-full w-full items-center justify-center text-2xl">
+        <sl-spinner></sl-spinner>
+      </div>`;
+
+    return html`
+      <div class="mb-2 flex justify-between text-base font-medium">
+        <h3 id="crawlTextHeading">${msg("Crawl Text")}</h3>
+        <h3 id="replayTextHeading">${msg("Replay Text")}</h3>
+      </div>
+      <div class="flex rounded border bg-slate-50">
+        <div
+          class="aspect-video h-full flex-1 overflow-auto whitespace-pre-line p-4 outline -outline-offset-2 outline-yellow-400"
+          style="max-width: 50%"
+          aria-labelledby="qaTextHeading"
+        >
+          ${this.qaDataText ? this.qaDataText : renderSpinner()}
+        </div>
+        <div
+          class="aspect-video h-full flex-1 overflow-auto whitespace-pre-line p-4 outline -outline-offset-2 outline-green-400"
+          style="max-width: 50%"
+          name="replayText"
+          aria-labelledby="replayTextHeading"
+        >
+          ${this.crawlDataText ? this.crawlDataText : renderSpinner()}
+        </div>
       </div>
     `;
   };
@@ -682,26 +728,23 @@ export class ArchivedItemQA extends TailwindElement {
         icon: "exclamation-octagon",
       });
     }
-
-    if (this.page) {
-      const timestamp = this.page.ts?.split(".")[0].replace(/\D/g, "");
-      this.crawlDataUrl = `/replay/w/${this.itemId}/${timestamp}mp_/urn:view:${this.page.url}`;
-      this.qaDataUrl = `/replay/w/${this.qaRunId}/${timestamp}mp_/urn:view:${this.page.url}`;
-    } else {
-      this.crawlDataUrl = null;
-      this.qaDataUrl = null;
-    }
   }
 
   private async fetchContent(): Promise<void> {
+    if (this.crawlBlobUrl) {
+      URL.revokeObjectURL(this.crawlBlobUrl);
+      this.crawlBlobUrl = null;
+    }
+    this.crawlDataText = null;
+
     if (this.qaBlobUrl) {
       URL.revokeObjectURL(this.qaBlobUrl);
       this.qaBlobUrl = null;
     }
+    this.qaDataText = null;
 
-    if (this.crawlBlobUrl) {
-      URL.revokeObjectURL(this.crawlBlobUrl);
-      this.crawlBlobUrl = null;
+    if (!this.page) {
+      return;
     }
 
     const frame = this.renderRoot.querySelector(
@@ -711,17 +754,42 @@ export class ArchivedItemQA extends TailwindElement {
       return;
     }
 
-    if (this.crawlDataUrl /* && this.crawlDataAvail*/) {
-      const crawlResp = await frame.contentWindow.fetch(this.crawlDataUrl);
-      const crawlBlob = await crawlResp.blob();
-      this.crawlBlobUrl = URL.createObjectURL(crawlBlob);
+    let type = "";
+
+    switch (this.tab) {
+      case "screenshots":
+        type = "view";
+        break;
+
+      case "text":
+        type = "text";
+        break;
     }
 
-    if (this.qaDataUrl /* && this.qaDataAvail*/) {
-      const qaResp = await frame.contentWindow.fetch(this.qaDataUrl);
+    const timestamp = this.page.ts?.split(".")[0].replace(/\D/g, "");
+    const crawlDataUrl = `/replay/w/${this.itemId}/${timestamp}mp_/urn:${type}:${this.page.url}`;
+    const qaDataUrl = `/replay/w/${this.qaRunId}/${timestamp}mp_/urn:${type}:${this.page.url}`;
+
+    //if (this.crawlDataUrl /* && this.crawlDataAvail*/) {
+    const crawlResp = await frame.contentWindow.fetch(crawlDataUrl);
+    if (type === "view") {
+      const crawlBlob = await crawlResp.blob();
+      this.crawlBlobUrl = URL.createObjectURL(crawlBlob);
+    } else {
+      this.crawlDataText = await crawlResp.text();
+    }
+
+    //}
+
+    //if (this.qaDataUrl /* && this.qaDataAvail*/) {
+    const qaResp = await frame.contentWindow.fetch(qaDataUrl);
+    if (type === "view") {
       const qaBlob = await qaResp.blob();
       this.qaBlobUrl = URL.createObjectURL(qaBlob);
+    } else {
+      this.qaDataText = await qaResp.text();
     }
+    //}
   }
 
   private async getPage(pageId: string): Promise<ArchivedItemQAPage> {
