@@ -593,32 +593,35 @@ export class ArchivedItemQA extends TailwindElement {
 
   private readonly renderScreenshots = () => {
     return html`
-      <div class="mb-2 flex justify-between text-base font-medium">
-        <h3 id="crawlScreenshotHeading">${msg("Crawl Screenshot")}</h3>
-        <h3 id="replayScreenshotHeading">${msg("Replay Screenshot")}</h3>
-      </div>
-      <div class="aspect-video overflow-hidden rounded border bg-slate-50">
-        ${when(
-          this.crawlData.blobUrl && this.qaData.blobUrl,
-          () => html`
-            <sl-image-comparer>
-              <img
-                slot="before"
-                src="${this.crawlData.blobUrl || ""}"
-                class="h-full w-full"
-                aria-labelledby="crawlScreenshotHeading"
-              />
-              <img
-                slot="after"
-                src="${this.qaData.blobUrl || ""}"
-                class="h-full w-full"
-                aria-labelledby="replayScreenshotHeading"
-              />
-            </sl-image-comparer>
-          `,
-          this.renderSpinner,
-        )}
-      </div>
+      ${guard(
+        [this.crawlData.blobUrl, this.qaData.blobUrl],
+        () => html`
+          <div class="mb-2 flex justify-between text-base font-medium">
+            <h3 id="crawlScreenshotHeading">${msg("Crawl Screenshot")}</h3>
+            <h3 id="replayScreenshotHeading">${msg("Replay Screenshot")}</h3>
+          </div>
+          <div class="aspect-video overflow-hidden rounded border bg-slate-50">
+            ${when(
+              this.crawlData.blobUrl && this.qaData.blobUrl,
+              () => html`
+                <sl-image-comparer>
+                  <img
+                    slot="before"
+                    src="${this.crawlData.blobUrl || ""}"
+                    aria-labelledby="crawlScreenshotHeading"
+                  />
+                  <img
+                    slot="after"
+                    src="${this.qaData.blobUrl || ""}"
+                    aria-labelledby="replayScreenshotHeading"
+                  />
+                </sl-image-comparer>
+              `,
+              this.renderSpinner,
+            )}
+          </div>
+        `,
+      )}
     `;
   };
 
