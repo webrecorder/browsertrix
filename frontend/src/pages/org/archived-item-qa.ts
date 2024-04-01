@@ -74,6 +74,7 @@ const resourceTypes = [
 
 type BlobPayload = { blobUrl: string };
 type TextPayload = { text: string };
+type StatusPayload = { statusCode: number };
 type ReplayData = {
   blobUrl: BlobPayload["blobUrl"];
   text: TextPayload["text"];
@@ -176,19 +177,16 @@ export class ArchivedItemQA extends TailwindElement {
   page?: ArchivedItemQAPage;
 
   @state()
-  crawlSwAvail = false;
-
-  @state()
-  qaSwAvail = false;
-
-  @state()
   private crawlData = initialReplayData;
 
   @state()
   private qaData = initialReplayData;
 
   @state()
-  private replayTabReady = false;
+  hiddenIframeLoaded = false;
+
+  @state()
+  private crawlReplayPageReady = false;
 
   @state()
   filterPagesBy: {
@@ -212,28 +210,6 @@ export class ArchivedItemQA extends TailwindElement {
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
 
-  connectedCallback(): void {
-    super.connectedCallback();
-
-    // Check if replay-web-page is ready
-    window.addEventListener("message", (event) => {
-      const sourceLoc = (event.source as Window).location.href;
-
-      console.log("message:", sourceLoc);
-
-      // ensure its an rwp frame
-      if (sourceLoc.indexOf("?source=") > 0) {
-        // check if has /qa/ in path, then QA
-        if (sourceLoc.indexOf("%2Fqa%2F") >= 0) {
-          this.qaSwAvail = true;
-          // otherwise main crawl replay
-        } else {
-          this.crawlSwAvail = true;
-        }
-      }
-    });
-  }
-
   @query("#replayframe")
   private replayFrame?: HTMLIFrameElement | null;
 
@@ -254,8 +230,7 @@ export class ArchivedItemQA extends TailwindElement {
 
     if (
       changedProperties.get("page") ||
-      (changedProperties.has("crawlSwAvail") && this.crawlSwAvail) ||
-      (changedProperties.has("qaSwAvail") && this.qaSwAvail)
+      (changedProperties.has("hiddenIframeLoaded") && this.hiddenIframeLoaded)
     ) {
       void this.fetchContent();
     }
@@ -326,7 +301,12 @@ export class ArchivedItemQA extends TailwindElement {
 
     return html`
       <!-- Use iframe to access replay content -->
-      <iframe class="hidden" id="replayframe" src="/replay/"></iframe>
+      <iframe
+        class="hidden"
+        id="replayframe"
+        src="/replay/"
+        @load=${() => (this.hiddenIframeLoaded = true)}
+      ></iframe>
       <div class="offscreen" aria-hidden="true">
         ${this.renderRWP(this.qaRunId, { qa: true })}
         ${this.renderRWP(this.itemId, { qa: false })}
@@ -561,7 +541,7 @@ export class ArchivedItemQA extends TailwindElement {
   private readonly renderScreenshots = () => {
     return html`
       ${guard(
-        [this.crawlData.blobUrl, this.qaData.blobUrl],
+        [`${this.crawlData.blobUrl}${this.qaData.blobUrl}`],
         () => html`
           <div class="mb-2 flex justify-between text-base font-medium">
             <h3 id="crawlScreenshotHeading">${msg("Crawl Screenshot")}</h3>
@@ -661,31 +641,28 @@ export class ArchivedItemQA extends TailwindElement {
   };
 
   private readonly renderReplay = () => {
+    const timestamp = this.page?.ts?.split(".")[0].replace(/\D/g, "");
+    const pageUrl = this.page?.url;
+    console.log(
+      "crawlReplayPageReady:",
+      this.crawlReplayPageReady,
+      timestamp,
+      pageUrl,
+    );
+
     return html`
       <div
         class="relative aspect-video overflow-hidden rounded-b-lg border-x border-b"
       >
-        ${guard([this.itemId, this.page], () =>
-          when(this.page, (page) => {
-            const timestamp = page.ts?.split(".")[0].replace(/\D/g, "");
-            const pageUrl = page.url;
-            const urlPart = `${timestamp}mp_/${pageUrl}`;
-            const url = `/replay/w/${this.itemId}/${urlPart}`;
-            return html`<iframe
-              src=${url}
-              class="h-full w-full"
-              @load=${() => (this.replayTabReady = true)}
-            ></iframe>`;
-          }),
-        )}
-        ${when(
-          !this.replayTabReady,
-          () => html`
-            <div class="absolute inset-0 bg-neutral-50">
-              ${this.renderSpinner()}
-            </div>
-          `,
-        )}
+        ${when(timestamp && pageUrl, () => {
+          const urlPart = `${timestamp}mp_/${pageUrl}`;
+          const url = `/replay/w/${this.itemId}/${urlPart}`;
+          console.log("url 2:", url);
+          return html`<iframe
+            src=${url}
+            class="h-full w-full outline"
+          ></iframe>`;
+        })}
       </div>
     `;
   };
@@ -806,7 +783,7 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private async fetchContent(): Promise<void> {
-    if (!this.page) {
+    if (!this.page || !this.hiddenIframeLoaded) {
       return;
     }
 
@@ -819,11 +796,12 @@ export class ArchivedItemQA extends TailwindElement {
     const timestamp = this.page.ts?.split(".")[0].replace(/\D/g, "");
     const pageUrl = this.page.url;
 
-    const doLoad = async <T = BlobPayload | TextPayload>(
+    const doLoad = async <T = BlobPayload | TextPayload | StatusPayload>(
       tab: QATab,
       replayId: string,
     ): Promise<T> => {
-      const urlPart = `${timestamp}mp_/urn:${tabToPrefix[tab]}:${pageUrl}`;
+      const urlPrefix = tabToPrefix[tab];
+      const urlPart = `${timestamp}mp_/${urlPrefix ? `urn:${urlPrefix}:` : ""}${pageUrl}`;
       const url = `/replay/w/${replayId}/${urlPart}`;
       const resp = await frameWindow.fetch(url);
 
@@ -834,6 +812,9 @@ export class ArchivedItemQA extends TailwindElement {
       } else if (tab === "text") {
         const text = await resp.text();
         return { text } as T;
+      } else if (tab === "replay") {
+        console.log("url 1:", url);
+        return { statusCode: resp.status } as T;
       } else if (tab === "resources") {
         const json = await resp.json();
         console.log(json);
@@ -881,7 +862,7 @@ export class ArchivedItemQA extends TailwindElement {
       return { text: "" } as T;
     };
 
-    if (this.itemId && this.crawlSwAvail) {
+    if (this.itemId) {
       if (this.crawlData.blobUrl) {
         this.resetData("crawlData");
       }
@@ -891,8 +872,12 @@ export class ArchivedItemQA extends TailwindElement {
         text: (await doLoad<TextPayload>("text", this.itemId)).text,
         resources: (await doLoad<TextPayload>("resources", this.itemId)).text,
       };
+
+      // Load page for replay tab
+      const data = await await doLoad<StatusPayload>("replay", this.itemId);
+      this.crawlReplayPageReady = data.statusCode === 200;
     }
-    if (this.qaRunId && this.qaSwAvail) {
+    if (this.qaRunId) {
       if (this.qaData.blobUrl) {
         this.resetData("qaData");
       }
