@@ -7,8 +7,9 @@ import {
   type PropertyValues,
   type TemplateResult,
 } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
+import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -77,13 +78,26 @@ const resourceTypes = [
   "other",
 ];
 
+type BlobPayload = { blobUrl: string };
+type TextPayload = { text: string };
+type ReplayData = {
+  blobUrl: BlobPayload["blobUrl"];
+  text: TextPayload["text"];
+  resources: TextPayload["text"];
+};
+const initialReplayData: ReplayData = {
+  blobUrl: "",
+  text: "",
+  resources: "",
+};
+
 @localized()
 @customElement("btrix-archived-item-qa")
 export class ArchivedItemQA extends TailwindElement {
   static styles = css`
     article {
       /* TODO calculate screen space instead of hardcoding */
-      height: calc(100vh - 12rem);
+      height: 100vh;
       grid-template:
         "mainHeader"
         "main"
@@ -123,6 +137,15 @@ export class ArchivedItemQA extends TailwindElement {
     .pageList {
       grid-area: pageList;
     }
+
+    sl-image-comparer::part(divider) {
+      background-color: yellow;
+      /* mix-blend-mode: difference; */
+    }
+
+    sl-image-comparer::part(handle) {
+      background-color: red;
+    }
   `;
 
   @property({ type: Object })
@@ -158,23 +181,17 @@ export class ArchivedItemQA extends TailwindElement {
   @property({ type: Object })
   page?: ArchivedItemQAPage;
 
-  @property({ type: Boolean })
-  crawlDataAvail = false;
-
-  @property({ type: Boolean })
-  qaDataAvail = false;
+  @state()
+  crawlSwAvail = false;
 
   @state()
-  private crawlBlobUrl: string | null = null;
+  qaSwAvail = false;
 
   @state()
-  private qaBlobUrl: string | null = null;
+  private crawlData = initialReplayData;
 
   @state()
-  private crawlDataText: string | null = null;
-
-  @state()
-  private qaDataText: string | null = null;
+  private qaData = initialReplayData;
 
   @state()
   filterPagesBy: {
@@ -205,18 +222,23 @@ export class ArchivedItemQA extends TailwindElement {
     window.addEventListener("message", (event) => {
       const sourceLoc = (event.source as Window).location.href;
 
+      console.log("message:", sourceLoc);
+
       // ensure its an rwp frame
       if (sourceLoc.indexOf("?source=") > 0) {
         // check if has /qa/ in path, then QA
         if (sourceLoc.indexOf("%2Fqa%2F") >= 0) {
-          this.qaDataAvail = true;
+          this.qaSwAvail = true;
           // otherwise main crawl replay
         } else {
-          this.crawlDataAvail = true;
+          this.crawlSwAvail = true;
         }
       }
     });
   }
+
+  @query("#replayframe")
+  private replayFrame?: HTMLIFrameElement | null;
 
   protected willUpdate(
     changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
@@ -234,10 +256,9 @@ export class ArchivedItemQA extends TailwindElement {
     }
 
     if (
-      changedProperties.has("page") ||
-      changedProperties.has("tab") ||
-      changedProperties.has("crawlDataAvail") ||
-      changedProperties.has("qaDataAvail")
+      changedProperties.get("page") ||
+      (changedProperties.has("crawlSwAvail") && this.crawlSwAvail) ||
+      (changedProperties.has("qaSwAvail") && this.qaSwAvail)
     ) {
       void this.fetchContent();
     }
@@ -307,12 +328,14 @@ export class ArchivedItemQA extends TailwindElement {
       : [];
 
     return html`
+      <!-- Use iframe to access replay content -->
       <iframe class="hidden" id="replayframe" src="/replay/"></iframe>
       <div class="offscreen" aria-hidden="true">
         ${when(this.qaRunId && this.tab !== "replay", () =>
           this.renderRWP(this.qaRunId, { qa: true }),
         )}
       </div>
+
       <article class="grid gap-x-4 gap-y-3">
         <header class="mainHeader flex items-center justify-between gap-1">
           <h1 class="text-base font-semibold leading-tight">
@@ -553,7 +576,7 @@ export class ArchivedItemQA extends TailwindElement {
         return html`
           <section
             class="${isActive ? "" : "offscreen"}"
-            aria-labelledby="${this.tab}-tab"
+            aria-labelledby="${tab}-tab"
             aria-hidden=${!isActive}
           >
             ${section.render()}
@@ -563,56 +586,38 @@ export class ArchivedItemQA extends TailwindElement {
     `;
   }
 
+  private readonly renderSpinner = () =>
+    html`<div class="flex h-full w-full items-center justify-center text-2xl">
+      <sl-spinner></sl-spinner>
+    </div>`;
+
   private readonly renderScreenshots = () => {
-    if (!this.page) return; // TODO loading indicator
-
-    const renderSpinner = () =>
-      html`<div class="flex h-full w-full items-center justify-center text-2xl">
-        <sl-spinner></sl-spinner>
-      </div>`;
-
     return html`
       <div class="mb-2 flex justify-between text-base font-medium">
         <h3 id="crawlScreenshotHeading">${msg("Crawl Screenshot")}</h3>
         <h3 id="replayScreenshotHeading">${msg("Replay Screenshot")}</h3>
       </div>
-      <div class="flex overflow-hidden rounded border bg-slate-50">
-        <div
-          class="aspect-video flex-1 outline -outline-offset-2 outline-yellow-400"
-        >
-          ${when(
-            this.crawlBlobUrl,
-            () => html`
+      <div class="aspect-video overflow-hidden rounded border bg-slate-50">
+        ${when(
+          this.crawlData.blobUrl && this.qaData.blobUrl,
+          () => html`
+            <sl-image-comparer>
               <img
                 slot="before"
-                style="width: 100%; height: auto"
-                name="crawlScreenshot"
-                src="${this.crawlBlobUrl || ""}"
+                src="${this.crawlData.blobUrl || ""}"
                 class="h-full w-full"
                 aria-labelledby="crawlScreenshotHeading"
               />
-            `,
-            renderSpinner,
-          )}
-        </div>
-        <div
-          class="aspect-video flex-1 outline -outline-offset-2 outline-green-400"
-        >
-          ${when(
-            this.qaBlobUrl,
-            () => html`
               <img
                 slot="after"
-                style="width: 100%; height: auto"
-                name="replayScreenshot"
-                src="${this.qaBlobUrl || ""}"
+                src="${this.qaData.blobUrl || ""}"
                 class="h-full w-full"
                 aria-labelledby="replayScreenshotHeading"
               />
-            `,
-            renderSpinner,
-          )}
-        </div>
+            </sl-image-comparer>
+          `,
+          this.renderSpinner,
+        )}
       </div>
     `;
   };
@@ -637,7 +642,7 @@ export class ArchivedItemQA extends TailwindElement {
           name="crawlText"
           aria-labelledby="crawlTextHeading"
         >
-          ${this.crawlDataText ? this.crawlDataText : renderSpinner()}
+          ${this.crawlData ? this.crawlData.text : renderSpinner()}
         </div>
         <div
           class="aspect-video h-full flex-1 overflow-auto whitespace-pre-line p-4 outline -outline-offset-2 outline-yellow-400"
@@ -645,7 +650,7 @@ export class ArchivedItemQA extends TailwindElement {
           name="replayText"
           aria-labelledby="replayTextHeading"
         >
-          ${this.qaDataText ? this.qaDataText : renderSpinner()}
+          ${this.qaData ? this.qaData.text : renderSpinner()}
         </div>
       </div>
     `;
@@ -671,7 +676,7 @@ export class ArchivedItemQA extends TailwindElement {
           name="crawlResources"
           aria-labelledby="crawlResourcesHeading"
         >
-          ${this.crawlDataText ? this.crawlDataText : renderSpinner()}
+          ${this.crawlData ? this.crawlData.resources : renderSpinner()}
         </div>
         <div
           class="aspect-video h-full flex-1 overflow-auto whitespace-pre-line p-4 outline -outline-offset-2 outline-yellow-400"
@@ -679,24 +684,28 @@ export class ArchivedItemQA extends TailwindElement {
           name="replayResources"
           aria-labelledby="replayResourcesHeading"
         >
-          ${this.qaDataText ? this.qaDataText : renderSpinner()}
+          ${this.qaData ? this.qaData.resources : renderSpinner()}
         </div>
       </div>
     `;
   };
 
   private readonly renderReplay = () => {
-    // only set URL if actually showing replay, otherwise unneeded for other tabs
-    const url = this.tab === "replay" ? this.page?.url : undefined;
-
     return html`
       <div
-        class="${!url
-          ? "hidden"
-          : ""} overflow-hidden rounded-b-lg border-x border-b"
-        style="height: 500px"
+        class="relative aspect-video overflow-hidden rounded-b-lg border-x border-b"
       >
-        ${this.renderRWP(this.itemId, { qa: false, url })}
+        ${when(this.page?.url, (url) =>
+          this.renderRWP(this.itemId, { qa: false, url }),
+        )}
+        ${when(
+          !this.crawlSwAvail,
+          () => html`
+            <div class="absolute inset-0 bg-neutral-50">
+              ${this.renderSpinner()}
+            </div>
+          `,
+        )}
       </div>
     `;
   };
@@ -711,27 +720,20 @@ export class ArchivedItemQA extends TailwindElement {
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
-    return html`
-      <replay-web-page
-        source="${replaySource}"
-        coll="${rwpId}"
-        config="${config}"
-        replayBase="/replay/"
-        embed="replayonly"
-        noCache="true"
-        url="${ifDefined(url)}"
-      ></replay-web-page>
-    `;
-  };
-
-  private readonly onScreenshotLoad = () => {
-    // const iframe = e.currentTarget as HTMLIFrameElement;
-    // const img = iframe.contentDocument?.body.querySelector("img");
-    // // Make image fill iframe container
-    // if (img) {
-    //   img.style.height = "auto";
-    //   img.style.width = "100%";
-    // }
+    return guard(
+      [replaySource, rwpId, config, url],
+      () => html`
+        <replay-web-page
+          source="${replaySource}"
+          coll="${rwpId}"
+          config="${config}"
+          replayBase="/replay/"
+          embed="replayonly"
+          noCache="true"
+          url="${ifDefined(url)}"
+        ></replay-web-page>
+      `,
+    );
   };
 
   private async onUpdateItemPage(e: CustomEvent<UpdateItemPageDetail>) {
@@ -816,49 +818,43 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
+  private async resetData(dataType: "crawlData" | "qaData") {
+    if (this[dataType].blobUrl) {
+      URL.revokeObjectURL(this[dataType].blobUrl);
+    }
+    this[dataType] = initialReplayData;
+  }
+
   private async fetchContent(): Promise<void> {
-    if (this.crawlBlobUrl) {
-      URL.revokeObjectURL(this.crawlBlobUrl);
-      this.crawlBlobUrl = null;
-    }
-    this.crawlDataText = null;
-
-    if (this.qaBlobUrl) {
-      URL.revokeObjectURL(this.qaBlobUrl);
-      this.qaBlobUrl = null;
-    }
-    this.qaDataText = null;
-
     if (!this.page) {
       return;
     }
 
-    const frame = this.renderRoot.querySelector("#replayframe");
-    const frameWindow = (frame as HTMLIFrameElement | null)?.contentWindow;
+    const frameWindow = this.replayFrame?.contentWindow;
     if (!frameWindow) {
+      console.debug("no iframe found with id replayFrame");
       return;
     }
 
     const timestamp = this.page.ts?.split(".")[0].replace(/\D/g, "");
-    const urlPart = `${timestamp}mp_/urn:${tabToPrefix[this.tab]}:${this.page.url}`;
-    const crawlDataUrl = `/replay/w/${this.itemId}/${urlPart}`;
-    const qaDataUrl = `/replay/w/${this.qaRunId}/${urlPart}`;
+    const pageUrl = this.page.url;
 
-    const doLoad = async (
-      type: QATab,
-      win: Window,
-      url: string,
-    ): Promise<{ blobUrl?: string; text?: string }> => {
-      const resp = await win.fetch(url);
+    const doLoad = async <T = BlobPayload | TextPayload>(
+      tab: QATab,
+      replayId: string,
+    ): Promise<T> => {
+      const urlPart = `${timestamp}mp_/urn:${tabToPrefix[tab]}:${pageUrl}`;
+      const url = `/replay/w/${replayId}/${urlPart}`;
+      const resp = await frameWindow.fetch(url);
 
-      if (type === "screenshots") {
+      if (tab === "screenshots") {
         const blob = await resp.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        return { blobUrl };
-      } else if (type === "text") {
+        const blobUrl = URL.createObjectURL(blob) || "";
+        return { blobUrl } as T;
+      } else if (tab === "text") {
         const text = await resp.text();
-        return { text };
-      } else if (type === "resources") {
+        return { text } as T;
+      } else if (tab === "resources") {
         const json = await resp.json();
         console.log(json);
 
@@ -900,28 +896,33 @@ export class ArchivedItemQA extends TailwindElement {
           2,
         );
 
-        return { text };
-      } else {
-        return {};
+        return { text } as T;
       }
+      return { text: "" } as T;
     };
 
-    const { blobUrl: crawlBlobUrl, text: crawlDataText } = await doLoad(
-      this.tab,
-      frameWindow,
-      crawlDataUrl,
-    );
-
-    const { blobUrl: qaBlobUrl, text: qaDataText } = await doLoad(
-      this.tab,
-      frameWindow,
-      qaDataUrl,
-    );
-
-    this.crawlBlobUrl = crawlBlobUrl || null;
-    this.crawlDataText = crawlDataText || null;
-    this.qaBlobUrl = qaBlobUrl || null;
-    this.qaDataText = qaDataText || null;
+    if (this.itemId && this.crawlSwAvail) {
+      if (this.crawlData.blobUrl) {
+        this.resetData("crawlData");
+      }
+      this.crawlData = {
+        blobUrl: (await doLoad<BlobPayload>("screenshots", this.itemId))
+          .blobUrl,
+        text: (await doLoad<TextPayload>("text", this.itemId)).text,
+        resources: (await doLoad<TextPayload>("resources", this.itemId)).text,
+      };
+    }
+    if (this.qaRunId && this.qaSwAvail) {
+      if (this.qaData.blobUrl) {
+        this.resetData("qaData");
+      }
+      this.qaData = {
+        blobUrl: (await doLoad<BlobPayload>("screenshots", this.qaRunId))
+          .blobUrl,
+        text: (await doLoad<TextPayload>("text", this.qaRunId)).text,
+        resources: (await doLoad<TextPayload>("resources", this.qaRunId)).text,
+      };
+    }
   }
 
   private async getPage(pageId: string): Promise<ArchivedItemQAPage> {
