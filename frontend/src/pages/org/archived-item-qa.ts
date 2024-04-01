@@ -1,12 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { merge } from "immutable";
-import {
-  css,
-  html,
-  nothing,
-  type PropertyValues,
-  type TemplateResult,
-} from "lit";
+import { css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
@@ -194,6 +188,9 @@ export class ArchivedItemQA extends TailwindElement {
   private qaData = initialReplayData;
 
   @state()
+  private replayTabReady = false;
+
+  @state()
   filterPagesBy: {
     filterQABy?: string;
     gte?: number;
@@ -331,11 +328,9 @@ export class ArchivedItemQA extends TailwindElement {
       <!-- Use iframe to access replay content -->
       <iframe class="hidden" id="replayframe" src="/replay/"></iframe>
       <div class="offscreen" aria-hidden="true">
-        ${when(this.qaRunId && this.tab !== "replay", () =>
-          this.renderRWP(this.qaRunId, { qa: true }),
-        )}
+        ${this.renderRWP(this.qaRunId, { qa: true })}
+        ${this.renderRWP(this.itemId, { qa: false })}
       </div>
-
       <article class="grid gap-x-4 gap-y-3">
         <header class="mainHeader flex items-center justify-between gap-1">
           <h1 class="text-base font-semibold leading-tight">
@@ -546,43 +541,15 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private renderSections() {
-    const tabSection: Record<
-      QATab,
-      { render: () => TemplateResult<1> | undefined }
-    > = {
-      screenshots: {
-        render: this.renderScreenshots,
-      },
-      text: {
-        render: this.renderText,
-      },
-      resources: {
-        render: this.renderResources,
-      },
-      replay: {
-        render: this.renderReplay,
-      },
-    };
-
-    // All sections are rendered at page load to enable
-    // quick switching between tabs without reloading RWP.
-    //
-    // This also enables us to reuse the replay tab RWP
-    // embed to load the replay screenshot
     return html`
-      ${TABS.map((tab) => {
-        const section = tabSection[tab];
-        const isActive = tab === this.tab;
-        return html`
-          <section
-            class="${isActive ? "" : "offscreen"}"
-            aria-labelledby="${tab}-tab"
-            aria-hidden=${!isActive}
-          >
-            ${section.render()}
-          </section>
-        `;
-      })}
+      <section aria-labelledby="${this.tab}-tab">
+        ${choose(this.tab, [
+          ["screenshots", this.renderScreenshots],
+          ["text", this.renderText],
+          ["resources", this.renderResources],
+          ["replay", this.renderReplay],
+        ])}
+      </section>
     `;
   }
 
@@ -698,11 +665,21 @@ export class ArchivedItemQA extends TailwindElement {
       <div
         class="relative aspect-video overflow-hidden rounded-b-lg border-x border-b"
       >
-        ${when(this.page?.url, (url) =>
-          this.renderRWP(this.itemId, { qa: false, url }),
+        ${guard([this.itemId, this.page], () =>
+          when(this.page, (page) => {
+            const timestamp = page.ts?.split(".")[0].replace(/\D/g, "");
+            const pageUrl = page.url;
+            const urlPart = `${timestamp}mp_/${pageUrl}`;
+            const url = `/replay/w/${this.itemId}/${urlPart}`;
+            return html`<iframe
+              src=${url}
+              class="h-full w-full"
+              @load=${() => (this.replayTabReady = true)}
+            ></iframe>`;
+          }),
         )}
         ${when(
-          !this.crawlSwAvail,
+          !this.replayTabReady,
           () => html`
             <div class="absolute inset-0 bg-neutral-50">
               ${this.renderSpinner()}
