@@ -35,9 +35,11 @@ The Replay tab displays the web content contained within the archived item.
 
 For more details on navigating web archives within ReplayWeb.page, see the [ReplayWeb.page user documentation.](https://replayweb.page/docs/exploring)
 
-### Files
+### Exporting Files
 
-The Files tab lists the individually downloadable WACZ files that make up the archived item as well as their file sizes.
+While crawling, Browsertrix will output multiple WACZ files — the crawler aims to output files in consistently sized chunks, additionally each [crawler instance](workflow-setup.md#crawler-instances) will output separate WACZ files.
+
+The Files tab lists the individually downloadable WACZ files that make up the archived item as well as their file sizes. To combine one or more archived items and download them all as a single WACZ file, add them to a collection and [download the collection](collections.md#downloading-collections).
 
 ### Error Logs
 
