@@ -126,8 +126,7 @@ export class ArchivedItemQA extends TailwindElement {
   @state()
   hiddenIframeLoaded = false;
 
-  @state()
-  private crawlReplayPageReady = false;
+  private retryFetchContent = false;
 
   @state()
   filterPagesBy: {
@@ -154,6 +153,37 @@ export class ArchivedItemQA extends TailwindElement {
   @query("#replayframe")
   private replayFrame?: HTMLIFrameElement | null;
 
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    // Check if replay-web-page is ready
+    window.addEventListener("message", this.onWindowMessage);
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+
+    window.removeEventListener("message", this.onWindowMessage);
+  }
+
+  onWindowMessage = (event: MessageEvent) => {
+    // const sourceLoc = (event.source as Window).location.href;
+
+    console.log("retry on message?", this.retryFetchContent, event);
+    // if (!this.retryFetchContent) return;
+
+    // // ensure its an rwp frame
+    // if (sourceLoc.indexOf("?source=") > 0) {
+    //   // check if has /qa/ in path, then QA
+    //   if (sourceLoc.indexOf("%2Fqa%2F") >= 0) {
+    //     // this.qaSwAvail = true;
+    //     // otherwise main crawl replay
+    //   } else {
+    //     // this.crawlSwAvail = true;
+    //   }
+    // }
+  };
+
   protected willUpdate(
     changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
   ): void {
@@ -168,11 +198,15 @@ export class ArchivedItemQA extends TailwindElement {
     if (changedProperties.has("itemPageId") && this.itemPageId) {
       void this.fetchPage();
     }
+  }
 
+  protected updated(
+    changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
+  ): void {
     if (
-      changedProperties.get("page") ||
+      changedProperties.has("page") ||
       changedProperties.get("tab") ||
-      (changedProperties.has("hiddenIframeLoaded") && this.hiddenIframeLoaded)
+      changedProperties.has("hiddenIframeLoaded")
     ) {
       // TODO prefetch content for other tabs
       void this.fetchContentForTab();
@@ -624,6 +658,12 @@ export class ArchivedItemQA extends TailwindElement {
       // TODO check status code
       const resp = await frameWindow.fetch(url);
 
+      console.log("resp:", resp);
+
+      if (!resp.ok) {
+        throw resp.statusText;
+      }
+
       if (tab === "screenshots") {
         const blob = await resp.blob();
         const blobUrl = URL.createObjectURL(blob) || "";
@@ -680,25 +720,32 @@ export class ArchivedItemQA extends TailwindElement {
       return { text: "" } as T;
     };
 
-    if (this.itemId) {
-      if (this.tab === "screenshots" && this.crawlData.blobUrl) {
-        URL.revokeObjectURL(this.crawlData.blobUrl);
+    try {
+      if (this.itemId) {
+        if (this.tab === "screenshots" && this.crawlData.blobUrl) {
+          URL.revokeObjectURL(this.crawlData.blobUrl);
+        }
+        const content = await doLoad(this.tab, this.itemId);
+        this.crawlData = {
+          ...this.crawlData,
+          ...content,
+        };
       }
-      const content = await doLoad(this.tab, this.itemId);
-      this.crawlData = {
-        ...this.crawlData,
-        ...content,
-      };
-    }
-    if (this.qaRunId) {
-      if (this.tab === "screenshots" && this.qaData.blobUrl) {
-        URL.revokeObjectURL(this.qaData.blobUrl);
+      if (this.qaRunId) {
+        if (this.tab === "screenshots" && this.qaData.blobUrl) {
+          URL.revokeObjectURL(this.qaData.blobUrl);
+        }
+        if (this.tab !== "replay") {
+          const content = await doLoad(this.tab, this.qaRunId);
+          this.qaData = {
+            ...this.qaData,
+            ...content,
+          };
+        }
       }
-      const content = await doLoad(this.tab, this.qaRunId);
-      this.qaData = {
-        ...this.qaData,
-        ...content,
-      };
+    } catch (e: unknown) {
+      console.log("error:", e);
+      this.retryFetchContent = true;
     }
   }
 
