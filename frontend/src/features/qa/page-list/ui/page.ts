@@ -106,6 +106,7 @@ export class QaPage extends TailwindElement {
         this.scrollIntoView({
           behavior: "smooth",
           block: "center",
+          inline: "start",
         });
       } else if (changedProperties.get("selected") === true) {
         void this.animateCollapse();

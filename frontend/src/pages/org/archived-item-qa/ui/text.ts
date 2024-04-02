@@ -16,13 +16,16 @@ function renderDiff(
 ) {
   return until(
     diffImport.then(({ diffWords }) => {
-      const diff = diffWords(crawlText, qaText);
+      const diff = diffWords(qaText, crawlText);
 
       const addedText = tw`bg-red-100 text-red-700`;
       const removedText = tw`bg-red-100 text-red-100`;
 
       return html`
-        <div class=${tw`flex-1 whitespace-pre-line`}>
+        <div
+          class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg border-r border-dashed p-4`}
+          aria-labelledby="qaTextHeading"
+        >
           ${diff.map((part) => {
             return html`
               <span
@@ -36,7 +39,10 @@ function renderDiff(
             `;
           })}
         </div>
-        <div class=${tw`flex-1 whitespace-pre-line`}>
+        <div
+          class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg p-4`}
+          aria-labelledby="crawlTextHeading"
+        >
           ${diff.map((part) => {
             return html`
               <span
@@ -57,19 +63,25 @@ function renderDiff(
 
 export function renderText(crawlData: ReplayData, qaData: ReplayData) {
   return html`
-    <div class=${tw`mb-2 flex justify-between text-base font-medium`}>
-      <h3 id="qaTextHeading">${msg("Crawl Text")}</h3>
-      <h3 id="crawlTextHeading">${msg("Replay Text")}</h3>
+    <div class=${tw`flex h-full flex-col outline`}>
+      <div class=${tw`mb-2 flex text-base font-medium`}>
+        <h3 id="qaTextHeading" class=${tw`flex-1`}>${msg("Crawl Text")}</h3>
+        <h3 id="crawlTextHeading" class=${tw`flex-1`}>${msg("Replay Text")}</h3>
+      </div>
+      <div
+        class=${tw`flex-1 overflow-auto overscroll-contain rounded-lg border`}
+      >
+        ${guard(
+          [crawlData, qaData],
+          () => html`
+            <div class=${tw`flex`}>
+              ${when(crawlData?.text && qaData?.text, () =>
+                renderDiff(crawlData!.text!, qaData!.text!),
+              )}
+            </div>
+          `,
+        )}
+      </div>
     </div>
-    ${guard(
-      [crawlData, qaData],
-      () => html`
-        <div class=${tw`flex border placeholder:rounded`}>
-          ${when(crawlData?.text && qaData?.text, () =>
-            renderDiff(qaData!.text!, crawlData!.text!),
-          )}
-        </div>
-      `,
-    )}
   `;
 }

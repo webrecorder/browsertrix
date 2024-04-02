@@ -16,35 +16,43 @@ function renderDiff(
 ) {
   return until(
     diffImport.then(({ diffJson }) => {
-      const diff = diffJson(crawlResources, qaResources);
+      const diff = diffJson(qaResources, crawlResources);
 
       const addedText = tw`bg-red-100 text-red-700`;
-      const removedText = tw`hidden`;
+      const removedText = tw`bg-red-100 text-red-100`;
 
       return html`
-        <div class=${tw`flex-1`}>
+        <div
+          class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg border-r border-dashed p-4`}
+          aria-labelledby="qaResourcesHeading"
+        >
           ${diff.map((part) => {
             return html`
-              <div
-                class=${`${
-                  part.added ? removedText : part.removed ? addedText : ""
-                } ${tw`whitespace-pre-line`}`}
+              <span
+                class=${part.added
+                  ? removedText
+                  : part.removed
+                    ? addedText
+                    : ""}
+                >${part.value}</span
               >
-                ${part.value}
-              </div>
             `;
           })}
         </div>
-        <div class=${tw`flex-1`}>
+        <div
+          class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg p-4`}
+          aria-labelledby="crawlResourcesHeading"
+        >
           ${diff.map((part) => {
             return html`
-              <div
-                class=${`${
-                  part.added ? addedText : part.removed ? removedText : ""
-                } ${tw`whitespace-pre-line`}`}
+              <span
+                class=${part.added
+                  ? addedText
+                  : part.removed
+                    ? removedText
+                    : ""}
+                >${part.value}</span
               >
-                ${part.value}
-              </div>
             `;
           })}
         </div>
@@ -55,19 +63,29 @@ function renderDiff(
 
 export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
   return html`
-    <div class=${tw`mb-2 flex justify-between text-base font-medium`}>
-      <h3 id="qaResourcesHeading">${msg("QA Resources")}</h3>
-      <h3 id="crawlResourcesHeading">${msg("Crawl Resources")}</h3>
+    <div class=${tw`flex h-full flex-col outline`}>
+      <div class=${tw`mb-2 flex text-base font-medium`}>
+        <h3 id="qaResourcesHeading" class=${tw`flex-1`}>
+          ${msg("Crawl Resources")}
+        </h3>
+        <h3 id="crawlResourcesHeading" class=${tw`flex-1`}>
+          ${msg("Replay Resources")}
+        </h3>
+      </div>
+      <div
+        class=${tw`flex-1 overflow-auto overscroll-contain rounded-lg border`}
+      >
+        ${guard(
+          [crawlData, qaData],
+          () => html`
+            <div class=${tw`flex`}>
+              ${when(crawlData?.resources && qaData?.resources, () =>
+                renderDiff(crawlData!.resources!, qaData!.resources!),
+              )}
+            </div>
+          `,
+        )}
+      </div>
     </div>
-    ${guard(
-      [crawlData, qaData],
-      () => html`
-        <div class=${tw`flex border placeholder:rounded`}>
-          ${when(crawlData?.resources && qaData?.resources, () =>
-            renderDiff(qaData!.resources!, crawlData!.resources!),
-          )}
-        </div>
-      `,
-    )}
   `;
 }

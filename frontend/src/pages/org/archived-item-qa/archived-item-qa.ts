@@ -291,13 +291,14 @@ export class ArchivedItemQA extends TailwindElement {
     return html`
       ${this.renderHidden()}
 
-      <article class="grid gap-x-4 gap-y-3">
-        <header class="mainHeader flex items-center justify-between gap-1">
-          <h1 class="text-base font-semibold leading-tight">
-            ${msg("Reviewing")} ${itemName}
-          </h1>
-          <div class="flex items-center">
-            <span class="font-medium text-neutral-400">${msg("QA run:")}</span>
+      <article class="grid gap-x-6 gap-y-4 md:gap-y-0">
+        <header
+          class="grid--header flex items-center justify-between gap-1 border-b pb-2"
+        >
+          <div class="flex items-center gap-2 overflow-hidden">
+            <h1 class="flex-1 truncate text-base font-semibold leading-tight">
+              ${msg("Reviewing")} ${itemName}
+            </h1>
             <btrix-qa-run-dropdown
               .items=${finishedQARuns}
               selectedId=${this.qaRunId || ""}
@@ -308,107 +309,113 @@ export class ArchivedItemQA extends TailwindElement {
               }}
             ></btrix-qa-run-dropdown>
           </div>
-        </header>
-        <section class="main">
-          <nav class="mb-3 flex flex-col-reverse">
-            <div class="mt-3 flex gap-8 self-start">
-              <btrix-navigation-button
-                id="screenshot-tab"
-                href=${`${crawlBaseUrl}/review/screenshots?${searchParams}`}
-                ?active=${this.tab === "screenshots"}
-                @click=${this.navigate.link}
-              >
-                ${msg("Screenshots")}
-                ${when(currentPage, (page) => {
-                  let variant: BadgeVariant = "neutral";
-                  switch (severityFromMatch(currentPage.qa.screenshotMatch)) {
-                    case "severe":
-                      variant = "danger";
-                      break;
-                    case "moderate":
-                      variant = "warning";
-                      break;
-                    case "good":
-                      variant = "success";
-                      break;
-                    default:
-                      break;
-                  }
-
-                  return html`
-                    <btrix-badge variant=${variant}
-                      >${formatPercentage(
-                        page.qa.screenshotMatch,
-                      )}%</btrix-badge
-                    >
-                  `;
-                })}
-              </btrix-navigation-button>
-              <btrix-navigation-button
-                id="text-tab"
-                href=${`${crawlBaseUrl}/review/text?${searchParams}`}
-                ?active=${this.tab === "text"}
-                @click=${this.navigate.link}
-              >
-                ${msg("Text")}
-              </btrix-navigation-button>
-              <btrix-navigation-button
-                id="text-tab"
-                href=${`${crawlBaseUrl}/review/resources?${searchParams}`}
-                ?active=${this.tab === "resources"}
-                @click=${this.navigate.link}
-              >
-                ${msg("Resources")}
-              </btrix-navigation-button>
-              <btrix-navigation-button
-                id="replay-tab"
-                href=${`${crawlBaseUrl}/review/replay?${searchParams}`}
-                ?active=${this.tab === "replay"}
-                @click=${this.navigate.link}
-              >
-                ${msg("Replay")}
-              </btrix-navigation-button>
-            </div>
-            <div class="flex gap-4 self-end">
-              <sl-button
-                size="small"
-                @click=${this.navPrevPage}
-                ?disabled=${!prevPage}
-              >
-                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
-                ${msg("Previous Page")}
-              </sl-button>
-              <btrix-page-qa-toolbar
-                .authState=${this.authState}
-                .orgId=${this.orgId}
-                .itemId=${this.itemId}
-                .pageId=${this.itemPageId}
-                .page=${this.page}
-                @btrix-update-item-page=${this.onUpdateItemPage}
-              ></btrix-page-qa-toolbar>
-              <sl-button
-                variant="primary"
-                size="small"
-                ?disabled=${!nextPage}
-                @click=${this.navNextPage}
-              >
-                <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-                ${msg("Next Page")}
-              </sl-button>
-            </div>
-          </nav>
-          ${this.renderToolbar()} ${this.renderPanel()}
-        </section>
-        <div class="pageListHeader flex items-center justify-between">
-          <h2 class="text-base font-semibold leading-none">${msg("Pages")}</h2>
           <sl-button
             size="small"
             href=${`${crawlBaseUrl}#qa`}
             @click=${this.navigate.link}
             >${msg("Done Reviewing")}</sl-button
           >
+        </header>
+
+        <div
+          class="grid--pageToolbar flex items-center justify-between overflow-hidden border-b py-2"
+        >
+          <h2 class="mr-4 truncate font-semibold text-neutral-600">
+            ${this.page ? this.page.title || msg("no page title") : nothing}
+          </h2>
+          <div class="flex gap-4">
+            <sl-button
+              size="small"
+              @click=${this.navPrevPage}
+              ?disabled=${!prevPage}
+            >
+              <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+              ${msg("Previous Page")}
+            </sl-button>
+            <btrix-page-qa-toolbar
+              .authState=${this.authState}
+              .orgId=${this.orgId}
+              .itemId=${this.itemId}
+              .pageId=${this.itemPageId}
+              .page=${this.page}
+              @btrix-update-item-page=${this.onUpdateItemPage}
+            ></btrix-page-qa-toolbar>
+            <sl-button
+              variant="primary"
+              size="small"
+              ?disabled=${!nextPage}
+              @click=${this.navNextPage}
+            >
+              <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+              ${msg("Next Page")}
+            </sl-button>
+          </div>
         </div>
-        <section class="pageList">
+
+        <div class="grid--tabGroup flex flex-col">
+          <nav class="my-2 flex gap-2">
+            <btrix-navigation-button
+              id="screenshot-tab"
+              href=${`${crawlBaseUrl}/review/screenshots?${searchParams}`}
+              ?active=${this.tab === "screenshots"}
+              @click=${this.navigate.link}
+            >
+              ${msg("Screenshots")}
+              ${when(currentPage, (page) => {
+                let variant: BadgeVariant = "neutral";
+                switch (severityFromMatch(currentPage.qa.screenshotMatch)) {
+                  case "severe":
+                    variant = "danger";
+                    break;
+                  case "moderate":
+                    variant = "warning";
+                    break;
+                  case "good":
+                    variant = "success";
+                    break;
+                  default:
+                    break;
+                }
+
+                return html`
+                  <btrix-badge variant=${variant}
+                    >${formatPercentage(page.qa.screenshotMatch)}%</btrix-badge
+                  >
+                `;
+              })}
+            </btrix-navigation-button>
+            <btrix-navigation-button
+              id="text-tab"
+              href=${`${crawlBaseUrl}/review/text?${searchParams}`}
+              ?active=${this.tab === "text"}
+              @click=${this.navigate.link}
+            >
+              ${msg("Text")}
+            </btrix-navigation-button>
+            <btrix-navigation-button
+              id="text-tab"
+              href=${`${crawlBaseUrl}/review/resources?${searchParams}`}
+              ?active=${this.tab === "resources"}
+              @click=${this.navigate.link}
+            >
+              ${msg("Resources")}
+            </btrix-navigation-button>
+            <btrix-navigation-button
+              id="replay-tab"
+              href=${`${crawlBaseUrl}/review/replay?${searchParams}`}
+              ?active=${this.tab === "replay"}
+              @click=${this.navigate.link}
+            >
+              ${msg("Replay")}
+            </btrix-navigation-button>
+          </nav>
+          ${this.renderPanelToolbar()} ${this.renderPanel()}
+        </div>
+
+        <section class="grid--pageList overflow-hidden">
+          <h2 class="my-4 font-semibold leading-none text-neutral-700">
+            ${msg("Pages")}
+          </h2>
           <btrix-qa-page-list
             class="flex h-full flex-col"
             .qaRunId=${this.qaRunId}
@@ -494,7 +501,7 @@ export class ArchivedItemQA extends TailwindElement {
     );
   }
 
-  private renderToolbar() {
+  private renderPanelToolbar() {
     // TODO
     const buttons = nothing;
     // html`
@@ -519,8 +526,8 @@ export class ArchivedItemQA extends TailwindElement {
     return html`
       <div
         class="${this.tab === "replay"
-          ? "rounded-t-lg m2-2"
-          : "rounded-lg my-2"} flex h-12 items-center border bg-neutral-50 text-base"
+          ? "rounded-t-lg"
+          : "rounded-lg mb-3"} flex h-12 items-center border bg-neutral-50 text-base"
       >
         ${buttons}
         <div
@@ -566,7 +573,7 @@ export class ArchivedItemQA extends TailwindElement {
       }
     };
     return html`
-      <section aria-labelledby="${this.tab}-tab">
+      <section aria-labelledby="${this.tab}-tab" class="flex-1 overflow-hidden">
         ${cache(choosePanel())}
       </section>
     `;
