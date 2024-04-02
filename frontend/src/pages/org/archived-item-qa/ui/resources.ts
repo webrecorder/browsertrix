@@ -4,15 +4,15 @@ import { guard } from "lit/directives/guard.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 
-import type { ReplayData } from "../types";
+import type { ReplayData, ResourcesPayload } from "../types";
 
 import { tw } from "@/utils/tailwind";
 
 const diffImport = import("diff");
 
 function renderDiff(
-  crawlResources: ReplayData["resources"],
-  qaResources: ReplayData["resources"],
+  crawlResources: ResourcesPayload["resources"],
+  qaResources: ResourcesPayload["resources"],
 ) {
   return until(
     diffImport.then(({ diffJson }) => {
@@ -63,8 +63,8 @@ export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
       [crawlData, qaData],
       () => html`
         <div class=${tw`flex border placeholder:rounded`}>
-          ${when(crawlData.resources && qaData.resources, () =>
-            renderDiff(crawlData.resources, qaData.resources),
+          ${when(crawlData?.resources && qaData?.resources, () =>
+            renderDiff(crawlData!.resources!, qaData!.resources!),
           )}
         </div>
       `,

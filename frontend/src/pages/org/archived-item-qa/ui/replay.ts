@@ -11,16 +11,14 @@ export function renderReplay(crawlData: ReplayData) {
     <div
       class=${tw`relative aspect-video overflow-hidden rounded-b-lg border-x border-b`}
     >
-      ${guard(
-        [crawlData],
-        () => html`
-          ${when(crawlData.replayUrl, () => {
-            return html`<iframe
-              src=${crawlData.replayUrl}
-              class=${tw`h-full w-full outline`}
-            ></iframe>`;
-          })}
-        `,
+      ${guard([crawlData], () =>
+        when(crawlData?.replayUrl, (replayUrl) => {
+          console.log("[debug] replayUrl:", replayUrl);
+          return html`<iframe
+            src=${replayUrl}
+            class=${tw`h-full w-full outline`}
+          ></iframe>`;
+        }),
       )}
     </div>
   `;

@@ -16,23 +16,40 @@ export function renderScreenshots(crawlData: ReplayData, qaData: ReplayData) {
           <h3 id="crawlScreenshotHeading">${msg("Crawl Screenshot")}</h3>
           <h3 id="replayScreenshotHeading">${msg("Replay Screenshot")}</h3>
         </div>
-        <div class="aspect-video overflow-hidden rounded border bg-slate-50">
+        <div class=" overflow-hidden rounded border bg-slate-50">
           ${when(
-            crawlData.blobUrl && qaData.blobUrl,
-            () => html`
-              <sl-image-comparer>
-                <img
-                  slot="before"
-                  src="${crawlData.blobUrl || ""}"
-                  aria-labelledby="crawlScreenshotHeading"
-                />
-                <img
-                  slot="after"
-                  src="${qaData.blobUrl || ""}"
-                  aria-labelledby="replayScreenshotHeading"
-                />
-              </sl-image-comparer>
-            `,
+            crawlData?.blobUrl && qaData?.blobUrl,
+            () =>
+              html` <div class="flex">
+                <div class="aspect-video flex-1">
+                  <img
+                    class="flex-1"
+                    src="${crawlData?.blobUrl || ""}"
+                    aria-labelledby="crawlScreenshotHeading"
+                  />
+                </div>
+                <div class="aspect-video flex-1">
+                  <img
+                    class="flex-1"
+                    src="${qaData?.blobUrl || ""}"
+                    aria-labelledby="replayScreenshotHeading"
+                  />
+                </div>
+              </div>`,
+            // html`
+            //   <sl-image-comparer>
+            //     <img
+            //       slot="before"
+            //       src="${crawlData?.blobUrl || ""}"
+            //       aria-labelledby="crawlScreenshotHeading"
+            //     />
+            //     <img
+            //       slot="after"
+            //       src="${qaData?.blobUrl || ""}"
+            //       aria-labelledby="replayScreenshotHeading"
+            //     />
+            //   </sl-image-comparer>
+            // `
             renderSpinner,
           )}
         </div>

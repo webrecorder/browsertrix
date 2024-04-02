@@ -6,6 +6,7 @@ import { cache } from "lit/directives/cache.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
@@ -72,13 +73,6 @@ const resourceTypes = [
   "other",
 ];
 
-const initialReplayData: QATypes.ReplayData = {
-  blobUrl: "",
-  text: "",
-  replayUrl: "",
-  resources: {},
-};
-
 @localized()
 @customElement("btrix-archived-item-qa")
 export class ArchivedItemQA extends TailwindElement {
@@ -118,15 +112,10 @@ export class ArchivedItemQA extends TailwindElement {
   page?: ArchivedItemQAPage;
 
   @state()
-  private crawlData = initialReplayData;
+  private crawlData: QATypes.ReplayData = null;
 
   @state()
-  private qaData = initialReplayData;
-
-  @state()
-  hiddenIframeLoaded = false;
-
-  private retryFetchContent = false;
+  private qaData: QATypes.ReplayData = null;
 
   @state()
   filterPagesBy: {
@@ -149,44 +138,66 @@ export class ArchivedItemQA extends TailwindElement {
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
+  private readonly replaySwReg =
+    navigator.serviceWorker.getRegistration("/replay/");
 
   @query("#replayframe")
   private replayFrame?: HTMLIFrameElement | null;
 
   connectedCallback(): void {
     super.connectedCallback();
-
-    // Check if replay-web-page is ready
+    // Receive messages from replay-web-page windows
+    this.replaySwReg.then((reg) => {
+      if (!reg) {
+        console.log("[debug] no reg, listening to messages");
+        // window.addEventListener("message", this.onWindowMessage);
+      }
+    });
     window.addEventListener("message", this.onWindowMessage);
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
-
+    if (this.crawlData?.blobUrl) URL.revokeObjectURL(this.crawlData.blobUrl);
+    if (this.qaData?.blobUrl) URL.revokeObjectURL(this.qaData.blobUrl);
     window.removeEventListener("message", this.onWindowMessage);
   }
 
-  onWindowMessage = (event: MessageEvent) => {
-    // const sourceLoc = (event.source as Window).location.href;
+  private onWindowMessage = (event: MessageEvent) => {
+    const sourceLoc = (event.source as Window).location.href;
 
-    console.log("retry on message?", this.retryFetchContent, event);
-    // if (!this.retryFetchContent) return;
-
-    // // ensure its an rwp frame
-    // if (sourceLoc.indexOf("?source=") > 0) {
-    //   // check if has /qa/ in path, then QA
-    //   if (sourceLoc.indexOf("%2Fqa%2F") >= 0) {
-    //     // this.qaSwAvail = true;
-    //     // otherwise main crawl replay
-    //   } else {
-    //     // this.crawlSwAvail = true;
-    //   }
-    // }
+    // ensure its an rwp frame
+    if (sourceLoc.indexOf("?source=") > 0) {
+      this.handleRwpMessage(sourceLoc);
+    }
   };
 
-  protected willUpdate(
+  /**
+   * Callback for when hidden RWP embeds are loaded and ready.
+   * This won't fire if the RWP service worker is already
+   * registered on the page due to RWP conditionally rendering
+   * if the sw is not present.
+   */
+  private async handleRwpMessage(sourceLoc: string) {
+    console.log("[debug] handleRwpMessage", sourceLoc);
+    // check if has /qa/ in path, then QA
+    if (sourceLoc.indexOf("%2Fqa%2F") >= 0) {
+      console.log("[debug] onWindowMessage qa", this.qaData);
+      await this.fetchContentForTab({ qa: true });
+      // otherwise main crawl replay
+    } else {
+      console.log("[debug] onWindowMessage crawl", this.crawlData);
+      await this.fetchContentForTab();
+    }
+    await this.updateComplete;
+    if (this.crawlData && this.qaData) {
+      window.removeEventListener("message", this.onWindowMessage);
+    }
+  }
+
+  protected async willUpdate(
     changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
-  ): void {
+  ) {
     if (changedProperties.has("itemId") && this.itemId) {
       void this.initItem();
     } else if (
@@ -198,18 +209,19 @@ export class ArchivedItemQA extends TailwindElement {
     if (changedProperties.has("itemPageId") && this.itemPageId) {
       void this.fetchPage();
     }
-  }
-
-  protected updated(
-    changedProperties: PropertyValues<this> | Map<PropertyKey, unknown>,
-  ): void {
-    if (
-      changedProperties.has("page") ||
-      changedProperties.get("tab") ||
-      changedProperties.has("hiddenIframeLoaded")
-    ) {
-      // TODO prefetch content for other tabs
-      void this.fetchContentForTab();
+    // Re-fetch when tab, archived item page, or QA run ID changes
+    // from an existing one, probably due to user interaction
+    if (changedProperties.get("tab") || changedProperties.get("page")) {
+      if (this.tab === "screenshots") {
+        if (this.crawlData?.blobUrl)
+          URL.revokeObjectURL(this.crawlData.blobUrl);
+        if (this.qaData?.blobUrl) URL.revokeObjectURL(this.qaData.blobUrl);
+      }
+      // TODO prefetch content for other tabs?
+      this.fetchContentForTab();
+      this.fetchContentForTab({ qa: true });
+    } else if (changedProperties.get("qaRunId")) {
+      this.fetchContentForTab({ qa: true });
     }
   }
 
@@ -277,17 +289,8 @@ export class ArchivedItemQA extends TailwindElement {
       : [];
 
     return html`
-      <!-- Use iframe to access replay content -->
-      <iframe
-        class="hidden"
-        id="replayframe"
-        src="/replay/"
-        @load=${() => (this.hiddenIframeLoaded = true)}
-      ></iframe>
-      <div class="offscreen" aria-hidden="true">
-        ${this.renderRWP(this.qaRunId, { qa: true })}
-        ${this.renderRWP(this.itemId, { qa: false })}
-      </div>
+      ${this.renderHidden()}
+
       <article class="grid gap-x-4 gap-y-3">
         <header class="mainHeader flex items-center justify-between gap-1">
           <h1 class="text-base font-semibold leading-tight">
@@ -394,7 +397,7 @@ export class ArchivedItemQA extends TailwindElement {
               </sl-button>
             </div>
           </nav>
-          ${this.renderToolbar()} ${this.renderSections()}
+          ${this.renderToolbar()} ${this.renderPanel()}
         </section>
         <div class="pageListHeader flex items-center justify-between">
           <h2 class="text-base font-semibold leading-none">${msg("Pages")}</h2>
@@ -447,6 +450,50 @@ export class ArchivedItemQA extends TailwindElement {
     `;
   }
 
+  private renderHidden() {
+    const iframe = (reg?: ServiceWorkerRegistration) =>
+      when(this.page, () => {
+        const onLoad = reg
+          ? () => {
+              this.fetchContentForTab();
+              this.fetchContentForTab({ qa: true });
+            }
+          : () => {
+              console.debug("waiting for post message instead");
+            };
+        // Use iframe to access replay content
+        return html`
+          <iframe
+            class="hidden"
+            id="replayframe"
+            src="/replay/"
+            @load=${onLoad}
+          ></iframe>
+        `;
+      });
+    const rwp = (reg?: ServiceWorkerRegistration) =>
+      when(
+        !reg,
+        () => html`
+          <div class="offscreen" aria-hidden="true">
+            ${this.qaRunId
+              ? this.renderRWP(this.qaRunId, { qa: true })
+              : nothing}
+            ${this.itemId
+              ? this.renderRWP(this.itemId, { qa: false })
+              : nothing}
+          </div>
+        `,
+      );
+    return guard([this.replaySwReg, this.page, this.qaRunId, this.itemId], () =>
+      until(
+        this.replaySwReg.then((reg) => {
+          return html`${iframe(reg)}${rwp(reg)}`;
+        }),
+      ),
+    );
+  }
+
   private renderToolbar() {
     return html`
       <div
@@ -497,7 +544,7 @@ export class ArchivedItemQA extends TailwindElement {
     `;
   }
 
-  private renderSections() {
+  private renderPanel() {
     // cache DOM for faster switching between tabs
     const choosePanel = () => {
       switch (this.tab) {
@@ -521,7 +568,7 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private readonly renderRWP = (
-    rwpId = this.itemId,
+    rwpId: string,
     { qa, url }: { qa: boolean; url?: string },
   ) => {
     if (!rwpId) return;
@@ -529,9 +576,9 @@ export class ArchivedItemQA extends TailwindElement {
     const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
-
+    console.log("[debug] rendering rwp", rwpId);
     return guard(
-      [this.itemId, this.page, this.authState],
+      [rwpId, this.page, this.authState],
       () => html`
         <replay-web-page
           source="${replaySource}"
@@ -628,51 +675,53 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
-  private async fetchContentForTab(): Promise<void> {
-    if (!this.page || !this.hiddenIframeLoaded) {
-      return;
-    }
-
+  private async fetchContentForTab({ qa } = { qa: false }): Promise<void> {
+    const page = this.page;
+    const tab = this.tab;
+    const sourceId = qa ? this.qaRunId : this.itemId;
     const frameWindow = this.replayFrame?.contentWindow;
-    if (!frameWindow) {
-      console.debug("no iframe found with id replayFrame");
+
+    if (!page || !sourceId || !frameWindow) {
+      console.log(
+        "[debug] no page replaId or frameWindow",
+        page,
+        sourceId,
+        frameWindow,
+      );
       return;
     }
 
-    const timestamp = this.page.ts?.split(".")[0].replace(/\D/g, "");
-    const pageUrl = this.page.url;
+    if (qa && tab === "replay") {
+      return;
+    }
 
-    const doLoad = async <
-      T =
-        | QATypes.BlobPayload
-        | QATypes.TextPayload
-        | QATypes.ReplayPayload
-        | QATypes.ResourcesPayload,
-    >(
-      tab: QATypes.QATab,
-      replayId: string,
-    ): Promise<T> => {
+    const timestamp = page.ts?.split(".")[0].replace(/\D/g, "");
+    const pageUrl = page.url;
+
+    const doLoad = async () => {
       const urlPrefix = tabToPrefix[tab];
       const urlPart = `${timestamp}mp_/${urlPrefix ? `urn:${urlPrefix}:` : ""}${pageUrl}`;
-      const url = `/replay/w/${replayId}/${urlPart}`;
+      const url = `/replay/w/${sourceId}/${urlPart}`;
       // TODO check status code
+
+      if (tab === "replay") {
+        return { replayUrl: url };
+      }
       const resp = await frameWindow.fetch(url);
 
       console.log("resp:", resp);
 
       if (!resp.ok) {
-        throw resp.statusText;
+        throw resp.status;
       }
 
       if (tab === "screenshots") {
         const blob = await resp.blob();
         const blobUrl = URL.createObjectURL(blob) || "";
-        return { blobUrl } as T;
+        return { blobUrl };
       } else if (tab === "text") {
         const text = await resp.text();
-        return { text } as T;
-      } else if (tab === "replay") {
-        return { replayUrl: resp.url } as T;
+        return { text };
       } else if (tab === "resources") {
         const json = await resp.json();
         // console.log(json);
@@ -715,37 +764,30 @@ export class ArchivedItemQA extends TailwindElement {
         //   2,
         // );
 
-        return { resources: Object.fromEntries(typeMap.entries()) } as T;
+        return { resources: Object.fromEntries(typeMap.entries()) };
       }
-      return { text: "" } as T;
+      return { text: "" };
     };
 
     try {
-      if (this.itemId) {
-        if (this.tab === "screenshots" && this.crawlData.blobUrl) {
-          URL.revokeObjectURL(this.crawlData.blobUrl);
-        }
-        const content = await doLoad(this.tab, this.itemId);
+      const content = await doLoad();
+
+      if (qa) {
+        this.qaData = {
+          ...this.qaData,
+          ...content,
+        };
+      } else {
         this.crawlData = {
           ...this.crawlData,
           ...content,
         };
       }
-      if (this.qaRunId) {
-        if (this.tab === "screenshots" && this.qaData.blobUrl) {
-          URL.revokeObjectURL(this.qaData.blobUrl);
-        }
-        if (this.tab !== "replay") {
-          const content = await doLoad(this.tab, this.qaRunId);
-          this.qaData = {
-            ...this.qaData,
-            ...content,
-          };
-        }
-      }
     } catch (e: unknown) {
-      console.log("error:", e);
-      this.retryFetchContent = true;
+      console.log("[debug] error:", e);
+      if (e === 404) {
+        // TODO
+      }
     }
   }
 

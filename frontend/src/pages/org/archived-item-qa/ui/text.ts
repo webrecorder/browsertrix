@@ -4,13 +4,16 @@ import { guard } from "lit/directives/guard.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 
-import type { ReplayData } from "../types";
+import type { ReplayData, TextPayload } from "../types";
 
 import { tw } from "@/utils/tailwind";
 
 const diffImport = import("diff");
 
-function renderDiff(crawlText: ReplayData["text"], qaText: ReplayData["text"]) {
+function renderDiff(
+  crawlText: TextPayload["text"],
+  qaText: TextPayload["text"],
+) {
   return until(
     diffImport.then(({ diffWords }) => {
       const diff = diffWords(crawlText, qaText);
@@ -62,8 +65,8 @@ export function renderText(crawlData: ReplayData, qaData: ReplayData) {
       [crawlData, qaData],
       () => html`
         <div class=${tw`flex border placeholder:rounded`}>
-          ${when(crawlData.text && qaData.text, () =>
-            renderDiff(crawlData.text, qaData.text),
+          ${when(crawlData?.text && qaData?.text, () =>
+            renderDiff(crawlData!.text!, qaData!.text!),
           )}
         </div>
       `,
