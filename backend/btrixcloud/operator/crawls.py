@@ -1178,6 +1178,11 @@ class CrawlOperator(BaseOperator):
             pages_done = await redis.llen(f"{crawl_id}:d")
 
         pages_found = await redis.scard(f"{crawl_id}:s")
+        # account for extra seeds and subtract from seen list
+        extra_seeds = await redis.llen(f"{crawl_id}:extraSeeds")
+        if extra_seeds:
+            pages_found -= extra_seeds
+
         sizes = await redis.hgetall(f"{crawl_id}:size")
         archive_size = sum(int(x) for x in sizes.values())
 
