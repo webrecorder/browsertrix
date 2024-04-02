@@ -1,16 +1,23 @@
 import { localized, msg } from "@lit/localize";
 import { merge } from "immutable";
-import { css, html, nothing, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { cache } from "lit/directives/cache.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import { styles } from "./styles";
+import type * as QATypes from "./types";
+import { renderReplay } from "./ui/replay";
+import { renderResources } from "./ui/resources";
+import { renderScreenshots } from "./ui/screenshots";
+import { renderText } from "./ui/text";
+
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { BadgeVariant } from "@/components/ui/badge";
-import { TWO_COL_SCREEN_MIN_CSS } from "@/components/ui/tab-list";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
@@ -36,19 +43,12 @@ import { type AuthState } from "@/utils/AuthService";
 import { renderName } from "@/utils/crawler";
 
 const DEFAULT_PAGE_SIZE = 100;
-const TABS = ["screenshots", "text", "resources", "replay"] as const;
-export type QATab = (typeof TABS)[number];
 
-const tabToPrefix: Record<QATab, string> = {
+const tabToPrefix: Record<QATypes.QATab, string> = {
   screenshots: "view",
   text: "text",
   resources: "pageinfo",
   replay: "",
-};
-
-type GoodBad = {
-  good: number;
-  bad: number;
 };
 
 const resourceTypes = [
@@ -72,12 +72,7 @@ const resourceTypes = [
   "other",
 ];
 
-type BlobPayload = { blobUrl: string };
-type TextPayload = { text: string };
-type ReplayPayload = { replayUrl: string };
-type ResourcesPayload = { resources: string };
-type ReplayData = BlobPayload & TextPayload & ReplayPayload & ResourcesPayload;
-const initialReplayData: ReplayData = {
+const initialReplayData: QATypes.ReplayData = {
   blobUrl: "",
   text: "",
   replayUrl: "",
@@ -87,59 +82,7 @@ const initialReplayData: ReplayData = {
 @localized()
 @customElement("btrix-archived-item-qa")
 export class ArchivedItemQA extends TailwindElement {
-  static styles = css`
-    article {
-      /* TODO calculate screen space instead of hardcoding */
-      height: 100vh;
-      grid-template:
-        "mainHeader"
-        "main"
-        "pageListHeader"
-        "pageList";
-      grid-template-columns: 100%;
-      grid-template-rows: repeat(4, max-content);
-      min-height: 0;
-    }
-
-    article > * {
-      min-height: 0;
-    }
-
-    @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
-      article {
-        grid-template:
-          "mainHeader pageListHeader"
-          "main pageList";
-        grid-template-columns: 1fr 35rem;
-        grid-template-rows: min-content 1fr;
-      }
-    }
-
-    .mainHeader {
-      grid-area: mainHeader;
-    }
-
-    .pageListHeader {
-      grid-area: pageListHeader;
-    }
-
-    .main {
-      grid-area: main;
-    }
-
-    .pageList {
-      grid-area: pageList;
-    }
-
-    sl-image-comparer::part(divider) {
-      background-color: yellow;
-      /* mix-blend-mode: difference; */
-    }
-
-    sl-image-comparer::part(handle) {
-      background-color: red;
-    }
-  `;
+  static styles = styles;
 
   @property({ type: Object })
   authState?: AuthState;
@@ -160,7 +103,7 @@ export class ArchivedItemQA extends TailwindElement {
   isCrawler = false;
 
   @property({ type: String })
-  tab: QATab = "screenshots";
+  tab: QATypes.QATab = "screenshots";
 
   @state()
   private item?: ArchivedItem;
@@ -521,144 +464,27 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private renderSections() {
+    // cache DOM for faster switching between tabs
+    const choosePanel = () => {
+      switch (this.tab) {
+        case "screenshots":
+          return renderScreenshots(this.crawlData, this.qaData);
+        case "text":
+          return renderText(this.crawlData, this.qaData);
+        case "resources":
+          return renderResources(this.crawlData, this.qaData);
+        case "replay":
+          return renderReplay(this.crawlData);
+        default:
+          break;
+      }
+    };
     return html`
       <section aria-labelledby="${this.tab}-tab">
-        ${choose(this.tab, [
-          ["screenshots", this.renderScreenshots],
-          ["text", this.renderText],
-          ["resources", this.renderResources],
-          ["replay", this.renderReplay],
-        ])}
+        ${cache(choosePanel())}
       </section>
     `;
   }
-
-  private readonly renderSpinner = () =>
-    html`<div class="flex h-full w-full items-center justify-center text-2xl">
-      <sl-spinner></sl-spinner>
-    </div>`;
-
-  private readonly renderScreenshots = () => {
-    return html`
-      ${guard(
-        [`${this.crawlData.blobUrl}${this.qaData.blobUrl}`],
-        () => html`
-          <div class="mb-2 flex justify-between text-base font-medium">
-            <h3 id="crawlScreenshotHeading">${msg("Crawl Screenshot")}</h3>
-            <h3 id="replayScreenshotHeading">${msg("Replay Screenshot")}</h3>
-          </div>
-          <div class="aspect-video overflow-hidden rounded border bg-slate-50">
-            ${when(
-              this.crawlData.blobUrl && this.qaData.blobUrl,
-              () => html`
-                <sl-image-comparer>
-                  <img
-                    slot="before"
-                    src="${this.crawlData.blobUrl || ""}"
-                    aria-labelledby="crawlScreenshotHeading"
-                  />
-                  <img
-                    slot="after"
-                    src="${this.qaData.blobUrl || ""}"
-                    aria-labelledby="replayScreenshotHeading"
-                  />
-                </sl-image-comparer>
-              `,
-              this.renderSpinner,
-            )}
-          </div>
-        `,
-      )}
-    `;
-  };
-
-  private readonly renderText = () => {
-    if (!this.page) return; // TODO loading indicator
-
-    const renderSpinner = () =>
-      html`<div class="flex h-full w-full items-center justify-center text-2xl">
-        <sl-spinner></sl-spinner>
-      </div>`;
-
-    return html`
-      <div class="mb-2 flex justify-between text-base font-medium">
-        <h3 id="crawlTextHeading">${msg("Crawl Text")}</h3>
-        <h3 id="replayTextHeading">${msg("Replay Text")}</h3>
-      </div>
-      <div class="flex rounded border bg-slate-50">
-        <div
-          class="aspect-video h-full flex-1 overflow-auto whitespace-pre-line p-4 outline -outline-offset-2 outline-green-400"
-          style="max-width: 50%"
-          name="crawlText"
-          aria-labelledby="crawlTextHeading"
-        >
-          ${this.crawlData ? this.crawlData.text : renderSpinner()}
-        </div>
-        <div
-          class="aspect-video h-full flex-1 overflow-auto whitespace-pre-line p-4 outline -outline-offset-2 outline-yellow-400"
-          style="max-width: 50%"
-          name="replayText"
-          aria-labelledby="replayTextHeading"
-        >
-          ${this.qaData ? this.qaData.text : renderSpinner()}
-        </div>
-      </div>
-    `;
-  };
-
-  private readonly renderResources = () => {
-    if (!this.page) return; // TODO loading indicator
-
-    const renderSpinner = () =>
-      html`<div class="flex h-full w-full items-center justify-center text-2xl">
-        <sl-spinner></sl-spinner>
-      </div>`;
-
-    return html`
-      <div class="mb-2 flex justify-between text-base font-medium">
-        <h3 id="crawlResourcesHeading">${msg("Crawl Resources")}</h3>
-        <h3 id="replayResourcesHeading">${msg("Replay Resources")}</h3>
-      </div>
-      <div class="flex rounded border bg-slate-50">
-        <div
-          class="aspect-video h-full flex-1 overflow-auto whitespace-pre-line p-4 outline -outline-offset-2 outline-green-400"
-          style="max-width: 50%"
-          name="crawlResources"
-          aria-labelledby="crawlResourcesHeading"
-        >
-          ${this.crawlData ? this.crawlData.resources : renderSpinner()}
-        </div>
-        <div
-          class="aspect-video h-full flex-1 overflow-auto whitespace-pre-line p-4 outline -outline-offset-2 outline-yellow-400"
-          style="max-width: 50%"
-          name="replayResources"
-          aria-labelledby="replayResourcesHeading"
-        >
-          ${this.qaData ? this.qaData.resources : renderSpinner()}
-        </div>
-      </div>
-    `;
-  };
-
-  private readonly renderReplay = () => {
-    return html`
-      <div
-        class="relative aspect-video overflow-hidden rounded-b-lg border-x border-b"
-      >
-        ${guard(
-          [this.crawlData],
-          () => html`
-            ${when(this.crawlData.replayUrl, () => {
-              return html`<iframe
-                src=${this.crawlData.replayUrl}
-                class="h-full w-full outline"
-              ></iframe>`;
-            })}
-          `,
-        )}
-      </div>
-    `;
-  };
 
   private readonly renderRWP = (
     rwpId = this.itemId,
@@ -671,7 +497,7 @@ export class ArchivedItemQA extends TailwindElement {
     const config = JSON.stringify({ headers });
 
     return guard(
-      [replaySource, rwpId, config, url],
+      [this.itemId, this.page, this.authState],
       () => html`
         <replay-web-page
           source="${replaySource}"
@@ -783,9 +609,13 @@ export class ArchivedItemQA extends TailwindElement {
     const pageUrl = this.page.url;
 
     const doLoad = async <
-      T = BlobPayload | TextPayload | ReplayPayload | ResourcesPayload,
+      T =
+        | QATypes.BlobPayload
+        | QATypes.TextPayload
+        | QATypes.ReplayPayload
+        | QATypes.ResourcesPayload,
     >(
-      tab: QATab,
+      tab: QATypes.QATab,
       replayId: string,
     ): Promise<T> => {
       const urlPrefix = tabToPrefix[tab];
@@ -806,7 +636,7 @@ export class ArchivedItemQA extends TailwindElement {
         const json = await resp.json();
         // console.log(json);
 
-        const typeMap = new Map<string, GoodBad>();
+        const typeMap = new Map<string, QATypes.GoodBad>();
         resourceTypes.forEach((x) => typeMap.set(x, { good: 0, bad: 0 }));
         let good = 0,
           bad = 0;
