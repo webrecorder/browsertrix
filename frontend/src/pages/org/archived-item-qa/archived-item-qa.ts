@@ -76,7 +76,7 @@ const initialReplayData: QATypes.ReplayData = {
   blobUrl: "",
   text: "",
   replayUrl: "",
-  resources: "",
+  resources: {},
 };
 
 @localized()
@@ -621,6 +621,7 @@ export class ArchivedItemQA extends TailwindElement {
       const urlPrefix = tabToPrefix[tab];
       const urlPart = `${timestamp}mp_/${urlPrefix ? `urn:${urlPrefix}:` : ""}${pageUrl}`;
       const url = `/replay/w/${replayId}/${urlPart}`;
+      // TODO check status code
       const resp = await frameWindow.fetch(url);
 
       if (tab === "screenshots") {
@@ -668,13 +669,13 @@ export class ArchivedItemQA extends TailwindElement {
 
         typeMap.set("Total", { good, bad });
 
-        const text = JSON.stringify(
-          Object.fromEntries(typeMap.entries()),
-          null,
-          2,
-        );
+        // const text = JSON.stringify(
+        //   Object.fromEntries(typeMap.entries()),
+        //   null,
+        //   2,
+        // );
 
-        return { resources: text } as T;
+        return { resources: Object.fromEntries(typeMap.entries()) } as T;
       }
       return { text: "" } as T;
     };

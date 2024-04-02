@@ -9,7 +9,7 @@ export type GoodBad = {
 export type BlobPayload = { blobUrl: string };
 export type TextPayload = { text: string };
 export type ReplayPayload = { replayUrl: string };
-export type ResourcesPayload = { resources: string };
+export type ResourcesPayload = { resources: { [key: string]: GoodBad } };
 export type ReplayData = BlobPayload &
   TextPayload &
   ReplayPayload &

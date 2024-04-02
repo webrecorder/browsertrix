@@ -4,10 +4,12 @@ import { when } from "lit/directives/when.js";
 
 import type { ReplayData } from "../types";
 
+import { tw } from "@/utils/tailwind";
+
 export function renderReplay(crawlData: ReplayData) {
   return html`
     <div
-      class="relative aspect-video overflow-hidden rounded-b-lg border-x border-b"
+      class=${tw`relative aspect-video overflow-hidden rounded-b-lg border-x border-b`}
     >
       ${guard(
         [crawlData],
@@ -15,7 +17,7 @@ export function renderReplay(crawlData: ReplayData) {
           ${when(crawlData.replayUrl, () => {
             return html`<iframe
               src=${crawlData.replayUrl}
-              class="h-full w-full outline"
+              class=${tw`h-full w-full outline`}
             ></iframe>`;
           })}
         `,

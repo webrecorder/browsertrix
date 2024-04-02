@@ -29,6 +29,7 @@
     "copy-webpack-plugin": "^9.1.0",
     "css-loader": "^6.3.0",
     "del-cli": "^4.0.1",
+    "diff": "^5.2.0",
     "dotenv": "^10.0.0",
     "dotenv-webpack": "^7.0.3",
     "eslint": "^8.56.0",
@@ -96,6 +97,7 @@
   },
   "devDependencies": {
     "@lit/localize-tools": "^0.7.1",
+    "@types/diff": "^5.0.9",
     "@web/dev-server-esbuild": "^0.3.3",
     "@web/dev-server-import-maps": "^0.2.0",
     "@web/dev-server-rollup": "^0.6.1",
