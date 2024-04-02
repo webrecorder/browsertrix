@@ -74,15 +74,13 @@ const resourceTypes = [
 
 type BlobPayload = { blobUrl: string };
 type TextPayload = { text: string };
-type StatusPayload = { statusCode: number };
-type ReplayData = {
-  blobUrl: BlobPayload["blobUrl"];
-  text: TextPayload["text"];
-  resources: TextPayload["text"];
-};
+type ReplayPayload = { replayUrl: string };
+type ResourcesPayload = { resources: string };
+type ReplayData = BlobPayload & TextPayload & ReplayPayload & ResourcesPayload;
 const initialReplayData: ReplayData = {
   blobUrl: "",
   text: "",
+  replayUrl: "",
   resources: "",
 };
 
@@ -230,9 +228,11 @@ export class ArchivedItemQA extends TailwindElement {
 
     if (
       changedProperties.get("page") ||
+      changedProperties.get("tab") ||
       (changedProperties.has("hiddenIframeLoaded") && this.hiddenIframeLoaded)
     ) {
-      void this.fetchContent();
+      // TODO prefetch content for other tabs
+      void this.fetchContentForTab();
     }
   }
 
@@ -641,28 +641,21 @@ export class ArchivedItemQA extends TailwindElement {
   };
 
   private readonly renderReplay = () => {
-    const timestamp = this.page?.ts?.split(".")[0].replace(/\D/g, "");
-    const pageUrl = this.page?.url;
-    console.log(
-      "crawlReplayPageReady:",
-      this.crawlReplayPageReady,
-      timestamp,
-      pageUrl,
-    );
-
     return html`
       <div
         class="relative aspect-video overflow-hidden rounded-b-lg border-x border-b"
       >
-        ${when(timestamp && pageUrl, () => {
-          const urlPart = `${timestamp}mp_/${pageUrl}`;
-          const url = `/replay/w/${this.itemId}/${urlPart}`;
-          console.log("url 2:", url);
-          return html`<iframe
-            src=${url}
-            class="h-full w-full outline"
-          ></iframe>`;
-        })}
+        ${guard(
+          [this.crawlData],
+          () => html`
+            ${when(this.crawlData.replayUrl, () => {
+              return html`<iframe
+                src=${this.crawlData.replayUrl}
+                class="h-full w-full outline"
+              ></iframe>`;
+            })}
+          `,
+        )}
       </div>
     `;
   };
@@ -775,14 +768,7 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
-  private async resetData(dataType: "crawlData" | "qaData") {
-    if (this[dataType].blobUrl) {
-      URL.revokeObjectURL(this[dataType].blobUrl);
-    }
-    this[dataType] = initialReplayData;
-  }
-
-  private async fetchContent(): Promise<void> {
+  private async fetchContentForTab(): Promise<void> {
     if (!this.page || !this.hiddenIframeLoaded) {
       return;
     }
@@ -796,7 +782,9 @@ export class ArchivedItemQA extends TailwindElement {
     const timestamp = this.page.ts?.split(".")[0].replace(/\D/g, "");
     const pageUrl = this.page.url;
 
-    const doLoad = async <T = BlobPayload | TextPayload | StatusPayload>(
+    const doLoad = async <
+      T = BlobPayload | TextPayload | ReplayPayload | ResourcesPayload,
+    >(
       tab: QATab,
       replayId: string,
     ): Promise<T> => {
@@ -813,11 +801,10 @@ export class ArchivedItemQA extends TailwindElement {
         const text = await resp.text();
         return { text } as T;
       } else if (tab === "replay") {
-        console.log("url 1:", url);
-        return { statusCode: resp.status } as T;
+        return { replayUrl: resp.url } as T;
       } else if (tab === "resources") {
         const json = await resp.json();
-        console.log(json);
+        // console.log(json);
 
         const typeMap = new Map<string, GoodBad>();
         resourceTypes.forEach((x) => typeMap.set(x, { good: 0, bad: 0 }));
@@ -857,35 +844,29 @@ export class ArchivedItemQA extends TailwindElement {
           2,
         );
 
-        return { text } as T;
+        return { resources: text } as T;
       }
       return { text: "" } as T;
     };
 
     if (this.itemId) {
-      if (this.crawlData.blobUrl) {
-        this.resetData("crawlData");
+      if (this.tab === "screenshots" && this.crawlData.blobUrl) {
+        URL.revokeObjectURL(this.crawlData.blobUrl);
       }
+      const content = await doLoad(this.tab, this.itemId);
       this.crawlData = {
-        blobUrl: (await doLoad<BlobPayload>("screenshots", this.itemId))
-          .blobUrl,
-        text: (await doLoad<TextPayload>("text", this.itemId)).text,
-        resources: (await doLoad<TextPayload>("resources", this.itemId)).text,
+        ...this.crawlData,
+        ...content,
       };
-
-      // Load page for replay tab
-      const data = await await doLoad<StatusPayload>("replay", this.itemId);
-      this.crawlReplayPageReady = data.statusCode === 200;
     }
     if (this.qaRunId) {
-      if (this.qaData.blobUrl) {
-        this.resetData("qaData");
+      if (this.tab === "screenshots" && this.qaData.blobUrl) {
+        URL.revokeObjectURL(this.qaData.blobUrl);
       }
+      const content = await doLoad(this.tab, this.qaRunId);
       this.qaData = {
-        blobUrl: (await doLoad<BlobPayload>("screenshots", this.qaRunId))
-          .blobUrl,
-        text: (await doLoad<TextPayload>("text", this.qaRunId)).text,
-        resources: (await doLoad<TextPayload>("resources", this.qaRunId)).text,
+        ...this.qaData,
+        ...content,
       };
     }
   }
