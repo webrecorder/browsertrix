@@ -58,15 +58,15 @@ function renderDiff(
 export function renderText(crawlData: ReplayData, qaData: ReplayData) {
   return html`
     <div class=${tw`mb-2 flex justify-between text-base font-medium`}>
-      <h3 id="crawlTextHeading">${msg("Crawl Text")}</h3>
-      <h3 id="replayTextHeading">${msg("Replay Text")}</h3>
+      <h3 id="qaTextHeading">${msg("Crawl Text")}</h3>
+      <h3 id="crawlTextHeading">${msg("Replay Text")}</h3>
     </div>
     ${guard(
       [crawlData, qaData],
       () => html`
         <div class=${tw`flex border placeholder:rounded`}>
           ${when(crawlData?.text && qaData?.text, () =>
-            renderDiff(crawlData!.text!, qaData!.text!),
+            renderDiff(qaData!.text!, crawlData!.text!),
           )}
         </div>
       `,

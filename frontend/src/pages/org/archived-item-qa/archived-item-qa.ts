@@ -3,7 +3,7 @@ import { merge } from "immutable";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
-import { choose } from "lit/directives/choose.js";
+// import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
@@ -495,29 +495,34 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private renderToolbar() {
+    // TODO
+    const buttons = nothing;
+    // html`
+    // <div class="ml-1 flex">
+    //       ${choose(this.tab, [
+    //         [
+    //           "replay",
+    //           () => html`
+    //             <sl-icon-button name="arrow-clockwise"></sl-icon-button>
+    //           `,
+    //         ],
+    //         [
+    //           "screenshots",
+    //           () => html`
+    //             <sl-icon-button name="intersect"></sl-icon-button>
+    //             <sl-icon-button name="vr"></sl-icon-button>
+    //           `,
+    //         ],
+    //       ])}
+    //     </div>
+    // `
     return html`
       <div
         class="${this.tab === "replay"
           ? "rounded-t-lg m2-2"
           : "rounded-lg my-2"} flex h-12 items-center border bg-neutral-50 text-base"
       >
-        <div class="ml-1 flex">
-          ${choose(this.tab, [
-            [
-              "replay",
-              () => html`
-                <sl-icon-button name="arrow-clockwise"></sl-icon-button>
-              `,
-            ],
-            [
-              "screenshots",
-              () => html`
-                <sl-icon-button name="intersect"></sl-icon-button>
-                <sl-icon-button name="vr"></sl-icon-button>
-              `,
-            ],
-          ])}
-        </div>
+        ${buttons}
         <div
           class="mx-1.5 flex h-8 min-w-0 flex-1 items-center justify-between gap-2 overflow-hidden whitespace-nowrap rounded border bg-neutral-0 px-2 text-sm"
         >
@@ -786,7 +791,11 @@ export class ArchivedItemQA extends TailwindElement {
     } catch (e: unknown) {
       console.log("[debug] error:", e);
       if (e === 404) {
-        // TODO
+        if (qa) {
+          this.qaData = {};
+        } else {
+          this.crawlData = {};
+        }
       }
     }
   }

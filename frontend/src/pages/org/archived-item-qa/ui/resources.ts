@@ -56,15 +56,15 @@ function renderDiff(
 export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
   return html`
     <div class=${tw`mb-2 flex justify-between text-base font-medium`}>
+      <h3 id="qaResourcesHeading">${msg("QA Resources")}</h3>
       <h3 id="crawlResourcesHeading">${msg("Crawl Resources")}</h3>
-      <h3 id="replayResourcesHeading">${msg("Replay Resources")}</h3>
     </div>
     ${guard(
       [crawlData, qaData],
       () => html`
         <div class=${tw`flex border placeholder:rounded`}>
           ${when(crawlData?.resources && qaData?.resources, () =>
-            renderDiff(crawlData!.resources!, qaData!.resources!),
+            renderDiff(qaData!.resources!, crawlData!.resources!),
           )}
         </div>
       `,

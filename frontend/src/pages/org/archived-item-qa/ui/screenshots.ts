@@ -7,52 +7,74 @@ import type { ReplayData } from "../types";
 
 import { renderSpinner } from "./spinner";
 
+import { tw } from "@/utils/tailwind";
+
+function image(data: ReplayData) {
+  if (!data?.blobUrl) {
+    return html`<div
+      class=${tw`flex h-full w-full flex-col items-center justify-center gap-2 text-xs text-neutral-500`}
+    >
+      <sl-icon name="slash-circle"></sl-icon>
+      ${msg("Screenshot not available")}
+    </div>`;
+  }
+  return html` <img class=${tw`h-full w-full`} src=${data.blobUrl} /> `;
+}
+
 export function renderScreenshots(crawlData: ReplayData, qaData: ReplayData) {
   return html`
     ${guard(
       [crawlData, qaData],
       () => html`
-        <div class="mb-2 flex justify-between text-base font-medium">
-          <h3 id="crawlScreenshotHeading">${msg("Crawl Screenshot")}</h3>
-          <h3 id="replayScreenshotHeading">${msg("Replay Screenshot")}</h3>
+        <div class=${tw`flex flex-col gap-2 md:flex-row`}>
+          <div class=${tw`flex-1`}>
+            <h3
+              id="qaScreenshotHeading"
+              class=${tw`mb-2 flex text-base font-medium`}
+            >
+              ${msg("Crawl Screenshot")}
+            </h3>
+            <div
+              class=${tw`aspect-video flex-1 overflow-hidden rounded-lg border bg-slate-50 shadow-sm`}
+              aria-labelledby="qaScreenshotHeading"
+            >
+              ${when(qaData, image, renderSpinner)}
+            </div>
+          </div>
+          <div class=${tw`flex-1`}>
+            <h3
+              id="crawlScreenshotHeading"
+              class=${tw`mb-2 flex text-base font-medium`}
+            >
+              ${msg("Replay Screenshot")}
+            </h3>
+            <div
+              class=${tw`aspect-video flex-1 overflow-hidden rounded-lg border bg-slate-50 shadow-sm`}
+              aria-labelledby="crawlScreenshotHeading"
+            >
+              ${when(crawlData, image, renderSpinner)}
+            </div>
+          </div>
         </div>
-        <div class=" overflow-hidden rounded border bg-slate-50">
-          ${when(
-            crawlData?.blobUrl && qaData?.blobUrl,
-            () =>
-              html` <div class="flex">
-                <div class="aspect-video flex-1">
-                  <img
-                    class="flex-1"
-                    src="${crawlData?.blobUrl || ""}"
-                    aria-labelledby="crawlScreenshotHeading"
-                  />
-                </div>
-                <div class="aspect-video flex-1">
-                  <img
-                    class="flex-1"
-                    src="${qaData?.blobUrl || ""}"
-                    aria-labelledby="replayScreenshotHeading"
-                  />
-                </div>
-              </div>`,
-            // html`
-            //   <sl-image-comparer>
-            //     <img
-            //       slot="before"
-            //       src="${crawlData?.blobUrl || ""}"
-            //       aria-labelledby="crawlScreenshotHeading"
-            //     />
-            //     <img
-            //       slot="after"
-            //       src="${qaData?.blobUrl || ""}"
-            //       aria-labelledby="replayScreenshotHeading"
-            //     />
-            //   </sl-image-comparer>
-            // `
-            renderSpinner,
-          )}
-        </div>
+
+        ${when(
+          crawlData && qaData,
+          () => {},
+          // html`
+          //   <sl-image-comparer>
+          //     <img
+          //       slot="before"
+          //       src="${crawlData?.blobUrl || ""}"
+          //       aria-labelledby="crawlScreenshotHeading"
+          //     />
+          //     <img
+          //       slot="after"
+          //       src="${qaData?.blobUrl || ""}"
+          //       aria-labelledby="replayScreenshotHeading"
+          //     />
+          //   </sl-image-comparer>
+          // `
+        )}
       `,
     )}
   `;
