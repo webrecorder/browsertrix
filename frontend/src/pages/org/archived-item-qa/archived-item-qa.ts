@@ -505,14 +505,21 @@ export class ArchivedItemQA extends TailwindElement {
           [
             "screenshots",
             () => html`
-              <sl-icon-button
-                name="intersect"
-                @click="${() => (this.splitView = true)}"
-              ></sl-icon-button>
-              <sl-icon-button
-                name="vr"
-                @click="${() => (this.splitView = false)}"
-              ></sl-icon-button>
+              <sl-tooltip
+                content=${msg("Toggle split view")}
+                placement="bottom-start"
+              >
+                <btrix-button
+                  icon
+                  variant=${this.splitView ? "primary" : "neutral"}
+                >
+                  <sl-icon
+                    name="vr"
+                    label=${msg("Split view")}
+                    @click="${() => (this.splitView = !this.splitView)}"
+                  ></sl-icon>
+                </btrix-button>
+              </sl-tooltip>
             `,
           ],
         ])}

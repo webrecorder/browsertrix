@@ -23,7 +23,7 @@ function renderDiff(
 
       return html`
         <div
-          class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg p-4`}
+          class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg border-dashed p-4 first-of-type:border-r`}
           aria-labelledby="crawlResourcesHeading"
         >
           ${diff.map((part) => {
@@ -40,7 +40,7 @@ function renderDiff(
           })}
         </div>
         <div
-          class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg border-r border-dashed p-4`}
+          class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg border-dashed p-4 first-of-type:border-r`}
           aria-labelledby="qaResourcesHeading"
         >
           ${diff.map((part) => {
