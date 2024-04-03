@@ -315,12 +315,23 @@ export class ArchivedItemQA extends TailwindElement {
               }}
             ></btrix-qa-run-dropdown>
           </div>
-          <sl-button
-            size="small"
-            href=${`${crawlBaseUrl}#qa`}
-            @click=${this.navigate.link}
-            >${msg("Done Reviewing")}</sl-button
-          >
+          <div>
+            <sl-button
+              size="small"
+              variant="text"
+              href=${`${crawlBaseUrl}#qa`}
+              @click=${this.navigate.link}
+              >${msg("Exit Review")}</sl-button
+            >
+            <sl-button
+              variant="success"
+              size="small"
+              href=${`${crawlBaseUrl}#qa`}
+            >
+              <sl-icon name="patch-check" slot="prefix"></sl-icon>
+              ${msg("Finish Review")}</sl-button
+            >
+          </div>
         </header>
 
         <div

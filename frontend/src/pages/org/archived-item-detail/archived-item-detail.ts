@@ -459,9 +459,6 @@ export class ArchivedItemDetail extends TailwindElement {
               iconLibrary: "default",
               icon: "clipboard2-data-fill",
               label: msg("QA"),
-              detail: html`
-                <btrix-badge variant="primary">${msg("Ready")}</btrix-badge>
-              `,
             })}
           `,
         )}
