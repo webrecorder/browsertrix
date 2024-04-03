@@ -202,12 +202,17 @@ export class ArchivedItemQA extends TailwindElement {
     if (changedProperties.has("itemId") && this.itemId) {
       void this.initItem();
     } else if (
-      changedProperties.get("filterPagesBy") ??
-      changedProperties.get("sortPagesBy")
+      changedProperties.get("filterPagesBy") ||
+      changedProperties.get("sortPagesBy") ||
+      changedProperties.get("qaRunId")
     ) {
       void this.fetchPages();
     }
-    if (changedProperties.has("itemPageId") && this.itemPageId) {
+    if (
+      (changedProperties.has("itemPageId") ||
+        changedProperties.get("qaRunId")) &&
+      this.itemPageId
+    ) {
       void this.fetchPage();
     }
     // Re-fetch when tab, archived item page, or QA run ID changes
