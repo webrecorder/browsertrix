@@ -329,10 +329,11 @@ export class ArchivedItemQA extends TailwindElement {
               >${msg("Exit Review")}</sl-button
             >
             <sl-button
-              variant="primary"
+              variant="success"
               size="small"
               @click=${() => this.reviewDialog?.show()}
             >
+              <sl-icon slot="prefix" name="patch-check"> </sl-icon>
               ${this.item?.reviewStatus
                 ? msg("Update Review")
                 : msg("Finish Review")}</sl-button
