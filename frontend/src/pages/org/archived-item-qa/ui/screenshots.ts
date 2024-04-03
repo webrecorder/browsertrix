@@ -28,30 +28,30 @@ export function renderScreenshots(crawlData: ReplayData, qaData: ReplayData) {
       <div class=${tw`flex flex-col gap-2 md:flex-row`}>
         <div class=${tw`flex-1`}>
           <h3
-            id="qaScreenshotHeading"
+            id="crawlScreenshotHeading"
             class=${tw`mb-2 flex text-base font-medium`}
           >
             ${msg("Crawl Screenshot")}
           </h3>
           <div
             class=${tw`aspect-video flex-1 overflow-hidden rounded-lg border bg-slate-50 shadow-sm`}
-            aria-labelledby="qaScreenshotHeading"
+            aria-labelledby="crawlScreenshotHeading"
           >
-            ${when(qaData, image, renderSpinner)}
+            ${when(crawlData, image, renderSpinner)}
           </div>
         </div>
         <div class=${tw`flex-1`}>
           <h3
-            id="crawlScreenshotHeading"
+            id="qaScreenshotHeading"
             class=${tw`mb-2 flex text-base font-medium`}
           >
-            ${msg("Replay Screenshot")}
+            ${msg("QA Screenshot")}
           </h3>
           <div
             class=${tw`aspect-video flex-1 overflow-hidden rounded-lg border bg-slate-50 shadow-sm`}
-            aria-labelledby="crawlScreenshotHeading"
+            aria-labelledby="qaScreenshotHeading"
           >
-            ${when(crawlData, image, renderSpinner)}
+            ${when(qaData, image, renderSpinner)}
           </div>
         </div>
       </div>

@@ -16,29 +16,12 @@ function renderDiff(
 ) {
   return until(
     diffImport.then(({ diffJson }) => {
-      const diff = diffJson(qaResources, crawlResources);
+      const diff = diffJson(crawlResources, qaResources);
 
       const addedText = tw`bg-red-100 text-red-700`;
       const removedText = tw`bg-red-100 text-red-100`;
 
       return html`
-        <div
-          class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg border-r border-dashed p-4`}
-          aria-labelledby="qaResourcesHeading"
-        >
-          ${diff.map((part) => {
-            return html`
-              <span
-                class=${part.added
-                  ? removedText
-                  : part.removed
-                    ? addedText
-                    : ""}
-                >${part.value}</span
-              >
-            `;
-          })}
-        </div>
         <div
           class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg p-4`}
           aria-labelledby="crawlResourcesHeading"
@@ -56,6 +39,23 @@ function renderDiff(
             `;
           })}
         </div>
+        <div
+          class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg border-r border-dashed p-4`}
+          aria-labelledby="qaResourcesHeading"
+        >
+          ${diff.map((part) => {
+            return html`
+              <span
+                class=${part.added
+                  ? removedText
+                  : part.removed
+                    ? addedText
+                    : ""}
+                >${part.value}</span
+              >
+            `;
+          })}
+        </div>
       `;
     }),
   );
@@ -65,11 +65,11 @@ export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
   return html`
     <div class=${tw`flex h-full flex-col outline`}>
       <div class=${tw`mb-2 flex text-base font-medium`}>
-        <h3 id="qaResourcesHeading" class=${tw`flex-1`}>
+        <h3 id="crawlResourcesHeading" class=${tw`flex-1`}>
           ${msg("Crawl Resources")}
         </h3>
-        <h3 id="crawlResourcesHeading" class=${tw`flex-1`}>
-          ${msg("Replay Resources")}
+        <h3 id="qaResourcesHeading" class=${tw`flex-1`}>
+          ${msg("QA Resources")}
         </h3>
       </div>
       <div
