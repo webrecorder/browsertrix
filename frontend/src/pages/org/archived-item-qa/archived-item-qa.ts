@@ -180,10 +180,10 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private onWindowMessage = (event: MessageEvent) => {
-    const sourceLoc = (event.source as Window).location.href;
+    const sourceLoc = (event.source as Window | null)?.location.href;
 
     // ensure its an rwp frame
-    if (sourceLoc.indexOf("?source=") > 0) {
+    if (sourceLoc && sourceLoc.indexOf("?source=") > 0) {
       this.handleRwpMessage(sourceLoc);
     }
   };
@@ -910,7 +910,7 @@ export class ArchivedItemQA extends TailwindElement {
       if (e === 404) {
         let hasEndpoint = false;
         try {
-          const resp = await frameWindow.fetch(`/replay/w//api/c/${sourceId}`);
+          const resp = await frameWindow.fetch(`/replay/w/api/c/${sourceId}`);
           hasEndpoint = !!resp.ok;
         } catch (e) {
           hasEndpoint = false;
