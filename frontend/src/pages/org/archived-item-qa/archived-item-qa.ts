@@ -117,6 +117,15 @@ export class ArchivedItemQA extends TailwindElement {
   @state()
   private qaData: QATypes.ReplayData = null;
 
+  // indicate whether the crawl / qa endpoints have been registered in SW
+  // if not, requires loading via <replay-web-page>
+  // endpoints may be registered but crawlData / qaData may still be missing
+  @state()
+  private crawlDataRegistered = false;
+
+  @state()
+  private qaDataRegistered = false;
+
   @state()
   private splitView = true;
 
@@ -159,6 +168,7 @@ export class ArchivedItemQA extends TailwindElement {
         // window.addEventListener("message", this.onWindowMessage);
       }
     });
+
     window.addEventListener("message", this.onWindowMessage);
   }
 
@@ -187,18 +197,21 @@ export class ArchivedItemQA extends TailwindElement {
   private async handleRwpMessage(sourceLoc: string) {
     console.log("[debug] handleRwpMessage", sourceLoc);
     // check if has /qa/ in path, then QA
-    if (sourceLoc.indexOf("%2Fqa%2F") >= 0) {
+    if (sourceLoc.indexOf("%2Fqa%2F") >= 0 && !this.qaDataRegistered) {
+      this.qaDataRegistered = true;
       console.log("[debug] onWindowMessage qa", this.qaData);
       await this.fetchContentForTab({ qa: true });
+      await this.updateComplete;
       // otherwise main crawl replay
-    } else {
+    } else if (!this.crawlDataRegistered) {
+      this.crawlDataRegistered = true;
       console.log("[debug] onWindowMessage crawl", this.crawlData);
       await this.fetchContentForTab();
+      await this.updateComplete;
     }
-    await this.updateComplete;
-    if (this.crawlData && this.qaData) {
-      window.removeEventListener("message", this.onWindowMessage);
-    }
+    // if (this.crawlData && this.qaData) {
+    //   window.removeEventListener("message", this.onWindowMessage);
+    // }
   }
 
   protected async willUpdate(
@@ -526,35 +539,46 @@ export class ArchivedItemQA extends TailwindElement {
               console.debug("waiting for post message instead");
             };
         // Use iframe to access replay content
+        // Use a 'non-existent' URL on purpose so that RWP itself is not rendered,
+        // but we need a /replay iframe for proper fetch() to service worker
         return html`
           <iframe
             class="hidden"
             id="replayframe"
-            src="/replay/placeholder"
+            src="/replay/non-existent"
             @load=${onLoad}
           ></iframe>
         `;
       });
     const rwp = (reg?: ServiceWorkerRegistration) =>
       when(
-        !reg,
+        !reg || !this.crawlDataRegistered || !this.qaDataRegistered,
         () => html`
           <div class="offscreen" aria-hidden="true">
-            ${this.qaRunId
-              ? this.renderRWP(this.qaRunId, { qa: true })
-              : nothing}
-            ${this.itemId
+            ${this.itemId && !this.crawlDataRegistered
               ? this.renderRWP(this.itemId, { qa: false })
+              : nothing}
+            ${this.qaRunId && !this.qaDataRegistered
+              ? this.renderRWP(this.qaRunId, { qa: true })
               : nothing}
           </div>
         `,
       );
-    return guard([this.replaySwReg, this.page, this.qaRunId, this.itemId], () =>
-      until(
-        this.replaySwReg.then((reg) => {
-          return html`${iframe(reg)}${rwp(reg)}`;
-        }),
-      ),
+    return guard(
+      [
+        this.replaySwReg,
+        this.page,
+        this.itemId,
+        this.qaRunId,
+        this.crawlDataRegistered,
+        this.qaDataRegistered,
+      ],
+      () =>
+        until(
+          this.replaySwReg.then((reg) => {
+            return html`${iframe(reg)}${rwp(reg)}`;
+          }),
+        ),
     );
   }
 
@@ -790,7 +814,7 @@ export class ArchivedItemQA extends TailwindElement {
       }
       const resp = await frameWindow.fetch(url);
 
-      console.log("resp:", resp);
+      //console.log("resp:", resp);
 
       if (!resp.ok) {
         throw resp.status;
@@ -858,19 +882,32 @@ export class ArchivedItemQA extends TailwindElement {
           ...this.qaData,
           ...content,
         };
+        this.qaDataRegistered = true;
       } else {
         this.crawlData = {
           ...this.crawlData,
           ...content,
         };
+        this.crawlDataRegistered = true;
       }
     } catch (e: unknown) {
       console.log("[debug] error:", e);
+
+      // check if this endpoint is registered, if not, ensure re-render
       if (e === 404) {
+        let hasEndpoint = false;
+        try {
+          const resp = await frameWindow.fetch(`/replay/w//api/c/${sourceId}`);
+          hasEndpoint = !!resp.ok;
+        } catch (e) {
+          hasEndpoint = false;
+        }
         if (qa) {
-          this.qaData = {};
+          this.qaData = hasEndpoint ? {} : null;
+          this.qaDataRegistered = hasEndpoint;
         } else {
-          this.crawlData = {};
+          this.crawlData = hasEndpoint ? {} : null;
+          this.crawlDataRegistered = hasEndpoint;
         }
       }
     }
