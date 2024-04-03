@@ -68,10 +68,13 @@ export function renderQA({
   return html`
     <div class="mb-5 rounded-lg border p-4">
       <btrix-desc-list horizontal>
-        <btrix-desc-list-item label=${msg("Review Status")}>
+        <btrix-desc-list-item label=${msg("Review Result")}>
           ${when(
             reviewStatus !== undefined,
-            () => (reviewStatus ? html`${reviewStatus}` : msg("No Review")),
+            () =>
+              reviewStatus
+                ? html`<span class="capitalize">${reviewStatus}</span>`
+                : msg("None"),
             renderEmpty,
           )}
         </btrix-desc-list-item>

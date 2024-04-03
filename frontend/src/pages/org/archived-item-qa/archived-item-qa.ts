@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import { serialize } from "@shoelace-style/shoelace";
 import { merge } from "immutable";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -19,6 +20,7 @@ import { renderSeverityBadge } from "./ui/severityBadge";
 import { renderText } from "./ui/text";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import type { Dialog } from "@/components/ui/dialog";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
@@ -94,9 +96,6 @@ export class ArchivedItemQA extends TailwindElement {
   @property({ type: Boolean })
   isCrawler = false;
 
-  @property({ type: Boolean })
-  splitView = true;
-
   @property({ type: String })
   tab: QATypes.QATab = "screenshots";
 
@@ -117,6 +116,9 @@ export class ArchivedItemQA extends TailwindElement {
 
   @state()
   private qaData: QATypes.ReplayData = null;
+
+  @state()
+  private splitView = true;
 
   @state()
   filterPagesBy: {
@@ -144,6 +146,9 @@ export class ArchivedItemQA extends TailwindElement {
 
   @query("#replayframe")
   private replayFrame?: HTMLIFrameElement | null;
+
+  @query(".reviewDialog")
+  private reviewDialog?: Dialog | null;
 
   connectedCallback(): void {
     super.connectedCallback();
@@ -324,12 +329,13 @@ export class ArchivedItemQA extends TailwindElement {
               >${msg("Exit Review")}</sl-button
             >
             <sl-button
-              variant="success"
+              variant="primary"
               size="small"
-              href=${`${crawlBaseUrl}#qa`}
+              @click=${() => this.reviewDialog?.show()}
             >
-              <sl-icon name="patch-check" slot="prefix"></sl-icon>
-              ${msg("Finish Review")}</sl-button
+              ${this.item?.reviewStatus
+                ? msg("Update Review")
+                : msg("Finish Review")}</sl-button
             >
           </div>
         </header>
@@ -361,6 +367,7 @@ export class ArchivedItemQA extends TailwindElement {
               variant="primary"
               size="small"
               ?disabled=${!nextPage}
+              outline
               @click=${this.navNextPage}
             >
               <sl-icon slot="suffix" name="arrow-right"></sl-icon>
@@ -461,6 +468,49 @@ export class ArchivedItemQA extends TailwindElement {
           ></btrix-qa-page-list>
         </section>
       </article>
+      <btrix-dialog class="reviewDialog" label=${msg("Finish Review")}>
+        <form class="qaReviewForm" @submit=${this.onReviewSubmit}>
+          <sl-radio-group
+            class="mb-5"
+            name="reviewStatus"
+            label=${msg("Crawl quality assessment")}
+            value=${this.item?.reviewStatus ?? ""}
+            required
+          >
+            <sl-radio-button value="failure">
+              <sl-icon name="patch-exclamation" slot="prefix"></sl-icon>
+              ${msg("Failed")}
+            </sl-radio-button>
+            <sl-radio-button value="acceptable" checked>
+              <sl-icon name="patch-minus" slot="prefix"></sl-icon>
+              ${msg("Acceptable")}
+            </sl-radio-button>
+            <sl-radio-button value="good">
+              <sl-icon name="patch-check" slot="prefix"></sl-icon>
+              ${msg("Good")}
+            </sl-radio-button>
+          </sl-radio-group>
+          <sl-textarea
+            label=${msg("Update archived item description?")}
+            name="description"
+            value=${this.item?.description ?? ""}
+            placeholder=${msg("No description")}
+          ></sl-textarea>
+        </form>
+
+        <div slot="footer" class="flex justify-between">
+          <sl-button size="small">${msg("Cancel")}</sl-button>
+          <sl-button
+            variant="primary"
+            size="small"
+            type="submit"
+            @click=${() => this.reviewDialog?.submit()}
+          >
+            <sl-icon name="patch-check" slot="prefix"></sl-icon>
+            ${msg("Submit Review")}
+          </sl-button>
+        </div>
+      </btrix-dialog>
     `;
   }
 
@@ -870,5 +920,43 @@ export class ArchivedItemQA extends TailwindElement {
         : `/orgs/${this.orgId}/crawls/${this.itemId}/pages?${query}`,
       this.authState!,
     );
+  }
+
+  private async onReviewSubmit(e: SubmitEvent) {
+    e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    const params = serialize(form);
+
+    if (!params.reviewStatus) {
+      return;
+    }
+
+    try {
+      const data = await this.api.fetch<{ updated: boolean }>(
+        `/orgs/${this.orgId}/all-crawls/${this.itemId}`,
+        this.authState!,
+        {
+          method: "PATCH",
+          body: JSON.stringify(params),
+        },
+      );
+
+      if (!data.updated) {
+        throw data;
+      }
+
+      this.reviewDialog?.hide();
+      this.notify.toast({
+        message: msg("Submitted QA review."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e) {
+      this.notify.toast({
+        message: msg("Sorry, couldn't submit QA review at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 }
