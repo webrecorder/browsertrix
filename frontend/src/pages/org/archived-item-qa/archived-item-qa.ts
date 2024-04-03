@@ -300,7 +300,7 @@ export class ArchivedItemQA extends TailwindElement {
         >
           <div class="flex items-center gap-2 overflow-hidden">
             <h1 class="flex-1 truncate text-base font-semibold leading-tight">
-              ${msg("Reviewing")} ${itemName}
+              ${itemName}
             </h1>
             <btrix-qa-run-dropdown
               .items=${finishedQARuns}
@@ -323,7 +323,7 @@ export class ArchivedItemQA extends TailwindElement {
         <div
           class="grid--pageToolbar flex items-center justify-between overflow-hidden border-b py-2"
         >
-          <h2 class="mr-4 truncate font-semibold text-neutral-600">
+          <h2 class="mr-4 truncate text-base font-semibold text-neutral-700">
             ${this.page ? this.page.title || msg("no page title") : nothing}
           </h2>
           <div class="flex gap-4">
@@ -416,7 +416,9 @@ export class ArchivedItemQA extends TailwindElement {
         </div>
 
         <section class="grid--pageList overflow-hidden">
-          <h2 class="my-4 font-semibold leading-none text-neutral-700">
+          <h2
+            class="my-4 text-base font-semibold leading-none text-neutral-800"
+          >
             ${msg("Pages")}
           </h2>
           <btrix-qa-page-list

@@ -32,9 +32,9 @@ export function renderScreenshots(
           <div class=${tw`flex-1`}>
             <h3
               id="crawlScreenshotHeading"
-              class=${tw`mb-2 flex text-base font-medium`}
+              class=${tw`mb-2 flex font-semibold`}
             >
-              ${msg("Crawl Screenshot")}
+              ${msg("Screenshot during crawl")}
             </h3>
             <div
               class=${tw`aspect-video flex-1 overflow-hidden rounded-lg border bg-slate-50 shadow-sm`}
@@ -44,11 +44,8 @@ export function renderScreenshots(
             </div>
           </div>
           <div class=${tw`flex-1`}>
-            <h3
-              id="qaScreenshotHeading"
-              class=${tw`mb-2 flex text-base font-medium`}
-            >
-              ${msg("QA Screenshot")}
+            <h3 id="qaScreenshotHeading" class=${tw`mb-2 flex font-semibold`}>
+              ${msg("Screenshot from replay")}
             </h3>
             <div
               class=${tw`aspect-video flex-1 overflow-hidden rounded-lg border bg-slate-50 shadow-sm`}

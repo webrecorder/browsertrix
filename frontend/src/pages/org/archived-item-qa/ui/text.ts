@@ -64,9 +64,13 @@ function renderDiff(
 export function renderText(crawlData: ReplayData, qaData: ReplayData) {
   return html`
     <div class=${tw`flex h-full flex-col outline`}>
-      <div class=${tw`mb-2 flex text-base font-medium`}>
-        <h3 id="crawlTextHeading" class=${tw`flex-1`}>${msg("Craw Text")}</h3>
-        <h3 id="qaTextHeading" class=${tw`flex-1`}>${msg("QA Text")}</h3>
+      <div class=${tw`mb-2 flex font-semibold`}>
+        <h3 id="crawlTextHeading" class=${tw`flex-1`}>
+          ${msg("Text extracted during crawl")}
+        </h3>
+        <h3 id="qaTextHeading" class=${tw`flex-1`}>
+          ${msg("Text extracted from replay")}
+        </h3>
       </div>
       <div
         class=${tw`flex-1 overflow-auto overscroll-contain rounded-lg border`}

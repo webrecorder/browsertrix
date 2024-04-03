@@ -64,12 +64,12 @@ function renderDiff(
 export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
   return html`
     <div class=${tw`flex h-full flex-col outline`}>
-      <div class=${tw`mb-2 flex text-base font-medium`}>
+      <div class=${tw`mb-2 flex font-semibold`}>
         <h3 id="crawlResourcesHeading" class=${tw`flex-1`}>
-          ${msg("Crawl Resources")}
+          ${msg("Resources loaded during crawl")}
         </h3>
         <h3 id="qaResourcesHeading" class=${tw`flex-1`}>
-          ${msg("QA Resources")}
+          ${msg("Resources loaded in replay")}
         </h3>
       </div>
       <div

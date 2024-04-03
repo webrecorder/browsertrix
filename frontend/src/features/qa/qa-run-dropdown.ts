@@ -1,4 +1,4 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import type { SlSelectEvent } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
@@ -42,7 +42,7 @@ export class QaRunDropdown extends TailwindElement {
       <sl-dropdown @sl-select=${this.onSelect} distance="-2">
         <sl-button slot="trigger" variant="text" size="small" caret>
           ${selectedRun
-            ? formatDate(selectedRun.finished)
+            ? msg(str`Analysis from ${formatDate(selectedRun.finished)}`)
             : msg("Select a QA run")}
         </sl-button>
         <sl-menu>
