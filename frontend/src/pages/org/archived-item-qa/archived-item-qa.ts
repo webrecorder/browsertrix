@@ -15,14 +15,13 @@ import type * as QATypes from "./types";
 import { renderReplay } from "./ui/replay";
 import { renderResources } from "./ui/resources";
 import { renderScreenshots } from "./ui/screenshots";
+import { renderSeverityBadge } from "./ui/severityBadge";
 import { renderText } from "./ui/text";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import type { BadgeVariant } from "@/components/ui/badge";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
-import { severityFromMatch } from "@/features/qa/page-list/helpers";
 import {
   type QaFilterChangeDetail,
   type QaPaginationChangeDetail,
@@ -30,7 +29,6 @@ import {
   type SortableFieldNames,
   type SortDirection,
 } from "@/features/qa/page-list/page-list";
-import { formatPercentage } from "@/features/qa/page-list/ui/page-details";
 import { type UpdateItemPageDetail } from "@/features/qa/page-qa-toolbar";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
 import type {
@@ -363,29 +361,11 @@ export class ArchivedItemQA extends TailwindElement {
               ?active=${this.tab === "screenshots"}
               @click=${this.navigate.link}
             >
+              <sl-icon name="camera-fill"></sl-icon>
               ${msg("Screenshots")}
-              ${when(currentPage, (page) => {
-                let variant: BadgeVariant = "neutral";
-                switch (severityFromMatch(currentPage.qa.screenshotMatch)) {
-                  case "severe":
-                    variant = "danger";
-                    break;
-                  case "moderate":
-                    variant = "warning";
-                    break;
-                  case "good":
-                    variant = "success";
-                    break;
-                  default:
-                    break;
-                }
-
-                return html`
-                  <btrix-badge variant=${variant}
-                    >${formatPercentage(page.qa.screenshotMatch)}%</btrix-badge
-                  >
-                `;
-              })}
+              ${when(this.page?.qa || currentPage?.qa, (qa) =>
+                renderSeverityBadge(qa.screenshotMatch),
+              )}
             </btrix-navigation-button>
             <btrix-navigation-button
               id="text-tab"
@@ -393,7 +373,11 @@ export class ArchivedItemQA extends TailwindElement {
               ?active=${this.tab === "text"}
               @click=${this.navigate.link}
             >
+              <sl-icon name="file-text-fill"></sl-icon>
               ${msg("Text")}
+              ${when(this.page?.qa || currentPage?.qa, (qa) =>
+                renderSeverityBadge(qa.textMatch),
+              )}
             </btrix-navigation-button>
             <btrix-navigation-button
               id="text-tab"
@@ -401,6 +385,7 @@ export class ArchivedItemQA extends TailwindElement {
               ?active=${this.tab === "resources"}
               @click=${this.navigate.link}
             >
+              <sl-icon name="list-check"></sl-icon>
               ${msg("Resources")}
             </btrix-navigation-button>
             <btrix-navigation-button
@@ -409,6 +394,7 @@ export class ArchivedItemQA extends TailwindElement {
               ?active=${this.tab === "replay"}
               @click=${this.navigate.link}
             >
+              <sl-icon name="link-replay" library="app"></sl-icon>
               ${msg("Replay")}
             </btrix-navigation-button>
           </nav>
@@ -818,7 +804,9 @@ export class ArchivedItemQA extends TailwindElement {
 
   private async getPage(pageId: string): Promise<ArchivedItemQAPage> {
     return this.api.fetch<ArchivedItemQAPage>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
+      this.qaRunId
+        ? `/orgs/${this.orgId}/crawls/${this.itemId}/qa/${this.qaRunId}/pages/${pageId}`
+        : `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
       this.authState!,
     );
   }
