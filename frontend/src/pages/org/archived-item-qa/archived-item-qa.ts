@@ -464,7 +464,7 @@ export class ArchivedItemQA extends TailwindElement {
           <iframe
             class="hidden"
             id="replayframe"
-            src="/replay/"
+            src="/replay/placeholder"
             @load=${onLoad}
           ></iframe>
         `;

@@ -65,7 +65,7 @@ export function renderScreenshots(
             <img
               slot="before"
               src="${qaData?.blobUrl || ""}"
-              aria-labelledby="replayScreenshotHeading"
+              aria-labelledby="qaScreenshotHeading"
             />
           </sl-image-comparer>
         `,
