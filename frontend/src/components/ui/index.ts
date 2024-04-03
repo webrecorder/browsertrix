@@ -3,6 +3,7 @@ import "./badge";
 import "./navigation";
 
 import("./button");
+import("./card");
 import("./code");
 import("./combobox");
 import("./config-details");

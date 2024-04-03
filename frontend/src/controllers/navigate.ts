@@ -57,7 +57,7 @@ export class NavigateController implements ReactiveController {
    * ```
    * @param event Click event
    */
-  link = (event: MouseEvent, _href?: string): void => {
+  link = (event: MouseEvent, _href?: string, resetScroll = true): void => {
     if (
       // Detect keypress for opening in a new tab
       event.ctrlKey ||
@@ -75,7 +75,7 @@ export class NavigateController implements ReactiveController {
     const evt = new CustomEvent<NavigateEventDetail>(NAVIGATE_EVENT_NAME, {
       detail: {
         url: (event.currentTarget as HTMLAnchorElement).href,
-        resetScroll: true,
+        resetScroll,
       },
       bubbles: true,
       composed: true,

@@ -4,7 +4,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
-import type { QATab } from "./archived-item-qa";
+import type { QATab } from "./archived-item-qa/types";
 import type { Tab as CollectionTab } from "./collection-detail";
 import type {
   Member,
@@ -31,7 +31,7 @@ import "./workflows-list";
 import "./workflows-new";
 import "./archived-item-detail";
 import "./archived-items";
-import "./archived-item-qa";
+import "./archived-item-qa/archived-item-qa";
 import "./collections-list";
 import "./collection-detail";
 import "./browser-profiles-detail";

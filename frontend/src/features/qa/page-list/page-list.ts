@@ -95,7 +95,7 @@ export class PageList extends TailwindElement {
       changedProperties.get("pages") &&
       this.pages
     ) {
-      this.scrollContainer?.scrollTo({ top: 0 });
+      this.scrollContainer?.scrollTo({ top: 0, left: 0 });
     }
   }
 
@@ -106,7 +106,9 @@ export class PageList extends TailwindElement {
       >
         ${this.renderSortControl()} ${this.renderFilterControl()}
       </div>
-      <div class="scrollContainer relative -mx-2 overflow-y-auto px-2">
+      <div
+        class="scrollContainer relative -mx-2 overflow-y-auto overscroll-contain px-2"
+      >
         ${this.pages?.total
           ? html`
               <div
@@ -163,7 +165,7 @@ export class PageList extends TailwindElement {
           : html`<div
               class="flex flex-col items-center justify-center gap-4 py-8 text-xs text-gray-600"
             >
-              <sl-icon name="dash-circle" class="h-4 w-4"></sl-icon>
+              <sl-icon name="slash-circle"></sl-icon>
               ${msg("No matching pages found")}
             </div>`}
       </div>

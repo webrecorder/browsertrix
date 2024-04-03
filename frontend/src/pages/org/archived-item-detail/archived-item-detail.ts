@@ -1,25 +1,37 @@
 import { localized, msg, str } from "@lit/localize";
-import type { PropertyValues, TemplateResult } from "lit";
+import { css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
+import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
+import queryString from "query-string";
 
-import type { ArchivedItem, Crawl, CrawlConfig, Seed, Workflow } from "./types";
+import { renderQA } from "./ui/qa";
 
+import { TailwindElement } from "@/classes/TailwindElement";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { RelativeDuration } from "@/components/ui/relative-duration";
+import { APIController } from "@/controllers/api";
+import { NavigateController } from "@/controllers/navigate";
+import { NotifyController } from "@/controllers/notify";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
-import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
-import type { APIPaginatedList } from "@/types/api";
-import { type QARun } from "@/types/qa";
+import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type {
+  ArchivedItem,
+  ArchivedItemPage,
+  Crawl,
+  CrawlConfig,
+  Seed,
+  Workflow,
+} from "@/types/crawler";
+import type { QARun } from "@/types/qa";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { isActive } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 const SECTIONS = [
   "overview",
@@ -41,7 +53,16 @@ type SectionName = (typeof SECTIONS)[number];
  */
 @localized()
 @customElement("btrix-archived-item-detail")
-export class CrawlDetail extends LiteElement {
+export class ArchivedItemDetail extends TailwindElement {
+  static styles = css`
+    .qaPageList {
+      --btrix-cell-padding-top: var(--sl-spacing-x-small);
+      --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
+      --btrix-cell-padding-left: var(--sl-spacing-small);
+      --btrix-cell-padding-right: var(--sl-spacing-small);
+    }
+  `;
+
   @property({ type: Object })
   authState?: AuthState;
 
@@ -82,10 +103,13 @@ export class CrawlDetail extends LiteElement {
   private qaRuns?: QARun[];
 
   @state()
+  private pages?: APIPaginatedList<ArchivedItemPage>;
+
+  @state()
   private qaRunId?: string;
 
   @state()
-  private sectionName: SectionName = "overview";
+  activeTab: SectionName = "overview";
 
   @state()
   private openDialogName?: "scale" | "metadata" | "exclusions";
@@ -101,11 +125,14 @@ export class CrawlDetail extends LiteElement {
     } else if (this.crawl?.type === "crawl") {
       path = "items/crawl";
     }
-    return `${this.orgBasePath}/${path}`;
+    return `${this.navigate.orgBasePath}/${path}`;
   }
 
   // TODO localize
   private readonly numberFormatter = new Intl.NumberFormat();
+  private api = new APIController(this);
+  private navigate = new NavigateController(this);
+  private notify = new NotifyController(this);
 
   private get isActive(): boolean | null {
     if (!this.crawl) return null;
@@ -131,10 +158,27 @@ export class CrawlDetail extends LiteElement {
       void this.fetchCrawl();
       void this.fetchCrawlLogs();
       void this.fetchSeeds();
-      void this.fetchQARuns();
+
+      this.fetchTabData();
+    } else {
+      if (changedProperties.has("activeTab") && this.activeTab) {
+        this.fetchTabData();
+      }
     }
     if (changedProperties.has("workflowId") && this.workflowId) {
       void this.fetchWorkflow();
+    }
+  }
+
+  private fetchTabData() {
+    switch (this.activeTab) {
+      case "qa":
+        void this.fetchPages();
+        void this.fetchQARuns();
+        break;
+
+      default:
+        break;
     }
   }
 
@@ -142,7 +186,7 @@ export class CrawlDetail extends LiteElement {
     // Set initial active section based on URL #hash value
     const hash = window.location.hash.slice(1);
     if ((SECTIONS as readonly string[]).includes(hash)) {
-      this.sectionName = hash as SectionName;
+      this.activeTab = hash as SectionName;
     }
     super.connectedCallback();
   }
@@ -151,7 +195,7 @@ export class CrawlDetail extends LiteElement {
     const authToken = this.authState!.headers.Authorization.split(" ")[1];
     let sectionContent: string | TemplateResult = "";
 
-    switch (this.sectionName) {
+    switch (this.activeTab) {
       case "qa":
         sectionContent = this.renderPanel(
           html`${this.renderTitle(msg("Quality Assurance (QA)"))}
@@ -159,9 +203,9 @@ export class CrawlDetail extends LiteElement {
               <sl-button
                 variant="primary"
                 size="small"
-                href="${this.orgBasePath}/items/crawl/${this
+                href="${this.navigate.orgBasePath}/items/crawl/${this
                   .crawlId}/review/screenshots?qaRunId=${this.qaRunId || ""}"
-                @click=${this.navLink}
+                @click=${this.navigate.link}
               >
                 ${msg("Review Crawl")}
               </sl-button>
@@ -171,11 +215,29 @@ export class CrawlDetail extends LiteElement {
                 ?loading=${!this.qaRuns}
               >
                 ${this.qaRuns?.length
-                  ? msg("Rerun QA Analysis")
-                  : msg("Run QA Analysis")}
+                  ? msg("Rerun Analysis")
+                  : msg("Run Analysis")}
               </sl-button>
             </div>`,
-          this.renderQA(),
+          html`
+            ${guard(
+              [
+                this.crawl?.reviewStatus,
+                this.crawl?.qaCrawlExecSeconds,
+                this.qaRuns,
+                this.qaRunId,
+                this.pages,
+              ],
+              () =>
+                renderQA({
+                  reviewStatus: this.crawl?.reviewStatus,
+                  qaCrawlExecSeconds: this.crawl?.qaCrawlExecSeconds,
+                  qaRuns: this.qaRuns,
+                  qaRunId: this.qaRunId,
+                  pages: this.pages,
+                }),
+            )}
+          `,
         );
         break;
       case "replay":
@@ -283,7 +345,7 @@ export class CrawlDetail extends LiteElement {
         <a
           class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
           href=${this.listUrl}
-          @click=${this.navLink}
+          @click=${this.navigate.link}
         >
           <sl-icon
             name="arrow-left"
@@ -358,7 +420,7 @@ export class CrawlDetail extends LiteElement {
       icon: string;
       detail?: TemplateResult<1>;
     }) => {
-      const isActive = section === this.sectionName;
+      const isActive = section === this.activeTab;
       const baseUrl = window.location.pathname.split("#")[0];
       return html`
         <btrix-navigation-button
@@ -366,7 +428,7 @@ export class CrawlDetail extends LiteElement {
           .active=${isActive}
           href=${`${baseUrl}${window.location.search}#${section}`}
           @click=${() => {
-            this.sectionName = section;
+            this.activeTab = section;
           }}
           ><sl-icon
             class="h-4 w-4 shrink-0"
@@ -397,9 +459,6 @@ export class CrawlDetail extends LiteElement {
               iconLibrary: "default",
               icon: "clipboard2-data-fill",
               label: msg("QA"),
-              detail: html`
-                <btrix-badge variant="primary">${msg("Ready")}</btrix-badge>
-              `,
             })}
           `,
         )}
@@ -507,8 +566,8 @@ export class CrawlDetail extends LiteElement {
             () => html`
               <sl-menu-item
                 @click=${() =>
-                  this.navTo(
-                    `${this.orgBasePath}/workflows/crawl/${
+                  this.navigate.to(
+                    `${this.navigate.orgBasePath}/workflows/crawl/${
                       (this.crawl as Crawl).cid
                     }`,
                   )}
@@ -575,56 +634,6 @@ export class CrawlDetail extends LiteElement {
       >
         ${content}
       </div>
-    `;
-  }
-
-  private renderQA() {
-    const finishedQARuns = this.qaRuns
-      ? this.qaRuns.filter(({ finished }) => finished)
-      : [];
-    return html`
-      <div class="outline">
-        TEMP running crawl:
-        <pre>
-${JSON.stringify(
-            this.qaRuns?.filter(({ finished }) => !finished),
-            null,
-            2,
-          )}
-      </pre
-        >
-      </div>
-      <section class="mb-5 rounded-lg border p-4">[summary]</section>
-      <btrix-tab-group>
-        <btrix-tab-group-tab slot="nav" panel="pages">
-          ${msg("Review")}
-        </btrix-tab-group-tab>
-        <btrix-tab-group-tab slot="nav" panel="runs">
-          ${msg("QA Runs")}
-        </btrix-tab-group-tab>
-
-        <btrix-tab-group-panel name="pages">
-          <div class="flex items-center gap-1">
-            <h4 class="text-base font-semibold leading-8">
-              ${msg("QA Analysis")}
-            </h4>
-            <btrix-qa-run-dropdown
-              .items=${finishedQARuns}
-              selectedId=${this.qaRunId || ""}
-              @btrix-select=${(e: CustomEvent<SelectDetail>) =>
-                (this.qaRunId = e.detail.item.id)}
-            ></btrix-qa-run-dropdown>
-          </div>
-          <section class="mb-7 rounded-lg border p-4">[stats]</section>
-          <h4 class="mb-2 text-base font-semibold leading-8">
-            ${msg("Page Reviews")}
-          </h4>
-          <section>[pages]</section>
-        </btrix-tab-group-panel>
-        <btrix-tab-group-panel name="runs">
-          <section>[runs]</section>
-        </btrix-tab-group-panel>
-      </btrix-tab-group>
     `;
   }
 
@@ -779,7 +788,7 @@ ${JSON.stringify(
                               +this.crawl.stats.found,
                             )}
                           </span>
-                          <span> pages</span>`
+                          <span>${msg("pages")}</span>`
                       : ""}`
                 : html`<span class="text-0-400">${msg("Unknown")}</span>`}`
             : html`<sl-skeleton class="h-[16px] w-24"></sl-skeleton>`}
@@ -863,8 +872,8 @@ ${this.crawl?.description}
                         html`<li class="mt-1">
                           <a
                             class="text-primary hover:text-indigo-400"
-                            href=${`${this.orgBasePath}/collections/view/${id}`}
-                            @click=${this.navLink}
+                            href=${`${this.navigate.orgBasePath}/collections/view/${id}`}
+                            @click=${this.navigate.link}
                             >${name}</a
                           >
                         </li>`,
@@ -995,7 +1004,7 @@ ${this.crawl?.description}
     try {
       this.crawl = await this.getCrawl();
     } catch {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't retrieve crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -1007,7 +1016,7 @@ ${this.crawl?.description}
     try {
       this.seeds = await this.getSeeds();
     } catch {
-      this.notify({
+      this.notify.toast({
         message: msg(
           "Sorry, couldn't retrieve all crawl settings at this time.",
         ),
@@ -1029,12 +1038,12 @@ ${this.crawl?.description}
     const apiPath = `/orgs/${this.orgId}/${
       this.itemType === "upload" ? "uploads" : "crawls"
     }/${this.crawlId}/replay.json`;
-    return this.apiFetch<Crawl>(apiPath, this.authState!);
+    return this.api.fetch<Crawl>(apiPath, this.authState!);
   }
 
   private async getSeeds() {
     // NOTE Returns first 1000 seeds (backend pagination max)
-    const data = await this.apiFetch<APIPaginatedList<Seed>>(
+    const data = await this.api.fetch<APIPaginatedList<Seed>>(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/seeds`,
       this.authState!,
     );
@@ -1042,7 +1051,7 @@ ${this.crawl?.description}
   }
 
   private async getWorkflow(): Promise<Workflow> {
-    return this.apiFetch<Workflow>(
+    return this.api.fetch<Workflow>(
       `/orgs/${this.orgId}/crawlconfigs/${this.workflowId}`,
       this.authState!,
     );
@@ -1059,7 +1068,7 @@ ${this.crawl?.description}
     } catch (e: unknown) {
       console.debug(e);
 
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't retrieve crawl logs at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -1071,7 +1080,7 @@ ${this.crawl?.description}
     const page = params.page || this.logs?.page || 1;
     const pageSize = params.pageSize || this.logs?.pageSize || 50;
 
-    const data = (await this.apiFetch)<APIPaginatedList<CrawlLog>>(
+    const data = (await this.api.fetch)<APIPaginatedList<CrawlLog>>(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/errors?page=${page}&pageSize=${pageSize}`,
       this.authState!,
     );
@@ -1081,7 +1090,7 @@ ${this.crawl?.description}
 
   private async cancel() {
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
-      const data = await this.apiFetch<{ success: boolean }>(
+      const data = await this.api.fetch<{ success: boolean }>(
         `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/cancel`,
         this.authState!,
         {
@@ -1092,7 +1101,7 @@ ${this.crawl?.description}
       if (data.success) {
         void this.fetchCrawl();
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg("Sorry, couldn't cancel crawl at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
@@ -1103,7 +1112,7 @@ ${this.crawl?.description}
 
   private async stop() {
     if (window.confirm(msg("Are you sure you want to stop the crawl?"))) {
-      const data = await this.apiFetch<{ success: boolean }>(
+      const data = await this.api.fetch<{ success: boolean }>(
         `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/stop`,
         this.authState!,
         {
@@ -1114,7 +1123,7 @@ ${this.crawl?.description}
       if (data.success) {
         void this.fetchCrawl();
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg("Sorry, couldn't stop crawl at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
@@ -1144,7 +1153,7 @@ ${this.crawl?.description}
     }
 
     try {
-      const _data = await this.apiFetch(
+      const _data = await this.api.fetch(
         `/orgs/${this.crawl!.oid}/${
           this.crawl!.type === "crawl" ? "crawls" : "uploads"
         }/delete`,
@@ -1156,8 +1165,8 @@ ${this.crawl?.description}
           }),
         },
       );
-      this.navTo(this.listUrl);
-      this.notify({
+      this.navigate.to(this.listUrl);
+      this.notify.toast({
         message: msg(`Successfully deleted crawl`),
         variant: "success",
         icon: "check2-circle",
@@ -1175,7 +1184,7 @@ ${this.crawl?.description}
           message = e.message;
         }
       }
-      this.notify({
+      this.notify.toast({
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
@@ -1185,7 +1194,7 @@ ${this.crawl?.description}
 
   private async startQARun() {
     try {
-      const data = await this.apiFetch<{ started: string }>(
+      const data = await this.api.fetch<{ started: string }>(
         `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/start`,
         this.authState!,
         {
@@ -1196,7 +1205,7 @@ ${this.crawl?.description}
       console.debug("qa run id: ", data.started);
       this.fetchQARuns();
 
-      this.notify({
+      this.notify.toast({
         message: msg("Starting QA analysis..."),
         variant: "success",
         icon: "check2-circle",
@@ -1204,7 +1213,7 @@ ${this.crawl?.description}
     } catch (e: unknown) {
       console.debug(e);
 
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't start QA run at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -1217,7 +1226,7 @@ ${this.crawl?.description}
       this.qaRuns = await this.getQARuns();
       this.qaRunId = this.qaRunId || this.qaRuns[0]?.id;
     } catch {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't retrieve archived item at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -1226,8 +1235,44 @@ ${this.crawl?.description}
   }
 
   private async getQARuns(): Promise<QARun[]> {
-    return this.apiFetch<QARun[]>(
+    return this.api.fetch<QARun[]>(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/qa`,
+      this.authState!,
+    );
+  }
+
+  private async fetchPages(params?: APIPaginationQuery): Promise<void> {
+    try {
+      this.pages = await this.getPages({
+        page: params?.page ?? this.pages?.page ?? 1,
+        pageSize: params?.pageSize ?? this.pages?.pageSize ?? 10,
+      });
+    } catch {
+      this.notify.toast({
+        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async getPages(
+    params?: APIPaginationQuery & { reviewed?: boolean },
+  ): Promise<APIPaginatedList<ArchivedItemPage>> {
+    const query = queryString.stringify(
+      {
+        // sortBy: this.sortPagesBy.sortBy,
+        // sortDirection: this.sortPagesBy.sortDirection,
+        ...params,
+      },
+      {
+        arrayFormat: "comma",
+      },
+    );
+    return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
+      this.qaRunId
+        ? `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${this.qaRunId}/pages?${query}`
+        : `/orgs/${this.orgId}/crawls/${this.crawlId}/pages?${query}`,
       this.authState!,
     );
   }
