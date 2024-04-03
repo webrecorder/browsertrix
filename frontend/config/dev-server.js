@@ -35,13 +35,18 @@ module.exports = {
   onBeforeSetupMiddleware: (server) => {
     server.app.get("/replay/sw.js", (req, res) => {
       res.set("Content-Type", "application/javascript");
-      res.set("Service-Worker-Allowed", "/");
       res.send(`importScripts("${RWP_BASE_URL}sw.js")`);
     });
 
     server.app.get("/replay/ui.js", (req, res) => {
       res.set("Content-Type", "application/javascript");
       res.redirect(307, RWP_BASE_URL + "ui.js");
+    });
+
+    // serve a 404 page for /replay/ path, as that should be taken over by RWP
+    server.app.get("/replay/*", (req, res) => {
+      res.set("Content-Type", "application/javascript");
+      res.status(404).send(`{"error": "placeholder_for_replay"}`);
     });
   },
 };

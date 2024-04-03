@@ -45,13 +45,18 @@ server {
     # serve replay service worker, RWP_BASE_URL set in Dockerfile
     location /replay/sw.js {
       add_header Content-Type application/javascript;
-      add_header Service-Worker-Allowed /;
       return 200 'importScripts("${RWP_BASE_URL}sw.js");';
     }
 
     location /replay/ui.js {
       add_header Content-Type application/javascript;
       return 307 ${RWP_BASE_URL}ui.js;
+    }
+
+    # serve a 404 page for /replay/ path, as that should be taken over by RWP
+    location /replay/ {
+      add_header Content-Type application/json;
+      return 404 "{\"error\": \"placeholder_for_replay\"}";
     }
 
     # used by docker only: k8s deployment handles /api directly via ingress
