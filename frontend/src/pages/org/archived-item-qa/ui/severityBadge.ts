@@ -6,7 +6,7 @@ import { severityFromMatch } from "@/features/qa/page-list/helpers";
 import { formatPercentage } from "@/features/qa/page-list/ui/page-details";
 
 export function renderSeverityBadge(value: number) {
-  if (value === undefined) {
+  if (value === undefined || value === null) {
     return;
   }
 

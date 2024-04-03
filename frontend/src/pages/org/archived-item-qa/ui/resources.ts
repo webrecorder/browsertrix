@@ -6,6 +6,8 @@ import { when } from "lit/directives/when.js";
 
 import type { ReplayData, ResourcesPayload } from "../types";
 
+import { renderSpinner } from "./spinner";
+
 import { tw } from "@/utils/tailwind";
 
 const diffImport = import("diff");
@@ -62,6 +64,13 @@ function renderDiff(
 }
 
 export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
+  const noData = html`<div
+    class=${tw`flex flex-col items-center justify-center gap-2 text-xs text-neutral-500`}
+  >
+    <sl-icon name="slash-circle"></sl-icon>
+    ${msg("Resources data not available")}
+  </div>`;
+
   return html`
     <div class=${tw`flex h-full flex-col outline`}>
       <div class=${tw`mb-2 flex font-semibold`}>
@@ -75,15 +84,20 @@ export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
       <div
         class=${tw`flex-1 overflow-auto overscroll-contain rounded-lg border`}
       >
-        ${guard(
-          [crawlData, qaData],
-          () => html`
-            <div class=${tw`flex`}>
-              ${when(crawlData?.resources && qaData?.resources, () =>
-                renderDiff(crawlData!.resources!, qaData!.resources!),
-              )}
-            </div>
-          `,
+        ${guard([crawlData, qaData], () =>
+          when(
+            crawlData && qaData,
+            () => html`
+              <div
+                class=${tw`flex min-h-full ${crawlData?.text && qaData?.text ? "" : tw`items-center justify-center`}`}
+              >
+                ${crawlData?.resources && qaData?.resources
+                  ? renderDiff(crawlData.resources, qaData.resources)
+                  : noData}
+              </div>
+            `,
+            renderSpinner,
+          ),
         )}
       </div>
     </div>
