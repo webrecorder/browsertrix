@@ -3,7 +3,7 @@ import { merge } from "immutable";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
-// import { choose } from "lit/directives/choose.js";
+import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
@@ -95,6 +95,9 @@ export class ArchivedItemQA extends TailwindElement {
 
   @property({ type: Boolean })
   isCrawler = false;
+
+  @property({ type: Boolean })
+  splitView = true;
 
   @property({ type: String })
   tab: QATypes.QATab = "screenshots";
@@ -502,27 +505,31 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private renderPanelToolbar() {
-    // TODO
-    const buttons = nothing;
-    // html`
-    // <div class="ml-1 flex">
-    //       ${choose(this.tab, [
-    //         [
-    //           "replay",
-    //           () => html`
-    //             <sl-icon-button name="arrow-clockwise"></sl-icon-button>
-    //           `,
-    //         ],
-    //         [
-    //           "screenshots",
-    //           () => html`
-    //             <sl-icon-button name="intersect"></sl-icon-button>
-    //             <sl-icon-button name="vr"></sl-icon-button>
-    //           `,
-    //         ],
-    //       ])}
-    //     </div>
-    // `
+    const buttons = html`
+      <div class="ml-1 flex">
+        ${choose(this.tab, [
+          [
+            "replay",
+            () => html`
+              <sl-icon-button name="arrow-clockwise"></sl-icon-button>
+            `,
+          ],
+          [
+            "screenshots",
+            () => html`
+              <sl-icon-button
+                name="intersect"
+                @click="${() => (this.splitView = true)}"
+              ></sl-icon-button>
+              <sl-icon-button
+                name="vr"
+                @click="${() => (this.splitView = false)}"
+              ></sl-icon-button>
+            `,
+          ],
+        ])}
+      </div>
+    `;
     return html`
       <div
         class="${this.tab === "replay"
@@ -561,7 +568,7 @@ export class ArchivedItemQA extends TailwindElement {
     const choosePanel = () => {
       switch (this.tab) {
         case "screenshots":
-          return renderScreenshots(this.crawlData, this.qaData);
+          return renderScreenshots(this.crawlData, this.qaData, this.splitView);
         case "text":
           return renderText(this.crawlData, this.qaData);
         case "resources":
