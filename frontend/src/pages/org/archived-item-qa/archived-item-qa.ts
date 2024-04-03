@@ -423,7 +423,7 @@ export class ArchivedItemQA extends TailwindElement {
                 ? "desc"
                 : "asc") as SortDirection,
             }}
-            totalPages=${+(this.item?.stats?.found || 0)}
+            totalPages=${+(this.item?.stats?.done || 0)}
             @btrix-qa-pagination-change=${(
               e: CustomEvent<QaPaginationChangeDetail>,
             ) => {
