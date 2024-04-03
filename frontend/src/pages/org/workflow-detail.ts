@@ -601,7 +601,7 @@ export class WorkflowDetail extends LiteElement {
               this.isCancelingOrStoppingCrawl ||
               this.workflow?.lastCrawlStopping}
             >
-              <sl-icon name="dash-square" slot="prefix"></sl-icon>
+              <sl-icon name="slash-square" slot="prefix"></sl-icon>
               <span>${msg("Stop")}</span>
             </sl-button>
             <sl-button

@@ -512,7 +512,7 @@ export class ArchivedItemDetail extends TailwindElement {
             ? html`
                 <sl-button-group>
                   <sl-button size="small" @click=${this.stop}>
-                    <sl-icon name="dash-square" slot="prefix"></sl-icon>
+                    <sl-icon name="slash-square" slot="prefix"></sl-icon>
                     <span> ${msg("Stop")} </span>
                   </sl-button>
                   <sl-button size="small" @click=${this.cancel}>
