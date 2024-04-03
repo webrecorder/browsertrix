@@ -342,10 +342,11 @@ export class ArchivedItemQA extends TailwindElement {
               >${msg("Exit Review")}</sl-button
             >
             <sl-button
-              variant="primary"
+              variant="success"
               size="small"
               @click=${() => this.reviewDialog?.show()}
             >
+              <sl-icon slot="prefix" name="patch-check"> </sl-icon>
               ${this.item?.reviewStatus
                 ? msg("Update Review")
                 : msg("Finish Review")}</sl-button
@@ -491,15 +492,27 @@ export class ArchivedItemQA extends TailwindElement {
             required
           >
             <sl-radio-button value="failure">
-              <sl-icon name="patch-exclamation" slot="prefix"></sl-icon>
+              <sl-icon
+                name="patch-exclamation"
+                slot="prefix"
+                class="text-base"
+              ></sl-icon>
               ${msg("Failed")}
             </sl-radio-button>
             <sl-radio-button value="acceptable" checked>
-              <sl-icon name="patch-minus" slot="prefix"></sl-icon>
+              <sl-icon
+                name="patch-minus"
+                slot="prefix"
+                class="text-base"
+              ></sl-icon>
               ${msg("Acceptable")}
             </sl-radio-button>
             <sl-radio-button value="good">
-              <sl-icon name="patch-check" slot="prefix"></sl-icon>
+              <sl-icon
+                name="patch-check"
+                slot="prefix"
+                class="text-base"
+              ></sl-icon>
               ${msg("Good")}
             </sl-radio-button>
           </sl-radio-group>

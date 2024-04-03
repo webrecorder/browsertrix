@@ -66,7 +66,7 @@ export function renderQA({
   const renderEmpty = () => html`--`;
 
   return html`
-    <div class="mb-5 rounded-lg border p-4">
+    <div class="mb-5 rounded-lg border p-2">
       <btrix-desc-list horizontal>
         <btrix-desc-list-item label=${msg("Review Result")}>
           ${when(

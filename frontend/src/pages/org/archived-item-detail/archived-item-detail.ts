@@ -207,6 +207,7 @@ export class ArchivedItemDetail extends TailwindElement {
                   .crawlId}/review/screenshots?qaRunId=${this.qaRunId || ""}"
                 @click=${this.navigate.link}
               >
+                <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
                 ${msg("Review Crawl")}
               </sl-button>
               <sl-button
@@ -214,6 +215,11 @@ export class ArchivedItemDetail extends TailwindElement {
                 @click=${() => this.startQARun()}
                 ?loading=${!this.qaRuns}
               >
+                <sl-icon
+                  slot="prefix"
+                  name="microscope"
+                  library="app"
+                ></sl-icon>
                 ${this.qaRuns?.length
                   ? msg("Rerun Analysis")
                   : msg("Run Analysis")}
@@ -512,7 +518,7 @@ export class ArchivedItemDetail extends TailwindElement {
             ? html`
                 <sl-button-group>
                   <sl-button size="small" @click=${this.stop}>
-                    <sl-icon name="dash-square" slot="prefix"></sl-icon>
+                    <sl-icon name="slash-square" slot="prefix"></sl-icon>
                     <span> ${msg("Stop")} </span>
                   </sl-button>
                   <sl-button size="small" @click=${this.cancel}>
