@@ -299,7 +299,7 @@ export class ArchivedItemQA extends TailwindElement {
 
       <article class="grid gap-x-6 gap-y-4 md:gap-y-0">
         <header
-          class="grid--header flex items-center justify-between gap-1 border-b pb-2"
+          class="grid--header flex items-center justify-between gap-1 border-b py-2"
         >
           <div class="flex items-center gap-2 overflow-hidden">
             <h1 class="flex-1 truncate text-base font-semibold leading-tight">
@@ -364,7 +364,7 @@ export class ArchivedItemQA extends TailwindElement {
               id="screenshot-tab"
               href=${`${crawlBaseUrl}/review/screenshots?${searchParams}`}
               ?active=${this.tab === "screenshots"}
-              @click=${this.navigate.link}
+              @click=${this.onTabNavClick}
             >
               <sl-icon name="camera-fill"></sl-icon>
               ${msg("Screenshots")}
@@ -376,7 +376,7 @@ export class ArchivedItemQA extends TailwindElement {
               id="text-tab"
               href=${`${crawlBaseUrl}/review/text?${searchParams}`}
               ?active=${this.tab === "text"}
-              @click=${this.navigate.link}
+              @click=${this.onTabNavClick}
             >
               <sl-icon name="file-text-fill"></sl-icon>
               ${msg("Text")}
@@ -388,7 +388,7 @@ export class ArchivedItemQA extends TailwindElement {
               id="text-tab"
               href=${`${crawlBaseUrl}/review/resources?${searchParams}`}
               ?active=${this.tab === "resources"}
-              @click=${this.navigate.link}
+              @click=${this.onTabNavClick}
             >
               <sl-icon name="list-check"></sl-icon>
               ${msg("Resources")}
@@ -397,7 +397,7 @@ export class ArchivedItemQA extends TailwindElement {
               id="replay-tab"
               href=${`${crawlBaseUrl}/review/replay?${searchParams}`}
               ?active=${this.tab === "replay"}
-              @click=${this.navigate.link}
+              @click=${this.onTabNavClick}
             >
               <sl-icon name="link-replay" library="app"></sl-icon>
               ${msg("Replay")}
@@ -607,6 +607,10 @@ export class ArchivedItemQA extends TailwindElement {
         ></replay-web-page>
       `,
     );
+  };
+
+  private readonly onTabNavClick = (e: MouseEvent) => {
+    this.navigate.link(e, undefined, /* resetScroll: */ false);
   };
 
   private async onUpdateItemPage(e: CustomEvent<UpdateItemPageDetail>) {

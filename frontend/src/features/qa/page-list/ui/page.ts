@@ -102,12 +102,11 @@ export class QaPage extends TailwindElement {
   protected async updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("selected")) {
       if (this.selected) {
-        await this.animateExpand();
         this.scrollIntoView({
           behavior: "smooth",
-          block: "center",
-          inline: "start",
+          block: "nearest",
         });
+        await this.animateExpand();
       } else if (changedProperties.get("selected") === true) {
         void this.animateCollapse();
       }
