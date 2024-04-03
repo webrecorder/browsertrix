@@ -61,12 +61,12 @@ export function renderScreenshots(
       : html`
           <sl-image-comparer>
             <img
-              slot="before"
+              slot="after"
               src="${crawlData?.blobUrl || ""}"
               aria-labelledby="crawlScreenshotHeading"
             />
             <img
-              slot="after"
+              slot="before"
               src="${qaData?.blobUrl || ""}"
               aria-labelledby="replayScreenshotHeading"
             />
