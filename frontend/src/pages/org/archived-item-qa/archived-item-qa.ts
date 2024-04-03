@@ -464,7 +464,7 @@ export class ArchivedItemQA extends TailwindElement {
           <iframe
             class="hidden"
             id="replayframe"
-            src="/replay/placeholder"
+            src="/replay/"
             @load=${onLoad}
           ></iframe>
         `;
@@ -499,16 +499,14 @@ export class ArchivedItemQA extends TailwindElement {
           [
             "replay",
             () => html`
-              <sl-icon-button name="arrow-clockwise"></sl-icon-button>
+              <!-- <sl-icon-button name="arrow-clockwise"></sl-icon-button> -->
             `,
           ],
           [
             "screenshots",
             () => html`
               <sl-tooltip
-                content=${this.splitView
-                  ? msg("Compare with slider")
-                  : msg("View separate")}
+                content=${msg("Toggle view")}
                 placement="bottom-start"
               >
                 <btrix-button
