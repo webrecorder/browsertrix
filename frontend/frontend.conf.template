@@ -55,7 +55,7 @@ server {
 
     # serve a 404 page for /replay/ path, as that should be taken over by RWP
     location /replay/ {
-      add_header Content-Type application/json;
+      default_type application/json;
       return 404 "{\"error\": \"placeholder_for_replay\"}";
     }
 
