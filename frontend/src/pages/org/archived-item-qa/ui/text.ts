@@ -32,9 +32,9 @@ function renderDiff(
             return html`
               <span
                 class=${part.added
-                  ? addedText
+                  ? removedText
                   : part.removed
-                    ? removedText
+                    ? addedText
                     : ""}
                 >${part.value}</span
               >
@@ -49,9 +49,9 @@ function renderDiff(
             return html`
               <span
                 class=${part.added
-                  ? removedText
+                  ? addedText
                   : part.removed
-                    ? addedText
+                    ? removedText
                     : ""}
                 >${part.value}</span
               >
