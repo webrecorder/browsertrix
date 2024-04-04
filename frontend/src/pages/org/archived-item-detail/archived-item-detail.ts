@@ -109,7 +109,7 @@ export class ArchivedItemDetail extends TailwindElement {
   private qaRunId?: string;
 
   @state()
-  activeTab: SectionName = "overview";
+  activeTab: SectionName | undefined = "overview";
 
   @state()
   private openDialogName?: "scale" | "metadata" | "exclusions";

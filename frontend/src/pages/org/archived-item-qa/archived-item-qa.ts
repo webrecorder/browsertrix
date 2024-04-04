@@ -103,7 +103,7 @@ export class ArchivedItemQA extends TailwindElement {
   private item?: ArchivedItem;
 
   @state()
-  private qaRuns: QARun[] = [];
+  private qaRuns: QARun[] | undefined = [];
 
   @state()
   private pages?: APIPaginatedList<ArchivedItemQAPage>;
@@ -265,7 +265,7 @@ export class ArchivedItemQA extends TailwindElement {
     }
 
     const searchParams = new URLSearchParams(window.location.search);
-    const firstQaRun = this.qaRuns[0] as QARun | undefined;
+    const firstQaRun = this.qaRuns?.[0];
     const firstPage = this.pages?.items[0];
 
     if (!this.qaRunId && firstQaRun) {
