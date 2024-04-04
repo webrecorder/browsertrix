@@ -31,15 +31,15 @@ export class QaPage extends TailwindElement {
   selected = false;
 
   @query(".contentContainer")
-  private contentContainer?: HTMLElement;
+  private readonly contentContainer?: HTMLElement;
 
   @query("sl-tooltip")
-  private tooltip?: SlTooltip;
+  private readonly tooltip?: SlTooltip;
 
-  private select = async () => {
+  private readonly select = async () => {
     if (this.selected) return;
 
-    this.tooltip?.hide();
+    void this.tooltip?.hide();
     this.dispatchEvent(
       new CustomEvent<string>("btrix-qa-page-select", {
         detail: this.page!.id,
@@ -49,7 +49,7 @@ export class QaPage extends TailwindElement {
     );
   };
 
-  private animateExpand = async () => {
+  private readonly animateExpand = async () => {
     if (!this.contentContainer) return;
     await animateTo(
       this.contentContainer,
@@ -74,7 +74,7 @@ export class QaPage extends TailwindElement {
     );
   };
 
-  private animateCollapse = async () => {
+  private readonly animateCollapse = async () => {
     if (!this.contentContainer) return;
     await animateTo(
       this.contentContainer,

@@ -347,7 +347,7 @@ export class PageQAToolbar extends TailwindElement {
         },
       );
 
-      this.dispatchPageUpdate({ approved });
+      void this.dispatchPageUpdate({ approved });
     } catch (e: unknown) {
       console.debug(e);
       this.notify.toast({

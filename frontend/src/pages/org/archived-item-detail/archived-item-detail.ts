@@ -130,9 +130,9 @@ export class ArchivedItemDetail extends TailwindElement {
 
   // TODO localize
   private readonly numberFormatter = new Intl.NumberFormat();
-  private api = new APIController(this);
-  private navigate = new NavigateController(this);
-  private notify = new NotifyController(this);
+  private readonly api = new APIController(this);
+  private readonly navigate = new NavigateController(this);
+  private readonly notify = new NotifyController(this);
 
   private get isActive(): boolean | null {
     if (!this.crawl) return null;
@@ -212,7 +212,7 @@ export class ArchivedItemDetail extends TailwindElement {
               </sl-button>
               <sl-button
                 size="small"
-                @click=${() => this.startQARun()}
+                @click=${() => void this.startQARun()}
                 ?loading=${!this.qaRuns}
               >
                 <sl-icon
@@ -1209,7 +1209,7 @@ ${this.crawl?.description}
       );
 
       console.debug("qa run id: ", data.started);
-      this.fetchQARuns();
+      void this.fetchQARuns();
 
       this.notify.toast({
         message: msg("Starting QA analysis..."),

@@ -154,15 +154,15 @@ export class ArchivedItemQA extends TailwindElement {
     navigator.serviceWorker.getRegistration("/replay/");
 
   @query("#replayframe")
-  private replayFrame?: HTMLIFrameElement | null;
+  private readonly replayFrame?: HTMLIFrameElement | null;
 
   @query(".reviewDialog")
-  private reviewDialog?: Dialog | null;
+  private readonly reviewDialog?: Dialog | null;
 
   connectedCallback(): void {
     super.connectedCallback();
     // Receive messages from replay-web-page windows
-    this.replaySwReg.then((reg) => {
+    void this.replaySwReg.then((reg) => {
       if (!reg) {
         console.log("[debug] no reg, listening to messages");
         // window.addEventListener("message", this.onWindowMessage);
@@ -179,12 +179,12 @@ export class ArchivedItemQA extends TailwindElement {
     window.removeEventListener("message", this.onWindowMessage);
   }
 
-  private onWindowMessage = (event: MessageEvent) => {
+  private readonly onWindowMessage = (event: MessageEvent) => {
     const sourceLoc = (event.source as Window | null)?.location.href;
 
     // ensure its an rwp frame
     if (sourceLoc && sourceLoc.indexOf("?source=") > 0) {
-      this.handleRwpMessage(sourceLoc);
+      void this.handleRwpMessage(sourceLoc);
     }
   };
 
@@ -242,10 +242,10 @@ export class ArchivedItemQA extends TailwindElement {
         if (this.qaData?.blobUrl) URL.revokeObjectURL(this.qaData.blobUrl);
       }
       // TODO prefetch content for other tabs?
-      this.fetchContentForTab();
-      this.fetchContentForTab({ qa: true });
+      void this.fetchContentForTab();
+      void this.fetchContentForTab({ qa: true });
     } else if (changedProperties.get("qaRunId")) {
-      this.fetchContentForTab({ qa: true });
+      void this.fetchContentForTab({ qa: true });
     }
   }
 
@@ -265,7 +265,7 @@ export class ArchivedItemQA extends TailwindElement {
     }
 
     const searchParams = new URLSearchParams(window.location.search);
-    const firstQaRun = this.qaRuns?.[0];
+    const firstQaRun = this.qaRuns[0] as QARun | undefined;
     const firstPage = this.pages?.items[0];
 
     if (!this.qaRunId && firstQaRun) {
@@ -275,7 +275,7 @@ export class ArchivedItemQA extends TailwindElement {
       searchParams.set("itemPageId", firstPage.id);
     }
 
-    this.navigate.to(`${window.location.pathname}?${searchParams}`);
+    this.navigate.to(`${window.location.pathname}?${searchParams.toString()}`);
   }
 
   /**
@@ -283,9 +283,13 @@ export class ArchivedItemQA extends TailwindElement {
    */
   private getPageListSliceByCurrent(
     pageId = this.itemPageId,
-  ): ArchivedItemQAPage[] {
+  ): [
+    ArchivedItemQAPage | undefined,
+    ArchivedItemQAPage | undefined,
+    ArchivedItemQAPage | undefined,
+  ] {
     if (!pageId || !this.pages) {
-      return [];
+      return [undefined, undefined, undefined];
     }
 
     const pages = this.pages.items;
@@ -297,7 +301,7 @@ export class ArchivedItemQA extends TailwindElement {
     const searchParams = new URLSearchParams(window.location.search);
     searchParams.set("itemPageId", pageId);
     this.navigate.to(
-      `${window.location.pathname}?${searchParams}`,
+      `${window.location.pathname}?${searchParams.toString()}`,
       undefined,
       /* resetScroll: */ false,
     );
@@ -329,7 +333,9 @@ export class ArchivedItemQA extends TailwindElement {
               @btrix-select=${(e: CustomEvent<SelectDetail>) => {
                 const params = new URLSearchParams(searchParams);
                 params.set("qaRunId", e.detail.item.id);
-                this.navigate.to(`${window.location.pathname}?${params}`);
+                this.navigate.to(
+                  `${window.location.pathname}?${params.toString()}`,
+                );
               }}
             ></btrix-qa-run-dropdown>
           </div>
@@ -344,7 +350,7 @@ export class ArchivedItemQA extends TailwindElement {
             <sl-button
               variant="success"
               size="small"
-              @click=${() => this.reviewDialog?.show()}
+              @click=${() => void this.reviewDialog?.show()}
             >
               <sl-icon slot="prefix" name="patch-check"> </sl-icon>
               ${this.item?.reviewStatus
@@ -394,7 +400,7 @@ export class ArchivedItemQA extends TailwindElement {
           <nav class="my-2 flex gap-2">
             <btrix-navigation-button
               id="screenshot-tab"
-              href=${`${crawlBaseUrl}/review/screenshots?${searchParams}`}
+              href=${`${crawlBaseUrl}/review/screenshots?${searchParams.toString()}`}
               ?active=${this.tab === "screenshots"}
               @click=${this.onTabNavClick}
             >
@@ -406,7 +412,7 @@ export class ArchivedItemQA extends TailwindElement {
             </btrix-navigation-button>
             <btrix-navigation-button
               id="text-tab"
-              href=${`${crawlBaseUrl}/review/text?${searchParams}`}
+              href=${`${crawlBaseUrl}/review/text?${searchParams.toString()}`}
               ?active=${this.tab === "text"}
               @click=${this.onTabNavClick}
             >
@@ -418,7 +424,7 @@ export class ArchivedItemQA extends TailwindElement {
             </btrix-navigation-button>
             <btrix-navigation-button
               id="text-tab"
-              href=${`${crawlBaseUrl}/review/resources?${searchParams}`}
+              href=${`${crawlBaseUrl}/review/resources?${searchParams.toString()}`}
               ?active=${this.tab === "resources"}
               @click=${this.onTabNavClick}
             >
@@ -427,7 +433,7 @@ export class ArchivedItemQA extends TailwindElement {
             </btrix-navigation-button>
             <btrix-navigation-button
               id="replay-tab"
-              href=${`${crawlBaseUrl}/review/replay?${searchParams}`}
+              href=${`${crawlBaseUrl}/review/replay?${searchParams.toString()}`}
               ?active=${this.tab === "replay"}
               @click=${this.onTabNavClick}
             >
@@ -460,7 +466,7 @@ export class ArchivedItemQA extends TailwindElement {
               e: CustomEvent<QaPaginationChangeDetail>,
             ) => {
               const { page } = e.detail;
-              this.fetchPages({ page });
+              void this.fetchPages({ page });
             }}
             @btrix-qa-page-select=${(e: CustomEvent<string>) => {
               this.navToPage(e.detail);
@@ -545,8 +551,8 @@ export class ArchivedItemQA extends TailwindElement {
       when(this.page, () => {
         const onLoad = reg
           ? () => {
-              this.fetchContentForTab();
-              this.fetchContentForTab({ qa: true });
+              void this.fetchContentForTab();
+              void this.fetchContentForTab({ qa: true });
             }
           : () => {
               console.debug("waiting for post message instead");
@@ -721,7 +727,7 @@ export class ArchivedItemQA extends TailwindElement {
       this.page.notes?.length !== updated.notes?.length;
 
     if (reviewStatusChanged) {
-      this.fetchPages();
+      void this.fetchPages();
     }
 
     this.page = merge<ArchivedItemQAPage>(this.page, updated);
@@ -840,7 +846,9 @@ export class ArchivedItemQA extends TailwindElement {
       } else if (tab === "text") {
         const text = await resp.text();
         return { text };
-      } else if (tab === "resources") {
+      } else {
+        // tab === "resources"
+
         const json = await resp.json();
         // console.log(json);
 
@@ -995,7 +1003,7 @@ export class ArchivedItemQA extends TailwindElement {
         throw data;
       }
 
-      this.reviewDialog?.hide();
+      void this.reviewDialog?.hide();
       this.notify.toast({
         message: msg("Submitted QA review."),
         variant: "success",

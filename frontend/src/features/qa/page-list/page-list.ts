@@ -87,7 +87,7 @@ export class PageList extends TailwindElement {
   };
 
   @query(".scrollContainer")
-  private scrollContainer?: HTMLElement | null;
+  private readonly scrollContainer?: HTMLElement | null;
 
   protected async updated(changedProperties: PropertyValues<this>) {
     if (
