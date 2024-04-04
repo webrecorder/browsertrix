@@ -727,7 +727,9 @@ class CrawlOps(BaseCrawlOps):
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
 
-    async def stop_crawl_qa_run(self, crawl_id: str, org: Organization):
+    async def stop_crawl_qa_run(
+        self, crawl_id: str, org: Organization, graceful: bool = True
+    ):
         """Stop crawl QA run, QA run removed when actually finished"""
         crawl = await self.get_crawl(crawl_id, org)
 
@@ -735,7 +737,9 @@ class CrawlOps(BaseCrawlOps):
             raise HTTPException(status_code=400, detail="qa_not_running")
 
         try:
-            result = await self.crawl_manager.shutdown_crawl(crawl.qa.id, graceful=True)
+            result = await self.crawl_manager.shutdown_crawl(
+                crawl.qa.id, graceful=graceful
+            )
 
             if result.get("error") == "Not Found":
                 # treat as success, qa crawl no longer exists, so mark as no qa
@@ -1071,6 +1075,13 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     ):
         # pylint: disable=unused-argument
         return await ops.stop_crawl_qa_run(crawl_id, org)
+
+    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/cancel", tags=["qa"])
+    async def cancel_crawl_qa_run(
+        crawl_id: str, org: Organization = Depends(org_crawl_dep)
+    ):
+        # pylint: disable=unused-argument
+        return await ops.stop_crawl_qa_run(crawl_id, org, graceful=False)
 
     @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/delete", tags=["qa"])
     async def delete_crawl_qa_runs(
