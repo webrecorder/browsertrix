@@ -1266,7 +1266,7 @@ class CrawlOperator(BaseOperator):
 
         # check for other statuses
         else:
-            new_status: TYPE_RUNNING_STATES
+            new_status: Optional[TYPE_RUNNING_STATES] = None
             if status_count.get("running"):
                 if status.state in ("generate-wacz", "uploading-wacz", "pending-wacz"):
                     new_status = "running"

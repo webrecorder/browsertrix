@@ -53,6 +53,12 @@ server {
       return 307 ${RWP_BASE_URL}ui.js;
     }
 
+    # serve a 404 page for /replay/ path, as that should be taken over by RWP
+    location /replay/ {
+      default_type application/json;
+      return 404 "{\"error\": \"placeholder_for_replay\"}";
+    }
+
     # used by docker only: k8s deployment handles /api directly via ingress
     location /api/ {
       proxy_pass http://${BACKEND_HOST}:8000;

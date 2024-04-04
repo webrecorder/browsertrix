@@ -59,7 +59,7 @@ export class Button extends TailwindElement {
       type=${this.type === "submit" ? "submit" : "button"}
       class=${[
         tw`flex h-6 cursor-pointer items-center justify-center gap-2 rounded-sm text-center font-medium transition-all disabled:cursor-not-allowed disabled:text-neutral-300`,
-        this.icon ? tw`min-h-6 min-w-6 px-1` : tw`h-6 px-2`,
+        this.icon ? tw`min-h-8 min-w-8 px-1` : tw`h-6 px-2`,
         this.raised ? tw`shadow-sm` : "",
         {
           primary: tw`bg-blue-50 text-blue-600 shadow-blue-800/20 hover:bg-blue-100`,

@@ -5,6 +5,7 @@ import appState from "@/utils/state";
 export type NavigateEventDetail = {
   url: string;
   state?: { [key: string]: unknown };
+  resetScroll: boolean;
 };
 
 export interface NavigateEventMap {
@@ -35,9 +36,13 @@ export class NavigateController implements ReactiveController {
   hostConnected() {}
   hostDisconnected() {}
 
-  to = (url: string, state?: { [key: string]: unknown }): void => {
+  to = (
+    url: string,
+    state?: { [key: string]: unknown },
+    resetScroll = true,
+  ): void => {
     const evt = new CustomEvent<NavigateEventDetail>(NAVIGATE_EVENT_NAME, {
-      detail: { url, state },
+      detail: { url, state, resetScroll },
       bubbles: true,
       composed: true,
     });
@@ -52,7 +57,7 @@ export class NavigateController implements ReactiveController {
    * ```
    * @param event Click event
    */
-  link = (event: MouseEvent, _href?: string): void => {
+  link = (event: MouseEvent, _href?: string, resetScroll = true): void => {
     if (
       // Detect keypress for opening in a new tab
       event.ctrlKey ||
@@ -68,7 +73,10 @@ export class NavigateController implements ReactiveController {
     event.preventDefault();
 
     const evt = new CustomEvent<NavigateEventDetail>(NAVIGATE_EVENT_NAME, {
-      detail: { url: (event.currentTarget as HTMLAnchorElement).href },
+      detail: {
+        url: (event.currentTarget as HTMLAnchorElement).href,
+        resetScroll,
+      },
       bubbles: true,
       composed: true,
     });

@@ -182,7 +182,7 @@ export class CrawlStatus extends LitElement {
 
       case "stopped_by_user":
         icon = html`<sl-icon
-          name="dash-square-fill"
+          name="slash-square-fill"
           slot="prefix"
           style="color: var(--warning)"
         ></sl-icon>`;
