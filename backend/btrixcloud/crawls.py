@@ -40,6 +40,7 @@ from .models import (
     PaginatedResponse,
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
+    NON_RUNNING_STATES,
     ALL_CRAWL_STATES,
     TYPE_ALL_CRAWL_STATES,
 )
@@ -775,7 +776,7 @@ class CrawlOps(BaseCrawlOps):
 
         query: Dict[str, Any] = {"qa": None}
 
-        if crawl.qa.finished and crawl.qa.state in SUCCESSFUL_STATES:
+        if crawl.qa.finished and crawl.qa.state in NON_RUNNING_STATES:
             query[f"qaFinished.{crawl.qa.id}"] = crawl.qa.dict()
 
         if await self.crawls.find_one_and_update(
@@ -786,14 +787,24 @@ class CrawlOps(BaseCrawlOps):
         return False
 
     async def get_qa_runs(
-        self, crawl_id: str, org: Optional[Organization] = None
+        self,
+        crawl_id: str,
+        skip_failed: bool = False,
+        org: Optional[Organization] = None,
     ) -> List[QARunOut]:
         """Return list of QA runs"""
         crawl_data = await self.get_crawl_raw(
             crawl_id, org, "crawl", project={"qaFinished": True, "qa": True}
         )
         qa_finished = crawl_data.get("qaFinished") or {}
-        all_qa = [QARunOut(**qa_run_data) for qa_run_data in qa_finished.values()]
+        if skip_failed:
+            all_qa = [
+                QARunOut(**qa_run_data)
+                for qa_run_data in qa_finished.values()
+                if qa_run_data.get("state") in SUCCESSFUL_STATES
+            ]
+        else:
+            all_qa = [QARunOut(**qa_run_data) for qa_run_data in qa_finished.values()]
         all_qa.sort(key=lambda x: x.finished or dt_now(), reverse=True)
         qa = crawl_data.get("qa")
         if qa:
@@ -1075,8 +1086,10 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         tags=["qa"],
         response_model=List[QARunOut],
     )
-    async def get_qa_runs(crawl_id, org: Organization = Depends(org_viewer_dep)):
-        return await ops.get_qa_runs(crawl_id, org)
+    async def get_qa_runs(
+        crawl_id, org: Organization = Depends(org_viewer_dep), skipFailed: bool = False
+    ):
+        return await ops.get_qa_runs(crawl_id, skip_failed=skipFailed, org=org)
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa/activeQA",
