@@ -25,7 +25,7 @@ function renderDiff(
 
       return html`
         <div
-          class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg border-dashed p-4 first-of-type:border-r`}
+          class=${tw`flex-1 overflow-hidden rounded-lg border-dashed p-4 first-of-type:border-r`}
           aria-labelledby="crawlTextHeading"
         >
           ${diff.map((part) => {
@@ -42,7 +42,7 @@ function renderDiff(
           })}
         </div>
         <div
-          class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg border-dashed p-4 first-of-type:border-r`}
+          class=${tw`flex-1 overflow-hidden rounded-lg border-dashed p-4 first-of-type:border-r`}
           aria-labelledby="qaTextHeading"
         >
           ${diff.map((part) => {
