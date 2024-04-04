@@ -70,9 +70,6 @@ spec:
       persistentVolumeClaim:
         claimName: {{ name }}
 
-    - name: crawler-workdir
-      emptyDir:
-        sizeLimit: {{ crawler_workdir_size }}
 
   affinity:
 {% if crawler_node_type %}
@@ -137,9 +134,6 @@ spec:
         - --writePagesToRedis
        {% endif %}
       volumeMounts:
-        - name: crawler-workdir
-          mountPath: /tmp
-
         - name: crawl-config
           mountPath: /tmp/crawl-config.json
           subPath: crawl-config.json
@@ -161,7 +155,7 @@ spec:
 
       env:
         - name: HOME
-          value: /tmp
+          value: /crawls
 
         - name: CRAWL_ID
           value: "{{ id }}"
