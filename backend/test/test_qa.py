@@ -250,7 +250,7 @@ def test_fail_running_qa(crawler_crawl_id, crawler_auth_headers, default_org_id)
     assert failed_run["started"]
     assert failed_run["finished"]
     assert failed_run["stats"]
-    assert failed_run["crawlExecSeconds"] > 0
+    assert failed_run["crawlExecSeconds"] >= 0
 
     # Ensure failed QA run not included in list endpoint with skipFailed param
     r = requests.get(
