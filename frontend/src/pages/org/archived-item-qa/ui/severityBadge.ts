@@ -5,7 +5,7 @@ import type { BadgeVariant } from "@/components/ui/badge";
 import { severityFromMatch } from "@/features/qa/page-list/helpers";
 import { formatPercentage } from "@/features/qa/page-list/ui/page-details";
 
-export function renderSeverityBadge(value: number | null | undefined) {
+export function renderSeverityBadge(value?: number | null) {
   if (value === undefined || value === null) {
     return;
   }

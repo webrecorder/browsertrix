@@ -849,7 +849,9 @@ export class ArchivedItemQA extends TailwindElement {
       } else {
         // tab === "resources"
 
-        const json = await resp.json();
+        const json = (await resp.json()) as {
+          urls: { status?: number; type?: string }[];
+        };
         // console.log(json);
 
         const typeMap = new Map<string, QATypes.GoodBad>();
@@ -858,9 +860,8 @@ export class ArchivedItemQA extends TailwindElement {
           bad = 0;
 
         for (const entry of Object.values(json.urls)) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { type: resType_, status } = entry as any;
-          const resType = (resType_ || "").toLowerCase();
+          const { type: resType_ = "", status = 0 } = entry;
+          const resType = resType_.toLowerCase();
 
           if (typeMap.has(resType)) {
             const count = typeMap.get(resType);

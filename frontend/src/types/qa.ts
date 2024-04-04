@@ -16,13 +16,13 @@ export type QARun = {
 
 export type ArchivedItemQAPage = ArchivedItemPage & {
   qa: {
-    screenshotMatch: number;
-    textMatch: number;
+    screenshotMatch: number | null;
+    textMatch: number | null;
     resourceCounts: {
       crawlGood: number;
       crawlBad: number;
       replayGood: number;
       replayBad: number;
-    };
+    } | null;
   };
 };

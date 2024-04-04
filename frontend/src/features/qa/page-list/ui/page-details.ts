@@ -48,14 +48,13 @@ export const pageDetails = (page: ArchivedItemQAPage) =>
       <li class="my-3 flex">
         ${iconFor(
           severityFromResourceCounts(
-            page.qa.resourceCounts.crawlBad,
-            page.qa.resourceCounts.crawlGood,
+            page.qa.resourceCounts?.crawlBad,
+            page.qa.resourceCounts?.crawlGood,
           ),
           tw`mr-2 flex-none`,
         )}
         <span class="inline-block">
-          ${page.qa.resourceCounts.crawlBad != null &&
-          page.qa.resourceCounts.crawlGood != null
+          ${page.qa.resourceCounts != null
             ? html`<span class="font-bold"
                   >${crawlCounts(
                     page.qa.resourceCounts.crawlBad,
@@ -69,14 +68,13 @@ export const pageDetails = (page: ArchivedItemQAPage) =>
       <li class="my-3 flex">
         ${iconFor(
           severityFromResourceCounts(
-            page.qa.resourceCounts.replayBad,
-            page.qa.resourceCounts.replayGood,
+            page.qa.resourceCounts?.replayBad,
+            page.qa.resourceCounts?.replayGood,
           ),
           tw`mr-2 flex-none`,
         )}
         <span class="inline-block">
-          ${page.qa.resourceCounts.replayBad != null &&
-          page.qa.resourceCounts.replayGood != null
+          ${page.qa.resourceCounts != null
             ? html`<span class="font-bold"
                   >${crawlCounts(
                     page.qa.resourceCounts.replayBad,

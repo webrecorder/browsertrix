@@ -1,8 +1,6 @@
 import { type PropertyValueMap } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 
-import "@/components/ui/navigation/navigation-button";
-
 import { NavigationButton } from "@/components/ui/navigation/navigation-button";
 
 export type TabClickDetail = { panel: string };
