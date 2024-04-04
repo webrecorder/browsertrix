@@ -85,7 +85,7 @@ export class Dashboard extends LiteElement {
               href=${`${this.orgBasePath}/settings`}
               class="text-lg"
               name="gear"
-              label="Edit org settings"
+              label=${msg("Edit org settings")}
               @click=${this.navLink}
             ></sl-icon-button>`,
         )}

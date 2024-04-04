@@ -9,7 +9,7 @@ import urllib.parse
 from datetime import datetime
 from uuid import UUID
 
-from typing import Optional, List, Dict, Union, Any
+from typing import Optional, List, Dict, Union, Any, Sequence
 
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -41,6 +41,7 @@ from .models import (
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
     ALL_CRAWL_STATES,
+    TYPE_ALL_CRAWL_STATES,
 )
 
 
@@ -442,8 +443,8 @@ class CrawlOps(BaseCrawlOps):
         self,
         crawl_id: str,
         is_qa: bool,
-        state: str,
-        allowed_from: List[str],
+        state: TYPE_ALL_CRAWL_STATES,
+        allowed_from: Sequence[TYPE_ALL_CRAWL_STATES],
         finished: Optional[datetime] = None,
         stats: Optional[CrawlStats] = None,
     ):

@@ -201,6 +201,28 @@ class PageOps:
         page_raw = await self.get_page_raw(page_id, oid, crawl_id)
         return Page.from_dict(page_raw)
 
+    async def get_page_out(
+        self,
+        page_id: UUID,
+        oid: UUID,
+        crawl_id: Optional[str] = None,
+        qa_run_id: Optional[str] = None,
+    ) -> Union[PageOut, PageOutWithSingleQA]:
+        """Return PageOut or PageOutWithSingleQA for page"""
+        page_raw = await self.get_page_raw(page_id, oid, crawl_id)
+        if qa_run_id:
+            qa = page_raw.get("qa")
+            if qa and qa.get(qa_run_id):
+                page_raw["qa"] = qa.get(qa_run_id)
+            else:
+                print(
+                    f"Error: Page {page_id} does not have data from QA run {qa_run_id}",
+                    flush=True,
+                )
+                page_raw["qa"] = None
+            return PageOutWithSingleQA.from_dict(page_raw)
+        return PageOut.from_dict(page_raw)
+
     async def add_qa_run_for_page(
         self, page_id: UUID, oid: UUID, qa_run_id: str, compare: PageQACompare
     ) -> bool:
@@ -522,7 +544,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}",
         tags=["pages"],
-        response_model=Page,
+        response_model=PageOut,
     )
     async def get_page(
         crawl_id: str,
@@ -530,7 +552,21 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         org: Organization = Depends(org_crawl_dep),
     ):
         """GET single page"""
-        return await ops.get_page(page_id, org.id, crawl_id)
+        return await ops.get_page_out(page_id, org.id, crawl_id)
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/pages/{page_id}",
+        tags=["pages", "qa"],
+        response_model=PageOutWithSingleQA,
+    )
+    async def get_page_with_qa(
+        crawl_id: str,
+        qa_run_id: str,
+        page_id: UUID,
+        org: Organization = Depends(org_crawl_dep),
+    ):
+        """GET single page"""
+        return await ops.get_page_out(page_id, org.id, crawl_id, qa_run_id=qa_run_id)
 
     @app.patch(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}",

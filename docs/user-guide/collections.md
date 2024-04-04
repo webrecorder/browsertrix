@@ -17,6 +17,10 @@ A crawl workflow can also be set to [automatically add any completed archived it
 
 Collections are private by default, but can be made public by marking them as sharable in the Metadata step of collection creation, or by toggling the _Collection is Shareable_ switch in the share collection dialogue.
 
-After a collection has been made public, it can be shared with others using the public URL available in the share collection dialogue. The collection can also be embedded into other websites using the provided embed code. Unsharing the collection will break any previously shared links.
+After a collection has been made public, it can be shared with others using the public URL available in the share collection dialogue. The collection can also be embedded into other websites using the provided embed code. Un-sharing the collection will break any previously shared links.
 
 For further resources on embedding archived web content into your own website, see the [ReplayWeb.page docs page on embedding](https://replayweb.page/docs/embedding).
+
+## Downloading Collections
+
+Downloading a collection will export every archived item within it as a single WACZ file. To download a collection, use the _Download Collection_ option under the collection's _Actions_ dropdown.

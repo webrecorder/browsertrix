@@ -152,6 +152,7 @@ export class OrgsList extends LiteElement {
           <sl-icon-button
             name="gear"
             slot="prefix"
+            label=${msg("Edit org quotas")}
             @click="${this.showQuotas(org)}"
           ></sl-icon-button>
         </div>

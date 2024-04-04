@@ -3,7 +3,7 @@
 import traceback
 import os
 from pprint import pprint
-from typing import Optional, Any
+from typing import Optional, Any, Sequence
 from datetime import datetime
 
 import json
@@ -14,6 +14,9 @@ from kubernetes.utils import parse_quantity
 from redis import asyncio as exceptions
 
 from btrixcloud.models import (
+    TYPE_NON_RUNNING_STATES,
+    TYPE_RUNNING_STATES,
+    TYPE_ALL_CRAWL_STATES,
     NON_RUNNING_STATES,
     RUNNING_STATES,
     RUNNING_AND_STARTING_ONLY,
@@ -37,8 +40,10 @@ from .baseoperator import BaseOperator, Redis
 from .models import (
     CrawlSpec,
     CrawlStatus,
+    StopReason,
     MCBaseRequest,
     MCSyncData,
+    PodInfo,
     POD,
     CMAP,
     PVC,
@@ -55,10 +60,23 @@ DEFAULT_TTL = 30
 REDIS_TTL = 60
 
 # time in seconds before a crawl is deemed 'waiting' instead of 'starting'
-STARTING_TIME_SECS = 60
+STARTING_TIME_SECS = 150
 
 # how often to update execution time seconds
 EXEC_TIME_UPDATE_SECS = 60
+
+
+# scale up if exceeded this threshold of mem usage (eg. 90%)
+MEM_SCALE_UP_THRESHOLD = 0.90
+
+# scale up by this much
+MEM_SCALE_UP = 1.2
+
+# soft OOM if exceeded this threshold of mem usage (eg. 100%)
+MEM_SOFT_OOM_THRESHOLD = 1.0
+
+# set memory limit to this much of request for extra padding
+MEM_LIMIT_PADDING = 1.2
 
 
 # pylint: disable=too-many-public-methods, too-many-locals, too-many-branches, too-many-statements
@@ -209,8 +227,10 @@ class CrawlOperator(BaseOperator):
                 data.related.get(METRICS, {}),
             )
 
-            # auto sizing handled here
-            self.handle_auto_size(crawl.id, status.podStatus)
+            # auto-scaling not possible without pod metrics
+            if self.k8s.has_pod_metrics:
+                # auto sizing handled here
+                await self.handle_auto_size(status.podStatus)
 
             if status.finished:
                 return await self.finalize_response(
@@ -326,6 +346,7 @@ class CrawlOperator(BaseOperator):
         params["name"] = name
         params["cpu"] = pod_info.newCpu or params.get("crawler_cpu")
         params["memory"] = pod_info.newMemory or params.get("crawler_memory")
+        params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
         params["do_restart"] = (
             pod_info.should_restart_pod() or params.get("force_restart")
         ) and has_pod
@@ -411,10 +432,10 @@ class CrawlOperator(BaseOperator):
 
     async def set_state(
         self,
-        state: str,
+        state: TYPE_ALL_CRAWL_STATES,
         status: CrawlStatus,
         crawl: CrawlSpec,
-        allowed_from: list[str],
+        allowed_from: Sequence[TYPE_ALL_CRAWL_STATES],
         finished: Optional[datetime] = None,
         stats: Optional[CrawlStats] = None,
     ):
@@ -758,8 +779,6 @@ class CrawlOperator(BaseOperator):
             qa_run_id = crawl.id if crawl.is_qa else None
 
             while page_crawled:
-                print("PAGE DATA", flush=True)
-                print(page_crawled, flush=True)
                 page_dict = json.loads(page_crawled)
                 await self.page_ops.add_page_to_db(
                     page_dict, crawl.db_crawl_id, qa_run_id, crawl.oid
@@ -836,7 +855,7 @@ class CrawlOperator(BaseOperator):
 
         return crawler_running, redis_running, done
 
-    def handle_terminated_pod(self, name, role, status, terminated):
+    def handle_terminated_pod(self, name, role, status: CrawlStatus, terminated):
         """handle terminated pod state"""
         if not terminated:
             return
@@ -986,7 +1005,9 @@ class CrawlOperator(BaseOperator):
 
         return False
 
-    async def add_used_stats(self, crawl_id, pod_status, redis, metrics):
+    async def add_used_stats(
+        self, crawl_id, pod_status: dict[str, PodInfo], redis, metrics
+    ):
         """load current usage stats"""
         if redis:
             stats = await redis.info("persistence")
@@ -1010,20 +1031,42 @@ class CrawlOperator(BaseOperator):
             pod_info.used.memory = int(parse_quantity(usage["memory"]))
             pod_info.used.cpu = float(parse_quantity(usage["cpu"]))
 
-    def handle_auto_size(self, _, pod_status):
+    async def handle_auto_size(self, pod_status: dict[str, PodInfo]) -> None:
         """auto scale pods here, experimental"""
         for name, pod in pod_status.items():
-            # if pod crashed due to OOM, increase mem
-            # if pod.isNewExit and pod.reason == "oom":
-            #    pod.newMemory = int(float(pod.allocated.memory) * 1.2)
-            #    print(f"Resizing pod {name} -> mem {pod.newMemory} - OOM Detected")
+            mem_usage = pod.get_percent_memory()
+            new_memory = int(float(pod.allocated.memory) * MEM_SCALE_UP)
+            send_sig = False
 
-            # if redis is using >0.90 of its memory, increase mem
-            if name.startswith("redis") and pod.get_percent_memory() > 0.90:
-                pod.newMemory = int(float(pod.allocated.memory) * 1.2)
-                print(f"Resizing pod {name} -> mem {pod.newMemory} - Redis Capacity")
+            # if pod is using >MEM_SCALE_UP_THRESHOLD of its memory, increase mem
+            if mem_usage > MEM_SCALE_UP_THRESHOLD:
+                pod.newMemory = new_memory
+                print(
+                    f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - Scale Up"
+                )
 
-    async def log_crashes(self, crawl_id, pod_status, redis):
+                # if crawler pod is using its OOM threshold, attempt a soft OOM
+                # via a second SIGTERM
+                if (
+                    mem_usage >= MEM_SOFT_OOM_THRESHOLD
+                    and name.startswith("crawl")
+                    and pod.signalAtMem != pod.newMemory
+                ):
+                    send_sig = True
+
+            # if any pod crashed due to OOM, increase mem
+            elif pod.isNewExit and pod.reason == "oom":
+                pod.newMemory = new_memory
+                print(
+                    f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - OOM Detected"
+                )
+                send_sig = True
+
+            # avoid resending SIGTERM multiple times after it already succeeded
+            if send_sig and await self.k8s.send_signal_to_pod(name, "SIGTERM"):
+                pod.signalAtMem = pod.newMemory
+
+    async def log_crashes(self, crawl_id, pod_status: dict[str, PodInfo], redis):
         """report/log any pod crashes here"""
         for name, pod in pod_status.items():
             # log only unexpected exits as crashes
@@ -1093,7 +1136,7 @@ class CrawlOperator(BaseOperator):
 
     async def is_crawl_stopping(
         self, crawl: CrawlSpec, status: CrawlStatus
-    ) -> Optional[str]:
+    ) -> Optional[StopReason]:
         """check if crawl is stopping and set reason"""
         # if user requested stop, then enter stopping phase
         if crawl.stopping:
@@ -1203,8 +1246,11 @@ class CrawlOperator(BaseOperator):
                 await self.fail_crawl(crawl, status, pods, stats)
                 return status
 
-            if status.stopReason in ("stopped_by_user", "stopped_quota_reached"):
-                state = status.stopReason
+            state: TYPE_NON_RUNNING_STATES
+            if status.stopReason == "stopped_by_user":
+                state = "stopped_by_user"
+            elif status.stopReason == "stopped_quota_reached":
+                state = "stopped_quota_reached"
             else:
                 state = "complete"
 
@@ -1220,7 +1266,7 @@ class CrawlOperator(BaseOperator):
 
         # check for other statuses
         else:
-            new_status = None
+            new_status: TYPE_RUNNING_STATES
             if status_count.get("running"):
                 if status.state in ("generate-wacz", "uploading-wacz", "pending-wacz"):
                     new_status = "running"
@@ -1243,17 +1289,14 @@ class CrawlOperator(BaseOperator):
         self,
         crawl: CrawlSpec,
         status: CrawlStatus,
-        state: str,
+        state: TYPE_NON_RUNNING_STATES,
         stats: Optional[CrawlStats] = None,
     ) -> bool:
         """mark crawl as finished, set finished timestamp and final state"""
 
         finished = dt_now()
 
-        if state in SUCCESSFUL_STATES:
-            allowed_from = RUNNING_STATES
-        else:
-            allowed_from = RUNNING_AND_STARTING_STATES
+        allowed_from = RUNNING_AND_STARTING_STATES
 
         # if set_state returns false, already set to same status, return
         if not await self.set_state(
@@ -1290,7 +1333,7 @@ class CrawlOperator(BaseOperator):
         self,
         crawl: CrawlSpec,
         status: CrawlStatus,
-        state: str,
+        state: TYPE_NON_RUNNING_STATES,
     ) -> None:
         """Run tasks after crawl completes in asyncio.task coroutine."""
         await self.crawl_config_ops.stats_recompute_last(
@@ -1318,7 +1361,7 @@ class CrawlOperator(BaseOperator):
     async def do_qa_run_finished_tasks(
         self,
         crawl: CrawlSpec,
-        state: str,
+        state: TYPE_NON_RUNNING_STATES,
     ) -> None:
         """Run tasks after qa run completes in asyncio.task coroutine."""
 
