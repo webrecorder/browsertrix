@@ -23,7 +23,7 @@ spec:
   volumes:
     - name: crawler-workdir
       emptyDir:
-        sizeLimit: {{ crawler_workdir_size }}
+        sizeLimit: {{ profile_browser_workdir_size }}
 
   {% if priorityClassName %}
   priorityClassName: {{ priorityClassName }}

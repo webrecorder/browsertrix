@@ -247,12 +247,16 @@ crawler_extra_memory_per_browser: 768Mi
 #
 # profile_browser_cpu:
 
+# optional: set the workdir size for the profilebrowser pods
+# the workdir is used to store the browser profile data and other temporary files
+# profile_browser_workdir_size: 4Gi
+
 # Other Crawler Settings
 # ----------------------
 
 # minimum size allocated to each crawler
-# should be at least double crawl session size to ensure space for WACZ
-crawler_storage: "22Gi"
+# should be at least double crawl session size to ensure space for WACZ and browser profile data
+crawler_storage: "26Gi"
 
 # max size at which crawler will commit current crawl session
 crawler_session_size_limit_bytes: "10000000000"
@@ -271,9 +275,7 @@ crawler_liveness_port: 6065
 # crawler_gid: 201400007
 # crawler_fsgroup: 201400007
 
-# optional: set the workdir size for the crawler and profilebrowser pods
-# the workdir is used to store the browser profile data and other temporary files
-# crawler_workdir_size: 10Gi
+
 
 # time to wait for graceful stop
 grace_period: 1000
