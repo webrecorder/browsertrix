@@ -282,6 +282,8 @@ def test_delete_qa_run(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     assert r.json()["deleted"] == 2
 
+    time.sleep(5)
+
     # deleted from finished qa list
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
