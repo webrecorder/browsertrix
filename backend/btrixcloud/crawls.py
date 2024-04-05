@@ -811,7 +811,8 @@ class CrawlOps(BaseCrawlOps):
             all_qa = [QARunOut(**qa_run_data) for qa_run_data in qa_finished.values()]
         all_qa.sort(key=lambda x: x.finished or dt_now(), reverse=True)
         qa = crawl_data.get("qa")
-        if qa:
+        # ensure current QA run didn't just fail, just in case
+        if qa and (not skip_failed or qa.get("state") in SUCCESSFUL_STATES):
             all_qa.insert(0, QARunOut(**qa))
         return all_qa
 
