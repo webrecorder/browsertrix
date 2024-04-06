@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
+import clsx from "clsx";
 import { css, html, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { classMap } from "lit/directives/class-map.js";
 import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -32,6 +32,7 @@ import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { isActive } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import { tw } from "@/utils/tailwind";
 
 const SECTIONS = [
   "overview",
@@ -198,20 +199,27 @@ export class ArchivedItemDetail extends TailwindElement {
     switch (this.activeTab) {
       case "qa":
         sectionContent = this.renderPanel(
-          html`${this.renderTitle(msg("Quality Assurance (QA)"))}
-            <div>
+          html`${this.renderTitle(msg("Quality Assurance"))}
+            <div class="ml-auto flex flex-wrap justify-end gap-2">
+              ${this.qaRuns?.length
+                ? html` <sl-button
+                    variant="primary"
+                    size="small"
+                    href="${this.navigate.orgBasePath}/items/crawl/${this
+                      .crawlId}/review/screenshots?qaRunId=${this.qaRunId ||
+                    ""}"
+                    @click=${this.navigate.link}
+                  >
+                    <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
+                    ${msg("Review Crawl")}
+                  </sl-button>`
+                : undefined}
               <sl-button
-                variant="primary"
                 size="small"
-                href="${this.navigate.orgBasePath}/items/crawl/${this
-                  .crawlId}/review/screenshots?qaRunId=${this.qaRunId || ""}"
-                @click=${this.navigate.link}
-              >
-                <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
-                ${msg("Review Crawl")}
-              </sl-button>
-              <sl-button
-                size="small"
+                variant="${
+                  // This is checked again being 0 explicitly because while QA state is loading, `this.qaRuns` is undefined, and the content change is less when the rightmost button stays non-primary when a run exists.
+                  this.qaRuns?.length === 0 ? "primary" : "default"
+                }"
                 @click=${() => void this.startQARun()}
                 ?loading=${!this.qaRuns}
               >
@@ -247,11 +255,9 @@ export class ArchivedItemDetail extends TailwindElement {
         );
         break;
       case "replay":
-        sectionContent = this.renderPanel(msg("Replay"), this.renderReplay(), {
-          "overflow-hidden": true,
-          "rounded-lg": true,
-          border: true,
-        });
+        sectionContent = this.renderPanel(msg("Replay"), this.renderReplay(), [
+          tw`overflow-hidden rounded-lg border`,
+        ]);
         break;
       case "files":
         sectionContent = this.renderPanel(msg("Files"), this.renderFiles());
@@ -275,22 +281,16 @@ export class ArchivedItemDetail extends TailwindElement {
         sectionContent = this.renderPanel(
           msg("Crawl Settings"),
           this.renderConfig(),
-          {
-            "p-4": true,
-            "rounded-lg": true,
-            border: true,
-          },
+          [tw`rounded-lg border p-4`],
         );
         break;
       default:
         sectionContent = html`
           <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <div class="col-span-1 flex flex-col">
-              ${this.renderPanel(msg("Overview"), this.renderOverview(), {
-                "p-4": true,
-                "rounded-lg": true,
-                border: true,
-              })}
+              ${this.renderPanel(msg("Overview"), this.renderOverview(), [
+                tw`rounded-lg border p-4`,
+              ])}
             </div>
             <div class="col-span-1 flex flex-col">
               ${this.renderPanel(
@@ -319,11 +319,7 @@ export class ArchivedItemDetail extends TailwindElement {
                   )}
                 `,
                 this.renderMetadata(),
-                {
-                  "p-4": true,
-                  "rounded-lg": true,
-                  border: true,
-                },
+                [tw`rounded-lg border p-4`],
               )}
             </div>
           </div>
@@ -365,14 +361,18 @@ export class ArchivedItemDetail extends TailwindElement {
 
       <main>
         <section class="grid gap-6 md:grid-cols-14">
-          <div class="col-span-14 grid border-b md:col-span-3 md:border-b-0 ">
+          <div
+            class="col-span-14 grid min-w-0 border-b md:col-span-3 md:border-b-0"
+          >
             <div
               class="-mx-3 box-border flex overflow-x-auto px-3 md:mx-0 md:block md:px-0"
             >
               ${this.renderNav()}
             </div>
           </div>
-          <div class="col-span-14 md:col-span-11">${sectionContent}</div>
+          <div class="col-span-14 min-w-0 md:col-span-11">
+            ${sectionContent}
+          </div>
         </section>
       </main>
 
@@ -448,7 +448,7 @@ export class ArchivedItemDetail extends TailwindElement {
     };
     return html`
       <nav
-        class="sticky top-0 flex flex-row gap-2 pb-4 text-center md:mt-10 md:flex-col md:text-start"
+        class="sticky top-0 -mx-3 flex flex-row gap-2 overflow-x-auto px-3 pb-4 text-center md:mt-10 md:flex-col md:text-start"
         role="menu"
       >
         ${renderNavItem({
@@ -617,29 +617,22 @@ export class ArchivedItemDetail extends TailwindElement {
   }
 
   private renderTitle(title: string) {
-    return html`<h2 class="text-lg font-semibold">${title}</h2>`;
+    return html`<h2 class="text-lg font-semibold leading-8">${title}</h2>`;
   }
 
   private renderPanel(
     heading: string | TemplateResult,
     content: TemplateResult | undefined,
-    classes: Record<string, boolean> = {},
+    classes: clsx.ClassValue[] = [],
   ) {
     const headingIsTitle = typeof heading === "string";
     return html`
       <header
-        class="flex-0 mb-2 flex h-8 min-h-fit items-center justify-between leading-none"
+        class="flex-0 mb-2 flex min-h-fit flex-wrap items-center justify-between gap-2 leading-none"
       >
         ${headingIsTitle ? this.renderTitle(heading) : heading}
       </header>
-      <div
-        class=${classMap({
-          "flex-1": true,
-          ...classes,
-        })}
-      >
-        ${content}
-      </div>
+      <div class=${clsx("flex-1", ...classes)}>${content}</div>
     `;
   }
 
@@ -689,7 +682,7 @@ export class ArchivedItemDetail extends TailwindElement {
             ? html`
                 <btrix-crawl-status
                   state=${this.crawl.state}
-                  ?isUpload=${this.crawl.type === "upload"}
+                  type=${this.crawl.type}
                 ></btrix-crawl-status>
               `
             : html`<sl-skeleton class="mb-[3px] h-[16px] w-24"></sl-skeleton>`}
