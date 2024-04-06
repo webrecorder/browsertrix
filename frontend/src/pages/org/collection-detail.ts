@@ -683,7 +683,7 @@ export class CollectionDetail extends LiteElement {
         slot="namePrefix"
         state=${item.state}
         hideLabel
-        ?isUpload=${item.type === "upload"}
+        type=${item.type}
       ></btrix-crawl-status>
       ${this.isCrawler
         ? html`

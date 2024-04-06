@@ -504,7 +504,7 @@ export class CrawlsList extends LiteElement {
         slot="namePrefix"
         state=${item.state}
         hideLabel
-        ?isUpload=${item.type === "upload"}
+        type=${item.type}
       ></btrix-crawl-status>
       <btrix-table-cell slot="actionCell" class="px-1">
         <btrix-overflow-dropdown

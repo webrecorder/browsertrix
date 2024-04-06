@@ -6,6 +6,8 @@ import startCase from "lodash/fp/startCase";
 import type { CrawlState } from "@/types/crawler";
 import { animatePulse } from "@/utils/css";
 
+type CrawlType = "crawl" | "upload" | "qa";
+
 @localized()
 @customElement("btrix-crawl-status")
 export class CrawlStatus extends LitElement {
@@ -15,8 +17,8 @@ export class CrawlStatus extends LitElement {
   @property({ type: Boolean })
   hideLabel = false;
 
-  @property({ type: Boolean })
-  isUpload = false;
+  @property({ type: String })
+  type: CrawlType = "crawl";
 
   @property({ type: Boolean })
   stopping = false;
@@ -59,11 +61,12 @@ export class CrawlStatus extends LitElement {
   // instead of separate utility function?
   static getContent(
     state?: CrawlState | AnyString,
-    isUpload?: boolean,
+    type: CrawlType = "crawl",
   ): {
     icon: TemplateResult;
     label: string;
   } {
+    const isUpload = type === "upload";
     let icon = html`<sl-icon
       name="circle"
       class="neutral"
@@ -155,11 +158,15 @@ export class CrawlStatus extends LitElement {
 
       case "complete":
         icon = html`<sl-icon
-          name=${isUpload ? "upload" : "check-circle-fill"}
+          name=${type === "upload" ? "upload" : "check-circle-fill"}
           slot="prefix"
           style="color: var(--success)"
         ></sl-icon>`;
-        label = isUpload ? msg("Uploaded") : msg("Complete");
+        label = {
+          upload: msg("Uploaded"),
+          crawl: msg("Complete"),
+          qa: msg("Ready for Review"),
+        }[type];
         break;
 
       case "failed":
@@ -220,7 +227,7 @@ export class CrawlStatus extends LitElement {
   render() {
     const state =
       this.stopping && this.state === "running" ? "stopping" : this.state;
-    const { icon, label } = CrawlStatus.getContent(state, this.isUpload);
+    const { icon, label } = CrawlStatus.getContent(state, this.type);
     if (this.hideLabel) {
       return html`<div class="icon-only">
         <sl-tooltip content=${label}
