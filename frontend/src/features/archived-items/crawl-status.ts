@@ -165,7 +165,7 @@ export class CrawlStatus extends LitElement {
         label = {
           upload: msg("Uploaded"),
           crawl: msg("Complete"),
-          qa: msg("Ready for Review"),
+          qa: msg("Complete"),
         }[type];
         break;
 
