@@ -4,6 +4,7 @@ import { when } from "lit/directives/when.js";
 
 import type { ArchivedItemDetail } from "../archived-item-detail";
 
+import type { PageChangeEvent } from "@/components/ui/pagination";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import {
   approvalFromPage,
@@ -14,20 +15,12 @@ import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
-type RenderParams = {
-  reviewStatus: ArchivedItem["reviewStatus"] | undefined;
-  qaCrawlExecSeconds: ArchivedItem["qaCrawlExecSeconds"] | undefined;
-  qaRuns: ArchivedItemDetail["qaRuns"];
-  qaRunId: ArchivedItemDetail["qaRunId"];
-  pages: ArchivedItemDetail["pages"];
-};
-
 export const iconForCrawlReview = (status: ArchivedItem["reviewStatus"]) => {
   switch (status) {
     case "acceptable":
       return html`<sl-icon
-        name="patch-minus-fill"
-        class="text-neutral-600"
+        name="patch-minus"
+        class="text-success-600"
       ></sl-icon>`;
 
     case "failure":
@@ -50,7 +43,7 @@ export const iconForCrawlReview = (status: ArchivedItem["reviewStatus"]) => {
 export const labelForCrawlReview = (severity: ArchivedItem["reviewStatus"]) => {
   switch (severity) {
     case "failure":
-      return msg("Failed");
+      return msg("Poor");
     case "acceptable":
       return msg("Acceptable");
     case "good":
@@ -89,6 +82,22 @@ function displayReviewStatus(status: ArchivedItem["reviewStatus"] | undefined) {
   return statusWithIcon(icon, label);
 }
 
+function pageReviewStatus(page: ArchivedItemPage) {
+  const status = approvalFromPage(page);
+  const icon =
+    status === "commentOnly"
+      ? html`<sl-icon
+          name="chat-square-text-fill"
+          class="text-blue-600"
+        ></sl-icon>`
+      : iconForPageReview(status);
+  const label =
+    labelForPageReview(status) ??
+    html`<span class="text-neutral-500">${msg("None")}</span>`;
+
+  return statusWithIcon(icon, label);
+}
+
 function renderAnalysis() {
   return html`
     <div class="flex flex-col gap-6 md:flex-row">
@@ -108,29 +117,79 @@ function renderAnalysis() {
   `;
 }
 
-function pageReviewStatus(page: ArchivedItemPage) {
-  const status = approvalFromPage(page);
-  const icon =
-    status === "commentOnly"
-      ? html`<sl-icon
-          name="chat-square-text-fill"
-          class="text-blue-600"
-        ></sl-icon>`
-      : iconForPageReview(status);
-  const label =
-    labelForPageReview(status) ??
-    html`<span class="text-neutral-500">${msg("None")}</span>`;
-
-  return statusWithIcon(icon, label);
+function renderPageList(component: ArchivedItemDetail) {
+  return html`
+    <btrix-table
+      style="grid-template-columns: ${[
+        "[clickable-start] auto",
+        "16rem [clickable-end]",
+      ].join(" ")}"
+    >
+      <btrix-table-head>
+        <btrix-table-header-cell>${msg("Page")}</btrix-table-header-cell>
+        <btrix-table-header-cell>${msg("Approval")}</btrix-table-header-cell>
+      </btrix-table-head>
+      <btrix-table-body class="rounded border">
+        ${component.pages?.items.map(
+          (page, idx) => html`
+            <btrix-table-row
+              class="${idx > 0
+                ? "border-t"
+                : ""} cursor-pointer select-none transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50"
+            >
+              <btrix-table-cell
+                class="block overflow-hidden"
+                rowClickTarget="a"
+              >
+                <a
+                  class="truncate text-sm font-semibold"
+                  href=${`${
+                    component.navigate.orgBasePath
+                  }/items/${component.itemType}/${component.crawlId}/review/screenshots?qaRunId=${
+                    component.qaRunId || ""
+                  }&itemPageId=${page.id}`}
+                  @click=${component.navigate.link}
+                  >${page.title}</a
+                >
+                <div class="truncate text-xs leading-4 text-neutral-600">
+                  ${page.url}
+                </div>
+              </btrix-table-cell>
+              <btrix-table-cell>${pageReviewStatus(page)}</btrix-table-cell>
+            </btrix-table-row>
+          `,
+        )}
+      </btrix-table-body>
+    </btrix-table>
+    ${when(component.pages, (pages) =>
+      pages.total > pages.pageSize
+        ? html`
+            <footer class="mt-3 flex justify-center">
+              <btrix-pagination
+                page=${pages.page}
+                size=${pages.pageSize}
+                totalCount=${pages.total}
+                @page-change=${(e: PageChangeEvent) => {
+                  component.fetchPages({
+                    page: e.detail.page,
+                  });
+                }}
+              ></btrix-pagination>
+            </footer>
+          `
+        : nothing,
+    )}
+  `;
 }
 
-export function renderQA({
-  reviewStatus,
-  qaCrawlExecSeconds,
-  qaRuns,
-  qaRunId,
-  pages,
-}: RenderParams) {
+/**
+ * TODO convert to lit component
+ */
+export function renderQA(component: ArchivedItemDetail) {
+  const reviewStatus = component.crawl?.reviewStatus;
+  const qaCrawlExecSeconds = component.crawl?.qaCrawlExecSeconds;
+  const qaRuns = component.qaRuns;
+  const qaRunId = component.qaRunId;
   const finishedQARuns = qaRuns
     ? qaRuns.filter(({ finished }) => finished)
     : [];
@@ -202,7 +261,7 @@ export function renderQA({
               .items=${finishedQARuns}
               selectedId=${qaRunId || ""}
               @btrix-select=${(e: CustomEvent<SelectDetail>) =>
-                (qaRunId = e.detail.item.id)}
+                (component.qaRunId = e.detail.item.id)}
             ></btrix-qa-run-dropdown>
           </div>
 
@@ -227,52 +286,13 @@ export function renderQA({
         <h4 class="mb-2 mt-4 text-lg font-semibold leading-8">
           ${msg("Pages")}
         </h4>
-        <btrix-table class="qaPageList -mx-3 overflow-x-auto px-3">
-          <btrix-table-head>
-            <btrix-table-header-cell> ${msg("Page")} </btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Approval")}
-            </btrix-table-header-cell>
-          </btrix-table-head>
-          <btrix-table-body class="rounded border">
-            ${pages?.items.map(
-              (page, idx) => html`
-                <btrix-table-row class=${idx > 0 ? "border-t" : ""}>
-                  <btrix-table-cell class="block overflow-hidden">
-                    <div class="truncate text-sm font-semibold">
-                      ${page.title}
-                    </div>
-                    <div class="truncate text-xs leading-4 text-neutral-600">
-                      ${page.url}
-                    </div>
-                  </btrix-table-cell>
-                  <btrix-table-cell>
-                    ${pageReviewStatus(page)}
-                  </btrix-table-cell>
-                </btrix-table-row>
-              `,
-            )}
-          </btrix-table-body>
-        </btrix-table>
-        ${when(pages, (pages) =>
-          pages.total > pages.pageSize
-            ? html`
-                <footer class="mt-3 flex justify-center">
-                  <btrix-pagination
-                    page=${pages.page}
-                    size=${pages.pageSize}
-                    totalCount=${pages.total}
-                  ></btrix-pagination>
-                </footer>
-              `
-            : nothing,
-        )}
+        ${renderPageList(component)}
       </btrix-tab-group-panel>
       <btrix-tab-group-panel
         name="runs"
         class="-mx-3 block overflow-x-hidden px-3"
       >
-        <btrix-table class="qaPageList grid-cols-[repeat(4,_auto)_min-content]">
+        <btrix-table class="grid-cols-[repeat(4,_auto)_min-content]">
           <btrix-table-head>
             <btrix-table-header-cell> ${msg("State")} </btrix-table-header-cell>
             <btrix-table-header-cell>

@@ -106,6 +106,7 @@ export class Pagination extends LitElement {
         transition: opacity 0.2s;
         min-height: 1.5rem;
         min-width: 1.5rem;
+        user-select: none;
       }
 
       .navButton[disabled] {

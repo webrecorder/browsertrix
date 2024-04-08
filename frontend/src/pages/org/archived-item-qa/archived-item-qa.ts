@@ -494,7 +494,7 @@ export class ArchivedItemQA extends TailwindElement {
           <sl-radio-group
             class="mb-5"
             name="reviewStatus"
-            label=${msg("Crawl quality")}
+            label=${msg("Crawl Quality")}
             value=${this.item?.reviewStatus ?? ""}
             required
           >
@@ -504,7 +504,7 @@ export class ArchivedItemQA extends TailwindElement {
                 slot="prefix"
                 class="text-base"
               ></sl-icon>
-              ${msg("Failed")}
+              ${msg("Poor")}
             </sl-radio-button>
             <sl-radio-button value="acceptable" checked>
               <sl-icon

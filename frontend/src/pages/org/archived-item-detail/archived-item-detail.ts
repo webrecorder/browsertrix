@@ -56,7 +56,7 @@ type SectionName = (typeof SECTIONS)[number];
 @customElement("btrix-archived-item-detail")
 export class ArchivedItemDetail extends TailwindElement {
   static styles = css`
-    .qaPageList {
+    btrix-table {
       --btrix-cell-padding-top: var(--sl-spacing-x-small);
       --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
       --btrix-cell-padding-left: var(--sl-spacing-small);
@@ -89,7 +89,7 @@ export class ArchivedItemDetail extends TailwindElement {
   isCrawler!: boolean;
 
   @state()
-  private crawl?: ArchivedItem;
+  crawl?: ArchivedItem;
 
   @state()
   private workflow?: Workflow;
@@ -101,13 +101,13 @@ export class ArchivedItemDetail extends TailwindElement {
   private logs?: APIPaginatedList<CrawlLog>;
 
   @state()
-  private qaRuns?: QARun[];
+  qaRuns?: QARun[];
 
   @state()
-  private pages?: APIPaginatedList<ArchivedItemPage>;
+  pages?: APIPaginatedList<ArchivedItemPage>;
 
   @state()
-  private qaRunId?: string;
+  qaRunId?: string;
 
   @state()
   activeTab: SectionName | undefined = "overview";
@@ -132,7 +132,7 @@ export class ArchivedItemDetail extends TailwindElement {
   // TODO localize
   private readonly numberFormatter = new Intl.NumberFormat();
   private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
+  readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
 
   private get isActive(): boolean | null {
@@ -243,13 +243,14 @@ export class ArchivedItemDetail extends TailwindElement {
                 this.pages,
               ],
               () =>
-                renderQA({
-                  reviewStatus: this.crawl?.reviewStatus,
-                  qaCrawlExecSeconds: this.crawl?.qaCrawlExecSeconds,
-                  qaRuns: this.qaRuns,
-                  qaRunId: this.qaRunId,
-                  pages: this.pages,
-                }),
+                html`<div
+                  @btrix-qa-pages-page-change=${(e: PageChangeEvent) => {
+                    console.log(e);
+                    // e.stopPropagation();
+                  }}
+                >
+                  ${renderQA(this)}
+                </div>`,
             )}
           `,
         );
@@ -1240,7 +1241,7 @@ ${this.crawl?.description}
     );
   }
 
-  private async fetchPages(params?: APIPaginationQuery): Promise<void> {
+  async fetchPages(params?: APIPaginationQuery): Promise<void> {
     try {
       this.pages = await this.getPages({
         page: params?.page ?? this.pages?.page ?? 1,
