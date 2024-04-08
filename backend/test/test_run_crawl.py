@@ -289,7 +289,7 @@ def test_update_crawl(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
         headers=admin_auth_headers,
         json={
-            "reviewStatus": "good",
+            "reviewStatus": 5,
         },
     )
     assert r.status_code == 200
@@ -301,7 +301,7 @@ def test_update_crawl(
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["reviewStatus"] == "good"
+    assert r.json()["reviewStatus"] == 5
 
     # Try to update to invalid reviewStatus
     r = requests.patch(
@@ -318,7 +318,7 @@ def test_update_crawl(
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["reviewStatus"] == "good"
+    assert r.json()["reviewStatus"] == 5
 
     # Verify deleting works as well
     r = requests.patch(
