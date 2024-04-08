@@ -47,7 +47,7 @@ export class NewBrowserProfileDialog extends LiteElement {
         @reset=${this.onReset}
         @submit=${this.onSubmit}
       >
-        <div class="grid gap-5">
+        <div class="grid">
           <div>
             <label
               id="startingUrlLabel"
@@ -57,21 +57,10 @@ export class NewBrowserProfileDialog extends LiteElement {
             </label>
 
             <div class="flex">
-              <sl-select
-                class="mr-1 max-w-[8rem] grow-0"
-                name="urlPrefix"
-                value="https://"
-                hoist
-                @sl-hide=${this.stopProp}
-                @sl-after-hide=${this.stopProp}
-              >
-                <sl-option value="http://">http://</sl-option>
-                <sl-option value="https://">https://</sl-option>
-              </sl-select>
               <sl-input
                 class="grow"
                 name="url"
-                placeholder=${msg("example.com")}
+                placeholder=${msg("https://example.com")}
                 autocomplete="off"
                 aria-labelledby="startingUrlLabel"
                 required
@@ -134,13 +123,15 @@ export class NewBrowserProfileDialog extends LiteElement {
     this.isSubmitting = true;
 
     const formData = new FormData(event.target as HTMLFormElement);
-    const url = formData.get("url") as string;
+    let url = formData.get("url") as string;
 
     try {
+      url = url.trim();
+      if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        url = `https://${url}`;
+      }
       const data = await this.createBrowser({
-        url: `${formData.get("urlPrefix")?.toString()}${url.substring(
-          url.indexOf(",") + 1,
-        )}`,
+        url: url,
         crawlerChannel: this.crawlerChannel,
       });
 
