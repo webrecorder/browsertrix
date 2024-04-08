@@ -10,7 +10,11 @@ import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import type { ArchivedItemQAPage } from "@/types/qa";
 
 export type SortDirection = "asc" | "desc";
-export type SortableFieldNames = "textMatch" | "screenshotMatch" | "approved";
+export type SortableFieldNames =
+  | "textMatch"
+  | "screenshotMatch"
+  | "approved"
+  | "notes";
 type SortableFields = Record<
   SortableFieldNames,
   {
@@ -30,6 +34,10 @@ const sortableFields = {
   approved: {
     label: msg("Review"),
     // defaultDirection: "asc",
+  },
+  notes: {
+    label: msg("Comments"),
+    defaultDirection: "desc",
   },
   // url: {
   //   label: msg("Page URL"),
@@ -138,7 +146,9 @@ export class PageList extends TailwindElement {
                   <btrix-qa-page
                     class="is-leaf -my-4 scroll-my-8 py-4 first-of-type:mt-0 last-of-type:mb-0"
                     .page=${page}
-                    statusField=${this.orderBy.field}
+                    statusField=${this.orderBy.field === "notes"
+                      ? "approved"
+                      : this.orderBy.field}
                     ?selected=${page.id === this.itemPageId}
                   >
                   </btrix-qa-page>
@@ -211,6 +221,10 @@ export class PageList extends TailwindElement {
                 detail.sortBy = "approved";
                 detail.sortDirection = 1;
                 break;
+              case "comments":
+                detail.sortBy = "notes";
+                detail.sortDirection = -1;
+                break;
               // case "url":
               //   detail.sortBy = "url";
               //   detail.sortDirection = 1;
@@ -235,6 +249,7 @@ export class PageList extends TailwindElement {
           <sl-option value="textMatch"
             >${msg("Worst extracted text match")}</sl-option
           >
+          <sl-option value="comments">${msg("Most comments")}</sl-option>
           <sl-option value="approved">${msg("Recently approved")}</sl-option>
           <sl-option value="notApproved">${msg("Not approved")}</sl-option>
         </sl-select>

@@ -31,7 +31,7 @@ import {
   type SortableFieldNames,
   type SortDirection,
 } from "@/features/qa/page-list/page-list";
-import { type UpdateItemPageDetail } from "@/features/qa/page-qa-toolbar";
+import { type UpdateItemPageDetail } from "@/features/qa/page-qa-approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
 import type {
   APIPaginatedList,
@@ -375,14 +375,14 @@ export class ArchivedItemQA extends TailwindElement {
               <sl-icon slot="prefix" name="arrow-left"></sl-icon>
               ${msg("Previous Page")}
             </sl-button>
-            <btrix-page-qa-toolbar
+            <btrix-page-qa-approval
               .authState=${this.authState}
               .orgId=${this.orgId}
               .itemId=${this.itemId}
               .pageId=${this.itemPageId}
               .page=${this.page}
               @btrix-update-item-page=${this.onUpdateItemPage}
-            ></btrix-page-qa-toolbar>
+            ></btrix-page-qa-approval>
             <sl-button
               variant="primary"
               size="small"

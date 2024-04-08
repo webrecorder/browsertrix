@@ -145,7 +145,7 @@ function renderPageListControls(component: ArchivedItemDetail) {
             });
           }}
         >
-          <sl-option value="title.1">${msg("Title")} ></sl-option>
+          <sl-option value="title.1">${msg("Title")}</sl-option>
           <sl-option value="url.1">${msg("URL")}</sl-option>
           <sl-option value="notes.-1">${msg("Most comments")}</sl-option>
           <sl-option value="approved.-1">${msg("Recently approved")}</sl-option>
