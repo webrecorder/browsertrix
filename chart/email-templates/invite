@@ -54,7 +54,9 @@ You have been invited by {{ sender }} to join their organization, "{{ org_name }
 
 {% else %}
 
-You can join by clicking here: {{ invite_url }}
+We're excited you're here and can't wait to help you get started crawling! You can now set up your account using the link below.
+
+{{ invite_url }}
 {% endif %}
 
 Here's what you should do first off to get the most value out of your experience:
