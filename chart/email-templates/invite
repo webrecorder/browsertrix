@@ -12,28 +12,35 @@ Welcome to Browsertrix!
 {% endif %}
 
 {% if is_new %}
-<p>You can now set up your account using the link below.</p>
+<p>We're excited you're here and can't wait to help you get started crawling! You can now set up your account using the link below.</p>
 
 <p style="font-weight: bold; padding: 12px; background-color: lightgrey"><a href="{{ invite_url }}">Click here to create an account.</a></p>
 {% else %}
 <p style="font-weight: bold; padding: 12px; background-color: lightgrey"><a href="{{ invite_url }}">Click here to accept this invite.</a></p>
 {% endif %}
 
-<p>When you first access your account, you’ll be directed to your Dashboard. It contains information you may want to view frequently including: Storage Usage, Crawling Info,  Collections, and Monthly Usage History. From there, you can click <i>+ Create New</i> to create your first Crawl Workflow!
-
-
-<p>For more info, check out the <b><a href="https://docs.browsertrix.cloud/user-guide/">Browsertrix User Guide</a></b></p>
-
+<p>Here's what you should do first off to get the most value out of your experience:</p>
 
 <p>
-We want you to get the most from your Browsertrix experience!
+Step 1: Create your login credentials<br/>
+Step 2: Review the <a href="https://docs.browsertrix.cloud/user-guide/">Browerstrix User Guide</a><br/>
+Step 3: <a href="https://docs.browsertrix.cloud/user-guide/org-settings/">Invite additional users</a> from your organization
 </p>
 
-<p>Let us know if you need any questions or feedback.</p>
-You can connect with our team at <a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
+<p>When you first access your account, you'll be directed to your Dashboard. It contains information you may want to view frequently including: Storage Usage, Crawling Info, Collections, and Monthly Usage History. From there, you can click <b>+ Create New</b> to <a href="https://docs.browsertrix.cloud/user-guide/workflow-setup/">create your first Crawl Workflow</a>!</p>
+
+<p>To help you get up to speed, here are the top three questions our users normally have on the first day:</p>
+
+<p>
+How do I <a href="https://docs.browsertrix.cloud/user-guide/workflow-setup/">crawl my first website</a>?<br/>
+How do I create a <a href="https://docs.browsertrix.cloud/user-guide/browser-profiles/">browser profile</a>?<br/>
+How do I <a href="https://docs.browsertrix.cloud/user-guide/archived-items/#crawl-settings">export my archived items</a>?
 </p>
 
-<p><i>The Webrecorder Team</i></p>
+<p>If you need any assistance, please direct your questions to <a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
+
+<p>Best Regards,</p>
+<p>The Webrecorder Team</p>
 </body>
 </html>
 ~~~
@@ -46,19 +53,28 @@ You have been invited by {{ sender }} to join their organization, "{{ org_name }
 
 {% else %}
 
-You can join by clicking here: {{ invite_url }}
+We're excited you're here and can't wait to help you get started crawling! You can now set up your account using the link below.
+
+{{ invite_url }}
 {% endif %}
 
-When you first access your account, you’ll be directed to your Dashboard. It contains information you may want to view frequently including: Storage Usage, Crawling Info,  Collections, and Monthly Usage History.
+Here's what you should do first off to get the most value out of your experience:
 
-For more info, check out Browsertrix User Guide at: https://docs.browsertrix.cloud/user-guide/
+Step 1: Create your login credentials
+Step 2: Review the Browerstrix User Guide (https://docs.browsertrix.cloud/user-guide/)
+Step 3: Invite additional users from your organization (https://docs.browsertrix.cloud/user-guide/org-settings/)
 
+When you first access your account, you'll be directed to your Dashboard.
+It contains information you may want to view frequently including: Storage Usage, Crawling Info, Collections, and Monthly Usage History.
+From there, you can click +Create New to create your first Crawl Workflow! (https://docs.browsertrix.cloud/user-guide/workflow-setup/)
 
-If you ever need to reset your password, go here: {{ origin }}/log-in/forgot-password
+To help you get up to speed, here are the top three questions our users normally have on the first day:
 
+How do I crawl my first website? (https://docs.browsertrix.cloud/user-guide/workflow-setup/)
+How do I create a browser profile? (https://docs.browsertrix.cloud/user-guide/browser-profiles/)
+How do I export my archived items? (https://docs.browsertrix.cloud/user-guide/archived-items/#crawl-settings)
 
-We want you to get the most from your Browsertrix experience. Let us know if you need any questions or feedback.
-You can connect with our team at {{ support_email }}.
+If you need any assistance, please direct your questions to {{ support_email }}.
 
-
-
+Best Regards,
+The Webrecorder Team

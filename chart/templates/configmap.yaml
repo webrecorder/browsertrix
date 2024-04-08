@@ -147,4 +147,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
 
 data:
-{{ (.Files.Glob "email-templates/*").AsConfig | indent 2 }}
+{{- $email_templates := .Values.email.templates | default dict }}
+{{- range tuple "failed_bg_job" "invite" "password_reset" "validate" }}
+  {{ . }}: |
+{{ ((get $email_templates . ) | default ($.Files.Get (printf "%s/%s" "email-templates" . ))) | indent 4 }}
+  {{- end }}
