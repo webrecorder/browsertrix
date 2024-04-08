@@ -28,7 +28,7 @@ const sortableFields = {
     defaultDirection: "desc",
   },
   approved: {
-    label: msg("Review Status"),
+    label: msg("Review"),
     // defaultDirection: "asc",
   },
   // url: {
@@ -85,6 +85,13 @@ export class PageList extends TailwindElement {
     field: "screenshotMatch",
     direction: "asc",
   };
+
+  @property({ type: Object })
+  filterBy: {
+    reviewed?: boolean;
+    approved?: boolean;
+    hasNotes?: boolean;
+  } = {};
 
   @query(".scrollContainer")
   private readonly scrollContainer?: HTMLElement | null;
@@ -236,11 +243,20 @@ export class PageList extends TailwindElement {
   }
 
   private renderFilterControl() {
+    const value = () => {
+      if (this.filterBy.approved) return "approved";
+      if (this.filterBy.approved === false) return "rejected";
+      if (this.filterBy.reviewed) return "reviewed";
+      if (this.filterBy.reviewed === false) return "notReviewed";
+      if (this.filterBy.hasNotes) return "hasNotes";
+      return "";
+    };
     return html`
       <div class="w-full">
         <sl-select
           class="label-same-line"
-          label=${msg("Review status:")}
+          label=${msg("Approval:")}
+          value=${value()}
           @sl-change=${(e: SlChangeEvent) => {
             const { value } = e.target as SlSelect;
             const detail: QaFilterChangeDetail = {
@@ -277,13 +293,13 @@ export class PageList extends TailwindElement {
           size="small"
         >
           <sl-option value="">${msg("Any")}</sl-option>
-          <sl-option value="notReviewed">${msg("No review")}</sl-option>
-          <sl-option value="reviewed">${msg("Reviewed")}</sl-option>
-          <sl-option value="approved">${msg("Reviewed as approved")}</sl-option>
-          <sl-option value="rejected">${msg("Reviewed as rejected")}</sl-option>
-          <sl-option value="hasNotes"
-            >${msg("Reviewed with comment")}</sl-option
+          <sl-option value="notReviewed">${msg("None")}</sl-option>
+          <sl-option value="reviewed"
+            >${msg("Approved, rejected, or commented")}</sl-option
           >
+          <sl-option value="approved">${msg("Approved")}</sl-option>
+          <sl-option value="rejected">${msg("Rejected")}</sl-option>
+          <sl-option value="hasNotes">${msg("Commented")}</sl-option>
         </sl-select>
       </div>
     `;

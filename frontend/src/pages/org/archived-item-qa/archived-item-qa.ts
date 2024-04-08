@@ -461,6 +461,7 @@ export class ArchivedItemQA extends TailwindElement {
                 ? "desc"
                 : "asc") as SortDirection,
             }}
+            .filterBy=${this.filterPagesBy}
             totalPages=${+(this.item?.stats?.done || 0)}
             @btrix-qa-pagination-change=${(
               e: CustomEvent<QaPaginationChangeDetail>,
@@ -493,7 +494,7 @@ export class ArchivedItemQA extends TailwindElement {
           <sl-radio-group
             class="mb-5"
             name="reviewStatus"
-            label=${msg("Crawl quality assessment")}
+            label=${msg("Crawl quality")}
             value=${this.item?.reviewStatus ?? ""}
             required
           >
