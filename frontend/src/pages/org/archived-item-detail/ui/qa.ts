@@ -1,4 +1,5 @@
-import { msg } from "@lit/localize";
+import { msg, str } from "@lit/localize";
+import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type TemplateResult } from "lit";
 import { when } from "lit/directives/when.js";
 
@@ -83,19 +84,21 @@ function displayReviewStatus(status: ArchivedItem["reviewStatus"] | undefined) {
 }
 
 function pageReviewStatus(page: ArchivedItemPage) {
-  const status = approvalFromPage(page);
-  const icon =
-    status === "commentOnly"
-      ? html`<sl-icon
-          name="chat-square-text-fill"
-          class="text-blue-600"
-        ></sl-icon>`
-      : iconForPageReview(status);
+  const approvalStatus = approvalFromPage(page);
+  const status = approvalStatus === "commentOnly" ? null : approvalStatus;
+  const icon = iconForPageReview(status);
   const label =
     labelForPageReview(status) ??
-    html`<span class="text-neutral-500">${msg("None")}</span>`;
+    html`<span class="text-neutral-400">${msg("None")}</span>`;
 
   return statusWithIcon(icon, label);
+}
+
+function renderCommentIcon() {
+  return html`<sl-icon
+    name="chat-square-text-fill"
+    class="text-blue-600"
+  ></sl-icon> `;
 }
 
 function renderAnalysis() {
@@ -117,17 +120,57 @@ function renderAnalysis() {
   `;
 }
 
+function renderPageListControls(component: ArchivedItemDetail) {
+  return html`
+    <div
+      class="z-40 mb-1 flex flex-wrap items-center gap-2 rounded-lg border bg-neutral-50 px-5 py-3"
+    >
+      <div class="flex w-full grow items-center md:w-fit">
+        <sl-select
+          id="qaPagesSortBySelect"
+          class="label-same-line"
+          label=${msg("Sort by:")}
+          size="small"
+          value="approved.-1"
+          pill
+          @sl-change=${(e: SlChangeEvent) => {
+            const { value } = e.target as SlSelect;
+            const [field, direction] = (
+              Array.isArray(value) ? value[0] : value
+            ).split(".");
+            component.fetchPages({
+              sortBy: field,
+              sortDirection: +direction,
+              page: 1,
+            });
+          }}
+        >
+          <sl-option value="title.1">${msg("Title")} ></sl-option>
+          <sl-option value="url.1">${msg("URL")}</sl-option>
+          <sl-option value="notes.-1">${msg("Most comments")}</sl-option>
+          <sl-option value="approved.-1">${msg("Recently approved")}</sl-option>
+          <sl-option value="approved.1">${msg("Not approved")}</sl-option>
+        </sl-select>
+      </div>
+    </div>
+  `;
+}
+
 function renderPageList(component: ArchivedItemDetail) {
+  const commentIcon = renderCommentIcon();
   return html`
     <btrix-table
+      class="mx-2"
       style="grid-template-columns: ${[
         "[clickable-start] auto",
-        "16rem [clickable-end]",
+        "12rem",
+        "12rem [clickable-end]",
       ].join(" ")}"
     >
       <btrix-table-head>
         <btrix-table-header-cell>${msg("Page")}</btrix-table-header-cell>
         <btrix-table-header-cell>${msg("Approval")}</btrix-table-header-cell>
+        <btrix-table-header-cell>${msg("Comments")}</btrix-table-header-cell>
       </btrix-table-head>
       <btrix-table-body class="rounded border">
         ${component.pages?.items.map(
@@ -156,6 +199,20 @@ function renderPageList(component: ArchivedItemDetail) {
                 </div>
               </btrix-table-cell>
               <btrix-table-cell>${pageReviewStatus(page)}</btrix-table-cell>
+              <btrix-table-cell
+                >${page.notes?.length
+                  ? statusWithIcon(
+                      commentIcon,
+                      page.notes.length === 1
+                        ? msg(str`1 comment`)
+                        : msg(
+                            str`${page.notes.length.toLocaleString()} comments`,
+                          ),
+                    )
+                  : html`<span class="text-neutral-400"
+                      >${msg("None")}</span
+                    >`}</btrix-table-cell
+              >
             </btrix-table-row>
           `,
         )}
@@ -283,10 +340,14 @@ export function renderQA(component: ArchivedItemDetail) {
                 <sl-spinner></sl-spinner>
               </div>`}
         </section>
-        <h4 class="mb-2 mt-4 text-lg font-semibold leading-8">
-          ${msg("Pages")}
-        </h4>
-        ${renderPageList(component)}
+        <div>
+          <h4 class="mb-2 mt-4 text-lg leading-8">
+            <span class="font-semibold">${msg("Pages")}</span> (${(
+              component.pages?.total ?? 0
+            ).toLocaleString()})
+          </h4>
+        </div>
+        ${renderPageListControls(component)} ${renderPageList(component)}
       </btrix-tab-group-panel>
       <btrix-tab-group-panel
         name="runs"

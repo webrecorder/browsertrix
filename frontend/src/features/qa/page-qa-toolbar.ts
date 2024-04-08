@@ -277,7 +277,7 @@ export class PageQAToolbar extends TailwindElement {
       ${when(
         comments.length,
         () => html`
-          <btrix-details>
+          <btrix-details open>
             <span slot="title"
               >${msg(str`Comments (${comments.length.toLocaleString()})`)}</span
             >

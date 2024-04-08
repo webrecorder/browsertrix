@@ -950,6 +950,8 @@ export class ArchivedItemQA extends TailwindElement {
       this.pages = await this.getPages({
         page: params?.page ?? this.pages?.page ?? 1,
         pageSize: params?.pageSize ?? this.pages?.pageSize ?? DEFAULT_PAGE_SIZE,
+        sortBy: this.sortPagesBy.sortBy,
+        sortDirection: this.sortPagesBy.sortDirection,
       });
     } catch {
       this.notify.toast({
@@ -961,12 +963,10 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private async getPages(
-    params?: APIPaginationQuery & { reviewed?: boolean },
+    params?: APIPaginationQuery & APISortQuery & { reviewed?: boolean },
   ): Promise<APIPaginatedList<ArchivedItemQAPage>> {
     const query = queryString.stringify(
       {
-        sortBy: this.sortPagesBy.sortBy,
-        sortDirection: this.sortPagesBy.sortDirection,
         ...(this.qaRunId ? this.filterPagesBy : {}),
         ...params,
       },

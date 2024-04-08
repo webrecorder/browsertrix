@@ -1,7 +1,8 @@
 import { localized, msg, str } from "@lit/localize";
+import type { SlSelect } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { css, html, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -18,7 +19,11 @@ import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type {
+  APIPaginatedList,
+  APIPaginationQuery,
+  APISortQuery,
+} from "@/types/api";
 import type {
   ArchivedItem,
   ArchivedItemPage,
@@ -114,6 +119,9 @@ export class ArchivedItemDetail extends TailwindElement {
 
   @state()
   private openDialogName?: "scale" | "metadata" | "exclusions";
+
+  @query("#qaPagesSortBySelect")
+  qaPagesSortBySelect?: SlSelect | null;
 
   private get listUrl(): string {
     let path = "items";
@@ -242,15 +250,7 @@ export class ArchivedItemDetail extends TailwindElement {
                 this.qaRunId,
                 this.pages,
               ],
-              () =>
-                html`<div
-                  @btrix-qa-pages-page-change=${(e: PageChangeEvent) => {
-                    console.log(e);
-                    // e.stopPropagation();
-                  }}
-                >
-                  ${renderQA(this)}
-                </div>`,
+              () => renderQA(this),
             )}
           `,
         );
@@ -1241,11 +1241,29 @@ ${this.crawl?.description}
     );
   }
 
-  async fetchPages(params?: APIPaginationQuery): Promise<void> {
+  async fetchPages(params?: APIPaginationQuery & APISortQuery): Promise<void> {
     try {
+      await this.updateComplete;
+
+      let sortBy = params?.sortBy;
+      let sortDirection = params?.sortDirection;
+
+      if (!sortBy && this.qaPagesSortBySelect?.value[0]) {
+        const value = this.qaPagesSortBySelect?.value;
+        if (value) {
+          const [field, direction] = (
+            Array.isArray(value) ? value[0] : value
+          ).split(".");
+          sortBy = field;
+          sortDirection = +direction;
+        }
+      }
+
       this.pages = await this.getPages({
         page: params?.page ?? this.pages?.page ?? 1,
         pageSize: params?.pageSize ?? this.pages?.pageSize ?? 10,
+        sortBy,
+        sortDirection,
       });
     } catch {
       this.notify.toast({
@@ -1257,12 +1275,10 @@ ${this.crawl?.description}
   }
 
   private async getPages(
-    params?: APIPaginationQuery & { reviewed?: boolean },
+    params?: APIPaginationQuery & APISortQuery & { reviewed?: boolean },
   ): Promise<APIPaginatedList<ArchivedItemPage>> {
     const query = queryString.stringify(
       {
-        // sortBy: this.sortPagesBy.sortBy,
-        // sortDirection: this.sortPagesBy.sortDirection,
         ...params,
       },
       {
@@ -1270,9 +1286,7 @@ ${this.crawl?.description}
       },
     );
     return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
-      this.qaRunId
-        ? `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${this.qaRunId}/pages?${query}`
-        : `/orgs/${this.orgId}/crawls/${this.crawlId}/pages?${query}`,
+      `/orgs/${this.orgId}/crawls/${this.crawlId}/pages?${query}`,
       this.authState!,
     );
   }
