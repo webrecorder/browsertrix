@@ -32,7 +32,7 @@ const sortableFields = {
     defaultDirection: "desc",
   },
   approved: {
-    label: msg("Review"),
+    label: msg("Approval"),
     // defaultDirection: "asc",
   },
   notes: {

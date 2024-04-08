@@ -46,7 +46,7 @@ export const labelForCrawlReview = (severity: ArchivedItem["reviewStatus"]) => {
     case "failure":
       return msg("Poor");
     case "acceptable":
-      return msg("Acceptable");
+      return msg("Fair");
     case "good":
       return msg("Good");
     default:
@@ -273,14 +273,13 @@ export function renderQA(component: ArchivedItemDetail) {
             renderSpinner,
           )}
         </btrix-desc-list-item>
-        <btrix-desc-list-item label=${msg("Review")}>
+        <btrix-desc-list-item label=${msg("Crawl Rating")}>
           ${when(
             reviewStatus !== undefined,
             () => displayReviewStatus(reviewStatus),
             renderSpinner,
           )}
         </btrix-desc-list-item>
-
         <btrix-desc-list-item label=${msg("Elapsed Time")}>
           ${when(
             qaCrawlExecSeconds !== undefined,

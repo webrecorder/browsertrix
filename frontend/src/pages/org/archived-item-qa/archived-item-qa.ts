@@ -494,26 +494,10 @@ export class ArchivedItemQA extends TailwindElement {
           <sl-radio-group
             class="mb-5"
             name="reviewStatus"
-            label=${msg("Crawl Quality")}
+            label=${msg("Rate this crawl:")}
             value=${this.item?.reviewStatus ?? ""}
             required
           >
-            <sl-radio-button value="failure">
-              <sl-icon
-                name="patch-exclamation"
-                slot="prefix"
-                class="text-base"
-              ></sl-icon>
-              ${msg("Poor")}
-            </sl-radio-button>
-            <sl-radio-button value="acceptable" checked>
-              <sl-icon
-                name="patch-minus"
-                slot="prefix"
-                class="text-base"
-              ></sl-icon>
-              ${msg("Acceptable")}
-            </sl-radio-button>
             <sl-radio-button value="good">
               <sl-icon
                 name="patch-check"
@@ -521,6 +505,22 @@ export class ArchivedItemQA extends TailwindElement {
                 class="text-base"
               ></sl-icon>
               ${msg("Good")}
+            </sl-radio-button>
+            <sl-radio-button value="acceptable" checked>
+              <sl-icon
+                name="patch-minus"
+                slot="prefix"
+                class="text-base"
+              ></sl-icon>
+              ${msg("Fair")}
+            </sl-radio-button>
+            <sl-radio-button value="failure">
+              <sl-icon
+                name="patch-exclamation"
+                slot="prefix"
+                class="text-base"
+              ></sl-icon>
+              ${msg("Poor")}
             </sl-radio-button>
           </sl-radio-group>
           <sl-textarea
