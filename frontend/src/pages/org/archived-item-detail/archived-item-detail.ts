@@ -1,13 +1,14 @@
 import { localized, msg, str } from "@lit/localize";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { CopyButton } from "@/components/ui/copy-button";
+import { type Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { RelativeDuration } from "@/components/ui/relative-duration";
 import { APIController } from "@/controllers/api";
@@ -30,6 +31,7 @@ import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { tw } from "@/utils/tailwind";
 
 import "./ui/qa";
+
 
 const SECTIONS = [
   "overview",
@@ -99,6 +101,12 @@ export class ArchivedItemDetail extends TailwindElement {
 
   @state()
   private openDialogName?: "scale" | "metadata" | "exclusions";
+
+  @query("#stopQARunDialog")
+  private stopQARunDialog?: Dialog | null;
+
+  @query("#cancelQARunDialog")
+  private cancelQARunDialog?: Dialog | null;
 
   private get listUrl(): string {
     let path = "items";
@@ -934,6 +942,43 @@ ${this.crawl?.description}
   private readonly renderQAHeader = (qaRuns: QARun[]) => {
     const qaIsRunning = isActive(qaRuns[0]?.state);
     return html`
+      ${qaIsRunning
+        ? html`
+            <sl-button-group>
+              <sl-button
+                size="small"
+                @click=${() => this.stopQARunDialog?.show()}
+              >
+                <sl-icon name="slash-square" slot="prefix"></sl-icon>
+                <span>${msg("Stop Analysis")}</span>
+              </sl-button>
+              <sl-button
+                size="small"
+                @click=${() => this.cancelQARunDialog?.show()}
+              >
+                <sl-icon
+                  name="x-octagon"
+                  slot="prefix"
+                  class="text-danger"
+                ></sl-icon>
+                <span class="text-danger">${msg("Cancel Analysis")}</span>
+              </sl-button>
+            </sl-button-group>
+          `
+        : html`
+            <sl-button
+              size="small"
+              variant="${
+                // This is checked again being 0 explicitly because while QA state is loading, `this.qaRuns` is undefined, and the content change is less when the rightmost button stays non-primary when a run exists.
+                qaRuns.length === 0 ? "primary" : "default"
+              }"
+              @click=${() => void this.startQARun()}
+              ?disabled=${qaIsRunning}
+            >
+              <sl-icon slot="prefix" name="microscope" library="app"></sl-icon>
+              ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
+            </sl-button>
+          `}
       ${qaRuns.length
         ? html`
             <sl-tooltip
@@ -954,23 +999,53 @@ ${this.crawl?.description}
             </sl-tooltip>
           `
         : nothing}
-      <sl-tooltip
-        ?disabled=${!qaIsRunning}
-        content=${msg("Analysis is already running.")}
-      >
-        <sl-button
-          size="small"
-          variant="${
-            // This is checked again being 0 explicitly because while QA state is loading, `this.qaRuns` is undefined, and the content change is less when the rightmost button stays non-primary when a run exists.
-            qaRuns.length === 0 ? "primary" : "default"
-          }"
-          @click=${() => void this.startQARun()}
-          ?disabled=${qaIsRunning}
-        >
-          <sl-icon slot="prefix" name="microscope" library="app"></sl-icon>
-          ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
-        </sl-button>
-      </sl-tooltip>
+
+      <btrix-dialog id="stopQARunDialog" .label=${msg("Stop QA Analysis?")}>
+        ${msg(
+          "Pages analyzed so far will be saved and this run will be marked as incomplete. Are you sure you want to stop this analysis run?",
+        )}
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            .autofocus=${true}
+            @click=${() => this.stopQARunDialog?.hide()}
+          >
+            ${msg("Keep Running")}
+          </sl-button>
+          <sl-button
+            size="small"
+            variant="primary"
+            @click=${async () => {
+              await this.stopQARun();
+              this.stopQARunDialog?.hide();
+            }}
+            >${msg("Stop Analysis")}</sl-button
+          >
+        </div>
+      </btrix-dialog>
+      <btrix-dialog id="cancelQARunDialog" .label=${msg("Cancel QA Analysis?")}>
+        ${msg(
+          "Canceling will discard all analysis data associated with this run. Are you sure you want to cancel this analysis run?",
+        )}
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            .autofocus=${true}
+            @click=${() => this.cancelQARunDialog?.hide()}
+          >
+            ${msg("Keep Running")}
+          </sl-button>
+          <sl-button
+            size="small"
+            variant="primary"
+            @click=${async () => {
+              await this.cancelQARun();
+              this.cancelQARunDialog?.hide();
+            }}
+            >${msg("Cancel Analysis")}</sl-button
+          >
+        </div>
+      </btrix-dialog>
     `;
   };
 
@@ -1197,6 +1272,70 @@ ${this.crawl?.description}
 
       this.notify.toast({
         message: msg("Sorry, couldn't start QA run at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async stopQARun() {
+    try {
+      const data = await this.api.fetch<{ success: boolean }>(
+        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/qa/stop`,
+        this.authState!,
+        {
+          method: "POST",
+        },
+      );
+
+      if (!data.success) {
+        throw data;
+      }
+
+      void this.fetchQARuns();
+      this.notify.toast({
+        message: msg(`Stopping QA analysis...`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: unknown) {
+      this.notify.toast({
+        message:
+          e === "qa_not_running"
+            ? msg("Analysis is not currently running.")
+            : msg("Sorry, couldn't stop crawl at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async cancelQARun() {
+    try {
+      const data = await this.api.fetch<{ success: boolean }>(
+        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/qa/cancel`,
+        this.authState!,
+        {
+          method: "POST",
+        },
+      );
+
+      if (!data.success) {
+        throw data;
+      }
+
+      void this.fetchQARuns();
+      this.notify.toast({
+        message: msg(`Canceling QA analysis...`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: unknown) {
+      this.notify.toast({
+        message:
+          e === "qa_not_running"
+            ? msg("Analysis is not currently running.")
+            : msg("Sorry, couldn't cancel crawl at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
