@@ -17,7 +17,7 @@ module.exports = [
     devServer: {
       watchFiles: ["src/**/*", __filename],
       open: true,
-      compress: true,
+      compress: false,
       hot: false,
       static: [
         {

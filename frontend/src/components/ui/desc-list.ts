@@ -60,7 +60,7 @@ export class DescListItem extends LitElement {
   render() {
     return html`<div class="item">
       <div class="content">
-        <dt>${this.label}</dt>
+        <dt>${this.label}<slot name="label"></slot></dt>
         <dd><slot></slot></dd>
       </div>
     </div>`;

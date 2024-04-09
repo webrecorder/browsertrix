@@ -156,4 +156,6 @@ module.exports = {
   extract: {
     include: ["./src/**/*.{ts,js}"],
   },
+
+  plugins: [require("@tailwindcss/container-queries")],
 };

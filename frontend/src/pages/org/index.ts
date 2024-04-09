@@ -4,7 +4,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
-import type { QATab } from "./archived-item-qa";
+import type { QATab } from "./archived-item-qa/types";
 import type { Tab as CollectionTab } from "./collection-detail";
 import type {
   Member,
@@ -31,7 +31,7 @@ import "./workflows-list";
 import "./workflows-new";
 import "./archived-item-detail";
 import "./archived-items";
-import "./archived-item-qa";
+import "./archived-item-qa/archived-item-qa";
 import "./collections-list";
 import "./collection-detail";
 import "./browser-profiles-detail";
@@ -55,6 +55,7 @@ export type OrgParams = {
     itemId?: string;
     itemPageId?: string;
     qaTab?: QATab;
+    qaRunId?: string;
     workflowId?: string;
     collectionId?: string;
   };
@@ -372,7 +373,7 @@ export class Org extends LiteElement {
   private renderOrgNavBar() {
     return html`
       <div
-        class="mx-auto box-border w-full max-w-screen-desktop overflow-x-hidden"
+        class="mx-auto box-border w-full max-w-screen-desktop overflow-x-hidden overscroll-contain"
       >
         <nav class="-mx-3 flex items-end overflow-x-auto px-3">
           ${this.renderNavTab({
@@ -532,6 +533,7 @@ export class Org extends LiteElement {
           orgId=${this.orgId}
           itemId=${params.itemId}
           itemPageId=${ifDefined(params.itemPageId)}
+          qaRunId=${ifDefined(params.qaRunId)}
           tab=${params.qaTab}
           ?isCrawler=${this.isCrawler}
         ></btrix-archived-item-qa>`;

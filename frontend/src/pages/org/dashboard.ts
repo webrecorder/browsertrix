@@ -603,21 +603,18 @@ export class Dashboard extends LiteElement {
     renderFooter?: (metric: Metrics) => TemplateResult,
   ) {
     return html`
-      <section class="flex flex-1 flex-col rounded border p-4">
-        <h2 class="mb-3 border-b pb-3 text-lg font-semibold leading-none">
-          ${title}
-        </h2>
-        <div class="flex-1">
-          ${when(
-            this.metrics,
-            () => renderContent(this.metrics!),
-            this.renderCardSkeleton,
-          )}
-        </div>
-        ${when(renderFooter && this.metrics, () =>
-          renderFooter!(this.metrics!),
+      <btrix-card class="flex-1">
+        <span slot="title">${title}</span>
+        ${when(
+          this.metrics,
+          () => renderContent(this.metrics!),
+          this.renderCardSkeleton,
         )}
-      </section>
+        ${when(
+          renderFooter && this.metrics,
+          () => html`<div slot="footer">${renderFooter!(this.metrics!)}</div>`,
+        )}
+      </btrix-card>
     `;
   }
 

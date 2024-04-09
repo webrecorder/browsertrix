@@ -112,6 +112,37 @@ frontend_avg_memory_threshold: 95
 
 Browsertrix sends user invitations, password resets, background job failure notifications, and other important messages via email. The `email` setting can be used to configure the SMTP server used to send emails. To avoid email messages from Browsertrix being flagged as spam, be sure to use the same domain for `sender_email` and `reply_to_email`.
 
+
+### Customizing Email Templates
+
+It is also possible to custom the HTML/plain-text email templates that Browsertrix sends out with a custom `--set-file` parameter for `email.templates.<TEMPLATE_NAME>` pointing to an alternate template file. For example, to use a custom `invite.html` for the invite template, add:
+
+```shell
+helm upgrade --install btrix ... --set-file email.templates.invite=./invite.html
+```
+
+The list of available templates (and their default content) [is available here](https://github.com/webrecorder/browsertrix-cloud/tree/main/chart/email-templates)
+
+The format of the template file is, for HTML emails:
+
+```
+Subject
+~~~
+HTML Content
+~~~
+Text Content
+```
+
+or, for plain text emails:
+
+```
+Subject
+~~~
+Text
+```
+
+The `~~~` is used to separate the sections. If only two sections are provided, the email template is treated as plain text, if three, an HTML email with plain text fallback is sent.
+
 ## Signing WACZ files
 
 Browsertrix has the ability to cryptographically sign WACZ files with [Authsign](https://github.com/webrecorder/authsign). The ``signer`` setting can be used to enable this feature and configure Authsign.

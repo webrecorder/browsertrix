@@ -3,6 +3,7 @@ import "./badge";
 import "./navigation";
 
 import("./button");
+import("./card");
 import("./code");
 import("./combobox");
 import("./config-details");
@@ -27,6 +28,7 @@ import("./relative-duration");
 import("./search-combobox");
 import("./section-heading");
 import("./select-crawler");
+import("./tab-group");
 import("./tab-list");
 import("./table");
 import("./tag-input");

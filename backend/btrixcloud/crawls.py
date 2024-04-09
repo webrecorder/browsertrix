@@ -9,7 +9,7 @@ import urllib.parse
 from datetime import datetime
 from uuid import UUID
 
-from typing import Optional, List, Dict, Union, Any
+from typing import Optional, List, Dict, Union, Any, Sequence
 
 from fastapi import Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -40,7 +40,9 @@ from .models import (
     PaginatedResponse,
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
+    NON_RUNNING_STATES,
     ALL_CRAWL_STATES,
+    TYPE_ALL_CRAWL_STATES,
 )
 
 
@@ -442,8 +444,8 @@ class CrawlOps(BaseCrawlOps):
         self,
         crawl_id: str,
         is_qa: bool,
-        state: str,
-        allowed_from: List[str],
+        state: TYPE_ALL_CRAWL_STATES,
+        allowed_from: Sequence[TYPE_ALL_CRAWL_STATES],
         finished: Optional[datetime] = None,
         stats: Optional[CrawlStats] = None,
     ):
@@ -725,7 +727,9 @@ class CrawlOps(BaseCrawlOps):
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=500, detail=f"Error starting crawl: {exc}")
 
-    async def stop_crawl_qa_run(self, crawl_id: str, org: Organization):
+    async def stop_crawl_qa_run(
+        self, crawl_id: str, org: Organization, graceful: bool = True
+    ):
         """Stop crawl QA run, QA run removed when actually finished"""
         crawl = await self.get_crawl(crawl_id, org)
 
@@ -733,7 +737,9 @@ class CrawlOps(BaseCrawlOps):
             raise HTTPException(status_code=400, detail="qa_not_running")
 
         try:
-            result = await self.crawl_manager.shutdown_crawl(crawl.qa.id, graceful=True)
+            result = await self.crawl_manager.shutdown_crawl(
+                crawl.qa.id, graceful=graceful
+            )
 
             if result.get("error") == "Not Found":
                 # treat as success, qa crawl no longer exists, so mark as no qa
@@ -774,7 +780,7 @@ class CrawlOps(BaseCrawlOps):
 
         query: Dict[str, Any] = {"qa": None}
 
-        if crawl.qa.finished and crawl.qa.state in SUCCESSFUL_STATES:
+        if crawl.qa.finished and crawl.qa.state in NON_RUNNING_STATES:
             query[f"qaFinished.{crawl.qa.id}"] = crawl.qa.dict()
 
         if await self.crawls.find_one_and_update(
@@ -785,17 +791,28 @@ class CrawlOps(BaseCrawlOps):
         return False
 
     async def get_qa_runs(
-        self, crawl_id: str, org: Optional[Organization] = None
+        self,
+        crawl_id: str,
+        skip_failed: bool = False,
+        org: Optional[Organization] = None,
     ) -> List[QARunOut]:
         """Return list of QA runs"""
         crawl_data = await self.get_crawl_raw(
             crawl_id, org, "crawl", project={"qaFinished": True, "qa": True}
         )
         qa_finished = crawl_data.get("qaFinished") or {}
-        all_qa = [QARunOut(**qa_run_data) for qa_run_data in qa_finished.values()]
+        if skip_failed:
+            all_qa = [
+                QARunOut(**qa_run_data)
+                for qa_run_data in qa_finished.values()
+                if qa_run_data.get("state") in SUCCESSFUL_STATES
+            ]
+        else:
+            all_qa = [QARunOut(**qa_run_data) for qa_run_data in qa_finished.values()]
         all_qa.sort(key=lambda x: x.finished or dt_now(), reverse=True)
         qa = crawl_data.get("qa")
-        if qa:
+        # ensure current QA run didn't just fail, just in case
+        if qa and (not skip_failed or qa.get("state") in SUCCESSFUL_STATES):
             all_qa.insert(0, QARunOut(**qa))
         return all_qa
 
@@ -1060,6 +1077,13 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         # pylint: disable=unused-argument
         return await ops.stop_crawl_qa_run(crawl_id, org)
 
+    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/cancel", tags=["qa"])
+    async def cancel_crawl_qa_run(
+        crawl_id: str, org: Organization = Depends(org_crawl_dep)
+    ):
+        # pylint: disable=unused-argument
+        return await ops.stop_crawl_qa_run(crawl_id, org, graceful=False)
+
     @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/delete", tags=["qa"])
     async def delete_crawl_qa_runs(
         crawl_id: str,
@@ -1074,8 +1098,10 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         tags=["qa"],
         response_model=List[QARunOut],
     )
-    async def get_qa_runs(crawl_id, org: Organization = Depends(org_viewer_dep)):
-        return await ops.get_qa_runs(crawl_id, org)
+    async def get_qa_runs(
+        crawl_id, org: Organization = Depends(org_viewer_dep), skipFailed: bool = False
+    ):
+        return await ops.get_qa_runs(crawl_id, skip_failed=skipFailed, org=org)
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa/activeQA",
