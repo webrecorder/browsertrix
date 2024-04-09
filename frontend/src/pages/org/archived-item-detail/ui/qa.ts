@@ -138,7 +138,7 @@ function renderPageListControls(component: ArchivedItemDetail) {
             const [field, direction] = (
               Array.isArray(value) ? value[0] : value
             ).split(".");
-            component.fetchPages({
+            void component.fetchPages({
               sortBy: field,
               sortDirection: +direction,
               page: 1,

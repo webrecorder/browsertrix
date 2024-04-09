@@ -1249,7 +1249,7 @@ ${this.crawl?.description}
       let sortDirection = params?.sortDirection;
 
       if (!sortBy && this.qaPagesSortBySelect?.value[0]) {
-        const value = this.qaPagesSortBySelect?.value;
+        const value = this.qaPagesSortBySelect.value;
         if (value) {
           const [field, direction] = (
             Array.isArray(value) ? value[0] : value
