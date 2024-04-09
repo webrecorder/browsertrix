@@ -120,7 +120,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
   private pages?: APIPaginatedList<ArchivedItemPage>;
 
   @query("#qaPagesSortBySelect")
-  private qaPagesSortBySelect?: SlSelect | null;
+  private readonly qaPagesSortBySelect?: SlSelect | null;
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
@@ -212,7 +212,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 ${msg("QA Analysis")}
               </h4>
               ${when(this.qaRuns, (qaRuns) => {
-                const finishedQARuns = qaRuns
+                const finishedQARuns = qaRuns.length
                   ? qaRuns.filter(({ finished }) => finished)
                   : [];
                 return html`
@@ -503,7 +503,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                   size=${pages.pageSize}
                   totalCount=${pages.total}
                   @page-change=${(e: PageChangeEvent) => {
-                    this.fetchPages({
+                    void this.fetchPages({
                       page: e.detail.page,
                     });
                   }}
