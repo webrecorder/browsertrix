@@ -31,7 +31,7 @@ import {
   type SortableFieldNames,
   type SortDirection,
 } from "@/features/qa/page-list/page-list";
-import { type UpdateItemPageDetail } from "@/features/qa/page-qa-toolbar";
+import { type UpdateItemPageDetail } from "@/features/qa/page-qa-approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
 import type {
   APIPaginatedList,
@@ -375,14 +375,14 @@ export class ArchivedItemQA extends TailwindElement {
               <sl-icon slot="prefix" name="arrow-left"></sl-icon>
               ${msg("Previous Page")}
             </sl-button>
-            <btrix-page-qa-toolbar
+            <btrix-page-qa-approval
               .authState=${this.authState}
               .orgId=${this.orgId}
               .itemId=${this.itemId}
               .pageId=${this.itemPageId}
               .page=${this.page}
               @btrix-update-item-page=${this.onUpdateItemPage}
-            ></btrix-page-qa-toolbar>
+            ></btrix-page-qa-approval>
             <sl-button
               variant="primary"
               size="small"
@@ -461,6 +461,7 @@ export class ArchivedItemQA extends TailwindElement {
                 ? "desc"
                 : "asc") as SortDirection,
             }}
+            .filterBy=${this.filterPagesBy}
             totalPages=${+(this.item?.stats?.done || 0)}
             @btrix-qa-pagination-change=${(
               e: CustomEvent<QaPaginationChangeDetail>,
@@ -493,26 +494,10 @@ export class ArchivedItemQA extends TailwindElement {
           <sl-radio-group
             class="mb-5"
             name="reviewStatus"
-            label=${msg("Crawl quality assessment")}
+            label=${msg("Rate this crawl:")}
             value=${this.item?.reviewStatus ?? ""}
             required
           >
-            <sl-radio-button value="failure">
-              <sl-icon
-                name="patch-exclamation"
-                slot="prefix"
-                class="text-base"
-              ></sl-icon>
-              ${msg("Failed")}
-            </sl-radio-button>
-            <sl-radio-button value="acceptable" checked>
-              <sl-icon
-                name="patch-minus"
-                slot="prefix"
-                class="text-base"
-              ></sl-icon>
-              ${msg("Acceptable")}
-            </sl-radio-button>
             <sl-radio-button value="good">
               <sl-icon
                 name="patch-check"
@@ -520,6 +505,22 @@ export class ArchivedItemQA extends TailwindElement {
                 class="text-base"
               ></sl-icon>
               ${msg("Good")}
+            </sl-radio-button>
+            <sl-radio-button value="acceptable" checked>
+              <sl-icon
+                name="patch-minus"
+                slot="prefix"
+                class="text-base"
+              ></sl-icon>
+              ${msg("Fair")}
+            </sl-radio-button>
+            <sl-radio-button value="failure">
+              <sl-icon
+                name="patch-exclamation"
+                slot="prefix"
+                class="text-base"
+              ></sl-icon>
+              ${msg("Poor")}
             </sl-radio-button>
           </sl-radio-group>
           <sl-textarea
@@ -949,6 +950,8 @@ export class ArchivedItemQA extends TailwindElement {
       this.pages = await this.getPages({
         page: params?.page ?? this.pages?.page ?? 1,
         pageSize: params?.pageSize ?? this.pages?.pageSize ?? DEFAULT_PAGE_SIZE,
+        sortBy: this.sortPagesBy.sortBy,
+        sortDirection: this.sortPagesBy.sortDirection,
       });
     } catch {
       this.notify.toast({
@@ -960,12 +963,10 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private async getPages(
-    params?: APIPaginationQuery & { reviewed?: boolean },
+    params?: APIPaginationQuery & APISortQuery & { reviewed?: boolean },
   ): Promise<APIPaginatedList<ArchivedItemQAPage>> {
     const query = queryString.stringify(
       {
-        sortBy: this.sortPagesBy.sortBy,
-        sortDirection: this.sortPagesBy.sortDirection,
         ...(this.qaRunId ? this.filterPagesBy : {}),
         ...params,
       },
