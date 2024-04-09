@@ -1,3 +1,4 @@
+// @ts-check
 // cSpell:ignore glitchtip
 // webpack.config.js
 const childProcess = require("child_process");
@@ -5,12 +6,12 @@ const fs = require("fs");
 const path = require("path");
 
 const CopyPlugin = require("copy-webpack-plugin");
-const ESLintPlugin = require("eslint-webpack-plugin");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const webpack = require("webpack");
 
+// @ts-ignore
 const packageJSON = require("./package.json");
 
 const isDevServer = process.env.WEBPACK_SERVE;
@@ -33,6 +34,10 @@ const WEBSOCKET_HOST =
 
 // Get git info for release version info
 
+/**
+ * @param {string} cmd
+ * @param {string} defValue
+ */
 const execCommand = (cmd, defValue) => {
   try {
     return childProcess.execSync(cmd).toString().trim();
@@ -90,10 +95,9 @@ const main = {
           {
             loader: "postcss-loader",
             options: {
-              /** @type {import('postcss-load-config').Config} */
               postcssOptions: {
                 syntax: "postcss-lit",
-                plugins: [["tailwindcss"], ["autoprefixer"]],
+                plugins: ["tailwindcss", "autoprefixer"],
               },
             },
           },
@@ -144,6 +148,7 @@ const main = {
 
   resolve: {
     extensions: [".ts", ".js"],
+    // @ts-ignore
     plugins: [new TsconfigPathsPlugin()],
   },
 
@@ -181,16 +186,6 @@ const main = {
       scriptLoading: "defer",
     }),
 
-    // Lint js files
-    new ESLintPlugin({
-      // lint only changed files:
-      lintDirtyModulesOnly: true,
-      // prevent warnings from stopping dev build
-      emitWarning: false,
-      // enable to auto-fix source files:
-      // fix: true
-    }),
-
     new CopyPlugin({
       patterns: [
         // Copy Shoelace assets to dist/shoelace
@@ -215,12 +210,14 @@ const main = {
         },
       ],
     }),
+    // @ts-ignore
     ...(process.env.BUNDLE_ANALYZER
       ? [new (require("webpack-bundle-analyzer").BundleAnalyzerPlugin)()]
       : []),
   ],
 };
 
+/** @type {import('webpack').Configuration} */
 const vnc = {
   entry: "./node_modules/@novnc/novnc/core/rfb.js",
   experiments: { outputModule: true },
@@ -232,5 +229,5 @@ const vnc = {
     hashFunction: "xxhash64",
   },
 };
-
+/** @type {[import('webpack').Configuration, import('webpack').Configuration]} */
 module.exports = [main, vnc];
