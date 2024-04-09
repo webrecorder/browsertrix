@@ -1,15 +1,10 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlSelect } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import { css, html, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
-import { guard } from "lit/directives/guard.js";
+import { html, type PropertyValues, type TemplateResult } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
-import queryString from "query-string";
-
-import { renderQA } from "./ui/qa";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -19,14 +14,9 @@ import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
-import type {
-  APIPaginatedList,
-  APIPaginationQuery,
-  APISortQuery,
-} from "@/types/api";
+import type { APIPaginatedList } from "@/types/api";
 import type {
   ArchivedItem,
-  ArchivedItemPage,
   Crawl,
   CrawlConfig,
   Seed,
@@ -38,6 +28,8 @@ import type { AuthState } from "@/utils/AuthService";
 import { isActive } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { tw } from "@/utils/tailwind";
+
+import "./ui/qa";
 
 const SECTIONS = [
   "overview",
@@ -60,15 +52,6 @@ type SectionName = (typeof SECTIONS)[number];
 @localized()
 @customElement("btrix-archived-item-detail")
 export class ArchivedItemDetail extends TailwindElement {
-  static styles = css`
-    btrix-table {
-      --btrix-cell-padding-top: var(--sl-spacing-x-small);
-      --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
-      --btrix-cell-padding-left: var(--sl-spacing-small);
-      --btrix-cell-padding-right: var(--sl-spacing-small);
-    }
-  `;
-
   @property({ type: Object })
   authState?: AuthState;
 
@@ -85,16 +68,22 @@ export class ArchivedItemDetail extends TailwindElement {
   showOrgLink = false;
 
   @property({ type: String })
-  orgId!: string;
+  orgId?: string;
 
   @property({ type: String })
   crawlId?: string;
 
   @property({ type: Boolean })
-  isCrawler!: boolean;
+  isCrawler = false;
 
   @state()
-  crawl?: ArchivedItem;
+  private qaRunId?: string;
+
+  @state()
+  private qaRuns?: QARun[];
+
+  @state()
+  private crawl?: ArchivedItem;
 
   @state()
   private workflow?: Workflow;
@@ -106,22 +95,10 @@ export class ArchivedItemDetail extends TailwindElement {
   private logs?: APIPaginatedList<CrawlLog>;
 
   @state()
-  qaRuns?: QARun[];
-
-  @state()
-  pages?: APIPaginatedList<ArchivedItemPage>;
-
-  @state()
-  qaRunId?: string;
-
-  @state()
   activeTab: SectionName | undefined = "overview";
 
   @state()
   private openDialogName?: "scale" | "metadata" | "exclusions";
-
-  @query("#qaPagesSortBySelect")
-  qaPagesSortBySelect?: SlSelect | null;
 
   private get listUrl(): string {
     let path = "items";
@@ -140,7 +117,7 @@ export class ArchivedItemDetail extends TailwindElement {
   // TODO localize
   private readonly numberFormatter = new Intl.NumberFormat();
   private readonly api = new APIController(this);
-  readonly navigate = new NavigateController(this);
+  private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
 
   private get isActive(): boolean | null {
@@ -167,30 +144,16 @@ export class ArchivedItemDetail extends TailwindElement {
       void this.fetchCrawl();
       void this.fetchCrawlLogs();
       void this.fetchSeeds();
-
-      this.fetchTabData();
-    } else {
-      if (changedProperties.has("activeTab") && this.activeTab) {
-        this.fetchTabData();
+      void this.fetchQARuns();
+    } else if (changedProperties.get("activeTab")) {
+      if (this.activeTab === "qa") {
+        void this.fetchQARuns();
       }
     }
     if (changedProperties.has("workflowId") && this.workflowId) {
       void this.fetchWorkflow();
     }
   }
-
-  private fetchTabData() {
-    switch (this.activeTab) {
-      case "qa":
-        void this.fetchPages();
-        void this.fetchQARuns();
-        break;
-
-      default:
-        break;
-    }
-  }
-
   connectedCallback(): void {
     // Set initial active section based on URL #hash value
     const hash = window.location.hash.slice(1);
@@ -209,49 +172,18 @@ export class ArchivedItemDetail extends TailwindElement {
         sectionContent = this.renderPanel(
           html`${this.renderTitle(msg("Quality Assurance"))}
             <div class="ml-auto flex flex-wrap justify-end gap-2">
-              ${this.qaRuns?.length
-                ? html` <sl-button
-                    variant="primary"
-                    size="small"
-                    href="${this.navigate.orgBasePath}/items/crawl/${this
-                      .crawlId}/review/screenshots?qaRunId=${this.qaRunId ||
-                    ""}"
-                    @click=${this.navigate.link}
-                  >
-                    <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
-                    ${msg("Review Crawl")}
-                  </sl-button>`
-                : undefined}
-              <sl-button
-                size="small"
-                variant="${
-                  // This is checked again being 0 explicitly because while QA state is loading, `this.qaRuns` is undefined, and the content change is less when the rightmost button stays non-primary when a run exists.
-                  this.qaRuns?.length === 0 ? "primary" : "default"
-                }"
-                @click=${() => void this.startQARun()}
-                ?loading=${!this.qaRuns}
-              >
-                <sl-icon
-                  slot="prefix"
-                  name="microscope"
-                  library="app"
-                ></sl-icon>
-                ${this.qaRuns?.length
-                  ? msg("Rerun Analysis")
-                  : msg("Run Analysis")}
-              </sl-button>
-            </div>`,
+              ${when(this.qaRuns, this.renderQAHeader)}
+            </div> `,
           html`
-            ${guard(
-              [
-                this.crawl?.reviewStatus,
-                this.crawl?.qaCrawlExecSeconds,
-                this.qaRuns,
-                this.qaRunId,
-                this.pages,
-              ],
-              () => renderQA(this),
-            )}
+            <btrix-archived-item-detail-qa
+              .authState=${this.authState}
+              .orgId=${this.orgId}
+              .crawlId=${this.crawlId}
+              .itemType=${this.itemType}
+              .crawl=${this.crawl}
+              .qaRuns=${this.qaRuns}
+              .qaRunId=${this.qaRunId}
+            ></btrix-archived-item-detail-qa>
           `,
         );
         break;
@@ -992,6 +924,34 @@ ${this.crawl?.description}
     `;
   }
 
+  private readonly renderQAHeader = (qaRuns: QARun[]) => {
+    return html`
+      ${qaRuns.length
+        ? html` <sl-button
+            variant="primary"
+            size="small"
+            href="${this.navigate.orgBasePath}/items/crawl/${this
+              .crawlId}/review/screenshots?qaRunId=${this.qaRunId || ""}"
+            @click=${this.navigate.link}
+          >
+            <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
+            ${msg("Review Crawl")}
+          </sl-button>`
+        : undefined}
+      <sl-button
+        size="small"
+        variant="${
+          // This is checked again being 0 explicitly because while QA state is loading, `this.qaRuns` is undefined, and the content change is less when the rightmost button stays non-primary when a run exists.
+          qaRuns.length === 0 ? "primary" : "default"
+        }"
+        @click=${() => void this.startQARun()}
+      >
+        <sl-icon slot="prefix" name="microscope" library="app"></sl-icon>
+        ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
+      </sl-button>
+    `;
+  };
+
   private readonly renderLoading = () =>
     html`<div class="my-24 flex w-full items-center justify-center text-3xl">
       <sl-spinner></sl-spinner>
@@ -1224,7 +1184,10 @@ ${this.crawl?.description}
   private async fetchQARuns(): Promise<void> {
     try {
       this.qaRuns = await this.getQARuns();
-      this.qaRunId = this.qaRunId || this.qaRuns[0]?.id;
+
+      if (!this.qaRunId && this.qaRuns[0]?.id) {
+        this.qaRunId = this.qaRuns[0].id;
+      }
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve archived item at this time."),
@@ -1237,56 +1200,6 @@ ${this.crawl?.description}
   private async getQARuns(): Promise<QARun[]> {
     return this.api.fetch<QARun[]>(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/qa`,
-      this.authState!,
-    );
-  }
-
-  async fetchPages(params?: APIPaginationQuery & APISortQuery): Promise<void> {
-    try {
-      await this.updateComplete;
-
-      let sortBy = params?.sortBy;
-      let sortDirection = params?.sortDirection;
-
-      if (!sortBy && this.qaPagesSortBySelect?.value[0]) {
-        const value = this.qaPagesSortBySelect.value;
-        if (value) {
-          const [field, direction] = (
-            Array.isArray(value) ? value[0] : value
-          ).split(".");
-          sortBy = field;
-          sortDirection = +direction;
-        }
-      }
-
-      this.pages = await this.getPages({
-        page: params?.page ?? this.pages?.page ?? 1,
-        pageSize: params?.pageSize ?? this.pages?.pageSize ?? 10,
-        sortBy,
-        sortDirection,
-      });
-    } catch {
-      this.notify.toast({
-        message: msg("Sorry, couldn't retrieve archived item at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  private async getPages(
-    params?: APIPaginationQuery & APISortQuery & { reviewed?: boolean },
-  ): Promise<APIPaginatedList<ArchivedItemPage>> {
-    const query = queryString.stringify(
-      {
-        ...params,
-      },
-      {
-        arrayFormat: "comma",
-      },
-    );
-    return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/pages?${query}`,
       this.authState!,
     );
   }
