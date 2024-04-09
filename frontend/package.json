@@ -98,8 +98,6 @@
   },
   "devDependencies": {
     "@lit/localize-tools": "^0.7.1",
-    "@types/node": "^20.12.6",
-    "@types/webpack": "^5.28.5",
     "@types/webpack-bundle-analyzer": "^4.7.0",
     "@web/dev-server-esbuild": "^0.3.3",
     "@web/dev-server-import-maps": "^0.2.0",
