@@ -451,20 +451,13 @@ export class CollectionDetail extends LiteElement {
                   ${msg("Make Private")}
                 </sl-menu-item>
               `}
-          <!-- Shoelace doesn't allow "href" on menu items,
-              see https://github.com/shoelace-style/shoelace/issues/1351 -->
-          <a
+          <btrix-menu-item-link
             href=${`/api/orgs/${this.orgId}/collections/${this.collectionId}/download?auth_bearer=${authToken}`}
-            class="flex items-center gap-2 whitespace-nowrap px-6 py-[0.6rem] hover:bg-neutral-100"
-            @click=${(e: MouseEvent) => {
-              void (e.target as HTMLAnchorElement)
-                .closest("sl-dropdown")
-                ?.hide();
-            }}
+            download
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Collection")}
-          </a>
+          </btrix-menu-item-link>
           <sl-divider></sl-divider>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"
