@@ -30,6 +30,6 @@
     },
     "lib": ["DOM", "DOM.Iterable", "ES2021.WeakRef"],
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "webpack.*.js"],
   "exclude": ["node_modules"],
 }
