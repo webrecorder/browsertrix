@@ -326,14 +326,13 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 }}
               >
                 <sl-menu>
-                  <sl-menu-item
-                    @click=${() => {
-                      console.log("download");
-                    }}
+                  <btrix-menu-item-link
+                    href=${`/api/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${run.id}/replay.json`}
+                    download
                   >
                     <sl-icon name="download" slot="prefix"></sl-icon>
                     ${msg("Download QA Run")}
-                  </sl-menu-item>
+                  </btrix-menu-item-link>
                   <sl-divider></sl-divider>
                   <sl-menu-item
                     @click=${() => {
