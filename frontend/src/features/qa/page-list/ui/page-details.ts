@@ -86,21 +86,18 @@ export const pageDetails = (page: ArchivedItemQAPage) =>
         </span>
       </li>
     </ul>
-    ${page.notes?.[0]
+    ${page.notes?.length
       ? html` <sl-divider
             class="[--color:theme(colors.gray.200)] [--spacing:theme(spacing.3)]"
           ></sl-divider>
-          <ul class="text-xs leading-4">
-            ${page.notes.map(
-              (note) => html`
-                <li class="my-3 flex">
-                  <sl-icon
-                    name="chat-square-text-fill"
-                    class="mr-2 h-4 w-4 flex-none text-blue-600"
-                  ></sl-icon>
-                  ${note.text}
-                </li>
-              `,
-            )}
-          </ul>`
+          <div class="my-2 text-xs text-neutral-400">
+            ${msg("Newest comment:")}
+          </div>
+          <div class="mb-3 flex text-xs leading-4">
+            <sl-icon
+              name="chat-square-text-fill"
+              class="mr-2 h-4 w-4 flex-none text-blue-600"
+            ></sl-icon>
+            ${page.notes[page.notes.length - 1]?.text}
+          </div>`
       : nothing}`;

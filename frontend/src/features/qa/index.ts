@@ -1,3 +1,3 @@
 export * from "./page-list";
-import("./page-qa-toolbar");
+import("./page-qa-approval");
 import("./qa-run-dropdown");
