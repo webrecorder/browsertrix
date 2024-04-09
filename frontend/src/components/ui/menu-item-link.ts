@@ -12,10 +12,12 @@ import { NavigateController } from "@/controllers/navigate";
 /**
  * Enables `href` on menu items
  * See https://github.com/shoelace-style/shoelace/discussions/1629
+ *
+ * Based on https://github.com/shoelace-style/shoelace/blob/d0b71adb81e21687a5ef036565dad44bc609bcce/src/components/menu-item/menu-item.component.ts
  */
 @localized()
 @customElement("btrix-menu-item-link")
-export class Component extends TailwindElement {
+export class MenuItemLink extends TailwindElement {
   static styles = [menuItemStyles];
 
   @property({ type: String })
@@ -27,6 +29,9 @@ export class Component extends TailwindElement {
   @property({ type: Boolean })
   disabled = false;
 
+  @property({ type: Boolean })
+  loading = false;
+
   private readonly navigate = new NavigateController(this);
 
   render() {
@@ -37,11 +42,12 @@ export class Component extends TailwindElement {
       class=${classMap({
         "menu-item": true,
         "menu-item--disabled": this.disabled,
+        "menu-item--loading": this.loading,
       })}
       download=${this.download}
       aria-disabled=${this.disabled}
       @click=${(e: MouseEvent) => {
-        if (this.disabled) return;
+        if (this.disabled || this.loading) return;
 
         if (this.download) {
           const dropdown = this.shadowRoot!.host.closest<
@@ -62,6 +68,10 @@ export class Component extends TailwindElement {
       <slot name="prefix" part="prefix" class="menu-item__prefix"></slot>
       <slot part="label" class="menu-item__label"></slot>
       <slot name="suffix" part="suffix" class="menu-item__suffix"></slot>
+      <span part="submenu-icon" class="menu-item__chevron">
+        <!-- This also functions as a spacer in sl-menu-item -->
+      </span>
+      ${this.loading ? html` <sl-spinner part="spinner"></sl-spinner> ` : ""}
     </a>`;
   }
 }

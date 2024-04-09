@@ -1,5 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
+import type {
+  SlChangeEvent,
+  SlSelect,
+  SlShowEvent,
+} from "@shoelace-style/shoelace";
 import {
   css,
   html,
@@ -12,6 +16,8 @@ import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import type { MenuItemLink } from "@/components/ui/menu-item-link";
+import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
@@ -286,6 +292,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
   }
 
   private readonly renderQARunRows = (qaRuns: QARun[]) => {
+    console.log(qaRuns);
     return qaRuns.map(
       (run, idx) => html`
         <btrix-table-row class=${idx > 0 ? "border-t" : ""}>
@@ -319,21 +326,39 @@ export class ArchivedItemDetailQA extends TailwindElement {
           <btrix-table-cell class="px-1">
             <div class="col action">
               <btrix-overflow-dropdown
-                @click=${(e: MouseEvent) => {
-                  // Prevent navigation to detail view
-                  e.preventDefault();
-                  e.stopPropagation();
+                @sl-show=${async (e: SlShowEvent) => {
+                  const dropdown = e.currentTarget as OverflowDropdown;
+                  const downloadLink = dropdown.querySelector(
+                    "btrix-menu-item-link",
+                  ) as MenuItemLink;
+
+                  if (!downloadLink) {
+                    console.debug("no download link");
+                    return;
+                  }
+
+                  downloadLink.loading = true;
+                  const file = await this.getQARunDownloadLink(run.id);
+                  if (file) {
+                    downloadLink.disabled = false;
+                    downloadLink.href = file.path;
+                  } else {
+                    downloadLink.disabled = true;
+                  }
+                  downloadLink.loading = false;
                 }}
               >
                 <sl-menu>
-                  <btrix-menu-item-link
-                    href=${`/api/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${run.id}/replay.json`}
-                    download
-                  >
-                    <sl-icon name="download" slot="prefix"></sl-icon>
-                    ${msg("Download QA Run")}
-                  </btrix-menu-item-link>
-                  <sl-divider></sl-divider>
+                  ${run.state === "canceled"
+                    ? nothing
+                    : html`
+                        <btrix-menu-item-link href="#" download>
+                          <sl-icon name="download" slot="prefix"></sl-icon>
+                          ${msg("Download QA Run")}
+                        </btrix-menu-item-link>
+                        <sl-divider></sl-divider>
+                      `}
+
                   <sl-menu-item
                     @click=${() => {
                       console.log("delete");
@@ -569,5 +594,18 @@ export class ArchivedItemDetailQA extends TailwindElement {
       `/orgs/${this.orgId}/crawls/${this.crawlId}/pages?${query}`,
       this.authState!,
     );
+  }
+
+  async getQARunDownloadLink(qaRunId: string) {
+    try {
+      const { resources } = await this.api.fetch<QARun>(
+        `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${qaRunId}/replay.json`,
+        this.authState!,
+      );
+      // TODO handle more than one file
+      return resources?.[0];
+    } catch (e) {
+      console.debug(e);
+    }
   }
 }
