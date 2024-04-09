@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import clsx from "clsx";
-import { html, type PropertyValues, type TemplateResult } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -80,7 +80,7 @@ export class ArchivedItemDetail extends TailwindElement {
   private qaRunId?: string;
 
   @state()
-  private qaRuns?: QARun[];
+  qaRuns?: QARun[];
 
   @state()
   private crawl?: ArchivedItem;
@@ -145,6 +145,7 @@ export class ArchivedItemDetail extends TailwindElement {
       void this.fetchCrawlLogs();
       void this.fetchSeeds();
       void this.fetchQARuns();
+      void this.fetchQARuns();
     } else if (changedProperties.get("activeTab")) {
       if (this.activeTab === "qa") {
         void this.fetchQARuns();
@@ -153,7 +154,13 @@ export class ArchivedItemDetail extends TailwindElement {
     if (changedProperties.has("workflowId") && this.workflowId) {
       void this.fetchWorkflow();
     }
+    if (changedProperties.has("qaRuns") && this.qaRuns) {
+      if (!this.qaRunId && this.qaRuns[0]?.id) {
+        this.qaRunId = this.qaRuns[0].id;
+      }
+    }
   }
+
   connectedCallback(): void {
     // Set initial active section based on URL #hash value
     const hash = window.location.hash.slice(1);
@@ -925,30 +932,45 @@ ${this.crawl?.description}
   }
 
   private readonly renderQAHeader = (qaRuns: QARun[]) => {
+    const qaIsRunning = isActive(qaRuns[0]?.state);
     return html`
       ${qaRuns.length
-        ? html` <sl-button
-            variant="primary"
-            size="small"
-            href="${this.navigate.orgBasePath}/items/crawl/${this
-              .crawlId}/review/screenshots?qaRunId=${this.qaRunId || ""}"
-            @click=${this.navigate.link}
-          >
-            <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
-            ${msg("Review Crawl")}
-          </sl-button>`
-        : undefined}
-      <sl-button
-        size="small"
-        variant="${
-          // This is checked again being 0 explicitly because while QA state is loading, `this.qaRuns` is undefined, and the content change is less when the rightmost button stays non-primary when a run exists.
-          qaRuns.length === 0 ? "primary" : "default"
-        }"
-        @click=${() => void this.startQARun()}
+        ? html`
+            <sl-tooltip
+              ?disabled=${!qaIsRunning}
+              content=${msg("Reviews are disabled during analysis runs.")}
+            >
+              <sl-button
+                variant="primary"
+                size="small"
+                href="${this.navigate.orgBasePath}/items/crawl/${this
+                  .crawlId}/review/screenshots?qaRunId=${this.qaRunId || ""}"
+                @click=${this.navigate.link}
+                ?disabled=${qaIsRunning}
+              >
+                <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
+                ${msg("Review Crawl")}
+              </sl-button>
+            </sl-tooltip>
+          `
+        : nothing}
+      <sl-tooltip
+        ?disabled=${!qaIsRunning}
+        content=${msg("Analysis is already running.")}
       >
-        <sl-icon slot="prefix" name="microscope" library="app"></sl-icon>
-        ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
-      </sl-button>
+        <sl-button
+          size="small"
+          variant="${
+            // This is checked again being 0 explicitly because while QA state is loading, `this.qaRuns` is undefined, and the content change is less when the rightmost button stays non-primary when a run exists.
+            qaRuns.length === 0 ? "primary" : "default"
+          }"
+          @click=${() => void this.startQARun()}
+          ?disabled=${qaIsRunning}
+        >
+          <sl-icon slot="prefix" name="microscope" library="app"></sl-icon>
+          ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
+        </sl-button>
+      </sl-tooltip>
     `;
   };
 
@@ -1184,10 +1206,6 @@ ${this.crawl?.description}
   private async fetchQARuns(): Promise<void> {
     try {
       this.qaRuns = await this.getQARuns();
-
-      if (!this.qaRunId && this.qaRuns[0]?.id) {
-        this.qaRunId = this.qaRuns[0].id;
-      }
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve archived item at this time."),
