@@ -1,5 +1,5 @@
 import { localized, msg } from "@lit/localize";
-import { serialize } from "@shoelace-style/shoelace";
+import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { merge } from "immutable";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -41,7 +41,7 @@ import type {
 import type { ArchivedItem } from "@/types/crawler";
 import type { ArchivedItemQAPage, QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
-import { renderName } from "@/utils/crawler";
+import { isActive, renderName } from "@/utils/crawler";
 
 const DEFAULT_PAGE_SIZE = 100;
 
@@ -103,7 +103,7 @@ export class ArchivedItemQA extends TailwindElement {
   private item?: ArchivedItem;
 
   @state()
-  private qaRuns: QARun[] | undefined = [];
+  qaRuns: QARun[] | undefined = [];
 
   @state()
   private pages?: APIPaginatedList<ArchivedItemQAPage>;
@@ -220,15 +220,15 @@ export class ArchivedItemQA extends TailwindElement {
     if (changedProperties.has("itemId") && this.itemId) {
       void this.initItem();
     } else if (
-      changedProperties.get("filterPagesBy") ||
-      changedProperties.get("sortPagesBy") ||
-      changedProperties.get("qaRunId")
+      changedProperties.has("filterPagesBy") ||
+      changedProperties.has("sortPagesBy") ||
+      changedProperties.has("qaRunId")
     ) {
       void this.fetchPages();
     }
     if (
       (changedProperties.has("itemPageId") ||
-        changedProperties.get("qaRunId")) &&
+        changedProperties.has("qaRunId")) &&
       this.itemPageId
     ) {
       void this.fetchPage();
@@ -251,20 +251,18 @@ export class ArchivedItemQA extends TailwindElement {
 
   private async initItem() {
     void this.fetchCrawl();
-
-    if (this.qaRunId) {
-      void this.fetchQARuns();
-    } else {
-      await this.fetchQARuns();
-    }
-
-    if (this.itemPageId) {
-      void this.fetchPages({ page: 1 });
-    } else {
-      await this.fetchPages({ page: 1 });
-    }
+    await this.fetchQARuns();
 
     const searchParams = new URLSearchParams(window.location.search);
+
+    if (this.qaRunId) {
+      if (this.itemPageId) {
+        void this.fetchPages({ page: 1 });
+      } else {
+        await this.fetchPages({ page: 1 });
+      }
+    }
+
     const firstQaRun = this.qaRuns?.[0];
     const firstPage = this.pages?.items[0];
 
@@ -315,6 +313,8 @@ export class ArchivedItemQA extends TailwindElement {
     const finishedQARuns = this.qaRuns
       ? this.qaRuns.filter(({ finished }) => finished)
       : [];
+    const currentQARun = this.qaRuns?.find(({ id }) => id === this.qaRunId);
+    const disableReview = !currentQARun || isActive(currentQARun.state);
 
     return html`
       ${this.renderHidden()}
@@ -347,16 +347,24 @@ export class ArchivedItemQA extends TailwindElement {
               @click=${this.navigate.link}
               >${msg("Exit Review")}</sl-button
             >
-            <sl-button
-              variant="success"
-              size="small"
-              @click=${() => void this.reviewDialog?.show()}
+            <sl-tooltip
+              content=${msg(
+                "Reviews are temporarily disabled during analysis runs.",
+              )}
+              ?disabled=${!disableReview}
             >
-              <sl-icon slot="prefix" name="patch-check"> </sl-icon>
-              ${this.item?.reviewStatus
-                ? msg("Update Review")
-                : msg("Finish Review")}</sl-button
-            >
+              <sl-button
+                variant="success"
+                size="small"
+                @click=${() => void this.reviewDialog?.show()}
+                ?disabled=${disableReview}
+              >
+                <sl-icon slot="prefix" name="patch-check"> </sl-icon>
+                ${this.item?.reviewStatus
+                  ? msg("Update Review")
+                  : msg("Finish Review")}
+              </sl-button>
+            </sl-tooltip>
           </div>
         </header>
 
@@ -375,14 +383,22 @@ export class ArchivedItemQA extends TailwindElement {
               <sl-icon slot="prefix" name="arrow-left"></sl-icon>
               ${msg("Previous Page")}
             </sl-button>
-            <btrix-page-qa-approval
-              .authState=${this.authState}
-              .orgId=${this.orgId}
-              .itemId=${this.itemId}
-              .pageId=${this.itemPageId}
-              .page=${this.page}
-              @btrix-update-item-page=${this.onUpdateItemPage}
-            ></btrix-page-qa-approval>
+            <sl-tooltip
+              content=${msg(
+                "Approvals are temporarily disabled during analysis runs.",
+              )}
+              ?disabled=${!disableReview}
+            >
+              <btrix-page-qa-approval
+                .authState=${this.authState}
+                .orgId=${this.orgId}
+                .itemId=${this.itemId}
+                .pageId=${this.itemPageId}
+                .page=${this.page}
+                ?disabled=${disableReview}
+                @btrix-update-item-page=${this.onUpdateItemPage}
+              ></btrix-page-qa-approval>
+            </sl-tooltip>
             <sl-button
               variant="primary"
               size="small"
@@ -950,12 +966,11 @@ export class ArchivedItemQA extends TailwindElement {
       this.pages = await this.getPages({
         page: params?.page ?? this.pages?.page ?? 1,
         pageSize: params?.pageSize ?? this.pages?.pageSize ?? DEFAULT_PAGE_SIZE,
-        sortBy: this.sortPagesBy.sortBy,
-        sortDirection: this.sortPagesBy.sortDirection,
+        ...this.sortPagesBy,
       });
     } catch {
       this.notify.toast({
-        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        message: msg("Sorry, couldn't retrieve pages at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -967,7 +982,7 @@ export class ArchivedItemQA extends TailwindElement {
   ): Promise<APIPaginatedList<ArchivedItemQAPage>> {
     const query = queryString.stringify(
       {
-        ...(this.qaRunId ? this.filterPagesBy : {}),
+        ...this.filterPagesBy,
         ...params,
       },
       {
@@ -975,9 +990,7 @@ export class ArchivedItemQA extends TailwindElement {
       },
     );
     return this.api.fetch<APIPaginatedList<ArchivedItemQAPage>>(
-      this.qaRunId
-        ? `/orgs/${this.orgId}/crawls/${this.itemId}/qa/${this.qaRunId}/pages?${query}`
-        : `/orgs/${this.orgId}/crawls/${this.itemId}/pages?${query}`,
+      `/orgs/${this.orgId}/crawls/${this.itemId ?? ""}/qa/${this.qaRunId ?? ""}/pages?${query}`,
       this.authState!,
     );
   }
