@@ -200,10 +200,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
 
         <sl-divider></sl-divider>
 
-        <btrix-tab-group-panel
-          name="pages"
-          class="-mx-3 block overflow-x-hidden px-3"
-        >
+        <btrix-tab-group-panel name="pages" class="block">
           <section class="mb-7">
             <div class="mb-2 flex items-center gap-1">
               <h4 class="text-lg font-semibold leading-8">
@@ -256,11 +253,10 @@ export class ArchivedItemDetailQA extends TailwindElement {
           </div>
           ${this.renderPageListControls()} ${this.renderPageList()}
         </btrix-tab-group-panel>
-        <btrix-tab-group-panel
-          name="runs"
-          class="-mx-3 block overflow-x-hidden px-3"
-        >
-          <btrix-table class="grid-cols-[repeat(4,_auto)_min-content]">
+        <btrix-tab-group-panel name="runs" class="block">
+          <btrix-table
+            class="-mx-3 grid-cols-[repeat(4,_auto)_min-content] overflow-x-auto px-3"
+          >
             <btrix-table-head>
               <btrix-table-header-cell>
                 ${msg("State")}
@@ -429,11 +425,11 @@ export class ArchivedItemDetailQA extends TailwindElement {
   private renderPageList() {
     return html`
       <btrix-table
-        class="mx-2"
+        class="-mx-3 overflow-x-auto px-5"
         style="grid-template-columns: ${[
-          "[clickable-start] auto",
-          "12rem",
-          "12rem [clickable-end]",
+          "[clickable-start] minmax(12rem, auto)",
+          "minmax(min-content, 12rem)",
+          "minmax(min-content, 12rem) [clickable-end]",
         ].join(" ")}"
       >
         <btrix-table-head>

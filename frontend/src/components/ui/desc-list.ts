@@ -74,24 +74,46 @@ export class DescList extends LitElement {
     dl {
       display: grid;
       margin: 0;
+      gap: 1rem;
     }
 
     .vertical {
       grid-template-columns: 100%;
-      gap: 1rem;
       --width-full: 100%;
     }
 
     .horizontal {
       --justify-item: center;
-      --border-right: 1px solid var(--sl-panel-border-color);
-      grid-auto-flow: column;
+      overflow: hidden;
+      display: flex;
+      flex-wrap: wrap;
     }
 
-    /* Although this only applies to .horizontal, apply to any last child
-    since we can't do complex selectors with ::slotted */
-    ::slotted(*:last-of-type) {
-      --border-right: 0px;
+    .horizontal ::slotted(btrix-desc-list-item) {
+      position: relative;
+      display: inline-block;
+      flex: 1 0 0;
+      min-width: min-content;
+    }
+
+    .horizontal ::slotted(btrix-desc-list-item)::before {
+      content: "";
+      width: 1px;
+      height: 100%;
+      top: 0;
+      left: -0.5rem;
+      position: absolute;
+      background-color: var(--sl-panel-border-color);
+    }
+
+    .horizontal ::slotted(btrix-desc-list-item)::after {
+      content: "";
+      height: 1px;
+      width: 100%;
+      top: -0.5rem;
+      left: 0;
+      position: absolute;
+      background-color: var(--sl-panel-border-color);
     }
   `;
 
