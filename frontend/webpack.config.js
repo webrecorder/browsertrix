@@ -5,7 +5,6 @@ const fs = require("fs");
 const path = require("path");
 
 const CopyPlugin = require("copy-webpack-plugin");
-const ESLintPlugin = require("eslint-webpack-plugin");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
@@ -179,16 +178,6 @@ const main = {
       // scriptLoading: isDevServer ? "blocking" : "defer",
       inject: true,
       scriptLoading: "defer",
-    }),
-
-    // Lint js files
-    new ESLintPlugin({
-      // lint only changed files:
-      lintDirtyModulesOnly: true,
-      // prevent warnings from stopping dev build
-      emitWarning: false,
-      // enable to auto-fix source files:
-      // fix: true
     }),
 
     new CopyPlugin({

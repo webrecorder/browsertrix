@@ -1,3 +1,4 @@
+const ESLintPlugin = require("eslint-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const { merge } = require("webpack-merge");
 
@@ -23,6 +24,12 @@ module.exports = [
               drop_console: ["log", "info"],
             },
           },
+        }),
+      ],
+      plugins: [
+        new ESLintPlugin({
+          failOnWarning: true,
+          extensions: ["ts", "js"],
         }),
       ],
     },

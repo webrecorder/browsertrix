@@ -1,5 +1,6 @@
 const path = require("path");
 
+const ESLintPlugin = require("eslint-webpack-plugin");
 const { merge } = require("webpack-merge");
 
 const devServerConfig = require("./config/dev-server.js");
@@ -37,6 +38,11 @@ module.exports = [
         config: [__filename],
       },
     },
+    plugins: [
+      new ESLintPlugin({
+        extensions: ["ts", "js"],
+      }),
+    ],
   }),
   {
     ...vnc,
