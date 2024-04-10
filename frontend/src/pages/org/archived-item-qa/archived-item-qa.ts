@@ -489,46 +489,71 @@ export class ArchivedItemQA extends TailwindElement {
           ></btrix-qa-page-list>
         </section>
       </article>
-      <btrix-dialog class="reviewDialog" label=${msg("Finish Review")}>
+      <btrix-dialog
+        class="reviewDialog [--width:60rem]"
+        label=${msg("QA Review")}
+      >
         <form class="qaReviewForm" @submit=${this.onReviewSubmit}>
-          <sl-radio-group
-            class="mb-5"
-            name="reviewStatus"
-            label=${msg("Rate this crawl:")}
-            value=${this.item?.reviewStatus ?? ""}
-            required
-          >
-            <sl-radio-button value="5">
-              <sl-icon
-                name="patch-check"
-                slot="prefix"
-                class="text-base"
-              ></sl-icon>
-              ${msg("Good")}
-            </sl-radio-button>
-            <sl-radio-button value="3" checked>
-              <sl-icon
-                name="patch-minus"
-                slot="prefix"
-                class="text-base"
-              ></sl-icon>
-              ${msg("Fair")}
-            </sl-radio-button>
-            <sl-radio-button value="1">
-              <sl-icon
-                name="patch-exclamation"
-                slot="prefix"
-                class="text-base"
-              ></sl-icon>
-              ${msg("Poor")}
-            </sl-radio-button>
-          </sl-radio-group>
-          <sl-textarea
-            label=${msg("Update archived item description?")}
-            name="description"
-            value=${this.item?.description ?? ""}
-            placeholder=${msg("No description")}
-          ></sl-textarea>
+          <div class="flex flex-col gap-6 md:flex-row">
+            <div>
+              <sl-radio-group
+                class="mb-5"
+                name="reviewStatus"
+                label=${msg("Rate this crawl:")}
+                value=${this.item?.reviewStatus ?? ""}
+                required
+              >
+                <sl-radio value="5">
+                  <strong class="font-semibold">${msg("Excellent!")}</strong>
+                  <div class="text-xs text-neutral-600">
+                    ${msg(
+                      "This archived item perfectly replicates the original pages.",
+                    )}
+                  </div>
+                </sl-radio>
+                <sl-radio value="4">
+                  <strong class="font-semibold">${msg("Good")}</strong>
+                  <div class="text-xs text-neutral-600">
+                    ${msg(
+                      "Looks and functions nearly the same as the original pages.",
+                    )}
+                  </div>
+                </sl-radio>
+                <sl-radio value="3" checked>
+                  <strong class="font-semibold">${msg("Fair")}</strong>
+                  <div class="text-xs text-neutral-600">
+                    ${msg(
+                      "Similar to the original pages, but may be missing non-critical content or functionality.",
+                    )}
+                  </div>
+                </sl-radio>
+                <sl-radio value="2">
+                  <strong class="font-semibold">${msg("Poor")}</strong>
+                  <div class="text-xs text-neutral-600">
+                    ${msg(
+                      "Some similarities with the original pages, but missing critical content or functionality.",
+                    )}
+                  </div>
+                </sl-radio>
+                <sl-radio value="1">
+                  <strong class="font-semibold">${msg("Bad")}</strong>
+                  <div class="text-xs text-neutral-600">
+                    ${msg(
+                      "Missing all content and functionality from the original pages.",
+                    )}
+                  </div>
+                </sl-radio>
+              </sl-radio-group>
+            </div>
+            <div class="flex-1 pl-4 md:border-l">
+              <sl-textarea
+                label=${msg("Update archived item description?")}
+                name="description"
+                value=${this.item?.description ?? ""}
+                placeholder=${msg("No description")}
+              ></sl-textarea>
+            </div>
+          </div>
         </form>
 
         <div slot="footer" class="flex justify-between">

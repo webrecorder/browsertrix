@@ -60,13 +60,15 @@ const iconForCrawlReview = (status: ArchivedItem["reviewStatus"]) => {
 const labelForCrawlReview = (severity: ArchivedItem["reviewStatus"]) => {
   switch (severity) {
     case 1:
+      return msg("Bad");
     case 2:
       return msg("Poor");
     case 3:
       return msg("Fair");
     case 4:
-    case 5:
       return msg("Good");
+    case 5:
+      return msg("Excellent");
     default:
       return;
   }
