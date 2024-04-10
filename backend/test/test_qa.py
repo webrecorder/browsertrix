@@ -257,6 +257,53 @@ def test_qa_replay(
     assert data["resources"][0]["path"]
 
 
+def test_qa_stats(
+    crawler_crawl_id,
+    crawler_auth_headers,
+    default_org_id,
+    qa_run_id,
+    qa_run_pages_ready,
+):
+    # We'll want to improve this test by having more pages to test
+    # if we can figure out stable page scores to test against
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/stats?screenshotThresholds=0.7,0.9&textThresholds=0.7,0.9",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["screenshotMatch"] == [{"lowerBoundary": "0.9", "count": 1}]
+    assert data["textMatch"] == [{"lowerBoundary": "0.9", "count": 1}]
+
+    # Test we get expected results with explicit 0 boundary
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/stats?screenshotThresholds=0,0.7,0.9&textThresholds=0,0.7,0.9",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["screenshotMatch"] == [{"lowerBoundary": "0.9", "count": 1}]
+    assert data["textMatch"] == [{"lowerBoundary": "0.9", "count": 1}]
+
+    # Test that missing threshold values result in 422 HTTPException
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/stats?screenshotThresholds=0.7",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 422
+    assert r.json()["detail"][0]["msg"] == "field required"
+
+    # Test that invalid threshold values result in 400 HTTPException
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/stats?screenshotThresholds=0.7&textThresholds=null",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_thresholds"
+
+
 def test_run_qa_not_running(
     crawler_crawl_id,
     crawler_auth_headers,
