@@ -36,6 +36,7 @@ import type {
 import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
+import { finishedCrawlStates } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
 const iconForCrawlReview = (status: ArchivedItem["reviewStatus"]) => {
@@ -215,8 +216,8 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 ${msg("QA Analysis")}
               </h4>
               ${when(this.qaRuns, (qaRuns) => {
-                const finishedQARuns = qaRuns.filter(
-                  ({ finished }) => finished,
+                const finishedQARuns = qaRuns.filter(({ state }) =>
+                  finishedCrawlStates.includes(state),
                 );
                 return html`
                   <btrix-qa-run-dropdown
@@ -292,7 +293,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
   }
 
   private readonly renderQARunRows = (qaRuns: QARun[]) => {
-    console.log(qaRuns);
     return qaRuns.map(
       (run, idx) => html`
         <btrix-table-row class=${idx > 0 ? "border-t" : ""}>

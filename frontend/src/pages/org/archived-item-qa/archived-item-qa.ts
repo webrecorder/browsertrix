@@ -41,7 +41,7 @@ import type {
 import type { ArchivedItem } from "@/types/crawler";
 import type { ArchivedItemQAPage, QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
-import { isActive, renderName } from "@/utils/crawler";
+import { finishedCrawlStates, isActive, renderName } from "@/utils/crawler";
 
 const DEFAULT_PAGE_SIZE = 100;
 
@@ -103,7 +103,9 @@ export class ArchivedItemQA extends TailwindElement {
   private item?: ArchivedItem;
 
   @state()
-  qaRuns: QARun[] | undefined = [];
+  finishedQARuns:
+    | (QARun & { state: (typeof finishedCrawlStates)[number] })[]
+    | undefined = [];
 
   @state()
   private pages?: APIPaginatedList<ArchivedItemQAPage>;
@@ -263,11 +265,11 @@ export class ArchivedItemQA extends TailwindElement {
       }
     }
 
-    const firstQaRun = this.qaRuns?.[0];
+    const firstQARun = this.finishedQARuns?.[0];
     const firstPage = this.pages?.items[0];
 
-    if (!this.qaRunId && firstQaRun) {
-      searchParams.set("qaRunId", firstQaRun.id);
+    if (!this.qaRunId && firstQARun) {
+      searchParams.set("qaRunId", firstQARun.id);
     }
     if (!this.itemPageId && firstPage) {
       searchParams.set("itemPageId", firstPage.id);
@@ -310,10 +312,9 @@ export class ArchivedItemQA extends TailwindElement {
     const searchParams = new URLSearchParams(window.location.search);
     const itemName = this.item ? renderName(this.item) : nothing;
     const [prevPage, currentPage, nextPage] = this.getPageListSliceByCurrent();
-    const finishedQARuns = this.qaRuns
-      ? this.qaRuns.filter(({ finished }) => finished)
-      : [];
-    const currentQARun = this.qaRuns?.find(({ id }) => id === this.qaRunId);
+    const currentQARun = this.finishedQARuns?.find(
+      ({ id }) => id === this.qaRunId,
+    );
     const disableReview = !currentQARun || isActive(currentQARun.state);
 
     return html`
@@ -327,17 +328,22 @@ export class ArchivedItemQA extends TailwindElement {
             <h1 class="flex-1 truncate text-base font-semibold leading-tight">
               ${itemName}
             </h1>
-            <btrix-qa-run-dropdown
-              .items=${finishedQARuns}
-              selectedId=${this.qaRunId || ""}
-              @btrix-select=${(e: CustomEvent<SelectDetail>) => {
-                const params = new URLSearchParams(searchParams);
-                params.set("qaRunId", e.detail.item.id);
-                this.navigate.to(
-                  `${window.location.pathname}?${params.toString()}`,
-                );
-              }}
-            ></btrix-qa-run-dropdown>
+            ${when(
+              this.finishedQARuns,
+              (qaRuns) => html`
+                <btrix-qa-run-dropdown
+                  .items=${qaRuns}
+                  selectedId=${this.qaRunId || ""}
+                  @btrix-select=${(e: CustomEvent<SelectDetail>) => {
+                    const params = new URLSearchParams(searchParams);
+                    params.set("qaRunId", e.detail.item.id);
+                    this.navigate.to(
+                      `${window.location.pathname}?${params.toString()}`,
+                    );
+                  }}
+                ></btrix-qa-run-dropdown>
+              `,
+            )}
           </div>
           <div>
             <sl-button
@@ -778,7 +784,9 @@ export class ArchivedItemQA extends TailwindElement {
 
   private async fetchQARuns(): Promise<void> {
     try {
-      this.qaRuns = await this.getQARuns();
+      this.finishedQARuns = (await this.getQARuns()).filter(({ state }) =>
+        finishedCrawlStates.includes(state),
+      );
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve QA data at this time."),
@@ -790,7 +798,7 @@ export class ArchivedItemQA extends TailwindElement {
 
   private async getQARuns(): Promise<QARun[]> {
     return this.api.fetch<QARun[]>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
+      `/orgs/${this.orgId}/crawls/${this.itemId}/qa?skipFailed=true`,
       this.authState!,
     );
   }

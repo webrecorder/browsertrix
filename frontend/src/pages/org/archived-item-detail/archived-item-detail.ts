@@ -26,7 +26,7 @@ import type {
 import type { QARun } from "@/types/qa";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
-import { isActive } from "@/utils/crawler";
+import { finishedCrawlStates, isActive } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { tw } from "@/utils/tailwind";
 
@@ -162,8 +162,13 @@ export class ArchivedItemDetail extends TailwindElement {
       void this.fetchWorkflow();
     }
     if (changedProperties.has("qaRuns") && this.qaRuns) {
-      if (!this.qaRunId && this.qaRuns[0]?.id) {
-        this.qaRunId = this.qaRuns[0].id;
+      if (!this.qaRunId) {
+        const firstFinishedQARun = this.qaRuns.find(({ state }) =>
+          finishedCrawlStates.includes(state),
+        );
+        if (firstFinishedQARun) {
+          this.qaRunId = firstFinishedQARun.id;
+        }
       }
     }
   }
