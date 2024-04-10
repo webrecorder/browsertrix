@@ -33,7 +33,11 @@ import type {
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import type { ArchivedItem, ArchivedItemPage } from "@/types/crawler";
+import {
+  ReviewStatus,
+  type ArchivedItem,
+  type ArchivedItemPage,
+} from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates } from "@/utils/crawler";
@@ -41,19 +45,19 @@ import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
 const iconForCrawlReview = (status: ArchivedItem["reviewStatus"]) => {
   switch (status) {
-    case 1:
-    case 2:
+    case ReviewStatus.Bad:
+    case ReviewStatus.Poor:
       return html`<sl-icon
         name="patch-exclamation-fill"
         class="text-danger-600"
       ></sl-icon>`;
-    case 3:
+    case ReviewStatus.Fair:
       return html`<sl-icon
         name="patch-minus"
         class="text-success-600"
       ></sl-icon>`;
-    case 4:
-    case 5:
+    case ReviewStatus.Good:
+    case ReviewStatus.Excellent:
       return html`<sl-icon
         name="patch-check-fill"
         class="text-success-600"
@@ -66,14 +70,16 @@ const iconForCrawlReview = (status: ArchivedItem["reviewStatus"]) => {
 
 const labelForCrawlReview = (severity: ArchivedItem["reviewStatus"]) => {
   switch (severity) {
-    case 1:
-    case 2:
+    case ReviewStatus.Bad:
+      return msg("Bad");
+    case ReviewStatus.Poor:
       return msg("Poor");
-    case 3:
+    case ReviewStatus.Fair:
       return msg("Fair");
-    case 4:
-    case 5:
+    case ReviewStatus.Good:
       return msg("Good");
+    case ReviewStatus.Excellent:
+      return msg("Excellent");
     default:
       return;
   }
@@ -481,6 +487,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                     }/items/${this.itemType}/${this.crawlId}/review/screenshots?qaRunId=${
                       this.qaRunId || ""
                     }&itemPageId=${page.id}`}
+                    title="${page.title ?? page.url}"
                     @click=${this.navigate.link}
                     >${page.title}</a
                   >
