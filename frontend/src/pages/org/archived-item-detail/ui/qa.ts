@@ -53,6 +53,19 @@ function pageReviewStatus(page: ArchivedItemPage) {
   return msg("No review");
 }
 
+function crawlReviewStatus(status: number | null) {
+  if (status === 1) {
+    return msg("Failure");
+  }
+  if (status === 3) {
+    return msg("Acceptable");
+  }
+  if (status === 5) {
+    return msg("Good");
+  }
+  return msg("No review");
+}
+
 export function renderQA({
   reviewStatus,
   qaCrawlExecSeconds,
@@ -73,8 +86,10 @@ export function renderQA({
             reviewStatus !== undefined,
             () =>
               reviewStatus
-                ? html`<span class="capitalize">${reviewStatus}</span>`
-                : msg("None"),
+                ? html`<span class="capitalize"
+                    >${crawlReviewStatus(reviewStatus)}</span
+                  >`
+                : msg("No review"),
             renderEmpty,
           )}
         </btrix-desc-list-item>
