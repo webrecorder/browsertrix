@@ -1,5 +1,7 @@
 // @ts-check
 
+const path = require("path");
+
 const ESLintPlugin = require("eslint-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const { merge } = require("webpack-merge");
@@ -34,6 +36,7 @@ module.exports = [
       new ESLintPlugin({
         failOnWarning: true,
         extensions: ["ts", "js"],
+        cwd: path.resolve(__dirname),
       }),
     ],
   }),
