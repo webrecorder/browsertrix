@@ -34,19 +34,19 @@ import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
 const iconForCrawlReview = (status: ArchivedItem["reviewStatus"]) => {
   switch (status) {
-    case "acceptable":
-      return html`<sl-icon
-        name="patch-minus"
-        class="text-success-600"
-      ></sl-icon>`;
-
-    case "failure":
+    case 1:
+    case 2:
       return html`<sl-icon
         name="patch-exclamation-fill"
         class="text-danger-600"
       ></sl-icon>`;
-
-    case "good":
+    case 3:
+      return html`<sl-icon
+        name="patch-minus"
+        class="text-success-600"
+      ></sl-icon>`;
+    case 4:
+    case 5:
       return html`<sl-icon
         name="patch-check-fill"
         class="text-success-600"
@@ -59,11 +59,13 @@ const iconForCrawlReview = (status: ArchivedItem["reviewStatus"]) => {
 
 const labelForCrawlReview = (severity: ArchivedItem["reviewStatus"]) => {
   switch (severity) {
-    case "failure":
+    case 1:
+    case 2:
       return msg("Poor");
-    case "acceptable":
+    case 3:
       return msg("Fair");
-    case "good":
+    case 4:
+    case 5:
       return msg("Good");
     default:
       return;

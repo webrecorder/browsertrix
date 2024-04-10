@@ -147,7 +147,7 @@ type ArchivedItemBase = {
   tags: string[];
   crawlExecSeconds: number;
   qaCrawlExecSeconds: number;
-  reviewStatus: "good" | "acceptable" | "failure" | null;
+  reviewStatus?: number;
 };
 
 export type Crawl = ArchivedItemBase &
