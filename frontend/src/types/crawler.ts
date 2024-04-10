@@ -128,7 +128,13 @@ export type CrawlState =
   | "stopped_quota_reached";
 
 // TODO maybe convert this to an enum?
-export type ReviewStatus = 1 | 2 | 3 | 4 | 5;
+export enum ReviewStatus {
+  Bad = 1,
+  Poor = 2,
+  Fair = 3,
+  Good = 4,
+  Excellent = 5,
+}
 
 type ArchivedItemBase = {
   id: string;
