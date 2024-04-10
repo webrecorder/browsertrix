@@ -498,7 +498,7 @@ export class ArchivedItemQA extends TailwindElement {
             value=${this.item?.reviewStatus ?? ""}
             required
           >
-            <sl-radio-button value="4">
+            <sl-radio-button value="5">
               <sl-icon
                 name="patch-check"
                 slot="prefix"
@@ -514,7 +514,7 @@ export class ArchivedItemQA extends TailwindElement {
               ></sl-icon>
               ${msg("Fair")}
             </sl-radio-button>
-            <sl-radio-button value="2">
+            <sl-radio-button value="1">
               <sl-icon
                 name="patch-exclamation"
                 slot="prefix"
@@ -997,7 +997,10 @@ export class ArchivedItemQA extends TailwindElement {
         this.authState!,
         {
           method: "PATCH",
-          body: JSON.stringify(params),
+          body: JSON.stringify({
+            reviewStatus: +params.reviewStatus,
+            description: params.description,
+          }),
         },
       );
 
