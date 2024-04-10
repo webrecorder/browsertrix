@@ -55,7 +55,7 @@ export class MenuItemLink extends TailwindElement {
           >("sl-dropdown, btrix-overflow-dropdown");
 
           if (dropdown) {
-            dropdown.hide();
+            void dropdown.hide();
           }
         } else {
           this.navigate.link(e);

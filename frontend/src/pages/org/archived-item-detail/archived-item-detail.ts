@@ -32,7 +32,6 @@ import { tw } from "@/utils/tailwind";
 
 import "./ui/qa";
 
-
 const SECTIONS = [
   "overview",
   "qa",
@@ -103,10 +102,10 @@ export class ArchivedItemDetail extends TailwindElement {
   private openDialogName?: "scale" | "metadata" | "exclusions";
 
   @query("#stopQARunDialog")
-  private stopQARunDialog?: Dialog | null;
+  private readonly stopQARunDialog?: Dialog | null;
 
   @query("#cancelQARunDialog")
-  private cancelQARunDialog?: Dialog | null;
+  private readonly cancelQARunDialog?: Dialog | null;
 
   private get listUrl(): string {
     let path = "items";
@@ -947,14 +946,14 @@ ${this.crawl?.description}
             <sl-button-group>
               <sl-button
                 size="small"
-                @click=${() => this.stopQARunDialog?.show()}
+                @click=${() => void this.stopQARunDialog?.show()}
               >
                 <sl-icon name="slash-square" slot="prefix"></sl-icon>
                 <span>${msg("Stop Analysis")}</span>
               </sl-button>
               <sl-button
                 size="small"
-                @click=${() => this.cancelQARunDialog?.show()}
+                @click=${() => void this.cancelQARunDialog?.show()}
               >
                 <sl-icon
                   name="x-octagon"
@@ -1008,7 +1007,7 @@ ${this.crawl?.description}
           <sl-button
             size="small"
             .autofocus=${true}
-            @click=${() => this.stopQARunDialog?.hide()}
+            @click=${() => void this.stopQARunDialog?.hide()}
           >
             ${msg("Keep Running")}
           </sl-button>
@@ -1017,7 +1016,7 @@ ${this.crawl?.description}
             variant="primary"
             @click=${async () => {
               await this.stopQARun();
-              this.stopQARunDialog?.hide();
+              void this.stopQARunDialog?.hide();
             }}
             >${msg("Stop Analysis")}</sl-button
           >
@@ -1031,7 +1030,7 @@ ${this.crawl?.description}
           <sl-button
             size="small"
             .autofocus=${true}
-            @click=${() => this.cancelQARunDialog?.hide()}
+            @click=${async () => this.cancelQARunDialog?.hide()}
           >
             ${msg("Keep Running")}
           </sl-button>
@@ -1040,7 +1039,7 @@ ${this.crawl?.description}
             variant="primary"
             @click=${async () => {
               await this.cancelQARun();
-              this.cancelQARunDialog?.hide();
+              void this.cancelQARunDialog?.hide();
             }}
             >${msg("Cancel Analysis")}</sl-button
           >

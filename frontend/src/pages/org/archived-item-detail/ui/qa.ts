@@ -215,9 +215,9 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 ${msg("QA Analysis")}
               </h4>
               ${when(this.qaRuns, (qaRuns) => {
-                const finishedQARuns = qaRuns.length
-                  ? qaRuns.filter(({ finished }) => finished)
-                  : [];
+                const finishedQARuns = qaRuns.filter(
+                  ({ finished }) => finished,
+                );
                 return html`
                   <btrix-qa-run-dropdown
                     .items=${finishedQARuns}
@@ -328,9 +328,9 @@ export class ArchivedItemDetailQA extends TailwindElement {
               <btrix-overflow-dropdown
                 @sl-show=${async (e: SlShowEvent) => {
                   const dropdown = e.currentTarget as OverflowDropdown;
-                  const downloadLink = dropdown.querySelector(
+                  const downloadLink = dropdown.querySelector<MenuItemLink>(
                     "btrix-menu-item-link",
-                  ) as MenuItemLink;
+                  );
 
                   if (!downloadLink) {
                     console.debug("no download link");
@@ -358,7 +358,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
                         </btrix-menu-item-link>
                         <sl-divider></sl-divider>
                       `}
-
                   <sl-menu-item
                     @click=${() => {
                       console.log("delete");

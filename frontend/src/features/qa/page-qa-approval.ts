@@ -198,8 +198,7 @@ export class PageQAToolbar extends TailwindElement {
   private readonly notify = new NotifyController(this);
 
   render() {
-    console.log(this.disabled);
-    const disabled = this.disabled ?? !this.page;
+    const disabled = this.disabled || !this.page;
     const approved = this.page?.approved === true;
     const rejected = this.page?.approved === false;
     const commented = Boolean(this.page?.notes?.length);
