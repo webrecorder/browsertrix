@@ -460,6 +460,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                     }/items/${this.itemType}/${this.crawlId}/review/screenshots?qaRunId=${
                       this.qaRunId || ""
                     }&itemPageId=${page.id}`}
+                    title="${page.title ?? page.url}"
                     @click=${this.navigate.link}
                     >${page.title}</a
                   >
