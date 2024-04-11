@@ -154,12 +154,17 @@ export class ArchivedItemDetailQA extends TailwindElement {
               this.qaRuns,
               (qaRuns) =>
                 qaRuns[0]
-                  ? html`
-                      <btrix-crawl-status
+                  ? qaRuns[0].state === "running"
+                    ? html`<sl-progress-bar
+                        value=${(100 * qaRuns[0].stats.done) /
+                          qaRuns[0].stats.found || 1}
+                        style="--height: 0.5rem;"
+                        class="mt-2 w-32"
+                      ></sl-progress-bar>`
+                    : html`<btrix-crawl-status
                         state=${qaRuns[0]?.state}
                         type="qa"
-                      ></btrix-crawl-status>
-                    `
+                      ></btrix-crawl-status>`
                   : statusWithIcon(
                       html`<sl-icon
                         name="slash-circle"
