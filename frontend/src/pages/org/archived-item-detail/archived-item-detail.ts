@@ -20,6 +20,7 @@ import type {
   ArchivedItem,
   Crawl,
   CrawlConfig,
+  CrawlState,
   Seed,
   Workflow,
 } from "@/types/crawler";
@@ -43,6 +44,17 @@ const SECTIONS = [
   "exclusions",
 ] as const;
 type SectionName = (typeof SECTIONS)[number];
+
+const POLL_INTERVAL_SECONDS = 5;
+const RUNNING_STATES = [
+  "running",
+  "starting",
+  "waiting_capacity",
+  "waiting_org_limit",
+  "stopping",
+] as CrawlState[];
+
+const QA_RUNNING_STATES = ["starting", ...RUNNING_STATES] as CrawlState[];
 
 /**
  * Usage:
@@ -127,16 +139,16 @@ export class ArchivedItemDetail extends TailwindElement {
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
 
+  private timerId?: number;
+
   private get isActive(): boolean | null {
     if (!this.crawl) return null;
+    return RUNNING_STATES.includes(this.crawl.state);
+  }
 
-    return (
-      this.crawl.state === "running" ||
-      this.crawl.state === "starting" ||
-      this.crawl.state === "waiting_capacity" ||
-      this.crawl.state === "waiting_org_limit" ||
-      this.crawl.state === "stopping"
-    );
+  private get isQAActive(): boolean | null {
+    if (!this.qaRuns?.[0]) return null;
+    return QA_RUNNING_STATES.includes(this.qaRuns[0].state);
   }
 
   private get hasFiles(): boolean | null {
@@ -180,6 +192,11 @@ export class ArchivedItemDetail extends TailwindElement {
       this.activeTab = hash as SectionName;
     }
     super.connectedCallback();
+  }
+
+  disconnectedCallback(): void {
+    this.stopPoll();
+    super.disconnectedCallback();
   }
 
   render() {
@@ -1356,6 +1373,17 @@ ${this.crawl?.description}
         icon: "exclamation-octagon",
       });
     }
+
+    if (this.isQAActive) {
+      // Restart timer for next poll
+      this.timerId = window.setTimeout(() => {
+        void this.fetchQARuns();
+      }, 1000 * POLL_INTERVAL_SECONDS);
+    }
+  }
+
+  private stopPoll() {
+    window.clearTimeout(this.timerId);
   }
 
   private async getQARuns(): Promise<QARun[]> {
