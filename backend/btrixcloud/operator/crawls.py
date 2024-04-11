@@ -334,7 +334,13 @@ class CrawlOperator(BaseOperator):
 
         params["name"] = name
         params["qa_source_replay_json"] = res_and_pages.json()
-        # params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})
+        # The configmap can only be 256K - if the page list is too big
+        # we need to clear it out, in which case the crawler will load it directly from WACZ
+        # currently setting it here to deal with pages sometimes being missing from pages.jsonl
+        if len(params["qa_source_replay_json"]) > 200000:
+            print("Pages list too big, loading from WACZ")
+            res_and_pages.pages = []
+            params["qa_source_replay_json"] = res_and_pages.json()
 
         return self.load_from_yaml("qa_configmap.yaml", params)
 
