@@ -12,6 +12,7 @@ export type QARun = {
     done: number;
     size: number;
   };
+  resources?: { crawlId: string; name: string; path: string }[];
 };
 
 export type ArchivedItemQAPage = ArchivedItemPage & {

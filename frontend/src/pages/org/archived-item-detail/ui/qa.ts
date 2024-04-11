@@ -1,5 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
+import type {
+  SlChangeEvent,
+  SlSelect,
+  SlShowEvent,
+} from "@shoelace-style/shoelace";
 import {
   css,
   html,
@@ -12,6 +16,8 @@ import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import type { MenuItemLink } from "@/components/ui/menu-item-link";
+import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
@@ -34,6 +40,7 @@ import {
 } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
+import { finishedCrawlStates } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
 const iconForCrawlReview = (status: ArchivedItem["reviewStatus"]) => {
@@ -215,9 +222,9 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 ${msg("QA Analysis")}
               </h4>
               ${when(this.qaRuns, (qaRuns) => {
-                const finishedQARuns = qaRuns.length
-                  ? qaRuns.filter(({ finished }) => finished)
-                  : [];
+                const finishedQARuns = qaRuns.filter(({ state }) =>
+                  finishedCrawlStates.includes(state),
+                );
                 return html`
                   <btrix-qa-run-dropdown
                     .items=${finishedQARuns}
@@ -325,22 +332,38 @@ export class ArchivedItemDetailQA extends TailwindElement {
           <btrix-table-cell class="px-1">
             <div class="col action">
               <btrix-overflow-dropdown
-                @click=${(e: MouseEvent) => {
-                  // Prevent navigation to detail view
-                  e.preventDefault();
-                  e.stopPropagation();
+                @sl-show=${async (e: SlShowEvent) => {
+                  const dropdown = e.currentTarget as OverflowDropdown;
+                  const downloadLink = dropdown.querySelector<MenuItemLink>(
+                    "btrix-menu-item-link",
+                  );
+
+                  if (!downloadLink) {
+                    console.debug("no download link");
+                    return;
+                  }
+
+                  downloadLink.loading = true;
+                  const file = await this.getQARunDownloadLink(run.id);
+                  if (file) {
+                    downloadLink.disabled = false;
+                    downloadLink.href = file.path;
+                  } else {
+                    downloadLink.disabled = true;
+                  }
+                  downloadLink.loading = false;
                 }}
               >
                 <sl-menu>
-                  <sl-menu-item
-                    @click=${() => {
-                      console.log("download");
-                    }}
-                  >
-                    <sl-icon name="download" slot="prefix"></sl-icon>
-                    ${msg("Download QA Run")}
-                  </sl-menu-item>
-                  <sl-divider></sl-divider>
+                  ${run.state === "canceled"
+                    ? nothing
+                    : html`
+                        <btrix-menu-item-link href="#" download>
+                          <sl-icon name="download" slot="prefix"></sl-icon>
+                          ${msg("Download QA Run")}
+                        </btrix-menu-item-link>
+                        <sl-divider></sl-divider>
+                      `}
                   <sl-menu-item
                     @click=${() => {
                       console.log("delete");
@@ -577,5 +600,18 @@ export class ArchivedItemDetailQA extends TailwindElement {
       `/orgs/${this.orgId}/crawls/${this.crawlId}/pages?${query}`,
       this.authState!,
     );
+  }
+
+  async getQARunDownloadLink(qaRunId: string) {
+    try {
+      const { resources } = await this.api.fetch<QARun>(
+        `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${qaRunId}/replay.json`,
+        this.authState!,
+      );
+      // TODO handle more than one file
+      return resources?.[0];
+    } catch (e) {
+      console.debug(e);
+    }
   }
 }

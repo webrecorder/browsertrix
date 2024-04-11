@@ -167,20 +167,23 @@ export class PageQAToolbar extends TailwindElement {
     }
   `;
 
-  @property({ type: Object })
+  @property({ type: Object, attribute: false })
   authState?: AuthState;
 
-  @property({ type: String })
+  @property({ type: String, attribute: false })
   orgId?: string;
 
-  @property({ type: String })
+  @property({ type: String, attribute: false })
   itemId?: string;
 
-  @property({ type: String })
+  @property({ type: String, attribute: false })
   pageId?: string;
 
-  @property({ type: Object })
+  @property({ type: Object, attribute: false })
   page?: ArchivedItemPage;
+
+  @property({ type: Boolean })
+  disabled = false;
 
   @state()
   private showComments = false;
@@ -195,7 +198,7 @@ export class PageQAToolbar extends TailwindElement {
   private readonly notify = new NotifyController(this);
 
   render() {
-    const disabled = !this.page;
+    const disabled = this.disabled || !this.page;
     const approved = this.page?.approved === true;
     const rejected = this.page?.approved === false;
     const commented = Boolean(this.page?.notes?.length);
