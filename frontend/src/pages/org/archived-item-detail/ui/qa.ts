@@ -155,15 +155,24 @@ export class ArchivedItemDetailQA extends TailwindElement {
               (qaRuns) =>
                 qaRuns[0]
                   ? qaRuns[0].state === "running"
-                    ? html`<sl-progress-bar
-                        value=${(100 * qaRuns[0].stats.done) /
-                          qaRuns[0].stats.found || 1}
-                        style="--height: 0.5rem;"
-                        class="mt-2 w-32"
-                      ></sl-progress-bar>`
+                    ? html`<sl-tooltip
+                        content="${msg(
+                          str`${qaRuns[0].stats.done}/${qaRuns[0].stats.found} Pages`,
+                        )}"
+                        placement="bottom"
+                        hoist
+                      >
+                        <sl-progress-bar
+                          value=${(100 * qaRuns[0].stats.done) /
+                            qaRuns[0].stats.found || 1}
+                          style="--height: 0.5rem;"
+                          class="mt-2 w-32"
+                        ></sl-progress-bar>
+                      </sl-tooltip>`
                     : html`<btrix-crawl-status
                         state=${qaRuns[0]?.state}
                         type="qa"
+                        class="min-w-32"
                       ></btrix-crawl-status>`
                   : statusWithIcon(
                       html`<sl-icon
@@ -388,7 +397,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
   };
 
   private readonly renderLoadingDetail = () =>
-    html`<sl-spinner class="h-4 w-4"></sl-spinner>`;
+    html`<div class="min-w-32"><sl-spinner class="h-4 w-4"></sl-spinner></div>`;
 
   private renderReviewStatus(status: ArchivedItem["reviewStatus"]) {
     const icon =
