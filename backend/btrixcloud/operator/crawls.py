@@ -339,8 +339,7 @@ class CrawlOperator(BaseOperator):
         # currently setting it here to deal with pages sometimes being missing from pages.jsonl
         if len(params["qa_source_replay_json"]) > 200000:
             print("Pages list too big, loading from WACZ")
-            res_and_pages.pages = []
-            params["qa_source_replay_json"] = res_and_pages.json()
+            params["qa_source_replay_json"] = res_and_pages.json(exclude={"pages"})
 
         return self.load_from_yaml("qa_configmap.yaml", params)
 
