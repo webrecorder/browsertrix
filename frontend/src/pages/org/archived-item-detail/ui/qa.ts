@@ -154,26 +154,11 @@ export class ArchivedItemDetailQA extends TailwindElement {
               this.qaRuns,
               (qaRuns) =>
                 qaRuns[0]
-                  ? qaRuns[0].state === "running"
-                    ? html`<sl-tooltip
-                        content="${msg(
-                          str`${qaRuns[0].stats.done}/${qaRuns[0].stats.found} Pages`,
-                        )}"
-                        placement="bottom"
-                        hoist
-                      >
-                        <sl-progress-bar
-                          value=${(100 * qaRuns[0].stats.done) /
-                            qaRuns[0].stats.found || 1}
-                          style="--height: 0.5rem;"
-                          class="mt-2 w-32"
-                        ></sl-progress-bar>
-                      </sl-tooltip>`
-                    : html`<btrix-crawl-status
-                        state=${qaRuns[0]?.state}
-                        type="qa"
-                        class="min-w-32"
-                      ></btrix-crawl-status>`
+                  ? html`<btrix-crawl-status
+                      state=${qaRuns[0]?.state}
+                      type="qa"
+                      class="min-w-32"
+                    ></btrix-crawl-status>`
                   : statusWithIcon(
                       html`<sl-icon
                         name="slash-circle"
@@ -187,6 +172,27 @@ export class ArchivedItemDetailQA extends TailwindElement {
               this.renderLoadingDetail,
             )}
           </btrix-desc-list-item>
+          ${this.qaRuns?.[0]?.state === "running"
+            ? html`
+                <btrix-desc-list-item label=${msg("Analysis Progress")}>
+                  <sl-tooltip
+                    content="${msg(
+                      str`${this.qaRuns[0].stats.done}/${this.qaRuns[0].stats.found} Pages`,
+                    )}"
+                    placement="bottom"
+                    hoist
+                  >
+                    <sl-progress-bar
+                      value=${(100 * this.qaRuns[0].stats.done) /
+                        this.qaRuns[0].stats.found || 1}
+                      ?indeterminate=${this.qaRuns[0].stats.found === 0}
+                      style="--height: 0.5rem;"
+                      class="mt-2 w-32"
+                    ></sl-progress-bar>
+                  </sl-tooltip>
+                </btrix-desc-list-item>
+              `
+            : ""}
           <btrix-desc-list-item label=${msg("Crawl Rating")}>
             ${when(
               this.crawl,
