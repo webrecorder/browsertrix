@@ -177,7 +177,11 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 <btrix-desc-list-item label=${msg("Analysis Progress")}>
                   <sl-tooltip
                     content="${msg(
-                      str`${this.qaRuns[0].stats.done}/${this.qaRuns[0].stats.found} Pages`,
+                      str`${
+                        this.qaRuns[0].stats.found === 0
+                          ? msg("Loading")
+                          : `${this.qaRuns[0].stats.done}/${this.qaRuns[0].stats.found}`
+                      } Pages`,
                     )}"
                     placement="bottom"
                     hoist
