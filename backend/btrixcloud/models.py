@@ -1557,11 +1557,3 @@ class PageOutWithSingleQA(Page):
     """Page out with single QA entry"""
 
     qa: Optional[PageQACompare] = None
-
-
-# ============================================================================
-class PagesAndResources(BaseModel):
-    """moage for qa configmap data, pages + resources"""
-
-    resources: List[CrawlFileOut] = []
-    pages: List[PageOut] = []

@@ -27,7 +27,6 @@ from btrixcloud.models import (
     CrawlFile,
     CrawlCompleteIn,
     StorageRef,
-    PagesAndResources,
 )
 
 from btrixcloud.utils import (
@@ -326,21 +325,10 @@ class CrawlOperator(BaseOperator):
         if name in children[CMAP]:
             return [children[CMAP][name]]
 
-        pages, _ = await self.page_ops.list_pages(qa_source_crawl_id, page_size=1000)
-
         crawl_replay = await self.crawl_ops.get_internal_crawl_out(qa_source_crawl_id)
 
-        res_and_pages = PagesAndResources(resources=crawl_replay.resources, pages=pages)
-
         params["name"] = name
-        params["qa_source_replay_json"] = res_and_pages.json()
-        # The configmap can only be 256K - if the page list is too big
-        # we need to clear it out, in which case the crawler will load it directly from WACZ
-        # currently setting it here to deal with pages sometimes being missing from pages.jsonl
-        if len(params["qa_source_replay_json"]) > 200000:
-            print("Pages list too big, loading from WACZ")
-            params["qa_source_replay_json"] = res_and_pages.json(exclude={"pages"})
-
+        params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})
         return self.load_from_yaml("qa_configmap.yaml", params)
 
     def _load_crawler(self, params, i, status, children):
