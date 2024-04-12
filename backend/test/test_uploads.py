@@ -896,7 +896,8 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
     all_crawls_delete_config_id,
     upload_id_2,
 ):
-    crawls_to_delete = [all_crawls_delete_crawl_ids, upload_id_2]
+    crawls_to_delete = all_crawls_delete_crawl_ids
+    crawls_to_delete.append(upload_id_2)
 
     # Get org metrics
     r = requests.get(
@@ -985,7 +986,7 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
                 f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{all_crawls_delete_config_id}",
                 headers=admin_auth_headers,
             )
-            assert r.json()["totalSize"] == workflow_size - crawl_1_size
+            assert r.json()["totalSize"] == workflow_size - combined_crawl_size
         except:
             if time.monotonic() - start_time_workflow > time_limit:
                 raise
