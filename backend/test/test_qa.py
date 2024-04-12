@@ -23,6 +23,26 @@ def qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     return qa_run_id
 
 
+@pytest.fixture(scope="module")
+def qa_run_pages_ready(
+    crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_id
+):
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/pages",
+            headers=crawler_auth_headers,
+        )
+        if len(r.json()["items"]) > 0:
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(5)
+        count += 1
+
+
 def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/start",
@@ -47,6 +67,9 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
         if data.get("qa") and data["qa"].get("state") == "running":
             break
 
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
         time.sleep(5)
         count += 1
 
@@ -67,6 +90,9 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
         data = r.json()
         if data.get("state") == "canceled":
             break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
 
         time.sleep(5)
         count += 1
@@ -303,11 +329,11 @@ def test_delete_qa_run(
         if data.get("count") == 0:
             break
 
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
         time.sleep(5)
         count += 1
-
-        if count == MAX_ATTEMPTS:
-            raise
 
     # Ensure runs are deleted from finished qa list
     r = requests.get(
@@ -330,8 +356,8 @@ def test_delete_qa_run(
             if data["count"] == 0 and len(data["items"]) == 0:
                 break
 
+            if count + 1 == MAX_ATTEMPTS:
+                assert False
+
             time.sleep(5)
             count += 1
-
-            if count == MAX_ATTEMPTS:
-                raise
