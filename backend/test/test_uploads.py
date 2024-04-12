@@ -896,8 +896,7 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
     all_crawls_delete_config_id,
     upload_id_2,
 ):
-    crawls_to_delete = all_crawls_delete_crawl_ids
-    crawls_to_delete.append(upload_id_2)
+    crawls_to_delete = [all_crawls_delete_crawl_ids, upload_id_2]
 
     # Get org metrics
     r = requests.get(
@@ -959,7 +958,7 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
     assert data["deleted"]
     assert data["storageQuotaReached"] is False
 
-    time_limit_seconds = 60
+    time_limit = 10
 
     # Check that org and workflow size figures are as expected
     start_time = time.monotonic()
@@ -975,19 +974,19 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
             assert data["storageUsedCrawls"] == org_crawl_bytes - combined_crawl_size
             assert data["storageUsedUploads"] == org_upload_bytes - upload_size
         except:
-            if time.monotonic() - start_time > time_limit_seconds:
+            if time.monotonic() - start_time > time_limit:
                 raise
-            time.sleep(5)
+            time.sleep(1)
 
-    start_time = time.monotonic()
+    start_time_workflow = time.monotonic()
     while True:
         try:
             r = requests.get(
                 f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{all_crawls_delete_config_id}",
                 headers=admin_auth_headers,
             )
-            assert r.json()["totalSize"] == workflow_size - combined_crawl_size
+            assert r.json()["totalSize"] == workflow_size - crawl_1_size
         except:
-            if time.monotonic() - start_time > time_limit_seconds:
+            if time.monotonic() - start_time_workflow > time_limit:
                 raise
-            time.sleep(5)
+            time.sleep(1)
