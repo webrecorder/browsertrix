@@ -1031,6 +1031,7 @@ ${this.crawl?.description}
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
+            variant="primary"
             .autofocus=${true}
             @click=${() => void this.stopQARunDialog?.hide()}
           >
@@ -1038,7 +1039,8 @@ ${this.crawl?.description}
           </sl-button>
           <sl-button
             size="small"
-            variant="primary"
+            variant="danger"
+            outline
             @click=${async () => {
               await this.stopQARun();
               void this.stopQARunDialog?.hide();
@@ -1054,6 +1056,7 @@ ${this.crawl?.description}
         <div slot="footer" class="flex justify-between">
           <sl-button
             size="small"
+            variant="primary"
             .autofocus=${true}
             @click=${async () => this.cancelQARunDialog?.hide()}
           >
@@ -1061,7 +1064,8 @@ ${this.crawl?.description}
           </sl-button>
           <sl-button
             size="small"
-            variant="primary"
+            variant="danger"
+            outline
             @click=${async () => {
               await this.cancelQARun();
               void this.cancelQARunDialog?.hide();
