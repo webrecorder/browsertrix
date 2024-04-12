@@ -54,7 +54,10 @@ const RUNNING_STATES = [
   "stopping",
 ] as CrawlState[];
 
-const QA_RUNNING_STATES = ["starting", ...RUNNING_STATES] as CrawlState[];
+export const QA_RUNNING_STATES = [
+  "starting",
+  ...RUNNING_STATES,
+] as CrawlState[];
 
 /**
  * Usage:

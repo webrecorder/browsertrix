@@ -15,6 +15,8 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import { QA_RUNNING_STATES } from "../archived-item-detail";
+
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { MenuItemLink } from "@/components/ui/menu-item-link";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
@@ -139,9 +141,16 @@ export class ArchivedItemDetailQA extends TailwindElement {
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
 
+  private mostRecentNonFailedQARun?: QARun;
+
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("crawlId") && this.crawlId) {
       void this.fetchPages();
+    }
+    if (changedProperties.has("qaRuns")) {
+      this.mostRecentNonFailedQARun = this.qaRuns?.find((run) =>
+        [...QA_RUNNING_STATES, "complete"].includes(run.state),
+      );
     }
   }
 
@@ -152,10 +161,10 @@ export class ArchivedItemDetailQA extends TailwindElement {
           <btrix-desc-list-item label=${msg("Analysis Status")}>
             ${when(
               this.qaRuns,
-              (qaRuns) =>
-                qaRuns[0]
+              () =>
+                this.mostRecentNonFailedQARun
                   ? html`<btrix-crawl-status
-                      state=${qaRuns[0]?.state}
+                      state=${this.mostRecentNonFailedQARun.state}
                       type="qa"
                       class="min-w-32"
                     ></btrix-crawl-status>`
@@ -172,24 +181,25 @@ export class ArchivedItemDetailQA extends TailwindElement {
               this.renderLoadingDetail,
             )}
           </btrix-desc-list-item>
-          ${this.qaRuns?.[0]?.state === "running"
+          ${this.mostRecentNonFailedQARun?.state === "running"
             ? html`
                 <btrix-desc-list-item label=${msg("Analysis Progress")}>
                   <sl-tooltip
                     content="${msg(
                       str`${
-                        this.qaRuns[0].stats.found === 0
+                        this.mostRecentNonFailedQARun.stats.found === 0
                           ? msg("Loading")
-                          : `${this.qaRuns[0].stats.done}/${this.qaRuns[0].stats.found}`
+                          : `${this.mostRecentNonFailedQARun.stats.done}/${this.mostRecentNonFailedQARun.stats.found}`
                       } Pages`,
                     )}"
                     placement="bottom"
                     hoist
                   >
                     <sl-progress-bar
-                      value=${(100 * this.qaRuns[0].stats.done) /
-                        this.qaRuns[0].stats.found || 1}
-                      ?indeterminate=${this.qaRuns[0].stats.found === 0}
+                      value=${(100 * this.mostRecentNonFailedQARun.stats.done) /
+                        this.mostRecentNonFailedQARun.stats.found || 1}
+                      ?indeterminate=${this.mostRecentNonFailedQARun.stats
+                        .found === 0}
                       style="--height: 0.5rem;"
                       class="mt-2 w-32"
                     ></sl-progress-bar>
@@ -207,8 +217,8 @@ export class ArchivedItemDetailQA extends TailwindElement {
           <btrix-desc-list-item label=${msg("Elapsed Time")}>
             ${when(
               this.qaRuns,
-              (qaRuns) =>
-                qaRuns[0] && this.crawl?.qaCrawlExecSeconds
+              () =>
+                this.mostRecentNonFailedQARun && this.crawl?.qaCrawlExecSeconds
                   ? humanizeExecutionSeconds(this.crawl.qaCrawlExecSeconds)
                   : html`<span class="text-neutral-400">${msg("N/A")}</span>`,
 
@@ -262,8 +272,8 @@ export class ArchivedItemDetailQA extends TailwindElement {
 
             ${when(
               this.qaRuns,
-              (qaRuns) =>
-                qaRuns[0]
+              () =>
+                this.mostRecentNonFailedQARun
                   ? this.renderAnalysis()
                   : html`
                       <div
