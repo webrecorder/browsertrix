@@ -43,6 +43,7 @@ def qa_run_pages_ready(
         count += 1
 
 
+@pytest.fixture(scope="module")
 def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/start",
