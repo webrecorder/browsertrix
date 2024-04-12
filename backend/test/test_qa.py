@@ -27,6 +27,25 @@ def qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
 def qa_run_pages_ready(
     crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_id
 ):
+    # Wait until activeQA is finished
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/activeQA",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if not data["qa"]:
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(5)
+        count += 1
+
+    # Wait until pages are ready
     count = 0
     while count < MAX_ATTEMPTS:
         r = requests.get(
@@ -74,6 +93,29 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
         time.sleep(5)
         count += 1
 
+    # Ensure can't start another QA job while this one's running
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/start",
+        headers=crawler_auth_headers,
+    )
+
+    assert r.status_code == 400
+    assert r.json()["detail"] == "qa_already_running"
+
+    # Ensure activeQA responds as expected
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/activeQA",
+        headers=crawler_auth_headers,
+    )
+
+    data = r.json()
+    qa = data["qa"]
+
+    assert qa
+    assert qa["state"]
+    assert qa["started"]
+    assert not qa["finished"]
+
     # Cancel crawl
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/cancel",
@@ -101,32 +143,9 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     return failed_qa_run_id
 
 
-def test_run_qa_already_running(crawler_crawl_id, crawler_auth_headers, default_org_id):
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/start",
-        headers=crawler_auth_headers,
-    )
-
-    assert r.status_code == 400
-    assert r.json()["detail"] == "qa_already_running"
-
-
-def test_active_qa(crawler_crawl_id, crawler_auth_headers, default_org_id):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/activeQA",
-        headers=crawler_auth_headers,
-    )
-
-    data = r.json()
-    qa = data["qa"]
-
-    assert qa
-    assert qa["state"]
-    assert qa["started"]
-    assert not qa["finished"]
-
-
-def test_qa_list(crawler_crawl_id, crawler_auth_headers, default_org_id):
+def test_qa_list(
+    crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_pages_ready
+):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
         headers=crawler_auth_headers,
@@ -143,27 +162,9 @@ def test_qa_list(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert not qa["finished"]
 
 
-def test_wait_for_complete(crawler_crawl_id, crawler_auth_headers, default_org_id):
-    count = 0
-    completed = False
-    while count < MAX_ATTEMPTS:
-        r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/activeQA",
-            headers=crawler_auth_headers,
-        )
-
-        data = r.json()
-        if not data["qa"]:
-            completed = True
-            break
-
-        time.sleep(5)
-        count += 1
-
-    assert completed
-
-
-def test_qa_completed(crawler_crawl_id, crawler_auth_headers, default_org_id):
+def test_qa_completed(
+    crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_pages_ready
+):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
         headers=crawler_auth_headers,
@@ -183,7 +184,9 @@ def test_qa_completed(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert qa["crawlExecSeconds"] > 0
 
 
-def test_qa_org_stats(crawler_crawl_id, crawler_auth_headers, default_org_id):
+def test_qa_org_stats(
+    crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_pages_ready
+):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
         headers=crawler_auth_headers,
@@ -265,7 +268,9 @@ def test_qa_replay(
     assert data["resources"][0]["path"]
 
 
-def test_run_qa_not_running(crawler_crawl_id, crawler_auth_headers, default_org_id):
+def test_run_qa_not_running(
+    crawler_crawl_id, crawler_auth_headers, default_org_id, failed_qa_run_id
+):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/stop",
         headers=crawler_auth_headers,
@@ -320,7 +325,7 @@ def test_failed_qa_run(
     assert qa["crawlExecSeconds"] > 0
 
 
-def test_delete_qa_run(
+def test_delete_qa_runs(
     crawler_crawl_id,
     crawler_auth_headers,
     default_org_id,
