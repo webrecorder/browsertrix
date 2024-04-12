@@ -202,7 +202,11 @@ def test_qa_org_stats(crawler_crawl_id, crawler_auth_headers, default_org_id):
 
 
 def test_qa_page_data(
-    crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_id
+    crawler_crawl_id,
+    crawler_auth_headers,
+    default_org_id,
+    qa_run_id,
+    qa_run_pages_ready,
 ):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/pages",
@@ -244,7 +248,13 @@ def test_qa_page_data(
     }
 
 
-def test_qa_replay(crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_id):
+def test_qa_replay(
+    crawler_crawl_id,
+    crawler_auth_headers,
+    default_org_id,
+    qa_run_id,
+    qa_run_pages_ready,
+):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/replay.json",
         headers=crawler_auth_headers,
@@ -265,7 +275,11 @@ def test_run_qa_not_running(crawler_crawl_id, crawler_auth_headers, default_org_
 
 
 def test_failed_qa_run(
-    crawler_crawl_id, crawler_auth_headers, default_org_id, failed_qa_run_id
+    crawler_crawl_id,
+    crawler_auth_headers,
+    default_org_id,
+    failed_qa_run_id,
+    qa_run_pages_ready,
 ):
     # Ensure failed QA run is included in list endpoint
     r = requests.get(
@@ -306,7 +320,11 @@ def test_failed_qa_run(
 
 
 def test_delete_qa_run(
-    crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_id, failed_qa_run_id
+    crawler_crawl_id,
+    crawler_auth_headers,
+    default_org_id,
+    qa_run_pages_ready,
+    failed_qa_run_id,
 ):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/delete",
