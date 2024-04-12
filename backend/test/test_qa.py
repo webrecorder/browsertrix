@@ -3,12 +3,13 @@ import requests
 import time
 from datetime import datetime
 
+import pytest
 
-qa_run_id = None
-failed_qa_run_id = None
+MAX_ATTEMPTS = 24
 
 
-def test_run_qa(crawler_crawl_id, crawler_auth_headers, default_org_id):
+@pytest.fixture(scope="module")
+def qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/start",
         headers=crawler_auth_headers,
@@ -17,9 +18,60 @@ def test_run_qa(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert r.status_code == 200
 
     data = r.json()
-    assert data["started"]
-    global qa_run_id
     qa_run_id = data["started"]
+    assert qa_run_id
+    return qa_run_id
+
+
+def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/start",
+        headers=crawler_auth_headers,
+    )
+
+    assert r.status_code == 200
+
+    data = r.json()
+    failed_qa_run_id = data["started"]
+    assert failed_qa_run_id
+
+    # Wait until it's properly running
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/activeQA",
+            headers=crawler_auth_headers,
+        )
+
+        data = r.json()
+        if data.get("qa") and data["qa"].get("state") == "running":
+            break
+
+        time.sleep(5)
+        count += 1
+
+    # Cancel crawl
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/cancel",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    # Wait until it stops with canceled state
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/pages",
+            headers=crawler_auth_headers,
+        )
+        data = r.json()
+        if data.get("state") == "canceled":
+            break
+
+        time.sleep(5)
+        count += 1
+
+    return failed_qa_run_id
 
 
 def test_run_qa_already_running(crawler_crawl_id, crawler_auth_headers, default_org_id):
@@ -67,7 +119,7 @@ def test_qa_list(crawler_crawl_id, crawler_auth_headers, default_org_id):
 def test_wait_for_complete(crawler_crawl_id, crawler_auth_headers, default_org_id):
     count = 0
     completed = False
-    while count < 24:
+    while count < MAX_ATTEMPTS:
         r = requests.get(
             f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/activeQA",
             headers=crawler_auth_headers,
@@ -123,7 +175,9 @@ def test_qa_org_stats(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert org_stats["qaUsage"][yymm] > 0
 
 
-def test_qa_page_data(crawler_crawl_id, crawler_auth_headers, default_org_id):
+def test_qa_page_data(
+    crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_id
+):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/pages",
         headers=crawler_auth_headers,
@@ -164,7 +218,7 @@ def test_qa_page_data(crawler_crawl_id, crawler_auth_headers, default_org_id):
     }
 
 
-def test_qa_replay(crawler_crawl_id, crawler_auth_headers, default_org_id):
+def test_qa_replay(crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/replay.json",
         headers=crawler_auth_headers,
@@ -184,56 +238,9 @@ def test_run_qa_not_running(crawler_crawl_id, crawler_auth_headers, default_org_
     assert r.json()["detail"] == "qa_not_running"
 
 
-def test_fail_running_qa(crawler_crawl_id, crawler_auth_headers, default_org_id):
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/start",
-        headers=crawler_auth_headers,
-    )
-
-    assert r.status_code == 200
-
-    data = r.json()
-    assert data["started"]
-    global failed_qa_run_id
-    failed_qa_run_id = data["started"]
-
-    # Wait until it's properly running
-    count = 0
-    while count < 24:
-        r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/activeQA",
-            headers=crawler_auth_headers,
-        )
-
-        data = r.json()
-        if data.get("qa") and data["qa"].get("state") == "running":
-            break
-
-        time.sleep(5)
-        count += 1
-
-    # Cancel crawl
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/cancel",
-        headers=crawler_auth_headers,
-    )
-    assert r.status_code == 200
-
-    # Wait until it stops with canceled state
-    count = 0
-    while count < 24:
-        r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/activeQA",
-            headers=crawler_auth_headers,
-        )
-
-        data = r.json()
-        if data.get("qa") and data["qa"].get("state") == "canceled":
-            break
-
-        time.sleep(5)
-        count += 1
-
+def test_failed_qa_run(
+    crawler_crawl_id, crawler_auth_headers, default_org_id, failed_qa_run_id
+):
     # Ensure failed QA run is included in list endpoint
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
@@ -272,7 +279,9 @@ def test_fail_running_qa(crawler_crawl_id, crawler_auth_headers, default_org_id)
     assert qa["crawlExecSeconds"] > 0
 
 
-def test_delete_qa_run(crawler_crawl_id, crawler_auth_headers, default_org_id):
+def test_delete_qa_run(
+    crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_id, failed_qa_run_id
+):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/delete",
         json={"qa_run_ids": [qa_run_id, failed_qa_run_id]},
@@ -282,19 +291,47 @@ def test_delete_qa_run(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     assert r.json()["deleted"] == 2
 
-    time.sleep(5)
+    # Wait for QA runs and their pages to be deleted
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
+            headers=crawler_auth_headers,
+        )
 
-    # deleted from finished qa list
+        data = r.json()
+        if data.get("count") == 0:
+            break
+
+        time.sleep(5)
+        count += 1
+
+        if count == MAX_ATTEMPTS:
+            raise
+
+    # Ensure runs are deleted from finished qa list
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
         headers=crawler_auth_headers,
     )
+    data = r.json()
+    assert data["count"] == 0
+    assert len(data["items"]) == 0
 
-    assert len(r.json()) == 0
+    # Ensure associated files are also deleted
+    for qa_run in (qa_run_id, failed_qa_run_id):
+        count = 0
+        while count < MAX_ATTEMPTS:
+            r = requests.get(
+                f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run}/pages",
+                headers=crawler_auth_headers,
+            )
+            data = r.json()
+            if data["count"] == 0 and len(data["items"]) == 0:
+                break
 
-    # deleted from pages
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/pages",
-        headers=crawler_auth_headers,
-    )
-    assert len(r.json()["items"]) == 0
+            time.sleep(5)
+            count += 1
+
+            if count == MAX_ATTEMPTS:
+                raise
