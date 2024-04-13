@@ -347,9 +347,9 @@ class CrawlOperator(BaseOperator):
             print(f"Restart {name}")
 
         if params.get("qa_source_crawl_id"):
-            params["priorityClassName"] = f"qa-crawl-instance-{i}"
+            params["priorityClassName"] = f"qa-crawl-pri-{i}"
         else:
-            params["priorityClassName"] = f"crawl-instance-{i}"
+            params["priorityClassName"] = f"crawl-pri-{i}"
 
         return self.load_from_yaml("crawler.yaml", params)
 
