@@ -143,6 +143,7 @@ export class ArchivedItemDetail extends TailwindElement {
   private readonly notify = new NotifyController(this);
 
   private timerId?: number;
+  private mostRecentNonFailedQARun?: QARun;
 
   private get isActive(): boolean | null {
     if (!this.crawl) return null;
@@ -176,8 +177,11 @@ export class ArchivedItemDetail extends TailwindElement {
     if (changedProperties.has("workflowId") && this.workflowId) {
       void this.fetchWorkflow();
     }
-    if (changedProperties.has("qaRuns") && this.qaRuns) {
-      if (!this.qaRunId) {
+    if (changedProperties.has("qaRuns")) {
+      this.mostRecentNonFailedQARun = this.qaRuns?.find((run) =>
+        [...QA_RUNNING_STATES, "complete"].includes(run.state),
+      );
+      if (!this.qaRunId && this.qaRuns) {
         const firstFinishedQARun = this.qaRuns.find(({ state }) =>
           finishedCrawlStates.includes(state),
         );
@@ -222,6 +226,7 @@ export class ArchivedItemDetail extends TailwindElement {
               .crawl=${this.crawl}
               .qaRuns=${this.qaRuns}
               .qaRunId=${this.qaRunId}
+              .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
             ></btrix-archived-item-detail-qa>
           `,
         );
@@ -965,6 +970,7 @@ ${this.crawl?.description}
 
   private readonly renderQAHeader = (qaRuns: QARun[]) => {
     const qaIsRunning = isActive(qaRuns[0]?.state);
+    const qaIsAvailable = !this.mostRecentNonFailedQARun && qaIsRunning;
     return html`
       ${qaIsRunning
         ? html`
@@ -1006,8 +1012,10 @@ ${this.crawl?.description}
       ${qaRuns.length
         ? html`
             <sl-tooltip
-              ?disabled=${!qaIsRunning}
-              content=${msg("Reviews are disabled during analysis runs.")}
+              ?disabled=${qaIsAvailable}
+              content=${qaIsRunning
+                ? msg("Reviews are disabled during analysis runs.")
+                : msg("No completed analysis runs are available.")}
             >
               <sl-button
                 variant="primary"
@@ -1015,7 +1023,7 @@ ${this.crawl?.description}
                 href="${this.navigate.orgBasePath}/items/crawl/${this
                   .crawlId}/review/screenshots?qaRunId=${this.qaRunId || ""}"
                 @click=${this.navigate.link}
-                ?disabled=${qaIsRunning}
+                ?disabled=${!qaIsAvailable}
               >
                 <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
                 ${msg("Review Crawl")}

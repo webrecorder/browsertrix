@@ -15,8 +15,6 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import { QA_RUNNING_STATES } from "../archived-item-detail";
-
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { MenuItemLink } from "@/components/ui/menu-item-link";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
@@ -131,6 +129,9 @@ export class ArchivedItemDetailQA extends TailwindElement {
   @property({ type: Array, attribute: false })
   qaRuns?: QARun[];
 
+  @property({ attribute: false })
+  mostRecentNonFailedQARun?: QARun;
+
   @state()
   private pages?: APIPaginatedList<ArchivedItemPage>;
 
@@ -141,16 +142,9 @@ export class ArchivedItemDetailQA extends TailwindElement {
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
 
-  private mostRecentNonFailedQARun?: QARun;
-
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("crawlId") && this.crawlId) {
       void this.fetchPages();
-    }
-    if (changedProperties.has("qaRuns")) {
-      this.mostRecentNonFailedQARun = this.qaRuns?.find((run) =>
-        [...QA_RUNNING_STATES, "complete"].includes(run.state),
-      );
     }
   }
 
