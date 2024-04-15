@@ -214,6 +214,8 @@ def test_qa_page_data(
 
     assert page["title"] == "Webrecorder"
     assert page["url"] == "https://webrecorder.net/"
+    assert page["mime"] == "text/html"
+    assert page["status"] == 200
     assert page["qa"]["textMatch"] == 1.0
     assert page["qa"]["screenshotMatch"] == 1.0
     assert page["qa"]["resourceCounts"] == {
@@ -231,6 +233,8 @@ def test_qa_page_data(
     assert page["id"]
     assert page["title"] == "Webrecorder"
     assert page["url"] == "https://webrecorder.net/"
+    assert page["mime"] == "text/html"
+    assert page["status"] == 200
     assert page["qa"]["textMatch"] == 1.0
     assert page["qa"]["screenshotMatch"] == 1.0
     assert page["qa"]["resourceCounts"] == {
