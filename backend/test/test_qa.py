@@ -124,7 +124,29 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     assert r.json()["success"]
 
-    time.sleep(10)
+    # Wait for state to be changed
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
+            headers=crawler_auth_headers,
+        )
+        assert r.status_code == 200
+
+        data = r.json()
+        matching_runs = [
+            qa_run for qa_run in data if qa_run.get("id") == failed_qa_run_id
+        ]
+        if matching_runs:
+            matching_run = matching_runs[0]
+            if matching_run.get("state") == "canceled":
+                break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(5)
+        count += 1
 
     return failed_qa_run_id
 
