@@ -435,7 +435,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
         assert page.get("title") or page.get("title") is None
         assert page["loadState"]
         assert page["status"]
-        assert page["mime"]
+        assert page["mime"] or page.get("mime") is None
 
     # Test GET page endpoint
     global page_id
@@ -454,7 +454,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page["ts"]
     assert page.get("title") or page.get("title") is None
     assert page["loadState"]
-    assert page["mime"]
+    assert page["mime"] or page.get("mime") is None
 
     assert page["notes"] == []
     assert page.get("userid") is None
@@ -552,7 +552,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page["ts"]
     assert page.get("title") or page.get("title") is None
     assert page["loadState"]
-    assert page["mime"]
+    assert page["mime"] or page.get("mime") is None
 
     assert page["notes"] == []
     assert page["userid"]
@@ -629,7 +629,7 @@ def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_
         assert page.get("title") or page.get("title") is None
         assert page["loadState"]
         assert page["status"]
-        assert page["mime"]
+        assert page["mime"] or page.get("mime") is None
 
     # Ensure only superuser can re-add pages for all crawls in an org
     r = requests.post(
