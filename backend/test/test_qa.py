@@ -376,9 +376,7 @@ def test_delete_qa_runs(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
         headers=crawler_auth_headers,
     )
-    data = r.json()
-    assert data["count"] == 0
-    assert len(data["items"]) == 0
+    assert len(r.json()) == 0
 
     # Ensure associated files are also deleted
     for qa_run in (qa_run_id, failed_qa_run_id):
