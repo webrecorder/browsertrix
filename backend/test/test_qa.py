@@ -127,7 +127,7 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     count = 0
     while count < MAX_ATTEMPTS:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/replay.json",
             headers=crawler_auth_headers,
         )
         data = r.json()
