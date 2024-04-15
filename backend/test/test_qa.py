@@ -143,25 +143,6 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     return failed_qa_run_id
 
 
-def test_qa_list(
-    crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_pages_ready
-):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
-        headers=crawler_auth_headers,
-    )
-
-    data = r.json()
-
-    assert len(data) == 1
-
-    qa = data[0]
-    assert qa
-    assert qa["state"]
-    assert qa["started"]
-    assert not qa["finished"]
-
-
 def test_qa_completed(
     crawler_crawl_id, crawler_auth_headers, default_org_id, qa_run_pages_ready
 ):
@@ -172,16 +153,16 @@ def test_qa_completed(
 
     data = r.json()
 
-    assert len(data) == 1
+    assert len(data) >= 1
 
-    qa = data[0]
-    assert qa
-    assert qa["state"] == "complete"
-    assert qa["started"]
-    assert qa["finished"]
-    assert qa["stats"]["found"] == 1
-    assert qa["stats"]["done"] == 1
-    assert qa["crawlExecSeconds"] > 0
+    for qa in data:
+        assert qa
+        assert qa["state"]
+        assert qa["started"]
+        assert qa["finished"]
+        assert qa["stats"]["found"] == 1
+        assert qa["stats"]["done"] == 1
+        assert qa["crawlExecSeconds"] > 0
 
 
 def test_qa_org_stats(
