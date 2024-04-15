@@ -258,7 +258,11 @@ def test_qa_replay(
 
 
 def test_run_qa_not_running(
-    crawler_crawl_id, crawler_auth_headers, default_org_id, failed_qa_run_id
+    crawler_crawl_id,
+    crawler_auth_headers,
+    default_org_id,
+    failed_qa_run_id,
+    qa_run_pages_ready,
 ):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/stop",
@@ -318,6 +322,7 @@ def test_delete_qa_runs(
     crawler_crawl_id,
     crawler_auth_headers,
     default_org_id,
+    qa_run_id,
     qa_run_pages_ready,
     failed_qa_run_id,
 ):
