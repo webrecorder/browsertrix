@@ -124,6 +124,8 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert r.status_code == 200
     assert r.json()["success"]
 
+    time.sleep(10)
+
     return failed_qa_run_id
 
 
