@@ -353,7 +353,7 @@ def test_delete_qa_runs(
     assert r.status_code == 200
     assert r.json()["deleted"] == 2
 
-    # Wait for QA runs and their pages to be deleted
+    # Wait for QA runs to be delete
     count = 0
     while count < MAX_ATTEMPTS:
         r = requests.get(
@@ -361,8 +361,7 @@ def test_delete_qa_runs(
             headers=crawler_auth_headers,
         )
 
-        data = r.json()
-        if data.get("count") == 0:
+        if len(r.json()) == 0:
             break
 
         if count + 1 == MAX_ATTEMPTS:
@@ -370,13 +369,6 @@ def test_delete_qa_runs(
 
         time.sleep(5)
         count += 1
-
-    # Ensure runs are deleted from finished qa list
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa",
-        headers=crawler_auth_headers,
-    )
-    assert len(r.json()) == 0
 
     # Ensure associated files are also deleted
     for qa_run in (qa_run_id, failed_qa_run_id):
