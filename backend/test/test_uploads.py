@@ -560,7 +560,6 @@ def test_get_all_crawls_by_collection_id(
     assert r.status_code == 200
     new_coll_id = r.json()["id"]
     assert new_coll_id
-    return new_coll_id
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?collectionId={new_coll_id}",
