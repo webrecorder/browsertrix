@@ -101,7 +101,7 @@ class PageOps:
             title=page_dict.get("title"),
             loadState=page_dict.get("loadState"),
             status=status,
-            mime=page_dict.get("mime"),
+            mime=page_dict.get("mime", "text/html"),
             ts=(
                 from_k8s_date(page_dict.get("ts"))
                 if page_dict.get("ts")
