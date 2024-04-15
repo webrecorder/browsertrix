@@ -353,7 +353,7 @@ def test_delete_qa_runs(
     assert r.status_code == 200
     assert r.json()["deleted"] == 2
 
-    # Wait for QA runs to be delete
+    # Wait for QA runs to be deleted
     count = 0
     while count < MAX_ATTEMPTS:
         r = requests.get(
