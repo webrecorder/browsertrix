@@ -264,6 +264,24 @@ def test_run_qa_not_running(
     failed_qa_run_id,
     qa_run_pages_ready,
 ):
+    # Make sure no active QA is running
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/activeQA",
+            headers=crawler_auth_headers,
+        )
+        data = r.json()
+        if data.get("qa") is None:
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(5)
+        count += 1
+
+    # Try to stop when there's no running QA run
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/stop",
         headers=crawler_auth_headers,
