@@ -132,13 +132,15 @@ class PageOps:
     ):
         """Add page to database"""
         page = self._get_page_from_dict(page_dict, crawl_id, oid)
+        print(f"PAGE: {page}", flush=True)
+
+        page_to_insert = page.to_dict(
+            exclude_unset=True, exclude_none=True, exclude_defaults=True
+        )
+        print(f"PAGE TO INSERT: {page_to_insert}")
 
         try:
-            await self.pages.insert_one(
-                page.to_dict(
-                    exclude_unset=True, exclude_none=True, exclude_defaults=True
-                )
-            )
+            await self.pages.insert_one(page_to_insert)
         except pymongo.errors.DuplicateKeyError:
             pass
 
