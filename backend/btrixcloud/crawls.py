@@ -733,18 +733,8 @@ class CrawlOps(BaseCrawlOps):
         """Stop crawl QA run, QA run removed when actually finished"""
         crawl = await self.get_crawl(crawl_id, org)
 
-        active_qa = await self.get_active_qa(crawl_id, org)
-        if not active_qa:
-            return HTTPException(status_code=400, detail="qa_not_running")
-
-        qa_run_id = active_qa.id
-
-        state_update = "stopped_by_user"
-        if not graceful:
-            state_update = "canceled"
-
         if not crawl.qa:
-            raise HTTPException(status_code=400, detail="qa_not_running")
+            return HTTPException(status_code=400, detail="qa_not_running")
 
         try:
             result = await self.crawl_manager.shutdown_crawl(
@@ -754,12 +744,6 @@ class CrawlOps(BaseCrawlOps):
             if result.get("error") == "Not Found":
                 # treat as success, qa crawl no longer exists, so mark as no qa
                 result = {"success": True}
-
-            if result.get("success"):
-                await self.crawls.find_one_and_update(
-                    {"_id": crawl_id, "type": "crawl"},
-                    {"$set": {f"qaFinished.{qa_run_id}.state": state_update}},
-                )
 
             return result
 

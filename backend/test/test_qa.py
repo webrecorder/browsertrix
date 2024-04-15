@@ -131,6 +131,8 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
             headers=crawler_auth_headers,
         )
         data = r.json()
+        print(f"Canceled crawl info, attempt {count}", flush=True)
+        print(data, flush=True)
         if data.get("state") == "canceled":
             break
 
