@@ -734,7 +734,7 @@ class CrawlOps(BaseCrawlOps):
         crawl = await self.get_crawl(crawl_id, org)
 
         if not crawl.qa:
-            return HTTPException(status_code=400, detail="qa_not_running")
+            raise HTTPException(status_code=400, detail="qa_not_running")
 
         try:
             result = await self.crawl_manager.shutdown_crawl(
