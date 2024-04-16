@@ -370,7 +370,7 @@ def test_delete_qa_runs(
         time.sleep(5)
         count += 1
 
-    # Ensure associated files are also deleted
+    # Ensure associated qa run information in pages is also deleted
     for qa_run in (qa_run_id, failed_qa_run_id):
         count = 0
         while count < MAX_ATTEMPTS:
@@ -379,7 +379,14 @@ def test_delete_qa_runs(
                 headers=crawler_auth_headers,
             )
             data = r.json()
-            if data.get("count") == 0 and len(data.get("items", [])) == 0:
+
+            pages_with_qa_run = [
+                page
+                for page in data["items"]
+                if page.get("qa") and page.get("qa").get(qa_run)
+            ]
+
+            if not pages_with_qa_run:
                 break
 
             if count + 1 == MAX_ATTEMPTS:
