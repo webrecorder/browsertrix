@@ -165,6 +165,8 @@ class CrawlOps(BaseCrawlOps):
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject", "errors", "config"]},
+            {"$set": {"qaRunCount": {"$size": {"$objectToArray": "$qaFinished"}}}},
+            {"$set": {"activeQAState": "$qa.state"}},
         ]
 
         if not resources:
@@ -188,6 +190,9 @@ class CrawlOps(BaseCrawlOps):
                 "finished",
                 "fileSize",
                 "firstSeed",
+                "reviewStatus",
+                "qaRunCount",
+                "activeQAState",
             ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
