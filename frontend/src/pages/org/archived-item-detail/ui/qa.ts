@@ -398,7 +398,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                     : html`
                         <btrix-menu-item-link href="#" download>
                           <sl-icon name="download" slot="prefix"></sl-icon>
-                          ${msg("Download QA Run")}
+                          ${msg("Download Analysis Run")}
                         </btrix-menu-item-link>
                         <sl-divider></sl-divider>
                       `}
