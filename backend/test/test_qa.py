@@ -378,7 +378,8 @@ def test_delete_qa_runs(
                 f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run}/pages",
                 headers=crawler_auth_headers,
             )
-            if len(r.json()) == 0:
+            data = r.json()
+            if data.get("count") == 0 and len(data.get("items", [])) == 0:
                 break
 
             if count + 1 == MAX_ATTEMPTS:
