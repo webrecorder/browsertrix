@@ -2,6 +2,7 @@ from .conftest import API_PREFIX, HOST_PREFIX
 import requests
 import time
 from datetime import datetime
+from tempfile import TemporaryFile
 
 import pytest
 
