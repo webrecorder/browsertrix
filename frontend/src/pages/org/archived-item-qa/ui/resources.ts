@@ -65,7 +65,7 @@ function renderDiff(
 
 export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
   const noData = html`<div
-    class=${tw`flex flex-col items-center justify-center gap-2 text-xs text-neutral-500`}
+    class="m-4 flex flex-col items-center justify-center gap-2 text-xs text-neutral-500"
   >
     <sl-icon name="slash-circle"></sl-icon>
     ${msg("Resources data not available")}

@@ -322,10 +322,12 @@ export class ArchivedItemQA extends TailwindElement {
 
       <article class="grid gap-x-6 gap-y-4 md:gap-y-0">
         <header
-          class="grid--header flex items-center justify-between gap-1 border-b py-2"
+          class="grid--header flex flex-wrap items-center justify-between gap-1 border-b py-2"
         >
           <div class="flex items-center gap-2 overflow-hidden">
-            <h1 class="flex-1 truncate text-base font-semibold leading-tight">
+            <h1
+              class="flex-1 flex-shrink-0 basis-32 truncate text-base font-semibold leading-tight"
+            >
               ${itemName}
             </h1>
             ${when(
@@ -345,7 +347,7 @@ export class ArchivedItemQA extends TailwindElement {
               `,
             )}
           </div>
-          <div>
+          <div class="ml-auto flex">
             <sl-button
               size="small"
               variant="text"
@@ -375,16 +377,21 @@ export class ArchivedItemQA extends TailwindElement {
         </header>
 
         <div
-          class="grid--pageToolbar flex items-center justify-between overflow-hidden border-b py-2"
+          class="grid--pageToolbar flex flex-wrap items-center justify-stretch gap-y-2 overflow-hidden border-b py-2 @container"
         >
-          <h2 class="mr-4 truncate text-base font-semibold text-neutral-700">
+          <h2
+            class="mr-4 flex-auto flex-shrink-0 flex-grow basis-32 truncate text-base font-semibold text-neutral-700"
+          >
             ${this.page ? this.page.title || msg("no page title") : nothing}
           </h2>
-          <div class="flex gap-4">
+          <div
+            class="ml-auto flex flex-grow basis-auto flex-wrap justify-between gap-4 @lg:flex-grow-0"
+          >
             <sl-button
               size="small"
               @click=${this.navPrevPage}
               ?disabled=${!prevPage}
+              class="order-1"
             >
               <sl-icon slot="prefix" name="arrow-left"></sl-icon>
               ${msg("Previous Page")}
@@ -394,6 +401,7 @@ export class ArchivedItemQA extends TailwindElement {
                 "Approvals are temporarily disabled during analysis runs.",
               )}
               ?disabled=${!disableReview}
+              class="order-3 mx-auto flex w-full justify-center @lg:order-2 @lg:mx-0 @lg:w-auto"
             >
               <btrix-page-qa-approval
                 .authState=${this.authState}
@@ -411,6 +419,7 @@ export class ArchivedItemQA extends TailwindElement {
               ?disabled=${!nextPage}
               outline
               @click=${this.navNextPage}
+              class="order-2 @lg:order-3"
             >
               <sl-icon slot="suffix" name="arrow-right"></sl-icon>
               ${msg("Next Page")}
@@ -418,7 +427,7 @@ export class ArchivedItemQA extends TailwindElement {
           </div>
         </div>
 
-        <div class="grid--tabGroup flex flex-col">
+        <div class="grid--tabGroup flex min-w-0 flex-col">
           <nav class="my-2 flex gap-2">
             <btrix-navigation-button
               id="screenshot-tab"
