@@ -958,43 +958,48 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
     assert data["deleted"]
     assert data["storageQuotaReached"] is False
 
-    time_limit = 60
+    max_attempts = 24
 
     # Check that org and workflow size figures are as expected
-    start_time = time.monotonic()
-    while True:
-        try:
-            r = requests.get(
-                f"{API_PREFIX}/orgs/{default_org_id}/metrics",
-                headers=admin_auth_headers,
-            )
-            data = r.json()
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/metrics",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
 
-            if data["storageUsedBytes"] != org_bytes - total_size:
-                raise Exception("not true on this pass")
+        all_good = True
 
-            if data["storageUsedCrawls"] != org_crawl_bytes - combined_crawl_size:
-                raise Exception("not true on this pass")
+        if data["storageUsedBytes"] != org_bytes - total_size:
+            all_good = False
 
-            if data["storageUsedUploads"] != org_upload_bytes - upload_size:
-                raise Exception("not true on this pass")
+        if data["storageUsedCrawls"] != org_crawl_bytes - combined_crawl_size:
+            all_good = False
+
+        if data["storageUsedUploads"] != org_upload_bytes - upload_size:
+            all_good = False
+
+        if all_good:
             break
-        except:
-            if time.monotonic() - start_time > time_limit:
-                raise
-            time.sleep(5)
 
-    start_time_workflow = time.monotonic()
-    while True:
-        try:
-            r = requests.get(
-                f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{all_crawls_delete_config_id}",
-                headers=admin_auth_headers,
-            )
-            if r.json()["totalSize"] == workflow_size - combined_crawl_size:
-                break
-            raise Exception("not true on this pass")
-        except:
-            if time.monotonic() - start_time_workflow > time_limit:
-                raise
-            time.sleep(5)
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(5)
+        count += 1
+
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{all_crawls_delete_config_id}",
+            headers=admin_auth_headers,
+        )
+        if r.json()["totalSize"] == workflow_size - combined_crawl_size:
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False
+
+        time.sleep(5)
+        count += 1
