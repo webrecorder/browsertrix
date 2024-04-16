@@ -551,6 +551,8 @@ class BaseCrawlOps:
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject", "errors", "config"]},
+            {"$set": {"qaRunCount": {"$size": {"$objectToArray": "$qaFinished"}}}},
+            {"$set": {"activeQAState": "$qa.state"}},
         ]
 
         if not resources:
@@ -569,7 +571,14 @@ class BaseCrawlOps:
             aggregate.extend([{"$match": {"collectionIds": {"$in": [collection_id]}}}])
 
         if sort_by:
-            if sort_by not in ("started", "finished", "fileSize"):
+            if sort_by not in (
+                "started",
+                "finished",
+                "fileSize",
+                "reviewStatus",
+                "qaRunCount",
+                "activeQAState",
+            ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
