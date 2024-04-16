@@ -970,9 +970,14 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
             )
             data = r.json()
 
-            assert data["storageUsedBytes"] == org_bytes - total_size
-            assert data["storageUsedCrawls"] == org_crawl_bytes - combined_crawl_size
-            assert data["storageUsedUploads"] == org_upload_bytes - upload_size
+            if data["storageUsedBytes"] != org_bytes - total_size:
+                raise Exception("not true on this pass")
+
+            if data["storageUsedCrawls"] != org_crawl_bytes - combined_crawl_size:
+                raise Exception("not true on this pass")
+
+            if data["storageUsedUploads"] != org_upload_bytes - upload_size:
+                raise Exception("not true on this pass")
             break
         except:
             if time.monotonic() - start_time > time_limit:
@@ -986,8 +991,9 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
                 f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{all_crawls_delete_config_id}",
                 headers=admin_auth_headers,
             )
-            assert r.json()["totalSize"] == workflow_size - combined_crawl_size
-            break
+            if r.json()["totalSize"] == workflow_size - combined_crawl_size:
+                break
+            raise Exception("not true on this pass")
         except:
             if time.monotonic() - start_time_workflow > time_limit:
                 raise
