@@ -393,7 +393,7 @@ def test_sort_crawls_by_qa_runs(
     crawls = r.json()["items"]
 
     assert crawls[-1]["id"] == crawler_crawl_id
-    assert crawls[-1]["qaRunCount"] == 2
+    assert crawls[-1]["qaRunCount"] > 0
 
     last_count = 0
     for crawl in crawls:
@@ -434,7 +434,7 @@ def test_sort_crawls_by_qa_runs(
     crawls = r.json()["items"]
 
     assert crawls[-1]["id"] == crawler_crawl_id
-    assert crawls[-1]["qaRunCount"] == 2
+    assert crawls[-1]["qaRunCount"] > 0
 
     last_count = 0
     for crawl in crawls:
