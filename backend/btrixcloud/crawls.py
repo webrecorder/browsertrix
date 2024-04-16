@@ -165,8 +165,54 @@ class CrawlOps(BaseCrawlOps):
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject", "errors", "config"]},
-            {"$set": {"qaRunCount": {"$size": {"$objectToArray": "$qaFinished"}}}},
-            {"$set": {"activeQAState": "$qa.state"}},
+            {
+                "$set": {
+                    "qaFinishedObject": {
+                        "$cond": {
+                            "if": {"$eq": ["$qaFinished", None]},
+                            "then": {},
+                            "else": "$qaFinished",
+                        }
+                    }
+                }
+            },
+            {
+                "$set": {
+                    "qaRunCount": {"$size": {"$objectToArray": "$qaFinishedObject"}}
+                }
+            },
+            {"$set": {"qaState": "$qa.state"}},
+            {"$set": {"activeQAState": "$qaState"}},
+            {
+                "$set": {
+                    "qaFinishedArray": {
+                        "$map": {
+                            "input": {"$objectToArray": "$qaFinishedObject"},
+                            "in": "$$this.v",
+                        }
+                    }
+                }
+            },
+            {
+                "$set": {
+                    "sortedQARuns": {
+                        "$sortArray": {
+                            "input": "$qaFinishedArray",
+                            "sortBy": {"started": -1},
+                        }
+                    }
+                }
+            },
+            {"$set": {"lastQARun": {"$arrayElemAt": ["$sortedQARuns", 0]}}},
+            {"$set": {"lastQAState": "$lastQARun.state"}},
+            {
+                "$unset": [
+                    "lastQARun",
+                    "qaFinishedObject",
+                    "qaFinishedArray",
+                    "sortedQARuns",
+                ]
+            },
         ]
 
         if not resources:
@@ -192,13 +238,19 @@ class CrawlOps(BaseCrawlOps):
                 "firstSeed",
                 "reviewStatus",
                 "qaRunCount",
-                "activeQAState",
+                "qaState",
             ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
-            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+            sort_query = {sort_by: sort_direction}
+
+            # Add secondary sort for qaState - sorted by current, then last
+            if sort_by == "qaState":
+                sort_query["lastQAState"] = sort_direction
+
+            aggregate.extend([{"$sort": sort_query}])
 
         aggregate.extend(
             [

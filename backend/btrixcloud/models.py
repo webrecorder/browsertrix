@@ -660,6 +660,7 @@ class CrawlOut(BaseMongoModel):
 
     qaRunCount: int = 0
     activeQAState: Optional[str]
+    lastQAState: Optional[str]
 
 
 # ============================================================================

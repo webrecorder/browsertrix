@@ -116,25 +116,27 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert qa["started"]
     assert not qa["finished"]
 
-    # Ensure sorting by activeQAState works as expected
+    # Ensure sorting by qaState works as expected - current floated to top
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=activeQAState",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=qaState",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     crawls = r.json()["items"]
     assert crawls[0]["id"] == crawler_crawl_id
     assert crawls[0]["activeQAState"]
+    assert crawls[0]["lastQAState"]
 
-    # Ensure sorting by activeQAState works as expected with all-crawls
+    # Ensure sorting by qaState works as expected with all-crawls
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=activeQAState",
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=qaState",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     crawls = r.json()["items"]
     assert crawls[0]["id"] == crawler_crawl_id
     assert crawls[0]["activeQAState"]
+    assert crawls[0]["lastQAState"]
 
     # Cancel crawl
     r = requests.post(
