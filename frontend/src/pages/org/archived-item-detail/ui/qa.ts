@@ -15,9 +15,8 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import { QA_RUNNING_STATES } from "../archived-item-detail";
-
 import { TailwindElement } from "@/classes/TailwindElement";
+import { type Dialog } from "@/components/ui/dialog";
 import type { MenuItemLink } from "@/components/ui/menu-item-link";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import type { PageChangeEvent } from "@/components/ui/pagination";
@@ -131,26 +130,25 @@ export class ArchivedItemDetailQA extends TailwindElement {
   @property({ type: Array, attribute: false })
   qaRuns?: QARun[];
 
+  @property({ attribute: false })
+  mostRecentNonFailedQARun?: QARun;
+
   @state()
   private pages?: APIPaginatedList<ArchivedItemPage>;
 
   @query("#qaPagesSortBySelect")
   private readonly qaPagesSortBySelect?: SlSelect | null;
 
+  @query("#deleteQADialog")
+  private readonly deleteQADialog?: Dialog | null;
+
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
 
-  private mostRecentNonFailedQARun?: QARun;
-
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("crawlId") && this.crawlId) {
       void this.fetchPages();
-    }
-    if (changedProperties.has("qaRuns")) {
-      this.mostRecentNonFailedQARun = this.qaRuns?.find((run) =>
-        [...QA_RUNNING_STATES, "complete"].includes(run.state),
-      );
     }
   }
 
@@ -400,7 +398,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                       `}
                   <sl-menu-item
                     @click=${() => {
-                      console.log("delete");
+                      // TODO
                     }}
                     style="--sl-color-neutral-700: var(--danger)"
                   >
@@ -415,6 +413,32 @@ export class ArchivedItemDetailQA extends TailwindElement {
       `,
     );
   };
+
+  private readonly renderDeleteConfirmDialog = (id: string) => html`
+    <btrix-dialog id="deleteQARunDialog" .label=${msg("Delete QA run?")}>
+      ${msg("All of the data included in this QA run will be deleted")}
+      <div slot="footer" class="flex justify-between">
+        <sl-button
+          size="small"
+          variant="primary"
+          .autofocus=${true}
+          @click=${() => void this.deleteQADialog?.hide()}
+        >
+          ${msg("Keep this Analysis")}
+        </sl-button>
+        <sl-button
+          size="small"
+          variant="danger"
+          outline
+          @click=${async () => {
+            await this.deleteQARun(id);
+            void this.deleteQADialog?.hide();
+          }}
+          >${msg("Stop Delete Analysis")}</sl-button
+        >
+      </div>
+    </btrix-dialog>
+  `;
 
   private readonly renderLoadingDetail = () =>
     html`<div class="min-w-32"><sl-spinner class="h-4 w-4"></sl-spinner></div>`;
@@ -646,6 +670,18 @@ export class ArchivedItemDetailQA extends TailwindElement {
       return resources?.[0];
     } catch (e) {
       console.debug(e);
+    }
+  }
+
+  async deleteQARun(id: string) {
+    try {
+      await this.api.fetch(
+        `/orgs/${this.orgId}/crawls/${this.crawlId}`,
+        this.authState!,
+        { method: "POST", body: JSON.stringify({ qa_run_ids: [id] }) },
+      );
+    } catch (e) {
+      console.error(e);
     }
   }
 }
