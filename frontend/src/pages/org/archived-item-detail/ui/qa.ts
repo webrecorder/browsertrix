@@ -43,6 +43,7 @@ import type { QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import { getLocale, pluralize } from "@/utils/localization";
 
 const iconForCrawlReview = (status: ArchivedItem["reviewStatus"]) => {
   switch (status) {
@@ -136,10 +137,13 @@ export class ArchivedItemDetailQA extends TailwindElement {
   @state()
   private pages?: APIPaginatedList<ArchivedItemPage>;
 
+  @state()
+  private deleting: string | null = null;
+
   @query("#qaPagesSortBySelect")
   private readonly qaPagesSortBySelect?: SlSelect | null;
 
-  @query("#deleteQADialog")
+  @query("#deleteQARunDialog")
   private readonly deleteQADialog?: Dialog | null;
 
   private readonly api = new APIController(this);
@@ -225,7 +229,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
           </btrix-desc-list-item>
         </btrix-desc-list>
       </div>
-
+      ${this.renderDeleteConfirmDialog()}
       <btrix-tab-group>
         <btrix-tab-group-tab slot="nav" panel="pages">
           <sl-icon name="file-richtext-fill"></sl-icon>
@@ -342,6 +346,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
           </btrix-table-cell>
           <btrix-table-cell>
             <sl-format-date
+              lang=${getLocale()}
               date=${`${run.started}Z`}
               month="2-digit"
               day="2-digit"
@@ -352,6 +357,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
           </btrix-table-cell>
           <btrix-table-cell>
             <sl-format-date
+              lang=${getLocale()}
               date=${`${run.finished}Z`}
               month="2-digit"
               day="2-digit"
@@ -398,7 +404,8 @@ export class ArchivedItemDetailQA extends TailwindElement {
                       `}
                   <sl-menu-item
                     @click=${() => {
-                      // TODO
+                      this.deleting = run.id;
+                      void this.deleteQADialog?.show();
                     }}
                     style="--sl-color-neutral-700: var(--danger)"
                   >
@@ -414,31 +421,55 @@ export class ArchivedItemDetailQA extends TailwindElement {
     );
   };
 
-  private readonly renderDeleteConfirmDialog = (id: string) => html`
-    <btrix-dialog id="deleteQARunDialog" .label=${msg("Delete QA run?")}>
-      ${msg("All of the data included in this QA run will be deleted")}
-      <div slot="footer" class="flex justify-between">
-        <sl-button
-          size="small"
-          variant="primary"
-          .autofocus=${true}
-          @click=${() => void this.deleteQADialog?.hide()}
+  private readonly renderDeleteConfirmDialog = () => {
+    const runToBeDeleted = this.qaRuns?.find((run) => run.id === this.deleting);
+
+    if (!runToBeDeleted) return;
+
+    return html`
+      <btrix-dialog id="deleteQARunDialog" .label=${msg("Delete QA Run?")} open>
+        <b class="font-semibold"
+          >${msg("All of the data included in this QA run will be deleted.")}</b
         >
-          ${msg("Keep this Analysis")}
-        </sl-button>
-        <sl-button
-          size="small"
-          variant="danger"
-          outline
-          @click=${async () => {
-            await this.deleteQARun(id);
-            void this.deleteQADialog?.hide();
-          }}
-          >${msg("Stop Delete Analysis")}</sl-button
-        >
-      </div>
-    </btrix-dialog>
-  `;
+        <div>
+          ${msg(
+            `This QA run includes data for ${runToBeDeleted.stats.done} ${pluralize(runToBeDeleted.stats.done, { zero: msg("pages", { desc: 'plural form of "page" for zero pages' }), one: msg("page"), two: msg("pages", { desc: 'plural form of "page" for two pages' }), few: msg("pages", { desc: 'plural form of "page" for few pages' }), many: msg("pages", { desc: 'plural form of "page" for many pages' }), other: msg("pages", { desc: 'plural form of "page" for multiple/other pages' }) })} and was started on `,
+          )}
+          <sl-format-date
+            lang=${getLocale()}
+            date=${`${runToBeDeleted.started}Z`}
+            month="2-digit"
+            day="2-digit"
+            year="2-digit"
+            hour="2-digit"
+            minute="2-digit"
+          ></sl-format-date>
+          ${msg("by")} ${runToBeDeleted.userName}.
+        </div>
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            variant="primary"
+            .autofocus=${true}
+            @click=${() => void this.deleteQADialog?.hide()}
+          >
+            ${msg("Cancel")}
+          </sl-button>
+          <sl-button
+            size="small"
+            variant="danger"
+            outline
+            @click=${async () => {
+              await this.deleteQARun(runToBeDeleted.id);
+              this.deleting = null;
+              void this.deleteQADialog?.hide();
+            }}
+            >${msg("Delete QA Run")}</sl-button
+          >
+        </div>
+      </btrix-dialog>
+    `;
+  };
 
   private readonly renderLoadingDetail = () =>
     html`<div class="min-w-32"><sl-spinner class="h-4 w-4"></sl-spinner></div>`;

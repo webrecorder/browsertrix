@@ -30,3 +30,9 @@ export const getLocaleTimeZone = (locales?: string[]) => {
     .replace(date.toLocaleTimeString([], { hour: "2-digit" }), "")
     .trim();
 };
+
+export const pluralize = (
+  number: number,
+  strings: { [k in Intl.LDMLPluralRule]: string },
+  options?: Intl.PluralRulesOptions,
+) => strings[new Intl.PluralRules(getLocale(), options).select(number)];
