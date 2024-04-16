@@ -11,6 +11,8 @@ from .utils import read_in_chunks
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
+MAX_ATEMPTS = 24
+
 
 @pytest.fixture(scope="module")
 def upload_id(admin_auth_headers, default_org_id, uploads_collection_id):
@@ -957,8 +959,6 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
     data = r.json()
     assert data["deleted"]
     assert data["storageQuotaReached"] is False
-
-    max_attempts = 24
 
     # Check that org and workflow size figures are as expected
     count = 0
