@@ -27,7 +27,6 @@ from btrixcloud.models import (
     CrawlFile,
     CrawlCompleteIn,
     StorageRef,
-    PagesAndResources,
 )
 
 from btrixcloud.utils import (
@@ -326,16 +325,10 @@ class CrawlOperator(BaseOperator):
         if name in children[CMAP]:
             return [children[CMAP][name]]
 
-        pages, _ = await self.page_ops.list_pages(qa_source_crawl_id, page_size=1000)
-
         crawl_replay = await self.crawl_ops.get_internal_crawl_out(qa_source_crawl_id)
 
-        res_and_pages = PagesAndResources(resources=crawl_replay.resources, pages=pages)
-
         params["name"] = name
-        params["qa_source_replay_json"] = res_and_pages.json()
-        # params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})
-
+        params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})
         return self.load_from_yaml("qa_configmap.yaml", params)
 
     def _load_crawler(self, params, i, status, children):
@@ -354,9 +347,9 @@ class CrawlOperator(BaseOperator):
             print(f"Restart {name}")
 
         if params.get("qa_source_crawl_id"):
-            params["priorityClassName"] = f"qa-crawl-instance-{i}"
+            params["priorityClassName"] = f"qa-crawl-pri-{i}"
         else:
-            params["priorityClassName"] = f"crawl-instance-{i}"
+            params["priorityClassName"] = f"crawl-pri-{i}"
 
         return self.load_from_yaml("crawler.yaml", params)
 
