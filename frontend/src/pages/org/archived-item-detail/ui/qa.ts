@@ -433,7 +433,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
         >
         <div>
           ${msg(
-            `This QA run includes data for ${runToBeDeleted.stats.done} ${pluralize(runToBeDeleted.stats.done, { zero: msg("pages", { desc: 'plural form of "page" for zero pages' }), one: msg("page"), two: msg("pages", { desc: 'plural form of "page" for two pages' }), few: msg("pages", { desc: 'plural form of "page" for few pages' }), many: msg("pages", { desc: 'plural form of "page" for many pages' }), other: msg("pages", { desc: 'plural form of "page" for multiple/other pages' }) })} and was started on `,
+            str`This QA run includes data for ${runToBeDeleted.stats.done} ${pluralize(runToBeDeleted.stats.done, { zero: msg("pages", { desc: 'plural form of "page" for zero pages' }), one: msg("page"), two: msg("pages", { desc: 'plural form of "page" for two pages' }), few: msg("pages", { desc: 'plural form of "page" for few pages' }), many: msg("pages", { desc: 'plural form of "page" for many pages' }), other: msg("pages", { desc: 'plural form of "page" for multiple/other pages' }) })} and was started on `,
           )}
           <sl-format-date
             lang=${getLocale()}
