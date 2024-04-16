@@ -11,7 +11,7 @@ from .utils import read_in_chunks
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
-MAX_ATEMPTS = 24
+MAX_ATTEMPTS = 24
 
 
 @pytest.fixture(scope="module")
