@@ -111,7 +111,7 @@ export class ArchivedItemDetail extends TailwindElement {
   private logs?: APIPaginatedList<CrawlLog>;
 
   @state()
-  activeTab: SectionName | undefined = "overview";
+  activeTab: SectionName = "overview";
 
   @state()
   private openDialogName?: "scale" | "metadata" | "exclusions";
@@ -197,13 +197,42 @@ export class ArchivedItemDetail extends TailwindElement {
     const hash = window.location.hash.slice(1);
     if ((SECTIONS as readonly string[]).includes(hash)) {
       this.activeTab = hash as SectionName;
+    } else {
+      const newLocation = new URL(window.location.toString());
+      newLocation.hash = this.activeTab;
+      window.history.pushState(undefined, "", newLocation);
     }
     super.connectedCallback();
+    window.addEventListener("hashchange", this.getActiveTabFromHash);
   }
 
   disconnectedCallback(): void {
     this.stopPoll();
     super.disconnectedCallback();
+    window.removeEventListener("hashchange", this.getActiveTabFromHash);
+  }
+
+  // TODO this should be refactored out into the API router or something, it's
+  // mostly copied from frontend/src/pages/org/workflow-detail.ts
+  private readonly getActiveTabFromHash = async () => {
+    await this.updateComplete;
+
+    const hashValue = window.location.hash.slice(1);
+    if (SECTIONS.includes(hashValue as (typeof SECTIONS)[number])) {
+      this.activeTab = hashValue as SectionName;
+    } else {
+      this.goToTab(this.activeTab, { replace: true });
+    }
+  };
+
+  private goToTab(tab: SectionName, { replace = false } = {}) {
+    const path = `${window.location.href.split("#")[0]}#${tab}`;
+    if (replace) {
+      window.history.replaceState(null, "", path);
+    } else {
+      window.history.pushState(null, "", path);
+    }
+    this.activeTab = tab;
   }
 
   render() {
