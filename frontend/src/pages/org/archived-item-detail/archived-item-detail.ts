@@ -970,7 +970,7 @@ ${this.crawl?.description}
 
   private readonly renderQAHeader = (qaRuns: QARun[]) => {
     const qaIsRunning = isActive(qaRuns[0]?.state);
-    const qaIsAvailable = !this.mostRecentNonFailedQARun && qaIsRunning;
+    const qaIsAvailable = this.mostRecentNonFailedQARun && !qaIsRunning;
     return html`
       ${qaIsRunning
         ? html`
