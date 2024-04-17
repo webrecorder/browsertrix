@@ -528,7 +528,7 @@ class PageOps:
 
         # Make sure boundaries start with 0
         if boundaries[0] != 0:
-            boundaries.insert(0, 0)
+            boundaries.insert(0, 0.0)
 
         # Make sure we have upper boundary just over 1 to be inclusive of scores of 1
         if boundaries[-1] <= 1:
