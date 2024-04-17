@@ -20,8 +20,20 @@ function renderDiff(
     html`<span class=${tw`capitalize`}>${key}</span>`,
     html`${crawlResources[key].good.toLocaleString()}`,
     html`${crawlResources[key].bad.toLocaleString()}`,
-    html`${qaResources[key].good.toLocaleString()}`,
-    html`${qaResources[key].bad.toLocaleString()}`,
+    html`<span
+      class=${crawlResources[key].good !== qaResources[key].good
+        ? tw`font-semibold text-danger`
+        : tw`text-neutral-400`}
+    >
+      ${qaResources[key].good.toLocaleString()}
+    </span>`,
+    html`<span
+      class=${crawlResources[key].bad !== qaResources[key].bad
+        ? tw`font-semibold text-danger`
+        : tw`text-neutral-400`}
+    >
+      ${qaResources[key].bad.toLocaleString()}
+    </span>`,
   ]);
 
   return html`
