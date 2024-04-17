@@ -35,6 +35,7 @@ from .models import (
     QARun,
     QARunOut,
     QARunWithResources,
+    QARunAggregateStatsOut,
     DeleteQARunList,
     Organization,
     User,
@@ -917,6 +918,23 @@ class CrawlOps(BaseCrawlOps):
 
         return QARunWithResources(**qa_run_dict)
 
+    async def get_qa_run_aggregate_stats(
+        self,
+        crawl_id: str,
+        qa_run_id: str,
+        thresholds: Dict[str, List[float]],
+    ) -> QARunAggregateStatsOut:
+        """Get aggregate stats for QA run"""
+        screenshot_results = await self.page_ops.get_qa_run_aggregate_counts(
+            crawl_id, qa_run_id, thresholds, key="screenshotMatch"
+        )
+        text_results = await self.page_ops.get_qa_run_aggregate_counts(
+            crawl_id, qa_run_id, thresholds, key="textMatch"
+        )
+        return QARunAggregateStatsOut(
+            screenshotMatch=screenshot_results, textMatch=text_results
+        )
+
 
 # ============================================================================
 async def recompute_crawl_file_count_and_size(crawls, crawl_id):
@@ -1124,6 +1142,37 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         crawl_id, qa_run_id, org: Organization = Depends(org_viewer_dep)
     ):
         return await ops.get_qa_run_for_replay(crawl_id, qa_run_id, org)
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/stats",
+        tags=["qa"],
+        response_model=QARunAggregateStatsOut,
+    )
+    async def get_qa_run_aggregate_stats(
+        crawl_id,
+        qa_run_id,
+        screenshotThresholds: str,
+        textThresholds: str,
+        # pylint: disable=unused-argument
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        thresholds: Dict[str, List[float]] = {}
+        try:
+            thresholds["screenshotMatch"] = [
+                float(threshold) for threshold in screenshotThresholds.split(",")
+            ]
+            thresholds["textMatch"] = [
+                float(threshold) for threshold in textThresholds.split(",")
+            ]
+        # pylint: disable=broad-exception-caught,raise-missing-from
+        except Exception:
+            raise HTTPException(status_code=400, detail="invalid_thresholds")
+
+        return await ops.get_qa_run_aggregate_stats(
+            crawl_id,
+            qa_run_id,
+            thresholds,
+        )
 
     @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/start", tags=["qa"])
     async def start_crawl_qa_run(

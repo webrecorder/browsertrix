@@ -739,6 +739,22 @@ class QARunOut(BaseModel):
 
 
 # ============================================================================
+class QARunBucketStats(BaseModel):
+    """Model for per-bucket aggregate stats results"""
+
+    lowerBoundary: str
+    count: int
+
+
+# ============================================================================
+class QARunAggregateStatsOut(BaseModel):
+    """QA Run aggregate stats out"""
+
+    screenshotMatch: List[QARunBucketStats]
+    textMatch: List[QARunBucketStats]
+
+
+# ============================================================================
 class Crawl(BaseCrawl, CrawlConfigCore):
     """Store State of a Crawl (Finished or Running)"""
 
