@@ -1,6 +1,6 @@
-import { localized, msg } from "@lit/localize";
-import { type SlCheckbox } from "@shoelace-style/shoelace";
-import { css, html, nothing } from "lit";
+import { localized, msg, str } from "@lit/localize";
+import type { SlCheckbox, SlHideEvent } from "@shoelace-style/shoelace";
+import { css, html, nothing, type TemplateResult } from "lit";
 import {
   customElement,
   property,
@@ -9,6 +9,8 @@ import {
   state,
 } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+
+import { CrawlStatus } from "./crawl-status";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { NavigateController } from "@/controllers/navigate";
@@ -22,7 +24,6 @@ export type CheckboxChangeEventDetail = {
 
 /**
  * @slot actionCell - Action cell
- * @slot namePrefix - Prefix name in cell
  * @fires btrix-checkbox-change
  */
 @localized()
@@ -51,6 +52,9 @@ export class ArchivedItemListItem extends TailwindElement {
   @property({ type: Boolean })
   checked = false;
 
+  @property({ type: Boolean })
+  showStatus = false;
+
   @property({ type: Number })
   index = 0;
 
@@ -65,12 +69,17 @@ export class ArchivedItemListItem extends TailwindElement {
   render() {
     if (!this.item) return;
     const checkboxId = `${this.item.id}-checkbox`;
-    const rowName = html`
-      <div class="flex items-center gap-3">
-        <slot name="namePrefix"></slot>
-        ${renderName(this.item)}
-      </div>
-    `;
+    const rowName = renderName(this.item);
+    const isUpload = this.item.type === "upload";
+    const crawlStatus = CrawlStatus.getContent(this.item.state, isUpload);
+    let typeLabel = msg("Crawl");
+    let typeIcon = "gear-wide-connected";
+
+    if (isUpload) {
+      typeLabel = msg("Upload");
+      typeIcon = "upload";
+    }
+
     return html`
       <btrix-table-row
         class=${this.href || this.checkbox
@@ -100,6 +109,29 @@ export class ArchivedItemListItem extends TailwindElement {
               </btrix-table-cell>
             `
           : nothing}
+        <btrix-table-cell class="pr-0">
+          ${this.showStatus
+            ? html`
+                <btrix-crawl-status
+                  state=${this.item.state}
+                  hideLabel
+                  ?isUpload=${isUpload}
+                ></btrix-crawl-status>
+              `
+            : html`
+                <sl-tooltip
+                  content=${msg(str`${typeLabel}: ${crawlStatus.label}`)}
+                  @sl-hide=${(e: SlHideEvent) => e.stopPropagation()}
+                  @sl-after-hide=${(e: SlHideEvent) => e.stopPropagation()}
+                >
+                  <sl-icon
+                    style="color: ${crawlStatus.cssColor}"
+                    name=${typeIcon}
+                    label=${typeLabel}
+                  ></sl-icon>
+                </sl-tooltip>
+              `}
+        </btrix-table-cell>
         <btrix-table-cell
           rowClickTarget=${ifDefined(
             this.href ? "a" : this.checkbox ? "label" : undefined,
@@ -148,9 +180,6 @@ export class ArchivedItemListItem extends TailwindElement {
               </div>`
             : html`<span class="text-neutral-400">${msg("n/a")}</span>`}
         </btrix-table-cell>
-        <btrix-table-cell>
-          <div class="truncate">${this.item.userName}</div>
-        </btrix-table-cell>
         <slot name="actionCell"></slot>
       </btrix-table-row>
     `;
@@ -193,7 +222,7 @@ export class ArchivedItemList extends TailwindElement {
   `;
 
   @queryAssignedElements({ selector: "btrix-archived-item-list-item" })
-  items!: ArchivedItemListItem[];
+  public items!: ArchivedItemListItem[];
 
   @state()
   private hasCheckboxCell = false;
@@ -202,14 +231,58 @@ export class ArchivedItemList extends TailwindElement {
   private hasActionCell = false;
 
   render() {
+    const headerCols: { cssCol: string; cell: TemplateResult<1> | symbol }[] = [
+      {
+        cssCol: "min-content",
+        cell: html`<btrix-table-header-cell>
+          <span class="sr-only">${msg("Type")}</span>
+        </btrix-table-header-cell>`,
+      },
+      {
+        cssCol: "[clickable-start] 60ch",
+        cell: html`<btrix-table-header-cell
+          >${msg("Name")}</btrix-table-header-cell
+        >`,
+      },
+      {
+        cssCol: "12rem",
+        cell: html`<btrix-table-header-cell>
+          ${msg("Date Created")}
+        </btrix-table-header-cell>`,
+      },
+      {
+        cssCol: "1fr",
+        cell: html`<btrix-table-header-cell>
+          ${msg("Size")}
+        </btrix-table-header-cell>`,
+      },
+      {
+        cssCol: "1fr [clickable-end]",
+        cell: html`<btrix-table-header-cell>
+          ${msg("Pages Crawled")}
+        </btrix-table-header-cell>`,
+      },
+    ];
+
+    if (this.hasCheckboxCell) {
+      headerCols.unshift({
+        cssCol: "min-content",
+        cell: nothing, // renders into slot
+      });
+    }
+    if (this.hasActionCell) {
+      headerCols.push({
+        cssCol: "min-content",
+        cell: nothing, // renders into slot
+      });
+    }
+
     return html`
       <style>
         btrix-table {
-          grid-template-columns: ${`${
-            this.hasCheckboxCell ? "min-content" : ""
-          } [clickable-start] 60ch 12rem 1fr 1fr 30ch [clickable-end] ${
-            this.hasActionCell ? "min-content" : ""
-          }`.trim()};
+          grid-template-columns: ${headerCols
+            .map(({ cssCol }) => cssCol)
+            .join(" ")};
         }
       </style>
       <div class="overflow-auto">
@@ -221,17 +294,7 @@ export class ArchivedItemList extends TailwindElement {
                 (this.hasCheckboxCell =
                   (e.target as HTMLSlotElement).assignedElements().length > 0)}
             ></slot>
-            <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Date Created")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
-            <btrix-table-header-cell
-              >${msg("Pages Crawled")}</btrix-table-header-cell
-            >
-            <btrix-table-header-cell>
-              ${msg("Created By")}
-            </btrix-table-header-cell>
+            ${headerCols.map(({ cell }) => cell)}
             <slot
               name="actionCell"
               @slotchange=${(e: Event) =>

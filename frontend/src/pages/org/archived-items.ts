@@ -499,13 +499,8 @@ export class CrawlsList extends LiteElement {
     <btrix-archived-item-list-item
       href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}`}
       .item=${item}
+      ?showStatus=${this.itemType !== null}
     >
-      <btrix-crawl-status
-        slot="namePrefix"
-        state=${item.state}
-        hideLabel
-        type=${item.type}
-      ></btrix-crawl-status>
       <btrix-table-cell slot="actionCell" class="px-1">
         <btrix-overflow-dropdown
           @click=${(e: MouseEvent) => {

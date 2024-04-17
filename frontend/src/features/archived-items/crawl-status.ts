@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import type { SlHideEvent } from "@shoelace-style/shoelace";
 import { css, html, LitElement, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import startCase from "lodash/fp/startCase";
@@ -65,35 +66,38 @@ export class CrawlStatus extends LitElement {
   ): {
     icon: TemplateResult;
     label: string;
+    cssColor: string;
   } {
-    const isUpload = type === "upload";
+    let color = "var(--sl-color-neutral-400)";
     let icon = html`<sl-icon
       name="circle"
       class="neutral"
       slot="prefix"
-      style="color: var(--sl-color-neutral-400)"
+      style="color: ${color}"
     ></sl-icon>`;
     let label = "";
 
     switch (state) {
       case "starting":
+        color = "var(--sl-color-purple-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
           class="animatePulse"
           slot="prefix"
-          style="color: var(--sl-color-purple-600)"
+          style="color: ${color}"
         ></sl-icon>`;
         label = msg("Starting");
         break;
 
       case "waiting_capacity":
       case "waiting_org_limit":
+        color = "var(--sl-color-purple-600)";
         icon = html`<sl-icon
           name="hourglass-split"
           class="animatePulse"
           slot="prefix"
-          style="color: var(--sl-color-purple-600)"
+          style="color: ${color}"
         ></sl-icon>`;
         label =
           state === "waiting_capacity"
@@ -102,65 +106,71 @@ export class CrawlStatus extends LitElement {
         break;
 
       case "running":
+        color = "var(--success)";
         icon = html`<sl-icon
           name="dot"
           library="app"
           class="animatePulse"
           slot="prefix"
-          style="color: var(--success)"
+          style="color: ${color}"
         ></sl-icon>`;
         label = msg("Running");
         break;
 
       case "stopping":
+        color = "var(--sl-color-purple-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
           class="animatePulse"
           slot="prefix"
-          style="color: var(--sl-color-purple-600)"
+          style="color: ${color}"
         ></sl-icon>`;
         label = msg("Stopping");
         break;
 
       case "pending-wait":
+        color = "var(--sl-color-purple-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
           class="animatePulse"
           slot="prefix"
-          style="color: var(--sl-color-purple-600)"
+          style="color: ${color}"
         ></sl-icon>`;
         label = msg("Finishing Crawl");
         break;
 
       case "generate-wacz":
+        color = "var(--sl-color-purple-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
           class="animatePulse"
           slot="prefix"
-          style="color: var(--sl-color-purple-600)"
+          style="color: ${color}"
         ></sl-icon>`;
         label = msg("Generating WACZ");
         break;
 
       case "uploading-wacz":
+        color = "var(--sl-color-purple-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
           class="animatePulse"
           slot="prefix"
-          style="color: var(--sl-color-purple-600)"
+          style="color: ${color}"
         ></sl-icon>`;
         label = msg("Uploading WACZ");
         break;
 
       case "complete":
+        color = "var(--success)";
         icon = html`<sl-icon
-          name=${type === "upload" ? "upload" : "check-circle-fill"}
+          name="check-circle-fill"
           slot="prefix"
-          style="color: var(--success)"
+          style="color: ${color}"
         ></sl-icon>`;
         label = {
           upload: msg("Uploaded"),
@@ -170,46 +180,51 @@ export class CrawlStatus extends LitElement {
         break;
 
       case "failed":
+        color = "var(--danger)";
         icon = html`<sl-icon
-          name=${isUpload ? "upload" : "exclamation-triangle-fill"}
+          name="exclamation-triangle-fill"
           slot="prefix"
-          style="color: var(--danger)"
+          style="color: ${color}"
         ></sl-icon>`;
         label = msg("Failed");
         break;
 
       case "skipped_quota_reached":
+        color = "var(--danger)";
         icon = html`<sl-icon
           name="exclamation-triangle-fill"
           slot="prefix"
-          style="color: var(--danger)"
+          style="color: ${color}"
         ></sl-icon>`;
         label = msg("Skipped: Storage Quota Reached");
         break;
 
       case "stopped_by_user":
+        color = "var(--warning)";
         icon = html`<sl-icon
           name="slash-square-fill"
           slot="prefix"
-          style="color: var(--warning)"
+          style="color: ${color}"
         ></sl-icon>`;
         label = msg("Stopped");
         break;
 
       case "stopped_quota_reached":
+        color = "var(--warning)";
         icon = html`<sl-icon
           name="exclamation-square-fill"
           slot="prefix"
-          style="color: var(--warning)"
+          style="color: ${color}"
         ></sl-icon>`;
         label = msg("Stopped: Time Quota Reached");
         break;
 
       case "canceled":
+        color = "var(--sl-color-orange-600)";
         icon = html`<sl-icon
           name="x-octagon-fill"
           slot="prefix"
-          style="color: var(--sl-color-orange-600)"
+          style="color: ${color}"
         ></sl-icon>`;
         label = msg("Canceled");
         break;
@@ -221,7 +236,7 @@ export class CrawlStatus extends LitElement {
         }
         break;
     }
-    return { icon, label };
+    return { icon, label, cssColor: color };
   }
 
   render() {
@@ -230,9 +245,13 @@ export class CrawlStatus extends LitElement {
     const { icon, label } = CrawlStatus.getContent(state, this.type);
     if (this.hideLabel) {
       return html`<div class="icon-only">
-        <sl-tooltip content=${label}
-          ><div class="wrapper">${icon}</div></sl-tooltip
+        <sl-tooltip
+          content=${label}
+          @sl-hide=${(e: SlHideEvent) => e.stopPropagation()}
+          @sl-after-hide=${(e: SlHideEvent) => e.stopPropagation()}
         >
+          <div class="wrapper">${icon}</div>
+        </sl-tooltip>
       </div>`;
     }
     if (label) {

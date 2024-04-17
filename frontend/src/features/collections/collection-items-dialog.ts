@@ -546,6 +546,7 @@ export class CollectionItemsDialog extends TailwindElement {
       <btrix-archived-item-list-item
         .item=${item}
         checkbox
+        showStatus
         ?checked=${isInCollection}
         @btrix-checkbox-change=${(
           e: CustomEvent<CheckboxChangeEventDetail>,
