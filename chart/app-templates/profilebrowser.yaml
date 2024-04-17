@@ -83,7 +83,7 @@ spec:
 
       env:
         - name: HOME
-          value: /tmp
+          value: /tmp/home
 
         - name: STORE_PATH
           value: {{ storage_path }}

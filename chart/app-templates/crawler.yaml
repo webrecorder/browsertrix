@@ -155,7 +155,7 @@ spec:
 
       env:
         - name: HOME
-          value: /crawls
+          value: /crawls/home
 
         - name: CRAWL_ID
           value: "{{ id }}"
