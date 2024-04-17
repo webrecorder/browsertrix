@@ -370,9 +370,7 @@ export class ArchivedItemDetail extends TailwindElement {
           <div
             class="col-span-14 grid min-w-0 border-b md:col-span-3 md:border-b-0"
           >
-            <div
-              class="-mx-3 box-border flex overflow-x-auto px-3 md:mx-0 md:block md:px-0"
-            >
+            <div class="-mx-3 box-border flex overflow-x-auto px-3 md:block ">
               ${this.renderNav()}
             </div>
           </div>
