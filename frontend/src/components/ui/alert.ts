@@ -17,6 +17,10 @@ export class Alert extends LitElement {
 
   // postcss-lit-disable-next-line
   static styles = css`
+    :host {
+      display: block;
+    }
+
     :host > div {
       padding: var(--sl-spacing-x-small) var(--sl-spacing-small);
       border-radius: var(--sl-border-radius-medium);

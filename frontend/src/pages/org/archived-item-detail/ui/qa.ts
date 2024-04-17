@@ -15,6 +15,8 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import { QA_RUNNING_STATES } from "../archived-item-detail";
+
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type Dialog } from "@/components/ui/dialog";
 import type { MenuItemLink } from "@/components/ui/menu-item-link";
@@ -261,23 +263,36 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 const finishedQARuns = qaRuns.filter(({ state }) =>
                   finishedCrawlStates.includes(state),
                 );
-                const isCurrent =
-                  this.qaRunId &&
-                  this.qaRunId === this.mostRecentNonFailedQARun?.id;
+
+                if (!finishedQARuns.length) {
+                  return nothing;
+                }
+
+                const mostRecentSelected =
+                  this.mostRecentNonFailedQARun &&
+                  this.mostRecentNonFailedQARun.id === this.qaRunId;
+                const latestFinishedSelected =
+                  this.qaRunId === finishedQARuns[0].id;
 
                 return html`
                   <sl-tooltip
-                    content=${isCurrent
-                      ? msg("You're viewing the latest analysis results.")
+                    content=${mostRecentSelected
+                      ? msg(
+                          "You're viewing the latest results from a finished analysis run.",
+                        )
                       : msg(
                           "You're viewing results from an older analysis run.",
                         )}
                   >
                     <sl-tag
                       size="small"
-                      variant=${isCurrent ? "success" : "warning"}
+                      variant=${mostRecentSelected ? "success" : "warning"}
                     >
-                      ${isCurrent ? msg("Current") : msg("Outdated")}
+                      ${mostRecentSelected
+                        ? msg("Current")
+                        : latestFinishedSelected
+                          ? msg("Last Finished")
+                          : msg("Outdated")}
                     </sl-tag>
                   </sl-tooltip>
                   <btrix-qa-run-dropdown
@@ -504,7 +519,18 @@ export class ArchivedItemDetailQA extends TailwindElement {
   }
 
   private renderAnalysis() {
+    const isRunning =
+      this.mostRecentNonFailedQARun &&
+      QA_RUNNING_STATES.includes(this.mostRecentNonFailedQARun.state);
+
     return html`
+      ${isRunning
+        ? html`<btrix-alert class="mb-3" variant="warning">
+            ${msg(
+              "This crawl is being analyzed. You're currently viewing results from an older analysis run.",
+            )}
+          </btrix-alert>`
+        : nothing}
       <div class="flex flex-col gap-6 md:flex-row">
         <btrix-card class="flex-1">
           <span slot="title">${msg("Screenshots")}</span>
