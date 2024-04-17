@@ -116,6 +116,9 @@ export class ArchivedItemDetail extends TailwindElement {
   @state()
   private openDialogName?: "scale" | "metadata" | "exclusions";
 
+  @state()
+  mostRecentNonFailedQARun?: QARun;
+
   @query("#stopQARunDialog")
   private readonly stopQARunDialog?: Dialog | null;
 
@@ -143,7 +146,6 @@ export class ArchivedItemDetail extends TailwindElement {
   private readonly notify = new NotifyController(this);
 
   private timerId?: number;
-  private mostRecentNonFailedQARun?: QARun;
 
   private get isActive(): boolean | null {
     if (!this.crawl) return null;
@@ -168,7 +170,6 @@ export class ArchivedItemDetail extends TailwindElement {
       void this.fetchCrawlLogs();
       void this.fetchSeeds();
       void this.fetchQARuns();
-      void this.fetchQARuns();
     } else if (changedProperties.get("activeTab")) {
       if (this.activeTab === "qa") {
         void this.fetchQARuns();
@@ -178,16 +179,31 @@ export class ArchivedItemDetail extends TailwindElement {
       void this.fetchWorkflow();
     }
     if (changedProperties.has("qaRuns")) {
+      // Latest QA run that's either running or finished:
       this.mostRecentNonFailedQARun = this.qaRuns?.find((run) =>
-        [...QA_RUNNING_STATES, "complete"].includes(run.state),
+        [...QA_RUNNING_STATES, ...finishedCrawlStates].includes(run.state),
       );
-      if (!this.qaRunId && this.qaRuns) {
-        const firstFinishedQARun = this.qaRuns.find(({ state }) =>
-          finishedCrawlStates.includes(state),
-        );
-        if (firstFinishedQARun) {
-          this.qaRunId = firstFinishedQARun.id;
-        }
+    }
+    if (
+      (changedProperties.has("qaRuns") ||
+        changedProperties.has("mostRecentNonFailedQARun")) &&
+      this.qaRuns &&
+      this.mostRecentNonFailedQARun
+    ) {
+      const firstFinishedQARun = this.qaRuns.find(({ state }) =>
+        finishedCrawlStates.includes(state),
+      );
+      const prevMostRecentNonFailedQARun =
+        changedProperties.get("mostRecentNonFailedQARun") ||
+        this.mostRecentNonFailedQARun;
+      const mostRecentNowFinished =
+        QA_RUNNING_STATES.includes(prevMostRecentNonFailedQARun.state) &&
+        finishedCrawlStates.includes(this.mostRecentNonFailedQARun.state);
+
+      // Update currently selected QA run if there is none,
+      // or if a QA run that was previously running is now finished:
+      if (firstFinishedQARun && (!this.qaRunId || mostRecentNowFinished)) {
+        this.qaRunId = firstFinishedQARun.id;
       }
     }
   }
@@ -370,9 +386,7 @@ export class ArchivedItemDetail extends TailwindElement {
           <div
             class="col-span-14 grid min-w-0 border-b md:col-span-3 md:border-b-0"
           >
-            <div
-              class="-mx-3 box-border flex overflow-x-auto px-3 md:mx-0 md:block md:px-0"
-            >
+            <div class="-mx-3 box-border flex overflow-x-auto px-3 md:block ">
               ${this.renderNav()}
             </div>
           </div>
@@ -1316,7 +1330,7 @@ ${this.crawl?.description}
 
   private async startQARun() {
     try {
-      const data = await this.api.fetch<{ started: string }>(
+      await this.api.fetch<{ started: string }>(
         `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/start`,
         this.authState!,
         {
@@ -1324,7 +1338,6 @@ ${this.crawl?.description}
         },
       );
 
-      console.debug("qa run id: ", data.started);
       void this.fetchQARuns();
 
       this.notify.toast({

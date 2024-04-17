@@ -15,6 +15,8 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import { QA_RUNNING_STATES } from "../archived-item-detail";
+
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type Dialog } from "@/components/ui/dialog";
 import type { MenuItemLink } from "@/components/ui/menu-item-link";
@@ -86,6 +88,9 @@ const labelForCrawlReview = (severity: ArchivedItem["reviewStatus"]) => {
       return;
   }
 };
+
+const notApplicable = () =>
+  html`<span class="text-neutral-400">${msg("n/a")}</span>`;
 
 function statusWithIcon(
   icon: TemplateResult<1>,
@@ -222,7 +227,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
               () =>
                 this.mostRecentNonFailedQARun && this.crawl?.qaCrawlExecSeconds
                   ? humanizeExecutionSeconds(this.crawl.qaCrawlExecSeconds)
-                  : html`<span class="text-neutral-400">${msg("N/A")}</span>`,
+                  : notApplicable(),
 
               this.renderLoadingDetail,
             )}
@@ -253,15 +258,46 @@ export class ArchivedItemDetailQA extends TailwindElement {
 
         <btrix-tab-group-panel name="pages" class="block">
           <section class="mb-7">
-            <div class="mb-2 flex items-center gap-1">
-              <h4 class="text-lg font-semibold leading-8">
+            <div class="mb-2 flex items-center">
+              <h4 class="mr-3 text-lg font-semibold leading-8">
                 ${msg("QA Analysis")}
               </h4>
               ${when(this.qaRuns, (qaRuns) => {
                 const finishedQARuns = qaRuns.filter(({ state }) =>
                   finishedCrawlStates.includes(state),
                 );
+
+                if (!finishedQARuns.length) {
+                  return nothing;
+                }
+
+                const mostRecentSelected =
+                  this.mostRecentNonFailedQARun &&
+                  this.mostRecentNonFailedQARun.id === this.qaRunId;
+                const latestFinishedSelected =
+                  this.qaRunId === finishedQARuns[0].id;
+
                 return html`
+                  <sl-tooltip
+                    content=${mostRecentSelected
+                      ? msg(
+                          "You're viewing the latest results from a finished analysis run.",
+                        )
+                      : msg(
+                          "You're viewing results from an older analysis run.",
+                        )}
+                  >
+                    <sl-tag
+                      size="small"
+                      variant=${mostRecentSelected ? "success" : "warning"}
+                    >
+                      ${mostRecentSelected
+                        ? msg("Current")
+                        : latestFinishedSelected
+                          ? msg("Last Finished")
+                          : msg("Outdated")}
+                    </sl-tag>
+                  </sl-tooltip>
                   <btrix-qa-run-dropdown
                     .items=${finishedQARuns}
                     selectedId=${this.qaRunId || ""}
@@ -356,15 +392,19 @@ export class ArchivedItemDetailQA extends TailwindElement {
             ></sl-format-date>
           </btrix-table-cell>
           <btrix-table-cell>
-            <sl-format-date
-              lang=${getLocale()}
-              date=${`${run.finished}Z`}
-              month="2-digit"
-              day="2-digit"
-              year="2-digit"
-              hour="2-digit"
-              minute="2-digit"
-            ></sl-format-date>
+            ${run.finished
+              ? html`
+                  <sl-format-date
+                    lang=${getLocale()}
+                    date=${`${run.finished}Z`}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="2-digit"
+                    minute="2-digit"
+                  ></sl-format-date>
+                `
+              : notApplicable()}
           </btrix-table-cell>
           <btrix-table-cell>${run.userName}</btrix-table-cell>
           <btrix-table-cell class="px-1">
@@ -397,8 +437,11 @@ export class ArchivedItemDetailQA extends TailwindElement {
                     ? nothing
                     : html`
                         <btrix-menu-item-link href="#" download>
-                          <sl-icon name="download" slot="prefix"></sl-icon>
-                          ${msg("Download QA Run")}
+                          <sl-icon
+                            name="cloud-download"
+                            slot="prefix"
+                          ></sl-icon>
+                          ${msg("Download Analysis Run")}
                         </btrix-menu-item-link>
                         <sl-divider></sl-divider>
                       `}
@@ -410,7 +453,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                     style="--sl-color-neutral-700: var(--danger)"
                   >
                     <sl-icon name="trash3" slot="prefix"></sl-icon>
-                    ${msg("Delete Item")}
+                    ${msg("Delete Analysis Run")}
                   </sl-menu-item>
                 </sl-menu>
               </btrix-overflow-dropdown>
@@ -424,49 +467,51 @@ export class ArchivedItemDetailQA extends TailwindElement {
   private readonly renderDeleteConfirmDialog = () => {
     const runToBeDeleted = this.qaRuns?.find((run) => run.id === this.deleting);
 
-    if (!runToBeDeleted) return;
-
     return html`
-      <btrix-dialog id="deleteQARunDialog" .label=${msg("Delete QA Run?")} open>
+      <btrix-dialog
+        id="deleteQARunDialog"
+        .label=${msg("Delete Analysis Run?")}
+      >
         <b class="font-semibold"
-          >${msg("All of the data included in this QA run will be deleted.")}</b
+          >${msg(
+            "All of the data included in this Analysis Run will be deleted.",
+          )}</b
         >
-        <div>
-          ${msg(
-            str`This QA run includes data for ${runToBeDeleted.stats.done} ${pluralize(runToBeDeleted.stats.done, { zero: msg("pages", { desc: 'plural form of "page" for zero pages', id: "pages.plural.zero" }), one: msg("page"), two: msg("pages", { desc: 'plural form of "page" for two pages', id: "pages.plural.two" }), few: msg("pages", { desc: 'plural form of "page" for few pages', id: "pages.plural.few" }), many: msg("pages", { desc: 'plural form of "page" for many pages', id: "pages.plural.many" }), other: msg("pages", { desc: 'plural form of "page" for multiple/other pages', id: "pages.plural.other" }) })} and was started on `,
-          )}
-          <sl-format-date
-            lang=${getLocale()}
-            date=${`${runToBeDeleted.started}Z`}
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-            hour="2-digit"
-            minute="2-digit"
-          ></sl-format-date>
-          ${msg("by")} ${runToBeDeleted.userName}.
-        </div>
-        <div slot="footer" class="flex justify-between">
-          <sl-button
-            size="small"
-            variant="primary"
-            .autofocus=${true}
-            @click=${() => void this.deleteQADialog?.hide()}
-          >
-            ${msg("Cancel")}
-          </sl-button>
-          <sl-button
-            size="small"
-            variant="danger"
-            outline
-            @click=${async () => {
-              await this.deleteQARun(runToBeDeleted.id);
-              this.deleting = null;
-              void this.deleteQADialog?.hide();
-            }}
-            >${msg("Delete QA Run")}</sl-button
-          >
-        </div>
+        ${runToBeDeleted &&
+        html`<div>
+            ${msg(
+              str`This Analysis Run includes data for ${runToBeDeleted.stats.done} ${pluralize(runToBeDeleted.stats.done, { zero: msg("pages", { desc: 'plural form of "page" for zero pages', id: "pages.plural.zero" }), one: msg("page"), two: msg("pages", { desc: 'plural form of "page" for two pages', id: "pages.plural.two" }), few: msg("pages", { desc: 'plural form of "page" for few pages', id: "pages.plural.few" }), many: msg("pages", { desc: 'plural form of "page" for many pages', id: "pages.plural.many" }), other: msg("pages", { desc: 'plural form of "page" for multiple/other pages', id: "pages.plural.other" }) })} and was started on `,
+            )}
+            <sl-format-date
+              lang=${getLocale()}
+              date=${`${runToBeDeleted.started}Z`}
+              month="2-digit"
+              day="2-digit"
+              year="2-digit"
+              hour="2-digit"
+              minute="2-digit"
+            ></sl-format-date>
+            ${msg("by")} ${runToBeDeleted.userName}.
+          </div>
+          <div slot="footer" class="flex justify-between">
+            <sl-button
+              size="small"
+              .autofocus=${true}
+              @click=${() => void this.deleteQADialog?.hide()}
+            >
+              ${msg("Cancel")}
+            </sl-button>
+            <sl-button
+              size="small"
+              variant="danger"
+              @click=${async () => {
+                await this.deleteQARun(runToBeDeleted.id);
+                this.deleting = null;
+                void this.deleteQADialog?.hide();
+              }}
+              >${msg("Delete Analysis Run")}</sl-button
+            >
+          </div>`}
       </btrix-dialog>
     `;
   };
@@ -486,21 +531,36 @@ export class ArchivedItemDetailQA extends TailwindElement {
   }
 
   private renderAnalysis() {
+    const isRunning =
+      this.mostRecentNonFailedQARun &&
+      QA_RUNNING_STATES.includes(this.mostRecentNonFailedQARun.state);
+
     return html`
-      <div class="flex flex-col gap-6 md:flex-row">
-        <btrix-card class="flex-1">
-          <span slot="title">${msg("Screenshots")}</span>
-          TODO
-        </btrix-card>
-        <btrix-card class="flex-1">
-          <span slot="title">${msg("Extracted Text")}</span>
-          TODO
-        </btrix-card>
-        <btrix-card class="flex-1">
-          <span slot="title">${msg("Page Resources")}</span>
-          TODO
-        </btrix-card>
-      </div>
+      ${isRunning
+        ? html`<btrix-alert class="mb-3" variant="warning">
+            ${msg(
+              "This crawl is being analyzed. You're currently viewing results from an older analysis run.",
+            )}
+          </btrix-alert>`
+        : nothing}
+      ${
+        // TODO un-hide this once we've got data in here
+        nothing
+        // html`<div class="flex flex-col gap-6 md:flex-row">
+        //   <btrix-card class="flex-1">
+        //     <span slot="title">${msg("Screenshots")}</span>
+        //     TODO
+        //   </btrix-card>
+        //   <btrix-card class="flex-1">
+        //     <span slot="title">${msg("Extracted Text")}</span>
+        //     TODO
+        //   </btrix-card>
+        //   <btrix-card class="flex-1">
+        //     <span slot="title">${msg("Page Resources")}</span>
+        //     TODO
+        //   </btrix-card>
+        // </div>`
+      }
     `;
   }
 
