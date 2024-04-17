@@ -236,7 +236,7 @@ export class CrawlStatus extends TailwindElement {
           @sl-hide=${(e: SlHideEvent) => e.stopPropagation()}
           @sl-after-hide=${(e: SlHideEvent) => e.stopPropagation()}
         >
-          ${icon}
+          <div>${icon}</div>
         </sl-tooltip>
       </div>`;
     }

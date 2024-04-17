@@ -177,6 +177,8 @@ export type Crawl = ArchivedItemBase &
     completions?: number;
     description: string | null;
     stopping: boolean;
+    qaRunCount: number;
+    qaState: CrawlState; // active QA run if it exists, else last QA run
   };
 
 export type Upload = ArchivedItemBase & {

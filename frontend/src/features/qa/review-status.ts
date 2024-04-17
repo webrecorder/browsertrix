@@ -71,11 +71,11 @@ export class QAReviewStatus extends TailwindElement {
   status: ArchivedItem["reviewStatus"];
 
   render() {
-    return html`<sl-tooltip content=${msg("test")}>
+    return html`
       <div class="flex items-center gap-2">
         ${iconFor(this.status)}
         <div>${labelFor(this.status)}</div>
       </div>
-    </sl-tooltip>`;
+    `;
   }
 }

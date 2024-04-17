@@ -36,3 +36,8 @@ export const pluralize = (
   strings: { [k in Intl.LDMLPluralRule]: string },
   options?: Intl.PluralRulesOptions,
 ) => strings[new Intl.PluralRules(getLocale(), options).select(number)];
+
+export const formatNumber = (
+  number: number,
+  options?: Intl.NumberFormatOptions,
+) => new Intl.NumberFormat(getLocale(), options).format(number);

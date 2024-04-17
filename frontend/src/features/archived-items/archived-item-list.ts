@@ -14,9 +14,9 @@ import { CrawlStatus } from "./crawl-status";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { NavigateController } from "@/controllers/navigate";
-import type { ArchivedItem } from "@/types/crawler";
+import { ReviewStatus, type ArchivedItem, type Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
-import { getLocale } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
 
 export type CheckboxChangeEventDetail = {
   checked: boolean;
@@ -65,7 +65,10 @@ export class ArchivedItemListItem extends TailwindElement {
   href?: string;
 
   @query("sl-checkbox")
-  checkboxEl?: SlCheckbox;
+  readonly checkboxEl?: SlCheckbox;
+
+  @query(".rowLink")
+  private readonly rowLink?: HTMLAnchorElement;
 
   private readonly navigate = new NavigateController(this);
 
@@ -145,7 +148,11 @@ export class ArchivedItemListItem extends TailwindElement {
           )}
         >
           ${this.href
-            ? html`<a href=${this.href} @click=${this.navigate.link}>
+            ? html`<a
+                class="rowLink"
+                href=${this.href}
+                @click=${this.navigate.link}
+              >
                 ${rowName}
               </a>`
             : this.checkbox
@@ -162,23 +169,33 @@ export class ArchivedItemListItem extends TailwindElement {
               : html`<div>${rowName}</div>`}
         </btrix-table-cell>
         <btrix-table-cell>
-          <sl-format-date
-            lang=${getLocale()}
-            class="truncate"
-            date=${`${this.item.finished}Z`}
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-            hour="2-digit"
-            minute="2-digit"
-          ></sl-format-date>
+          <sl-tooltip content=${msg(str`By ${this.item.userName}`)}>
+            <sl-format-date
+              lang=${getLocale()}
+              class="truncate"
+              date=${`${this.item.finished}Z`}
+              month="2-digit"
+              day="2-digit"
+              year="2-digit"
+              hour="2-digit"
+              minute="2-digit"
+            ></sl-format-date>
+          </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell>
-          <sl-format-bytes
-            class="truncate"
-            value=${this.item.fileSize || 0}
-            display="narrow"
-          ></sl-format-bytes>
+          <sl-tooltip
+            content=${formatNumber(this.item.fileSize || 0, {
+              style: "unit",
+              unit: "byte",
+              unitDisplay: "long",
+            })}
+          >
+            <sl-format-bytes
+              class="truncate"
+              value=${this.item.fileSize || 0}
+              display="narrow"
+            ></sl-format-bytes>
+          </sl-tooltip>
         </btrix-table-cell>
         ${this.listType === "upload"
           ? nothing
@@ -186,27 +203,68 @@ export class ArchivedItemListItem extends TailwindElement {
               <btrix-table-cell>
                 ${isUpload
                   ? notApplicable
-                  : html`<div class="truncate">
-                      ${(this.item.stats?.done || 0).toLocaleString()}
-                    </div>`}
+                  : html`<sl-tooltip
+                      @click=${this.onTooltipClick}
+                      content=${msg(
+                        str`${formatNumber(
+                          this.item.stats?.done ? +this.item.stats.done : 0,
+                        )} crawled, ${formatNumber(this.item.stats?.found ? +this.item.stats.found : 0)} found`,
+                      )}
+                    >
+                      <div>
+                        ${formatNumber(
+                          this.item.stats?.done ? +this.item.stats.done : 0,
+                          {
+                            notation: "compact",
+                          },
+                        )}
+                      </div>
+                    </sl-tooltip>`}
               </btrix-table-cell>
               <btrix-table-cell>
                 ${isUpload
                   ? notApplicable
-                  : html`<btrix-qa-review-status
-                      .status=${this.item.reviewStatus}
-                    ></btrix-qa-review-status>`}
+                  : html`<sl-tooltip
+                      @click=${this.onTooltipClick}
+                      content=${this.item.reviewStatus
+                        ? msg(
+                            str`Rated ${this.item.reviewStatus} / ${ReviewStatus.Excellent}`,
+                          )
+                        : msg("No QA review submitted")}
+                    >
+                      <btrix-qa-review-status
+                        .status=${this.item.reviewStatus}
+                      ></btrix-qa-review-status>
+                    </sl-tooltip>`}
               </btrix-table-cell>
               <btrix-table-cell>
                 ${isUpload
                   ? notApplicable
-                  : html`<div class="truncate">TODO</div>`}
+                  : html`<sl-tooltip
+                      @click=${this.onTooltipClick}
+                      content=${msg(
+                        str`${formatNumber((this.item as Crawl).qaRunCount)} QA analysis run(s)`,
+                      )}
+                    >
+                      <div>
+                        ${formatNumber((this.item as Crawl).qaRunCount, {
+                          notation: "compact",
+                        })}
+                      </div>
+                    </sl-tooltip>`}
               </btrix-table-cell>
             `}
 
         <slot name="actionCell"></slot>
       </btrix-table-row>
     `;
+  }
+
+  // FIXME Tooltips are enabled by styling them in in table.stylesheet.css
+  // to have a z-index higher than the anchor link overlay.
+  // Should probably fix this in table-cell or table-row instead
+  private onTooltipClick() {
+    this.rowLink?.click();
   }
 }
 
@@ -274,7 +332,7 @@ export class ArchivedItemList extends TailwindElement {
       {
         cssCol: "12rem",
         cell: html`<btrix-table-header-cell>
-          ${msg("Date Created")}
+          ${msg("Created")}
         </btrix-table-header-cell>`,
       },
       {
