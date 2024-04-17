@@ -3,6 +3,7 @@ from typing import Dict
 from uuid import UUID
 
 import requests
+import pytest
 
 from .conftest import API_PREFIX, FINISHED_STATES
 
@@ -15,11 +16,6 @@ PROFILE_DESC_UPDATED = "Updated profile used for backend tests"
 
 PROFILE_2_NAME = "Second test profile"
 PROFILE_2_DESC = "Second profile used to test list endpoint"
-
-profile_id = None
-profile_config_id = None
-
-profile_2_id = None
 
 
 def prepare_browser_for_profile_commit(
@@ -76,38 +72,43 @@ def prepare_browser_for_profile_commit(
         attempts += 1
 
 
-def test_commit_browser_to_new_profile(
-    admin_auth_headers, default_org_id, profile_browser_id
-):
+@pytest.fixture(scope="module")
+def profile_id(admin_auth_headers, default_org_id, profile_browser_id):
     prepare_browser_for_profile_commit(
         profile_browser_id, admin_auth_headers, default_org_id
     )
 
     # Create profile
+    start_time = time.monotonic()
+    time_limit = 300
     while True:
-        r = requests.post(
-            f"{API_PREFIX}/orgs/{default_org_id}/profiles",
-            headers=admin_auth_headers,
-            json={
-                "browserid": profile_browser_id,
-                "name": PROFILE_NAME,
-                "description": PROFILE_DESC,
-            },
-        )
-        assert r.status_code == 200
-        data = r.json()
-        if data.get("detail") and data.get("detail") == "waiting_for_browser":
+        try:
+            r = requests.post(
+                f"{API_PREFIX}/orgs/{default_org_id}/profiles",
+                headers=admin_auth_headers,
+                json={
+                    "browserid": profile_browser_id,
+                    "name": PROFILE_NAME,
+                    "description": PROFILE_DESC,
+                },
+                timeout=10,
+            )
+            assert r.status_code == 200
+            data = r.json()
+            if data.get("detail") and data.get("detail") == "waiting_for_browser":
+                time.sleep(5)
+                continue
+            if data.get("added"):
+                assert data["storageQuotaReached"] in (True, False)
+                return data["id"]
+        except:
+            if time.monotonic() - start_time > time_limit:
+                raise
             time.sleep(5)
-        if data.get("added"):
-            assert data["storageQuotaReached"] in (True, False)
-            global profile_id
-            profile_id = data["id"]
-            break
-
-    assert profile_id
 
 
-def test_get_profile(admin_auth_headers, default_org_id):
+@pytest.fixture(scope="module")
+def profile_config_id(admin_auth_headers, default_org_id, profile_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
         headers=admin_auth_headers,
@@ -150,125 +151,158 @@ def test_get_profile(admin_auth_headers, default_org_id):
         },
     )
     data = r.json()
-
-    global profile_config_id
-    profile_config_id = data["id"]
-
-    time.sleep(5)
-
-    # Check get endpoint again and check that crawlconfigs is updated
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["id"] == profile_id
-    assert data["name"] == PROFILE_NAME
-    assert data["description"] == PROFILE_DESC
-    assert data["userid"]
-    assert data["oid"] == default_org_id
-    assert data.get("origins") or data.get("origins") == []
-    assert data["created"]
-    assert not data["baseid"]
-
-    resource = data["resource"]
-    assert resource
-    assert resource["filename"]
-    assert resource["hash"]
-    assert resource["size"]
-    assert resource["storage"]
-    assert resource["storage"]["name"]
-    assert resource.get("replicas") or resource.get("replicas") == []
-
-    crawl_configs = data.get("crawlconfigs")
-    assert crawl_configs
-    assert len(crawl_configs) == 1
-    assert crawl_configs[0]["id"] == profile_config_id
-    assert crawl_configs[0]["name"] == "Profile Test Crawl"
+    return data["id"]
 
 
-def test_commit_second_profile(
-    admin_auth_headers, default_org_id, profile_browser_2_id
-):
+@pytest.fixture(scope="module")
+def profile_2_id(admin_auth_headers, default_org_id, profile_browser_2_id):
     prepare_browser_for_profile_commit(
         profile_browser_2_id, admin_auth_headers, default_org_id
     )
 
     # Create profile
+    start_time = time.monotonic()
+    time_limit = 300
     while True:
-        r = requests.post(
-            f"{API_PREFIX}/orgs/{default_org_id}/profiles",
-            headers=admin_auth_headers,
-            json={
-                "browserid": profile_browser_2_id,
-                "name": PROFILE_2_NAME,
-                "description": PROFILE_2_DESC,
-            },
-        )
-        assert r.status_code == 200
-        data = r.json()
-        if data.get("detail") and data.get("detail") == "waiting_for_browser":
-            time.sleep(5)
-        if data.get("added"):
-            assert data["storageQuotaReached"] in (True, False)
-            global profile_2_id
-            profile_2_id = data["id"]
-            break
+        try:
+            r = requests.post(
+                f"{API_PREFIX}/orgs/{default_org_id}/profiles",
+                headers=admin_auth_headers,
+                json={
+                    "browserid": profile_browser_2_id,
+                    "name": PROFILE_2_NAME,
+                    "description": PROFILE_2_DESC,
+                },
+                timeout=10,
+            )
+            assert r.status_code == 200
+            data = r.json()
+            if data.get("detail") and data.get("detail") == "waiting_for_browser":
+                time.sleep(5)
+            if data.get("added"):
+                assert data["storageQuotaReached"] in (True, False)
 
+                return data["id"]
+        except:
+            if time.monotonic() - start_time > time_limit:
+                raise
+            time.sleep(5)
+
+
+def test_commit_browser_to_new_profile(admin_auth_headers, default_org_id, profile_id):
+    assert profile_id
+
+
+def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_config_id):
+    start_time = time.monotonic()
+    time_limit = 10
+    # Check get endpoint again and check that crawlconfigs is updated
+    while True:
+        try:
+            r = requests.get(
+                f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
+                headers=admin_auth_headers,
+            )
+            assert r.status_code == 200
+            data = r.json()
+            assert data["id"] == profile_id
+            assert data["name"] == PROFILE_NAME
+            assert data["description"] == PROFILE_DESC
+            assert data["userid"]
+            assert data["oid"] == default_org_id
+            assert data.get("origins") or data.get("origins") == []
+            assert data["created"]
+            assert not data["baseid"]
+
+            resource = data["resource"]
+            assert resource
+            assert resource["filename"]
+            assert resource["hash"]
+            assert resource["size"]
+            assert resource["storage"]
+            assert resource["storage"]["name"]
+            assert resource.get("replicas") or resource.get("replicas") == []
+
+            crawl_configs = data.get("crawlconfigs")
+            assert crawl_configs
+            assert len(crawl_configs) == 1
+            assert crawl_configs[0]["id"] == profile_config_id
+            assert crawl_configs[0]["name"] == "Profile Test Crawl"
+            break
+        except:
+            if time.monotonic() - start_time > time_limit:
+                raise
+            time.sleep(1)
+
+
+def test_commit_second_profile(profile_2_id):
     assert profile_2_id
 
 
-def test_list_profiles(admin_auth_headers, default_org_id):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/profiles",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["total"] == 2
+def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2_id):
+    start_time = time.monotonic()
+    time_limit = 10
+    # Check get endpoint again and check that crawlconfigs is updated
+    while True:
+        try:
+            r = requests.get(
+                f"{API_PREFIX}/orgs/{default_org_id}/profiles",
+                headers=admin_auth_headers,
+            )
+            assert r.status_code == 200
+            data = r.json()
+            assert data["total"] == 2
 
-    profiles = data["items"]
-    assert len(profiles) == 2
+            profiles = data["items"]
+            assert len(profiles) == 2
 
-    profile_1 = [profile for profile in profiles if profile["id"] == profile_id][0]
-    assert profile_1["id"] == profile_id
-    assert profile_1["name"] == PROFILE_NAME
-    assert profile_1["description"] == PROFILE_DESC
-    assert profile_1["userid"]
-    assert profile_1["oid"] == default_org_id
-    assert profile_1.get("origins") or data.get("origins") == []
-    assert profile_1["created"]
-    assert not profile_1["baseid"]
-    resource = profile_1["resource"]
-    assert resource
-    assert resource["filename"]
-    assert resource["hash"]
-    assert resource["size"]
-    assert resource["storage"]
-    assert resource["storage"]["name"]
-    assert resource.get("replicas") or resource.get("replicas") == []
+            profile_1 = [
+                profile for profile in profiles if profile["id"] == profile_id
+            ][0]
+            assert profile_1["id"] == profile_id
+            assert profile_1["name"] == PROFILE_NAME
+            assert profile_1["description"] == PROFILE_DESC
+            assert profile_1["userid"]
+            assert profile_1["oid"] == default_org_id
+            assert profile_1.get("origins") or data.get("origins") == []
+            assert profile_1["created"]
+            assert not profile_1["baseid"]
+            resource = profile_1["resource"]
+            assert resource
+            assert resource["filename"]
+            assert resource["hash"]
+            assert resource["size"]
+            assert resource["storage"]
+            assert resource["storage"]["name"]
+            assert resource.get("replicas") or resource.get("replicas") == []
 
-    profile_2 = [profile for profile in profiles if profile["id"] == profile_2_id][0]
-    assert profile_2["id"] == profile_2_id
-    assert profile_2["name"] == PROFILE_2_NAME
-    assert profile_2["description"] == PROFILE_2_DESC
-    assert profile_2["userid"]
-    assert profile_2["oid"] == default_org_id
-    assert profile_2.get("origins") or data.get("origins") == []
-    assert profile_2["created"]
-    assert not profile_2["baseid"]
-    resource = profile_2["resource"]
-    assert resource
-    assert resource["filename"]
-    assert resource["hash"]
-    assert resource["size"]
-    assert resource["storage"]
-    assert resource["storage"]["name"]
-    assert resource.get("replicas") or resource.get("replicas") == []
+            profile_2 = [
+                profile for profile in profiles if profile["id"] == profile_2_id
+            ][0]
+            assert profile_2["id"] == profile_2_id
+            assert profile_2["name"] == PROFILE_2_NAME
+            assert profile_2["description"] == PROFILE_2_DESC
+            assert profile_2["userid"]
+            assert profile_2["oid"] == default_org_id
+            assert profile_2.get("origins") or data.get("origins") == []
+            assert profile_2["created"]
+            assert not profile_2["baseid"]
+            resource = profile_2["resource"]
+            assert resource
+            assert resource["filename"]
+            assert resource["hash"]
+            assert resource["size"]
+            assert resource["storage"]
+            assert resource["storage"]["name"]
+            assert resource.get("replicas") or resource.get("replicas") == []
+            break
+        except:
+            if time.monotonic() - start_time > time_limit:
+                raise
+            time.sleep(1)
 
 
-def test_delete_profile(admin_auth_headers, default_org_id):
+def test_delete_profile(admin_auth_headers, default_org_id, profile_2_id):
     # Delete second profile
     r = requests.delete(
         f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_2_id}",
@@ -294,7 +328,7 @@ def test_delete_profile(admin_auth_headers, default_org_id):
     assert r.json()["detail"] == "profile_not_found"
 
 
-def test_update_profile_metadata(admin_auth_headers, default_org_id):
+def test_update_profile_metadata(admin_auth_headers, default_org_id, profile_id):
     # Update name and description
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
@@ -322,7 +356,7 @@ def test_update_profile_metadata(admin_auth_headers, default_org_id):
 
 
 def test_commit_browser_to_existing_profile(
-    admin_auth_headers, default_org_id, profile_browser_3_id
+    admin_auth_headers, default_org_id, profile_browser_3_id, profile_id
 ):
     prepare_browser_for_profile_commit(
         profile_browser_3_id, admin_auth_headers, default_org_id

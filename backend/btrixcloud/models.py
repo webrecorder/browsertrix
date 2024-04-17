@@ -658,6 +658,10 @@ class CrawlOut(BaseMongoModel):
 
     reviewStatus: Optional[conint(ge=1, le=5)] = None  # type: ignore
 
+    qaRunCount: int = 0
+    activeQAState: Optional[str]
+    lastQAState: Optional[str]
+
 
 # ============================================================================
 class CrawlOutWithResources(CrawlOut):
@@ -1529,6 +1533,7 @@ class Page(BaseMongoModel):
     ts: Optional[datetime] = None
     loadState: Optional[int] = None
     status: Optional[int] = None
+    mime: Optional[str] = None
 
     # manual review
     userid: Optional[UUID] = None
@@ -1557,11 +1562,3 @@ class PageOutWithSingleQA(Page):
     """Page out with single QA entry"""
 
     qa: Optional[PageQACompare] = None
-
-
-# ============================================================================
-class PagesAndResources(BaseModel):
-    """moage for qa configmap data, pages + resources"""
-
-    resources: List[CrawlFileOut] = []
-    pages: List[PageOut] = []
