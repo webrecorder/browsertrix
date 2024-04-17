@@ -14,10 +14,6 @@ btrix-table-cell sl-tooltip > * {
   z-index: 1;
 }
 
-sl-tooltip:active {
-  outline: 2px solid red;
-}
-
 btrix-table-cell .rowClickTarget::after {
   content: "";
   display: block;

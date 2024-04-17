@@ -149,7 +149,7 @@ export class ArchivedItemListItem extends TailwindElement {
         >
           ${this.href
             ? html`<a
-                class="rowLink"
+                class="rowLink overflow-hidden"
                 href=${this.href}
                 @click=${this.navigate.link}
               >
@@ -324,7 +324,7 @@ export class ArchivedItemList extends TailwindElement {
         </btrix-table-header-cell>`,
       },
       {
-        cssCol: "[clickable-start] 60ch",
+        cssCol: "[clickable-start] 50ch",
         cell: html`<btrix-table-header-cell>
           ${msg("Name")}
         </btrix-table-header-cell>`,
