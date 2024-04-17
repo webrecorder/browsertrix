@@ -1,9 +1,10 @@
 import { localized, msg } from "@lit/localize";
 import type { SlHideEvent } from "@shoelace-style/shoelace";
-import { css, html, LitElement, type TemplateResult } from "lit";
+import { css, html, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import startCase from "lodash/fp/startCase";
 
+import { TailwindElement } from "@/classes/TailwindElement";
 import type { CrawlState } from "@/types/crawler";
 import { animatePulse } from "@/utils/css";
 
@@ -11,7 +12,7 @@ type CrawlType = "crawl" | "upload" | "qa";
 
 @localized()
 @customElement("btrix-crawl-status")
-export class CrawlStatus extends LitElement {
+export class CrawlStatus extends TailwindElement {
   @property({ type: String })
   state?: CrawlState | AnyString;
 
@@ -32,24 +33,9 @@ export class CrawlStatus extends LitElement {
         color: var(--sl-color-neutral-700);
       }
 
-      .wrapper,
-      .icon-only {
-        display: flex;
-        align-items: center;
-      }
-
       sl-icon {
+        display: block;
         font-size: 1rem;
-      }
-
-      .with-label sl-icon,
-      :host:not(:last-child) .icon-only {
-        margin-right: var(--sl-spacing-x-small);
-      }
-
-      .label {
-        height: 1rem;
-        line-height: 1rem;
       }
 
       sl-skeleton {
@@ -244,22 +230,23 @@ export class CrawlStatus extends LitElement {
       this.stopping && this.state === "running" ? "stopping" : this.state;
     const { icon, label } = CrawlStatus.getContent(state, this.type);
     if (this.hideLabel) {
-      return html`<div class="icon-only">
+      return html`<div class="flex items-center">
         <sl-tooltip
           content=${label}
           @sl-hide=${(e: SlHideEvent) => e.stopPropagation()}
           @sl-after-hide=${(e: SlHideEvent) => e.stopPropagation()}
         >
-          <div class="wrapper">${icon}</div>
+          ${icon}
         </sl-tooltip>
       </div>`;
     }
     if (label) {
-      return html`<div class="wrapper with-label">
-        ${icon}<span class="label">${label}</span>
+      return html`<div class="flex items-center gap-2">
+        ${icon}
+        <div class="leading-none">${label}</div>
       </div>`;
     }
-    return html`<div class="wrapper with-label">
+    return html`<div class="flex items-center gap-2">
       ${icon}<sl-skeleton></sl-skeleton>
     </div>`;
   }

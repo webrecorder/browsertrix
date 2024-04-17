@@ -25,7 +25,6 @@ import type { PageChangeEvent } from "@/components/ui/pagination";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
-import * as reviewStatus from "@/features/qa/_helpers/reviewStatus";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import * as pageApproval from "@/features/qa/page-list/helpers/approval";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -171,7 +170,10 @@ export class ArchivedItemDetailQA extends TailwindElement {
           <btrix-desc-list-item label=${msg("Crawl Rating")}>
             ${when(
               this.crawl,
-              (crawl) => this.renderReviewStatus(crawl.reviewStatus),
+              (crawl) =>
+                html`<btrix-qa-review-status
+                  .status=${crawl.reviewStatus}
+                ></btrix-qa-review-status>`,
               this.renderLoadingDetail,
             )}
           </btrix-desc-list-item>
@@ -475,17 +477,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
 
   private readonly renderLoadingDetail = () =>
     html`<div class="min-w-32"><sl-spinner class="h-4 w-4"></sl-spinner></div>`;
-
-  private renderReviewStatus(status: ArchivedItem["reviewStatus"]) {
-    const icon =
-      reviewStatus.iconFor(status) ??
-      html` <sl-icon name="slash-circle" class="text-neutral-400"></sl-icon> `;
-    const label =
-      reviewStatus.labelFor(status) ||
-      html`<span class="text-neutral-400">${msg("None Submitted")}</span>`;
-
-    return statusWithIcon(icon, label);
-  }
 
   private renderAnalysis() {
     const isRunning =

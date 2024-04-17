@@ -86,7 +86,6 @@ export class ArchivedItemListItem extends TailwindElement {
     const notApplicable = html`<span class="text-neutral-400"
       >${msg("n/a")}</span
     >`;
-    const none = html`<span class="text-neutral-400">${msg("none")}</span>`;
 
     return html`
       <btrix-table-row
@@ -194,9 +193,9 @@ export class ArchivedItemListItem extends TailwindElement {
               <btrix-table-cell>
                 ${isUpload
                   ? notApplicable
-                  : html`<div class="truncate">
-                      ${this.item.reviewStatus || none}
-                    </div>`}
+                  : html`<btrix-qa-review-status
+                      .status=${this.item.reviewStatus}
+                    ></btrix-qa-review-status>`}
               </btrix-table-cell>
               <btrix-table-cell>
                 ${isUpload
