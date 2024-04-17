@@ -436,7 +436,7 @@ export class CrawlsList extends LiteElement {
     if (!this.archivedItems) return;
 
     return html`
-      <btrix-archived-item-list>
+      <btrix-archived-item-list .listType=${this.itemType}>
         <btrix-table-header-cell slot="actionCell" class="px-1">
           <span class="sr-only">${msg("Row actions")}</span>
         </btrix-table-header-cell>

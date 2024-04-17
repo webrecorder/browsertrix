@@ -43,8 +43,11 @@ export class ArchivedItemListItem extends TailwindElement {
     }
   `;
 
-  @property({ type: Object })
+  @property({ type: Object, attribute: false })
   item?: ArchivedItem;
+
+  @property({ type: String, attribute: false })
+  listType: ArchivedItem["type"] | null = null;
 
   @property({ type: Boolean })
   checkbox = false;
@@ -79,6 +82,11 @@ export class ArchivedItemListItem extends TailwindElement {
       typeLabel = msg("Upload");
       typeIcon = "upload";
     }
+
+    const notApplicable = html`<span class="text-neutral-400"
+      >${msg("n/a")}</span
+    >`;
+    const none = html`<span class="text-neutral-400">${msg("none")}</span>`;
 
     return html`
       <btrix-table-row
@@ -173,13 +181,30 @@ export class ArchivedItemListItem extends TailwindElement {
             display="narrow"
           ></sl-format-bytes>
         </btrix-table-cell>
-        <btrix-table-cell>
-          ${this.item.type === "crawl"
-            ? html`<div class="truncate">
-                ${(this.item.stats?.done || 0).toLocaleString()}
-              </div>`
-            : html`<span class="text-neutral-400">${msg("n/a")}</span>`}
-        </btrix-table-cell>
+        ${this.listType === "upload"
+          ? nothing
+          : html`
+              <btrix-table-cell>
+                ${isUpload
+                  ? notApplicable
+                  : html`<div class="truncate">
+                      ${(this.item.stats?.done || 0).toLocaleString()}
+                    </div>`}
+              </btrix-table-cell>
+              <btrix-table-cell>
+                ${isUpload
+                  ? notApplicable
+                  : html`<div class="truncate">
+                      ${this.item.reviewStatus || none}
+                    </div>`}
+              </btrix-table-cell>
+              <btrix-table-cell>
+                ${isUpload
+                  ? notApplicable
+                  : html`<div class="truncate">TODO</div>`}
+              </btrix-table-cell>
+            `}
+
         <slot name="actionCell"></slot>
       </btrix-table-row>
     `;
@@ -221,6 +246,9 @@ export class ArchivedItemList extends TailwindElement {
     }
   `;
 
+  @property({ type: String })
+  listType: ArchivedItem["type"] | null = null;
+
   @queryAssignedElements({ selector: "btrix-archived-item-list-item" })
   public items!: ArchivedItemListItem[];
 
@@ -240,9 +268,9 @@ export class ArchivedItemList extends TailwindElement {
       },
       {
         cssCol: "[clickable-start] 60ch",
-        cell: html`<btrix-table-header-cell
-          >${msg("Name")}</btrix-table-header-cell
-        >`,
+        cell: html`<btrix-table-header-cell>
+          ${msg("Name")}
+        </btrix-table-header-cell>`,
       },
       {
         cssCol: "12rem",
@@ -256,14 +284,29 @@ export class ArchivedItemList extends TailwindElement {
           ${msg("Size")}
         </btrix-table-header-cell>`,
       },
-      {
-        cssCol: "1fr [clickable-end]",
-        cell: html`<btrix-table-header-cell>
-          ${msg("Pages Crawled")}
-        </btrix-table-header-cell>`,
-      },
     ];
-
+    if (this.listType !== "upload") {
+      headerCols.push(
+        {
+          cssCol: "1fr",
+          cell: html`<btrix-table-header-cell>
+            ${msg("Pages Crawled")}
+          </btrix-table-header-cell>`,
+        },
+        {
+          cssCol: "1fr",
+          cell: html`<btrix-table-header-cell>
+            ${msg("Crawl Rating")}
+          </btrix-table-header-cell>`,
+        },
+        {
+          cssCol: "1fr",
+          cell: html`<btrix-table-header-cell>
+            ${msg("Analysis Runs")}
+          </btrix-table-header-cell>`,
+        },
+      );
+    }
     if (this.hasCheckboxCell) {
       headerCols.unshift({
         cssCol: "min-content",
@@ -272,7 +315,7 @@ export class ArchivedItemList extends TailwindElement {
     }
     if (this.hasActionCell) {
       headerCols.push({
-        cssCol: "min-content",
+        cssCol: "[clickable-end] min-content",
         cell: nothing, // renders into slot
       });
     }
@@ -303,7 +346,13 @@ export class ArchivedItemList extends TailwindElement {
             ></slot>
           </btrix-table-head>
           <btrix-table-body class="rounded border">
-            <slot></slot>
+            <slot
+              @slotchange=${() => {
+                this.items.forEach((row) => {
+                  row.listType = this.listType;
+                });
+              }}
+            ></slot>
           </btrix-table-body>
         </btrix-table>
       </div>

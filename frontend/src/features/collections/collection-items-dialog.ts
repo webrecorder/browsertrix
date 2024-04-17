@@ -381,7 +381,7 @@ export class CollectionItemsDialog extends TailwindElement {
         </btrix-section-heading>
       </header>
       <section class="flex-1 px-3 pb-3 pt-2">
-        <btrix-archived-item-list>
+        <btrix-archived-item-list listType="upload">
           <btrix-table-header-cell slot="checkboxCell" class="pr-0">
             <span class="sr-only">${msg("In Collection?")}</span>
           </btrix-table-header-cell>
