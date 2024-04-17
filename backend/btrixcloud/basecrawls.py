@@ -551,29 +551,13 @@ class BaseCrawlOps:
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject", "errors", "config"]},
-            {
-                "$set": {
-                    "qaFinishedObject": {
-                        "$cond": {
-                            "if": {"$eq": ["$qaFinished", None]},
-                            "then": {},
-                            "else": "$qaFinished",
-                        }
-                    }
-                }
-            },
-            {
-                "$set": {
-                    "qaRunCount": {"$size": {"$objectToArray": "$qaFinishedObject"}}
-                }
-            },
             {"$set": {"qaState": "$qa.state"}},
             {"$set": {"activeQAState": "$qaState"}},
             {
                 "$set": {
                     "qaFinishedArray": {
                         "$map": {
-                            "input": {"$objectToArray": "$qaFinishedObject"},
+                            "input": {"$objectToArray": "$qaFinished"},
                             "in": "$$this.v",
                         }
                     }
@@ -592,9 +576,21 @@ class BaseCrawlOps:
             {"$set": {"lastQARun": {"$arrayElemAt": ["$sortedQARuns", 0]}}},
             {"$set": {"lastQAState": "$lastQARun.state"}},
             {
+                "$set": {
+                    "qaRunCount": {
+                        "$size": {
+                            "$cond": [
+                                {"$isArray": "$qaFinishedArray"},
+                                "$qaFinishedArray",
+                                [],
+                            ]
+                        }
+                    }
+                }
+            },
+            {
                 "$unset": [
                     "lastQARun",
-                    "qaFinishedObject",
                     "qaFinishedArray",
                     "sortedQARuns",
                 ]
