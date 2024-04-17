@@ -3,6 +3,8 @@ import { html } from "lit";
 
 import type { ReplayData, ResourcesPayload } from "../types";
 
+import { renderSpinner } from "./spinner";
+
 import { tw } from "@/utils/tailwind";
 
 function renderDiff(
@@ -51,14 +53,14 @@ export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
 
   return html`
     <div class=${tw`flex h-full flex-col outline`}>
-      <div
-        class=${tw`flex-1 overflow-auto overscroll-contain rounded-lg border`}
-      >
-        ${crawlData?.resources && qaData?.resources
-          ? renderDiff(crawlData.resources, qaData.resources)
-          : noData}
+      <div class=${tw`flex-1 overflow-auto overscroll-contain pb-2`}>
+        ${crawlData && qaData
+          ? crawlData.resources && qaData.resources
+            ? renderDiff(crawlData.resources, qaData.resources)
+            : noData
+          : renderSpinner()}
       </div>
-      <footer class=${tw`mt-3 text-xs text-neutral-600`}>
+      <footer class=${tw`border-t pt-2 text-xs text-neutral-600`}>
         <p class=${tw`mb-2`}>
           ${msg('"Good" and "Bad" indicates the status code of the resource.')}
         </p>
