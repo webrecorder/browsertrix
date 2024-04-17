@@ -543,20 +543,24 @@ export class ArchivedItemDetailQA extends TailwindElement {
             )}
           </btrix-alert>`
         : nothing}
-      <div class="flex flex-col gap-6 md:flex-row">
-        <btrix-card class="flex-1">
-          <span slot="title">${msg("Screenshots")}</span>
-          TODO
-        </btrix-card>
-        <btrix-card class="flex-1">
-          <span slot="title">${msg("Extracted Text")}</span>
-          TODO
-        </btrix-card>
-        <btrix-card class="flex-1">
-          <span slot="title">${msg("Page Resources")}</span>
-          TODO
-        </btrix-card>
-      </div>
+      ${
+        // TODO un-hide this once we've got data in here
+        nothing
+        // html`<div class="flex flex-col gap-6 md:flex-row">
+        //   <btrix-card class="flex-1">
+        //     <span slot="title">${msg("Screenshots")}</span>
+        //     TODO
+        //   </btrix-card>
+        //   <btrix-card class="flex-1">
+        //     <span slot="title">${msg("Extracted Text")}</span>
+        //     TODO
+        //   </btrix-card>
+        //   <btrix-card class="flex-1">
+        //     <span slot="title">${msg("Page Resources")}</span>
+        //     TODO
+        //   </btrix-card>
+        // </div>`
+      }
     `;
   }
 
