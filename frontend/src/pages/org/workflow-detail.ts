@@ -527,7 +527,7 @@ export class WorkflowDetail extends LiteElement {
             size="small"
             ?disabled=${!isDownloadEnabled}
           >
-            <sl-icon slot="prefix" name="download"></sl-icon>
+            <sl-icon slot="prefix" name="cloud-download"></sl-icon>
             ${msg("Download Logs")}
           </sl-button>
         </sl-tooltip>`;

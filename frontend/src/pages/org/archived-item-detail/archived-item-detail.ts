@@ -265,7 +265,7 @@ export class ArchivedItemDetail extends TailwindElement {
               size="small"
               variant="primary"
             >
-              <sl-icon slot="prefix" name="download"></sl-icon>
+              <sl-icon slot="prefix" name="cloud-download"></sl-icon>
               ${msg("Download Logs")}
             </sl-button>`,
           this.renderLogs(),
