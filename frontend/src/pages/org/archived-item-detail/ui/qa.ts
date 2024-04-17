@@ -253,15 +253,33 @@ export class ArchivedItemDetailQA extends TailwindElement {
 
         <btrix-tab-group-panel name="pages" class="block">
           <section class="mb-7">
-            <div class="mb-2 flex items-center gap-1">
-              <h4 class="text-lg font-semibold leading-8">
+            <div class="mb-2 flex items-center">
+              <h4 class="mr-3 text-lg font-semibold leading-8">
                 ${msg("QA Analysis")}
               </h4>
               ${when(this.qaRuns, (qaRuns) => {
                 const finishedQARuns = qaRuns.filter(({ state }) =>
                   finishedCrawlStates.includes(state),
                 );
+                const isCurrent =
+                  this.qaRunId &&
+                  this.qaRunId === this.mostRecentNonFailedQARun?.id;
+
                 return html`
+                  <sl-tooltip
+                    content=${isCurrent
+                      ? msg("You're viewing the latest analysis results.")
+                      : msg(
+                          "You're viewing results from an older analysis run.",
+                        )}
+                  >
+                    <sl-tag
+                      size="small"
+                      variant=${isCurrent ? "success" : "warning"}
+                    >
+                      ${isCurrent ? msg("Current") : msg("Outdated")}
+                    </sl-tag>
+                  </sl-tooltip>
                   <btrix-qa-run-dropdown
                     .items=${finishedQARuns}
                     selectedId=${this.qaRunId || ""}

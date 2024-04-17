@@ -179,7 +179,7 @@ export class ArchivedItemDetail extends TailwindElement {
     }
     if (changedProperties.has("qaRuns")) {
       this.mostRecentNonFailedQARun = this.qaRuns?.find((run) =>
-        [...QA_RUNNING_STATES, "complete"].includes(run.state),
+        [...QA_RUNNING_STATES, ...finishedCrawlStates].includes(run.state),
       );
       if (!this.qaRunId && this.qaRuns) {
         const firstFinishedQARun = this.qaRuns.find(({ state }) =>
