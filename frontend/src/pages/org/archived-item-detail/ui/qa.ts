@@ -223,7 +223,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
               this.renderLoadingDetail,
             )}
           </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Elapsed Time")}>
+          <btrix-desc-list-item label=${msg("Total Analysis Time")}>
             ${when(
               this.qaRuns,
               () =>
@@ -312,7 +312,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
             //       `;
             //     })}
             //   </div>
-
             //   ${when(
             //     this.qaRuns,
             //     () =>
