@@ -74,7 +74,7 @@ export class ArchivedItemListItem extends TailwindElement {
     const checkboxId = `${this.item.id}-checkbox`;
     const rowName = renderName(this.item);
     const isUpload = this.item.type === "upload";
-    const crawlStatus = CrawlStatus.getContent(this.item.state, isUpload);
+    const crawlStatus = CrawlStatus.getContent(this.item.state, this.item.type);
     let typeLabel = msg("Crawl");
     let typeIcon = "gear-wide-connected";
 

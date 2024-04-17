@@ -25,11 +25,9 @@ import type { PageChangeEvent } from "@/components/ui/pagination";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
+import * as reviewStatus from "@/features/qa/_helpers/reviewStatus";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
-import {
-  approvalFromPage,
-  labelFor as labelForPageReview,
-} from "@/features/qa/page-list/helpers/reviewStatus";
+import * as pageApproval from "@/features/qa/page-list/helpers/approval";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
 import type {
@@ -37,59 +35,13 @@ import type {
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import {
-  ReviewStatus,
-  type ArchivedItem,
-  type ArchivedItemPage,
-} from "@/types/crawler";
+import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { finishedCrawlStates } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { getLocale, pluralize } from "@/utils/localization";
-
-const iconForCrawlReview = (status: ArchivedItem["reviewStatus"]) => {
-  switch (status) {
-    case ReviewStatus.Bad:
-    case ReviewStatus.Poor:
-      return html`<sl-icon
-        name="patch-exclamation-fill"
-        class="text-danger-600"
-      ></sl-icon>`;
-    case ReviewStatus.Fair:
-      return html`<sl-icon
-        name="patch-minus"
-        class="text-success-600"
-      ></sl-icon>`;
-    case ReviewStatus.Good:
-    case ReviewStatus.Excellent:
-      return html`<sl-icon
-        name="patch-check-fill"
-        class="text-success-600"
-      ></sl-icon>`;
-
-    default:
-      return;
-  }
-};
-
-const labelForCrawlReview = (severity: ArchivedItem["reviewStatus"]) => {
-  switch (severity) {
-    case ReviewStatus.Bad:
-      return msg("Bad");
-    case ReviewStatus.Poor:
-      return msg("Poor");
-    case ReviewStatus.Fair:
-      return msg("Fair");
-    case ReviewStatus.Good:
-      return msg("Good");
-    case ReviewStatus.Excellent:
-      return msg("Excellent");
-    default:
-      return;
-  }
-};
 
 const notApplicable = () =>
   html`<span class="text-neutral-400">${msg("n/a")}</span>`;
@@ -526,10 +478,10 @@ export class ArchivedItemDetailQA extends TailwindElement {
 
   private renderReviewStatus(status: ArchivedItem["reviewStatus"]) {
     const icon =
-      iconForCrawlReview(status) ??
+      reviewStatus.iconFor(status) ??
       html` <sl-icon name="slash-circle" class="text-neutral-400"></sl-icon> `;
     const label =
-      labelForCrawlReview(status) ??
+      reviewStatus.labelFor(status) ||
       html`<span class="text-neutral-400">${msg("None Submitted")}</span>`;
 
     return statusWithIcon(icon, label);
@@ -692,11 +644,11 @@ export class ArchivedItemDetailQA extends TailwindElement {
   }
 
   private renderApprovalStatus(page: ArchivedItemPage) {
-    const approvalStatus = approvalFromPage(page);
+    const approvalStatus = pageApproval.approvalFromPage(page);
     const status = approvalStatus === "commentOnly" ? null : approvalStatus;
     const icon = iconForPageReview(status);
     const label =
-      labelForPageReview(status) ??
+      pageApproval.labelFor(status) ??
       html`<span class="text-neutral-400">${msg("None")}</span>`;
 
     return statusWithIcon(icon, label);
