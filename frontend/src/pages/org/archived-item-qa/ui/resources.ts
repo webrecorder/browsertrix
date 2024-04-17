@@ -31,7 +31,7 @@ function renderDiff(
 
 export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
   const noData = html`<div
-    class=${tw`flex flex-col items-center justify-center gap-2 text-xs text-neutral-500`}
+    class=${tw`flex h-full flex-col items-center justify-center gap-2 text-xs text-neutral-500`}
   >
     <sl-icon name="slash-circle"></sl-icon>
     ${msg("Resources data not available")}
@@ -39,14 +39,6 @@ export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
 
   return html`
     <div class=${tw`flex h-full flex-col outline`}>
-      <div class=${tw`mb-2 flex font-semibold`}>
-        <h3 id="crawlResourcesHeading" class=${tw`flex-1`}>
-          ${msg("Resources loaded during crawl")}
-        </h3>
-        <h3 id="qaResourcesHeading" class=${tw`flex-1`}>
-          ${msg("Resources loaded in replay")}
-        </h3>
-      </div>
       <div
         class=${tw`flex-1 overflow-auto overscroll-contain rounded-lg border`}
       >
@@ -54,6 +46,21 @@ export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
           ? renderDiff(crawlData.resources, qaData.resources)
           : noData}
       </div>
+      <footer class=${tw`mt-3 text-xs text-neutral-600`}>
+        <p class=${tw`mb-2`}>
+          ${msg('"Good" and "Bad" indicates the status code of the resource.')}
+        </p>
+        <dl>
+          <div class=${tw`flex gap-1`}>
+            <dt class=${tw`font-semibold`}>${msg("Good:")}</dt>
+            <dd>${msg("Status code between 200-399")}</dd>
+          </div>
+          <div class=${tw`flex gap-1`}>
+            <dt class=${tw`font-semibold`}>${msg("Bad:")}</dt>
+            <dd>${msg("Status code between 400-599")}</dd>
+          </div>
+        </dl>
+      </footer>
     </div>
   `;
 }
