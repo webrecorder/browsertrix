@@ -1,66 +1,32 @@
 import { msg } from "@lit/localize";
 import { html } from "lit";
-import { guard } from "lit/directives/guard.js";
-import { until } from "lit/directives/until.js";
-import { when } from "lit/directives/when.js";
 
 import type { ReplayData, ResourcesPayload } from "../types";
 
-import { renderSpinner } from "./spinner";
-
 import { tw } from "@/utils/tailwind";
-
-const diffImport = import("diff");
 
 function renderDiff(
   crawlResources: ResourcesPayload["resources"],
   qaResources: ResourcesPayload["resources"],
 ) {
-  return until(
-    diffImport.then(({ diffJson }) => {
-      const diff = diffJson(crawlResources, qaResources);
+  const columns = [
+    msg("Resource Type"),
+    msg("Good During Crawl"),
+    msg("Bad During Crawl"),
+    msg("Good in Replay"),
+    msg("Bad in Replay"),
+  ];
+  const rows = Object.keys(crawlResources).map((key) => [
+    html`<span class=${tw`capitalize`}>${key}</span>`,
+    html`${crawlResources[key].good.toLocaleString()}`,
+    html`${crawlResources[key].bad.toLocaleString()}`,
+    html`${qaResources[key].good.toLocaleString()}`,
+    html`${qaResources[key].bad.toLocaleString()}`,
+  ]);
 
-      const addedText = tw`bg-red-100 text-red-700`;
-      const removedText = tw`bg-red-100 text-red-100`;
-
-      return html`
-        <div
-          class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg border-dashed p-4 first-of-type:border-r`}
-          aria-labelledby="crawlResourcesHeading"
-        >
-          ${diff.map((part) => {
-            return html`
-              <span
-                class=${part.added
-                  ? removedText
-                  : part.removed
-                    ? addedText
-                    : ""}
-                >${part.value}</span
-              >
-            `;
-          })}
-        </div>
-        <div
-          class=${tw`flex-1 overflow-hidden whitespace-pre-line rounded-lg border-dashed p-4 first-of-type:border-r`}
-          aria-labelledby="qaResourcesHeading"
-        >
-          ${diff.map((part) => {
-            return html`
-              <span
-                class=${part.added
-                  ? addedText
-                  : part.removed
-                    ? removedText
-                    : ""}
-                >${part.value}</span
-              >
-            `;
-          })}
-        </div>
-      `;
-    }),
-  );
+  return html`
+    <btrix-data-table .columns=${columns} .rows=${rows}></btrix-data-table>
+  `;
 }
 
 export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
@@ -84,21 +50,9 @@ export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
       <div
         class=${tw`flex-1 overflow-auto overscroll-contain rounded-lg border`}
       >
-        ${guard([crawlData, qaData], () =>
-          when(
-            crawlData && qaData,
-            () => html`
-              <div
-                class=${tw`flex min-h-full ${crawlData?.text && qaData?.text ? "" : tw`items-center justify-center`}`}
-              >
-                ${crawlData?.resources && qaData?.resources
-                  ? renderDiff(crawlData.resources, qaData.resources)
-                  : noData}
-              </div>
-            `,
-            renderSpinner,
-          ),
-        )}
+        ${crawlData?.resources && qaData?.resources
+          ? renderDiff(crawlData.resources, qaData.resources)
+          : noData}
       </div>
     </div>
   `;
