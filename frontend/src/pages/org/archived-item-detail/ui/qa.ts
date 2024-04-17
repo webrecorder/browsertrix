@@ -443,7 +443,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                     style="--sl-color-neutral-700: var(--danger)"
                   >
                     <sl-icon name="trash3" slot="prefix"></sl-icon>
-                    ${msg("Delete Item")}
+                    ${msg("Delete Analysis Run")}
                   </sl-menu-item>
                 </sl-menu>
               </btrix-overflow-dropdown>
@@ -457,49 +457,51 @@ export class ArchivedItemDetailQA extends TailwindElement {
   private readonly renderDeleteConfirmDialog = () => {
     const runToBeDeleted = this.qaRuns?.find((run) => run.id === this.deleting);
 
-    if (!runToBeDeleted) return;
-
     return html`
-      <btrix-dialog id="deleteQARunDialog" .label=${msg("Delete QA Run?")} open>
+      <btrix-dialog
+        id="deleteQARunDialog"
+        .label=${msg("Delete Analysis Run?")}
+      >
         <b class="font-semibold"
-          >${msg("All of the data included in this QA run will be deleted.")}</b
+          >${msg(
+            "All of the data included in this Analysis Run will be deleted.",
+          )}</b
         >
-        <div>
-          ${msg(
-            str`This QA run includes data for ${runToBeDeleted.stats.done} ${pluralize(runToBeDeleted.stats.done, { zero: msg("pages", { desc: 'plural form of "page" for zero pages', id: "pages.plural.zero" }), one: msg("page"), two: msg("pages", { desc: 'plural form of "page" for two pages', id: "pages.plural.two" }), few: msg("pages", { desc: 'plural form of "page" for few pages', id: "pages.plural.few" }), many: msg("pages", { desc: 'plural form of "page" for many pages', id: "pages.plural.many" }), other: msg("pages", { desc: 'plural form of "page" for multiple/other pages', id: "pages.plural.other" }) })} and was started on `,
-          )}
-          <sl-format-date
-            lang=${getLocale()}
-            date=${`${runToBeDeleted.started}Z`}
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-            hour="2-digit"
-            minute="2-digit"
-          ></sl-format-date>
-          ${msg("by")} ${runToBeDeleted.userName}.
-        </div>
-        <div slot="footer" class="flex justify-between">
-          <sl-button
-            size="small"
-            variant="primary"
-            .autofocus=${true}
-            @click=${() => void this.deleteQADialog?.hide()}
-          >
-            ${msg("Cancel")}
-          </sl-button>
-          <sl-button
-            size="small"
-            variant="danger"
-            outline
-            @click=${async () => {
-              await this.deleteQARun(runToBeDeleted.id);
-              this.deleting = null;
-              void this.deleteQADialog?.hide();
-            }}
-            >${msg("Delete QA Run")}</sl-button
-          >
-        </div>
+        ${runToBeDeleted &&
+        html`<div>
+            ${msg(
+              str`This Analysis Run includes data for ${runToBeDeleted.stats.done} ${pluralize(runToBeDeleted.stats.done, { zero: msg("pages", { desc: 'plural form of "page" for zero pages', id: "pages.plural.zero" }), one: msg("page"), two: msg("pages", { desc: 'plural form of "page" for two pages', id: "pages.plural.two" }), few: msg("pages", { desc: 'plural form of "page" for few pages', id: "pages.plural.few" }), many: msg("pages", { desc: 'plural form of "page" for many pages', id: "pages.plural.many" }), other: msg("pages", { desc: 'plural form of "page" for multiple/other pages', id: "pages.plural.other" }) })} and was started on `,
+            )}
+            <sl-format-date
+              lang=${getLocale()}
+              date=${`${runToBeDeleted.started}Z`}
+              month="2-digit"
+              day="2-digit"
+              year="2-digit"
+              hour="2-digit"
+              minute="2-digit"
+            ></sl-format-date>
+            ${msg("by")} ${runToBeDeleted.userName}.
+          </div>
+          <div slot="footer" class="flex justify-between">
+            <sl-button
+              size="small"
+              .autofocus=${true}
+              @click=${() => void this.deleteQADialog?.hide()}
+            >
+              ${msg("Cancel")}
+            </sl-button>
+            <sl-button
+              size="small"
+              variant="danger"
+              @click=${async () => {
+                await this.deleteQARun(runToBeDeleted.id);
+                this.deleting = null;
+                void this.deleteQADialog?.hide();
+              }}
+              >${msg("Delete Analysis Run")}</sl-button
+            >
+          </div>`}
       </btrix-dialog>
     `;
   };
