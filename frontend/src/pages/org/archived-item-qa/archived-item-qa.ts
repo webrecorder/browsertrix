@@ -1,5 +1,5 @@
 import { localized, msg } from "@lit/localize";
-import { serialize } from "@shoelace-style/shoelace";
+import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { merge } from "immutable";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -31,7 +31,7 @@ import {
   type SortableFieldNames,
   type SortDirection,
 } from "@/features/qa/page-list/page-list";
-import { type UpdateItemPageDetail } from "@/features/qa/page-qa-toolbar";
+import { type UpdateItemPageDetail } from "@/features/qa/page-qa-approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
 import type {
   APIPaginatedList,
@@ -41,7 +41,7 @@ import type {
 import type { ArchivedItem } from "@/types/crawler";
 import type { ArchivedItemQAPage, QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
-import { renderName } from "@/utils/crawler";
+import { finishedCrawlStates, isActive, renderName } from "@/utils/crawler";
 
 const DEFAULT_PAGE_SIZE = 100;
 
@@ -103,7 +103,9 @@ export class ArchivedItemQA extends TailwindElement {
   private item?: ArchivedItem;
 
   @state()
-  private qaRuns: QARun[] | undefined = [];
+  finishedQARuns:
+    | (QARun & { state: (typeof finishedCrawlStates)[number] })[]
+    | undefined = [];
 
   @state()
   private pages?: APIPaginatedList<ArchivedItemQAPage>;
@@ -220,15 +222,15 @@ export class ArchivedItemQA extends TailwindElement {
     if (changedProperties.has("itemId") && this.itemId) {
       void this.initItem();
     } else if (
-      changedProperties.get("filterPagesBy") ||
-      changedProperties.get("sortPagesBy") ||
-      changedProperties.get("qaRunId")
+      changedProperties.has("filterPagesBy") ||
+      changedProperties.has("sortPagesBy") ||
+      changedProperties.has("qaRunId")
     ) {
       void this.fetchPages();
     }
     if (
       (changedProperties.has("itemPageId") ||
-        changedProperties.get("qaRunId")) &&
+        changedProperties.has("qaRunId")) &&
       this.itemPageId
     ) {
       void this.fetchPage();
@@ -251,25 +253,23 @@ export class ArchivedItemQA extends TailwindElement {
 
   private async initItem() {
     void this.fetchCrawl();
-
-    if (this.qaRunId) {
-      void this.fetchQARuns();
-    } else {
-      await this.fetchQARuns();
-    }
-
-    if (this.itemPageId) {
-      void this.fetchPages({ page: 1 });
-    } else {
-      await this.fetchPages({ page: 1 });
-    }
+    await this.fetchQARuns();
 
     const searchParams = new URLSearchParams(window.location.search);
-    const firstQaRun = this.qaRuns?.[0];
+
+    if (this.qaRunId) {
+      if (this.itemPageId) {
+        void this.fetchPages({ page: 1 });
+      } else {
+        await this.fetchPages({ page: 1 });
+      }
+    }
+
+    const firstQARun = this.finishedQARuns?.[0];
     const firstPage = this.pages?.items[0];
 
-    if (!this.qaRunId && firstQaRun) {
-      searchParams.set("qaRunId", firstQaRun.id);
+    if (!this.qaRunId && firstQARun) {
+      searchParams.set("qaRunId", firstQARun.id);
     }
     if (!this.itemPageId && firstPage) {
       searchParams.set("itemPageId", firstPage.id);
@@ -312,9 +312,10 @@ export class ArchivedItemQA extends TailwindElement {
     const searchParams = new URLSearchParams(window.location.search);
     const itemName = this.item ? renderName(this.item) : nothing;
     const [prevPage, currentPage, nextPage] = this.getPageListSliceByCurrent();
-    const finishedQARuns = this.qaRuns
-      ? this.qaRuns.filter(({ finished }) => finished)
-      : [];
+    const currentQARun = this.finishedQARuns?.find(
+      ({ id }) => id === this.qaRunId,
+    );
+    const disableReview = !currentQARun || isActive(currentQARun.state);
 
     return html`
       ${this.renderHidden()}
@@ -327,17 +328,22 @@ export class ArchivedItemQA extends TailwindElement {
             <h1 class="flex-1 truncate text-base font-semibold leading-tight">
               ${itemName}
             </h1>
-            <btrix-qa-run-dropdown
-              .items=${finishedQARuns}
-              selectedId=${this.qaRunId || ""}
-              @btrix-select=${(e: CustomEvent<SelectDetail>) => {
-                const params = new URLSearchParams(searchParams);
-                params.set("qaRunId", e.detail.item.id);
-                this.navigate.to(
-                  `${window.location.pathname}?${params.toString()}`,
-                );
-              }}
-            ></btrix-qa-run-dropdown>
+            ${when(
+              this.finishedQARuns,
+              (qaRuns) => html`
+                <btrix-qa-run-dropdown
+                  .items=${qaRuns}
+                  selectedId=${this.qaRunId || ""}
+                  @btrix-select=${(e: CustomEvent<SelectDetail>) => {
+                    const params = new URLSearchParams(searchParams);
+                    params.set("qaRunId", e.detail.item.id);
+                    this.navigate.to(
+                      `${window.location.pathname}?${params.toString()}`,
+                    );
+                  }}
+                ></btrix-qa-run-dropdown>
+              `,
+            )}
           </div>
           <div>
             <sl-button
@@ -347,16 +353,24 @@ export class ArchivedItemQA extends TailwindElement {
               @click=${this.navigate.link}
               >${msg("Exit Review")}</sl-button
             >
-            <sl-button
-              variant="success"
-              size="small"
-              @click=${() => void this.reviewDialog?.show()}
+            <sl-tooltip
+              content=${msg(
+                "Reviews are temporarily disabled during analysis runs.",
+              )}
+              ?disabled=${!disableReview}
             >
-              <sl-icon slot="prefix" name="patch-check"> </sl-icon>
-              ${this.item?.reviewStatus
-                ? msg("Update Review")
-                : msg("Finish Review")}</sl-button
-            >
+              <sl-button
+                variant="success"
+                size="small"
+                @click=${() => void this.reviewDialog?.show()}
+                ?disabled=${disableReview}
+              >
+                <sl-icon slot="prefix" name="patch-check"> </sl-icon>
+                ${this.item?.reviewStatus
+                  ? msg("Update Review")
+                  : msg("Finish Review")}
+              </sl-button>
+            </sl-tooltip>
           </div>
         </header>
 
@@ -375,14 +389,22 @@ export class ArchivedItemQA extends TailwindElement {
               <sl-icon slot="prefix" name="arrow-left"></sl-icon>
               ${msg("Previous Page")}
             </sl-button>
-            <btrix-page-qa-toolbar
-              .authState=${this.authState}
-              .orgId=${this.orgId}
-              .itemId=${this.itemId}
-              .pageId=${this.itemPageId}
-              .page=${this.page}
-              @btrix-update-item-page=${this.onUpdateItemPage}
-            ></btrix-page-qa-toolbar>
+            <sl-tooltip
+              content=${msg(
+                "Approvals are temporarily disabled during analysis runs.",
+              )}
+              ?disabled=${!disableReview}
+            >
+              <btrix-page-qa-approval
+                .authState=${this.authState}
+                .orgId=${this.orgId}
+                .itemId=${this.itemId}
+                .pageId=${this.itemPageId}
+                .page=${this.page}
+                ?disabled=${disableReview}
+                @btrix-update-item-page=${this.onUpdateItemPage}
+              ></btrix-page-qa-approval>
+            </sl-tooltip>
             <sl-button
               variant="primary"
               size="small"
@@ -461,6 +483,7 @@ export class ArchivedItemQA extends TailwindElement {
                 ? "desc"
                 : "asc") as SortDirection,
             }}
+            .filterBy=${this.filterPagesBy}
             totalPages=${+(this.item?.stats?.done || 0)}
             @btrix-qa-pagination-change=${(
               e: CustomEvent<QaPaginationChangeDetail>,
@@ -488,46 +511,71 @@ export class ArchivedItemQA extends TailwindElement {
           ></btrix-qa-page-list>
         </section>
       </article>
-      <btrix-dialog class="reviewDialog" label=${msg("Finish Review")}>
+      <btrix-dialog
+        class="reviewDialog [--width:60rem]"
+        label=${msg("QA Review")}
+      >
         <form class="qaReviewForm" @submit=${this.onReviewSubmit}>
-          <sl-radio-group
-            class="mb-5"
-            name="reviewStatus"
-            label=${msg("Crawl quality assessment")}
-            value=${this.item?.reviewStatus ?? null}
-            required
-          >
-            <sl-radio-button value="1">
-              <sl-icon
-                name="patch-exclamation"
-                slot="prefix"
-                class="text-base"
-              ></sl-icon>
-              ${msg("Failed")}
-            </sl-radio-button>
-            <sl-radio-button value="3" checked>
-              <sl-icon
-                name="patch-minus"
-                slot="prefix"
-                class="text-base"
-              ></sl-icon>
-              ${msg("Acceptable")}
-            </sl-radio-button>
-            <sl-radio-button value="5">
-              <sl-icon
-                name="patch-check"
-                slot="prefix"
-                class="text-base"
-              ></sl-icon>
-              ${msg("Good")}
-            </sl-radio-button>
-          </sl-radio-group>
-          <sl-textarea
-            label=${msg("Update archived item description?")}
-            name="description"
-            value=${this.item?.description ?? ""}
-            placeholder=${msg("No description")}
-          ></sl-textarea>
+          <div class="flex flex-col gap-6 md:flex-row">
+            <div>
+              <sl-radio-group
+                class="mb-5"
+                name="reviewStatus"
+                label=${msg("Rate this crawl:")}
+                value=${this.item?.reviewStatus ?? ""}
+                required
+              >
+                <sl-radio value="5">
+                  <strong class="font-semibold">${msg("Excellent!")}</strong>
+                  <div class="text-xs text-neutral-600">
+                    ${msg(
+                      "This archived item perfectly replicates the original pages.",
+                    )}
+                  </div>
+                </sl-radio>
+                <sl-radio value="4">
+                  <strong class="font-semibold">${msg("Good")}</strong>
+                  <div class="text-xs text-neutral-600">
+                    ${msg(
+                      "Looks and functions nearly the same as the original pages.",
+                    )}
+                  </div>
+                </sl-radio>
+                <sl-radio value="3" checked>
+                  <strong class="font-semibold">${msg("Fair")}</strong>
+                  <div class="text-xs text-neutral-600">
+                    ${msg(
+                      "Similar to the original pages, but may be missing non-critical content or functionality.",
+                    )}
+                  </div>
+                </sl-radio>
+                <sl-radio value="2">
+                  <strong class="font-semibold">${msg("Poor")}</strong>
+                  <div class="text-xs text-neutral-600">
+                    ${msg(
+                      "Some similarities with the original pages, but missing critical content or functionality.",
+                    )}
+                  </div>
+                </sl-radio>
+                <sl-radio value="1">
+                  <strong class="font-semibold">${msg("Bad")}</strong>
+                  <div class="text-xs text-neutral-600">
+                    ${msg(
+                      "Missing all content and functionality from the original pages.",
+                    )}
+                  </div>
+                </sl-radio>
+              </sl-radio-group>
+            </div>
+            <div class="flex-1 pl-4 md:border-l">
+              <sl-textarea
+                label=${msg("Update archived item description?")}
+                name="description"
+                value=${this.item?.description ?? ""}
+                placeholder=${msg("No description")}
+              ></sl-textarea>
+            </div>
+          </div>
         </form>
 
         <div slot="footer" class="flex justify-between">
@@ -761,7 +809,9 @@ export class ArchivedItemQA extends TailwindElement {
 
   private async fetchQARuns(): Promise<void> {
     try {
-      this.qaRuns = await this.getQARuns();
+      this.finishedQARuns = (await this.getQARuns()).filter(({ state }) =>
+        finishedCrawlStates.includes(state),
+      );
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve QA data at this time."),
@@ -773,7 +823,7 @@ export class ArchivedItemQA extends TailwindElement {
 
   private async getQARuns(): Promise<QARun[]> {
     return this.api.fetch<QARun[]>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
+      `/orgs/${this.orgId}/crawls/${this.itemId}/qa?skipFailed=true`,
       this.authState!,
     );
   }
@@ -949,10 +999,11 @@ export class ArchivedItemQA extends TailwindElement {
       this.pages = await this.getPages({
         page: params?.page ?? this.pages?.page ?? 1,
         pageSize: params?.pageSize ?? this.pages?.pageSize ?? DEFAULT_PAGE_SIZE,
+        ...this.sortPagesBy,
       });
     } catch {
       this.notify.toast({
-        message: msg("Sorry, couldn't retrieve archived item at this time."),
+        message: msg("Sorry, couldn't retrieve pages at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -960,13 +1011,11 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private async getPages(
-    params?: APIPaginationQuery & { reviewed?: boolean },
+    params?: APIPaginationQuery & APISortQuery & { reviewed?: boolean },
   ): Promise<APIPaginatedList<ArchivedItemQAPage>> {
     const query = queryString.stringify(
       {
-        sortBy: this.sortPagesBy.sortBy,
-        sortDirection: this.sortPagesBy.sortDirection,
-        ...(this.qaRunId ? this.filterPagesBy : {}),
+        ...this.filterPagesBy,
         ...params,
       },
       {
@@ -974,9 +1023,7 @@ export class ArchivedItemQA extends TailwindElement {
       },
     );
     return this.api.fetch<APIPaginatedList<ArchivedItemQAPage>>(
-      this.qaRunId
-        ? `/orgs/${this.orgId}/crawls/${this.itemId}/qa/${this.qaRunId}/pages?${query}`
-        : `/orgs/${this.orgId}/crawls/${this.itemId}/pages?${query}`,
+      `/orgs/${this.orgId}/crawls/${this.itemId ?? ""}/qa/${this.qaRunId ?? ""}/pages?${query}`,
       this.authState!,
     );
   }
@@ -996,7 +1043,10 @@ export class ArchivedItemQA extends TailwindElement {
         this.authState!,
         {
           method: "PATCH",
-          body: JSON.stringify(params),
+          body: JSON.stringify({
+            reviewStatus: +params.reviewStatus,
+            description: params.description,
+          }),
         },
       );
 

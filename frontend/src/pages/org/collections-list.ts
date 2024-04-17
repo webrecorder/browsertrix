@@ -10,7 +10,6 @@ import queryString from "query-string";
 
 import type { SelectNewDialogEvent } from ".";
 
-import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -603,21 +602,13 @@ export class CollectionsList extends LiteElement {
                   ${msg("Make Private")}
                 </sl-menu-item>
               `}
-          <!-- Shoelace doesn't allow "href" on menu items,
-              see https://github.com/shoelace-style/shoelace/issues/1351 -->
-          <a
+          <btrix-menu-item-link
             href=${`/api/orgs/${this.orgId}/collections/${col.id}/download?auth_bearer=${authToken}`}
-            class="flex items-center gap-2 whitespace-nowrap px-6 py-[0.6rem] hover:bg-neutral-100"
             download
-            @click=${(e: MouseEvent) => {
-              (e.target as HTMLAnchorElement)
-                .closest<OverflowDropdown>("btrix-overflow-dropdown")
-                ?.hide();
-            }}
           >
             <sl-icon name="cloud-download" slot="prefix"></sl-icon>
             ${msg("Download Collection")}
-          </a>
+          </btrix-menu-item-link>
           <sl-divider></sl-divider>
           <sl-menu-item
             style="--sl-color-neutral-700: var(--danger)"

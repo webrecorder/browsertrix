@@ -1,37 +1,37 @@
 import { localized, msg, str } from "@lit/localize";
-import { css, html, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
-import { classMap } from "lit/directives/class-map.js";
-import { guard } from "lit/directives/guard.js";
+import clsx from "clsx";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
-import queryString from "query-string";
-
-import { renderQA } from "./ui/qa";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { CopyButton } from "@/components/ui/copy-button";
+import { type Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import { RelativeDuration } from "@/components/ui/relative-duration";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import type { CrawlLog } from "@/features/archived-items/crawl-logs";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type { APIPaginatedList } from "@/types/api";
 import type {
   ArchivedItem,
-  ArchivedItemPage,
   Crawl,
   CrawlConfig,
+  CrawlState,
   Seed,
   Workflow,
 } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
-import { isActive } from "@/utils/crawler";
+import { finishedCrawlStates, isActive } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import { tw } from "@/utils/tailwind";
+
+import "./ui/qa";
 
 const SECTIONS = [
   "overview",
@@ -45,6 +45,20 @@ const SECTIONS = [
 ] as const;
 type SectionName = (typeof SECTIONS)[number];
 
+const POLL_INTERVAL_SECONDS = 5;
+const RUNNING_STATES = [
+  "running",
+  "starting",
+  "waiting_capacity",
+  "waiting_org_limit",
+  "stopping",
+] as CrawlState[];
+
+export const QA_RUNNING_STATES = [
+  "starting",
+  ...RUNNING_STATES,
+] as CrawlState[];
+
 /**
  * Usage:
  * ```ts
@@ -54,15 +68,6 @@ type SectionName = (typeof SECTIONS)[number];
 @localized()
 @customElement("btrix-archived-item-detail")
 export class ArchivedItemDetail extends TailwindElement {
-  static styles = css`
-    .qaPageList {
-      --btrix-cell-padding-top: var(--sl-spacing-x-small);
-      --btrix-cell-padding-bottom: var(--sl-spacing-x-small);
-      --btrix-cell-padding-left: var(--sl-spacing-small);
-      --btrix-cell-padding-right: var(--sl-spacing-small);
-    }
-  `;
-
   @property({ type: Object })
   authState?: AuthState;
 
@@ -79,13 +84,19 @@ export class ArchivedItemDetail extends TailwindElement {
   showOrgLink = false;
 
   @property({ type: String })
-  orgId!: string;
+  orgId?: string;
 
   @property({ type: String })
   crawlId?: string;
 
   @property({ type: Boolean })
-  isCrawler!: boolean;
+  isCrawler = false;
+
+  @state()
+  private qaRunId?: string;
+
+  @state()
+  qaRuns?: QARun[];
 
   @state()
   private crawl?: ArchivedItem;
@@ -100,19 +111,19 @@ export class ArchivedItemDetail extends TailwindElement {
   private logs?: APIPaginatedList<CrawlLog>;
 
   @state()
-  private qaRuns?: QARun[];
-
-  @state()
-  private pages?: APIPaginatedList<ArchivedItemPage>;
-
-  @state()
-  private qaRunId?: string;
-
-  @state()
-  activeTab: SectionName | undefined = "overview";
+  activeTab: SectionName = "overview";
 
   @state()
   private openDialogName?: "scale" | "metadata" | "exclusions";
+
+  @state()
+  mostRecentNonFailedQARun?: QARun;
+
+  @query("#stopQARunDialog")
+  private readonly stopQARunDialog?: Dialog | null;
+
+  @query("#cancelQARunDialog")
+  private readonly cancelQARunDialog?: Dialog | null;
 
   private get listUrl(): string {
     let path = "items";
@@ -134,16 +145,16 @@ export class ArchivedItemDetail extends TailwindElement {
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
 
+  private timerId?: number;
+
   private get isActive(): boolean | null {
     if (!this.crawl) return null;
+    return RUNNING_STATES.includes(this.crawl.state);
+  }
 
-    return (
-      this.crawl.state === "running" ||
-      this.crawl.state === "starting" ||
-      this.crawl.state === "waiting_capacity" ||
-      this.crawl.state === "waiting_org_limit" ||
-      this.crawl.state === "stopping"
-    );
+  private get isQAActive(): boolean | null {
+    if (!this.qaRuns?.[0]) return null;
+    return QA_RUNNING_STATES.includes(this.qaRuns[0].state);
   }
 
   private get hasFiles(): boolean | null {
@@ -158,27 +169,42 @@ export class ArchivedItemDetail extends TailwindElement {
       void this.fetchCrawl();
       void this.fetchCrawlLogs();
       void this.fetchSeeds();
-
-      this.fetchTabData();
-    } else {
-      if (changedProperties.has("activeTab") && this.activeTab) {
-        this.fetchTabData();
+      void this.fetchQARuns();
+    } else if (changedProperties.get("activeTab")) {
+      if (this.activeTab === "qa") {
+        void this.fetchQARuns();
       }
     }
     if (changedProperties.has("workflowId") && this.workflowId) {
       void this.fetchWorkflow();
     }
-  }
+    if (changedProperties.has("qaRuns")) {
+      // Latest QA run that's either running or finished:
+      this.mostRecentNonFailedQARun = this.qaRuns?.find((run) =>
+        [...QA_RUNNING_STATES, ...finishedCrawlStates].includes(run.state),
+      );
+    }
+    if (
+      (changedProperties.has("qaRuns") ||
+        changedProperties.has("mostRecentNonFailedQARun")) &&
+      this.qaRuns &&
+      this.mostRecentNonFailedQARun
+    ) {
+      const firstFinishedQARun = this.qaRuns.find(({ state }) =>
+        finishedCrawlStates.includes(state),
+      );
+      const prevMostRecentNonFailedQARun =
+        changedProperties.get("mostRecentNonFailedQARun") ||
+        this.mostRecentNonFailedQARun;
+      const mostRecentNowFinished =
+        QA_RUNNING_STATES.includes(prevMostRecentNonFailedQARun.state) &&
+        finishedCrawlStates.includes(this.mostRecentNonFailedQARun.state);
 
-  private fetchTabData() {
-    switch (this.activeTab) {
-      case "qa":
-        void this.fetchPages();
-        void this.fetchQARuns();
-        break;
-
-      default:
-        break;
+      // Update currently selected QA run if there is none,
+      // or if a QA run that was previously running is now finished:
+      if (firstFinishedQARun && (!this.qaRunId || mostRecentNowFinished)) {
+        this.qaRunId = firstFinishedQARun.id;
+      }
     }
   }
 
@@ -187,8 +213,42 @@ export class ArchivedItemDetail extends TailwindElement {
     const hash = window.location.hash.slice(1);
     if ((SECTIONS as readonly string[]).includes(hash)) {
       this.activeTab = hash as SectionName;
+    } else {
+      const newLocation = new URL(window.location.toString());
+      newLocation.hash = this.activeTab;
+      window.history.pushState(undefined, "", newLocation);
     }
     super.connectedCallback();
+    window.addEventListener("hashchange", this.getActiveTabFromHash);
+  }
+
+  disconnectedCallback(): void {
+    this.stopPoll();
+    super.disconnectedCallback();
+    window.removeEventListener("hashchange", this.getActiveTabFromHash);
+  }
+
+  // TODO this should be refactored out into the API router or something, it's
+  // mostly copied from frontend/src/pages/org/workflow-detail.ts
+  private readonly getActiveTabFromHash = async () => {
+    await this.updateComplete;
+
+    const hashValue = window.location.hash.slice(1);
+    if (SECTIONS.includes(hashValue as (typeof SECTIONS)[number])) {
+      this.activeTab = hashValue as SectionName;
+    } else {
+      this.goToTab(this.activeTab, { replace: true });
+    }
+  };
+
+  private goToTab(tab: SectionName, { replace = false } = {}) {
+    const path = `${window.location.href.split("#")[0]}#${tab}`;
+    if (replace) {
+      window.history.replaceState(null, "", path);
+    } else {
+      window.history.pushState(null, "", path);
+    }
+    this.activeTab = tab;
   }
 
   render() {
@@ -198,60 +258,28 @@ export class ArchivedItemDetail extends TailwindElement {
     switch (this.activeTab) {
       case "qa":
         sectionContent = this.renderPanel(
-          html`${this.renderTitle(msg("Quality Assurance (QA)"))}
-            <div>
-              <sl-button
-                variant="primary"
-                size="small"
-                href="${this.navigate.orgBasePath}/items/crawl/${this
-                  .crawlId}/review/screenshots?qaRunId=${this.qaRunId || ""}"
-                @click=${this.navigate.link}
-              >
-                <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
-                ${msg("Review Crawl")}
-              </sl-button>
-              <sl-button
-                size="small"
-                @click=${() => void this.startQARun()}
-                ?loading=${!this.qaRuns}
-              >
-                <sl-icon
-                  slot="prefix"
-                  name="microscope"
-                  library="app"
-                ></sl-icon>
-                ${this.qaRuns?.length
-                  ? msg("Rerun Analysis")
-                  : msg("Run Analysis")}
-              </sl-button>
-            </div>`,
+          html`${this.renderTitle(msg("Quality Assurance"))}
+            <div class="ml-auto flex flex-wrap justify-end gap-2">
+              ${when(this.qaRuns, this.renderQAHeader)}
+            </div> `,
           html`
-            ${guard(
-              [
-                this.crawl?.reviewStatus,
-                this.crawl?.qaCrawlExecSeconds,
-                this.qaRuns,
-                this.qaRunId,
-                this.pages,
-              ],
-              () =>
-                renderQA({
-                  reviewStatus: this.crawl?.reviewStatus,
-                  qaCrawlExecSeconds: this.crawl?.qaCrawlExecSeconds,
-                  qaRuns: this.qaRuns,
-                  qaRunId: this.qaRunId,
-                  pages: this.pages,
-                }),
-            )}
+            <btrix-archived-item-detail-qa
+              .authState=${this.authState}
+              .orgId=${this.orgId}
+              .crawlId=${this.crawlId}
+              .itemType=${this.itemType}
+              .crawl=${this.crawl}
+              .qaRuns=${this.qaRuns}
+              .qaRunId=${this.qaRunId}
+              .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
+            ></btrix-archived-item-detail-qa>
           `,
         );
         break;
       case "replay":
-        sectionContent = this.renderPanel(msg("Replay"), this.renderReplay(), {
-          "overflow-hidden": true,
-          "rounded-lg": true,
-          border: true,
-        });
+        sectionContent = this.renderPanel(msg("Replay"), this.renderReplay(), [
+          tw`overflow-hidden rounded-lg border`,
+        ]);
         break;
       case "files":
         sectionContent = this.renderPanel(msg("Files"), this.renderFiles());
@@ -275,22 +303,16 @@ export class ArchivedItemDetail extends TailwindElement {
         sectionContent = this.renderPanel(
           msg("Crawl Settings"),
           this.renderConfig(),
-          {
-            "p-4": true,
-            "rounded-lg": true,
-            border: true,
-          },
+          [tw`rounded-lg border p-4`],
         );
         break;
       default:
         sectionContent = html`
           <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <div class="col-span-1 flex flex-col">
-              ${this.renderPanel(msg("Overview"), this.renderOverview(), {
-                "p-4": true,
-                "rounded-lg": true,
-                border: true,
-              })}
+              ${this.renderPanel(msg("Overview"), this.renderOverview(), [
+                tw`rounded-lg border p-4`,
+              ])}
             </div>
             <div class="col-span-1 flex flex-col">
               ${this.renderPanel(
@@ -319,11 +341,7 @@ export class ArchivedItemDetail extends TailwindElement {
                   )}
                 `,
                 this.renderMetadata(),
-                {
-                  "p-4": true,
-                  "rounded-lg": true,
-                  border: true,
-                },
+                [tw`rounded-lg border p-4`],
               )}
             </div>
           </div>
@@ -365,14 +383,16 @@ export class ArchivedItemDetail extends TailwindElement {
 
       <main>
         <section class="grid gap-6 md:grid-cols-14">
-          <div class="col-span-14 grid border-b md:col-span-3 md:border-b-0 ">
-            <div
-              class="-mx-3 box-border flex overflow-x-auto px-3 md:mx-0 md:block md:px-0"
-            >
+          <div
+            class="col-span-14 grid min-w-0 border-b md:col-span-3 md:border-b-0"
+          >
+            <div class="-mx-3 box-border flex overflow-x-auto px-3 md:block ">
               ${this.renderNav()}
             </div>
           </div>
-          <div class="col-span-14 md:col-span-11">${sectionContent}</div>
+          <div class="col-span-14 min-w-0 md:col-span-11">
+            ${sectionContent}
+          </div>
         </section>
       </main>
 
@@ -448,7 +468,7 @@ export class ArchivedItemDetail extends TailwindElement {
     };
     return html`
       <nav
-        class="sticky top-0 flex flex-row gap-2 pb-4 text-center md:mt-10 md:flex-col md:text-start"
+        class="sticky top-0 -mx-3 flex flex-row gap-2 overflow-x-auto px-3 pb-4 text-center md:mt-10 md:flex-col md:text-start"
         role="menu"
       >
         ${renderNavItem({
@@ -617,29 +637,22 @@ export class ArchivedItemDetail extends TailwindElement {
   }
 
   private renderTitle(title: string) {
-    return html`<h2 class="text-lg font-semibold">${title}</h2>`;
+    return html`<h2 class="text-lg font-semibold leading-8">${title}</h2>`;
   }
 
   private renderPanel(
     heading: string | TemplateResult,
     content: TemplateResult | undefined,
-    classes: Record<string, boolean> = {},
+    classes: clsx.ClassValue[] = [],
   ) {
     const headingIsTitle = typeof heading === "string";
     return html`
       <header
-        class="flex-0 mb-2 flex h-8 min-h-fit items-center justify-between leading-none"
+        class="flex-0 mb-2 flex min-h-fit flex-wrap items-center justify-between gap-2 leading-none"
       >
         ${headingIsTitle ? this.renderTitle(heading) : heading}
       </header>
-      <div
-        class=${classMap({
-          "flex-1": true,
-          ...classes,
-        })}
-      >
-        ${content}
-      </div>
+      <div class=${clsx("flex-1", ...classes)}>${content}</div>
     `;
   }
 
@@ -689,7 +702,7 @@ export class ArchivedItemDetail extends TailwindElement {
             ? html`
                 <btrix-crawl-status
                   state=${this.crawl.state}
-                  ?isUpload=${this.crawl.type === "upload"}
+                  type=${this.crawl.type}
                 ></btrix-crawl-status>
               `
             : html`<sl-skeleton class="mb-[3px] h-[16px] w-24"></sl-skeleton>`}
@@ -998,6 +1011,123 @@ ${this.crawl?.description}
     `;
   }
 
+  private readonly renderQAHeader = (qaRuns: QARun[]) => {
+    const qaIsRunning = isActive(qaRuns[0]?.state);
+    const qaIsAvailable = this.mostRecentNonFailedQARun && !qaIsRunning;
+    return html`
+      ${qaIsRunning
+        ? html`
+            <sl-button-group>
+              <sl-button
+                size="small"
+                @click=${() => void this.stopQARunDialog?.show()}
+              >
+                <sl-icon name="slash-square" slot="prefix"></sl-icon>
+                <span>${msg("Stop Analysis")}</span>
+              </sl-button>
+              <sl-button
+                size="small"
+                @click=${() => void this.cancelQARunDialog?.show()}
+              >
+                <sl-icon
+                  name="x-octagon"
+                  slot="prefix"
+                  class="text-danger"
+                ></sl-icon>
+                <span class="text-danger">${msg("Cancel Analysis")}</span>
+              </sl-button>
+            </sl-button-group>
+          `
+        : html`
+            <sl-button
+              size="small"
+              variant="${
+                // This is checked again being 0 explicitly because while QA state is loading, `this.qaRuns` is undefined, and the content change is less when the rightmost button stays non-primary when a run exists.
+                qaRuns.length === 0 ? "primary" : "default"
+              }"
+              @click=${() => void this.startQARun()}
+              ?disabled=${qaIsRunning}
+            >
+              <sl-icon slot="prefix" name="microscope" library="app"></sl-icon>
+              ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
+            </sl-button>
+          `}
+      ${qaRuns.length
+        ? html`
+            <sl-tooltip
+              ?disabled=${qaIsAvailable}
+              content=${qaIsRunning
+                ? msg("Reviews are disabled during analysis runs.")
+                : msg("No completed analysis runs are available.")}
+            >
+              <sl-button
+                variant="primary"
+                size="small"
+                href="${this.navigate.orgBasePath}/items/crawl/${this
+                  .crawlId}/review/screenshots?qaRunId=${this.qaRunId || ""}"
+                @click=${this.navigate.link}
+                ?disabled=${!qaIsAvailable}
+              >
+                <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
+                ${msg("Review Crawl")}
+              </sl-button>
+            </sl-tooltip>
+          `
+        : nothing}
+
+      <btrix-dialog id="stopQARunDialog" .label=${msg("Stop QA Analysis?")}>
+        ${msg(
+          "Pages analyzed so far will be saved and this run will be marked as incomplete. Are you sure you want to stop this analysis run?",
+        )}
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            variant="primary"
+            .autofocus=${true}
+            @click=${() => void this.stopQARunDialog?.hide()}
+          >
+            ${msg("Keep Running")}
+          </sl-button>
+          <sl-button
+            size="small"
+            variant="danger"
+            outline
+            @click=${async () => {
+              await this.stopQARun();
+              void this.stopQARunDialog?.hide();
+            }}
+            >${msg("Stop Analysis")}</sl-button
+          >
+        </div>
+      </btrix-dialog>
+      <btrix-dialog id="cancelQARunDialog" .label=${msg("Cancel QA Analysis?")}>
+        ${msg(
+          "Canceling will discard all analysis data associated with this run. Are you sure you want to cancel this analysis run?",
+        )}
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            variant="primary"
+            .autofocus=${true}
+            @click=${async () => this.cancelQARunDialog?.hide()}
+          >
+            ${msg("Keep Running")}
+          </sl-button>
+          <sl-button
+            size="small"
+            variant="danger"
+            outline
+            @click=${async () => {
+              await this.cancelQARun();
+              void this.cancelQARunDialog?.hide();
+            }}
+            >${msg("Cancel Analysis")}</sl-button
+          >
+        </div>
+      </btrix-dialog>
+    `;
+  };
+
   private readonly renderLoading = () =>
     html`<div class="my-24 flex w-full items-center justify-center text-3xl">
       <sl-spinner></sl-spinner>
@@ -1200,7 +1330,7 @@ ${this.crawl?.description}
 
   private async startQARun() {
     try {
-      const data = await this.api.fetch<{ started: string }>(
+      await this.api.fetch<{ started: string }>(
         `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/start`,
         this.authState!,
         {
@@ -1208,7 +1338,6 @@ ${this.crawl?.description}
         },
       );
 
-      console.debug("qa run id: ", data.started);
       void this.fetchQARuns();
 
       this.notify.toast({
@@ -1233,10 +1362,73 @@ ${this.crawl?.description}
     }
   }
 
+  private async stopQARun() {
+    try {
+      const data = await this.api.fetch<{ success: boolean }>(
+        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/qa/stop`,
+        this.authState!,
+        {
+          method: "POST",
+        },
+      );
+
+      if (!data.success) {
+        throw data;
+      }
+
+      void this.fetchQARuns();
+      this.notify.toast({
+        message: msg(`Stopping QA analysis...`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: unknown) {
+      this.notify.toast({
+        message:
+          e === "qa_not_running"
+            ? msg("Analysis is not currently running.")
+            : msg("Sorry, couldn't stop crawl at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async cancelQARun() {
+    try {
+      const data = await this.api.fetch<{ success: boolean }>(
+        `/orgs/${this.crawl!.oid}/crawls/${this.crawlId}/qa/cancel`,
+        this.authState!,
+        {
+          method: "POST",
+        },
+      );
+
+      if (!data.success) {
+        throw data;
+      }
+
+      void this.fetchQARuns();
+      this.notify.toast({
+        message: msg(`Canceling QA analysis...`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e: unknown) {
+      this.notify.toast({
+        message:
+          e === "qa_not_running"
+            ? msg("Analysis is not currently running.")
+            : msg("Sorry, couldn't cancel crawl at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
   private async fetchQARuns(): Promise<void> {
     try {
       this.qaRuns = await this.getQARuns();
-      this.qaRunId = this.qaRunId || this.qaRuns[0]?.id;
     } catch {
       this.notify.toast({
         message: msg("Sorry, couldn't retrieve archived item at this time."),
@@ -1244,47 +1436,22 @@ ${this.crawl?.description}
         icon: "exclamation-octagon",
       });
     }
+
+    if (this.isQAActive) {
+      // Restart timer for next poll
+      this.timerId = window.setTimeout(() => {
+        void this.fetchQARuns();
+      }, 1000 * POLL_INTERVAL_SECONDS);
+    }
+  }
+
+  private stopPoll() {
+    window.clearTimeout(this.timerId);
   }
 
   private async getQARuns(): Promise<QARun[]> {
     return this.api.fetch<QARun[]>(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/qa`,
-      this.authState!,
-    );
-  }
-
-  private async fetchPages(params?: APIPaginationQuery): Promise<void> {
-    try {
-      this.pages = await this.getPages({
-        page: params?.page ?? this.pages?.page ?? 1,
-        pageSize: params?.pageSize ?? this.pages?.pageSize ?? 10,
-      });
-    } catch {
-      this.notify.toast({
-        message: msg("Sorry, couldn't retrieve archived item at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  private async getPages(
-    params?: APIPaginationQuery & { reviewed?: boolean },
-  ): Promise<APIPaginatedList<ArchivedItemPage>> {
-    const query = queryString.stringify(
-      {
-        // sortBy: this.sortPagesBy.sortBy,
-        // sortDirection: this.sortPagesBy.sortDirection,
-        ...params,
-      },
-      {
-        arrayFormat: "comma",
-      },
-    );
-    return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
-      this.qaRunId
-        ? `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${this.qaRunId}/pages?${query}`
-        : `/orgs/${this.orgId}/crawls/${this.crawlId}/pages?${query}`,
       this.authState!,
     );
   }

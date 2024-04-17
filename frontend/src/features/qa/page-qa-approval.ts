@@ -23,12 +23,12 @@ export type UpdateItemPageDetail = {
 };
 
 /**
- * Manage crawl QA page review
+ * Manage crawl QA page approval
  *
  * @fires btrix-update-item-page
  */
 @localized()
-@customElement("btrix-page-qa-toolbar")
+@customElement("btrix-page-qa-approval")
 export class PageQAToolbar extends TailwindElement {
   static styles = css`
     :host {
@@ -167,20 +167,23 @@ export class PageQAToolbar extends TailwindElement {
     }
   `;
 
-  @property({ type: Object })
+  @property({ type: Object, attribute: false })
   authState?: AuthState;
 
-  @property({ type: String })
+  @property({ type: String, attribute: false })
   orgId?: string;
 
-  @property({ type: String })
+  @property({ type: String, attribute: false })
   itemId?: string;
 
-  @property({ type: String })
+  @property({ type: String, attribute: false })
   pageId?: string;
 
-  @property({ type: Object })
+  @property({ type: Object, attribute: false })
   page?: ArchivedItemPage;
+
+  @property({ type: Boolean })
+  disabled = false;
 
   @state()
   private showComments = false;
@@ -195,7 +198,7 @@ export class PageQAToolbar extends TailwindElement {
   private readonly notify = new NotifyController(this);
 
   render() {
-    const disabled = !this.page;
+    const disabled = this.disabled || !this.page;
     const approved = this.page?.approved === true;
     const rejected = this.page?.approved === false;
     const commented = Boolean(this.page?.notes?.length);
@@ -253,7 +256,7 @@ export class PageQAToolbar extends TailwindElement {
       </fieldset>
 
       <btrix-dialog
-        label=${msg("Page Review Comments")}
+        label=${msg("Page Comments")}
         ?open=${this.showComments}
         @sl-hide=${() => (this.showComments = false)}
       >
@@ -277,7 +280,7 @@ export class PageQAToolbar extends TailwindElement {
       ${when(
         comments.length,
         () => html`
-          <btrix-details>
+          <btrix-details open>
             <span slot="title"
               >${msg(str`Comments (${comments.length.toLocaleString()})`)}</span
             >
@@ -351,7 +354,7 @@ export class PageQAToolbar extends TailwindElement {
     } catch (e: unknown) {
       console.debug(e);
       this.notify.toast({
-        message: msg("Sorry, couldn't submit page review at this time."),
+        message: msg("Sorry, couldn't submit page approval at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
