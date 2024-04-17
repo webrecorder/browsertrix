@@ -3,6 +3,7 @@
 # pylint: disable=too-many-lines
 
 import json
+import os
 import re
 import contextlib
 import urllib.parse
@@ -63,6 +64,8 @@ class CrawlOps(BaseCrawlOps):
         self.crawl_configs.set_crawl_ops(self)
         self.colls.set_crawl_ops(self)
         self.event_webhook_ops.set_crawl_ops(self)
+
+        self.min_qa_crawler_image = os.environ.get("MIN_QA_CRAWLER_IMAGE")
 
     async def init_index(self):
         """init index for crawls db collection"""
@@ -733,6 +736,14 @@ class CrawlOps(BaseCrawlOps):
         # can only QA successfully finished crawls
         if crawl.state not in SUCCESSFUL_STATES:
             raise HTTPException(status_code=400, detail="crawl_did_not_succeed")
+
+        # if set, can only QA if crawl image is >= min_qa_crawler_image
+        if (
+            self.min_qa_crawler_image
+            and crawl.image
+            and crawl.image < self.min_qa_crawler_image
+        ):
+            raise HTTPException(status_code=400, detail="qa_not_supported_for_crawl")
 
         # can only run one QA at a time
         if crawl.qa:

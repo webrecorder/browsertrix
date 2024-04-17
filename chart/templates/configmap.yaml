@@ -52,6 +52,8 @@ data:
 
   CRAWLER_CHANNELS_JSON: "/ops-configs/crawler_channels.json"
 
+  MIN_QA_CRAWLER_IMAGE: "{{ .Values.min_qa_crawler_image }}"
+
 ---
 apiVersion: v1
 kind: ConfigMap
