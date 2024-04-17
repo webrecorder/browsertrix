@@ -419,7 +419,7 @@ def test_list_all_crawls(
         assert item["finished"]
         assert item["state"]
 
-    # Test that all-crawls qaState sort always puts cralws before uploads
+    # Test that all-crawls qaState sort always puts crawls before uploads
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=qaState",
         headers=admin_auth_headers,
