@@ -1,5 +1,8 @@
-import { css, html, LitElement } from "lit";
+import clsx from "clsx";
+import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+
+import { TailwindElement } from "@/classes/TailwindElement";
 
 /**
  * Alert used inline, e.g. for form server errors
@@ -11,45 +14,30 @@ import { customElement, property } from "lit/decorators.js";
  * ```
  */
 @customElement("btrix-alert")
-export class Alert extends LitElement {
+export class Alert extends TailwindElement {
   @property({ type: String })
   variant: "success" | "warning" | "danger" | "info" = "info";
 
-  // postcss-lit-disable-next-line
   static styles = css`
     :host {
       display: block;
-    }
-
-    :host > div {
-      padding: var(--sl-spacing-x-small) var(--sl-spacing-small);
-      border-radius: var(--sl-border-radius-medium);
-    }
-
-    .success {
-      background-color: var(--sl-color-success-50);
-      color: var(--success);
-    }
-
-    .warning {
-      background-color: var(--sl-color-warning-50);
-      color: var(--warning);
-    }
-
-    .danger {
-      background-color: var(--sl-color-danger-50);
-      color: var(--danger);
-    }
-
-    .info {
-      background-color: var(--sl-color-sky-50);
-      color: var(--sl-color-sky-600);
     }
   `;
 
   render() {
     return html`
-      <div class="${this.variant}" role="alert">
+      <div
+        class="${clsx(
+          "px-3 py-2 rounded border",
+          {
+            success: "bg-success-50 text-success-800 border-success-200",
+            warning: "bg-warning-50 text-warning-800 border-warning-200",
+            danger: "bg-danger-50 text-danger-800 border-danger-200",
+            info: "bg-primary-50 text-primary-800 border-primary-200",
+          }[this.variant],
+        )}"
+        role="alert"
+      >
         <slot></slot>
       </div>
     `;
