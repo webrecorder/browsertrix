@@ -273,8 +273,16 @@ def test_qa_stats(
     assert r.status_code == 200
 
     data = r.json()
-    assert data["screenshotMatch"] == [{"lowerBoundary": "0.9", "count": 1}]
-    assert data["textMatch"] == [{"lowerBoundary": "0.9", "count": 1}]
+    assert data["screenshotMatch"] == [
+        {"lowerBoundary": "0.0", "count": 0},
+        {"lowerBoundary": "0.7", "count": 0},
+        {"lowerBoundary": "0.9", "count": 1},
+    ]
+    assert data["textMatch"] == [
+        {"lowerBoundary": "0.0", "count": 0},
+        {"lowerBoundary": "0.7", "count": 0},
+        {"lowerBoundary": "0.9", "count": 1},
+    ]
 
     # Test we get expected results with explicit 0 boundary
     r = requests.get(
@@ -284,8 +292,16 @@ def test_qa_stats(
     assert r.status_code == 200
 
     data = r.json()
-    assert data["screenshotMatch"] == [{"lowerBoundary": "0.9", "count": 1}]
-    assert data["textMatch"] == [{"lowerBoundary": "0.9", "count": 1}]
+    assert data["screenshotMatch"] == [
+        {"lowerBoundary": "0.0", "count": 0},
+        {"lowerBoundary": "0.7", "count": 0},
+        {"lowerBoundary": "0.9", "count": 1},
+    ]
+    assert data["textMatch"] == [
+        {"lowerBoundary": "0.0", "count": 0},
+        {"lowerBoundary": "0.7", "count": 0},
+        {"lowerBoundary": "0.9", "count": 1},
+    ]
 
     # Test that missing threshold values result in 422 HTTPException
     r = requests.get(

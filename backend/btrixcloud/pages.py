@@ -559,7 +559,20 @@ class PageOps:
                 )
             )
 
-        return return_data
+        # Add missing boundaries to result and re-sort
+        for boundary in boundaries:
+            if boundary < 1.0:
+                matching_return_data = [
+                    bucket
+                    for bucket in return_data
+                    if bucket.lowerBoundary == str(boundary)
+                ]
+                if not matching_return_data:
+                    return_data.append(
+                        QARunBucketStats(lowerBoundary=str(boundary), count=0)
+                    )
+
+        return sorted(return_data, key=lambda bucket: bucket.lowerBoundary)
 
 
 # ============================================================================
