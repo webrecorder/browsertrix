@@ -116,6 +116,28 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert qa["started"]
     assert not qa["finished"]
 
+    # Ensure sorting by qaState works as expected - current floated to top
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=qaState",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    assert crawls[0]["id"] == crawler_crawl_id
+    assert crawls[0]["activeQAState"]
+    assert crawls[0]["lastQAState"]
+
+    # Ensure sorting by qaState works as expected with all-crawls
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=qaState",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    assert crawls[0]["id"] == crawler_crawl_id
+    assert crawls[0]["activeQAState"]
+    assert crawls[0]["lastQAState"]
+
     # Cancel crawl
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/cancel",
@@ -338,6 +360,96 @@ def test_failed_qa_run(
     assert qa["stats"]["found"] == 1
     assert qa["stats"]["done"] == 1
     assert qa["crawlExecSeconds"] > 0
+
+
+def test_sort_crawls_by_qa_runs(
+    crawler_crawl_id,
+    crawler_auth_headers,
+    default_org_id,
+    failed_qa_run_id,
+    qa_run_pages_ready,
+):
+    # Test that sorting by qaRunCount works as expected
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=qaRunCount",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+
+    assert crawls[0]["id"] == crawler_crawl_id
+    qa_run_count = crawls[0]["qaRunCount"]
+    assert qa_run_count > 0
+
+    last_count = qa_run_count
+    for crawl in crawls:
+        if crawl["id"] == crawler_crawl_id:
+            continue
+        crawl_qa_count = crawl["qaRunCount"]
+        assert isinstance(crawl_qa_count, int)
+        assert crawl_qa_count <= last_count
+        last_count = crawl_qa_count
+
+    # Test ascending sort
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=qaRunCount&sortDirection=1",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+
+    assert crawls[-1]["id"] == crawler_crawl_id
+    assert crawls[-1]["qaRunCount"] > 0
+
+    last_count = 0
+    for crawl in crawls:
+        if crawl["id"] == crawler_crawl_id:
+            continue
+        crawl_qa_count = crawl["qaRunCount"]
+        assert isinstance(crawl_qa_count, int)
+        assert crawl_qa_count >= last_count
+        last_count = crawl_qa_count
+
+    # Test same with all-crawls
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=qaRunCount",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+
+    assert crawls[0]["id"] == crawler_crawl_id
+    qa_run_count = crawls[0]["qaRunCount"]
+    assert qa_run_count > 0
+
+    last_count = qa_run_count
+    for crawl in crawls:
+        if crawl["id"] == crawler_crawl_id:
+            continue
+        crawl_qa_count = crawl["qaRunCount"]
+        assert isinstance(crawl_qa_count, int)
+        assert crawl_qa_count <= last_count
+        last_count = crawl_qa_count
+
+    # Test ascending sort
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=qaRunCount&sortDirection=1",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+
+    assert crawls[-1]["id"] == crawler_crawl_id
+    assert crawls[-1]["qaRunCount"] > 0
+
+    last_count = 0
+    for crawl in crawls:
+        if crawl["id"] == crawler_crawl_id:
+            continue
+        crawl_qa_count = crawl["qaRunCount"]
+        assert isinstance(crawl_qa_count, int)
+        assert crawl_qa_count >= last_count
+        last_count = crawl_qa_count
 
 
 def test_delete_qa_runs(

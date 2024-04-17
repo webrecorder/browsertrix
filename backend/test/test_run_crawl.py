@@ -303,6 +303,44 @@ def test_update_crawl(
     assert r.status_code == 200
     assert r.json()["reviewStatus"] == 5
 
+    # Test sorting on reviewStatus
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=reviewStatus",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    assert crawls[0]["id"] == admin_crawl_id
+    assert crawls[0]["reviewStatus"] == 5
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=reviewStatus&sortDirection=1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    assert crawls[-1]["id"] == admin_crawl_id
+    assert crawls[-1]["reviewStatus"] == 5
+
+    # Test sorting on reviewStatus for all-crawls
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=reviewStatus",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    assert crawls[0]["id"] == admin_crawl_id
+    assert crawls[0]["reviewStatus"] == 5
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=reviewStatus&sortDirection=1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    assert crawls[-1]["id"] == admin_crawl_id
+    assert crawls[-1]["reviewStatus"] == 5
+
     # Try to update to invalid reviewStatus
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
