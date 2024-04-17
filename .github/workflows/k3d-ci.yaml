@@ -21,6 +21,7 @@ jobs:
       - name: Create k3d Cluster
         uses: AbsaOSS/k3d-action@v2
         with:
+          k3d-version: v5.6.0
           cluster-name: btrix-1
           args: >-
             -p "30870:30870@agent:0:direct"
@@ -96,3 +97,7 @@ jobs:
       - name: Print Backend Logs (Operator)
         if: ${{ failure() }}
         run: kubectl logs svc/browsertrix-cloud-backend -c op
+
+      - name: Print K8S Events
+        if: ${{ failure() }}
+        run: kubectl events --all-namespaces

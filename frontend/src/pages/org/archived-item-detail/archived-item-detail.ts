@@ -265,7 +265,7 @@ export class ArchivedItemDetail extends TailwindElement {
               size="small"
               variant="primary"
             >
-              <sl-icon slot="prefix" name="download"></sl-icon>
+              <sl-icon slot="prefix" name="cloud-download"></sl-icon>
               ${msg("Download Logs")}
             </sl-button>`,
           this.renderLogs(),
@@ -1217,10 +1217,16 @@ ${this.crawl?.description}
         icon: "check2-circle",
       });
     } catch (e: unknown) {
+      let message = msg("Sorry, couldn't start QA run at this time.");
+      if (e instanceof Error && e.message === "qa_not_supported_for_crawl") {
+        message = msg(
+          "Sorry, QA analysis is not supported for this crawl as it was run with an older crawler version. Please run a new crawl with the latest crawler and QA should be available.",
+        );
+      }
       console.debug(e);
 
       this.notify.toast({
-        message: msg("Sorry, couldn't start QA run at this time."),
+        message,
         variant: "danger",
         icon: "exclamation-octagon",
       });

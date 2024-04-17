@@ -20,6 +20,7 @@ class Migration(BaseMigration):
 
         Add type "crawl" to all existing crawls that don't already have a type
         """
+        # pylint: disable=duplicate-code
         crawls = self.mdb["crawls"]
         try:
             await crawls.update_many(

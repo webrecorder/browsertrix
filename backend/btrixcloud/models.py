@@ -536,15 +536,6 @@ class CrawlFileOut(BaseModel):
 
 
 # ============================================================================
-class ReviewStatus(str, Enum):
-    """QA review statuses"""
-
-    GOOD = "good"
-    ACCEPTABLE = "acceptable"
-    FAILURE = "failure"
-
-
-# ============================================================================
 class CrawlStats(BaseModel):
     """Crawl Stats for pages and size"""
 
@@ -599,7 +590,7 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
 
     collectionIds: Optional[List[UUID]] = []
 
-    reviewStatus: Optional[ReviewStatus] = None
+    reviewStatus: Optional[conint(ge=1, le=5)] = None  # type: ignore
 
 
 # ============================================================================
@@ -665,7 +656,11 @@ class CrawlOut(BaseMongoModel):
     crawlerChannel: str = "default"
     image: Optional[str]
 
-    reviewStatus: Optional[ReviewStatus] = None
+    reviewStatus: Optional[conint(ge=1, le=5)] = None  # type: ignore
+
+    qaRunCount: int = 0
+    activeQAState: Optional[str]
+    lastQAState: Optional[str]
 
 
 # ============================================================================
@@ -684,7 +679,7 @@ class UpdateCrawl(BaseModel):
     description: Optional[str]
     tags: Optional[List[str]]
     collectionIds: Optional[List[UUID]]
-    reviewStatus: Optional[ReviewStatus]
+    reviewStatus: Optional[conint(ge=1, le=5)]  # type: ignore
 
 
 # ============================================================================
@@ -741,6 +736,22 @@ class QARunOut(BaseModel):
     crawlExecSeconds: int = 0
 
     stats: CrawlStats = CrawlStats()
+
+
+# ============================================================================
+class QARunBucketStats(BaseModel):
+    """Model for per-bucket aggregate stats results"""
+
+    lowerBoundary: str
+    count: int
+
+
+# ============================================================================
+class QARunAggregateStatsOut(BaseModel):
+    """QA Run aggregate stats out"""
+
+    screenshotMatch: List[QARunBucketStats]
+    textMatch: List[QARunBucketStats]
 
 
 # ============================================================================
@@ -1538,6 +1549,7 @@ class Page(BaseMongoModel):
     ts: Optional[datetime] = None
     loadState: Optional[int] = None
     status: Optional[int] = None
+    mime: Optional[str] = None
 
     # manual review
     userid: Optional[UUID] = None
@@ -1566,11 +1578,3 @@ class PageOutWithSingleQA(Page):
     """Page out with single QA entry"""
 
     qa: Optional[PageQACompare] = None
-
-
-# ============================================================================
-class PagesAndResources(BaseModel):
-    """moage for qa configmap data, pages + resources"""
-
-    resources: List[CrawlFileOut] = []
-    pages: List[PageOut] = []

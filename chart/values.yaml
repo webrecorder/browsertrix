@@ -209,6 +209,9 @@ crawler_pull_policy: "Always"
 
 crawler_namespace: "crawlers"
 
+# if set, will restrict QA to image names that are >= than this value
+# min_qa_crawler_image: ""
+
 # optional: enable to use a persist volume claim for all crawls
 # can be enabled to use a multi-write shared filesystem
 # crawler_pv_claim: "nfs-shared-crawls"
@@ -247,12 +250,16 @@ crawler_extra_memory_per_browser: 768Mi
 #
 # profile_browser_cpu:
 
+# optional: set the workdir size for the profilebrowser pods
+# the workdir is used to store the browser profile data and other temporary files
+# profile_browser_workdir_size: 4Gi
+
 # Other Crawler Settings
 # ----------------------
 
 # minimum size allocated to each crawler
-# should be at least double crawl session size to ensure space for WACZ
-crawler_storage: "22Gi"
+# should be at least double crawl session size to ensure space for WACZ and browser profile data
+crawler_storage: "26Gi"
 
 # max size at which crawler will commit current crawl session
 crawler_session_size_limit_bytes: "10000000000"
@@ -265,6 +272,13 @@ crawler_liveness_port: 6065
 # optional: use socks5 proxy for crawler and profilebrowser
 # crawler_socks_proxy_host: 192.0.2.1
 # crawler_socks_proxy_port: 9050
+
+# optional: set the uid, gid and fsgroup for the crawler and profilebrowser pods
+# crawler_uid: 201400007
+# crawler_gid: 201400007
+# crawler_fsgroup: 201400007
+
+
 
 # time to wait for graceful stop
 grace_period: 1000

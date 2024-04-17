@@ -3,6 +3,7 @@
 # pylint: disable=too-many-lines
 
 import json
+import os
 import re
 import contextlib
 import urllib.parse
@@ -34,6 +35,7 @@ from .models import (
     QARun,
     QARunOut,
     QARunWithResources,
+    QARunAggregateStatsOut,
     DeleteQARunList,
     Organization,
     User,
@@ -63,6 +65,8 @@ class CrawlOps(BaseCrawlOps):
         self.crawl_configs.set_crawl_ops(self)
         self.colls.set_crawl_ops(self)
         self.event_webhook_ops.set_crawl_ops(self)
+
+        self.min_qa_crawler_image = os.environ.get("MIN_QA_CRAWLER_IMAGE")
 
     async def init_index(self):
         """init index for crawls db collection"""
@@ -165,6 +169,50 @@ class CrawlOps(BaseCrawlOps):
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject", "errors", "config"]},
+            {"$set": {"qaState": "$qa.state"}},
+            {"$set": {"activeQAState": "$qaState"}},
+            {
+                "$set": {
+                    "qaFinishedArray": {
+                        "$map": {
+                            "input": {"$objectToArray": "$qaFinished"},
+                            "in": "$$this.v",
+                        }
+                    }
+                }
+            },
+            {
+                "$set": {
+                    "sortedQARuns": {
+                        "$sortArray": {
+                            "input": "$qaFinishedArray",
+                            "sortBy": {"started": -1},
+                        }
+                    }
+                }
+            },
+            {"$set": {"lastQARun": {"$arrayElemAt": ["$sortedQARuns", 0]}}},
+            {"$set": {"lastQAState": "$lastQARun.state"}},
+            {
+                "$set": {
+                    "qaRunCount": {
+                        "$size": {
+                            "$cond": [
+                                {"$isArray": "$qaFinishedArray"},
+                                "$qaFinishedArray",
+                                [],
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "$unset": [
+                    "lastQARun",
+                    "qaFinishedArray",
+                    "sortedQARuns",
+                ]
+            },
         ]
 
         if not resources:
@@ -188,12 +236,21 @@ class CrawlOps(BaseCrawlOps):
                 "finished",
                 "fileSize",
                 "firstSeed",
+                "reviewStatus",
+                "qaRunCount",
+                "qaState",
             ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
-            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+            sort_query = {sort_by: sort_direction}
+
+            # Add secondary sort for qaState - sorted by current, then last
+            if sort_by == "qaState":
+                sort_query["lastQAState"] = sort_direction
+
+            aggregate.extend([{"$sort": sort_query}])
 
         aggregate.extend(
             [
@@ -681,6 +738,14 @@ class CrawlOps(BaseCrawlOps):
         if crawl.state not in SUCCESSFUL_STATES:
             raise HTTPException(status_code=400, detail="crawl_did_not_succeed")
 
+        # if set, can only QA if crawl image is >= min_qa_crawler_image
+        if (
+            self.min_qa_crawler_image
+            and crawl.image
+            and crawl.image < self.min_qa_crawler_image
+        ):
+            raise HTTPException(status_code=400, detail="qa_not_supported_for_crawl")
+
         # can only run one QA at a time
         if crawl.qa:
             raise HTTPException(status_code=400, detail="qa_already_running")
@@ -852,6 +917,23 @@ class CrawlOps(BaseCrawlOps):
         qa_run_dict["resources"] = resources
 
         return QARunWithResources(**qa_run_dict)
+
+    async def get_qa_run_aggregate_stats(
+        self,
+        crawl_id: str,
+        qa_run_id: str,
+        thresholds: Dict[str, List[float]],
+    ) -> QARunAggregateStatsOut:
+        """Get aggregate stats for QA run"""
+        screenshot_results = await self.page_ops.get_qa_run_aggregate_counts(
+            crawl_id, qa_run_id, thresholds, key="screenshotMatch"
+        )
+        text_results = await self.page_ops.get_qa_run_aggregate_counts(
+            crawl_id, qa_run_id, thresholds, key="textMatch"
+        )
+        return QARunAggregateStatsOut(
+            screenshotMatch=screenshot_results, textMatch=text_results
+        )
 
 
 # ============================================================================
@@ -1060,6 +1142,37 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         crawl_id, qa_run_id, org: Organization = Depends(org_viewer_dep)
     ):
         return await ops.get_qa_run_for_replay(crawl_id, qa_run_id, org)
+
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/stats",
+        tags=["qa"],
+        response_model=QARunAggregateStatsOut,
+    )
+    async def get_qa_run_aggregate_stats(
+        crawl_id,
+        qa_run_id,
+        screenshotThresholds: str,
+        textThresholds: str,
+        # pylint: disable=unused-argument
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        thresholds: Dict[str, List[float]] = {}
+        try:
+            thresholds["screenshotMatch"] = [
+                float(threshold) for threshold in screenshotThresholds.split(",")
+            ]
+            thresholds["textMatch"] = [
+                float(threshold) for threshold in textThresholds.split(",")
+            ]
+        # pylint: disable=broad-exception-caught,raise-missing-from
+        except Exception:
+            raise HTTPException(status_code=400, detail="invalid_thresholds")
+
+        return await ops.get_qa_run_aggregate_stats(
+            crawl_id,
+            qa_run_id,
+            thresholds,
+        )
 
     @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/start", tags=["qa"])
     async def start_crawl_qa_run(

@@ -551,6 +551,50 @@ class BaseCrawlOps:
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject", "errors", "config"]},
+            {"$set": {"qaState": "$qa.state"}},
+            {"$set": {"activeQAState": "$qaState"}},
+            {
+                "$set": {
+                    "qaFinishedArray": {
+                        "$map": {
+                            "input": {"$objectToArray": "$qaFinished"},
+                            "in": "$$this.v",
+                        }
+                    }
+                }
+            },
+            {
+                "$set": {
+                    "sortedQARuns": {
+                        "$sortArray": {
+                            "input": "$qaFinishedArray",
+                            "sortBy": {"started": -1},
+                        }
+                    }
+                }
+            },
+            {"$set": {"lastQARun": {"$arrayElemAt": ["$sortedQARuns", 0]}}},
+            {"$set": {"lastQAState": "$lastQARun.state"}},
+            {
+                "$set": {
+                    "qaRunCount": {
+                        "$size": {
+                            "$cond": [
+                                {"$isArray": "$qaFinishedArray"},
+                                "$qaFinishedArray",
+                                [],
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "$unset": [
+                    "lastQARun",
+                    "qaFinishedArray",
+                    "sortedQARuns",
+                ]
+            },
         ]
 
         if not resources:
@@ -569,12 +613,25 @@ class BaseCrawlOps:
             aggregate.extend([{"$match": {"collectionIds": {"$in": [collection_id]}}}])
 
         if sort_by:
-            if sort_by not in ("started", "finished", "fileSize"):
+            if sort_by not in (
+                "started",
+                "finished",
+                "fileSize",
+                "reviewStatus",
+                "qaRunCount",
+                "qaState",
+            ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
-            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+            sort_query = {sort_by: sort_direction}
+
+            # Add secondary sort for qaState - sorted by current, then last
+            if sort_by == "qaState":
+                sort_query["lastQAState"] = sort_direction
+
+            aggregate.extend([{"$sort": sort_query}])
 
         aggregate.extend(
             [

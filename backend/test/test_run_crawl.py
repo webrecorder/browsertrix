@@ -289,7 +289,7 @@ def test_update_crawl(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}",
         headers=admin_auth_headers,
         json={
-            "reviewStatus": "good",
+            "reviewStatus": 5,
         },
     )
     assert r.status_code == 200
@@ -301,7 +301,45 @@ def test_update_crawl(
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["reviewStatus"] == "good"
+    assert r.json()["reviewStatus"] == 5
+
+    # Test sorting on reviewStatus
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=reviewStatus",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    assert crawls[0]["id"] == admin_crawl_id
+    assert crawls[0]["reviewStatus"] == 5
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=reviewStatus&sortDirection=1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    assert crawls[-1]["id"] == admin_crawl_id
+    assert crawls[-1]["reviewStatus"] == 5
+
+    # Test sorting on reviewStatus for all-crawls
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=reviewStatus",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    assert crawls[0]["id"] == admin_crawl_id
+    assert crawls[0]["reviewStatus"] == 5
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=reviewStatus&sortDirection=1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    assert crawls[-1]["id"] == admin_crawl_id
+    assert crawls[-1]["reviewStatus"] == 5
 
     # Try to update to invalid reviewStatus
     r = requests.patch(
@@ -318,7 +356,7 @@ def test_update_crawl(
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
-    assert r.json()["reviewStatus"] == "good"
+    assert r.json()["reviewStatus"] == 5
 
     # Verify deleting works as well
     r = requests.patch(
@@ -435,6 +473,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
         assert page.get("title") or page.get("title") is None
         assert page["loadState"]
         assert page["status"]
+        assert page["mime"]
 
     # Test GET page endpoint
     global page_id
@@ -453,6 +492,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page["ts"]
     assert page.get("title") or page.get("title") is None
     assert page["loadState"]
+    assert page["mime"]
 
     assert page["notes"] == []
     assert page.get("userid") is None
@@ -550,6 +590,7 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     assert page["ts"]
     assert page.get("title") or page.get("title") is None
     assert page["loadState"]
+    assert page["mime"]
 
     assert page["notes"] == []
     assert page["userid"]
@@ -626,6 +667,7 @@ def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_
         assert page.get("title") or page.get("title") is None
         assert page["loadState"]
         assert page["status"]
+        assert page["mime"]
 
     # Ensure only superuser can re-add pages for all crawls in an org
     r = requests.post(

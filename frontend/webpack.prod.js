@@ -1,7 +1,11 @@
+// @ts-check
+
+const ESLintPlugin = require("eslint-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const { merge } = require("webpack-merge");
 
-const [main, vnc] = require("./webpack.config.js");
+const baseConfigs = require("./webpack.config.js");
+const [main, vnc] = baseConfigs;
 
 module.exports = [
   merge(main, {
@@ -26,6 +30,12 @@ module.exports = [
         }),
       ],
     },
+    plugins: [
+      new ESLintPlugin({
+        failOnWarning: true,
+        extensions: ["ts", "js"],
+      }),
+    ],
   }),
   {
     ...vnc,
