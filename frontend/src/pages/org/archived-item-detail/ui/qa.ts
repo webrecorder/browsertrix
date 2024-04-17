@@ -89,6 +89,9 @@ const labelForCrawlReview = (severity: ArchivedItem["reviewStatus"]) => {
   }
 };
 
+const notApplicable = () =>
+  html`<span class="text-neutral-400">${msg("n/a")}</span>`;
+
 function statusWithIcon(
   icon: TemplateResult<1>,
   label: string | TemplateResult<1>,
@@ -224,7 +227,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
               () =>
                 this.mostRecentNonFailedQARun && this.crawl?.qaCrawlExecSeconds
                   ? humanizeExecutionSeconds(this.crawl.qaCrawlExecSeconds)
-                  : html`<span class="text-neutral-400">${msg("N/A")}</span>`,
+                  : notApplicable(),
 
               this.renderLoadingDetail,
             )}
@@ -389,15 +392,19 @@ export class ArchivedItemDetailQA extends TailwindElement {
             ></sl-format-date>
           </btrix-table-cell>
           <btrix-table-cell>
-            <sl-format-date
-              lang=${getLocale()}
-              date=${`${run.finished}Z`}
-              month="2-digit"
-              day="2-digit"
-              year="2-digit"
-              hour="2-digit"
-              minute="2-digit"
-            ></sl-format-date>
+            ${run.finished
+              ? html`
+                  <sl-format-date
+                    lang=${getLocale()}
+                    date=${`${run.finished}Z`}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="2-digit"
+                    minute="2-digit"
+                  ></sl-format-date>
+                `
+              : notApplicable()}
           </btrix-table-cell>
           <btrix-table-cell>${run.userName}</btrix-table-cell>
           <btrix-table-cell class="px-1">
