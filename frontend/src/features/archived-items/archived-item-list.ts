@@ -169,7 +169,10 @@ export class ArchivedItemListItem extends TailwindElement {
               : html`<div>${rowName}</div>`}
         </btrix-table-cell>
         <btrix-table-cell>
-          <sl-tooltip content=${msg(str`By ${this.item.userName}`)}>
+          <sl-tooltip
+            content=${msg(str`By ${this.item.userName}`)}
+            @click=${this.onTooltipClick}
+          >
             <sl-format-date
               lang=${getLocale()}
               class="truncate"
@@ -189,6 +192,7 @@ export class ArchivedItemListItem extends TailwindElement {
               unit: "byte",
               unitDisplay: "long",
             })}
+            @click=${this.onTooltipClick}
           >
             <sl-format-bytes
               class="truncate"
