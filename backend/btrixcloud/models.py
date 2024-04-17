@@ -1529,6 +1529,7 @@ class Page(BaseMongoModel):
     ts: Optional[datetime] = None
     loadState: Optional[int] = None
     status: Optional[int] = None
+    mime: Optional[str] = None
 
     # manual review
     userid: Optional[UUID] = None
