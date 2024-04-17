@@ -1062,7 +1062,9 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         return await ops.get_qa_run_for_replay(crawl_id, qa_run_id, org)
 
     @app.get("/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/download", tags=["qa"])
-    async def download_crawl(crawl_id: str, qa_run_id: str, org: Organization):
+    async def download_crawl(
+        crawl_id: str, qa_run_id: str, org: Organization = Depends(org_crawl_dep)
+    ):
         """Download all WACZs in the crawl as streaming nested WACZ, if more than one"""
         qa_run = await ops.get_qa_run_for_replay(crawl_id, qa_run_id, org)
 

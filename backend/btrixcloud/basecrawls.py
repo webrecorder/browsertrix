@@ -802,7 +802,7 @@ def init_base_crawls_api(app, user_dep, *args):
         return await ops.get_crawl_out(crawl_id, org)
 
     @app.get("/orgs/{oid}/crawls/{crawl_id}/download", tags=["crawls"])
-    async def download_crawl(crawl_id: str, org: Organization):
+    async def download_crawl(crawl_id: str, org: Organization = Depends(org_crawl_dep)):
         """Download all WACZs in the crawl as streaming nested WACZ, if more than one"""
         crawl = await ops.get_crawl_out(crawl_id, org)
 
