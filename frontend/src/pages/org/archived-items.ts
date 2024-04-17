@@ -19,7 +19,12 @@ import LiteElement, { html } from "@/utils/LiteElement";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;
 type SearchFields = "name" | "firstSeed";
-type SortField = "finished" | "fileSize";
+type SortField =
+  | "finished"
+  | "fileSize"
+  | "reviewStatus"
+  | "qaRunCount"
+  | "qaState";
 type SortDirection = "asc" | "desc";
 
 const ABORT_REASON_THROTTLE = "throttled";
@@ -35,6 +40,18 @@ const sortableFields: Record<
   },
   fileSize: {
     label: msg("Size"),
+    defaultDirection: "desc",
+  },
+  reviewStatus: {
+    label: msg("QA Rating"),
+    defaultDirection: "desc",
+  },
+  qaState: {
+    label: msg("Analysis Run State"),
+    defaultDirection: "desc",
+  },
+  qaRunCount: {
+    label: msg("# of Analysis Runs"),
     defaultDirection: "desc",
   },
 };
@@ -372,7 +389,7 @@ export class CrawlsList extends LiteElement {
     );
     return html`
       <sl-select
-        class="flex-1 md:w-[10rem]"
+        class="flex-1 md:w-[24ch]"
         size="small"
         pill
         value=${this.orderBy.field}

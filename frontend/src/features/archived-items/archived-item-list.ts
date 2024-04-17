@@ -332,7 +332,7 @@ export class ArchivedItemList extends TailwindElement {
       {
         cssCol: "12rem",
         cell: html`<btrix-table-header-cell>
-          ${msg("Created")}
+          ${msg("Date Created")}
         </btrix-table-header-cell>`,
       },
       {
@@ -353,7 +353,7 @@ export class ArchivedItemList extends TailwindElement {
         {
           cssCol: "1fr",
           cell: html`<btrix-table-header-cell>
-            ${msg("Crawl Rating")}
+            ${msg("QA Rating")}
           </btrix-table-header-cell>`,
         },
         {

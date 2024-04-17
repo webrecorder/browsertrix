@@ -167,7 +167,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 </btrix-desc-list-item>
               `
             : ""}
-          <btrix-desc-list-item label=${msg("Crawl Rating")}>
+          <btrix-desc-list-item label=${msg("QA Rating")}>
             ${when(
               this.crawl,
               (crawl) =>
