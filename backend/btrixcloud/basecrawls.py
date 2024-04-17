@@ -627,9 +627,11 @@ class BaseCrawlOps:
 
             sort_query = {sort_by: sort_direction}
 
-            # Add secondary sort for qaState - sorted by current, then last
+            # Secondary sort for qaState - sorted by current, then last
+            # Tertiary sort for qaState - type, always ascending so crawls are first
             if sort_by == "qaState":
                 sort_query["lastQAState"] = sort_direction
+                sort_query["type"] = 1
 
             aggregate.extend([{"$sort": sort_query}])
 
