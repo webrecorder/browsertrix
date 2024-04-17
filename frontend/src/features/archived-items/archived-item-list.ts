@@ -211,7 +211,7 @@ export class ArchivedItemListItem extends TailwindElement {
                         )} crawled, ${formatNumber(this.item.stats?.found ? +this.item.stats.found : 0)} found`,
                       )}
                     >
-                      <div>
+                      <div class="min-w-4">
                         ${formatNumber(
                           this.item.stats?.done ? +this.item.stats.done : 0,
                           {
@@ -242,14 +242,16 @@ export class ArchivedItemListItem extends TailwindElement {
                   ? notApplicable
                   : html`<sl-tooltip
                       @click=${this.onTooltipClick}
-                      content=${msg(
-                        str`${formatNumber((this.item as Crawl).qaRunCount)} QA analysis run(s)`,
-                      )}
+                      content=${(this.item as Crawl).activeQAState
+                        ? msg("Analysis is currently running")
+                        : (this.item as Crawl).lastQAState
+                          ? msg(
+                              str`Latest analysis status: ${CrawlStatus.getContent((this.item as Crawl).lastQAState!).label}`,
+                            )
+                          : msg("No analysis runs")}
                     >
-                      <div>
-                        ${formatNumber((this.item as Crawl).qaRunCount, {
-                          notation: "compact",
-                        })}
+                      <div class="min-w-4">
+                        ${formatNumber((this.item as Crawl).qaRunCount)}
                       </div>
                     </sl-tooltip>`}
               </btrix-table-cell>

@@ -47,7 +47,7 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
   qaState: {
-    label: msg("Analysis Run State"),
+    label: msg("Latest Analysis Status"),
     defaultDirection: "desc",
   },
   qaRunCount: {
