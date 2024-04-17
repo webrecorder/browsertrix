@@ -43,7 +43,7 @@ data:
   FAST_RETRY_SECS: "{{ .Values.operator_fast_resync_secs | default 3 }}"
 
   MAX_CRAWL_SCALE: "{{ .Values.max_crawl_scale | default 3 }}"
-  
+
   LOG_FAILED_CRAWL_LINES: "{{ .Values.log_failed_crawl_lines | default 0 }}"
 
   IS_LOCAL_MINIO: "{{ .Values.minio_local }}"
@@ -78,7 +78,7 @@ data:
   config.yaml: |
     namespace: {{ .Values.crawler_namespace }}
     termination_grace_secs: "{{ .Values.grace_period_secs | default 600 }}"
- 
+
     volume_storage_class: "{{ .Values.volume_storage_class }}"
 
     # redis
@@ -106,13 +106,19 @@ data:
     crawler_memory: "{{ .Values.crawler_memory }}"
 
     crawler_storage: "{{ .Values.crawler_storage }}"
- 
+
     volume_storage_class: "{{ .Values.volume_storage_class }}"
 
     crawler_liveness_port: "{{ .Values.crawler_liveness_port | default 0 }}"
 
     crawler_socks_proxy_host: "{{ .Values.crawler_socks_proxy_host }}"
     crawler_socks_proxy_port: "{{ .Values.crawler_socks_proxy_port }}"
+
+    crawler_uid: "{{ .Values.crawler_uid | default 201400007 }}"
+    crawler_gid: "{{ .Values.crawler_gid | default 201400007 }}"
+    crawler_fsgroup: "{{ .Values.crawler_fsgroup | default 201400007 }}"
+
+    profile_browser_workdir_size: "{{ .Values.profile_browser_workdir_size | default "4Gi" }}"
 
     crawler_node_type: "{{ .Values.crawler_node_type }}"
     redis_node_type: "{{ .Values.redis_node_type }}"

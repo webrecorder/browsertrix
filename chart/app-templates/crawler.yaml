@@ -49,6 +49,14 @@ spec:
 
   restartPolicy: OnFailure
 
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: {{ crawler_uid}}
+    runAsGroup: {{ crawler_gid}}
+    fsGroup: {{ crawler_fsgroup }}
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+
   terminationGracePeriodSeconds: {{ termination_grace_secs }}
   volumes:
     - name: crawl-config
@@ -61,6 +69,7 @@ spec:
     - name: crawl-data
       persistentVolumeClaim:
         claimName: {{ name }}
+
 
   affinity:
 {% if crawler_node_type %}
@@ -132,7 +141,6 @@ spec:
 
         - name: crawl-data
           mountPath: /crawls
-
       envFrom:
         - configMapRef:
             name: shared-crawler-config
@@ -146,6 +154,9 @@ spec:
       {% endif %}
 
       env:
+        - name: HOME
+          value: /crawls/home
+
         - name: CRAWL_ID
           value: "{{ id }}"
 
