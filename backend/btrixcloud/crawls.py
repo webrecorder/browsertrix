@@ -1057,9 +1057,23 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         response_model=QARunWithResources,
     )
     async def get_qa_run(
-        crawl_id, qa_run_id, org: Organization = Depends(org_viewer_dep)
+        crawl_id: str, qa_run_id: str, org: Organization = Depends(org_viewer_dep)
     ):
         return await ops.get_qa_run_for_replay(crawl_id, qa_run_id, org)
+
+    @app.get("/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/download", tags=["qa"])
+    async def download_crawl(crawl_id: str, qa_run_id: str, org: Organization):
+        """Download all WACZs in the crawl as streaming nested WACZ, if more than one"""
+        qa_run = await ops.get_qa_run_for_replay(crawl_id, qa_run_id, org)
+
+        resp = await ops.storage_ops.download_streaming_wacz(
+            org, qa_run.resources or []
+        )
+
+        headers = {"Content-Disposition": f'attachment; filename="{qa_run_id}.wacz"'}
+        return StreamingResponse(
+            resp, headers=headers, media_type="application/wacz+zip"
+        )
 
     @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/start", tags=["qa"])
     async def start_crawl_qa_run(

@@ -8,6 +8,7 @@ import urllib.parse
 
 import asyncio
 from fastapi import HTTPException, Depends
+from fastapi.responses import StreamingResponse
 
 from .models import (
     CrawlFile,
@@ -799,6 +800,18 @@ def init_base_crawls_api(app, user_dep, *args):
     )
     async def get_crawl_out(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_out(crawl_id, org)
+
+    @app.get("/orgs/{oid}/crawls/{crawl_id}/download", tags=["crawls"])
+    async def download_crawl(crawl_id: str, org: Organization):
+        """Download all WACZs in the crawl as streaming nested WACZ, if more than one"""
+        crawl = await ops.get_crawl_out(crawl_id, org)
+
+        resp = await ops.storage_ops.download_streaming_wacz(org, crawl.resources or [])
+
+        headers = {"Content-Disposition": f'attachment; filename="{crawl_id}.wacz"'}
+        return StreamingResponse(
+            resp, headers=headers, media_type="application/wacz+zip"
+        )
 
     @app.patch("/orgs/{oid}/all-crawls/{crawl_id}", tags=["all-crawls"])
     async def update_crawl(
