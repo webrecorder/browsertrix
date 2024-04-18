@@ -905,7 +905,7 @@ export class ArchivedItemQA extends TailwindElement {
           if (mime.includes("html")) {
             resType = "html";
           }
-          if (url.includes("favicon.ico")) {
+          if (url.endsWith("favicon.ico")) {
             resType = "favicon";
           }
           if (!mime) {
