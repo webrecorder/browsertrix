@@ -553,6 +553,7 @@ class BaseCrawlOps:
             {"$unset": ["firstSeedObject", "errors", "config"]},
             {"$set": {"qaState": "$qa.state"}},
             {"$set": {"activeQAState": "$qaState"}},
+            {"$set": {"activeQAStats": "$qa.stats"}},
             {
                 "$set": {
                     "qaFinishedArray": {
