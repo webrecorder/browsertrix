@@ -426,7 +426,7 @@ export class ArchivedItemQA extends TailwindElement {
               ?active=${this.tab === "screenshots"}
               @click=${this.onTabNavClick}
             >
-              <sl-icon name="camera-fill"></sl-icon>
+              <sl-icon name="images"></sl-icon>
               ${msg("Screenshots")}
               ${when(this.page?.qa || currentPage?.qa, (qa) =>
                 renderSeverityBadge(qa.screenshotMatch),
