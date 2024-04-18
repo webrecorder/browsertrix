@@ -450,7 +450,7 @@ export class ArchivedItemQA extends TailwindElement {
               ?active=${this.tab === "resources"}
               @click=${this.onTabNavClick}
             >
-              <sl-icon name="database"></sl-icon>
+              <sl-icon name="server"></sl-icon>
               ${msg("Resources")}
             </btrix-navigation-button>
             <btrix-navigation-button
