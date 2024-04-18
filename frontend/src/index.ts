@@ -256,9 +256,9 @@ export class App extends LiteElement {
     }
 
     return html`
-      <div class="border-b">
+      <div class="border-b bg-neutral-50">
         <nav
-          class="mx-auto box-border flex h-12 max-w-screen-desktop items-center justify-between pl-3"
+          class="mx-auto box-border flex h-12 items-center justify-between px-3 xl:pl-6"
         >
           <a
             aria-label="home"
