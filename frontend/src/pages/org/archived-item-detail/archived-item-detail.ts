@@ -140,8 +140,7 @@ export class ArchivedItemDetail extends TailwindElement {
     return `${this.navigate.orgBasePath}/${path}`;
   }
 
-  // TODO localize
-  private readonly numberFormatter = new Intl.NumberFormat();
+  private readonly numberFormatter = new Intl.NumberFormat(getLocale());
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);

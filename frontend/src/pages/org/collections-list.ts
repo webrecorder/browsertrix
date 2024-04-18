@@ -107,8 +107,7 @@ export class CollectionsList extends LiteElement {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
 
-  // TODO localize
-  private readonly numberFormatter = new Intl.NumberFormat(undefined, {
+  private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
     notation: "compact",
   });
 

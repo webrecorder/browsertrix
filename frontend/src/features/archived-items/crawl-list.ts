@@ -66,8 +66,7 @@ export class CrawlListItem extends TailwindElement {
   @query("btrix-overflow-dropdown")
   dropdownMenu!: OverflowDropdown;
 
-  // TODO localize
-  private readonly numberFormatter = new Intl.NumberFormat(undefined, {
+  private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
     notation: "compact",
   });
 

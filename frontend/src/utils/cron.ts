@@ -1,6 +1,7 @@
 import { parseCron } from "@cheap-glitch/mi-cron";
 import { msg, str } from "@lit/localize";
 
+import { getLocale } from "./localization";
 import * as numberUtils from "./number";
 
 export const getNextDate = parseCron.nextDate;
@@ -91,7 +92,7 @@ export function humanizeSchedule(
         intervalMsg = msg(str`Every ${formattedWeekDay}`);
         break;
       case "monthly": {
-        const { format } = numberFormatter();
+        const { format } = numberFormatter(getLocale());
         intervalMsg = msg(
           str`Monthly on the ${format(days[0], { ordinal: true })}`,
         );

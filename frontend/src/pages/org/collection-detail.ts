@@ -65,8 +65,7 @@ export class CollectionDetail extends LiteElement {
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
 
-  // TODO localize
-  private readonly numberFormatter = new Intl.NumberFormat(undefined, {
+  private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
     notation: "compact",
   });
 

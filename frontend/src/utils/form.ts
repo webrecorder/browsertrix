@@ -1,8 +1,10 @@
 import { msg, str } from "@lit/localize";
 import type { SlInput, SlTextarea } from "@shoelace-style/shoelace";
 
+import { getLocale } from "./localization";
+
 // TODO localize
-const numberFormatter = new Intl.NumberFormat(undefined);
+const numberFormatter = new Intl.NumberFormat(getLocale());
 
 export type MaxLengthValidator = {
   helpText: string;

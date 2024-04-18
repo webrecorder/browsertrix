@@ -213,7 +213,7 @@ export class WorkflowListItem extends LitElement {
 
   private readonly navigate = new NavigateController(this);
 
-  private readonly numberFormatter = numberFormatter(undefined, {
+  private readonly numberFormatter = numberFormatter(getLocale(), {
     notation: "compact",
   });
 

@@ -67,6 +67,7 @@ import {
 } from "@/utils/cron";
 import { maxLengthValidator } from "@/utils/form";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { getLocale } from "@/utils/localization";
 import { regexEscape, regexUnescape } from "@/utils/string";
 
 type NewCrawlConfigParams = WorkflowParams & {
@@ -214,7 +215,7 @@ const getDefaultFormState = (): FormState => ({
 function getLocalizedWeekDays() {
   const now = new Date();
   // TODO accept locale from locale-picker
-  const { format } = new Intl.DateTimeFormat(undefined, { weekday: "short" });
+  const { format } = new Intl.DateTimeFormat(getLocale(), { weekday: "short" });
   return Array.from({ length: 7 }).map((x, day) =>
     format(Date.now() - (now.getDay() - day) * 86400000),
   );
