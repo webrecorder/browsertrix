@@ -252,6 +252,7 @@ class RawCrawlConfig(BaseModel):
     behaviorTimeout: Optional[int]
     pageLoadTimeout: Optional[int]
     pageExtraDelay: Optional[int] = 0
+    postLoadDelay: Optional[int] = 0
 
     workers: Optional[int] = None
 
