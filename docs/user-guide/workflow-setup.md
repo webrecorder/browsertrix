@@ -134,6 +134,10 @@ Increasing the amount of crawler instances will speed up crawls by using additio
 
 Limits amount of elapsed time to wait for a page to load. Behaviors will run after this timeout only if the page is partially or fully loaded.
 
+### Delay After Page Load
+
+Waits on the page after initial page load for a set number of seconds prior to moving on to link extraction, behaviors, screenshots, and text extraction. This can be useful with pages that are slow to display page contents.
+
 ### Behavior Timeout
 
 Limits amount of elapsed time behaviors have to complete.
