@@ -459,7 +459,7 @@ export class ArchivedItemQA extends TailwindElement {
               ?active=${this.tab === "replay"}
               @click=${this.onTabNavClick}
             >
-              <sl-icon name="link-replay" library="app"></sl-icon>
+              <sl-icon name="replaywebpage" library="app"></sl-icon>
               ${msg("Replay")}
             </btrix-navigation-button>
           </nav>

@@ -26,6 +26,7 @@ import appState, { AppStateService, use } from "./utils/state";
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
 import { theme } from "@/theme";
+import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
 import "./shoelace";
 import "./components";
@@ -255,25 +256,22 @@ export class App extends LiteElement {
     }
 
     return html`
-      <div class="border-b">
+      <div class="border-b bg-neutral-50">
         <nav
-          class="mx-auto box-border flex h-12 max-w-screen-desktop items-center justify-between pl-3"
+          class="mx-auto box-border flex h-12 items-center justify-between px-3 xl:pl-6"
         >
-          <div>
-            <a
-              class="text-sm font-medium hover:text-neutral-400"
-              href=${homeHref}
-              @click=${(e: MouseEvent) => {
-                if (isAdmin) {
-                  this.clearSelectedOrg();
-                }
-                this.navLink(e);
-              }}
-            >
-              ${msg("Browsertrix")}
-            </a>
-          </div>
-
+          <a
+            aria-label="home"
+            href=${homeHref}
+            @click=${(e: MouseEvent) => {
+              if (isAdmin) {
+                this.clearSelectedOrg();
+              }
+              this.navLink(e);
+            }}
+          >
+            <img class="h-6" alt="Browsertrix logo" src=${brandLockupColor} />
+          </a>
           ${isAdmin
             ? html`
                 <div

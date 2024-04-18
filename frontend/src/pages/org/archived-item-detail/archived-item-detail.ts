@@ -491,7 +491,7 @@ export class ArchivedItemDetail extends TailwindElement {
         ${renderNavItem({
           section: "replay",
           iconLibrary: "app",
-          icon: "link-replay",
+          icon: "replaywebpage",
           label: msg("Replay"),
         })}
         ${renderNavItem({
@@ -924,7 +924,7 @@ ${this.crawl?.description}
                         class="h-4 shrink-0 pr-2 text-neutral-600"
                       ></sl-icon>
                       <a
-                        class="mr-2 truncate text-primary hover:underline"
+                        class="mr-2 truncate text-blue-600 hover:text-blue-500 hover:underline"
                         href=${file.path}
                         download
                         title=${file.name}
