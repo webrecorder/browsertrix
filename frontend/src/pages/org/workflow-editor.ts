@@ -1604,7 +1604,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       `)}
       ${this.renderHelpTextCol(
         msg(
-          `Waits on the page after initial page load prior to moving on to link extraction, behaviors, screenshots, and text extraction. Can be useful with pages that are slow to load content.`,
+          `Waits on the page after initial HTML page load prior to moving on to next steps such as link extraction and behaviors. Can be useful with pages that are slow to load page contents.`,
         ),
       )}
       ${this.renderFormCol(html`

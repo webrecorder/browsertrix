@@ -136,7 +136,7 @@ Limits amount of elapsed time to wait for a page to load. Behaviors will run aft
 
 ### Delay After Page Load
 
-Waits on the page after initial page load for a set number of seconds prior to moving on to link extraction, behaviors, screenshots, and text extraction. This can be useful with pages that are slow to display page contents.
+Waits on the page after initial HTML page load for a set number of seconds prior to moving on to next steps such as link extraction and behaviors. Can be useful with pages that are slow to load page contents.
 
 ### Behavior Timeout
 
