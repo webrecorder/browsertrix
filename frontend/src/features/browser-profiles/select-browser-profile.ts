@@ -8,6 +8,7 @@ import type { Profile } from "@/pages/org/types";
 import type { APIPaginatedList } from "@/types/api";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement from "@/utils/LiteElement";
+import { getLocale } from "@/utils/localization";
 
 type SelectBrowserProfileChangeDetail = {
   value: Profile | undefined;
@@ -83,6 +84,7 @@ export class SelectBrowserProfile extends LiteElement {
               <div slot="suffix">
                 <div class="text-xs">
                   <sl-format-date
+                    lang=${getLocale()}
                     date=${`${profile.created}Z` /** Z for UTC */}
                     month="2-digit"
                     day="2-digit"
@@ -116,6 +118,7 @@ export class SelectBrowserProfile extends LiteElement {
         <span>
           ${msg("Last edited:")}
           <sl-format-date
+            lang=${getLocale()}
             date=${`${this.selectedProfile.created}Z` /** Z for UTC */}
             month="2-digit"
             day="2-digit"

@@ -27,6 +27,7 @@ import { RelativeDuration } from "@/components/ui/relative-duration";
 import { NavigateController } from "@/controllers/navigate";
 import type { Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
+import { getLocale } from "@/utils/localization";
 
 /**
  * @slot menu
@@ -82,6 +83,7 @@ export class CrawlListItem extends TailwindElement {
           ${this.safeRender(
             (crawl) => html`
               <sl-format-date
+                lang=${getLocale()}
                 date=${`${crawl.started}Z`}
                 month="2-digit"
                 day="2-digit"
@@ -150,6 +152,7 @@ export class CrawlListItem extends TailwindElement {
                 ${this.safeRender(
                   (crawl) => html`
                     <sl-format-date
+                      lang=${getLocale()}
                       date=${`${crawl.started}Z`}
                       month="2-digit"
                       day="2-digit"
@@ -166,6 +169,7 @@ export class CrawlListItem extends TailwindElement {
             crawl.finished
               ? html`
                   <sl-format-date
+                    lang=${getLocale()}
                     date=${`${crawl.finished}Z`}
                     month="2-digit"
                     day="2-digit"

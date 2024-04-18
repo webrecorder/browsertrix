@@ -10,6 +10,7 @@ import type { SelectNewDialogEvent } from ".";
 import type { AuthState } from "@/utils/AuthService";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { getLocale } from "@/utils/localization";
 import type { OrgData, YearMonth } from "@/utils/orgs";
 
 type Metrics = {
@@ -786,6 +787,7 @@ export class Dashboard extends LiteElement {
         const tableRows = [
           html`
             <sl-format-date
+              lang=${getLocale()}
               date="${mY}-15T00:00:00.000Z"
               time-zone="utc"
               month="long"

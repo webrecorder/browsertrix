@@ -42,6 +42,7 @@ import type { ArchivedItem } from "@/types/crawler";
 import type { ArchivedItemQAPage, QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive, renderName } from "@/utils/crawler";
+import { getLocale } from "@/utils/localization";
 
 const DEFAULT_PAGE_SIZE = 100;
 
@@ -696,6 +697,7 @@ export class ArchivedItemQA extends TailwindElement {
             this.page,
             (page) => html`
               <sl-format-date
+                lang=${getLocale()}
                 class="font-monostyle text-xs text-neutral-500"
                 date=${`${page.ts}Z`}
                 month="2-digit"
