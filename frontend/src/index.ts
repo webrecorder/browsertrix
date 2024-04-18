@@ -260,22 +260,18 @@ export class App extends LiteElement {
         <nav
           class="mx-auto box-border flex h-12 max-w-screen-desktop items-center justify-between pl-3"
         >
-          <div>
-            <a
-              aria-label="home"
-              class="text-sm font-medium hover:text-neutral-400"
-              href=${homeHref}
-              @click=${(e: MouseEvent) => {
-                if (isAdmin) {
-                  this.clearSelectedOrg();
-                }
-                this.navLink(e);
-              }}
-            >
-              <img class="h-6" alt="Browsertrix logo" src=${brandLockupColor} />
-            </a>
-          </div>
-
+          <a
+            aria-label="home"
+            href=${homeHref}
+            @click=${(e: MouseEvent) => {
+              if (isAdmin) {
+                this.clearSelectedOrg();
+              }
+              this.navLink(e);
+            }}
+          >
+            <img class="h-6" alt="Browsertrix logo" src=${brandLockupColor} />
+          </a>
           ${isAdmin
             ? html`
                 <div
