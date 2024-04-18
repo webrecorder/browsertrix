@@ -26,6 +26,7 @@ export type SeedConfig = Expand<
     behaviorTimeout: number | null;
     pageLoadTimeout: number | null;
     pageExtraDelay: number | null;
+    postLoadDelay: number | null;
     behaviors?: string | null;
     extraHops?: number | null;
     useSitemap?: boolean;
