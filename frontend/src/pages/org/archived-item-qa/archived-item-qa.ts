@@ -887,9 +887,6 @@ export class ArchivedItemQA extends TailwindElement {
         let good = 0,
           bad = 0;
 
-        // Initialize favicon so it shows even if only present in replay
-        typeMap.set("favicon", { good: 0, bad: 0 });
-
         for (const [url, entry] of Object.entries(json.urls)) {
           const { mime = "", status = 0 } = entry;
           let resType = mime.split("/")[0];
@@ -910,6 +907,9 @@ export class ArchivedItemQA extends TailwindElement {
           }
           if (url.includes("favicon.ico")) {
             resType = "favicon";
+          }
+          if (!mime) {
+            resType = "other";
           }
 
           if (!typeMap.has(resType)) {
