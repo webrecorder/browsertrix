@@ -19,6 +19,7 @@ import("./language-select");
 import("./locale-picker");
 import("./markdown-editor");
 import("./markdown-viewer");
+import("./menu-item-link");
 import("./meter");
 import("./numbered-list");
 import("./overflow-dropdown");

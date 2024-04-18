@@ -10,7 +10,6 @@ import {
   severityFromMatch,
 } from "../helpers";
 import { approvalFromPage } from "../helpers/reviewStatus";
-import { type SortableFieldNames } from "../page-list";
 
 import { animateTo, shimKeyframesHeightAuto } from "./animate";
 import { pageDetails } from "./page-details";
@@ -25,7 +24,7 @@ export class QaPage extends TailwindElement {
   page?: ArchivedItemQAPage;
 
   @property({ type: String })
-  statusField: SortableFieldNames = "screenshotMatch";
+  statusField: "textMatch" | "screenshotMatch" | "approved" = "screenshotMatch";
 
   @property({ type: Boolean })
   selected = false;

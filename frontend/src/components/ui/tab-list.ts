@@ -1,4 +1,4 @@
-import { css, html, LitElement, type PropertyValues } from "lit";
+import { css, html, type PropertyValues } from "lit";
 import { customElement, property, queryAsync } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
@@ -77,7 +77,7 @@ type TabElement = Tab & HTMLElement;
 type TabPanelElement = TabPanel & HTMLElement;
 
 @customElement("btrix-tab-list")
-export class TabList extends LitElement {
+export class TabList extends TailwindElement {
   static styles = css`
     :host {
       --track-width: 4px;
@@ -228,7 +228,7 @@ export class TabList extends LitElement {
   render() {
     return html`
       <div class="container">
-        <div class="navWrapper">${this.renderNav()}</div>
+        <div class="navWrapper min-w-0">${this.renderNav()}</div>
         <div class="header"><slot name="header"></slot></div>
         <div class="content">
           <slot></slot>
@@ -247,13 +247,13 @@ export class TabList extends LitElement {
           class="nav ${this.progressPanel ? "linear" : "nonlinear"} ${this
             .hideIndicator
             ? "hide-indicator"
-            : "show-indicator"}"
+            : "show-indicator"} -m-3 overflow-x-hidden p-3"
         >
           <div class="track" role="presentation">
             <div class="indicator" role="presentation"></div>
           </div>
 
-          <ul class="tablist" role="tablist">
+          <ul class="tablist -m-3 overflow-x-auto p-3" role="tablist">
             <slot name="nav"></slot>
           </ul>
         </div>

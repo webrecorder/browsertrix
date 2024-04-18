@@ -127,6 +127,15 @@ export type CrawlState =
   | "stopped_by_user"
   | "stopped_quota_reached";
 
+// TODO maybe convert this to an enum?
+export enum ReviewStatus {
+  Bad = 1,
+  Poor = 2,
+  Fair = 3,
+  Good = 4,
+  Excellent = 5,
+}
+
 type ArchivedItemBase = {
   id: string;
   userid: string;
@@ -147,7 +156,7 @@ type ArchivedItemBase = {
   tags: string[];
   crawlExecSeconds: number;
   qaCrawlExecSeconds: number;
-  reviewStatus?: number;
+  reviewStatus?: ReviewStatus;
 };
 
 export type Crawl = ArchivedItemBase &
