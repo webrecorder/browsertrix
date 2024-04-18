@@ -35,7 +35,7 @@ function renderDiff(
         class="${tw`font-semibold`} ${crawlResources[TOTAL].good !==
         qaResources[TOTAL].good
           ? tw`text-danger`
-          : tw`text-success`}"
+          : tw`text-neutral-700`}"
       >
         ${qaResources[TOTAL].good.toLocaleString()}
       </span>`,
@@ -43,7 +43,7 @@ function renderDiff(
         class="${tw`font-semibold`} ${crawlResources[TOTAL].bad !==
         qaResources[TOTAL].bad
           ? tw`text-danger`
-          : tw`text-success`}"
+          : tw`text-neutral-700`}"
       >
         ${qaResources[TOTAL].bad.toLocaleString()}
       </span>`,
