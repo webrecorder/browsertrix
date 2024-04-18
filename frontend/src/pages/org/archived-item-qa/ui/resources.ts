@@ -14,7 +14,7 @@ function renderDiff(
   qaResources: ResourcesPayload["resources"],
 ) {
   const columns = [
-    msg("MIME Type"),
+    msg("Resource Type"),
     msg("Good During Crawl"),
     msg("Bad During Crawl"),
     msg("Good in Replay"),
