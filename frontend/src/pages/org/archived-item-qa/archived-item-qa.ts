@@ -887,25 +887,41 @@ export class ArchivedItemQA extends TailwindElement {
         let good = 0,
           bad = 0;
 
-        for (const entry of Object.values(json.urls)) {
-          const { status = 0 } = entry;
-          let mime = entry.mime || "";
+        // Initialize favicon so it shows even if only present in replay
+        typeMap.set("favicon", { good: 0, bad: 0 });
 
-          // Use consistent mime type for JavaScript
+        for (const [url, entry] of Object.entries(json.urls)) {
+          const { mime = "", status = 0 } = entry;
+          let resType = mime.split("/")[0];
+
+          // Map common mime types where important information would be lost
+          // if we only use first half to more descriptive resource types
           if (mime.includes("javascript")) {
-            mime = "text/javascript";
+            resType = "javascript";
+          }
+          if (mime.includes("css")) {
+            resType = "stylesheet";
+          }
+          if (mime.includes("json")) {
+            resType = "json";
+          }
+          if (mime.includes("html")) {
+            resType = "html";
+          }
+          if (url.includes("favicon.ico")) {
+            resType = "favicon";
           }
 
-          if (!typeMap.has(mime)) {
+          if (!typeMap.has(resType)) {
             if (status < 400) {
-              typeMap.set(mime, { good: 1, bad: 0 });
+              typeMap.set(resType, { good: 1, bad: 0 });
               good++;
             } else {
-              typeMap.set(mime, { good: 0, bad: 1 });
+              typeMap.set(resType, { good: 0, bad: 1 });
               bad++;
             }
           } else {
-            const count = typeMap.get(mime);
+            const count = typeMap.get(resType);
             if (status < 400) {
               count!.good++;
               good++;
@@ -913,7 +929,7 @@ export class ArchivedItemQA extends TailwindElement {
               count!.bad++;
               bad++;
             }
-            typeMap.set(mime, count!);
+            typeMap.set(resType, count!);
           }
         }
 
