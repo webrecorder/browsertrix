@@ -52,27 +52,6 @@ const tabToPrefix: Record<QATypes.QATab, string> = {
   replay: "",
 };
 
-const resourceTypes = [
-  "document",
-  "image",
-  "media",
-  "stylesheet",
-  "font",
-  "script",
-  "xhr",
-  "fetch",
-  "prefetch",
-  "eventsource",
-  "websocket",
-  "manifest",
-  "ping",
-  "cspviolationreport",
-  "preflight",
-  "signedexchange",
-  "texttrack",
-  "other",
-];
-
 @localized()
 @customElement("btrix-archived-item-qa")
 export class ArchivedItemQA extends TailwindElement {
@@ -900,21 +879,33 @@ export class ArchivedItemQA extends TailwindElement {
         // tab === "resources"
 
         const json = (await resp.json()) as {
-          urls: { status?: number; type?: string }[];
+          urls: { status?: number; mime?: string }[];
         };
         // console.log(json);
 
         const typeMap = new Map<string, QATypes.GoodBad>();
-        resourceTypes.forEach((x) => typeMap.set(x, { good: 0, bad: 0 }));
         let good = 0,
           bad = 0;
 
         for (const entry of Object.values(json.urls)) {
-          const { type: resType_ = "", status = 0 } = entry;
-          const resType = resType_.toLowerCase();
+          const { status = 0 } = entry;
+          let mime = entry.mime || "";
 
-          if (typeMap.has(resType)) {
-            const count = typeMap.get(resType);
+          // Use consistent mime type for JavaScript
+          if (mime.includes("javascript")) {
+            mime = "text/javascript";
+          }
+
+          if (!typeMap.has(mime)) {
+            if (status < 400) {
+              typeMap.set(mime, { good: 1, bad: 0 });
+              good++;
+            } else {
+              typeMap.set(mime, { good: 0, bad: 1 });
+              bad++;
+            }
+          } else {
+            const count = typeMap.get(mime);
             if (status < 400) {
               count!.good++;
               good++;
@@ -922,16 +913,9 @@ export class ArchivedItemQA extends TailwindElement {
               count!.bad++;
               bad++;
             }
-            typeMap.set(resType, count!);
+            typeMap.set(mime, count!);
           }
         }
-
-        // remove empty entries
-        resourceTypes.forEach((x) => {
-          if (!typeMap.get(x)) {
-            typeMap.delete(x);
-          }
-        });
 
         typeMap.set("Total", { good, bad });
 

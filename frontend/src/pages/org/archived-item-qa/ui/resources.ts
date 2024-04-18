@@ -22,9 +22,7 @@ function renderDiff(
   ];
   const rows = [
     [
-      html`<span class=${tw`font-semibold capitalize`}
-        >${msg("All Resources")}</span
-      >`,
+      html`<span class=${tw`font-semibold`}>${msg("All Resources")}</span>`,
       html`<span class=${tw`font-semibold`}
         >${crawlResources[TOTAL].good.toLocaleString()}</span
       >`,
@@ -51,7 +49,7 @@ function renderDiff(
     ...Object.keys(crawlResources)
       .filter((key) => key !== TOTAL)
       .map((key) => [
-        html`<span class=${tw`capitalize`}>${key}</span>`,
+        html`<span>${key}</span>`,
         html`${crawlResources[key].good.toLocaleString()}`,
         html`${crawlResources[key].bad.toLocaleString()}`,
         html`<span
