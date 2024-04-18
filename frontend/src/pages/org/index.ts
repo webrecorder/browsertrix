@@ -375,7 +375,7 @@ export class Org extends LiteElement {
       <div
         class="mx-auto box-border w-full overflow-x-hidden overscroll-contain"
       >
-        <nav class="-mx-3 flex items-end overflow-x-auto px-3">
+        <nav class="-mx-3 flex items-end overflow-x-auto px-3 xl:px-6">
           ${this.renderNavTab({
             tabName: "home",
             label: msg("Overview"),
