@@ -360,7 +360,7 @@ export class WorkflowDetail extends LiteElement {
           >
           <sl-button
             size="small"
-            variant="primary"
+            variant="danger"
             ?loading=${this.isCancelingOrStoppingCrawl}
             @click=${async () => {
               await this.cancel();
@@ -527,7 +527,7 @@ export class WorkflowDetail extends LiteElement {
             size="small"
             ?disabled=${!isDownloadEnabled}
           >
-            <sl-icon slot="prefix" name="download"></sl-icon>
+            <sl-icon slot="prefix" name="cloud-download"></sl-icon>
             ${msg("Download Logs")}
           </sl-button>
         </sl-tooltip>`;
@@ -1060,7 +1060,7 @@ export class WorkflowDetail extends LiteElement {
               >
                 <sl-icon
                   slot="prefix"
-                  name="link-replay"
+                  name="replaywebpage"
                   library="app"
                 ></sl-icon>
                 ${msg("Replay Latest Crawl")}</sl-button

@@ -293,7 +293,7 @@ export class ArchivedItemDetail extends TailwindElement {
               size="small"
               variant="primary"
             >
-              <sl-icon slot="prefix" name="download"></sl-icon>
+              <sl-icon slot="prefix" name="cloud-download"></sl-icon>
               ${msg("Download Logs")}
             </sl-button>`,
           this.renderLogs(),
@@ -491,7 +491,7 @@ export class ArchivedItemDetail extends TailwindElement {
         ${renderNavItem({
           section: "replay",
           iconLibrary: "app",
-          icon: "link-replay",
+          icon: "replaywebpage",
           label: msg("Replay"),
         })}
         ${renderNavItem({
@@ -924,7 +924,7 @@ ${this.crawl?.description}
                         class="h-4 shrink-0 pr-2 text-neutral-600"
                       ></sl-icon>
                       <a
-                        class="mr-2 truncate text-primary hover:underline"
+                        class="mr-2 truncate text-blue-600 hover:text-blue-500 hover:underline"
                         href=${file.path}
                         download
                         title=${file.name}
@@ -1346,10 +1346,16 @@ ${this.crawl?.description}
         icon: "check2-circle",
       });
     } catch (e: unknown) {
+      let message = msg("Sorry, couldn't start QA run at this time.");
+      if (e instanceof Error && e.message === "qa_not_supported_for_crawl") {
+        message = msg(
+          "Sorry, QA analysis is not supported for this crawl as it was run with an older crawler version. Please run a new crawl with the latest crawler and QA should be available.",
+        );
+      }
       console.debug(e);
 
       this.notify.toast({
-        message: msg("Sorry, couldn't start QA run at this time."),
+        message,
         variant: "danger",
         icon: "exclamation-octagon",
       });

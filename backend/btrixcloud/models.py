@@ -252,6 +252,7 @@ class RawCrawlConfig(BaseModel):
     behaviorTimeout: Optional[int]
     pageLoadTimeout: Optional[int]
     pageExtraDelay: Optional[int] = 0
+    postLoadDelay: Optional[int] = 0
 
     workers: Optional[int] = None
 
@@ -658,6 +659,11 @@ class CrawlOut(BaseMongoModel):
 
     reviewStatus: Optional[conint(ge=1, le=5)] = None  # type: ignore
 
+    qaRunCount: int = 0
+    activeQAState: Optional[str]
+    activeQAStats: Optional[CrawlStats]
+    lastQAState: Optional[str]
+
 
 # ============================================================================
 class CrawlOutWithResources(CrawlOut):
@@ -732,6 +738,22 @@ class QARunOut(BaseModel):
     crawlExecSeconds: int = 0
 
     stats: CrawlStats = CrawlStats()
+
+
+# ============================================================================
+class QARunBucketStats(BaseModel):
+    """Model for per-bucket aggregate stats results"""
+
+    lowerBoundary: str
+    count: int
+
+
+# ============================================================================
+class QARunAggregateStatsOut(BaseModel):
+    """QA Run aggregate stats out"""
+
+    screenshotMatch: List[QARunBucketStats]
+    textMatch: List[QARunBucketStats]
 
 
 # ============================================================================
@@ -1529,6 +1551,7 @@ class Page(BaseMongoModel):
     ts: Optional[datetime] = None
     loadState: Optional[int] = None
     status: Optional[int] = None
+    mime: Optional[str] = None
 
     # manual review
     userid: Optional[UUID] = None

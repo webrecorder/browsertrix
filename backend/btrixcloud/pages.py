@@ -22,6 +22,7 @@ from .models import (
     PageNoteIn,
     PageNoteEdit,
     PageNoteDelete,
+    QARunBucketStats,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import from_k8s_date, str_list_to_bools
@@ -101,6 +102,7 @@ class PageOps:
             title=page_dict.get("title"),
             loadState=page_dict.get("loadState"),
             status=status,
+            mime=page_dict.get("mime", "text/html"),
             ts=(
                 from_k8s_date(page_dict.get("ts"))
                 if page_dict.get("ts")
@@ -131,13 +133,15 @@ class PageOps:
     ):
         """Add page to database"""
         page = self._get_page_from_dict(page_dict, crawl_id, oid)
+        print(f"PAGE: {page}", flush=True)
+
+        page_to_insert = page.to_dict(
+            exclude_unset=True, exclude_none=True, exclude_defaults=True
+        )
+        print(f"PAGE TO INSERT: {page_to_insert}")
 
         try:
-            await self.pages.insert_one(
-                page.to_dict(
-                    exclude_unset=True, exclude_none=True, exclude_defaults=True
-                )
-            )
+            await self.pages.insert_one(page_to_insert)
         except pymongo.errors.DuplicateKeyError:
             pass
 
@@ -510,6 +514,68 @@ class PageOps:
         )
         for crawl_id in crawl_ids:
             await self.re_add_crawl_pages(crawl_id, oid)
+
+    async def get_qa_run_aggregate_counts(
+        self,
+        crawl_id: str,
+        qa_run_id: str,
+        thresholds: Dict[str, List[float]],
+        key: str = "screenshotMatch",
+    ):
+        """Get counts for pages in QA run in buckets by score key based on thresholds"""
+        boundaries = thresholds.get(key, [])
+        if not boundaries:
+            raise HTTPException(status_code=400, detail="missing_thresholds")
+
+        boundaries = sorted(boundaries)
+
+        # Make sure boundaries start with 0
+        if boundaries[0] != 0:
+            boundaries.insert(0, 0.0)
+
+        # Make sure we have upper boundary just over 1 to be inclusive of scores of 1
+        if boundaries[-1] <= 1:
+            boundaries.append(1.1)
+
+        aggregate = [
+            {"$match": {"crawl_id": crawl_id}},
+            {
+                "$bucket": {
+                    "groupBy": f"$qa.{qa_run_id}.{key}",
+                    "default": "No data",
+                    "boundaries": boundaries,
+                    "output": {
+                        "count": {"$sum": 1},
+                    },
+                }
+            },
+        ]
+        cursor = self.pages.aggregate(aggregate)
+        results = await cursor.to_list(length=len(boundaries))
+
+        return_data = []
+
+        for result in results:
+            return_data.append(
+                QARunBucketStats(
+                    lowerBoundary=str(result.get("_id")), count=result.get("count", 0)
+                )
+            )
+
+        # Add missing boundaries to result and re-sort
+        for boundary in boundaries:
+            if boundary < 1.0:
+                matching_return_data = [
+                    bucket
+                    for bucket in return_data
+                    if bucket.lowerBoundary == str(boundary)
+                ]
+                if not matching_return_data:
+                    return_data.append(
+                        QARunBucketStats(lowerBoundary=str(boundary), count=0)
+                    )
+
+        return sorted(return_data, key=lambda bucket: bucket.lowerBoundary)
 
 
 # ============================================================================

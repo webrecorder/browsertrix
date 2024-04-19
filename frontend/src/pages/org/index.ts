@@ -373,9 +373,9 @@ export class Org extends LiteElement {
   private renderOrgNavBar() {
     return html`
       <div
-        class="mx-auto box-border w-full max-w-screen-desktop overflow-x-hidden overscroll-contain"
+        class="mx-auto box-border w-full overflow-x-hidden overscroll-contain"
       >
-        <nav class="-mx-3 flex items-end overflow-x-auto px-3">
+        <nav class="-mx-3 flex items-end overflow-x-auto px-3 xl:px-6">
           ${this.renderNavTab({
             tabName: "home",
             label: msg("Overview"),

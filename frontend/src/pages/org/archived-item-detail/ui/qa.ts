@@ -30,6 +30,7 @@ import {
   approvalFromPage,
   labelFor as labelForPageReview,
 } from "@/features/qa/page-list/helpers/reviewStatus";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
 import type {
   APIPaginatedList,
@@ -43,6 +44,7 @@ import {
 } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { finishedCrawlStates } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { getLocale, pluralize } from "@/utils/localization";
@@ -221,7 +223,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
               this.renderLoadingDetail,
             )}
           </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Elapsed Time")}>
+          <btrix-desc-list-item label=${msg("Total Analysis Time")}>
             ${when(
               this.qaRuns,
               () =>
@@ -257,80 +259,83 @@ export class ArchivedItemDetailQA extends TailwindElement {
         <sl-divider></sl-divider>
 
         <btrix-tab-group-panel name="pages" class="block">
-          <section class="mb-7">
-            <div class="mb-2 flex items-center">
-              <h4 class="mr-3 text-lg font-semibold leading-8">
-                ${msg("QA Analysis")}
-              </h4>
-              ${when(this.qaRuns, (qaRuns) => {
-                const finishedQARuns = qaRuns.filter(({ state }) =>
-                  finishedCrawlStates.includes(state),
-                );
+          ${
+            // TODO un-hide this once we've got data in here
+            nothing
+            // <section class="mb-7">
+            //   <div class="mb-2 flex items-center">
+            //     <h4 class="mr-3 text-lg font-semibold leading-8">
+            //       ${msg("QA Analysis")}
+            //     </h4>
+            //     ${when(this.qaRuns, (qaRuns) => {
+            //       const finishedQARuns = qaRuns.filter(({ state }) =>
+            //         finishedCrawlStates.includes(state),
+            //       );
 
-                if (!finishedQARuns.length) {
-                  return nothing;
-                }
+            //       if (!finishedQARuns.length) {
+            //         return nothing;
+            //       }
 
-                const mostRecentSelected =
-                  this.mostRecentNonFailedQARun &&
-                  this.mostRecentNonFailedQARun.id === this.qaRunId;
-                const latestFinishedSelected =
-                  this.qaRunId === finishedQARuns[0].id;
+            //       const mostRecentSelected =
+            //         this.mostRecentNonFailedQARun &&
+            //         this.mostRecentNonFailedQARun.id === this.qaRunId;
+            //       const latestFinishedSelected =
+            //         this.qaRunId === finishedQARuns[0].id;
 
-                return html`
-                  <sl-tooltip
-                    content=${mostRecentSelected
-                      ? msg(
-                          "You're viewing the latest results from a finished analysis run.",
-                        )
-                      : msg(
-                          "You're viewing results from an older analysis run.",
-                        )}
-                  >
-                    <sl-tag
-                      size="small"
-                      variant=${mostRecentSelected ? "success" : "warning"}
-                    >
-                      ${mostRecentSelected
-                        ? msg("Current")
-                        : latestFinishedSelected
-                          ? msg("Last Finished")
-                          : msg("Outdated")}
-                    </sl-tag>
-                  </sl-tooltip>
-                  <btrix-qa-run-dropdown
-                    .items=${finishedQARuns}
-                    selectedId=${this.qaRunId || ""}
-                    @btrix-select=${(e: CustomEvent<SelectDetail>) =>
-                      (this.qaRunId = e.detail.item.id)}
-                  ></btrix-qa-run-dropdown>
-                `;
-              })}
-            </div>
+            //       return html`
+            //         <sl-tooltip
+            //           content=${mostRecentSelected
+            //             ? msg(
+            //                 "You're viewing the latest results from a finished analysis run.",
+            //               )
+            //             : msg(
+            //                 "You're viewing results from an older analysis run.",
+            //               )}
+            //         >
+            //           <sl-tag
+            //             size="small"
+            //             variant=${mostRecentSelected ? "success" : "warning"}
+            //           >
+            //             ${mostRecentSelected
+            //               ? msg("Current")
+            //               : latestFinishedSelected
+            //                 ? msg("Last Finished")
+            //                 : msg("Outdated")}
+            //           </sl-tag>
+            //         </sl-tooltip>
+            //         <btrix-qa-run-dropdown
+            //           .items=${finishedQARuns}
+            //           selectedId=${this.qaRunId || ""}
+            //           @btrix-select=${(e: CustomEvent<SelectDetail>) =>
+            //             (this.qaRunId = e.detail.item.id)}
+            //         ></btrix-qa-run-dropdown>
+            //       `;
+            //     })}
+            //   </div>
+            //   ${when(
+            //     this.qaRuns,
+            //     () =>
+            //       this.mostRecentNonFailedQARun
+            //         ? this.renderAnalysis()
+            //         : html`
+            //             <div
+            //               class="rounded-lg border bg-slate-50 p-4 text-center text-slate-600"
+            //             >
+            //               ${msg(
+            //                 "This crawl hasn’t been analyzed yet. Run an analysis to access crawl quality metrics.",
+            //               )}
+            //             </div>
+            //           `,
 
-            ${when(
-              this.qaRuns,
-              () =>
-                this.mostRecentNonFailedQARun
-                  ? this.renderAnalysis()
-                  : html`
-                      <div
-                        class="rounded-lg border bg-slate-50 p-4 text-center text-slate-600"
-                      >
-                        ${msg(
-                          "This crawl hasn’t been analyzed yet. Run an analysis to access crawl quality metrics.",
-                        )}
-                      </div>
-                    `,
-
-              () =>
-                html`<div
-                  class="grid h-[55px] place-content-center rounded-lg border bg-slate-50 p-4 text-lg text-slate-600"
-                >
-                  <sl-spinner></sl-spinner>
-                </div>`,
-            )}
-          </section>
+            //     () =>
+            //       html`<div
+            //         class="grid h-[55px] place-content-center rounded-lg border bg-slate-50 p-4 text-lg text-slate-600"
+            //       >
+            //         <sl-spinner></sl-spinner>
+            //       </div>`,
+            //   )}
+            // </section>
+          }
           <div>
             <h4 class="mb-2 mt-4 text-lg leading-8">
               <span class="font-semibold">${msg("Pages")}</span> (${(
@@ -543,24 +548,20 @@ export class ArchivedItemDetailQA extends TailwindElement {
             )}
           </btrix-alert>`
         : nothing}
-      ${
-        // TODO un-hide this once we've got data in here
-        nothing
-        // html`<div class="flex flex-col gap-6 md:flex-row">
-        //   <btrix-card class="flex-1">
-        //     <span slot="title">${msg("Screenshots")}</span>
-        //     TODO
-        //   </btrix-card>
-        //   <btrix-card class="flex-1">
-        //     <span slot="title">${msg("Extracted Text")}</span>
-        //     TODO
-        //   </btrix-card>
-        //   <btrix-card class="flex-1">
-        //     <span slot="title">${msg("Page Resources")}</span>
-        //     TODO
-        //   </btrix-card>
-        // </div>`
-      }
+      <div class="flex flex-col gap-6 md:flex-row">
+        <btrix-card class="flex-1">
+          <span slot="title">${msg("Screenshots")}</span>
+          TODO
+        </btrix-card>
+        <btrix-card class="flex-1">
+          <span slot="title">${msg("Extracted Text")}</span>
+          TODO
+        </btrix-card>
+        <btrix-card class="flex-1">
+          <span slot="title">${msg("Page Resources")}</span>
+          TODO
+        </btrix-card>
+      </div>
     `;
   }
 
