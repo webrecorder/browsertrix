@@ -86,25 +86,22 @@ export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
 
   return html`
     <div class=${tw`flex h-full flex-col outline`}>
-      <div class=${tw`flex-1 overflow-auto overscroll-contain pb-3`}>
+      <div class=${tw`flex-1 overflow-auto overscroll-contain`}>
         ${crawlData && qaData
           ? crawlData.resources && qaData.resources
             ? renderDiff(crawlData.resources, qaData.resources)
             : noData
           : renderSpinner()}
       </div>
-      <footer class=${tw`border-t pt-2 text-xs text-neutral-600`}>
-        <p class=${tw`mb-2`}>
-          ${msg('"Good" and "Bad" indicates the status code of the resource.')}
-        </p>
+      <footer class=${tw`pt-2 text-xs text-neutral-600`}>
         <dl>
           <div class=${tw`flex gap-1`}>
             <dt class=${tw`font-semibold`}>${msg("Good:")}</dt>
-            <dd>${msg("Status code between 200-399")}</dd>
+            <dd>${msg("Resource status code between 200–399")}</dd>
           </div>
           <div class=${tw`flex gap-1`}>
             <dt class=${tw`font-semibold`}>${msg("Bad:")}</dt>
-            <dd>${msg("Status code between 400-599")}</dd>
+            <dd>${msg("Resource status code between 400–599")}</dd>
           </div>
         </dl>
       </footer>

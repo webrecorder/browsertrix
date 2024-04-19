@@ -48,7 +48,7 @@ export const styles = css`
   }
 
   sl-image-comparer::part(divider) {
-    width: 1rem;
+    --divider-width: 1rem;
     border-left: 1px solid var(--sl-panel-border-color);
     border-right: 1px solid var(--sl-panel-border-color);
     box-shadow: var(--sl-shadow-large);
