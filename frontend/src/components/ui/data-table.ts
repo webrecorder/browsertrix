@@ -61,10 +61,10 @@ export class DataTable extends TailwindElement {
     }`;
     return html`
       <btrix-table
-        class="overflow-auto rounded border"
+        class="relative z-20 h-full w-full rounded border"
         style=${gridAutoColumnsStyle}
       >
-        <btrix-table-head class="rounded-t border-b bg-neutral-50">
+        <btrix-table-head class="sticky top-0 z-10 border-b bg-neutral-50">
           ${this.columns.map(
             (content, i) => html`
               <btrix-table-header-cell class=${i > 0 ? "border-l" : ""}>
@@ -73,7 +73,7 @@ export class DataTable extends TailwindElement {
             `,
           )}
         </btrix-table-head>
-        <btrix-table-body>
+        <btrix-table-body class="overflow-scroll">
           ${this.rows.map(
             (cells, i) => html`
               <btrix-table-row class=${i > 0 ? "border-t" : ""}>

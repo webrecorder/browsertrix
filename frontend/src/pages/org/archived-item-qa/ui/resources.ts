@@ -86,7 +86,7 @@ export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
 
   return html`
     <div class=${tw`flex h-full flex-col outline`}>
-      <div class=${tw`flex-1 overflow-auto overscroll-contain pb-3`}>
+      <div class=${tw`flex-1 overflow-auto overscroll-contain`}>
         ${crawlData && qaData
           ? crawlData.resources && qaData.resources
             ? renderDiff(crawlData.resources, qaData.resources)
