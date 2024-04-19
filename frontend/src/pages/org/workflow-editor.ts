@@ -105,6 +105,7 @@ type FormState = {
   behaviorTimeoutSeconds: number | null;
   pageLoadTimeoutSeconds: number | null;
   pageExtraDelaySeconds: number | null;
+  postLoadDelaySeconds: number | null;
   maxCrawlSizeGB: number;
   maxScopeDepth: number | null;
   scopeType: WorkflowParams["config"]["scopeType"];
@@ -184,6 +185,7 @@ const getDefaultFormState = (): FormState => ({
   behaviorTimeoutSeconds: null,
   pageLoadTimeoutSeconds: null,
   pageExtraDelaySeconds: null,
+  postLoadDelaySeconds: null,
   maxScopeDepth: null,
   scopeType: "host",
   exclusions: [],
@@ -580,6 +582,8 @@ export class CrawlConfigEditor extends LiteElement {
         seedsConfig.pageLoadTimeout ?? defaultFormState.pageLoadTimeoutSeconds,
       pageExtraDelaySeconds:
         seedsConfig.pageExtraDelay ?? defaultFormState.pageExtraDelaySeconds,
+      postLoadDelaySeconds:
+        seedsConfig.postLoadDelay ?? defaultFormState.postLoadDelaySeconds,
       maxScopeDepth: primarySeedConfig.depth ?? defaultFormState.maxScopeDepth,
       scale: this.initialWorkflow.scale,
       blockAds: this.initialWorkflow.config.blockAds,
@@ -1587,6 +1591,24 @@ https://archiveweb.page/images/${"logo.svg"}`}
       )}
       ${this.renderFormCol(html`
         <sl-input
+          name="postLoadDelaySeconds"
+          type="number"
+          inputmode="numeric"
+          label=${msg("Delay After Page Load")}
+          placeholder=${"Default: 0"}
+          value=${ifDefined(this.formState.postLoadDelaySeconds ?? undefined)}
+          min="0"
+        >
+          <span slot="suffix">${msg("seconds")}</span>
+        </sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        msg(
+          `Waits on the page after initial HTML page load prior to moving on to next steps such as link extraction and behaviors. Can be useful with pages that are slow to load page contents.`,
+        ),
+      )}
+      ${this.renderFormCol(html`
+        <sl-input
           name="behaviorTimeoutSeconds"
           type="number"
           inputmode="numeric"
@@ -2445,6 +2467,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         behaviorTimeout: this.formState.behaviorTimeoutSeconds,
         pageLoadTimeout: this.formState.pageLoadTimeoutSeconds,
         pageExtraDelay: this.formState.pageExtraDelaySeconds,
+        postLoadDelay: this.formState.postLoadDelaySeconds,
         userAgent: this.formState.userAgent,
         limit: this.formState.pageLimit,
         lang: this.formState.lang || "",

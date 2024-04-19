@@ -24,6 +24,7 @@ const defaultValue = {
     behaviorTimeout: null,
     pageLoadTimeout: null,
     pageExtraDelay: null,
+    postLoadDelay: null,
     useSitemap: false,
     failOnFailedSeed: false,
     userAgent: null,

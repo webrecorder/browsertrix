@@ -165,6 +165,10 @@ export class ConfigDetails extends LiteElement {
             ),
           )}
           ${this.renderSetting(
+            msg("Delay After Page Load"),
+            renderTimeLimit(crawlConfig?.config.postLoadDelay, 0),
+          )}
+          ${this.renderSetting(
             msg("Page Behavior Timeout"),
             renderTimeLimit(
               crawlConfig?.config.behaviorTimeout,
