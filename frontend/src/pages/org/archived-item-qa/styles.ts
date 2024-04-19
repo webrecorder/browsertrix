@@ -1,7 +1,5 @@
 import { css } from "lit";
 
-import { TWO_COL_SCREEN_MIN_CSS } from "@/components/ui/tab-list";
-
 export const styles = css`
   article > * {
     min-height: 0;
@@ -18,7 +16,8 @@ export const styles = css`
     grid-template-rows: repeat(5, max-content);
   }
 
-  @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
+  /* Tailwind's 'lg' viewport width */
+  @media only screen and (min-width: 1024px) {
     .grid {
       /* TODO calculate screen space instead of hardcoding */
       height: 100vh;
