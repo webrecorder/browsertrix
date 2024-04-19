@@ -377,7 +377,10 @@ export class ArchivedItemQA extends TailwindElement {
         <div
           class="grid--pageToolbar flex items-center justify-between overflow-hidden border-b py-2"
         >
-          <h2 class="mr-4 truncate text-base font-semibold text-neutral-700">
+          <h2
+            class="mr-4 truncate text-base font-semibold text-neutral-700"
+            title="${this.page ? this.page.title : nothing}"
+          >
             ${this.page ? this.page.title || msg("no page title") : nothing}
           </h2>
           <div class="flex gap-4">
