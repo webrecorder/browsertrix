@@ -428,7 +428,9 @@ export class ArchivedItemQA extends TailwindElement {
         </div>
 
         <div class="grid--tabGroup flex min-w-0 flex-col">
-          <nav class="my-2 flex gap-2">
+          <nav
+            class="-mx-3 my-2 flex gap-2 overflow-x-auto px-3 lg:mx-0 lg:px-0"
+          >
             <btrix-navigation-button
               id="screenshot-tab"
               href=${`${crawlBaseUrl}/review/screenshots?${searchParams.toString()}`}
