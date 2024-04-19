@@ -8,6 +8,10 @@ icon: https://webrecorder.net/assets/icon.png
 version: v1.10.0-beta.1
 
 dependencies:
+  - name: btrix-admin-logging
+    version: 0.1.0
+    condition: addons.admin.logging
+    repository: file://./admin/logging
   - name: btrix-crds
     version: 0.1.1
     repository: file://./btrix-crds
