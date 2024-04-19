@@ -244,14 +244,14 @@ export class PageList extends TailwindElement {
           }}
         >
           <sl-option value="screenshotMatch"
-            >${msg("Worst screenshot match")}</sl-option
+            >${msg("Worst Screenshot Match")}</sl-option
           >
           <sl-option value="textMatch"
-            >${msg("Worst extracted text match")}</sl-option
+            >${msg("Worst Extracted Text Match")}</sl-option
           >
-          <sl-option value="comments">${msg("Most comments")}</sl-option>
-          <sl-option value="approved">${msg("Recently approved")}</sl-option>
-          <sl-option value="notApproved">${msg("Not approved")}</sl-option>
+          <sl-option value="comments">${msg("Most Comments")}</sl-option>
+          <sl-option value="approved">${msg("Recently Approved")}</sl-option>
+          <sl-option value="notApproved">${msg("Not Approved")}</sl-option>
         </sl-select>
       </div>
     `;
@@ -310,7 +310,7 @@ export class PageList extends TailwindElement {
           <sl-option value="">${msg("Any")}</sl-option>
           <sl-option value="notReviewed">${msg("None")}</sl-option>
           <sl-option value="reviewed"
-            >${msg("Approved, rejected, or commented")}</sl-option
+            >${msg("Approved, Rejected, or Commented")}</sl-option
           >
           <sl-option value="approved">${msg("Approved")}</sl-option>
           <sl-option value="rejected">${msg("Rejected")}</sl-option>
