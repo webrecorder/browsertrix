@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import ISO6391, { type LanguageCode } from "iso-639-1";
-import { css, html, LitElement } from "lit";
+import { css, html, LitElement, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import sortBy from "lodash/fp/sortBy";
@@ -35,10 +35,6 @@ export class LanguageSelect extends LitElement {
     sl-select::part(control) {
       box-shadow: var(--sl-shadow-small);
     }
-
-    sl-menu-item:not(:hover) .secondaryText {
-      color: var(--sl-color-neutral-400);
-    }
   `;
 
   @property({ type: String })
@@ -69,7 +65,7 @@ export class LanguageSelect extends LitElement {
         ${languages.map(
           ({ code, name, nativeName }) => html`
             <sl-option value=${code}>
-              ${name} <span class="secondaryText">(${nativeName})</span>
+              ${name} ${name !== nativeName ? `(${nativeName})` : nothing}
             </sl-option>
           `,
         )}
