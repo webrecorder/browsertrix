@@ -75,7 +75,7 @@ export class DataTable extends TailwindElement {
             `,
           )}
         </btrix-table-head>
-        <btrix-table-body class="overflow-scroll">
+        <btrix-table-body class="overflow-auto">
           ${this.rows.map(
             (cells, i) => html`
               <btrix-table-row class=${i > 0 ? "border-t" : ""}>
