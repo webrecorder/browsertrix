@@ -484,7 +484,7 @@ export class ArchivedItemDetail extends TailwindElement {
               section: "qa",
               iconLibrary: "default",
               icon: "clipboard2-data-fill",
-              label: msg("QA"),
+              label: msg("Quality Assurance"),
             })}
           `,
         )}
