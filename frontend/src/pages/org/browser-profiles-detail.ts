@@ -9,6 +9,7 @@ import type { Profile } from "./types";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { getLocale } from "@/utils/localization";
 
 /**
  * Usage:
@@ -126,6 +127,7 @@ export class BrowserProfilesDetail extends LiteElement {
               ${this.profile
                 ? html`
                     <sl-format-date
+                      lang=${getLocale()}
                       date=${`${this.profile.created}Z` /** Z for UTC */}
                       month="2-digit"
                       day="2-digit"

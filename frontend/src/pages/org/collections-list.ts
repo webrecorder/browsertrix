@@ -18,6 +18,7 @@ import type { UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { getLocale } from "@/utils/localization";
 import noCollectionsImg from "~assets/images/no-collections-found.webp";
 
 type Collections = APIPaginatedList<Collection>;
@@ -106,8 +107,7 @@ export class CollectionsList extends LiteElement {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
 
-  // TODO localize
-  private readonly numberFormatter = new Intl.NumberFormat(undefined, {
+  private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
     notation: "compact",
   });
 
@@ -544,6 +544,7 @@ export class CollectionsList extends LiteElement {
       </btrix-table-cell>
       <btrix-table-cell>
         <sl-format-date
+          lang=${getLocale()}
           date=${`${col.modified}Z`}
           month="2-digit"
           day="2-digit"

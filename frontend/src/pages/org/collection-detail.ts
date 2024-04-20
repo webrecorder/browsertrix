@@ -18,6 +18,7 @@ import type { Collection } from "@/types/collection";
 import type { ArchivedItem, Crawl, CrawlState, Upload } from "@/types/crawler";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { getLocale } from "@/utils/localization";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const DESCRIPTION_MAX_HEIGHT_PX = 200;
@@ -64,8 +65,7 @@ export class CollectionDetail extends LiteElement {
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
 
-  // TODO localize
-  private readonly numberFormatter = new Intl.NumberFormat(undefined, {
+  private readonly numberFormatter = new Intl.NumberFormat(getLocale(), {
     notation: "compact",
   });
 
@@ -496,6 +496,7 @@ export class CollectionDetail extends LiteElement {
           msg("Last Updated"),
           (col) =>
             html`<sl-format-date
+              lang=${getLocale()}
               date=${`${col.modified}Z`}
               month="2-digit"
               day="2-digit"

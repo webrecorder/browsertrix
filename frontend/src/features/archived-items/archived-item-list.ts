@@ -14,6 +14,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { NavigateController } from "@/controllers/navigate";
 import type { ArchivedItem } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
+import { getLocale } from "@/utils/localization";
 
 export type CheckboxChangeEventDetail = {
   checked: boolean;
@@ -123,6 +124,7 @@ export class ArchivedItemListItem extends TailwindElement {
         </btrix-table-cell>
         <btrix-table-cell>
           <sl-format-date
+            lang=${getLocale()}
             class="truncate"
             date=${`${this.item.finished}Z`}
             month="2-digit"

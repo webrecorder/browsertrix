@@ -26,6 +26,7 @@ import { NavigateController } from "@/controllers/navigate";
 import type { ListWorkflow } from "@/types/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { srOnly, truncate } from "@/utils/css";
+import { getLocale } from "@/utils/localization";
 import { numberFormatter } from "@/utils/number";
 
 // postcss-lit-disable-next-line
@@ -212,7 +213,7 @@ export class WorkflowListItem extends LitElement {
 
   private readonly navigate = new NavigateController(this);
 
-  private readonly numberFormatter = numberFormatter(undefined, {
+  private readonly numberFormatter = numberFormatter(getLocale(), {
     notation: "compact",
   });
 
@@ -275,6 +276,7 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender((workflow) => {
             if (workflow.lastCrawlTime && workflow.lastCrawlStartTime) {
               return html`<sl-format-date
+                  lang=${getLocale()}
                   date="${workflow.lastRun.toString()}Z"
                   month="2-digit"
                   day="2-digit"
@@ -373,6 +375,7 @@ export class WorkflowListItem extends LitElement {
           ${this.safeRender(
             (workflow) => html`
               <sl-format-date
+                lang=${getLocale()}
                 date=${workflow.modified.toString()}
                 month="2-digit"
                 day="2-digit"

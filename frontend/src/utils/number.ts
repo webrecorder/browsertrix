@@ -12,9 +12,10 @@ export function numberFormatter(
   opts?: Intl.NumberFormatOptions,
 ) {
   const numFormat = new Intl.NumberFormat(locales, opts);
+  // TODO localize
   const pluralRules = new Intl.PluralRules("en", { type: "ordinal" });
 
-  const suffixes = new Map([
+  const suffixes = new Map<Intl.LDMLPluralRule, string>([
     ["one", "st"],
     ["two", "nd"],
     ["few", "rd"],
