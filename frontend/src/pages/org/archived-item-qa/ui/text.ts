@@ -1,4 +1,5 @@
 import { msg } from "@lit/localize";
+import { type Task } from "@lit/task";
 import { html } from "lit";
 import { guard } from "lit/directives/guard.js";
 import { until } from "lit/directives/until.js";
@@ -63,7 +64,7 @@ function renderDiff(
   );
 }
 
-export function renderText(crawlData: ReplayData, qaData: ReplayData) {
+export function renderText(crawlData: Task<ReplayData>, qaData: ReplayData) {
   const noData = html`<div
     class=${tw`flex flex-col items-center justify-center gap-2 text-xs text-neutral-500`}
   >

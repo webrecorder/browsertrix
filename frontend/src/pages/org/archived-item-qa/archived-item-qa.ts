@@ -42,6 +42,7 @@ import type { ArchivedItem } from "@/types/crawler";
 import type { ArchivedItemQAPage, QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive, renderName } from "@/utils/crawler";
+import { Task } from "@lit/task";
 
 const DEFAULT_PAGE_SIZE = 100;
 
@@ -112,6 +113,12 @@ export class ArchivedItemQA extends TailwindElement {
 
   @property({ type: Object })
   page?: ArchivedItemQAPage;
+
+  private _crawlData = new Task(this, {
+    task: async ([itemId], {signal}) => {
+      const
+    }
+  })
 
   @state()
   private crawlData: QATypes.ReplayData = null;
