@@ -97,11 +97,13 @@ export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
         <dl>
           <div class=${tw`flex gap-1`}>
             <dt class=${tw`font-semibold`}>${msg("Good:")}</dt>
-            <dd>${msg("Resource status code between 200–399")}</dd>
+            <dd>${msg("Success (2xx) and Redirection (3xx) status codes")}</dd>
           </div>
           <div class=${tw`flex gap-1`}>
             <dt class=${tw`font-semibold`}>${msg("Bad:")}</dt>
-            <dd>${msg("Resource status code between 400–599")}</dd>
+            <dd>
+              ${msg("Client error (4xx) and Server error (5xx) status codes")}
+            </dd>
           </div>
         </dl>
       </footer>
