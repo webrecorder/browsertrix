@@ -381,7 +381,7 @@ export class ArchivedItemQA extends TailwindElement {
         >
           <h2
             class="mr-4 flex-auto flex-shrink-0 flex-grow basis-32 truncate text-base font-semibold text-neutral-700"
-            title="${this.page ? this.page.title : nothing}"
+            title="${this.page?.title ?? ""}"
           >
             ${this.page ? this.page.title || msg("no page title") : nothing}
           </h2>
