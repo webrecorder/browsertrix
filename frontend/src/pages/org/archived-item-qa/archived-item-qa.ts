@@ -320,7 +320,7 @@ export class ArchivedItemQA extends TailwindElement {
     return html`
       ${this.renderHidden()}
 
-      <article class="grid gap-x-6 gap-y-4 md:gap-y-0">
+      <article class="qa-grid grid gap-x-6 gap-y-4 md:gap-y-0">
         <header
           class="grid--header flex flex-wrap items-center justify-between gap-1 border-b py-2"
         >

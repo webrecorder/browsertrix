@@ -7,7 +7,7 @@ export const styles = css`
     min-height: 0;
   }
 
-  .grid {
+  .qa-grid {
     grid-template:
       "header"
       "pageToolbar"
@@ -19,7 +19,7 @@ export const styles = css`
   }
 
   @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
-    .grid {
+    .qa-grid {
       /* TODO calculate screen space instead of hardcoding */
       height: 100vh;
       /* overflow: hidden; */
