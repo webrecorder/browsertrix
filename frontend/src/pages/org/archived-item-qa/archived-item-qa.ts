@@ -477,14 +477,14 @@ export class ArchivedItemQA extends TailwindElement {
           ${this.renderPanelToolbar()} ${this.renderPanel()}
         </div>
 
-        <section class="grid--pageList overflow-hidden">
+        <section class="grid--pageList grid *:min-h-0 *:min-w-0">
           <h2
             class="my-4 text-base font-semibold leading-none text-neutral-800"
           >
             ${msg("Pages")}
           </h2>
           <btrix-qa-page-list
-            class="flex h-full flex-col"
+            class="flex flex-col"
             .qaRunId=${this.qaRunId}
             .itemPageId=${this.itemPageId}
             .pages=${this.pages}
