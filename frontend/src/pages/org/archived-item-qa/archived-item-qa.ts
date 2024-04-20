@@ -377,7 +377,10 @@ export class ArchivedItemQA extends TailwindElement {
         <div
           class="grid--pageToolbar flex items-center justify-between overflow-hidden border-b py-2"
         >
-          <h2 class="mr-4 truncate text-base font-semibold text-neutral-700">
+          <h2
+            class="mr-4 truncate text-base font-semibold text-neutral-700"
+            title="${this.page ? this.page.title : nothing}"
+          >
             ${this.page ? this.page.title || msg("no page title") : nothing}
           </h2>
           <div class="flex gap-4">
@@ -450,7 +453,7 @@ export class ArchivedItemQA extends TailwindElement {
               ?active=${this.tab === "resources"}
               @click=${this.onTabNavClick}
             >
-              <sl-icon name="server"></sl-icon>
+              <sl-icon name="puzzle-fill"></sl-icon>
               ${msg("Resources")}
             </btrix-navigation-button>
             <btrix-navigation-button
@@ -651,43 +654,45 @@ export class ArchivedItemQA extends TailwindElement {
 
   private renderPanelToolbar() {
     const buttons = html`
-      <div class="ml-1 flex">
-        ${choose(this.tab, [
-          [
-            "replay",
-            () => html`
-              <!-- <sl-icon-button name="arrow-clockwise"></sl-icon-button> -->
-            `,
-          ],
-          [
-            "screenshots",
-            () => html`
+      ${choose(this.tab, [
+        // [
+        //   "replay",
+        //   () => html`
+        //     <div class="flex">
+        //        <sl-icon-button name="arrow-clockwise"></sl-icon-button>
+        //     </div>
+        //   `,
+        // ],
+        [
+          "screenshots",
+          () => html`
+            <div class="flex">
               <sl-tooltip
-                content=${msg("Toggle view")}
+                content=${msg("Toggle screenshot wipe view")}
                 placement="bottom-start"
               >
                 <btrix-button
                   icon
-                  variant=${this.splitView ? "primary" : "neutral"}
+                  variant=${!this.splitView ? "primary" : "neutral"}
                   @click="${() => (this.splitView = !this.splitView)}"
                 >
                   <sl-icon name="vr" label=${msg("Split view")}></sl-icon>
                 </btrix-button>
               </sl-tooltip>
-            `,
-          ],
-        ])}
-      </div>
+            </div>
+          `,
+        ],
+      ])}
     `;
     return html`
       <div
         class="${this.tab === "replay"
           ? "rounded-t-lg"
-          : "rounded-lg mb-3"} flex h-12 items-center border bg-neutral-50 text-base"
+          : "rounded-lg mb-3"} flex h-12 items-center gap-2 border bg-neutral-50 p-2 text-base"
       >
         ${buttons}
         <div
-          class="mx-1.5 flex h-8 min-w-0 flex-1 items-center justify-between gap-2 overflow-hidden whitespace-nowrap rounded border bg-neutral-0 px-2 text-sm"
+          class="flex h-8 min-w-0 flex-1 items-center justify-between gap-2 overflow-hidden whitespace-nowrap rounded border bg-neutral-0 px-2 text-sm"
         >
           <div class="fade-out-r scrollbar-hidden flex-1 overflow-x-scroll">
             <span class="pr-2">${this.page?.url || "http://"}</span>
