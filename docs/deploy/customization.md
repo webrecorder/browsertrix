@@ -121,7 +121,7 @@ It is also possible to custom the HTML/plain-text email templates that Browsertr
 helm upgrade --install btrix ... --set-file email.templates.invite=./invite.html
 ```
 
-The list of available templates (and their default content) [is available here](https://github.com/webrecorder/browsertrix-cloud/tree/main/chart/email-templates)
+The list of available templates (and their default content) [is available here](https://github.com/webrecorder/browsertrix/tree/main/chart/email-templates)
 
 The format of the template file is, for HTML emails:
 

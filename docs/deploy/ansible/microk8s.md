@@ -1,6 +1,6 @@
 # Microk8s
 
-*Playbook Path: [ansible/playbooks/install_microk8s.yml](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/playbooks/install_microk8s.yml)*
+*Playbook Path: [ansible/playbooks/install_microk8s.yml](https://github.com/webrecorder/browsertrix/blob/main/ansible/playbooks/install_microk8s.yml)*
 
 This playbook provides an easy way to install Browsertrix on Ubuntu (tested on Jammy Jellyfish) and RedHat 9 (tested on Rocky Linux 9). It automatically sets up Browsertrix with Letsencrypt certificates.
 
@@ -27,11 +27,11 @@ To run this ansible playbook, you need to:
 
 1. Clone the repo:
 ```zsh
-git clone https://github.com/webrecorder/browsertrix-cloud.git
-cd browsertrix-cloud/ansible
+git clone https://github.com/webrecorder/browsertrix.git
+cd browsertrix/ansible
 ```
 
-2. [Look at the configuration options](https://github.com/webrecorder/browsertrix-cloud/blob/main/ansible/group_vars/microk8s/main.yml) and modify them or pass them as extra variables as shown below. 
+2. [Look at the configuration options](https://github.com/webrecorder/browsertrix/blob/main/ansible/group_vars/microk8s/main.yml) and modify them or pass them as extra variables as shown below. 
 
 3. Add your IP address above to a new file called [inventory/hosts]
 

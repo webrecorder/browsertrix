@@ -23,18 +23,18 @@ Welcome to Browsertrix!
 
 <p>
 Step 1: Create your login credentials<br/>
-Step 2: Review the <a href="https://docs.browsertrix.cloud/user-guide/">Browerstrix User Guide</a><br/>
-Step 3: <a href="https://docs.browsertrix.cloud/user-guide/org-settings/">Invite additional users</a> from your organization
+Step 2: Review the <a href="https://docs.browsertrix.com/user-guide/">Browerstrix User Guide</a><br/>
+Step 3: <a href="https://docs.browsertrix.com/user-guide/org-settings/">Invite additional users</a> from your organization
 </p>
 
-<p>When you first access your account, you'll be directed to your Dashboard. It contains information you may want to view frequently including: Storage Usage, Crawling Info, Collections, and Monthly Usage History. From there, you can click <b>+ Create New</b> to <a href="https://docs.browsertrix.cloud/user-guide/workflow-setup/">create your first Crawl Workflow</a>!</p>
+<p>When you first access your account, you'll be directed to your Dashboard. It contains information you may want to view frequently including: Storage Usage, Crawling Info, Collections, and Monthly Usage History. From there, you can click <b>+ Create New</b> to <a href="https://docs.browsertrix.com/user-guide/workflow-setup/">create your first Crawl Workflow</a>!</p>
 
 <p>To help you get up to speed, here are the top three questions our users normally have on the first day:</p>
 
 <p>
-How do I <a href="https://docs.browsertrix.cloud/user-guide/workflow-setup/">crawl my first website</a>?<br/>
-How do I create a <a href="https://docs.browsertrix.cloud/user-guide/browser-profiles/">browser profile</a>?<br/>
-How do I <a href="https://docs.browsertrix.cloud/user-guide/archived-items/#crawl-settings">export my archived items</a>?
+How do I <a href="https://docs.browsertrix.com/user-guide/workflow-setup/">crawl my first website</a>?<br/>
+How do I create a <a href="https://docs.browsertrix.com/user-guide/browser-profiles/">browser profile</a>?<br/>
+How do I <a href="https://docs.browsertrix.com/user-guide/archived-items/#crawl-settings">export my archived items</a>?
 </p>
 
 <p>If you need any assistance, please direct your questions to <a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
@@ -61,18 +61,18 @@ We're excited you're here and can't wait to help you get started crawling! You c
 Here's what you should do first off to get the most value out of your experience:
 
 Step 1: Create your login credentials
-Step 2: Review the Browerstrix User Guide (https://docs.browsertrix.cloud/user-guide/)
-Step 3: Invite additional users from your organization (https://docs.browsertrix.cloud/user-guide/org-settings/)
+Step 2: Review the Browerstrix User Guide (https://docs.browsertrix.com/user-guide/)
+Step 3: Invite additional users from your organization (https://docs.browsertrix.com/user-guide/org-settings/)
 
 When you first access your account, you'll be directed to your Dashboard.
 It contains information you may want to view frequently including: Storage Usage, Crawling Info, Collections, and Monthly Usage History.
-From there, you can click +Create New to create your first Crawl Workflow! (https://docs.browsertrix.cloud/user-guide/workflow-setup/)
+From there, you can click +Create New to create your first Crawl Workflow! (https://docs.browsertrix.com/user-guide/workflow-setup/)
 
 To help you get up to speed, here are the top three questions our users normally have on the first day:
 
-How do I crawl my first website? (https://docs.browsertrix.cloud/user-guide/workflow-setup/)
-How do I create a browser profile? (https://docs.browsertrix.cloud/user-guide/browser-profiles/)
-How do I export my archived items? (https://docs.browsertrix.cloud/user-guide/archived-items/#crawl-settings)
+How do I crawl my first website? (https://docs.browsertrix.com/user-guide/workflow-setup/)
+How do I create a browser profile? (https://docs.browsertrix.com/user-guide/browser-profiles/)
+How do I export my archived items? (https://docs.browsertrix.com/user-guide/archived-items/#crawl-settings)
 
 If you need any assistance, please direct your questions to {{ support_email }}.
 

@@ -465,7 +465,7 @@ export class App extends LiteElement {
         <div class="flex items-center justify-center">
           <a
             class="flex items-center gap-2 text-neutral-400 hover:text-primary"
-            href="https://github.com/webrecorder/browsertrix-cloud"
+            href="https://github.com/webrecorder/browsertrix.com"
             target="_blank"
             rel="noopener"
           >
@@ -479,7 +479,7 @@ export class App extends LiteElement {
         <div class="flex items-center justify-center">
           <a
             class="flex items-center gap-2 text-neutral-400 hover:text-primary"
-            href="https://docs.browsertrix.cloud"
+            href="https://docs.browsertrix.com"
             target="_blank"
             rel="noopener"
           >

@@ -40,9 +40,10 @@ jobs:
             helm upgrade --install btrix https://github.com/webrecorder/browsertrix/releases/download/v${{ env.version }}/browsertrix-v${{ env.version }}.tgz
             ```
 
-            Alternatively, you can add the Browsertrix Helm Chart Repo with `helm repo add https://docs.browsertrix.com/repo/` and install with:
+            Alternatively, you can add the Browsertrix Helm Chart Repo with:
 
             ```  
+            helm repo add browsertrix https://docs.browsertrix.com/helm-repo/
             helm upgrade --install btrix browsertrix/browsertrix --version ${{ env.version }}
             ```
 
@@ -50,5 +51,5 @@ jobs:
 
           files: .chart-out/browsertrix-v${{ env.version }}.tgz
           tag_name: v${{ env.version }}
-          fail_on_unmatched_files: true
           draft: true
+          fail_on_unmatched_files: true

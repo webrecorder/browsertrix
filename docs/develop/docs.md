@@ -12,7 +12,7 @@ pip install mkdocs-material
 
 In the project root directory run `mkdocs serve` to run a local version of the documentation site.
 
-The docs hosted on [docs.browsertrix.cloud](https://docs.browsertrix.cloud) are created from the main branch of [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud)
+The docs hosted on [docs.browsertrix.com](https://docs.browsertrix.com) are created from the main branch of [https://github.com/webrecorder/browsertrix](https://github.com/webrecorder/browsertrix)
 
 ## Adding New Pages
 
