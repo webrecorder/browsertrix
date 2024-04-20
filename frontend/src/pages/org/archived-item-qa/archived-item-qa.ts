@@ -377,17 +377,17 @@ export class ArchivedItemQA extends TailwindElement {
         </header>
 
         <div
-          class="grid--pageToolbar flex flex-wrap items-center justify-stretch gap-y-2 overflow-hidden border-b py-2 @container"
+          class="grid--pageToolbar flex flex-wrap items-center justify-stretch gap-2 overflow-hidden border-b py-2 @container"
         >
           <h2
-            class="mr-4 flex-auto flex-shrink-0 flex-grow basis-32 truncate text-base font-semibold text-neutral-700"
+            class="flex-auto flex-shrink-0 flex-grow basis-32 truncate text-base font-semibold text-neutral-700"
             title="${this.page?.title ?? ""}"
           >
             ${this.page?.title ||
             html`<span class="opacity-50">${msg("No page title")}</span>`}
           </h2>
           <div
-            class="ml-auto flex flex-grow basis-auto flex-wrap justify-between gap-4 @lg:flex-grow-0"
+            class="ml-auto flex flex-grow basis-auto flex-wrap justify-between gap-2 @lg:flex-grow-0"
           >
             <sl-button
               size="small"
