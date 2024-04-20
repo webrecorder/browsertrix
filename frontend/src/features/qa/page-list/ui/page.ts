@@ -1,4 +1,4 @@
-import { localized } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import type { SlTooltip } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
@@ -159,7 +159,8 @@ export class QaPage extends TailwindElement {
             </div>
           </sl-tooltip>
           <h5 class="truncate text-sm font-semibold text-black">
-            ${page.title}
+            ${page.title ||
+            html`<span class="opacity-50">${msg("No page title")}</span>`}
           </h5>
           <div class="truncate text-xs leading-4 text-blue-600">
             ${page.url}

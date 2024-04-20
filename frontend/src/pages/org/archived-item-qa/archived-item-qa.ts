@@ -383,7 +383,8 @@ export class ArchivedItemQA extends TailwindElement {
             class="mr-4 flex-auto flex-shrink-0 flex-grow basis-32 truncate text-base font-semibold text-neutral-700"
             title="${this.page?.title ?? ""}"
           >
-            ${this.page ? this.page.title || msg("no page title") : nothing}
+            ${this.page?.title ||
+            html`<span class="opacity-50">${msg("No page title")}</span>`}
           </h2>
           <div
             class="ml-auto flex flex-grow basis-auto flex-wrap justify-between gap-4 @lg:flex-grow-0"
