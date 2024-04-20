@@ -18,7 +18,15 @@ function image(data: ReplayData) {
       ${msg("Screenshot not available")}
     </div>`;
   }
-  return html` <img class=${tw`h-full w-full`} src=${data.blobUrl} /> `;
+  return html`
+    <img
+      class=${tw`h-full w-full`}
+      width="1920"
+      height="1080"
+      alt=""
+      src=${data.blobUrl}
+    />
+  `;
 }
 
 export function renderScreenshots(
@@ -60,17 +68,13 @@ export function renderScreenshots(
           <div
             class=${tw`aspect-video overflow-hidden rounded-lg border bg-slate-50`}
           >
-            <sl-image-comparer>
-              <img
-                slot="after"
-                src="${crawlData?.blobUrl || ""}"
-                aria-labelledby="crawlScreenshotHeading"
-              />
-              <img
-                slot="before"
-                src="${qaData?.blobUrl || ""}"
-                aria-labelledby="qaScreenshotHeading"
-              />
+            <sl-image-comparer class="h-full w-full">
+              <div slot="after" aria-labelledby="crawlScreenshotHeading">
+                ${when(crawlData, image, renderSpinner)}
+              </div>
+              <div slot="before" aria-labelledby="qaScreenshotHeading">
+                ${when(qaData, image, renderSpinner)}
+              </div>
             </sl-image-comparer>
           </div>
         `}
