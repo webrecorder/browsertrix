@@ -3,7 +3,7 @@ import type { SlInput, SlTextarea } from "@shoelace-style/shoelace";
 
 import { getLocale } from "./localization";
 
-// TODO localize
+// TODO listen for localize changes and update
 const numberFormatter = new Intl.NumberFormat(getLocale());
 
 export type MaxLengthValidator = {
