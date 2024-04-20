@@ -65,7 +65,7 @@ export class DataTable extends TailwindElement {
         style=${gridAutoColumnsStyle}
       >
         <btrix-table-head
-          class="sticky top-0 z-10 rounded-t-[0.188rem] border-b bg-neutral-50"
+          class="sticky top-0 z-10 rounded-t-[0.1875rem] border-b bg-neutral-50"
         >
           ${this.columns.map(
             (content, i) => html`
