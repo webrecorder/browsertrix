@@ -127,6 +127,7 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert crawls[0]["activeQAState"]
     assert crawls[0]["activeQAStats"]
     assert crawls[0]["lastQAState"]
+    assert crawls[0]["lastQAStarted"]
 
     # Ensure sorting by qaState works as expected with all-crawls
     r = requests.get(
@@ -138,7 +139,7 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert crawls[0]["id"] == crawler_crawl_id
     assert crawls[0]["activeQAState"]
     assert crawls[0]["activeQAStats"]
-    assert crawls[0]["lastQAState"]
+    assert crawls[0]["lastQAStarted"]
 
     # Cancel crawl
     r = requests.post(

@@ -663,6 +663,7 @@ class CrawlOut(BaseMongoModel):
     activeQAState: Optional[str]
     activeQAStats: Optional[CrawlStats]
     lastQAState: Optional[str]
+    lastQAStarted: Optional[datetime]
 
 
 # ============================================================================

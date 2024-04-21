@@ -576,6 +576,7 @@ class BaseCrawlOps:
             },
             {"$set": {"lastQARun": {"$arrayElemAt": ["$sortedQARuns", 0]}}},
             {"$set": {"lastQAState": "$lastQARun.state"}},
+            {"$set": {"lastQAStarted": "$lastQARun.started"}},
             {
                 "$set": {
                     "qaRunCount": {
@@ -619,6 +620,7 @@ class BaseCrawlOps:
                 "finished",
                 "fileSize",
                 "reviewStatus",
+                "qaStarted",
                 "qaRunCount",
                 "qaState",
             ):
@@ -632,6 +634,10 @@ class BaseCrawlOps:
             # Tertiary sort for qaState - type, always ascending so crawls are first
             if sort_by == "qaState":
                 sort_query["lastQAState"] = sort_direction
+                sort_query["type"] = 1
+
+            if sort_by == "qaStarted":
+                sort_query["lastQAStarted"] = sort_direction
                 sort_query["type"] = 1
 
             aggregate.extend([{"$sort": sort_query}])

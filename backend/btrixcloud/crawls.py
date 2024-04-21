@@ -194,6 +194,7 @@ class CrawlOps(BaseCrawlOps):
             },
             {"$set": {"lastQARun": {"$arrayElemAt": ["$sortedQARuns", 0]}}},
             {"$set": {"lastQAState": "$lastQARun.state"}},
+            {"$set": {"lastQAStarted": "$lastQARun.started"}},
             {
                 "$set": {
                     "qaRunCount": {
@@ -238,6 +239,7 @@ class CrawlOps(BaseCrawlOps):
                 "fileSize",
                 "firstSeed",
                 "reviewStatus",
+                "qaStarted",
                 "qaRunCount",
                 "qaState",
             ):
@@ -250,6 +252,9 @@ class CrawlOps(BaseCrawlOps):
             # Add secondary sort for qaState - sorted by current, then last
             if sort_by == "qaState":
                 sort_query["lastQAState"] = sort_direction
+
+            if sort_by == "qaStarted":
+                sort_query["lastQAStarted"] = sort_direction
 
             aggregate.extend([{"$sort": sort_query}])
 
