@@ -14,7 +14,12 @@ import { CrawlStatus } from "./crawl-status";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { NavigateController } from "@/controllers/navigate";
-import { ReviewStatus, type ArchivedItem, type Crawl } from "@/types/crawler";
+import {
+  ReviewStatus,
+  type ArchivedItem,
+  type Crawl,
+  type CrawlState,
+} from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
 import { formatNumber, getLocale } from "@/utils/localization";
 
@@ -89,6 +94,9 @@ export class ArchivedItemListItem extends TailwindElement {
     const notApplicable = html`<span class="text-neutral-400"
       >${msg("n/a")}</span
     >`;
+
+    const lastQAState: CrawlState | null = (this.item as Crawl).lastQAState;
+    const qaRunCount: number = (this.item as Crawl).qaRunCount;
 
     return html`
       <btrix-table-row
@@ -248,15 +256,13 @@ export class ArchivedItemListItem extends TailwindElement {
                       @click=${this.onTooltipClick}
                       content=${(this.item as Crawl).activeQAState
                         ? msg("Analysis is currently running")
-                        : (this.item as Crawl).lastQAState
+                        : lastQAState
                           ? msg(
-                              str`Latest analysis status: ${CrawlStatus.getContent((this.item as Crawl).lastQAState!).label}`,
+                              str`Latest analysis status: ${CrawlStatus.getContent(lastQAState).label}`,
                             )
                           : msg("No analysis runs")}
                     >
-                      <div class="min-w-4">
-                        ${formatNumber((this.item as Crawl).qaRunCount)}
-                      </div>
+                      <div class="min-w-4">${formatNumber(qaRunCount)}</div>
                     </sl-tooltip>`}
               </btrix-table-cell>
             `}
