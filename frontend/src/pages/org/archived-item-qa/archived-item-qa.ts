@@ -45,6 +45,32 @@ import { finishedCrawlStates, isActive, renderName } from "@/utils/crawler";
 
 const DEFAULT_PAGE_SIZE = 100;
 
+type PageResource = {
+  status?: number;
+  mime?: string;
+  type?: string;
+};
+
+// From https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types
+const IMG_EXTS = [
+  "apng",
+  "avif",
+  "gif",
+  "jpg",
+  "jpeg",
+  "jfif",
+  "pjpeg",
+  "pjp",
+  "png",
+  "svg",
+  "webp",
+  "tif",
+  "tiff",
+  "bmp",
+  "ico",
+  "cur",
+];
+
 const tabToPrefix: Record<QATypes.QATab, string> = {
   screenshots: "view",
   text: "text",
@@ -828,6 +854,73 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
+  private resolveType(url: string, { mime = "", type }: PageResource) {
+    if (type) {
+      type = type.toLowerCase();
+    }
+
+    // Map common mime types where important information would be lost
+    // if we only use first half to more descriptive resource types
+    if (type === "script" || mime.includes("javascript")) {
+      return "javascript";
+    }
+    if (type === "stylesheet" || mime.includes("css")) {
+      return "stylesheet";
+    }
+    if (type === "image") {
+      return "image";
+    }
+    if (type === "font") {
+      return "font";
+    }
+    if (type === "ping") {
+      return "other";
+    }
+
+    if (url.endsWith("favicon.ico")) {
+      return "favicon";
+    }
+
+    let path = "";
+
+    try {
+      path = new URL(url).pathname;
+    } catch (e) {
+      // ignore
+    }
+
+    const ext = path.slice(path.lastIndexOf(".") + 1);
+
+    if (type === "fetch" || type === "xhr") {
+      if (IMG_EXTS.includes(ext)) {
+        return "image";
+      }
+    }
+
+    if (mime.includes("json") || ext === "json") {
+      return "json";
+    }
+
+    if (mime.includes("pdf") || ext === "pdf") {
+      return "pdf";
+    }
+
+    if (
+      type === "document" ||
+      mime.includes("html") ||
+      ext === "html" ||
+      ext === "htm"
+    ) {
+      return "html";
+    }
+
+    if (!mime) {
+      return "other";
+    }
+
+    return mime.split("/")[0];
+  }
+
   private async fetchContentForTab({ qa } = { qa: false }): Promise<void> {
     const page = this.page;
     const tab = this.tab;
@@ -851,7 +944,7 @@ export class ArchivedItemQA extends TailwindElement {
     const timestamp = page.ts?.split(".")[0].replace(/\D/g, "");
     const pageUrl = page.url;
 
-    const doLoad = async () => {
+    const doLoad = async (isQA: boolean) => {
       const urlPrefix = tabToPrefix[tab];
       const urlPart = `${timestamp}mp_/${urlPrefix ? `urn:${urlPrefix}:` : ""}${pageUrl}`;
       const url = `/replay/w/${sourceId}/${urlPart}`;
@@ -879,7 +972,7 @@ export class ArchivedItemQA extends TailwindElement {
         // tab === "resources"
 
         const json = (await resp.json()) as {
-          urls: { status?: number; mime?: string }[];
+          urls: PageResource[];
         };
         // console.log(json);
 
@@ -888,29 +981,18 @@ export class ArchivedItemQA extends TailwindElement {
           bad = 0;
 
         for (const [url, entry] of Object.entries(json.urls)) {
-          const { mime = "", status = 0 } = entry;
-          let resType = mime.split("/")[0];
+          const { status = 0, type, mime } = entry;
+          const resType = this.resolveType(url, entry);
 
-          // Map common mime types where important information would be lost
-          // if we only use first half to more descriptive resource types
-          if (mime.includes("javascript")) {
-            resType = "javascript";
-          }
-          if (mime.includes("css")) {
-            resType = "stylesheet";
-          }
-          if (mime.includes("json")) {
-            resType = "json";
-          }
-          if (mime.includes("html")) {
-            resType = "html";
-          }
-          if (url.endsWith("favicon.ico")) {
-            resType = "favicon";
-          }
-          if (!mime) {
-            resType = "other";
-          }
+          console.log(
+            isQA ? "replay" : "crawl",
+            status >= 400 ? "bad" : "good",
+            resType,
+            type,
+            mime,
+            status,
+            url,
+          );
 
           if (!typeMap.has(resType)) {
             if (status < 400) {
@@ -947,7 +1029,7 @@ export class ArchivedItemQA extends TailwindElement {
     };
 
     try {
-      const content = await doLoad();
+      const content = await doLoad(qa);
 
       if (qa) {
         this.qaData = {
