@@ -419,9 +419,22 @@ def test_list_all_crawls(
         assert item["finished"]
         assert item["state"]
 
-    # Test that all-crawls qaState sort always puts crawls before uploads
+    # Test that all-crawls lastQAState and lastQAStarted sorts always puts crawls before uploads
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=qaState",
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=lastQAState",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    last_type = None
+    for item in data["items"]:
+        if last_type == "upload":
+            assert item["type"] != "crawl"
+        last_type = item["type"]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=lastQAStarted",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
