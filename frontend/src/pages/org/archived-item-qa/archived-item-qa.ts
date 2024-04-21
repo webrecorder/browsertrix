@@ -984,15 +984,8 @@ export class ArchivedItemQA extends TailwindElement {
           const { status = 0, type, mime } = entry;
           const resType = this.resolveType(url, entry);
 
-          console.log(
-            isQA ? "replay" : "crawl",
-            status >= 400 ? "bad" : "good",
-            resType,
-            type,
-            mime,
-            status,
-            url,
-          );
+          // for debugging
+          logResource(isQA, resType, url, type, mime, status);
 
           if (!typeMap.has(resType)) {
             if (status < 400) {
@@ -1150,4 +1143,24 @@ export class ArchivedItemQA extends TailwindElement {
       });
     }
   }
+}
+
+// leaving here for further debugging of resources
+function logResource(
+  _isQA: boolean,
+  _resType: string,
+  _url: string,
+  _type?: string,
+  _mime?: string,
+  _status = 0,
+) {
+  // console.log(
+  //   _isQA ? "replay" : "crawl",
+  //   _status >= 400 ? "bad" : "good",
+  //   _resType,
+  //   _type,
+  //   _mime,
+  //   _status,
+  //   _url,
+  // );
 }
