@@ -564,8 +564,16 @@ class BaseCrawlOps:
             },
             # Add active QA run to array if exists prior to sorting, taking care not to
             # pass null to $concatArrays so that our result isn't null
-            {"set": {"qaActiveArray": {"$cond": [{"$ne": ["$qa", None]}, ["$qa"], []]}}}
-            {"$set": {"qaArray": {"$concatArrays": [ "$qaFinishedArray", "$qaActiveArray"]}}},
+            {
+                "set": {
+                    "qaActiveArray": {"$cond": [{"$ne": ["$qa", None]}, ["$qa"], []]}
+                }
+            },
+            {
+                "$set": {
+                    "qaArray": {"$concatArrays": ["$qaFinishedArray", "$qaActiveArray"]}
+                }
+            },
             {
                 "$set": {
                     "sortedQARuns": {
