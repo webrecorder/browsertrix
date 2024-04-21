@@ -116,29 +116,52 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert qa["started"]
     assert not qa["finished"]
 
-    # Ensure sorting by qaState works as expected - current floated to top
+    # Ensure sorting by lastQAState works as expected - current floated to top
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=qaState",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=lastQAState",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     crawls = r.json()["items"]
     assert crawls[0]["id"] == crawler_crawl_id
-    assert crawls[0]["activeQAState"]
     assert crawls[0]["activeQAStats"]
     assert crawls[0]["lastQAState"]
     assert crawls[0]["lastQAStarted"]
 
-    # Ensure sorting by qaState works as expected with all-crawls
+    # Ensure sorting by lastQAState works as expected with all-crawls
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=qaState",
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=lastQAState",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     crawls = r.json()["items"]
     assert crawls[0]["id"] == crawler_crawl_id
-    assert crawls[0]["activeQAState"]
     assert crawls[0]["activeQAStats"]
+    assert crawls[0]["lastQAState"]
+    assert crawls[0]["lastQAStarted"]
+
+    # Ensure sorting by lastQAStarted works as expected - current floated to top
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=lastQAStarted",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    assert crawls[0]["id"] == crawler_crawl_id
+    assert crawls[0]["activeQAStats"]
+    assert crawls[0]["lastQAState"]
+    assert crawls[0]["lastQAStarted"]
+
+    # Ensure sorting by lastQAState works as expected with all-crawls
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=lastQAStarted",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    assert crawls[0]["id"] == crawler_crawl_id
+    assert crawls[0]["activeQAStats"]
+    assert crawls[0]["lastQAState"]
     assert crawls[0]["lastQAStarted"]
 
     # Cancel crawl

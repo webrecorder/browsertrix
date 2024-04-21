@@ -169,8 +169,6 @@ class CrawlOps(BaseCrawlOps):
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject", "errors", "config"]},
-            {"$set": {"qaState": "$qa.state"}},
-            {"$set": {"activeQAState": "$qaState"}},
             {"$set": {"activeQAStats": "$qa.stats"}},
             {
                 "$set": {
@@ -182,11 +180,15 @@ class CrawlOps(BaseCrawlOps):
                     }
                 }
             },
+            # Add active QA run to array if exists prior to sorting, taking care not to
+            # pass null to $concatArrays so that our result isn't null
+            {"set": {"qaActiveArray": {"$cond": [{"$ne": ["$qa", None]}, ["$qa"], []]}}}
+            {"$set": {"qaArray": {"$concatArrays": [ "$qaFinishedArray", "$qaActiveArray"]}}},
             {
                 "$set": {
                     "sortedQARuns": {
                         "$sortArray": {
-                            "input": "$qaFinishedArray",
+                            "input": "$qaArray",
                             "sortBy": {"started": -1},
                         }
                     }
@@ -200,8 +202,8 @@ class CrawlOps(BaseCrawlOps):
                     "qaRunCount": {
                         "$size": {
                             "$cond": [
-                                {"$isArray": "$qaFinishedArray"},
-                                "$qaFinishedArray",
+                                {"$isArray": "$qaArray"},
+                                "$qaArray",
                                 [],
                             ]
                         }
@@ -211,7 +213,9 @@ class CrawlOps(BaseCrawlOps):
             {
                 "$unset": [
                     "lastQARun",
+                    "qaActiveArray",
                     "qaFinishedArray",
+                    "qaArray",
                     "sortedQARuns",
                 ]
             },
@@ -239,24 +243,15 @@ class CrawlOps(BaseCrawlOps):
                 "fileSize",
                 "firstSeed",
                 "reviewStatus",
-                "qaStarted",
                 "qaRunCount",
-                "qaState",
+                "lastQAState",
+                "lastQAStarted"
             ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
-            sort_query = {sort_by: sort_direction}
-
-            # Add secondary sort for qaState - sorted by current, then last
-            if sort_by == "qaState":
-                sort_query["lastQAState"] = sort_direction
-
-            if sort_by == "qaStarted":
-                sort_query["lastQAStarted"] = sort_direction
-
-            aggregate.extend([{"$sort": sort_query}])
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
 
         aggregate.extend(
             [

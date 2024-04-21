@@ -660,7 +660,6 @@ class CrawlOut(BaseMongoModel):
     reviewStatus: Optional[conint(ge=1, le=5)] = None  # type: ignore
 
     qaRunCount: int = 0
-    activeQAState: Optional[str]
     activeQAStats: Optional[CrawlStats]
     lastQAState: Optional[str]
     lastQAStarted: Optional[datetime]
