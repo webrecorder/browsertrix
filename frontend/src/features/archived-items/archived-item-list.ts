@@ -91,14 +91,12 @@ export class ArchivedItemListItem extends TailwindElement {
     >`;
 
     const crawlItem = this.item as Crawl;
-    const { activeQAState, activeQAStats, lastQAState, qaRunCount } = crawlItem;
+    const { activeQAStats, lastQAState, qaRunCount } = crawlItem;
     const activeProgress = activeQAStats
       ? Math.round((100 * activeQAStats.done) / activeQAStats.found)
       : 0;
 
-    const qaStatus = CrawlStatus.getContent(
-      activeQAState || lastQAState || undefined,
-    );
+    const qaStatus = CrawlStatus.getContent(lastQAState || undefined);
 
     return html`
       <btrix-table-row
@@ -256,7 +254,7 @@ export class ArchivedItemListItem extends TailwindElement {
                   ? notApplicable
                   : html`<sl-tooltip
                       @click=${this.onTooltipClick}
-                      content=${activeQAState
+                      content=${activeQAStats
                         ? msg("Analysis is currently running")
                         : lastQAState
                           ? msg(str`Latest analysis status: ${qaStatus.label}`)
