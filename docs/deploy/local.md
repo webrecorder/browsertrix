@@ -10,7 +10,7 @@ Today, there are numerous ways to deploy Kubernetes fairly easily, and we recomm
 
 The instructions below assume a local package manager for your platform (eg. `brew` for macOS, `choco` for Windows, etc...) is already installed.
 
-Cloning the repository at [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud) is only needed to access additional configuration files.
+Cloning the repository at [https://github.com/webrecorder/browsertrix](https://github.com/webrecorder/browsertrix) is only needed to access additional configuration files.
 
 Here are some environment specific instructions for setting up a local cluster from different Kubernetes vendors:
 
@@ -54,27 +54,63 @@ Here are some environment specific instructions for setting up a local cluster f
 
     3. Set `KUBECONFIG` to point to the config for K3S: `export KUBECONFIG=/etc/rancher/k3s/k3s.yaml` to ensure Helm will use the correct version.
 
-## Launching Browsertrix with Helm
+## Launching Browsertrix with Helm Repository
 
-Once you have a running Kubernetes cluster with one of the options above, and Helm 3 installed, install the latest release of Browsertrix directly from the latest GitHub release.
+Once you have a running Kubernetes cluster with Helm 3 installed using one of the options, you can add
+the Browsertrix Helm Repository:
+
+```sh
+helm repo add browsertrix https://docs.browsertrix.com/helm-repo/
+```
+
+and then install the latest version of the Browsertrix helm chart with:
+
+```sh
+helm upgrade --install btrix browsertrix/browsertrix
+```
+
+You can optionally specify a specific version with the `--version` flag:
+
+<insert-version></insert-version>
+
+```sh
+helm upgrade --install btrix browsertrix/browsertrix --version VERSION
+```
+
+The versions correspond to the available [Release Tags](https://github.com/webrecorder/browsertrix/tags)
+
+### Installing from GitHub Release Directly
+
+Alternatively, you can also use Helm to install a specific version of Browsertrix directly from the latest GitHub release, if you
+don't wish to add the Helm repository
 
 <insert-version></insert-version>
 
 
 ```sh
 helm upgrade --install btrix \
-https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-VERSION.tgz
+https://github.com/webrecorder/browsertrix/releases/download/VERSION/browsertrix-VERSION.tgz
 ```
+
+However, the Helm repository option is recommended as it makes upgrading to the latest version easier.
+
 
 ??? info "MicroK8S"
 
-    If using microk8s, the command will be:
+    If using microk8s, the commands will be:
+
+    ```sh
+    microk8s helm3 repo add browsertrix https://docs.browsertrix.com/helm-repo/
+    microk8s helm3 upgrade --install btrix browsertrix/browsertrix
+    ```
+
+    for the Helm repo option or, for a direct install:
 
     <insert-version></insert-version>
 
     ```sh
     microk8s helm3 upgrade --install btrix \
-    https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-VERSION.tgz
+    https://github.com/webrecorder/browsertrix/releases/download/VERSION/browsertrix-VERSION.tgz
     ```
 
     **Note:** Subsequent commands will also use `microk8s helm3` instead of `helm`.
@@ -86,7 +122,7 @@ An admin user with name `admin@example.com` and password `PASSW0RD!` will be aut
 
 With Helm, additional YAML files can be added to further override previous settings.
 
-Some possible settings can be changed are found in [chart/examples/local-config.yaml](https://github.com/webrecorder/browsertrix-cloud/blob/main/chart/examples/local-config.yaml).
+Some possible settings can be changed are found in [chart/examples/local-config.yaml](https://github.com/webrecorder/browsertrix/blob/main/chart/examples/local-config.yaml).
 
 For example, to change the default superadmin, uncomment the `superadmin` block in `local-config.yaml`, and then change the username (`admin@example.com`) and password (`PASSW0RD!`) to different values. (The admin username and password will be updated with each deployment).
 To change the local port, change `local_service_port` setting.
@@ -96,7 +132,7 @@ You can then redeploy with these additional settings by running:
 <insert-version></insert-version>
 
 ```shell
-helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/VERSION/browsertrix-cloud-VERSION.tgz \
+helm upgrade --install btrix https://github.com/webrecorder/browsertrix/releases/download/VERSION/browsertrix-VERSION.tgz \
 -f ./chart/examples/local-config.yaml
 ```
 
@@ -148,14 +184,14 @@ Often, the error may be obvious, such as failed to pull an image.
 
 If the pod is running, or previously ran, you can also get the logs from the container by running `#!sh kubectl logs <podname>`
 
-The outputs of these commands are helpful when reporting an issue [on GitHub](https://github.com/webrecorder/browsertrix-cloud/issues)
+The outputs of these commands are helpful when reporting an issue [on GitHub](https://github.com/webrecorder/browsertrix/issues)
 
 ## Updating the Cluster
 
 To update the cluster, for example to update to new version `NEWVERSION`, re-run the same command again, which will pull the latest images. In this way, you can upgrade to the latest release of Browsertrix. The upgrade will preserve the database and current archives.
 
 ```shell
-helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/NEWVERSION/browsertrix-cloud-NEWVERSION.tgz
+helm upgrade --install btrix https://github.com/webrecorder/browsertrix/releases/download/NEWVERSION/browsertrix-NEWVERSION.tgz
 ```
 
 ## Uninstalling

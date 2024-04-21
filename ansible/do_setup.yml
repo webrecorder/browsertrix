@@ -1,5 +1,5 @@
 ---
-- name: deploy browsertrix cloud on digital ocean
+- name: deploy browsertrix on digital ocean
   hosts: localhost
   connection: local
   gather_facts: false

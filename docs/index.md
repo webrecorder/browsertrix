@@ -12,6 +12,6 @@ Welcome to the Browsertrix official user guide and developer docs. These docs wi
 - [Developer Docs](develop/index.md) — Information on developing Browsertrix itself.
 - [User Guide](user-guide/index.md) — Instructions and reference for using Browsertrix.
 
-If you are unfamiliar with Browsertrix, please check out [our website](https://browsertrix.cloud), or the main repository at [https://github.com/webrecorder/browsertrix-cloud](https://github.com/webrecorder/browsertrix-cloud)
+If you are unfamiliar with Browsertrix, please check out [our website](https://browsertrix.com), or the main repository at [https://github.com/webrecorder/browsertrix](https://github.com/webrecorder/browsertrix)
 
-If something is missing, unclear, or seems incorrect, please open an [issue](https://github.com/webrecorder/browsertrix-cloud/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc) and we'll try to make sure that your questions get answered here in the future!
+If something is missing, unclear, or seems incorrect, please open an [issue](https://github.com/webrecorder/browsertrix/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc) and we'll try to make sure that your questions get answered here in the future!
