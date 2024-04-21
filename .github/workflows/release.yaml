@@ -1,4 +1,4 @@
-name: Browsertrix Cloud Release Build
+name: Browsertrix Release Build
 
 on:
   release:
