@@ -14,12 +14,7 @@ import { CrawlStatus } from "./crawl-status";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { NavigateController } from "@/controllers/navigate";
-import {
-  ReviewStatus,
-  type ArchivedItem,
-  type Crawl,
-  type CrawlState,
-} from "@/types/crawler";
+import { ReviewStatus, type ArchivedItem, type Crawl } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
 import { formatNumber, getLocale } from "@/utils/localization";
 
@@ -95,8 +90,15 @@ export class ArchivedItemListItem extends TailwindElement {
       >${msg("n/a")}</span
     >`;
 
-    const lastQAState: CrawlState | null = (this.item as Crawl).lastQAState;
-    const qaRunCount: number = (this.item as Crawl).qaRunCount;
+    const crawlItem = this.item as Crawl;
+    const { activeQAState, activeQAStats, lastQAState, qaRunCount } = crawlItem;
+    const activeProgress = activeQAStats
+      ? Math.round((100 * activeQAStats.done) / activeQAStats.found)
+      : 0;
+
+    const qaStatus = CrawlStatus.getContent(
+      activeQAState || lastQAState || undefined,
+    );
 
     return html`
       <btrix-table-row
@@ -254,15 +256,35 @@ export class ArchivedItemListItem extends TailwindElement {
                   ? notApplicable
                   : html`<sl-tooltip
                       @click=${this.onTooltipClick}
-                      content=${(this.item as Crawl).activeQAState
+                      content=${activeQAState
                         ? msg("Analysis is currently running")
                         : lastQAState
-                          ? msg(
-                              str`Latest analysis status: ${CrawlStatus.getContent(lastQAState).label}`,
-                            )
+                          ? msg(str`Latest analysis status: ${qaStatus.label}`)
                           : msg("No analysis runs")}
                     >
-                      <div class="min-w-4">${formatNumber(qaRunCount)}</div>
+                      <div
+                        class="flex min-w-4"
+                        style="${qaRunCount
+                          ? ""
+                          : "color: var(--sl-color-neutral-400)"}"
+                      >
+                        ${activeQAStats
+                          ? html`
+                              <sl-progress-ring
+                                value="${activeProgress}"
+                                style="color: ${qaStatus.cssColor}; --size: 20px; --track-width: 1px; --indicator-width: 2px;"
+                              ></sl-progress-ring>
+                            `
+                          : html`
+                              <sl-icon
+                                style="color: ${qaStatus.cssColor}"
+                                name="microscope"
+                                library="app"
+                                aria-hidden="true"
+                              ></sl-icon>
+                            `}
+                        &nbsp;(${formatNumber(qaRunCount)})
+                      </div>
                     </sl-tooltip>`}
               </btrix-table-cell>
             `}
@@ -371,7 +393,7 @@ export class ArchivedItemList extends TailwindElement {
         {
           cssCol: "1fr",
           cell: html`<btrix-table-header-cell>
-            ${msg("Analysis Runs")}
+            ${msg("Last Analysis Status (Total Runs)")}
           </btrix-table-header-cell>`,
         },
       );

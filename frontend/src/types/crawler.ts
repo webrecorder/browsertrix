@@ -179,6 +179,7 @@ export type Crawl = ArchivedItemBase &
     stopping: boolean;
     qaRunCount: number;
     activeQAState: CrawlState | null;
+    activeQAStats: { done: number; found: number } | null;
     lastQAState: CrawlState | null;
   };
 

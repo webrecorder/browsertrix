@@ -24,7 +24,8 @@ type SortField =
   | "fileSize"
   | "reviewStatus"
   | "qaRunCount"
-  | "qaState";
+  | "qaState"
+  | "qaStarted";
 type SortDirection = "asc" | "desc";
 
 const ABORT_REASON_THROTTLE = "throttled";
@@ -48,6 +49,10 @@ const sortableFields: Record<
   },
   qaState: {
     label: msg("Latest Analysis Status"),
+    defaultDirection: "desc",
+  },
+  qaStarted: {
+    label: msg("Last Analysis Run"),
     defaultDirection: "desc",
   },
   qaRunCount: {
