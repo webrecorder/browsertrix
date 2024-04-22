@@ -158,6 +158,12 @@ type ArchivedItemBase = {
   crawlExecSeconds: number;
   qaCrawlExecSeconds: number;
   reviewStatus?: ReviewStatus;
+  completions?: number;
+  stopping: boolean | null;
+  qaRunCount: number | null;
+  activeQAStats: { done: number; found: number } | null;
+  lastQAState: CrawlState | null;
+  lastQAStarted: string | null;
 };
 
 export type Crawl = ArchivedItemBase &
@@ -174,12 +180,6 @@ export type Crawl = ArchivedItemBase &
       size: number;
       numReplicas: number;
     }[];
-    completions?: number;
-    description: string | null;
-    stopping: boolean;
-    qaRunCount: number;
-    activeQAStats: { done: number; found: number } | null;
-    lastQAState: CrawlState | null;
   };
 
 export type Upload = ArchivedItemBase & {
