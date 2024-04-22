@@ -768,7 +768,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
   async deleteQARun(id: string) {
     try {
       await this.api.fetch(
-        `/orgs/${this.orgId}/crawls/${this.crawlId}`,
+        `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/delete`,
         this.authState!,
         { method: "POST", body: JSON.stringify({ qa_run_ids: [id] }) },
       );
