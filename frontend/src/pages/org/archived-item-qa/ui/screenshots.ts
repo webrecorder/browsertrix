@@ -38,7 +38,7 @@ export function renderScreenshots(
         id="qaScreenshotHeading"
         class=${tw`mb-2 font-semibold ${splitView ? tw`flex-1` : "flex-grow-0"}`}
       >
-        ${msg("Screenshot from replay")}
+        ${msg("Screenshot during analysis")}
       </h3>
     </div>
     ${splitView
