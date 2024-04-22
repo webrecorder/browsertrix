@@ -83,7 +83,11 @@ function renderDiff(
   ];
 
   return html`
-    <btrix-data-table .columns=${columns} .rows=${rows}></btrix-data-table>
+    <btrix-data-table
+      class="block"
+      .columns=${columns}
+      .rows=${rows}
+    ></btrix-data-table>
   `;
 }
 
