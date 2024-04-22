@@ -305,7 +305,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
           >
             <btrix-table-head>
               <btrix-table-header-cell>
-                ${msg("State")}
+                ${msg("Status")}
               </btrix-table-header-cell>
               <btrix-table-header-cell>
                 ${msg("Started")}
