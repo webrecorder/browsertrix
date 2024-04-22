@@ -224,7 +224,11 @@ export class ArchivedItemDetailQA extends TailwindElement {
           <sl-icon name="file-richtext-fill"></sl-icon>
           ${msg("Pages")}
         </btrix-tab-group-tab>
-        <btrix-tab-group-tab slot="nav" panel="runs">
+        <btrix-tab-group-tab
+          slot="nav"
+          panel="runs"
+          ?disabled=${!this.qaRuns?.length}
+        >
           <sl-icon name="list-ul"></sl-icon>
           ${msg("Analysis Runs")}
         </btrix-tab-group-tab>
