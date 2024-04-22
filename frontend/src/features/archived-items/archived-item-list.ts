@@ -86,9 +86,20 @@ export class ArchivedItemListItem extends TailwindElement {
       typeIcon = "upload";
     }
 
-    const notApplicable = html`<span class="text-neutral-400"
-      >${msg("n/a")}</span
-    >`;
+    const notApplicable = html`<sl-tooltip content=${msg("Not applicable")}>
+      <sl-icon
+        name="slash"
+        class="text-base text-neutral-400"
+        label=${msg("Not applicable")}
+      ></sl-icon>
+    </sl-tooltip>`;
+    const none = html`<sl-tooltip content=${msg("None")}>
+      <sl-icon
+        name="slash"
+        class="text-base text-neutral-400"
+        label=${msg("None")}
+      ></sl-icon>
+    </sl-tooltip>`;
 
     const crawlItem = this.item as Crawl;
     const { activeQAStats, lastQAState, qaRunCount } = crawlItem;
@@ -149,6 +160,29 @@ export class ArchivedItemListItem extends TailwindElement {
                   ></sl-icon>
                 </sl-tooltip>
               `}
+          <sl-tooltip
+            content=${activeQAStats
+              ? `${activeProgress}%`
+              : msg(
+                  str`Last QA Analysis: ${isUpload ? "Not Applicable" : qaStatus.label || msg("None")}`,
+                )}
+          >
+            ${activeQAStats
+              ? html`
+                  <sl-progress-ring
+                    value="${activeProgress}"
+                    style="color: ${qaStatus.cssColor}; --size: var(--font-size-base); --track-width: 1px; --indicator-width: 2px;"
+                  ></sl-progress-ring>
+                `
+              : html`
+                  <sl-icon
+                    class="text-base"
+                    style="color: ${qaStatus.cssColor}"
+                    name=${isUpload ? "slash" : "microscope"}
+                    library=${isUpload ? "default" : "app"}
+                  ></sl-icon>
+                `}
+          </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell
           rowClickTarget=${ifDefined(
@@ -252,41 +286,11 @@ export class ArchivedItemListItem extends TailwindElement {
               <btrix-table-cell>
                 ${isUpload
                   ? notApplicable
-                  : html` <div
-                      class="${qaRunCount
-                        ? ""
-                        : "text-neutral-400"} flex min-w-4 items-center gap-2"
-                    >
-                      <sl-tooltip
-                        @click=${this.onTooltipClick}
-                        content=${activeQAStats
-                          ? msg("Analysis is currently running")
-                          : lastQAState
-                            ? qaStatus.label
-                            : msg("No analysis runs")}
-                      >
-                        ${activeQAStats
-                          ? html`
-                              <sl-progress-ring
-                                value="${activeProgress}"
-                                style="color: ${qaStatus.cssColor}; --size: var(--font-size-base); --track-width: 1px; --indicator-width: 2px;"
-                              ></sl-progress-ring>
-                            `
-                          : html`
-                              <sl-icon
-                                class="text-base"
-                                style="color: ${qaStatus.cssColor}"
-                                name="microscope"
-                                library="app"
-                                aria-hidden="true"
-                              ></sl-icon>
-                            `}
-                      </sl-tooltip>
-                      (${formatNumber(qaRunCount)})
-                    </div>`}
+                  : qaRunCount
+                    ? formatNumber(qaRunCount)
+                    : none}
               </btrix-table-cell>
             `}
-
         <slot name="actionCell"></slot>
       </btrix-table-row>
     `;
@@ -352,7 +356,7 @@ export class ArchivedItemList extends TailwindElement {
       {
         cssCol: "min-content",
         cell: html`<btrix-table-header-cell>
-          <span class="sr-only">${msg("Type")}</span>
+          ${msg("Status")}
         </btrix-table-header-cell>`,
       },
       {
@@ -391,7 +395,7 @@ export class ArchivedItemList extends TailwindElement {
         {
           cssCol: "1fr",
           cell: html`<btrix-table-header-cell>
-            ${msg("Last Analysis Status (Total Runs)")}
+            ${msg("QA Analysis Runs")}
           </btrix-table-header-cell>`,
         },
       );
