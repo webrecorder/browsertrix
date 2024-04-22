@@ -34,15 +34,22 @@ jobs:
           body: |
             ## Deployment
 
-            This release can be deployed with Helm by running:
+            This release can be deployed with Helm directly by running:
 
             ```
-            helm upgrade --install btrix https://github.com/webrecorder/browsertrix-cloud/releases/download/v${{ env.version }}/browsertrix-cloud-v${{ env.version }}.tgz
+            helm upgrade --install btrix https://github.com/webrecorder/browsertrix/releases/download/v${{ env.version }}/browsertrix-v${{ env.version }}.tgz
             ```
 
-            See [the development guide](https://docs.browsertrix.cloud/deploy/) for more info how to deploy Browsertrix Cloud.
+            Alternatively, you can add the Browsertrix Helm Chart Repo with:
 
-          files: .chart-out/browsertrix-cloud-v${{ env.version }}.tgz
+            ```  
+            helm repo add browsertrix https://docs.browsertrix.com/helm-repo/
+            helm upgrade --install btrix browsertrix/browsertrix --version ${{ env.version }}
+            ```
+
+            See [the development guide](https://docs.browsertrix.com/deploy/) for more info how to deploy Browsertrix.
+
+          files: .chart-out/browsertrix-v${{ env.version }}.tgz
           tag_name: v${{ env.version }}
-          fail_on_unmatched_files: true
           draft: true
+          fail_on_unmatched_files: true

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# ./btrix: Browsertrix Cloud dev environment utility
+# ./btrix: Browsertrix dev environment utility
 #
 # Test commands require installing pytest first, e.g.:
 # python3 -m pip install pytest
@@ -196,7 +196,7 @@ if [[ $1 = "nightly" ]]; then
     runNightlyTests
 fi
 
-# down: stop and uninstall browsertrix cloud
+# down: stop and uninstall browsertrix
 if [[ $1 = "down" ]]; then
     if [[ $2 = "$MICROK8S" ]] ; then
         resetMicrok8s

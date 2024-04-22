@@ -42,8 +42,35 @@ import type { ArchivedItem } from "@/types/crawler";
 import type { ArchivedItemQAPage, QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive, renderName } from "@/utils/crawler";
+import { getLocale } from "@/utils/localization";
 
 const DEFAULT_PAGE_SIZE = 100;
+
+type PageResource = {
+  status?: number;
+  mime?: string;
+  type?: string;
+};
+
+// From https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types
+const IMG_EXTS = [
+  "apng",
+  "avif",
+  "gif",
+  "jpg",
+  "jpeg",
+  "jfif",
+  "pjpeg",
+  "pjp",
+  "png",
+  "svg",
+  "webp",
+  "tif",
+  "tiff",
+  "bmp",
+  "ico",
+  "cur",
+];
 
 const tabToPrefix: Record<QATypes.QATab, string> = {
   screenshots: "view",
@@ -51,27 +78,6 @@ const tabToPrefix: Record<QATypes.QATab, string> = {
   resources: "pageinfo",
   replay: "",
 };
-
-const resourceTypes = [
-  "document",
-  "image",
-  "media",
-  "stylesheet",
-  "font",
-  "script",
-  "xhr",
-  "fetch",
-  "prefetch",
-  "eventsource",
-  "websocket",
-  "manifest",
-  "ping",
-  "cspviolationreport",
-  "preflight",
-  "signedexchange",
-  "texttrack",
-  "other",
-];
 
 @localized()
 @customElement("btrix-archived-item-qa")
@@ -713,6 +719,7 @@ export class ArchivedItemQA extends TailwindElement {
             this.page,
             (page) => html`
               <sl-format-date
+                lang=${getLocale()}
                 class="font-monostyle text-xs text-neutral-500"
                 date=${`${page.ts}Z`}
                 month="2-digit"
@@ -866,6 +873,73 @@ export class ArchivedItemQA extends TailwindElement {
     }
   }
 
+  private resolveType(url: string, { mime = "", type }: PageResource) {
+    if (type) {
+      type = type.toLowerCase();
+    }
+
+    // Map common mime types where important information would be lost
+    // if we only use first half to more descriptive resource types
+    if (type === "script" || mime.includes("javascript")) {
+      return "javascript";
+    }
+    if (type === "stylesheet" || mime.includes("css")) {
+      return "stylesheet";
+    }
+    if (type === "image") {
+      return "image";
+    }
+    if (type === "font") {
+      return "font";
+    }
+    if (type === "ping") {
+      return "other";
+    }
+
+    if (url.endsWith("favicon.ico")) {
+      return "favicon";
+    }
+
+    let path = "";
+
+    try {
+      path = new URL(url).pathname;
+    } catch (e) {
+      // ignore
+    }
+
+    const ext = path.slice(path.lastIndexOf(".") + 1);
+
+    if (type === "fetch" || type === "xhr") {
+      if (IMG_EXTS.includes(ext)) {
+        return "image";
+      }
+    }
+
+    if (mime.includes("json") || ext === "json") {
+      return "json";
+    }
+
+    if (mime.includes("pdf") || ext === "pdf") {
+      return "pdf";
+    }
+
+    if (
+      type === "document" ||
+      mime.includes("html") ||
+      ext === "html" ||
+      ext === "htm"
+    ) {
+      return "html";
+    }
+
+    if (!mime) {
+      return "other";
+    }
+
+    return mime.split("/")[0];
+  }
+
   private async fetchContentForTab({ qa } = { qa: false }): Promise<void> {
     const page = this.page;
     const tab = this.tab;
@@ -889,7 +963,7 @@ export class ArchivedItemQA extends TailwindElement {
     const timestamp = page.ts?.split(".")[0].replace(/\D/g, "");
     const pageUrl = page.url;
 
-    const doLoad = async () => {
+    const doLoad = async (isQA: boolean) => {
       const urlPrefix = tabToPrefix[tab];
       const urlPart = `${timestamp}mp_/${urlPrefix ? `urn:${urlPrefix}:` : ""}${pageUrl}`;
       const url = `/replay/w/${sourceId}/${urlPart}`;
@@ -917,20 +991,30 @@ export class ArchivedItemQA extends TailwindElement {
         // tab === "resources"
 
         const json = (await resp.json()) as {
-          urls: { status?: number; type?: string }[];
+          urls: PageResource[];
         };
         // console.log(json);
 
         const typeMap = new Map<string, QATypes.GoodBad>();
-        resourceTypes.forEach((x) => typeMap.set(x, { good: 0, bad: 0 }));
         let good = 0,
           bad = 0;
 
-        for (const entry of Object.values(json.urls)) {
-          const { type: resType_ = "", status = 0 } = entry;
-          const resType = resType_.toLowerCase();
+        for (const [url, entry] of Object.entries(json.urls)) {
+          const { status = 0, type, mime } = entry;
+          const resType = this.resolveType(url, entry);
 
-          if (typeMap.has(resType)) {
+          // for debugging
+          logResource(isQA, resType, url, type, mime, status);
+
+          if (!typeMap.has(resType)) {
+            if (status < 400) {
+              typeMap.set(resType, { good: 1, bad: 0 });
+              good++;
+            } else {
+              typeMap.set(resType, { good: 0, bad: 1 });
+              bad++;
+            }
+          } else {
             const count = typeMap.get(resType);
             if (status < 400) {
               count!.good++;
@@ -942,13 +1026,6 @@ export class ArchivedItemQA extends TailwindElement {
             typeMap.set(resType, count!);
           }
         }
-
-        // remove empty entries
-        resourceTypes.forEach((x) => {
-          if (!typeMap.get(x)) {
-            typeMap.delete(x);
-          }
-        });
 
         typeMap.set("Total", { good, bad });
 
@@ -964,7 +1041,7 @@ export class ArchivedItemQA extends TailwindElement {
     };
 
     try {
-      const content = await doLoad();
+      const content = await doLoad(qa);
 
       if (qa) {
         this.qaData = {
@@ -1085,4 +1162,24 @@ export class ArchivedItemQA extends TailwindElement {
       });
     }
   }
+}
+
+// leaving here for further debugging of resources
+function logResource(
+  _isQA: boolean,
+  _resType: string,
+  _url: string,
+  _type?: string,
+  _mime?: string,
+  _status = 0,
+) {
+  // console.log(
+  //   _isQA ? "replay" : "crawl",
+  //   _status >= 400 ? "bad" : "good",
+  //   _resType,
+  //   _type,
+  //   _mime,
+  //   _status,
+  //   _url,
+  // );
 }

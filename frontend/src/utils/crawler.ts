@@ -1,6 +1,8 @@
 import { msg, str } from "@lit/localize";
 import { html, type TemplateResult } from "lit";
 
+import { tw } from "./tailwind";
+
 import type { ArchivedItem, CrawlState, Workflow } from "@/types/crawler";
 
 export const activeCrawlStates: CrawlState[] = [
@@ -34,30 +36,30 @@ export function isActive(state: CrawlState | null) {
 }
 
 export function renderName(item: ArchivedItem | Workflow) {
-  if (item.name) return html`<span class="truncate">${item.name}</span>`;
+  if (item.name) return html`<div class=${tw`truncate`}>${item.name}</div>`;
   if (item.firstSeed && item.seedCount) {
     const remainder = item.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
       if (remainder === 1) {
-        nameSuffix = html`<span class="ml-1"
-          >${msg(str`+${remainder} URL`)}</span
-        >`;
+        nameSuffix = html`<div class=${tw`ml-1`}>
+          ${msg(str`+${remainder} URL`)}
+        </div>`;
       } else {
-        nameSuffix = html`<span class="ml-1"
-          >${msg(str`+${remainder} URLs`)}</span
-        >`;
+        nameSuffix = html`<div class=${tw`ml-1`}>
+          ${msg(str`+${remainder} URLs`)}
+        </div>`;
       }
     }
     return html`
-      <div class="inline-flex overflow-hidden whitespace-nowrap">
-        <span class="min-w-0 truncate">${item.firstSeed}</span>
-        <span>${nameSuffix}</span>
+      <div class=${tw`inline-flex w-full overflow-hidden whitespace-nowrap`}>
+        <div class=${tw`min-w-0 truncate`}>${item.firstSeed}</div>
+        ${nameSuffix}
       </div>
     `;
   }
 
-  return html`<span class="truncate text-neutral-500"
-    >${msg("(unnamed item)")}</span
-  >`;
+  return html`<div class=${tw`truncate text-neutral-500`}>
+    ${msg("(unnamed item)")}
+  </div>`;
 }

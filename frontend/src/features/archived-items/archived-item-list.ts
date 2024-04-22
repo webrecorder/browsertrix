@@ -1,6 +1,6 @@
-import { localized, msg } from "@lit/localize";
-import { type SlCheckbox } from "@shoelace-style/shoelace";
-import { css, html, nothing } from "lit";
+import { localized, msg, str } from "@lit/localize";
+import type { SlCheckbox, SlHideEvent } from "@shoelace-style/shoelace";
+import { css, html, nothing, type TemplateResult } from "lit";
 import {
   customElement,
   property,
@@ -10,10 +10,13 @@ import {
 } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
+import { CrawlStatus } from "./crawl-status";
+
 import { TailwindElement } from "@/classes/TailwindElement";
 import { NavigateController } from "@/controllers/navigate";
-import type { ArchivedItem } from "@/types/crawler";
+import { ReviewStatus, type ArchivedItem } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
+import { formatDate, formatNumber, getLocale } from "@/utils/localization";
 
 export type CheckboxChangeEventDetail = {
   checked: boolean;
@@ -21,7 +24,6 @@ export type CheckboxChangeEventDetail = {
 
 /**
  * @slot actionCell - Action cell
- * @slot namePrefix - Prefix name in cell
  * @fires btrix-checkbox-change
  */
 @localized()
@@ -41,14 +43,20 @@ export class ArchivedItemListItem extends TailwindElement {
     }
   `;
 
-  @property({ type: Object })
+  @property({ type: Object, attribute: false })
   item?: ArchivedItem;
+
+  @property({ type: String, attribute: false })
+  listType: ArchivedItem["type"] | null = null;
 
   @property({ type: Boolean })
   checkbox = false;
 
   @property({ type: Boolean })
   checked = false;
+
+  @property({ type: Boolean })
+  showStatus = false;
 
   @property({ type: Number })
   index = 0;
@@ -57,19 +65,49 @@ export class ArchivedItemListItem extends TailwindElement {
   href?: string;
 
   @query("sl-checkbox")
-  checkboxEl?: SlCheckbox;
+  readonly checkboxEl?: SlCheckbox;
+
+  @query(".rowLink")
+  private readonly rowLink?: HTMLAnchorElement;
 
   private readonly navigate = new NavigateController(this);
 
   render() {
     if (!this.item) return;
     const checkboxId = `${this.item.id}-checkbox`;
-    const rowName = html`
-      <div class="flex items-center gap-3">
-        <slot name="namePrefix"></slot>
-        ${renderName(this.item)}
-      </div>
-    `;
+    const rowName = renderName(this.item);
+    const isUpload = this.item.type === "upload";
+    const crawlStatus = CrawlStatus.getContent(this.item.state, this.item.type);
+    let typeLabel = msg("Crawl");
+    let typeIcon = "gear-wide-connected";
+
+    if (isUpload) {
+      typeLabel = msg("Upload");
+      typeIcon = "upload";
+    }
+
+    const notApplicable = html`<sl-tooltip content=${msg("Not applicable")}>
+      <sl-icon
+        name="slash"
+        class="text-base text-neutral-400"
+        label=${msg("Not applicable")}
+      ></sl-icon>
+    </sl-tooltip>`;
+    const none = html`<sl-tooltip content=${msg("None")}>
+      <sl-icon
+        name="slash"
+        class="text-base text-neutral-400"
+        label=${msg("None")}
+      ></sl-icon>
+    </sl-tooltip>`;
+
+    const { activeQAStats, lastQAState, lastQAStarted, qaRunCount } = this.item;
+    const activeProgress = activeQAStats?.found
+      ? Math.round((100 * activeQAStats.done) / activeQAStats.found)
+      : 0;
+
+    const qaStatus = CrawlStatus.getContent(lastQAState || undefined);
+
     return html`
       <btrix-table-row
         class=${this.href || this.checkbox
@@ -99,13 +137,65 @@ export class ArchivedItemListItem extends TailwindElement {
               </btrix-table-cell>
             `
           : nothing}
+        <btrix-table-cell class="pr-0">
+          ${this.showStatus
+            ? html`
+                <btrix-crawl-status
+                  state=${this.item.state}
+                  hideLabel
+                  ?isUpload=${isUpload}
+                ></btrix-crawl-status>
+              `
+            : html`
+                <sl-tooltip
+                  content=${msg(str`${typeLabel}: ${crawlStatus.label}`)}
+                  @sl-hide=${(e: SlHideEvent) => e.stopPropagation()}
+                  @sl-after-hide=${(e: SlHideEvent) => e.stopPropagation()}
+                >
+                  <sl-icon
+                    style="color: ${crawlStatus.cssColor}"
+                    name=${typeIcon}
+                    label=${typeLabel}
+                  ></sl-icon>
+                </sl-tooltip>
+              `}
+          <sl-tooltip
+            content=${activeQAStats
+              ? msg(
+                  str`QA Analysis: ${qaStatus.label} (${activeProgress}% finished)`,
+                )
+              : msg(
+                  str`QA Analysis: ${isUpload ? "Not Applicable" : qaStatus.label || msg("None")}`,
+                )}
+          >
+            ${activeQAStats
+              ? html`
+                  <sl-progress-ring
+                    value="${activeProgress}"
+                    style="color: ${qaStatus.cssColor}; --size: var(--font-size-base); --track-width: 1px; --indicator-width: 2px;"
+                  ></sl-progress-ring>
+                `
+              : html`
+                  <sl-icon
+                    class="text-base"
+                    style="color: ${qaStatus.cssColor}"
+                    name=${isUpload ? "slash" : "microscope"}
+                    library=${isUpload ? "default" : "app"}
+                  ></sl-icon>
+                `}
+          </sl-tooltip>
+        </btrix-table-cell>
         <btrix-table-cell
           rowClickTarget=${ifDefined(
             this.href ? "a" : this.checkbox ? "label" : undefined,
           )}
         >
           ${this.href
-            ? html`<a href=${this.href} @click=${this.navigate.link}>
+            ? html`<a
+                class="rowLink overflow-hidden"
+                href=${this.href}
+                @click=${this.navigate.link}
+              >
                 ${rowName}
               </a>`
             : this.checkbox
@@ -122,36 +212,108 @@ export class ArchivedItemListItem extends TailwindElement {
               : html`<div>${rowName}</div>`}
         </btrix-table-cell>
         <btrix-table-cell>
-          <sl-format-date
-            class="truncate"
-            date=${`${this.item.finished}Z`}
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-            hour="2-digit"
-            minute="2-digit"
-          ></sl-format-date>
+          <sl-tooltip
+            content=${msg(str`By ${this.item.userName}`)}
+            @click=${this.onTooltipClick}
+          >
+            <sl-format-date
+              lang=${getLocale()}
+              class="truncate"
+              date=${`${this.item.finished}Z`}
+              month="2-digit"
+              day="2-digit"
+              year="2-digit"
+              hour="2-digit"
+              minute="2-digit"
+            ></sl-format-date>
+          </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell>
-          <sl-format-bytes
-            class="truncate"
-            value=${this.item.fileSize || 0}
-            display="narrow"
-          ></sl-format-bytes>
+          <sl-tooltip
+            content=${formatNumber(this.item.fileSize || 0, {
+              style: "unit",
+              unit: "byte",
+              unitDisplay: "long",
+            })}
+            @click=${this.onTooltipClick}
+          >
+            <sl-format-bytes
+              class="truncate"
+              value=${this.item.fileSize || 0}
+              display="narrow"
+            ></sl-format-bytes>
+          </sl-tooltip>
         </btrix-table-cell>
-        <btrix-table-cell>
-          ${this.item.type === "crawl"
-            ? html`<div class="truncate">
-                ${(this.item.stats?.done || 0).toLocaleString()}
-              </div>`
-            : html`<span class="text-neutral-400">${msg("n/a")}</span>`}
-        </btrix-table-cell>
-        <btrix-table-cell>
-          <div class="truncate">${this.item.userName}</div>
-        </btrix-table-cell>
+        ${this.listType === "upload"
+          ? nothing
+          : html`
+              <btrix-table-cell>
+                ${isUpload
+                  ? notApplicable
+                  : html`<sl-tooltip
+                      @click=${this.onTooltipClick}
+                      content=${msg(
+                        str`${formatNumber(
+                          this.item.stats?.done ? +this.item.stats.done : 0,
+                        )} crawled, ${formatNumber(this.item.stats?.found ? +this.item.stats.found : 0)} found`,
+                      )}
+                    >
+                      <div class="min-w-4">
+                        ${formatNumber(
+                          this.item.stats?.done ? +this.item.stats.done : 0,
+                          {
+                            notation: "compact",
+                          },
+                        )}
+                      </div>
+                    </sl-tooltip>`}
+              </btrix-table-cell>
+              <btrix-table-cell>
+                ${isUpload
+                  ? notApplicable
+                  : lastQAStarted && qaRunCount
+                    ? html`
+                        <sl-tooltip
+                          content=${msg(
+                            str`Last run started on ${formatDate(lastQAStarted)}`,
+                          )}
+                        >
+                          <span>
+                            ${formatNumber(qaRunCount, {
+                              notation: "compact",
+                            })}
+                          </span>
+                        </sl-tooltip>
+                      `
+                    : none}
+              </btrix-table-cell>
+              <btrix-table-cell>
+                ${isUpload
+                  ? notApplicable
+                  : html`<sl-tooltip
+                      @click=${this.onTooltipClick}
+                      content=${this.item.reviewStatus
+                        ? msg(
+                            str`Rated ${this.item.reviewStatus} / ${ReviewStatus.Excellent}`,
+                          )
+                        : msg("No QA review submitted")}
+                    >
+                      <btrix-qa-review-status
+                        .status=${this.item.reviewStatus}
+                      ></btrix-qa-review-status>
+                    </sl-tooltip>`}
+              </btrix-table-cell>
+            `}
         <slot name="actionCell"></slot>
       </btrix-table-row>
     `;
+  }
+
+  // FIXME Tooltips are enabled by styling them in in table.stylesheet.css
+  // to have a z-index higher than the anchor link overlay.
+  // Should probably fix this in table-cell or table-row instead
+  private onTooltipClick() {
+    this.rowLink?.click();
   }
 }
 
@@ -190,8 +352,11 @@ export class ArchivedItemList extends TailwindElement {
     }
   `;
 
+  @property({ type: String })
+  listType: ArchivedItem["type"] | null = null;
+
   @queryAssignedElements({ selector: "btrix-archived-item-list-item" })
-  items!: ArchivedItemListItem[];
+  public items!: ArchivedItemListItem[];
 
   @state()
   private hasCheckboxCell = false;
@@ -200,14 +365,73 @@ export class ArchivedItemList extends TailwindElement {
   private hasActionCell = false;
 
   render() {
+    const headerCols: { cssCol: string; cell: TemplateResult<1> | symbol }[] = [
+      {
+        cssCol: "min-content",
+        cell: html`<btrix-table-header-cell>
+          ${msg("Status")}
+        </btrix-table-header-cell>`,
+      },
+      {
+        cssCol: "[clickable-start] 50ch",
+        cell: html`<btrix-table-header-cell>
+          ${msg("Name")}
+        </btrix-table-header-cell>`,
+      },
+      {
+        cssCol: "12rem",
+        cell: html`<btrix-table-header-cell>
+          ${msg("Date Created")}
+        </btrix-table-header-cell>`,
+      },
+      {
+        cssCol: "1fr",
+        cell: html`<btrix-table-header-cell>
+          ${msg("Size")}
+        </btrix-table-header-cell>`,
+      },
+    ];
+    if (this.listType !== "upload") {
+      headerCols.push(
+        {
+          cssCol: "1fr",
+          cell: html`<btrix-table-header-cell>
+            ${msg("Pages Crawled")}
+          </btrix-table-header-cell>`,
+        },
+        {
+          cssCol: "1fr",
+          cell: html`<btrix-table-header-cell>
+            ${msg("QA Analysis Runs")}
+          </btrix-table-header-cell>`,
+        },
+        {
+          cssCol: "1fr",
+          cell: html`<btrix-table-header-cell>
+            ${msg("QA Rating")}
+          </btrix-table-header-cell>`,
+        },
+      );
+    }
+    if (this.hasCheckboxCell) {
+      headerCols.unshift({
+        cssCol: "min-content",
+        cell: nothing, // renders into slot
+      });
+    }
+    if (this.hasActionCell) {
+      headerCols.push({
+        cssCol: "[clickable-end] min-content",
+        cell: nothing, // renders into slot
+      });
+    }
+
     return html`
       <style>
         btrix-table {
-          grid-template-columns: ${`${
-            this.hasCheckboxCell ? "min-content" : ""
-          } [clickable-start] 60ch 12rem 1fr 1fr 30ch [clickable-end] ${
-            this.hasActionCell ? "min-content" : ""
-          }`.trim()};
+          grid-template-columns: ${headerCols
+            .map(({ cssCol }) => cssCol)
+            .join(" ")};
         }
       </style>
       <div class="overflow-auto">
@@ -219,17 +443,7 @@ export class ArchivedItemList extends TailwindElement {
                 (this.hasCheckboxCell =
                   (e.target as HTMLSlotElement).assignedElements().length > 0)}
             ></slot>
-            <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
-            <btrix-table-header-cell>
-              ${msg("Date Created")}
-            </btrix-table-header-cell>
-            <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
-            <btrix-table-header-cell
-              >${msg("Pages Crawled")}</btrix-table-header-cell
-            >
-            <btrix-table-header-cell>
-              ${msg("Created By")}
-            </btrix-table-header-cell>
+            ${headerCols.map(({ cell }) => cell)}
             <slot
               name="actionCell"
               @slotchange=${(e: Event) =>
@@ -238,7 +452,13 @@ export class ArchivedItemList extends TailwindElement {
             ></slot>
           </btrix-table-head>
           <btrix-table-body class="rounded border">
-            <slot></slot>
+            <slot
+              @slotchange=${() => {
+                this.items.forEach((row) => {
+                  row.listType = this.listType;
+                });
+              }}
+            ></slot>
           </btrix-table-body>
         </btrix-table>
       </div>

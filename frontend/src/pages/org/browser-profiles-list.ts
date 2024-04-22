@@ -10,6 +10,7 @@ import type { APIPaginatedList } from "@/types/api";
 import type { Browser } from "@/types/browser";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { getLocale } from "@/utils/localization";
 
 /**
  * Usage:
@@ -140,6 +141,7 @@ export class BrowserProfilesList extends LiteElement {
         </btrix-table-cell>
         <btrix-table-cell class="whitespace-nowrap">
           <sl-format-date
+            lang=${getLocale()}
             date=${`${data.created}Z`}
             month="2-digit"
             day="2-digit"

@@ -19,7 +19,13 @@ import LiteElement, { html } from "@/utils/LiteElement";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;
 type SearchFields = "name" | "firstSeed";
-type SortField = "finished" | "fileSize";
+type SortField =
+  | "finished"
+  | "fileSize"
+  | "reviewStatus"
+  | "qaRunCount"
+  | "lastQAState"
+  | "lastQAStarted";
 type SortDirection = "asc" | "desc";
 
 const ABORT_REASON_THROTTLE = "throttled";
@@ -35,6 +41,22 @@ const sortableFields: Record<
   },
   fileSize: {
     label: msg("Size"),
+    defaultDirection: "desc",
+  },
+  reviewStatus: {
+    label: msg("QA Rating"),
+    defaultDirection: "desc",
+  },
+  lastQAState: {
+    label: msg("Latest Analysis Status"),
+    defaultDirection: "desc",
+  },
+  lastQAStarted: {
+    label: msg("Last Analysis Run"),
+    defaultDirection: "desc",
+  },
+  qaRunCount: {
+    label: msg("# of Analysis Runs"),
     defaultDirection: "desc",
   },
 };
@@ -372,7 +394,7 @@ export class CrawlsList extends LiteElement {
     );
     return html`
       <sl-select
-        class="flex-1 md:w-[10rem]"
+        class="flex-1 md:w-[24ch]"
         size="small"
         pill
         value=${this.orderBy.field}
@@ -436,7 +458,7 @@ export class CrawlsList extends LiteElement {
     if (!this.archivedItems) return;
 
     return html`
-      <btrix-archived-item-list>
+      <btrix-archived-item-list .listType=${this.itemType}>
         <btrix-table-header-cell slot="actionCell" class="px-1">
           <span class="sr-only">${msg("Row actions")}</span>
         </btrix-table-header-cell>
@@ -499,13 +521,8 @@ export class CrawlsList extends LiteElement {
     <btrix-archived-item-list-item
       href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}`}
       .item=${item}
+      ?showStatus=${this.itemType !== null}
     >
-      <btrix-crawl-status
-        slot="namePrefix"
-        state=${item.state}
-        hideLabel
-        type=${item.type}
-      ></btrix-crawl-status>
       <btrix-table-cell slot="actionCell" class="px-1">
         <btrix-overflow-dropdown
           @click=${(e: MouseEvent) => {

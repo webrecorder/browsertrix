@@ -1,7 +1,11 @@
 import { css, html, LitElement } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  queryAssignedElements,
+} from "lit/decorators.js";
 
-const ALLOWED_ROW_CLICK_TARGET_TAG = ["a", "label"] as const;
+export const ALLOWED_ROW_CLICK_TARGET_TAG = ["a", "label"] as const;
 
 /**
  * @example Usage as row click target:
@@ -41,6 +45,9 @@ export class TableCell extends LitElement {
 
   @property({ type: String })
   rowClickTarget?: (typeof ALLOWED_ROW_CLICK_TARGET_TAG)[number];
+
+  @queryAssignedElements({ selector: ".rowClickTarget" })
+  public rowClickTargetEl?: HTMLElement[];
 
   render() {
     return html`<slot @slotchange=${this.handleSlotChange}></slot>`;

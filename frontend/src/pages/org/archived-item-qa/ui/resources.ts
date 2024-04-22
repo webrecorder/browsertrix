@@ -53,23 +53,29 @@ function renderDiff(
         ${qaResources[TOTAL].bad.toLocaleString()}
       </span>`,
     ],
-    ...Object.keys(crawlResources)
+    ...Object.keys(qaResources)
       .filter((key) => key !== TOTAL)
       .map((key) => [
         html`<span class="capitalize">${key}</span>`,
-        html`${crawlResources[key].good.toLocaleString()}`,
-        html`${crawlResources[key].bad.toLocaleString()}`,
+        html`${Object.prototype.hasOwnProperty.call(crawlResources, key)
+          ? crawlResources[key].good.toLocaleString()
+          : 0}`,
+        html`${Object.prototype.hasOwnProperty.call(crawlResources, key)
+          ? crawlResources[key].bad.toLocaleString()
+          : 0}`,
         html`<span
-          class=${crawlResources[key].good !== qaResources[key].good
-            ? tw`text-danger`
-            : tw`text-neutral-400`}
+          class=${Object.prototype.hasOwnProperty.call(crawlResources, key) &&
+          crawlResources[key].good === qaResources[key].good
+            ? tw`text-neutral-400`
+            : tw`text-danger`}
         >
           ${qaResources[key].good.toLocaleString()}
         </span>`,
         html`<span
-          class=${crawlResources[key].bad !== qaResources[key].bad
-            ? tw`font-semibold text-danger`
-            : tw`text-neutral-400`}
+          class=${Object.prototype.hasOwnProperty.call(crawlResources, key) &&
+          crawlResources[key].bad === qaResources[key].bad
+            ? tw`text-neutral-400`
+            : tw`font-semibold text-danger`}
         >
           ${qaResources[key].bad.toLocaleString()}
         </span>`,

@@ -29,6 +29,7 @@ import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import { getLocale } from "@/utils/localization";
 import { tw } from "@/utils/tailwind";
 
 import "./ui/qa";
@@ -139,8 +140,7 @@ export class ArchivedItemDetail extends TailwindElement {
     return `${this.navigate.orgBasePath}/${path}`;
   }
 
-  // TODO localize
-  private readonly numberFormatter = new Intl.NumberFormat();
+  private readonly numberFormatter = new Intl.NumberFormat(getLocale());
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
@@ -272,6 +272,7 @@ export class ArchivedItemDetail extends TailwindElement {
               .qaRuns=${this.qaRuns}
               .qaRunId=${this.qaRunId}
               .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
+              @btrix-qa-runs-update=${() => void this.fetchQARuns()}
             ></btrix-archived-item-detail-qa>
           `,
         );
@@ -593,9 +594,7 @@ export class ArchivedItemDetail extends TailwindElement {
               <sl-menu-item
                 @click=${() =>
                   this.navigate.to(
-                    `${this.navigate.orgBasePath}/workflows/crawl/${
-                      (this.crawl as Crawl).cid
-                    }`,
+                    `${this.navigate.orgBasePath}/workflows/crawl/${this.crawl?.cid}`,
                   )}
               >
                 <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
@@ -603,7 +602,7 @@ export class ArchivedItemDetail extends TailwindElement {
               </sl-menu-item>
               <sl-menu-item
                 @click=${() =>
-                  CopyButton.copyToClipboard((this.crawl as Crawl).cid)}
+                  CopyButton.copyToClipboard(this.crawl?.cid || "")}
               >
                 <sl-icon name="copy" slot="prefix"></sl-icon>
                 ${msg("Copy Workflow ID")}
@@ -712,6 +711,7 @@ export class ArchivedItemDetail extends TailwindElement {
             ? html`
                 <btrix-desc-list-item label=${msg("Uploaded")}>
                   <sl-format-date
+                    lang=${getLocale()}
                     date=${`${this.crawl!.finished}Z` /** Z for UTC */}
                     month="2-digit"
                     day="2-digit"
@@ -725,6 +725,7 @@ export class ArchivedItemDetail extends TailwindElement {
             : html`
                 <btrix-desc-list-item label=${msg("Start Time")}>
                   <sl-format-date
+                    lang=${getLocale()}
                     date=${`${this.crawl!.started}Z` /** Z for UTC */}
                     month="2-digit"
                     day="2-digit"
@@ -737,6 +738,7 @@ export class ArchivedItemDetail extends TailwindElement {
                 <btrix-desc-list-item label=${msg("Finish Time")}>
                   ${this.crawl!.finished
                     ? html`<sl-format-date
+                        lang=${getLocale()}
                         date=${`${this.crawl!.finished}Z` /** Z for UTC */}
                         month="2-digit"
                         day="2-digit"

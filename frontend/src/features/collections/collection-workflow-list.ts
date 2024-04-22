@@ -17,6 +17,7 @@ import type {
 import type { Crawl, Workflow } from "@/types/crawler";
 import { type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates } from "@/utils/crawler";
+import { getLocale } from "@/utils/localization";
 
 export type SelectionChangeDetail = {
   selection: Record<string, boolean>;
@@ -286,6 +287,7 @@ export class CollectionWorkflowList extends TailwindElement {
         <div class="grid flex-1 grid-cols-5 items-center">
           <div class="col-span-3 md:col-span-1">
             <sl-format-date
+              lang=${getLocale()}
               date=${`${crawl.finished}Z`}
               month="2-digit"
               day="2-digit"

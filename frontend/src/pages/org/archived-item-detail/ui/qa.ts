@@ -26,10 +26,7 @@ import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
-import {
-  approvalFromPage,
-  labelFor as labelForPageReview,
-} from "@/features/qa/page-list/helpers/reviewStatus";
+import * as pageApproval from "@/features/qa/page-list/helpers/approval";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
 import type {
@@ -37,59 +34,13 @@ import type {
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import {
-  ReviewStatus,
-  type ArchivedItem,
-  type ArchivedItemPage,
-} from "@/types/crawler";
+import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { finishedCrawlStates } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { getLocale, pluralize } from "@/utils/localization";
-
-const iconForCrawlReview = (status: ArchivedItem["reviewStatus"]) => {
-  switch (status) {
-    case ReviewStatus.Bad:
-    case ReviewStatus.Poor:
-      return html`<sl-icon
-        name="patch-exclamation-fill"
-        class="text-danger-600"
-      ></sl-icon>`;
-    case ReviewStatus.Fair:
-      return html`<sl-icon
-        name="patch-minus"
-        class="text-success-600"
-      ></sl-icon>`;
-    case ReviewStatus.Good:
-    case ReviewStatus.Excellent:
-      return html`<sl-icon
-        name="patch-check-fill"
-        class="text-success-600"
-      ></sl-icon>`;
-
-    default:
-      return;
-  }
-};
-
-const labelForCrawlReview = (severity: ArchivedItem["reviewStatus"]) => {
-  switch (severity) {
-    case ReviewStatus.Bad:
-      return msg("Bad");
-    case ReviewStatus.Poor:
-      return msg("Poor");
-    case ReviewStatus.Fair:
-      return msg("Fair");
-    case ReviewStatus.Good:
-      return msg("Good");
-    case ReviewStatus.Excellent:
-      return msg("Excellent");
-    default:
-      return;
-  }
-};
 
 const notApplicable = () =>
   html`<span class="text-neutral-400">${msg("n/a")}</span>`;
@@ -105,6 +56,9 @@ function statusWithIcon(
   `;
 }
 
+/**
+ * @fires btrix-qa-runs-update
+ */
 @localized()
 @customElement("btrix-archived-item-detail-qa")
 export class ArchivedItemDetailQA extends TailwindElement {
@@ -216,10 +170,13 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 </btrix-desc-list-item>
               `
             : ""}
-          <btrix-desc-list-item label=${msg("Crawl Rating")}>
+          <btrix-desc-list-item label=${msg("QA Rating")}>
             ${when(
               this.crawl,
-              (crawl) => this.renderReviewStatus(crawl.reviewStatus),
+              (crawl) =>
+                html`<btrix-qa-review-status
+                  .status=${crawl.reviewStatus}
+                ></btrix-qa-review-status>`,
               this.renderLoadingDetail,
             )}
           </btrix-desc-list-item>
@@ -351,7 +308,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
           >
             <btrix-table-head>
               <btrix-table-header-cell>
-                ${msg("State")}
+                ${msg("Status")}
               </btrix-table-header-cell>
               <btrix-table-header-cell>
                 ${msg("Started")}
@@ -376,6 +333,16 @@ export class ArchivedItemDetailQA extends TailwindElement {
   }
 
   private readonly renderQARunRows = (qaRuns: QARun[]) => {
+    if (!qaRuns.length) {
+      return html`
+        <div
+          class="col-span-4 flex h-full flex-col items-center justify-center gap-2 p-3 text-xs text-neutral-500"
+        >
+          <sl-icon name="slash-circle"></sl-icon>
+          ${msg("No analysis runs found")}
+        </div>
+      `;
+    }
     return qaRuns.map(
       (run, idx) => html`
         <btrix-table-row class=${idx > 0 ? "border-t" : ""}>
@@ -511,6 +478,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
               variant="danger"
               @click=${async () => {
                 await this.deleteQARun(runToBeDeleted.id);
+                this.dispatchEvent(new CustomEvent("btrix-qa-runs-update"));
                 this.deleting = null;
                 void this.deleteQADialog?.hide();
               }}
@@ -523,17 +491,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
 
   private readonly renderLoadingDetail = () =>
     html`<div class="min-w-32"><sl-spinner class="h-4 w-4"></sl-spinner></div>`;
-
-  private renderReviewStatus(status: ArchivedItem["reviewStatus"]) {
-    const icon =
-      iconForCrawlReview(status) ??
-      html` <sl-icon name="slash-circle" class="text-neutral-400"></sl-icon> `;
-    const label =
-      labelForCrawlReview(status) ??
-      html`<span class="text-neutral-400">${msg("None Submitted")}</span>`;
-
-    return statusWithIcon(icon, label);
-  }
 
   private renderAnalysis() {
     const isRunning =
@@ -692,11 +649,11 @@ export class ArchivedItemDetailQA extends TailwindElement {
   }
 
   private renderApprovalStatus(page: ArchivedItemPage) {
-    const approvalStatus = approvalFromPage(page);
+    const approvalStatus = pageApproval.approvalFromPage(page);
     const status = approvalStatus === "commentOnly" ? null : approvalStatus;
     const icon = iconForPageReview(status);
     const label =
-      labelForPageReview(status) ??
+      pageApproval.labelFor(status) ??
       html`<span class="text-neutral-400">${msg("None")}</span>`;
 
     return statusWithIcon(icon, label);
@@ -768,7 +725,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
   async deleteQARun(id: string) {
     try {
       await this.api.fetch(
-        `/orgs/${this.orgId}/crawls/${this.crawlId}`,
+        `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/delete`,
         this.authState!,
         { method: "POST", body: JSON.stringify({ qa_run_ids: [id] }) },
       );

@@ -169,8 +169,6 @@ class CrawlOps(BaseCrawlOps):
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject", "errors", "config"]},
-            {"$set": {"qaState": "$qa.state"}},
-            {"$set": {"activeQAState": "$qaState"}},
             {"$set": {"activeQAStats": "$qa.stats"}},
             {
                 "$set": {
@@ -182,11 +180,23 @@ class CrawlOps(BaseCrawlOps):
                     }
                 }
             },
+            # Add active QA run to array if exists prior to sorting, taking care not to
+            # pass null to $concatArrays so that our result isn't null
+            {
+                "$set": {
+                    "qaActiveArray": {"$cond": [{"$ne": ["$qa", None]}, ["$qa"], []]}
+                }
+            },
+            {
+                "$set": {
+                    "qaArray": {"$concatArrays": ["$qaFinishedArray", "$qaActiveArray"]}
+                }
+            },
             {
                 "$set": {
                     "sortedQARuns": {
                         "$sortArray": {
-                            "input": "$qaFinishedArray",
+                            "input": "$qaArray",
                             "sortBy": {"started": -1},
                         }
                     }
@@ -194,13 +204,14 @@ class CrawlOps(BaseCrawlOps):
             },
             {"$set": {"lastQARun": {"$arrayElemAt": ["$sortedQARuns", 0]}}},
             {"$set": {"lastQAState": "$lastQARun.state"}},
+            {"$set": {"lastQAStarted": "$lastQARun.started"}},
             {
                 "$set": {
                     "qaRunCount": {
                         "$size": {
                             "$cond": [
-                                {"$isArray": "$qaFinishedArray"},
-                                "$qaFinishedArray",
+                                {"$isArray": "$qaArray"},
+                                "$qaArray",
                                 [],
                             ]
                         }
@@ -210,7 +221,9 @@ class CrawlOps(BaseCrawlOps):
             {
                 "$unset": [
                     "lastQARun",
+                    "qaActiveArray",
                     "qaFinishedArray",
+                    "qaArray",
                     "sortedQARuns",
                 ]
             },
@@ -239,19 +252,14 @@ class CrawlOps(BaseCrawlOps):
                 "firstSeed",
                 "reviewStatus",
                 "qaRunCount",
-                "qaState",
+                "lastQAState",
+                "lastQAStarted",
             ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
-            sort_query = {sort_by: sort_direction}
-
-            # Add secondary sort for qaState - sorted by current, then last
-            if sort_by == "qaState":
-                sort_query["lastQAState"] = sort_direction
-
-            aggregate.extend([{"$sort": sort_query}])
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
 
         aggregate.extend(
             [
@@ -820,11 +828,15 @@ class CrawlOps(BaseCrawlOps):
                 status_code=404, detail=f"crawl_not_found, (details: {exc})"
             )
 
-    async def delete_crawl_qa_runs(self, crawl_id: str, delete_list: DeleteQARunList):
+    async def delete_crawl_qa_runs(
+        self, crawl_id: str, delete_list: DeleteQARunList, org: Organization
+    ):
         """delete specified finished QA run"""
-
         count = 0
         for qa_run_id in delete_list.qa_run_ids:
+            await self.page_ops.delete_qa_run_from_pages(crawl_id, qa_run_id)
+            await self.delete_crawl_qa_run_files(crawl_id, qa_run_id, org)
+
             res = await self.crawls.find_one_and_update(
                 {"_id": crawl_id, "type": "crawl"},
                 {"$unset": {f"qaFinished.{qa_run_id}": ""}},
@@ -833,9 +845,20 @@ class CrawlOps(BaseCrawlOps):
             if res:
                 count += 1
 
-            await self.page_ops.delete_qa_run_from_pages(crawl_id, qa_run_id)
-
         return {"deleted": count}
+
+    async def delete_crawl_qa_run_files(
+        self, crawl_id: str, qa_run_id: str, org: Organization
+    ):
+        """delete crawl qa wacz files"""
+        qa_run = await self.get_qa_run(crawl_id, qa_run_id, org)
+        for file_ in qa_run.files:
+            if not await self.storage_ops.delete_crawl_file_object(org, file_):
+                raise HTTPException(status_code=400, detail="file_deletion_error")
+            # Not replicating QA run WACZs yet
+            # await self.background_job_ops.create_delete_replica_jobs(
+            #     org, file_, qa_run_id, "qa"
+            # )
 
     async def qa_run_finished(self, crawl_id: str):
         """clear active qa, add qa run to finished list, if successful"""
@@ -892,16 +915,25 @@ class CrawlOps(BaseCrawlOps):
         qa = crawl_data.get("qa")
         return QARunOut(**qa) if qa else None
 
-    async def get_qa_run_for_replay(
+    async def get_qa_run(
         self, crawl_id: str, qa_run_id: str, org: Optional[Organization] = None
-    ) -> QARunWithResources:
-        """Fetch QA runs with resources for replay.json"""
+    ):
+        """Get QARun by id"""
         crawl = await self.get_crawl(crawl_id, org)
         qa_finished = crawl.qaFinished or {}
         qa_run = qa_finished.get(qa_run_id)
 
         if not qa_run:
             raise HTTPException(status_code=404, detail="crawl_qa_not_found")
+
+        return qa_run
+
+    async def get_qa_run_for_replay(
+        self, crawl_id: str, qa_run_id: str, org: Optional[Organization] = None
+    ) -> QARunWithResources:
+        """Fetch QA runs with resources for replay.json"""
+        crawl = await self.get_crawl(crawl_id, org)
+        qa_run = await self.get_qa_run(crawl_id, qa_run_id, org)
 
         if not org:
             org = await self.orgs.get_org_by_id(crawl.oid)
@@ -1204,8 +1236,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         qa_run_ids: DeleteQARunList,
         org: Organization = Depends(org_crawl_dep),
     ):
-        # pylint: disable=unused-argument
-        return await ops.delete_crawl_qa_runs(crawl_id, qa_run_ids)
+        return await ops.delete_crawl_qa_runs(crawl_id, qa_run_ids, org)
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa",
