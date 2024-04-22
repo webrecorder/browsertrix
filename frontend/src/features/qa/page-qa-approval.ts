@@ -305,6 +305,7 @@ export class PageQAToolbar extends TailwindElement {
                       <sl-icon-button
                         class="hover:text-danger"
                         name="trash3"
+                        label=${msg("Delete comment")}
                         @click=${async () => this.deleteComment(comment.id)}
                       ></sl-icon-button>
                     </div>
@@ -366,7 +367,7 @@ export class PageQAToolbar extends TailwindElement {
     this.showComments = false;
 
     try {
-      await this.api.fetch(
+      const { data } = await this.api.fetch<{ data: ArchivedItemPageComment }>(
         `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.pageId}/notes`,
         this.authState!,
         {
@@ -375,15 +376,8 @@ export class PageQAToolbar extends TailwindElement {
         },
       );
 
-      const comment: ArchivedItemPageComment = {
-        id: "",
-        created: new Date().toISOString(),
-        modified: "",
-        userName: "",
-        text: value,
-      };
       void this.dispatchPageUpdate({
-        notes: this.page?.notes ? [...this.page.notes, comment] : [comment],
+        notes: this.page?.notes ? [...this.page.notes, data] : [data],
       });
     } catch (e: unknown) {
       console.debug(e);
@@ -408,7 +402,7 @@ export class PageQAToolbar extends TailwindElement {
       );
 
       void this.dispatchPageUpdate({
-        notes: this.page?.notes?.filter(({ id }) => id === commentId) || [],
+        notes: this.page?.notes?.filter(({ id }) => id !== commentId) || [],
       });
     } catch {
       this.notify.toast({
