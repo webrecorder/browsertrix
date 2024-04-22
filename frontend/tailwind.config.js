@@ -63,6 +63,7 @@ function makeTheme() {
       current: "currentColor",
       ...colors.map(makeColorPalette),
       primary,
+      theme: { blue: primary, green: "#4d7c0f" },
       success: { ...makeColorPalette("success"), DEFAULT: `var(--success)` },
       warning: { ...makeColorPalette("warning"), DEFAULT: `var(--warning)` },
       danger: { ...makeColorPalette("danger"), DEFAULT: `var(--danger)` },

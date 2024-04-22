@@ -326,6 +326,8 @@ export class ArchivedItemQA extends TailwindElement {
     return html`
       ${this.renderHidden()}
 
+      <btrix-beta-badge placement="right"></btrix-beta-badge>
+
       <article class="grid gap-x-6 gap-y-4 md:gap-y-0">
         <header
           class="grid--header flex items-center justify-between gap-1 border-b py-2"
