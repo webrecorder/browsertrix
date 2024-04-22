@@ -1,7 +1,7 @@
 import { localized } from "@lit/localize";
 import type { SlTooltip } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import { html, nothing, type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 
 import {
@@ -158,16 +158,14 @@ export class QaPage extends TailwindElement {
                       0,
                     )}%</span
                   >`
-                : severe > 0
-                  ? html`<span class="text-[10px] font-semibold text-red-600"
-                      >+${severe}</span
-                    >`
-                  : moderate > 0
-                    ? html`<span
-                        class="text-[10px] font-semibold text-yellow-600"
-                        >+${moderate}</span
-                      >`
-                    : nothing}
+                : html`<span
+                    class="${clsx(
+                      "text-[10px] font-semibold",
+                      textColorFromSeverity(severe > 0 ? "severe" : "moderate"),
+                      severe === 0 && moderate === 0 && "hidden",
+                    )}"
+                    >+${severe || moderate}</span
+                  >`}
               ${page.notes?.[0] &&
               html`<sl-icon
                 name="chat-square-text-fill"
