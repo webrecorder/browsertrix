@@ -23,6 +23,7 @@ from .models import (
     StorageRef,
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
+    QARun,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now
@@ -317,6 +318,7 @@ class BaseCrawlOps:
 
             if type_ == "crawl":
                 await self.page_ops.delete_crawl_pages(crawl_id, org.id)
+                await self.delete_all_crawl_qa_files(crawl_id, org)
 
             crawl_size = await self._delete_crawl_files(crawl, org)
             size += crawl_size
@@ -351,16 +353,20 @@ class BaseCrawlOps:
 
         return res.deleted_count, cids_to_update, quota_reached
 
-    async def _delete_crawl_files(self, crawl: BaseCrawl, org: Organization):
+    async def _delete_crawl_files(
+        self, crawl: Union[BaseCrawl, QARun], org: Organization
+    ):
         """Delete files associated with crawl from storage."""
         size = 0
         for file_ in crawl.files:
             size += file_.size
             if not await self.storage_ops.delete_crawl_file_object(org, file_):
                 raise HTTPException(status_code=400, detail="file_deletion_error")
-            await self.background_job_ops.create_delete_replica_jobs(
-                org, file_, crawl.id, crawl.type
-            )
+            # Not replicating QA run WACZs yet
+            if not isinstance(crawl, QARun):
+                await self.background_job_ops.create_delete_replica_jobs(
+                    org, file_, crawl.id, crawl.type
+                )
 
         return size
 
@@ -369,6 +375,14 @@ class BaseCrawlOps:
         crawl = await self.get_base_crawl(crawl_id)
         org = await self.orgs.get_org_by_id(oid)
         return await self._delete_crawl_files(crawl, org)
+
+    async def delete_all_crawl_qa_files(self, crawl_id: str, org: Organization):
+        """Delete files for all qa runs in a crawl"""
+        crawl_raw = await self.get_crawl_raw(crawl_id)
+        qa_finished = crawl_raw.get("qaFinished", {})
+        for qa_run_raw in qa_finished.values():
+            qa_run = QARun(**qa_run_raw)
+            await self._delete_crawl_files(qa_run, org)
 
     async def _resolve_crawl_refs(
         self,

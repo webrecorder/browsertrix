@@ -525,9 +525,21 @@ def test_delete_qa_runs(
     qa_run_pages_ready,
     failed_qa_run_id,
 ):
+    # Get download links for QA WACZs
+    delete_list = [qa_run_id, failed_qa_run_id]
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    assert len(data["resources"]) == 1
+    qa_wacz_url = data["resources"][0]["path"]
+
+    # Delete QA runs
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/delete",
-        json={"qa_run_ids": [qa_run_id, failed_qa_run_id]},
+        json={"qa_run_ids": delete_list},
         headers=crawler_auth_headers,
     )
 
@@ -550,6 +562,10 @@ def test_delete_qa_runs(
 
         time.sleep(5)
         count += 1
+
+    # Ensure QA WACZs weas deleted
+    r = requests.get(f"http://localhost:30870{qa_wacz_url}")
+    assert r.status_code == 404
 
     # Ensure associated qa run information in pages is also deleted
     for qa_run in (qa_run_id, failed_qa_run_id):
