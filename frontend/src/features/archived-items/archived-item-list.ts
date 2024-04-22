@@ -14,9 +14,9 @@ import { CrawlStatus } from "./crawl-status";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { NavigateController } from "@/controllers/navigate";
-import { ReviewStatus, type ArchivedItem, type Crawl } from "@/types/crawler";
+import { ReviewStatus, type ArchivedItem } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
-import { formatNumber, getLocale } from "@/utils/localization";
+import { formatDate, formatNumber, getLocale } from "@/utils/localization";
 
 export type CheckboxChangeEventDetail = {
   checked: boolean;
@@ -101,8 +101,7 @@ export class ArchivedItemListItem extends TailwindElement {
       ></sl-icon>
     </sl-tooltip>`;
 
-    const crawlItem = this.item as Crawl;
-    const { activeQAStats, lastQAState, qaRunCount } = crawlItem;
+    const { activeQAStats, lastQAState, lastQAStarted, qaRunCount } = this.item;
     const activeProgress = activeQAStats?.found
       ? Math.round((100 * activeQAStats.done) / activeQAStats.found)
       : 0;
@@ -163,10 +162,10 @@ export class ArchivedItemListItem extends TailwindElement {
           <sl-tooltip
             content=${activeQAStats
               ? msg(
-                  str`Last QA Analysis: ${qaStatus.label} (${activeProgress}% finished)`,
+                  str`QA Analysis: ${qaStatus.label} (${activeProgress}% finished)`,
                 )
               : msg(
-                  str`Last QA Analysis: ${isUpload ? "Not Applicable" : qaStatus.label || msg("None")}`,
+                  str`QA Analysis: ${isUpload ? "Not Applicable" : qaStatus.label || msg("None")}`,
                 )}
           >
             ${activeQAStats
@@ -272,14 +271,12 @@ export class ArchivedItemListItem extends TailwindElement {
               <btrix-table-cell>
                 ${isUpload
                   ? notApplicable
-                  : qaRunCount
+                  : lastQAStarted && qaRunCount
                     ? html`
                         <sl-tooltip
-                          content=${qaRunCount === 1
-                            ? msg("1 run started")
-                            : msg(
-                                str`${formatNumber(qaRunCount)} runs started`,
-                              )}
+                          content=${msg(
+                            str`Last run started on ${formatDate(lastQAStarted)}`,
+                          )}
                         >
                           <span>
                             ${formatNumber(qaRunCount, {

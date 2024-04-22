@@ -184,6 +184,7 @@ export type Crawl = ArchivedItemBase &
 
 export type Upload = ArchivedItemBase & {
   type: "upload";
+  cid: undefined;
   resources: undefined;
   crawlerChannel: "default";
   image: null;

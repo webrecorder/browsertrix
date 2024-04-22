@@ -41,3 +41,19 @@ export const formatNumber = (
   number: number,
   options?: Intl.NumberFormatOptions,
 ) => new Intl.NumberFormat(getLocale(), options).format(number);
+
+export const formatDate = (
+  date: string,
+  options?: Intl.DateTimeFormatOptions,
+) =>
+  new Date(date.endsWith("Z") ? date : `${date}Z`).toLocaleDateString(
+    getLocale(),
+    {
+      month: "2-digit",
+      day: "2-digit",
+      year: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      ...options,
+    },
+  );
