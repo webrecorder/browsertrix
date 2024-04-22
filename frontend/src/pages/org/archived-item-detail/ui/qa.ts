@@ -105,6 +105,9 @@ function statusWithIcon(
   `;
 }
 
+/**
+ * @fires btrix-qa-runs-update
+ */
 @localized()
 @customElement("btrix-archived-item-detail-qa")
 export class ArchivedItemDetailQA extends TailwindElement {
@@ -376,6 +379,16 @@ export class ArchivedItemDetailQA extends TailwindElement {
   }
 
   private readonly renderQARunRows = (qaRuns: QARun[]) => {
+    if (!qaRuns.length) {
+      return html`
+        <div
+          class="col-span-4 flex h-full flex-col items-center justify-center gap-2 p-3 text-xs text-neutral-500"
+        >
+          <sl-icon name="slash-circle"></sl-icon>
+          ${msg("No analysis runs found")}
+        </div>
+      `;
+    }
     return qaRuns.map(
       (run, idx) => html`
         <btrix-table-row class=${idx > 0 ? "border-t" : ""}>
@@ -511,6 +524,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
               variant="danger"
               @click=${async () => {
                 await this.deleteQARun(runToBeDeleted.id);
+                this.dispatchEvent(new CustomEvent("btrix-qa-runs-update"));
                 this.deleting = null;
                 void this.deleteQADialog?.hide();
               }}
@@ -768,7 +782,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
   async deleteQARun(id: string) {
     try {
       await this.api.fetch(
-        `/orgs/${this.orgId}/crawls/${this.crawlId}`,
+        `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/delete`,
         this.authState!,
         { method: "POST", body: JSON.stringify({ qa_run_ids: [id] }) },
       );
