@@ -42,8 +42,8 @@ export const formatNumber = (
   options?: Intl.NumberFormatOptions,
 ) => new Intl.NumberFormat(getLocale(), options).format(number);
 
-export const formatDate = (
-  date: string,
+export const formatISODateString = (
+  date: string, // ISO string
   options?: Intl.DateTimeFormatOptions,
 ) =>
   new Date(date.endsWith("Z") ? date : `${date}Z`).toLocaleDateString(

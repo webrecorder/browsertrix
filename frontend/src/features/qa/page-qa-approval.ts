@@ -15,7 +15,7 @@ import type {
   ArchivedItemPageComment,
 } from "@/types/crawler";
 import { type AuthState } from "@/utils/AuthService";
-import { formatDate } from "@/utils/localization";
+import { formatISODateString } from "@/utils/localization";
 
 export type UpdateItemPageDetail = {
   id: ArchivedItemPage["id"];
@@ -293,7 +293,13 @@ export class PageQAToolbar extends TailwindElement {
                     >
                       <div class="p-2">
                         ${msg(
-                          str`${comment.userName} commented on ${formatDate(comment.created)}`,
+                          str`${comment.userName} commented on ${formatISODateString(
+                            comment.created,
+                            {
+                              hour: undefined,
+                              minute: undefined,
+                            },
+                          )}`,
                         )}
                       </div>
                       <sl-icon-button
@@ -357,6 +363,8 @@ export class PageQAToolbar extends TailwindElement {
 
     if (!value) return;
 
+    this.showComments = false;
+
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.pageId}/notes`,
@@ -367,11 +375,9 @@ export class PageQAToolbar extends TailwindElement {
         },
       );
 
-      this.showComments = false;
-
       const comment: ArchivedItemPageComment = {
         id: "",
-        created: "",
+        created: new Date().toISOString(),
         modified: "",
         userName: "",
         text: value,
