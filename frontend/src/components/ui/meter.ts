@@ -111,25 +111,24 @@ export class Meter extends LitElement {
   @property({ type: Number })
   value = 0;
 
-  @property({ type: Array })
-  subValues?: number[];
-
   @property({ type: String })
   valueText?: string;
 
   @query(".valueBar")
   private readonly valueBar?: HTMLElement;
 
-  @query(".labels")
-  private readonly labels?: HTMLElement;
-
   @query(".maxText")
   private readonly maxText?: HTMLElement;
 
   // postcss-lit-disable-next-line
   static styles = css`
+    :host {
+      display: block;
+    }
+
     .meter {
       position: relative;
+      width: 100%;
     }
 
     .track {

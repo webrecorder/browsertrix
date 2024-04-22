@@ -27,7 +27,6 @@ import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import * as pageApproval from "@/features/qa/page-list/helpers/approval";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
 import type {
   APIPaginatedList,
@@ -37,10 +36,30 @@ import type {
 import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { finishedCrawlStates } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { getLocale, pluralize } from "@/utils/localization";
+import { formatNumber, getLocale, pluralize } from "@/utils/localization";
+
+type QAStatsThreshold = { lowerBoundary: string; count: number };
+type QAStats = Record<"screenshotMatch" | "textMatch", QAStatsThreshold[]>;
+
+const qaStatsThresholds = [
+  {
+    lowerBoundary: "0.0",
+    cssColor: "var(--sl-color-danger-500)",
+    label: msg("Low"),
+  },
+  {
+    lowerBoundary: "0.5",
+    cssColor: "var(--sl-color-warning-500)",
+    label: msg("Medium"),
+  },
+  {
+    lowerBoundary: "0.9",
+    cssColor: "var(--sl-color-success-500)",
+    label: msg("High"),
+  },
+];
 
 const notApplicable = () =>
   html`<span class="text-neutral-400">${msg("n/a")}</span>`;
@@ -99,6 +118,9 @@ export class ArchivedItemDetailQA extends TailwindElement {
   private pages?: APIPaginatedList<ArchivedItemPage>;
 
   @state()
+  private qaStats?: QAStats;
+
+  @state()
   private deleting: string | null = null;
 
   @query("#qaPagesSortBySelect")
@@ -114,6 +136,9 @@ export class ArchivedItemDetailQA extends TailwindElement {
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("crawlId") && this.crawlId) {
       void this.fetchPages();
+    }
+    if (changedProperties.has("qaRunId") && this.qaRunId) {
+      void this.fetchQAStats();
     }
   }
 
@@ -216,83 +241,79 @@ export class ArchivedItemDetailQA extends TailwindElement {
         <sl-divider></sl-divider>
 
         <btrix-tab-group-panel name="pages" class="block">
-          ${
-            // TODO un-hide this once we've got data in here
-            nothing
-            // <section class="mb-7">
-            //   <div class="mb-2 flex items-center">
-            //     <h4 class="mr-3 text-lg font-semibold leading-8">
-            //       ${msg("QA Analysis")}
-            //     </h4>
-            //     ${when(this.qaRuns, (qaRuns) => {
-            //       const finishedQARuns = qaRuns.filter(({ state }) =>
-            //         finishedCrawlStates.includes(state),
-            //       );
+          <section class="mb-7">
+            <div class="mb-2 flex items-center">
+              <h4 class="mr-3 text-lg font-semibold leading-8">
+                ${msg("QA Analysis")}
+              </h4>
+              ${when(this.qaRuns, (qaRuns) => {
+                const finishedQARuns = qaRuns.filter(({ state }) =>
+                  finishedCrawlStates.includes(state),
+                );
 
-            //       if (!finishedQARuns.length) {
-            //         return nothing;
-            //       }
+                if (!finishedQARuns.length) {
+                  return nothing;
+                }
 
-            //       const mostRecentSelected =
-            //         this.mostRecentNonFailedQARun &&
-            //         this.mostRecentNonFailedQARun.id === this.qaRunId;
-            //       const latestFinishedSelected =
-            //         this.qaRunId === finishedQARuns[0].id;
+                const mostRecentSelected =
+                  this.mostRecentNonFailedQARun &&
+                  this.mostRecentNonFailedQARun.id === this.qaRunId;
+                const latestFinishedSelected =
+                  this.qaRunId === finishedQARuns[0].id;
 
-            //       return html`
-            //         <sl-tooltip
-            //           content=${mostRecentSelected
-            //             ? msg(
-            //                 "You're viewing the latest results from a finished analysis run.",
-            //               )
-            //             : msg(
-            //                 "You're viewing results from an older analysis run.",
-            //               )}
-            //         >
-            //           <sl-tag
-            //             size="small"
-            //             variant=${mostRecentSelected ? "success" : "warning"}
-            //           >
-            //             ${mostRecentSelected
-            //               ? msg("Current")
-            //               : latestFinishedSelected
-            //                 ? msg("Last Finished")
-            //                 : msg("Outdated")}
-            //           </sl-tag>
-            //         </sl-tooltip>
-            //         <btrix-qa-run-dropdown
-            //           .items=${finishedQARuns}
-            //           selectedId=${this.qaRunId || ""}
-            //           @btrix-select=${(e: CustomEvent<SelectDetail>) =>
-            //             (this.qaRunId = e.detail.item.id)}
-            //         ></btrix-qa-run-dropdown>
-            //       `;
-            //     })}
-            //   </div>
-            //   ${when(
-            //     this.qaRuns,
-            //     () =>
-            //       this.mostRecentNonFailedQARun
-            //         ? this.renderAnalysis()
-            //         : html`
-            //             <div
-            //               class="rounded-lg border bg-slate-50 p-4 text-center text-slate-600"
-            //             >
-            //               ${msg(
-            //                 "This crawl hasn’t been analyzed yet. Run an analysis to access crawl quality metrics.",
-            //               )}
-            //             </div>
-            //           `,
+                return html`
+                  <sl-tooltip
+                    content=${mostRecentSelected
+                      ? msg(
+                          "You're viewing the latest results from a finished analysis run.",
+                        )
+                      : msg(
+                          "You're viewing results from an older analysis run.",
+                        )}
+                  >
+                    <sl-tag
+                      size="small"
+                      variant=${mostRecentSelected ? "success" : "warning"}
+                    >
+                      ${mostRecentSelected
+                        ? msg("Current")
+                        : latestFinishedSelected
+                          ? msg("Last Finished")
+                          : msg("Outdated")}
+                    </sl-tag>
+                  </sl-tooltip>
+                  <btrix-qa-run-dropdown
+                    .items=${finishedQARuns}
+                    selectedId=${this.qaRunId || ""}
+                    @btrix-select=${(e: CustomEvent<SelectDetail>) =>
+                      (this.qaRunId = e.detail.item.id)}
+                  ></btrix-qa-run-dropdown>
+                `;
+              })}
+            </div>
+            ${when(
+              this.qaRuns,
+              () =>
+                this.mostRecentNonFailedQARun
+                  ? this.renderAnalysis()
+                  : html`
+                      <div
+                        class="rounded-lg border bg-slate-50 p-4 text-center text-slate-600"
+                      >
+                        ${msg(
+                          "This crawl hasn’t been analyzed yet. Run an analysis to access crawl quality metrics.",
+                        )}
+                      </div>
+                    `,
 
-            //     () =>
-            //       html`<div
-            //         class="grid h-[55px] place-content-center rounded-lg border bg-slate-50 p-4 text-lg text-slate-600"
-            //       >
-            //         <sl-spinner></sl-spinner>
-            //       </div>`,
-            //   )}
-            // </section>
-          }
+              () =>
+                html`<div
+                  class="grid h-[55px] place-content-center rounded-lg border bg-slate-50 p-4 text-lg text-slate-600"
+                >
+                  <sl-spinner></sl-spinner>
+                </div>`,
+            )}
+          </section>
           <div>
             <h4 class="mb-2 mt-4 text-lg leading-8">
               <span class="font-semibold">${msg("Pages")}</span> (${(
@@ -505,20 +526,99 @@ export class ArchivedItemDetailQA extends TailwindElement {
             )}
           </btrix-alert>`
         : nothing}
-      <div class="flex flex-col gap-6 md:flex-row">
-        <btrix-card class="flex-1">
-          <span slot="title">${msg("Screenshots")}</span>
-          TODO
-        </btrix-card>
-        <btrix-card class="flex-1">
-          <span slot="title">${msg("Extracted Text")}</span>
-          TODO
-        </btrix-card>
-        <btrix-card class="flex-1">
-          <span slot="title">${msg("Page Resources")}</span>
-          TODO
-        </btrix-card>
-      </div>
+      <btrix-card>
+        <div slot="title" class="flex items-center gap-2">
+          ${msg("Crawl vs. Analysis Run Match")}
+          ${when(
+            this.mostRecentNonFailedQARun?.stats,
+            (stats) => html`
+              <div class="font-normal text-neutral-500">
+                ${formatNumber(stats.done)} / ${formatNumber(stats.found)}
+                ${stats.found === 1 ? msg("page") : msg("pages")}
+              </div>
+            `,
+          )}
+        </div>
+        <figure>
+          <btrix-table class="grid-cols-[min-content_1fr]">
+            <btrix-table-head>
+              <btrix-table-header-cell>
+                <span class="sr-only">${msg("Statistic")}</span>
+              </btrix-table-header-cell>
+              <btrix-table-header-cell>
+                <span class="sr-only">${msg("Chart")}</span>
+              </btrix-table-header-cell>
+            </btrix-table-head>
+            <btrix-table-body>
+              <btrix-table-row>
+                <btrix-table-cell>${msg("Screenshots")}</btrix-table-cell>
+                <btrix-table-cell>
+                  ${this.renderMeter(
+                    this.mostRecentNonFailedQARun?.stats.found,
+                    this.qaStats?.screenshotMatch,
+                  )}
+                </btrix-table-cell>
+              </btrix-table-row>
+              <btrix-table-row>
+                <btrix-table-cell>${msg("Text")}</btrix-table-cell>
+                <btrix-table-cell>
+                  ${this.renderMeter(
+                    this.mostRecentNonFailedQARun?.stats.found,
+                    this.qaStats?.textMatch,
+                  )}
+                </btrix-table-cell>
+              </btrix-table-row>
+            </btrix-table-body>
+          </btrix-table>
+          <figcaption>
+            <dl class="flex items-center justify-end gap-4">
+              ${qaStatsThresholds.map(
+                (threshold) => html`
+                  <div class="flex items-center gap-2">
+                    <dt class="h-4 w-4">
+                      <sl-icon
+                        name="circle-fill"
+                        class="text-base"
+                        style="color: ${threshold.cssColor}"
+                      ></sl-icon>
+                      <span class="sr-only">${threshold.lowerBoundary}</span>
+                    </dt>
+                    <dd>${threshold.label}</dd>
+                  </div>
+                `,
+              )}
+            </dl>
+          </figcaption>
+        </figure>
+      </btrix-card>
+    `;
+  }
+
+  private renderMeter(pageCount?: number, barData?: QAStatsThreshold[]) {
+    if (pageCount === undefined || !barData) {
+      return html`<sl-skeleton></sl-skeleton>`;
+    }
+
+    console.log(barData);
+    return html`
+      <btrix-meter class="flex-1" value=${pageCount}>
+        ${barData.map((bar) => {
+          const threshold = qaStatsThresholds.find(
+            ({ lowerBoundary }) => bar.lowerBoundary === lowerBoundary,
+          );
+
+          return html`
+            <btrix-meter-bar
+              value=${(bar.count / pageCount) * 100}
+              style="--background-color: ${threshold?.cssColor}"
+              aria-label=${bar.lowerBoundary}
+            >
+              ${formatNumber(bar.count)}
+              ${bar.count === 1 ? msg("page") : msg("pages")}
+            </btrix-meter-bar>
+          `;
+        })}
+      </btrix-meter>
     `;
   }
 
@@ -692,6 +792,21 @@ export class ArchivedItemDetailQA extends TailwindElement {
     }
   }
 
+  private async fetchQAStats() {
+    try {
+      this.qaStats = await this.getQAStats();
+      console.log("this.qaStats:", this.qaStats);
+    } catch {
+      this.notify.toast({
+        message: msg(
+          "Sorry, couldn't retrieve QA analysis stats at this time.",
+        ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
   private async getPages(
     params?: APIPaginationQuery & APISortQuery & { reviewed?: boolean },
   ): Promise<APIPaginatedList<ArchivedItemPage>> {
@@ -709,7 +824,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
     );
   }
 
-  async getQARunDownloadLink(qaRunId: string) {
+  private async getQARunDownloadLink(qaRunId: string) {
     try {
       const { resources } = await this.api.fetch<QARun>(
         `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${qaRunId}/replay.json`,
@@ -722,7 +837,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
     }
   }
 
-  async deleteQARun(id: string) {
+  private async deleteQARun(id: string) {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/delete`,
@@ -732,5 +847,22 @@ export class ArchivedItemDetailQA extends TailwindElement {
     } catch (e) {
       console.error(e);
     }
+  }
+
+  private async getQAStats() {
+    const query = queryString.stringify(
+      {
+        screenshotThresholds: [0.5, 0.9],
+        textThresholds: [0.5, 0.9],
+      },
+      {
+        arrayFormat: "comma",
+      },
+    );
+
+    return this.api.fetch<QAStats>(
+      `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${this.qaRunId}/stats?${query}`,
+      this.authState!,
+    );
   }
 }
