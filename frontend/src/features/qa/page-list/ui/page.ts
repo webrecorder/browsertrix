@@ -1,5 +1,6 @@
 import { localized } from "@lit/localize";
 import type { SlTooltip } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 
@@ -8,11 +9,12 @@ import {
   issueCounts,
   maxSeverity,
   severityFromMatch,
+  textColorFromSeverity,
 } from "../helpers";
 import { approvalFromPage } from "../helpers/reviewStatus";
 
 import { animateTo, shimKeyframesHeightAuto } from "./animate";
-import { pageDetails } from "./page-details";
+import { formatPercentage, pageDetails } from "./page-details";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type ArchivedItemQAPage } from "@/types/qa";
@@ -142,15 +144,30 @@ export class QaPage extends TailwindElement {
               class="absolute -left-4 top-[50%] flex w-8 translate-y-[-50%] flex-col place-items-center gap-1 rounded-full border border-gray-300 bg-neutral-0 p-2 leading-[14px] shadow transition-transform hover:scale-110"
             >
               ${iconFor(statusIcon)}
-              ${severe > 0
-                ? html`<span class="text-[10px] font-semibold text-red-600"
-                    >+${severe}</span
+              ${this.statusField === "screenshotMatch" ||
+              this.statusField === "textMatch"
+                ? html`<span
+                    class="${clsx(
+                      "text-[10px] font-semibold",
+                      textColorFromSeverity(
+                        severityFromMatch(page.qa[this.statusField]),
+                      ),
+                    )}"
+                    >${formatPercentage(
+                      page.qa[this.statusField] ?? 0,
+                      0,
+                    )}%</span
                   >`
-                : moderate > 0
-                  ? html`<span class="text-[10px] font-semibold text-yellow-600"
-                      >+${moderate}</span
+                : severe > 0
+                  ? html`<span class="text-[10px] font-semibold text-red-600"
+                      >+${severe}</span
                     >`
-                  : nothing}
+                  : moderate > 0
+                    ? html`<span
+                        class="text-[10px] font-semibold text-yellow-600"
+                        >+${moderate}</span
+                      >`
+                    : nothing}
               ${page.notes?.[0] &&
               html`<sl-icon
                 name="chat-square-text-fill"

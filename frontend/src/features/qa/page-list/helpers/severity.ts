@@ -1,3 +1,4 @@
+import { tw } from "@/utils/tailwind";
 import { cached } from "@/utils/weakCache";
 
 export type Severity = "severe" | "moderate" | "good" | null;
@@ -22,3 +23,16 @@ export const severityFromResourceCounts = cached(
     return "good";
   },
 );
+
+export const textColorFromSeverity = cached((severity: Severity) => {
+  switch (severity) {
+    case "good":
+      return tw`text-green-600`;
+    case "moderate":
+      return tw`text-yellow-600`;
+    case "severe":
+      return tw`text-red-600`;
+    default:
+      return "";
+  }
+});

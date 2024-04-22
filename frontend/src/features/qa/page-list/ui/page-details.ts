@@ -11,11 +11,11 @@ import {
 import type { ArchivedItemQAPage } from "@/types/qa";
 import { tw } from "@/utils/tailwind";
 
-export function formatPercentage(n: number) {
+export function formatPercentage(n: number, fractionDigits = 2) {
   if (Number.isNaN(n)) {
     return "n/a";
   }
-  return (n * 100).toFixed(2).replace(/[.,]00$/, "");
+  return (n * 100).toFixed(fractionDigits).replace(/[.,]00$/, "");
 }
 
 export const pageDetails = (page: ArchivedItemQAPage) =>
