@@ -243,6 +243,13 @@ export class ArchivedItemListItem extends TailwindElement {
             ></sl-format-bytes>
           </sl-tooltip>
         </btrix-table-cell>
+        <btrix-table-cell>
+          ${isUpload
+            ? notApplicable
+            : qaRunCount
+              ? formatNumber(qaRunCount)
+              : none}
+        </btrix-table-cell>
         ${this.listType === "upload"
           ? nothing
           : html`
@@ -282,13 +289,6 @@ export class ArchivedItemListItem extends TailwindElement {
                         .status=${this.item.reviewStatus}
                       ></btrix-qa-review-status>
                     </sl-tooltip>`}
-              </btrix-table-cell>
-              <btrix-table-cell>
-                ${isUpload
-                  ? notApplicable
-                  : qaRunCount
-                    ? formatNumber(qaRunCount)
-                    : none}
               </btrix-table-cell>
             `}
         <slot name="actionCell"></slot>
@@ -389,13 +389,13 @@ export class ArchivedItemList extends TailwindElement {
         {
           cssCol: "1fr",
           cell: html`<btrix-table-header-cell>
-            ${msg("QA Rating")}
+            ${msg("QA Analysis Runs")}
           </btrix-table-header-cell>`,
         },
         {
           cssCol: "1fr",
           cell: html`<btrix-table-header-cell>
-            ${msg("QA Analysis Runs")}
+            ${msg("QA Rating")}
           </btrix-table-header-cell>`,
         },
       );
