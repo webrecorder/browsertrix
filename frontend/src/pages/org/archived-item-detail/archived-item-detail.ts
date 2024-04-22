@@ -1054,24 +1054,6 @@ ${this.crawl?.description}
               ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
             </sl-button>
           `}
-      <sl-tooltip
-        ?disabled=${qaIsAvailable}
-        content=${qaIsRunning
-          ? msg("Reviews are disabled during analysis runs.")
-          : msg("No completed analysis runs are available.")}
-      >
-        <sl-button
-          variant="primary"
-          size="small"
-          href="${this.navigate.orgBasePath}/items/crawl/${this
-            .crawlId}/review/screenshots?qaRunId=${this.qaRunId || ""}"
-          @click=${this.navigate.link}
-          ?disabled=${!qaIsAvailable}
-        >
-          <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
-          ${msg("Review Crawl")}
-        </sl-button>
-      </sl-tooltip>
       ${qaRuns.length
         ? html`
             <sl-tooltip
