@@ -272,6 +272,7 @@ export class ArchivedItemDetail extends TailwindElement {
               .qaRuns=${this.qaRuns}
               .qaRunId=${this.qaRunId}
               .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
+              @btrix-qa-runs-update=${() => void this.fetchQARuns()}
             ></btrix-archived-item-detail-qa>
           `,
         );
