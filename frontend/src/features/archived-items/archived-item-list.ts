@@ -162,7 +162,9 @@ export class ArchivedItemListItem extends TailwindElement {
               `}
           <sl-tooltip
             content=${activeQAStats
-              ? `${activeProgress}%`
+              ? msg(
+                  str`Last QA Analysis: ${qaStatus.label} (${activeProgress}% finished)`,
+                )
               : msg(
                   str`Last QA Analysis: ${isUpload ? "Not Applicable" : qaStatus.label || msg("None")}`,
                 )}
@@ -243,13 +245,6 @@ export class ArchivedItemListItem extends TailwindElement {
             ></sl-format-bytes>
           </sl-tooltip>
         </btrix-table-cell>
-        <btrix-table-cell>
-          ${isUpload
-            ? notApplicable
-            : qaRunCount
-              ? formatNumber(qaRunCount)
-              : none}
-        </btrix-table-cell>
         ${this.listType === "upload"
           ? nothing
           : html`
@@ -273,6 +268,27 @@ export class ArchivedItemListItem extends TailwindElement {
                         )}
                       </div>
                     </sl-tooltip>`}
+              </btrix-table-cell>
+              <btrix-table-cell>
+                ${isUpload
+                  ? notApplicable
+                  : qaRunCount
+                    ? html`
+                        <sl-tooltip
+                          content=${qaRunCount === 1
+                            ? msg("1 run started")
+                            : msg(
+                                str`${formatNumber(qaRunCount)} runs started`,
+                              )}
+                        >
+                          <span>
+                            ${formatNumber(qaRunCount, {
+                              notation: "compact",
+                            })}
+                          </span>
+                        </sl-tooltip>
+                      `
+                    : none}
               </btrix-table-cell>
               <btrix-table-cell>
                 ${isUpload
