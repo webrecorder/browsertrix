@@ -15,6 +15,7 @@ import type {
   ArchivedItemPageComment,
 } from "@/types/crawler";
 import { type AuthState } from "@/utils/AuthService";
+import { formatDate } from "@/utils/localization";
 
 export type UpdateItemPageDetail = {
   id: ArchivedItemPage["id"];
@@ -275,49 +276,38 @@ export class PageQAToolbar extends TailwindElement {
   }
 
   private renderComments() {
-    const comments = this.page?.notes || [];
     return html`
       ${when(
-        comments.length,
-        () => html`
+        this.page?.notes?.length,
+        (commentCount) => html`
           <btrix-details open>
-            <span slot="title"
-              >${msg(str`Comments (${comments.length.toLocaleString()})`)}</span
-            >
-            ${when(
-              this.page?.notes,
-              (notes) => html`
-                <ul>
-                  ${notes.map(
-                    (comment) =>
-                      html`<li class="mb-3">
-                        <div
-                          class="flex items-center justify-between rounded-t border bg-neutral-50 text-xs leading-none text-neutral-600"
-                        >
-                          <div class="p-2">
-                            ${msg(
-                              str`${comment.userName} commented on ${new Date(comment.created + "Z").toLocaleDateString()}`,
-                            )}
-                          </div>
-                          <sl-icon-button
-                            class="hover:text-danger"
-                            name="trash3"
-                            @click=${async () => this.deleteComment(comment.id)}
-                          ></sl-icon-button>
-                        </div>
-                        <div class="rounded-b border-b border-l border-r p-2">
-                          ${comment.text}
-                        </div>
-                      </li> `,
-                  )}
-                </ul>
-              `,
-              () => html`
-                <p class="text-neutral-500">
-                  ${msg("This page doesn't have any comments.")}
-                </p>
-              `,
-            )}
+            <span slot="title">
+              ${msg(str`Comments (${commentCount.toLocaleString()})`)}
+            </span>
+            <ul>
+              ${this.page?.notes?.map(
+                (comment) =>
+                  html`<li class="mb-3">
+                    <div
+                      class="flex items-center justify-between rounded-t border bg-neutral-50 text-xs leading-none text-neutral-600"
+                    >
+                      <div class="p-2">
+                        ${msg(
+                          str`${comment.userName} commented on ${formatDate(comment.created)}`,
+                        )}
+                      </div>
+                      <sl-icon-button
+                        class="hover:text-danger"
+                        name="trash3"
+                        @click=${async () => this.deleteComment(comment.id)}
+                      ></sl-icon-button>
+                    </div>
+                    <div class="rounded-b border-b border-l border-r p-2">
+                      ${comment.text}
+                    </div>
+                  </li> `,
+              )}
+            </ul>
           </btrix-details>
         `,
       )}
