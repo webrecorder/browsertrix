@@ -313,7 +313,7 @@ class PageOps:
         note_in: PageNoteEdit,
         user: User,
         crawl_id: str,
-    ) -> Dict[str, Union[bool, object]]:
+    ) -> Dict[str, Union[bool, PageNote]]:
         """Update specific page note"""
         page = await self.get_page_raw(page_id, oid)
         page_notes = page.get("notes", [])
