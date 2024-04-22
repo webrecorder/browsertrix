@@ -293,9 +293,9 @@ export class ArchivedItemDetailQA extends TailwindElement {
             </div>
             ${when(
               this.qaRuns,
-              () =>
+              (qaRuns) =>
                 this.mostRecentNonFailedQARun
-                  ? this.renderAnalysis()
+                  ? this.renderAnalysis(qaRuns)
                   : html`
                       <div
                         class="rounded-lg border bg-slate-50 p-4 text-center text-slate-600"
@@ -513,10 +513,17 @@ export class ArchivedItemDetailQA extends TailwindElement {
   private readonly renderLoadingDetail = () =>
     html`<div class="min-w-32"><sl-spinner class="h-4 w-4"></sl-spinner></div>`;
 
-  private renderAnalysis() {
+  private renderAnalysis(qaRuns: QARun[]) {
     const isRunning =
       this.mostRecentNonFailedQARun &&
       QA_RUNNING_STATES.includes(this.mostRecentNonFailedQARun.state);
+    const qaRun = qaRuns.find(({ id }) => id === this.qaRunId);
+
+    if (!qaRun) {
+      return html`<btrix-alert class="mb-3" variant="warning">
+        ${msg("This analysis run doesn't exist.")}
+      </btrix-alert>`;
+    }
 
     return html`
       ${isRunning
@@ -527,18 +534,30 @@ export class ArchivedItemDetailQA extends TailwindElement {
           </btrix-alert>`
         : nothing}
       <btrix-card>
-        <div slot="title" class="flex items-center gap-2">
-          ${msg("Crawl vs. Analysis Run Match")}
-          ${when(
-            this.mostRecentNonFailedQARun?.stats,
-            (stats) => html`
-              <div class="font-normal text-neutral-500">
-                ${formatNumber(stats.done)} / ${formatNumber(stats.found)}
-                ${stats.found === 1 ? msg("page") : msg("pages")}
-              </div>
-            `,
-          )}
+        <div slot="title" class="flex justify-between">
+          <div class="flex items-center gap-2">
+            ${msg("Match Quality")}
+            ${when(
+              qaRun.stats,
+              (stats) => html`
+                <div class="text-sm font-normal text-neutral-500">
+                  ${formatNumber(stats.done)} / ${formatNumber(stats.found)}
+                  ${stats.found === 1
+                    ? msg("page analyzed")
+                    : msg("pages analyzed")}
+                </div>
+              `,
+            )}
+          </div>
+          <sl-tooltip
+            content=${msg(
+              "Match quality compares data points during a crawl against the same data point during an analysis run. A high quality match indicates that the crawl is probably good, whereas a low quality match may indicate a bad crawl.",
+            )}
+          >
+            <sl-icon class="text-base" name="info-circle"></sl-icon>
+          </sl-tooltip>
         </div>
+
         <figure>
           <btrix-table class="grid-cols-[min-content_1fr]">
             <btrix-table-head>
@@ -551,7 +570,9 @@ export class ArchivedItemDetailQA extends TailwindElement {
             </btrix-table-head>
             <btrix-table-body>
               <btrix-table-row>
-                <btrix-table-cell>${msg("Screenshots")}</btrix-table-cell>
+                <btrix-table-cell class="text-base font-medium">
+                  ${msg("Screenshots")}
+                </btrix-table-cell>
                 <btrix-table-cell>
                   ${this.renderMeter(
                     this.mostRecentNonFailedQARun?.stats.found,
@@ -560,7 +581,9 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 </btrix-table-cell>
               </btrix-table-row>
               <btrix-table-row>
-                <btrix-table-cell>${msg("Text")}</btrix-table-cell>
+                <btrix-table-cell class="text-base font-medium">
+                  ${msg("Text")}
+                </btrix-table-cell>
                 <btrix-table-cell>
                   ${this.renderMeter(
                     this.mostRecentNonFailedQARun?.stats.found,
@@ -573,7 +596,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
           <figcaption>
             <dl class="flex items-center justify-end gap-4">
               ${qaStatsThresholds.map(
-                (threshold) => html`
+                (threshold, idx) => html`
                   <div class="flex items-center gap-2">
                     <dt class="h-4 w-4">
                       <sl-icon
@@ -583,7 +606,16 @@ export class ArchivedItemDetailQA extends TailwindElement {
                       ></sl-icon>
                       <span class="sr-only">${threshold.lowerBoundary}</span>
                     </dt>
-                    <dd>${threshold.label}</dd>
+                    <dd>
+                      ${threshold.label}
+                      <span class="text-neutral-400">
+                        ${idx === 0
+                          ? `<${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`
+                          : idx === qaStatsThresholds.length - 1
+                            ? `>=${+threshold.lowerBoundary * 100}%`
+                            : `${+threshold.lowerBoundary * 100}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`}
+                      </span>
+                    </dd>
                   </div>
                 `,
               )}
@@ -599,7 +631,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
       return html`<sl-skeleton></sl-skeleton>`;
     }
 
-    console.log(barData);
     return html`
       <btrix-meter class="flex-1" value=${pageCount}>
         ${barData.map((bar) => {
@@ -795,7 +826,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
   private async fetchQAStats() {
     try {
       this.qaStats = await this.getQAStats();
-      console.log("this.qaStats:", this.qaStats);
     } catch {
       this.notify.toast({
         message: msg(

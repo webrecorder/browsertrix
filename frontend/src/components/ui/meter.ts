@@ -1,4 +1,4 @@
-import { css, html, LitElement, type PropertyValues } from "lit";
+import { css, html, type PropertyValues } from "lit";
 import {
   customElement,
   property,
@@ -10,10 +10,12 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
+import { TailwindElement } from "@/classes/TailwindElement";
 import type { UnderlyingFunction } from "@/types/utils";
+import { tw } from "@/utils/tailwind";
 
 @customElement("btrix-meter-bar")
-export class MeterBar extends LitElement {
+export class MeterBar extends TailwindElement {
   /* Percentage of value / max */
   @property({ type: Number })
   value = 0;
@@ -43,7 +45,7 @@ export class MeterBar extends LitElement {
 }
 
 @customElement("btrix-divided-meter-bar")
-export class DividedMeterBar extends LitElement {
+export class DividedMeterBar extends TailwindElement {
   /* Percentage of value / max */
   @property({ type: Number })
   value = 0;
@@ -101,7 +103,7 @@ export class DividedMeterBar extends LitElement {
  * ```
  */
 @customElement("btrix-meter")
-export class Meter extends LitElement {
+export class Meter extends TailwindElement {
   @property({ type: Number })
   min = 0;
 
@@ -114,11 +116,17 @@ export class Meter extends LitElement {
   @property({ type: String })
   valueText?: string;
 
+  @query(".labels")
+  private readonly labels?: HTMLElement;
+
   @query(".valueBar")
   private readonly valueBar?: HTMLElement;
 
   @query(".maxText")
   private readonly maxText?: HTMLElement;
+
+  @queryAssignedElements({ slot: "valueLabel" })
+  private readonly valueLabel!: HTMLElement[];
 
   // postcss-lit-disable-next-line
   static styles = css`
@@ -181,6 +189,13 @@ export class Meter extends LitElement {
   updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("value") || changedProperties.has("max")) {
       this.repositionLabels();
+    }
+  }
+
+  firstUpdated() {
+    // TODO refactor to check slot
+    if (!this.valueLabel.length) {
+      this.labels?.classList.add(tw`hidden`);
     }
   }
 
