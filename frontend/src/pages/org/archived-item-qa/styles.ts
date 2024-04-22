@@ -1,7 +1,5 @@
 import { css } from "lit";
 
-import { TWO_COL_SCREEN_MIN_CSS } from "@/components/ui/tab-list";
-
 export const styles = css`
   article > * {
     min-height: 0;
@@ -11,14 +9,14 @@ export const styles = css`
     grid-template:
       "header"
       "pageToolbar"
-      "tabNav"
       "tabGroup"
       "pageList";
     grid-template-columns: 100%;
     grid-template-rows: repeat(5, max-content);
   }
 
-  @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
+  /* Tailwind 'lg' responsive size */
+  @media only screen and (min-width: 1024px) {
     .qa-grid {
       /* TODO calculate screen space instead of hardcoding */
       height: 100vh;

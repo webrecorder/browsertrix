@@ -320,7 +320,7 @@ export class ArchivedItemQA extends TailwindElement {
     return html`
       ${this.renderHidden()}
 
-      <article class="qa-grid grid gap-x-6 gap-y-4 md:gap-y-0">
+      <article class="qa-grid grid gap-x-6 gap-y-0">
         <header
           class="grid--header flex flex-wrap items-center justify-between gap-1 border-b py-2"
         >
@@ -430,7 +430,9 @@ export class ArchivedItemQA extends TailwindElement {
         </div>
 
         <div class="grid--tabGroup flex min-w-0 flex-col">
-          <nav class="my-2 flex gap-2">
+          <nav
+            class="-mx-3 my-0 flex gap-2 overflow-x-auto px-3 py-2 lg:mx-0 lg:px-0"
+          >
             <btrix-navigation-button
               id="screenshot-tab"
               href=${`${crawlBaseUrl}/review/screenshots?${searchParams.toString()}`}
