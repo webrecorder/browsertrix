@@ -910,7 +910,7 @@ class CrawlOps(BaseCrawlOps):
     async def get_qa_run(
         self, crawl_id: str, qa_run_id: str, org: Optional[Organization] = None
     ):
-        """Get QARun as dict by id"""
+        """Get QARun by id"""
         crawl = await self.get_crawl(crawl_id, org)
         qa_finished = crawl.qaFinished or {}
         qa_run = qa_finished.get(qa_run_id)
