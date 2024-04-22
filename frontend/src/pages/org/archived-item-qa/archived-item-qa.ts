@@ -479,7 +479,9 @@ export class ArchivedItemQA extends TailwindElement {
           ${this.renderPanelToolbar()} ${this.renderPanel()}
         </div>
 
-        <section class="grid--pageList grid *:min-h-0 *:min-w-0">
+        <section
+          class="grid--pageList grid grid-rows-[auto_1fr] *:min-h-0 *:min-w-0"
+        >
           <h2
             class="my-4 text-base font-semibold leading-none text-neutral-800"
           >
