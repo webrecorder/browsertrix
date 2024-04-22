@@ -145,7 +145,7 @@ export class ArchivedItemDetail extends TailwindElement {
 
   private get isActive(): boolean | null {
     if (!this.crawl) return null;
-    return RUNNING_STATES.includes(this.crawl.state);
+    return activeCrawlStates.includes(this.crawl.state);
   }
 
   private get isQAActive(): boolean | null {
