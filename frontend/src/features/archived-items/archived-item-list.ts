@@ -103,7 +103,7 @@ export class ArchivedItemListItem extends TailwindElement {
 
     const crawlItem = this.item as Crawl;
     const { activeQAStats, lastQAState, qaRunCount } = crawlItem;
-    const activeProgress = activeQAStats
+    const activeProgress = activeQAStats?.found
       ? Math.round((100 * activeQAStats.done) / activeQAStats.found)
       : 0;
 
