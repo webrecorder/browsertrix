@@ -224,44 +224,18 @@ export class ArchivedItemDetailQA extends TailwindElement {
           <sl-icon name="file-richtext-fill"></sl-icon>
           ${msg("Pages")}
         </btrix-tab-group-tab>
-        ${when(
-          this.qaRuns,
-          (qaRuns) => html`
-            <btrix-tab-group-tab
-              slot="nav"
-              panel="runs"
-              ?disabled=${!qaRuns.length}
-            >
-              <sl-icon name="list-ul"></sl-icon>
-              ${msg("Analysis Runs")}
-            </btrix-tab-group-tab>
-          `,
-        )}
+        <btrix-tab-group-tab slot="nav" panel="runs">
+          <sl-icon name="list-ul"></sl-icon>
+          ${msg("Analysis Runs")}
+        </btrix-tab-group-tab>
 
         <sl-divider></sl-divider>
 
         <btrix-tab-group-panel name="pages" class="block">
-          ${when(
-            this.qaRuns,
-            (qaRuns) =>
-              this.mostRecentNonFailedQARun
-                ? this.renderAnalysis(qaRuns)
-                : html`
-                    <div
-                      class="rounded-lg border bg-slate-50 p-4 text-center text-slate-600"
-                    >
-                      ${msg(
-                        "This crawl hasn’t been analyzed yet. Run an analysis to access crawl quality metrics.",
-                      )}
-                    </div>
-                  `,
-            () =>
-              html`<div
-                class="grid h-[55px] place-content-center rounded-lg border bg-slate-50 p-4 text-lg text-slate-600"
-              >
-                <sl-spinner></sl-spinner>
-              </div>`,
+          ${when(this.mostRecentNonFailedQARun && this.qaRuns, (qaRuns) =>
+            this.renderAnalysis(qaRuns),
           )}
+
           <div>
             <h4 class="mb-2 mt-4 text-lg leading-8">
               <span class="font-semibold">${msg("Pages")}</span> (${(
@@ -308,7 +282,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
           class="col-span-4 flex h-full flex-col items-center justify-center gap-2 p-3 text-xs text-neutral-500"
         >
           <sl-icon name="slash-circle"></sl-icon>
-          ${msg("No analysis runs found")}
+          ${msg("No analysis runs, yet")}
         </div>
       `;
     }
@@ -467,6 +441,12 @@ export class ArchivedItemDetailQA extends TailwindElement {
       QA_RUNNING_STATES.includes(this.mostRecentNonFailedQARun.state);
     const qaRun = qaRuns.find(({ id }) => id === this.qaRunId);
 
+    if (!qaRun && isRunning) {
+      return html`<btrix-alert class="mb-3" variant="success">
+        ${msg("Running QA analysis on pages...")}
+      </btrix-alert>`;
+    }
+
     if (!qaRun) {
       return html`<btrix-alert class="mb-3" variant="warning">
         ${msg("This analysis run doesn't exist.")}
@@ -623,7 +603,10 @@ export class ArchivedItemDetailQA extends TailwindElement {
 
   private renderMeter(pageCount?: number, barData?: QAStatsThreshold[]) {
     if (pageCount === undefined || !barData) {
-      return html`<sl-skeleton></sl-skeleton>`;
+      return html`<sl-skeleton
+        class="h-4 flex-1"
+        effect="sheen"
+      ></sl-skeleton>`;
     }
 
     return html`
