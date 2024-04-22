@@ -673,12 +673,6 @@ export class CollectionDetail extends LiteElement {
       href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}?collectionId=${this.collectionId}`}
       .item=${item}
     >
-      <btrix-crawl-status
-        slot="namePrefix"
-        state=${item.state}
-        hideLabel
-        type=${item.type}
-      ></btrix-crawl-status>
       ${this.isCrawler
         ? html`
             <btrix-table-cell slot="actionCell" class="px-1">

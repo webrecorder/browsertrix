@@ -594,9 +594,7 @@ export class ArchivedItemDetail extends TailwindElement {
               <sl-menu-item
                 @click=${() =>
                   this.navigate.to(
-                    `${this.navigate.orgBasePath}/workflows/crawl/${
-                      (this.crawl as Crawl).cid
-                    }`,
+                    `${this.navigate.orgBasePath}/workflows/crawl/${this.crawl?.cid}`,
                   )}
               >
                 <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
@@ -604,7 +602,7 @@ export class ArchivedItemDetail extends TailwindElement {
               </sl-menu-item>
               <sl-menu-item
                 @click=${() =>
-                  CopyButton.copyToClipboard((this.crawl as Crawl).cid)}
+                  CopyButton.copyToClipboard(this.crawl?.cid || "")}
               >
                 <sl-icon name="copy" slot="prefix"></sl-icon>
                 ${msg("Copy Workflow ID")}

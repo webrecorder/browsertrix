@@ -9,7 +9,7 @@ import {
   maxSeverity,
   severityFromMatch,
 } from "../helpers";
-import { approvalFromPage } from "../helpers/reviewStatus";
+import { approvalFromPage } from "../helpers/approval";
 
 import { animateTo, shimKeyframesHeightAuto } from "./animate";
 import { pageDetails } from "./page-details";

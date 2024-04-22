@@ -1,7 +1,7 @@
 import { clsx } from "clsx";
 import { html } from "lit";
 
-import { type ReviewStatus } from "./reviewStatus";
+import { type ReviewStatus } from "./approval";
 import type { Severity } from "./severity";
 
 import { tw } from "@/utils/tailwind";
