@@ -148,7 +148,7 @@ export class QaPage extends TailwindElement {
               this.statusField === "textMatch"
                 ? html`<span
                     class="${clsx(
-                      "text-[10px] font-semibold",
+                      "text-[10px] font-semibold tracking-tighter tabular-nums",
                       textColorFromSeverity(
                         severityFromMatch(page.qa[this.statusField]),
                       ),
