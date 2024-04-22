@@ -570,7 +570,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 </btrix-table-cell>
                 <btrix-table-cell>
                   ${this.renderMeter(
-                    this.mostRecentNonFailedQARun?.stats.found,
+                    qaRun.stats.found,
                     this.qaStats?.screenshotMatch,
                   )}
                 </btrix-table-cell>
@@ -581,7 +581,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 </btrix-table-cell>
                 <btrix-table-cell>
                   ${this.renderMeter(
-                    this.mostRecentNonFailedQARun?.stats.found,
+                    qaRun.stats.found,
                     this.qaStats?.textMatch,
                   )}
                 </btrix-table-cell>
