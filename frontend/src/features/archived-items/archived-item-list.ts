@@ -252,38 +252,38 @@ export class ArchivedItemListItem extends TailwindElement {
               <btrix-table-cell>
                 ${isUpload
                   ? notApplicable
-                  : html`<sl-tooltip
-                      @click=${this.onTooltipClick}
-                      content=${activeQAStats
-                        ? msg("Analysis is currently running")
-                        : lastQAState
-                          ? msg(str`Latest analysis status: ${qaStatus.label}`)
-                          : msg("No analysis runs")}
+                  : html` <div
+                      class="${qaRunCount
+                        ? ""
+                        : "text-neutral-400"} flex min-w-4 items-center gap-2"
                     >
-                      <div
-                        class="flex min-w-4"
-                        style="${qaRunCount
-                          ? ""
-                          : "color: var(--sl-color-neutral-400)"}"
+                      <sl-tooltip
+                        @click=${this.onTooltipClick}
+                        content=${activeQAStats
+                          ? msg("Analysis is currently running")
+                          : lastQAState
+                            ? qaStatus.label
+                            : msg("No analysis runs")}
                       >
                         ${activeQAStats
                           ? html`
                               <sl-progress-ring
                                 value="${activeProgress}"
-                                style="color: ${qaStatus.cssColor}; --size: 20px; --track-width: 1px; --indicator-width: 2px;"
+                                style="color: ${qaStatus.cssColor}; --size: var(--font-size-base); --track-width: 1px; --indicator-width: 2px;"
                               ></sl-progress-ring>
                             `
                           : html`
                               <sl-icon
+                                class="text-base"
                                 style="color: ${qaStatus.cssColor}"
                                 name="microscope"
                                 library="app"
                                 aria-hidden="true"
                               ></sl-icon>
                             `}
-                        &nbsp;(${formatNumber(qaRunCount)})
-                      </div>
-                    </sl-tooltip>`}
+                      </sl-tooltip>
+                      (${formatNumber(qaRunCount)})
+                    </div>`}
               </btrix-table-cell>
             `}
 
