@@ -526,8 +526,6 @@ def test_delete_qa_runs(
     failed_qa_run_id,
 ):
     # Get download links for QA WACZs
-    delete_list = [qa_run_id, failed_qa_run_id]
-
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/replay.json",
         headers=crawler_auth_headers,
@@ -539,7 +537,7 @@ def test_delete_qa_runs(
     # Delete QA runs
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/delete",
-        json={"qa_run_ids": delete_list},
+        json={"qa_run_ids": [qa_run_id, failed_qa_run_id]},
         headers=crawler_auth_headers,
     )
 
