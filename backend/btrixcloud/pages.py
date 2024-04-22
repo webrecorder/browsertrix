@@ -304,7 +304,7 @@ class PageOps:
         if not result:
             raise HTTPException(status_code=404, detail="page_not_found")
 
-        return {"added": True}
+        return {"added": True, "data": note}
 
     async def update_page_note(
         self,
