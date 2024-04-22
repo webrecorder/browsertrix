@@ -551,8 +551,6 @@ class BaseCrawlOps:
             {"$set": {"firstSeedObject": {"$arrayElemAt": ["$config.seeds", 0]}}},
             {"$set": {"firstSeed": "$firstSeedObject.url"}},
             {"$unset": ["firstSeedObject", "errors", "config"]},
-            {"$set": {"qaState": "$qa.state"}},
-            {"$set": {"activeQAState": "$qaState"}},
             {"$set": {"activeQAStats": "$qa.stats"}},
             {
                 "$set": {
@@ -564,11 +562,23 @@ class BaseCrawlOps:
                     }
                 }
             },
+            # Add active QA run to array if exists prior to sorting, taking care not to
+            # pass null to $concatArrays so that our result isn't null
+            {
+                "$set": {
+                    "qaActiveArray": {"$cond": [{"$ne": ["$qa", None]}, ["$qa"], []]}
+                }
+            },
+            {
+                "$set": {
+                    "qaArray": {"$concatArrays": ["$qaFinishedArray", "$qaActiveArray"]}
+                }
+            },
             {
                 "$set": {
                     "sortedQARuns": {
                         "$sortArray": {
-                            "input": "$qaFinishedArray",
+                            "input": "$qaArray",
                             "sortBy": {"started": -1},
                         }
                     }
@@ -576,13 +586,14 @@ class BaseCrawlOps:
             },
             {"$set": {"lastQARun": {"$arrayElemAt": ["$sortedQARuns", 0]}}},
             {"$set": {"lastQAState": "$lastQARun.state"}},
+            {"$set": {"lastQAStarted": "$lastQARun.started"}},
             {
                 "$set": {
                     "qaRunCount": {
                         "$size": {
                             "$cond": [
-                                {"$isArray": "$qaFinishedArray"},
-                                "$qaFinishedArray",
+                                {"$isArray": "$qaArray"},
+                                "$qaArray",
                                 [],
                             ]
                         }
@@ -592,7 +603,9 @@ class BaseCrawlOps:
             {
                 "$unset": [
                     "lastQARun",
+                    "qaActiveArray",
                     "qaFinishedArray",
+                    "qaArray",
                     "sortedQARuns",
                 ]
             },
@@ -619,8 +632,9 @@ class BaseCrawlOps:
                 "finished",
                 "fileSize",
                 "reviewStatus",
+                "lastQAStarted",
+                "lastQAState",
                 "qaRunCount",
-                "qaState",
             ):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
@@ -628,10 +642,8 @@ class BaseCrawlOps:
 
             sort_query = {sort_by: sort_direction}
 
-            # Secondary sort for qaState - sorted by current, then last
-            # Tertiary sort for qaState - type, always ascending so crawls are first
-            if sort_by == "qaState":
-                sort_query["lastQAState"] = sort_direction
+            # Ensure crawls are always sorted first for QA-related sorts
+            if sort_by in ("lastQAStarted", "lastQAState"):
                 sort_query["type"] = 1
 
             aggregate.extend([{"$sort": sort_query}])
