@@ -561,7 +561,7 @@ def test_delete_qa_runs(
         time.sleep(5)
         count += 1
 
-    # Ensure QA WACZs weas deleted
+    # Ensure QA WACZs was deleted
     r = requests.get(f"http://localhost:30870{qa_wacz_url}")
     assert r.status_code == 404
 
