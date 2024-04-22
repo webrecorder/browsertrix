@@ -1,32 +1,13 @@
 import { localized, msg } from "@lit/localize";
 import { type SlTooltip } from "@shoelace-style/shoelace";
-import { css, html } from "lit";
+import { html, unsafeCSS } from "lit";
 import { customElement, property } from "lit/decorators.js";
+
+import stylesheet from "./beta-badges.stylesheet.css";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 
-const styles = css`
-  @tailwind base;
-  @tailwind components;
-  @tailwind utilities;
-
-  @layer components {
-    :host {
-      @apply contents !leading-[0];
-    }
-    sl-tooltip {
-      @apply [--max-width:theme(spacing.64)];
-    }
-    sl-tooltip::part(body),
-    sl-tooltip::part(base__arrow) {
-      @apply bg-theme-green;
-    }
-
-    sl-tooltip::part(body) {
-      @apply w-auto text-balance text-white;
-    }
-  }
-`;
+const styles = unsafeCSS(stylesheet);
 
 @localized()
 @customElement("btrix-beta-icon")
