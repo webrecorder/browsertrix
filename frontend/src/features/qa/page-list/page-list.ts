@@ -3,9 +3,11 @@ import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import { when } from "lit/directives/when.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type PageChangeEvent } from "@/components/ui/pagination";
+import { renderSpinner } from "@/pages/org/archived-item-qa/ui/spinner";
 import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import type { ArchivedItemQAPage } from "@/types/qa";
 
@@ -124,67 +126,74 @@ export class PageList extends TailwindElement {
       <div
         class="scrollContainer relative -mx-2 overflow-y-auto overscroll-contain px-2"
       >
-        ${this.pages?.total
-          ? html`
-              <div
-                class="sticky top-0 z-30 bg-gradient-to-b from-white to-white/85 backdrop-blur-sm"
-              >
-                <div class="mb-0.5 ml-2 border-b py-1 text-xs text-neutral-500">
-                  ${this.pages.total === this.totalPages
-                    ? msg(
-                        str`Showing all ${this.totalPages.toLocaleString()} pages`,
-                      )
-                    : msg(
-                        str`Showing ${this.pages.total.toLocaleString()} of ${this.totalPages.toLocaleString()} pages`,
-                      )}
-                </div>
-              </div>
-              ${repeat(
-                this.pages.items,
-                ({ id }) => id,
-                (page: ArchivedItemQAPage) => html`
-                  <btrix-qa-page
-                    class="is-leaf -my-4 scroll-my-8 py-4 first-of-type:mt-0 last-of-type:mb-0"
-                    .page=${page}
-                    statusField=${this.orderBy.field === "notes"
-                      ? "approved"
-                      : this.orderBy.field}
-                    ?selected=${page.id === this.itemPageId}
+        ${when(
+          this.pages,
+          ({ total, items, page, pageSize }) =>
+            total
+              ? html`
+                  <div
+                    class="sticky top-0 z-30 bg-gradient-to-b from-white to-white/85 backdrop-blur-sm"
                   >
-                  </btrix-qa-page>
-                `,
-              )}
-              <div class="my-2 flex justify-center">
-                <btrix-pagination
-                  page=${this.pages.page}
-                  totalCount=${this.pages.total}
-                  size=${this.pages.pageSize}
-                  compact
-                  @page-change=${(e: PageChangeEvent) => {
-                    e.stopPropagation();
-                    this.dispatchEvent(
-                      new CustomEvent<QaPaginationChangeDetail>(
-                        "btrix-qa-pagination-change",
-                        {
-                          detail: { page: e.detail.page },
-                        },
-                      ),
-                    );
-                  }}
-                >
-                </btrix-pagination>
-              </div>
+                    <div
+                      class="mb-0.5 ml-2 border-b py-1 text-xs text-neutral-500"
+                    >
+                      ${total === this.totalPages
+                        ? msg(
+                            str`Showing all ${this.totalPages.toLocaleString()} pages`,
+                          )
+                        : msg(
+                            str`Showing ${total.toLocaleString()} of ${this.totalPages.toLocaleString()} pages`,
+                          )}
+                    </div>
+                  </div>
+                  ${repeat(
+                    items,
+                    ({ id }) => id,
+                    (page: ArchivedItemQAPage) => html`
+                      <btrix-qa-page
+                        class="is-leaf -my-4 scroll-my-8 py-4 first-of-type:mt-0 last-of-type:mb-0"
+                        .page=${page}
+                        statusField=${this.orderBy.field === "notes"
+                          ? "approved"
+                          : this.orderBy.field}
+                        ?selected=${page.id === this.itemPageId}
+                      >
+                      </btrix-qa-page>
+                    `,
+                  )}
+                  <div class="my-2 flex justify-center">
+                    <btrix-pagination
+                      page=${page}
+                      totalCount=${total}
+                      size=${pageSize}
+                      compact
+                      @page-change=${(e: PageChangeEvent) => {
+                        e.stopPropagation();
+                        this.dispatchEvent(
+                          new CustomEvent<QaPaginationChangeDetail>(
+                            "btrix-qa-pagination-change",
+                            {
+                              detail: { page: e.detail.page },
+                            },
+                          ),
+                        );
+                      }}
+                    >
+                    </btrix-pagination>
+                  </div>
 
-              <div
-                class="sticky bottom-0 z-30 h-4 bg-gradient-to-t from-white to-white/0"
-              ></div>
-            `
-          : html`<div
-              class="flex flex-col items-center justify-center gap-4 py-8 text-xs text-gray-600"
-            >
-              <sl-icon name="slash-circle"></sl-icon>
-              ${msg("No matching pages found")}
-            </div>`}
+                  <div
+                    class="sticky bottom-0 z-30 h-4 bg-gradient-to-t from-white to-white/0"
+                  ></div>
+                `
+              : html`<div
+                  class="flex flex-col items-center justify-center gap-4 py-8 text-xs text-gray-600"
+                >
+                  <sl-icon name="slash-circle"></sl-icon>
+                  ${msg("No matching pages found")}
+                </div>`,
+          renderSpinner,
+        )}
       </div>
     `;
   }
