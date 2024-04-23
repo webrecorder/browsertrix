@@ -336,6 +336,7 @@ class UserManager:
         self, create: UserCreateIn, request: Optional[Request] = None
     ) -> User:
         """create new user in db"""
+        # pylint: disable=too-many-branches
         await self.validate_password(create.password)
 
         hashed_password = get_password_hash(create.password)
@@ -375,7 +376,7 @@ class UserManager:
                 print(exc)
 
             if new_user_invite and not new_user_invite.oid:
-                add_to_default_org = True
+                add_to_org = True
 
         else:
             add_to_org = True
