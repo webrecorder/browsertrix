@@ -304,7 +304,7 @@ export class Org extends LiteElement {
         <main
           class="${noMaxWidth
             ? "w-full"
-            : "w-full max-w-screen-desktop"} mx-auto box-border flex flex-1 flex-col p-3 pt-7"
+            : "w-full max-w-screen-desktop pt-7"} mx-auto box-border flex flex-1 flex-col p-3"
           aria-labelledby="${this.orgTab}-tab"
         >
           ${tabPanelContent}
