@@ -4,6 +4,7 @@ import type { SlCheckbox, SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
@@ -243,7 +244,6 @@ export class CrawlsList extends TailwindElement {
           field: "finished",
           direction: sortableFields["finished"].defaultDirection!,
         };
-        // this.archivedItems = undefined;
       }
       this.pagination = {
         page: 1,
@@ -392,7 +392,7 @@ export class CrawlsList extends TailwindElement {
               <btrix-table-header-cell slot="actionCell" class="px-1">
                 <span class="sr-only">${msg("Row actions")}</span>
               </btrix-table-header-cell>
-              ${items.map(this.renderArchivedItem)}
+              ${repeat(items, ({ id }) => id, this.renderArchivedItem)}
             </btrix-archived-item-list>
           `
         : this.renderEmptyState()}
