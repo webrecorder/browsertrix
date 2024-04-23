@@ -32,7 +32,7 @@ type SortField =
   | "lastQAStarted";
 type SortDirection = "asc" | "desc";
 
-// const ABORT_REASON_THROTTLE = "throttled";
+const POLL_INTERVAL_SECONDS = 5;
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const sortableFields: Record<
@@ -157,9 +157,8 @@ export class CrawlsList extends TailwindElement {
       if (!orgId || !authState || !userId) {
         return initialState;
       }
-      this.cancelInProgressGetArchivedItems();
       try {
-        return await this.getArchivedItems(
+        const data = await this.getArchivedItems(
           {
             orgId,
             authState,
@@ -172,6 +171,12 @@ export class CrawlsList extends TailwindElement {
           },
           signal,
         );
+
+        this.getArchivedItemsTimeout = window.setTimeout(() => {
+          void this.archivedItemsTask.run();
+        }, POLL_INTERVAL_SECONDS * 1000);
+
+        return data;
       } catch (e) {
         if ((e as Error).name === "AbortError") {
           console.debug("Fetch archived items aborted to throttle");
@@ -201,11 +206,10 @@ export class CrawlsList extends TailwindElement {
       ] as const,
   });
 
+  private getArchivedItemsTimeout?: number;
+
   // For fuzzy search:
   private readonly searchKeys = ["name", "firstSeed"];
-
-  // Use to cancel requests
-  // private readonly getArchivedItemsController: AbortController | null = null;
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
@@ -260,7 +264,7 @@ export class CrawlsList extends TailwindElement {
   }
 
   disconnectedCallback(): void {
-    this.cancelInProgressGetArchivedItems();
+    window.clearTimeout(this.getArchivedItemsTimeout);
     super.disconnectedCallback();
   }
 
@@ -338,41 +342,19 @@ export class CrawlsList extends TailwindElement {
         </header>
 
         ${this.archivedItemsTask.render({
-          pending: () => html`
+          initial: () => html`
             <div class="my-12 flex w-full items-center justify-center text-2xl">
               <sl-spinner></sl-spinner>
             </div>
           `,
-          complete: ({ items, page, total, pageSize }) => html`
-            <section class="mx-2">
-              ${items.length
-                ? this.renderArchivedItemList()
-                : this.renderEmptyState()}
-            </section>
-            ${when(
-              total > pageSize,
-              () => html`
-                <footer class="mt-6 flex justify-center">
-                  <btrix-pagination
-                    page=${page}
-                    totalCount=${total}
-                    size=${pageSize}
-                    @page-change=${async (e: PageChangeEvent) => {
-                      this.pagination = {
-                        ...this.pagination,
-                        page: e.detail.page,
-                      };
-                      await this.updateComplete;
-
-                      // Scroll to top of list
-                      // TODO once deep-linking is implemented, scroll to top of pushstate
-                      this.scrollIntoView({ behavior: "smooth" });
-                    }}
-                  ></btrix-pagination>
-                </footer>
-              `,
-            )}
-          `,
+          pending: () =>
+            // TODO differentiate between pending between poll and
+            // pending from user action, in order to show loading indicator
+            this.archivedItemsTask.value
+              ? // Render previous value while latest is loading
+                this.renderArchivedItems(this.archivedItemsTask.value)
+              : nothing,
+          complete: this.renderArchivedItems,
         })}
       </main>
       ${when(
@@ -396,6 +378,96 @@ export class CrawlsList extends TailwindElement {
       )}
     `;
   }
+
+  private readonly renderArchivedItems = ({
+    items,
+    page,
+    total,
+    pageSize,
+  }: APIPaginatedList<ArchivedItem>) => html`
+    <section class="mx-2">
+      ${items.length
+        ? html`
+            <btrix-archived-item-list .listType=${this.itemType}>
+              <btrix-table-header-cell slot="actionCell" class="px-1">
+                <span class="sr-only">${msg("Row actions")}</span>
+              </btrix-table-header-cell>
+              ${items.map(this.renderArchivedItem)}
+            </btrix-archived-item-list>
+          `
+        : this.renderEmptyState()}
+    </section>
+    ${when(
+      total > pageSize,
+      () => html`
+        <footer class="mt-6 flex justify-center">
+          <btrix-pagination
+            page=${page}
+            totalCount=${total}
+            size=${pageSize}
+            @page-change=${async (e: PageChangeEvent) => {
+              this.pagination = {
+                ...this.pagination,
+                page: e.detail.page,
+              };
+              await this.updateComplete;
+
+              // Scroll to top of list
+              // TODO once deep-linking is implemented, scroll to top of pushstate
+              this.scrollIntoView({ behavior: "smooth" });
+            }}
+          ></btrix-pagination>
+        </footer>
+      `,
+    )}
+    ${this.itemToEdit
+      ? html`
+          <btrix-item-metadata-editor
+            .authState=${this.authState}
+            .crawl=${this.itemToEdit}
+            ?open=${this.isEditingItem}
+            @request-close=${() => (this.isEditingItem = false)}
+            @updated=${() => {
+              /* TODO fetch current page or single crawl */
+              void this.archivedItemsTask.run();
+            }}
+          ></btrix-item-metadata-editor>
+        `
+      : nothing}
+
+    <btrix-dialog
+      .label=${msg("Delete Archived Item?")}
+      .open=${this.isDeletingItem}
+      @sl-after-hide=${() => (this.isDeletingItem = false)}
+    >
+      ${msg("This item will be removed from any Collection it is a part of.")}
+      ${when(this.itemToDelete?.type === "crawl", () =>
+        msg(
+          "All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow.",
+        ),
+      )}
+      <div slot="footer" class="flex justify-between">
+        <sl-button size="small" .autofocus=${true}>${msg("Cancel")}</sl-button>
+        <sl-button
+          size="small"
+          variant="danger"
+          @click=${async () => {
+            this.isDeletingItem = false;
+            if (this.itemToDelete) {
+              await this.deleteItem(this.itemToDelete);
+            }
+          }}
+          >${msg(
+            str`Delete ${
+              this.itemToDelete?.type === "upload"
+                ? msg("Upload")
+                : msg("Crawl")
+            }`,
+          )}</sl-button
+        >
+      </div>
+    </btrix-dialog>
+  `;
 
   private renderControls() {
     const viewPlaceholder = msg("Any");
@@ -521,69 +593,6 @@ export class CrawlsList extends TailwindElement {
         }}
       >
       </btrix-search-combobox>
-    `;
-  }
-
-  private renderArchivedItemList() {
-    return html`
-      <btrix-archived-item-list .listType=${this.itemType}>
-        <btrix-table-header-cell slot="actionCell" class="px-1">
-          <span class="sr-only">${msg("Row actions")}</span>
-        </btrix-table-header-cell>
-        ${this.archivedItemsTask.render({
-          complete: ({ items }) => items.map(this.renderArchivedItem),
-        })}
-      </btrix-archived-item-list>
-
-      ${this.itemToEdit
-        ? html`
-            <btrix-item-metadata-editor
-              .authState=${this.authState}
-              .crawl=${this.itemToEdit}
-              ?open=${this.isEditingItem}
-              @request-close=${() => (this.isEditingItem = false)}
-              @updated=${() => {
-                /* TODO fetch current page or single crawl */
-                void this.archivedItemsTask.run();
-              }}
-            ></btrix-item-metadata-editor>
-          `
-        : nothing}
-
-      <btrix-dialog
-        .label=${msg("Delete Archived Item?")}
-        .open=${this.isDeletingItem}
-        @sl-after-hide=${() => (this.isDeletingItem = false)}
-      >
-        ${msg("This item will be removed from any Collection it is a part of.")}
-        ${when(this.itemToDelete?.type === "crawl", () =>
-          msg(
-            "All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow.",
-          ),
-        )}
-        <div slot="footer" class="flex justify-between">
-          <sl-button size="small" .autofocus=${true}
-            >${msg("Cancel")}</sl-button
-          >
-          <sl-button
-            size="small"
-            variant="danger"
-            @click=${async () => {
-              this.isDeletingItem = false;
-              if (this.itemToDelete) {
-                await this.deleteItem(this.itemToDelete);
-              }
-            }}
-            >${msg(
-              str`Delete ${
-                this.itemToDelete?.type === "upload"
-                  ? msg("Upload")
-                  : msg("Crawl")
-              }`,
-            )}</sl-button
-          >
-        </div>
-      </btrix-dialog>
     `;
   }
 
@@ -722,14 +731,6 @@ export class CrawlsList extends TailwindElement {
     `;
   }
 
-  private cancelInProgressGetArchivedItems() {
-    // TODO abort
-    // if (this.getArchivedItemsController) {
-    //   this.getArchivedItemsController.abort(ABORT_REASON_THROTTLE);
-    //   this.getArchivedItemsController = null;
-    // }
-  }
-
   private async getArchivedItems(
     params: {
       orgId: string;
@@ -760,7 +761,7 @@ export class CrawlsList extends TailwindElement {
         arrayFormat: "comma",
       },
     );
-    console.log("get!", query);
+
     return this.api.fetch<ArchivedItems>(
       `/orgs/${params.orgId}/all-crawls?${query}`,
       params.authState,
