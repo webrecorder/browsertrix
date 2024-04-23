@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import type {
   SlChangeEvent,
   SlSelect,
@@ -35,7 +36,7 @@ import type {
 } from "@/types/api";
 import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
-import { type AuthState } from "@/utils/AuthService";
+import { type Auth, type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { formatNumber, getLocale, pluralize } from "@/utils/localization";
@@ -117,8 +118,15 @@ export class ArchivedItemDetailQA extends TailwindElement {
   @state()
   private pages?: APIPaginatedList<ArchivedItemPage>;
 
-  @state()
-  private qaStats?: QAStats;
+  private readonly qaStats = new Task(this, {
+    task: async ([orgId, crawlId, qaRunId, authState]) => {
+      if (!qaRunId || !authState) throw new Error("Missing args");
+      const stats = await this.getQAStats(orgId, crawlId, qaRunId, authState);
+      return stats;
+    },
+    args: () =>
+      [this.orgId!, this.crawlId!, this.qaRunId, this.authState] as const,
+  });
 
   @state()
   private deleting: string | null = null;
@@ -136,9 +144,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("crawlId") && this.crawlId) {
       void this.fetchPages();
-    }
-    if (changedProperties.has("qaRunId") && this.qaRunId) {
-      void this.fetchQAStats();
     }
   }
 
@@ -553,10 +558,12 @@ export class ArchivedItemDetailQA extends TailwindElement {
                   ${msg("Screenshots")}
                 </btrix-table-cell>
                 <btrix-table-cell>
-                  ${this.renderMeter(
-                    qaRun.stats.found,
-                    this.qaStats?.screenshotMatch,
-                  )}
+                  ${this.qaStats.render({
+                    complete: ({ screenshotMatch }) =>
+                      this.renderMeter(qaRun.stats.found, screenshotMatch),
+                    pending: () => this.renderMeter(),
+                    initial: () => this.renderMeter(),
+                  })}
                 </btrix-table-cell>
               </btrix-table-row>
               <btrix-table-row>
@@ -564,10 +571,12 @@ export class ArchivedItemDetailQA extends TailwindElement {
                   ${msg("Text")}
                 </btrix-table-cell>
                 <btrix-table-cell>
-                  ${this.renderMeter(
-                    qaRun.stats.found,
-                    this.qaStats?.textMatch,
-                  )}
+                  ${this.qaStats.render({
+                    complete: ({ textMatch }) =>
+                      this.renderMeter(qaRun.stats.found, textMatch),
+                    pending: () => this.renderMeter(),
+                    initial: () => this.renderMeter(),
+                  })}
                 </btrix-table-cell>
               </btrix-table-row>
             </btrix-table-body>
@@ -803,20 +812,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
     }
   }
 
-  private async fetchQAStats() {
-    try {
-      this.qaStats = await this.getQAStats();
-    } catch {
-      this.notify.toast({
-        message: msg(
-          "Sorry, couldn't retrieve QA analysis stats at this time.",
-        ),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
   private async getPages(
     params?: APIPaginationQuery & APISortQuery & { reviewed?: boolean },
   ): Promise<APIPaginatedList<ArchivedItemPage>> {
@@ -859,7 +854,12 @@ export class ArchivedItemDetailQA extends TailwindElement {
     }
   }
 
-  private async getQAStats() {
+  private async getQAStats(
+    orgId: string,
+    crawlId: string,
+    qaRunId: string,
+    authState: Auth,
+  ) {
     const query = queryString.stringify(
       {
         screenshotThresholds: [0.5, 0.9],
@@ -871,8 +871,8 @@ export class ArchivedItemDetailQA extends TailwindElement {
     );
 
     return this.api.fetch<QAStats>(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${this.qaRunId}/stats?${query}`,
-      this.authState!,
+      `/orgs/${orgId}/crawls/${crawlId}/qa/${qaRunId}/stats?${query}`,
+      authState,
     );
   }
 }
