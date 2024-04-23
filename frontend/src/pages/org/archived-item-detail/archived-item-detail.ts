@@ -249,33 +249,38 @@ export class ArchivedItemDetail extends TailwindElement {
 
   render() {
     const authToken = this.authState!.headers.Authorization.split(" ")[1];
-    let sectionContent: string | TemplateResult = "";
+    let sectionContent: string | TemplateResult<1> = "";
 
     switch (this.activeTab) {
-      case "qa":
-        sectionContent = this.renderPanel(
-          html`${this.renderTitle(
-              html`${msg("Quality Assurance")}
-                <btrix-beta-badge></btrix-beta-badge>`,
-            )}
-            <div class="ml-auto flex flex-wrap justify-end gap-2">
-              ${when(this.qaRuns, this.renderQAHeader)}
-            </div> `,
-          html`
-            <btrix-archived-item-detail-qa
-              .authState=${this.authState}
-              .orgId=${this.orgId}
-              .crawlId=${this.crawlId}
-              .itemType=${this.itemType}
-              .crawl=${this.crawl}
-              .qaRuns=${this.qaRuns}
-              .qaRunId=${this.qaRunId}
-              .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
-              @btrix-qa-runs-update=${() => void this.fetchQARuns()}
-            ></btrix-archived-item-detail-qa>
-          `,
-        );
+      case "qa": {
+        if (this.isCrawler) {
+          sectionContent = this.renderPanel(
+            html`${this.renderTitle(
+                html`${msg("Quality Assurance")}
+                  <btrix-beta-badge></btrix-beta-badge>`,
+              )}
+              <div class="ml-auto flex flex-wrap justify-end gap-2">
+                ${when(this.qaRuns, this.renderQAHeader)}
+              </div> `,
+            html`
+              <btrix-archived-item-detail-qa
+                .authState=${this.authState}
+                .orgId=${this.orgId}
+                .crawlId=${this.crawlId}
+                .itemType=${this.itemType}
+                .crawl=${this.crawl}
+                .qaRuns=${this.qaRuns}
+                .qaRunId=${this.qaRunId}
+                .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
+                @btrix-qa-runs-update=${() => void this.fetchQARuns()}
+              ></btrix-archived-item-detail-qa>
+            `,
+          );
+          break;
+        }
+        sectionContent = "";
         break;
+      }
       case "replay":
         sectionContent = this.renderPanel(msg("Replay"), this.renderReplay(), [
           tw`overflow-hidden rounded-lg border`,
@@ -478,7 +483,7 @@ export class ArchivedItemDetail extends TailwindElement {
           label: msg("Overview"),
         })}
         ${when(
-          this.itemType === "crawl",
+          this.itemType === "crawl" && this.isCrawler,
           () => html`
             ${renderNavItem({
               section: "qa",
