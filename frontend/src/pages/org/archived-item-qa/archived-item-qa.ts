@@ -330,18 +330,35 @@ export class ArchivedItemQA extends TailwindElement {
     return html`
       ${this.renderHidden()}
 
-      <btrix-beta-badge placement="right"></btrix-beta-badge>
+      <div class="flex items-center gap-2">
+        <a
+          class="font-medium text-neutral-500 hover:text-neutral-600"
+          href=${`${crawlBaseUrl}#qa`}
+          @click=${this.navigate.link}
+        >
+          <sl-icon
+            name="arrow-left"
+            class="inline-block align-middle"
+          ></sl-icon>
+          <span class="inline-block align-middle"> ${msg("Back")} </span>
+        </a>
+        <div class="text-neutral-400" role="separator">/</div>
+        <h1 class="text-neutral-400">
+          ${msg("Review Archived Item")}
+          <btrix-beta-badge placement="right"></btrix-beta-badge>
+        </h1>
+      </div>
 
       <article class="qa-grid grid gap-x-6 gap-y-0">
         <header
           class="grid--header flex flex-wrap items-center justify-between gap-1 border-b py-2"
         >
           <div class="flex items-center gap-2 overflow-hidden">
-            <h1
+            <h2
               class="flex-1 flex-shrink-0 basis-32 truncate text-base font-semibold leading-tight"
             >
               ${itemName}
-            </h1>
+            </h2>
             ${when(
               this.finishedQARuns,
               (qaRuns) => html`
@@ -389,15 +406,15 @@ export class ArchivedItemQA extends TailwindElement {
         <div
           class="grid--pageToolbar flex flex-wrap items-center justify-stretch gap-2 overflow-hidden border-b py-2 @container"
         >
-          <h2
+          <h3
             class="flex-auto flex-shrink-0 flex-grow basis-32 truncate text-base font-semibold text-neutral-700"
             title="${this.page?.title ?? ""}"
           >
-            ${
-              this.page?.title ||
-              html`<span class="opacity-50">${msg("No page title")}</span>`
-            }
-          </h2>
+          ${
+            this.page?.title ||
+            html`<span class="opacity-50">${msg("No page title")}</span>`
+          }
+          </h3>
           <div
             class="ml-auto flex flex-grow basis-auto flex-wrap justify-between gap-2 @lg:flex-grow-0"
           >
@@ -495,11 +512,11 @@ export class ArchivedItemQA extends TailwindElement {
         <section
           class="grid--pageList grid grid-rows-[auto_1fr] *:min-h-0 *:min-w-0"
         >
-          <h2
+          <h3
             class="my-4 text-base font-semibold leading-none text-neutral-800"
           >
             ${msg("Pages")}
-          </h2>
+          </h3>
           <btrix-qa-page-list
             class="flex flex-col"
             .qaRunId=${this.qaRunId}

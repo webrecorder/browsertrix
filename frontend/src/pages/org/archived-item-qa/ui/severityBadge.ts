@@ -26,6 +26,6 @@ export function renderSeverityBadge(value?: number | null) {
   }
 
   return html`
-    <btrix-badge variant=${variant}>${formatPercentage(value)}%</btrix-badge>
+    <btrix-badge variant=${variant}>${formatPercentage(value, 0)}%</btrix-badge>
   `;
 }

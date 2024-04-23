@@ -154,6 +154,7 @@ export class ArchivedItemListItem extends TailwindElement {
                   @sl-after-hide=${(e: SlHideEvent) => e.stopPropagation()}
                 >
                   <sl-icon
+                    class="text-base"
                     style="color: ${crawlStatus.cssColor}"
                     name=${typeIcon}
                     label=${typeLabel}
@@ -276,11 +277,11 @@ export class ArchivedItemListItem extends TailwindElement {
                       str`Last run started on ${formatISODateString(lastQAStarted)}`,
                     )}
                   >
-                    <span>
+                    <div class="min-w-4">
                       ${formatNumber(qaRunCount, {
                         notation: "compact",
                       })}
-                    </span>
+                    </div>
                   </sl-tooltip>
                 `
               : none}
