@@ -39,7 +39,8 @@ import type { QARun } from "@/types/qa";
 import { type Auth, type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { formatNumber, getLocale, pluralize } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
+import { pluralOf } from "@/utils/pluralize";
 
 type QAStatsThreshold = {
   lowerBoundary: `${number}` | "No data";
@@ -407,7 +408,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
         ${runToBeDeleted &&
         html`<div>
             ${msg(
-              str`This analysis run includes data for ${runToBeDeleted.stats.done} ${pluralize(runToBeDeleted.stats.done, { zero: msg("pages", { desc: 'plural form of "page" for zero pages', id: "pages.plural.zero" }), one: msg("page"), two: msg("pages", { desc: 'plural form of "page" for two pages', id: "pages.plural.two" }), few: msg("pages", { desc: 'plural form of "page" for few pages', id: "pages.plural.few" }), many: msg("pages", { desc: 'plural form of "page" for many pages', id: "pages.plural.many" }), other: msg("pages", { desc: 'plural form of "page" for multiple/other pages', id: "pages.plural.other" }) })} and was started on `,
+              str`This analysis run includes data for ${runToBeDeleted.stats.done} ${pluralOf("pages", runToBeDeleted.stats.done)} and was started on `,
             )}
             <sl-format-date
               lang=${getLocale()}
@@ -474,8 +475,8 @@ export class ArchivedItemDetailQA extends TailwindElement {
           </btrix-alert>`
         : nothing}
       <btrix-card>
-        <div slot="title" class="flex justify-between">
-          <div class="flex items-center gap-3">
+        <div slot="title" class="flex flex-wrap justify-between">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
             ${msg("Page Match Analysis")}
             ${when(this.qaRuns, (qaRuns) => {
               const finishedQARuns = qaRuns.filter(({ state }) =>
@@ -497,10 +498,10 @@ export class ArchivedItemDetailQA extends TailwindElement {
                   <sl-tooltip
                     content=${mostRecentSelected
                       ? msg(
-                          "You're viewing the latest results from a finished analysis run.",
+                          "You’re viewing the latest results from a finished analysis run.",
                         )
                       : msg(
-                          "You're viewing results from an older analysis run.",
+                          "You’re viewing results from an older analysis run.",
                         )}
                   >
                     <sl-tag
@@ -524,15 +525,13 @@ export class ArchivedItemDetailQA extends TailwindElement {
               `;
             })}
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 text-neutral-500">
             ${when(
               qaRun.stats,
               (stats) => html`
-                <div class="text-sm font-normal text-neutral-500">
+                <div class="text-sm font-normal">
                   ${formatNumber(stats.done)} / ${formatNumber(stats.found)}
-                  ${stats.found === 1
-                    ? msg("page analyzed")
-                    : msg("pages analyzed")}
+                  ${pluralOf("pages", stats.found)} ${msg("analyzed")}
                 </div>
               `,
             )}
@@ -560,7 +559,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 <btrix-table-cell class="font-medium">
                   ${msg("Screenshots")}
                 </btrix-table-cell>
-                <btrix-table-cell>
+                <btrix-table-cell class="p-0">
                   ${this.qaStats.render({
                     complete: ({ screenshotMatch }) =>
                       this.renderMeter(qaRun.stats.found, screenshotMatch),
@@ -573,7 +572,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 <btrix-table-cell class="font-medium">
                   ${msg("Text")}
                 </btrix-table-cell>
-                <btrix-table-cell>
+                <btrix-table-cell class="p-0">
                   ${this.qaStats.render({
                     complete: ({ textMatch }) =>
                       this.renderMeter(qaRun.stats.found, textMatch),
@@ -586,12 +585,12 @@ export class ArchivedItemDetailQA extends TailwindElement {
           </btrix-table>
         </figure>
         <figcaption slot="footer" class="mt-2">
-          <dl class="flex items-center justify-end gap-4">
+          <dl class="flex flex-wrap items-center justify-end gap-4">
             ${qaStatsThresholds.map(
               (threshold) => html`
                 <div class="flex items-center gap-2">
                   <dt
-                    class="h-4 w-4 rounded"
+                    class="h-4 w-4 flex-shrink-0 rounded"
                     style="background-color: ${threshold.cssColor}"
                   >
                     <span class="sr-only">${threshold.lowerBoundary}</span>
@@ -609,7 +608,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
   private renderMeter(pageCount?: number, barData?: QAStatsThreshold[]) {
     if (pageCount === undefined || !barData) {
       return html`<sl-skeleton
-        class="h-4 flex-1"
+        class="h-4 flex-1 [--border-radius:var(--sl-border-radius-medium)]"
         effect="sheen"
       ></sl-skeleton>`;
     }
@@ -641,30 +640,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                             : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`}
                         match <br />`
                     : nothing}
-                  ${formatNumber(bar.count)}
-                  ${pluralize(bar.count, {
-                    zero: msg("pages", {
-                      desc: 'plural form of "page" for zero pages',
-                      id: "pages.plural.zero",
-                    }),
-                    one: msg("page"),
-                    two: msg("pages", {
-                      desc: 'plural form of "page" for two pages',
-                      id: "pages.plural.two",
-                    }),
-                    few: msg("pages", {
-                      desc: 'plural form of "page" for few pages',
-                      id: "pages.plural.few",
-                    }),
-                    many: msg("pages", {
-                      desc: 'plural form of "page" for many pages',
-                      id: "pages.plural.many",
-                    }),
-                    other: msg("pages", {
-                      desc: 'plural form of "page" for multiple/other pages',
-                      id: "pages.plural.other",
-                    }),
-                  })}
+                  ${formatNumber(bar.count)} ${pluralOf("pages", bar.count)}
                 </div>
               </div>
             </btrix-meter-bar>
@@ -764,11 +740,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                           name="chat-square-text-fill"
                           class="text-blue-600"
                         ></sl-icon>`,
-                        page.notes.length === 1
-                          ? msg(str`1 comment`)
-                          : msg(
-                              str`${page.notes.length.toLocaleString()} comments`,
-                            ),
+                        `${page.notes.length.toLocaleString()} ${pluralOf("comments", page.notes.length)}`,
                       )
                     : html`<span class="text-neutral-400"
                         >${msg("None")}</span
