@@ -8,10 +8,13 @@ export class Card extends TailwindElement {
   render() {
     return html`
       <section class="flex h-full flex-col rounded border p-4">
-        <h2 class="mb-3 border-b pb-3 text-base font-semibold leading-none">
+        <div
+          id="cardHeading"
+          class="mb-3 border-b pb-3 text-base font-semibold leading-none"
+        >
           <slot name="title"></slot>
-        </h2>
-        <div class="flex-1">
+        </div>
+        <div class="flex-1" aria-labelledby="cardHeading">
           <slot></slot>
         </div>
         <slot name="footer"></slot>

@@ -25,6 +25,9 @@ export class CrawlStatus extends TailwindElement {
   @property({ type: Boolean })
   stopping = false;
 
+  @property({ type: Boolean })
+  hoist = false;
+
   static styles = [
     animatePulse,
     css`
@@ -235,6 +238,7 @@ export class CrawlStatus extends TailwindElement {
           content=${label}
           @sl-hide=${(e: SlHideEvent) => e.stopPropagation()}
           @sl-after-hide=${(e: SlHideEvent) => e.stopPropagation()}
+          .hoist=${this.hoist}
         >
           <div>${icon}</div>
         </sl-tooltip>

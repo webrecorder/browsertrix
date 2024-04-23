@@ -27,7 +27,11 @@ import type {
 import type { QARun } from "@/types/qa";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
-import { finishedCrawlStates, isActive } from "@/utils/crawler";
+import {
+  activeCrawlStates,
+  finishedCrawlStates,
+  isActive,
+} from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { getLocale } from "@/utils/localization";
 import { tw } from "@/utils/tailwind";
@@ -47,17 +51,9 @@ const SECTIONS = [
 type SectionName = (typeof SECTIONS)[number];
 
 const POLL_INTERVAL_SECONDS = 5;
-const RUNNING_STATES = [
-  "running",
-  "starting",
-  "waiting_capacity",
-  "waiting_org_limit",
-  "stopping",
-] as CrawlState[];
-
 export const QA_RUNNING_STATES = [
   "starting",
-  ...RUNNING_STATES,
+  ...activeCrawlStates,
 ] as CrawlState[];
 
 /**
@@ -149,7 +145,7 @@ export class ArchivedItemDetail extends TailwindElement {
 
   private get isActive(): boolean | null {
     if (!this.crawl) return null;
-    return RUNNING_STATES.includes(this.crawl.state);
+    return activeCrawlStates.includes(this.crawl.state);
   }
 
   private get isQAActive(): boolean | null {

@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import type {
   SlChangeEvent,
   SlSelect,
@@ -27,7 +28,6 @@ import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import * as pageApproval from "@/features/qa/page-list/helpers/approval";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
 import type {
   APIPaginatedList,
@@ -36,11 +36,35 @@ import type {
 } from "@/types/api";
 import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
-import { type AuthState } from "@/utils/AuthService";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { type Auth, type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { getLocale, pluralize } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
+import { pluralOf } from "@/utils/pluralize";
+
+type QAStatsThreshold = {
+  lowerBoundary: `${number}` | "No data";
+  count: number;
+};
+type QAStats = Record<"screenshotMatch" | "textMatch", QAStatsThreshold[]>;
+
+const qaStatsThresholds = [
+  {
+    lowerBoundary: "0.0",
+    cssColor: "var(--sl-color-danger-500)",
+    label: msg("Severe Inconsistencies"),
+  },
+  {
+    lowerBoundary: "0.5",
+    cssColor: "var(--sl-color-warning-500)",
+    label: msg("Moderate Inconsistencies"),
+  },
+  {
+    lowerBoundary: "0.9",
+    cssColor: "var(--sl-color-success-500)",
+    label: msg("Good Match"),
+  },
+];
 
 const notApplicable = () =>
   html`<span class="text-neutral-400">${msg("n/a")}</span>`;
@@ -97,6 +121,16 @@ export class ArchivedItemDetailQA extends TailwindElement {
 
   @state()
   private pages?: APIPaginatedList<ArchivedItemPage>;
+
+  private readonly qaStats = new Task(this, {
+    task: async ([orgId, crawlId, qaRunId, authState]) => {
+      if (!qaRunId || !authState) throw new Error("Missing args");
+      const stats = await this.getQAStats(orgId, crawlId, qaRunId, authState);
+      return stats;
+    },
+    args: () =>
+      [this.orgId!, this.crawlId!, this.qaRunId, this.authState] as const,
+  });
 
   @state()
   private deleting: string | null = null;
@@ -197,102 +231,24 @@ export class ArchivedItemDetailQA extends TailwindElement {
       <btrix-tab-group>
         <btrix-tab-group-tab slot="nav" panel="pages">
           <sl-icon name="file-richtext-fill"></sl-icon>
-          ${msg("Review Pages")}
+          ${msg("Pages")}
         </btrix-tab-group-tab>
-        ${when(
-          this.qaRuns,
-          (qaRuns) => html`
-            <btrix-tab-group-tab
-              slot="nav"
-              panel="runs"
-              ?disabled=${!qaRuns.length}
-            >
-              <sl-icon name="list-ul"></sl-icon>
-              ${msg("Analysis Runs")}
-            </btrix-tab-group-tab>
-          `,
-        )}
+        <btrix-tab-group-tab
+          slot="nav"
+          panel="runs"
+          ?disabled=${!this.qaRuns?.length}
+        >
+          <sl-icon name="list-ul"></sl-icon>
+          ${msg("Analysis Runs")}
+        </btrix-tab-group-tab>
 
         <sl-divider></sl-divider>
 
         <btrix-tab-group-panel name="pages" class="block">
-          ${
-            // TODO un-hide this once we've got data in here
-            nothing
-            // <section class="mb-7">
-            //   <div class="mb-2 flex items-center">
-            //     <h4 class="mr-3 text-lg font-semibold leading-8">
-            //       ${msg("QA Analysis")}
-            //     </h4>
-            //     ${when(this.qaRuns, (qaRuns) => {
-            //       const finishedQARuns = qaRuns.filter(({ state }) =>
-            //         finishedCrawlStates.includes(state),
-            //       );
+          ${when(this.mostRecentNonFailedQARun && this.qaRuns, (qaRuns) =>
+            this.renderAnalysis(qaRuns),
+          )}
 
-            //       if (!finishedQARuns.length) {
-            //         return nothing;
-            //       }
-
-            //       const mostRecentSelected =
-            //         this.mostRecentNonFailedQARun &&
-            //         this.mostRecentNonFailedQARun.id === this.qaRunId;
-            //       const latestFinishedSelected =
-            //         this.qaRunId === finishedQARuns[0].id;
-
-            //       return html`
-            //         <sl-tooltip
-            //           content=${mostRecentSelected
-            //             ? msg(
-            //                 "You're viewing the latest results from a finished analysis run.",
-            //               )
-            //             : msg(
-            //                 "You're viewing results from an older analysis run.",
-            //               )}
-            //         >
-            //           <sl-tag
-            //             size="small"
-            //             variant=${mostRecentSelected ? "success" : "warning"}
-            //           >
-            //             ${mostRecentSelected
-            //               ? msg("Current")
-            //               : latestFinishedSelected
-            //                 ? msg("Last Finished")
-            //                 : msg("Outdated")}
-            //           </sl-tag>
-            //         </sl-tooltip>
-            //         <btrix-qa-run-dropdown
-            //           .items=${finishedQARuns}
-            //           selectedId=${this.qaRunId || ""}
-            //           @btrix-select=${(e: CustomEvent<SelectDetail>) =>
-            //             (this.qaRunId = e.detail.item.id)}
-            //         ></btrix-qa-run-dropdown>
-            //       `;
-            //     })}
-            //   </div>
-            //   ${when(
-            //     this.qaRuns,
-            //     () =>
-            //       this.mostRecentNonFailedQARun
-            //         ? this.renderAnalysis()
-            //         : html`
-            //             <div
-            //               class="rounded-lg border bg-slate-50 p-4 text-center text-slate-600"
-            //             >
-            //               ${msg(
-            //                 "This crawl hasn’t been analyzed yet. Run an analysis to access crawl quality metrics.",
-            //               )}
-            //             </div>
-            //           `,
-
-            //     () =>
-            //       html`<div
-            //         class="grid h-[55px] place-content-center rounded-lg border bg-slate-50 p-4 text-lg text-slate-600"
-            //       >
-            //         <sl-spinner></sl-spinner>
-            //       </div>`,
-            //   )}
-            // </section>
-          }
           <div>
             <h4 class="mb-2 mt-4 text-lg leading-8">
               <span class="font-semibold">${msg("Pages")}</span> (${(
@@ -339,7 +295,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
           class="col-span-4 flex h-full flex-col items-center justify-center gap-2 p-3 text-xs text-neutral-500"
         >
           <sl-icon name="slash-circle"></sl-icon>
-          ${msg("No analysis runs found")}
+          ${msg("No analysis runs, yet")}
         </div>
       `;
     }
@@ -452,7 +408,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
         ${runToBeDeleted &&
         html`<div>
             ${msg(
-              str`This analysis run includes data for ${runToBeDeleted.stats.done} ${pluralize(runToBeDeleted.stats.done, { zero: msg("pages", { desc: 'plural form of "page" for zero pages', id: "pages.plural.zero" }), one: msg("page"), two: msg("pages", { desc: 'plural form of "page" for two pages', id: "pages.plural.two" }), few: msg("pages", { desc: 'plural form of "page" for few pages', id: "pages.plural.few" }), many: msg("pages", { desc: 'plural form of "page" for many pages', id: "pages.plural.many" }), other: msg("pages", { desc: 'plural form of "page" for multiple/other pages', id: "pages.plural.other" }) })} and was started on `,
+              str`This analysis run includes data for ${runToBeDeleted.stats.done} ${pluralOf("pages", runToBeDeleted.stats.done)} and was started on `,
             )}
             <sl-format-date
               lang=${getLocale()}
@@ -492,10 +448,23 @@ export class ArchivedItemDetailQA extends TailwindElement {
   private readonly renderLoadingDetail = () =>
     html`<div class="min-w-32"><sl-spinner class="h-4 w-4"></sl-spinner></div>`;
 
-  private renderAnalysis() {
+  private renderAnalysis(qaRuns: QARun[]) {
     const isRunning =
       this.mostRecentNonFailedQARun &&
       QA_RUNNING_STATES.includes(this.mostRecentNonFailedQARun.state);
+    const qaRun = qaRuns.find(({ id }) => id === this.qaRunId);
+
+    if (!qaRun && isRunning) {
+      return html`<btrix-alert class="mb-3" variant="success">
+        ${msg("Running QA analysis on pages...")}
+      </btrix-alert>`;
+    }
+
+    if (!qaRun) {
+      return html`<btrix-alert class="mb-3" variant="warning">
+        ${msg("This analysis run doesn't exist.")}
+      </btrix-alert>`;
+    }
 
     return html`
       ${isRunning
@@ -505,20 +474,199 @@ export class ArchivedItemDetailQA extends TailwindElement {
             )}
           </btrix-alert>`
         : nothing}
-      <div class="flex flex-col gap-6 md:flex-row">
-        <btrix-card class="flex-1">
-          <span slot="title">${msg("Screenshots")}</span>
-          TODO
-        </btrix-card>
-        <btrix-card class="flex-1">
-          <span slot="title">${msg("Extracted Text")}</span>
-          TODO
-        </btrix-card>
-        <btrix-card class="flex-1">
-          <span slot="title">${msg("Page Resources")}</span>
-          TODO
-        </btrix-card>
-      </div>
+      <btrix-card>
+        <div slot="title" class="flex flex-wrap justify-between">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+            ${msg("Page Match Analysis")}
+            ${when(this.qaRuns, (qaRuns) => {
+              const finishedQARuns = qaRuns.filter(({ state }) =>
+                finishedCrawlStates.includes(state),
+              );
+
+              if (!finishedQARuns.length) {
+                return nothing;
+              }
+
+              const mostRecentSelected =
+                this.mostRecentNonFailedQARun &&
+                this.mostRecentNonFailedQARun.id === this.qaRunId;
+              const latestFinishedSelected =
+                this.qaRunId === finishedQARuns[0].id;
+
+              return html`
+                <div>
+                  <sl-tooltip
+                    content=${mostRecentSelected
+                      ? msg(
+                          "You’re viewing the latest results from a finished analysis run.",
+                        )
+                      : msg(
+                          "You’re viewing results from an older analysis run.",
+                        )}
+                  >
+                    <sl-tag
+                      size="small"
+                      variant=${mostRecentSelected ? "success" : "warning"}
+                    >
+                      ${mostRecentSelected
+                        ? msg("Current")
+                        : latestFinishedSelected
+                          ? msg("Last Finished")
+                          : msg("Outdated")}
+                    </sl-tag>
+                  </sl-tooltip>
+                  <btrix-qa-run-dropdown
+                    .items=${finishedQARuns}
+                    selectedId=${this.qaRunId || ""}
+                    @btrix-select=${(e: CustomEvent<SelectDetail>) =>
+                      (this.qaRunId = e.detail.item.id)}
+                  ></btrix-qa-run-dropdown>
+                </div>
+              `;
+            })}
+          </div>
+          <div class="flex items-center gap-2 text-neutral-500">
+            ${when(
+              qaRun.state.startsWith("stop") ||
+                (qaRun.state === "complete" &&
+                  qaRun.stats.done < qaRun.stats.found),
+              () =>
+                html`<sl-tooltip
+                  content=${qaRun.state.startsWith("stop")
+                    ? msg("This analysis run was stopped and is not complete.")
+                    : msg(
+                        "Not all pages in this crawl were analyzed. This is likely because some pages are not HTML pages, but other types of documents.",
+                      )}
+                  class="[--max-width:theme(spacing.56)]"
+                >
+                  <sl-icon
+                    name="exclamation-triangle-fill"
+                    class="text-warning"
+                    label=${msg("Note about page counts")}
+                  ></sl-icon>
+                </sl-tooltip> `,
+            )}
+            ${when(
+              qaRun.stats,
+              (stats) => html`
+                <div class="text-sm font-normal">
+                  ${formatNumber(stats.done)} / ${formatNumber(stats.found)}
+                  ${pluralOf("pages", stats.found)} ${msg("analyzed")}
+                </div>
+              `,
+            )}
+            <sl-tooltip
+              content=${msg(
+                "Match analysis compares pages during a crawl against their replay during an analysis run. A good match indicates that the crawl is probably good, whereas severe inconsistencies may indicate a bad crawl.",
+              )}
+            >
+              <sl-icon class="text-base" name="info-circle"></sl-icon>
+            </sl-tooltip>
+          </div>
+        </div>
+        <figure>
+          <btrix-table class="grid-cols-[min-content_1fr]">
+            <btrix-table-head class="sr-only">
+              <btrix-table-header-cell>
+                ${msg("Statistic")}
+              </btrix-table-header-cell>
+              <btrix-table-header-cell>
+                ${msg("Chart")}
+              </btrix-table-header-cell>
+            </btrix-table-head>
+            <btrix-table-body>
+              <btrix-table-row>
+                <btrix-table-cell class="font-medium">
+                  ${msg("Screenshots")}
+                </btrix-table-cell>
+                <btrix-table-cell class="p-0">
+                  ${this.qaStats.render({
+                    complete: ({ screenshotMatch }) =>
+                      this.renderMeter(qaRun.stats.found, screenshotMatch),
+                    pending: () => this.renderMeter(),
+                    initial: () => this.renderMeter(),
+                  })}
+                </btrix-table-cell>
+              </btrix-table-row>
+              <btrix-table-row>
+                <btrix-table-cell class="font-medium">
+                  ${msg("Text")}
+                </btrix-table-cell>
+                <btrix-table-cell class="p-0">
+                  ${this.qaStats.render({
+                    complete: ({ textMatch }) =>
+                      this.renderMeter(qaRun.stats.found, textMatch),
+                    pending: () => this.renderMeter(),
+                    initial: () => this.renderMeter(),
+                  })}
+                </btrix-table-cell>
+              </btrix-table-row>
+            </btrix-table-body>
+          </btrix-table>
+        </figure>
+        <figcaption slot="footer" class="mt-2">
+          <dl class="flex flex-wrap items-center justify-end gap-4">
+            ${qaStatsThresholds.map(
+              (threshold) => html`
+                <div class="flex items-center gap-2">
+                  <dt
+                    class="h-4 w-4 flex-shrink-0 rounded"
+                    style="background-color: ${threshold.cssColor}"
+                  >
+                    <span class="sr-only">${threshold.lowerBoundary}</span>
+                  </dt>
+                  <dd>${threshold.label}</dd>
+                </div>
+              `,
+            )}
+          </dl>
+        </figcaption>
+      </btrix-card>
+    `;
+  }
+
+  private renderMeter(pageCount?: number, barData?: QAStatsThreshold[]) {
+    if (pageCount === undefined || !barData) {
+      return html`<sl-skeleton
+        class="h-4 flex-1 [--border-radius:var(--sl-border-radius-medium)]"
+        effect="sheen"
+      ></sl-skeleton>`;
+    }
+
+    return html`
+      <btrix-meter class="flex-1" value=${pageCount}>
+        ${barData.map((bar) => {
+          const threshold = qaStatsThresholds.find(
+            ({ lowerBoundary }) => bar.lowerBoundary === lowerBoundary,
+          );
+          const idx = threshold ? qaStatsThresholds.indexOf(threshold) : -1;
+
+          return html`
+            <btrix-meter-bar
+              value=${(bar.count / pageCount) * 100}
+              style="--background-color: ${threshold?.cssColor}"
+              aria-label=${bar.lowerBoundary}
+            >
+              <div class="text-center">
+                ${bar.lowerBoundary === "No data"
+                  ? msg("No Data")
+                  : threshold?.label}
+                <div class="text-xs opacity-80">
+                  ${bar.lowerBoundary !== "No data"
+                    ? html`${idx === 0
+                          ? `<${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`
+                          : idx === qaStatsThresholds.length - 1
+                            ? `>=${threshold ? +threshold.lowerBoundary * 100 : 0}%`
+                            : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`}
+                        match <br />`
+                    : nothing}
+                  ${formatNumber(bar.count)} ${pluralOf("pages", bar.count)}
+                </div>
+              </div>
+            </btrix-meter-bar>
+          `;
+        })}
+      </btrix-meter>
     `;
   }
 
@@ -612,11 +760,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                           name="chat-square-text-fill"
                           class="text-blue-600"
                         ></sl-icon>`,
-                        page.notes.length === 1
-                          ? msg(str`1 comment`)
-                          : msg(
-                              str`${page.notes.length.toLocaleString()} comments`,
-                            ),
+                        `${page.notes.length.toLocaleString()} ${pluralOf("comments", page.notes.length)}`,
                       )
                     : html`<span class="text-neutral-400"
                         >${msg("None")}</span
@@ -709,7 +853,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
     );
   }
 
-  async getQARunDownloadLink(qaRunId: string) {
+  private async getQARunDownloadLink(qaRunId: string) {
     try {
       const { resources } = await this.api.fetch<QARun>(
         `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${qaRunId}/replay.json`,
@@ -722,7 +866,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
     }
   }
 
-  async deleteQARun(id: string) {
+  private async deleteQARun(id: string) {
     try {
       await this.api.fetch(
         `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/delete`,
@@ -732,5 +876,27 @@ export class ArchivedItemDetailQA extends TailwindElement {
     } catch (e) {
       console.error(e);
     }
+  }
+
+  private async getQAStats(
+    orgId: string,
+    crawlId: string,
+    qaRunId: string,
+    authState: Auth,
+  ) {
+    const query = queryString.stringify(
+      {
+        screenshotThresholds: [0.5, 0.9],
+        textThresholds: [0.5, 0.9],
+      },
+      {
+        arrayFormat: "comma",
+      },
+    );
+
+    return this.api.fetch<QAStats>(
+      `/orgs/${orgId}/crawls/${crawlId}/qa/${qaRunId}/stats?${query}`,
+      authState,
+    );
   }
 }
