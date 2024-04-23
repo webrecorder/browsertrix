@@ -169,6 +169,9 @@ class OrgOps:
     async def get_org_by_id(self, oid: UUID):
         """Get an org by id"""
         res = await self.orgs.find_one({"_id": oid})
+        if not res:
+            raise HTTPException(status_code=400, detail="invalid_org_id")
+
         return Organization.from_dict(res)
 
     async def get_default_org(self):

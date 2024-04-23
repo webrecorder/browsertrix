@@ -86,6 +86,7 @@ class UserManager:
         self.email_collation = Collation("en", strength=2)
 
         self.registration_enabled = is_bool(os.environ.get("REGISTRATION_ENABLED"))
+        self.register_to_org_id = os.environ.get("REGISTER_TO_ORG_ID")
 
     # pylint: disable=attribute-defined-outside-init
     def set_ops(self, org_ops, crawl_config_ops, base_crawl_ops):
@@ -335,6 +336,7 @@ class UserManager:
         self, create: UserCreateIn, request: Optional[Request] = None
     ) -> User:
         """create new user in db"""
+        # pylint: disable=too-many-branches
         await self.validate_password(create.password)
 
         hashed_password = get_password_hash(create.password)
@@ -362,7 +364,7 @@ class UserManager:
         except DuplicateKeyError:
             raise HTTPException(status_code=400, detail="user_already_exists")
 
-        add_to_default_org = False
+        add_to_org = False
 
         if create.inviteToken:
             new_user_invite = None
@@ -374,10 +376,10 @@ class UserManager:
                 print(exc)
 
             if new_user_invite and not new_user_invite.oid:
-                add_to_default_org = True
+                add_to_org = True
 
         else:
-            add_to_default_org = True
+            add_to_org = True
             if not is_verified:
                 asyncio.create_task(self.request_verify(user, request))
 
@@ -385,8 +387,13 @@ class UserManager:
         auto_add_org: Optional[Organization] = None
 
         # if add to default, then get default org
-        if add_to_default_org:
-            auto_add_org = await self.org_ops.get_default_org()
+        if add_to_org:
+            if self.register_to_org_id:
+                auto_add_org = await self.org_ops.get_org_by_id(
+                    UUID(self.register_to_org_id)
+                )
+            else:
+                auto_add_org = await self.org_ops.get_default_org()
 
         # if creating new org, create here
         elif create.newOrg is True:
@@ -401,7 +408,7 @@ class UserManager:
 
         # if org set, add user to org
         if auto_add_org:
-            await self.org_ops.add_user_to_org(auto_add_org, user.id)
+            await self.org_ops.add_user_to_org(auto_add_org, user.id, UserRole.CRAWLER)
 
         return user
 

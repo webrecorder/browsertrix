@@ -61,6 +61,10 @@ volume_storage_class:
 # crawler_node_type:
 
 registration_enabled: "0"
+
+# if set, along with 'registration_enabled', will add registrated users to this org
+# registration_org_id: ""
+
 jwt_token_lifetime_minutes: 1440
 
 # if set to "1", allow inviting same user to same org multiple times
