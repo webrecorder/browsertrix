@@ -47,17 +47,17 @@ const qaStatsThresholds = [
   {
     lowerBoundary: "0.0",
     cssColor: "var(--sl-color-danger-500)",
-    label: msg("Low"),
+    label: msg("Severe Inconsistencies"),
   },
   {
     lowerBoundary: "0.5",
     cssColor: "var(--sl-color-warning-500)",
-    label: msg("Medium"),
+    label: msg("Moderate Inconsistencies"),
   },
   {
     lowerBoundary: "0.9",
     cssColor: "var(--sl-color-success-500)",
-    label: msg("High"),
+    label: msg("Good Match"),
   },
 ];
 
@@ -530,7 +530,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
             )}
             <sl-tooltip
               content=${msg(
-                "Match analysis compares pages during a crawl vs. during an analysis run. A high quality match indicates that the crawl is probably good, whereas a low quality match may indicate a bad crawl.",
+                "Match analysis compares pages during a crawl vs. during an analysis run. A good match indicates that the crawl is probably good, whereas a severely inconsistent may indicate a bad crawl.",
               )}
             >
               <sl-icon class="text-base" name="info-circle"></sl-icon>
@@ -576,26 +576,17 @@ export class ArchivedItemDetailQA extends TailwindElement {
         <figcaption slot="footer" class="mt-2">
           <dl class="flex items-center justify-end gap-4">
             ${qaStatsThresholds.map(
-              (threshold, idx) => html`
+              (threshold) => html`
                 <div class="flex items-center gap-2">
                   <dt class="h-4 w-4">
                     <sl-icon
-                      name="circle-fill"
+                      name="square-fill"
                       class="text-base"
                       style="color: ${threshold.cssColor}"
                     ></sl-icon>
                     <span class="sr-only">${threshold.lowerBoundary}</span>
                   </dt>
-                  <dd>
-                    ${threshold.label}
-                    <span class="text-neutral-400">
-                      ${idx === 0
-                        ? `<${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`
-                        : idx === qaStatsThresholds.length - 1
-                          ? `>=${+threshold.lowerBoundary * 100}%`
-                          : `${+threshold.lowerBoundary * 100}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`}
-                    </span>
-                  </dd>
+                  <dd>${threshold.label}</dd>
                 </div>
               `,
             )}
@@ -619,13 +610,20 @@ export class ArchivedItemDetailQA extends TailwindElement {
           const threshold = qaStatsThresholds.find(
             ({ lowerBoundary }) => bar.lowerBoundary === lowerBoundary,
           );
-
+          const idx = threshold ? qaStatsThresholds.indexOf(threshold) : -1;
+          console.log("threshold:", threshold);
           return html`
             <btrix-meter-bar
               value=${(bar.count / pageCount) * 100}
               style="--background-color: ${threshold?.cssColor}"
               aria-label=${bar.lowerBoundary}
             >
+              ${threshold?.label}
+              (${idx === 0
+                ? `<${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`
+                : idx === qaStatsThresholds.length - 1
+                  ? `>=${threshold ? +threshold.lowerBoundary * 100 : 0}%`
+                  : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`}):
               ${formatNumber(bar.count)}
               ${bar.count === 1 ? msg("page") : msg("pages")}
             </btrix-meter-bar>
