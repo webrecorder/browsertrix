@@ -32,7 +32,14 @@ export class QaRunDropdown extends TailwindElement {
       <sl-dropdown @sl-select=${this.onSelect} distance="-2">
         <sl-button slot="trigger" variant="text" size="small" caret>
           ${selectedRun
-            ? formatDate(selectedRun.finished)
+            ? html`<btrix-crawl-status
+                  type="qa"
+                  hideLabel
+                  state=${selectedRun.state}
+                  slot="prefix"
+                  hoist
+                ></btrix-crawl-status>
+                ${formatDate(selectedRun.finished)} `
             : msg("Select a QA run")}
         </sl-button>
         <sl-menu>
@@ -46,6 +53,13 @@ export class QaRunDropdown extends TailwindElement {
                 ?checked=${isSelected}
               >
                 ${formatDate(run.finished)}
+                <btrix-crawl-status
+                  type="qa"
+                  hideLabel
+                  state=${run.state}
+                  slot="prefix"
+                  hoist
+                ></btrix-crawl-status>
               </sl-menu-item>
             `;
           })}
