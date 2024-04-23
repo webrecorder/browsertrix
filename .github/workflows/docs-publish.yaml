@@ -5,6 +5,8 @@ on:
       - main
     paths:
       - 'docs/**'
+  release:
+    types: [published]
 
 permissions:
   contents: write
