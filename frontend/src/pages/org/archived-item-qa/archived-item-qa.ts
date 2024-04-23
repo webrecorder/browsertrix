@@ -1,4 +1,5 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
+import type { SlTextarea } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { merge } from "immutable";
 import { html, nothing, type PropertyValues } from "lit";
@@ -31,18 +32,18 @@ import {
   type SortableFieldNames,
   type SortDirection,
 } from "@/features/qa/page-list/page-list";
-import { type UpdateItemPageDetail } from "@/features/qa/page-qa-approval";
+import { type UpdatePageApprovalDetail } from "@/features/qa/page-qa-approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import type { ArchivedItem } from "@/types/crawler";
+import type { ArchivedItem, ArchivedItemPageComment } from "@/types/crawler";
 import type { ArchivedItemQAPage, QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive, renderName } from "@/utils/crawler";
-import { getLocale } from "@/utils/localization";
+import { formatISODateString, getLocale } from "@/utils/localization";
 
 const DEFAULT_PAGE_SIZE = 100;
 
@@ -166,6 +167,12 @@ export class ArchivedItemQA extends TailwindElement {
 
   @query(".reviewDialog")
   private readonly reviewDialog?: Dialog | null;
+
+  @query(".commentDialog")
+  private readonly commentDialog?: Dialog | null;
+
+  @query('sl-textarea[name="pageComment"]')
+  private readonly commentTextarea?: SlTextarea | null;
 
   connectedCallback(): void {
     super.connectedCallback();
@@ -389,8 +396,10 @@ export class ArchivedItemQA extends TailwindElement {
             class="flex-auto flex-shrink-0 flex-grow basis-32 truncate text-base font-semibold text-neutral-700"
             title="${this.page?.title ?? ""}"
           >
-            ${this.page?.title ||
-            html`<span class="opacity-50">${msg("No page title")}</span>`}
+            ${
+              this.page?.title ||
+              html`<span class="opacity-50">${msg("No page title")}</span>`
+            }
           </h2>
           <div
             class="ml-auto flex flex-grow basis-auto flex-wrap justify-between gap-2 @lg:flex-grow-0"
@@ -418,7 +427,8 @@ export class ArchivedItemQA extends TailwindElement {
                 .pageId=${this.itemPageId}
                 .page=${this.page}
                 ?disabled=${disableReview}
-                @btrix-update-item-page=${this.onUpdateItemPage}
+                @btrix-show-comments=${() => void this.commentDialog?.show()}
+                @btrix-update-page-approval=${this.onUpdatePageApproval}
               ></btrix-page-qa-approval>
             </sl-tooltip>
             <sl-button
@@ -532,6 +542,23 @@ export class ArchivedItemQA extends TailwindElement {
           ></btrix-qa-page-list>
         </section>
       </article>
+
+      <btrix-dialog
+        class="commentDialog"
+        label=${msg("Page Comments")}
+      >
+        ${this.renderComments()}
+        </p>
+        <sl-button
+          slot="footer"
+          size="small"
+          variant="primary"
+          @click=${() => this.commentDialog?.submit()}
+        >
+          ${msg("Submit Comment")}
+        </sl-button>
+      </btrix-dialog>
+
       <btrix-dialog
         class="reviewDialog [--width:60rem]"
         label=${msg("QA Review")}
@@ -670,6 +697,64 @@ export class ArchivedItemQA extends TailwindElement {
     );
   }
 
+  private renderComments() {
+    return html`
+      ${when(
+        this.page?.notes?.length,
+        (commentCount) => html`
+          <btrix-details open>
+            <span slot="title">
+              ${msg(str`Comments (${commentCount.toLocaleString()})`)}
+            </span>
+            <ul>
+              ${this.page?.notes?.map(
+                (comment) =>
+                  html`<li class="mb-3">
+                    <div
+                      class="flex items-center justify-between rounded-t border bg-neutral-50 text-xs leading-none text-neutral-600"
+                    >
+                      <div class="p-2">
+                        ${msg(
+                          str`${comment.userName} commented on ${formatISODateString(
+                            comment.created,
+                            {
+                              hour: undefined,
+                              minute: undefined,
+                            },
+                          )}`,
+                        )}
+                      </div>
+                      <sl-tooltip content=${msg("Delete comment")}>
+                        <sl-icon-button
+                          class="hover:text-danger"
+                          name="trash3"
+                          label=${msg("Delete comment")}
+                          @click=${async () =>
+                            this.deletePageComment(comment.id)}
+                        ></sl-icon-button>
+                      </sl-tooltip>
+                    </div>
+                    <div class="rounded-b border-b border-l border-r p-2">
+                      ${comment.text}
+                    </div>
+                  </li> `,
+              )}
+            </ul>
+          </btrix-details>
+        `,
+      )}
+      <form @submit=${this.onSubmitComment}>
+        <sl-textarea
+          name="pageComment"
+          label=${msg("Add a comment")}
+          placeholder=${msg("Enter page feedback")}
+          minlength="1"
+          maxlength="500"
+        ></sl-textarea>
+      </form>
+    `;
+  }
+
   private renderPanelToolbar() {
     const buttons = html`
       ${choose(this.tab, [
@@ -789,20 +874,17 @@ export class ArchivedItemQA extends TailwindElement {
     this.navigate.link(e, undefined, /* resetScroll: */ false);
   };
 
-  private async onUpdateItemPage(e: CustomEvent<UpdateItemPageDetail>) {
+  private async onUpdatePageApproval(e: CustomEvent<UpdatePageApprovalDetail>) {
     const updated = e.detail;
 
     if (!this.page || this.page.id !== updated.id) return;
 
-    const reviewStatusChanged =
-      this.page.approved !== updated.approved ||
-      this.page.notes?.length !== updated.notes?.length;
+    this.page = merge<ArchivedItemQAPage>(this.page, updated);
 
+    const reviewStatusChanged = this.page.approved !== updated.approved;
     if (reviewStatusChanged) {
       void this.fetchPages();
     }
-
-    this.page = merge<ArchivedItemQAPage>(this.page, updated);
   }
 
   private async fetchCrawl(): Promise<void> {
@@ -828,6 +910,70 @@ export class ArchivedItemQA extends TailwindElement {
     const [prevPage] = this.getPageListSliceByCurrent();
     if (prevPage) {
       this.navToPage(prevPage.id);
+    }
+  }
+
+  private async onSubmitComment(e: SubmitEvent) {
+    e.preventDefault();
+    const value = this.commentTextarea?.value;
+
+    if (!value) return;
+
+    void this.commentDialog?.hide();
+
+    try {
+      const { data } = await this.api.fetch<{ data: ArchivedItemPageComment }>(
+        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.itemPageId}/notes`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({ text: value }),
+        },
+      );
+
+      const commentForm = this.commentDialog?.querySelector("form");
+      if (commentForm) {
+        commentForm.reset();
+      }
+
+      const comments = [...this.page!.notes!, data];
+      this.page = merge<ArchivedItemQAPage>(this.page!, { notes: comments });
+
+      void this.fetchPages();
+    } catch (e: unknown) {
+      void this.commentDialog?.show();
+
+      console.debug(e);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't add comment at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async deletePageComment(commentId: string): Promise<void> {
+    try {
+      await this.api.fetch(
+        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.itemPageId}/notes/delete`,
+        this.authState!,
+        {
+          method: "POST",
+          body: JSON.stringify({ delete_list: [commentId] }),
+        },
+      );
+
+      const comments = this.page!.notes!.filter(({ id }) => id !== commentId);
+      this.page = merge<ArchivedItemQAPage>(this.page!, { notes: comments });
+
+      void this.fetchPages();
+    } catch {
+      this.notify.toast({
+        message: msg("Sorry, couldn't delete comment at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
     }
   }
 

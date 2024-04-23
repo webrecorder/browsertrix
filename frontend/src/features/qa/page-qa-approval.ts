@@ -1,32 +1,24 @@
-import { localized, msg, str } from "@lit/localize";
-import type { SlTextarea } from "@shoelace-style/shoelace";
+import { localized, msg } from "@lit/localize";
 import { css, html } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
-import { keyed } from "lit/directives/keyed.js";
-import { when } from "lit/directives/when.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import type { Dialog } from "@/components/ui/dialog";
 import { APIController } from "@/controllers/api";
 import { NotifyController } from "@/controllers/notify";
-import type {
-  ArchivedItemPage,
-  ArchivedItemPageComment,
-} from "@/types/crawler";
+import type { ArchivedItemPage } from "@/types/crawler";
 import { type AuthState } from "@/utils/AuthService";
-import { formatISODateString } from "@/utils/localization";
 
-export type UpdateItemPageDetail = {
+export type UpdatePageApprovalDetail = {
   id: ArchivedItemPage["id"];
   approved?: ArchivedItemPage["approved"];
-  notes?: ArchivedItemPage["notes"];
 };
 
 /**
  * Manage crawl QA page approval
  *
- * @fires btrix-update-item-page
+ * @fires btrix-update-page-approval
+ * @fires btrix-show-comments
  */
 @localized()
 @customElement("btrix-page-qa-approval")
@@ -186,15 +178,6 @@ export class PageQAToolbar extends TailwindElement {
   @property({ type: Boolean })
   disabled = false;
 
-  @state()
-  private showComments = false;
-
-  @query("btrix-dialog")
-  private readonly dialog!: Dialog;
-
-  @query('sl-textarea[name="pageComment"]')
-  private readonly textarea!: SlTextarea;
-
   private readonly api = new APIController(this);
   private readonly notify = new NotifyController(this);
 
@@ -225,7 +208,7 @@ export class PageQAToolbar extends TailwindElement {
           aria-checked=${approved}
           ?disabled=${disabled}
           @click=${async () =>
-            this.submitReview({ approved: approved ? null : true })}
+            this.submitApproval({ approved: approved ? null : true })}
         >
           <sl-icon name="hand-thumbs-up" label=${msg("Approve")}></sl-icon>
         </button>
@@ -237,7 +220,8 @@ export class PageQAToolbar extends TailwindElement {
           })}
           aria-checked=${commented}
           ?disabled=${disabled}
-          @click=${() => (this.showComments = true)}
+          @click=${() =>
+            this.dispatchEvent(new CustomEvent("btrix-show-comments"))}
         >
           <sl-icon name="chat-square-text" label=${msg("Comment")}></sl-icon>
         </button>
@@ -250,96 +234,24 @@ export class PageQAToolbar extends TailwindElement {
           aria-checked=${rejected}
           ?disabled=${disabled}
           @click=${async () =>
-            this.submitReview({ approved: rejected ? null : false })}
+            this.submitApproval({ approved: rejected ? null : false })}
         >
           <sl-icon name="hand-thumbs-down" label=${msg("Reject")}></sl-icon>
         </button>
       </fieldset>
-
-      <btrix-dialog
-        label=${msg("Page Comments")}
-        ?open=${this.showComments}
-        @sl-hide=${() => (this.showComments = false)}
-      >
-        ${keyed(this.showComments, this.renderComments())}
-        </p>
-        <sl-button
-          slot="footer"
-          size="small"
-          variant="primary"
-          @click=${() => this.dialog.submit()}
-        >
-          ${msg("Submit Comment")}
-        </sl-button>
-      </btrix-dialog>
     `;
   }
 
-  private renderComments() {
-    return html`
-      ${when(
-        this.page?.notes?.length,
-        (commentCount) => html`
-          <btrix-details open>
-            <span slot="title">
-              ${msg(str`Comments (${commentCount.toLocaleString()})`)}
-            </span>
-            <ul>
-              ${this.page?.notes?.map(
-                (comment) =>
-                  html`<li class="mb-3">
-                    <div
-                      class="flex items-center justify-between rounded-t border bg-neutral-50 text-xs leading-none text-neutral-600"
-                    >
-                      <div class="p-2">
-                        ${msg(
-                          str`${comment.userName} commented on ${formatISODateString(
-                            comment.created,
-                            {
-                              hour: undefined,
-                              minute: undefined,
-                            },
-                          )}`,
-                        )}
-                      </div>
-                      <sl-icon-button
-                        class="hover:text-danger"
-                        name="trash3"
-                        label=${msg("Delete comment")}
-                        @click=${async () => this.deleteComment(comment.id)}
-                      ></sl-icon-button>
-                    </div>
-                    <div class="rounded-b border-b border-l border-r p-2">
-                      ${comment.text}
-                    </div>
-                  </li> `,
-              )}
-            </ul>
-          </btrix-details>
-        `,
-      )}
-      <form @submit=${this.onSubmitComment}>
-        <sl-textarea
-          name="pageComment"
-          label=${msg("Add a comment")}
-          placeholder=${msg("Enter page feedback")}
-          minlength="1"
-          maxlength="500"
-        ></sl-textarea>
-      </form>
-    `;
-  }
-
-  private async submitReview({
+  private async submitApproval({
     approved,
   }: {
     approved: ArchivedItemPage["approved"];
   }) {
-    if (!this.page) return;
+    if (!this.pageId) return;
 
     try {
       await this.api.fetch(
-        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.page.id}`,
+        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.pageId}`,
         this.authState!,
         {
           method: "PATCH",
@@ -347,7 +259,17 @@ export class PageQAToolbar extends TailwindElement {
         },
       );
 
-      void this.dispatchPageUpdate({ approved });
+      this.dispatchEvent(
+        new CustomEvent<UpdatePageApprovalDetail>(
+          "btrix-update-page-approval",
+          {
+            detail: {
+              id: this.pageId,
+              approved,
+            },
+          },
+        ),
+      );
     } catch (e: unknown) {
       console.debug(e);
       this.notify.toast({
@@ -356,73 +278,5 @@ export class PageQAToolbar extends TailwindElement {
         icon: "exclamation-octagon",
       });
     }
-  }
-
-  private async onSubmitComment(e: SubmitEvent) {
-    e.preventDefault();
-    const value = this.textarea.value;
-
-    if (!value) return;
-
-    this.showComments = false;
-
-    try {
-      const { data } = await this.api.fetch<{ data: ArchivedItemPageComment }>(
-        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.pageId}/notes`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify({ text: value }),
-        },
-      );
-
-      void this.dispatchPageUpdate({
-        notes: this.page?.notes ? [...this.page.notes, data] : [data],
-      });
-    } catch (e: unknown) {
-      console.debug(e);
-
-      this.notify.toast({
-        message: msg("Sorry, couldn't add comment at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  private async deleteComment(commentId: string): Promise<void> {
-    try {
-      await this.api.fetch(
-        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.pageId}/notes/delete`,
-        this.authState!,
-        {
-          method: "POST",
-          body: JSON.stringify({ delete_list: [commentId] }),
-        },
-      );
-
-      void this.dispatchPageUpdate({
-        notes: this.page?.notes?.filter(({ id }) => id !== commentId) || [],
-      });
-    } catch {
-      this.notify.toast({
-        message: msg("Sorry, couldn't delete comment at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  private async dispatchPageUpdate(page: Partial<UpdateItemPageDetail>) {
-    if (!this.pageId) return;
-
-    this.dispatchEvent(
-      new CustomEvent<UpdateItemPageDetail>("btrix-update-item-page", {
-        detail: {
-          id: this.pageId,
-          ...page,
-        },
-      }),
-    );
   }
 }
