@@ -22,6 +22,8 @@ data:
 
   REGISTRATION_ENABLED: "{{ .Values.registration_enabled | default 0 }}"
 
+  REGISTER_TO_ORG_ID: "{{ .Values.registration_org_id }}"
+
   ALLOW_DUPE_INVITES: "{{ .Values.allow_dupe_invites | default 0 }}"
 
   JWT_TOKEN_LIFETIME_MINUTES: "{{ .Values.jwt_token_lifetime_minutes | default 60 }}"
