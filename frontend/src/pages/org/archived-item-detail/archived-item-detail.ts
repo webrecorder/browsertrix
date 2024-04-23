@@ -253,32 +253,32 @@ export class ArchivedItemDetail extends TailwindElement {
 
     switch (this.activeTab) {
       case "qa": {
-        if (this.isCrawler) {
-          sectionContent = this.renderPanel(
-            html`${this.renderTitle(
-                html`${msg("Quality Assurance")}
-                  <btrix-beta-badge></btrix-beta-badge>`,
-              )}
-              <div class="ml-auto flex flex-wrap justify-end gap-2">
-                ${when(this.qaRuns, this.renderQAHeader)}
-              </div> `,
-            html`
-              <btrix-archived-item-detail-qa
-                .authState=${this.authState}
-                .orgId=${this.orgId}
-                .crawlId=${this.crawlId}
-                .itemType=${this.itemType}
-                .crawl=${this.crawl}
-                .qaRuns=${this.qaRuns}
-                .qaRunId=${this.qaRunId}
-                .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
-                @btrix-qa-runs-update=${() => void this.fetchQARuns()}
-              ></btrix-archived-item-detail-qa>
-            `,
-          );
+        if (!this.isCrawler) {
+          sectionContent = "";
           break;
         }
-        sectionContent = "";
+        sectionContent = this.renderPanel(
+          html`${this.renderTitle(
+              html`${msg("Quality Assurance")}
+                <btrix-beta-badge></btrix-beta-badge>`,
+            )}
+            <div class="ml-auto flex flex-wrap justify-end gap-2">
+              ${when(this.qaRuns, this.renderQAHeader)}
+            </div> `,
+          html`
+            <btrix-archived-item-detail-qa
+              .authState=${this.authState}
+              .orgId=${this.orgId}
+              .crawlId=${this.crawlId}
+              .itemType=${this.itemType}
+              .crawl=${this.crawl}
+              .qaRuns=${this.qaRuns}
+              .qaRunId=${this.qaRunId}
+              .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
+              @btrix-qa-runs-update=${() => void this.fetchQARuns()}
+            ></btrix-archived-item-detail-qa>
+          `,
+        );
         break;
       }
       case "replay":
