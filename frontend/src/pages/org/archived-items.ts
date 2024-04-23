@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlCheckbox, SlSelect } from "@shoelace-style/shoelace";
-import { nothing, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -8,14 +8,17 @@ import queryString from "query-string";
 
 import type { ArchivedItem, Crawl, CrawlState, Workflow } from "./types";
 
+import { TailwindElement } from "@/classes/TailwindElement";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import { APIController } from "@/controllers/api";
+import { NavigateController } from "@/controllers/navigate";
+import { NotifyController } from "@/controllers/notify";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive } from "@/utils/crawler";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;
 type SearchFields = "name" | "firstSeed";
@@ -69,7 +72,7 @@ const sortableFields: Record<
  */
 @localized()
 @customElement("btrix-archived-items")
-export class CrawlsList extends LiteElement {
+export class CrawlsList extends TailwindElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
@@ -138,6 +141,10 @@ export class CrawlsList extends LiteElement {
 
   // Use to cancel requests
   private getArchivedItemsController: AbortController | null = null;
+
+  private readonly api = new APIController(this);
+  private readonly navigate = new NavigateController(this);
+  private readonly notify = new NotifyController(this);
 
   private get selectedSearchFilterKey() {
     return Object.keys(CrawlsList.FieldLabels).find((key) =>
@@ -248,10 +255,10 @@ export class CrawlsList extends LiteElement {
               return html` <btrix-navigation-button
                 .active=${isSelected}
                 aria-selected="${isSelected}"
-                href=${`${this.orgBasePath}/items${
+                href=${`${this.navigate.orgBasePath}/items${
                   itemType ? `/${itemType}` : ""
                 }`}
-                @click=${this.navLink}
+                @click=${this.navigate.link}
                 size="small"
               >
                 ${icon ? html`<sl-icon name=${icon}></sl-icon>` : ""}
@@ -519,7 +526,7 @@ export class CrawlsList extends LiteElement {
 
   private readonly renderArchivedItem = (item: ArchivedItem) => html`
     <btrix-archived-item-list-item
-      href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}`}
+      href=${`${this.navigate.orgBasePath}/items/${item.type}/${item.id}`}
       .item=${item}
       ?showStatus=${this.itemType !== null}
     >
@@ -561,7 +568,9 @@ export class CrawlsList extends LiteElement {
         ? html`
             <sl-menu-item
               @click=${() =>
-                this.navTo(`${this.orgBasePath}/workflows/crawl/${item.cid}`)}
+                this.navigate.to(
+                  `${this.navigate.orgBasePath}/workflows/crawl/${item.cid}`,
+                )}
             >
               <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
               ${msg("Go to Workflow")}
@@ -661,7 +670,7 @@ export class CrawlsList extends LiteElement {
       if ((e as Error).name === "AbortError") {
         console.debug("Fetch archived items aborted to throttle");
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg("Sorry, couldn't retrieve archived items at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
@@ -702,7 +711,7 @@ export class CrawlsList extends LiteElement {
     );
 
     this.getArchivedItemsController = new AbortController();
-    const data = await this.apiFetch<ArchivedItems>(
+    const data = await this.api.fetch<ArchivedItems>(
       `/orgs/${this.orgId}/all-crawls?${query}`,
       this.authState!,
       {
@@ -725,7 +734,7 @@ export class CrawlsList extends LiteElement {
         names: string[];
         descriptions: string[];
         firstSeeds: string[];
-      } = await this.apiFetch(
+      } = await this.api.fetch(
         `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
         this.authState!,
       );
@@ -764,7 +773,7 @@ export class CrawlsList extends LiteElement {
     }
 
     try {
-      const _data = await this.apiFetch(
+      const _data = await this.api.fetch(
         `/orgs/${item.oid}/${apiPath}/delete`,
         this.authState!,
         {
@@ -780,7 +789,7 @@ export class CrawlsList extends LiteElement {
         ...crawlsData,
         items: items.filter((c) => c.id !== item.id),
       };
-      this.notify({
+      this.notify.toast({
         message: msg(str`Successfully deleted archived item.`),
         variant: "success",
         icon: "check2-circle",
@@ -802,7 +811,7 @@ export class CrawlsList extends LiteElement {
           message = e.message;
         }
       }
-      this.notify({
+      this.notify.toast({
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
@@ -811,7 +820,7 @@ export class CrawlsList extends LiteElement {
   }
 
   async getWorkflow(crawl: Crawl): Promise<Workflow> {
-    const data: Workflow = await this.apiFetch(
+    const data: Workflow = await this.api.fetch(
       `/orgs/${crawl.oid}/crawlconfigs/${crawl.cid}`,
       this.authState!,
     );
