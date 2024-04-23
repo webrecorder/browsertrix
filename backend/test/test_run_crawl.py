@@ -864,6 +864,18 @@ def test_delete_crawls_crawler(
     assert r.status_code == 200
     assert r.json()["total"] > 0
 
+    # Get WACZ presigned url for crawl about to delete
+    wacz_presigned_urls = []
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data["resources"]) >= 1
+    for resource in data["resources"]:
+        wacz_presigned_urls.append(resource["path"])
+
     # Test that crawler user can delete own crawl
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
@@ -883,6 +895,11 @@ def test_delete_crawls_crawler(
         headers=crawler_auth_headers,
     )
     assert r.status_code == 404
+
+    # Test that WACZs are deleted
+    for wacz_url in wacz_presigned_urls:
+        r = requests.get(f"http://localhost:30870{wacz_url}")
+        assert r.status_code == 404
 
     # Test that associated pages are also deleted
     r = requests.get(

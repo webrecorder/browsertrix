@@ -5,19 +5,9 @@ import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type QARun } from "@/types/qa";
+import { formatDate } from "@/utils/localization";
 
 export type SelectDetail = { item: { id: string } };
-
-// NOTE <sl-format-date> seems to prevent sl-select event, needs investigation
-function formatDate(date: string) {
-  return new Date(`${date}Z`).toLocaleDateString(undefined, {
-    month: "2-digit",
-    day: "2-digit",
-    year: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 /**
  * @fires btrix-select

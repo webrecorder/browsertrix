@@ -116,29 +116,53 @@ def failed_qa_run_id(crawler_crawl_id, crawler_auth_headers, default_org_id):
     assert qa["started"]
     assert not qa["finished"]
 
-    # Ensure sorting by qaState works as expected - current floated to top
+    # Ensure sorting by lastQAState works as expected - current floated to top
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=qaState",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=lastQAState",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     crawls = r.json()["items"]
     assert crawls[0]["id"] == crawler_crawl_id
-    assert crawls[0]["activeQAState"]
     assert crawls[0]["activeQAStats"]
     assert crawls[0]["lastQAState"]
+    assert crawls[0]["lastQAStarted"]
 
-    # Ensure sorting by qaState works as expected with all-crawls
+    # Ensure sorting by lastQAState works as expected with all-crawls
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=qaState",
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=lastQAState",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
     crawls = r.json()["items"]
     assert crawls[0]["id"] == crawler_crawl_id
-    assert crawls[0]["activeQAState"]
     assert crawls[0]["activeQAStats"]
     assert crawls[0]["lastQAState"]
+    assert crawls[0]["lastQAStarted"]
+
+    # Ensure sorting by lastQAStarted works as expected - current floated to top
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=lastQAStarted",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    assert crawls[0]["id"] == crawler_crawl_id
+    assert crawls[0]["activeQAStats"]
+    assert crawls[0]["lastQAState"]
+    assert crawls[0]["lastQAStarted"]
+
+    # Ensure sorting by lastQAState works as expected with all-crawls
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?sortBy=lastQAStarted",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    crawls = r.json()["items"]
+    assert crawls[0]["id"] == crawler_crawl_id
+    assert crawls[0]["activeQAStats"]
+    assert crawls[0]["lastQAState"]
+    assert crawls[0]["lastQAStarted"]
 
     # Cancel crawl
     r = requests.post(
@@ -525,6 +549,16 @@ def test_delete_qa_runs(
     qa_run_pages_ready,
     failed_qa_run_id,
 ):
+    # Get download links for QA WACZs
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/{qa_run_id}/replay.json",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    assert len(data["resources"]) == 1
+    qa_wacz_url = data["resources"][0]["path"]
+
+    # Delete QA runs
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/delete",
         json={"qa_run_ids": [qa_run_id, failed_qa_run_id]},
@@ -550,6 +584,10 @@ def test_delete_qa_runs(
 
         time.sleep(5)
         count += 1
+
+    # Ensure QA WACZs was deleted
+    r = requests.get(f"http://localhost:30870{qa_wacz_url}")
+    assert r.status_code == 404
 
     # Ensure associated qa run information in pages is also deleted
     for qa_run in (qa_run_id, failed_qa_run_id):
