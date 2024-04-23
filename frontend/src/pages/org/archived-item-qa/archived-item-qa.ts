@@ -330,10 +330,24 @@ export class ArchivedItemQA extends TailwindElement {
     return html`
       ${this.renderHidden()}
 
-      <h1 class="font-medium text-neutral-500">
-        ${msg("Review Archived Item")}
-        <btrix-beta-badge placement="right"></btrix-beta-badge>
-      </h1>
+      <div class="flex gap-2">
+        <a
+          class="font-medium text-neutral-500 hover:text-neutral-600"
+          href=${`${crawlBaseUrl}#qa`}
+          @click=${this.navigate.link}
+        >
+          <sl-icon
+            name="arrow-left"
+            class="inline-block align-middle"
+          ></sl-icon>
+          <span class="inline-block align-middle"> ${msg("Back")} </span>
+        </a>
+        <div class="text-neutral-400" role="separator">/</div>
+        <h1 class="text-neutral-400">
+          ${msg("Review Archived Item")}
+          <btrix-beta-badge placement="right"></btrix-beta-badge>
+        </h1>
+      </div>
 
       <article class="qa-grid grid gap-x-6 gap-y-0">
         <header
