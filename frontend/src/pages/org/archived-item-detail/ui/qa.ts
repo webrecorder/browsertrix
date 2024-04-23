@@ -715,7 +715,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
 
   private renderPageList() {
     const pageTitle = (page: ArchivedItemPage) => html`
-      <div class="truncate">
+      <div class="truncate font-medium">
         ${page.title ||
         html`<span class="opacity-50">${msg("No page title")}</span>`}
       </div>
@@ -750,9 +750,8 @@ export class ArchivedItemDetailQA extends TailwindElement {
                   ${this.qaRunId
                     ? html`
                         <a
-                          class="truncate text-sm font-semibold"
                           href=${`${this.navigate.orgBasePath}/items/${this.itemType}/${this.crawlId}/review/screenshots?qaRunId=${this.qaRunId}&itemPageId=${page.id}`}
-                          title="${page.title ?? page.url}"
+                          title=${msg(str`Review "${page.title ?? page.url}"`)}
                           @click=${this.navigate.link}
                         >
                           ${pageTitle(page)}
