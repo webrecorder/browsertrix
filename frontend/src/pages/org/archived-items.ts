@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { initialState, Task } from "@lit/task";
 import type { SlCheckbox, SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -17,7 +18,7 @@ import { NotifyController } from "@/controllers/notify";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
+import type { Auth, AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive } from "@/utils/crawler";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;
@@ -31,7 +32,7 @@ type SortField =
   | "lastQAStarted";
 type SortDirection = "asc" | "desc";
 
-const ABORT_REASON_THROTTLE = "throttled";
+// const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const sortableFields: Record<
@@ -97,7 +98,10 @@ export class CrawlsList extends TailwindElement {
   itemType: ArchivedItem["type"] | null = null;
 
   @state()
-  private archivedItems?: ArchivedItems;
+  private pagination: Required<APIPaginationQuery> = {
+    page: 1,
+    pageSize: INITIAL_PAGE_SIZE,
+  };
 
   @state()
   private searchOptions: Record<string, string>[] = [];
@@ -136,11 +140,72 @@ export class CrawlsList extends TailwindElement {
   @query("#stateSelect")
   stateSelect?: SlSelect;
 
+  private readonly archivedItemsTask = new Task(this, {
+    task: async (
+      [
+        orgId,
+        authState,
+        userId,
+        itemType,
+        pagination,
+        orderBy,
+        filterBy,
+        filterByCurrentUser,
+      ],
+      { signal },
+    ) => {
+      if (!orgId || !authState || !userId) {
+        return initialState;
+      }
+      this.cancelInProgressGetArchivedItems();
+      try {
+        return await this.getArchivedItems(
+          {
+            orgId,
+            authState,
+            userId,
+            itemType,
+            pagination,
+            orderBy,
+            filterBy,
+            filterByCurrentUser,
+          },
+          signal,
+        );
+      } catch (e) {
+        if ((e as Error).name === "AbortError") {
+          console.debug("Fetch archived items aborted to throttle");
+        } else {
+          this.notify.toast({
+            message: msg(
+              "Sorry, couldn't retrieve archived items at this time.",
+            ),
+            variant: "danger",
+            icon: "exclamation-octagon",
+          });
+        }
+        throw e;
+      }
+    },
+    args: () =>
+      // TODO consolidate filters into single fetch params
+      [
+        this.orgId,
+        this.authState,
+        this.userId,
+        this.itemType,
+        this.pagination,
+        this.orderBy,
+        this.filterBy,
+        this.filterByCurrentUser,
+      ] as const,
+  });
+
   // For fuzzy search:
   private readonly searchKeys = ["name", "firstSeed"];
 
   // Use to cancel requests
-  private getArchivedItemsController: AbortController | null = null;
+  // private readonly getArchivedItemsController: AbortController | null = null;
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
@@ -174,13 +239,12 @@ export class CrawlsList extends TailwindElement {
           field: "finished",
           direction: sortableFields["finished"].defaultDirection!,
         };
-        this.archivedItems = undefined;
+        // this.archivedItems = undefined;
       }
-
-      void this.fetchArchivedItems({
+      this.pagination = {
         page: 1,
         pageSize: INITIAL_PAGE_SIZE,
-      });
+      };
 
       if (changedProperties.has("filterByCurrentUser")) {
         window.sessionStorage.setItem(
@@ -273,45 +337,43 @@ export class CrawlsList extends TailwindElement {
           </div>
         </header>
 
-        ${when(
-          this.archivedItems,
-          () => {
-            const { items, page, total, pageSize } = this.archivedItems!;
-            return html`
-              <section class="mx-2">
-                ${items.length
-                  ? this.renderArchivedItemList()
-                  : this.renderEmptyState()}
-              </section>
-              ${when(
-                total > pageSize,
-                () => html`
-                  <footer class="mt-6 flex justify-center">
-                    <btrix-pagination
-                      page=${page}
-                      totalCount=${total}
-                      size=${pageSize}
-                      @page-change=${async (e: PageChangeEvent) => {
-                        await this.fetchArchivedItems({
-                          page: e.detail.page,
-                        });
-
-                        // Scroll to top of list
-                        // TODO once deep-linking is implemented, scroll to top of pushstate
-                        this.scrollIntoView({ behavior: "smooth" });
-                      }}
-                    ></btrix-pagination>
-                  </footer>
-                `,
-              )}
-            `;
-          },
-          () => html`
+        ${this.archivedItemsTask.render({
+          pending: () => html`
             <div class="my-12 flex w-full items-center justify-center text-2xl">
               <sl-spinner></sl-spinner>
             </div>
           `,
-        )}
+          complete: ({ items, page, total, pageSize }) => html`
+            <section class="mx-2">
+              ${items.length
+                ? this.renderArchivedItemList()
+                : this.renderEmptyState()}
+            </section>
+            ${when(
+              total > pageSize,
+              () => html`
+                <footer class="mt-6 flex justify-center">
+                  <btrix-pagination
+                    page=${page}
+                    totalCount=${total}
+                    size=${pageSize}
+                    @page-change=${async (e: PageChangeEvent) => {
+                      this.pagination = {
+                        ...this.pagination,
+                        page: e.detail.page,
+                      };
+                      await this.updateComplete;
+
+                      // Scroll to top of list
+                      // TODO once deep-linking is implemented, scroll to top of pushstate
+                      this.scrollIntoView({ behavior: "smooth" });
+                    }}
+                  ></btrix-pagination>
+                </footer>
+              `,
+            )}
+          `,
+        })}
       </main>
       ${when(
         this.isCrawler && this.orgId,
@@ -323,9 +385,10 @@ export class CrawlsList extends TailwindElement {
             @request-close=${() => (this.isUploadingArchive = false)}
             @uploaded=${() => {
               if (this.itemType !== "crawl") {
-                void this.fetchArchivedItems({
+                this.pagination = {
+                  ...this.pagination,
                   page: 1,
-                });
+                };
               }
             }}
           ></btrix-file-uploader>
@@ -462,14 +525,14 @@ export class CrawlsList extends TailwindElement {
   }
 
   private renderArchivedItemList() {
-    if (!this.archivedItems) return;
-
     return html`
       <btrix-archived-item-list .listType=${this.itemType}>
         <btrix-table-header-cell slot="actionCell" class="px-1">
           <span class="sr-only">${msg("Row actions")}</span>
         </btrix-table-header-cell>
-        ${this.archivedItems.items.map(this.renderArchivedItem)}
+        ${this.archivedItemsTask.render({
+          complete: ({ items }) => items.map(this.renderArchivedItem),
+        })}
       </btrix-archived-item-list>
 
       ${this.itemToEdit
@@ -479,10 +542,10 @@ export class CrawlsList extends TailwindElement {
               .crawl=${this.itemToEdit}
               ?open=${this.isEditingItem}
               @request-close=${() => (this.isEditingItem = false)}
-              @updated=${
-                /* TODO fetch current page or single crawl */ this
-                  .fetchArchivedItems
-              }
+              @updated=${() => {
+                /* TODO fetch current page or single crawl */
+                void this.archivedItemsTask.run();
+              }}
             ></btrix-item-metadata-editor>
           `
         : nothing}
@@ -640,7 +703,7 @@ export class CrawlsList extends TailwindElement {
       `;
     }
 
-    if (this.archivedItems?.page && this.archivedItems.page > 1) {
+    if (this.pagination.page && this.pagination.page > 1) {
       return html`
         <div class="border-b border-t py-5">
           <p class="text-center text-neutral-500">
@@ -659,69 +722,49 @@ export class CrawlsList extends TailwindElement {
     `;
   }
 
-  /**
-   * Fetch archived items and update internal state
-   */
-  private async fetchArchivedItems(params?: APIPaginationQuery): Promise<void> {
-    this.cancelInProgressGetArchivedItems();
-    try {
-      this.archivedItems = await this.getArchivedItems(params);
-    } catch (e) {
-      if ((e as Error).name === "AbortError") {
-        console.debug("Fetch archived items aborted to throttle");
-      } else {
-        this.notify.toast({
-          message: msg("Sorry, couldn't retrieve archived items at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
-      }
-    }
-  }
-
   private cancelInProgressGetArchivedItems() {
-    if (this.getArchivedItemsController) {
-      this.getArchivedItemsController.abort(ABORT_REASON_THROTTLE);
-      this.getArchivedItemsController = null;
-    }
+    // TODO abort
+    // if (this.getArchivedItemsController) {
+    //   this.getArchivedItemsController.abort(ABORT_REASON_THROTTLE);
+    //   this.getArchivedItemsController = null;
+    // }
   }
 
   private async getArchivedItems(
-    queryParams?: APIPaginationQuery & { state?: CrawlState[] },
-  ): Promise<ArchivedItems> {
+    params: {
+      orgId: string;
+      authState: Auth;
+      userId: CrawlsList["userId"];
+      itemType: CrawlsList["itemType"];
+      pagination: CrawlsList["pagination"];
+      orderBy: CrawlsList["orderBy"];
+      filterBy: CrawlsList["filterBy"];
+      filterByCurrentUser: CrawlsList["filterByCurrentUser"];
+    },
+    signal: AbortSignal,
+  ) {
     const query = queryString.stringify(
       {
-        ...this.filterBy,
-        state: this.filterBy.state?.length
-          ? this.filterBy.state
+        ...params.filterBy,
+        state: params.filterBy.state?.length
+          ? params.filterBy.state
           : finishedCrawlStates,
-        page: queryParams?.page || this.archivedItems?.page || 1,
-        pageSize:
-          queryParams?.pageSize ||
-          this.archivedItems?.pageSize ||
-          INITIAL_PAGE_SIZE,
-        userid: this.filterByCurrentUser ? this.userId : undefined,
-        sortBy: this.orderBy.field,
-        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
-        crawlType: this.itemType,
+        page: params.pagination.page,
+        pageSize: params.pagination.pageSize,
+        userid: params.filterByCurrentUser ? params.userId : undefined,
+        sortBy: params.orderBy.field,
+        sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
+        crawlType: params.itemType,
       },
       {
         arrayFormat: "comma",
       },
     );
-
-    this.getArchivedItemsController = new AbortController();
-    const data = await this.api.fetch<ArchivedItems>(
-      `/orgs/${this.orgId}/all-crawls?${query}`,
-      this.authState!,
-      {
-        signal: this.getArchivedItemsController.signal,
-      },
+    return this.api.fetch<ArchivedItems>(
+      `/orgs/${params.orgId}/all-crawls?${query}`,
+      params.authState,
+      { signal },
     );
-
-    this.getArchivedItemsController = null;
-
-    return data;
   }
 
   private async fetchConfigSearchValues() {
@@ -783,18 +826,19 @@ export class CrawlsList extends TailwindElement {
           }),
         },
       );
-      const { items, ...crawlsData } = this.archivedItems!;
+      // TODO eager list update before server response
+      void this.archivedItemsTask.run();
+      // const { items, ...crawlsData } = this.archivedItems!;
       this.itemToDelete = null;
-      this.archivedItems = {
-        ...crawlsData,
-        items: items.filter((c) => c.id !== item.id),
-      };
+      // this.archivedItems = {
+      //   ...crawlsData,
+      //   items: items.filter((c) => c.id !== item.id),
+      // };
       this.notify.toast({
         message: msg(str`Successfully deleted archived item.`),
         variant: "success",
         icon: "check2-circle",
       });
-      void this.fetchArchivedItems();
     } catch (e) {
       if (this.itemToDelete) {
         this.confirmDeleteItem(this.itemToDelete);
