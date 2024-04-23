@@ -359,10 +359,12 @@ class UserManager:
             is_verified=is_verified,
         )
 
+        user_already_exists = False
+
         try:
             await self.users.insert_one(user.dict())
         except DuplicateKeyError:
-            raise HTTPException(status_code=400, detail="user_already_exists")
+            user_already_exists = True
 
         add_to_org = False
 
@@ -385,6 +387,10 @@ class UserManager:
 
         # org to auto-add user to, if any
         auto_add_org: Optional[Organization] = None
+
+        # if user already exists, and not adding to a new org, error
+        if user_already_exists and not add_to_org:
+            raise HTTPException(status_code=400, detail="user_already_exists")
 
         # if add to default, then get default org
         if add_to_org:

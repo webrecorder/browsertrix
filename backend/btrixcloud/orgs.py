@@ -367,11 +367,12 @@ class OrgOps:
         await self.add_user_to_org(org, user.id, invite.role)
         return True
 
-    async def add_user_to_org(
-        self, org: Organization, userid: UUID, role: Optional[UserRole] = None
-    ):
+    async def add_user_to_org(self, org: Organization, userid: UUID, role: UserRole):
         """Add user to organization with specified role"""
-        org.users[str(userid)] = role or UserRole.OWNER
+        if str(userid) in org.users:
+            raise HTTPException(status_code=400, detail="user_already_is_org_member")
+
+        org.users[str(userid)] = role
         await self.update_users(org)
 
     async def get_org_owners(self, org: Organization):
