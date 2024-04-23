@@ -99,9 +99,6 @@ export class ArchivedItemQA extends TailwindElement {
   @property({ type: String })
   qaRunId?: string;
 
-  @property({ type: Boolean })
-  isCrawler = false;
-
   @property({ type: String })
   tab: QATypes.QATab = "screenshots";
 
@@ -838,7 +835,7 @@ export class ArchivedItemQA extends TailwindElement {
       );
     } catch {
       this.notify.toast({
-        message: msg("Sorry, couldn't retrieve QA data at this time."),
+        message: msg("Sorry, couldn't retrieve analysis runs at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });

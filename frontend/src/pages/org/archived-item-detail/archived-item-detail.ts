@@ -249,10 +249,14 @@ export class ArchivedItemDetail extends TailwindElement {
 
   render() {
     const authToken = this.authState!.headers.Authorization.split(" ")[1];
-    let sectionContent: string | TemplateResult = "";
+    let sectionContent: string | TemplateResult<1> = "";
 
     switch (this.activeTab) {
-      case "qa":
+      case "qa": {
+        if (!this.isCrawler) {
+          sectionContent = "";
+          break;
+        }
         sectionContent = this.renderPanel(
           html`${this.renderTitle(
               html`${msg("Quality Assurance")}
@@ -276,6 +280,7 @@ export class ArchivedItemDetail extends TailwindElement {
           `,
         );
         break;
+      }
       case "replay":
         sectionContent = this.renderPanel(msg("Replay"), this.renderReplay(), [
           tw`overflow-hidden rounded-lg border`,
@@ -478,7 +483,7 @@ export class ArchivedItemDetail extends TailwindElement {
           label: msg("Overview"),
         })}
         ${when(
-          this.itemType === "crawl",
+          this.itemType === "crawl" && this.isCrawler,
           () => html`
             ${renderNavItem({
               section: "qa",
@@ -553,11 +558,13 @@ export class ArchivedItemDetail extends TailwindElement {
                 </sl-button-group>
               `
             : ""}
-          ${this.crawl && this.isCrawler
-            ? this.renderMenu()
-            : html`<sl-skeleton
-                class="h-8 w-24 [--border-radius:theme(borderRadius.sm)]"
-              ></sl-skeleton>`}
+          ${this.isCrawler
+            ? this.crawl
+              ? this.renderMenu()
+              : html`<sl-skeleton
+                  class="h-8 w-24 [--border-radius:theme(borderRadius.sm)]"
+                ></sl-skeleton>`
+            : nothing}
         </div>
       </header>
     `;
