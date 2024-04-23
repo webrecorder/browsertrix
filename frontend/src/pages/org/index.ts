@@ -527,7 +527,13 @@ export class Org extends LiteElement {
 
     if (params.itemId) {
       if (params.qaTab) {
-        return html` <btrix-archived-item-qa
+        if (!this.isCrawler) {
+          return html`<btrix-not-found
+            class="flex items-center justify-center"
+          ></btrix-not-found>`;
+        }
+
+        return html`<btrix-archived-item-qa
           class="flex-1"
           .authState=${this.authState!}
           orgId=${this.orgId}
@@ -535,7 +541,6 @@ export class Org extends LiteElement {
           itemPageId=${ifDefined(params.itemPageId)}
           qaRunId=${ifDefined(params.qaRunId)}
           tab=${params.qaTab}
-          ?isCrawler=${this.isCrawler}
         ></btrix-archived-item-qa>`;
       }
 
