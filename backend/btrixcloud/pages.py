@@ -286,7 +286,7 @@ class PageOps:
         text: str,
         user: User,
         crawl_id: str,
-    ) -> Dict[str, bool]:
+    ) -> Dict[str, Union[bool, PageNote]]:
         """Add note to page"""
         note = PageNote(id=uuid4(), text=text, userid=user.id, userName=user.name)
 
@@ -304,7 +304,7 @@ class PageOps:
         if not result:
             raise HTTPException(status_code=404, detail="page_not_found")
 
-        return {"added": True}
+        return {"added": True, "data": note}
 
     async def update_page_note(
         self,
@@ -313,7 +313,7 @@ class PageOps:
         note_in: PageNoteEdit,
         user: User,
         crawl_id: str,
-    ) -> Dict[str, bool]:
+    ) -> Dict[str, Union[bool, PageNote]]:
         """Update specific page note"""
         page = await self.get_page_raw(page_id, oid)
         page_notes = page.get("notes", [])
@@ -345,7 +345,7 @@ class PageOps:
         if not result:
             raise HTTPException(status_code=404, detail="page_not_found")
 
-        return {"updated": True}
+        return {"updated": True, "data": new_note}
 
     async def delete_page_notes(
         self,

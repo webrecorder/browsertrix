@@ -5,7 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { type QARun } from "@/types/qa";
-import { formatDate } from "@/utils/localization";
+import { formatISODateString } from "@/utils/localization";
 
 export type SelectDetail = { item: { id: string } };
 
@@ -39,7 +39,7 @@ export class QaRunDropdown extends TailwindElement {
                   slot="prefix"
                   hoist
                 ></btrix-crawl-status>
-                ${formatDate(selectedRun.finished)} `
+                ${formatISODateString(selectedRun.finished)} `
             : msg("Select a QA run")}
         </sl-button>
         <sl-menu>
@@ -52,7 +52,7 @@ export class QaRunDropdown extends TailwindElement {
                 ?disabled=${isSelected}
                 ?checked=${isSelected}
               >
-                ${formatDate(run.finished)}
+                ${formatISODateString(run.finished)}
                 <btrix-crawl-status
                   type="qa"
                   hideLabel

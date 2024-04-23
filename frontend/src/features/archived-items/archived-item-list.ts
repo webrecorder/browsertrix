@@ -16,7 +16,11 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { NavigateController } from "@/controllers/navigate";
 import { ReviewStatus, type ArchivedItem } from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
-import { formatDate, formatNumber, getLocale } from "@/utils/localization";
+import {
+  formatISODateString,
+  formatNumber,
+  getLocale,
+} from "@/utils/localization";
 
 export type CheckboxChangeEventDetail = {
   checked: boolean;
@@ -269,7 +273,7 @@ export class ArchivedItemListItem extends TailwindElement {
               ? html`
                   <sl-tooltip
                     content=${msg(
-                      str`Last run started on ${formatDate(lastQAStarted)}`,
+                      str`Last run started on ${formatISODateString(lastQAStarted)}`,
                     )}
                   >
                     <span>
