@@ -65,7 +65,7 @@ function renderDiff(
 
 export function renderText(crawlData: ReplayData, qaData: ReplayData) {
   const noData = html`<div
-    class=${tw`flex flex-col items-center justify-center gap-2 text-xs text-neutral-500`}
+    class="m-4 flex flex-col items-center justify-center gap-2 text-xs text-neutral-500"
   >
     <sl-icon name="slash-circle"></sl-icon>
     ${msg("Text data not available")}
@@ -78,7 +78,7 @@ export function renderText(crawlData: ReplayData, qaData: ReplayData) {
           ${msg("Text extracted during crawl")}
         </h3>
         <h3 id="qaTextHeading" class=${tw`flex-1`}>
-          ${msg("Text extracted from replay")}
+          ${msg("Text extracted during analysis")}
         </h3>
       </div>
       <div

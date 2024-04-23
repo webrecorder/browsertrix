@@ -326,12 +326,16 @@ export class ArchivedItemQA extends TailwindElement {
     return html`
       ${this.renderHidden()}
 
-      <article class="grid gap-x-6 gap-y-4 md:gap-y-0">
+      <btrix-beta-badge placement="right"></btrix-beta-badge>
+
+      <article class="qa-grid grid gap-x-6 gap-y-0">
         <header
-          class="grid--header flex items-center justify-between gap-1 border-b py-2"
+          class="grid--header flex flex-wrap items-center justify-between gap-1 border-b py-2"
         >
           <div class="flex items-center gap-2 overflow-hidden">
-            <h1 class="flex-1 truncate text-base font-semibold leading-tight">
+            <h1
+              class="flex-1 flex-shrink-0 basis-32 truncate text-base font-semibold leading-tight"
+            >
               ${itemName}
             </h1>
             ${when(
@@ -351,7 +355,7 @@ export class ArchivedItemQA extends TailwindElement {
               `,
             )}
           </div>
-          <div>
+          <div class="ml-auto flex">
             <sl-button
               size="small"
               variant="text"
@@ -381,19 +385,23 @@ export class ArchivedItemQA extends TailwindElement {
         </header>
 
         <div
-          class="grid--pageToolbar flex items-center justify-between overflow-hidden border-b py-2"
+          class="grid--pageToolbar flex flex-wrap items-center justify-stretch gap-2 overflow-hidden border-b py-2 @container"
         >
           <h2
-            class="mr-4 truncate text-base font-semibold text-neutral-700"
-            title="${this.page ? this.page.title : nothing}"
+            class="flex-auto flex-shrink-0 flex-grow basis-32 truncate text-base font-semibold text-neutral-700"
+            title="${this.page?.title ?? ""}"
           >
-            ${this.page ? this.page.title || msg("no page title") : nothing}
+            ${this.page?.title ||
+            html`<span class="opacity-50">${msg("No page title")}</span>`}
           </h2>
-          <div class="flex gap-4">
+          <div
+            class="ml-auto flex flex-grow basis-auto flex-wrap justify-between gap-2 @lg:flex-grow-0"
+          >
             <sl-button
               size="small"
               @click=${this.navPrevPage}
               ?disabled=${!prevPage}
+              class="order-1"
             >
               <sl-icon slot="prefix" name="arrow-left"></sl-icon>
               ${msg("Previous Page")}
@@ -403,6 +411,7 @@ export class ArchivedItemQA extends TailwindElement {
                 "Approvals are temporarily disabled during analysis runs.",
               )}
               ?disabled=${!disableReview}
+              class="order-3 mx-auto flex w-full justify-center @lg:order-2 @lg:mx-0 @lg:w-auto"
             >
               <btrix-page-qa-approval
                 .authState=${this.authState}
@@ -420,6 +429,7 @@ export class ArchivedItemQA extends TailwindElement {
               ?disabled=${!nextPage}
               outline
               @click=${this.navNextPage}
+              class="order-2 @lg:order-3"
             >
               <sl-icon slot="suffix" name="arrow-right"></sl-icon>
               ${msg("Next Page")}
@@ -427,8 +437,10 @@ export class ArchivedItemQA extends TailwindElement {
           </div>
         </div>
 
-        <div class="grid--tabGroup flex flex-col">
-          <nav class="my-2 flex gap-2">
+        <div class="grid--tabGroup flex min-w-0 flex-col">
+          <nav
+            class="-mx-3 my-0 flex gap-2 overflow-x-auto px-3 py-2 lg:mx-0 lg:px-0"
+          >
             <btrix-navigation-button
               id="screenshot-tab"
               href=${`${crawlBaseUrl}/review/screenshots?${searchParams.toString()}`}
@@ -475,14 +487,16 @@ export class ArchivedItemQA extends TailwindElement {
           ${this.renderPanelToolbar()} ${this.renderPanel()}
         </div>
 
-        <section class="grid--pageList overflow-hidden">
+        <section
+          class="grid--pageList grid grid-rows-[auto_1fr] *:min-h-0 *:min-w-0"
+        >
           <h2
             class="my-4 text-base font-semibold leading-none text-neutral-800"
           >
             ${msg("Pages")}
           </h2>
           <btrix-qa-page-list
-            class="flex h-full flex-col"
+            class="flex flex-col"
             .qaRunId=${this.qaRunId}
             .itemPageId=${this.itemPageId}
             .pages=${this.pages}

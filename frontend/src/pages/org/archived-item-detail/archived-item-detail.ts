@@ -254,7 +254,10 @@ export class ArchivedItemDetail extends TailwindElement {
     switch (this.activeTab) {
       case "qa":
         sectionContent = this.renderPanel(
-          html`${this.renderTitle(msg("Quality Assurance"))}
+          html`${this.renderTitle(
+              html`${msg("Quality Assurance")}
+                <btrix-beta-badge></btrix-beta-badge>`,
+            )}
             <div class="ml-auto flex flex-wrap justify-end gap-2">
               ${when(this.qaRuns, this.renderQAHeader)}
             </div> `,
@@ -482,6 +485,7 @@ export class ArchivedItemDetail extends TailwindElement {
               iconLibrary: "default",
               icon: "clipboard2-data-fill",
               label: msg("Quality Assurance"),
+              detail: html`<btrix-beta-icon></btrix-beta-icon>`,
             })}
           `,
         )}
@@ -631,7 +635,7 @@ export class ArchivedItemDetail extends TailwindElement {
     `;
   }
 
-  private renderTitle(title: string) {
+  private renderTitle(title: string | TemplateResult<1>) {
     return html`<h2 class="text-lg font-semibold leading-8">${title}</h2>`;
   }
 

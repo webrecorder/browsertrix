@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  :host {
+    @apply contents !leading-[0];
+  }
+  sl-tooltip {
+    @apply [--max-width:theme(spacing.64)];
+  }
+  sl-tooltip::part(body),
+  sl-tooltip::part(base__arrow) {
+    @apply bg-theme-green;
+  }
+
+  sl-tooltip::part(body) {
+    @apply w-auto text-balance text-white;
+  }
+}
