@@ -87,14 +87,17 @@ export class ArchivedItemListItem extends TailwindElement {
       typeIcon = "upload";
     }
 
-    const notApplicable = html`<sl-tooltip content=${msg("Not applicable")}>
+    const notApplicable = html`<sl-tooltip
+      hoist
+      content=${msg("Not applicable")}
+    >
       <sl-icon
         name="slash"
         class="text-base text-neutral-400"
         label=${msg("Not applicable")}
       ></sl-icon>
     </sl-tooltip>`;
-    const none = html`<sl-tooltip content=${msg("None")}>
+    const none = html`<sl-tooltip hoist content=${msg("None")}>
       <sl-icon
         name="slash"
         class="text-base text-neutral-400"
@@ -152,6 +155,7 @@ export class ArchivedItemListItem extends TailwindElement {
                   content=${msg(str`${typeLabel}: ${crawlStatus.label}`)}
                   @sl-hide=${(e: SlHideEvent) => e.stopPropagation()}
                   @sl-after-hide=${(e: SlHideEvent) => e.stopPropagation()}
+                  hoist
                 >
                   <sl-icon
                     class="text-base"
@@ -162,6 +166,7 @@ export class ArchivedItemListItem extends TailwindElement {
                 </sl-tooltip>
               `}
           <sl-tooltip
+            hoist
             content=${activeQAStats
               ? msg(
                   str`QA Analysis: ${qaStatus.label} (${activeProgress}% finished)`,
@@ -217,6 +222,7 @@ export class ArchivedItemListItem extends TailwindElement {
           <sl-tooltip
             content=${msg(str`By ${this.item.userName}`)}
             @click=${this.onTooltipClick}
+            hoist
           >
             <sl-format-date
               lang=${getLocale()}
@@ -232,6 +238,7 @@ export class ArchivedItemListItem extends TailwindElement {
         </btrix-table-cell>
         <btrix-table-cell>
           <sl-tooltip
+            hoist
             content=${formatNumber(this.item.fileSize || 0, {
               style: "unit",
               unit: "byte",
@@ -250,6 +257,7 @@ export class ArchivedItemListItem extends TailwindElement {
           ${isUpload
             ? notApplicable
             : html`<sl-tooltip
+                hoist
                 @click=${this.onTooltipClick}
                 content=${msg(
                   str`${formatNumber(
@@ -273,6 +281,7 @@ export class ArchivedItemListItem extends TailwindElement {
             : lastQAStarted && qaRunCount
               ? html`
                   <sl-tooltip
+                    hoist
                     content=${msg(
                       str`Last run started on ${formatISODateString(lastQAStarted)}`,
                     )}
@@ -290,6 +299,7 @@ export class ArchivedItemListItem extends TailwindElement {
           ${isUpload
             ? notApplicable
             : html`<sl-tooltip
+                hoist
                 @click=${this.onTooltipClick}
                 content=${this.item.reviewStatus
                   ? msg(
