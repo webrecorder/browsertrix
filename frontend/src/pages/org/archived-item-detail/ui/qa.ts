@@ -681,7 +681,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
             class="label-same-line"
             label=${msg("Sort by:")}
             size="small"
-            value="approved.-1"
+            value=${this.qaRunId ? "approved.-1" : "url.1"}
             pill
             @sl-change=${(e: SlChangeEvent) => {
               const { value } = e.target as SlSelect;
@@ -697,11 +697,15 @@ export class ArchivedItemDetailQA extends TailwindElement {
           >
             <sl-option value="title.1">${msg("Title")}</sl-option>
             <sl-option value="url.1">${msg("URL")}</sl-option>
-            <sl-option value="notes.-1">${msg("Most Comments")}</sl-option>
-            <sl-option value="approved.-1"
-              >${msg("Recently Approved")}</sl-option
+            <sl-option value="notes.-1" ?disabled=${!this.qaRunId}
+              >${msg("Most Comments")}</sl-option
             >
-            <sl-option value="approved.1">${msg("Not Approved")}</sl-option>
+            <sl-option value="approved.-1" ?disabled=${!this.qaRunId}>
+              ${msg("Recently Approved")}
+            </sl-option>
+            <sl-option value="approved.1" ?disabled=${!this.qaRunId}>
+              ${msg("Not Approved")}
+            </sl-option>
           </sl-select>
         </div>
       </div>
