@@ -530,7 +530,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
             )}
             <sl-tooltip
               content=${msg(
-                "Match analysis compares pages during a crawl vs. during an analysis run. A good match indicates that the crawl is probably good, whereas a severely inconsistent may indicate a bad crawl.",
+                "Match analysis compares pages during a crawl vs. during an analysis run. A good match indicates that the crawl is probably good, whereas severe inconsistencies may indicate a bad crawl.",
               )}
             >
               <sl-icon class="text-base" name="info-circle"></sl-icon>
