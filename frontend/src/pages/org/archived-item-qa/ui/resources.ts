@@ -18,8 +18,8 @@ function renderDiff(
     msg("Resource Type"),
     msg("Good During Crawl"),
     msg("Bad During Crawl"),
-    msg("Good in Replay"),
-    msg("Bad in Replay"),
+    msg("Good During Analysis"),
+    msg("Bad During Analysis"),
   ];
   const rows = [
     [

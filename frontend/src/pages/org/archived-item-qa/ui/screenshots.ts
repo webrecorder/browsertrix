@@ -51,7 +51,7 @@ export function renderScreenshots(
           splitView ? "flex-1" : "flex-grow-0",
         )}
       >
-        ${msg("Screenshot from replay")}
+        ${msg("Screenshot during analysis")}
       </h3>
     </div>
     ${splitView
