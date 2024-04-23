@@ -46,9 +46,6 @@ export class ArchivedItemListItem extends TailwindElement {
   @property({ type: Object, attribute: false })
   item?: ArchivedItem;
 
-  @property({ type: String, attribute: false })
-  listType: ArchivedItem["type"] | null = null;
-
   @property({ type: Boolean })
   checkbox = false;
 
@@ -244,66 +241,62 @@ export class ArchivedItemListItem extends TailwindElement {
             ></sl-format-bytes>
           </sl-tooltip>
         </btrix-table-cell>
-        ${this.listType === "upload"
-          ? nothing
-          : html`
-              <btrix-table-cell>
-                ${isUpload
-                  ? notApplicable
-                  : html`<sl-tooltip
-                      @click=${this.onTooltipClick}
-                      content=${msg(
-                        str`${formatNumber(
-                          this.item.stats?.done ? +this.item.stats.done : 0,
-                        )} crawled, ${formatNumber(this.item.stats?.found ? +this.item.stats.found : 0)} found`,
-                      )}
-                    >
-                      <div class="min-w-4">
-                        ${formatNumber(
-                          this.item.stats?.done ? +this.item.stats.done : 0,
-                          {
-                            notation: "compact",
-                          },
-                        )}
-                      </div>
-                    </sl-tooltip>`}
-              </btrix-table-cell>
-              <btrix-table-cell>
-                ${isUpload
-                  ? notApplicable
-                  : lastQAStarted && qaRunCount
-                    ? html`
-                        <sl-tooltip
-                          content=${msg(
-                            str`Last run started on ${formatDate(lastQAStarted)}`,
-                          )}
-                        >
-                          <span>
-                            ${formatNumber(qaRunCount, {
-                              notation: "compact",
-                            })}
-                          </span>
-                        </sl-tooltip>
-                      `
-                    : none}
-              </btrix-table-cell>
-              <btrix-table-cell>
-                ${isUpload
-                  ? notApplicable
-                  : html`<sl-tooltip
-                      @click=${this.onTooltipClick}
-                      content=${this.item.reviewStatus
-                        ? msg(
-                            str`Rated ${this.item.reviewStatus} / ${ReviewStatus.Excellent}`,
-                          )
-                        : msg("No QA review submitted")}
-                    >
-                      <btrix-qa-review-status
-                        .status=${this.item.reviewStatus}
-                      ></btrix-qa-review-status>
-                    </sl-tooltip>`}
-              </btrix-table-cell>
-            `}
+        <btrix-table-cell>
+          ${isUpload
+            ? notApplicable
+            : html`<sl-tooltip
+                @click=${this.onTooltipClick}
+                content=${msg(
+                  str`${formatNumber(
+                    this.item.stats?.done ? +this.item.stats.done : 0,
+                  )} crawled, ${formatNumber(this.item.stats?.found ? +this.item.stats.found : 0)} found`,
+                )}
+              >
+                <div class="min-w-4">
+                  ${formatNumber(
+                    this.item.stats?.done ? +this.item.stats.done : 0,
+                    {
+                      notation: "compact",
+                    },
+                  )}
+                </div>
+              </sl-tooltip>`}
+        </btrix-table-cell>
+        <btrix-table-cell>
+          ${isUpload
+            ? notApplicable
+            : lastQAStarted && qaRunCount
+              ? html`
+                  <sl-tooltip
+                    content=${msg(
+                      str`Last run started on ${formatDate(lastQAStarted)}`,
+                    )}
+                  >
+                    <span>
+                      ${formatNumber(qaRunCount, {
+                        notation: "compact",
+                      })}
+                    </span>
+                  </sl-tooltip>
+                `
+              : none}
+        </btrix-table-cell>
+        <btrix-table-cell>
+          ${isUpload
+            ? notApplicable
+            : html`<sl-tooltip
+                @click=${this.onTooltipClick}
+                content=${this.item.reviewStatus
+                  ? msg(
+                      str`Rated ${this.item.reviewStatus} / ${ReviewStatus.Excellent}`,
+                    )
+                  : msg("No QA review submitted")}
+              >
+                <btrix-qa-review-status
+                  .status=${this.item.reviewStatus}
+                ></btrix-qa-review-status>
+              </sl-tooltip>`}
+        </btrix-table-cell>
         <slot name="actionCell"></slot>
       </btrix-table-row>
     `;
@@ -390,29 +383,25 @@ export class ArchivedItemList extends TailwindElement {
           ${msg("Size")}
         </btrix-table-header-cell>`,
       },
+      {
+        cssCol: "1fr",
+        cell: html`<btrix-table-header-cell>
+          ${msg("Pages Crawled")}
+        </btrix-table-header-cell>`,
+      },
+      {
+        cssCol: "1fr",
+        cell: html`<btrix-table-header-cell>
+          ${msg("QA Analysis Runs")}
+        </btrix-table-header-cell>`,
+      },
+      {
+        cssCol: "1fr",
+        cell: html`<btrix-table-header-cell>
+          ${msg("QA Rating")}
+        </btrix-table-header-cell>`,
+      },
     ];
-    if (this.listType !== "upload") {
-      headerCols.push(
-        {
-          cssCol: "1fr",
-          cell: html`<btrix-table-header-cell>
-            ${msg("Pages Crawled")}
-          </btrix-table-header-cell>`,
-        },
-        {
-          cssCol: "1fr",
-          cell: html`<btrix-table-header-cell>
-            ${msg("QA Analysis Runs")}
-          </btrix-table-header-cell>`,
-        },
-        {
-          cssCol: "1fr",
-          cell: html`<btrix-table-header-cell>
-            ${msg("QA Rating")}
-          </btrix-table-header-cell>`,
-        },
-      );
-    }
     if (this.hasCheckboxCell) {
       headerCols.unshift({
         cssCol: "min-content",
@@ -452,13 +441,7 @@ export class ArchivedItemList extends TailwindElement {
             ></slot>
           </btrix-table-head>
           <btrix-table-body class="rounded border">
-            <slot
-              @slotchange=${() => {
-                this.items.forEach((row) => {
-                  row.listType = this.listType;
-                });
-              }}
-            ></slot>
+            <slot></slot>
           </btrix-table-body>
         </btrix-table>
       </div>

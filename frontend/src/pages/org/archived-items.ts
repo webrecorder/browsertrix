@@ -1,21 +1,26 @@
 import { localized, msg, str } from "@lit/localize";
+import { initialState, Task } from "@lit/task";
 import type { SlCheckbox, SlSelect } from "@shoelace-style/shoelace";
-import { nothing, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import type { ArchivedItem, Crawl, CrawlState, Workflow } from "./types";
 
+import { TailwindElement } from "@/classes/TailwindElement";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import { APIController } from "@/controllers/api";
+import { NavigateController } from "@/controllers/navigate";
+import { NotifyController } from "@/controllers/notify";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { isApiError } from "@/utils/api";
-import type { AuthState } from "@/utils/AuthService";
+import type { Auth, AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive } from "@/utils/crawler";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;
 type SearchFields = "name" | "firstSeed";
@@ -28,7 +33,7 @@ type SortField =
   | "lastQAStarted";
 type SortDirection = "asc" | "desc";
 
-const ABORT_REASON_THROTTLE = "throttled";
+const POLL_INTERVAL_SECONDS = 5;
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const sortableFields: Record<
@@ -69,7 +74,7 @@ const sortableFields: Record<
  */
 @localized()
 @customElement("btrix-archived-items")
-export class CrawlsList extends LiteElement {
+export class CrawlsList extends TailwindElement {
   static FieldLabels: Record<SearchFields, string> = {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
@@ -94,7 +99,10 @@ export class CrawlsList extends LiteElement {
   itemType: ArchivedItem["type"] | null = null;
 
   @state()
-  private archivedItems?: ArchivedItems;
+  private pagination: Required<APIPaginationQuery> = {
+    page: 1,
+    pageSize: INITIAL_PAGE_SIZE,
+  };
 
   @state()
   private searchOptions: Record<string, string>[] = [];
@@ -133,11 +141,80 @@ export class CrawlsList extends LiteElement {
   @query("#stateSelect")
   stateSelect?: SlSelect;
 
+  private readonly archivedItemsTask = new Task(this, {
+    task: async (
+      [
+        orgId,
+        authState,
+        userId,
+        itemType,
+        pagination,
+        orderBy,
+        filterBy,
+        filterByCurrentUser,
+      ],
+      { signal },
+    ) => {
+      if (!orgId || !authState || !userId) {
+        return initialState;
+      }
+      try {
+        const data = await this.getArchivedItems(
+          {
+            orgId,
+            authState,
+            userId,
+            itemType,
+            pagination,
+            orderBy,
+            filterBy,
+            filterByCurrentUser,
+          },
+          signal,
+        );
+
+        this.getArchivedItemsTimeout = window.setTimeout(() => {
+          void this.archivedItemsTask.run();
+        }, POLL_INTERVAL_SECONDS * 1000);
+
+        return data;
+      } catch (e) {
+        if ((e as Error).name === "AbortError") {
+          console.debug("Fetch archived items aborted to throttle");
+        } else {
+          this.notify.toast({
+            message: msg(
+              "Sorry, couldn't retrieve archived items at this time.",
+            ),
+            variant: "danger",
+            icon: "exclamation-octagon",
+          });
+        }
+        throw e;
+      }
+    },
+    args: () =>
+      // TODO consolidate filters into single fetch params
+      [
+        this.orgId,
+        this.authState,
+        this.userId,
+        this.itemType,
+        this.pagination,
+        this.orderBy,
+        this.filterBy,
+        this.filterByCurrentUser,
+      ] as const,
+  });
+
+  private getArchivedItemsTimeout?: number;
+
   // For fuzzy search:
   private readonly searchKeys = ["name", "firstSeed"];
 
-  // Use to cancel requests
-  private getArchivedItemsController: AbortController | null = null;
+  private readonly api = new APIController(this);
+  private readonly navigate = new NavigateController(this);
+  private readonly notify = new NotifyController(this);
 
   private get selectedSearchFilterKey() {
     return Object.keys(CrawlsList.FieldLabels).find((key) =>
@@ -167,13 +244,11 @@ export class CrawlsList extends LiteElement {
           field: "finished",
           direction: sortableFields["finished"].defaultDirection!,
         };
-        this.archivedItems = undefined;
       }
-
-      void this.fetchArchivedItems({
+      this.pagination = {
         page: 1,
         pageSize: INITIAL_PAGE_SIZE,
-      });
+      };
 
       if (changedProperties.has("filterByCurrentUser")) {
         window.sessionStorage.setItem(
@@ -189,7 +264,7 @@ export class CrawlsList extends LiteElement {
   }
 
   disconnectedCallback(): void {
-    this.cancelInProgressGetArchivedItems();
+    window.clearTimeout(this.getArchivedItemsTimeout);
     super.disconnectedCallback();
   }
 
@@ -248,10 +323,10 @@ export class CrawlsList extends LiteElement {
               return html` <btrix-navigation-button
                 .active=${isSelected}
                 aria-selected="${isSelected}"
-                href=${`${this.orgBasePath}/items${
+                href=${`${this.navigate.orgBasePath}/items${
                   itemType ? `/${itemType}` : ""
                 }`}
-                @click=${this.navLink}
+                @click=${this.navigate.link}
                 size="small"
               >
                 ${icon ? html`<sl-icon name=${icon}></sl-icon>` : ""}
@@ -266,45 +341,21 @@ export class CrawlsList extends LiteElement {
           </div>
         </header>
 
-        ${when(
-          this.archivedItems,
-          () => {
-            const { items, page, total, pageSize } = this.archivedItems!;
-            return html`
-              <section class="mx-2">
-                ${items.length
-                  ? this.renderArchivedItemList()
-                  : this.renderEmptyState()}
-              </section>
-              ${when(
-                total > pageSize,
-                () => html`
-                  <footer class="mt-6 flex justify-center">
-                    <btrix-pagination
-                      page=${page}
-                      totalCount=${total}
-                      size=${pageSize}
-                      @page-change=${async (e: PageChangeEvent) => {
-                        await this.fetchArchivedItems({
-                          page: e.detail.page,
-                        });
-
-                        // Scroll to top of list
-                        // TODO once deep-linking is implemented, scroll to top of pushstate
-                        this.scrollIntoView({ behavior: "smooth" });
-                      }}
-                    ></btrix-pagination>
-                  </footer>
-                `,
-              )}
-            `;
-          },
-          () => html`
+        ${this.archivedItemsTask.render({
+          initial: () => html`
             <div class="my-12 flex w-full items-center justify-center text-2xl">
               <sl-spinner></sl-spinner>
             </div>
           `,
-        )}
+          pending: () =>
+            // TODO differentiate between pending between poll and
+            // pending from user action, in order to show loading indicator
+            this.archivedItemsTask.value
+              ? // Render previous value while latest is loading
+                this.renderArchivedItems(this.archivedItemsTask.value)
+              : nothing,
+          complete: this.renderArchivedItems,
+        })}
       </main>
       ${when(
         this.isCrawler && this.orgId,
@@ -316,9 +367,10 @@ export class CrawlsList extends LiteElement {
             @request-close=${() => (this.isUploadingArchive = false)}
             @uploaded=${() => {
               if (this.itemType !== "crawl") {
-                void this.fetchArchivedItems({
+                this.pagination = {
+                  ...this.pagination,
                   page: 1,
-                });
+                };
               }
             }}
           ></btrix-file-uploader>
@@ -326,6 +378,96 @@ export class CrawlsList extends LiteElement {
       )}
     `;
   }
+
+  private readonly renderArchivedItems = ({
+    items,
+    page,
+    total,
+    pageSize,
+  }: APIPaginatedList<ArchivedItem>) => html`
+    <section class="mx-2">
+      ${items.length
+        ? html`
+            <btrix-archived-item-list .listType=${this.itemType}>
+              <btrix-table-header-cell slot="actionCell" class="px-1">
+                <span class="sr-only">${msg("Row actions")}</span>
+              </btrix-table-header-cell>
+              ${repeat(items, ({ id }) => id, this.renderArchivedItem)}
+            </btrix-archived-item-list>
+          `
+        : this.renderEmptyState()}
+    </section>
+    ${when(
+      total > pageSize,
+      () => html`
+        <footer class="mt-6 flex justify-center">
+          <btrix-pagination
+            page=${page}
+            totalCount=${total}
+            size=${pageSize}
+            @page-change=${async (e: PageChangeEvent) => {
+              this.pagination = {
+                ...this.pagination,
+                page: e.detail.page,
+              };
+              await this.updateComplete;
+
+              // Scroll to top of list
+              // TODO once deep-linking is implemented, scroll to top of pushstate
+              this.scrollIntoView({ behavior: "smooth" });
+            }}
+          ></btrix-pagination>
+        </footer>
+      `,
+    )}
+    ${this.itemToEdit
+      ? html`
+          <btrix-item-metadata-editor
+            .authState=${this.authState}
+            .crawl=${this.itemToEdit}
+            ?open=${this.isEditingItem}
+            @request-close=${() => (this.isEditingItem = false)}
+            @updated=${() => {
+              /* TODO fetch current page or single crawl */
+              void this.archivedItemsTask.run();
+            }}
+          ></btrix-item-metadata-editor>
+        `
+      : nothing}
+
+    <btrix-dialog
+      .label=${msg("Delete Archived Item?")}
+      .open=${this.isDeletingItem}
+      @sl-after-hide=${() => (this.isDeletingItem = false)}
+    >
+      ${msg("This item will be removed from any Collection it is a part of.")}
+      ${when(this.itemToDelete?.type === "crawl", () =>
+        msg(
+          "All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow.",
+        ),
+      )}
+      <div slot="footer" class="flex justify-between">
+        <sl-button size="small" .autofocus=${true}>${msg("Cancel")}</sl-button>
+        <sl-button
+          size="small"
+          variant="danger"
+          @click=${async () => {
+            this.isDeletingItem = false;
+            if (this.itemToDelete) {
+              await this.deleteItem(this.itemToDelete);
+            }
+          }}
+          >${msg(
+            str`Delete ${
+              this.itemToDelete?.type === "upload"
+                ? msg("Upload")
+                : msg("Crawl")
+            }`,
+          )}</sl-button
+        >
+      </div>
+    </btrix-dialog>
+  `;
 
   private renderControls() {
     const viewPlaceholder = msg("Any");
@@ -434,14 +576,14 @@ export class CrawlsList extends LiteElement {
           : this.itemType === "crawl"
             ? msg("Search all crawls by name or Crawl Start URL")
             : msg("Search all items by name or Crawl Start URL")}
-        @on-select=${(e: CustomEvent) => {
+        @btrix-select=${(e: CustomEvent) => {
           const { key, value } = e.detail;
           this.filterBy = {
             ...this.filterBy,
             [key]: value,
           };
         }}
-        @on-clear=${() => {
+        @btrix-clear=${() => {
           const {
             name: _name,
             firstSeed: _firstSeed,
@@ -454,72 +596,9 @@ export class CrawlsList extends LiteElement {
     `;
   }
 
-  private renderArchivedItemList() {
-    if (!this.archivedItems) return;
-
-    return html`
-      <btrix-archived-item-list .listType=${this.itemType}>
-        <btrix-table-header-cell slot="actionCell" class="px-1">
-          <span class="sr-only">${msg("Row actions")}</span>
-        </btrix-table-header-cell>
-        ${this.archivedItems.items.map(this.renderArchivedItem)}
-      </btrix-archived-item-list>
-
-      ${this.itemToEdit
-        ? html`
-            <btrix-item-metadata-editor
-              .authState=${this.authState}
-              .crawl=${this.itemToEdit}
-              ?open=${this.isEditingItem}
-              @request-close=${() => (this.isEditingItem = false)}
-              @updated=${
-                /* TODO fetch current page or single crawl */ this
-                  .fetchArchivedItems
-              }
-            ></btrix-item-metadata-editor>
-          `
-        : nothing}
-
-      <btrix-dialog
-        .label=${msg("Delete Archived Item?")}
-        .open=${this.isDeletingItem}
-        @sl-after-hide=${() => (this.isDeletingItem = false)}
-      >
-        ${msg("This item will be removed from any Collection it is a part of.")}
-        ${when(this.itemToDelete?.type === "crawl", () =>
-          msg(
-            "All files and logs associated with this item will also be deleted, and the crawl will no longer be visible in its associated Workflow.",
-          ),
-        )}
-        <div slot="footer" class="flex justify-between">
-          <sl-button size="small" .autofocus=${true}
-            >${msg("Cancel")}</sl-button
-          >
-          <sl-button
-            size="small"
-            variant="danger"
-            @click=${async () => {
-              this.isDeletingItem = false;
-              if (this.itemToDelete) {
-                await this.deleteItem(this.itemToDelete);
-              }
-            }}
-            >${msg(
-              str`Delete ${
-                this.itemToDelete?.type === "upload"
-                  ? msg("Upload")
-                  : msg("Crawl")
-              }`,
-            )}</sl-button
-          >
-        </div>
-      </btrix-dialog>
-    `;
-  }
-
   private readonly renderArchivedItem = (item: ArchivedItem) => html`
     <btrix-archived-item-list-item
-      href=${`/orgs/${this.appState.orgSlug}/items/${item.type}/${item.id}`}
+      href=${`${this.navigate.orgBasePath}/items/${item.type}/${item.id}`}
       .item=${item}
       ?showStatus=${this.itemType !== null}
     >
@@ -561,7 +640,9 @@ export class CrawlsList extends LiteElement {
         ? html`
             <sl-menu-item
               @click=${() =>
-                this.navTo(`${this.orgBasePath}/workflows/crawl/${item.cid}`)}
+                this.navigate.to(
+                  `${this.navigate.orgBasePath}/workflows/crawl/${item.cid}`,
+                )}
             >
               <sl-icon name="arrow-return-right" slot="prefix"></sl-icon>
               ${msg("Go to Workflow")}
@@ -631,7 +712,7 @@ export class CrawlsList extends LiteElement {
       `;
     }
 
-    if (this.archivedItems?.page && this.archivedItems.page > 1) {
+    if (this.pagination.page && this.pagination.page > 1) {
       return html`
         <div class="border-b border-t py-5">
           <p class="text-center text-neutral-500">
@@ -650,69 +731,42 @@ export class CrawlsList extends LiteElement {
     `;
   }
 
-  /**
-   * Fetch archived items and update internal state
-   */
-  private async fetchArchivedItems(params?: APIPaginationQuery): Promise<void> {
-    this.cancelInProgressGetArchivedItems();
-    try {
-      this.archivedItems = await this.getArchivedItems(params);
-    } catch (e) {
-      if ((e as Error).name === "AbortError") {
-        console.debug("Fetch archived items aborted to throttle");
-      } else {
-        this.notify({
-          message: msg("Sorry, couldn't retrieve archived items at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-        });
-      }
-    }
-  }
-
-  private cancelInProgressGetArchivedItems() {
-    if (this.getArchivedItemsController) {
-      this.getArchivedItemsController.abort(ABORT_REASON_THROTTLE);
-      this.getArchivedItemsController = null;
-    }
-  }
-
   private async getArchivedItems(
-    queryParams?: APIPaginationQuery & { state?: CrawlState[] },
-  ): Promise<ArchivedItems> {
+    params: {
+      orgId: string;
+      authState: Auth;
+      userId: CrawlsList["userId"];
+      itemType: CrawlsList["itemType"];
+      pagination: CrawlsList["pagination"];
+      orderBy: CrawlsList["orderBy"];
+      filterBy: CrawlsList["filterBy"];
+      filterByCurrentUser: CrawlsList["filterByCurrentUser"];
+    },
+    signal: AbortSignal,
+  ) {
     const query = queryString.stringify(
       {
-        ...this.filterBy,
-        state: this.filterBy.state?.length
-          ? this.filterBy.state
+        ...params.filterBy,
+        state: params.filterBy.state?.length
+          ? params.filterBy.state
           : finishedCrawlStates,
-        page: queryParams?.page || this.archivedItems?.page || 1,
-        pageSize:
-          queryParams?.pageSize ||
-          this.archivedItems?.pageSize ||
-          INITIAL_PAGE_SIZE,
-        userid: this.filterByCurrentUser ? this.userId : undefined,
-        sortBy: this.orderBy.field,
-        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
-        crawlType: this.itemType,
+        page: params.pagination.page,
+        pageSize: params.pagination.pageSize,
+        userid: params.filterByCurrentUser ? params.userId : undefined,
+        sortBy: params.orderBy.field,
+        sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
+        crawlType: params.itemType,
       },
       {
         arrayFormat: "comma",
       },
     );
 
-    this.getArchivedItemsController = new AbortController();
-    const data = await this.apiFetch<ArchivedItems>(
-      `/orgs/${this.orgId}/all-crawls?${query}`,
-      this.authState!,
-      {
-        signal: this.getArchivedItemsController.signal,
-      },
+    return this.api.fetch<ArchivedItems>(
+      `/orgs/${params.orgId}/all-crawls?${query}`,
+      params.authState,
+      { signal },
     );
-
-    this.getArchivedItemsController = null;
-
-    return data;
   }
 
   private async fetchConfigSearchValues() {
@@ -725,7 +779,7 @@ export class CrawlsList extends LiteElement {
         names: string[];
         descriptions: string[];
         firstSeeds: string[];
-      } = await this.apiFetch(
+      } = await this.api.fetch(
         `/orgs/${this.orgId}/all-crawls/search-values?${query}`,
         this.authState!,
       );
@@ -764,7 +818,7 @@ export class CrawlsList extends LiteElement {
     }
 
     try {
-      const _data = await this.apiFetch(
+      const _data = await this.api.fetch(
         `/orgs/${item.oid}/${apiPath}/delete`,
         this.authState!,
         {
@@ -774,18 +828,19 @@ export class CrawlsList extends LiteElement {
           }),
         },
       );
-      const { items, ...crawlsData } = this.archivedItems!;
+      // TODO eager list update before server response
+      void this.archivedItemsTask.run();
+      // const { items, ...crawlsData } = this.archivedItems!;
       this.itemToDelete = null;
-      this.archivedItems = {
-        ...crawlsData,
-        items: items.filter((c) => c.id !== item.id),
-      };
-      this.notify({
+      // this.archivedItems = {
+      //   ...crawlsData,
+      //   items: items.filter((c) => c.id !== item.id),
+      // };
+      this.notify.toast({
         message: msg(str`Successfully deleted archived item.`),
         variant: "success",
         icon: "check2-circle",
       });
-      void this.fetchArchivedItems();
     } catch (e) {
       if (this.itemToDelete) {
         this.confirmDeleteItem(this.itemToDelete);
@@ -802,7 +857,7 @@ export class CrawlsList extends LiteElement {
           message = e.message;
         }
       }
-      this.notify({
+      this.notify.toast({
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
@@ -811,7 +866,7 @@ export class CrawlsList extends LiteElement {
   }
 
   async getWorkflow(crawl: Crawl): Promise<Workflow> {
-    const data: Workflow = await this.apiFetch(
+    const data: Workflow = await this.api.fetch(
       `/orgs/${crawl.oid}/crawlconfigs/${crawl.cid}`,
       this.authState!,
     );
