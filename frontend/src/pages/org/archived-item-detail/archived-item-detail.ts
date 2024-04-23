@@ -558,11 +558,13 @@ export class ArchivedItemDetail extends TailwindElement {
                 </sl-button-group>
               `
             : ""}
-          ${this.crawl && this.isCrawler
-            ? this.renderMenu()
-            : html`<sl-skeleton
-                class="h-8 w-24 [--border-radius:theme(borderRadius.sm)]"
-              ></sl-skeleton>`}
+          ${this.isCrawler
+            ? this.crawl
+              ? this.renderMenu()
+              : html`<sl-skeleton
+                  class="h-8 w-24 [--border-radius:theme(borderRadius.sm)]"
+                ></sl-skeleton>`
+            : nothing}
         </div>
       </header>
     `;
