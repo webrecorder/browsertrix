@@ -374,12 +374,9 @@ export class ArchivedItemQA extends TailwindElement {
                 size="small"
                 @click=${() => void this.reviewDialog?.show()}
                 ?disabled=${disableReview}
-                ?loading=${!this.item}
               >
                 <sl-icon slot="prefix" name="patch-check"> </sl-icon>
-                ${this.item?.reviewStatus
-                  ? msg("Update Review")
-                  : msg("Finish Review")}
+                ${msg("Finish Review")}
               </sl-button>
             </sl-tooltip>
           </div>
@@ -1134,8 +1131,6 @@ export class ArchivedItemQA extends TailwindElement {
       return;
     }
 
-    const isUpdatingReview = Boolean(this.item?.reviewStatus);
-
     try {
       const data = await this.api.fetch<{ updated: boolean }>(
         `/orgs/${this.orgId}/all-crawls/${this.itemId}`,
@@ -1155,12 +1150,9 @@ export class ArchivedItemQA extends TailwindElement {
 
       void this.reviewDialog?.hide();
 
-      if (!isUpdatingReview) {
-        this.navigate.to(
-          `${this.navigate.orgBasePath}/items/crawl/${this.itemId}#qa`,
-        );
-      }
-
+      this.navigate.to(
+        `${this.navigate.orgBasePath}/items/crawl/${this.itemId}#qa`,
+      );
       this.notify.toast({
         message: msg("Saved QA review."),
         variant: "success",
