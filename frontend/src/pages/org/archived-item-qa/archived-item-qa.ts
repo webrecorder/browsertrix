@@ -330,7 +330,7 @@ export class ArchivedItemQA extends TailwindElement {
     return html`
       ${this.renderHidden()}
 
-      <div class="flex gap-2">
+      <div class="flex items-center gap-2">
         <a
           class="font-medium text-neutral-500 hover:text-neutral-600"
           href=${`${crawlBaseUrl}#qa`}
