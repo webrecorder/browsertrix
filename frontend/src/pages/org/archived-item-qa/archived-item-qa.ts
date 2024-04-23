@@ -376,9 +376,7 @@ export class ArchivedItemQA extends TailwindElement {
                 ?disabled=${disableReview}
               >
                 <sl-icon slot="prefix" name="patch-check"> </sl-icon>
-                ${this.item?.reviewStatus
-                  ? msg("Update Review")
-                  : msg("Finish Review")}
+                ${msg("Finish Review")}
               </sl-button>
             </sl-tooltip>
           </div>
@@ -1151,8 +1149,12 @@ export class ArchivedItemQA extends TailwindElement {
       }
 
       void this.reviewDialog?.hide();
+
+      this.navigate.to(
+        `${this.navigate.orgBasePath}/items/crawl/${this.itemId}#qa`,
+      );
       this.notify.toast({
-        message: msg("Submitted QA review."),
+        message: msg("Saved QA review."),
         variant: "success",
         icon: "check2-circle",
       });

@@ -13,6 +13,7 @@ import {
   type TemplateResult,
 } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
@@ -681,7 +682,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
             class="label-same-line"
             label=${msg("Sort by:")}
             size="small"
-            value="approved.-1"
+            value=${this.qaRunId ? "approved.-1" : "url.1"}
             pill
             @sl-change=${(e: SlChangeEvent) => {
               const { value } = e.target as SlSelect;
@@ -697,11 +698,15 @@ export class ArchivedItemDetailQA extends TailwindElement {
           >
             <sl-option value="title.1">${msg("Title")}</sl-option>
             <sl-option value="url.1">${msg("URL")}</sl-option>
-            <sl-option value="notes.-1">${msg("Most Comments")}</sl-option>
-            <sl-option value="approved.-1"
-              >${msg("Recently Approved")}</sl-option
+            <sl-option value="notes.-1" ?disabled=${!this.qaRunId}
+              >${msg("Most Comments")}</sl-option
             >
-            <sl-option value="approved.1">${msg("Not Approved")}</sl-option>
+            <sl-option value="approved.-1" ?disabled=${!this.qaRunId}>
+              ${msg("Recently Approved")}
+            </sl-option>
+            <sl-option value="approved.1" ?disabled=${!this.qaRunId}>
+              ${msg("Not Approved")}
+            </sl-option>
           </sl-select>
         </div>
       </div>
@@ -709,6 +714,13 @@ export class ArchivedItemDetailQA extends TailwindElement {
   }
 
   private renderPageList() {
+    const pageTitle = (page: ArchivedItemPage) => html`
+      <div class="truncate font-medium">
+        ${page.title ||
+        html`<span class="opacity-50">${msg("No page title")}</span>`}
+      </div>
+      <div class="truncate text-xs leading-4 text-neutral-600">${page.url}</div>
+    `;
     return html`
       <btrix-table
         class="-mx-3 overflow-x-auto px-5"
@@ -727,28 +739,25 @@ export class ArchivedItemDetailQA extends TailwindElement {
           ${this.pages?.items.map(
             (page, idx) => html`
               <btrix-table-row
-                class="${idx > 0
-                  ? "border-t"
-                  : ""} cursor-pointer select-none transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50"
+                class="${idx > 0 ? "border-t" : ""} ${this.qaRunId
+                  ? "cursor-pointer transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50"
+                  : ""} select-none"
               >
                 <btrix-table-cell
                   class="block overflow-hidden"
-                  rowClickTarget="a"
+                  rowClickTarget=${ifDefined(this.qaRunId ? "a" : undefined)}
                 >
-                  <a
-                    class="truncate text-sm font-semibold"
-                    href=${`${
-                      this.navigate.orgBasePath
-                    }/items/${this.itemType}/${this.crawlId}/review/screenshots?qaRunId=${
-                      this.qaRunId || ""
-                    }&itemPageId=${page.id}`}
-                    title="${page.title ?? page.url}"
-                    @click=${this.navigate.link}
-                    >${page.title}</a
-                  >
-                  <div class="truncate text-xs leading-4 text-neutral-600">
-                    ${page.url}
-                  </div>
+                  ${this.qaRunId
+                    ? html`
+                        <a
+                          href=${`${this.navigate.orgBasePath}/items/${this.itemType}/${this.crawlId}/review/screenshots?qaRunId=${this.qaRunId}&itemPageId=${page.id}`}
+                          title=${msg(str`Review "${page.title ?? page.url}"`)}
+                          @click=${this.navigate.link}
+                        >
+                          ${pageTitle(page)}
+                        </a>
+                      `
+                    : pageTitle(page)}
                 </btrix-table-cell>
                 <btrix-table-cell
                   >${this.renderApprovalStatus(page)}</btrix-table-cell
