@@ -611,7 +611,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
             ({ lowerBoundary }) => bar.lowerBoundary === lowerBoundary,
           );
           const idx = threshold ? qaStatsThresholds.indexOf(threshold) : -1;
-          console.log("threshold:", threshold);
+
           return html`
             <btrix-meter-bar
               value=${(bar.count / pageCount) * 100}
