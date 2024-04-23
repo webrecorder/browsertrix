@@ -504,14 +504,14 @@ export class CrawlsList extends TailwindElement {
           : this.itemType === "crawl"
             ? msg("Search all crawls by name or Crawl Start URL")
             : msg("Search all items by name or Crawl Start URL")}
-        @on-select=${(e: CustomEvent) => {
+        @btrix-select=${(e: CustomEvent) => {
           const { key, value } = e.detail;
           this.filterBy = {
             ...this.filterBy,
             [key]: value,
           };
         }}
-        @on-clear=${() => {
+        @btrix-clear=${() => {
           const {
             name: _name,
             firstSeed: _firstSeed,
@@ -760,6 +760,7 @@ export class CrawlsList extends TailwindElement {
         arrayFormat: "comma",
       },
     );
+    console.log("get!", query);
     return this.api.fetch<ArchivedItems>(
       `/orgs/${params.orgId}/all-crawls?${query}`,
       params.authState,
