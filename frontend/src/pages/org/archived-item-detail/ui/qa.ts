@@ -41,7 +41,10 @@ import { finishedCrawlStates } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { formatNumber, getLocale, pluralize } from "@/utils/localization";
 
-type QAStatsThreshold = { lowerBoundary: string; count: number };
+type QAStatsThreshold = {
+  lowerBoundary: `${number}` | "No data";
+  count: number;
+};
 type QAStats = Record<"screenshotMatch" | "textMatch", QAStatsThreshold[]>;
 
 const qaStatsThresholds = [
@@ -587,12 +590,10 @@ export class ArchivedItemDetailQA extends TailwindElement {
             ${qaStatsThresholds.map(
               (threshold) => html`
                 <div class="flex items-center gap-2">
-                  <dt class="h-4 w-4">
-                    <sl-icon
-                      name="square-fill"
-                      class="text-base"
-                      style="color: ${threshold.cssColor}"
-                    ></sl-icon>
+                  <dt
+                    class="h-4 w-4 rounded"
+                    style="background-color: ${threshold.cssColor}"
+                  >
                     <span class="sr-only">${threshold.lowerBoundary}</span>
                   </dt>
                   <dd>${threshold.label}</dd>
@@ -627,14 +628,45 @@ export class ArchivedItemDetailQA extends TailwindElement {
               style="--background-color: ${threshold?.cssColor}"
               aria-label=${bar.lowerBoundary}
             >
-              ${threshold?.label}
-              (${idx === 0
-                ? `<${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`
-                : idx === qaStatsThresholds.length - 1
-                  ? `>=${threshold ? +threshold.lowerBoundary * 100 : 0}%`
-                  : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`}):
-              ${formatNumber(bar.count)}
-              ${bar.count === 1 ? msg("page") : msg("pages")}
+              <div class="text-center">
+                ${bar.lowerBoundary === "No data"
+                  ? msg("No Data")
+                  : threshold?.label}
+                <div class="text-xs opacity-80">
+                  ${bar.lowerBoundary !== "No data"
+                    ? html`${idx === 0
+                          ? `<${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`
+                          : idx === qaStatsThresholds.length - 1
+                            ? `>=${threshold ? +threshold.lowerBoundary * 100 : 0}%`
+                            : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`}
+                        match <br />`
+                    : nothing}
+                  ${formatNumber(bar.count)}
+                  ${pluralize(bar.count, {
+                    zero: msg("pages", {
+                      desc: 'plural form of "page" for zero pages',
+                      id: "pages.plural.zero",
+                    }),
+                    one: msg("page"),
+                    two: msg("pages", {
+                      desc: 'plural form of "page" for two pages',
+                      id: "pages.plural.two",
+                    }),
+                    few: msg("pages", {
+                      desc: 'plural form of "page" for few pages',
+                      id: "pages.plural.few",
+                    }),
+                    many: msg("pages", {
+                      desc: 'plural form of "page" for many pages',
+                      id: "pages.plural.many",
+                    }),
+                    other: msg("pages", {
+                      desc: 'plural form of "page" for multiple/other pages',
+                      id: "pages.plural.other",
+                    }),
+                  })}
+                </div>
+              </div>
             </btrix-meter-bar>
           `;
         })}
