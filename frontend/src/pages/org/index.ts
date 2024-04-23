@@ -183,10 +183,17 @@ export class Org extends LiteElement {
 
   async willUpdate(changedProperties: Map<string, unknown>) {
     if (
-      (changedProperties.has("userInfo") && this.userInfo) ||
-      (changedProperties.has("slug") && this.slug)
+      (changedProperties.has("userInfo") || changedProperties.has("slug")) &&
+      this.userInfo &&
+      this.slug
     ) {
-      void this.updateOrg();
+      if (this.userOrg) {
+        void this.updateOrg();
+      } else {
+        // Couldn't find org with slug, redirect to first org
+        this.navTo(`/orgs/${this.userInfo.orgs[0].slug}`);
+        return;
+      }
     }
     if (changedProperties.has("openDialogName")) {
       // Sync URL to create dialog
@@ -216,9 +223,6 @@ export class Org extends LiteElement {
       this.checkStorageQuota();
       this.checkExecutionMinutesQuota();
     } catch {
-      // TODO handle 404
-      this.org = null;
-
       this.notify({
         message: msg("Sorry, couldn't retrieve organization at this time."),
         variant: "danger",
@@ -253,8 +257,7 @@ export class Org extends LiteElement {
 
   render() {
     if (this.org === null) {
-      // TODO handle 404 and 500s
-      return "";
+      return html`<btrix-not-found></btrix-not-found>`;
     }
 
     if (!this.org || !this.userInfo) {
