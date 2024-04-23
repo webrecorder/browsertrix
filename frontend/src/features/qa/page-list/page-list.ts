@@ -197,7 +197,7 @@ export class PageList extends TailwindElement {
           label=${msg("Sort by:")}
           size="small"
           pill
-          value="screenshotMatch"
+          value="worstScreenshotMatch"
           @sl-change=${(e: Event) => {
             const { value } = e.target as SlSelect;
             const detail: QaSortChangeDetail = {
@@ -205,11 +205,19 @@ export class PageList extends TailwindElement {
               sortDirection: this.orderBy.direction === "asc" ? 1 : -1,
             };
             switch (value) {
-              case "screenshotMatch":
+              case "bestScreenshotMatch":
+                detail.sortBy = "screenshotMatch";
+                detail.sortDirection = -1;
+                break;
+              case "worstScreenshotMatch":
                 detail.sortBy = "screenshotMatch";
                 detail.sortDirection = 1;
                 break;
-              case "textMatch":
+              case "bestTextMatch":
+                detail.sortBy = "textMatch";
+                detail.sortDirection = -1;
+                break;
+              case "worstTextMatch":
                 detail.sortBy = "textMatch";
                 detail.sortDirection = 1;
                 break;
@@ -243,10 +251,16 @@ export class PageList extends TailwindElement {
             );
           }}
         >
-          <sl-option value="screenshotMatch"
+          <sl-option value="bestScreenshotMatch"
+            >${msg("Best Screenshot Match")}</sl-option
+          >
+          <sl-option value="worstScreenshotMatch"
             >${msg("Worst Screenshot Match")}</sl-option
           >
-          <sl-option value="textMatch"
+          <sl-option value="bestTextMatch"
+            >${msg("Best Extracted Text Match")}</sl-option
+          >
+          <sl-option value="worstTextMatch"
             >${msg("Worst Extracted Text Match")}</sl-option
           >
           <sl-option value="comments">${msg("Most Comments")}</sl-option>
