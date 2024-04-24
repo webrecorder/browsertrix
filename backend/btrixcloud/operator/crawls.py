@@ -1033,6 +1033,13 @@ class CrawlOperator(BaseOperator):
 
             # if pod is using >MEM_SCALE_UP_THRESHOLD of its memory, increase mem
             if mem_usage > MEM_SCALE_UP_THRESHOLD:
+                if new_memory > self.k8s.max_crawler_memory_size:
+                    print(
+                        f"Mem {mem_usage}: Not resizing pod {name}: "
+                        + f"mem {new_memory} > max allowed {self.k8s.max_crawler_memory_size}"
+                    )
+                    return
+
                 pod.newMemory = new_memory
                 print(
                     f"Mem {mem_usage}: Resizing pod {name} -> mem {pod.newMemory} - Scale Up"

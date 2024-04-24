@@ -1,6 +1,7 @@
 """ Base Operator class for all operators """
 
 import asyncio
+import os
 from typing import TYPE_CHECKING
 from kubernetes.utils import parse_quantity
 
@@ -28,6 +29,9 @@ else:
 class K8sOpAPI(K8sAPI):
     """Additional k8s api for operators"""
 
+    has_pod_metrics: bool
+    max_crawler_memory_size: int
+
     def __init__(self):
         super().__init__()
         self.config_file = "/config/config.yaml"
@@ -37,6 +41,8 @@ class K8sOpAPI(K8sAPI):
         self.has_pod_metrics = False
         self.compute_crawler_resources()
         self.compute_profile_resources()
+
+        self.max_crawler_memory_size = 0
 
     def compute_crawler_resources(self):
         """compute memory / cpu resources for crawlers"""
@@ -68,6 +74,15 @@ class K8sOpAPI(K8sAPI):
         else:
             crawler_memory = int(parse_quantity(p["crawler_memory"]))
             print(f"memory = {crawler_memory}")
+
+        max_crawler_memory_size = 0
+        max_crawler_memory = os.environ.get("MAX_CRAWLER_MEMORY")
+        if max_crawler_memory:
+            max_crawler_memory_size = int(parse_quantity(max_crawler_memory_size))
+
+        self.max_crawler_memory_size = max_crawler_memory_size or crawler_memory
+
+        print("max crawler memory size", self.max_crawler_memory_size)
 
         p["crawler_cpu"] = crawler_cpu
         p["crawler_memory"] = crawler_memory
