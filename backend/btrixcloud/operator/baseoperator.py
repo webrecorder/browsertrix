@@ -29,19 +29,20 @@ else:
 class K8sOpAPI(K8sAPI):
     """Additional k8s api for operators"""
 
+    has_pod_metrics: bool
+    max_crawler_memory_size: int
+
     def __init__(self):
         super().__init__()
         self.config_file = "/config/config.yaml"
         with open(self.config_file, encoding="utf-8") as fh_config:
             self.shared_params = yaml.safe_load(fh_config)
 
-        self.max_crawler_memory_size = int(
-            parse_quantity(os.environ.get("MAX_CRAWLER_MEMORY_SIZE", "0"))
-        )
-
         self.has_pod_metrics = False
         self.compute_crawler_resources()
         self.compute_profile_resources()
+
+        self.max_crawler_memory_size = 0
 
     def compute_crawler_resources(self):
         """compute memory / cpu resources for crawlers"""
@@ -73,6 +74,12 @@ class K8sOpAPI(K8sAPI):
         else:
             crawler_memory = int(parse_quantity(p["crawler_memory"]))
             print(f"memory = {crawler_memory}")
+
+        max_crawler_memory_size = os.environ.get("MAX_CRAWLER_MEMORY_SIZE")
+        if not max_crawler_memory_size:
+            self.max_crawler_memory_size = crawler_memory
+        else:
+            self.max_crawler_memory_size = int(parse_quantity(max_crawler_memory_size))
 
         print("max crawler memory size", self.max_crawler_memory_size)
 
