@@ -364,6 +364,7 @@ class UserManager:
         try:
             await self.users.insert_one(user.dict())
         except DuplicateKeyError:
+            user = await self.get_by_email(create.email)
             user_already_exists = True
 
         add_to_org = False
@@ -382,7 +383,7 @@ class UserManager:
 
         else:
             add_to_org = True
-            if not is_verified:
+            if not is_verified and not user_already_exists:
                 asyncio.create_task(self.request_verify(user, request))
 
         # org to auto-add user to, if any

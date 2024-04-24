@@ -44,6 +44,9 @@ export class SignUpForm extends LiteElement {
   @state()
   private pwStrengthResults: null | ZxcvbnResult = null;
 
+  @state()
+  private showLoginLink = false;
+
   protected firstUpdated() {
     void PasswordService.setOptions();
   }
@@ -55,8 +58,15 @@ export class SignUpForm extends LiteElement {
       serverError = html`
         <div class="mb-5">
           <btrix-alert id="formError" variant="danger"
-            >${this.serverError}</btrix-alert
-          >
+            >${this.serverError}
+            ${this.showLoginLink
+              ? html` <p>
+                  Go to the
+                  <a class="underline" href="/log-in">Log-In Page</a> and try
+                  again.
+                </p>`
+              : ``}
+          </btrix-alert>
         </div>
       `;
     }
@@ -179,6 +189,7 @@ export class SignUpForm extends LiteElement {
     this.dispatchEvent(new CustomEvent("submit"));
 
     this.serverError = undefined;
+    this.showLoginLink = false;
     this.isSubmitting = true;
 
     const formData = new FormData(event.target as HTMLFormElement);
@@ -229,7 +240,10 @@ export class SignUpForm extends LiteElement {
         const { detail } = (await resp.json()) as {
           detail: string & { code: string };
         };
-        if (detail === "user_already_exists") {
+        if (
+          detail === "user_already_exists" ||
+          detail === "user_already_is_org_member"
+        ) {
           shouldLogIn = true;
         } else if (detail.code && detail.code === "invalid_password") {
           this.serverError = msg(
@@ -254,7 +268,11 @@ export class SignUpForm extends LiteElement {
         try {
           await this.logIn({ email, password });
         } catch {
-          this.dispatchEvent(new CustomEvent("unauthenticated"));
+          this.serverError = msg(
+            "User is already registered, but with a different password.",
+          );
+          this.showLoginLink = true;
+          //this.dispatchEvent(new CustomEvent("unauthenticated"));
         }
       }
     }
