@@ -75,11 +75,12 @@ class K8sOpAPI(K8sAPI):
             crawler_memory = int(parse_quantity(p["crawler_memory"]))
             print(f"memory = {crawler_memory}")
 
-        max_crawler_memory_size = os.environ.get("MAX_CRAWLER_MEMORY")
-        if not max_crawler_memory_size:
-            self.max_crawler_memory_size = crawler_memory
-        else:
-            self.max_crawler_memory_size = int(parse_quantity(max_crawler_memory_size))
+        max_crawler_memory_size = 0
+        max_crawler_memory = os.environ.get("MAX_CRAWLER_MEMORY")
+        if max_crawler_memory:
+            max_crawler_memory_size = int(parse_quantity(max_crawler_memory_size))
+
+        self.max_crawler_memory_size = max_crawler_memory_size or crawler_memory
 
         print("max crawler memory size", self.max_crawler_memory_size)
 
