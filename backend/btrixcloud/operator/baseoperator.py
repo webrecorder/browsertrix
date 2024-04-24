@@ -1,6 +1,7 @@
 """ Base Operator class for all operators """
 
 import asyncio
+import os
 from typing import TYPE_CHECKING
 from kubernetes.utils import parse_quantity
 
@@ -33,6 +34,10 @@ class K8sOpAPI(K8sAPI):
         self.config_file = "/config/config.yaml"
         with open(self.config_file, encoding="utf-8") as fh_config:
             self.shared_params = yaml.safe_load(fh_config)
+
+        self.max_crawler_memory_size = int(
+            parse_quantity(os.environ.get("MAX_CRAWLER_MEMORY_SIZE", "0"))
+        )
 
         self.has_pod_metrics = False
         self.compute_crawler_resources()
@@ -68,6 +73,8 @@ class K8sOpAPI(K8sAPI):
         else:
             crawler_memory = int(parse_quantity(p["crawler_memory"]))
             print(f"memory = {crawler_memory}")
+
+        print("max crawler memory size", self.max_crawler_memory_size)
 
         p["crawler_cpu"] = crawler_cpu
         p["crawler_memory"] = crawler_memory

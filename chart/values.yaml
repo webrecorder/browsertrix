@@ -249,6 +249,10 @@ crawler_extra_memory_per_browser: 768Mi
 # crawler_memory = crawler_memory_base + crawler_memory_per_extra_browser * (crawler_browser_instances - 1)
 # crawler_memory:
 
+
+# max crawler memory size, if set, will ensure crawler autoscaling can not exceed this size
+# max_crawler_memory_size: 
+
 # optional: defaults to crawler_memory_base and crawler_cpu_base if not set
 # profile_browser_memory:
 #
