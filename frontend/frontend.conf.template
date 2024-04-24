@@ -34,12 +34,10 @@ server {
         root /usr/share/nginx/html;
     }
 
-    # fallback to index for any page
-    error_page 404 /index.html;
-
     location / {
       root   /usr/share/nginx/html;
       index  index.html index.htm;
+      try_files $uri /index.html;
     }
 
     # serve replay service worker, RWP_BASE_URL set in Dockerfile
