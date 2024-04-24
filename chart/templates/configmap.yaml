@@ -56,7 +56,7 @@ data:
 
   MIN_QA_CRAWLER_IMAGE: "{{ .Values.min_qa_crawler_image }}"
 
-  MAX_CRAWLER_MEMORY_SIZE: "{{ .Values.max_crawler_memory_size | default 0 }}"
+  MAX_CRAWLER_MEMORY: "{{ .Values.max_crawler_memory | default 0 }}"
 
 ---
 apiVersion: v1
