@@ -364,7 +364,11 @@ class UserManager:
         try:
             await self.users.insert_one(user.dict())
         except DuplicateKeyError:
-            user = await self.get_by_email(create.email)
+            maybe_user = await self.get_by_email(create.email)
+            # shouldn't happen since user should exist if we have duplicate key, but just in case!
+            if not maybe_user:
+                raise HTTPException(status_code=400, detail="user_missing")
+            user = maybe_user
             user_already_exists = True
 
         add_to_org = False
