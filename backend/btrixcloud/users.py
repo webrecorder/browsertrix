@@ -359,10 +359,17 @@ class UserManager:
             is_verified=is_verified,
         )
 
+        user_already_exists = False
+
         try:
             await self.users.insert_one(user.dict())
         except DuplicateKeyError:
-            raise HTTPException(status_code=400, detail="user_already_exists")
+            maybe_user = await self.get_by_email(create.email)
+            # shouldn't happen since user should exist if we have duplicate key, but just in case!
+            if not maybe_user:
+                raise HTTPException(status_code=400, detail="user_missing")
+            user = maybe_user
+            user_already_exists = True
 
         add_to_org = False
 
@@ -380,11 +387,15 @@ class UserManager:
 
         else:
             add_to_org = True
-            if not is_verified:
+            if not is_verified and not user_already_exists:
                 asyncio.create_task(self.request_verify(user, request))
 
         # org to auto-add user to, if any
         auto_add_org: Optional[Organization] = None
+
+        # if user already exists, and not adding to a new org, error
+        if user_already_exists and not add_to_org:
+            raise HTTPException(status_code=400, detail="user_already_exists")
 
         # if add to default, then get default org
         if add_to_org:
