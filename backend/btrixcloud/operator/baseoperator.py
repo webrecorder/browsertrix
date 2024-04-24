@@ -83,7 +83,6 @@ class K8sOpAPI(K8sAPI):
         self.max_crawler_memory_size = max_crawler_memory_size or crawler_memory
 
         print(f"max crawler memory size: {self.max_crawler_memory_size}")
-        print()
 
         p["crawler_cpu"] = crawler_cpu
         p["crawler_memory"] = crawler_memory
