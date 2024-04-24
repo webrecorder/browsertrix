@@ -66,7 +66,7 @@ EXEC_TIME_UPDATE_SECS = 60
 
 
 # scale up if exceeded this threshold of mem usage (eg. 90%)
-MEM_SCALE_UP_THRESHOLD = 0.95
+MEM_SCALE_UP_THRESHOLD = 0.90
 
 # scale up by this much
 MEM_SCALE_UP = 1.2
