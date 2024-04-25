@@ -113,6 +113,9 @@ data:
 
     volume_storage_class: "{{ .Values.volume_storage_class }}"
 
+    profile_browser_cpu: "{{ .Values.profile_browser_cpu }}"
+    profile_browser_memory: "{{ .Values.profile_browser_memory }}"
+
     crawler_liveness_port: "{{ .Values.crawler_liveness_port | default 0 }}"
 
     crawler_socks_proxy_host: "{{ .Values.crawler_socks_proxy_host }}"
