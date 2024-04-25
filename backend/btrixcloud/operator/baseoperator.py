@@ -39,10 +39,10 @@ class K8sOpAPI(K8sAPI):
             self.shared_params = yaml.safe_load(fh_config)
 
         self.has_pod_metrics = False
+        self.max_crawler_memory_size = 0
+
         self.compute_crawler_resources()
         self.compute_profile_resources()
-
-        self.max_crawler_memory_size = 0
 
     def compute_crawler_resources(self):
         """compute memory / cpu resources for crawlers"""
