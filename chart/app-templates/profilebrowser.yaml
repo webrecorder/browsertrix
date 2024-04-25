@@ -75,7 +75,7 @@ spec:
 
       volumeMounts:
         - name: crawler-workdir
-          mountPath: /tmp
+          mountPath: /tmp/home
 
       envFrom:
         - secretRef:
