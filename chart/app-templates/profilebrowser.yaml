@@ -20,10 +20,10 @@ spec:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
 
-  volumes:
-    - name: crawler-workdir
-      emptyDir:
-        sizeLimit: {{ profile_browser_workdir_size }}
+  #volumes:
+  #  - name: crawler-workdir
+  #    emptyDir:
+  #      sizeLimit: {{ profile_browser_workdir_size }}
 
   {% if priorityClassName %}
   priorityClassName: {{ priorityClassName }}
@@ -73,9 +73,9 @@ spec:
         - "@{{ profile_filename }}"
       {%- endif %}
 
-      volumeMounts:
-        - name: crawler-workdir
-          mountPath: /tmp/home
+      #volumeMounts:
+      #  - name: crawler-workdir
+      #    mountPath: /tmp/home
 
       envFrom:
         - secretRef:
