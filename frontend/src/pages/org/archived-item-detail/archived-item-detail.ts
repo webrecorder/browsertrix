@@ -93,6 +93,12 @@ export class ArchivedItemDetail extends TailwindElement {
   private qaRunId?: string;
 
   @state()
+  private lastFinishedQARunId?: string;
+
+  @state()
+  private isQAActive = false;
+
+  @state()
   qaRuns?: QARun[];
 
   @state()
@@ -148,8 +154,8 @@ export class ArchivedItemDetail extends TailwindElement {
     return activeCrawlStates.includes(this.crawl.state);
   }
 
-  private get isQAActive(): boolean | null {
-    if (!this.qaRuns?.[0]) return null;
+  private getIsQAActive(): boolean {
+    if (!this.qaRuns?.[0]) return false;
     return QA_RUNNING_STATES.includes(this.qaRuns[0].state);
   }
 
@@ -186,7 +192,7 @@ export class ArchivedItemDetail extends TailwindElement {
       this.qaRuns &&
       this.mostRecentNonFailedQARun
     ) {
-      const firstFinishedQARun = this.qaRuns.find(({ state }) =>
+      const lastFinishedQARun = this.qaRuns.find(({ state }) =>
         finishedCrawlStates.includes(state),
       );
       const prevMostRecentNonFailedQARun =
@@ -198,9 +204,13 @@ export class ArchivedItemDetail extends TailwindElement {
 
       // Update currently selected QA run if there is none,
       // or if a QA run that was previously running is now finished:
-      if (firstFinishedQARun && (!this.qaRunId || mostRecentNowFinished)) {
-        this.qaRunId = firstFinishedQARun.id;
+      if (lastFinishedQARun && (!this.qaRunId || mostRecentNowFinished)) {
+        this.qaRunId = lastFinishedQARun.id;
       }
+      // set last finished run
+      this.lastFinishedQARunId = lastFinishedQARun
+        ? lastFinishedQARun.id
+        : undefined;
     }
   }
 
@@ -1021,8 +1031,16 @@ ${this.crawl?.description}
   }
 
   private readonly renderQAHeader = (qaRuns: QARun[]) => {
-    const qaIsRunning = isActive(qaRuns[0]?.state);
-    const qaIsAvailable = this.mostRecentNonFailedQARun && !qaIsRunning;
+    //const qaIsRunning = isActive(qaRuns[0]?.state);
+    //const qaIsAvailable = this.mostRecentNonFailedQARun && !qaIsRunning;
+    const qaIsRunning = this.isQAActive;
+    const qaIsAvailable = !!this.lastFinishedQARunId;
+
+    const reviewLink =
+      qaIsAvailable && this.qaRunId
+        ? `${this.navigate.orgBasePath}/items/crawl/${this.crawlId}/review/screenshots?qaRunId=${this.qaRunId}`
+        : undefined;
+
     return html`
       ${qaIsRunning
         ? html`
@@ -1065,15 +1083,12 @@ ${this.crawl?.description}
         ? html`
             <sl-tooltip
               ?disabled=${qaIsAvailable}
-              content=${qaIsRunning
-                ? msg("Reviews are disabled during analysis runs.")
-                : msg("No completed analysis runs are available.")}
+              content=${msg("No completed analysis runs are available.")}
             >
               <sl-button
                 variant="primary"
                 size="small"
-                href="${this.navigate.orgBasePath}/items/crawl/${this
-                  .crawlId}/review/screenshots?qaRunId=${this.qaRunId || ""}"
+                href="${ifDefined(reviewLink)}"
                 @click=${this.navigate.link}
                 ?disabled=${!qaIsAvailable}
               >
@@ -1445,6 +1460,8 @@ ${this.crawl?.description}
         icon: "exclamation-octagon",
       });
     }
+
+    this.isQAActive = this.getIsQAActive();
 
     if (this.isQAActive) {
       // Restart timer for next poll
