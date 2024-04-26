@@ -208,9 +208,7 @@ export class ArchivedItemDetail extends TailwindElement {
         this.qaRunId = lastFinishedQARun.id;
       }
       // set last finished run
-      this.lastFinishedQARunId = lastFinishedQARun
-        ? lastFinishedQARun.id
-        : undefined;
+      this.lastFinishedQARunId = lastFinishedQARun?.id;
     }
   }
 
