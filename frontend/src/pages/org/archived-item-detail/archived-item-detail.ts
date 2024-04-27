@@ -154,11 +154,6 @@ export class ArchivedItemDetail extends TailwindElement {
     return activeCrawlStates.includes(this.crawl.state);
   }
 
-  private getIsQAActive(): boolean {
-    if (!this.qaRuns?.[0]) return false;
-    return QA_RUNNING_STATES.includes(this.qaRuns[0].state);
-  }
-
   private get hasFiles(): boolean | null {
     if (!this.crawl) return null;
     if (!this.crawl.resources) return false;
@@ -1459,7 +1454,9 @@ ${this.crawl?.description}
       });
     }
 
-    this.isQAActive = this.getIsQAActive();
+    this.isQAActive =
+      (this.qaRuns?.[0] && QA_RUNNING_STATES.includes(this.qaRuns[0].state)) ||
+      false;
 
     if (this.isQAActive) {
       // Restart timer for next poll
