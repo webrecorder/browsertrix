@@ -17,32 +17,32 @@ from fastapi.responses import StreamingResponse
 from slugify import slugify
 
 
-def get_templates_dir():
+def get_templates_dir() -> str:
     """return directory containing templates for loading"""
     return os.path.join(os.path.dirname(__file__), "templates")
 
 
-def from_k8s_date(string):
+def from_k8s_date(string: Optional[str]) -> Optional[datetime]:
     """convert k8s date string to datetime"""
     return datetime.fromisoformat(string[:-1]) if string else None
 
 
-def to_k8s_date(dt_val):
+def to_k8s_date(dt_val: datetime) -> str:
     """convert datetime to string for k8s"""
     return dt_val.isoformat("T") + "Z"
 
 
-def dt_now():
+def dt_now() -> datetime:
     """get current ts"""
     return datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
 
-def ts_now():
+def ts_now() -> str:
     """get current ts"""
     return str(dt_now())
 
 
-def run_once_lock(name):
+def run_once_lock(name) -> bool:
     """run once lock via temp directory
     - if dir doesn't exist, return true
     - if exists, return false"""
@@ -62,7 +62,7 @@ def run_once_lock(name):
     return True
 
 
-def register_exit_handler():
+def register_exit_handler() -> None:
     """register exit handler to exit on SIGTERM"""
     loop = asyncio.get_running_loop()
 
@@ -74,7 +74,7 @@ def register_exit_handler():
     loop.add_signal_handler(signal.SIGTERM, exit_handler)
 
 
-def parse_jsonl_error_messages(errors):
+def parse_jsonl_error_messages(errors) -> list:
     """parse json-l error strings from redis/db into json"""
     parsed_errors = []
     for error_line in errors:
@@ -123,7 +123,9 @@ def slug_from_name(name: str) -> str:
     return slugify(name.replace("'", ""))
 
 
-def stream_dict_list_as_csv(data: List[Dict[str, Union[str, int]]], filename: str):
+def stream_dict_list_as_csv(
+    data: List[Dict[str, Union[str, int]]], filename: str
+) -> StreamingResponse:
     """Stream list of dictionaries as CSV with attachment filename header"""
     if not data:
         raise HTTPException(status_code=404, detail="crawls_not_found")

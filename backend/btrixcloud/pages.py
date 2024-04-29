@@ -94,6 +94,8 @@ class PageOps:
         if not status and page_dict.get("loadState"):
             status = 200
 
+        ts = page_dict.get("ts") or ""
+
         return Page(
             id=page_id,
             oid=oid,
@@ -103,11 +105,7 @@ class PageOps:
             loadState=page_dict.get("loadState"),
             status=status,
             mime=page_dict.get("mime", "text/html"),
-            ts=(
-                from_k8s_date(page_dict.get("ts"))
-                if page_dict.get("ts")
-                else datetime.now()
-            ),
+            ts=(from_k8s_date(ts) if ts else datetime.utcnow()),
         )
 
     async def _add_pages_to_db(self, pages: List[Page]):

@@ -255,7 +255,7 @@ class CrawlConfigOps:
 
         inc = self.inc_crawl_count(crawlconfig.id)
         add = self.crawl_ops.add_new_crawl(
-            crawl_id, crawlconfig, user.id, started, manual
+            crawl_id, crawlconfig, user.id, str(started), manual
         )
         info = self.set_config_current_crawl_info(
             crawlconfig.id, crawl_id, started, user

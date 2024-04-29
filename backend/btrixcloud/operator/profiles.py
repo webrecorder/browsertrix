@@ -29,7 +29,7 @@ class ProfileOperator(BaseOperator):
         expire_time = from_k8s_date(spec.get("expireTime"))
         browserid = spec.get("id")
 
-        if dt_now() >= expire_time:
+        if expire_time and dt_now() >= expire_time:
             self.run_task(self.k8s.delete_profile_browser(browserid))
             return {"status": {}, "children": []}
 

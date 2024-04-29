@@ -43,7 +43,7 @@ class BgJobOperator(BaseOperator):
 
         finalized = True
 
-        finished = from_k8s_date(completion_time) if completion_time else dt_now()
+        finished = from_k8s_date(completion_time) or dt_now()
 
         try:
             await self.background_job_ops.job_finished(

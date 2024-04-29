@@ -248,7 +248,7 @@ class BaseCrawlOps:
     async def update_crawl_state(self, crawl_id: str, state: str):
         """called only when job container is being stopped/canceled"""
 
-        data = {"state": state}
+        data: Dict[str, Any] = {"state": state}
         # if cancelation, set the finish time here
         if state == "canceled":
             data["finished"] = dt_now()
@@ -443,7 +443,7 @@ class BaseCrawlOps:
             presigned_url = file_.presignedUrl
             now = dt_now()
 
-            if not presigned_url or now >= file_.expireAt:
+            if not presigned_url or (file_.expireAt and now >= file_.expireAt):
                 exp = now + delta
                 presigned_url = await self.storage_ops.get_presigned_url(
                     org, file_, self.presign_duration_seconds
