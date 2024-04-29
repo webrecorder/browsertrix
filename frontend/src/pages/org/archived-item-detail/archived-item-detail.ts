@@ -1454,9 +1454,9 @@ ${this.crawl?.description}
       });
     }
 
-    this.isQAActive =
-      (this.qaRuns?.[0] && QA_RUNNING_STATES.includes(this.qaRuns[0].state)) ||
-      false;
+    this.isQAActive = Boolean(
+      this.qaRuns?.[0] && QA_RUNNING_STATES.includes(this.qaRuns[0].state),
+    );
 
     if (this.isQAActive) {
       // Restart timer for next poll
