@@ -53,7 +53,8 @@ export class Combobox extends LitElement {
 
   @queryAssignedElements({
     slot: "menu-item",
-    selector: "sl-menu-item:not([disabled])",
+    selector: "sl-menu-item",
+    flatten: true,
   })
   private readonly menuItems?: SlMenuItem[];
 
@@ -96,12 +97,7 @@ export class Combobox extends LitElement {
             }
           }}
         >
-          <sl-menu
-            role="listbox"
-            @sl-select=${() => {
-              console.log("select?");
-            }}
-          >
+          <sl-menu role="listbox">
             <slot name="menu-item"></slot>
           </sl-menu>
         </div>
@@ -127,7 +123,12 @@ export class Combobox extends LitElement {
 
   private onKeydown(e: KeyboardEvent) {
     if (this.open && e.key === "ArrowDown") {
-      if (this.menu && this.menuItems?.length && !this.menu.getCurrentItem()) {
+      if (
+        this.menu &&
+        this.menuItems?.length &&
+        !this.menu.getCurrentItem() &&
+        !this.menuItems[0].disabled
+      ) {
         // Focus on first menu item
         e.preventDefault();
         const menuItem = this.menuItems[0];

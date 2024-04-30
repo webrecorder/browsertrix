@@ -223,16 +223,13 @@ export class CollectionsAdd extends TailwindElement {
         return html`
           ${results.map((item: Collection) => {
             return html`
-              <sl-menu-item class="w-full" slot="menu-item" data-key=${item.id}>
-                <div class="flex w-full items-center gap-2">
-                  <div class="grow justify-self-stretch truncate">
-                    ${item.name}
-                  </div>
-                  <div
-                    class="font-monostyle flex-auto text-right text-xs text-neutral-500"
-                  >
-                    ${msg(str`${item.crawlCount} items`)}
-                  </div>
+              <sl-menu-item slot="menu-item" data-key=${item.id}>
+                ${item.name}
+                <div
+                  slot="suffix"
+                  class="font-monostyle flex-auto text-right text-xs text-neutral-500"
+                >
+                  ${msg(str`${item.crawlCount} items`)}
                 </div>
               </sl-menu-item>
             `;
