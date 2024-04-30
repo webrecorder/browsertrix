@@ -355,7 +355,7 @@ export class ArchivedItemQA extends TailwindElement {
         >
           <div class="flex items-center gap-2 overflow-hidden">
             <h2
-              class="flex-1 flex-shrink-0 basis-32 truncate text-base font-semibold leading-tight"
+              class="flex-1 flex-shrink-0 min-w-32 truncate text-base font-semibold leading-tight"
             >
               ${itemName}
             </h2>
