@@ -96,7 +96,12 @@ export class Combobox extends LitElement {
             }
           }}
         >
-          <sl-menu role="listbox">
+          <sl-menu
+            role="listbox"
+            @sl-select=${() => {
+              console.log("select?");
+            }}
+          >
             <slot name="menu-item"></slot>
           </sl-menu>
         </div>
@@ -158,5 +163,13 @@ export class Combobox extends LitElement {
 
   private closeDropdown() {
     this.dropdown?.classList.add("animateHide");
+  }
+
+  public show() {
+    this.open = true;
+  }
+
+  public hide() {
+    this.open = false;
   }
 }
