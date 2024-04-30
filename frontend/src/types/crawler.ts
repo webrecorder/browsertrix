@@ -108,7 +108,7 @@ export type Profile = {
     path: string;
     hash: string;
     size: number;
-    replicas: ProfileReplica[];
+    replicas: ProfileReplica[] | null;
   };
 };
 
