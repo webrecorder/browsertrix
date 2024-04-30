@@ -86,7 +86,7 @@ export function renderText(crawlData: ReplayData, qaData: ReplayData) {
       >
         ${guard([crawlData, qaData], () =>
           when(
-            crawlData?.text && qaData?.text,
+            crawlData?.text !== undefined && qaData?.text !== undefined,
             () => html`
               <div
                 class=${tw`flex min-h-full ${crawlData?.text && qaData?.text ? "" : tw`items-center justify-center`}`}
