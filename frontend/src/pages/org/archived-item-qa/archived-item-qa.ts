@@ -253,10 +253,17 @@ export class ArchivedItemQA extends TailwindElement {
           URL.revokeObjectURL(this.crawlData.blobUrl);
         if (this.qaData?.blobUrl) URL.revokeObjectURL(this.qaData.blobUrl);
       }
+      // FIXME Set to null to render loading state, should be refactored
+      // to handle loading state separately in https://github.com/webrecorder/browsertrix/issues/1716
+      this.crawlData = null;
+      this.qaData = null;
       // TODO prefetch content for other tabs?
       void this.fetchContentForTab();
       void this.fetchContentForTab({ qa: true });
     } else if (changedProperties.get("qaRunId")) {
+      // FIXME Set to null to render loading state, should be refactored
+      // to handle loading state separately in https://github.com/webrecorder/browsertrix/issues/1716
+      this.qaData = null;
       void this.fetchContentForTab({ qa: true });
     }
   }
@@ -1197,7 +1204,6 @@ export class ArchivedItemQA extends TailwindElement {
 
         return { resources: Object.fromEntries(typeMap.entries()) };
       }
-      return { text: "" };
     };
 
     try {
