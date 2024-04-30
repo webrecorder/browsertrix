@@ -176,7 +176,7 @@ export class ArchivedItemQA extends TailwindElement {
     // Receive messages from replay-web-page windows
     void this.replaySwReg.then((reg) => {
       if (!reg) {
-        console.log("[debug] no reg, listening to messages");
+        console.debug("no reg, listening to messages");
         // window.addEventListener("message", this.onWindowMessage);
       }
     });
@@ -207,17 +207,17 @@ export class ArchivedItemQA extends TailwindElement {
    * if the sw is not present.
    */
   private async handleRwpMessage(sourceLoc: string) {
-    console.log("[debug] handleRwpMessage", sourceLoc);
+    console.debug("handleRwpMessage", sourceLoc);
     // check if has /qa/ in path, then QA
     if (sourceLoc.indexOf("%2Fqa%2F") >= 0 && !this.qaDataRegistered) {
       this.qaDataRegistered = true;
-      console.log("[debug] onWindowMessage qa", this.qaData);
+      console.debug("onWindowMessage qa", this.qaData);
       await this.fetchContentForTab({ qa: true });
       await this.updateComplete;
       // otherwise main crawl replay
     } else if (!this.crawlDataRegistered) {
       this.crawlDataRegistered = true;
-      console.log("[debug] onWindowMessage crawl", this.crawlData);
+      console.debug("onWindowMessage crawl", this.crawlData);
       await this.fetchContentForTab();
       await this.updateComplete;
     }
@@ -875,7 +875,7 @@ export class ArchivedItemQA extends TailwindElement {
     const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
-    console.log("[debug] rendering rwp", rwpId);
+    console.debug("rendering rwp", rwpId);
     return guard(
       [rwpId, this.page, this.authState],
       () => html`
@@ -1115,8 +1115,8 @@ export class ArchivedItemQA extends TailwindElement {
     const frameWindow = this.replayFrame?.contentWindow;
 
     if (!page || !sourceId || !frameWindow) {
-      console.log(
-        "[debug] no page replaId or frameWindow",
+      console.debug(
+        "no page replaId or frameWindow",
         page,
         sourceId,
         frameWindow,
@@ -1224,7 +1224,7 @@ export class ArchivedItemQA extends TailwindElement {
         this.crawlDataRegistered = true;
       }
     } catch (e: unknown) {
-      console.log("[debug] error:", e);
+      console.debug("error:", e);
 
       // check if this endpoint is registered, if not, ensure re-render
       if (e === 404) {
