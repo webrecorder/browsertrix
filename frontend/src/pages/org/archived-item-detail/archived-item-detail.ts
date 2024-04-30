@@ -165,8 +165,10 @@ export class ArchivedItemDetail extends TailwindElement {
     if (changedProperties.has("crawlId") && this.crawlId) {
       void this.fetchCrawl();
       void this.fetchCrawlLogs();
-      void this.fetchSeeds();
-      void this.fetchQARuns();
+      if (this.itemType === "crawl") {
+        void this.fetchSeeds();
+        void this.fetchQARuns();
+      }
     } else if (changedProperties.get("activeTab")) {
       if (this.activeTab === "qa") {
         void this.fetchQARuns();
