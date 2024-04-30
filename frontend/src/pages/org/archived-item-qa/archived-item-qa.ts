@@ -248,15 +248,16 @@ export class ArchivedItemQA extends TailwindElement {
     // Re-fetch when tab, archived item page, or QA run ID changes
     // from an existing one, probably due to user interaction
     if (changedProperties.get("tab") || changedProperties.get("page")) {
-      if (this.tab === "screenshots") {
+      if (changedProperties.get("page")) {
         if (this.crawlData?.blobUrl)
           URL.revokeObjectURL(this.crawlData.blobUrl);
         if (this.qaData?.blobUrl) URL.revokeObjectURL(this.qaData.blobUrl);
+
+        // FIXME Set to null to render loading state, should be refactored
+        // to handle loading state separately in https://github.com/webrecorder/browsertrix/issues/1716
+        this.crawlData = null;
+        this.qaData = null;
       }
-      // FIXME Set to null to render loading state, should be refactored
-      // to handle loading state separately in https://github.com/webrecorder/browsertrix/issues/1716
-      this.crawlData = null;
-      this.qaData = null;
       // TODO prefetch content for other tabs?
       void this.fetchContentForTab();
       void this.fetchContentForTab({ qa: true });
