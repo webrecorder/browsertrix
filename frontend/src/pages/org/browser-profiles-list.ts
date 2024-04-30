@@ -1,6 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import type { Profile } from "./types";
 
@@ -92,17 +93,27 @@ export class BrowserProfilesList extends LiteElement {
             `
           : nothing}
       </btrix-table>
-      ${this.browserProfiles?.length
-        ? nothing
-        : html`
-            <div class="border-b border-t py-5">
-              <p class="text-center text-0-500">
-                ${msg("No browser profiles yet.")}
-              </p>
-            </div>
-          `}
+      ${when(
+        this.browserProfiles,
+        (browserProfiles) =>
+          browserProfiles.length
+            ? nothing
+            : html`
+                <div class="border-b border-t py-5">
+                  <p class="text-center text-0-500">
+                    ${msg("No browser profiles yet.")}
+                  </p>
+                </div>
+              `,
+        this.renderLoading,
+      )}
     `;
   }
+
+  private readonly renderLoading = () =>
+    html`<div class="my-24 flex w-full items-center justify-center text-3xl">
+      <sl-spinner></sl-spinner>
+    </div>`;
 
   private readonly renderItem = (data: Profile) => {
     const isBackedUp =
