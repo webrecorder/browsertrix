@@ -105,7 +105,8 @@ export class BrowserProfilesList extends LiteElement {
   }
 
   private readonly renderItem = (data: Profile) => {
-    const isBackedUp = data.resource && data.resource.replicas.length > 0;
+    const isBackedUp =
+      data.resource?.replicas && data.resource.replicas.length > 0;
     return html`
       <btrix-table-row
         class="cursor-pointer select-none rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
