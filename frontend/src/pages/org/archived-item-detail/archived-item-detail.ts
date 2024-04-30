@@ -534,9 +534,11 @@ export class ArchivedItemDetail extends TailwindElement {
 
   private renderHeader() {
     return html`
-      <header class="mb-3 flex flex-wrap items-center gap-2 border-b pb-3">
+      <header
+        class="mb-3 flex flex-col items-end gap-2 border-b pb-3 lg:flex-row"
+      >
         <h1
-          class="grid min-w-0 flex-auto truncate text-xl font-semibold leading-7"
+          class="grid min-w-0 flex-auto break-all text-xl font-semibold leading-7"
         >
           ${this.renderName()}
         </h1>

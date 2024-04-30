@@ -285,7 +285,7 @@ export class WorkflowDetail extends LiteElement {
         <header class="col-span-1 items-end justify-between md:flex">
           <h2>
             <span
-              class="inline-block align-middle text-xl font-semibold leading-10 md:mr-2"
+              class="inline-block break-all align-middle text-xl font-semibold leading-10 md:mr-2"
               >${this.renderName()}</span
             >
             ${when(
@@ -559,7 +559,9 @@ export class WorkflowDetail extends LiteElement {
     ${this.renderHeader(this.workflow!.id)}
 
     <header>
-      <h2 class="text-xl font-semibold leading-10">${this.renderName()}</h2>
+      <h2 class="break-all text-xl font-semibold leading-10">
+        ${this.renderName()}
+      </h2>
     </header>
 
     ${when(
