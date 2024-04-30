@@ -283,9 +283,9 @@ export class WorkflowDetail extends LiteElement {
         ${this.renderHeader()}
 
         <header
-          class="col-span-1 mb-3 flex flex-col items-end gap-2 border-b pb-3 lg:flex-row"
+          class="col-span-1 mb-3 flex flex-col gap-2 border-b pb-3 lg:flex-row"
         >
-          <h2>
+          <h2 class="w-full">
             <span
               class="inline-block align-middle text-xl font-semibold leading-8 md:mr-2"
               >${this.renderName()}</span
@@ -299,7 +299,7 @@ export class WorkflowDetail extends LiteElement {
               `,
             )}
           </h2>
-          <div class="flex-0 flex justify-end">
+          <div class="flex-0 flex justify-end md:items-end">
             ${when(
               this.isCrawler && this.workflow && !this.workflow.inactive,
               this.renderActions,

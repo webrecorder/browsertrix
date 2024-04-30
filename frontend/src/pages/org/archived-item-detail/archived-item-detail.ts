@@ -534,16 +534,16 @@ export class ArchivedItemDetail extends TailwindElement {
 
   private renderHeader() {
     return html`
-      <header
-        class="mb-3 flex flex-col items-end gap-2 border-b pb-3 lg:flex-row"
-      >
-        <h1 class="grid min-w-0 flex-auto text-xl font-semibold leading-8">
+      <header class="mb-3 flex flex-col gap-2 border-b pb-3 lg:flex-row">
+        <h1
+          class="grid w-full min-w-0 flex-auto text-xl font-semibold leading-8"
+        >
           ${this.renderName()}
         </h1>
         <div
           class="${this.isActive
-            ? "justify-between"
-            : "justify-end ml-auto"} grid grid-flow-col gap-2"
+            ? "justify-between md:items-end"
+            : "justify-end ml-auto"} grid grid-flow-col gap-2 md:items-end"
         >
           ${this.isActive
             ? html`
