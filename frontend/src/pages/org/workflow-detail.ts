@@ -282,10 +282,12 @@ export class WorkflowDetail extends LiteElement {
       <div class="grid grid-cols-1 gap-7">
         ${this.renderHeader()}
 
-        <header class="col-span-1 items-end justify-between md:flex">
+        <header
+          class="col-span-1 mb-3 flex flex-col items-end gap-2 border-b pb-3 lg:flex-row"
+        >
           <h2>
             <span
-              class="inline-block break-all align-middle text-xl font-semibold leading-10 md:mr-2"
+              class="inline-block align-middle text-xl font-semibold leading-8 md:mr-2"
               >${this.renderName()}</span
             >
             ${when(
@@ -804,18 +806,22 @@ export class WorkflowDetail extends LiteElement {
     if (this.workflow.name) return this.workflow.name;
     const { seedCount, firstSeed } = this.workflow;
     if (seedCount === 1) {
-      return firstSeed;
+      return html`<span class="break-all">${firstSeed}</span>`;
     }
     const remainderCount = seedCount - 1;
     if (remainderCount === 1) {
       return msg(
-        html`${firstSeed}
-          <span class="text-neutral-500">+${remainderCount} URL</span>`,
+        html` <span class="break-all">${firstSeed}</span>
+          <span class="break-word text-neutral-500"
+            >+${remainderCount} URL</span
+          >`,
       );
     }
     return msg(
-      html`${firstSeed}
-        <span class="text-neutral-500">+${remainderCount} URLs</span>`,
+      html` <span class="break-all">${firstSeed}</span>
+        <span class="break-word text-neutral-500"
+          >+${remainderCount} URLs</span
+        >`,
     );
   }
 
