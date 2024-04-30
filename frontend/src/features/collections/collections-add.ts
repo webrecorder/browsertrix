@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput, SlMenuItem } from "@shoelace-style/shoelace";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import queryString from "query-string";
@@ -64,10 +64,14 @@ export class CollectionsAdd extends LiteElement {
   private collectionIds: string[] = [];
 
   @state()
-  private searchByValue = "";
-
-  @state()
   private searchResults: Collection[] = [];
+
+  @query("sl-input")
+  private readonly input?: SlInput | null;
+
+  private get searchByValue() {
+    return this.input ? this.input.value.trim() : "";
+  }
 
   private get hasSearchStr() {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
@@ -124,7 +128,7 @@ export class CollectionsAdd extends LiteElement {
         ?open=${this.searchResultsOpen}
         @request-close=${() => {
           this.searchResultsOpen = false;
-          this.searchByValue = "";
+          if (this.input) this.input.value = "";
         }}
         @sl-select=${async (e: CustomEvent<{ item: SlMenuItem }>) => {
           this.searchResultsOpen = false;
@@ -152,7 +156,6 @@ export class CollectionsAdd extends LiteElement {
           size="small"
           placeholder=${msg("Search by Collection name")}
           clearable
-          value=${this.searchByValue}
           @sl-clear=${() => {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
@@ -249,9 +252,7 @@ export class CollectionsAdd extends LiteElement {
     }
   }
 
-  private readonly onSearchInput = debounce(200)(async (e: Event) => {
-    this.searchByValue = (e.target as SlInput).value.trim();
-
+  private readonly onSearchInput = debounce(200)(async () => {
     if (!this.searchResultsOpen && this.hasSearchStr) {
       this.searchResultsOpen = true;
     }
