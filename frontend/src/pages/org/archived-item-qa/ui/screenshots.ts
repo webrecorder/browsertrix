@@ -11,7 +11,7 @@ import { renderSpinner } from "./spinner";
 function image(data: ReplayData) {
   if (!data?.blobUrl) {
     return html`<div
-      class="flex h-full w-full flex-col items-center justify-center gap-2 text-xs text-neutral-500"
+      class="flex aspect-video h-full w-full flex-col items-center justify-center gap-2 bg-slate-50 text-xs text-neutral-500"
     >
       <sl-icon name="slash-circle"></sl-icon>
       ${msg("Screenshot not available")}
