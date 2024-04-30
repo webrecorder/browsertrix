@@ -1145,10 +1145,12 @@ class CrawlOperator(BaseOperator):
 
         # check timeout if timeout time exceeds elapsed time
         if crawl.timeout:
-            elapsed = (
-                status.elapsedCrawlTime
-                + (dt_now() - from_k8s_date(status.lastUpdatedTime)).total_seconds()
-            )
+            elapsed = status.elapsedCrawlTime
+            if status.lastUpdatedTime:
+                elapsed += (
+                    dt_now() - from_k8s_date(status.lastUpdatedTime)
+                ).total_seconds()
+
             if elapsed > crawl.timeout:
                 print(
                     f"Graceful Stop: Crawl running time exceeded {crawl.timeout} second timeout"
