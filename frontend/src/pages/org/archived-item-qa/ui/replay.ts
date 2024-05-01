@@ -45,7 +45,7 @@ export function renderReplay(crawlData: ReplayData) {
         )}
       </div>
       <btrix-dialog .label=${msg("Click prevented")}>
-        ${msg("Clicking links within Replay is currently disabled.")}
+        ${msg("Clicking links during review is disabled.")}
       </btrix-dialog>
     </div>
   `;
