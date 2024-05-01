@@ -595,7 +595,7 @@ export class ArchivedItemQA extends TailwindElement {
         class="reviewDialog [--width:60rem]"
         label=${msg("QA Review")}
       >
-        <form class="qaReviewForm" @submit=${this.onReviewSubmit}>
+        <form class="qaReviewForm" @submit=${this.onSubmitReview}>
           <div class="flex flex-col gap-6 md:flex-row">
             <div>
               <sl-radio-group
@@ -958,6 +958,9 @@ export class ArchivedItemQA extends TailwindElement {
 
     if (!value) return;
 
+    const formEl = e.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
+
     void this.commentDialog?.hide();
 
     try {
@@ -990,6 +993,11 @@ export class ArchivedItemQA extends TailwindElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  async checkFormValidity(formEl: HTMLFormElement) {
+    await this.updateComplete;
+    return !formEl.querySelector("[data-invalid]");
   }
 
   private async deletePageComment(commentId: string): Promise<void> {
@@ -1310,14 +1318,15 @@ export class ArchivedItemQA extends TailwindElement {
     );
   }
 
-  private async onReviewSubmit(e: SubmitEvent) {
+  private async onSubmitReview(e: SubmitEvent) {
     e.preventDefault();
     const form = e.currentTarget as HTMLFormElement;
     const params = serialize(form);
 
-    if (!params.reviewStatus) {
-      return;
-    }
+    if (!params.reviewStatus) return;
+
+    const formEl = e.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
 
     try {
       const data = await this.api.fetch<{ updated: boolean }>(
