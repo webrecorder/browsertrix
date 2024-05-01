@@ -43,6 +43,7 @@ import type { ArchivedItem, ArchivedItemPageComment } from "@/types/crawler";
 import type { ArchivedItemQAPage, QARun } from "@/types/qa";
 import { type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive, renderName } from "@/utils/crawler";
+import { maxLengthValidator } from "@/utils/form";
 import { formatISODateString, getLocale } from "@/utils/localization";
 
 const DEFAULT_PAGE_SIZE = 100;
@@ -581,6 +582,15 @@ export class ArchivedItemQA extends TailwindElement {
         </sl-button>
       </btrix-dialog>
 
+      ${this.renderReviewDialog()}
+    `;
+  }
+
+  private readonly validateCrawlDescriptionMax = maxLengthValidator(500);
+
+  private renderReviewDialog() {
+    const { helpText, validate } = this.validateCrawlDescriptionMax;
+    return html`
       <btrix-dialog
         class="reviewDialog [--width:60rem]"
         label=${msg("QA Review")}
@@ -642,7 +652,11 @@ export class ArchivedItemQA extends TailwindElement {
                 label=${msg("Update archived item description?")}
                 name="description"
                 value=${this.item?.description ?? ""}
-                placeholder=${msg("No description")}
+                placeholder=${msg("No description, yet")}
+                rows="8"
+                autocomplete="off"
+                help-text=${helpText}
+                @sl-input=${validate}
               ></sl-textarea>
             </div>
           </div>
