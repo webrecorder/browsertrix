@@ -11,7 +11,7 @@ import { tw } from "@/utils/tailwind";
 export function renderReplay(crawlData: ReplayData) {
   return html`
     <div
-      class=${tw`relative aspect-video overflow-hidden rounded-b-lg border-x border-b`}
+      class=${tw`relative h-full overflow-hidden rounded-b-lg border-x border-b bg-slate-100 p-4 shadow-inner`}
     >
       ${guard([crawlData], () =>
         when(
@@ -19,7 +19,7 @@ export function renderReplay(crawlData: ReplayData) {
           (replayUrl) =>
             html`<iframe
               src=${replayUrl}
-              class=${tw`h-full w-full outline`}
+              class=${tw`h-full w-full overflow-hidden rounded border bg-neutral-0 shadow-lg`}
             ></iframe>`,
           renderSpinner,
         ),
