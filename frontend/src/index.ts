@@ -198,7 +198,11 @@ export class App extends LiteElement {
     }
   }
 
-  navigate(newViewPath: string, state?: { [key: string]: unknown }) {
+  navigate(
+    newViewPath: string,
+    state?: { [key: string]: unknown },
+    replace?: boolean,
+  ) {
     let url;
 
     if (newViewPath.startsWith("http")) {
@@ -220,14 +224,15 @@ export class App extends LiteElement {
     }
 
     this.viewState.data = state;
+    const urlStr = `${this.viewState.pathname.replace(url.search, "")}${url.hash}${
+      url.search
+    }`;
 
-    window.history.pushState(
-      this.viewState,
-      "",
-      `${this.viewState.pathname.replace(url.search, "")}${url.hash}${
-        url.search
-      }`,
-    );
+    if (replace) {
+      window.history.replaceState(this.viewState, "", urlStr);
+    } else {
+      window.history.pushState(this.viewState, "", urlStr);
+    }
   }
 
   render() {
@@ -795,9 +800,9 @@ export class App extends LiteElement {
   onNavigateTo = (event: CustomEvent<NavigateEventDetail>) => {
     event.stopPropagation();
 
-    const { url, state, resetScroll } = event.detail;
+    const { url, state, resetScroll, replace } = event.detail;
 
-    this.navigate(url, state);
+    this.navigate(url, state, replace);
 
     if (resetScroll) {
       // Scroll to top of page

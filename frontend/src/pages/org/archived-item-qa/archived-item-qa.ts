@@ -293,7 +293,12 @@ export class ArchivedItemQA extends TailwindElement {
       searchParams.set("itemPageId", firstPage.id);
     }
 
-    this.navigate.to(`${window.location.pathname}?${searchParams.toString()}`);
+    this.navigate.to(
+      `${window.location.pathname}?${searchParams.toString()}`,
+      undefined,
+      undefined,
+      /* replace: */ true,
+    );
   }
 
   /**
