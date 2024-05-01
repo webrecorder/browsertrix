@@ -176,7 +176,7 @@ export class ArchivedItemQA extends TailwindElement {
     // Receive messages from replay-web-page windows
     void this.replaySwReg.then((reg) => {
       if (!reg) {
-        console.log("[debug] no reg, listening to messages");
+        console.debug("no reg, listening to messages");
         // window.addEventListener("message", this.onWindowMessage);
       }
     });
@@ -207,17 +207,17 @@ export class ArchivedItemQA extends TailwindElement {
    * if the sw is not present.
    */
   private async handleRwpMessage(sourceLoc: string) {
-    console.log("[debug] handleRwpMessage", sourceLoc);
+    console.debug("handleRwpMessage", sourceLoc);
     // check if has /qa/ in path, then QA
     if (sourceLoc.indexOf("%2Fqa%2F") >= 0 && !this.qaDataRegistered) {
       this.qaDataRegistered = true;
-      console.log("[debug] onWindowMessage qa", this.qaData);
+      console.debug("onWindowMessage qa", this.qaData);
       await this.fetchContentForTab({ qa: true });
       await this.updateComplete;
       // otherwise main crawl replay
     } else if (!this.crawlDataRegistered) {
       this.crawlDataRegistered = true;
-      console.log("[debug] onWindowMessage crawl", this.crawlData);
+      console.debug("onWindowMessage crawl", this.crawlData);
       await this.fetchContentForTab();
       await this.updateComplete;
     }
@@ -248,15 +248,23 @@ export class ArchivedItemQA extends TailwindElement {
     // Re-fetch when tab, archived item page, or QA run ID changes
     // from an existing one, probably due to user interaction
     if (changedProperties.get("tab") || changedProperties.get("page")) {
-      if (this.tab === "screenshots") {
+      if (changedProperties.get("page")) {
         if (this.crawlData?.blobUrl)
           URL.revokeObjectURL(this.crawlData.blobUrl);
         if (this.qaData?.blobUrl) URL.revokeObjectURL(this.qaData.blobUrl);
+
+        // FIXME Set to null to render loading state, should be refactored
+        // to handle loading state separately in https://github.com/webrecorder/browsertrix/issues/1716
+        this.crawlData = null;
+        this.qaData = null;
       }
       // TODO prefetch content for other tabs?
       void this.fetchContentForTab();
       void this.fetchContentForTab({ qa: true });
     } else if (changedProperties.get("qaRunId")) {
+      // FIXME Set to null to render loading state, should be refactored
+      // to handle loading state separately in https://github.com/webrecorder/browsertrix/issues/1716
+      this.qaData = null;
       void this.fetchContentForTab({ qa: true });
     }
   }
@@ -355,7 +363,7 @@ export class ArchivedItemQA extends TailwindElement {
         >
           <div class="flex items-center gap-2 overflow-hidden">
             <h2
-              class="flex-1 flex-shrink-0 basis-32 truncate text-base font-semibold leading-tight"
+              class="flex-1 flex-shrink-0 min-w-32 truncate text-base font-semibold leading-tight"
             >
               ${itemName}
             </h2>
@@ -867,7 +875,7 @@ export class ArchivedItemQA extends TailwindElement {
     const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
-    console.log("[debug] rendering rwp", rwpId);
+    console.debug("rendering rwp", rwpId);
     return guard(
       [rwpId, this.page, this.authState],
       () => html`
@@ -1107,8 +1115,8 @@ export class ArchivedItemQA extends TailwindElement {
     const frameWindow = this.replayFrame?.contentWindow;
 
     if (!page || !sourceId || !frameWindow) {
-      console.log(
-        "[debug] no page replaId or frameWindow",
+      console.debug(
+        "no page replaId or frameWindow",
         page,
         sourceId,
         frameWindow,
@@ -1129,9 +1137,8 @@ export class ArchivedItemQA extends TailwindElement {
       const url = `/replay/w/${sourceId}/${urlPart}`;
       // TODO check status code
 
-      if (tab === "replay") {
-        return { replayUrl: url };
-      }
+      console.log("replay?");
+
       const resp = await frameWindow.fetch(url);
 
       //console.log("resp:", resp);
@@ -1140,14 +1147,19 @@ export class ArchivedItemQA extends TailwindElement {
         throw resp.status;
       }
 
+      if (tab === "replay") {
+        return { replayUrl: url };
+      }
       if (tab === "screenshots") {
         const blob = await resp.blob();
         const blobUrl = URL.createObjectURL(blob) || "";
         return { blobUrl };
-      } else if (tab === "text") {
+      }
+      if (tab === "text") {
         const text = await resp.text();
         return { text };
-      } else {
+      }
+      {
         // tab === "resources"
 
         const json = (await resp.json()) as {
@@ -1197,7 +1209,6 @@ export class ArchivedItemQA extends TailwindElement {
 
         return { resources: Object.fromEntries(typeMap.entries()) };
       }
-      return { text: "" };
     };
 
     try {
@@ -1217,7 +1228,7 @@ export class ArchivedItemQA extends TailwindElement {
         this.crawlDataRegistered = true;
       }
     } catch (e: unknown) {
-      console.log("[debug] error:", e);
+      console.debug("error:", e);
 
       // check if this endpoint is registered, if not, ensure re-render
       if (e === 404) {

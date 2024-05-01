@@ -92,20 +92,18 @@ function renderDiff(
 }
 
 export function renderResources(crawlData: ReplayData, qaData: ReplayData) {
-  const noData = html`<div
-    class="m-4 flex flex-col items-center justify-center gap-2 text-xs text-neutral-500"
-  >
-    <sl-icon name="slash-circle"></sl-icon>
-    ${msg("Resources data not available")}
-  </div>`;
+  // const noData = html`<div
+  //   class="m-4 flex flex-col items-center justify-center gap-2 text-xs text-neutral-500"
+  // >
+  //   <sl-icon name="slash-circle"></sl-icon>
+  //   ${msg("Resources data not available")}
+  // </div>`;
 
   return html`
     <div class="flex h-full flex-col outline">
       <div class="flex-1 overflow-auto overscroll-contain">
-        ${crawlData && qaData
-          ? crawlData.resources && qaData.resources
-            ? renderDiff(crawlData.resources, qaData.resources)
-            : noData
+        ${crawlData?.resources && qaData?.resources
+          ? renderDiff(crawlData.resources, qaData.resources)
           : renderSpinner()}
       </div>
       <footer class="pt-2 text-xs text-neutral-600">

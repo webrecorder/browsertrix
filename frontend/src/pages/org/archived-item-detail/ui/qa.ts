@@ -188,7 +188,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                         this.mostRecentNonFailedQARun.stats.found === 0
                           ? msg("Loading")
                           : `${this.mostRecentNonFailedQARun.stats.done}/${this.mostRecentNonFailedQARun.stats.found}`
-                      } Pages`,
+                      } ${pluralOf("pages", this.mostRecentNonFailedQARun.stats.found)}`,
                     )}"
                     placement="bottom"
                     hoist
