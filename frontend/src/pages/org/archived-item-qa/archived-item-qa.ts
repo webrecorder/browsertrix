@@ -161,8 +161,11 @@ export class ArchivedItemQA extends TailwindElement {
   private readonly validateItemDescriptionMax = maxLengthValidator(500);
   private readonly validatePageCommentMax = maxLengthValidator(500);
 
-  @query("#replayframe")
-  private readonly replayFrame?: HTMLIFrameElement | null;
+  @query("#hiddenReplayFrame")
+  private readonly hiddenReplayFrame?: HTMLIFrameElement | null;
+
+  @query("#interactiveReplayFrame")
+  private readonly interactiveReplayFrame?: HTMLIFrameElement | null;
 
   @query(".reviewDialog")
   private readonly reviewDialog?: Dialog | null;
@@ -699,7 +702,7 @@ export class ArchivedItemQA extends TailwindElement {
         return html`
           <iframe
             class="hidden"
-            id="replayframe"
+            id="hiddenReplayFrame"
             src="/replay/non-existent"
             @load=${onLoad}
           ></iframe>
@@ -801,14 +804,20 @@ export class ArchivedItemQA extends TailwindElement {
   private renderPanelToolbar() {
     const buttons = html`
       ${choose(this.tab, [
-        // [
-        //   "replay",
-        //   () => html`
-        //     <div class="flex">
-        //        <sl-icon-button name="arrow-clockwise"></sl-icon-button>
-        //     </div>
-        //   `,
-        // ],
+        [
+          "replay",
+          () => html`
+            <div class="flex">
+              <sl-icon-button
+                name="arrow-clockwise"
+                @click=${() => {
+                  console.log("reload");
+                  this.interactiveReplayFrame?.contentWindow?.location.reload();
+                }}
+              ></sl-icon-button>
+            </div>
+          `,
+        ],
         [
           "screenshots",
           () => html`
@@ -1141,7 +1150,7 @@ export class ArchivedItemQA extends TailwindElement {
     const page = this.page;
     const tab = this.tab;
     const sourceId = qa ? this.qaRunId : this.itemId;
-    const frameWindow = this.replayFrame?.contentWindow;
+    const frameWindow = this.hiddenReplayFrame?.contentWindow;
 
     if (!page || !sourceId || !frameWindow) {
       console.debug(

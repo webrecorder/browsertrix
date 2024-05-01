@@ -18,6 +18,7 @@ export function renderReplay(crawlData: ReplayData) {
           crawlData?.replayUrl,
           (replayUrl) =>
             html`<iframe
+              id="interactiveReplayFrame"
               src=${replayUrl}
               class=${tw`h-full w-full overflow-hidden rounded border bg-neutral-0 shadow-lg`}
             ></iframe>`,
