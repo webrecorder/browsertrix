@@ -98,10 +98,9 @@ class CrawlOps(BaseCrawlOps):
         self,
         crawlid: str,
         org: Optional[Organization] = None,
-        project: Optional[dict[str, bool]] = None,
     ) -> Crawl:
         """Get crawl data for internal use"""
-        res = await self.get_crawl_raw(crawlid, org, "crawl", project)
+        res = await self.get_crawl_raw(crawlid, org, "crawl")
         return Crawl.from_dict(res)
 
     @contextlib.asynccontextmanager
@@ -479,7 +478,7 @@ class CrawlOps(BaseCrawlOps):
         """add new exclusion to config or remove exclusion from config
         for given crawl_id, update config on crawl"""
 
-        crawl = await self.get_crawl(crawl_id, org, project={"cid": True})
+        crawl = await self.get_crawl(crawl_id, org)
 
         cid = crawl.cid
 

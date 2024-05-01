@@ -149,10 +149,9 @@ class BaseCrawlOps:
         crawlid: str,
         org: Optional[Organization] = None,
         type_: Optional[str] = None,
-        project: Optional[dict[str, bool]] = None,
     ) -> BaseCrawl:
         """Get crawl data for internal use"""
-        res = await self.get_crawl_raw(crawlid, org, type_, project)
+        res = await self.get_crawl_raw(crawlid, org, type_)
         return BaseCrawl.from_dict(res)
 
     async def get_crawl_out(
