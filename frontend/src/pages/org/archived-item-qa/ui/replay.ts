@@ -56,9 +56,7 @@ export function renderReplay(crawlData: ReplayData, tab: QATab) {
         no-header
         @sl-request-close=${(e: SlRequestCloseEvent) => e.preventDefault()}
       >
-        <div class="mb-3 leading-none text-neutral-500">
-          ${msg("Loading page...")}
-        </div>
+        <div class="sr-only">${msg("Loading page")}</div>
         <sl-progress-bar
           indeterminate
           class="[--height:0.5rem]"
