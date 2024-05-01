@@ -770,7 +770,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                             <div class="text-xs text-neutral-400">
                               ${msg("Newest comment:")}
                             </div>
-                            <div class="text-xs">
+                            <div class="leading04 max-w-60 text-xs">
                               ${page.notes[page.notes.length - 1].text}
                             </div>
                           </div>
