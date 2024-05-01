@@ -139,7 +139,9 @@ export class QaPage extends TailwindElement {
           aria-selected=${this.selected}
         >
           <sl-tooltip class="invert-tooltip" placement="left" hoist>
-            <div slot="content" class="text-xs">${pageDetails(page)}</div>
+            <div slot="content" class="max-w-60 text-xs">
+              ${pageDetails(page)}
+            </div>
             <div
               class="absolute -left-4 top-[50%] flex w-8 translate-y-[-50%] flex-col place-items-center gap-1 rounded-full border border-gray-300 bg-neutral-0 p-2 leading-[14px] shadow transition-transform hover:scale-110"
             >

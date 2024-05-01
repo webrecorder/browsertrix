@@ -93,7 +93,7 @@ export const pageDetails = (page: ArchivedItemQAPage) =>
           <div class="my-2 text-xs text-neutral-400">
             ${msg("Newest comment:")}
           </div>
-          <div class="mb-3 flex max-w-60 text-xs leading-4">
+          <div class="mb-3 flex text-xs leading-4">
             <sl-icon
               name="chat-square-text-fill"
               class="mr-2 h-4 w-4 flex-none text-blue-600"
