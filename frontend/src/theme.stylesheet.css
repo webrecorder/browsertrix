@@ -196,6 +196,18 @@
     min-width: min-content;
   }
 
+  /* Style tooltip with white background */
+  sl-tooltip.invert-tooltip {
+    --sl-tooltip-arrow-size: 0;
+    --sl-tooltip-background-color: var(--sl-color-neutral-0);
+    --sl-tooltip-color: var(--sl-color-neutral-700);
+  }
+
+  sl-tooltip.invert-tooltip::part(body) {
+    outline: 1px solid var(--sl-panel-border-color);
+    box-shadow: var(--sl-shadow-large);
+  }
+
   /* For single-input forms with submit button inline */
   /* Requires form control and button to be direct children */
   .inline-control-input,
