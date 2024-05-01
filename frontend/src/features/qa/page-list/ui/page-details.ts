@@ -98,6 +98,6 @@ export const pageDetails = (page: ArchivedItemQAPage) =>
               name="chat-square-text-fill"
               class="mr-2 h-4 w-4 flex-none text-blue-600"
             ></sl-icon>
-            ${page.notes[page.notes.length - 1]?.text}
+            ${page.notes[page.notes.length - 1].text}
           </div>`
       : nothing}`;
