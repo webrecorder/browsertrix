@@ -762,19 +762,31 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 <btrix-table-cell
                   >${this.renderApprovalStatus(page)}</btrix-table-cell
                 >
-                <btrix-table-cell
-                  >${page.notes?.length
-                    ? statusWithIcon(
-                        html`<sl-icon
-                          name="chat-square-text-fill"
-                          class="text-blue-600"
-                        ></sl-icon>`,
-                        `${page.notes.length.toLocaleString()} ${pluralOf("comments", page.notes.length)}`,
-                      )
-                    : html`<span class="text-neutral-400"
-                        >${msg("None")}</span
-                      >`}</btrix-table-cell
-                >
+                <btrix-table-cell>
+                  ${page.notes?.length
+                    ? html`
+                        <sl-tooltip class="invert-tooltip">
+                          <div slot="content">
+                            <div class="text-xs text-neutral-400">
+                              ${msg("Newest comment:")}
+                            </div>
+                            <div class="leading04 max-w-60 text-xs">
+                              ${page.notes[page.notes.length - 1].text}
+                            </div>
+                          </div>
+                          ${statusWithIcon(
+                            html`<sl-icon
+                              name="chat-square-text-fill"
+                              class="text-blue-600"
+                            ></sl-icon>`,
+                            `${page.notes.length.toLocaleString()} ${pluralOf("comments", page.notes.length)}`,
+                          )}
+                        </sl-tooltip>
+                      `
+                    : html`<span class="text-neutral-400">
+                        ${msg("None")}
+                      </span>`}
+                </btrix-table-cell>
               </btrix-table-row>
             `,
           )}
