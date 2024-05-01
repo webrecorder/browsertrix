@@ -258,10 +258,14 @@ export class ArchivedItemQA extends TailwindElement {
           URL.revokeObjectURL(this.crawlData.blobUrl);
         if (this.qaData?.blobUrl) URL.revokeObjectURL(this.qaData.blobUrl);
 
-        // FIXME Set to null to render loading state, should be refactored
-        // to handle loading state separately in https://github.com/webrecorder/browsertrix/issues/1716
-        this.crawlData = null;
-        this.qaData = null;
+        if (this.tab === "replay") {
+          this.showReplayPageLoadingDialog();
+        } else {
+          // FIXME Set to null to render loading state, should be refactored
+          // to handle loading state separately in https://github.com/webrecorder/browsertrix/issues/1716
+          this.crawlData = null;
+          this.qaData = null;
+        }
       }
       // TODO prefetch content for other tabs?
       void this.fetchContentForTab();
@@ -815,10 +819,7 @@ export class ArchivedItemQA extends TailwindElement {
                     this.interactiveReplayFrame?.contentDocument?.readyState ===
                     "complete"
                   ) {
-                    void this.interactiveReplayFrame
-                      .closest(".replayContainer")
-                      ?.querySelector<Dialog>("btrix-dialog.loadingPageDialog")
-                      ?.show();
+                    this.showReplayPageLoadingDialog();
                     this.interactiveReplayFrame.contentWindow?.location.reload();
                   }
                 }}
@@ -892,7 +893,7 @@ export class ArchivedItemQA extends TailwindElement {
         case "resources":
           return renderResources(this.crawlData, this.qaData);
         case "replay":
-          return renderReplay(this.crawlData);
+          return renderReplay(this.crawlData, this.tab);
         default:
           break;
       }
@@ -971,6 +972,14 @@ export class ArchivedItemQA extends TailwindElement {
     if (prevPage) {
       this.navToPage(prevPage.id);
     }
+  }
+
+  private showReplayPageLoadingDialog() {
+    if (!this.interactiveReplayFrame) return;
+    void this.interactiveReplayFrame
+      .closest(".replayContainer")
+      ?.querySelector<Dialog>("btrix-dialog.loadingPageDialog")
+      ?.show();
   }
 
   private async onSubmitComment(e: SubmitEvent) {

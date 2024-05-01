@@ -1,17 +1,17 @@
 import { msg } from "@lit/localize";
+import type { SlRequestCloseEvent } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { guard } from "lit/directives/guard.js";
 import { when } from "lit/directives/when.js";
 
-import type { ReplayData } from "../types";
+import type { QATab, ReplayData } from "../types";
 
 import { renderSpinner } from "./spinner";
 
 import type { Dialog } from "@/components/ui/dialog";
 import { tw } from "@/utils/tailwind";
 
-export function renderReplay(crawlData: ReplayData) {
-  console.log("crawlData?.replayUrl", crawlData?.replayUrl);
+export function renderReplay(crawlData: ReplayData, tab: QATab) {
   return html`
     <div class="replayContainer ${tw`h-full [contain:paint]`}">
       <div
@@ -50,7 +50,13 @@ export function renderReplay(crawlData: ReplayData) {
           ),
         )}
       </div>
-      <btrix-dialog class="loadingPageDialog" .label=${msg("Loading page...")}>
+      <btrix-dialog
+        class="loadingPageDialog"
+        .label=${msg("Loading page...")}
+        ?open=${tab === "replay"}
+        no-header
+        @sl-request-close=${(e: SlRequestCloseEvent) => e.preventDefault()}
+      >
         <sl-progress-bar
           indeterminate
           class="[--height:0.5rem]"
