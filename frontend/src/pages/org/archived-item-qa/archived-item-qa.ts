@@ -812,18 +812,28 @@ export class ArchivedItemQA extends TailwindElement {
           "replay",
           () => html`
             <div class="flex">
-              <sl-icon-button
-                name="arrow-clockwise"
-                @click=${() => {
-                  if (
-                    this.interactiveReplayFrame?.contentDocument?.readyState ===
-                    "complete"
-                  ) {
-                    this.showReplayPageLoadingDialog();
-                    this.interactiveReplayFrame.contentWindow?.location.reload();
-                  }
-                }}
-              ></sl-icon-button>
+              <sl-tooltip
+                content=${msg("Reload Replay")}
+                placement="bottom-start"
+              >
+                <btrix-button
+                  icon
+                  @click=${() => {
+                    if (
+                      this.interactiveReplayFrame?.contentDocument
+                        ?.readyState === "complete"
+                    ) {
+                      this.showReplayPageLoadingDialog();
+                      this.interactiveReplayFrame.contentWindow?.location.reload();
+                    }
+                  }}
+                >
+                  <sl-icon
+                    name="arrow-clockwise"
+                    label=${msg("Reload page")}
+                  ></sl-icon>
+                </btrix-button>
+              </sl-tooltip>
             </div>
           `,
         ],
