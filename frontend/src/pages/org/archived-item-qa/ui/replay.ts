@@ -28,13 +28,19 @@ export function renderReplay(crawlData: ReplayData) {
                 @load=${(e: Event) => {
                   const iframe = e.currentTarget as HTMLIFrameElement;
 
+                  void iframe
+                    .closest(".replayContainer")
+                    ?.querySelector<Dialog>("btrix-dialog.loadingPageDialog")
+                    ?.hide();
                   /// Prevent anchor tag navigation
                   iframe.contentDocument?.querySelectorAll("a").forEach((a) => {
                     a.addEventListener("click", (e: MouseEvent) => {
                       e.preventDefault();
                       void iframe
                         .closest(".replayContainer")
-                        ?.querySelector<Dialog>("btrix-dialog")
+                        ?.querySelector<Dialog>(
+                          "btrix-dialog.clickPreventedDialog",
+                        )
                         ?.show();
                     });
                   });
@@ -44,7 +50,16 @@ export function renderReplay(crawlData: ReplayData) {
           ),
         )}
       </div>
-      <btrix-dialog .label=${msg("Click prevented")}>
+      <btrix-dialog class="loadingPageDialog" .label=${msg("Loading page...")}>
+        <sl-progress-bar
+          indeterminate
+          class="[--height:0.5rem]"
+        ></sl-progress-bar>
+      </btrix-dialog>
+      <btrix-dialog
+        class="clickPreventedDialog"
+        .label=${msg("Click prevented")}
+      >
         ${msg("Clicking links during review is disabled.")}
       </btrix-dialog>
     </div>

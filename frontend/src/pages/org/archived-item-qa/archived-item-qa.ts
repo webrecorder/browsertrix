@@ -811,8 +811,16 @@ export class ArchivedItemQA extends TailwindElement {
               <sl-icon-button
                 name="arrow-clockwise"
                 @click=${() => {
-                  console.log("reload");
-                  this.interactiveReplayFrame?.contentWindow?.location.reload();
+                  if (
+                    this.interactiveReplayFrame?.contentDocument?.readyState ===
+                    "complete"
+                  ) {
+                    void this.interactiveReplayFrame
+                      .closest(".replayContainer")
+                      ?.querySelector<Dialog>("btrix-dialog.loadingPageDialog")
+                      ?.show();
+                    this.interactiveReplayFrame.contentWindow?.location.reload();
+                  }
                 }}
               ></sl-icon-button>
             </div>
