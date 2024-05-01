@@ -1137,9 +1137,8 @@ export class ArchivedItemQA extends TailwindElement {
       const url = `/replay/w/${sourceId}/${urlPart}`;
       // TODO check status code
 
-      if (tab === "replay") {
-        return { replayUrl: url };
-      }
+      console.log("replay?");
+
       const resp = await frameWindow.fetch(url);
 
       //console.log("resp:", resp);
@@ -1148,14 +1147,19 @@ export class ArchivedItemQA extends TailwindElement {
         throw resp.status;
       }
 
+      if (tab === "replay") {
+        return { replayUrl: url };
+      }
       if (tab === "screenshots") {
         const blob = await resp.blob();
         const blobUrl = URL.createObjectURL(blob) || "";
         return { blobUrl };
-      } else if (tab === "text") {
+      }
+      if (tab === "text") {
         const text = await resp.text();
         return { text };
-      } else {
+      }
+      {
         // tab === "resources"
 
         const json = (await resp.json()) as {
