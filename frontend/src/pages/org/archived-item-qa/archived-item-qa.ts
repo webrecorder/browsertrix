@@ -159,6 +159,8 @@ export class ArchivedItemQA extends TailwindElement {
   private readonly notify = new NotifyController(this);
   private readonly replaySwReg =
     navigator.serviceWorker.getRegistration("/replay/");
+  private readonly validateItemDescriptionMax = maxLengthValidator(500);
+  private readonly validatePageCommentMax = maxLengthValidator(500);
 
   @query("#replayframe")
   private readonly replayFrame?: HTMLIFrameElement | null;
@@ -586,10 +588,8 @@ export class ArchivedItemQA extends TailwindElement {
     `;
   }
 
-  private readonly validateCrawlDescriptionMax = maxLengthValidator(500);
-
   private renderReviewDialog() {
-    const { helpText, validate } = this.validateCrawlDescriptionMax;
+    const { helpText, validate } = this.validateItemDescriptionMax;
     return html`
       <btrix-dialog
         class="reviewDialog [--width:60rem]"
@@ -653,7 +653,7 @@ export class ArchivedItemQA extends TailwindElement {
                 name="description"
                 value=${this.item?.description ?? ""}
                 placeholder=${msg("No description, yet")}
-                rows="8"
+                rows="10"
                 autocomplete="off"
                 help-text=${helpText}
                 @sl-input=${validate}
@@ -734,6 +734,7 @@ export class ArchivedItemQA extends TailwindElement {
   }
 
   private renderComments() {
+    const { helpText, validate } = this.validatePageCommentMax;
     return html`
       ${when(
         this.page?.notes?.length,
@@ -784,8 +785,10 @@ export class ArchivedItemQA extends TailwindElement {
           name="pageComment"
           label=${msg("Add a comment")}
           placeholder=${msg("Enter page feedback")}
-          minlength="1"
-          maxlength="500"
+          rows="4"
+          autocomplete="off"
+          help-text=${helpText}
+          @sl-input=${validate}
         ></sl-textarea>
       </form>
     `;
