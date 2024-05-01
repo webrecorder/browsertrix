@@ -15,7 +15,7 @@ export function renderReplay(crawlData: ReplayData, tab: QATab) {
   return html`
     <div class="replayContainer ${tw`h-full [contain:paint]`}">
       <div
-        class=${tw`relative h-full overflow-hidden rounded-b-lg border-x border-b bg-slate-100 p-4 shadow-inner`}
+        class=${tw`relative h-full overflow-hidden rounded-b-lg border-x border-b bg-slate-100 p-4 shadow-inner md:min-h-[80vh]`}
       >
         ${guard([crawlData], () =>
           when(
