@@ -1304,13 +1304,10 @@ ${this.crawl?.description}
     return !formEl.querySelector("[data-invalid]");
   }
 
+  // TODO replace with in-page dialog
   private async deleteCrawl() {
     if (
-      !window.confirm(
-        msg(
-          str`Are you sure you want to delete crawl of ${this.renderName()}?`,
-        ),
-      )
+      !window.confirm(msg(str`Are you sure you want to delete this crawl?`))
     ) {
       return;
     }
