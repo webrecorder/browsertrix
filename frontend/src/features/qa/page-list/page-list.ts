@@ -123,7 +123,9 @@ export class PageList extends TailwindElement {
       >
         ${this.renderSortControl()} ${this.renderFilterControl()}
       </div>
-      <div class="scrollContainer relative -mx-2 overflow-y-auto px-2">
+      <div
+        class="scrollContainer relative -mx-2 overflow-y-auto overscroll-contain px-2"
+      >
         ${when(
           this.pages,
           ({ total, items, page, pageSize }) =>

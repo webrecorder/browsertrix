@@ -6,8 +6,6 @@ import { when } from "lit/directives/when.js";
 
 import type { QATab, ReplayData } from "../types";
 
-import { renderSpinner } from "./spinner";
-
 import type { Dialog } from "@/components/ui/dialog";
 import { tw } from "@/utils/tailwind";
 
@@ -81,7 +79,6 @@ export function renderReplay(crawlData: ReplayData, tab: QATab) {
                   );
                 }}
               ></iframe>`,
-            renderSpinner,
           ),
         )}
       </div>
