@@ -421,23 +421,23 @@ export class ArchivedItemDetail extends TailwindElement {
       return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
 
     if (this.crawl.name)
-      return html`<span class="block truncate">${this.crawl.name}</span>`;
+      return html`<span class="truncate">${this.crawl.name}</span>`;
     if (!this.crawl.firstSeed || !this.crawl.seedCount) return this.crawl.id;
     const remainder = this.crawl.seedCount - 1;
-    let crawlName: TemplateResult = html`<span class="block truncate"
+    let crawlName: TemplateResult = html`<span class="truncate"
       >${this.crawl.firstSeed}</span
     >`;
     if (remainder) {
       if (remainder === 1) {
         crawlName = msg(
-          html`<span class="block truncate">${this.crawl.firstSeed}</span>
+          html`<span class="truncate">${this.crawl.firstSeed}</span>
             <span class="whitespace-nowrap text-neutral-500"
               >+${remainder} URL</span
             >`,
         );
       } else {
         crawlName = msg(
-          html`<span class="block truncate">${this.crawl.firstSeed}</span>
+          html`<span class="truncate">${this.crawl.firstSeed}</span>
             <span class="whitespace-nowrap text-neutral-500"
               >+${remainder} URLs</span
             >`,

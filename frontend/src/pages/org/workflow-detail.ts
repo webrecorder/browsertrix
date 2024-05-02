@@ -809,22 +809,22 @@ export class WorkflowDetail extends LiteElement {
   private renderName() {
     if (!this.workflow) return "";
     if (this.workflow.name)
-      return html`<span class="block truncate">${this.workflow.name}</span>`;
+      return html`<span class="truncate">${this.workflow.name}</span>`;
     const { seedCount, firstSeed } = this.workflow;
     if (seedCount === 1) {
-      return html`<span class="block truncate">${firstSeed}</span>`;
+      return html`<span class="truncate">${firstSeed}</span>`;
     }
     const remainderCount = seedCount - 1;
     if (remainderCount === 1) {
       return msg(
-        html` <span class="block truncate">${firstSeed}</span>
+        html` <span class="truncate">${firstSeed}</span>
           <span class="whitespace-nowrap text-neutral-500"
             >+${remainderCount} URL</span
           >`,
       );
     }
     return msg(
-      html` <span class="block truncate">${firstSeed}</span>
+      html` <span class="truncate">${firstSeed}</span>
         <span class="whitespace-nowrap text-neutral-500"
           >+${remainderCount} URLs</span
         >`,
