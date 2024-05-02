@@ -9,6 +9,7 @@ import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
+import { throttle } from "lodash/fp";
 import queryString from "query-string";
 
 import { styles } from "./styles";
@@ -44,6 +45,7 @@ import { type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive, renderName } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
 import { formatISODateString, getLocale } from "@/utils/localization";
+import { tw } from "@/utils/tailwind";
 
 const DEFAULT_PAGE_SIZE = 100;
 
@@ -178,6 +180,7 @@ export class ArchivedItemQA extends TailwindElement {
 
   connectedCallback(): void {
     super.connectedCallback();
+
     // Receive messages from replay-web-page windows
     void this.replaySwReg.then((reg) => {
       if (!reg) {
@@ -187,14 +190,32 @@ export class ArchivedItemQA extends TailwindElement {
     });
 
     window.addEventListener("message", this.onWindowMessage);
+    window.addEventListener("scroll", this.onWindowScroll);
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
+
     if (this.crawlData?.blobUrl) URL.revokeObjectURL(this.crawlData.blobUrl);
     if (this.qaData?.blobUrl) URL.revokeObjectURL(this.qaData.blobUrl);
+
     window.removeEventListener("message", this.onWindowMessage);
+    window.addEventListener("scroll", this.onWindowScroll);
   }
+
+  private scrollY = 0;
+  private readonly onWindowScroll = throttle(100)(() => {
+    // Set scroll snap only when scrolling down
+    if (window.scrollY > this.scrollY) {
+      if (!document.documentElement.classList.contains(tw`snap-y`)) {
+        document.documentElement.classList.add(tw`snap-y`);
+      }
+    } else {
+      document.documentElement.classList.remove(tw`snap-y`);
+    }
+
+    this.scrollY = window.scrollY;
+  });
 
   private readonly onWindowMessage = (event: MessageEvent) => {
     const sourceLoc = (event.source as Window | null)?.location.href;
@@ -371,7 +392,7 @@ export class ArchivedItemQA extends TailwindElement {
         </h1>
       </div>
 
-      <article class="qa-grid grid gap-x-6 gap-y-0">
+      <article class="qa-grid grid gap-x-6 gap-y-0 snap-start">
         <header
           class="grid--header flex flex-wrap items-center justify-between gap-1 border-b py-2"
         >
@@ -1201,8 +1222,6 @@ export class ArchivedItemQA extends TailwindElement {
       const urlPart = `${timestamp}mp_/${urlPrefix ? `urn:${urlPrefix}:` : ""}${pageUrl}`;
       const url = `/replay/w/${sourceId}/${urlPart}`;
       // TODO check status code
-
-      console.log("replay?");
 
       const resp = await frameWindow.fetch(url);
 

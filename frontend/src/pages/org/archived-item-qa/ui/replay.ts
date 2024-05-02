@@ -12,7 +12,7 @@ import { tw } from "@/utils/tailwind";
 export function renderReplay(crawlData: ReplayData, tab: QATab) {
   return html`
     <div
-      class="replayContainer ${tw`h-full min-h-96 [contain:paint] lg:min-h-0`}"
+      class="replayContainer ${tw`h-full min-h-96 [contain:paint] lg:min-h-0 lg:pb-3`}"
     >
       <div
         class=${tw`relative h-full overflow-hidden rounded-b-lg border-x border-b bg-slate-100 p-4 shadow-inner`}
