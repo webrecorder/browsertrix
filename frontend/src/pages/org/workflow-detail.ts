@@ -285,20 +285,18 @@ export class WorkflowDetail extends LiteElement {
         <header
           class="col-span-1 mb-3 flex flex-col gap-2 border-b pb-3 lg:flex-row"
         >
-          <h2 class="w-full">
-            <span
-              class="inline-block align-middle text-xl font-semibold leading-8 md:mr-2"
-              >${this.renderName()}</span
-            >
-            ${when(
-              this.workflow?.inactive,
-              () => html`
-                <btrix-badge class="inline-block align-middle" variant="warning"
-                  >${msg("Inactive")}</btrix-badge
-                >
-              `,
-            )}
+          <h2 class="flex w-full min-w-0 text-xl font-semibold leading-8">
+            ${this.renderName()}
           </h2>
+          ${when(
+            this.workflow?.inactive,
+            () => html`
+              <btrix-badge class="inline-block align-middle" variant="warning"
+                >${msg("Inactive")}</btrix-badge
+              >
+            `,
+          )}
+
           <div class="flex-0 flex justify-end md:items-end">
             ${when(
               this.isCrawler && this.workflow && !this.workflow.inactive,
@@ -806,19 +804,19 @@ export class WorkflowDetail extends LiteElement {
     if (this.workflow.name) return this.workflow.name;
     const { seedCount, firstSeed } = this.workflow;
     if (seedCount === 1) {
-      return html`<span class="break-all">${firstSeed}</span>`;
+      return html`<span class="truncate">${firstSeed}</span>`;
     }
     const remainderCount = seedCount - 1;
     if (remainderCount === 1) {
       return msg(
-        html` <span class="break-all">${firstSeed}</span>
+        html` <span class="truncate">${firstSeed}</span>
           <span class="break-word text-neutral-500"
             >+${remainderCount} URL</span
           >`,
       );
     }
     return msg(
-      html` <span class="break-all">${firstSeed}</span>
+      html` <span class="truncate">${firstSeed}</span>
         <span class="break-word text-neutral-500"
           >+${remainderCount} URLs</span
         >`,

@@ -423,19 +423,21 @@ export class ArchivedItemDetail extends TailwindElement {
     if (this.crawl.name) return this.crawl.name;
     if (!this.crawl.firstSeed || !this.crawl.seedCount) return this.crawl.id;
     const remainder = this.crawl.seedCount - 1;
-    let crawlName: TemplateResult = html`<span class="break-all"
+    let crawlName: TemplateResult = html`<span class="truncate"
       >${this.crawl.firstSeed}</span
     >`;
     if (remainder) {
       if (remainder === 1) {
         crawlName = msg(
-          html`<span class="break-all">${this.crawl.firstSeed}</span>
-            <span class="text-neutral-500">+${remainder} URL</span>`,
+          html`<span class="truncate">${this.crawl.firstSeed}</span>
+            <span class="break-word text-neutral-500">+${remainder} URL</span>`,
         );
       } else {
         crawlName = msg(
-          html`<span class="break-all">${this.crawl.firstSeed}</span>
-            <span class="text-neutral-500">+${remainder} URLs</span>`,
+          html`<span class="truncate">${this.crawl.firstSeed}</span>
+            <span class="break-word text-neutral-500"
+              >+${remainder} URLs</span
+            >`,
         );
       }
     }
@@ -535,9 +537,7 @@ export class ArchivedItemDetail extends TailwindElement {
   private renderHeader() {
     return html`
       <header class="mb-3 flex flex-col gap-2 border-b pb-3 lg:flex-row">
-        <h1
-          class="grid w-full min-w-0 flex-auto text-xl font-semibold leading-8"
-        >
+        <h1 class="flex w-full min-w-0 text-xl font-semibold leading-8">
           ${this.renderName()}
         </h1>
         <div
