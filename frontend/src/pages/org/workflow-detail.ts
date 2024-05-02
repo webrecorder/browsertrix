@@ -807,7 +807,8 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private renderName() {
-    if (!this.workflow) return "";
+    if (!this.workflow)
+      return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
     if (this.workflow.name)
       return html`<span class="truncate">${this.workflow.name}</span>`;
     const { seedCount, firstSeed } = this.workflow;
