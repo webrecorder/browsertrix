@@ -420,22 +420,25 @@ export class ArchivedItemDetail extends TailwindElement {
     if (!this.crawl)
       return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
 
-    if (this.crawl.name) return this.crawl.name;
+    if (this.crawl.name)
+      return html`<span class="block truncate">${this.crawl.name}</span>`;
     if (!this.crawl.firstSeed || !this.crawl.seedCount) return this.crawl.id;
     const remainder = this.crawl.seedCount - 1;
-    let crawlName: TemplateResult = html`<span class="truncate"
+    let crawlName: TemplateResult = html`<span class="block truncate"
       >${this.crawl.firstSeed}</span
     >`;
     if (remainder) {
       if (remainder === 1) {
         crawlName = msg(
-          html`<span class="truncate">${this.crawl.firstSeed}</span>
-            <span class="break-word text-neutral-500">+${remainder} URL</span>`,
+          html`<span class="block truncate">${this.crawl.firstSeed}</span>
+            <span class="whitespace-nowrap text-neutral-500"
+              >+${remainder} URL</span
+            >`,
         );
       } else {
         crawlName = msg(
-          html`<span class="truncate">${this.crawl.firstSeed}</span>
-            <span class="break-word text-neutral-500"
+          html`<span class="block truncate">${this.crawl.firstSeed}</span>
+            <span class="whitespace-nowrap text-neutral-500"
               >+${remainder} URLs</span
             >`,
         );
@@ -537,9 +540,14 @@ export class ArchivedItemDetail extends TailwindElement {
   private renderHeader() {
     return html`
       <header class="mb-3 flex flex-col gap-2 border-b pb-3 lg:flex-row">
-        <h1 class="flex w-full min-w-0 text-xl font-semibold leading-8">
-          ${this.renderName()}
-        </h1>
+        <sl-tooltip
+          class="break-all"
+          content="${ifDefined(this.crawl?.name || this.crawl?.firstSeed)}"
+        >
+          <h1 class="flex min-w-0 text-xl font-semibold leading-8">
+            ${this.renderName()}
+          </h1>
+        </sl-tooltip>
         <div
           class="${this.isActive
             ? "justify-between md:items-end"

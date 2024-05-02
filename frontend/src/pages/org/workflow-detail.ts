@@ -283,11 +283,18 @@ export class WorkflowDetail extends LiteElement {
         ${this.renderHeader()}
 
         <header
-          class="col-span-1 mb-3 flex flex-col gap-2 border-b pb-3 lg:flex-row"
+          class="col-span-1 mb-3 flex flex-col justify-between gap-2 border-b pb-3 lg:flex-row"
         >
-          <h2 class="flex w-full min-w-0 text-xl font-semibold leading-8">
-            ${this.renderName()}
-          </h2>
+          <sl-tooltip
+            class="break-all"
+            content="${ifDefined(
+              this.workflow?.name || this.workflow?.firstSeed,
+            )}"
+          >
+            <h1 class="flex min-w-0 text-xl font-semibold leading-8">
+              ${this.renderName()}
+            </h1>
+          </sl-tooltip>
           ${when(
             this.workflow?.inactive,
             () => html`
@@ -801,23 +808,24 @@ export class WorkflowDetail extends LiteElement {
 
   private renderName() {
     if (!this.workflow) return "";
-    if (this.workflow.name) return this.workflow.name;
+    if (this.workflow.name)
+      return html`<span class="block truncate">${this.workflow.name}</span>`;
     const { seedCount, firstSeed } = this.workflow;
     if (seedCount === 1) {
-      return html`<span class="truncate">${firstSeed}</span>`;
+      return html`<span class="block truncate">${firstSeed}</span>`;
     }
     const remainderCount = seedCount - 1;
     if (remainderCount === 1) {
       return msg(
-        html` <span class="truncate">${firstSeed}</span>
-          <span class="break-word text-neutral-500"
+        html` <span class="block truncate">${firstSeed}</span>
+          <span class="whitespace-nowrap text-neutral-500"
             >+${remainderCount} URL</span
           >`,
       );
     }
     return msg(
-      html` <span class="truncate">${firstSeed}</span>
-        <span class="break-word text-neutral-500"
+      html` <span class="block truncate">${firstSeed}</span>
+        <span class="whitespace-nowrap text-neutral-500"
           >+${remainderCount} URLs</span
         >`,
     );
