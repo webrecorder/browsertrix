@@ -13,7 +13,9 @@ import { tw } from "@/utils/tailwind";
 
 export function renderReplay(crawlData: ReplayData, tab: QATab) {
   return html`
-    <div class="replayContainer ${tw`h-full min-h-96 [contain:paint]`}">
+    <div
+      class="replayContainer ${tw`h-full min-h-96 [contain:paint] lg:min-h-0`}"
+    >
       <div
         class=${tw`relative h-full overflow-hidden rounded-b-lg border-x border-b bg-slate-100 p-4 shadow-inner`}
       >
@@ -24,26 +26,59 @@ export function renderReplay(crawlData: ReplayData, tab: QATab) {
               html`<iframe
                 id="interactiveReplayFrame"
                 src=${replayUrl}
-                class=${tw`h-full w-full overflow-hidden rounded border bg-neutral-0 shadow-lg`}
+                class=${tw`h-full w-full overflow-hidden overscroll-contain rounded-lg border bg-neutral-0 shadow-lg`}
                 @load=${(e: Event) => {
-                  const iframe = e.currentTarget as HTMLIFrameElement;
+                  // NOTE This is all pretty hacky. To be improved with
+                  // https://github.com/webrecorder/browsertrix/issues/1780
 
-                  void iframe
-                    .closest(".replayContainer")
+                  const iframe = e.currentTarget as HTMLIFrameElement;
+                  const iframeContainer = iframe.closest(".replayContainer");
+                  const showDialog = async () => {
+                    await iframeContainer
+                      ?.querySelector<Dialog>(
+                        "btrix-dialog.clickPreventedDialog",
+                      )
+                      ?.show();
+                  };
+
+                  // Hide loading indicator
+                  void iframeContainer
                     ?.querySelector<Dialog>("btrix-dialog.loadingPageDialog")
                     ?.hide();
-                  /// Prevent anchor tag navigation
+
+                  // Prevent anchor tag navigation
                   iframe.contentDocument?.querySelectorAll("a").forEach((a) => {
                     a.addEventListener("click", (e: MouseEvent) => {
                       e.preventDefault();
-                      void iframe
-                        .closest(".replayContainer")
-                        ?.querySelector<Dialog>(
-                          "btrix-dialog.clickPreventedDialog",
-                        )
-                        ?.show();
+                      void showDialog();
                     });
                   });
+
+                  // Handle visibility change as fallback in case navigation happens anyway
+                  const onVisibilityChange = async () => {
+                    iframe.contentWindow?.removeEventListener(
+                      "visibilitychange",
+                      onVisibilityChange,
+                    );
+
+                    // Check if we're reloading the page, not navigating away
+                    if (
+                      iframe.contentWindow?.location.href.slice(
+                        iframe.contentWindow.location.href.indexOf("mp_/"),
+                      ) === replayUrl.slice(replayUrl.indexOf("mp_/"))
+                    ) {
+                      return;
+                    }
+
+                    // We've navigated away--notify and go back
+                    await showDialog();
+                    iframe.contentWindow?.history.back();
+                  };
+
+                  iframe.contentWindow?.addEventListener(
+                    "visibilitychange",
+                    onVisibilityChange,
+                  );
                 }}
               ></iframe>`,
             renderSpinner,
@@ -64,9 +99,9 @@ export function renderReplay(crawlData: ReplayData, tab: QATab) {
       </btrix-dialog>
       <btrix-dialog
         class="clickPreventedDialog"
-        .label=${msg("Click prevented")}
+        .label=${msg("Navigation prevented")}
       >
-        ${msg("Clicking links during review is disabled.")}
+        ${msg("Following links during review is disabled.")}
       </btrix-dialog>
     </div>
   `;
