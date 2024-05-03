@@ -282,9 +282,7 @@ export class WorkflowDetail extends LiteElement {
       <div class="grid grid-cols-1 gap-7">
         ${this.renderHeader()}
 
-        <header
-          class="col-span-1 mb-3 flex flex-col justify-between gap-2 border-b pb-3 lg:flex-row"
-        >
+        <header class="col-span-1 flex flex-wrap gap-2">
           <btrix-detail-page-title
             .item=${this.workflow}
           ></btrix-detail-page-title>
@@ -297,7 +295,7 @@ export class WorkflowDetail extends LiteElement {
             `,
           )}
 
-          <div class="flex-0 flex justify-end md:items-end">
+          <div class="flex-0 ml-auto flex justify-end">
             ${when(
               this.isCrawler && this.workflow && !this.workflow.inactive,
               this.renderActions,

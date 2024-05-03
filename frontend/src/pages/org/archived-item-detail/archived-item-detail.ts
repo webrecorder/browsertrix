@@ -539,13 +539,9 @@ export class ArchivedItemDetail extends TailwindElement {
 
   private renderHeader() {
     return html`
-      <header class="mb-3 flex flex-col gap-2 border-b pb-3 lg:flex-row">
+      <header class="mb-3 flex flex-wrap gap-2 border-b pb-3">
         <btrix-detail-page-title .item=${this.crawl}></btrix-detail-page-title>
-        <div
-          class="${this.isActive
-            ? "justify-between md:items-end"
-            : "justify-end ml-auto"} grid grid-flow-col gap-2 md:items-end"
-        >
+        <div class="ml-auto flex flex-wrap justify-end gap-2">
           ${this.isActive
             ? html`
                 <sl-button-group>
