@@ -34,7 +34,7 @@ Metadata can be edited by pressing the pencil icon at the top right of the metad
 
 The Replay tab displays the web content contained within the archived item.
 
-For more details on navigating web archives within ReplayWeb.page, see the [ReplayWeb.page user documentation.](https://replayweb.page/docs/exploring)
+For more details on navigating web archives within ReplayWeb.page, see the [ReplayWeb.page user documentation.](https://replayweb.page/docs/user-guide/exploring/)
 
 ### Exporting Files
 
