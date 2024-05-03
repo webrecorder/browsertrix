@@ -295,7 +295,7 @@ export class WorkflowDetail extends LiteElement {
             `,
           )}
 
-          <div class="flex-0 ml-auto flex justify-end">
+          <div class="flex-0 ml-auto flex flex-wrap justify-end gap-2">
             ${when(
               this.isCrawler && this.workflow && !this.workflow.inactive,
               this.renderActions,
@@ -593,7 +593,7 @@ export class WorkflowDetail extends LiteElement {
       ${when(
         this.workflow.isCrawlRunning,
         () => html`
-          <sl-button-group class="mr-2">
+          <sl-button-group>
             <sl-button
               size="small"
               @click=${() => (this.openDialogName = "stop")}
@@ -629,7 +629,6 @@ export class WorkflowDetail extends LiteElement {
             <sl-button
               size="small"
               variant="primary"
-              class="mr-2"
               ?disabled=${this.orgStorageQuotaReached ||
               this.orgExecutionMinutesQuotaReached}
               @click=${() => void this.runNow()}
@@ -1056,7 +1055,6 @@ export class WorkflowDetail extends LiteElement {
             this.workflow?.lastCrawlId,
             () => html`
               <sl-button
-                class="mr-2"
                 href=${`${this.orgBasePath}/items/crawl/${
                   this.workflow!.lastCrawlId
                 }#replay`}
