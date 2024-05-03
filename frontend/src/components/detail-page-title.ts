@@ -28,6 +28,11 @@ export class DetailPageTitle extends TailwindElement {
     :host {
       display: contents;
     }
+
+    sl-tooltip::part(body) {
+      word-break: break-all;
+      max-width: min(var(--max-width), calc(100vw - 0.5rem));
+    }
   `;
 
   private primaryTitle(item: Item): {
@@ -60,8 +65,8 @@ export class DetailPageTitle extends TailwindElement {
       return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
 
     return html`<sl-tooltip
-      class="break-all"
       content="${this.primaryTitle(this.item).title}"
+      hoist
     >
       <h1 class="flex min-w-32 text-xl font-semibold leading-8">
         ${this.renderTitle(this.item)}
