@@ -59,27 +59,27 @@ const plurals = {
   URLs: {
     zero: msg("URLs", {
       desc: 'plural form of "URLs" for zero URLs',
-      id: "comments.plural.zero",
+      id: "URLs.plural.zero",
     }),
     one: msg("URL", {
       desc: 'singular form for "URL"',
-      id: "comments.plural.one",
+      id: "URLs.plural.one",
     }),
     two: msg("URLs", {
       desc: 'plural form of "URLs" for two URLs',
-      id: "comments.plural.two",
+      id: "URLs.plural.two",
     }),
     few: msg("URLs", {
       desc: 'plural form of "URLs" for few URLs',
-      id: "comments.plural.few",
+      id: "URLs.plural.few",
     }),
     many: msg("URLs", {
       desc: 'plural form of "URLs" for many URLs',
-      id: "comments.plural.many",
+      id: "URLs.plural.many",
     }),
     other: msg("URLs", {
       desc: 'plural form of "URLs" for multiple/other URLs',
-      id: "comments.plural.other",
+      id: "URLs.plural.other",
     }),
   },
 };
