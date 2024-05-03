@@ -420,22 +420,27 @@ export class ArchivedItemDetail extends TailwindElement {
     if (!this.crawl)
       return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
 
-    if (this.crawl.name) return this.crawl.name;
+    if (this.crawl.name)
+      return html`<span class="truncate">${this.crawl.name}</span>`;
     if (!this.crawl.firstSeed || !this.crawl.seedCount) return this.crawl.id;
     const remainder = this.crawl.seedCount - 1;
-    let crawlName: TemplateResult = html`<span class="break-words"
+    let crawlName: TemplateResult = html`<span class="truncate"
       >${this.crawl.firstSeed}</span
     >`;
     if (remainder) {
       if (remainder === 1) {
         crawlName = msg(
-          html`<span class="break-words">${this.crawl.firstSeed}</span>
-            <span class="text-neutral-500">+${remainder} URL</span>`,
+          html`<span class="truncate">${this.crawl.firstSeed}</span>
+            <span class="whitespace-nowrap text-neutral-500"
+              >+${remainder} URL</span
+            >`,
         );
       } else {
         crawlName = msg(
-          html`<span class="break-words">${this.crawl.firstSeed}</span>
-            <span class="text-neutral-500">+${remainder} URLs</span>`,
+          html`<span class="truncate">${this.crawl.firstSeed}</span>
+            <span class="whitespace-nowrap text-neutral-500"
+              >+${remainder} URLs</span
+            >`,
         );
       }
     }
@@ -534,17 +539,9 @@ export class ArchivedItemDetail extends TailwindElement {
 
   private renderHeader() {
     return html`
-      <header class="mb-3 flex flex-wrap items-center gap-2 border-b pb-3">
-        <h1
-          class="grid min-w-0 flex-auto truncate text-xl font-semibold leading-7"
-        >
-          ${this.renderName()}
-        </h1>
-        <div
-          class="${this.isActive
-            ? "justify-between"
-            : "justify-end ml-auto"} grid grid-flow-col gap-2"
-        >
+      <header class="mb-3 flex flex-wrap gap-2 border-b pb-3">
+        <btrix-detail-page-title .item=${this.crawl}></btrix-detail-page-title>
+        <div class="ml-auto flex flex-wrap justify-end gap-2">
           ${this.isActive
             ? html`
                 <sl-button-group>
@@ -1296,13 +1293,10 @@ ${this.crawl?.description}
     return !formEl.querySelector("[data-invalid]");
   }
 
+  // TODO replace with in-page dialog
   private async deleteCrawl() {
     if (
-      !window.confirm(
-        msg(
-          str`Are you sure you want to delete crawl of ${this.renderName()}?`,
-        ),
-      )
+      !window.confirm(msg(str`Are you sure you want to delete this crawl?`))
     ) {
       return;
     }

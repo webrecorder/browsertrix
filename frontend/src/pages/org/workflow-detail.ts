@@ -282,22 +282,20 @@ export class WorkflowDetail extends LiteElement {
       <div class="grid grid-cols-1 gap-7">
         ${this.renderHeader()}
 
-        <header class="col-span-1 items-end justify-between md:flex">
-          <h2>
-            <span
-              class="inline-block align-middle text-xl font-semibold leading-10 md:mr-2"
-              >${this.renderName()}</span
-            >
-            ${when(
-              this.workflow?.inactive,
-              () => html`
-                <btrix-badge class="inline-block align-middle" variant="warning"
-                  >${msg("Inactive")}</btrix-badge
-                >
-              `,
-            )}
-          </h2>
-          <div class="flex-0 flex justify-end">
+        <header class="col-span-1 flex flex-wrap gap-2">
+          <btrix-detail-page-title
+            .item=${this.workflow}
+          ></btrix-detail-page-title>
+          ${when(
+            this.workflow?.inactive,
+            () => html`
+              <btrix-badge class="inline-block align-middle" variant="warning"
+                >${msg("Inactive")}</btrix-badge
+              >
+            `,
+          )}
+
+          <div class="flex-0 ml-auto flex flex-wrap justify-end gap-2">
             ${when(
               this.isCrawler && this.workflow && !this.workflow.inactive,
               this.renderActions,
@@ -559,7 +557,9 @@ export class WorkflowDetail extends LiteElement {
     ${this.renderHeader(this.workflow!.id)}
 
     <header>
-      <h2 class="text-xl font-semibold leading-10">${this.renderName()}</h2>
+      <h2 class="break-all text-xl font-semibold leading-10">
+        ${this.renderName()}
+      </h2>
     </header>
 
     ${when(
@@ -593,7 +593,7 @@ export class WorkflowDetail extends LiteElement {
       ${when(
         this.workflow.isCrawlRunning,
         () => html`
-          <sl-button-group class="mr-2">
+          <sl-button-group>
             <sl-button
               size="small"
               @click=${() => (this.openDialogName = "stop")}
@@ -629,7 +629,6 @@ export class WorkflowDetail extends LiteElement {
             <sl-button
               size="small"
               variant="primary"
-              class="mr-2"
               ?disabled=${this.orgStorageQuotaReached ||
               this.orgExecutionMinutesQuotaReached}
               @click=${() => void this.runNow()}
@@ -798,22 +797,28 @@ export class WorkflowDetail extends LiteElement {
   }
 
   private renderName() {
-    if (!this.workflow) return "";
-    if (this.workflow.name) return this.workflow.name;
+    if (!this.workflow)
+      return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
+    if (this.workflow.name)
+      return html`<span class="truncate">${this.workflow.name}</span>`;
     const { seedCount, firstSeed } = this.workflow;
     if (seedCount === 1) {
-      return firstSeed;
+      return html`<span class="truncate">${firstSeed}</span>`;
     }
     const remainderCount = seedCount - 1;
     if (remainderCount === 1) {
       return msg(
-        html`${firstSeed}
-          <span class="text-neutral-500">+${remainderCount} URL</span>`,
+        html` <span class="truncate">${firstSeed}</span>
+          <span class="whitespace-nowrap text-neutral-500"
+            >+${remainderCount} URL</span
+          >`,
       );
     }
     return msg(
-      html`${firstSeed}
-        <span class="text-neutral-500">+${remainderCount} URLs</span>`,
+      html` <span class="truncate">${firstSeed}</span>
+        <span class="whitespace-nowrap text-neutral-500"
+          >+${remainderCount} URLs</span
+        >`,
     );
   }
 
@@ -1050,7 +1055,6 @@ export class WorkflowDetail extends LiteElement {
             this.workflow?.lastCrawlId,
             () => html`
               <sl-button
-                class="mr-2"
                 href=${`${this.orgBasePath}/items/crawl/${
                   this.workflow!.lastCrawlId
                 }#replay`}
