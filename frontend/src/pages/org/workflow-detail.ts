@@ -285,16 +285,9 @@ export class WorkflowDetail extends LiteElement {
         <header
           class="col-span-1 mb-3 flex flex-col justify-between gap-2 border-b pb-3 lg:flex-row"
         >
-          <sl-tooltip
-            class="break-all"
-            content="${ifDefined(
-              this.workflow?.name || this.workflow?.firstSeed,
-            )}"
-          >
-            <h1 class="flex min-w-0 text-xl font-semibold leading-8">
-              ${this.renderName()}
-            </h1>
-          </sl-tooltip>
+          <btrix-detail-page-title
+            .item=${this.workflow}
+          ></btrix-detail-page-title>
           ${when(
             this.workflow?.inactive,
             () => html`

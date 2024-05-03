@@ -540,14 +540,7 @@ export class ArchivedItemDetail extends TailwindElement {
   private renderHeader() {
     return html`
       <header class="mb-3 flex flex-col gap-2 border-b pb-3 lg:flex-row">
-        <sl-tooltip
-          class="break-all"
-          content="${ifDefined(this.crawl?.name || this.crawl?.firstSeed)}"
-        >
-          <h1 class="flex min-w-0 text-xl font-semibold leading-8">
-            ${this.renderName()}
-          </h1>
-        </sl-tooltip>
+        <btrix-detail-page-title .item=${this.crawl}></btrix-detail-page-title>
         <div
           class="${this.isActive
             ? "justify-between md:items-end"

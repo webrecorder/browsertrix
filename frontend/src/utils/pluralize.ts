@@ -56,6 +56,32 @@ const plurals = {
       id: "comments.plural.other",
     }),
   },
+  URLs: {
+    zero: msg("URLs", {
+      desc: 'plural form of "URLs" for zero URLs',
+      id: "comments.plural.zero",
+    }),
+    one: msg("URL", {
+      desc: 'singular form for "URL"',
+      id: "comments.plural.one",
+    }),
+    two: msg("URLs", {
+      desc: 'plural form of "URLs" for two URLs',
+      id: "comments.plural.two",
+    }),
+    few: msg("URLs", {
+      desc: 'plural form of "URLs" for few URLs',
+      id: "comments.plural.few",
+    }),
+    many: msg("URLs", {
+      desc: 'plural form of "URLs" for many URLs',
+      id: "comments.plural.many",
+    }),
+    other: msg("URLs", {
+      desc: 'plural form of "URLs" for multiple/other URLs',
+      id: "comments.plural.other",
+    }),
+  },
 };
 
 export const pluralOf = (word: keyof typeof plurals, count: number) => {
