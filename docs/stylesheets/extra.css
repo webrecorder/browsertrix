@@ -135,12 +135,21 @@ code {
     }
 }
 
-.status-warning {
+.status-neutral {
     font-family: var(--md-code-font);
     font-weight: 500;
     white-space: nowrap;
     & svg {
         color: hsl(32.1 94.6% 43.7%);
+    }
+}
+
+.status-warning {
+    font-family: var(--md-code-font);
+    font-weight: 500;
+    white-space: nowrap;
+    & svg {
+        color: hsl(21, 90%, 48%);
     }
 }
 

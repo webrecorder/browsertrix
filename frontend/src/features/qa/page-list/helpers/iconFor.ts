@@ -19,7 +19,7 @@ export const iconFor = cached(
         ></sl-icon>`;
       case "moderate":
         return html`<sl-icon
-          name="slash-square-fill"
+          name="dash-square-fill"
           class=${clsx("text-yellow-600", baseClasses, classList)}
         ></sl-icon>`;
       case "good":
@@ -46,7 +46,7 @@ export const iconFor = cached(
       // No data
       default:
         return html`<sl-icon
-          name="dash-circle"
+          name="slash-circle"
           class=${clsx("text-gray-600", baseClasses, classList)}
         ></sl-icon>`;
     }

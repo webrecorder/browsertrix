@@ -59,7 +59,7 @@ export class CrawlStatus extends TailwindElement {
   } {
     let color = "var(--sl-color-neutral-400)";
     let icon = html`<sl-icon
-      name="circle"
+      name="slash-circle"
       class="neutral"
       slot="prefix"
       style="color: ${color}"
@@ -191,7 +191,7 @@ export class CrawlStatus extends TailwindElement {
       case "stopped_by_user":
         color = "var(--warning)";
         icon = html`<sl-icon
-          name="slash-square-fill"
+          name="dash-square-fill"
           slot="prefix"
           style="color: ${color}"
         ></sl-icon>`;
