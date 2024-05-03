@@ -139,6 +139,7 @@ export class CrawlListItem extends TailwindElement {
               <btrix-crawl-status
                 state=${workflow.state}
                 hideLabel
+                hoist
               ></btrix-crawl-status>
             `,
           )}
