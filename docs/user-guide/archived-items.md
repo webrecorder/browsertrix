@@ -22,13 +22,31 @@ Because <span class="status-warning">:bootstrap-x-octagon-fill: Canceled</span> 
 
 ## Archived Item Details
 
-The archived item details page is composed of five sections, though the Crawl Settings tab is only available for crawls and not uploads.
+The archived item details page is composed of six sections, though some tabs are only available for crawls and not uploads.
 
 ### Overview
 
 The Overview tab displays the item's metadata and statistics associated with its creation process.
 
 Metadata can be edited by pressing the pencil icon at the top right of the metadata section to edit the item's description, tags, and collections it is associated with.
+
+### Quality Assurance
+
+The Quality Assurance tab displays a list of crawled pages overall stats from collected through crawl analysis, and a list of all analysis runs. This tab is not available for uploaded archived items.
+
+The pages list provides a record of all pages within the archived item and any ratings or notes assigned to the page during review. If analysis has been run, clicking on a page in the pages list will show that page in the review interface.
+
+#### Crawl Analysis
+
+Running crawl analysis will re-visit all pages within the archived item, comparing the data collected during analysis with the data collected during crawling. Crawl analysis runs with the same workflow limit settings used during crawling.
+
+Crawl analysis can be run multiple times, though it will only yield different results if the crawler, or [ReplayWeb.page](https://replayweb.page/docs/) — the software responsible for playback of archived web content — has been updated between runs. Analysis run data can be downloaded or deleted from the _Analysis Runs_ tab.
+
+Once a crawl has been analyzed — either fully, or partially — it can be reviewed by pressing the _Review Crawl_ button. For more on reviewing crawls and how to interpret analysis data, see: [Crawl Review](review.md).
+
+`Paid Feature`{ .badge-green }
+
+Like running a crawl workflow, running crawl analysis also uses execution time. Crawls and crawl analysis share the same concurrent crawling limit, however crawl analysis runs will be paused in favor of new crawls if the concurrent crawling limit is reached.
 
 ### Replay
 
