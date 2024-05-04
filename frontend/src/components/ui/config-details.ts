@@ -248,9 +248,7 @@ export class ConfigDetails extends LiteElement {
             msg("User Agent"),
             crawlConfig?.config.userAgent
               ? crawlConfig.config.userAgent
-              : html`<span class="text-neutral-400"
-                  >${msg("Default User Agent")}</span
-                >`,
+              : html`<span class="text-neutral-400">${msg("Default")}</span>`,
           )}
           ${crawlConfig?.config.lang
             ? this.renderSetting(
