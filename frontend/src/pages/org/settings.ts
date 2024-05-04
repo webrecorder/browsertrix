@@ -269,9 +269,10 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderMembers() {
-    const columnWidths = ["1fr", "auto", "min-content"];
+    const columnWidths = ["1fr", "2fr", "auto", "min-content"];
     const rows = Object.entries(this.org.users!).map(([_id, user]) => [
       user.name,
+      user.email,
       this.renderUserRoleSelect(user),
       this.renderRemoveMemberButton(user),
     ]);
@@ -280,6 +281,7 @@ export class OrgSettings extends LiteElement {
         <btrix-data-table
           .columns=${[
             msg("Name"),
+            msg("Email"),
             msg("Role"),
             html`<span class="sr-only">${msg("Delete")}</span>`,
           ]}
