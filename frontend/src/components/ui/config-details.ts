@@ -117,6 +117,7 @@ export class ConfigDetails extends LiteElement {
       >`;
     };
 
+    console.log(this.crawlConfig?.jobType);
     return html`
       <section id="crawler-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
@@ -141,6 +142,9 @@ export class ConfigDetails extends LiteElement {
             `,
             () => this.renderSetting(msg("Exclusions"), msg("None")),
           )}
+          <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+            <h4>${msg("Per-Crawl Limits")}</h4>
+          </btrix-section-heading>
           ${this.renderSetting(
             msg("Max Pages"),
             when(
@@ -158,6 +162,21 @@ export class ConfigDetails extends LiteElement {
             ),
           )}
           ${this.renderSetting(
+            msg("Crawl Time Limit"),
+            renderTimeLimit(crawlConfig?.crawlTimeout, Infinity),
+          )}
+          ${this.renderSetting(
+            msg("Crawl Size Limit"),
+            renderSize(crawlConfig?.maxCrawlSize),
+          )}
+          ${this.renderSetting(
+            msg("Crawler Instances"),
+            crawlConfig?.scale ? `${crawlConfig.scale}×` : "",
+          )}
+          <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+            <h4>${msg("Per-Page Limits")}</h4>
+          </btrix-section-heading>
+          ${this.renderSetting(
             msg("Page Load Timeout"),
             renderTimeLimit(
               crawlConfig?.config.pageLoadTimeout,
@@ -169,7 +188,7 @@ export class ConfigDetails extends LiteElement {
             renderTimeLimit(crawlConfig?.config.postLoadDelay, 0),
           )}
           ${this.renderSetting(
-            msg("Page Behavior Timeout"),
+            msg("Behavior Timeout"),
             renderTimeLimit(
               crawlConfig?.config.behaviorTimeout,
               this.orgDefaults?.behaviorTimeoutSeconds ?? Infinity,
@@ -187,18 +206,6 @@ export class ConfigDetails extends LiteElement {
           ${this.renderSetting(
             msg("Delay Before Next Page"),
             renderTimeLimit(crawlConfig?.config.pageExtraDelay, 0),
-          )}
-          ${this.renderSetting(
-            msg("Crawl Time Limit"),
-            renderTimeLimit(crawlConfig?.crawlTimeout, Infinity),
-          )}
-          ${this.renderSetting(
-            msg("Crawl Size Limit"),
-            renderSize(crawlConfig?.maxCrawlSize),
-          )}
-          ${this.renderSetting(
-            msg("Crawler Instances"),
-            crawlConfig?.scale ? `${crawlConfig.scale}×` : "",
           )}
         </btrix-desc-list>
       </section>
