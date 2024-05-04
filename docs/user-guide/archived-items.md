@@ -68,4 +68,4 @@ All log entries with that were recorded in the creation of the Archived Item can
 
 ### Crawl Settings
 
-The Crawl Settings tab displays the crawl workflow configuration options that were used to generate the resulting archived item.
+The Crawl Settings tab displays the crawl workflow configuration options that were used to generate the resulting archived item. Many of these settings also apply when running crawl analysis.
