@@ -15,7 +15,7 @@ Screenshots taken during crawl analysis are compared with the page thumbnail cre
 Discrepancies between crawl and replay screenshots may occur because resources aren't loaded or rendered properly (usually indicating a replay issue).
 
 !!! Tip "Caveats"
-    If many similar pages exhibit the similar poor screenshot comparison scores but look fine in the replay tab, it may be because of loading time.
+    If many similar pages exhibit similarly poor screenshot comparison scores but look fine in the replay tab, it may be because of page loading time not being long enough during analysis.
 
     Some websites may take more time to load than others, including on replay! If the page wasn't given enough time to load during crawl analysis — because crawl analysis uses the same workflow limit settings as crawling — increasing the [_Delay After Page Load_ workflow setting](workflow-setup.md#delay-after-page-load) may yield better screenshot analysis scores, at the cost of extra execution time.
 
@@ -27,7 +27,7 @@ Resources not loaded properly on replay may display ReplayWeb.page's `Archived P
 
 ### Resource Comparison
 
-The resource comparison tab displays a table of resource types, and their [HTTP status code](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes) count grouped by "good" and "bad". 100–300 range status codes are assigned "good", 400–500 range status codes are assigned "bad". Bad status codes on crawl indicate that a resource was not successfully captured. Bad status codes on replay that were not present when crawling usually indicate a replay issue.
+The resource comparison tab displays a table of resource types, and their [HTTP status code](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes) count grouped by "good" and "bad". 2xx & 3xx range status codes are assigned "good", 4xx & 5xx range status codes are assigned "bad". Bad status codes on crawl indicate that a resource was not successfully captured. Bad status codes on replay that marked good when crawling usually indicate a replay issue.
 
 !!! Tip "Caveats"
     The number of resources may be higher on replay due to how components of ReplayWeb.page re-write certain request types. A discrepancy alone may not be an indicator that the page is broken, though generally it is a positive sign when the counts are equal.
