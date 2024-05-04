@@ -382,12 +382,12 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderRemoveInviteButton(invite: Invite) {
-    return html`<btrix-button
-      icon
+    return html`<sl-icon-button
+      class="text-base hover:text-danger"
+      name="trash3"
+      label=${msg("Revoke invite")}
       @click=${() => void this.removeInvite(invite)}
-    >
-      <sl-icon name="trash3"></sl-icon>
-    </btrix-button>`;
+    ></sl-icon-button>`;
   }
 
   private hideInviteDialog() {
