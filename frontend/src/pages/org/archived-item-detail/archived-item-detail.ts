@@ -683,6 +683,7 @@ export class ArchivedItemDetail extends TailwindElement {
           ? html`<div id="replay-crawl" class="aspect-4/3 overflow-hidden">
               <replay-web-page
                 source="${replaySource}"
+                url="${this.crawl.seedCount === 1 ? this.crawl.firstSeed : ""}"
                 coll="${ifDefined(this.crawl.id)}"
                 config="${config}"
                 replayBase="/replay/"
