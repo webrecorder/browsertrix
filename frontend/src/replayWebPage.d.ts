@@ -5,6 +5,7 @@
  * @attr {String} replayBase
  * @attr {String} noSandbox
  * @attr {String} noCache
+ * @attr {String} url
  */
 class ReplayWebPage {}
 
