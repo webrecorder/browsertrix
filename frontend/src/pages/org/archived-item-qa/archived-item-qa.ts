@@ -889,7 +889,7 @@ export class ArchivedItemQA extends TailwindElement {
           noCache="true"
           url=${
             /* TODO investigate if there's an RWP fix for preventing history manipulation when url is omitted */
-            "/non-existent"
+            "about:blank"
           }
         ></replay-web-page>
       `,
