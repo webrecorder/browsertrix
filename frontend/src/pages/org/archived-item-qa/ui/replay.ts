@@ -25,7 +25,7 @@ export function renderReplay(crawlData: ReplayData, tab: QATab) {
                 id="interactiveReplayFrame"
                 src=${replayUrl}
                 class=${tw`h-full w-full overflow-hidden overscroll-contain rounded-lg border bg-neutral-0 shadow-lg`}
-                @load=${(e: Event) => {
+                @load=${async (e: Event) => {
                   // NOTE This is all pretty hacky. To be improved with
                   // https://github.com/webrecorder/browsertrix/issues/1780
 
@@ -52,31 +52,14 @@ export function renderReplay(crawlData: ReplayData, tab: QATab) {
                     });
                   });
 
-                  // Handle visibility change as fallback in case navigation happens anyway
-                  const onVisibilityChange = async () => {
-                    iframe.contentWindow?.removeEventListener(
-                      "visibilitychange",
-                      onVisibilityChange,
-                    );
-
-                    // Check if we're reloading the page, not navigating away
-                    if (
-                      iframe.contentWindow?.location.href.slice(
-                        iframe.contentWindow.location.href.indexOf("mp_/"),
-                      ) === replayUrl.slice(replayUrl.indexOf("mp_/"))
-                    ) {
-                      return;
-                    }
-
-                    // We've navigated away--notify and go back
+                  if (
+                    iframe.contentWindow?.location.href.slice(
+                      iframe.contentWindow.location.href.indexOf("mp_/"),
+                    ) !== replayUrl.slice(replayUrl.indexOf("mp_/"))
+                  ) {
                     await showDialog();
                     iframe.contentWindow?.history.back();
-                  };
-
-                  iframe.contentWindow?.addEventListener(
-                    "visibilitychange",
-                    onVisibilityChange,
-                  );
+                  }
                 }}
               ></iframe>`,
           ),
