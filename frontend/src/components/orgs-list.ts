@@ -1,16 +1,19 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
-import { type TemplateResult } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { html, type TemplateResult } from "lit";
+import { customElement, property, query } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
+import { TailwindElement } from "@/classes/TailwindElement";
+import type { Dialog } from "@/components/ui/dialog";
+import { APIController } from "@/controllers/api";
+import { NavigateController } from "@/controllers/navigate";
 import type { CurrentUser, UserOrg } from "@/types/user";
-import LiteElement, { html } from "@/utils/LiteElement";
 import type { OrgData } from "@/utils/orgs";
 
 @localized()
 @customElement("btrix-orgs-list")
-export class OrgsList extends LiteElement {
+export class OrgsList extends TailwindElement {
   @property({ type: Object })
   userInfo?: CurrentUser;
 
@@ -23,6 +26,15 @@ export class OrgsList extends LiteElement {
   @property({ type: Object })
   currOrg?: OrgData | null = null;
 
+  @query("#orgDeleteDialog")
+  orgDeleteDialog?: Dialog | null;
+
+  @query("#orgQuotaDialog")
+  orgQuotaDialog?: Dialog | null;
+
+  private readonly api = new APIController(this);
+  private readonly navigate = new NavigateController(this);
+
   render() {
     if (this.skeleton) {
       return this.renderSkeleton();
@@ -33,17 +45,108 @@ export class OrgsList extends LiteElement {
     return html`
       <ul class="overflow-hidden rounded-lg border">
         ${this.orgList?.map(this.renderOrg(defaultOrg))}
+        ${this.renderOrgDelete()}
         ${this.renderOrgQuotas()}
       </ul>
+    `;
+  }
+
+  private renderOrgDelete() {
+    return html`
+      <btrix-dialog
+        class="[--width:36rem]"
+        id="orgDeleteDialog"
+        .label=${msg(str`Confirm Org Deletion: ${this.currOrg?.name || ""}`)}
+        @sl-after-hide=${() => (this.currOrg = null)}
+      >
+        ${when(this.currOrg, (org) => {
+          const confirmationStr = msg(str`Delete ${org.name}`);
+          return html`
+            <p class="mb-3">
+              ${msg(
+                html`Are you sure you want to delete
+                  <a
+                    class="font-semibold text-primary"
+                    href="/orgs/${org.slug}"
+                    target="_blank"
+                  >
+                    ${org.name}
+                    <sl-icon
+                      name="box-arrow-up-right"
+                      label=${msg("Open in new window")}
+                    ></sl-icon> </a
+                  >? This cannot be undone.`,
+              )}
+            </p>
+            <ul class="mb-3 text-neutral-600">
+              <li>${msg(str`Slug: ${org.slug}`)}</li>
+              <li>
+                ${msg(
+                  str`Members: ${Object.keys(org.users || {}).length.toLocaleString()}`,
+                )}
+              </li>
+            </ul>
+            <p class="mb-3">
+              ${msg(
+                html`Deleting an org will delete all
+                  <strong class="font-semibold">
+                    <sl-format-bytes value=${org.bytesStored}></sl-format-bytes>
+                  </strong>
+                  of data associated with the org.`,
+              )}
+            </p>
+            <ul class="mb-3 text-neutral-600">
+              <li>
+                ${msg(
+                  html`Crawls:
+                    <sl-format-bytes
+                      value=${org.bytesStoredCrawls}
+                    ></sl-format-bytes>`,
+                )}
+              </li>
+              <li>
+                ${msg(
+                  html`Uploads:
+                    <sl-format-bytes
+                      value=${org.bytesStoredUploads}
+                    ></sl-format-bytes>`,
+                )}
+              </li>
+              <li>
+                ${msg(
+                  html`Profiles:
+                    <sl-format-bytes
+                      value=${org.bytesStoredProfiles}
+                    ></sl-format-bytes>`,
+                )}
+              </li>
+            </ul>
+            <sl-divider></sl-divider>
+            <sl-input placeholder=${confirmationStr}>
+              <strong slot="label" class="font-semibold">
+                ${msg(str`Type "${confirmationStr}" to confirm`)}
+              </strong>
+            </sl-input>
+          `;
+        })}
+        <div slot="footer" class="flex justify-end">
+          <sl-button
+            size="small"
+            @click="${this.onSubmitQuotas}"
+            variant="danger"
+            >${msg("Delete Org")}
+          </sl-button>
+        </div>
+      </btrix-dialog>
     `;
   }
 
   private renderOrgQuotas() {
     return html`
       <btrix-dialog
+        id="orgQuotaDialog"
         .label=${msg(str`Quotas for: ${this.currOrg?.name || ""}`)}
-        .open=${!!this.currOrg}
-        @sl-request-close=${() => (this.currOrg = null)}
+        @sl-after-hide=${() => (this.currOrg = null)}
       >
         ${when(this.currOrg?.quotas, (quotas) =>
           Object.entries(quotas).map(([key, value]) => {
@@ -72,6 +175,7 @@ export class OrgsList extends LiteElement {
                 label = msg("Unlabeled");
             }
             return html` <sl-input
+              class="mb-3 last:mb-0"
               name=${key}
               label=${label}
               value=${value}
@@ -110,18 +214,6 @@ export class OrgsList extends LiteElement {
         new CustomEvent("update-quotas", { detail: this.currOrg }),
       );
     }
-    this.currOrg = null;
-  }
-
-  private showQuotas(org: OrgData) {
-    const stop = (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.currOrg = org;
-      return false;
-    };
-
-    return stop;
   }
 
   private readonly renderOrg = (defaultOrg?: UserOrg) => (org: OrgData) => {
@@ -158,12 +250,31 @@ export class OrgsList extends LiteElement {
               ? msg(`1 member`)
               : msg(str`${memberCount} members`)}
           </div>
-          <sl-icon-button
-            name="gear"
-            slot="prefix"
-            label=${msg("Edit org quotas")}
-            @click="${this.showQuotas(org)}"
-          ></sl-icon-button>
+          <btrix-overflow-dropdown
+            @click=${(e: MouseEvent) => e.stopPropagation()}
+          >
+            <sl-menu>
+              <sl-menu-item
+                @click=${() => {
+                  this.currOrg = org;
+                  void this.orgQuotaDialog?.show();
+                }}
+              >
+                <sl-icon slot="prefix" name="gear"></sl-icon>
+                ${msg("Edit Quotas")}
+              </sl-menu-item>
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--danger)"
+                @click=${() => {
+                  this.currOrg = org;
+                  void this.orgDeleteDialog?.show();
+                }}
+              >
+                <sl-icon slot="prefix" name="trash3"></sl-icon>
+                ${msg("Delete Org")}
+              </sl-menu-item>
+            </sl-menu>
+          </btrix-overflow-dropdown>
         </div>
       </li>
     `;
@@ -180,7 +291,7 @@ export class OrgsList extends LiteElement {
   }
 
   private makeOnOrgClick(org: OrgData) {
-    const navigate = () => this.navTo(`/orgs/${org.slug}`);
+    const navigate = () => this.navigate.to(`/orgs/${org.slug}`);
 
     if (typeof window.getSelection !== "undefined") {
       return () => {
