@@ -2,6 +2,7 @@ import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import type { CurrentUser, UserOrg } from "@/types/user";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -38,49 +39,47 @@ export class OrgsList extends LiteElement {
   }
 
   private renderOrgQuotas() {
-    if (!this.currOrg) {
-      return html``;
-    }
-
     return html`
       <btrix-dialog
-        .label=${msg(str`Quotas for: ${this.currOrg.name}`)}
+        .label=${msg(str`Quotas for: ${this.currOrg?.name || ""}`)}
         .open=${!!this.currOrg}
         @sl-request-close=${() => (this.currOrg = null)}
       >
-        ${Object.entries(this.currOrg.quotas!).map(([key, value]) => {
-          let label;
-          switch (key) {
-            case "maxConcurrentCrawls":
-              label = msg("Max Concurrent Crawls");
-              break;
-            case "maxPagesPerCrawl":
-              label = msg("Max Pages Per Crawl");
-              break;
-            case "storageQuota":
-              label = msg("Org Storage Quota (GB)");
-              value = Math.floor(value / 1e9);
-              break;
-            case "maxExecMinutesPerMonth":
-              label = msg("Max Execution Minutes Per Month");
-              break;
-            case "extraExecMinutes":
-              label = msg("Extra Execution Minutes");
-              break;
-            case "giftedExecMinutes":
-              label = msg("Gifted Execution Minutes");
-              break;
-            default:
-              label = msg("Unlabeled");
-          }
-          return html` <sl-input
-            name=${key}
-            label=${label}
-            value=${value}
-            type="number"
-            @sl-input="${this.onUpdateQuota}"
-          ></sl-input>`;
-        })}
+        ${when(this.currOrg?.quotas, (quotas) =>
+          Object.entries(quotas).map(([key, value]) => {
+            let label;
+            switch (key) {
+              case "maxConcurrentCrawls":
+                label = msg("Max Concurrent Crawls");
+                break;
+              case "maxPagesPerCrawl":
+                label = msg("Max Pages Per Crawl");
+                break;
+              case "storageQuota":
+                label = msg("Org Storage Quota (GB)");
+                value = Math.floor(value / 1e9);
+                break;
+              case "maxExecMinutesPerMonth":
+                label = msg("Max Execution Minutes Per Month");
+                break;
+              case "extraExecMinutes":
+                label = msg("Extra Execution Minutes");
+                break;
+              case "giftedExecMinutes":
+                label = msg("Gifted Execution Minutes");
+                break;
+              default:
+                label = msg("Unlabeled");
+            }
+            return html` <sl-input
+              name=${key}
+              label=${label}
+              value=${value}
+              type="number"
+              @sl-input="${this.onUpdateQuota}"
+            ></sl-input>`;
+          }),
+        )}
         <div slot="footer" class="flex justify-end">
           <sl-button
             size="small"
