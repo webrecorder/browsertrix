@@ -7,7 +7,6 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -871,10 +870,7 @@ export class ArchivedItemQA extends TailwindElement {
     `;
   }
 
-  private readonly renderRWP = (
-    rwpId: string,
-    { qa, url }: { qa: boolean; url?: string },
-  ) => {
+  private readonly renderRWP = (rwpId: string, { qa }: { qa: boolean }) => {
     if (!rwpId) return;
 
     const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json`;
@@ -891,7 +887,10 @@ export class ArchivedItemQA extends TailwindElement {
           replayBase="/replay/"
           embed="replayonly"
           noCache="true"
-          url="${ifDefined(url)}"
+          url=${
+            /* TODO investigate if there's an RWP fix for preventing history manipulation when url is omitted */
+            "/non-existent"
+          }
         ></replay-web-page>
       `,
     );
