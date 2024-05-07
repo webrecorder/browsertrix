@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlInput } from "@shoelace-style/shoelace";
+import type { SlChangeEvent, SlInput } from "@shoelace-style/shoelace";
 import { html, type TemplateResult } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -25,6 +25,9 @@ export class OrgsList extends TailwindElement {
 
   @property({ type: Object })
   currOrg?: OrgData | null = null;
+
+  @state()
+  enableDeleteButton = false;
 
   @query("#orgDeleteDialog")
   orgDeleteDialog?: Dialog | null;
@@ -122,7 +125,13 @@ export class OrgsList extends TailwindElement {
               </li>
             </ul>
             <sl-divider></sl-divider>
-            <sl-input placeholder=${confirmationStr}>
+            <sl-input
+              placeholder=${confirmationStr}
+              @sl-input=${(e: SlChangeEvent) => {
+                const { value } = e.target as SlInput;
+                this.enableDeleteButton = value === confirmationStr;
+              }}
+            >
               <strong slot="label" class="font-semibold">
                 ${msg(str`Type "${confirmationStr}" to confirm`)}
               </strong>
@@ -132,9 +141,13 @@ export class OrgsList extends TailwindElement {
         <div slot="footer" class="flex justify-end">
           <sl-button
             size="small"
-            @click="${this.onSubmitQuotas}"
+            @click=${() => {
+              console.log("TODO");
+            }}
             variant="danger"
-            >${msg("Delete Org")}
+            ?disabled=${!this.enableDeleteButton}
+          >
+            ${msg("Delete Org")}
           </sl-button>
         </div>
       </btrix-dialog>
