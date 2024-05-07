@@ -32,7 +32,7 @@ Metadata can be edited by pressing the pencil icon at the top right of the metad
 
 ### Quality Assurance
 
-The Quality Assurance tab displays a list of crawled pages overall stats from collected through crawl analysis, and a list of all analysis runs. This tab is not available for uploaded archived items.
+The Quality Assurance tab displays a list of crawled pages, overall stats from collected through crawl analysis, and a list of all analysis runs. This tab is not available for uploaded archived items.
 
 The pages list provides a record of all pages within the archived item and any ratings or notes assigned to the page during review. If analysis has been run, clicking on a page in the pages list will show that page in the review interface.
 
@@ -40,7 +40,7 @@ The pages list provides a record of all pages within the archived item and any r
 
 Running crawl analysis will re-visit all pages within the archived item, comparing the data collected during analysis with the data collected during crawling. Crawl analysis runs with the same workflow limit settings used during crawling.
 
-Crawl analysis can be run multiple times, though it will only yield different results if the crawler, or [ReplayWeb.page](https://replayweb.page/docs/) — the software responsible for playback of archived web content — has been updated between runs. Analysis run data can be downloaded or deleted from the _Analysis Runs_ tab.
+Crawl analysis can be run multiple times, though it will only yield different results if the crawler, or [ReplayWeb.page](https://replayweb.page/docs/) — the software responsible for playback of archived web content — has been updated between runs. Analysis run data can be downloaded or deleted from the _Analysis Runs_ tab. While they are stored as WACZ files, analysis run WACZs only contain analysis data and may not open correctly or be useful in other programs that replay archived content.
 
 Once a crawl has been analyzed — either fully, or partially — it can be reviewed by pressing the _Review Crawl_ button. For more on reviewing crawls and how to interpret analysis data, see: [Crawl Review](review.md).
 
