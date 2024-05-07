@@ -1,13 +1,13 @@
 import { localized, msg, str } from "@lit/localize";
+import type {
+  SlChangeEvent,
+  SlInput,
+  SlInputEvent,
+} from "@shoelace-style/shoelace";
 import type { PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import throttle from "lodash/fp/throttle";
-import type {
-  SlInput,
-  SlChangeEvent,
-  SlInputEvent,
-} from "@shoelace-style/shoelace";
 
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -123,7 +123,7 @@ export class CrawlQueue extends LiteElement {
       this.pageOffset + this.pageSize,
       this.queue.total,
     );
-    const getInputWIdth = (v: number | string) =>
+    const getInputWidth = (v: number | string) =>
       `${Math.max(v.toString().length, 3) + 2}ch`;
 
     return html`
@@ -133,22 +133,22 @@ export class CrawlQueue extends LiteElement {
           <btrix-inline-input
             class="mx-1 inline-block"
             style="width: ${Math.max(offsetValue.toString().length, 2) + 2}ch"
-            value=${offsetValue}
+            value="1"
             inputmode="numeric"
             size="small"
             autocomplete="off"
             @sl-input=${(e: SlInputEvent) => {
               const input = e.target as SlInput;
 
-              input.style.width = getInputWIdth(input.value);
+              input.style.width = getInputWidth(input.value);
             }}
-            @sl-change=${(e: SlChangeEvent) => {
+            @sl-change=${async (e: SlChangeEvent) => {
               const input = e.target as SlInput;
               const int = +input.value.replace(/\D/g, "");
-              const value = Math.max(
-                1,
-                Math.min(int, this.queue!.total - this.pageSize),
-              );
+
+              await this.updateComplete;
+
+              const value = Math.max(1, Math.min(int, this.queue!.total - 1));
 
               input.value = value.toString();
               this.pageOffset = value - 1;
@@ -183,9 +183,9 @@ export class CrawlQueue extends LiteElement {
           const isExcluded = !isMatch && this.isExcluded(url);
           return html`
             <btrix-numbered-list-item>
-              <span class="${isMatch ? "text-red-600" : ""}" slot="marker"
-                >${idx + this.pageOffset + 1}.</span
-              >
+              <span class="${isMatch ? "text-red-600" : ""}" slot="marker">
+                ${(idx + this.pageOffset + 1).toLocaleString()}.
+              </span>
               <a
                 class="${isMatch
                   ? "text-red-500 hover:text-red-400"
@@ -261,9 +261,6 @@ export class CrawlQueue extends LiteElement {
   private async fetchQueue() {
     try {
       this.queue = await this.getQueue();
-      if (this.pageOffset + this.pageSize >= this.queue.total) {
-        this.pageOffset = Math.max(0, this.queue.total - this.pageSize - 1);
-      }
       this.timerId = window.setTimeout(() => {
         void this.fetchQueue();
       }, POLL_INTERVAL_SECONDS * 1000);

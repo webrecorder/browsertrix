@@ -1,7 +1,7 @@
-import { css } from "lit";
-import { customElement } from "lit/decorators.js";
 import SlInput from "@shoelace-style/shoelace/dist/components/input/input.js";
 import inputStyles from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
+import { css } from "lit";
+import { customElement } from "lit/decorators.js";
 
 /**
  * Input to use inline with text.
