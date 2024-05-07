@@ -561,7 +561,6 @@ export class App extends LiteElement {
       case "forgotPassword":
         return html`<btrix-log-in
           class="flex w-full items-center justify-center md:bg-neutral-50"
-          @navigate=${this.onNavigateTo}
           .viewState=${this.viewState}
           redirectUrl=${this.viewState.params.redirectUrl ||
           this.viewState.data?.redirectUrl}
@@ -570,14 +569,12 @@ export class App extends LiteElement {
       case "resetPassword":
         return html`<btrix-reset-password
           class="flex w-full items-center justify-center md:bg-neutral-50"
-          @navigate=${this.onNavigateTo}
           .viewState=${this.viewState}
         ></btrix-reset-password>`;
 
       case "home":
         return html`<btrix-home
           class="w-full md:bg-neutral-50"
-          @navigate=${this.onNavigateTo}
           @update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
             void this.updateUserInfo();
@@ -604,7 +601,6 @@ export class App extends LiteElement {
             .split("/")[0] || "home";
         return html`<btrix-org
           class="w-full"
-          @navigate=${this.onNavigateTo}
           @update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
             void this.updateUserInfo();
@@ -653,7 +649,6 @@ export class App extends LiteElement {
           if (this.appState.userInfo.isAdmin) {
             return html`<btrix-crawls
               class="w-full"
-              @navigate=${this.onNavigateTo}
               @notify=${this.onNotify}
               .authState=${this.authService.authState}
               crawlId=${this.viewState.params.crawlId}
