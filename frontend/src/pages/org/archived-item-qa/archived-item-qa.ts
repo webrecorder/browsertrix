@@ -879,7 +879,10 @@ export class ArchivedItemQA extends TailwindElement {
       }
     };
     return html`
-      <section aria-labelledby="${this.tab}-tab" class="flex-1 overflow-hidden">
+      <section
+        aria-labelledby="${this.tab}-tab"
+        class="flex-1 overflow-hidden lg:[contain:size]"
+      >
         ${cache(choosePanel())}
       </section>
     `;
