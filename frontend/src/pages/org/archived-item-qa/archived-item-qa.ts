@@ -2,7 +2,7 @@ import { localized, msg, str } from "@lit/localize";
 import type { SlTextarea } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { merge } from "immutable";
-import { html, nothing, type PropertyValues } from "lit";
+import { html, nothing, unsafeCSS, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
 import { choose } from "lit/directives/choose.js";
@@ -12,7 +12,7 @@ import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import { styles } from "./styles";
+import stylesheet from "./archived-item-qa.stylesheet.css";
 import type * as QATypes from "./types";
 import { renderReplay } from "./ui/replay";
 import { renderResources } from "./ui/resources";
@@ -47,6 +47,8 @@ import { maxLengthValidator } from "@/utils/form";
 import { formatISODateString, getLocale } from "@/utils/localization";
 
 const DEFAULT_PAGE_SIZE = 100;
+
+const styles = unsafeCSS(stylesheet);
 
 type PageResource = {
   status?: number;
