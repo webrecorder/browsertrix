@@ -198,7 +198,11 @@ export class App extends LiteElement {
     }
   }
 
-  navigate(newViewPath: string, state?: { [key: string]: unknown }) {
+  navigate(
+    newViewPath: string,
+    state?: { [key: string]: unknown },
+    replace?: boolean,
+  ) {
     let url;
 
     if (newViewPath.startsWith("http")) {
@@ -220,14 +224,15 @@ export class App extends LiteElement {
     }
 
     this.viewState.data = state;
+    const urlStr = `${this.viewState.pathname.replace(url.search, "")}${url.hash}${
+      url.search
+    }`;
 
-    window.history.pushState(
-      this.viewState,
-      "",
-      `${this.viewState.pathname.replace(url.search, "")}${url.hash}${
-        url.search
-      }`,
-    );
+    if (replace) {
+      window.history.replaceState(this.viewState, "", urlStr);
+    } else {
+      window.history.pushState(this.viewState, "", urlStr);
+    }
   }
 
   render() {
@@ -556,7 +561,6 @@ export class App extends LiteElement {
       case "forgotPassword":
         return html`<btrix-log-in
           class="flex w-full items-center justify-center md:bg-neutral-50"
-          @navigate=${this.onNavigateTo}
           .viewState=${this.viewState}
           redirectUrl=${this.viewState.params.redirectUrl ||
           this.viewState.data?.redirectUrl}
@@ -565,14 +569,12 @@ export class App extends LiteElement {
       case "resetPassword":
         return html`<btrix-reset-password
           class="flex w-full items-center justify-center md:bg-neutral-50"
-          @navigate=${this.onNavigateTo}
           .viewState=${this.viewState}
         ></btrix-reset-password>`;
 
       case "home":
         return html`<btrix-home
           class="w-full md:bg-neutral-50"
-          @navigate=${this.onNavigateTo}
           @update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
             void this.updateUserInfo();
@@ -599,7 +601,6 @@ export class App extends LiteElement {
             .split("/")[0] || "home";
         return html`<btrix-org
           class="w-full"
-          @navigate=${this.onNavigateTo}
           @update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
             void this.updateUserInfo();
@@ -648,7 +649,6 @@ export class App extends LiteElement {
           if (this.appState.userInfo.isAdmin) {
             return html`<btrix-crawls
               class="w-full"
-              @navigate=${this.onNavigateTo}
               @notify=${this.onNotify}
               .authState=${this.authService.authState}
               crawlId=${this.viewState.params.crawlId}
@@ -795,9 +795,9 @@ export class App extends LiteElement {
   onNavigateTo = (event: CustomEvent<NavigateEventDetail>) => {
     event.stopPropagation();
 
-    const { url, state, resetScroll } = event.detail;
+    const { url, state, resetScroll, replace } = event.detail;
 
-    this.navigate(url, state);
+    this.navigate(url, state, replace);
 
     if (resetScroll) {
       // Scroll to top of page

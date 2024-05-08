@@ -6,6 +6,7 @@ export type NavigateEventDetail = {
   url: string;
   state?: { [key: string]: unknown };
   resetScroll: boolean;
+  replace?: boolean;
 };
 
 export interface NavigateEventMap {
@@ -40,9 +41,10 @@ export class NavigateController implements ReactiveController {
     url: string,
     state?: { [key: string]: unknown },
     resetScroll = true,
+    replace = false,
   ): void => {
     const evt = new CustomEvent<NavigateEventDetail>(NAVIGATE_EVENT_NAME, {
-      detail: { url, state, resetScroll },
+      detail: { url, state, resetScroll, replace },
       bubbles: true,
       composed: true,
     });
