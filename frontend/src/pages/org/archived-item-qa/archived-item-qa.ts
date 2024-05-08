@@ -362,7 +362,7 @@ export class ArchivedItemQA extends TailwindElement {
         </h1>
       </div>
 
-      <article class="qa-grid grid gap-x-6 gap-y-0">
+      <article class="qa-grid min-h-screen grid gap-x-6 gap-y-0">
         <header
           class="grid--header flex flex-wrap items-center justify-between gap-1 border-b py-2"
         >
@@ -531,7 +531,7 @@ export class ArchivedItemQA extends TailwindElement {
             ${msg("Pages")}
           </h3>
           <btrix-qa-page-list
-            class="flex flex-col"
+            class="flex flex-col [contain:size]"
             .qaRunId=${this.qaRunId}
             .itemPageId=${this.itemPageId}
             .pages=${this.pages}
