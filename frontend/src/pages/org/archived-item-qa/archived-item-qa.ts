@@ -531,7 +531,7 @@ export class ArchivedItemQA extends TailwindElement {
             ${msg("Pages")}
           </h3>
           <btrix-qa-page-list
-            class="flex flex-col [contain:size]"
+            class="flex flex-col lg:[contain:size]"
             .qaRunId=${this.qaRunId}
             .itemPageId=${this.itemPageId}
             .pages=${this.pages}
