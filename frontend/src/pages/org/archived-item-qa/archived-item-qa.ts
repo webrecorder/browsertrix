@@ -1004,9 +1004,9 @@ export class ArchivedItemQA extends TailwindElement {
                       onVisibilityChange,
                     );
 
-                    // We've navigated away--notify and go back
-                    await showDialog();
-                    iframe.contentWindow?.history.back();
+                    // // We've navigated away--notify and go back
+                    // await showDialog();
+                    // iframe.contentWindow?.history.back();
                   };
 
                   iframe.contentWindow?.addEventListener(
