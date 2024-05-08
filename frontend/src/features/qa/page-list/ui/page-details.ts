@@ -96,7 +96,7 @@ export const pageDetails = (page: ArchivedItemQAPage) =>
           <div class="mb-3 flex text-xs leading-4">
             <sl-icon
               name="chat-square-text-fill"
-              class="mr-2 h-4 w-4 flex-none text-blue-600"
+              class="mr-2 size-4 flex-none text-blue-600"
             ></sl-icon>
             ${page.notes[page.notes.length - 1].text}
           </div>`

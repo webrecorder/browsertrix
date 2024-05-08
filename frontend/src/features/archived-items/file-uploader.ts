@@ -161,7 +161,7 @@ export class FileUploader extends TailwindElement {
             </main>
           </section>
         </div>
-        <input class="invisible h-0 w-0" type="submit" />
+        <input class="invisible size-0" type="submit" />
       </form>
       <div slot="footer" class="flex justify-between">
         <sl-button

@@ -472,7 +472,7 @@ export class ArchivedItemDetail extends TailwindElement {
             this.activeTab = section;
           }}
           ><sl-icon
-            class="h-4 w-4 shrink-0"
+            class="size-4 shrink-0"
             name=${icon}
             aria-hidden="true"
             library=${iconLibrary}
@@ -683,7 +683,8 @@ export class ArchivedItemDetail extends TailwindElement {
           ? html`<div id="replay-crawl" class="aspect-4/3 overflow-hidden">
               <replay-web-page
                 source="${replaySource}"
-                url="${this.crawl.seedCount === 1 && this.crawl.firstSeed || ""}"
+                url="${(this.crawl.seedCount === 1 && this.crawl.firstSeed) ||
+                ""}"
                 coll="${ifDefined(this.crawl.id)}"
                 config="${config}"
                 replayBase="/replay/"
@@ -952,7 +953,7 @@ ${this.crawl?.description}
                           html` <sl-tooltip content=${msg("Backed up")}>
                             <sl-icon
                               name="clouds-fill"
-                              class="mr-2 h-4 w-4 shrink-0 align-text-bottom text-success"
+                              class="mr-2 size-4 shrink-0 align-text-bottom text-success"
                             ></sl-icon>
                           </sl-tooltip>`,
                       )}
