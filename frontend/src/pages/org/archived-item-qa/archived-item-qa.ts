@@ -819,8 +819,12 @@ export class ArchivedItemQA extends TailwindElement {
               >
                 <btrix-button
                   icon
-                  variant=${!this.splitView ? "primary" : "neutral"}
+                  variant=${!this.splitView ? "primaryFilled" : "neutral"}
+                  outlined
+                  raised
+                  size="small"
                   @click="${() => (this.splitView = !this.splitView)}"
+                  class="m-0.5"
                 >
                   <sl-icon name="vr" label=${msg("Split view")}></sl-icon>
                 </btrix-button>

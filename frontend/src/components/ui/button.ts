@@ -1,5 +1,6 @@
 /* eslint-disable lit/binding-positions */
 /* eslint-disable lit/no-invalid-html */
+import clsx from "clsx";
 import { css } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -7,6 +8,9 @@ import { html, literal } from "lit/static-html.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
+
+type VariantColor = "primary" | "danger" | "neutral";
+type Variant = VariantColor | `${VariantColor}Filled`;
 
 /**
  * Custom styled button
@@ -22,7 +26,13 @@ export class Button extends TailwindElement {
   type: "submit" | "button" = "button";
 
   @property({ type: String })
-  variant: "primary" | "danger" | "neutral" = "neutral";
+  variant: Variant = "neutral";
+
+  @property({ type: Boolean })
+  outlined = false;
+
+  @property({ type: String })
+  size: "small" | "medium" = "medium";
 
   @property({ type: String })
   label?: string;
@@ -57,18 +67,27 @@ export class Button extends TailwindElement {
     const tag = this.href ? literal`a` : literal`button`;
     return html`<${tag}
       type=${this.type === "submit" ? "submit" : "button"}
-      class=${[
-        tw`flex h-6 cursor-pointer items-center justify-center gap-2 rounded-sm text-center font-medium transition-all disabled:cursor-not-allowed disabled:text-neutral-300`,
-        this.icon ? tw`min-h-8 min-w-8 px-1` : tw`h-6 px-2`,
-        this.raised ? tw`shadow-sm` : "",
+      class=${clsx(
+        tw`flex h-6 cursor-pointer items-center justify-center gap-2 text-center font-medium outline-3 outline-offset-1 outline-primary transition focus-visible:outline disabled:cursor-not-allowed disabled:text-neutral-300`,
+        this.icon
+          ? clsx(
+              `rounded-md`,
+              this.size === "medium"
+                ? tw`min-h-8 min-w-8 px-1`
+                : tw`min-h-6 min-w-6`,
+            )
+          : tw`h-6 rounded-sm px-2`,
+        this.raised && tw`shadow-sm`,
+        this.outlined && tw`border`,
         {
-          primary: tw`bg-blue-50 text-blue-600 shadow-blue-800/20 hover:bg-blue-100`,
-          danger: tw`shadow-danger-800/20 bg-danger-50 text-danger-600 hover:bg-danger-100`,
-          neutral: tw`text-neutral-600 hover:text-blue-600`,
+          primary: tw` border-primary-300 bg-blue-50 text-primary-600 shadow-primary-800/20 hover:bg-primary-100`,
+          danger: tw`shadow-danger-800/20 border-danger-300 bg-danger-50 text-danger-600 hover:bg-danger-100`,
+          neutral: tw`border-gray-300 text-gray-600 hover:text-primary-600`,
+          primaryFilled: tw`border-primary-800 bg-primary-500 text-white shadow-primary-800/20`,
+          dangerFilled: tw`shadow-danger-800/20 border-danger-800 bg-danger-500 text-white`,
+          neutralFilled: tw`border-gray-800 bg-gray-500 text-white shadow-gray-800/20`,
         }[this.variant],
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      )}
       ?disabled=${this.disabled}
       href=${ifDefined(this.href)}
       aria-label=${ifDefined(this.label)}
