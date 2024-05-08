@@ -300,12 +300,14 @@ export class CollectionDetail extends LiteElement {
           class="mb-2"
           .value="${publicReplayUrl}"
           hideContentFromScreenReaders
+          hoist
         >
-          <sl-tooltip slot="prefix" content=${msg("Open in New Tab")}>
+          <sl-tooltip slot="prefix" content=${msg("Open in New Tab")} hoist>
             <sl-icon-button
               href=${publicReplayUrl}
               name="box-arrow-up-right"
               target="_blank"
+              class="m-px"
             >
             </sl-icon-button>
           </sl-tooltip>
@@ -323,12 +325,11 @@ export class CollectionDetail extends LiteElement {
         </p>
         <div class="relative mb-5 rounded border bg-slate-50 p-3 pr-9">
           <btrix-code value=${embedCode}></btrix-code>
-          <div
-            class="absolute right-1.5 top-1.5 rounded border bg-white shadow-sm"
-          >
+          <div class="absolute right-1 top-1">
             <btrix-copy-button
               .getValue=${() => embedCode}
               content=${msg("Copy Embed Code")}
+              hoist
             ></btrix-copy-button>
           </div>
         </div>
@@ -340,12 +341,11 @@ export class CollectionDetail extends LiteElement {
         </p>
         <div class="relative mb-5 rounded border bg-slate-50 p-3 pr-9">
           <btrix-code language="javascript" value=${importCode}></btrix-code>
-          <div
-            class="absolute right-1.5 top-1.5 rounded border bg-white shadow-sm"
-          >
+          <div class="absolute right-1 top-1">
             <btrix-copy-button
               .getValue=${() => importCode}
               content=${msg("Copy JS")}
+              hoist
             ></btrix-copy-button>
           </div>
         </div>
