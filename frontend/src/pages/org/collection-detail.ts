@@ -8,7 +8,10 @@ import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import { Dialog } from "@/components/ui/dialog";
 import type { PageChangeEvent } from "@/components/ui/pagination";
+import { CollectionItemsDialog } from "@/features/collections/collection-items-dialog";
+import { CollectionMetadataDialog } from "@/features/collections/collection-metadata-dialog";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -176,9 +179,11 @@ export class CollectionDetail extends LiteElement {
       <div class="my-7">${this.renderDescription()}</div>
 
       <btrix-dialog
-        label=${msg("Delete Collection?")}
-        ?open=${this.openDialogName === "delete"}
-        @sl-hide=${() => (this.openDialogName = undefined)}
+        .label=${msg("Delete Collection?")}
+        .open=${this.openDialogName === "delete"}
+        @sl-hide=${(e: Event) => {
+          if (e.target instanceof Dialog) this.openDialogName = undefined;
+        }}
       >
         ${msg(
           html`Are you sure you want to delete
@@ -209,7 +214,10 @@ export class CollectionDetail extends LiteElement {
         .authState=${this.authState}
         ?isCrawler=${this.isCrawler}
         ?open=${this.openDialogName === "editItems"}
-        @sl-hide=${() => (this.openDialogName = undefined)}
+        @sl-hide=${(e: Event) => {
+          if (e.target instanceof CollectionItemsDialog)
+            this.openDialogName = undefined;
+        }}
         @btrix-collection-saved=${() => {
           void this.fetchCollection();
           void this.fetchArchivedItems();
@@ -224,7 +232,10 @@ export class CollectionDetail extends LiteElement {
             .authState=${this.authState}
             .collection=${this.collection!}
             ?open=${this.openDialogName === "editMetadata"}
-            @sl-hide=${() => (this.openDialogName = undefined)}
+            @sl-hide=${(e: Event) => {
+              if (e.target instanceof CollectionMetadataDialog)
+                this.openDialogName = undefined;
+            }}
             @btrix-collection-saved=${() => void this.fetchCollection()}
           >
           </btrix-collection-metadata-dialog>
@@ -245,7 +256,11 @@ export class CollectionDetail extends LiteElement {
       <btrix-dialog
         .label=${msg("Share Collection")}
         .open=${this.showShareInfo}
-        @sl-hide=${() => (this.showShareInfo = false)}
+        @sl-hide=${(e: Event) => {
+          if (e.target instanceof Dialog) {
+            this.showShareInfo = false;
+          }
+        }}
         style="--width: 32rem;"
       >
         ${
