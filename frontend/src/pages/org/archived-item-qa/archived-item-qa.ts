@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlTextarea } from "@shoelace-style/shoelace";
+import type { SlRequestCloseEvent, SlTextarea } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { merge } from "immutable";
 import { html, nothing, type PropertyValues } from "lit";
@@ -14,7 +14,6 @@ import queryString from "query-string";
 
 import { styles } from "./styles";
 import type * as QATypes from "./types";
-import { renderReplay } from "./ui/replay";
 import { renderResources } from "./ui/resources";
 import { renderScreenshots } from "./ui/screenshots";
 import { renderSeverityBadge } from "./ui/severityBadge";
@@ -136,6 +135,9 @@ export class ArchivedItemQA extends TailwindElement {
 
   @state()
   private splitView = true;
+
+  @state()
+  private isReloadingReplay = false;
 
   @state()
   filterPagesBy: {
@@ -844,6 +846,7 @@ export class ArchivedItemQA extends TailwindElement {
                       this.interactiveReplayFrame?.contentDocument
                         ?.readyState === "complete"
                     ) {
+                      this.isReloadingReplay = true;
                       this.showReplayPageLoadingDialog();
                       this.interactiveReplayFrame.contentWindow?.location.reload();
                     }
@@ -924,15 +927,111 @@ export class ArchivedItemQA extends TailwindElement {
         case "resources":
           return renderResources(this.crawlData, this.qaData);
         case "replay":
-          return renderReplay(this.crawlData, this.tab);
+          return this.renderReplay();
         default:
           break;
       }
     };
     return html`
-      <section aria-labelledby="${this.tab}-tab" class="flex-1 overflow-hidden">
+      <section
+        aria-labelledby="${this.tab}-tab"
+        class="flex-1 overflow-hidden lg:pb-3"
+      >
         ${cache(choosePanel())}
       </section>
+    `;
+  }
+
+  private renderReplay() {
+    return html`
+      <div
+        class="replayContainer ${tw`h-full min-h-96 [contain:paint] lg:min-h-0`}"
+      >
+        <div
+          class=${tw`relative h-full overflow-hidden rounded-b-lg border-x border-b bg-slate-100 p-4 shadow-inner`}
+        >
+          ${when(
+            this.crawlData?.replayUrl,
+            (replayUrl) =>
+              html`<iframe
+                id="interactiveReplayFrame"
+                src=${replayUrl}
+                class=${tw`h-full w-full overflow-hidden overscroll-contain rounded-lg border bg-neutral-0 shadow-lg`}
+                @load=${async (e: Event) => {
+                  // NOTE This is all pretty hacky. To be improved with
+                  // https://github.com/webrecorder/browsertrix/issues/1780
+
+                  const iframe = e.currentTarget as HTMLIFrameElement;
+                  const iframeContainer = iframe.closest(".replayContainer");
+                  const showDialog = async () => {
+                    await iframeContainer
+                      ?.querySelector<Dialog>(
+                        "btrix-dialog.clickPreventedDialog",
+                      )
+                      ?.show();
+                  };
+
+                  // Hide loading indicator
+                  void iframeContainer
+                    ?.querySelector<Dialog>("btrix-dialog.loadingPageDialog")
+                    ?.hide();
+
+                  // Prevent anchor tag navigation
+                  iframe.contentDocument?.querySelectorAll("a").forEach((a) => {
+                    a.addEventListener("click", (e: MouseEvent) => {
+                      if (a.hasAttribute("href")) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void showDialog();
+                      }
+                    });
+                  });
+
+                  // Handle visibility change as fallback in case navigation happens anyway
+                  const onVisibilityChange = async () => {
+                    // Check if we're reloading the page, not navigating away
+                    if (this.isReloadingReplay) {
+                      this.isReloadingReplay = false;
+                      return;
+                    }
+
+                    iframe.contentWindow?.removeEventListener(
+                      "visibilitychange",
+                      onVisibilityChange,
+                    );
+
+                    // We've navigated away--notify and go back
+                    await showDialog();
+                    iframe.contentWindow?.history.back();
+                  };
+
+                  iframe.contentWindow?.addEventListener(
+                    "visibilitychange",
+                    onVisibilityChange,
+                  );
+                }}
+              ></iframe>`,
+          )}
+        </div>
+        <btrix-dialog
+          class="loadingPageDialog"
+          ?open=${this.tab === "replay"}
+          no-header
+          @sl-request-close=${(e: SlRequestCloseEvent) => e.preventDefault()}
+        >
+          <div class="sr-only">${msg("Loading page")}</div>
+          <sl-progress-bar
+            indeterminate
+            class="[--height:0.5rem]"
+          ></sl-progress-bar>
+        </btrix-dialog>
+        <btrix-dialog
+          class="clickPreventedDialog"
+          .label=${msg("Navigation prevented")}
+        >
+          ${msg("Following links during review is disabled.")}
+        </btrix-dialog>
+      </div>
     `;
   }
 
