@@ -989,6 +989,10 @@ export class ArchivedItemQA extends TailwindElement {
 
                   // Handle visibility change as fallback in case navigation happens anyway
                   const onVisibilityChange = async () => {
+                    if (this.tab !== "replay") {
+                      return;
+                    }
+
                     // Check if we're reloading the page, not navigating away
                     if (this.isReloadingReplay) {
                       this.isReloadingReplay = false;
