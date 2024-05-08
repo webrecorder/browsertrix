@@ -818,10 +818,8 @@ export class ArchivedItemQA extends TailwindElement {
                 placement="bottom-start"
               >
                 <btrix-button
-                  icon
-                  variant=${!this.splitView ? "primaryFilled" : "neutral"}
-                  outlined
                   raised
+                  ?filled=${!this.splitView}
                   size="small"
                   @click="${() => (this.splitView = !this.splitView)}"
                   class="m-0.5"

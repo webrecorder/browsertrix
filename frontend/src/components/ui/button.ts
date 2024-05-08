@@ -9,8 +9,7 @@ import { html, literal } from "lit/static-html.js";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
 
-type VariantColor = "primary" | "danger" | "neutral";
-type Variant = VariantColor | `${VariantColor}Filled`;
+type Variant = "neutral" | "danger";
 
 /**
  * Custom styled button
@@ -29,7 +28,7 @@ export class Button extends TailwindElement {
   variant: Variant = "neutral";
 
   @property({ type: Boolean })
-  outlined = false;
+  filled = false;
 
   @property({ type: String })
   size: "small" | "medium" = "medium";
@@ -49,9 +48,6 @@ export class Button extends TailwindElement {
   @property({ type: Boolean })
   loading = false;
 
-  @property({ type: Boolean })
-  icon = false;
-
   static styles = css`
     :host {
       display: inline-block;
@@ -69,24 +65,25 @@ export class Button extends TailwindElement {
       type=${this.type === "submit" ? "submit" : "button"}
       class=${clsx(
         tw`flex h-6 cursor-pointer items-center justify-center gap-2 text-center font-medium outline-3 outline-offset-1 outline-primary transition focus-visible:outline disabled:cursor-not-allowed disabled:text-neutral-300`,
-        this.icon
-          ? clsx(
-              `rounded-md`,
-              this.size === "medium"
-                ? tw`min-h-8 min-w-8 px-1`
-                : tw`min-h-6 min-w-6`,
-            )
-          : tw`h-6 rounded-sm px-2`,
-        this.raised && tw`shadow-sm`,
-        this.outlined && tw`border`,
-        {
-          primary: tw` border-primary-300 bg-blue-50 text-primary-600 shadow-primary-800/20 hover:bg-primary-100`,
-          danger: tw`shadow-danger-800/20 border-danger-300 bg-danger-50 text-danger-600 hover:bg-danger-100`,
-          neutral: tw`border-gray-300 text-gray-600 hover:text-primary-600`,
-          primaryFilled: tw`border-primary-800 bg-primary-500 text-white shadow-primary-800/20`,
-          dangerFilled: tw`shadow-danger-800/20 border-danger-800 bg-danger-500 text-white`,
-          neutralFilled: tw`border-gray-800 bg-gray-500 text-white shadow-gray-800/20`,
-        }[this.variant],
+        this.size === "medium"
+          ? tw`min-h-8 min-w-8 rounded-sm`
+          : tw`min-h-6 min-w-6 rounded-md`,
+        this.raised && tw`border shadow-sm`,
+        this.filled
+          ? [
+              tw`text-white`,
+              {
+                neutral: tw`border-primary-800 bg-primary-500 shadow-primary-800/20 hover:bg-primary-600`,
+                danger: tw`shadow-danger-800/20 border-danger-800 bg-danger-500 hover:bg-danger-600`,
+              }[this.variant],
+            ]
+          : [
+              this.raised && tw`bg-white`,
+              {
+                neutral: tw`border-gray-300 text-gray-600 hover:text-primary-600`,
+                danger: tw`shadow-danger-800/20 border-danger-300 bg-danger-50 text-danger-600 hover:bg-danger-100`,
+              }[this.variant],
+            ],
       )}
       ?disabled=${this.disabled}
       href=${ifDefined(this.href)}
