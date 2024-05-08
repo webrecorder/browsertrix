@@ -60,12 +60,18 @@ export class CopyButton extends LitElement {
         @sl-hide=${this.stopProp}
         @sl-after-hide=${this.stopProp}
       >
-        <sl-icon-button
-          name=${this.isCopied ? "check-lg" : this.name ? this.name : "copy"}
-          label=${msg("Copy to clipboard")}
+        <btrix-button
+          size="small"
           @click=${this.onClick}
           ?disabled=${!this.value && !this.getValue}
-        ></sl-icon-button>
+          class="inline"
+          raised
+        >
+          <sl-icon
+            name=${this.isCopied ? "check-lg" : this.name ? this.name : "copy"}
+            label=${msg("Copy to clipboard")}
+          ></sl-icon>
+        </btrix-button>
       </sl-tooltip>
     `;
   }

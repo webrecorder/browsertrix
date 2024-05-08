@@ -1,7 +1,7 @@
 import { localized } from "@lit/localize";
+import clsx from "clsx";
 import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { classMap } from "lit/directives/class-map.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 
@@ -56,19 +56,22 @@ export class CopyField extends TailwindElement {
 
   render() {
     return html`
-      <div role="group">
+      <div
+        role="group"
+        class=${clsx(
+          "rounded border",
+          this.filled && "bg-slate-50",
+          this.monostyle && "font-monostyle",
+        )}
+      >
         <label
-          class="${classMap({
-            hidden: !this.label && !this._slottedChildren,
-          })} mb-1.5 inline-block font-sans text-xs leading-[1.4] text-neutral-800"
+          class="${clsx(
+            "mb-1.5 inline-block font-sans text-xs leading-[1.4] text-neutral-800",
+            !this.label && !this._slottedChildren && "hidden",
+          )} "
           ><slot name="label">${this.label}</slot></label
         >
-        <div
-          class="${classMap({
-            "bg-slate-50": this.filled,
-            "font-monostyle": this.monostyle,
-          })} relative inline-flex w-full items-stretch justify-start rounded border"
-        >
+        <div class="relative inline-flex w-full items-stretch justify-start">
           <slot name="prefix"></slot>
           <span
             aria-hidden=${this.hideContentFromScreenReaders}
@@ -82,6 +85,7 @@ export class CopyField extends TailwindElement {
             .content=${this.buttonContent}
             .getValue=${this.getValue}
             .hoist=${this.hoist}
+            class="m-1 flex"
           ></btrix-copy-button>
         </div>
       </div>
