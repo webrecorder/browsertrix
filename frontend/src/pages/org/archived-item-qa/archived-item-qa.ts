@@ -531,7 +531,7 @@ export class ArchivedItemQA extends TailwindElement {
             ${msg("Pages")}
           </h3>
           <btrix-qa-page-list
-            class="flex flex-col lg:[contain:size]"
+            class="flex flex-col lg:contain-size"
             .qaRunId=${this.qaRunId}
             .itemPageId=${this.itemPageId}
             .pages=${this.pages}
@@ -881,7 +881,7 @@ export class ArchivedItemQA extends TailwindElement {
     return html`
       <section
         aria-labelledby="${this.tab}-tab"
-        class="flex-1 overflow-hidden lg:[contain:size]"
+        class="flex-1 overflow-hidden lg:contain-size"
       >
         ${cache(choosePanel())}
       </section>

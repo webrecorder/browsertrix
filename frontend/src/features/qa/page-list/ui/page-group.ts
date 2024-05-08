@@ -114,7 +114,7 @@ export class QaPageGroup extends TailwindElement {
         <div
           class="${this.expanded
             ? "h-auto"
-            : "h-0"} overflow-hidden [contain:content] [content-visibility:auto]"
+            : "h-0"} overflow-hidden contain-content content-auto"
           ${ref(this.contentContainer)}
         >
           <slot></slot>
