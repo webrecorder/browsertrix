@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlTextarea } from "@shoelace-style/shoelace";
+import type { SlRequestCloseEvent, SlTextarea } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { merge } from "immutable";
 import { html, nothing, type PropertyValues } from "lit";
@@ -9,11 +9,11 @@ import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
 import { until } from "lit/directives/until.js";
 import { when } from "lit/directives/when.js";
+import { throttle } from "lodash/fp";
 import queryString from "query-string";
 
 import { styles } from "./styles";
 import type * as QATypes from "./types";
-import { renderReplay } from "./ui/replay";
 import { renderResources } from "./ui/resources";
 import { renderScreenshots } from "./ui/screenshots";
 import { renderSeverityBadge } from "./ui/severityBadge";
@@ -44,6 +44,7 @@ import { type AuthState } from "@/utils/AuthService";
 import { finishedCrawlStates, isActive, renderName } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
 import { formatISODateString, getLocale } from "@/utils/localization";
+import { tw } from "@/utils/tailwind";
 
 const DEFAULT_PAGE_SIZE = 100;
 
@@ -136,6 +137,9 @@ export class ArchivedItemQA extends TailwindElement {
   private splitView = true;
 
   @state()
+  private isReloadingReplay = false;
+
+  @state()
   filterPagesBy: {
     filterQABy?: string;
     gte?: number;
@@ -161,8 +165,11 @@ export class ArchivedItemQA extends TailwindElement {
   private readonly validateItemDescriptionMax = maxLengthValidator(500);
   private readonly validatePageCommentMax = maxLengthValidator(500);
 
-  @query("#replayframe")
-  private readonly replayFrame?: HTMLIFrameElement | null;
+  @query("#hiddenReplayFrame")
+  private readonly hiddenReplayFrame?: HTMLIFrameElement | null;
+
+  @query("#interactiveReplayFrame")
+  private readonly interactiveReplayFrame?: HTMLIFrameElement | null;
 
   @query(".reviewDialog")
   private readonly reviewDialog?: Dialog | null;
@@ -175,6 +182,7 @@ export class ArchivedItemQA extends TailwindElement {
 
   connectedCallback(): void {
     super.connectedCallback();
+
     // Receive messages from replay-web-page windows
     void this.replaySwReg.then((reg) => {
       if (!reg) {
@@ -184,14 +192,32 @@ export class ArchivedItemQA extends TailwindElement {
     });
 
     window.addEventListener("message", this.onWindowMessage);
+    window.addEventListener("scroll", this.onWindowScroll);
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
+
     if (this.crawlData?.blobUrl) URL.revokeObjectURL(this.crawlData.blobUrl);
     if (this.qaData?.blobUrl) URL.revokeObjectURL(this.qaData.blobUrl);
+
     window.removeEventListener("message", this.onWindowMessage);
+    window.addEventListener("scroll", this.onWindowScroll);
   }
+
+  private scrollY = 0;
+  private readonly onWindowScroll = throttle(100)(() => {
+    // Set scroll snap only when scrolling down
+    if (window.scrollY > this.scrollY) {
+      if (!document.documentElement.classList.contains(tw`snap-y`)) {
+        document.documentElement.classList.add(tw`snap-y`);
+      }
+    } else {
+      document.documentElement.classList.remove(tw`snap-y`);
+    }
+
+    this.scrollY = window.scrollY;
+  });
 
   private readonly onWindowMessage = (event: MessageEvent) => {
     const sourceLoc = (event.source as Window | null)?.location.href;
@@ -255,10 +281,14 @@ export class ArchivedItemQA extends TailwindElement {
           URL.revokeObjectURL(this.crawlData.blobUrl);
         if (this.qaData?.blobUrl) URL.revokeObjectURL(this.qaData.blobUrl);
 
-        // FIXME Set to null to render loading state, should be refactored
-        // to handle loading state separately in https://github.com/webrecorder/browsertrix/issues/1716
-        this.crawlData = null;
-        this.qaData = null;
+        if (this.tab === "replay") {
+          this.showReplayPageLoadingDialog();
+        } else {
+          // FIXME Set to null to render loading state, should be refactored
+          // to handle loading state separately in https://github.com/webrecorder/browsertrix/issues/1716
+          this.crawlData = null;
+          this.qaData = null;
+        }
       }
       // TODO prefetch content for other tabs?
       void this.fetchContentForTab();
@@ -364,7 +394,7 @@ export class ArchivedItemQA extends TailwindElement {
         </h1>
       </div>
 
-      <article class="qa-grid grid gap-x-6 gap-y-0">
+      <article class="qa-grid grid gap-x-6 gap-y-0 snap-start">
         <header
           class="grid--header flex flex-wrap items-center justify-between gap-1 border-b py-2"
         >
@@ -699,7 +729,7 @@ export class ArchivedItemQA extends TailwindElement {
         return html`
           <iframe
             class="hidden"
-            id="replayframe"
+            id="hiddenReplayFrame"
             src="/replay/non-existent"
             @load=${onLoad}
           ></iframe>
@@ -801,14 +831,36 @@ export class ArchivedItemQA extends TailwindElement {
   private renderPanelToolbar() {
     const buttons = html`
       ${choose(this.tab, [
-        // [
-        //   "replay",
-        //   () => html`
-        //     <div class="flex">
-        //        <sl-icon-button name="arrow-clockwise"></sl-icon-button>
-        //     </div>
-        //   `,
-        // ],
+        [
+          "replay",
+          () => html`
+            <div class="flex">
+              <sl-tooltip
+                content=${msg("Reload Replay")}
+                placement="bottom-start"
+              >
+                <btrix-button
+                  icon
+                  @click=${() => {
+                    if (
+                      this.interactiveReplayFrame?.contentDocument
+                        ?.readyState === "complete"
+                    ) {
+                      this.isReloadingReplay = true;
+                      this.showReplayPageLoadingDialog();
+                      this.interactiveReplayFrame.contentWindow?.location.reload();
+                    }
+                  }}
+                >
+                  <sl-icon
+                    name="arrow-clockwise"
+                    label=${msg("Reload page")}
+                  ></sl-icon>
+                </btrix-button>
+              </sl-tooltip>
+            </div>
+          `,
+        ],
         [
           "screenshots",
           () => html`
@@ -875,15 +927,115 @@ export class ArchivedItemQA extends TailwindElement {
         case "resources":
           return renderResources(this.crawlData, this.qaData);
         case "replay":
-          return renderReplay(this.crawlData);
+          return this.renderReplay();
         default:
           break;
       }
     };
     return html`
-      <section aria-labelledby="${this.tab}-tab" class="flex-1 overflow-hidden">
+      <section
+        aria-labelledby="${this.tab}-tab"
+        class="flex-1 overflow-hidden lg:pb-3"
+      >
         ${cache(choosePanel())}
       </section>
+    `;
+  }
+
+  private renderReplay() {
+    return html`
+      <div
+        class="replayContainer ${tw`h-full min-h-96 [contain:paint] lg:min-h-0`}"
+      >
+        <div
+          class=${tw`relative h-full overflow-hidden rounded-b-lg border-x border-b bg-slate-100 p-4 shadow-inner`}
+        >
+          ${when(
+            this.crawlData?.replayUrl,
+            (replayUrl) =>
+              html`<iframe
+                id="interactiveReplayFrame"
+                src=${replayUrl}
+                class=${tw`h-full w-full overflow-hidden overscroll-contain rounded-lg border bg-neutral-0 shadow-lg`}
+                @load=${async (e: Event) => {
+                  // NOTE This is all pretty hacky. To be improved with
+                  // https://github.com/webrecorder/browsertrix/issues/1780
+
+                  const iframe = e.currentTarget as HTMLIFrameElement;
+                  const iframeContainer = iframe.closest(".replayContainer");
+                  const showDialog = async () => {
+                    await iframeContainer
+                      ?.querySelector<Dialog>(
+                        "btrix-dialog.clickPreventedDialog",
+                      )
+                      ?.show();
+                  };
+
+                  // Hide loading indicator
+                  void iframeContainer
+                    ?.querySelector<Dialog>("btrix-dialog.loadingPageDialog")
+                    ?.hide();
+
+                  // Prevent anchor tag navigation
+                  iframe.contentDocument?.querySelectorAll("a").forEach((a) => {
+                    a.addEventListener("click", (e: MouseEvent) => {
+                      if (a.hasAttribute("href")) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void showDialog();
+                      }
+                    });
+                  });
+
+                  // Handle visibility change as fallback in case navigation happens anyway
+                  const onVisibilityChange = async () => {
+                    if (this.tab !== "replay") {
+                      return;
+                    }
+
+                    // Check if we're reloading the page, not navigating away
+                    if (this.isReloadingReplay) {
+                      this.isReloadingReplay = false;
+                      return;
+                    }
+
+                    iframe.contentWindow?.removeEventListener(
+                      "visibilitychange",
+                      onVisibilityChange,
+                    );
+
+                    // // We've navigated away--notify and go back
+                    // await showDialog();
+                    // iframe.contentWindow?.history.back();
+                  };
+
+                  iframe.contentWindow?.addEventListener(
+                    "visibilitychange",
+                    onVisibilityChange,
+                  );
+                }}
+              ></iframe>`,
+          )}
+        </div>
+        <btrix-dialog
+          class="loadingPageDialog"
+          ?open=${this.tab === "replay"}
+          no-header
+          @sl-request-close=${(e: SlRequestCloseEvent) => e.preventDefault()}
+        >
+          <div class="sr-only">${msg("Loading page")}</div>
+          <sl-progress-bar
+            indeterminate
+            class="[--height:0.5rem]"
+          ></sl-progress-bar>
+        </btrix-dialog>
+        <btrix-dialog
+          class="clickPreventedDialog"
+          .label=${msg("Navigation prevented")}
+        >
+          ${msg("Following links during review is disabled.")}
+        </btrix-dialog>
+      </div>
     `;
   }
 
@@ -954,6 +1106,14 @@ export class ArchivedItemQA extends TailwindElement {
     if (prevPage) {
       this.navToPage(prevPage.id);
     }
+  }
+
+  private showReplayPageLoadingDialog() {
+    if (!this.interactiveReplayFrame) return;
+    void this.interactiveReplayFrame
+      .closest(".replayContainer")
+      ?.querySelector<Dialog>("btrix-dialog.loadingPageDialog")
+      ?.show();
   }
 
   private async onSubmitComment(e: SubmitEvent) {
@@ -1141,7 +1301,7 @@ export class ArchivedItemQA extends TailwindElement {
     const page = this.page;
     const tab = this.tab;
     const sourceId = qa ? this.qaRunId : this.itemId;
-    const frameWindow = this.replayFrame?.contentWindow;
+    const frameWindow = this.hiddenReplayFrame?.contentWindow;
 
     if (!page || !sourceId || !frameWindow) {
       console.debug(
@@ -1165,8 +1325,6 @@ export class ArchivedItemQA extends TailwindElement {
       const urlPart = `${timestamp}mp_/${urlPrefix ? `urn:${urlPrefix}:` : ""}${pageUrl}`;
       const url = `/replay/w/${sourceId}/${urlPart}`;
       // TODO check status code
-
-      console.log("replay?");
 
       const resp = await frameWindow.fetch(url);
 
