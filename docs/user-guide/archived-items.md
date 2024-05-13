@@ -46,7 +46,7 @@ Once a crawl has been analyzed — either fully, or partially — it can be revi
 
 `Paid Feature`{ .badge-green }
 
-Like running a crawl workflow, running crawl analysis also uses execution time. Crawls and crawl analysis share the same concurrent crawling limit, however crawl analysis runs will be paused in favor of new crawls if the concurrent crawling limit is reached.
+Like running a crawl workflow, running crawl analysis also uses execution time. Crawls and crawl analysis share the same concurrent crawling limit, but crawl analysis runs will be paused in favor of new crawls if the concurrent crawling limit is reached.
 
 ### Replay
 
