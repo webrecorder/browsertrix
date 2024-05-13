@@ -2,7 +2,7 @@
 
 The Crawl Review page provides a streamlined interface for assessing the capture quality of pages within an archived item using the heuristics collected during crawl analysis.
 
-Crawls can only be reviewed once [crawl analysis](archived-items.md#crawl-analysis) has been run. If multiple analysis runs have been completed, the page analysis heuristics will be used from the selected analysis run, available beside the archived item name.
+Crawls can only be reviewed once [crawl analysis](archived-items.md#crawl-analysis) has been run. If multiple analysis runs have been completed, the page analysis heuristics will be used from the selected analysis run, which are displayed next to the archived item name. The most recent analysis run is selected by default, but you can choose to display data from any other completed or stopped analysis run here as well.
 
 ## Heuristics
 
