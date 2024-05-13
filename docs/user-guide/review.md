@@ -32,7 +32,7 @@ The resource comparison tab displays a table of resource types, and their [HTTP 
 !!! Tip "Caveats"
     The number of resources may be higher on replay due to how components of ReplayWeb.page re-write certain request types. A discrepancy alone may not be an indicator that the page is broken, though generally it is a positive sign when the counts are equal.
 
-    Due to the complicated nature of resource count comparison, they are not available as sorting options in the pages list.
+    Due to the complicated nature of resource count comparison, this is not available as a sorting option in the pages list.
 
 ## Page Review
 
