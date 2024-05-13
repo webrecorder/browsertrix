@@ -39,7 +39,7 @@ The resource comparison tab displays a table of resource types, and their [HTTP 
 The pages list can be sorted using analysis heuristics to determine the pages that are likely more important to review versus those that might require less attention. After selecting a page to review, looking over the analysis heuristics, and checking them against replay, make a decision about if the page capture was successful or unsuccessful and leave a note about what worked well or what might be problematic.
 
 ??? Question "Should I review every page? (Spoiler alert: probably not!)"
-    When reviewing a crawl of a site that has many similar pages, all of which exhibit the same error and have similar heuristic scores, they're likely all like that and you can _probably_ save yourself the trouble. Depending on the website, the heuristic scores may not always be an accurate predictor of quality, but in our testing they are fairly consistent — consistency being the important factor of this tool. It is up to you, the curator, to make the final quality judgement!
+    When reviewing a crawl of a site that has many similar pages, all of which exhibit the same error and have similar heuristic scores, it's likely that they all are similarly broken, and you can _probably_ save yourself the trouble. Depending on the website, the heuristic scores may not always be an accurate predictor of quality, but in our testing they are fairly consistent — consistency being the important factor of this tool. It is up to you, the curator, to make the final quality judgement!
 
     Our recommended workflow is: run crawl analysis, examine the most severe issues as highlighted, examine some key examples of common layouts, review any other key pages, and score the crawl accordingly!
 
