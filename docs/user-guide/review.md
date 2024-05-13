@@ -21,7 +21,7 @@ Discrepancies between crawl and replay screenshots may occur because resources a
 
 ### Extracted Text Comparison
 
-Text extracted during crawl analysis is compared to the extracted text created during crawling. Extracted text is compared on the basis of [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance).
+Text extracted during crawl analysis is compared to the text extracted during crawling. Text is compared on the basis of [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance).
 
 Resources not loaded properly on replay may display ReplayWeb.page's `Archived Page Not Found` error within the extracted text.
 
