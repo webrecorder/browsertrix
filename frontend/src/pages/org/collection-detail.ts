@@ -176,8 +176,8 @@ export class CollectionDetail extends LiteElement {
       <div class="my-7">${this.renderDescription()}</div>
 
       <btrix-dialog
-        label=${msg("Delete Collection?")}
-        ?open=${this.openDialogName === "delete"}
+        .label=${msg("Delete Collection?")}
+        .open=${this.openDialogName === "delete"}
         @sl-hide=${() => (this.openDialogName = undefined)}
       >
         ${msg(

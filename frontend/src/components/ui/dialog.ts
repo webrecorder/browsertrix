@@ -1,7 +1,11 @@
 import SlDialog from "@shoelace-style/shoelace/dist/components/dialog/dialog.js";
 import dialogStyles from "@shoelace-style/shoelace/dist/components/dialog/dialog.styles.js";
 import { css } from "lit";
-import { customElement, queryAssignedElements } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  queryAssignedElements,
+} from "lit/decorators.js";
 
 /**
  * <sl-dialog> with custom CSS
@@ -58,6 +62,28 @@ export class Dialog extends SlDialog {
 
   @queryAssignedElements({ selector: "form", flatten: true })
   readonly formElems!: HTMLFormElement[];
+
+  @property({ type: Boolean })
+  reEmitInnerSlHideEvents = false;
+
+  // Because both `sl-tooltip` and `sl-dialog` elements use "sl-hide", anything
+  // that listens for "sl-hide" events receives them from tooltips inside the
+  // dialog as well as from the dialog itself, which can lead to mousing out of
+  // a tooltip causing the dialog to close (if it's used as a fully-controlled
+  // component). This prevents that by catching any "sl-hide" events, and
+  // optionally re-emitting them as "sl-inner-hide" events
+  protected createRenderRoot() {
+    const root = super.createRenderRoot();
+    root.addEventListener("sl-hide", (event: Event) => {
+      if (!(event.target instanceof Dialog)) {
+        event.stopPropagation();
+        if (this.reEmitInnerSlHideEvents) {
+          this.dispatchEvent(new CustomEvent("sl-inner-hide", { ...event }));
+        }
+      }
+    });
+    return root;
+  }
 
   /**
    * Submit form using external buttons to bypass
