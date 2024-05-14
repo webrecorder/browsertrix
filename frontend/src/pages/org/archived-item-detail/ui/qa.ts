@@ -447,7 +447,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
   };
 
   private readonly renderLoadingDetail = () =>
-    html`<div class="min-w-32"><sl-spinner class="h-4 w-4"></sl-spinner></div>`;
+    html`<div class="min-w-32"><sl-spinner class="size-4"></sl-spinner></div>`;
 
   private renderAnalysis(qaRuns: QARun[]) {
     const isRunning =
@@ -611,7 +611,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
               (threshold) => html`
                 <div class="flex items-center gap-2">
                   <dt
-                    class="h-4 w-4 flex-shrink-0 rounded"
+                    class="size-4 flex-shrink-0 rounded"
                     style="background-color: ${threshold.cssColor}"
                   >
                     <span class="sr-only">${threshold.lowerBoundary}</span>

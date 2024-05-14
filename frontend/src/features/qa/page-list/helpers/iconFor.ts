@@ -9,7 +9,7 @@ import { cached } from "@/utils/weakCache";
 
 export const iconFor = cached(
   (severity: Severity | ReviewStatus, classList?: string) => {
-    const baseClasses = tw`h-4 w-4`;
+    const baseClasses = tw`size-4`;
     switch (severity) {
       // Severity
       case "severe":

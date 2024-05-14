@@ -2,7 +2,7 @@ import { localized, msg, str } from "@lit/localize";
 import type { SlRequestCloseEvent, SlTextarea } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { merge } from "immutable";
-import { html, nothing, type PropertyValues } from "lit";
+import { html, nothing, unsafeCSS, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
 import { choose } from "lit/directives/choose.js";
@@ -12,7 +12,7 @@ import { when } from "lit/directives/when.js";
 import { throttle } from "lodash/fp";
 import queryString from "query-string";
 
-import { styles } from "./styles";
+import stylesheet from "./archived-item-qa.stylesheet.css";
 import type * as QATypes from "./types";
 import { renderResources } from "./ui/resources";
 import { renderScreenshots } from "./ui/screenshots";
@@ -47,6 +47,8 @@ import { formatISODateString, getLocale } from "@/utils/localization";
 import { tw } from "@/utils/tailwind";
 
 const DEFAULT_PAGE_SIZE = 100;
+
+const styles = unsafeCSS(stylesheet);
 
 type PageResource = {
   status?: number;
@@ -394,7 +396,7 @@ export class ArchivedItemQA extends TailwindElement {
         </h1>
       </div>
 
-      <article class="qa-grid grid gap-x-6 gap-y-0 snap-start">
+      <article class="qa-grid min-h-screen grid gap-x-6 gap-y-0 lg:snap-start">
         <header
           class="grid--header flex flex-wrap items-center justify-between gap-1 border-b py-2"
         >
@@ -563,7 +565,7 @@ export class ArchivedItemQA extends TailwindElement {
             ${msg("Pages")}
           </h3>
           <btrix-qa-page-list
-            class="flex flex-col"
+            class="flex flex-col lg:contain-size"
             .qaRunId=${this.qaRunId}
             .itemPageId=${this.itemPageId}
             .pages=${this.pages}
@@ -935,7 +937,7 @@ export class ArchivedItemQA extends TailwindElement {
     return html`
       <section
         aria-labelledby="${this.tab}-tab"
-        class="flex-1 overflow-hidden lg:pb-3"
+        class="flex-1 overflow-hidden lg:pb-3 lg:contain-size"
       >
         ${cache(choosePanel())}
       </section>

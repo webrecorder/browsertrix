@@ -95,7 +95,7 @@ export class CollectionMetadataDialog extends LiteElement {
           `,
         )}
 
-        <input class="invisible h-0 w-0" type="submit" />
+        <input class="invisible size-0" type="submit" />
       </form>
       <div slot="footer" class="flex items-center justify-end gap-3">
         <sl-button

@@ -186,7 +186,7 @@ export class QaPage extends TailwindElement {
         <div
           class="contentContainer ${this.selected
             ? "h-auto"
-            : "h-0"} overflow-hidden [contain:content] [content-visibility:auto]"
+            : "h-0"} overflow-hidden contain-content content-auto"
         >
           <div
             class="z-10 -mt-2 ml-6 mr-2 rounded-b-lg border border-solid border-gray-200 bg-neutral-0 px-4 pb-1 pt-4"

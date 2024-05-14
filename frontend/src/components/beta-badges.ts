@@ -18,7 +18,7 @@ export class BetaIcon extends TailwindElement {
       <sl-icon
         name="stars"
         label="Beta"
-        class="h-4 w-4 text-theme-green"
+        class="size-4 text-theme-green"
       ></sl-icon>
     </sl-tooltip>`;
   }
@@ -44,7 +44,7 @@ export class BetaBadge extends TailwindElement {
         <sl-icon
           name="stars"
           label="Beta feature"
-          class="h-4 w-4 align-middle"
+          class="size-4 align-middle"
         ></sl-icon
         >&nbsp;${msg("Beta")}
       </span>

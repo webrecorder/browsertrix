@@ -72,7 +72,7 @@ export function renderText(crawlData: ReplayData, qaData: ReplayData) {
   </div>`;
 
   return html`
-    <div class=${tw`flex h-full flex-col outline`}>
+    <div class=${tw`flex h-full flex-col`}>
       <div class=${tw`mb-2 flex font-semibold`}>
         <h3 id="crawlTextHeading" class=${tw`flex-1`}>
           ${msg("Text extracted during crawl")}
