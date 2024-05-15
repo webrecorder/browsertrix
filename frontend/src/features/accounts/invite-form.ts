@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import type { SlSelect } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -151,7 +152,9 @@ export class InviteForm extends TailwindElement {
         },
       );
 
+      // Reset fields except selected org ID
       formEl.reset();
+      formEl.querySelector<SlSelect>('[name="orgId"]')!.value = orgId;
 
       this.dispatchEvent(
         new CustomEvent<InviteSuccessDetail>("btrix-invite-success", {
