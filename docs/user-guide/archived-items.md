@@ -22,7 +22,7 @@ Because <span class="status-warning">:bootstrap-x-octagon-fill: Canceled</span> 
 
 ## Archived Item Details
 
-The archived item details page is composed of six sections, though some tabs are only available for crawls and not uploads.
+The archived item details page is composed of the following sections, though some are only available for crawls and not uploads.
 
 ### Overview
 
@@ -32,7 +32,7 @@ Metadata can be edited by pressing the pencil icon at the top right of the metad
 
 ### Quality Assurance
 
-The Quality Assurance tab displays a list of crawled pages, overall stats collected through crawl analysis, and a list of all analysis runs. This tab is not available for uploaded archived items.
+The Quality Assurance tab displays a list of crawled pages, overall stats collected through crawl analysis, and a list of all analysis runs. This tab is not available for uploaded archived items and not accessible for users with [viewer permissions](org-settings.md#permission-levels).
 
 The pages list provides a record of all pages within the archived item, as well as any ratings or notes given to the page during review. If analysis has been run, clicking on a page in the pages list will go to that page in the review interface.
 
