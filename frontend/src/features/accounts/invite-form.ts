@@ -1,13 +1,14 @@
 import { localized, msg } from "@lit/localize";
-import { type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import sortBy from "lodash/fp/sortBy";
 
+import { TailwindElement } from "@/classes/TailwindElement";
+import { APIController } from "@/controllers/api";
 import type { OrgData } from "@/types/org";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 const sortByName = sortBy("name");
 
@@ -16,7 +17,7 @@ const sortByName = sortBy("name");
  */
 @localized()
 @customElement("btrix-invite-form")
-export class InviteForm extends LiteElement {
+export class InviteForm extends TailwindElement {
   @property({ type: Object })
   authState?: AuthState;
 
@@ -34,6 +35,8 @@ export class InviteForm extends LiteElement {
 
   @state()
   private selectedOrgId?: string;
+
+  private readonly api = new APIController(this);
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
     if (
@@ -129,7 +132,7 @@ export class InviteForm extends LiteElement {
     const inviteEmail = formData.get("inviteEmail") as string;
 
     try {
-      const data = await this.apiFetch<{ invited: string }>(
+      const data = await this.api.fetch<{ invited: string }>(
         `/orgs/${this.selectedOrgId}/invite`,
         this.authState,
         {
@@ -147,6 +150,7 @@ export class InviteForm extends LiteElement {
             inviteEmail,
             isExistingUser: data.invited === "existing_user",
           },
+          composed: true,
         }),
       );
     } catch (e) {
