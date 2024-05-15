@@ -1,17 +1,26 @@
 // Serve app locally without building with webpack, e.g. for e2e
+const path = require("path");
+
 const connectHistoryApiFallback = require("connect-history-api-fallback");
 const express = require("express");
 const { createProxyMiddleware } = require("http-proxy-middleware");
 
-const devServerConfig = require("../webpack.dev.js");
+const dotEnvPath = path.resolve(process.cwd(), ".env.local");
+require("dotenv").config({
+  path: dotEnvPath,
+});
+
+const [devConfig] = require("../webpack.dev.js");
 
 const app = express();
 
-devServerConfig.onBeforeSetupMiddleware({ app });
+const { devServer } = devConfig;
+
+devServer.onBeforeSetupMiddleware({ app });
 
 app.use("/", express.static("dist"));
-Object.keys(devServerConfig.proxy).forEach((path) => {
-  app.use(path, createProxyMiddleware(devServerConfig.proxy[path]));
+Object.keys(devServer.proxy).forEach((path) => {
+  app.use(path, createProxyMiddleware(devServer.proxy[path]));
 });
 app.use(connectHistoryApiFallback());
 
