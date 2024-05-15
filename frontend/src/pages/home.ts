@@ -156,9 +156,6 @@ export class Home extends LiteElement {
             <btrix-orgs-list
               .userInfo=${this.userInfo}
               .orgList=${this.orgList}
-              .defaultOrg=${this.userInfo?.orgs.find(
-                (org) => org.default === true,
-              )}
               @update-quotas=${this.onUpdateOrgQuotas}
             ></btrix-orgs-list>
           </section>
@@ -308,8 +305,8 @@ export class Home extends LiteElement {
 
       // Update user info since orgs are checked against userInfo.orgs
       this.dispatchEvent(new CustomEvent("btrix-update-user-info"));
-      await this.updateComplete;
 
+      await this.updateComplete;
       void this.fetchOrgs();
 
       this.notify({
