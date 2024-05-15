@@ -9,6 +9,7 @@ RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn --p
 COPY --link lit-localize.json \
   postcss.config.js \
   tailwind.config.js \
+  config/tailwind \
   tsconfig.json \
   webpack.config.js \
   webpack.prod.js \
@@ -18,7 +19,6 @@ COPY --link lit-localize.json \
   ./
 
 COPY --link src ./src/
-COPY --link plugins ./plugins/
 
 # Build variables used to show current app version
 # in the UI. Note that this will invalidate all
