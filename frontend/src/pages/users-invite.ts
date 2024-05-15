@@ -46,9 +46,6 @@ export class UsersInvite extends LiteElement {
         <btrix-invite-form
           .authState=${this.authState}
           .orgs=${this.userInfo?.orgs || []}
-          .defaultOrg=${this.userInfo?.orgs.find(
-            (org) => org.default === true,
-          ) ?? null}
           @btrix-invite-success=${this.onSuccess}
         ></btrix-invite-form>
       </main>
