@@ -45,4 +45,4 @@ The pages list can be sorted using analysis heuristics to determine the pages th
 
 ## Finish Review
 
-Once a satisfactory amount of pages have been reviewed, press the _Finish Review_ button to give the archived item an overall quality score ranging from "Excellent!" to "Bad". Update the description with any additional notes or considerations.
+Once a satisfactory amount of pages have been reviewed, press the _Finish Review_ button to give the archived item an overall quality score ranging from "Excellent!" to "Bad". You can add any additional notes or considerations in the archived item description, which can be edited during this step.
