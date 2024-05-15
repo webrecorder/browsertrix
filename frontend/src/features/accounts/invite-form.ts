@@ -11,6 +11,12 @@ import { AccessCode, type OrgData } from "@/types/org";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 
+export type InviteSuccessDetail = {
+  inviteEmail: string;
+  orgId: string;
+  isExistingUser: boolean;
+};
+
 const sortByName = sortBy("name");
 
 /**
@@ -145,10 +151,13 @@ export class InviteForm extends TailwindElement {
         },
       );
 
+      formEl.reset();
+
       this.dispatchEvent(
-        new CustomEvent("btrix-invite-success", {
+        new CustomEvent<InviteSuccessDetail>("btrix-invite-success", {
           detail: {
             inviteEmail,
+            orgId,
             isExistingUser: data.invited === "existing_user",
           },
           composed: true,
