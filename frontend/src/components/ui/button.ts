@@ -27,6 +27,7 @@ export class Button extends TailwindElement {
   // TODO unify button styling & variants - there are probably a few different
   // approaches for difference button use cases, but we'll figure that out in
   // the future when we work more on our UI library.
+  // See also https://github.com/webrecorder/browsertrix/issues/1550
   @property({ type: String })
   variant: Variant = "neutral";
 
