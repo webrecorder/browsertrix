@@ -19,7 +19,7 @@ const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
 
 /**
- * @fires update-user-info
+ * @fires btrix-update-user-info
  */
 @localized()
 @customElement("btrix-request-verify")
@@ -337,7 +337,7 @@ export class AccountSettings extends LiteElement {
         }),
       });
 
-      this.dispatchEvent(new CustomEvent("update-user-info"));
+      this.dispatchEvent(new CustomEvent("btrix-update-user-info"));
       this.notify({
         message: msg("Your name has been updated."),
         variant: "success",
@@ -377,7 +377,7 @@ export class AccountSettings extends LiteElement {
         }),
       });
 
-      this.dispatchEvent(new CustomEvent("update-user-info"));
+      this.dispatchEvent(new CustomEvent("btrix-update-user-info"));
       this.notify({
         message: msg("Your email has been updated."),
         variant: "success",
@@ -417,7 +417,7 @@ export class AccountSettings extends LiteElement {
       });
 
       this.isChangingPassword = false;
-      this.dispatchEvent(new CustomEvent("update-user-info"));
+      this.dispatchEvent(new CustomEvent("btrix-update-user-info"));
       this.notify({
         message: msg("Your password has been updated."),
         variant: "success",

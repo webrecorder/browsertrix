@@ -13,7 +13,7 @@ import LiteElement, { html } from "@/utils/LiteElement";
 import type { OrgData } from "@/utils/orgs";
 
 /**
- * @fires update-user-info
+ * @fires btrix-update-user-info
  */
 @localized()
 @customElement("btrix-home")
@@ -307,7 +307,7 @@ export class Home extends LiteElement {
       });
 
       // Update user info since orgs are checked against userInfo.orgs
-      this.dispatchEvent(new CustomEvent("update-user-info"));
+      this.dispatchEvent(new CustomEvent("btrix-update-user-info"));
       await this.updateComplete;
 
       void this.fetchOrgs();
