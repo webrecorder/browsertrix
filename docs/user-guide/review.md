@@ -10,7 +10,7 @@ Crawl analysis generates comparisons across three heuristics that can indicate w
 
 ### Screenshot Comparison
 
-Screenshots taken during crawl analysis are compared with the page thumbnail created during crawling. Screenshots are compared using [Pixelmatch](https://github.com/mapbox/pixelmatch).
+Screenshots are compared by measuring the perceived difference between color samples and by the intensity of difference between pixels. These metrics are provided by the open-source tool [Pixelmatch](https://observablehq.com/@mourner/pixelmatch-demo).
 
 Discrepancies between crawl and replay screenshots may occur because resources aren't loaded or rendered properly (usually indicating a replay issue).
 
