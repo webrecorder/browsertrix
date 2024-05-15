@@ -257,14 +257,10 @@ export class Home extends LiteElement {
       `;
     }
 
-    const defaultOrg = this.userInfo?.orgs.find(
-      (org) => org.default === true,
-    ) || { name: "" };
     return html`
       <btrix-invite-form
         .authState=${this.authState}
         .orgs=${this.orgList}
-        .defaultOrg=${defaultOrg}
         @btrix-invite-success=${() => (this.isInviteComplete = true)}
       ></btrix-invite-form>
     `;

@@ -72,9 +72,8 @@ export class InviteForm extends TailwindElement {
         <div class="mb-5">
           <sl-select
             label=${msg("Organization")}
-            value=${ifDefined(
-              this.defaultOrg ? this.defaultOrg.id : sortedOrgs[0]?.id,
-            )}
+            placeholder=${msg("Select an org")}
+            value=${ifDefined(this.defaultOrg?.id)}
             @sl-change=${(e: Event) => {
               this.selectedOrgId = (e.target as HTMLSelectElement).value;
             }}
