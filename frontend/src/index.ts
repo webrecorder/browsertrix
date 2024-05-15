@@ -365,7 +365,7 @@ export class App extends LiteElement {
       : { slug: "", name: msg("All Organizations") };
     if (!selectedOption) {
       console.debug(
-        `Could't find organization with slug ${this.appState.orgSlug}`,
+        `Couldn't find organization with slug ${this.appState.orgSlug}`,
         orgs,
       );
       return;

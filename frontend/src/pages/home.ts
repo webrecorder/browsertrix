@@ -12,6 +12,9 @@ import { maxLengthValidator } from "@/utils/form";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { OrgData } from "@/utils/orgs";
 
+/**
+ * @fires update-user-info
+ */
 @localized()
 @customElement("btrix-home")
 export class Home extends LiteElement {
@@ -219,8 +222,9 @@ export class Home extends LiteElement {
                   size="small"
                   ?loading=${this.isSubmittingNewOrg}
                   ?disabled=${this.isSubmittingNewOrg}
-                  >${msg("Create Org")}</sl-button
                 >
+                  ${msg("Create Org")}
+                </sl-button>
               </div>
             `
           : ""}
@@ -302,7 +306,12 @@ export class Home extends LiteElement {
         body: JSON.stringify(params),
       });
 
+      // Update user info since orgs are checked against userInfo.orgs
+      this.dispatchEvent(new CustomEvent("update-user-info"));
+      await this.updateComplete;
+
       void this.fetchOrgs();
+
       this.notify({
         message: msg(str`Created new org named "${params.name}".`),
         variant: "success",
