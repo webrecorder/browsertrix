@@ -62,7 +62,10 @@ export class InviteForm extends TailwindElement {
             name="orgId"
             label=${msg("Organization")}
             placeholder=${msg("Select an org")}
-            value=${ifDefined(this.defaultOrg?.id)}
+            value=${ifDefined(
+              this.defaultOrg?.id ||
+                (this.orgs?.length === 1 ? this.orgs[0].id : undefined),
+            )}
             ?disabled=${sortedOrgs.length === 1}
             required
           >
