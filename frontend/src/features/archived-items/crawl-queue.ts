@@ -1,4 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
+import type {
+  SlChangeEvent,
+  SlInput,
+  SlInputEvent,
+} from "@shoelace-style/shoelace";
 import type { PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -61,6 +66,9 @@ export class CrawlQueue extends LiteElement {
   private isLoading = false;
 
   @state()
+  private pageOffset = 0;
+
+  @state()
   private pageSize = 50;
 
   private timerId?: number;
@@ -82,7 +90,10 @@ export class CrawlQueue extends LiteElement {
       changedProperties.has("orgId") ||
       changedProperties.has("crawlId") ||
       changedProperties.has("pageSize") ||
-      changedProperties.has("regex")
+      changedProperties.has("regex") ||
+      (changedProperties.has("pageOffset") &&
+        // Prevents double-fetch when offset is programmatically changed according to queue total
+        !changedProperties.has("queue"))
     ) {
       void this.fetchOnUpdate();
     }
@@ -90,10 +101,63 @@ export class CrawlQueue extends LiteElement {
 
   render() {
     return html`
-      <btrix-section-heading style="--margin: var(--sl-spacing-small)"
-        >${msg("Queued URLs")} ${this.renderBadge()}</btrix-section-heading
-      >
+      <btrix-section-heading style="--margin: var(--sl-spacing-small)">
+        ${this.renderOffsetControl()} ${this.renderBadge()}
+      </btrix-section-heading>
       ${this.renderContent()}
+    `;
+  }
+
+  private renderOffsetControl() {
+    if (!this.queue) {
+      return msg("Queued URLs");
+    }
+    if (this.pageOffset === 0 && this.queue.total <= this.pageSize) {
+      return msg(
+        str`Queued URLs from 1 to ${this.queue.total.toLocaleString()}`,
+      );
+    }
+
+    const offsetValue = this.pageOffset + 1;
+    const countMax = Math.min(
+      this.pageOffset + this.pageSize,
+      this.queue.total,
+    );
+    const getInputWidth = (v: number | string) =>
+      `${Math.max(v.toString().length, 3) + 2}ch`;
+
+    return html`
+      <div class="flex items-center text-neutral-500">
+        ${msg(html`
+          Queued URLs from
+          <btrix-inline-input
+            class="mx-1 inline-block"
+            style="width: ${Math.max(offsetValue.toString().length, 2) + 2}ch"
+            value="1"
+            inputmode="numeric"
+            size="small"
+            autocomplete="off"
+            @sl-input=${(e: SlInputEvent) => {
+              const input = e.target as SlInput;
+
+              input.style.width = getInputWidth(input.value);
+            }}
+            @sl-change=${async (e: SlChangeEvent) => {
+              const input = e.target as SlInput;
+              const int = +input.value.replace(/\D/g, "");
+
+              await this.updateComplete;
+
+              const value = Math.max(1, Math.min(int, this.queue!.total - 1));
+
+              input.value = value.toString();
+              this.pageOffset = value - 1;
+            }}
+          ></btrix-inline-input>
+          to ${countMax.toLocaleString()} of
+          ${this.queue.total.toLocaleString()}
+        `)}
+      </div>
     `;
   }
 
@@ -119,9 +183,9 @@ export class CrawlQueue extends LiteElement {
           const isExcluded = !isMatch && this.isExcluded(url);
           return html`
             <btrix-numbered-list-item>
-              <span class="${isMatch ? "text-red-600" : ""}" slot="marker"
-                >${idx + 1}.</span
-              >
+              <span class="${isMatch ? "text-red-600" : ""}" slot="marker">
+                ${(idx + this.pageOffset + 1).toLocaleString()}.
+              </span>
               <a
                 class="${isMatch
                   ? "text-red-500 hover:text-red-400"
@@ -140,7 +204,7 @@ export class CrawlQueue extends LiteElement {
 
       <footer class="text-center">
         ${when(
-          this.queue.total === this.queue.results.length,
+          this.queue.total <= this.pageOffset + this.pageSize,
           () =>
             html`<div class="py-3 text-xs text-neutral-400">
               ${msg("End of queue")}
@@ -165,14 +229,6 @@ export class CrawlQueue extends LiteElement {
     if (!this.queue) return "";
 
     return html`
-      <btrix-badge class="ml-1">
-        ${this.queue.total
-          ? this.queue.total > 1
-            ? msg(str`${this.queue.total.toLocaleString()} URLs`)
-            : msg(str`1 URL`)
-          : msg("No queue")}
-      </btrix-badge>
-
       ${this.matchedTotal
         ? html`
             <btrix-badge variant="danger" class="ml-1">
@@ -230,10 +286,13 @@ export class CrawlQueue extends LiteElement {
   }
 
   private async getQueue(): Promise<ResponseData> {
-    const offset = "0";
     const count = this.pageSize.toString();
     const regex = this.regex;
-    const params = new URLSearchParams({ offset, count, regex });
+    const params = new URLSearchParams({
+      offset: this.pageOffset.toString(),
+      count,
+      regex,
+    });
     const data: ResponseData = await this.apiFetch(
       `/orgs/${this.orgId}/crawls/${this.crawlId}/queue?${params.toString()}`,
       this.authState!,

@@ -32,6 +32,7 @@ export class Observable extends LitElement {
 
   disconnectedCallback(): void {
     this.observer?.disconnect();
+    super.disconnectedCallback();
   }
 
   firstUpdated() {
