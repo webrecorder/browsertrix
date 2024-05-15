@@ -24,6 +24,9 @@ export class Button extends TailwindElement {
   @property({ type: String })
   type: "submit" | "button" = "button";
 
+  // TODO unify button styling & variants - there are probably a few different
+  // approaches for difference button use cases, but we'll figure that out in
+  // the future when we work more on our UI library.
   @property({ type: String })
   variant: Variant = "neutral";
 
