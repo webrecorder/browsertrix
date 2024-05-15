@@ -22,7 +22,7 @@ Because <span class="status-warning">:bootstrap-x-octagon-fill: Canceled</span> 
 
 ## Archived Item Details
 
-The archived item details page is composed of five sections, though the Crawl Settings tab is only available for crawls and not uploads.
+The archived item details page is composed of the following sections, though some are only available for crawls and not uploads.
 
 ### Overview
 
@@ -30,11 +30,29 @@ The Overview tab displays the item's metadata and statistics associated with its
 
 Metadata can be edited by pressing the pencil icon at the top right of the metadata section to edit the item's description, tags, and collections it is associated with.
 
+### Quality Assurance
+
+The Quality Assurance tab displays crawl quality information collected from analysis runs and user assessment of pages. This is where you can start new analysis runs, view quality metrics from older runs, and delete previous analysis runs. This tab is not available for uploaded archived items and not accessible for users with [viewer permissions](org-settings.md#permission-levels).
+
+The pages list provides a record of all pages within the archived item, as well as any ratings or notes given to the page during review. If analysis has been run, clicking on a page in the pages list will go to that page in the review interface.
+
+#### Crawl Analysis
+
+Running crawl analysis will re-visit all pages within the archived item, comparing the data collected during analysis with the data collected during crawling. Crawl analysis runs with the same workflow limit settings used during crawling.
+
+Crawl analysis can be run multiple times, though results should only differ if the crawler version has been updated between runs. The analysis process is being constantly improved and future analysis runs should produce better results. Analysis run data can be downloaded or deleted from the _Analysis Runs_ tab. While they are stored as WACZ files, analysis run WACZs only contain analysis data and may not open correctly or be useful in other programs that replay archived content.
+
+Once a crawl has been analyzed — either fully, or partially — it can be reviewed by pressing the _Review Crawl_ button. For more on reviewing crawls and how to interpret analysis data, see: [Crawl Review](review.md).
+
+`Paid Feature`{ .badge-green }
+
+Like running a crawl workflow, running crawl analysis also uses execution time. Crawls and crawl analysis share the same concurrent crawling limit, but crawl analysis runs will be paused in favor of new crawls if the concurrent crawling limit is reached.
+
 ### Replay
 
 The Replay tab displays the web content contained within the archived item.
 
-For more details on navigating web archives within ReplayWeb.page, see the [ReplayWeb.page user documentation.](https://replayweb.page/docs/exploring)
+For more details on navigating web archives within ReplayWeb.page, see the [ReplayWeb.page user documentation.](https://replayweb.page/docs/user-guide/exploring/)
 
 ### Exporting Files
 
@@ -50,4 +68,4 @@ All log entries with that were recorded in the creation of the Archived Item can
 
 ### Crawl Settings
 
-The Crawl Settings tab displays the crawl workflow configuration options that were used to generate the resulting archived item.
+The Crawl Settings tab displays the crawl workflow configuration options that were used to generate the resulting archived item. Many of these settings also apply when running crawl analysis.
