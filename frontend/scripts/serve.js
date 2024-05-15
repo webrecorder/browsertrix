@@ -3,7 +3,7 @@ const connectHistoryApiFallback = require("connect-history-api-fallback");
 const express = require("express");
 const { createProxyMiddleware } = require("http-proxy-middleware");
 
-const devServerConfig = require("../config/dev-server.js");
+const devServerConfig = require("../webpack.dev.js");
 
 const app = express();
 
