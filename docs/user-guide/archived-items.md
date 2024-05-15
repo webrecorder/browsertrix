@@ -40,7 +40,7 @@ The pages list provides a record of all pages within the archived item, as well 
 
 Running crawl analysis will re-visit all pages within the archived item, comparing the data collected during analysis with the data collected during crawling. Crawl analysis runs with the same workflow limit settings used during crawling.
 
-Crawl analysis can be run multiple times, though it will only yield different results if the crawler, or [ReplayWeb.page](https://replayweb.page/docs/) — the software responsible for playback of archived web content — has been updated between runs. Analysis run data can be downloaded or deleted from the _Analysis Runs_ tab. While they are stored as WACZ files, analysis run WACZs only contain analysis data and may not open correctly or be useful in other programs that replay archived content.
+Crawl analysis can be run multiple times, though results should only differ if the crawler version has been updated between runs. The analysis process is being constantly improved and future analysis runs should produce better results. Analysis run data can be downloaded or deleted from the _Analysis Runs_ tab. While they are stored as WACZ files, analysis run WACZs only contain analysis data and may not open correctly or be useful in other programs that replay archived content.
 
 Once a crawl has been analyzed — either fully, or partially — it can be reviewed by pressing the _Review Crawl_ button. For more on reviewing crawls and how to interpret analysis data, see: [Crawl Review](review.md).
 
