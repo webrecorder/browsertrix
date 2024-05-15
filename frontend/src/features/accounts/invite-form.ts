@@ -13,18 +13,18 @@ import type { AuthState } from "@/utils/AuthService";
 const sortByName = sortBy("name");
 
 /**
- * @event success
+ * @event btrix-invite-success
  */
 @localized()
 @customElement("btrix-invite-form")
 export class InviteForm extends TailwindElement {
-  @property({ type: Object })
+  @property({ type: Object, attribute: false })
   authState?: AuthState;
 
-  @property({ type: Array })
+  @property({ type: Array, attribute: false })
   orgs?: OrgData[] = [];
 
-  @property({ type: Object })
+  @property({ type: Object, attribute: false })
   defaultOrg: Partial<OrgData> | null = null;
 
   @state()
@@ -145,7 +145,7 @@ export class InviteForm extends TailwindElement {
       );
 
       this.dispatchEvent(
-        new CustomEvent("success", {
+        new CustomEvent("btrix-invite-success", {
           detail: {
             inviteEmail,
             isExistingUser: data.invited === "existing_user",

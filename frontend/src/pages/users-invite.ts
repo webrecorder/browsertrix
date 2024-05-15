@@ -49,7 +49,7 @@ export class UsersInvite extends LiteElement {
           .defaultOrg=${this.userInfo?.orgs.find(
             (org) => org.default === true,
           ) ?? null}
-          @success=${this.onSuccess}
+          @btrix-invite-success=${this.onSuccess}
         ></btrix-invite-form>
       </main>
     </div>`;
