@@ -1,5 +1,4 @@
 import SlInput from "@shoelace-style/shoelace/dist/components/input/input.js";
-import inputStyles from "@shoelace-style/shoelace/dist/components/input/input.styles.js";
 import { css } from "lit";
 import { customElement } from "lit/decorators.js";
 
@@ -9,7 +8,7 @@ import { customElement } from "lit/decorators.js";
 @customElement("btrix-inline-input")
 export class InlineInput extends SlInput {
   static styles = [
-    inputStyles,
+    SlInput.styles,
     css`
       :host {
         --sl-input-height-small: var(--sl-font-size-x-large);
@@ -21,5 +20,5 @@ export class InlineInput extends SlInput {
         padding: 0 0.5ch;
       }
     `,
-  ] as typeof SlInput.styles;
+  ];
 }

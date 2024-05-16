@@ -1,5 +1,4 @@
 import SlDialog from "@shoelace-style/shoelace/dist/components/dialog/dialog.js";
-import dialogStyles from "@shoelace-style/shoelace/dist/components/dialog/dialog.styles.js";
 import { css } from "lit";
 import {
   customElement,
@@ -15,7 +14,7 @@ import {
 @customElement("btrix-dialog")
 export class Dialog extends SlDialog {
   static styles = [
-    dialogStyles,
+    SlDialog.styles,
     css`
       :host {
         --header-spacing: var(--sl-spacing-medium);
@@ -54,11 +53,7 @@ export class Dialog extends SlDialog {
         border-top: 1px solid var(--sl-color-neutral-100);
       }
     `,
-    // TODO remove this type coercion once we migrate to
-    // lit@3 (or more specifically, to when the version of lit we use uses the
-    // same version of `@lit/reactive-element` as Shoelace -- at the time of
-    // writing, that's `@lit/reactive-element@2.0.2`)
-  ] as typeof SlDialog.styles;
+  ];
 
   @queryAssignedElements({ selector: "form", flatten: true })
   readonly formElems!: HTMLFormElement[];
