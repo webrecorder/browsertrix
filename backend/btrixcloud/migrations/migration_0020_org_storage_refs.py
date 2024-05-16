@@ -28,6 +28,7 @@ class Migration(BaseMigration):
         async for org in mdb_orgs.find({"storage.custom": None}):
             oid = org["_id"]
             storage = org["storage"]
+            update_dict = {}
 
             if storage.get("type") == "default":
                 if storage.get("name"):
