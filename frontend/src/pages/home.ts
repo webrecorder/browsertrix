@@ -255,17 +255,17 @@ export class Home extends LiteElement {
           const org = this.orgList?.find(({ id }) => id === e.detail.orgId);
 
           this.notify({
-            message: msg(
-              html`Invite sent!
-                <br />
-                <a
-                  class="underline hover:no-underline"
-                  href="/orgs/${org?.slug || e.detail.orgId}/settings/members"
-                  @click=${this.navLink.bind(this)}
-                >
-                  View org members
-                </a> `,
-            ),
+            message: html`
+              ${msg("Invite sent!")}
+              <br />
+              <a
+                class="underline hover:no-underline"
+                href="/orgs/${org?.slug || e.detail.orgId}/settings/members"
+                @click=${this.navLink.bind(this)}
+              >
+                ${msg("View org members")}
+              </a>
+            `,
             variant: "success",
             icon: "check2-circle",
           });
