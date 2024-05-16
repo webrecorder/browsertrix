@@ -1,5 +1,4 @@
 import SLTag from "@shoelace-style/shoelace/dist/components/tag/tag.js";
-import tagStyles from "@shoelace-style/shoelace/dist/components/tag/tag.styles.js";
 import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -20,7 +19,7 @@ export class Tag extends SLTag {
   };
 
   static styles = [
-    tagStyles,
+    SLTag.styles,
     css`
       :host {
         max-width: 100%;
@@ -91,7 +90,7 @@ export class Tag extends SLTag {
         padding: 0 0.125rem 0 0.5rem;
       }
     `,
-  ] as (typeof SLTag)["styles"];
+  ];
 
   @property({ type: String, noAccessor: true })
   tabindex?: string;
