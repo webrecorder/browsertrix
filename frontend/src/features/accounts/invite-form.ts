@@ -86,7 +86,7 @@ export class InviteForm extends TailwindElement {
         <div class="mb-5">
           <sl-select
             label=${msg("Role")}
-            value=${AccessCode.crawler}
+            value=${AccessCode.owner}
             name="inviteRole"
           >
             <sl-option value=${AccessCode.owner}>${"Admin"}</sl-option>
