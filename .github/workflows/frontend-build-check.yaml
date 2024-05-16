@@ -6,6 +6,7 @@ on:
       - 'frontend/*.json'
       - 'frontend/*.js'
       - 'frontend/*.ts'
+      - '.github/workflows/frontend-build-check.yaml'
 jobs:
   setup-and-build:
     runs-on: ubuntu-latest
@@ -44,9 +45,17 @@ jobs:
       - name: Localization build
         working-directory: frontend
         run: yarn localize:prepare
-      - name: Remove non-production dependencies
-        working-directory: frontend
-        run: yarn install --frozen-lockfile --ignore-optional --production
-      - name: Webpack build
-        working-directory: frontend
-        run: yarn build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver-opts: network=host
+
+      - name: Build Frontend
+        uses: docker/build-push-action@v3
+        with:
+          context: frontend
+          load: true
+          tags: webrecorder/browsertrix-frontend:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
