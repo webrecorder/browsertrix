@@ -1,29 +1,38 @@
 import { localized, msg } from "@lit/localize";
-import { type PropertyValues } from "lit";
+import type { SlSelect } from "@shoelace-style/shoelace";
+import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
+import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import sortBy from "lodash/fp/sortBy";
 
-import type { OrgData } from "@/types/org";
+import { TailwindElement } from "@/classes/TailwindElement";
+import { APIController } from "@/controllers/api";
+import { AccessCode, type OrgData } from "@/types/org";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
+
+export type InviteSuccessDetail = {
+  inviteEmail: string;
+  orgId: string;
+  isExistingUser: boolean;
+};
 
 const sortByName = sortBy("name");
 
 /**
- * @event success
+ * @event btrix-invite-success
  */
 @localized()
 @customElement("btrix-invite-form")
-export class InviteForm extends LiteElement {
-  @property({ type: Object })
+export class InviteForm extends TailwindElement {
+  @property({ type: Object, attribute: false })
   authState?: AuthState;
 
-  @property({ type: Array })
+  @property({ type: Array, attribute: false })
   orgs?: OrgData[] = [];
 
-  @property({ type: Object })
+  @property({ type: Object, attribute: false })
   defaultOrg: Partial<OrgData> | null = null;
 
   @state()
@@ -32,18 +41,7 @@ export class InviteForm extends LiteElement {
   @state()
   private serverError?: string;
 
-  @state()
-  private selectedOrgId?: string;
-
-  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
-    if (
-      changedProperties.has("defaultOrg") &&
-      this.defaultOrg &&
-      !this.selectedOrgId
-    ) {
-      this.selectedOrgId = this.defaultOrg.id;
-    }
-  }
+  private readonly api = new APIController(this);
 
   render() {
     let formError;
@@ -68,13 +66,13 @@ export class InviteForm extends LiteElement {
       >
         <div class="mb-5">
           <sl-select
+            name="orgId"
             label=${msg("Organization")}
+            placeholder=${msg("Select an org")}
             value=${ifDefined(
-              this.defaultOrg ? this.defaultOrg.id : sortedOrgs[0]?.id,
+              this.defaultOrg?.id ||
+                (this.orgs?.length === 1 ? this.orgs[0].id : undefined),
             )}
-            @sl-change=${(e: Event) => {
-              this.selectedOrgId = (e.target as HTMLSelectElement).value;
-            }}
             ?disabled=${sortedOrgs.length === 1}
             required
           >
@@ -83,6 +81,17 @@ export class InviteForm extends LiteElement {
                 <sl-option value=${org.id}>${org.name}</sl-option>
               `,
             )}
+          </sl-select>
+        </div>
+        <div class="mb-5">
+          <sl-select
+            label=${msg("Role")}
+            value=${AccessCode.owner}
+            name="inviteRole"
+          >
+            <sl-option value=${AccessCode.owner}>${"Admin"}</sl-option>
+            <sl-option value=${AccessCode.crawler}>${"Crawler"}</sl-option>
+            <sl-option value=${AccessCode.viewer}>${"Viewer"}</sl-option>
           </sl-select>
         </div>
         <div class="mb-5">
@@ -107,7 +116,7 @@ export class InviteForm extends LiteElement {
             size="small"
             type="submit"
             ?loading=${this.isSubmitting}
-            ?disabled=${!this.selectedOrgId || this.isSubmitting}
+            ?disabled=${this.isSubmitting}
             >${msg("Invite")}</sl-button
           >
         </div>
@@ -116,37 +125,45 @@ export class InviteForm extends LiteElement {
   }
 
   async onSubmit(event: SubmitEvent) {
-    event.preventDefault();
-    if (!this.authState || !this.selectedOrgId) return;
-
     const formEl = event.target as HTMLFormElement;
+    event.preventDefault();
+
     if (!(await this.checkFormValidity(formEl))) return;
 
     this.serverError = undefined;
     this.isSubmitting = true;
 
-    const formData = new FormData(event.target as HTMLFormElement);
-    const inviteEmail = formData.get("inviteEmail") as string;
+    const { orgId, inviteEmail, inviteRole } = serialize(formEl) as {
+      orgId: string;
+      inviteEmail: string;
+      inviteRole: string;
+    };
 
     try {
-      const data = await this.apiFetch<{ invited: string }>(
-        `/orgs/${this.selectedOrgId}/invite`,
-        this.authState,
+      const data = await this.api.fetch<{ invited: string }>(
+        `/orgs/${orgId}/invite`,
+        this.authState!,
         {
           method: "POST",
           body: JSON.stringify({
             email: inviteEmail,
-            role: 10,
+            role: +inviteRole,
           }),
         },
       );
 
+      // Reset fields except selected org ID
+      formEl.reset();
+      formEl.querySelector<SlSelect>('[name="orgId"]')!.value = orgId;
+
       this.dispatchEvent(
-        new CustomEvent("success", {
+        new CustomEvent<InviteSuccessDetail>("btrix-invite-success", {
           detail: {
             inviteEmail,
+            orgId,
             isExistingUser: data.invited === "existing_user",
           },
+          composed: true,
         }),
       );
     } catch (e) {

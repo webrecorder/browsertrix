@@ -3,6 +3,7 @@ import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
+import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
 import type { APIPaginatedList } from "@/types/api";
 import type { CurrentUser } from "@/types/user";
 import { isApiError } from "@/utils/api";
@@ -22,9 +23,6 @@ export class Home extends LiteElement {
 
   @property({ type: String })
   slug?: string;
-
-  @state()
-  private isInviteComplete?: boolean;
 
   @state()
   private orgList?: OrgData[];
@@ -249,23 +247,29 @@ export class Home extends LiteElement {
   }
 
   private renderInvite() {
-    if (this.isInviteComplete) {
-      return html`
-        <sl-button @click=${() => (this.isInviteComplete = false)}
-          >${msg("Send another invite")}</sl-button
-        >
-      `;
-    }
-
-    const defaultOrg = this.userInfo?.orgs.find(
-      (org) => org.default === true,
-    ) || { name: "" };
     return html`
       <btrix-invite-form
         .authState=${this.authState}
         .orgs=${this.orgList}
-        .defaultOrg=${defaultOrg}
-        @success=${() => (this.isInviteComplete = true)}
+        @btrix-invite-success=${(e: CustomEvent<InviteSuccessDetail>) => {
+          const org = this.orgList?.find(({ id }) => id === e.detail.orgId);
+
+          this.notify({
+            message: html`
+              ${msg("Invite sent!")}
+              <br />
+              <a
+                class="underline hover:no-underline"
+                href="/orgs/${org?.slug || e.detail.orgId}/settings/members"
+                @click=${this.navLink.bind(this)}
+              >
+                ${msg("View org members")}
+              </a>
+            `,
+            variant: "success",
+            icon: "check2-circle",
+          });
+        }}
       ></btrix-invite-form>
     `;
   }
