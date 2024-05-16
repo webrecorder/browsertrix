@@ -24,9 +24,6 @@ require("dotenv").config({
   path: dotEnvPath,
 });
 
-// for testing: for prod, the Dockerfile should have the official prod version used
-const _RWP_BASE_URL = process.env.RWP_BASE_URL || "https://replayweb.page/";
-
 const WEBSOCKET_HOST =
   isDevServer && process.env.API_BASE_URL
     ? new URL(process.env.API_BASE_URL).host

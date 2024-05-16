@@ -1,7 +1,7 @@
 const { tailwindTransform } = require("postcss-lit");
 
-const containPlugin = require("./plugins/contain");
-const contentVisibilityPlugin = require("./plugins/content-visibility");
+const containPlugin = require("./config/tailwind/plugins/contain");
+const contentVisibilityPlugin = require("./config/tailwind/plugins/content-visibility");
 
 const PRIMARY_COLOR = "#0891B2";
 

@@ -6,6 +6,7 @@ COPY yarn.lock package.json ./
 # Uses a cache mount for the Yarn cache so that it's not included in subsequent steps
 RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn --production --frozen-lockfile --ignore-optional --network-timeout 1000000
 
+COPY --link config ./config/
 COPY --link lit-localize.json \
   postcss.config.js \
   tailwind.config.js \
@@ -18,7 +19,6 @@ COPY --link lit-localize.json \
   ./
 
 COPY --link src ./src/
-COPY --link plugins ./plugins/
 
 # Build variables used to show current app version
 # in the UI. Note that this will invalidate all
