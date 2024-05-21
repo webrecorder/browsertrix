@@ -1,5 +1,6 @@
 /* eslint-disable lit/binding-positions */
 /* eslint-disable lit/no-invalid-html */
+import clsx from "clsx";
 import { css } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -7,6 +8,8 @@ import { html, literal } from "lit/static-html.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { tw } from "@/utils/tailwind";
+
+type Variant = "neutral" | "danger";
 
 /**
  * Custom styled button
@@ -21,8 +24,18 @@ export class Button extends TailwindElement {
   @property({ type: String })
   type: "submit" | "button" = "button";
 
+  // TODO unify button styling & variants - there are probably a few different
+  // approaches for difference button use cases, but we'll figure that out in
+  // the future when we work more on our UI library.
+  // See also https://github.com/webrecorder/browsertrix/issues/1550
   @property({ type: String })
-  variant: "primary" | "danger" | "neutral" = "neutral";
+  variant: Variant = "neutral";
+
+  @property({ type: Boolean })
+  filled = false;
+
+  @property({ type: String })
+  size: "small" | "medium" = "medium";
 
   @property({ type: String })
   label?: string;
@@ -39,9 +52,6 @@ export class Button extends TailwindElement {
   @property({ type: Boolean })
   loading = false;
 
-  @property({ type: Boolean })
-  icon = false;
-
   static styles = css`
     :host {
       display: inline-block;
@@ -57,18 +67,28 @@ export class Button extends TailwindElement {
     const tag = this.href ? literal`a` : literal`button`;
     return html`<${tag}
       type=${this.type === "submit" ? "submit" : "button"}
-      class=${[
-        tw`flex h-6 cursor-pointer items-center justify-center gap-2 rounded-sm text-center font-medium transition-all disabled:cursor-not-allowed disabled:text-neutral-300`,
-        this.icon ? tw`min-h-8 min-w-8 px-1` : tw`h-6 px-2`,
-        this.raised ? tw`shadow-sm` : "",
-        {
-          primary: tw`bg-blue-50 text-blue-600 shadow-blue-800/20 hover:bg-blue-100`,
-          danger: tw`shadow-danger-800/20 bg-danger-50 text-danger-600 hover:bg-danger-100`,
-          neutral: tw`text-neutral-600 hover:text-blue-600`,
-        }[this.variant],
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      class=${clsx(
+        tw`flex h-6 cursor-pointer items-center justify-center gap-2 text-center font-medium outline-3 outline-offset-1 outline-primary transition focus-visible:outline disabled:cursor-not-allowed disabled:text-neutral-300`,
+        this.size === "medium"
+          ? tw`min-h-8 min-w-8 rounded-sm`
+          : tw`min-h-6 min-w-6 rounded-md`,
+        this.raised && tw`border shadow-sm`,
+        this.filled
+          ? [
+              tw`text-white`,
+              {
+                neutral: tw`border-primary-800 bg-primary-500 shadow-primary-800/20 hover:bg-primary-600`,
+                danger: tw`shadow-danger-800/20 border-danger-800 bg-danger-500 hover:bg-danger-600`,
+              }[this.variant],
+            ]
+          : [
+              this.raised && tw`bg-white`,
+              {
+                neutral: tw`border-gray-300 text-gray-600 hover:text-primary-600`,
+                danger: tw`shadow-danger-800/20 border-danger-300 bg-danger-50 text-danger-600 hover:bg-danger-100`,
+              }[this.variant],
+            ],
+      )}
       ?disabled=${this.disabled}
       href=${ifDefined(this.href)}
       aria-label=${ifDefined(this.label)}

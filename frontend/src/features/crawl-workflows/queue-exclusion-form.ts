@@ -147,11 +147,10 @@ export class QueueExclusionForm extends LiteElement {
                   : ""}
               </sl-input>
             </div>
-            <div class="flex-0 w-10 pt-1 text-center">
+            <div class="flex-0 w-10 text-center">
               <btrix-button
-                variant="primary"
+                variant="neutral"
                 raised
-                icon
                 ?disabled=${!this.inputValue ||
                 this.isRegexInvalid ||
                 this.isSubmitting}
