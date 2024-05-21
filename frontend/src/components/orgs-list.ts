@@ -17,7 +17,7 @@ import type { OrgData } from "@/utils/orgs";
 export class OrgsList extends TailwindElement {
   static styles = css`
     btrix-table {
-      grid-template-columns: [clickable-start] auto auto [clickable-end] min-content;
+      grid-template-columns: [clickable-start] auto auto auto [clickable-end] min-content;
     }
   `;
   @property({ type: Object })
@@ -52,8 +52,15 @@ export class OrgsList extends TailwindElement {
     return html`
       <btrix-table>
         <btrix-table-head class="mb-2">
-          <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
-          <btrix-table-header-cell>${msg("Members")}</btrix-table-header-cell>
+          <btrix-table-header-cell class="px-2"
+            >${msg("Name")}</btrix-table-header-cell
+          >
+          <btrix-table-header-cell class="px-2"
+            >${msg("Members")}</btrix-table-header-cell
+          >
+          <btrix-table-header-cell class="px-2">
+            ${msg("Bytes Stored")}
+          </btrix-table-header-cell>
           <btrix-table-header-cell>
             <span class="sr-only">${msg("Actions")}</span>
           </btrix-table-header-cell>
@@ -62,6 +69,7 @@ export class OrgsList extends TailwindElement {
           ${this.orgList?.map(this.renderOrg)}
         </btrix-table-body>
       </btrix-table>
+
       ${this.renderOrgDelete()} ${this.renderOrgQuotas()}
     `;
   }
@@ -244,18 +252,32 @@ export class OrgsList extends TailwindElement {
   private readonly renderOrg = (org: OrgData) => {
     if (!this.userInfo) return;
 
-    // // There shouldn't really be a case where an org is in the org list but
-    // // not in user info, but disable clicking into the org just in case
-    // const isUserOrg = this.userInfo.orgs.some(({ id }) => id === org.id);
+    // There shouldn't really be a case where an org is in the org list but
+    // not in user info, but disable clicking into the org just in case
+    const isUserOrg = this.userInfo.orgs.some(({ id }) => id === org.id);
 
     const memberCount = Object.keys(org.users || {}).length;
 
+    const none = html`
+      <sl-icon
+        name="slash"
+        class="text-base text-neutral-400"
+        label=${msg("None")}
+      ></sl-icon>
+    `;
+
     return html`
       <btrix-table-row
-        class="cursor-pointer select-none border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
+        class="${isUserOrg
+          ? ""
+          : "opacity-50"} cursor-pointer select-none border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
         <btrix-table-cell class="p-2" rowClickTarget="a">
-          <a href="/orgs/${org.slug}" @click=${this.navigate.link}>
+          <a
+            href="/orgs/${org.slug}"
+            @click=${this.navigate.link}
+            aria-disabled="${!isUserOrg}"
+          >
             ${org.default
               ? html`<btrix-tag class="mr-1">${msg("Default")}</btrix-tag>`
               : nothing}
@@ -263,7 +285,15 @@ export class OrgsList extends TailwindElement {
           </a>
         </btrix-table-cell>
         <btrix-table-cell class="p-2">
-          ${formatNumber(memberCount)}
+          ${memberCount ? formatNumber(memberCount) : none}
+        </btrix-table-cell>
+        <btrix-table-cell class="p-2">
+          ${org.bytesStored
+            ? html`<sl-format-bytes
+                value=${org.bytesStored}
+                display="narrow"
+              ></sl-format-bytes>`
+            : none}
         </btrix-table-cell>
         <btrix-table-cell class="p-1">
           <btrix-overflow-dropdown
