@@ -12,12 +12,15 @@ import type { CurrentUser } from "@/types/user";
 import { formatNumber } from "@/utils/localization";
 import type { OrgData } from "@/utils/orgs";
 
+/**
+ * @fires update-quotas
+ */
 @localized()
 @customElement("btrix-orgs-list")
 export class OrgsList extends TailwindElement {
   static styles = css`
     btrix-table {
-      grid-template-columns: [clickable-start] auto auto auto [clickable-end] min-content;
+      grid-template-columns: min-content [clickable-start] auto auto auto [clickable-end] min-content;
     }
   `;
   @property({ type: Object })
@@ -52,12 +55,15 @@ export class OrgsList extends TailwindElement {
     return html`
       <btrix-table>
         <btrix-table-head class="mb-2">
-          <btrix-table-header-cell class="px-2"
-            >${msg("Name")}</btrix-table-header-cell
-          >
-          <btrix-table-header-cell class="px-2"
-            >${msg("Members")}</btrix-table-header-cell
-          >
+          <btrix-table-header-cell>
+            <span class="sr-only">${msg("Status")}</span>
+          </btrix-table-header-cell>
+          <btrix-table-header-cell class="px-2">
+            ${msg("Name")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell class="px-2">
+            ${msg("Members")}
+          </btrix-table-header-cell>
           <btrix-table-header-cell class="px-2">
             ${msg("Bytes Stored")}
           </btrix-table-header-cell>
@@ -246,6 +252,8 @@ export class OrgsList extends TailwindElement {
       this.dispatchEvent(
         new CustomEvent("update-quotas", { detail: this.currOrg }),
       );
+
+      void this.orgQuotaDialog?.hide();
     }
   }
 
@@ -272,6 +280,24 @@ export class OrgsList extends TailwindElement {
           ? ""
           : "opacity-50"} cursor-pointer select-none border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
+        <btrix-table-cell class="min-w-6 pl-2">
+          ${org.storageQuotaReached || org.execMinutesQuotaReached
+            ? html`
+                <sl-tooltip content=${msg("Quota reached")}>
+                  <sl-icon
+                    class="text-base text-danger"
+                    name="exclamation-triangle-fill"
+                  >
+                  </sl-icon>
+                </sl-tooltip>
+              `
+            : html`
+                <sl-tooltip content=${msg("Under quota")}>
+                  <sl-icon class="text-base text-success" name="check-circle">
+                  </sl-icon>
+                </sl-tooltip>
+              `}
+        </btrix-table-cell>
         <btrix-table-cell class="p-2" rowClickTarget="a">
           <a
             href="/orgs/${org.slug}"

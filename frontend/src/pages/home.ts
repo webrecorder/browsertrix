@@ -141,10 +141,10 @@ export class Home extends LiteElement {
       <div class="grid grid-cols-5 gap-8">
         <div class="col-span-5 md:col-span-3">
           <section>
-            <header class="flex items-center justify-between">
-              <h2 class="mb-3 mt-2 text-lg font-medium">
-                ${msg("All Organizations")}
-              </h2>
+            <header
+              class="mb-3 flex items-center justify-between border-b pb-3"
+            >
+              <h2 class="text-lg font-medium">${msg("All Organizations")}</h2>
               <sl-button
                 variant="primary"
                 size="small"
