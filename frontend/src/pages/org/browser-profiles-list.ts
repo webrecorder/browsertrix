@@ -133,7 +133,7 @@ export class BrowserProfilesList extends LiteElement {
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell
-          class="flex-col items-start justify-center pl-0"
+          class="flex-col items-center justify-center pl-0"
           rowClickTarget="a"
         >
           <a
@@ -143,13 +143,11 @@ export class BrowserProfilesList extends LiteElement {
           >
             ${data.name}
           </a>
-          <div class="w-full text-xs text-neutral-500">
-            <div class="truncate">
-              ${data.description} ${data.description} ${data.description}
-              ${data.description} ${data.description} ${data.description}
-              ${data.description}
-            </div>
-          </div>
+          ${data.description
+            ? html`<div class="w-full text-xs text-neutral-500">
+                <div class="truncate">${data.description}</div>
+              </div>`
+            : nothing}
         </btrix-table-cell>
         <btrix-table-cell class="whitespace-nowrap">
           <sl-format-date
@@ -163,9 +161,9 @@ export class BrowserProfilesList extends LiteElement {
           ></sl-format-date>
         </btrix-table-cell>
         <btrix-table-cell>${data.origins.join(", ")}</btrix-table-cell>
-        <btrix-table-cell class="px-1"
-          >${this.renderActions(data)}</btrix-table-cell
-        >
+        <btrix-table-cell class="px-1">
+          ${this.renderActions(data)}
+        </btrix-table-cell>
       </btrix-table-row>
     `;
   };
