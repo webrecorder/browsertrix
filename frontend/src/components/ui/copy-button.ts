@@ -1,6 +1,8 @@
 import { localized, msg } from "@lit/localize";
-import { html, LitElement } from "lit";
+import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+
+import { TailwindElement } from "@/classes/TailwindElement";
 
 /**
  * Copy text to clipboard on click
@@ -18,7 +20,7 @@ import { customElement, property, state } from "lit/decorators.js";
  */
 @localized()
 @customElement("btrix-copy-button")
-export class CopyButton extends LitElement {
+export class CopyButton extends TailwindElement {
   @property({ type: String })
   value?: string;
 
@@ -33,6 +35,12 @@ export class CopyButton extends LitElement {
 
   @property({ type: Boolean })
   hoist = false;
+
+  @property({ type: Boolean })
+  raised = false;
+
+  @property({ type: String })
+  size: "xs" | "sm" | "md" = "sm";
 
   @state()
   private isCopied = false;
@@ -61,15 +69,16 @@ export class CopyButton extends LitElement {
         @sl-after-hide=${this.stopProp}
       >
         <btrix-button
-          size="small"
+          size=${this.size}
           @click=${this.onClick}
           ?disabled=${!this.value && !this.getValue}
           class="inline"
-          raised
+          ?raised=${this.raised}
         >
           <sl-icon
             name=${this.isCopied ? "check-lg" : this.name ? this.name : "copy"}
             label=${msg("Copy to clipboard")}
+            class="size-[14px]"
           ></sl-icon>
         </btrix-button>
       </sl-tooltip>

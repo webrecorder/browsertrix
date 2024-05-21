@@ -85,6 +85,7 @@ export class CopyField extends TailwindElement {
             .getValue=${this.getValue}
             .hoist=${this.hoist}
             class="m-1 flex"
+            raised
           ></btrix-copy-button>
         </div>
       </div>

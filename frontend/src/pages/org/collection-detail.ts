@@ -330,6 +330,7 @@ export class CollectionDetail extends LiteElement {
               .getValue=${() => embedCode}
               content=${msg("Copy Embed Code")}
               hoist
+              raised
             ></btrix-copy-button>
           </div>
         </div>
@@ -346,6 +347,7 @@ export class CollectionDetail extends LiteElement {
               .getValue=${() => importCode}
               content=${msg("Copy JS")}
               hoist
+              raised
             ></btrix-copy-button>
           </div>
         </div>
