@@ -48,8 +48,15 @@ class K8sOpAPI(K8sAPI):
         """compute memory / cpu resources for crawlers"""
         p = self.shared_params
         num = max(int(p["crawler_browser_instances"]) - 1, 0)
+        try:
+            qa_num = max(int(p["qa_browser_instances"]) - 1, 0)
+        # pylint: disable=bare-except
+        except:
+            qa_num = num
         crawler_cpu: float = 0
         crawler_memory: int = 0
+        qa_cpu: float = 0
+        qa_memory: int = 0
         print("crawler resources")
         if not p.get("crawler_cpu"):
             base = parse_quantity(p["crawler_cpu_base"])
@@ -57,10 +64,13 @@ class K8sOpAPI(K8sAPI):
 
             # cpu is a floating value of cpu cores
             crawler_cpu = float(base + num * extra)
+            qa_cpu = float(base + qa_num * extra)
 
             print(f"cpu = {base} + {num} * {extra} = {crawler_cpu}")
+            print(f"qa_cpu = {base} + {qa_num} * {extra} = {qa_cpu}")
         else:
             crawler_cpu = float(parse_quantity(p["crawler_cpu"]))
+            qa_cpu = crawler_cpu
             print(f"cpu = {crawler_cpu}")
 
         if not p.get("crawler_memory"):
@@ -69,10 +79,13 @@ class K8sOpAPI(K8sAPI):
 
             # memory is always an int
             crawler_memory = int(base + num * extra)
+            qa_memory = int(base + qa_num * extra)
 
             print(f"memory = {base} + {num} * {extra} = {crawler_memory}")
+            print(f"qa_memory = {base} + {qa_num} * {extra} = {qa_memory}")
         else:
             crawler_memory = int(parse_quantity(p["crawler_memory"]))
+            qa_memory = crawler_memory
             print(f"memory = {crawler_memory}")
 
         max_crawler_memory_size = 0
@@ -86,6 +99,10 @@ class K8sOpAPI(K8sAPI):
 
         p["crawler_cpu"] = crawler_cpu
         p["crawler_memory"] = crawler_memory
+        p["crawler_workers"] = num + 1
+        p["qa_cpu"] = qa_cpu
+        p["qa_memory"] = qa_memory
+        p["qa_workers"] = qa_num + 1
 
     def compute_profile_resources(self):
         """compute memory /cpu resources for a single profile browser"""

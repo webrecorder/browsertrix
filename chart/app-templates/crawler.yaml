@@ -61,11 +61,12 @@ spec:
   volumes:
     - name: crawl-config
       configMap:
-      {% if not qa_source_crawl_id %}
         name: crawl-config-{{ cid }}
-      {% else %}
+    {% if qa_source_crawl_id %}
+    - name: qa-config
+      configMap:
         name: qa-replay-{{ qa_source_crawl_id }}
-      {% endif %}
+    {% endif %}
     - name: crawl-data
       persistentVolumeClaim:
         claimName: {{ name }}
@@ -114,30 +115,32 @@ spec:
       image: {{ crawler_image }}
       imagePullPolicy: {{ crawler_image_pull_policy }}
       command:
-      {% if not qa_source_crawl_id %}
-        - crawl
+        - {{ "crawl" if not qa_source_crawl_id else "qa" }}
         - --config
         - /tmp/crawl-config.json
+        - --workers
+        - "{{ workers }}"
         - --redisStoreUrl
         - {{ redis_url }}
-      {%- if profile_filename %}
+      {% if qa_source_crawl_id %}
+        - --qaSource
+        - /tmp/qa-config.json
+      {% elif profile_filename %}
         - --profile
         - "@{{ profile_filename }}"
-      {%- endif %}
-
-      {% else %}
-        - qa
-        - --qaSource
-        - /tmp/crawl-config.json
-        - --redisStoreUrl
-        - {{ redis_url }}
-        - --writePagesToRedis
-       {% endif %}
+      {% endif %}
       volumeMounts:
         - name: crawl-config
           mountPath: /tmp/crawl-config.json
           subPath: crawl-config.json
           readOnly: True
+
+      {% if qa_source_crawl_id %}
+        - name: qa-config
+          mountPath: /tmp/qa-config.json
+          subPath: qa-config.json
+          readOnly: True
+      {% endif %}
 
         - name: crawl-data
           mountPath: /crawls

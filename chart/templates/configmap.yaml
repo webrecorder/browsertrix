@@ -67,7 +67,7 @@ metadata:
 
 data:
   CRAWL_ARGS: >-
-    --workers {{ .Values.crawler_browser_instances | default 1 }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --maxPageLimit {{ .Values.max_pages_per_crawl | default 0 }} --healthCheckPort {{ .Values.crawler_liveness_port }} --diskUtilization {{ .Values.disk_utilization_threshold }} --logging {{ .Values.crawler_logging_opts }} --text {{ .Values.crawler_extract_full_text }} --generateWACZ --collection thecrawl --screencastPort 9037 --logErrorsToRedis --writePagesToRedis --restartsOnError --headless --screenshot view,thumbnail {{ .Values.crawler_extra_args }}
+    --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --maxPageLimit {{ .Values.max_pages_per_crawl | default 0 }} --healthCheckPort {{ .Values.crawler_liveness_port }} --diskUtilization {{ .Values.disk_utilization_threshold }} --logging {{ .Values.crawler_logging_opts }} --text {{ .Values.crawler_extract_full_text }} --generateWACZ --collection thecrawl --screencastPort 9037 --logErrorsToRedis --writePagesToRedis --restartsOnError --headless --screenshot view,thumbnail {{ .Values.crawler_extra_args }}
 
 ---
 apiVersion: v1
@@ -105,6 +105,7 @@ data:
     crawler_extra_memory_per_browser: "{{ .Values.crawler_extra_memory_per_browser | default 0 }}"
 
     crawler_browser_instances: "{{ .Values.crawler_browser_instances }}"
+    qa_browser_instances: "{{ .Values.qa_browser_instances }}"
 
     crawler_cpu: "{{ .Values.crawler_cpu }}"
     crawler_memory: "{{ .Values.crawler_memory }}"
