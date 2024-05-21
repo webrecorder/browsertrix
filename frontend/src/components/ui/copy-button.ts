@@ -40,7 +40,7 @@ export class CopyButton extends TailwindElement {
   raised = false;
 
   @property({ type: String })
-  size: "xs" | "sm" | "md" = "sm";
+  size: "x-small" | "small" | "medium" = "small";
 
   @state()
   private isCopied = false;

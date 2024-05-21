@@ -35,7 +35,7 @@ export class Button extends TailwindElement {
   filled = false;
 
   @property({ type: String })
-  size: "xs" | "sm" | "md" = "md";
+  size: "x-small" | "small" | "medium" = "medium";
 
   @property({ type: String })
   label?: string;
@@ -70,9 +70,9 @@ export class Button extends TailwindElement {
       class=${clsx(
         tw`flex cursor-pointer items-center justify-center gap-2 text-center font-medium outline-3 outline-offset-1 outline-primary transition focus-visible:outline disabled:cursor-not-allowed disabled:text-neutral-300`,
         {
-          md: tw`min-h-8 min-w-8 rounded-sm`,
-          sm: tw`min-h-6 min-w-6 rounded-md`,
-          xs: tw`min-h-4 min-w-4`,
+          "x-small": tw`min-h-4 min-w-4`,
+          small: tw`min-h-6 min-w-6 rounded-md`,
+          medium: tw`min-h-8 min-w-8 rounded-sm`,
         }[this.size],
         this.raised && tw`border shadow-sm`,
         this.filled
