@@ -842,7 +842,7 @@ export class ArchivedItemQA extends TailwindElement {
                 placement="bottom-start"
               >
                 <btrix-button
-                  size="sm"
+                  size="small"
                   class="m-0.5"
                   @click=${() => {
                     if (
@@ -875,7 +875,7 @@ export class ArchivedItemQA extends TailwindElement {
                 <btrix-button
                   raised
                   ?filled=${!this.splitView}
-                  size="sm"
+                  size="small"
                   @click="${() => (this.splitView = !this.splitView)}"
                   class="m-0.5"
                   aria-pressed=${!this.splitView}
