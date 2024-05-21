@@ -78,7 +78,7 @@ export class CopyButton extends TailwindElement {
           <sl-icon
             name=${this.isCopied ? "check-lg" : this.name ? this.name : "copy"}
             label=${msg("Copy to clipboard")}
-            class="size-[14px]"
+            class="size-3.5"
           ></sl-icon>
         </btrix-button>
       </sl-tooltip>
