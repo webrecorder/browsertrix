@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlChangeEvent, SlInput } from "@shoelace-style/shoelace";
-import { html, type TemplateResult } from "lit";
+import { css, html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
@@ -8,12 +8,18 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
-import type { CurrentUser, UserOrg } from "@/types/user";
+import type { CurrentUser } from "@/types/user";
+import { formatNumber } from "@/utils/localization";
 import type { OrgData } from "@/utils/orgs";
 
 @localized()
 @customElement("btrix-orgs-list")
 export class OrgsList extends TailwindElement {
+  static styles = css`
+    btrix-table {
+      grid-template-columns: [clickable-start] auto auto [clickable-end] min-content;
+    }
+  `;
   @property({ type: Object })
   userInfo?: CurrentUser;
 
@@ -43,14 +49,20 @@ export class OrgsList extends TailwindElement {
       return this.renderSkeleton();
     }
 
-    const defaultOrg = this.userInfo?.orgs.find((org) => org.default === true);
-
     return html`
-      <ul class="overflow-hidden rounded-lg border">
-        ${this.orgList?.map(this.renderOrg(defaultOrg))}
-        ${this.renderOrgDelete()}
-        ${this.renderOrgQuotas()}
-      </ul>
+      <btrix-table>
+        <btrix-table-head class="mb-2">
+          <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
+          <btrix-table-header-cell>${msg("Members")}</btrix-table-header-cell>
+          <btrix-table-header-cell>
+            <span class="sr-only">${msg("Actions")}</span>
+          </btrix-table-header-cell>
+        </btrix-table-head>
+        <btrix-table-body class="rounded border">
+          ${this.orgList?.map(this.renderOrg)}
+        </btrix-table-body>
+      </btrix-table>
+      ${this.renderOrgDelete()} ${this.renderOrgQuotas()}
     `;
   }
 
@@ -229,40 +241,31 @@ export class OrgsList extends TailwindElement {
     }
   }
 
-  private readonly renderOrg = (defaultOrg?: UserOrg) => (org: OrgData) => {
+  private readonly renderOrg = (org: OrgData) => {
     if (!this.userInfo) return;
 
-    // There shouldn't really be a case where an org is in the org list but
-    // not in user info, but disable clicking into the org just in case
-    const isUserOrg = this.userInfo.orgs.some(({ id }) => id === org.id);
+    // // There shouldn't really be a case where an org is in the org list but
+    // // not in user info, but disable clicking into the org just in case
+    // const isUserOrg = this.userInfo.orgs.some(({ id }) => id === org.id);
 
-    let defaultLabel: TemplateResult | undefined;
-
-    if (defaultOrg && org.id === defaultOrg.id) {
-      defaultLabel = html`<sl-tag size="small" variant="primary" class="mr-2"
-        >${msg("Default")}</sl-tag
-      >`;
-    }
     const memberCount = Object.keys(org.users || {}).length;
 
     return html`
-      <li
-        class="${isUserOrg
-          ? ""
-          : "select-none cursor-not-allowed opacity-50"} flex items-center justify-between border-t bg-white p-3 text-primary first:border-t-0 hover:text-indigo-400"
-        role="button"
-        @click=${this.makeOnOrgClick(org)}
-        aria-disabled="${isUserOrg}"
+      <btrix-table-row
+        class="cursor-pointer select-none border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
-        <div class="mr-2 font-medium transition-colors">
-          ${defaultLabel}${org.name}
-        </div>
-        <div class="flex flex-row items-center">
-          <div class="text-s font-monostyle mr-4 text-neutral-400">
-            ${memberCount === 1
-              ? msg(`1 member`)
-              : msg(str`${memberCount} members`)}
-          </div>
+        <btrix-table-cell class="p-2" rowClickTarget="a">
+          <a href="/orgs/${org.slug}" @click=${this.navigate.link}>
+            ${org.default
+              ? html`<btrix-tag class="mr-1">${msg("Default")}</btrix-tag>`
+              : nothing}
+            ${org.name}
+          </a>
+        </btrix-table-cell>
+        <btrix-table-cell class="p-2">
+          ${formatNumber(memberCount)}
+        </btrix-table-cell>
+        <btrix-table-cell class="p-1">
           <btrix-overflow-dropdown
             @click=${(e: MouseEvent) => e.stopPropagation()}
           >
@@ -288,8 +291,8 @@ export class OrgsList extends TailwindElement {
               </sl-menu-item>
             </sl-menu>
           </btrix-overflow-dropdown>
-        </div>
-      </li>
+        </btrix-table-cell>
+      </btrix-table-row>
     `;
   };
 
@@ -301,22 +304,5 @@ export class OrgsList extends TailwindElement {
         </div>
       </div>
     `;
-  }
-
-  private makeOnOrgClick(org: OrgData) {
-    const navigate = () => this.navigate.to(`/orgs/${org.slug}`);
-
-    if (typeof window.getSelection !== "undefined") {
-      return () => {
-        // Prevent navigation on user text selection
-        if (window.getSelection()?.type === "Range") {
-          return;
-        }
-
-        navigate();
-      };
-    }
-
-    return navigate;
   }
 }

@@ -17,6 +17,7 @@ export type OrgData = {
   id: string;
   name: string;
   slug: string;
+  default: boolean;
   quotas?: Record<string, number>;
   bytesStored: number;
   bytesStoredCrawls: number;
