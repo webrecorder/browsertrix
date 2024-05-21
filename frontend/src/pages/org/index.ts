@@ -80,7 +80,7 @@ const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /**
- * @fires update-user-info
+ * @fires btrix-update-user-info
  */
 @localized()
 @customElement("btrix-org")
@@ -725,7 +725,7 @@ export class Org extends LiteElement {
       });
 
       await this.dispatchEvent(
-        new CustomEvent("update-user-info", { bubbles: true }),
+        new CustomEvent("btrix-update-user-info", { bubbles: true }),
       );
       const newSlug = e.detail.slug;
       if (newSlug) {

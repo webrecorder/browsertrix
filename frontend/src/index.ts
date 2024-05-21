@@ -365,7 +365,7 @@ export class App extends LiteElement {
       : { slug: "", name: msg("All Organizations") };
     if (!selectedOption) {
       console.debug(
-        `Could't find organization with slug ${this.appState.orgSlug}`,
+        `Couldn't find organization with slug ${this.appState.orgSlug}`,
         orgs,
       );
       return;
@@ -575,7 +575,7 @@ export class App extends LiteElement {
       case "home":
         return html`<btrix-home
           class="w-full md:bg-neutral-50"
-          @update-user-info=${(e: CustomEvent) => {
+          @btrix-update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
             void this.updateUserInfo();
           }}
@@ -601,7 +601,7 @@ export class App extends LiteElement {
             .split("/")[0] || "home";
         return html`<btrix-org
           class="w-full"
-          @update-user-info=${(e: CustomEvent) => {
+          @btrix-update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
             void this.updateUserInfo();
           }}
@@ -619,7 +619,7 @@ export class App extends LiteElement {
       case "accountSettings":
         return html`<btrix-account-settings
           class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
-          @update-user-info=${(e: CustomEvent) => {
+          @btrix-update-user-info=${(e: CustomEvent) => {
             e.stopPropagation();
             void this.updateUserInfo();
           }}

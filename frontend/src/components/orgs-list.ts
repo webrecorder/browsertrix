@@ -16,9 +16,6 @@ export class OrgsList extends LiteElement {
   @property({ type: Array })
   orgList?: OrgData[] = [];
 
-  @property({ type: Object })
-  defaultOrg?: UserOrg;
-
   @property({ type: Boolean })
   skeleton? = false;
 
@@ -30,9 +27,12 @@ export class OrgsList extends LiteElement {
       return this.renderSkeleton();
     }
 
+    const defaultOrg = this.userInfo?.orgs.find((org) => org.default === true);
+
     return html`
       <ul class="overflow-hidden rounded-lg border">
-        ${this.orgList?.map(this.renderOrg)} ${this.renderOrgQuotas()}
+        ${this.orgList?.map(this.renderOrg(defaultOrg))}
+        ${this.renderOrgQuotas()}
       </ul>
     `;
   }
@@ -125,9 +125,16 @@ export class OrgsList extends LiteElement {
     return stop;
   }
 
-  private readonly renderOrg = (org: OrgData) => {
+  private readonly renderOrg = (defaultOrg?: UserOrg) => (org: OrgData) => {
+    if (!this.userInfo) return;
+
+    // There shouldn't really be a case where an org is in the org list but
+    // not in user info, but disable clicking into the org just in case
+    const isUserOrg = this.userInfo.orgs.some(({ id }) => id === org.id);
+
     let defaultLabel: TemplateResult | undefined;
-    if (this.defaultOrg && org.id === this.defaultOrg.id) {
+
+    if (defaultOrg && org.id === defaultOrg.id) {
       defaultLabel = html`<sl-tag size="small" variant="primary" class="mr-2"
         >${msg("Default")}</sl-tag
       >`;
@@ -136,9 +143,12 @@ export class OrgsList extends LiteElement {
 
     return html`
       <li
-        class="flex items-center justify-between border-t bg-white p-3 text-primary first:border-t-0 hover:text-indigo-400"
+        class="${isUserOrg
+          ? ""
+          : "select-none cursor-not-allowed opacity-50"} flex items-center justify-between border-t bg-white p-3 text-primary first:border-t-0 hover:text-indigo-400"
         role="button"
         @click=${this.makeOnOrgClick(org)}
+        aria-disabled="${isUserOrg}"
       >
         <div class="mr-2 font-medium transition-colors">
           ${defaultLabel}${org.name}
