@@ -300,7 +300,7 @@ export class BrowserProfilesDetail extends LiteElement {
               name="pencil"
             ></sl-icon>
             <span class="inline-block pr-2 align-middle"
-              >${msg("Edit Name & Description")}</span
+              >${msg("Edit Metadata")}</span
             >
           </li>
           <li
@@ -602,7 +602,8 @@ export class BrowserProfilesDetail extends LiteElement {
   }
 
   private async onSubmitEdit(e: SubmitEvent) {
-    e.preventDefault;
+    e.preventDefault();
+
     this.isSubmittingProfileChange = true;
 
     const formData = new FormData(e.target as HTMLFormElement);
