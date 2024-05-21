@@ -842,7 +842,8 @@ export class ArchivedItemQA extends TailwindElement {
                 placement="bottom-start"
               >
                 <btrix-button
-                  icon
+                  size="sm"
+                  class="m-0.5"
                   @click=${() => {
                     if (
                       this.interactiveReplayFrame?.contentDocument
@@ -874,7 +875,7 @@ export class ArchivedItemQA extends TailwindElement {
                 <btrix-button
                   raised
                   ?filled=${!this.splitView}
-                  size="small"
+                  size="sm"
                   @click="${() => (this.splitView = !this.splitView)}"
                   class="m-0.5"
                   aria-pressed=${!this.splitView}
