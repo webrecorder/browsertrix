@@ -1,11 +1,13 @@
 import { localized, msg, str } from "@lit/localize";
-import { type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
+import { TailwindElement } from "@/classes/TailwindElement";
+import { APIController } from "@/controllers/api";
+import { NotifyController } from "@/controllers/notify";
 import { isApiError, type APIError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 const POLL_INTERVAL_SECONDS = 2;
 const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];
@@ -35,7 +37,7 @@ export type BrowserErrorDetail = {
  */
 @localized()
 @customElement("btrix-profile-browser")
-export class ProfileBrowser extends LiteElement {
+export class ProfileBrowser extends TailwindElement {
   @property({ type: Object })
   authState!: AuthState;
 
@@ -85,6 +87,9 @@ export class ProfileBrowser extends LiteElement {
   private readonly iframe?: HTMLIFrameElement;
 
   private pollTimerId?: number;
+
+  private readonly api = new APIController(this);
+  private readonly notify = new NotifyController(this);
 
   connectedCallback() {
     super.connectedCallback();
@@ -361,7 +366,7 @@ export class ProfileBrowser extends LiteElement {
         }),
       );
 
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, can't edit browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -420,7 +425,7 @@ export class ProfileBrowser extends LiteElement {
   }
 
   private async getBrowser() {
-    const data = await this.apiFetch<{
+    const data = await this.api.fetch<{
       detail?: string;
       url?: string;
     }>(
@@ -437,7 +442,7 @@ export class ProfileBrowser extends LiteElement {
   private async navigateBrowser({ url }: { url: string }) {
     if (!this.iframeSrc) return;
 
-    const data = this.apiFetch(
+    const data = this.api.fetch(
       `/orgs/${this.orgId}/profiles/browser/${this.browserId}/navigate`,
       this.authState!,
       {
@@ -456,7 +461,7 @@ export class ProfileBrowser extends LiteElement {
     if (!this.iframeSrc) return;
 
     try {
-      const data = await this.apiFetch<{ origins?: string[] }>(
+      const data = await this.api.fetch<{ origins?: string[] }>(
         `/orgs/${this.orgId}/profiles/browser/${this.browserId}/ping`,
         this.authState!,
         {
