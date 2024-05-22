@@ -155,15 +155,25 @@ class ProfileOps:
         self,
         browser_commit: ProfileCreate,
         storage: StorageRef,
+        user: User,
         metadata: dict,
-        profileid: Optional[UUID] = None,
-        existing_created: Optional[datetime] = None,
+        existing_profile: Optional[Profile] = None,
     ) -> dict[str, Any]:
         """commit profile and shutdown profile browser"""
         # pylint: disable=too-many-locals
 
-        if not profileid:
+        now = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+
+        if existing_profile:
+            profileid = existing_profile.id
+            created = existing_profile.created
+            created_by = existing_profile.createdBy
+            created_by_name = existing_profile.createdByName
+        else:
             profileid = uuid4()
+            created = now
+            created_by = user.id
+            created_by_name = user.name if user.name else user.email
 
         filename_data = {"filename": f"profiles/profile-{profileid}.tar.gz"}
 
@@ -199,14 +209,16 @@ class ProfileOps:
         if await self.orgs.storage_quota_reached(oid):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
-        now = datetime.utcnow().replace(microsecond=0, tzinfo=None)
-
         profile = Profile(
             id=profileid,
             name=browser_commit.name,
             description=browser_commit.description,
-            created=existing_created if existing_created else now,
+            created=created,
+            createdBy=created_by,
+            createdByName=created_by_name,
             modified=now,
+            modifiedBy=user.id,
+            modifiedByName=user.name if user.name else user.email,
             origins=json["origins"],
             resource=profile_file,
             userid=UUID(metadata.get("btrix.user")),
@@ -231,11 +243,15 @@ class ProfileOps:
             "storageQuotaReached": quota_reached,
         }
 
-    async def update_profile_metadata(self, profileid: UUID, update: ProfileUpdate):
+    async def update_profile_metadata(
+        self, profileid: UUID, update: ProfileUpdate, user: User
+    ):
         """Update name and description metadata only on existing profile"""
         query = {
             "name": update.name,
             "modified": datetime.utcnow().replace(microsecond=0, tzinfo=None),
+            "modifiedBy": user.id,
+            "modifiedByName": user.name if user.name else user.email,
         }
 
         if update.description is not None:
@@ -434,19 +450,21 @@ def init_profiles_api(
     async def commit_browser_to_new(
         browser_commit: ProfileCreate,
         org: Organization = Depends(org_crawl_dep),
+        user: User = Depends(user_dep),
     ):
         metadata = await browser_get_metadata(browser_commit.browserid, org)
 
-        return await ops.commit_to_profile(browser_commit, org.storage, metadata)
+        return await ops.commit_to_profile(browser_commit, org.storage, user, metadata)
 
     @router.patch("/{profileid}")
     async def commit_browser_to_existing(
         browser_commit: ProfileUpdate,
         profileid: UUID,
         org: Organization = Depends(org_crawl_dep),
+        user: User = Depends(user_dep),
     ):
         if not browser_commit.browserid:
-            await ops.update_profile_metadata(profileid, browser_commit)
+            await ops.update_profile_metadata(profileid, browser_commit, user)
 
         else:
             metadata = await browser_get_metadata(browser_commit.browserid, org)
@@ -459,9 +477,9 @@ def init_profiles_api(
                     crawlerChannel=profile.crawlerChannel,
                 ),
                 storage=org.storage,
+                user=user,
                 metadata=metadata,
-                profileid=profileid,
-                existing_created=profile.created,
+                existing_profile=profile,
             )
 
         return {"updated": True}
