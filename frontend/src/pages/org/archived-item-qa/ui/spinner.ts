@@ -1,10 +1,12 @@
+import clsx from "clsx";
 import { html } from "lit";
 
-import { tw } from "@/utils/tailwind";
-
-export function renderSpinner() {
+export function renderSpinner(className?: clsx.ClassValue) {
   return html`<div
-    class=${tw`flex h-full w-full items-center justify-center p-9 text-2xl`}
+    class=${clsx(
+      "flex h-full w-full items-center justify-center p-9 text-2xl",
+      className,
+    )}
   >
     <sl-spinner></sl-spinner>
   </div>`;
