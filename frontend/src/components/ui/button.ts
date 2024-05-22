@@ -70,9 +70,9 @@ export class Button extends TailwindElement {
       class=${clsx(
         tw`flex cursor-pointer items-center justify-center gap-2 text-center font-medium outline-3 outline-offset-1 outline-primary transition focus-visible:outline disabled:cursor-not-allowed disabled:text-neutral-300`,
         {
-          "x-small": tw`min-h-4 min-w-4`,
-          small: tw`min-h-6 min-w-6 rounded-md`,
-          medium: tw`min-h-8 min-w-8 rounded-sm`,
+          "x-small": tw`min-h-4 min-w-4 text-sm`,
+          small: tw`min-h-6 min-w-6 rounded-md text-base`,
+          medium: tw`min-h-8 min-w-8 rounded-sm text-lg`,
         }[this.size],
         this.raised && tw`border shadow-sm`,
         this.filled
