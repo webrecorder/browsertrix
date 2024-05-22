@@ -157,6 +157,7 @@ class ProfileOps:
         storage: StorageRef,
         metadata: dict,
         profileid: Optional[UUID] = None,
+        existing_created: Optional[datetime] = None,
     ) -> dict[str, Any]:
         """commit profile and shutdown profile browser"""
         if not profileid:
@@ -196,11 +197,14 @@ class ProfileOps:
         if await self.orgs.storage_quota_reached(oid):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
+        now = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+
         profile = Profile(
             id=profileid,
             name=browser_commit.name,
             description=browser_commit.description,
-            created=datetime.utcnow().replace(microsecond=0, tzinfo=None),
+            created=existing_created if existing_created else now,
+            modified=now,
             origins=json["origins"],
             resource=profile_file,
             userid=UUID(metadata.get("btrix.user")),
@@ -227,7 +231,11 @@ class ProfileOps:
 
     async def update_profile_metadata(self, profileid: UUID, update: ProfileUpdate):
         """Update name and description metadata only on existing profile"""
-        query = {"name": update.name}
+        query = {
+            "name": update.name,
+            "modified": datetime.utcnow().replace(microsecond=0, tzinfo=None),
+        }
+
         if update.description is not None:
             query["description"] = update.description
 
@@ -451,6 +459,7 @@ def init_profiles_api(
                 storage=org.storage,
                 metadata=metadata,
                 profileid=profileid,
+                existing_created=profile.created,
             )
 
         return {"updated": True}

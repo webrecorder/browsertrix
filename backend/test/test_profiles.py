@@ -122,6 +122,7 @@ def profile_config_id(admin_auth_headers, default_org_id, profile_id):
     assert data["oid"] == default_org_id
     assert data.get("origins") or data.get("origins") == []
     assert data["created"]
+    assert data["modified"]
     assert not data["baseid"]
 
     resource = data["resource"]
@@ -212,6 +213,7 @@ def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_con
             assert data["oid"] == default_org_id
             assert data.get("origins") or data.get("origins") == []
             assert data["created"]
+            assert data["modified"]
             assert not data["baseid"]
 
             resource = data["resource"]
@@ -266,6 +268,7 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert profile_1["oid"] == default_org_id
             assert profile_1.get("origins") or data.get("origins") == []
             assert profile_1["created"]
+            assert profile_1["modified"]
             assert not profile_1["baseid"]
             resource = profile_1["resource"]
             assert resource
@@ -286,6 +289,7 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert profile_2["oid"] == default_org_id
             assert profile_2.get("origins") or data.get("origins") == []
             assert profile_2["created"]
+            assert profile_2["modified"]
             assert not profile_2["baseid"]
             resource = profile_2["resource"]
             assert resource
@@ -329,6 +333,16 @@ def test_delete_profile(admin_auth_headers, default_org_id, profile_2_id):
 
 
 def test_update_profile_metadata(admin_auth_headers, default_org_id, profile_id):
+    # Get original created/modified times
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.jsoN()
+    original_created = data["created"]
+    original_modified = data["modified"]
+
     # Update name and description
     r = requests.patch(
         f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
@@ -354,10 +368,24 @@ def test_update_profile_metadata(admin_auth_headers, default_org_id, profile_id)
     assert data["name"] == PROFILE_NAME_UPDATED
     assert data["description"] == PROFILE_DESC_UPDATED
 
+    # Ensure modified was updated but created was not
+    assert data["modified"] > original_modified
+    assert data["created"] == original_created
+
 
 def test_commit_browser_to_existing_profile(
     admin_auth_headers, default_org_id, profile_browser_3_id, profile_id
 ):
+    # Get original modified time
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    original_created = data["created"]
+    original_modified = data["modified"]
+
     prepare_browser_for_profile_commit(
         profile_browser_3_id, admin_auth_headers, default_org_id
     )
@@ -374,3 +402,13 @@ def test_commit_browser_to_existing_profile(
     )
     assert r.status_code == 200
     assert r.json()["updated"]
+
+    # Ensure modified was updated but created was not
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["modified"] > original_modified
+    assert data["created"] == original_created
