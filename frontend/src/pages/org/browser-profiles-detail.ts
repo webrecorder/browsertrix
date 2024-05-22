@@ -3,7 +3,6 @@ import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import { capitalize } from "lodash/fp";
 import queryString from "query-string";
 
 import type { Profile } from "./types";
@@ -121,60 +120,66 @@ export class BrowserProfilesDetail extends TailwindElement {
         </div>
       </header>
 
-      <section class="mb-7 rounded-lg border px-4 py-2">
-        <btrix-desc-list horizontal>
-          <btrix-desc-list-item label=${msg("Created At")}>
-            ${this.profile
-              ? html`
-                  <sl-format-date
-                    lang=${getLocale()}
-                    date=${`${this.profile.created}Z` /** Z for UTC */}
-                    month="2-digit"
-                    day="2-digit"
-                    year="2-digit"
-                    hour="numeric"
-                    minute="numeric"
-                    time-zone-name="short"
-                  ></sl-format-date>
-                `
-              : nothing}
-          </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Crawler Release Channel")}>
-            ${this.profile
-              ? this.profile.crawlerChannel
-                ? capitalize(this.profile.crawlerChannel)
-                : none
-              : nothing}
-          </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Crawl Workflows")}>
-            ${this.profile?.crawlconfigs?.length
-              ? html`<ul class="text-sm font-medium">
-                  ${this.profile.crawlconfigs.map(
-                    ({ id, name }) => html`
-                      <li>
-                        <a
-                          class="text-neutral-600 hover:underline"
-                          href=${`${this.navigate.orgBasePath}/workflows/crawl/${id}`}
-                          @click=${this.navigate.link}
-                        >
-                          ${name || msg("(no name)")}
-                        </a>
-                      </li>
-                    `,
-                  )}
-                </ul>`
-              : none}
-          </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Description")}>
-            ${this.profile
-              ? this.profile.description
+      <section class="mb-5 rounded border p-4">
+        <dl class="grid grid-cols-3 gap-5">
+          <div class="col-span-3 md:col-span-1">
+            <dt class="text-sm text-0-600">${msg("Description")}</dt>
+            <dd>${this.profile ? this.profile.description || none : ""}</dd>
+          </div>
+          <div class="col-span-3 md:col-span-1">
+            <dt class="text-sm text-0-600">
+              <span class="inline-block align-middle"
+                >${msg("Created at")}</span
+              >
+            </dt>
+            <dd>
+              ${this.profile
                 ? html`
-                    <div class="truncate">${this.profile.description}</div>
+                    <sl-format-date
+                      lang=${getLocale()}
+                      date=${`${this.profile.created}Z` /** Z for UTC */}
+                      month="2-digit"
+                      day="2-digit"
+                      year="2-digit"
+                      hour="numeric"
+                      minute="numeric"
+                      time-zone-name="short"
+                    ></sl-format-date>
                   `
-                : none
-              : nothing}
-          </btrix-desc-list-item>
-        </btrix-desc-list>
+                : ""}
+            </dd>
+          </div>
+          <div class="col-span-3 md:col-span-1">
+            <dt class="text-sm text-0-600">
+              <span class="inline-block align-middle"
+                >${msg("Crawl Workflows")}</span
+              >
+              <sl-tooltip content=${msg("Crawl workflows using this profile")}>
+                <sl-icon
+                  class="inline-block align-middle"
+                  name="info-circle"
+                ></sl-icon>
+              </sl-tooltip>
+            </dt>
+            <dd>
+              <ul class="text-sm font-medium">
+                ${this.profile?.crawlconfigs?.map(
+                  ({ id, name }) => html`
+                    <li>
+                      <a
+                        class="text-neutral-600 hover:underline"
+                        href=${`${this.navigate.orgBasePath}/workflows/crawl/${id}`}
+                        @click=${this.navigate.link}
+                      >
+                        ${name}
+                      </a>
+                    </li>
+                  `,
+                )}
+              </ul>
+            </dd>
+          </div>
+        </dl>
       </section>
 
       <div class="flex flex-col gap-5 lg:flex-row">
