@@ -123,17 +123,6 @@ export class BrowserProfilesDetail extends TailwindElement {
 
       <section class="mb-7 rounded-lg border px-4 py-2">
         <btrix-desc-list horizontal>
-          <btrix-desc-list-item label=${msg("Description")}>
-            ${this.profile
-              ? this.profile.description
-                ? html`
-                    <div class="max-h-12 overflow-auto">
-                      ${this.profile.description}
-                    </div>
-                  `
-                : none
-              : nothing}
-          </btrix-desc-list-item>
           <btrix-desc-list-item label=${msg("Created At")}>
             ${this.profile
               ? html`
@@ -175,6 +164,15 @@ export class BrowserProfilesDetail extends TailwindElement {
                   )}
                 </ul>`
               : none}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Description")}>
+            ${this.profile
+              ? this.profile.description
+                ? html`
+                    <div class="truncate">${this.profile.description}</div>
+                  `
+                : none
+              : nothing}
           </btrix-desc-list-item>
         </btrix-desc-list>
       </section>
