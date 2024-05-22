@@ -48,6 +48,13 @@ export class BrowserProfilesNew extends LiteElement {
   @state()
   private isDialogVisible = false;
 
+  disconnectedCallback(): void {
+    if (this.browserId) {
+      void this.deleteBrowser(this.browserId);
+    }
+    super.disconnectedCallback();
+  }
+
   render() {
     return html`
       <div class="mb-7">
@@ -117,11 +124,8 @@ export class BrowserProfilesNew extends LiteElement {
         ></btrix-profile-browser>
 
         <div
-          class="sticky bottom-2 z-10 mb-3 flex items-center justify-between rounded-lg border bg-neutral-0 p-2 shadow"
+          class="sticky bottom-2 z-10 mb-3 flex items-center justify-end rounded-lg border bg-neutral-0 p-2 shadow"
         >
-          <sl-button size="small" @click=${() => console.log("TODO")}>
-            ${msg("Cancel")}
-          </sl-button>
           <sl-button
             variant="success"
             size="small"
@@ -288,6 +292,16 @@ export class BrowserProfilesNew extends LiteElement {
       {
         method: "POST",
         body: JSON.stringify(params),
+      },
+    );
+  }
+
+  private async deleteBrowser(id: string) {
+    return this.apiFetch(
+      `/orgs/${this.orgId}/profiles/browser/${id}`,
+      this.authState!,
+      {
+        method: "DELETE",
       },
     );
   }

@@ -94,11 +94,11 @@ export class ProfileBrowser extends LiteElement {
   }
 
   disconnectedCallback() {
-    super.disconnectedCallback();
-
     window.clearTimeout(this.pollTimerId);
     document.removeEventListener("fullscreenchange", this.onFullscreenChange);
     window.removeEventListener("beforeunload", this.onBeforeUnload);
+
+    super.disconnectedCallback();
   }
 
   private onBeforeUnload(e: BeforeUnloadEvent) {
