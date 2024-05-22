@@ -51,9 +51,6 @@ export class BrowserProfilesDetail extends TailwindElement {
   private isBrowserLoaded = false;
 
   @state()
-  private isBrowserLoadingFailed = false;
-
-  @state()
   private isSubmittingBrowserChange = false;
 
   @state()
@@ -218,6 +215,7 @@ export class BrowserProfilesDetail extends TailwindElement {
                         @btrix-browser-load=${() =>
                           (this.isBrowserLoaded = true)}
                         @btrix-browser-error=${this.onBrowserError}
+                        @btrix-browser-reload=${this.startBrowserPreview}
                       ></btrix-profile-browser>
                       <div
                         class="flex-0 sticky bottom-2 rounded-lg border bg-neutral-0 shadow"
@@ -312,14 +310,6 @@ export class BrowserProfilesDetail extends TailwindElement {
           ${msg("Cancel")}
         </sl-button>
         <div>
-          ${this.isBrowserLoadingFailed
-            ? html`
-                <sl-button size="small" @click=${this.startBrowserPreview}>
-                  <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
-                  ${msg("Reload Browser")}
-                </sl-button>
-              `
-            : nothing}
           <sl-button
             variant="primary"
             size="small"
@@ -413,13 +403,11 @@ export class BrowserProfilesDetail extends TailwindElement {
 
   private async onBrowserError() {
     this.isBrowserLoaded = false;
-    this.isBrowserLoadingFailed = true;
   }
 
   private async startBrowserPreview() {
     if (!this.profile) return;
 
-    this.isBrowserLoadingFailed = false;
     this.isBrowserLoading = true;
 
     const url = this.profile.origins[0];

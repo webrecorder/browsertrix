@@ -40,6 +40,7 @@ export class BrowserProfilesNew extends LiteElement {
   private params: Partial<{
     name: string;
     description: string;
+    url: string;
     navigateUrl: string;
     profileId: string | null;
     crawlerChannel: string;
@@ -123,6 +124,7 @@ export class BrowserProfilesNew extends LiteElement {
           orgId=${this.orgId}
           browserId=${this.browserId}
           initialNavigateUrl=${ifDefined(this.params.navigateUrl)}
+          @btrix-browser-reload=${this.onBrowserReload}
         ></btrix-profile-browser>
 
         <div
@@ -202,6 +204,27 @@ export class BrowserProfilesNew extends LiteElement {
     </form>`;
   }
 
+  private async onBrowserReload() {
+    if (!this.params.url) {
+      console.debug("no start url");
+      return;
+    }
+
+    const crawlerChannel = this.params.crawlerChannel || "default";
+    const data = await this.createBrowser({
+      url: this.params.url,
+      crawlerChannel,
+    });
+
+    this.navTo(
+      `${this.orgBasePath}/browser-profiles/profile/browser/${
+        data.browserid
+      }?name=${window.encodeURIComponent(
+        this.params.name || msg("My Profile"),
+      )}&description=&profileId=&url=${this.params.url}&crawlerChannel=${crawlerChannel}`,
+    );
+  }
+
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
     this.isSubmitting = true;
@@ -254,5 +277,26 @@ export class BrowserProfilesNew extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+  private async createBrowser({
+    url,
+    crawlerChannel,
+  }: {
+    url: string;
+    crawlerChannel: string;
+  }) {
+    const params = {
+      url,
+      crawlerChannel,
+    };
+
+    return this.apiFetch<{ browserid: string }>(
+      `/orgs/${this.orgId}/profiles/browser`,
+      this.authState!,
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+      },
+    );
   }
 }

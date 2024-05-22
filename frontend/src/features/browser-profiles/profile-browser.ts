@@ -1,8 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
 import { type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
-import { type APIError } from "@/utils/api";
+import { isApiError, type APIError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 
@@ -28,8 +29,9 @@ export type BrowserErrorDetail = {
  * ></btrix-profile-browser>
  * ```
  *
- * @event btrix-browser-load Event on iframe load, with src URL
- * @event btrix-browser-error
+ * @fires btrix-browser-load Event on iframe load, with src URL
+ * @fires btrix-browser-error
+ * @fires btrix-browser-reload
  */
 @localized()
 @customElement("btrix-profile-browser")
@@ -57,6 +59,9 @@ export class ProfileBrowser extends LiteElement {
 
   @state()
   private browserNotAvailable = false;
+
+  @state()
+  private browserDisconnected = false;
 
   @state()
   private isFullscreen = false;
@@ -89,11 +94,11 @@ export class ProfileBrowser extends LiteElement {
   }
 
   disconnectedCallback() {
+    super.disconnectedCallback();
+
     window.clearTimeout(this.pollTimerId);
     document.removeEventListener("fullscreenchange", this.onFullscreenChange);
     window.removeEventListener("beforeunload", this.onBeforeUnload);
-
-    super.disconnectedCallback();
   }
 
   private onBeforeUnload(e: BeforeUnloadEvent) {
@@ -181,7 +186,7 @@ export class ProfileBrowser extends LiteElement {
           <span id="profileBrowserLabel"> ${msg("Interactive Browser")} </span>
           <sl-tooltip
             content=${msg(
-              "Interact with this embedded browser to set up your browser profile. The embedded browser will close and discard changes after a few minutes of inactivity.",
+              "Interact with this embedded browser to set up your browser profile. The embedded browser will exit and discard changes after a few minutes of inactivity.",
             )}
             hoist
           >
@@ -206,19 +211,46 @@ export class ProfileBrowser extends LiteElement {
       return html`
         <div class="flex h-full w-full items-center justify-center">
           <btrix-alert variant="danger">
-            ${msg(`Interactive browser is unavailable due to inactivity.`)}
+            <p>
+              ${msg(`Interactive browser is unavailable due to inactivity.`)}
+            </p>
+            <div class="py-2 text-center">
+              <sl-button size="small" @click=${this.onClickReload}>
+                <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
+                ${msg("Reload Browser")}
+              </sl-button>
+            </div>
           </btrix-alert>
         </div>
       `;
     }
 
     if (this.iframeSrc) {
-      return html`<iframe
-        class="h-full w-full"
-        src=${this.iframeSrc}
-        @load=${this.onIframeLoad}
-        aria-labelledby="profileBrowserLabel"
-      ></iframe>`;
+      return html`<div class="relative h-full w-full">
+        <iframe
+          class="h-full w-full"
+          src=${this.iframeSrc}
+          @load=${this.onIframeLoad}
+          aria-labelledby="profileBrowserLabel"
+        ></iframe>
+        ${when(
+          this.browserDisconnected,
+          () => html`
+            <div
+              class="absolute inset-0 flex items-center justify-center"
+              style="background-color: var(--sl-overlay-background-color);"
+            >
+              <btrix-alert variant="danger">
+                <p>
+                  ${msg(
+                    `Interactive browser is offline. Waiting to reconnect...`,
+                  )}
+                </p>
+              </btrix-alert>
+            </div>
+          `,
+        )}
+      </div>`;
     }
 
     if (this.browserId && !this.isIframeLoaded) {
@@ -297,6 +329,10 @@ export class ProfileBrowser extends LiteElement {
         ? html`<sl-icon name="play-btn" class="text-xl"></sl-icon>`
         : ""}
     </li>`;
+  }
+
+  private onClickReload() {
+    this.dispatchEvent(new CustomEvent("btrix-browser-reload"));
   }
 
   /**
@@ -436,11 +472,13 @@ export class ProfileBrowser extends LiteElement {
         );
       }
 
-      this.browserNotAvailable = false;
+      this.browserDisconnected = false;
     } catch (e) {
-      console.debug(e);
-
-      this.browserNotAvailable = true;
+      if (isApiError(e) && e.details === "no_such_browser") {
+        this.browserNotAvailable = true;
+      } else {
+        this.browserDisconnected = true;
+      }
 
       await this.updateComplete;
 

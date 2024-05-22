@@ -1,6 +1,12 @@
 import { localized, msg, str } from "@lit/localize";
 import { type SlInput } from "@shoelace-style/shoelace";
-import { customElement, property, queryAsync, state } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  query,
+  queryAsync,
+  state,
+} from "lit/decorators.js";
 
 import type { Dialog } from "@/components/ui/dialog";
 import { type SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
@@ -24,6 +30,9 @@ export class NewBrowserProfileDialog extends LiteElement {
 
   @state()
   private crawlerChannel = "default";
+
+  @query("btrix-dialog")
+  private readonly dialog?: Dialog;
 
   @queryAsync("#browserProfileForm")
   private readonly form!: Promise<HTMLFormElement>;
@@ -91,20 +100,12 @@ export class NewBrowserProfileDialog extends LiteElement {
           >${msg("Cancel")}</sl-button
         >
         <sl-button
-          variant="primary"
+          variant="success"
           size="small"
           ?loading=${this.isSubmitting}
           ?disabled=${this.isSubmitting}
-          @click=${async () => {
-            // Using submit method instead of type="submit" fixes
-            // incorrect getRootNode in Chrome
-            const form = await this.form;
-            const submitInput = form.querySelector<HTMLElement>(
-              'input[type="submit"]',
-            );
-            form.requestSubmit(submitInput);
-          }}
-          >${msg("Start Profile Creator")}</sl-button
+          @click=${() => this.dialog?.submit()}
+          >${msg("Configure Browser Profile")}</sl-button
         >
       </div>
     </btrix-dialog>`;
@@ -145,8 +146,8 @@ export class NewBrowserProfileDialog extends LiteElement {
         `${this.orgBasePath}/browser-profiles/profile/browser/${
           data.browserid
         }?name=${window.encodeURIComponent(
-          "My Profile",
-        )}&description=&profileId=&crawlerChannel=${this.crawlerChannel}`,
+          msg("My Profile"),
+        )}&description=&profileId=&url=${window.encodeURIComponent(url)}&crawlerChannel=${this.crawlerChannel}`,
       );
     } catch (e) {
       this.notify({
@@ -178,14 +179,5 @@ export class NewBrowserProfileDialog extends LiteElement {
         body: JSON.stringify(params),
       },
     );
-  }
-
-  /**
-   * Stop propgation of sl-select events.
-   * Prevents bug where sl-dialog closes when dropdown closes
-   * https://github.com/shoelace-style/shoelace/issues/170
-   */
-  private stopProp(e: CustomEvent) {
-    e.stopPropagation();
   }
 }
