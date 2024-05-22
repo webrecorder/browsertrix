@@ -1,5 +1,4 @@
 import { localized, msg, str } from "@lit/localize";
-import { type SlDropdown } from "@shoelace-style/shoelace";
 import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -83,6 +82,7 @@ export class BrowserProfilesDetail extends TailwindElement {
     if (this.browserId) {
       void this.deleteBrowser(this.browserId);
     }
+    super.disconnectedCallback();
   }
 
   firstUpdated() {
@@ -123,7 +123,7 @@ export class BrowserProfilesDetail extends TailwindElement {
         </div>
       </header>
 
-      <section class="mb-3 rounded-lg border px-4 py-2">
+      <section class="mb-5 rounded-lg border px-4 py-2">
         <btrix-desc-list horizontal>
           <btrix-desc-list-item label=${msg("Created At")}>
             ${this.profile
@@ -234,12 +234,12 @@ export class BrowserProfilesDetail extends TailwindElement {
                     class="mx-auto mb-4 max-w-prose text-center text-neutral-600"
                   >
                     ${msg(
-                      "Edit the profile to make changes or view its present configuration",
+                      "View or edit the current browser profile configuration.",
                     )}
                   </p>
                   <sl-button @click=${this.startBrowserPreview}>
-                    <sl-icon slot="prefix" name="pencil-square"></sl-icon>
-                    ${msg("Edit Browser Profile")}
+                    <sl-icon slot="prefix" name="gear"></sl-icon>
+                    ${msg("Configure Browser Profile")}
                   </sl-button>
                 </div>`,
           )}
@@ -336,61 +336,32 @@ export class BrowserProfilesDetail extends TailwindElement {
 
   private renderMenu() {
     return html`
-      <sl-dropdown placement="bottom-end" distance="4">
-        <sl-button size="small" slot="trigger" caret
-          >${msg("Actions")}</sl-button
-        >
-
-        <ul
-          class="whitespace-nowrap bg-white text-left text-sm text-neutral-800"
-          role="menu"
-        >
-          <li
-            class="cursor-pointer p-2 hover:bg-zinc-100"
-            role="menuitem"
-            @click=${(e: Event) => {
-              void (e.target as HTMLElement)
-                .closest<SlDropdown>("sl-dropdown")!
-                .hide();
-              this.isEditDialogOpen = true;
-            }}
+      <sl-dropdown distance="4" placement="bottom-end">
+        <sl-button size="small" slot="trigger" caret>
+          ${msg("Actions")}
+        </sl-button>
+        <sl-menu>
+          <sl-menu-item @click=${() => (this.isEditDialogOpen = true)}>
+            <sl-icon slot="prefix" name="pencil"></sl-icon>
+            ${msg("Edit Metadata")}
+          </sl-menu-item>
+          <sl-menu-item @click=${this.startBrowserPreview}>
+            <sl-icon slot="prefix" name="gear"></sl-icon>
+            ${msg("Configure Browser Profile")}
+          </sl-menu-item>
+          <sl-menu-item @click=${() => void this.duplicateProfile()}>
+            <sl-icon slot="prefix" name="files"></sl-icon>
+            ${msg("Duplicate Profile")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--danger)"
+            @click=${() => void this.deleteProfile()}
           >
-            <sl-icon
-              class="inline-block px-1 align-middle"
-              name="pencil"
-            ></sl-icon>
-            <span class="inline-block pr-2 align-middle"
-              >${msg("Edit Metadata")}</span
-            >
-          </li>
-          <li
-            class="cursor-pointer p-2 hover:bg-zinc-100"
-            role="menuitem"
-            @click=${() => void this.duplicateProfile()}
-          >
-            <sl-icon
-              class="inline-block px-1 align-middle"
-              name="files"
-            ></sl-icon>
-            <span class="inline-block pr-2 align-middle"
-              >${msg("Duplicate Profile")}</span
-            >
-          </li>
-          <hr />
-          <li
-            class="cursor-pointer p-2 text-danger hover:bg-danger hover:text-white"
-            role="menuitem"
-            @click=${() => {
-              void this.deleteProfile();
-            }}
-          >
-            <sl-icon
-              class="inline-block px-1 align-middle"
-              name="trash3"
-            ></sl-icon>
-            <span class="inline-block pr-2 align-middle">${msg("Delete")}</span>
-          </li>
-        </ul>
+            <sl-icon slot="prefix" name="trash3"></sl-icon>
+            ${msg("Delete")}
+          </sl-menu-item>
+        </sl-menu>
       </sl-dropdown>
     `;
   }
@@ -448,6 +419,7 @@ export class BrowserProfilesDetail extends TailwindElement {
   private async startBrowserPreview() {
     if (!this.profile) return;
 
+    this.isBrowserLoadingFailed = false;
     this.isBrowserLoading = true;
 
     const url = this.profile.origins[0];
