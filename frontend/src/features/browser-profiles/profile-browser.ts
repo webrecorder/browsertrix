@@ -186,7 +186,7 @@ export class ProfileBrowser extends LiteElement {
           <span id="profileBrowserLabel"> ${msg("Interactive Browser")} </span>
           <sl-tooltip
             content=${msg(
-              "Interact with this embedded browser to set up your browser profile. The embedded browser will exit and discard changes after a few minutes of inactivity.",
+              "Interact with this embedded browser to set up your browser profile. The embedded browser will exit without saving changes after a few minutes of inactivity.",
             )}
             hoist
           >

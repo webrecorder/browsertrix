@@ -7,6 +7,7 @@ import {
   queryAsync,
   state,
 } from "lit/decorators.js";
+import queryString from "query-string";
 
 import type { Dialog } from "@/components/ui/dialog";
 import { type SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
@@ -145,9 +146,11 @@ export class NewBrowserProfileDialog extends LiteElement {
       this.navTo(
         `${this.orgBasePath}/browser-profiles/profile/browser/${
           data.browserid
-        }?name=${window.encodeURIComponent(
-          msg("My Profile"),
-        )}&description=&profileId=&url=${window.encodeURIComponent(url)}&crawlerChannel=${this.crawlerChannel}`,
+        }?${queryString.stringify({
+          url,
+          name: msg("My Profile"),
+          crawlerChannel: this.crawlerChannel,
+        })}`,
       );
     } catch (e) {
       this.notify({

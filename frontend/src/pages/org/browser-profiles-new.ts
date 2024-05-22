@@ -1,6 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import queryString from "query-string";
 
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
@@ -28,44 +29,32 @@ export class BrowserProfilesNew extends LiteElement {
   @property({ type: String })
   browserId!: string;
 
+  @property({ type: Object, attribute: false })
+  browserParams: {
+    name: string;
+    url: string;
+    description?: string;
+    crawlerChannel?: string;
+    profileId?: string | null;
+    navigateUrl?: string;
+  } = {
+    name: "",
+    url: "",
+  };
+
   @state()
   private isSubmitting = false;
 
   @state()
   private isDialogVisible = false;
 
-  // URL params can be used to pass name and description
-  // base ID determines whether this is an edit/extension
-  @state()
-  private params: Partial<{
-    name: string;
-    description: string;
-    url: string;
-    navigateUrl: string;
-    profileId: string | null;
-    crawlerChannel: string;
-  }> = {};
-
-  firstUpdated() {
-    const params = new URLSearchParams(window.location.search);
-    const profileId = params.get("profileId");
-
-    this.params = {
-      name: params.get("name") || "",
-      description: params.get("description") || "",
-      navigateUrl: params.get("navigateUrl") || "",
-      profileId: profileId || null,
-      crawlerChannel: params.get("crawlerChannel") || "default",
-    };
-  }
-
   render() {
     return html`
       <div class="mb-7">
         <a
           class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
-          href=${this.params.profileId
-            ? `${this.orgBasePath}/browser-profiles/profile/${this.params.profileId}`
+          href=${this.browserParams.profileId
+            ? `${this.orgBasePath}/browser-profiles/profile/${this.browserParams.profileId}`
             : `${this.orgBasePath}/browser-profiles`}
           @click=${this.navLink}
         >
@@ -74,7 +63,7 @@ export class BrowserProfilesNew extends LiteElement {
             class="inline-block align-middle"
           ></sl-icon>
           <span class="inline-block align-middle"
-            >${this.params.profileId
+            >${this.browserParams.profileId
               ? msg("Back to Profile")
               : msg("Back to Browser Profiles")}</span
           >
@@ -105,12 +94,12 @@ export class BrowserProfilesNew extends LiteElement {
         `)}
       </p>
 
-      ${this.params.profileId
+      ${this.browserParams.profileId
         ? html`
             <div class="mb-2">
               <btrix-alert class="text-sm" variant="info"
                 >${msg(
-                  html`Extending <strong>${this.params.name}</strong>`,
+                  html`Extending <strong>${this.browserParams.name}</strong>`,
                 )}</btrix-alert
               >
             </div>
@@ -123,7 +112,7 @@ export class BrowserProfilesNew extends LiteElement {
           .authState=${this.authState}
           orgId=${this.orgId}
           browserId=${this.browserId}
-          initialNavigateUrl=${ifDefined(this.params.navigateUrl)}
+          initialNavigateUrl=${ifDefined(this.browserParams.navigateUrl)}
           @btrix-browser-reload=${this.onBrowserReload}
         ></btrix-profile-browser>
 
@@ -163,9 +152,9 @@ export class BrowserProfilesNew extends LiteElement {
             desc: "Example browser profile name",
           })}
           autocomplete="off"
-          value=${this.params.profileId && this.params.name
-            ? msg(str`${this.params.name} Copy`)
-            : this.params.name || msg("My Profile")}
+          value=${this.browserParams.profileId && this.browserParams.name
+            ? msg(str`${this.browserParams.name} Copy`)
+            : this.browserParams.name || msg("My Profile")}
           required
         ></sl-input>
 
@@ -178,7 +167,7 @@ export class BrowserProfilesNew extends LiteElement {
           })}
           rows="2"
           autocomplete="off"
-          value=${this.params.description || ""}
+          value=${this.browserParams.description || ""}
         ></sl-textarea>
 
         <div class="flex justify-between">
@@ -205,23 +194,26 @@ export class BrowserProfilesNew extends LiteElement {
   }
 
   private async onBrowserReload() {
-    if (!this.params.url) {
+    const { url } = this.browserParams;
+    if (!url) {
       console.debug("no start url");
       return;
     }
 
-    const crawlerChannel = this.params.crawlerChannel || "default";
+    const crawlerChannel = this.browserParams.crawlerChannel || "default";
     const data = await this.createBrowser({
-      url: this.params.url,
+      url,
       crawlerChannel,
     });
 
     this.navTo(
       `${this.orgBasePath}/browser-profiles/profile/browser/${
         data.browserid
-      }?name=${window.encodeURIComponent(
-        this.params.name || msg("My Profile"),
-      )}&description=&profileId=&url=${this.params.url}&crawlerChannel=${crawlerChannel}`,
+      }?${queryString.stringify({
+        url,
+        name: this.browserParams.name || msg("My Profile"),
+        crawlerChannel,
+      })}`,
     );
   }
 
@@ -234,7 +226,7 @@ export class BrowserProfilesNew extends LiteElement {
       browserid: this.browserId,
       name: formData.get("name"),
       description: formData.get("description"),
-      crawlerChannel: this.params.crawlerChannel,
+      crawlerChannel: this.browserParams.crawlerChannel,
     };
 
     try {

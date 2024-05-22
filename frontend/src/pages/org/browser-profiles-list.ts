@@ -2,6 +2,7 @@ import { localized, msg } from "@lit/localize";
 import { nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
+import queryString from "query-string";
 
 import type { Profile } from "./types";
 
@@ -209,11 +210,13 @@ export class BrowserProfilesList extends LiteElement {
       this.navTo(
         `${this.orgBasePath}/browser-profiles/profile/browser/${
           data.browserid
-        }?name=${window.encodeURIComponent(
-          profile.name,
-        )}&description=${window.encodeURIComponent(
-          profile.description || "",
-        )}&profileId=${window.encodeURIComponent(profile.id)}&navigateUrl=`,
+        }?${queryString.stringify({
+          url,
+          name: profile.name,
+          description: profile.description,
+          profileId: profile.id,
+          crawlerChannel: profile.crawlerChannel,
+        })}`,
       );
     } catch (e) {
       this.notify({

@@ -4,6 +4,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import { capitalize } from "lodash/fp";
+import queryString from "query-string";
 
 import type { Profile } from "./types";
 
@@ -467,11 +468,13 @@ export class BrowserProfilesDetail extends TailwindElement {
       this.navigate.to(
         `${this.navigate.orgBasePath}/browser-profiles/profile/browser/${
           data.browserid
-        }?name=${window.encodeURIComponent(
-          this.profile.name,
-        )}&description=${window.encodeURIComponent(
-          this.profile.description || "",
-        )}&profileId=${window.encodeURIComponent(this.profile.id)}&navigateUrl=`,
+        }?${queryString.stringify({
+          url,
+          name: this.profile.name,
+          description: this.profile.description,
+          profileId: this.profile.id,
+          crawlerChannel: this.profile.crawlerChannel,
+        })}`,
       );
     } catch (e) {
       this.isBrowserLoading = false;

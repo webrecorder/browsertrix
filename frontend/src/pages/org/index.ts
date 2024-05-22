@@ -63,6 +63,12 @@ export type OrgParams = {
     browserProfileId?: string;
     browserId?: string;
     new?: ResourceName;
+    name?: string;
+    url?: string;
+    description?: string;
+    crawlerChannel?: string;
+    profileId?: string;
+    navigateUrl?: string;
   };
   collections: {
     collectionId?: string;
@@ -639,6 +645,14 @@ export class Org extends LiteElement {
         .authState=${this.authState!}
         .orgId=${this.orgId}
         .browserId=${params.browserId}
+        .browserParams=${{
+          name: params.name || "",
+          url: params.url || "",
+          description: params.description,
+          crawlerChannel: params.crawlerChannel,
+          profileId: params.profileId,
+          navigateUrl: params.navigateUrl,
+        }}
       ></btrix-browser-profiles-new>`;
     }
 
