@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import { type SlDropdown } from "@shoelace-style/shoelace";
 import { html, nothing } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import { capitalize } from "lodash/fp";
@@ -64,6 +64,9 @@ export class BrowserProfilesDetail extends TailwindElement {
 
   @state()
   private isEditDialogContentVisible = false;
+
+  @query("#profileBrowserContainer")
+  private readonly profileBrowserContainer?: HTMLElement | null;
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
@@ -201,7 +204,8 @@ export class BrowserProfilesDetail extends TailwindElement {
             this.browserId || this.isBrowserLoading
               ? html`
                   <div
-                    class="flex h-screen flex-col overflow-hidden rounded-lg border"
+                    id="profileBrowserContainer"
+                    class="flex h-screen flex-col rounded-lg border"
                   >
                     <btrix-profile-browser
                       class="flex-1"
@@ -211,7 +215,9 @@ export class BrowserProfilesDetail extends TailwindElement {
                       .origins=${this.profile?.origins}
                       @load=${() => (this.isBrowserLoaded = true)}
                     ></btrix-profile-browser>
-                    <div class="flex-0 border-t">
+                    <div
+                      class="flex-0 sticky bottom-0 rounded-b-lg border-t bg-neutral-0"
+                    >
                       ${this.renderBrowserProfileControls()}
                     </div>
                   </div>
@@ -412,6 +418,10 @@ export class BrowserProfilesDetail extends TailwindElement {
 
       this.browserId = data.browserid;
       this.isBrowserLoading = false;
+
+      await this.updateComplete;
+
+      this.profileBrowserContainer?.scrollIntoView({ behavior: "smooth" });
     } catch (e) {
       this.isBrowserLoading = false;
 
