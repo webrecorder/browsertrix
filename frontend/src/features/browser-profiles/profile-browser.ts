@@ -12,6 +12,10 @@ import type { AuthState } from "@/utils/AuthService";
 const POLL_INTERVAL_SECONDS = 2;
 const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];
 
+type BrowserResponseData = {
+  detail?: string;
+  url?: string;
+};
 export type BrowserLoadDetail = string;
 export type BrowserErrorDetail = {
   error: APIError | Error;
@@ -378,7 +382,13 @@ export class ProfileBrowser extends TailwindElement {
    * Check whether temporary browser is up
    **/
   private async checkBrowserStatus() {
-    const result = await this.getBrowser();
+    let result: BrowserResponseData;
+    try {
+      result = await this.getBrowser();
+    } catch (e) {
+      this.browserNotAvailable = true;
+      return;
+    }
 
     if (result.detail === "waiting_for_browser") {
       this.pollTimerId = window.setTimeout(
@@ -425,10 +435,7 @@ export class ProfileBrowser extends TailwindElement {
   }
 
   private async getBrowser() {
-    const data = await this.api.fetch<{
-      detail?: string;
-      url?: string;
-    }>(
+    const data = await this.api.fetch<BrowserResponseData>(
       `/orgs/${this.orgId}/profiles/browser/${this.browserId}`,
       this.authState!,
     );
