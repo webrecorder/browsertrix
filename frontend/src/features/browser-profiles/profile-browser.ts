@@ -150,11 +150,12 @@ export class ProfileBrowser extends LiteElement {
           class="fixed left-1/2 top-2 z-50 flex -translate-x-1/2 items-center rounded-lg bg-white text-base shadow"
         >
           ${this.renderSidebarButton()}
-          <sl-icon-button
-            name="fullscreen-exit"
-            label=${msg("Exit fullscreen")}
-            @click=${() => void document.exitFullscreen()}
-          ></sl-icon-button>
+          <sl-tooltip content=${msg("Exit fullscreen")}>
+            <sl-icon-button
+              name="fullscreen-exit"
+              @click=${() => void document.exitFullscreen()}
+            ></sl-icon-button>
+          </sl-tooltip>
         </div>
       `;
     }
@@ -176,11 +177,12 @@ export class ProfileBrowser extends LiteElement {
         </div>
         <div class="p-1 text-base">
           ${this.renderSidebarButton()}
-          <sl-icon-button
-            name="arrows-fullscreen"
-            label=${msg("Enter fullscreen")}
-            @click=${() => void this.enterFullscreen()}
-          ></sl-icon-button>
+          <sl-tooltip content=${msg("Enter fullscreen")}>
+            <sl-icon-button
+              name="arrows-fullscreen"
+              @click=${() => void this.enterFullscreen()}
+            ></sl-icon-button>
+          </sl-tooltip>
         </div>
       </div>
     `;
@@ -217,14 +219,13 @@ export class ProfileBrowser extends LiteElement {
 
   private renderSidebarButton() {
     return html`
-      <sl-icon-button
-        name="layout-sidebar-reverse"
-        label=${!this.showOriginSidebar
-          ? msg("Show sidebar")
-          : msg("Hide sidebar")}
-        class="${this.showOriginSidebar ? "text-blue-600" : ""}"
-        @click=${() => (this.showOriginSidebar = !this.showOriginSidebar)}
-      ></sl-icon-button>
+      <sl-tooltip content=${msg("Toggle visited site list")}>
+        <sl-icon-button
+          name="layout-sidebar-reverse"
+          class="${this.showOriginSidebar ? "text-blue-600" : ""}"
+          @click=${() => (this.showOriginSidebar = !this.showOriginSidebar)}
+        ></sl-icon-button>
+      </sl-tooltip>
     `;
   }
 

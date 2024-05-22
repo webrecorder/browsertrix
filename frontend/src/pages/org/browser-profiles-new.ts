@@ -80,6 +80,26 @@ export class BrowserProfilesNew extends LiteElement {
         </a>
       </div>
 
+      <header class="mb-3">
+        <h1 class="min-w-0 flex-1 truncate text-xl font-medium leading-7">
+          ${msg("New Browser Profile")}
+        </h1>
+      </header>
+
+      <p class="mb-5 leading-normal text-neutral-700">
+        ${msg(
+          "Interact with the browsing tool to record your browser profile. It is highly recommended to create dedicated accounts to use when crawling.",
+        )}
+        <br />
+        ${msg("For details refer to the best practices on the ")}
+        <a
+          class="text-primary hover:text-indigo-400"
+          href="https://docs.browsertrix.com/user-guide/browser-profiles/"
+          target="_blank"
+          >${msg("browser profiles documentation page.")}</a
+        >
+      </p>
+
       ${this.params.profileId
         ? html`
             <div class="mb-2">
@@ -92,31 +112,7 @@ export class BrowserProfilesNew extends LiteElement {
           `
         : ""}
 
-      <div class="flex h-screen flex-col">
-        <div
-          class="flex-0 mb-3 flex items-center justify-between rounded-lg bg-slate-100 p-2"
-        >
-          <p class="mr-3 p-1 text-sm text-slate-600">
-            ${msg(
-              "Interact with the browsing tool to record your browser profile. It is highly recommended to create dedicated accounts to use when crawling. For details refer to the best practices on the ",
-            )}
-            <a
-              class="text-primary hover:text-indigo-400"
-              href="https://docs.browsertrix.com/user-guide/browser-profiles/"
-              target="_blank"
-              >${msg("browser profiles documentation page.")}</a
-            >
-          </p>
-
-          <sl-button
-            variant="primary"
-            size="small"
-            @click=${() => (this.isDialogVisible = true)}
-          >
-            ${msg("Finish Browsing")}
-          </sl-button>
-        </div>
-
+      <div class="sticky top-0 flex h-screen flex-col gap-2">
         <btrix-profile-browser
           class="flex-1 overflow-hidden rounded-lg border"
           .authState=${this.authState}
@@ -124,6 +120,21 @@ export class BrowserProfilesNew extends LiteElement {
           browserId=${this.browserId}
           initialNavigateUrl=${ifDefined(this.params.navigateUrl)}
         ></btrix-profile-browser>
+
+        <div
+          class="sticky bottom-2 z-10 mb-3 flex items-center justify-between rounded-lg border bg-neutral-0 p-2 shadow"
+        >
+          <sl-button size="small" @click=${() => console.log("TODO")}>
+            ${msg("Cancel")}
+          </sl-button>
+          <sl-button
+            variant="success"
+            size="small"
+            @click=${() => (this.isDialogVisible = true)}
+          >
+            ${msg("Finish Browsing")}
+          </sl-button>
+        </div>
       </div>
 
       <btrix-dialog

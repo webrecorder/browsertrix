@@ -9,6 +9,7 @@ import { capitalize } from "lodash/fp";
 import type { Profile } from "./types";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import type { Dialog } from "@/components/ui/dialog";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
@@ -67,6 +68,9 @@ export class BrowserProfilesDetail extends TailwindElement {
 
   @query("#profileBrowserContainer")
   private readonly profileBrowserContainer?: HTMLElement | null;
+
+  @query("#discardChangesDialog")
+  private readonly discardChangesDialog?: Dialog | null;
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
@@ -242,6 +246,30 @@ export class BrowserProfilesDetail extends TailwindElement {
         )}
       </div>
 
+      <btrix-dialog id="discardChangesDialog" .label=${msg("Cancel Editing?")}>
+        ${msg(
+          "Are you sure you want to discard changes to this browser profile?",
+        )}
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            .autofocus=${true}
+            @click=${() => void this.discardChangesDialog?.hide()}
+          >
+            ${msg("No, continue to edit")}
+          </sl-button>
+          <sl-button
+            size="small"
+            variant="danger"
+            @click=${() => {
+              void this.cancelEditBrowser();
+              void this.discardChangesDialog?.hide();
+            }}
+            >${msg("Yes, discard changes")}
+          </sl-button>
+        </div>
+      </btrix-dialog>
+
       <btrix-dialog
         .label=${msg(str`Edit Metadata`)}
         .open=${this.isEditDialogOpen}
@@ -273,8 +301,11 @@ export class BrowserProfilesDetail extends TailwindElement {
   private renderBrowserProfileControls() {
     return html`
       <div class="flex justify-between p-4">
-        <sl-button size="small" @click=${this.cancelEditBrowser}>
-          ${msg("Discard Changes")}
+        <sl-button
+          size="small"
+          @click=${() => void this.discardChangesDialog?.show()}
+        >
+          ${msg("Cancel")}
         </sl-button>
         <sl-button
           variant="primary"
@@ -569,16 +600,6 @@ export class BrowserProfilesDetail extends TailwindElement {
 
   private async saveBrowser() {
     if (!this.browserId) return;
-
-    if (
-      !window.confirm(
-        msg(
-          "Save browser changes to profile? You will need to re-load the browsing tool to make additional changes.",
-        ),
-      )
-    ) {
-      return;
-    }
 
     this.isSubmittingBrowserChange = true;
 
