@@ -60,6 +60,9 @@ export class ProfileBrowser extends LiteElement {
   @state()
   private newOrigins?: string[] = [];
 
+  @query("#interactiveBrowser")
+  private readonly interactiveBrowser?: HTMLElement;
+
   @query("#profileBrowserSidebar")
   private readonly sidebar?: HTMLElement;
 
@@ -113,7 +116,7 @@ export class ProfileBrowser extends LiteElement {
 
   render() {
     return html`
-      <div id="interactive-browser" class="flex h-full w-full flex-col">
+      <div id="interactiveBrowser" class="flex h-full w-full flex-col">
         ${this.renderControlBar()}
         <div
           id="iframeWrapper"
@@ -162,7 +165,7 @@ export class ProfileBrowser extends LiteElement {
         <sl-icon-button
           name="arrows-fullscreen"
           label=${msg("Enter fullscreen")}
-          @click=${() => void this.enterFullscreen("interactive-browser")}
+          @click=${() => void this.enterFullscreen()}
         ></sl-icon-button>
       </div>
     `;
@@ -393,11 +396,10 @@ export class ProfileBrowser extends LiteElement {
 
   /**
    * Enter fullscreen mode
-   * @param id ID of element to fullscreen
    */
-  private async enterFullscreen(id: string) {
+  private async enterFullscreen() {
     try {
-      await document.getElementById(id)!.requestFullscreen({
+      await this.interactiveBrowser?.requestFullscreen({
         // Hide browser navigation controls
         navigationUI: "hide",
       });
