@@ -121,8 +121,19 @@ export class BrowserProfilesDetail extends TailwindElement {
         </div>
       </header>
 
-      <section class="mb-5 rounded-lg border px-4 py-2">
+      <section class="mb-7 rounded-lg border px-4 py-2">
         <btrix-desc-list horizontal>
+          <btrix-desc-list-item label=${msg("Description")}>
+            ${this.profile
+              ? this.profile.description
+                ? html`
+                    <div class="max-h-12 overflow-auto">
+                      ${this.profile.description}
+                    </div>
+                  `
+                : none
+              : nothing}
+          </btrix-desc-list-item>
           <btrix-desc-list-item label=${msg("Created At")}>
             ${this.profile
               ? html`
@@ -166,35 +177,6 @@ export class BrowserProfilesDetail extends TailwindElement {
               : none}
           </btrix-desc-list-item>
         </btrix-desc-list>
-      </section>
-
-      <section class="mb-5">
-        <header class="flex items-center justify-between">
-          <h2 class="mb-1 text-lg font-medium leading-none">
-            ${msg("Description")}
-          </h2>
-          ${when(
-            this.isCrawler,
-            () => html`
-              <sl-icon-button
-                class="text-base"
-                name="pencil"
-                @click=${() => (this.isEditDialogOpen = true)}
-                label=${msg("Edit description")}
-              ></sl-icon-button>
-            `,
-          )}
-        </header>
-        <div class="rounded border p-5">
-          ${this.profile
-            ? this.profile.description ||
-              html`
-                <div class="text-center text-neutral-400">
-                  ${msg("No description added.")}
-                </div>
-              `
-            : nothing}
-        </div>
       </section>
 
       <div class="flex flex-col gap-5 lg:flex-row">
