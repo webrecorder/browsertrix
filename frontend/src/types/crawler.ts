@@ -110,6 +110,7 @@ export type Profile = {
     size: number;
     replicas: ProfileReplica[] | null;
   };
+  crawlerChannel?: string;
 };
 
 export type CrawlState =

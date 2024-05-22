@@ -1,14 +1,19 @@
 import { localized, msg, str } from "@lit/localize";
 import { type SlDropdown } from "@shoelace-style/shoelace";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import { capitalize } from "lodash/fp";
 
 import type { Profile } from "./types";
 
+import { TailwindElement } from "@/classes/TailwindElement";
+import { APIController } from "@/controllers/api";
+import { NavigateController } from "@/controllers/navigate";
+import { NotifyController } from "@/controllers/notify";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
 
 /**
@@ -23,15 +28,18 @@ import { getLocale } from "@/utils/localization";
  */
 @localized()
 @customElement("btrix-browser-profiles-detail")
-export class BrowserProfilesDetail extends LiteElement {
-  @property({ type: Object })
+export class BrowserProfilesDetail extends TailwindElement {
+  @property({ type: Object, attribute: false })
   authState!: AuthState;
 
-  @property({ type: String })
+  @property({ type: String, attribute: false })
   orgId!: string;
 
   @property({ type: String })
   profileId!: string;
+
+  @property({ type: Boolean })
+  isCrawler = false;
 
   @state()
   private profile?: Profile;
@@ -57,6 +65,10 @@ export class BrowserProfilesDetail extends LiteElement {
   @state()
   private isEditDialogContentVisible = false;
 
+  private readonly api = new APIController(this);
+  private readonly navigate = new NavigateController(this);
+  private readonly notify = new NotifyController(this);
+
   disconnectedCallback() {
     if (this.browserId) {
       void this.deleteBrowser(this.browserId);
@@ -68,11 +80,14 @@ export class BrowserProfilesDetail extends LiteElement {
   }
 
   render() {
+    const none = html`<span class="text-neutral-400">${msg("None")}</span>`;
+    console.log(this.profile?.crawlconfigs);
+
     return html`<div class="mb-7">
         <a
           class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
-          href=${`${this.orgBasePath}/browser-profiles`}
-          @click=${this.navLink}
+          href=${`${this.navigate.orgBasePath}/browser-profiles`}
+          @click=${this.navigate.link}
         >
           <sl-icon
             name="arrow-left"
@@ -85,18 +100,11 @@ export class BrowserProfilesDetail extends LiteElement {
       </div>
 
       <header class="mb-3 items-center justify-between md:flex">
-        <h2 class="mb-1 text-xl font-semibold md:h-9">
+        <h1 class="min-w-0 flex-1 truncate text-xl font-medium leading-7">
           ${this.profile?.name
-            ? html`${this.profile.name}
-                <sl-button
-                  size="small"
-                  variant="text"
-                  @click=${() => (this.isEditDialogOpen = true)}
-                >
-                  ${msg("Edit")}
-                </sl-button>`
-            : html`<sl-skeleton class="w-80 md:h-9"></sl-skeleton>`}
-        </h2>
+            ? html`${this.profile.name}`
+            : html`<sl-skeleton class="w-80 md:h-7"></sl-skeleton>`}
+        </h1>
         <div>
           ${this.profile
             ? this.renderMenu()
@@ -106,113 +114,123 @@ export class BrowserProfilesDetail extends LiteElement {
         </div>
       </header>
 
-      <section class="mb-5 rounded border p-4">
-        <dl class="grid grid-cols-3 gap-5">
-          <div class="col-span-3 md:col-span-1">
-            <dt class="text-sm text-0-600">${msg("Description")}</dt>
-            <dd>
-              ${this.profile
-                ? this.profile.description ||
-                  html`<span class="text-neutral-400">${msg("None")}</span>`
-                : ""}
-            </dd>
-          </div>
-          <div class="col-span-3 md:col-span-1">
-            <dt class="text-sm text-0-600">
-              <span class="inline-block align-middle"
-                >${msg("Created at")}</span
-              >
-            </dt>
-            <dd>
-              ${this.profile
-                ? html`
-                    <sl-format-date
-                      lang=${getLocale()}
-                      date=${`${this.profile.created}Z` /** Z for UTC */}
-                      month="2-digit"
-                      day="2-digit"
-                      year="2-digit"
-                      hour="numeric"
-                      minute="numeric"
-                      time-zone-name="short"
-                    ></sl-format-date>
-                  `
-                : ""}
-            </dd>
-          </div>
-          <div class="col-span-3 md:col-span-1">
-            <dt class="text-sm text-0-600">
-              <span class="inline-block align-middle"
-                >${msg("Crawl Workflows")}</span
-              >
-              <sl-tooltip content=${msg("Crawl workflows using this profile")}>
-                <sl-icon
-                  class="inline-block align-middle"
-                  name="info-circle"
-                ></sl-icon>
-              </sl-tooltip>
-            </dt>
-            <dd>
-              <ul class="text-sm font-medium">
-                ${this.profile?.crawlconfigs?.map(
-                  ({ id, name }) => html`
-                    <li>
-                      <a
-                        class="text-neutral-600 hover:underline"
-                        href=${`/orgs/${
-                          this.profile!.oid
-                        }/workflows/crawl/${id}`}
-                      >
-                        ${name}
-                      </a>
-                    </li>
-                  `,
-                )}
-              </ul>
-            </dd>
-          </div>
-        </dl>
+      <section class="mb-3 rounded-lg border px-4 py-2">
+        <btrix-desc-list horizontal>
+          <btrix-desc-list-item label=${msg("Created At")}>
+            ${this.profile
+              ? html`
+                  <sl-format-date
+                    lang=${getLocale()}
+                    date=${`${this.profile.created}Z` /** Z for UTC */}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="numeric"
+                    minute="numeric"
+                    time-zone-name="short"
+                  ></sl-format-date>
+                `
+              : nothing}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Crawler Release Channel")}>
+            ${this.profile
+              ? this.profile.crawlerChannel
+                ? capitalize(this.profile.crawlerChannel)
+                : none
+              : nothing}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Crawl Workflows")}>
+            ${this.profile?.crawlconfigs?.length
+              ? html`<ul class="text-sm font-medium">
+                  ${this.profile.crawlconfigs.map(
+                    ({ id, name }) => html`
+                      <li>
+                        <a
+                          class="text-neutral-600 hover:underline"
+                          href=${`${this.navigate.orgBasePath}/workflows/crawl/${id}`}
+                          @click=${this.navigate.link}
+                        >
+                          ${name || msg("(no name)")}
+                        </a>
+                      </li>
+                    `,
+                  )}
+                </ul>`
+              : none}
+          </btrix-desc-list-item>
+        </btrix-desc-list>
       </section>
 
-      <div class="flex">
-        <section class="flex-1">
-          <header class="mb-2">
-            <h3 class="text-lg font-medium">${msg("Browser Profile")}</h3>
-          </header>
+      <section class="mb-5">
+        <header class="flex items-center justify-between">
+          <h2 class="mb-1 text-lg font-medium leading-none">
+            ${msg("Description")}
+          </h2>
           ${when(
-            this.browserId || this.isBrowserLoading,
+            this.isCrawler,
             () => html`
-              <div
-                class="flex h-screen flex-col overflow-hidden rounded-lg border"
-              >
-                <btrix-profile-browser
-                  class="flex-1"
-                  .authState=${this.authState}
-                  orgId=${this.orgId}
-                  browserId=${ifDefined(this.browserId)}
-                  .origins=${this.profile?.origins}
-                  @load=${() => (this.isBrowserLoaded = true)}
-                ></btrix-profile-browser>
-                <div class="flex-0 border-t">
-                  ${this.renderBrowserProfileControls()}
-                </div>
-              </div>
+              <sl-icon-button
+                class="text-base"
+                name="pencil"
+                @click=${() => (this.isEditDialogOpen = true)}
+                label=${msg("Edit description")}
+              ></sl-icon-button>
             `,
-            () =>
-              html`<div
-                class="flex aspect-4/3 flex-col items-center justify-center rounded-lg border bg-neutral-50"
-              >
-                <p class="mb-4 max-w-prose text-neutral-600">
-                  ${msg(
-                    "Edit the profile to make changes or view its present configuration",
-                  )}
-                </p>
-                <sl-button @click=${this.startBrowserPreview}
-                  ><sl-icon slot="prefix" name="pencil-square"></sl-icon> ${msg(
-                    "Edit Browser Profile",
-                  )}</sl-button
+          )}
+        </header>
+        <div class="rounded border p-5">
+          ${this.profile
+            ? this.profile.description ||
+              html`
+                <div class="text-center text-neutral-400">
+                  ${msg("No description added.")}
+                </div>
+              `
+            : nothing}
+        </div>
+      </section>
+
+      <div class="flex flex-col gap-5 lg:flex-row">
+        <section class="flex-1">
+          <header class="mb-3">
+            <h2 class="text-lg font-medium leading-none">
+              ${msg("Browser Profile")}
+            </h2>
+          </header>
+          ${when(this.isCrawler, () =>
+            this.browserId || this.isBrowserLoading
+              ? html`
+                  <div
+                    class="flex h-screen flex-col overflow-hidden rounded-lg border"
+                  >
+                    <btrix-profile-browser
+                      class="flex-1"
+                      .authState=${this.authState}
+                      orgId=${this.orgId}
+                      browserId=${ifDefined(this.browserId)}
+                      .origins=${this.profile?.origins}
+                      @load=${() => (this.isBrowserLoaded = true)}
+                    ></btrix-profile-browser>
+                    <div class="flex-0 border-t">
+                      ${this.renderBrowserProfileControls()}
+                    </div>
+                  </div>
+                `
+              : html`<div
+                  class="flex aspect-video flex-col items-center justify-center rounded-lg border bg-neutral-50"
                 >
-              </div>`,
+                  <p
+                    class="mx-auto mb-4 max-w-prose text-center text-neutral-600"
+                  >
+                    ${msg(
+                      "Edit the profile to make changes or view its present configuration",
+                    )}
+                  </p>
+                  <sl-button @click=${this.startBrowserPreview}>
+                    <sl-icon slot="prefix" name="pencil-square"></sl-icon>
+                    ${msg("Edit Browser Profile")}
+                  </sl-button>
+                </div>`,
           )}
         </section>
         ${when(
@@ -222,21 +240,23 @@ export class BrowserProfilesDetail extends LiteElement {
       </div>
 
       <btrix-dialog
-        .label=${msg(str`Edit Profile`)}
+        .label=${msg(str`Edit Metadata`)}
         .open=${this.isEditDialogOpen}
         @sl-request-close=${() => (this.isEditDialogOpen = false)}
         @sl-show=${() => (this.isEditDialogContentVisible = true)}
         @sl-after-hide=${() => (this.isEditDialogContentVisible = false)}
       >
-        ${this.isEditDialogContentVisible ? this.renderEditProfile() : ""}
+        ${this.isEditDialogContentVisible ? this.renderEditProfile() : nothing}
       </btrix-dialog> `;
   }
 
   private readonly renderVisitedSites = () => {
     return html`
-      <section class="flex-grow-1 flex flex-col lg:w-80 lg:pl-6">
-        <header class="flex-0 mb-2">
-          <h3 class="text-lg font-medium">${msg("Visited Sites")}</h3>
+      <section class="flex-grow-1 flex flex-col lg:w-[60ch]">
+        <header class="flex-0 mb-3">
+          <h2 class="text-lg font-medium leading-none">
+            ${msg("Visited Sites")}
+          </h2>
         </header>
         <div class="flex-1 overflow-auto rounded-lg border p-4">
           <ul class="font-monostyle text-neutral-800">
@@ -395,7 +415,7 @@ export class BrowserProfilesDetail extends LiteElement {
     } catch (e) {
       this.isBrowserLoading = false;
 
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't preview browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -429,14 +449,14 @@ export class BrowserProfilesDetail extends LiteElement {
     try {
       const data = await this.createBrowser({ url });
 
-      this.notify({
+      this.notify.toast({
         message: msg("Starting up browser with current profile..."),
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.navTo(
-        `${this.orgBasePath}/browser-profiles/profile/browser/${
+      this.navigate.to(
+        `${this.navigate.orgBasePath}/browser-profiles/profile/browser/${
           data.browserid
         }?name=${window.encodeURIComponent(
           this.profile.name,
@@ -447,7 +467,7 @@ export class BrowserProfilesDetail extends LiteElement {
     } catch (e) {
       this.isBrowserLoading = false;
 
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't create browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -459,7 +479,7 @@ export class BrowserProfilesDetail extends LiteElement {
     const profileName = this.profile!.name;
 
     try {
-      const data = await this.apiFetch<Profile & { error: boolean }>(
+      const data = await this.api.fetch<Profile & { error: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profile!.id}`,
         this.authState!,
         {
@@ -468,7 +488,7 @@ export class BrowserProfilesDetail extends LiteElement {
       );
 
       if (data.error && data.crawlconfigs) {
-        this.notify({
+        this.notify.toast({
           message: msg(
             html`Could not delete <strong>${profileName}</strong>, in use by
               <strong
@@ -480,16 +500,16 @@ export class BrowserProfilesDetail extends LiteElement {
           duration: 15000,
         });
       } else {
-        this.navTo(`${this.orgBasePath}/browser-profiles`);
+        this.navigate.to(`${this.navigate.orgBasePath}/browser-profiles`);
 
-        this.notify({
+        this.notify.toast({
           message: msg(html`Deleted <strong>${profileName}</strong>.`),
           variant: "success",
           icon: "check2-circle",
         });
       }
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't delete browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -503,7 +523,7 @@ export class BrowserProfilesDetail extends LiteElement {
       profileId: this.profile!.id,
     };
 
-    return this.apiFetch<{ browserid: string }>(
+    return this.api.fetch<{ browserid: string }>(
       `/orgs/${this.orgId}/profiles/browser`,
       this.authState!,
       {
@@ -514,7 +534,7 @@ export class BrowserProfilesDetail extends LiteElement {
   }
 
   private async deleteBrowser(id: string) {
-    return this.apiFetch(
+    return this.api.fetch(
       `/orgs/${this.orgId}/profiles/browser/${id}`,
       this.authState!,
       {
@@ -532,7 +552,7 @@ export class BrowserProfilesDetail extends LiteElement {
 
       this.profile = data;
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -541,7 +561,7 @@ export class BrowserProfilesDetail extends LiteElement {
   }
 
   private async getProfile() {
-    const data = await this.apiFetch<Profile>(
+    const data = await this.api.fetch<Profile>(
       `/orgs/${this.orgId}/profiles/${this.profileId}`,
       this.authState!,
     );
@@ -570,7 +590,7 @@ export class BrowserProfilesDetail extends LiteElement {
     };
 
     try {
-      const data = await this.apiFetch<{ updated: boolean }>(
+      const data = await this.api.fetch<{ updated: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profileId}`,
         this.authState!,
         {
@@ -580,7 +600,7 @@ export class BrowserProfilesDetail extends LiteElement {
       );
 
       if (data.updated) {
-        this.notify({
+        this.notify.toast({
           message: msg("Successfully saved browser profile."),
           variant: "success",
           icon: "check2-circle",
@@ -591,7 +611,7 @@ export class BrowserProfilesDetail extends LiteElement {
         throw data;
       }
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't save browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -616,7 +636,7 @@ export class BrowserProfilesDetail extends LiteElement {
     };
 
     try {
-      const data = await this.apiFetch<{ updated: boolean }>(
+      const data = await this.api.fetch<{ updated: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profileId}`,
         this.authState!,
         {
@@ -626,7 +646,7 @@ export class BrowserProfilesDetail extends LiteElement {
       );
 
       if (data.updated) {
-        this.notify({
+        this.notify.toast({
           message: msg("Successfully saved browser profile."),
           variant: "success",
           icon: "check2-circle",
@@ -653,7 +673,7 @@ export class BrowserProfilesDetail extends LiteElement {
         }
       }
 
-      this.notify({
+      this.notify.toast({
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",

@@ -630,6 +630,7 @@ export class Org extends LiteElement {
         .authState=${this.authState!}
         .orgId=${this.orgId}
         profileId=${params.browserProfileId}
+        ?isCrawler=${this.isCrawler}
       ></btrix-browser-profiles-detail>`;
     }
 
