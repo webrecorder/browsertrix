@@ -16,6 +16,8 @@ import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { getLocale } from "@/utils/localization";
 
+const DESCRIPTION_MAXLENGTH = 500;
+
 /**
  * Usage:
  * ```ts
@@ -124,7 +126,13 @@ export class BrowserProfilesDetail extends TailwindElement {
         <dl class="grid grid-cols-3 gap-5">
           <div class="col-span-3 md:col-span-1">
             <dt class="text-sm text-0-600">${msg("Description")}</dt>
-            <dd>${this.profile ? this.profile.description || none : ""}</dd>
+            <dd>
+              ${this.profile
+                ? this.profile.description
+                  ? this.profile.description.slice(0, DESCRIPTION_MAXLENGTH)
+                  : none
+                : ""}
+            </dd>
           </div>
           <div class="col-span-3 md:col-span-1">
             <dt class="text-sm text-0-600">
@@ -456,7 +464,7 @@ export class BrowserProfilesDetail extends TailwindElement {
         }?${queryString.stringify({
           url,
           name: this.profile.name,
-          description: this.profile.description,
+          description: this.profile.description.slice(0, DESCRIPTION_MAXLENGTH),
           profileId: this.profile.id,
           crawlerChannel: this.profile.crawlerChannel,
         })}`,
