@@ -842,7 +842,8 @@ export class ArchivedItemQA extends TailwindElement {
                 placement="bottom-start"
               >
                 <btrix-button
-                  icon
+                  size="small"
+                  class="m-0.5"
                   @click=${() => {
                     if (
                       this.interactiveReplayFrame?.contentDocument

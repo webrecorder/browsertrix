@@ -476,7 +476,7 @@ export class App extends LiteElement {
           >
             <sl-icon
               name="github"
-              class="inline-block align-middle text-base"
+              class="inline-block size-4 align-middle text-base"
             ></sl-icon>
             Source Code
           </a>
@@ -490,7 +490,7 @@ export class App extends LiteElement {
           >
             <sl-icon
               name="book-half"
-              class="inline-block align-middle text-base"
+              class="inline-block size-4 align-middle text-base"
             ></sl-icon>
             Documentation
           </a>
@@ -499,9 +499,10 @@ export class App extends LiteElement {
           ${this.version
             ? html`
                 <btrix-copy-button
-                  class="text-neutral-400"
+                  class="mr-2 size-4 text-neutral-400"
                   .getValue=${() => this.version}
                   content=${msg("Copy Version Code")}
+                  size="x-small"
                 ></btrix-copy-button>
                 <span
                   class="font-monostyle inline-block align-middle text-xs text-neutral-400"

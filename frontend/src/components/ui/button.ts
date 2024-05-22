@@ -35,7 +35,7 @@ export class Button extends TailwindElement {
   filled = false;
 
   @property({ type: String })
-  size: "small" | "medium" = "medium";
+  size: "x-small" | "small" | "medium" = "medium";
 
   @property({ type: String })
   label?: string;
@@ -68,10 +68,12 @@ export class Button extends TailwindElement {
     return html`<${tag}
       type=${this.type === "submit" ? "submit" : "button"}
       class=${clsx(
-        tw`flex h-6 cursor-pointer items-center justify-center gap-2 text-center font-medium outline-3 outline-offset-1 outline-primary transition focus-visible:outline disabled:cursor-not-allowed disabled:text-neutral-300`,
-        this.size === "medium"
-          ? tw`min-h-8 min-w-8 rounded-sm`
-          : tw`min-h-6 min-w-6 rounded-md`,
+        tw`flex cursor-pointer items-center justify-center gap-2 text-center font-medium outline-3 outline-offset-1 outline-primary transition focus-visible:outline disabled:cursor-not-allowed disabled:text-neutral-300`,
+        {
+          "x-small": tw`min-h-4 min-w-4 text-sm`,
+          small: tw`min-h-6 min-w-6 rounded-md text-base`,
+          medium: tw`min-h-8 min-w-8 rounded-sm text-lg`,
+        }[this.size],
         this.raised && tw`border shadow-sm`,
         this.filled
           ? [
