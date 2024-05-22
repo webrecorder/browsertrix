@@ -195,35 +195,32 @@ export class BrowserProfilesDetail extends TailwindElement {
 
       <div class="flex flex-col gap-5 lg:flex-row">
         <section class="flex-1">
-          <header class="mb-3">
-            <h2 class="text-lg font-medium leading-none">
-              ${msg("Browser Profile")}
-            </h2>
-          </header>
+          <h2 class="text-lg font-medium leading-none">
+            ${msg("Browser Profile")}
+          </h2>
           ${when(this.isCrawler, () =>
             this.browserId || this.isBrowserLoading
               ? html`
-                  <div
-                    id="profileBrowserContainer"
-                    class="flex h-screen flex-col rounded-lg border"
-                  >
-                    <btrix-profile-browser
-                      class="flex-1"
-                      .authState=${this.authState}
-                      orgId=${this.orgId}
-                      browserId=${ifDefined(this.browserId)}
-                      .origins=${this.profile?.origins}
-                      @load=${() => (this.isBrowserLoaded = true)}
-                    ></btrix-profile-browser>
-                    <div
-                      class="flex-0 sticky bottom-0 rounded-b-lg border-t bg-neutral-0"
-                    >
-                      ${this.renderBrowserProfileControls()}
+                  <div id="profileBrowserContainer" class="flex h-screen py-3">
+                    <div class="flex flex-1 flex-col gap-2">
+                      <btrix-profile-browser
+                        class="flex-1 overflow-hidden rounded border"
+                        .authState=${this.authState}
+                        orgId=${this.orgId}
+                        browserId=${ifDefined(this.browserId)}
+                        .origins=${this.profile?.origins}
+                        @load=${() => (this.isBrowserLoaded = true)}
+                      ></btrix-profile-browser>
+                      <div
+                        class="flex-0 sticky bottom-2 rounded-lg border bg-neutral-0 shadow"
+                      >
+                        ${this.renderBrowserProfileControls()}
+                      </div>
                     </div>
                   </div>
                 `
               : html`<div
-                  class="flex aspect-video flex-col items-center justify-center rounded-lg border bg-neutral-50"
+                  class="mt-3 flex aspect-video flex-col items-center justify-center rounded-lg border bg-neutral-50"
                 >
                   <p
                     class="mx-auto mb-4 max-w-prose text-center text-neutral-600"
@@ -276,26 +273,17 @@ export class BrowserProfilesDetail extends TailwindElement {
   private renderBrowserProfileControls() {
     return html`
       <div class="flex justify-between p-4">
-        <div class="max-w-prose">
-          <p class="mx-1 text-xs text-neutral-500">
-            ${msg(
-              "Interact with the browsing tool to set up the browser profile.  Workflows that use this browser profile will behave as if they have logged into the same websites and have the same cookies that have been set here.",
-            )}
-          </p>
-        </div>
-        <div>
-          <sl-button size="small" @click=${this.cancelEditBrowser}
-            >${msg("Cancel")}</sl-button
-          >
-          <sl-button
-            variant="primary"
-            size="small"
-            ?loading=${this.isSubmittingBrowserChange}
-            ?disabled=${this.isSubmittingBrowserChange || !this.isBrowserLoaded}
-            @click=${this.saveBrowser}
-            >${msg("Save Browser Profile")}</sl-button
-          >
-        </div>
+        <sl-button size="small" @click=${this.cancelEditBrowser}>
+          ${msg("Discard Changes")}
+        </sl-button>
+        <sl-button
+          variant="primary"
+          size="small"
+          ?loading=${this.isSubmittingBrowserChange}
+          ?disabled=${this.isSubmittingBrowserChange || !this.isBrowserLoaded}
+          @click=${this.saveBrowser}
+          >${msg("Save Browser Profile")}</sl-button
+        >
       </div>
     `;
   }

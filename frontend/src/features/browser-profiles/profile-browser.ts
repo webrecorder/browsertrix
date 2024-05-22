@@ -160,13 +160,28 @@ export class ProfileBrowser extends LiteElement {
     }
 
     return html`
-      <div class="p-1 text-right text-base">
-        ${this.renderSidebarButton()}
-        <sl-icon-button
-          name="arrows-fullscreen"
-          label=${msg("Enter fullscreen")}
-          @click=${() => void this.enterFullscreen()}
-        ></sl-icon-button>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 px-3 font-medium text-neutral-700">
+          <span id="profileBrowserLabel">
+            ${msg("Interactive Profile Browser")}
+          </span>
+          <sl-tooltip
+            content=${msg(
+              "Interact with the browsing tool to set up the browser profile.  Workflows that use this browser profile will behave as if they have logged into the same websites and have the same cookies that have been set here.",
+            )}
+            hoist
+          >
+            <sl-icon class="text-base" name="info-circle"></sl-icon>
+          </sl-tooltip>
+        </div>
+        <div class="p-1 text-base">
+          ${this.renderSidebarButton()}
+          <sl-icon-button
+            name="arrows-fullscreen"
+            label=${msg("Enter fullscreen")}
+            @click=${() => void this.enterFullscreen()}
+          ></sl-icon-button>
+        </div>
       </div>
     `;
   }
@@ -183,9 +198,9 @@ export class ProfileBrowser extends LiteElement {
     if (this.iframeSrc) {
       return html`<iframe
         class="h-full w-full"
-        title=${msg("Interactive browser for creating browser profile")}
         src=${this.iframeSrc}
         @load=${this.onIframeLoad}
+        aria-labelledby="profileBrowserLabel"
       ></iframe>`;
     }
 
