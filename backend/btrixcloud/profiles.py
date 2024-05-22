@@ -160,6 +160,8 @@ class ProfileOps:
         existing_created: Optional[datetime] = None,
     ) -> dict[str, Any]:
         """commit profile and shutdown profile browser"""
+        # pylint: disable=too-many-locals
+
         if not profileid:
             profileid = uuid4()
 
