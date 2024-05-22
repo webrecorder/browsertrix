@@ -88,16 +88,19 @@ export class BrowserProfilesNew extends LiteElement {
 
       <p class="mb-5 leading-normal text-neutral-700">
         ${msg(
-          "Interact with the browsing tool to record your browser profile. It is highly recommended to create dedicated accounts to use when crawling.",
+          "Interact with the embedded website browser to record your browser profile. It is highly recommended to create dedicated accounts to use when crawling.",
         )}
         <br />
-        ${msg("For details refer to the best practices on the ")}
-        <a
-          class="text-primary hover:text-indigo-400"
-          href="https://docs.browsertrix.com/user-guide/browser-profiles/"
-          target="_blank"
-          >${msg("browser profiles documentation page.")}</a
-        >
+        ${msg(html`
+          For details, refer to the best practices on the
+          <a
+            class="text-primary hover:text-indigo-400"
+            href="https://docs.browsertrix.com/user-guide/browser-profiles/"
+            target="_blank"
+          >
+            ${msg("browser profiles documentation page")}</a
+          >.
+        `)}
       </p>
 
       ${this.params.profileId

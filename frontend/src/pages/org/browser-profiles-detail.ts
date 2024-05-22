@@ -52,6 +52,9 @@ export class BrowserProfilesDetail extends TailwindElement {
   private isBrowserLoaded = false;
 
   @state()
+  private isBrowserLoadingFailed = false;
+
+  @state()
   private isSubmittingBrowserChange = false;
 
   @state()
@@ -88,7 +91,6 @@ export class BrowserProfilesDetail extends TailwindElement {
 
   render() {
     const none = html`<span class="text-neutral-400">${msg("None")}</span>`;
-    console.log(this.profile?.crawlconfigs);
 
     return html`<div class="mb-7">
         <a
@@ -213,7 +215,9 @@ export class BrowserProfilesDetail extends TailwindElement {
                         orgId=${this.orgId}
                         browserId=${ifDefined(this.browserId)}
                         .origins=${this.profile?.origins}
-                        @load=${() => (this.isBrowserLoaded = true)}
+                        @btrix-browser-load=${() =>
+                          (this.isBrowserLoaded = true)}
+                        @btrix-browser-error=${this.onBrowserError}
                       ></btrix-profile-browser>
                       <div
                         class="flex-0 sticky bottom-2 rounded-lg border bg-neutral-0 shadow"
@@ -307,14 +311,25 @@ export class BrowserProfilesDetail extends TailwindElement {
         >
           ${msg("Cancel")}
         </sl-button>
-        <sl-button
-          variant="primary"
-          size="small"
-          ?loading=${this.isSubmittingBrowserChange}
-          ?disabled=${this.isSubmittingBrowserChange || !this.isBrowserLoaded}
-          @click=${this.saveBrowser}
-          >${msg("Save Browser Profile")}</sl-button
-        >
+        <div>
+          ${this.isBrowserLoadingFailed
+            ? html`
+                <sl-button size="small" @click=${this.startBrowserPreview}>
+                  <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
+                  ${msg("Reload Browser")}
+                </sl-button>
+              `
+            : nothing}
+          <sl-button
+            variant="primary"
+            size="small"
+            ?loading=${this.isSubmittingBrowserChange}
+            ?disabled=${this.isSubmittingBrowserChange || !this.isBrowserLoaded}
+            @click=${this.saveBrowser}
+          >
+            ${msg("Save Browser Profile")}
+          </sl-button>
+        </div>
       </div>
     `;
   }
@@ -423,6 +438,11 @@ export class BrowserProfilesDetail extends TailwindElement {
         </div>
       </form>
     `;
+  }
+
+  private async onBrowserError() {
+    this.isBrowserLoaded = false;
+    this.isBrowserLoadingFailed = true;
   }
 
   private async startBrowserPreview() {

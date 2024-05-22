@@ -2,11 +2,17 @@ import { localized, msg, str } from "@lit/localize";
 import { type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 
+import { type APIError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 const POLL_INTERVAL_SECONDS = 2;
 const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];
+
+export type BrowserLoadDetail = string;
+export type BrowserErrorDetail = {
+  error: APIError | Error;
+};
 
 /**
  * View embedded profile browser
@@ -22,7 +28,8 @@ const hiddenClassList = ["translate-x-2/3", "opacity-0", "pointer-events-none"];
  * ></btrix-profile-browser>
  * ```
  *
- * @event load Event on iframe load, with src URL
+ * @event btrix-browser-load Event on iframe load, with src URL
+ * @event btrix-browser-error
  */
 @localized()
 @customElement("btrix-profile-browser")
@@ -49,7 +56,7 @@ export class ProfileBrowser extends LiteElement {
   private isIframeLoaded = false;
 
   @state()
-  private hasFetchError = false;
+  private browserNotAvailable = false;
 
   @state()
   private isFullscreen = false;
@@ -163,12 +170,10 @@ export class ProfileBrowser extends LiteElement {
     return html`
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2 px-3 font-medium text-neutral-700">
-          <span id="profileBrowserLabel">
-            ${msg("Interactive Profile Browser")}
-          </span>
+          <span id="profileBrowserLabel"> ${msg("Interactive Browser")} </span>
           <sl-tooltip
             content=${msg(
-              "Interact with the browsing tool to set up the browser profile.  Workflows that use this browser profile will behave as if they have logged into the same websites and have the same cookies that have been set here.",
+              "Interact with this embedded browser to set up your browser profile. The embedded browser will close and discard changes after a few minutes of inactivity.",
             )}
             hoist
           >
@@ -189,11 +194,13 @@ export class ProfileBrowser extends LiteElement {
   }
 
   private renderBrowser() {
-    if (this.hasFetchError) {
+    if (this.browserNotAvailable) {
       return html`
-        <btrix-alert variant="danger">
-          ${msg(`The interactive browser is not available.`)}
-        </btrix-alert>
+        <div class="flex h-full w-full items-center justify-center">
+          <btrix-alert variant="danger">
+            ${msg(`Interactive browser is unavailable due to inactivity.`)}
+          </btrix-alert>
+        </div>
       `;
     }
 
@@ -295,11 +302,23 @@ export class ProfileBrowser extends LiteElement {
 
     try {
       await this.checkBrowserStatus();
+
+      this.browserNotAvailable = false;
     } catch (e) {
-      this.hasFetchError = true;
+      this.browserNotAvailable = true;
+
+      await this.updateComplete;
+
+      this.dispatchEvent(
+        new CustomEvent<BrowserErrorDetail>("btrix-browser-error", {
+          detail: {
+            error: e instanceof Error ? e : new Error(),
+          },
+        }),
+      );
 
       this.notify({
-        message: msg("Sorry, couldn't create browser profile at this time."),
+        message: msg("Sorry, can't edit browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -344,7 +363,11 @@ export class ProfileBrowser extends LiteElement {
 
       await this.updateComplete;
 
-      this.dispatchEvent(new CustomEvent("load", { detail: result.url }));
+      this.dispatchEvent(
+        new CustomEvent<BrowserLoadDetail>("btrix-browser-load", {
+          detail: result.url,
+        }),
+      );
 
       void this.pingBrowser();
     } else {
@@ -383,24 +406,42 @@ export class ProfileBrowser extends LiteElement {
   }
 
   /**
-   * Ping temporary browser every minute to keep it alive
+   * Ping temporary browser to keep it alive
    **/
   private async pingBrowser() {
     if (!this.iframeSrc) return;
 
-    const data = await this.apiFetch<{ origins?: string[] }>(
-      `/orgs/${this.orgId}/profiles/browser/${this.browserId}/ping`,
-      this.authState!,
-      {
-        method: "POST",
-      },
-    );
+    try {
+      const data = await this.apiFetch<{ origins?: string[] }>(
+        `/orgs/${this.orgId}/profiles/browser/${this.browserId}/ping`,
+        this.authState!,
+        {
+          method: "POST",
+        },
+      );
 
-    if (!this.origins) {
-      this.origins = data.origins;
-    } else {
-      this.newOrigins = data.origins?.filter(
-        (url: string) => !this.origins?.includes(url),
+      if (!this.origins) {
+        this.origins = data.origins;
+      } else {
+        this.newOrigins = data.origins?.filter(
+          (url: string) => !this.origins?.includes(url),
+        );
+      }
+
+      this.browserNotAvailable = false;
+    } catch (e) {
+      console.debug(e);
+
+      this.browserNotAvailable = true;
+
+      await this.updateComplete;
+
+      this.dispatchEvent(
+        new CustomEvent<BrowserErrorDetail>("btrix-browser-error", {
+          detail: {
+            error: e instanceof Error ? e : new Error(),
+          },
+        }),
       );
     }
 
@@ -431,7 +472,11 @@ export class ProfileBrowser extends LiteElement {
     } catch (e) {
       /* empty */
     }
-    this.dispatchEvent(new CustomEvent("load", { detail: this.iframeSrc }));
+    this.dispatchEvent(
+      new CustomEvent<BrowserLoadDetail>("btrix-browser-load", {
+        detail: this.iframeSrc,
+      }),
+    );
   }
 
   private readonly onFullscreenChange = async () => {
