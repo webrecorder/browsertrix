@@ -85,11 +85,19 @@ export class ProfileBrowser extends LiteElement {
     super.connectedCallback();
 
     document.addEventListener("fullscreenchange", this.onFullscreenChange);
+    window.addEventListener("beforeunload", this.onBeforeUnload);
   }
 
   disconnectedCallback() {
+    super.disconnectedCallback();
+
     window.clearTimeout(this.pollTimerId);
     document.removeEventListener("fullscreenchange", this.onFullscreenChange);
+    window.removeEventListener("beforeunload", this.onBeforeUnload);
+  }
+
+  private onBeforeUnload(e: BeforeUnloadEvent) {
+    e.preventDefault();
   }
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
