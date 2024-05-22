@@ -136,7 +136,7 @@ export class NewBrowserProfileDialog extends LiteElement {
       });
 
       this.notify({
-        message: msg("Starting up browser for profile creation."),
+        message: msg("Starting up browser for new profile..."),
         variant: "success",
         icon: "check2-circle",
       });

@@ -88,17 +88,18 @@ export class BrowserProfilesNew extends LiteElement {
 
       <p class="mb-5 leading-normal text-neutral-700">
         ${msg(
-          "Interact with the embedded website browser to record your browser profile. It is highly recommended to create dedicated accounts to use when crawling.",
+          "Workflows that use this browser profile will behave as if they have logged into the same websites and have the same web cookies.",
         )}
         <br />
         ${msg(html`
-          For details, refer to the best practices on the
+          It is highly recommended to create dedicated accounts to use when
+          crawling. For details, refer to
           <a
             class="text-primary hover:text-indigo-400"
             href="https://docs.browsertrix.com/user-guide/browser-profiles/"
             target="_blank"
           >
-            ${msg("browser profiles documentation page")}</a
+            ${msg("browser profiles best practivecs")}</a
           >.
         `)}
       </p>
