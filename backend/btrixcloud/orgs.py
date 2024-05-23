@@ -375,6 +375,14 @@ class OrgOps:
         org.users[str(userid)] = role
         await self.update_users(org)
 
+    async def change_user_role(self, org: Organization, userid: UUID, role: UserRole):
+        """Change role of existing user in organization"""
+        if str(userid) not in org.users:
+            raise HTTPException(status_code=400, detail="no_such_user")
+
+        org.users[str(userid)] = role
+        await self.update_users(org)
+
     async def get_org_owners(self, org: Organization):
         """Return list of org's Owner users."""
         org_owners = []
@@ -838,7 +846,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         if other_user.email == user.email:
             raise HTTPException(status_code=400, detail="Can't change own role!")
 
-        await ops.add_user_to_org(org, other_user.id, update.role)
+        await ops.change_user_role(org, other_user.id, update.role)
 
         return {"updated": True}
 

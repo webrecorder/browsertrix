@@ -182,6 +182,17 @@ def test_register_user_valid_password(admin_auth_headers, default_org_id):
     assert r.status_code == 201
 
 
+def test_user_change_role(admin_auth_headers, default_org_id):
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/user-role",
+        headers=admin_auth_headers,
+        json={"email": VALID_USER_EMAIL, "role": 40},
+    )
+
+    assert r.status_code == 200
+    assert r.json()["updated"] == True
+
+
 def test_reset_invalid_password(admin_auth_headers):
     r = requests.put(
         f"{API_PREFIX}/users/me/password-change",
