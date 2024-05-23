@@ -50,7 +50,6 @@ export class DescListItem extends LitElement {
 
     .content {
       width: var(--width-full, initial);
-      overflow: hidden;
     }
   `;
 
@@ -93,8 +92,7 @@ export class DescList extends LitElement {
       position: relative;
       display: inline-block;
       flex: 1 0 0;
-      /* min-width: min-content; */
-      max-width: 100%;
+      min-width: min-content;
     }
 
     .horizontal ::slotted(btrix-desc-list-item)::before {
