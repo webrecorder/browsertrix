@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import { nothing } from "lit";
+import { nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -35,31 +35,45 @@ export class BrowserProfilesList extends LiteElement {
   @property({ type: String })
   orgId!: string;
 
+  @property({ type: Boolean })
+  isCrawler = false;
+
   @state()
   browserProfiles?: APIPaginatedList<Profile>;
 
-  firstUpdated() {
-    void this.fetchBrowserProfiles();
+  protected willUpdate(
+    changedProperties: PropertyValues<this> & Map<string, unknown>,
+  ) {
+    if (changedProperties.has("orgId")) {
+      void this.fetchBrowserProfiles();
+    }
   }
 
   render() {
     return html`<header>
-        <div class="mb-4 flex h-8 w-full justify-between">
-          <h1 class="text-xl font-semibold">${msg("Browser Profiles")}</h1>
-          <sl-button
-            variant="primary"
-            size="small"
-            @click=${() => {
-              this.dispatchEvent(
-                new CustomEvent("select-new-dialog", {
-                  detail: "browser-profile",
-                }) as SelectNewDialogEvent,
-              );
-            }}
-          >
-            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-            ${msg("New Browser Profile")}
-          </sl-button>
+        <div class="mb-2 flex flex-wrap justify-between gap-2 border-b pb-3">
+          <h1 class="mb-2 text-xl font-semibold leading-8 md:mb-0">
+            ${msg("Browser Profiles")}
+          </h1>
+          ${when(
+            this.isCrawler,
+            () => html`
+              <sl-button
+                variant="primary"
+                size="small"
+                @click=${() => {
+                  this.dispatchEvent(
+                    new CustomEvent("select-new-dialog", {
+                      detail: "browser-profile",
+                    }) as SelectNewDialogEvent,
+                  );
+                }}
+              >
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                ${msg("New Browser Profile")}
+              </sl-button>
+            `,
+          )}
         </div>
       </header>
       <div class="overflow-auto px-2 pb-1">${this.renderTable()}</div>`;

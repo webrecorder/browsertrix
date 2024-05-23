@@ -659,6 +659,7 @@ export class Org extends LiteElement {
     return html`<btrix-browser-profiles-list
       .authState=${this.authState!}
       .orgId=${this.orgId}
+      ?isCrawler=${this.isCrawler}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-browser-profiles-list>`;
   }
