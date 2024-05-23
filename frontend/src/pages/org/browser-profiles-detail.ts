@@ -12,6 +12,7 @@ import type { Dialog } from "@/components/ui/dialog";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
+import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { getLocale } from "@/utils/localization";
@@ -210,6 +211,8 @@ export class BrowserProfilesDetail extends TailwindElement {
                           (this.isBrowserLoaded = true)}
                         @btrix-browser-error=${this.onBrowserError}
                         @btrix-browser-reload=${this.startBrowserPreview}
+                        @btrix-browser-connection-change=${this
+                          .onBrowserConnectionChange}
                       ></btrix-profile-browser>
                       <div
                         class="flex-0 sticky bottom-2 rounded-lg border bg-neutral-0 shadow"
@@ -397,6 +400,12 @@ export class BrowserProfilesDetail extends TailwindElement {
 
   private async onBrowserError() {
     this.isBrowserLoaded = false;
+  }
+
+  private async onBrowserConnectionChange(
+    e: CustomEvent<BrowserConnectionChange>,
+  ) {
+    this.isBrowserLoaded = e.detail.connected;
   }
 
   private async startBrowserPreview() {

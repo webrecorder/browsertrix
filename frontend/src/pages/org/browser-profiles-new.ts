@@ -297,12 +297,19 @@ export class BrowserProfilesNew extends LiteElement {
   }
 
   private async deleteBrowser(id: string) {
-    return this.apiFetch(
-      `/orgs/${this.orgId}/profiles/browser/${id}`,
-      this.authState!,
-      {
-        method: "DELETE",
-      },
-    );
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${this.orgId}/profiles/browser/${id}`,
+        this.authState!,
+        {
+          method: "DELETE",
+        },
+      );
+
+      return data;
+    } catch (e) {
+      // TODO Investigate DELETE returning 404
+      console.debug(e);
+    }
   }
 }

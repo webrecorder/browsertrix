@@ -20,6 +20,9 @@ export type BrowserLoadDetail = string;
 export type BrowserErrorDetail = {
   error: APIError | Error;
 };
+export type BrowserConnectionChange = {
+  connected: boolean;
+};
 
 /**
  * View embedded profile browser
@@ -38,6 +41,7 @@ export type BrowserErrorDetail = {
  * @fires btrix-browser-load Event on iframe load, with src URL
  * @fires btrix-browser-error
  * @fires btrix-browser-reload
+ * @fires btrix-browser-connection-change
  */
 @localized()
 @customElement("btrix-profile-browser")
@@ -131,6 +135,21 @@ export class ProfileBrowser extends TailwindElement {
       changedProperties.get("showOriginSidebar") !== undefined
     ) {
       this.animateSidebar();
+    }
+  }
+
+  updated(changedProperties: PropertyValues<this> & Map<string, unknown>) {
+    if (changedProperties.has("browserDisconnected")) {
+      this.dispatchEvent(
+        new CustomEvent<BrowserConnectionChange>(
+          "btrix-browser-connection-change",
+          {
+            detail: {
+              connected: !this.browserDisconnected,
+            },
+          },
+        ),
+      );
     }
   }
 
@@ -493,14 +512,6 @@ export class ProfileBrowser extends TailwindElement {
       }
 
       await this.updateComplete;
-
-      this.dispatchEvent(
-        new CustomEvent<BrowserErrorDetail>("btrix-browser-error", {
-          detail: {
-            error: e instanceof Error ? e : new Error(),
-          },
-        }),
-      );
     }
 
     this.pollTimerId = window.setTimeout(
