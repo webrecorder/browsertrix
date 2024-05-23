@@ -3,6 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import { capitalize } from "lodash/fp";
 import queryString from "query-string";
 
 import type { Profile } from "./types";
@@ -90,6 +91,9 @@ export class BrowserProfilesDetail extends TailwindElement {
   }
 
   render() {
+    const isBackedUp =
+      this.profile?.resource?.replicas &&
+      this.profile.resource.replicas.length > 0;
     const none = html`<span class="text-neutral-400">${msg("None")}</span>`;
 
     return html`<div class="mb-7">
@@ -123,56 +127,84 @@ export class BrowserProfilesDetail extends TailwindElement {
         </div>
       </header>
 
-      <section class="mb-5 rounded border p-4">
-        <dl class="grid grid-cols-3 gap-5">
-          <div class="col-span-3 md:col-span-1">
-            <dt class="text-sm text-0-600">${msg("Description")}</dt>
-            <dd>
-              ${this.profile
-                ? this.profile.description
-                  ? this.profile.description.slice(0, DESCRIPTION_MAXLENGTH)
-                  : none
-                : ""}
-            </dd>
+      <section class="mb-5 rounded-lg border px-4 py-2">
+        <btrix-desc-list horizontal>
+          <btrix-desc-list-item label=${msg("Backup Status")}>
+            ${isBackedUp
+              ? html`<sl-icon
+                  name="clouds-fill"
+                  class="text-success"
+                ></sl-icon>`
+              : html`<sl-icon
+                  name="cloud-slash-fill"
+                  class="text-neutral-500"
+                ></sl-icon>`}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Crawler Release Channel")}>
+            ${this.profile
+              ? this.profile.crawlerChannel
+                ? capitalize(this.profile.crawlerChannel)
+                : none
+              : nothing}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Created At")}>
+            ${this.profile
+              ? html`
+                  <sl-format-date
+                    lang=${getLocale()}
+                    date=${`${this.profile.created}Z` /** Z for UTC */}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="numeric"
+                    minute="numeric"
+                    time-zone-name="short"
+                  ></sl-format-date>
+                `
+              : nothing}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Last Modified")}>
+            ${this.profile ? html` TODO ` : nothing}
+          </btrix-desc-list-item>
+        </btrix-desc-list>
+      </section>
+
+      <div class="mb-5 flex flex-col gap-5 lg:flex-row">
+        <section class="flex-1">
+          <header class="flex items-center justify-between">
+            <h2 class="mb-1 text-lg font-medium leading-none">
+              ${msg("Description")}
+            </h2>
+            ${when(
+              this.isCrawler,
+              () => html`
+                <sl-icon-button
+                  class="text-base"
+                  name="pencil"
+                  @click=${() => (this.isEditDialogOpen = true)}
+                  label=${msg("Edit description")}
+                ></sl-icon-button>
+              `,
+            )}
+          </header>
+          <div class="rounded border p-5">
+            ${this.profile
+              ? this.profile.description ||
+                html`
+                  <div class="text-center text-neutral-400">
+                    ${msg("No description added.")}
+                  </div>
+                `
+              : nothing}
           </div>
-          <div class="col-span-3 md:col-span-1">
-            <dt class="text-sm text-0-600">
-              <span class="inline-block align-middle"
-                >${msg("Created at")}</span
-              >
-            </dt>
-            <dd>
-              ${this.profile
-                ? html`
-                    <sl-format-date
-                      lang=${getLocale()}
-                      date=${`${this.profile.created}Z` /** Z for UTC */}
-                      month="2-digit"
-                      day="2-digit"
-                      year="2-digit"
-                      hour="numeric"
-                      minute="numeric"
-                      time-zone-name="short"
-                    ></sl-format-date>
-                  `
-                : ""}
-            </dd>
-          </div>
-          <div class="col-span-3 md:col-span-1">
-            <dt class="text-sm text-0-600">
-              <span class="inline-block align-middle"
-                >${msg("Crawl Workflows")}</span
-              >
-              <sl-tooltip content=${msg("Crawl workflows using this profile")}>
-                <sl-icon
-                  class="inline-block align-middle"
-                  name="info-circle"
-                ></sl-icon>
-              </sl-tooltip>
-            </dt>
-            <dd>
-              <ul class="text-sm font-medium">
-                ${this.profile?.crawlconfigs?.map(
+        </section>
+        <section class="flex-1">
+          <h2 class="mb-1 text-lg font-medium leading-none">
+            ${msg("Crawl Workflows")}
+          </h2>
+          ${this.profile?.crawlconfigs?.length
+            ? html`<ul class="text-sm font-medium">
+                ${this.profile.crawlconfigs.map(
                   ({ id, name }) => html`
                     <li>
                       <a
@@ -180,16 +212,15 @@ export class BrowserProfilesDetail extends TailwindElement {
                         href=${`${this.navigate.orgBasePath}/workflows/crawl/${id}`}
                         @click=${this.navigate.link}
                       >
-                        ${name}
+                        ${name || msg("(no name)")}
                       </a>
                     </li>
                   `,
                 )}
-              </ul>
-            </dd>
-          </div>
-        </dl>
-      </section>
+              </ul>`
+            : none}
+        </section>
+      </div>
 
       <div class="flex flex-col gap-5 lg:flex-row">
         <section class="flex-1">
