@@ -1,4 +1,4 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -8,11 +8,14 @@ import type { Profile } from "./types";
 
 import type { SelectNewDialogEvent } from ".";
 
-import type { APIPaginatedList } from "@/types/api";
+import type { PageChangeEvent } from "@/components/ui/pagination";
+import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { Browser } from "@/types/browser";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
+
+const INITIAL_PAGE_SIZE = 20;
 
 /**
  * Usage:
@@ -33,7 +36,7 @@ export class BrowserProfilesList extends LiteElement {
   orgId!: string;
 
   @state()
-  browserProfiles?: Profile[];
+  browserProfiles?: APIPaginatedList<Profile>;
 
   firstUpdated() {
     void this.fetchBrowserProfiles();
@@ -65,15 +68,10 @@ export class BrowserProfilesList extends LiteElement {
   private renderTable() {
     return html`
       <btrix-table
-        style="grid-template-columns: min-content [clickable-start] 60ch repeat(2, auto) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
+        style="grid-template-columns: [clickable-start] 60ch repeat(2, auto) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
       >
         <btrix-table-head class="mb-2">
-          <btrix-table-header-cell>
-            <span class="sr-only">${msg("Backed up status")}</span>
-          </btrix-table-header-cell>
-          <btrix-table-header-cell class="pl-0">
-            ${msg("Name")}
-          </btrix-table-header-cell>
+          <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
           <btrix-table-header-cell>
             ${msg("Date Created")}
           </btrix-table-header-cell>
@@ -84,21 +82,34 @@ export class BrowserProfilesList extends LiteElement {
             <span class="sr-only">${msg("Row Actions")}</span>
           </btrix-table-header-cell>
         </btrix-table-head>
-        ${this.browserProfiles?.length
-          ? html`
-              <btrix-table-body
-                style="--btrix-row-gap: var(--sl-spacing-x-small); --btrix-cell-padding-top: var(--sl-spacing-2x-small); --btrix-cell-padding-bottom: var(--sl-spacing-2x-small);"
-              >
-                ${this.browserProfiles.map(this.renderItem)}
-              </btrix-table-body>
-            `
-          : nothing}
+        ${when(this.browserProfiles, ({ total, items }) =>
+          total
+            ? html`
+                <btrix-table-body
+                  style="--btrix-row-gap: var(--sl-spacing-x-small); --btrix-cell-padding-top: var(--sl-spacing-2x-small); --btrix-cell-padding-bottom: var(--sl-spacing-2x-small);"
+                >
+                  ${items.map(this.renderItem)}
+                </btrix-table-body>
+              `
+            : nothing,
+        )}
       </btrix-table>
       ${when(
         this.browserProfiles,
-        (browserProfiles) =>
-          browserProfiles.length
-            ? nothing
+        ({ total, page, pageSize }) =>
+          total
+            ? html`
+                <footer class="mt-6 flex justify-center">
+                  <btrix-pagination
+                    page=${page}
+                    totalCount=${total}
+                    size=${pageSize}
+                    @page-change=${async (e: PageChangeEvent) => {
+                      void this.fetchBrowserProfiles({ page: e.detail.page });
+                    }}
+                  ></btrix-pagination>
+                </footer>
+              `
             : html`
                 <div class="border-b border-t py-5">
                   <p class="text-center text-0-500">
@@ -117,24 +128,12 @@ export class BrowserProfilesList extends LiteElement {
     </div>`;
 
   private readonly renderItem = (data: Profile) => {
-    const isBackedUp =
-      data.resource?.replicas && data.resource.replicas.length > 0;
     return html`
       <btrix-table-row
         class="cursor-pointer select-none rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
       >
-        <btrix-table-cell class="p-3">
-          <sl-tooltip
-            content=${isBackedUp ? msg("Backed up") : msg("Not backed up")}
-          >
-            <sl-icon
-              name=${isBackedUp ? "clouds-fill" : "cloud-slash-fill"}
-              class="${isBackedUp ? "text-success" : "text-neutral-500"}"
-            ></sl-icon>
-          </sl-tooltip>
-        </btrix-table-cell>
         <btrix-table-cell
-          class="flex-col items-center justify-center pl-0"
+          class="flex-col items-center justify-center"
           rowClickTarget="a"
         >
           <a
@@ -144,11 +143,6 @@ export class BrowserProfilesList extends LiteElement {
           >
             ${data.name}
           </a>
-          ${data.description
-            ? html`<div class="w-full text-xs text-neutral-500">
-                <div class="truncate">${data.description}</div>
-              </div>`
-            : nothing}
         </btrix-table-cell>
         <btrix-table-cell class="whitespace-nowrap">
           <sl-format-date
@@ -161,7 +155,18 @@ export class BrowserProfilesList extends LiteElement {
             minute="2-digit"
           ></sl-format-date>
         </btrix-table-cell>
-        <btrix-table-cell>${data.origins.join(", ")}</btrix-table-cell>
+        <btrix-table-cell>
+          ${data.origins[0]}${data.origins.length > 1
+            ? html`<sl-tooltip
+                class="invert-tooltip"
+                content=${data.origins.slice(1).join(", ")}
+              >
+                <sl-tag size="small" class="ml-2">
+                  ${msg(str`+${data.origins.length - 1}`)}
+                </sl-tag>
+              </sl-tooltip>`
+            : nothing}
+        </btrix-table-cell>
         <btrix-table-cell class="px-1">
           ${this.renderActions(data)}
         </btrix-table-cell>
@@ -256,9 +261,7 @@ export class BrowserProfilesList extends LiteElement {
           icon: "check2-circle",
         });
 
-        this.browserProfiles = this.browserProfiles!.filter(
-          (p) => p.id !== profile.id,
-        );
+        void this.fetchBrowserProfiles();
       }
     } catch (e) {
       this.notify({
@@ -287,9 +290,17 @@ export class BrowserProfilesList extends LiteElement {
   /**
    * Fetch browser profiles and update internal state
    */
-  private async fetchBrowserProfiles(): Promise<void> {
+  private async fetchBrowserProfiles(
+    params?: APIPaginationQuery,
+  ): Promise<void> {
     try {
-      const data = await this.getProfiles();
+      const data = await this.getProfiles({
+        page: params?.page || this.browserProfiles?.page || 1,
+        pageSize:
+          params?.pageSize ||
+          this.browserProfiles?.pageSize ||
+          INITIAL_PAGE_SIZE,
+      });
 
       this.browserProfiles = data;
     } catch (e) {
@@ -301,12 +312,16 @@ export class BrowserProfilesList extends LiteElement {
     }
   }
 
-  private async getProfiles() {
+  private async getProfiles(params: APIPaginationQuery) {
+    const query = queryString.stringify(params, {
+      arrayFormat: "comma",
+    });
+
     const data = await this.apiFetch<APIPaginatedList<Profile>>(
-      `/orgs/${this.orgId}/profiles`,
+      `/orgs/${this.orgId}/profiles?${query}`,
       this.authState!,
     );
 
-    return data.items;
+    return data;
   }
 }
