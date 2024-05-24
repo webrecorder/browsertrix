@@ -425,9 +425,9 @@ def test_commit_browser_to_existing_profile(
         # Modified, ascending
         ("modified", 1, 1, 0),
         # Created, descending
-        ("created", -1, 0, 1),
+        ("created", -1, 1, 0),
         # Created, ascending
-        ("created", 1, 1, 0),
+        ("created", 1, 0, 1),
         # Name, descending
         ("name", -1, 0, 1),
         # Name, ascending
@@ -461,7 +461,7 @@ def test_sort_profiles(
 
             profile_1 = profiles[profile_1_index]
             assert profile_1["id"] == profile_id
-            assert profile_1["name"] == PROFILE_NAME
+            assert profile_1["name"] == PROFILE_NAME_UPDATED
 
             profile_2 = profiles[profile_2_index]
             assert profile_2["id"] == profile_2_id
