@@ -96,7 +96,7 @@ export class BrowserProfilesNew extends LiteElement {
             href="https://docs.browsertrix.com/user-guide/browser-profiles/"
             target="_blank"
           >
-            ${msg("browser profiles best practivecs")}</a
+            ${msg("browser profile best practices")}</a
           >.
         `)}
       </p>
