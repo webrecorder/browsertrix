@@ -931,11 +931,10 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        await user_manager.create_non_super_user(
+        new_user = await user_manager.create_non_super_user(
             invite.email, invite.password, invite.name
         )
-        update_role = UpdateRole(role=invite.role, email=invite.email)
-        await set_role(update_role, org, user)
+        await ops.add_user_to_org(org, new_user.id, invite.role)
         return {"added": True}
 
     @router.get("/metrics", tags=["organizations"], response_model=OrgMetrics)

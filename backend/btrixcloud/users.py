@@ -275,11 +275,10 @@ class UserManager:
         email: str,
         password: str,
         name: str = "New user",
-    ) -> None:
+    ) -> User:
         """create a regular user with given credentials"""
         if not email:
-            print("No user defined", flush=True)
-            return
+            raise HTTPException(status_code=400, detail="missing_user_email")
 
         if not password:
             password = generate_password()
@@ -294,7 +293,7 @@ class UserManager:
                 is_verified=True,
             )
 
-            await self._create(user_create)
+            return await self._create(user_create)
         except HTTPException as exc:
             print(f"User {email} already exists", flush=True)
             raise exc
