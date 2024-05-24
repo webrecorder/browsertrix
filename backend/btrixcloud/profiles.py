@@ -1,6 +1,6 @@
 """ Profile Management """
 
-from typing import Optional, TYPE_CHECKING, Any, cast
+from typing import Optional, TYPE_CHECKING, Any, cast, Dict, List
 from datetime import datetime
 from uuid import UUID, uuid4
 import os
@@ -270,22 +270,55 @@ class ProfileOps:
         userid: Optional[UUID] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        sort_by: str = "modified",
+        sort_direction: int = -1,
     ):
         """list all profiles"""
+        # pylint: disable=too-many-locals
+
         # Zero-index page for query
         page = page - 1
         skip = page_size * page
 
-        query = {"oid": org.id}
+        match_query = {"oid": org.id}
         if userid:
-            query["userid"] = userid
+            match_query["userid"] = userid
 
-        total = await self.profiles.count_documents(query)
+        aggregate: List[Dict[str, Any]] = [{"$match": match_query}]
 
-        cursor = self.profiles.find(query, skip=skip, limit=page_size)
-        results = await cursor.to_list(length=page_size)
-        profiles = [Profile.from_dict(res) for res in results]
+        if sort_by:
+            if sort_by not in ("modified", "created", "name"):
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+
+        aggregate.extend(
+            [
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
+            ]
+        )
+
+        cursor = self.profiles.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
+
+        profiles = [Profile.from_dict(res) for res in items]
         return profiles, total
 
     async def get_profile(self, profileid: UUID, org: Optional[Organization] = None):
@@ -440,9 +473,16 @@ def init_profiles_api(
         userid: Optional[UUID] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        sortBy: str = "modified",
+        sortDirection: int = -1,
     ):
         profiles, total = await ops.list_profiles(
-            org, userid, page_size=pageSize, page=page
+            org,
+            userid,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
         )
         return paginated_format(profiles, total, page, pageSize)
 
