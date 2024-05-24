@@ -299,6 +299,7 @@ export class ProfileBrowser extends TailwindElement {
           name="layout-sidebar-reverse"
           class="${this.showOriginSidebar ? "text-blue-600" : ""}"
           @click=${() => (this.showOriginSidebar = !this.showOriginSidebar)}
+          aria-pressed=${this.showOriginSidebar}
         ></sl-icon-button>
       </sl-tooltip>
     `;
