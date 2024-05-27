@@ -264,7 +264,7 @@ export class BrowserProfilesDetail extends TailwindElement {
               void this.cancelEditBrowser();
               void this.discardChangesDialog?.hide();
             }}
-            >${msg("Yes, discard changes")}
+            >${msg("Yes, Discard Changes")}
           </sl-button>
         </div>
       </btrix-dialog>
