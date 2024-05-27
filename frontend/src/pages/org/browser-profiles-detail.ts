@@ -1,15 +1,23 @@
 import { localized, msg, str } from "@lit/localize";
-import { type SlDropdown } from "@shoelace-style/shoelace";
-import { customElement, property, state } from "lit/decorators.js";
+import { html, nothing } from "lit";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import queryString from "query-string";
 
 import type { Profile } from "./types";
 
+import { TailwindElement } from "@/classes/TailwindElement";
+import type { Dialog } from "@/components/ui/dialog";
+import { APIController } from "@/controllers/api";
+import { NavigateController } from "@/controllers/navigate";
+import { NotifyController } from "@/controllers/notify";
+import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
+
+const DESCRIPTION_MAXLENGTH = 500;
 
 /**
  * Usage:
@@ -23,15 +31,18 @@ import { getLocale } from "@/utils/localization";
  */
 @localized()
 @customElement("btrix-browser-profiles-detail")
-export class BrowserProfilesDetail extends LiteElement {
-  @property({ type: Object })
+export class BrowserProfilesDetail extends TailwindElement {
+  @property({ type: Object, attribute: false })
   authState!: AuthState;
 
-  @property({ type: String })
+  @property({ type: String, attribute: false })
   orgId!: string;
 
   @property({ type: String })
   profileId!: string;
+
+  @property({ type: Boolean })
+  isCrawler = false;
 
   @state()
   private profile?: Profile;
@@ -57,10 +68,21 @@ export class BrowserProfilesDetail extends LiteElement {
   @state()
   private isEditDialogContentVisible = false;
 
+  @query("#profileBrowserContainer")
+  private readonly profileBrowserContainer?: HTMLElement | null;
+
+  @query("#discardChangesDialog")
+  private readonly discardChangesDialog?: Dialog | null;
+
+  private readonly api = new APIController(this);
+  private readonly navigate = new NavigateController(this);
+  private readonly notify = new NotifyController(this);
+
   disconnectedCallback() {
     if (this.browserId) {
       void this.deleteBrowser(this.browserId);
     }
+    super.disconnectedCallback();
   }
 
   firstUpdated() {
@@ -68,11 +90,13 @@ export class BrowserProfilesDetail extends LiteElement {
   }
 
   render() {
+    const none = html`<span class="text-neutral-400">${msg("None")}</span>`;
+
     return html`<div class="mb-7">
         <a
           class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
-          href=${`${this.orgBasePath}/browser-profiles`}
-          @click=${this.navLink}
+          href=${`${this.navigate.orgBasePath}/browser-profiles`}
+          @click=${this.navigate.link}
         >
           <sl-icon
             name="arrow-left"
@@ -85,18 +109,11 @@ export class BrowserProfilesDetail extends LiteElement {
       </div>
 
       <header class="mb-3 items-center justify-between md:flex">
-        <h2 class="mb-1 text-xl font-semibold md:h-9">
+        <h1 class="min-w-0 flex-1 truncate text-xl font-medium leading-7">
           ${this.profile?.name
-            ? html`${this.profile.name}
-                <sl-button
-                  size="small"
-                  variant="text"
-                  @click=${() => (this.isEditDialogOpen = true)}
-                >
-                  ${msg("Edit")}
-                </sl-button>`
-            : html`<sl-skeleton class="w-80 md:h-9"></sl-skeleton>`}
-        </h2>
+            ? html`${this.profile.name}`
+            : html`<sl-skeleton class="w-80 md:h-7"></sl-skeleton>`}
+        </h1>
         <div>
           ${this.profile
             ? this.renderMenu()
@@ -112,8 +129,9 @@ export class BrowserProfilesDetail extends LiteElement {
             <dt class="text-sm text-0-600">${msg("Description")}</dt>
             <dd>
               ${this.profile
-                ? this.profile.description ||
-                  html`<span class="text-neutral-400">${msg("None")}</span>`
+                ? this.profile.description
+                  ? this.profile.description.slice(0, DESCRIPTION_MAXLENGTH)
+                  : none
                 : ""}
             </dd>
           </div>
@@ -159,9 +177,8 @@ export class BrowserProfilesDetail extends LiteElement {
                     <li>
                       <a
                         class="text-neutral-600 hover:underline"
-                        href=${`/orgs/${
-                          this.profile!.oid
-                        }/workflows/crawl/${id}`}
+                        href=${`${this.navigate.orgBasePath}/workflows/crawl/${id}`}
+                        @click=${this.navigate.link}
                       >
                         ${name}
                       </a>
@@ -174,45 +191,52 @@ export class BrowserProfilesDetail extends LiteElement {
         </dl>
       </section>
 
-      <div class="flex">
+      <div class="flex flex-col gap-5 lg:flex-row">
         <section class="flex-1">
-          <header class="mb-2">
-            <h3 class="text-lg font-medium">${msg("Browser Profile")}</h3>
-          </header>
-          ${when(
-            this.browserId || this.isBrowserLoading,
-            () => html`
-              <div
-                class="flex h-screen flex-col overflow-hidden rounded-lg border"
-              >
-                <btrix-profile-browser
-                  class="flex-1"
-                  .authState=${this.authState}
-                  orgId=${this.orgId}
-                  browserId=${ifDefined(this.browserId)}
-                  .origins=${this.profile?.origins}
-                  @load=${() => (this.isBrowserLoaded = true)}
-                ></btrix-profile-browser>
-                <div class="flex-0 border-t">
-                  ${this.renderBrowserProfileControls()}
-                </div>
-              </div>
-            `,
-            () =>
-              html`<div
-                class="flex aspect-4/3 flex-col items-center justify-center rounded-lg border bg-neutral-50"
-              >
-                <p class="mb-4 max-w-prose text-neutral-600">
-                  ${msg(
-                    "Edit the profile to make changes or view its present configuration",
-                  )}
-                </p>
-                <sl-button @click=${this.startBrowserPreview}
-                  ><sl-icon slot="prefix" name="pencil-square"></sl-icon> ${msg(
-                    "Edit Browser Profile",
-                  )}</sl-button
+          <h2 class="text-lg font-medium leading-none">
+            ${msg("Browser Profile")}
+          </h2>
+          ${when(this.isCrawler, () =>
+            this.browserId || this.isBrowserLoading
+              ? html`
+                  <div id="profileBrowserContainer" class="flex h-screen py-3">
+                    <div class="flex flex-1 flex-col gap-2">
+                      <btrix-profile-browser
+                        class="flex-1 overflow-hidden rounded border"
+                        .authState=${this.authState}
+                        orgId=${this.orgId}
+                        browserId=${ifDefined(this.browserId)}
+                        .origins=${this.profile?.origins}
+                        @btrix-browser-load=${() =>
+                          (this.isBrowserLoaded = true)}
+                        @btrix-browser-error=${this.onBrowserError}
+                        @btrix-browser-reload=${this.startBrowserPreview}
+                        @btrix-browser-connection-change=${this
+                          .onBrowserConnectionChange}
+                      ></btrix-profile-browser>
+                      <div
+                        class="flex-0 sticky bottom-2 rounded-lg border bg-neutral-0 shadow"
+                      >
+                        ${this.renderBrowserProfileControls()}
+                      </div>
+                    </div>
+                  </div>
+                `
+              : html`<div
+                  class="mt-3 flex aspect-video flex-col items-center justify-center rounded-lg border bg-neutral-50"
                 >
-              </div>`,
+                  <p
+                    class="mx-auto mb-4 max-w-prose text-center text-neutral-600"
+                  >
+                    ${msg(
+                      "View or edit the current browser profile configuration.",
+                    )}
+                  </p>
+                  <sl-button @click=${this.startBrowserPreview}>
+                    <sl-icon slot="prefix" name="gear"></sl-icon>
+                    ${msg("Configure Browser Profile")}
+                  </sl-button>
+                </div>`,
           )}
         </section>
         ${when(
@@ -221,22 +245,48 @@ export class BrowserProfilesDetail extends LiteElement {
         )}
       </div>
 
+      <btrix-dialog id="discardChangesDialog" .label=${msg("Cancel Editing?")}>
+        ${msg(
+          "Are you sure you want to discard changes to this browser profile?",
+        )}
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            .autofocus=${true}
+            @click=${() => void this.discardChangesDialog?.hide()}
+          >
+            ${msg("No, Continue Editing")}
+          </sl-button>
+          <sl-button
+            size="small"
+            variant="danger"
+            @click=${() => {
+              void this.cancelEditBrowser();
+              void this.discardChangesDialog?.hide();
+            }}
+            >${msg("Yes, Discard Changes")}
+          </sl-button>
+        </div>
+      </btrix-dialog>
+
       <btrix-dialog
-        .label=${msg(str`Edit Profile`)}
+        .label=${msg(str`Edit Metadata`)}
         .open=${this.isEditDialogOpen}
         @sl-request-close=${() => (this.isEditDialogOpen = false)}
         @sl-show=${() => (this.isEditDialogContentVisible = true)}
         @sl-after-hide=${() => (this.isEditDialogContentVisible = false)}
       >
-        ${this.isEditDialogContentVisible ? this.renderEditProfile() : ""}
+        ${this.isEditDialogContentVisible ? this.renderEditProfile() : nothing}
       </btrix-dialog> `;
   }
 
   private readonly renderVisitedSites = () => {
     return html`
-      <section class="flex-grow-1 flex flex-col lg:w-80 lg:pl-6">
-        <header class="flex-0 mb-2">
-          <h3 class="text-lg font-medium">${msg("Visited Sites")}</h3>
+      <section class="flex-grow-1 flex flex-col lg:w-[60ch]">
+        <header class="flex-0 mb-3">
+          <h2 class="text-lg font-medium leading-none">
+            ${msg("Visited Sites")}
+          </h2>
         </header>
         <div class="flex-1 overflow-auto rounded-lg border p-4">
           <ul class="font-monostyle text-neutral-800">
@@ -250,25 +300,22 @@ export class BrowserProfilesDetail extends LiteElement {
   private renderBrowserProfileControls() {
     return html`
       <div class="flex justify-between p-4">
-        <div class="max-w-prose">
-          <p class="mx-1 text-xs text-neutral-500">
-            ${msg(
-              "Interact with the browsing tool to set up the browser profile.  Workflows that use this browser profile will behave as if they have logged into the same websites and have the same cookies that have been set here.",
-            )}
-          </p>
-        </div>
+        <sl-button
+          size="small"
+          @click=${() => void this.discardChangesDialog?.show()}
+        >
+          ${msg("Cancel")}
+        </sl-button>
         <div>
-          <sl-button size="small" @click=${this.cancelEditBrowser}
-            >${msg("Cancel")}</sl-button
-          >
           <sl-button
             variant="primary"
             size="small"
             ?loading=${this.isSubmittingBrowserChange}
             ?disabled=${this.isSubmittingBrowserChange || !this.isBrowserLoaded}
             @click=${this.saveBrowser}
-            >${msg("Save Browser Profile")}</sl-button
           >
+            ${msg("Save Browser Profile")}
+          </sl-button>
         </div>
       </div>
     `;
@@ -276,61 +323,32 @@ export class BrowserProfilesDetail extends LiteElement {
 
   private renderMenu() {
     return html`
-      <sl-dropdown placement="bottom-end" distance="4">
-        <sl-button size="small" slot="trigger" caret
-          >${msg("Actions")}</sl-button
-        >
-
-        <ul
-          class="whitespace-nowrap bg-white text-left text-sm text-neutral-800"
-          role="menu"
-        >
-          <li
-            class="cursor-pointer p-2 hover:bg-zinc-100"
-            role="menuitem"
-            @click=${(e: Event) => {
-              void (e.target as HTMLElement)
-                .closest<SlDropdown>("sl-dropdown")!
-                .hide();
-              this.isEditDialogOpen = true;
-            }}
+      <sl-dropdown distance="4" placement="bottom-end">
+        <sl-button size="small" slot="trigger" caret>
+          ${msg("Actions")}
+        </sl-button>
+        <sl-menu>
+          <sl-menu-item @click=${() => (this.isEditDialogOpen = true)}>
+            <sl-icon slot="prefix" name="pencil"></sl-icon>
+            ${msg("Edit Metadata")}
+          </sl-menu-item>
+          <sl-menu-item @click=${this.startBrowserPreview}>
+            <sl-icon slot="prefix" name="gear"></sl-icon>
+            ${msg("Configure Browser Profile")}
+          </sl-menu-item>
+          <sl-menu-item @click=${() => void this.duplicateProfile()}>
+            <sl-icon slot="prefix" name="files"></sl-icon>
+            ${msg("Duplicate Profile")}
+          </sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            style="--sl-color-neutral-700: var(--danger)"
+            @click=${() => void this.deleteProfile()}
           >
-            <sl-icon
-              class="inline-block px-1 align-middle"
-              name="pencil"
-            ></sl-icon>
-            <span class="inline-block pr-2 align-middle"
-              >${msg("Edit Metadata")}</span
-            >
-          </li>
-          <li
-            class="cursor-pointer p-2 hover:bg-zinc-100"
-            role="menuitem"
-            @click=${() => void this.duplicateProfile()}
-          >
-            <sl-icon
-              class="inline-block px-1 align-middle"
-              name="files"
-            ></sl-icon>
-            <span class="inline-block pr-2 align-middle"
-              >${msg("Duplicate Profile")}</span
-            >
-          </li>
-          <hr />
-          <li
-            class="cursor-pointer p-2 text-danger hover:bg-danger hover:text-white"
-            role="menuitem"
-            @click=${() => {
-              void this.deleteProfile();
-            }}
-          >
-            <sl-icon
-              class="inline-block px-1 align-middle"
-              name="trash3"
-            ></sl-icon>
-            <span class="inline-block pr-2 align-middle">${msg("Delete")}</span>
-          </li>
-        </ul>
+            <sl-icon slot="prefix" name="trash3"></sl-icon>
+            ${msg("Delete")}
+          </sl-menu-item>
+        </sl-menu>
       </sl-dropdown>
     `;
   }
@@ -380,6 +398,16 @@ export class BrowserProfilesDetail extends LiteElement {
     `;
   }
 
+  private async onBrowserError() {
+    this.isBrowserLoaded = false;
+  }
+
+  private async onBrowserConnectionChange(
+    e: CustomEvent<BrowserConnectionChange>,
+  ) {
+    this.isBrowserLoaded = e.detail.connected;
+  }
+
   private async startBrowserPreview() {
     if (!this.profile) return;
 
@@ -392,10 +420,14 @@ export class BrowserProfilesDetail extends LiteElement {
 
       this.browserId = data.browserid;
       this.isBrowserLoading = false;
+
+      await this.updateComplete;
+
+      this.profileBrowserContainer?.scrollIntoView({ behavior: "smooth" });
     } catch (e) {
       this.isBrowserLoading = false;
 
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't preview browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -429,25 +461,27 @@ export class BrowserProfilesDetail extends LiteElement {
     try {
       const data = await this.createBrowser({ url });
 
-      this.notify({
+      this.notify.toast({
         message: msg("Starting up browser with current profile..."),
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.navTo(
-        `${this.orgBasePath}/browser-profiles/profile/browser/${
+      this.navigate.to(
+        `${this.navigate.orgBasePath}/browser-profiles/profile/browser/${
           data.browserid
-        }?name=${window.encodeURIComponent(
-          this.profile.name,
-        )}&description=${window.encodeURIComponent(
-          this.profile.description || "",
-        )}&profileId=${window.encodeURIComponent(this.profile.id)}&navigateUrl=`,
+        }?${queryString.stringify({
+          url,
+          name: this.profile.name,
+          description: this.profile.description.slice(0, DESCRIPTION_MAXLENGTH),
+          profileId: this.profile.id,
+          crawlerChannel: this.profile.crawlerChannel,
+        })}`,
       );
     } catch (e) {
       this.isBrowserLoading = false;
 
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't create browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -459,7 +493,7 @@ export class BrowserProfilesDetail extends LiteElement {
     const profileName = this.profile!.name;
 
     try {
-      const data = await this.apiFetch<Profile & { error: boolean }>(
+      const data = await this.api.fetch<Profile & { error: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profile!.id}`,
         this.authState!,
         {
@@ -468,7 +502,7 @@ export class BrowserProfilesDetail extends LiteElement {
       );
 
       if (data.error && data.crawlconfigs) {
-        this.notify({
+        this.notify.toast({
           message: msg(
             html`Could not delete <strong>${profileName}</strong>, in use by
               <strong
@@ -480,16 +514,16 @@ export class BrowserProfilesDetail extends LiteElement {
           duration: 15000,
         });
       } else {
-        this.navTo(`${this.orgBasePath}/browser-profiles`);
+        this.navigate.to(`${this.navigate.orgBasePath}/browser-profiles`);
 
-        this.notify({
+        this.notify.toast({
           message: msg(html`Deleted <strong>${profileName}</strong>.`),
           variant: "success",
           icon: "check2-circle",
         });
       }
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't delete browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -503,7 +537,7 @@ export class BrowserProfilesDetail extends LiteElement {
       profileId: this.profile!.id,
     };
 
-    return this.apiFetch<{ browserid: string }>(
+    return this.api.fetch<{ browserid: string }>(
       `/orgs/${this.orgId}/profiles/browser`,
       this.authState!,
       {
@@ -514,7 +548,7 @@ export class BrowserProfilesDetail extends LiteElement {
   }
 
   private async deleteBrowser(id: string) {
-    return this.apiFetch(
+    return this.api.fetch(
       `/orgs/${this.orgId}/profiles/browser/${id}`,
       this.authState!,
       {
@@ -532,7 +566,7 @@ export class BrowserProfilesDetail extends LiteElement {
 
       this.profile = data;
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -541,7 +575,7 @@ export class BrowserProfilesDetail extends LiteElement {
   }
 
   private async getProfile() {
-    const data = await this.apiFetch<Profile>(
+    const data = await this.api.fetch<Profile>(
       `/orgs/${this.orgId}/profiles/${this.profileId}`,
       this.authState!,
     );
@@ -552,16 +586,6 @@ export class BrowserProfilesDetail extends LiteElement {
   private async saveBrowser() {
     if (!this.browserId) return;
 
-    if (
-      !window.confirm(
-        msg(
-          "Save browser changes to profile? You will need to re-load the browsing tool to make additional changes.",
-        ),
-      )
-    ) {
-      return;
-    }
-
     this.isSubmittingBrowserChange = true;
 
     const params = {
@@ -570,7 +594,7 @@ export class BrowserProfilesDetail extends LiteElement {
     };
 
     try {
-      const data = await this.apiFetch<{ updated: boolean }>(
+      const data = await this.api.fetch<{ updated: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profileId}`,
         this.authState!,
         {
@@ -580,7 +604,7 @@ export class BrowserProfilesDetail extends LiteElement {
       );
 
       if (data.updated) {
-        this.notify({
+        this.notify.toast({
           message: msg("Successfully saved browser profile."),
           variant: "success",
           icon: "check2-circle",
@@ -591,7 +615,7 @@ export class BrowserProfilesDetail extends LiteElement {
         throw data;
       }
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't save browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -616,7 +640,7 @@ export class BrowserProfilesDetail extends LiteElement {
     };
 
     try {
-      const data = await this.apiFetch<{ updated: boolean }>(
+      const data = await this.api.fetch<{ updated: boolean }>(
         `/orgs/${this.orgId}/profiles/${this.profileId}`,
         this.authState!,
         {
@@ -626,7 +650,7 @@ export class BrowserProfilesDetail extends LiteElement {
       );
 
       if (data.updated) {
-        this.notify({
+        this.notify.toast({
           message: msg("Successfully saved browser profile."),
           variant: "success",
           icon: "check2-circle",
@@ -653,7 +677,7 @@ export class BrowserProfilesDetail extends LiteElement {
         }
       }
 
-      this.notify({
+      this.notify.toast({
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",

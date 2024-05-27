@@ -1,6 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import queryString from "query-string";
 
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
@@ -28,34 +29,30 @@ export class BrowserProfilesNew extends LiteElement {
   @property({ type: String })
   browserId!: string;
 
+  @property({ type: Object, attribute: false })
+  browserParams: {
+    name: string;
+    url: string;
+    description?: string;
+    crawlerChannel?: string;
+    profileId?: string | null;
+    navigateUrl?: string;
+  } = {
+    name: "",
+    url: "",
+  };
+
   @state()
   private isSubmitting = false;
 
   @state()
   private isDialogVisible = false;
 
-  // URL params can be used to pass name and description
-  // base ID determines whether this is an edit/extension
-  @state()
-  private params: Partial<{
-    name: string;
-    description: string;
-    navigateUrl: string;
-    profileId: string | null;
-    crawlerChannel: string;
-  }> = {};
-
-  firstUpdated() {
-    const params = new URLSearchParams(window.location.search);
-    const profileId = params.get("profileId");
-
-    this.params = {
-      name: params.get("name") || "",
-      description: params.get("description") || "",
-      navigateUrl: params.get("navigateUrl") || "",
-      profileId: profileId || null,
-      crawlerChannel: params.get("crawlerChannel") || "default",
-    };
+  disconnectedCallback(): void {
+    if (this.browserId) {
+      void this.deleteBrowser(this.browserId);
+    }
+    super.disconnectedCallback();
   }
 
   render() {
@@ -63,8 +60,8 @@ export class BrowserProfilesNew extends LiteElement {
       <div class="mb-7">
         <a
           class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
-          href=${this.params.profileId
-            ? `${this.orgBasePath}/browser-profiles/profile/${this.params.profileId}`
+          href=${this.browserParams.profileId
+            ? `${this.orgBasePath}/browser-profiles/profile/${this.browserParams.profileId}`
             : `${this.orgBasePath}/browser-profiles`}
           @click=${this.navLink}
         >
@@ -73,57 +70,70 @@ export class BrowserProfilesNew extends LiteElement {
             class="inline-block align-middle"
           ></sl-icon>
           <span class="inline-block align-middle"
-            >${this.params.profileId
+            >${this.browserParams.profileId
               ? msg("Back to Profile")
               : msg("Back to Browser Profiles")}</span
           >
         </a>
       </div>
 
-      ${this.params.profileId
+      <header class="mb-3">
+        <h1 class="min-w-0 flex-1 truncate text-xl font-medium leading-7">
+          ${msg("New Browser Profile")}
+        </h1>
+      </header>
+
+      <p class="mb-5 leading-normal text-neutral-700">
+        ${msg(
+          "Workflows that use this browser profile will behave as if they have logged into the same websites and have the same web cookies.",
+        )}
+        <br />
+        ${msg(html`
+          It is highly recommended to create dedicated accounts to use when
+          crawling. For details, refer to
+          <a
+            class="text-primary hover:text-indigo-400"
+            href="https://docs.browsertrix.com/user-guide/browser-profiles/"
+            target="_blank"
+          >
+            ${msg("browser profile best practices")}</a
+          >.
+        `)}
+      </p>
+
+      ${this.browserParams.profileId
         ? html`
             <div class="mb-2">
               <btrix-alert class="text-sm" variant="info"
                 >${msg(
-                  html`Extending <strong>${this.params.name}</strong>`,
+                  html`Extending <strong>${this.browserParams.name}</strong>`,
                 )}</btrix-alert
               >
             </div>
           `
         : ""}
 
-      <div class="flex h-screen flex-col">
-        <div
-          class="flex-0 mb-3 flex items-center justify-between rounded-lg bg-slate-100 p-2"
-        >
-          <p class="mr-3 p-1 text-sm text-slate-600">
-            ${msg(
-              "Interact with the browsing tool to record your browser profile. It is highly recommended to create dedicated accounts to use when crawling. For details refer to the best practices on the ",
-            )}
-            <a
-              class="text-primary hover:text-indigo-400"
-              href="https://docs.browsertrix.com/user-guide/browser-profiles/"
-              target="_blank"
-              >${msg("browser profiles documentation page.")}</a
-            >
-          </p>
+      <div class="sticky top-0 flex h-screen flex-col gap-2">
+        <btrix-profile-browser
+          class="flex-1 overflow-hidden rounded-lg border"
+          .authState=${this.authState}
+          orgId=${this.orgId}
+          browserId=${this.browserId}
+          initialNavigateUrl=${ifDefined(this.browserParams.navigateUrl)}
+          @btrix-browser-reload=${this.onBrowserReload}
+        ></btrix-profile-browser>
 
+        <div
+          class="sticky bottom-2 z-10 mb-3 flex items-center justify-end rounded-lg border bg-neutral-0 p-2 shadow"
+        >
           <sl-button
-            variant="primary"
+            variant="success"
             size="small"
             @click=${() => (this.isDialogVisible = true)}
           >
             ${msg("Finish Browsing")}
           </sl-button>
         </div>
-
-        <btrix-profile-browser
-          class="flex-1 overflow-hidden rounded-lg border"
-          .authState=${this.authState}
-          orgId=${this.orgId}
-          browserId=${this.browserId}
-          initialNavigateUrl=${ifDefined(this.params.navigateUrl)}
-        ></btrix-profile-browser>
       </div>
 
       <btrix-dialog
@@ -146,9 +156,9 @@ export class BrowserProfilesNew extends LiteElement {
             desc: "Example browser profile name",
           })}
           autocomplete="off"
-          value=${this.params.profileId && this.params.name
-            ? msg(str`${this.params.name} Copy`)
-            : this.params.name || msg("My Profile")}
+          value=${this.browserParams.profileId && this.browserParams.name
+            ? msg(str`${this.browserParams.name} Copy`)
+            : this.browserParams.name || msg("My Profile")}
           required
         ></sl-input>
 
@@ -161,7 +171,7 @@ export class BrowserProfilesNew extends LiteElement {
           })}
           rows="2"
           autocomplete="off"
-          value=${this.params.description || ""}
+          value=${this.browserParams.description || ""}
         ></sl-textarea>
 
         <div class="flex justify-between">
@@ -187,6 +197,30 @@ export class BrowserProfilesNew extends LiteElement {
     </form>`;
   }
 
+  private async onBrowserReload() {
+    const { url } = this.browserParams;
+    if (!url) {
+      console.debug("no start url");
+      return;
+    }
+
+    const crawlerChannel = this.browserParams.crawlerChannel || "default";
+    const data = await this.createBrowser({
+      url,
+      crawlerChannel,
+    });
+
+    this.navTo(
+      `${this.orgBasePath}/browser-profiles/profile/browser/${
+        data.browserid
+      }?${queryString.stringify({
+        url,
+        name: this.browserParams.name || msg("My Profile"),
+        crawlerChannel,
+      })}`,
+    );
+  }
+
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
     this.isSubmitting = true;
@@ -196,7 +230,7 @@ export class BrowserProfilesNew extends LiteElement {
       browserid: this.browserId,
       name: formData.get("name"),
       description: formData.get("description"),
-      crawlerChannel: this.params.crawlerChannel,
+      crawlerChannel: this.browserParams.crawlerChannel,
     };
 
     try {
@@ -238,6 +272,44 @@ export class BrowserProfilesNew extends LiteElement {
         variant: "danger",
         icon: "exclamation-octagon",
       });
+    }
+  }
+  private async createBrowser({
+    url,
+    crawlerChannel,
+  }: {
+    url: string;
+    crawlerChannel: string;
+  }) {
+    const params = {
+      url,
+      crawlerChannel,
+    };
+
+    return this.apiFetch<{ browserid: string }>(
+      `/orgs/${this.orgId}/profiles/browser`,
+      this.authState!,
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+      },
+    );
+  }
+
+  private async deleteBrowser(id: string) {
+    try {
+      const data = await this.apiFetch(
+        `/orgs/${this.orgId}/profiles/browser/${id}`,
+        this.authState!,
+        {
+          method: "DELETE",
+        },
+      );
+
+      return data;
+    } catch (e) {
+      // TODO Investigate DELETE returning 404
+      console.debug(e);
     }
   }
 }
