@@ -255,7 +255,7 @@ export class BrowserProfilesDetail extends TailwindElement {
             .autofocus=${true}
             @click=${() => void this.discardChangesDialog?.hide()}
           >
-            ${msg("No, continue to edit")}
+            ${msg("No, Continue Editing")}
           </sl-button>
           <sl-button
             size="small"
