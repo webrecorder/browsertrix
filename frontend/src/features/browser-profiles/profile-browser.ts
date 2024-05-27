@@ -240,7 +240,7 @@ export class ProfileBrowser extends TailwindElement {
         <div class="flex h-full w-full items-center justify-center">
           <btrix-alert variant="danger">
             <p>
-              ${msg(`Interactive browser is unavailable due to inactivity.`)}
+              ${msg(`Interactive browser session timed out due to inactivity.`)}
             </p>
             <div class="py-2 text-center">
               <sl-button size="small" @click=${this.onClickReload}>
