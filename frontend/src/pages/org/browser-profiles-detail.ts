@@ -16,6 +16,7 @@ import { NotifyController } from "@/controllers/notify";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
+import { maxLengthValidator } from "@/utils/form";
 import { getLocale } from "@/utils/localization";
 
 const DESCRIPTION_MAXLENGTH = 500;
@@ -78,6 +79,8 @@ export class BrowserProfilesDetail extends TailwindElement {
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
+
+  private readonly validateDescriptionMax = maxLengthValidator(500);
 
   disconnectedCallback() {
     if (this.browserId) {
@@ -407,6 +410,8 @@ export class BrowserProfilesDetail extends TailwindElement {
   private renderEditProfile() {
     if (!this.profile) return;
 
+    const { helpText, validate } = this.validateDescriptionMax;
+
     return html`
       <form @submit=${this.onSubmitEdit}>
         <div class="mb-5">
@@ -423,9 +428,12 @@ export class BrowserProfilesDetail extends TailwindElement {
           <sl-textarea
             name="description"
             label=${msg("Description")}
-            rows="2"
-            autocomplete="off"
             value=${this.profile.description || ""}
+            rows="3"
+            autocomplete="off"
+            resize="auto"
+            help-text=${helpText}
+            @sl-input=${validate}
           ></sl-textarea>
         </div>
 
