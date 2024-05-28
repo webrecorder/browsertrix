@@ -2,13 +2,14 @@ import { msg } from "@lit/localize";
 import clsx from "clsx";
 import { html } from "lit";
 import { guard } from "lit/directives/guard.js";
-import { when } from "lit/directives/when.js";
 
 import type { BlobPayload, ReplayData } from "../types";
 
 import { renderSpinner } from "./spinner";
 
-function image(blobUrl: BlobPayload["blobUrl"]) {
+import { tw } from "@/utils/tailwind";
+
+function image(blobUrl: BlobPayload["blobUrl"] | undefined) {
   if (!blobUrl) {
     return html`<div
       class="flex aspect-video h-full w-full flex-col items-center justify-center gap-2 bg-slate-50 text-xs text-neutral-500"
@@ -28,11 +29,18 @@ function image(blobUrl: BlobPayload["blobUrl"]) {
   `;
 }
 
+const imageSpinner = renderSpinner(tw`aspect-video bg-slate-50`);
+
+const renderImage = (data: ReplayData | null) =>
+  guard(data, () => (data != null ? image(data.blobUrl) : imageSpinner));
+
 export function renderScreenshots(
   crawlData: ReplayData,
   qaData: ReplayData,
   splitView: boolean,
 ) {
+  const crawlImage = renderImage(crawlData);
+  const qaImage = renderImage(qaData);
   const content = html`
     <div class=${clsx("flex", !splitView && "justify-between")}>
       <h3
@@ -60,21 +68,13 @@ export function renderScreenshots(
             class="aspect-video flex-1 overflow-hidden rounded-lg border bg-slate-50"
             aria-labelledby="crawlScreenshotHeading"
           >
-            ${when(
-              crawlData?.blobUrl !== undefined && crawlData.blobUrl,
-              image,
-              renderSpinner,
-            )}
+            ${crawlImage}
           </div>
           <div
             class="aspect-video flex-1 overflow-hidden rounded-lg border bg-slate-50"
             aria-labelledby="qaScreenshotHeading"
           >
-            ${when(
-              qaData?.blobUrl !== undefined && qaData.blobUrl,
-              image,
-              renderSpinner,
-            )}
+            ${qaImage}
           </div>
         </div>`
       : html`
@@ -83,18 +83,10 @@ export function renderScreenshots(
           >
             <sl-image-comparer class="h-full w-full">
               <div slot="after" aria-labelledby="crawlScreenshotHeading">
-                ${when(
-                  crawlData?.blobUrl !== undefined && crawlData.blobUrl,
-                  image,
-                  renderSpinner,
-                )}
+                ${crawlImage}
               </div>
               <div slot="before" aria-labelledby="qaScreenshotHeading">
-                ${when(
-                  qaData?.blobUrl !== undefined && qaData.blobUrl,
-                  image,
-                  renderSpinner,
-                )}
+                ${qaImage}
               </div>
             </sl-image-comparer>
           </div>
