@@ -51,7 +51,7 @@ export class BrowserProfilesList extends LiteElement {
 
   render() {
     return html`<header>
-        <div class="mb-2 flex flex-wrap justify-between gap-2 border-b pb-3">
+        <div class="mb-3 flex flex-wrap justify-between gap-2 border-b pb-3">
           <h1 class="mb-2 text-xl font-semibold leading-8 md:mb-0">
             ${msg("Browser Profiles")}
           </h1>
@@ -85,7 +85,9 @@ export class BrowserProfilesList extends LiteElement {
         style="grid-template-columns: [clickable-start] 60ch repeat(2, auto) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
       >
         <btrix-table-head class="mb-2">
-          <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
+          <btrix-table-header-cell class="pl-3">
+            ${msg("Name")}
+          </btrix-table-header-cell>
           <btrix-table-header-cell>
             ${msg("Last Updated")}
           </btrix-table-header-cell>
@@ -147,7 +149,7 @@ export class BrowserProfilesList extends LiteElement {
         class="cursor-pointer select-none rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
       >
         <btrix-table-cell
-          class="flex-col items-center justify-center"
+          class="flex-col items-center justify-center pl-3"
           rowClickTarget="a"
         >
           <a
