@@ -98,6 +98,9 @@ export type Profile = {
   name: string;
   description: string;
   created: string;
+  createdByName: string | null;
+  modified: string | null;
+  modifiedByName: string | null;
   origins: string[];
   profileId: string;
   baseProfileName: string;

@@ -130,15 +130,19 @@ export class BrowserProfilesDetail extends TailwindElement {
       <section class="mb-5 rounded-lg border px-4 py-2">
         <btrix-desc-list horizontal>
           <btrix-desc-list-item label=${msg("Backup Status")}>
-            ${isBackedUp
-              ? html`<sl-icon
-                  name="clouds-fill"
-                  class="text-success"
-                ></sl-icon>`
-              : html`<sl-icon
-                  name="cloud-slash-fill"
-                  class="text-neutral-500"
-                ></sl-icon>`}
+            <div class="flex items-center gap-2">
+              ${isBackedUp
+                ? html`<sl-icon
+                      name="clouds-fill"
+                      class="text-success"
+                    ></sl-icon>
+                    ${msg("Backed Up")}`
+                : html`<sl-icon
+                      name="cloud-slash-fill"
+                      class="text-neutral-500"
+                    ></sl-icon>
+                    ${msg("Not Backed Up")}`}
+            </div>
           </btrix-desc-list-item>
           <btrix-desc-list-item label=${msg("Crawler Release Channel")}>
             ${this.profile
@@ -164,7 +168,23 @@ export class BrowserProfilesDetail extends TailwindElement {
               : nothing}
           </btrix-desc-list-item>
           <btrix-desc-list-item label=${msg("Last Modified")}>
-            ${this.profile ? html` TODO ` : nothing}
+            ${this.profile
+              ? html` <sl-format-date
+                  lang=${getLocale()}
+                  date=${
+                    `${
+                      // NOTE older profiles may not have "modified" data
+                      this.profile.modified || this.profile.created
+                    }Z` /** Z for UTC */
+                  }
+                  month="2-digit"
+                  day="2-digit"
+                  year="2-digit"
+                  hour="numeric"
+                  minute="numeric"
+                  time-zone-name="short"
+                ></sl-format-date>`
+              : nothing}
           </btrix-desc-list-item>
         </btrix-desc-list>
       </section>

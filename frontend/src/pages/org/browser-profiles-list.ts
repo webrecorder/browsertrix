@@ -327,9 +327,16 @@ export class BrowserProfilesList extends LiteElement {
   }
 
   private async getProfiles(params: APIPaginationQuery) {
-    const query = queryString.stringify(params, {
-      arrayFormat: "comma",
-    });
+    const query = queryString.stringify(
+      {
+        ...params,
+        sortBy: "created",
+        sortDirection: -1,
+      },
+      {
+        arrayFormat: "comma",
+      },
+    );
 
     const data = await this.apiFetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles?${query}`,
