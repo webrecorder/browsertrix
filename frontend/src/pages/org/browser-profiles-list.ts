@@ -87,7 +87,7 @@ export class BrowserProfilesList extends LiteElement {
         <btrix-table-head class="mb-2">
           <btrix-table-header-cell>${msg("Name")}</btrix-table-header-cell>
           <btrix-table-header-cell>
-            ${msg("Date Created")}
+            ${msg("Last Updated")}
           </btrix-table-header-cell>
           <btrix-table-header-cell>
             ${msg("Visited URLs")}
@@ -161,7 +161,12 @@ export class BrowserProfilesList extends LiteElement {
         <btrix-table-cell class="whitespace-nowrap">
           <sl-format-date
             lang=${getLocale()}
-            date=${`${data.created}Z`}
+            date=${
+              `${
+                // NOTE older profiles may not have "modified" data
+                data.modified || data.created
+              }Z` /** Z for UTC */
+            }
             month="2-digit"
             day="2-digit"
             year="2-digit"
@@ -327,16 +332,9 @@ export class BrowserProfilesList extends LiteElement {
   }
 
   private async getProfiles(params: APIPaginationQuery) {
-    const query = queryString.stringify(
-      {
-        ...params,
-        sortBy: "created",
-        sortDirection: -1,
-      },
-      {
-        arrayFormat: "comma",
-      },
-    );
+    const query = queryString.stringify(params, {
+      arrayFormat: "comma",
+    });
 
     const data = await this.apiFetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles?${query}`,

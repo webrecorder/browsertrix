@@ -167,7 +167,7 @@ export class BrowserProfilesDetail extends TailwindElement {
                 `
               : nothing}
           </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Last Modified")}>
+          <btrix-desc-list-item label=${msg("Last Updated")}>
             ${this.profile
               ? html` <sl-format-date
                   lang=${getLocale()}
