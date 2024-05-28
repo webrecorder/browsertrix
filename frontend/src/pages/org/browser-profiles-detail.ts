@@ -701,9 +701,10 @@ export class BrowserProfilesDetail extends TailwindElement {
   private async onSubmitEdit(e: SubmitEvent) {
     e.preventDefault();
 
-    this.isSubmittingProfileChange = true;
+    const formEl = e.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
 
-    const formData = new FormData(e.target as HTMLFormElement);
+    const formData = new FormData(formEl);
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
 
@@ -711,6 +712,8 @@ export class BrowserProfilesDetail extends TailwindElement {
       name,
       description,
     };
+
+    this.isSubmittingProfileChange = true;
 
     try {
       const data = await this.api.fetch<{ updated: boolean }>(
@@ -760,12 +763,8 @@ export class BrowserProfilesDetail extends TailwindElement {
     this.isSubmittingProfileChange = false;
   }
 
-  /**
-   * Stop propgation of sl-select events.
-   * Prevents bug where sl-dialog closes when dropdown closes
-   * https://github.com/shoelace-style/shoelace/issues/170
-   */
-  private stopProp(e: CustomEvent) {
-    e.stopPropagation();
+  async checkFormValidity(formEl: HTMLFormElement) {
+    await this.updateComplete;
+    return !formEl.querySelector("[data-invalid]");
   }
 }
