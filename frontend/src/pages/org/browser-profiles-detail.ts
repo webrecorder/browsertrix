@@ -17,7 +17,7 @@ import type { BrowserConnectionChange } from "@/features/browser-profiles/profil
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
-import { getLocale } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
 
 const DESCRIPTION_MAXLENGTH = 500;
 
@@ -192,60 +192,7 @@ export class BrowserProfilesDetail extends TailwindElement {
         </btrix-desc-list>
       </section>
 
-      <div class="mb-5 flex flex-col gap-5 lg:flex-row">
-        <section class="flex-1">
-          <header class="flex items-center justify-between">
-            <h2 class="mb-1 text-lg font-medium leading-none">
-              ${msg("Description")}
-            </h2>
-            ${when(
-              this.isCrawler,
-              () => html`
-                <sl-icon-button
-                  class="text-base"
-                  name="pencil"
-                  @click=${() => (this.isEditDialogOpen = true)}
-                  label=${msg("Edit description")}
-                ></sl-icon-button>
-              `,
-            )}
-          </header>
-          <div class="rounded border p-5">
-            ${this.profile
-              ? this.profile.description ||
-                html`
-                  <div class="text-center text-neutral-400">
-                    ${msg("No description added.")}
-                  </div>
-                `
-              : nothing}
-          </div>
-        </section>
-        <section class="flex-1">
-          <h2 class="mb-1 text-lg font-medium leading-none">
-            ${msg("Crawl Workflows")}
-          </h2>
-          ${this.profile?.crawlconfigs?.length
-            ? html`<ul class="text-sm font-medium">
-                ${this.profile.crawlconfigs.map(
-                  ({ id, name }) => html`
-                    <li>
-                      <a
-                        class="text-neutral-600 hover:underline"
-                        href=${`${this.navigate.orgBasePath}/workflows/crawl/${id}`}
-                        @click=${this.navigate.link}
-                      >
-                        ${name || msg("(no name)")}
-                      </a>
-                    </li>
-                  `,
-                )}
-              </ul>`
-            : none}
-        </section>
-      </div>
-
-      <div class="flex flex-col gap-5 lg:flex-row">
+      <div class="mb-7 flex flex-col gap-5 lg:flex-row">
         <section class="flex-1">
           <h2 class="text-lg font-medium leading-none">
             ${msg("Browser Profile")}
@@ -299,6 +246,46 @@ export class BrowserProfilesDetail extends TailwindElement {
         )}
       </div>
 
+      <section class="mb-7">
+        <header class="flex items-center justify-between">
+          <h2 class="mb-1 text-lg font-medium leading-none">
+            ${msg("Description")}
+          </h2>
+          ${when(
+            this.isCrawler,
+            () => html`
+              <sl-icon-button
+                class="text-base"
+                name="pencil"
+                @click=${() => (this.isEditDialogOpen = true)}
+                label=${msg("Edit description")}
+              ></sl-icon-button>
+            `,
+          )}
+        </header>
+        <div class="rounded border p-5">
+          ${this.profile
+            ? this.profile.description ||
+              html`
+                <div class="text-center text-neutral-400">
+                  ${msg("No description added.")}
+                </div>
+              `
+            : nothing}
+        </div>
+      </section>
+
+      <section class="mb-7">
+        <h2 class="mb-2 text-lg font-medium leading-none">
+          ${msg("Crawl Workflows")}${this.profile?.crawlconfigs?.length
+            ? html`<span class="font-normal text-neutral-500">
+                (${formatNumber(this.profile.crawlconfigs.length)})
+              </span>`
+            : nothing}
+        </h2>
+        ${this.renderCrawlWorkflows()}
+      </section>
+
       <btrix-dialog id="discardChangesDialog" .label=${msg("Cancel Editing?")}>
         ${msg(
           "Are you sure you want to discard changes to this browser profile?",
@@ -332,6 +319,33 @@ export class BrowserProfilesDetail extends TailwindElement {
       >
         ${this.isEditDialogContentVisible ? this.renderEditProfile() : nothing}
       </btrix-dialog> `;
+  }
+
+  private renderCrawlWorkflows() {
+    if (this.profile?.crawlconfigs?.length) {
+      return html`<ul>
+        ${this.profile.crawlconfigs.map(
+          ({ id, name }) => html`
+            <li
+              class="border-x border-b first:rounded-t first:border-t last:rounded-b"
+            >
+              <a
+                class="block p-2 transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50"
+                href=${`${this.navigate.orgBasePath}/workflows/crawl/${id}`}
+                @click=${this.navigate.link}
+              >
+                ${name ||
+                html`<span class="text-neutral-400">${msg("(no name)")}</span>`}
+              </a>
+            </li>
+          `,
+        )}
+      </ul>`;
+    }
+
+    return html`<div class="rounded border p-5 text-center text-neutral-400">
+      ${msg("Not used in any crawl workflows.")}
+    </div>`;
   }
 
   private readonly renderVisitedSites = () => {
