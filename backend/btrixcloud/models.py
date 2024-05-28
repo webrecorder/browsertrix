@@ -1183,6 +1183,12 @@ class Profile(BaseMongoModel):
     resource: Optional[ProfileFile]
 
     created: Optional[datetime]
+    createdBy: Optional[UUID] = None
+    createdByName: Optional[str] = None
+    modified: Optional[datetime] = None
+    modifiedBy: Optional[UUID] = None
+    modifiedByName: Optional[str] = None
+
     baseid: Optional[UUID] = None
     crawlerChannel: Optional[str]
 

@@ -1,6 +1,6 @@
 """ Profile Management """
 
-from typing import Optional, TYPE_CHECKING, Any, cast
+from typing import Optional, TYPE_CHECKING, Any, cast, Dict, List
 from datetime import datetime
 from uuid import UUID, uuid4
 import os
@@ -155,12 +155,25 @@ class ProfileOps:
         self,
         browser_commit: ProfileCreate,
         storage: StorageRef,
+        user: User,
         metadata: dict,
-        profileid: Optional[UUID] = None,
+        existing_profile: Optional[Profile] = None,
     ) -> dict[str, Any]:
         """commit profile and shutdown profile browser"""
-        if not profileid:
+        # pylint: disable=too-many-locals
+
+        now = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+
+        if existing_profile:
+            profileid = existing_profile.id
+            created = existing_profile.created
+            created_by = existing_profile.createdBy
+            created_by_name = existing_profile.createdByName
+        else:
             profileid = uuid4()
+            created = now
+            created_by = user.id
+            created_by_name = user.name if user.name else user.email
 
         filename_data = {"filename": f"profiles/profile-{profileid}.tar.gz"}
 
@@ -200,7 +213,12 @@ class ProfileOps:
             id=profileid,
             name=browser_commit.name,
             description=browser_commit.description,
-            created=datetime.utcnow().replace(microsecond=0, tzinfo=None),
+            created=created,
+            createdBy=created_by,
+            createdByName=created_by_name,
+            modified=now,
+            modifiedBy=user.id,
+            modifiedByName=user.name if user.name else user.email,
             origins=json["origins"],
             resource=profile_file,
             userid=UUID(metadata.get("btrix.user")),
@@ -225,9 +243,17 @@ class ProfileOps:
             "storageQuotaReached": quota_reached,
         }
 
-    async def update_profile_metadata(self, profileid: UUID, update: ProfileUpdate):
+    async def update_profile_metadata(
+        self, profileid: UUID, update: ProfileUpdate, user: User
+    ):
         """Update name and description metadata only on existing profile"""
-        query = {"name": update.name}
+        query = {
+            "name": update.name,
+            "modified": datetime.utcnow().replace(microsecond=0, tzinfo=None),
+            "modifiedBy": user.id,
+            "modifiedByName": user.name if user.name else user.email,
+        }
+
         if update.description is not None:
             query["description"] = update.description
 
@@ -244,22 +270,55 @@ class ProfileOps:
         userid: Optional[UUID] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        sort_by: str = "modified",
+        sort_direction: int = -1,
     ):
         """list all profiles"""
+        # pylint: disable=too-many-locals
+
         # Zero-index page for query
         page = page - 1
         skip = page_size * page
 
-        query = {"oid": org.id}
+        match_query = {"oid": org.id}
         if userid:
-            query["userid"] = userid
+            match_query["userid"] = userid
 
-        total = await self.profiles.count_documents(query)
+        aggregate: List[Dict[str, Any]] = [{"$match": match_query}]
 
-        cursor = self.profiles.find(query, skip=skip, limit=page_size)
-        results = await cursor.to_list(length=page_size)
-        profiles = [Profile.from_dict(res) for res in results]
+        if sort_by:
+            if sort_by not in ("modified", "created", "name"):
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
 
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+
+        aggregate.extend(
+            [
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
+            ]
+        )
+
+        cursor = self.profiles.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
+
+        profiles = [Profile.from_dict(res) for res in items]
         return profiles, total
 
     async def get_profile(self, profileid: UUID, org: Optional[Organization] = None):
@@ -414,9 +473,16 @@ def init_profiles_api(
         userid: Optional[UUID] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        sortBy: str = "modified",
+        sortDirection: int = -1,
     ):
         profiles, total = await ops.list_profiles(
-            org, userid, page_size=pageSize, page=page
+            org,
+            userid,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
         )
         return paginated_format(profiles, total, page, pageSize)
 
@@ -424,19 +490,21 @@ def init_profiles_api(
     async def commit_browser_to_new(
         browser_commit: ProfileCreate,
         org: Organization = Depends(org_crawl_dep),
+        user: User = Depends(user_dep),
     ):
         metadata = await browser_get_metadata(browser_commit.browserid, org)
 
-        return await ops.commit_to_profile(browser_commit, org.storage, metadata)
+        return await ops.commit_to_profile(browser_commit, org.storage, user, metadata)
 
     @router.patch("/{profileid}")
     async def commit_browser_to_existing(
         browser_commit: ProfileUpdate,
         profileid: UUID,
         org: Organization = Depends(org_crawl_dep),
+        user: User = Depends(user_dep),
     ):
         if not browser_commit.browserid:
-            await ops.update_profile_metadata(profileid, browser_commit)
+            await ops.update_profile_metadata(profileid, browser_commit, user)
 
         else:
             metadata = await browser_get_metadata(browser_commit.browserid, org)
@@ -449,8 +517,9 @@ def init_profiles_api(
                     crawlerChannel=profile.crawlerChannel,
                 ),
                 storage=org.storage,
+                user=user,
                 metadata=metadata,
-                profileid=profileid,
+                existing_profile=profile,
             )
 
         return {"updated": True}
