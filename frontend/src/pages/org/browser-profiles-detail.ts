@@ -140,7 +140,7 @@ export class BrowserProfilesDetail extends TailwindElement {
                 : none
               : nothing}
           </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Created At")}>
+          <btrix-desc-list-item label=${msg("Created On")}>
             ${this.profile
               ? html`
                   <sl-format-date

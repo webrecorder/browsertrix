@@ -82,7 +82,7 @@ export class BrowserProfilesList extends LiteElement {
   private renderTable() {
     return html`
       <btrix-table
-        style="grid-template-columns: [clickable-start] repeat(2, 50ch) repeat(2, 1fr) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
+        style="grid-template-columns: [clickable-start] 50ch 40ch repeat(2, 1fr) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
       >
         <btrix-table-head class="mb-2">
           <btrix-table-header-cell class="pl-3">
@@ -91,12 +91,12 @@ export class BrowserProfilesList extends LiteElement {
           <btrix-table-header-cell>
             ${msg("Visited URLs")}
           </btrix-table-header-cell>
-          <btrix-table-header-cell
-            >${msg("Date Created")}</btrix-table-header-cell
-          >
-          <btrix-table-header-cell
-            >${msg("Last Updated")}</btrix-table-header-cell
-          >
+          <btrix-table-header-cell>
+            ${msg("Created On")}
+          </btrix-table-header-cell>
+          <btrix-table-header-cell>
+            ${msg("Last Updated")}
+          </btrix-table-header-cell>
           <btrix-table-header-cell>
             <span class="sr-only">${msg("Row Actions")}</span>
           </btrix-table-header-cell>
@@ -184,6 +184,8 @@ export class BrowserProfilesList extends LiteElement {
               month="2-digit"
               day="2-digit"
               year="2-digit"
+              hour="2-digit"
+              minute="2-digit"
             ></sl-format-date>
           </sl-tooltip>
         </btrix-table-cell>
