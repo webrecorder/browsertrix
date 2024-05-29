@@ -3,6 +3,7 @@ import { html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import { capitalize } from "lodash/fp";
 import queryString from "query-string";
 
 import type { Profile } from "./types";
@@ -15,7 +16,8 @@ import { NotifyController } from "@/controllers/notify";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
-import { getLocale } from "@/utils/localization";
+import { maxLengthValidator } from "@/utils/form";
+import { formatNumber, getLocale } from "@/utils/localization";
 
 const DESCRIPTION_MAXLENGTH = 500;
 
@@ -78,6 +80,8 @@ export class BrowserProfilesDetail extends TailwindElement {
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
 
+  private readonly validateDescriptionMax = maxLengthValidator(500);
+
   disconnectedCallback() {
     if (this.browserId) {
       void this.deleteBrowser(this.browserId);
@@ -90,6 +94,9 @@ export class BrowserProfilesDetail extends TailwindElement {
   }
 
   render() {
+    const isBackedUp =
+      this.profile?.resource?.replicas &&
+      this.profile.resource.replicas.length > 0;
     const none = html`<span class="text-neutral-400">${msg("None")}</span>`;
 
     return html`<div class="mb-7">
@@ -123,75 +130,69 @@ export class BrowserProfilesDetail extends TailwindElement {
         </div>
       </header>
 
-      <section class="mb-5 rounded border p-4">
-        <dl class="grid grid-cols-3 gap-5">
-          <div class="col-span-3 md:col-span-1">
-            <dt class="text-sm text-0-600">${msg("Description")}</dt>
-            <dd>
-              ${this.profile
-                ? this.profile.description
-                  ? this.profile.description.slice(0, DESCRIPTION_MAXLENGTH)
-                  : none
-                : ""}
-            </dd>
-          </div>
-          <div class="col-span-3 md:col-span-1">
-            <dt class="text-sm text-0-600">
-              <span class="inline-block align-middle"
-                >${msg("Created at")}</span
-              >
-            </dt>
-            <dd>
-              ${this.profile
-                ? html`
-                    <sl-format-date
-                      lang=${getLocale()}
-                      date=${`${this.profile.created}Z` /** Z for UTC */}
-                      month="2-digit"
-                      day="2-digit"
-                      year="2-digit"
-                      hour="numeric"
-                      minute="numeric"
-                      time-zone-name="short"
-                    ></sl-format-date>
-                  `
-                : ""}
-            </dd>
-          </div>
-          <div class="col-span-3 md:col-span-1">
-            <dt class="text-sm text-0-600">
-              <span class="inline-block align-middle"
-                >${msg("Crawl Workflows")}</span
-              >
-              <sl-tooltip content=${msg("Crawl workflows using this profile")}>
-                <sl-icon
-                  class="inline-block align-middle"
-                  name="info-circle"
-                ></sl-icon>
-              </sl-tooltip>
-            </dt>
-            <dd>
-              <ul class="text-sm font-medium">
-                ${this.profile?.crawlconfigs?.map(
-                  ({ id, name }) => html`
-                    <li>
-                      <a
-                        class="text-neutral-600 hover:underline"
-                        href=${`${this.navigate.orgBasePath}/workflows/crawl/${id}`}
-                        @click=${this.navigate.link}
-                      >
-                        ${name}
-                      </a>
-                    </li>
-                  `,
-                )}
-              </ul>
-            </dd>
-          </div>
-        </dl>
+      <section class="mb-5 rounded-lg border px-4 py-2">
+        <btrix-desc-list horizontal>
+          <btrix-desc-list-item label=${msg("Backup Status")}>
+            <div class="flex items-center gap-2">
+              ${isBackedUp
+                ? html`<sl-icon
+                      name="clouds-fill"
+                      class="text-success"
+                    ></sl-icon>
+                    ${msg("Backed Up")}`
+                : html`<sl-icon
+                      name="cloud-slash-fill"
+                      class="text-neutral-500"
+                    ></sl-icon>
+                    ${msg("Not Backed Up")}`}
+            </div>
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Crawler Release Channel")}>
+            ${this.profile
+              ? this.profile.crawlerChannel
+                ? capitalize(this.profile.crawlerChannel)
+                : none
+              : nothing}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Created At")}>
+            ${this.profile
+              ? html`
+                  <sl-format-date
+                    lang=${getLocale()}
+                    date=${`${this.profile.created}Z` /** Z for UTC */}
+                    month="2-digit"
+                    day="2-digit"
+                    year="2-digit"
+                    hour="numeric"
+                    minute="numeric"
+                    time-zone-name="short"
+                  ></sl-format-date>
+                `
+              : nothing}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Last Updated")}>
+            ${this.profile
+              ? html` <sl-format-date
+                  lang=${getLocale()}
+                  date=${
+                    `${
+                      // NOTE older profiles may not have "modified" data
+                      this.profile.modified || this.profile.created
+                    }Z` /** Z for UTC */
+                  }
+                  month="2-digit"
+                  day="2-digit"
+                  year="2-digit"
+                  hour="numeric"
+                  minute="numeric"
+                  time-zone-name="short"
+                ></sl-format-date>`
+              : nothing}
+          </btrix-desc-list-item>
+        </btrix-desc-list>
       </section>
 
-      <div class="flex flex-col gap-5 lg:flex-row">
+      <div class="mb-7 flex flex-col gap-5 lg:flex-row">
         <section class="flex-1">
           <h2 class="text-lg font-medium leading-none">
             ${msg("Browser Profile")}
@@ -245,6 +246,46 @@ export class BrowserProfilesDetail extends TailwindElement {
         )}
       </div>
 
+      <section class="mb-7">
+        <header class="flex items-center justify-between">
+          <h2 class="mb-1 text-lg font-medium leading-none">
+            ${msg("Description")}
+          </h2>
+          ${when(
+            this.isCrawler,
+            () => html`
+              <sl-icon-button
+                class="text-base"
+                name="pencil"
+                @click=${() => (this.isEditDialogOpen = true)}
+                label=${msg("Edit description")}
+              ></sl-icon-button>
+            `,
+          )}
+        </header>
+        <div class="rounded border p-5">
+          ${this.profile
+            ? this.profile.description ||
+              html`
+                <div class="text-center text-neutral-400">
+                  ${msg("No description added.")}
+                </div>
+              `
+            : nothing}
+        </div>
+      </section>
+
+      <section class="mb-7">
+        <h2 class="mb-2 text-lg font-medium leading-none">
+          ${msg("Crawl Workflows")}${this.profile?.crawlconfigs?.length
+            ? html`<span class="font-normal text-neutral-500">
+                (${formatNumber(this.profile.crawlconfigs.length)})
+              </span>`
+            : nothing}
+        </h2>
+        ${this.renderCrawlWorkflows()}
+      </section>
+
       <btrix-dialog id="discardChangesDialog" .label=${msg("Cancel Editing?")}>
         ${msg(
           "Are you sure you want to discard changes to this browser profile?",
@@ -278,6 +319,33 @@ export class BrowserProfilesDetail extends TailwindElement {
       >
         ${this.isEditDialogContentVisible ? this.renderEditProfile() : nothing}
       </btrix-dialog> `;
+  }
+
+  private renderCrawlWorkflows() {
+    if (this.profile?.crawlconfigs?.length) {
+      return html`<ul>
+        ${this.profile.crawlconfigs.map(
+          ({ id, name }) => html`
+            <li
+              class="border-x border-b first:rounded-t first:border-t last:rounded-b"
+            >
+              <a
+                class="block p-2 transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50"
+                href=${`${this.navigate.orgBasePath}/workflows/crawl/${id}`}
+                @click=${this.navigate.link}
+              >
+                ${name ||
+                html`<span class="text-neutral-400">${msg("(no name)")}</span>`}
+              </a>
+            </li>
+          `,
+        )}
+      </ul>`;
+    }
+
+    return html`<div class="rounded border p-5 text-center text-neutral-400">
+      ${msg("Not used in any crawl workflows.")}
+    </div>`;
   }
 
   private readonly renderVisitedSites = () => {
@@ -356,6 +424,8 @@ export class BrowserProfilesDetail extends TailwindElement {
   private renderEditProfile() {
     if (!this.profile) return;
 
+    const { helpText, validate } = this.validateDescriptionMax;
+
     return html`
       <form @submit=${this.onSubmitEdit}>
         <div class="mb-5">
@@ -372,9 +442,12 @@ export class BrowserProfilesDetail extends TailwindElement {
           <sl-textarea
             name="description"
             label=${msg("Description")}
-            rows="2"
-            autocomplete="off"
             value=${this.profile.description || ""}
+            rows="3"
+            autocomplete="off"
+            resize="auto"
+            help-text=${helpText}
+            @sl-input=${validate}
           ></sl-textarea>
         </div>
 
@@ -628,9 +701,10 @@ export class BrowserProfilesDetail extends TailwindElement {
   private async onSubmitEdit(e: SubmitEvent) {
     e.preventDefault();
 
-    this.isSubmittingProfileChange = true;
+    const formEl = e.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
 
-    const formData = new FormData(e.target as HTMLFormElement);
+    const formData = new FormData(formEl);
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
 
@@ -638,6 +712,8 @@ export class BrowserProfilesDetail extends TailwindElement {
       name,
       description,
     };
+
+    this.isSubmittingProfileChange = true;
 
     try {
       const data = await this.api.fetch<{ updated: boolean }>(
@@ -687,12 +763,8 @@ export class BrowserProfilesDetail extends TailwindElement {
     this.isSubmittingProfileChange = false;
   }
 
-  /**
-   * Stop propgation of sl-select events.
-   * Prevents bug where sl-dialog closes when dropdown closes
-   * https://github.com/shoelace-style/shoelace/issues/170
-   */
-  private stopProp(e: CustomEvent) {
-    e.stopPropagation();
+  async checkFormValidity(formEl: HTMLFormElement) {
+    await this.updateComplete;
+    return !formEl.querySelector("[data-invalid]");
   }
 }
