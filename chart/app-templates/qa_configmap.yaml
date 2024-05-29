@@ -11,4 +11,4 @@ metadata:
     role: crawler
 
 data:
-  crawl-config.json: {{ qa_source_replay_json | tojson }}
+  qa-config.json: {{ qa_source_replay_json | tojson }}

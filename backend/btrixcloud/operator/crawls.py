@@ -335,21 +335,29 @@ class CrawlOperator(BaseOperator):
         name = f"crawl-{params['id']}-{i}"
         has_pod = name in children[POD]
 
+        if params.get("qa_source_crawl_id"):
+            cpu_field = "qa_cpu"
+            mem_field = "qa_memory"
+            worker_field = "qa_workers"
+            pri_class = f"qa-crawl-pri-{i}"
+        else:
+            cpu_field = "crawler_cpu"
+            mem_field = "crawler_memory"
+            worker_field = "crawler_workers"
+            pri_class = f"crawl-pri-{i}"
+
         pod_info = status.podStatus[name]
         params["name"] = name
-        params["cpu"] = pod_info.newCpu or params.get("crawler_cpu")
-        params["memory"] = pod_info.newMemory or params.get("crawler_memory")
+        params["priorityClassName"] = pri_class
+        params["cpu"] = pod_info.newCpu or params.get(cpu_field)
+        params["memory"] = pod_info.newMemory or params.get(mem_field)
         params["memory_limit"] = float(params["memory"]) * MEM_LIMIT_PADDING
+        params["workers"] = params.get(worker_field) or 1
         params["do_restart"] = (
             pod_info.should_restart_pod() or params.get("force_restart")
         ) and has_pod
         if params.get("do_restart"):
             print(f"Restart {name}")
-
-        if params.get("qa_source_crawl_id"):
-            params["priorityClassName"] = f"qa-crawl-pri-{i}"
-        else:
-            params["priorityClassName"] = f"crawl-pri-{i}"
 
         return self.load_from_yaml("crawler.yaml", params)
 
