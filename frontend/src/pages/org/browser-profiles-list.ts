@@ -89,10 +89,10 @@ export class BrowserProfilesList extends LiteElement {
             ${msg("Name")}
           </btrix-table-header-cell>
           <btrix-table-header-cell>
-            ${msg("Last Updated")}
+            ${msg("Visited URLs")}
           </btrix-table-header-cell>
           <btrix-table-header-cell>
-            ${msg("Visited URLs")}
+            ${msg("Last Updated")}
           </btrix-table-header-cell>
           <btrix-table-header-cell>
             <span class="sr-only">${msg("Row Actions")}</span>
@@ -160,22 +160,6 @@ export class BrowserProfilesList extends LiteElement {
             ${data.name}
           </a>
         </btrix-table-cell>
-        <btrix-table-cell class="whitespace-nowrap">
-          <sl-format-date
-            lang=${getLocale()}
-            date=${
-              `${
-                // NOTE older profiles may not have "modified" data
-                data.modified || data.created
-              }Z` /** Z for UTC */
-            }
-            month="2-digit"
-            day="2-digit"
-            year="2-digit"
-            hour="2-digit"
-            minute="2-digit"
-          ></sl-format-date>
-        </btrix-table-cell>
         <btrix-table-cell>
           ${data.origins[0]}${data.origins.length > 1
             ? html`<sl-tooltip
@@ -187,6 +171,27 @@ export class BrowserProfilesList extends LiteElement {
                 </sl-tag>
               </sl-tooltip>`
             : nothing}
+        </btrix-table-cell>
+        <btrix-table-cell class="whitespace-nowrap">
+          <sl-tooltip
+            content=${msg(str`By ${data.modifiedByName || data.createdByName}`)}
+            ?disabled=${!(data.modifiedByName || data.createdByName)}
+          >
+            <sl-format-date
+              lang=${getLocale()}
+              date=${
+                `${
+                  // NOTE older profiles may not have "modified" data
+                  data.modified || data.created
+                }Z` /** Z for UTC */
+              }
+              month="2-digit"
+              day="2-digit"
+              year="2-digit"
+              hour="2-digit"
+              minute="2-digit"
+            ></sl-format-date>
+          </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="px-1">
           ${this.renderActions(data)}
