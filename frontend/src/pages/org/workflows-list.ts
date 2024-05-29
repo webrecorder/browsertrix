@@ -51,7 +51,7 @@ const sortableFields: Record<
     defaultDirection: "asc",
   },
   created: {
-    label: msg("Created"),
+    label: msg("Date Created"),
     defaultDirection: "desc",
   },
 };

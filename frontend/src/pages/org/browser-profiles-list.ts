@@ -82,7 +82,7 @@ export class BrowserProfilesList extends LiteElement {
   private renderTable() {
     return html`
       <btrix-table
-        style="grid-template-columns: [clickable-start] 60ch repeat(2, auto) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
+        style="grid-template-columns: [clickable-start] repeat(2, 50ch) repeat(2, 1fr) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
       >
         <btrix-table-head class="mb-2">
           <btrix-table-header-cell class="pl-3">
@@ -91,9 +91,12 @@ export class BrowserProfilesList extends LiteElement {
           <btrix-table-header-cell>
             ${msg("Visited URLs")}
           </btrix-table-header-cell>
-          <btrix-table-header-cell>
-            ${msg("Last Updated")}
-          </btrix-table-header-cell>
+          <btrix-table-header-cell
+            >${msg("Date Created")}</btrix-table-header-cell
+          >
+          <btrix-table-header-cell
+            >${msg("Last Updated")}</btrix-table-header-cell
+          >
           <btrix-table-header-cell>
             <span class="sr-only">${msg("Row Actions")}</span>
           </btrix-table-header-cell>
@@ -161,7 +164,8 @@ export class BrowserProfilesList extends LiteElement {
           </a>
         </btrix-table-cell>
         <btrix-table-cell>
-          ${data.origins[0]}${data.origins.length > 1
+          <div class="truncate">${data.origins[0]}</div>
+          ${data.origins.length > 1
             ? html`<sl-tooltip
                 class="invert-tooltip"
                 content=${data.origins.slice(1).join(", ")}
@@ -173,9 +177,19 @@ export class BrowserProfilesList extends LiteElement {
             : nothing}
         </btrix-table-cell>
         <btrix-table-cell class="whitespace-nowrap">
+          <sl-tooltip content=${msg(str`By ${data.createdByName}`)}>
+            <sl-format-date
+              lang=${getLocale()}
+              date=${`${data.created}Z` /** Z for UTC */}
+              month="2-digit"
+              day="2-digit"
+              year="2-digit"
+            ></sl-format-date>
+          </sl-tooltip>
+        </btrix-table-cell>
+        <btrix-table-cell class="whitespace-nowrap">
           <sl-tooltip
             content=${msg(str`By ${data.modifiedByName || data.createdByName}`)}
-            ?disabled=${!(data.modifiedByName || data.createdByName)}
           >
             <sl-format-date
               lang=${getLocale()}

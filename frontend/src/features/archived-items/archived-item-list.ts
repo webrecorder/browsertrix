@@ -231,8 +231,6 @@ export class ArchivedItemListItem extends TailwindElement {
               month="2-digit"
               day="2-digit"
               year="2-digit"
-              hour="2-digit"
-              minute="2-digit"
             ></sl-format-date>
           </sl-tooltip>
         </btrix-table-cell>
@@ -387,7 +385,7 @@ export class ArchivedItemList extends TailwindElement {
         </btrix-table-header-cell>`,
       },
       {
-        cssCol: "12rem",
+        cssCol: "1fr",
         cell: html`<btrix-table-header-cell>
           ${msg("Date Created")}
         </btrix-table-header-cell>`,
