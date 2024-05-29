@@ -52,7 +52,8 @@ class K8sOpAPI(K8sAPI):
             qa_num_workers = max(int(p["qa_browser_instances"]), 1)
         # pylint: disable=bare-except
         except:
-            qa_num_workers = num_workers
+            # default to 1 for now for best results (to revisit in the future)
+            qa_num_workers = 1
         crawler_cpu: float = 0
         crawler_memory: int = 0
         qa_cpu: float = 0
