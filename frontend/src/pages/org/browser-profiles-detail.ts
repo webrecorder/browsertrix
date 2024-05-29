@@ -80,6 +80,7 @@ export class BrowserProfilesDetail extends TailwindElement {
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
 
+  private readonly validateNameMax = maxLengthValidator(50);
   private readonly validateDescriptionMax = maxLengthValidator(500);
 
   disconnectedCallback() {
@@ -437,16 +438,17 @@ export class BrowserProfilesDetail extends TailwindElement {
   private renderEditProfile() {
     if (!this.profile) return;
 
-    const { helpText, validate } = this.validateDescriptionMax;
-
     return html`
       <form @submit=${this.onSubmitEdit}>
-        <div class="mb-5">
+        <div>
           <sl-input
             name="name"
+            class="with-max-help-text"
             label=${msg("Name")}
             autocomplete="off"
             value=${this.profile.name}
+            help-text=${this.validateNameMax.helpText}
+            @sl-input=${this.validateNameMax.validate}
             required
           ></sl-input>
         </div>
@@ -454,13 +456,14 @@ export class BrowserProfilesDetail extends TailwindElement {
         <div class="mb-5">
           <sl-textarea
             name="description"
+            class="with-max-help-text"
             label=${msg("Description")}
             value=${this.profile.description || ""}
             rows="3"
             autocomplete="off"
             resize="auto"
-            help-text=${helpText}
-            @sl-input=${validate}
+            help-text=${this.validateDescriptionMax.helpText}
+            @sl-input=${this.validateDescriptionMax.validate}
           ></sl-textarea>
         </div>
 
