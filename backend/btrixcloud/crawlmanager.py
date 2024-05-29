@@ -200,7 +200,7 @@ class CrawlManager(K8sAPI):
             crawlconfig.oid,
             storage,
             crawlconfig.crawlerChannel,
-            1,
+            crawlconfig.scale,
             0,
             0,
             warc_prefix="qa",
