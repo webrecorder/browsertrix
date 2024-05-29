@@ -132,21 +132,6 @@ export class BrowserProfilesDetail extends TailwindElement {
 
       <section class="mb-5 rounded-lg border px-4 py-2">
         <btrix-desc-list horizontal>
-          <btrix-desc-list-item label=${msg("Backup Status")}>
-            <div class="flex items-center gap-2">
-              ${isBackedUp
-                ? html`<sl-icon
-                      name="clouds-fill"
-                      class="text-success"
-                    ></sl-icon>
-                    ${msg("Backed Up")}`
-                : html`<sl-icon
-                      name="cloud-slash-fill"
-                      class="text-neutral-500"
-                    ></sl-icon>
-                    ${msg("Not Backed Up")}`}
-            </div>
-          </btrix-desc-list-item>
           <btrix-desc-list-item label=${msg("Crawler Release Channel")}>
             ${this.profile
               ? this.profile.crawlerChannel
@@ -189,14 +174,42 @@ export class BrowserProfilesDetail extends TailwindElement {
                 ></sl-format-date>`
               : nothing}
           </btrix-desc-list-item>
+          ${
+            // NOTE older profiles may not have "modified/created by" data
+            this.profile?.modifiedByName || this.profile?.createdByName
+              ? html`
+                  <btrix-desc-list-item label=${msg("Updated By")}>
+                    ${this.profile.modifiedByName || this.profile.createdByName}
+                  </btrix-desc-list-item>
+                `
+              : nothing
+          }
         </btrix-desc-list>
       </section>
 
       <div class="mb-7 flex flex-col gap-5 lg:flex-row">
         <section class="flex-1">
-          <h2 class="text-lg font-medium leading-none">
-            ${msg("Browser Profile")}
-          </h2>
+          <header class="flex items-center gap-2">
+            <sl-tooltip
+              content=${isBackedUp ? msg("Backed Up") : msg("Not Backed Up")}
+              ?disabled=${!this.profile}
+            >
+              <sl-icon
+                class="${isBackedUp
+                  ? "text-success"
+                  : "text-neutral-500"} text-base"
+                name=${this.profile
+                  ? isBackedUp
+                    ? "clouds-fill"
+                    : "cloud-slash-fill"
+                  : "clouds"}
+              ></sl-icon>
+            </sl-tooltip>
+            <h2 class="text-lg font-medium leading-none">
+              ${msg("Browser Profile")}
+            </h2>
+          </header>
+
           ${when(this.isCrawler, () =>
             this.browserId || this.isBrowserLoading
               ? html`

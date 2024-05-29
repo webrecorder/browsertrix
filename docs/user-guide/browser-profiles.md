@@ -1,6 +1,6 @@
 # Browser Profiles
 
-Browser Profiles are saved instances of a web browsing session that can be reused to crawl websites as they were configured, with any cookies, saved login sessions, or browser settings. Using a pre-configured profile also means that content that can only be viewed by logged in users can be archived, without archiving the actual login credentials.
+Browser profiles are saved instances of a web browsing session that can be reused to crawl websites as they were configured, with any cookies, saved login sessions, or browser settings. Using a pre-configured profile also means that content that can only be viewed by logged in users can be archived, without archiving the actual login credentials.
 
 !!! tip "Best practice: Create and use web archiving-specific accounts for crawling with browser profiles"
 
@@ -47,8 +47,8 @@ Browser profiles don't just affect websites! Any of Brave's settings (available 
 
 Sometimes websites will log users out or expire cookies or login sessions after a period of time. In these cases, when crawling the browser profile can still be loaded but may not behave as it did when it was initially set up.
 
-To update the profile, go to the profile's details page and press the _Edit Browser Profile_ button to load and interact with the sites that need to be re-configured. When finished, press the _Save Browser Profile_ button to return to the profile's details page.
+To update the profile, go to the profile's details page and press the _Configure Browser Profile_ button to load and interact with the sites that need to be re-configured. When finished, press the _Save Browser Profile_ button to return to the profile's details page. Profiles are automatically backed up on save if replica storage locations are configured.
 
 ### Editing Browser Profile Metadata
 
-To edit a browser profile's name and description, select _Edit Name and Description_ from the actions menu on the profile's details page.
+To edit a browser profile's name and description, select _Edit Metadata_ from the actions menu on the profile's details page.
