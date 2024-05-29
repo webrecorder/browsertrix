@@ -47,7 +47,7 @@ Browser profiles don't just affect websites! Any of Brave's settings (available 
 
 Sometimes websites will log users out or expire cookies or login sessions after a period of time. In these cases, when crawling the browser profile can still be loaded but may not behave as it did when it was initially set up.
 
-To update the profile, go to the profile's details page and press the _Configure Browser Profile_ button to load and interact with the sites that need to be re-configured. When finished, press the _Save Browser Profile_ button to return to the profile's details page. Profiles are automatically backed up on save.
+To update the profile, go to the profile's details page and press the _Configure Browser Profile_ button to load and interact with the sites that need to be re-configured. When finished, press the _Save Browser Profile_ button to return to the profile's details page. Profiles are automatically backed up on save if replica storage locations are configured.
 
 ### Editing Browser Profile Metadata
 
