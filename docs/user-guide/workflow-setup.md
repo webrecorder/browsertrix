@@ -168,7 +168,18 @@ Will prevent any content from the domains listed in [Steven Black's Unified Host
 
 ### User Agent
 
-Sets the browser's user agent in outgoing requests to the specified value. If left blank, the crawler will use the browser's default user agent.
+Sets the browser's [user agent](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent) in outgoing requests to the specified value. If left blank, the crawler will use the Brave browser's default user agent. For a list of common user agents see [useragents.me](https://www.useragents.me/).
+
+??? example "Using custom user agents to get around restrictions"
+    Despite being against best practices, some websites will block specific browsers based on their user agent: a string of text that browsers send web servers to identify what type of browser or operating system is requesting content. If Brave is blocked, using a user agent string of a different browser (such as Chrome or Firefox) may be sufficient to convince the website that a different browser is being used.
+
+    User agents can also be used to voluntarily identify your crawling activity, which can be useful when working with a website's owners to ensure crawls can be completed successfully. We recommend using a user agent string similar to the following, replacing `orgname` and `orgwebsite.com` with your own:
+
+    ```
+    Mozilla/5.0 (Windows NT 10.0; Win64; x64) orgname.browsertrix (+https://orgwebsite.com)
+    ```
+
+    This string must also be provided to the website's owner so they can allowlist Browsertrix to prevent it from being blocked.
 
 ### Language
 
