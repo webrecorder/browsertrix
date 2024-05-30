@@ -179,6 +179,8 @@ Sets the browser's [user agent](https://developer.mozilla.org/en-US/docs/Web/HTT
     Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.3 orgname.browsertrix (+https://example.com/crawling-explination-page)
     ```
 
+    If you have no webpage to identify your organization or statement about your crawling activities available, omit the bracketed comment section at the end entirely.
+
     This string must also be provided to the website's owner so they can allowlist Browsertrix to prevent it from being blocked.
 
 ### Language
