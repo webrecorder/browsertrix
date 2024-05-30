@@ -17,7 +17,7 @@ type BrowserResponseData = {
   url?: string;
 };
 export type BrowserLoadDetail = string;
-export type BrowserErrorDetail = {
+export type BrowserNotAvailableError = {
   error: APIError | Error;
 };
 export type BrowserConnectionChange = {
@@ -158,11 +158,7 @@ export class ProfileBrowser extends TailwindElement {
         window.addEventListener("beforeunload", this.onBeforeUnload);
       }
       this.dispatchEvent(
-        new CustomEvent<BrowserErrorDetail>("btrix-browser-error", {
-          detail: {
-            error: new Error(),
-          },
-        }),
+        new CustomEvent<BrowserNotAvailableError>("btrix-browser-error"),
       );
     }
   }
