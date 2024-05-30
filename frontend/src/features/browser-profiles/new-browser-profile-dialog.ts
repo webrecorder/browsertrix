@@ -106,7 +106,7 @@ export class NewBrowserProfileDialog extends LiteElement {
           ?loading=${this.isSubmitting}
           ?disabled=${this.isSubmitting}
           @click=${() => this.dialog?.submit()}
-          >${msg("Configure Browser Profile")}</sl-button
+          >${msg("Start Browsing")}</sl-button
         >
       </div>
     </btrix-dialog>`;

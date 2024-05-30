@@ -1,8 +1,10 @@
 import { localized, msg, str } from "@lit/localize";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import queryString from "query-string";
 
+import type { Dialog } from "@/components/ui/dialog";
+import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -48,10 +50,14 @@ export class BrowserProfilesNew extends LiteElement {
   @state()
   private isDialogVisible = false;
 
+  @state()
+  private isBrowserLoaded = false;
+
+  @query("#discardDialog")
+  private readonly discardDialog?: Dialog | null;
+
   disconnectedCallback(): void {
-    if (this.browserId) {
-      void this.deleteBrowser(this.browserId);
-    }
+    void this.closeBrowser();
     super.disconnectedCallback();
   }
 
@@ -120,19 +126,16 @@ export class BrowserProfilesNew extends LiteElement {
           orgId=${this.orgId}
           browserId=${this.browserId}
           initialNavigateUrl=${ifDefined(this.browserParams.navigateUrl)}
+          @btrix-browser-load=${() => (this.isBrowserLoaded = true)}
           @btrix-browser-reload=${this.onBrowserReload}
+          @btrix-browser-error=${this.onBrowserError}
+          @btrix-browser-connection-change=${this.onBrowserConnectionChange}
         ></btrix-profile-browser>
 
         <div
-          class="sticky bottom-2 z-10 mb-3 flex items-center justify-end rounded-lg border bg-neutral-0 p-2 shadow"
+          class="flex-0 sticky bottom-2 rounded-lg border bg-neutral-0 shadow"
         >
-          <sl-button
-            variant="success"
-            size="small"
-            @click=${() => (this.isDialogVisible = true)}
-          >
-            ${msg("Finish Browsing")}
-          </sl-button>
+          ${this.renderBrowserProfileControls()}
         </div>
       </div>
 
@@ -143,6 +146,78 @@ export class BrowserProfilesNew extends LiteElement {
       >
         ${this.renderForm()}
       </btrix-dialog>
+
+      <btrix-dialog
+        id="discardDialog"
+        .label=${msg("Cancel Profile Creation?")}
+      >
+        ${msg("Are you sure you want to cancel creating a browser profile?")}
+        <div slot="footer" class="flex justify-between">
+          <sl-button
+            size="small"
+            .autofocus=${true}
+            @click=${() => void this.discardDialog?.hide()}
+          >
+            ${msg("No, Continue Browsing")}
+          </sl-button>
+          <sl-button
+            size="small"
+            variant="danger"
+            @click=${() => {
+              void this.discardDialog?.hide();
+              void this.closeBrowser();
+            }}
+            >${msg("Yes, Cancel")}
+          </sl-button>
+        </div>
+      </btrix-dialog>
+    `;
+  }
+
+  private async onBrowserError() {
+    this.isBrowserLoaded = false;
+  }
+
+  private async onBrowserConnectionChange(
+    e: CustomEvent<BrowserConnectionChange>,
+  ) {
+    this.isBrowserLoaded = e.detail.connected;
+  }
+
+  private onCancel() {
+    if (!this.isBrowserLoaded) {
+      void this.closeBrowser();
+    } else {
+      void this.discardDialog?.show();
+    }
+  }
+
+  private async closeBrowser() {
+    this.isBrowserLoaded = false;
+
+    if (this.browserId) {
+      await this.deleteBrowser(this.browserId);
+    }
+    this.navTo(`${this.orgBasePath}/browser-profiles`);
+  }
+
+  private renderBrowserProfileControls() {
+    return html`
+      <div class="flex justify-between p-4">
+        <sl-button size="small" @click="${this.onCancel}">
+          ${msg("Cancel")}
+        </sl-button>
+        <div>
+          <sl-button
+            variant="success"
+            size="small"
+            ?disabled=${!this.isBrowserLoaded}
+            @click=${() => (this.isDialogVisible = true)}
+          >
+            ${msg("Save New Profile...")}
+          </sl-button>
+        </div>
+      </div>
     `;
   }
 

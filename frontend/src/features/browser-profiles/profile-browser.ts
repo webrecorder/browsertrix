@@ -151,6 +151,20 @@ export class ProfileBrowser extends TailwindElement {
         ),
       );
     }
+    if (changedProperties.has("browserNotAvailable")) {
+      if (this.browserNotAvailable) {
+        window.removeEventListener("beforeunload", this.onBeforeUnload);
+      } else {
+        window.addEventListener("beforeunload", this.onBeforeUnload);
+      }
+      this.dispatchEvent(
+        new CustomEvent<BrowserErrorDetail>("btrix-browser-error", {
+          detail: {
+            error: new Error(),
+          },
+        }),
+      );
+    }
   }
 
   private animateSidebar() {
@@ -245,7 +259,7 @@ export class ProfileBrowser extends TailwindElement {
             <div class="py-2 text-center">
               <sl-button size="small" @click=${this.onClickReload}>
                 <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
-                ${msg("Reload Browser")}
+                ${msg("Load New Browser")}
               </sl-button>
             </div>
           </btrix-alert>
@@ -271,7 +285,7 @@ export class ProfileBrowser extends TailwindElement {
               <btrix-alert variant="danger">
                 <p>
                   ${msg(
-                    `Interactive browser is offline. Waiting to reconnect...`,
+                    `Connection to interactive browser lost. Waiting to reconnect...`,
                   )}
                 </p>
               </btrix-alert>
@@ -373,29 +387,7 @@ export class ProfileBrowser extends TailwindElement {
     this.iframeSrc = undefined;
     this.isIframeLoaded = false;
 
-    try {
-      await this.checkBrowserStatus();
-
-      this.browserNotAvailable = false;
-    } catch (e) {
-      this.browserNotAvailable = true;
-
-      await this.updateComplete;
-
-      this.dispatchEvent(
-        new CustomEvent<BrowserErrorDetail>("btrix-browser-error", {
-          detail: {
-            error: e instanceof Error ? e : new Error(),
-          },
-        }),
-      );
-
-      this.notify.toast({
-        message: msg("Sorry, can't edit browser profile at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
+    await this.checkBrowserStatus();
   }
 
   /**
@@ -405,6 +397,7 @@ export class ProfileBrowser extends TailwindElement {
     let result: BrowserResponseData;
     try {
       result = await this.getBrowser();
+      this.browserNotAvailable = false;
     } catch (e) {
       this.browserNotAvailable = true;
       return;
