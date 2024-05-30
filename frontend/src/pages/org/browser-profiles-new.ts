@@ -1,13 +1,17 @@
 import { localized, msg, str } from "@lit/localize";
+import { html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import queryString from "query-string";
 
+import { TailwindElement } from "@/classes/TailwindElement";
 import type { Dialog } from "@/components/ui/dialog";
+import { APIController } from "@/controllers/api";
+import { NavigateController } from "@/controllers/navigate";
+import { NotifyController } from "@/controllers/notify";
 import type { BrowserConnectionChange } from "@/features/browser-profiles/profile-browser";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 /**
  * Usage:
@@ -21,7 +25,7 @@ import LiteElement, { html } from "@/utils/LiteElement";
  */
 @localized()
 @customElement("btrix-browser-profiles-new")
-export class BrowserProfilesNew extends LiteElement {
+export class BrowserProfilesNew extends TailwindElement {
   @property({ type: Object })
   authState!: AuthState;
 
@@ -43,6 +47,10 @@ export class BrowserProfilesNew extends LiteElement {
     name: "",
     url: "",
   };
+
+  private readonly api = new APIController(this);
+  private readonly notify = new NotifyController(this);
+  private readonly nav = new NavigateController(this);
 
   @state()
   private isSubmitting = false;
@@ -67,9 +75,9 @@ export class BrowserProfilesNew extends LiteElement {
         <a
           class="text-sm font-medium text-neutral-500 hover:text-neutral-600"
           href=${this.browserParams.profileId
-            ? `${this.orgBasePath}/browser-profiles/profile/${this.browserParams.profileId}`
-            : `${this.orgBasePath}/browser-profiles`}
-          @click=${this.navLink}
+            ? `${this.nav.orgBasePath}/browser-profiles/profile/${this.browserParams.profileId}`
+            : `${this.nav.orgBasePath}/browser-profiles`}
+          @click=${this.nav.link}
         >
           <sl-icon
             name="arrow-left"
@@ -198,7 +206,7 @@ export class BrowserProfilesNew extends LiteElement {
     if (this.browserId) {
       await this.deleteBrowser(this.browserId);
     }
-    this.navTo(`${this.orgBasePath}/browser-profiles`);
+    this.nav.to(`${this.nav.orgBasePath}/browser-profiles`);
   }
 
   private renderBrowserProfileControls() {
@@ -285,8 +293,8 @@ export class BrowserProfilesNew extends LiteElement {
       crawlerChannel,
     });
 
-    this.navTo(
-      `${this.orgBasePath}/browser-profiles/profile/browser/${
+    this.nav.to(
+      `${this.nav.orgBasePath}/browser-profiles/profile/browser/${
         data.browserid
       }?${queryString.stringify({
         url,
@@ -309,7 +317,7 @@ export class BrowserProfilesNew extends LiteElement {
     };
 
     try {
-      const data = await this.apiFetch<{ id: string }>(
+      const data = await this.api.fetch<{ id: string }>(
         `/orgs/${this.orgId}/profiles`,
         this.authState!,
         {
@@ -318,13 +326,15 @@ export class BrowserProfilesNew extends LiteElement {
         },
       );
 
-      this.notify({
+      this.notify.toast({
         message: msg("Successfully created browser profile."),
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.navTo(`${this.orgBasePath}/browser-profiles/profile/${data.id}`);
+      this.nav.to(
+        `${this.nav.orgBasePath}/browser-profiles/profile/${data.id}`,
+      );
     } catch (e) {
       this.isSubmitting = false;
 
@@ -342,7 +352,7 @@ export class BrowserProfilesNew extends LiteElement {
         }
       }
 
-      this.notify({
+      this.notify.toast({
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
@@ -361,7 +371,7 @@ export class BrowserProfilesNew extends LiteElement {
       crawlerChannel,
     };
 
-    return this.apiFetch<{ browserid: string }>(
+    return this.api.fetch<{ browserid: string }>(
       `/orgs/${this.orgId}/profiles/browser`,
       this.authState!,
       {
@@ -373,7 +383,7 @@ export class BrowserProfilesNew extends LiteElement {
 
   private async deleteBrowser(id: string) {
     try {
-      const data = await this.apiFetch(
+      const data = await this.api.fetch(
         `/orgs/${this.orgId}/profiles/browser/${id}`,
         this.authState!,
         {
