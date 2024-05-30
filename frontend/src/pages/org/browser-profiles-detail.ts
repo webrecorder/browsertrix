@@ -381,10 +381,7 @@ export class BrowserProfilesDetail extends TailwindElement {
   private renderBrowserProfileControls() {
     return html`
       <div class="flex justify-between p-4">
-        <sl-button
-          size="small"
-          @click=${() => void this.discardChangesDialog?.show()}
-        >
+        <sl-button size="small" @click=${this.onCancel}>
           ${msg("Cancel")}
         </sl-button>
         <div>
@@ -492,6 +489,14 @@ export class BrowserProfilesDetail extends TailwindElement {
     e: CustomEvent<BrowserConnectionChange>,
   ) {
     this.isBrowserLoaded = e.detail.connected;
+  }
+
+  private async onCancel() {
+    if (this.isBrowserLoaded) {
+      void this.discardChangesDialog?.show();
+    } else {
+      void this.cancelEditBrowser();
+    }
   }
 
   private async startBrowserPreview() {
