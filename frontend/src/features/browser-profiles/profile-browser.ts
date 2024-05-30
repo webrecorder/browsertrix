@@ -285,7 +285,7 @@ export class ProfileBrowser extends TailwindElement {
               <btrix-alert variant="danger">
                 <p>
                   ${msg(
-                    `Connection to interactive browser lost. Waiting to reconnect...`,
+                    "Connection to interactive browser lost. Waiting to reconnect...",
                   )}
                 </p>
               </btrix-alert>
