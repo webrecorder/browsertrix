@@ -128,6 +128,8 @@ data:
 
     profile_browser_workdir_size: "{{ .Values.profile_browser_workdir_size | default "4Gi" }}"
 
+    qa_scale: "{{ .Values.qa_scale | default 1 }}"
+
     crawler_node_type: "{{ .Values.crawler_node_type }}"
     redis_node_type: "{{ .Values.redis_node_type }}"
 

@@ -146,6 +146,9 @@ class CrawlOperator(BaseOperator):
             qa_source_crawl_id=spec.get("qaSourceCrawlId"),
         )
 
+        if crawl.qa_source_crawl_id:
+            crawl.scale = int(params.get("qa_scale", 1))
+
         # if finalizing, crawl is being deleted
         if data.finalizing:
             if not status.finished:
