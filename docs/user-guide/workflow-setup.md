@@ -176,7 +176,7 @@ Sets the browser's [user agent](https://developer.mozilla.org/en-US/docs/Web/HTT
     User agents can also be used to voluntarily identify your crawling activity, which can be useful when working with a website's owners to ensure crawls can be completed successfully. We recommend using a user agent string similar to the following, replacing the `orgname` and URL comment with your own:
 
     ```
-    Mozilla/5.0 (Windows NT 10.0; Win64; x64) orgname.browsertrix (+https://example.com/crawling-explination-page)
+    Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.3 orgname.browsertrix (+https://example.com/crawling-explination-page)
     ```
 
     This string must also be provided to the website's owner so they can allowlist Browsertrix to prevent it from being blocked.
