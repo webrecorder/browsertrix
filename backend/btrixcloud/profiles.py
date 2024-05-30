@@ -287,10 +287,13 @@ class ProfileOps:
         aggregate: List[Dict[str, Any]] = [{"$match": match_query}]
 
         if sort_by:
-            if sort_by not in ("modified", "created", "name"):
+            if sort_by not in ("modified", "created", "name", "url"):
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
                 raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            if sort_by == "url":
+                sort_by = "origins.0"
 
             aggregate.extend([{"$sort": {sort_by: sort_direction}}])
 
