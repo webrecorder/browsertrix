@@ -55,6 +55,13 @@ export class CopyField extends TailwindElement {
 
   render() {
     return html`
+      <label
+        class="${clsx(
+          "mb-1.5 inline-block font-sans text-xs leading-[1.4] text-neutral-800",
+          !this.label && !this.slottedChildren?.length && tw`hidden`,
+        )} "
+        ><slot name="label">${this.label}</slot></label
+      >
       <div
         role="group"
         class=${clsx(
@@ -63,13 +70,6 @@ export class CopyField extends TailwindElement {
           this.monostyle && tw`font-monostyle`,
         )}
       >
-        <label
-          class="${clsx(
-            "mb-1.5 inline-block font-sans text-xs leading-[1.4] text-neutral-800",
-            !this.label && !this.slottedChildren?.length && tw`hidden`,
-          )} "
-          ><slot name="label">${this.label}</slot></label
-        >
         <div class="relative inline-flex w-full items-stretch justify-start">
           <slot name="prefix"></slot>
           <span
