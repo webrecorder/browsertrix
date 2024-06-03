@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import clsx from "clsx";
-import { nothing, type PropertyValues } from "lit";
+import { css, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
@@ -60,6 +60,36 @@ export class BrowserProfilesList extends TailwindElement {
     sortBy: "modified",
     sortDirection: -1,
   };
+  static styles = css`
+    btrix-table {
+      grid-template-columns:
+        [clickable-start] minmax(30ch, 50ch) minmax(30ch, 40ch) repeat(2, 1fr)
+        [clickable-end] min-content;
+      --btrix-cell-gap: var(--sl-spacing-x-small);
+      --btrix-cell-padding-left: var(--sl-spacing-small);
+      --btrix-cell-padding-right: var(--sl-spacing-small);
+    }
+
+    btrix-table-body btrix-table-row:nth-of-type(n + 2) {
+      --btrix-border-top: 1px solid var(--sl-panel-border-color);
+    }
+
+    btrix-table-body btrix-table-row:first-of-type {
+      --btrix-border-radius-top: var(--sl-border-radius-medium);
+    }
+
+    btrix-table-body btrix-table-row:last-of-type {
+      --btrix-border-radius-bottom: var(--sl-border-radius-medium);
+    }
+
+    btrix-table-row {
+      border-top: var(--btrix-border-top, 0);
+      border-radius: var(--btrix-border-radius-top, 0)
+        var(--btrix-border-radius-to, 0) var(--btrix-border-radius-bottom, 0)
+        var(--btrix-border-radius-bottom, 0);
+      height: 2.5rem;
+    }
+  `;
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
@@ -100,7 +130,7 @@ export class BrowserProfilesList extends TailwindElement {
           )}
         </div>
       </header>
-      <div class="overflow-auto px-2 pb-1">${this.renderTable()}</div>`;
+      <div class="pb-1">${this.renderTable()}</div>`;
   }
 
   private renderTable() {
@@ -148,9 +178,7 @@ export class BrowserProfilesList extends TailwindElement {
     };
 
     return html`
-      <btrix-table
-        style="grid-template-columns: [clickable-start] 50ch 40ch repeat(2, 1fr) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
-      >
+      <btrix-table class="-mx-3 overflow-x-auto px-3">
         <btrix-table-head class="mb-2">
           ${headerCells.map(({ sortBy, sortDirection, label, className }) => {
             const isSorting = sortBy === this.sort.sortBy;
@@ -232,7 +260,7 @@ export class BrowserProfilesList extends TailwindElement {
   private readonly renderItem = (data: Profile) => {
     return html`
       <btrix-table-row
-        class="cursor-pointer select-none rounded border shadow transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
+        class="cursor-pointer select-none transition-all focus-within:bg-neutral-50 hover:bg-neutral-50 hover:shadow-none"
       >
         <btrix-table-cell
           class="flex-col items-center justify-center pl-3"
