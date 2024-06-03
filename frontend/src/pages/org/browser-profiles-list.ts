@@ -132,7 +132,7 @@ export class BrowserProfilesList extends LiteElement {
       const { name, label, className } = sortProps[sortValue];
       return html`
         <sl-icon
-          class=${clsx(tw`ml-1 text-neutral-900`, className)}
+          class=${clsx(tw`ml-1 text-neutral-900 transition-opacity`, className)}
           name=${name}
           label=${label}
         ></sl-icon>
