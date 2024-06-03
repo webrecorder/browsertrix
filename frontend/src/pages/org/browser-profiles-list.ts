@@ -285,7 +285,7 @@ export class BrowserProfilesList extends TailwindElement {
               </sl-tooltip>`
             : nothing}
         </btrix-table-cell>
-        <btrix-table-cell class="whitespace-nowrap">
+        <btrix-table-cell class="whitespace-nowrap tabular-nums">
           <sl-tooltip
             content=${msg(str`By ${data.createdByName}`)}
             ?disabled=${!data.createdByName}
@@ -301,7 +301,7 @@ export class BrowserProfilesList extends TailwindElement {
             ></sl-format-date>
           </sl-tooltip>
         </btrix-table-cell>
-        <btrix-table-cell class="whitespace-nowrap">
+        <btrix-table-cell class="whitespace-nowrap tabular-nums">
           <sl-tooltip
             content=${msg(str`By ${data.modifiedByName || data.createdByName}`)}
             ?disabled=${!data.createdByName}
