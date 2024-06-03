@@ -9,11 +9,15 @@ import type { Profile } from "./types";
 
 import type { SelectNewDialogEvent } from ".";
 
+import { TailwindElement } from "@/classes/TailwindElement";
 import type { PageChangeEvent } from "@/components/ui/pagination";
 import {
   SortDirection,
   type SortValues,
 } from "@/components/ui/table/table-header-cell";
+import { APIController } from "@/controllers/api";
+import { NavigateController } from "@/controllers/navigate";
+import { NotifyController } from "@/controllers/notify";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -21,7 +25,7 @@ import type {
 } from "@/types/api";
 import type { Browser } from "@/types/browser";
 import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
+import { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
 import { tw } from "@/utils/tailwind";
 
@@ -38,7 +42,7 @@ const INITIAL_PAGE_SIZE = 20;
  */
 @localized()
 @customElement("btrix-browser-profiles-list")
-export class BrowserProfilesList extends LiteElement {
+export class BrowserProfilesList extends TailwindElement {
   @property({ type: Object })
   authState!: AuthState;
 
@@ -56,6 +60,10 @@ export class BrowserProfilesList extends LiteElement {
     sortBy: "modified",
     sortDirection: -1,
   };
+
+  private readonly api = new APIController(this);
+  private readonly navigate = new NavigateController(this);
+  private readonly notify = new NotifyController(this);
 
   protected willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
@@ -232,8 +240,8 @@ export class BrowserProfilesList extends LiteElement {
         >
           <a
             class="flex items-center gap-3"
-            href=${`${this.orgBasePath}/browser-profiles/profile/${data.id}`}
-            @click=${this.navLink}
+            href=${`${this.navigate.orgBasePath}/browser-profiles/profile/${data.id}`}
+            @click=${this.navigate.link}
           >
             ${data.name}
           </a>
@@ -327,14 +335,14 @@ export class BrowserProfilesList extends LiteElement {
     try {
       const data = await this.createBrowser({ url });
 
-      this.notify({
+      this.notify.toast({
         message: msg("Starting up browser with selected profile..."),
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.navTo(
-        `${this.orgBasePath}/browser-profiles/profile/browser/${
+      this.navigate.to(
+        `${this.navigate.orgBasePath}/browser-profiles/profile/browser/${
           data.browserid
         }?${queryString.stringify({
           url,
@@ -345,7 +353,7 @@ export class BrowserProfilesList extends LiteElement {
         })}`,
       );
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't create browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -355,7 +363,7 @@ export class BrowserProfilesList extends LiteElement {
 
   private async deleteProfile(profile: Profile) {
     try {
-      const data = await this.apiFetch<Profile & { error?: boolean }>(
+      const data = await this.api.fetch<Profile & { error?: boolean }>(
         `/orgs/${this.orgId}/profiles/${profile.id}`,
         this.authState!,
         {
@@ -364,7 +372,7 @@ export class BrowserProfilesList extends LiteElement {
       );
 
       if (data.error && data.crawlconfigs) {
-        this.notify({
+        this.notify.toast({
           message: msg(
             html`Could not delete <strong>${profile.name}</strong>, in use by
               <strong
@@ -376,7 +384,7 @@ export class BrowserProfilesList extends LiteElement {
           duration: 15000,
         });
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg(html`Deleted <strong>${profile.name}</strong>.`),
           variant: "success",
           icon: "check2-circle",
@@ -385,7 +393,7 @@ export class BrowserProfilesList extends LiteElement {
         void this.fetchBrowserProfiles();
       }
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't delete browser profile at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -398,7 +406,7 @@ export class BrowserProfilesList extends LiteElement {
       url,
     };
 
-    return this.apiFetch<Browser>(
+    return this.api.fetch<Browser>(
       `/orgs/${this.orgId}/profiles/browser`,
       this.authState!,
       {
@@ -425,7 +433,7 @@ export class BrowserProfilesList extends LiteElement {
 
       this.browserProfiles = data;
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't retrieve browser profiles at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -444,7 +452,7 @@ export class BrowserProfilesList extends LiteElement {
       },
     );
 
-    const data = await this.apiFetch<APIPaginatedList<Profile>>(
+    const data = await this.api.fetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles?${query}`,
       this.authState!,
     );
