@@ -216,7 +216,12 @@ export class BrowserProfilesList extends TailwindElement {
             <span class="sr-only">${msg("Row Actions")}</span>
           </btrix-table-header-cell>
         </btrix-table-head>
-        <btrix-table-body class="relative min-h-48 rounded border">
+        <btrix-table-body
+          class=${clsx(
+            "relative rounded border",
+            this.browserProfiles == null && this.isLoading && tw`min-h-48`,
+          )}
+        >
           ${when(this.browserProfiles, ({ total, items }) =>
             total ? html` ${items.map(this.renderItem)} ` : nothing,
           )}
