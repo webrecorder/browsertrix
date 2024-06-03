@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import clsx from "clsx";
 import { nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -9,7 +10,10 @@ import type { Profile } from "./types";
 import type { SelectNewDialogEvent } from ".";
 
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import { SortDirection } from "@/components/ui/table/table-header-cell";
+import {
+  SortDirection,
+  type SortValues,
+} from "@/components/ui/table/table-header-cell";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -19,6 +23,7 @@ import type { Browser } from "@/types/browser";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { getLocale } from "@/utils/localization";
+import { tw } from "@/utils/tailwind";
 
 const INITIAL_PAGE_SIZE = 20;
 
@@ -102,6 +107,38 @@ export class BrowserProfilesList extends LiteElement {
       { sortBy: "created", sortDirection: -1, label: msg("Created On") },
       { sortBy: "modified", sortDirection: -1, label: msg("Last Updated") },
     ];
+    const sortProps: Record<
+      SortValues,
+      { name: string; label: string; className: string }
+    > = {
+      none: {
+        name: "arrow-down-up",
+        label: msg("Sortable"),
+        className: tw`text-xs opacity-0 hover:opacity-100 group-hover:opacity-100`,
+      },
+      ascending: {
+        name: "sort-up-alt",
+        label: msg("Ascending"),
+        className: tw`text-base`,
+      },
+      descending: {
+        name: "sort-down",
+        label: msg("Descending"),
+        className: tw`text-base`,
+      },
+    };
+
+    const getSortIcon = (sortValue: SortValues) => {
+      const { name, label, className } = sortProps[sortValue];
+      return html`
+        <sl-icon
+          class=${clsx(tw`ml-1 text-neutral-900`, className)}
+          name=${name}
+          label=${label}
+        ></sl-icon>
+      `;
+    };
+
     return html`
       <btrix-table
         style="grid-template-columns: [clickable-start] 50ch 40ch repeat(2, 1fr) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
@@ -109,14 +146,14 @@ export class BrowserProfilesList extends LiteElement {
         <btrix-table-head class="mb-2">
           ${headerCells.map(({ sortBy, sortDirection, label, className }) => {
             const isSorting = sortBy === this.sort.sortBy;
-            // TODO implement sortable styles in table-header-cell
+            const sortValue =
+              (isSorting && SortDirection.get(this.sort.sortDirection)) ||
+              "none";
+            // TODO implement sort render logic in table-header-cell
             return html`
               <btrix-table-header-cell
-                class="${className} cursor-pointer rounded transition-colors hover:bg-neutral-50"
-                sortable
-                ariaSort=${(isSorting &&
-                  SortDirection.get(this.sort.sortDirection)) ||
-                "none"}
+                class="${className} group cursor-pointer rounded transition-colors hover:bg-neutral-50"
+                ariaSort=${sortValue}
                 @click=${() => {
                   if (isSorting) {
                     this.sort = {
@@ -131,7 +168,7 @@ export class BrowserProfilesList extends LiteElement {
                   }
                 }}
               >
-                ${label}
+                ${label} ${getSortIcon(sortValue)}
               </btrix-table-header-cell>
             `;
           })}
@@ -215,7 +252,10 @@ export class BrowserProfilesList extends LiteElement {
             : nothing}
         </btrix-table-cell>
         <btrix-table-cell class="whitespace-nowrap">
-          <sl-tooltip content=${msg(str`By ${data.createdByName}`)}>
+          <sl-tooltip
+            content=${msg(str`By ${data.createdByName}`)}
+            ?disabled=${!data.createdByName}
+          >
             <sl-format-date
               lang=${getLocale()}
               date=${`${data.created}Z` /** Z for UTC */}
@@ -230,6 +270,7 @@ export class BrowserProfilesList extends LiteElement {
         <btrix-table-cell class="whitespace-nowrap">
           <sl-tooltip
             content=${msg(str`By ${data.modifiedByName || data.createdByName}`)}
+            ?disabled=${!data.createdByName}
           >
             <sl-format-date
               lang=${getLocale()}
