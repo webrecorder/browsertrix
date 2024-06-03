@@ -269,7 +269,7 @@ export class BrowserProfilesList extends TailwindElement {
             href=${`${this.navigate.orgBasePath}/browser-profiles/profile/${data.id}`}
             @click=${this.navigate.link}
           >
-            ${data.name}
+            <span class="truncate">${data.name}</span>
           </a>
         </btrix-table-cell>
         <btrix-table-cell>
