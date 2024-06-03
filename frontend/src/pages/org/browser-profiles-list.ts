@@ -60,6 +60,10 @@ export class BrowserProfilesList extends TailwindElement {
     sortBy: "modified",
     sortDirection: -1,
   };
+
+  @state()
+  private isLoading = true;
+
   static styles = css`
     btrix-table {
       grid-template-columns:
@@ -212,48 +216,42 @@ export class BrowserProfilesList extends TailwindElement {
             <span class="sr-only">${msg("Row Actions")}</span>
           </btrix-table-header-cell>
         </btrix-table-head>
-        ${when(this.browserProfiles, ({ total, items }) =>
-          total
-            ? html`
-                <btrix-table-body
-                  style="--btrix-row-gap: var(--sl-spacing-x-small); --btrix-cell-padding-top: var(--sl-spacing-2x-small); --btrix-cell-padding-bottom: var(--sl-spacing-2x-small);"
-                >
-                  ${items.map(this.renderItem)}
-                </btrix-table-body>
-              `
-            : nothing,
-        )}
+        <btrix-table-body class="relative min-h-48 rounded border">
+          ${when(this.browserProfiles, ({ total, items }) =>
+            total ? html` ${items.map(this.renderItem)} ` : nothing,
+          )}
+          ${when(this.isLoading, this.renderLoading)}
+        </btrix-table-body>
       </btrix-table>
-      ${when(
-        this.browserProfiles,
-        ({ total, page, pageSize }) =>
-          total
-            ? html`
-                <footer class="mt-6 flex justify-center">
-                  <btrix-pagination
-                    page=${page}
-                    totalCount=${total}
-                    size=${pageSize}
-                    @page-change=${async (e: PageChangeEvent) => {
-                      void this.fetchBrowserProfiles({ page: e.detail.page });
-                    }}
-                  ></btrix-pagination>
-                </footer>
-              `
-            : html`
-                <div class="border-b border-t py-5">
-                  <p class="text-center text-0-500">
-                    ${msg("No browser profiles yet.")}
-                  </p>
-                </div>
-              `,
-        this.renderLoading,
+      ${when(this.browserProfiles, ({ total, page, pageSize }) =>
+        total
+          ? html`
+              <footer class="mt-6 flex justify-center">
+                <btrix-pagination
+                  page=${page}
+                  totalCount=${total}
+                  size=${pageSize}
+                  @page-change=${async (e: PageChangeEvent) => {
+                    void this.fetchBrowserProfiles({ page: e.detail.page });
+                  }}
+                ></btrix-pagination>
+              </footer>
+            `
+          : html`
+              <div class="border-b border-t py-5">
+                <p class="text-center text-0-500">
+                  ${msg("No browser profiles yet.")}
+                </p>
+              </div>
+            `,
       )}
     `;
   }
 
   private readonly renderLoading = () =>
-    html`<div class="my-24 flex w-full items-center justify-center text-3xl">
+    html`<div
+      class="absolute left-0 top-0 z-10 flex h-full w-full items-center justify-center bg-white/50 text-3xl"
+    >
       <sl-spinner></sl-spinner>
     </div>`;
 
@@ -451,6 +449,7 @@ export class BrowserProfilesList extends TailwindElement {
     params?: APIPaginationQuery,
   ): Promise<void> {
     try {
+      this.isLoading = true;
       const data = await this.getProfiles({
         page: params?.page || this.browserProfiles?.page || 1,
         pageSize:
@@ -466,6 +465,8 @@ export class BrowserProfilesList extends TailwindElement {
         variant: "danger",
         icon: "exclamation-octagon",
       });
+    } finally {
+      this.isLoading = false;
     }
   }
 
