@@ -279,9 +279,9 @@ export class BrowserProfilesList extends TailwindElement {
                 class="invert-tooltip"
                 content=${data.origins.slice(1).join(", ")}
               >
-                <sl-tag size="small" class="ml-2">
+                <btrix-badge class="ml-2">
                   ${msg(str`+${data.origins.length - 1}`)}
-                </sl-tag>
+                </btrix-badge>
               </sl-tooltip>`
             : nothing}
         </btrix-table-cell>
