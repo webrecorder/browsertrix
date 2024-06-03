@@ -275,10 +275,10 @@ export class BrowserProfilesList extends TailwindElement {
         <btrix-table-cell>
           <div class="truncate">${data.origins[0]}</div>
           ${data.origins.length > 1
-            ? html`<sl-tooltip
-                class="invert-tooltip"
-                content=${data.origins.slice(1).join(", ")}
-              >
+            ? html`<sl-tooltip class="invert-tooltip">
+                <span slot="content" class=" break-words"
+                  >${data.origins.slice(1).join(", ")}</span
+                >
                 <btrix-badge class="ml-2">
                   ${msg(str`+${data.origins.length - 1}`)}
                 </btrix-badge>
