@@ -9,7 +9,12 @@ import type { Profile } from "./types";
 import type { SelectNewDialogEvent } from ".";
 
 import type { PageChangeEvent } from "@/components/ui/pagination";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import { SortDirection } from "@/components/ui/table/table-header-cell";
+import type {
+  APIPaginatedList,
+  APIPaginationQuery,
+  APISortQuery,
+} from "@/types/api";
 import type { Browser } from "@/types/browser";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -41,10 +46,16 @@ export class BrowserProfilesList extends LiteElement {
   @state()
   browserProfiles?: APIPaginatedList<Profile>;
 
+  @state()
+  sort: Required<APISortQuery> = {
+    sortBy: "modified",
+    sortDirection: -1,
+  };
+
   protected willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (changedProperties.has("orgId")) {
+    if (changedProperties.has("orgId") || changedProperties.has("sort")) {
       void this.fetchBrowserProfiles();
     }
   }
@@ -80,23 +91,50 @@ export class BrowserProfilesList extends LiteElement {
   }
 
   private renderTable() {
+    const headerCells = [
+      {
+        sortBy: "name",
+        sortDirection: 1,
+        className: "pl-3",
+        label: msg("Name"),
+      },
+      { sortBy: "url", sortDirection: 1, label: msg("Visited URLs") },
+      { sortBy: "created", sortDirection: -1, label: msg("Created On") },
+      { sortBy: "modified", sortDirection: -1, label: msg("Last Updated") },
+    ];
     return html`
       <btrix-table
         style="grid-template-columns: [clickable-start] 50ch 40ch repeat(2, 1fr) [clickable-end] min-content; --btrix-cell-padding-left: var(--sl-spacing-x-small); --btrix-cell-padding-right: var(--sl-spacing-x-small);"
       >
         <btrix-table-head class="mb-2">
-          <btrix-table-header-cell class="pl-3">
-            ${msg("Name")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell>
-            ${msg("Visited URLs")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell>
-            ${msg("Created On")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell>
-            ${msg("Last Updated")}
-          </btrix-table-header-cell>
+          ${headerCells.map(({ sortBy, sortDirection, label, className }) => {
+            const isSorting = sortBy === this.sort.sortBy;
+            // TODO implement sortable styles in table-header-cell
+            return html`
+              <btrix-table-header-cell
+                class="${className} cursor-pointer rounded transition-colors hover:bg-neutral-50"
+                sortable
+                ariaSort=${(isSorting &&
+                  SortDirection.get(this.sort.sortDirection)) ||
+                "none"}
+                @click=${() => {
+                  if (isSorting) {
+                    this.sort = {
+                      ...this.sort,
+                      sortDirection: this.sort.sortDirection * -1,
+                    };
+                  } else {
+                    this.sort = {
+                      sortBy,
+                      sortDirection,
+                    };
+                  }
+                }}
+              >
+                ${label}
+              </btrix-table-header-cell>
+            `;
+          })}
           <btrix-table-header-cell>
             <span class="sr-only">${msg("Row Actions")}</span>
           </btrix-table-header-cell>
@@ -355,9 +393,15 @@ export class BrowserProfilesList extends LiteElement {
   }
 
   private async getProfiles(params: APIPaginationQuery) {
-    const query = queryString.stringify(params, {
-      arrayFormat: "comma",
-    });
+    const query = queryString.stringify(
+      {
+        ...params,
+        ...this.sort,
+      },
+      {
+        arrayFormat: "comma",
+      },
+    );
 
     const data = await this.apiFetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles?${query}`,

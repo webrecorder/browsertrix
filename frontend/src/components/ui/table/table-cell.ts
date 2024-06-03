@@ -1,9 +1,11 @@
-import { css, html, LitElement } from "lit";
+import { css, html } from "lit";
 import {
   customElement,
   property,
   queryAssignedElements,
 } from "lit/decorators.js";
+
+import { TailwindElement } from "@/classes/TailwindElement";
 
 export const ALLOWED_ROW_CLICK_TARGET_TAG = ["a", "label"] as const;
 
@@ -27,7 +29,7 @@ export const ALLOWED_ROW_CLICK_TARGET_TAG = ["a", "label"] as const;
  * @cssproperty --btrix-cell-padding-bottom
  */
 @customElement("btrix-table-cell")
-export class TableCell extends LitElement {
+export class TableCell extends TailwindElement {
   static styles = css`
     :host {
       display: flex;
