@@ -432,6 +432,10 @@ def test_commit_browser_to_existing_profile(
         ("name", -1, 0, 1),
         # Name, ascending
         ("name", 1, 1, 0),
+        # URL, descending
+        ("url", -1, 0, 1),
+        # URL, ascending
+        ("url", 1, 1, 0),
     ],
 )
 def test_sort_profiles(
