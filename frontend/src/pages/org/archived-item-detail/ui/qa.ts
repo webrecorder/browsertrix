@@ -44,7 +44,7 @@ import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 
 type QAStatsThreshold = {
-  lowerBoundary: `${number}` | "No data";
+  lowerBoundary: `${number}` | "No data" | "Files";
   count: number;
 };
 type QAStats = Record<"screenshotMatch" | "textMatch", QAStatsThreshold[]>;
@@ -64,6 +64,11 @@ const qaStatsThresholds = [
     lowerBoundary: "0.9",
     cssColor: "var(--sl-color-success-500)",
     label: msg("Good Match"),
+  },
+  {
+    lowerBoundary: "Files",
+    cssColor: "var(--sl-color-neutral-500)",
+    label: msg("Identical Files"),
   },
 ];
 
@@ -653,7 +658,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                   ? msg("No Data")
                   : threshold?.label}
                 <div class="text-xs opacity-80">
-                  ${bar.lowerBoundary !== "No data"
+                  ${!["No data", "Files"].includes(bar.lowerBoundary)
                     ? html`${idx === 0
                           ? `<${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`
                           : idx === qaStatsThresholds.length - 1
