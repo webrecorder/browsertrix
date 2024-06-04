@@ -192,7 +192,7 @@ export class BrowserProfilesList extends TailwindElement {
             // TODO implement sort render logic in table-header-cell
             return html`
               <btrix-table-header-cell
-                class="${className} group cursor-pointer rounded transition-colors hover:bg-neutral-50"
+                class="${className} group cursor-pointer rounded transition-colors hover:bg-primary-50"
                 ariaSort=${sortValue}
                 @click=${() => {
                   if (isSorting) {
