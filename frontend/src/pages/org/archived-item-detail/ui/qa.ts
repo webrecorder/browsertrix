@@ -644,7 +644,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                           : idx === qaStatsThresholds.length - 1
                             ? `>=${threshold ? +threshold.lowerBoundary * 100 : 0}%`
                             : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100 || 100}%`}
-                        match <br />`
+                        ${msg("match")} <br />`
                     : nothing}
                   ${formatNumber(bar.count)} ${pluralOf("pages", bar.count)}
                 </div>
