@@ -412,10 +412,12 @@ class CrawlConfigOut(CrawlConfigCore, CrawlConfigAdditional):
 
 
 # ============================================================================
-class CrawlConfigIdNameOut(BaseMongoModel):
-    """Crawl Config id and name output only"""
+class CrawlConfigProfileOut(BaseMongoModel):
+    """Crawl Config basic info for profiles"""
 
     name: str
+    firstSeed: str
+    seedCount: int
 
 
 # ============================================================================
@@ -1197,7 +1199,7 @@ class Profile(BaseMongoModel):
 class ProfileWithCrawlConfigs(Profile):
     """Profile with list of crawlconfigs using this profile"""
 
-    crawlconfigs: List[CrawlConfigIdNameOut] = []
+    crawlconfigs: List[CrawlConfigProfileOut] = []
 
 
 # ============================================================================
