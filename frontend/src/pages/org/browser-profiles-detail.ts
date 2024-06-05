@@ -1,12 +1,12 @@
 import { localized, msg, str } from "@lit/localize";
-import { html, nothing } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import { capitalize } from "lodash/fp";
 import queryString from "query-string";
 
-import type { Profile } from "./types";
+import type { Profile, ProfileWorkflow } from "./types";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { Dialog } from "@/components/ui/dialog";
@@ -339,17 +339,16 @@ export class BrowserProfilesDetail extends TailwindElement {
     if (this.profile?.crawlconfigs?.length) {
       return html`<ul>
         ${this.profile.crawlconfigs.map(
-          ({ id, name }) => html`
+          (workflow) => html`
             <li
               class="border-x border-b first:rounded-t first:border-t last:rounded-b"
             >
               <a
                 class="block p-2 transition-colors focus-within:bg-neutral-50 hover:bg-neutral-50"
-                href=${`${this.navigate.orgBasePath}/workflows/crawl/${id}`}
+                href=${`${this.navigate.orgBasePath}/workflows/crawl/${workflow.id}`}
                 @click=${this.navigate.link}
               >
-                ${name ||
-                html`<span class="text-neutral-400">${msg("(no name)")}</span>`}
+                ${this.renderWorkflowName(workflow)}
               </a>
             </li>
           `,
@@ -360,6 +359,30 @@ export class BrowserProfilesDetail extends TailwindElement {
     return html`<div class="rounded border p-5 text-center text-neutral-400">
       ${msg("Not used in any crawl workflows.")}
     </div>`;
+  }
+
+  private renderWorkflowName(workflow: ProfileWorkflow) {
+    if (workflow.name)
+      return html`<span class="truncate">${workflow.name}</span>`;
+    if (!workflow.firstSeed)
+      return html`<span class="truncate">${workflow.id}</span>`;
+    const remainder = workflow.seedCount - 1;
+    let nameSuffix: string | TemplateResult<1> = "";
+    if (remainder) {
+      if (remainder === 1) {
+        nameSuffix = html`<span class="ml-2 text-neutral-500"
+          >${msg(str`+${remainder} URL`)}</span
+        >`;
+      } else {
+        nameSuffix = html`<span class="ml-2 text-neutral-500"
+          >${msg(str`+${remainder} URLs`)}</span
+        >`;
+      }
+    }
+    return html`
+      <span class="primaryUrl truncate">${workflow.firstSeed}</span
+      >${nameSuffix}
+    `;
   }
 
   private readonly renderVisitedSites = () => {
