@@ -93,9 +93,6 @@ export class ArchivedItemDetail extends TailwindElement {
   private qaRunId?: string;
 
   @state()
-  private lastFinishedQARunId?: string;
-
-  @state()
   private isQAActive = false;
 
   @state()
@@ -187,25 +184,11 @@ export class ArchivedItemDetail extends TailwindElement {
       (changedProperties.has("qaRuns") ||
         changedProperties.has("mostRecentNonFailedQARun")) &&
       this.qaRuns &&
-      this.mostRecentNonFailedQARun
+      this.mostRecentNonFailedQARun?.id
     ) {
-      const lastFinishedQARun = this.qaRuns.find(({ state }) =>
-        finishedCrawlStates.includes(state),
-      );
-      const prevMostRecentNonFailedQARun =
-        changedProperties.get("mostRecentNonFailedQARun") ||
-        this.mostRecentNonFailedQARun;
-      const mostRecentNowFinished =
-        QA_RUNNING_STATES.includes(prevMostRecentNonFailedQARun.state) &&
-        finishedCrawlStates.includes(this.mostRecentNonFailedQARun.state);
-
-      // Update currently selected QA run if there is none,
-      // or if a QA run that was previously running is now finished:
-      if (lastFinishedQARun && (!this.qaRunId || mostRecentNowFinished)) {
-        this.qaRunId = lastFinishedQARun.id;
+      if (!this.qaRunId) {
+        this.qaRunId = this.mostRecentNonFailedQARun.id;
       }
-      // set last finished run
-      this.lastFinishedQARunId = lastFinishedQARun?.id;
     }
   }
 
@@ -1025,10 +1008,8 @@ ${this.crawl?.description}
   }
 
   private readonly renderQAHeader = (qaRuns: QARun[]) => {
-    //const qaIsRunning = isActive(qaRuns[0]?.state);
-    //const qaIsAvailable = this.mostRecentNonFailedQARun && !qaIsRunning;
     const qaIsRunning = this.isQAActive;
-    const qaIsAvailable = !!this.lastFinishedQARunId;
+    const qaIsAvailable = !!this.mostRecentNonFailedQARun;
 
     const reviewLink =
       qaIsAvailable && this.qaRunId
@@ -1345,13 +1326,14 @@ ${this.crawl?.description}
 
   private async startQARun() {
     try {
-      await this.api.fetch<{ started: string }>(
+      const result = await this.api.fetch<{ started: string }>(
         `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/start`,
         this.authState!,
         {
           method: "POST",
         },
       );
+      this.qaRunId = result.started;
 
       void this.fetchQARuns();
 

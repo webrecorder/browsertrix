@@ -129,13 +129,28 @@ export class ArchivedItemDetailQA extends TailwindElement {
   private pages?: APIPaginatedList<ArchivedItemPage>;
 
   private readonly qaStats = new Task(this, {
-    task: async ([orgId, crawlId, qaRunId, authState]) => {
-      if (!qaRunId || !authState) throw new Error("Missing args");
+    // mostRecentNonFailedQARun passed as arg for reactivity so that meter will auto-update
+    // like progress bar as the analysis run finishes new pages
+    task: async ([
+      orgId,
+      crawlId,
+      qaRunId,
+      authState,
+      mostRecentNonFailedQARun,
+    ]) => {
+      if (!qaRunId || !authState || !mostRecentNonFailedQARun)
+        throw new Error("Missing args");
       const stats = await this.getQAStats(orgId, crawlId, qaRunId, authState);
       return stats;
     },
     args: () =>
-      [this.orgId!, this.crawlId!, this.qaRunId, this.authState] as const,
+      [
+        this.orgId!,
+        this.crawlId!,
+        this.qaRunId,
+        this.authState,
+        this.mostRecentNonFailedQARun,
+      ] as const,
   });
 
   @state()
@@ -473,13 +488,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
     }
 
     return html`
-      ${isRunning
-        ? html`<btrix-alert class="mb-3" variant="warning">
-            ${msg(
-              "This crawl is being analyzed. You're currently viewing results from an older analysis run.",
-            )}
-          </btrix-alert>`
-        : nothing}
       <btrix-card>
         <div slot="title" class="flex flex-wrap justify-between">
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -488,23 +496,23 @@ export class ArchivedItemDetailQA extends TailwindElement {
               const finishedQARuns = qaRuns.filter(({ state }) =>
                 finishedCrawlStates.includes(state),
               );
-
-              if (!finishedQARuns.length) {
-                return nothing;
-              }
-
-              const mostRecentSelected =
-                this.mostRecentNonFailedQARun &&
-                this.mostRecentNonFailedQARun.id === this.qaRunId;
               const latestFinishedSelected =
-                this.qaRunId === finishedQARuns[0].id;
+                this.qaRunId === finishedQARuns[0]?.id;
+
+              const finishedAndRunningQARuns = qaRuns.filter(
+                ({ state }) =>
+                  finishedCrawlStates.includes(state) ||
+                  QA_RUNNING_STATES.includes(state),
+              );
+              const mostRecentSelected =
+                this.qaRunId === finishedAndRunningQARuns[0]?.id;
 
               return html`
                 <div>
                   <sl-tooltip
                     content=${mostRecentSelected
                       ? msg(
-                          "You’re viewing the latest results from a finished analysis run.",
+                          "You’re viewing the latest results from an analysis run.",
                         )
                       : msg(
                           "You’re viewing results from an older analysis run.",
@@ -522,7 +530,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                     </sl-tag>
                   </sl-tooltip>
                   <btrix-qa-run-dropdown
-                    .items=${finishedQARuns}
+                    .items=${finishedAndRunningQARuns}
                     selectedId=${this.qaRunId || ""}
                     @btrix-select=${(e: CustomEvent<SelectDetail>) =>
                       (this.qaRunId = e.detail.item.id)}
@@ -627,30 +635,32 @@ export class ArchivedItemDetailQA extends TailwindElement {
           );
           const idx = threshold ? qaStatsThresholds.indexOf(threshold) : -1;
 
-          return html`
-            <btrix-meter-bar
-              value=${(bar.count / pageCount) * 100}
-              style="--background-color: ${threshold?.cssColor}"
-              aria-label=${bar.lowerBoundary}
-            >
-              <div class="text-center">
-                ${bar.lowerBoundary === "No data"
-                  ? msg("No Data")
-                  : threshold?.label}
-                <div class="text-xs opacity-80">
-                  ${!["No data", "Files"].includes(bar.lowerBoundary)
-                    ? html`${idx === 0
-                          ? `<${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`
-                          : idx === qaStatsThresholds.length - 1
-                            ? `>=${threshold ? +threshold.lowerBoundary * 100 : 0}%`
-                            : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100 || 100}%`}
-                        ${msg("match")} <br />`
-                    : nothing}
-                  ${formatNumber(bar.count)} ${pluralOf("pages", bar.count)}
-                </div>
-              </div>
-            </btrix-meter-bar>
-          `;
+          return bar.count !== 0
+            ? html`
+                <btrix-meter-bar
+                  value=${(bar.count / pageCount) * 100}
+                  style="--background-color: ${threshold?.cssColor}"
+                  aria-label=${bar.lowerBoundary}
+                >
+                  <div class="text-center">
+                    ${bar.lowerBoundary === "No data"
+                      ? msg("No Data")
+                      : threshold?.label}
+                    <div class="text-xs opacity-80">
+                      ${!["No data", "Files"].includes(bar.lowerBoundary)
+                        ? html`${idx === 0
+                              ? `<${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`
+                              : idx === qaStatsThresholds.length - 1
+                                ? `>=${threshold ? +threshold.lowerBoundary * 100 : 0}%`
+                                : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100 || 100}%`}
+                            match <br />`
+                        : nothing}
+                      ${formatNumber(bar.count)} ${pluralOf("pages", bar.count)}
+                    </div>
+                  </div>
+                </btrix-meter-bar>
+              `
+            : nothing;
         })}
       </btrix-meter>
     `;
