@@ -365,7 +365,8 @@ export class BrowserProfilesDetail extends TailwindElement {
     if (workflow.name)
       return html`<span class="truncate">${workflow.name}</span>`;
     if (!workflow.firstSeed)
-      return html`<span class="truncate">${workflow.id}</span>`;
+      return html`<span class="truncate font-mono">${workflow.id}</span>
+        <span class="text-neutral-400">${msg("(no name)")}</span>`;
     const remainder = workflow.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
     if (remainder) {
