@@ -501,6 +501,34 @@ class PageOps:
 
         return [PageOut.from_dict(data) for data in items], total
 
+    async def get_crawl_file_count(self, crawl_id: str):
+        """Get count of pages in crawl that are files and don't need to be QAed"""
+        aggregate = [
+            {
+                "$match": {
+                    "crawl_id": crawl_id,
+                    "loadState": 2,
+                    "mime": {"$not": {"$regex": "^.*html", "$options": "i"}},
+                }
+            },
+            {"$count": "count"},
+        ]
+
+        cursor = self.pages.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+
+        if not results:
+            return 0
+
+        result = results[0]
+
+        try:
+            total = int(result["count"])
+        except (IndexError, ValueError):
+            total = 0
+
+        return total
+
     async def re_add_crawl_pages(self, crawl_id: str, oid: UUID):
         """Delete existing pages for crawl and re-add from WACZs."""
         await self.delete_crawl_pages(crawl_id, oid)
@@ -520,6 +548,7 @@ class PageOps:
         crawl_id: str,
         qa_run_id: str,
         thresholds: Dict[str, List[float]],
+        file_count: int,
         key: str = "screenshotMatch",
     ):
         """Get counts for pages in QA run in buckets by score key based on thresholds"""
@@ -556,11 +585,17 @@ class PageOps:
         return_data = []
 
         for result in results:
-            return_data.append(
-                QARunBucketStats(
-                    lowerBoundary=str(result.get("_id")), count=result.get("count", 0)
+            key = str(result.get("_id"))
+            if key == "No data":
+                count = result.get("count", 0) - file_count
+                return_data.append(QARunBucketStats(lowerBoundary=key, count=count))
+            else:
+                return_data.append(
+                    QARunBucketStats(lowerBoundary=key, count=result.get("count", 0))
                 )
-            )
+
+        # Add file count
+        return_data.append(QARunBucketStats(lowerBoundary="Files", count=file_count))
 
         # Add missing boundaries to result and re-sort
         for boundary in boundaries:

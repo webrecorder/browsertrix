@@ -44,7 +44,7 @@ import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 
 type QAStatsThreshold = {
-  lowerBoundary: `${number}` | "No data";
+  lowerBoundary: `${number}` | "No data" | "Files";
   count: number;
 };
 type QAStats = Record<"screenshotMatch" | "textMatch", QAStatsThreshold[]>;
@@ -64,6 +64,11 @@ const qaStatsThresholds = [
     lowerBoundary: "0.9",
     cssColor: "var(--sl-color-success-500)",
     label: msg("Good Match"),
+  },
+  {
+    lowerBoundary: "Files",
+    cssColor: "var(--sl-color-neutral-500)",
+    label: msg("Identical Files"),
   },
 ];
 
@@ -528,26 +533,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
           </div>
           <div class="flex items-center gap-2 text-neutral-500">
             ${when(
-              qaRun.state.startsWith("stop") ||
-                (qaRun.state === "complete" &&
-                  qaRun.stats.done < qaRun.stats.found),
-              () =>
-                html`<sl-tooltip
-                  content=${qaRun.state.startsWith("stop")
-                    ? msg("This analysis run was stopped and is not complete.")
-                    : msg(
-                        "Not all pages in this crawl were analyzed. This is likely because some pages are not HTML pages, but other types of documents.",
-                      )}
-                  class="[--max-width:theme(spacing.56)]"
-                >
-                  <sl-icon
-                    name="exclamation-triangle-fill"
-                    class="text-warning"
-                    label=${msg("Note about page counts")}
-                  ></sl-icon>
-                </sl-tooltip> `,
-            )}
-            ${when(
               qaRun.stats,
               (stats) => html`
                 <div class="text-sm font-normal">
@@ -653,13 +638,13 @@ export class ArchivedItemDetailQA extends TailwindElement {
                   ? msg("No Data")
                   : threshold?.label}
                 <div class="text-xs opacity-80">
-                  ${bar.lowerBoundary !== "No data"
+                  ${!["No data", "Files"].includes(bar.lowerBoundary)
                     ? html`${idx === 0
                           ? `<${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`
                           : idx === qaStatsThresholds.length - 1
                             ? `>=${threshold ? +threshold.lowerBoundary * 100 : 0}%`
-                            : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`}
-                        match <br />`
+                            : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100 || 100}%`}
+                        ${msg("match")} <br />`
                     : nothing}
                   ${formatNumber(bar.count)} ${pluralOf("pages", bar.count)}
                 </div>
