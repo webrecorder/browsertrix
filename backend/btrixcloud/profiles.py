@@ -336,9 +336,7 @@ class ProfileOps:
 
         return Profile.from_dict(res)
 
-    async def get_profile_with_configs(
-        self, profileid: UUID, org: Optional[Organization] = None
-    ):
+    async def get_profile_with_configs(self, profileid: UUID, org: Organization):
         """get profile for api output, with crawlconfigs"""
 
         profile = await self.get_profile(profileid, org)
@@ -369,16 +367,14 @@ class ProfileOps:
         except:
             return None
 
-    async def get_crawl_configs_for_profile(
-        self, profileid: UUID, org: Optional[Organization] = None
-    ):
-        """Get list of crawl config id, names for that use a particular profile"""
+    async def get_crawl_configs_for_profile(self, profileid: UUID, org: Organization):
+        """Get list of crawl configs with basic info for that use a particular profile"""
 
-        crawlconfig_names = await self.crawlconfigs.get_crawl_config_ids_for_profile(
+        crawlconfig_info = await self.crawlconfigs.get_crawl_config_info_for_profile(
             profileid, org
         )
 
-        return crawlconfig_names
+        return crawlconfig_info
 
     async def delete_profile(self, profileid: UUID, org: Organization):
         """delete profile, if not used in active crawlconfig"""

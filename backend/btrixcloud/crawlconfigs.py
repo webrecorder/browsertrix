@@ -23,7 +23,7 @@ from .models import (
     ConfigRevision,
     CrawlConfig,
     CrawlConfigOut,
-    CrawlConfigIdNameOut,
+    CrawlConfigProfileOut,
     CrawlOut,
     EmptyStr,
     UpdateCrawlConfig,
@@ -547,17 +547,24 @@ class CrawlConfigOps:
 
         return configs, total
 
-    async def get_crawl_config_ids_for_profile(
-        self, profileid: UUID, org: Optional[Organization] = None
+    async def get_crawl_config_info_for_profile(
+        self, profileid: UUID, org: Organization
     ):
         """Return all crawl configs that are associated with a given profileid"""
         query = {"profileid": profileid, "inactive": {"$ne": True}}
         if org:
             query["oid"] = org.id
 
-        cursor = self.crawl_configs.find(query, projection=["_id", "name"])
-        results = await cursor.to_list(length=1000)
-        results = [CrawlConfigIdNameOut.from_dict(res) for res in results]
+        results = []
+
+        cursor = self.crawl_configs.find(query, projection=["_id"])
+        workflows = await cursor.to_list(length=1000)
+        for workflow_dict in workflows:
+            workflow_out = await self.get_crawl_config_out(
+                workflow_dict.get("_id"), org
+            )
+            results.append(CrawlConfigProfileOut.from_dict(workflow_out.to_dict()))
+
         return results
 
     async def get_running_crawl(
