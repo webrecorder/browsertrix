@@ -574,12 +574,12 @@ export class ArchivedItemDetailQA extends TailwindElement {
                   ${msg("Screenshots")}
                 </btrix-table-cell>
                 <btrix-table-cell class="p-0">
-                  ${this.qaStats.render({
-                    complete: ({ screenshotMatch }) =>
-                      this.renderMeter(qaRun.stats.found, screenshotMatch),
-                    pending: () => this.renderMeter(),
-                    initial: () => this.renderMeter(),
-                  })}
+                  ${this.qaStats.value
+                    ? this.renderMeter(
+                        qaRun.stats.found,
+                        this.qaStats.value.screenshotMatch,
+                      )
+                    : this.renderMeter()}
                 </btrix-table-cell>
               </btrix-table-row>
               <btrix-table-row>
@@ -587,12 +587,12 @@ export class ArchivedItemDetailQA extends TailwindElement {
                   ${msg("Text")}
                 </btrix-table-cell>
                 <btrix-table-cell class="p-0">
-                  ${this.qaStats.render({
-                    complete: ({ textMatch }) =>
-                      this.renderMeter(qaRun.stats.found, textMatch),
-                    pending: () => this.renderMeter(),
-                    initial: () => this.renderMeter(),
-                  })}
+                  ${this.qaStats.value
+                    ? this.renderMeter(
+                        qaRun.stats.found,
+                        this.qaStats.value.textMatch,
+                      )
+                    : this.renderMeter()}
                 </btrix-table-cell>
               </btrix-table-row>
             </btrix-table-body>
