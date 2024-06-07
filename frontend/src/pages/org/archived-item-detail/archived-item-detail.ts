@@ -1439,6 +1439,10 @@ ${this.crawl?.description}
     );
 
     if (this.isQAActive) {
+      // Clear current timer, if it exists
+      if (this.timerId != null) {
+        this.stopPoll();
+      }
       // Restart timer for next poll
       this.timerId = window.setTimeout(() => {
         void this.fetchQARuns();
