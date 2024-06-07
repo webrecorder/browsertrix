@@ -1082,30 +1082,8 @@ export class WorkflowDetail extends LiteElement {
                   library="default"
                 ></sl-icon>
                 ${msg("QA Latest Crawl")}
-                <btrix-beta-icon></btrix-beta-icon>
               </sl-button>
             `,
-          )}
-          ${when(
-            this.isCrawler,
-            () =>
-              html` <sl-tooltip
-                content=${msg(
-                  "Org Storage Full or Monthly Execution Minutes Reached",
-                )}
-                ?disabled=${!this.orgStorageQuotaReached &&
-                !this.orgExecutionMinutesQuotaReached}
-              >
-                <sl-button
-                  size="small"
-                  ?disabled=${this.orgStorageQuotaReached ||
-                  this.orgExecutionMinutesQuotaReached}
-                  @click=${() => void this.runNow()}
-                >
-                  <sl-icon name="play" slot="prefix"></sl-icon>
-                  ${msg("Run Crawl")}
-                </sl-button>
-              </sl-tooltip>`,
           )}
         </div>
       </section>
