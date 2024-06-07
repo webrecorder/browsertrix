@@ -1069,6 +1069,21 @@ export class WorkflowDetail extends LiteElement {
                 ></sl-icon>
                 ${msg("Replay Latest Crawl")}</sl-button
               >
+              <sl-button
+                href=${`${this.orgBasePath}/items/crawl/${
+                  this.workflow!.lastCrawlId
+                }#qa`}
+                size="small"
+                @click=${this.navLink}
+              >
+                <sl-icon
+                  slot="prefix"
+                  name="clipboard2-data-fill"
+                  library="default"
+                ></sl-icon>
+                ${msg("QA Latest Crawl")}
+                <btrix-beta-icon></btrix-beta-icon>
+              </sl-button>
             `,
           )}
           ${when(
