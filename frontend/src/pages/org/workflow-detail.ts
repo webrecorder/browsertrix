@@ -1069,7 +1069,12 @@ export class WorkflowDetail extends LiteElement {
                 ></sl-icon>
                 ${msg("Replay Latest Crawl")}</sl-button
               >
-              <sl-button
+            `,
+          )}
+          ${when(
+            this.isCrawler,
+            () =>
+              html` <sl-button
                 href=${`${this.orgBasePath}/items/crawl/${
                   this.workflow!.lastCrawlId
                 }#qa`}
@@ -1082,8 +1087,7 @@ export class WorkflowDetail extends LiteElement {
                   library="default"
                 ></sl-icon>
                 ${msg("QA Latest Crawl")}
-              </sl-button>
-            `,
+              </sl-button>`,
           )}
         </div>
       </section>
