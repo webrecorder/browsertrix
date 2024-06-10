@@ -1074,23 +1074,20 @@ export class WorkflowDetail extends LiteElement {
           ${when(
             this.isCrawler,
             () =>
-              html` <sl-tooltip
-                content=${msg(
-                  "Org Storage Full or Monthly Execution Minutes Reached",
-                )}
-                ?disabled=${!this.orgStorageQuotaReached &&
-                !this.orgExecutionMinutesQuotaReached}
+              html` <sl-button
+                href=${`${this.orgBasePath}/items/crawl/${
+                  this.workflow!.lastCrawlId
+                }#qa`}
+                size="small"
+                @click=${this.navLink}
               >
-                <sl-button
-                  size="small"
-                  ?disabled=${this.orgStorageQuotaReached ||
-                  this.orgExecutionMinutesQuotaReached}
-                  @click=${() => void this.runNow()}
-                >
-                  <sl-icon name="play" slot="prefix"></sl-icon>
-                  ${msg("Run Crawl")}
-                </sl-button>
-              </sl-tooltip>`,
+                <sl-icon
+                  slot="prefix"
+                  name="clipboard2-data-fill"
+                  library="default"
+                ></sl-icon>
+                ${msg("QA Latest Crawl")}
+              </sl-button>`,
           )}
         </div>
       </section>
