@@ -425,7 +425,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
           <div slot="footer" class="flex justify-between">
             <sl-button
               size="small"
-              .autofocus=${true}
               @click=${() => void this.deleteQADialog?.hide()}
             >
               ${msg("Cancel")}
