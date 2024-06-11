@@ -36,7 +36,7 @@ else:
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes, too-many-arguments
+# pylint: disable=too-many-instance-attributes, too-many-arguments,too-many-public-methods
 class PageOps:
     """crawl pages"""
 
@@ -68,7 +68,7 @@ class PageOps:
                     continue
 
                 if len(pages_buffer) > batch_size:
-                    await self._add_pages_to_db(pages_buffer)
+                    await self._add_pages_to_db(crawl_id, pages_buffer)
 
                 pages_buffer.append(
                     self._get_page_from_dict(page_dict, crawl_id, crawl.oid)
@@ -76,7 +76,7 @@ class PageOps:
 
             # Add any remaining pages in buffer to db
             if pages_buffer:
-                await self._add_pages_to_db(pages_buffer)
+                await self._add_pages_to_db(crawl_id, pages_buffer)
 
             print(f"Added pages for crawl {crawl_id} to db", flush=True)
         # pylint: disable=broad-exception-caught, raise-missing-from
@@ -84,7 +84,9 @@ class PageOps:
             traceback.print_exc()
             print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
 
-    def _get_page_from_dict(self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID):
+    def _get_page_from_dict(
+        self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID
+    ) -> Page:
         """Return Page object from dict"""
         page_id = page_dict.get("id")
         if not page_id:
@@ -94,7 +96,7 @@ class PageOps:
         if not status and page_dict.get("loadState"):
             status = 200
 
-        return Page(
+        p = Page(
             id=page_id,
             oid=oid,
             crawl_id=crawl_id,
@@ -109,8 +111,10 @@ class PageOps:
                 else datetime.now()
             ),
         )
+        p.compute_page_type()
+        return p
 
-    async def _add_pages_to_db(self, pages: List[Page]):
+    async def _add_pages_to_db(self, crawl_id: str, pages: List[Page]):
         """Add batch of pages to db in one insert"""
         result = await self.pages.insert_many(
             [
@@ -124,6 +128,8 @@ class PageOps:
             # pylint: disable=broad-exception-raised
             raise Exception("No pages inserted")
 
+        await self.update_crawl_file_and_error_counts(crawl_id, pages)
+
     async def add_page_to_db(
         self,
         page_dict: Dict[str, Any],
@@ -133,12 +139,9 @@ class PageOps:
     ):
         """Add page to database"""
         page = self._get_page_from_dict(page_dict, crawl_id, oid)
-        print(f"PAGE: {page}", flush=True)
-
         page_to_insert = page.to_dict(
             exclude_unset=True, exclude_none=True, exclude_defaults=True
         )
-        print(f"PAGE TO INSERT: {page_to_insert}")
 
         try:
             await self.pages.insert_one(page_to_insert)
@@ -153,6 +156,9 @@ class PageOps:
             )
             return
 
+        if not qa_run_id and page:
+            await self.update_crawl_file_and_error_counts(crawl_id, [page])
+
         # qa data
         if qa_run_id and page:
             compare_dict = page_dict.get("comparison")
@@ -164,6 +170,39 @@ class PageOps:
             print("Adding QA Run Data for Page", page_dict.get("url"), compare)
 
             await self.add_qa_run_for_page(page.id, oid, qa_run_id, compare)
+
+    async def update_crawl_file_and_error_counts(
+        self, crawl_id: str, pages: List[Page]
+    ):
+        """Update crawl filePageCount and errorPageCount for pages."""
+        file_count = 0
+        error_count = 0
+
+        for page in pages:
+            if page.isFile:
+                file_count += 1
+
+            if page.isError:
+                error_count += 1
+
+        if file_count == 0 and error_count == 0:
+            return
+
+        inc_query = {}
+
+        if file_count > 0:
+            inc_query["filePageCount"] = file_count
+
+        if error_count > 0:
+            inc_query["errorPageCount"] = error_count
+
+        await self.crawls.find_one_and_update(
+            {
+                "_id": crawl_id,
+                "type": "crawl",
+            },
+            {"$inc": inc_query},
+        )
 
     async def delete_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
         """Delete crawl pages from db"""
@@ -500,34 +539,6 @@ class PageOps:
             return [PageOutWithSingleQA.from_dict(data) for data in items], total
 
         return [PageOut.from_dict(data) for data in items], total
-
-    async def get_crawl_file_count(self, crawl_id: str):
-        """Get count of pages in crawl that are files and don't need to be QAed"""
-        aggregate = [
-            {
-                "$match": {
-                    "crawl_id": crawl_id,
-                    "loadState": 2,
-                    "mime": {"$not": {"$regex": "^.*html", "$options": "i"}},
-                }
-            },
-            {"$count": "count"},
-        ]
-
-        cursor = self.pages.aggregate(aggregate)
-        results = await cursor.to_list(length=1)
-
-        if not results:
-            return 0
-
-        result = results[0]
-
-        try:
-            total = int(result["count"])
-        except (IndexError, ValueError):
-            total = 0
-
-        return total
 
     async def re_add_crawl_pages(self, crawl_id: str, oid: UUID):
         """Delete existing pages for crawl and re-add from WACZs."""

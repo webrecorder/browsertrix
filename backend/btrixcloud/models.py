@@ -666,6 +666,9 @@ class CrawlOut(BaseMongoModel):
     lastQAState: Optional[str]
     lastQAStarted: Optional[datetime]
 
+    filePageCount: Optional[int] = 0
+    errorPageCount: Optional[int] = 0
+
 
 # ============================================================================
 class CrawlOutWithResources(CrawlOut):
@@ -779,6 +782,9 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     qa: Optional[QARun] = None
     qaFinished: Optional[Dict[str, QARun]] = {}
+
+    filePageCount: Optional[int] = 0
+    errorPageCount: Optional[int] = 0
 
 
 # ============================================================================
@@ -1566,6 +1572,23 @@ class Page(BaseMongoModel):
     modified: Optional[datetime] = None
     approved: Optional[bool] = None
     notes: List[PageNote] = []
+
+    isFile: Optional[bool] = False
+    isError: Optional[bool] = False
+
+    def compute_page_type(self):
+        """sets self.isFile or self.isError flags"""
+        self.isFile = False
+        self.isError = False
+        if self.loadState == 2:
+            # pylint: disable=unsupported-membership-test
+            if self.mime and "html" not in self.mime:
+                self.isFile = True
+            elif self.title is None and self.status == 200:
+                self.isFile = True
+
+        elif self.loadState == 0:
+            self.isError = True
 
 
 # ============================================================================
