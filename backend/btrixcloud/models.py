@@ -666,6 +666,9 @@ class CrawlOut(BaseMongoModel):
     lastQAState: Optional[str]
     lastQAStarted: Optional[datetime]
 
+    filePageCount: Optional[int]
+    errorPageCount: Optional[int]
+
 
 # ============================================================================
 class CrawlOutWithResources(CrawlOut):
@@ -779,6 +782,9 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     qa: Optional[QARun] = None
     qaFinished: Optional[Dict[str, QARun]] = {}
+
+    filePageCount: Optional[int]
+    errorPageCount: Optional[int]
 
 
 # ============================================================================

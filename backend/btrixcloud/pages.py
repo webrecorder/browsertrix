@@ -36,7 +36,7 @@ else:
 
 
 # ============================================================================
-# pylint: disable=too-many-instance-attributes, too-many-arguments
+# pylint: disable=too-many-instance-attributes, too-many-arguments,too-many-public-methods
 class PageOps:
     """crawl pages"""
 
@@ -501,7 +501,11 @@ class PageOps:
 
         return [PageOut.from_dict(data) for data in items], total
 
-    async def get_crawl_file_count(self, crawl_id: str):
+    async def get_crawl_page_count(self, crawl_id: str) -> int:
+        """Return total number of pages in db for crawl"""
+        return await self.pages.count_documents({"crawl_id": crawl_id})
+
+    async def get_crawl_file_count(self, crawl_id: str) -> int:
         """Get count of pages in crawl that are files and don't need to be QAed"""
         aggregate = [
             {
@@ -517,6 +521,9 @@ class PageOps:
         cursor = self.pages.aggregate(aggregate)
         results = await cursor.to_list(length=1)
 
+        if results is None:
+            raise HTTPException(status_code=404, detail="crawl_not_found")
+
         if not results:
             return 0
 
@@ -528,6 +535,59 @@ class PageOps:
             total = 0
 
         return total
+
+    async def get_crawl_error_count(self, crawl_id: str) -> int:
+        """Get count of pages in crawl that errored and don't need to be QAed"""
+        aggregate = [
+            {
+                "$match": {
+                    "crawl_id": crawl_id,
+                    "loadState": 0,
+                }
+            },
+            {"$count": "count"},
+        ]
+
+        cursor = self.pages.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+
+        if results is None:
+            raise HTTPException(status_code=404, detail="crawl_not_found")
+
+        if not results:
+            return 0
+
+        result = results[0]
+
+        try:
+            total = int(result["count"])
+        except (IndexError, ValueError):
+            total = 0
+
+        return total
+
+    async def add_file_error_page_counts_to_crawl(
+        self, crawl_id: str, page_count: int, error_count: int
+    ):
+        """Cache file and error page counts in crawl"""
+        await self.crawls.find_one_and_update(
+            {
+                "_id": crawl_id,
+                "type": "crawl",
+            },
+            {
+                "$set": {"filePageCount": page_count},
+            },
+        )
+        await self.crawls.find_one_and_update(
+            {
+                "_id": crawl_id,
+                "type": "crawl",
+            },
+            {
+                "$set": {"errorPageCount": error_count},
+            },
+        )
 
     async def re_add_crawl_pages(self, crawl_id: str, oid: UUID):
         """Delete existing pages for crawl and re-add from WACZs."""

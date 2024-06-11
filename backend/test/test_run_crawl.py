@@ -196,6 +196,18 @@ def test_crawls_exclude_full_seeds(admin_auth_headers, default_org_id, admin_cra
         assert config is None or config.get("seeds") is None
 
 
+def test_crawls_include_file_error_page_counts(
+    admin_auth_headers, default_org_id, admin_crawl_id
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/replay.json",
+        headers=admin_auth_headers,
+    )
+    data = r.json()
+    assert data["filePageCount"] >= 0
+    assert data["errorPageCount"] >= 0
+
+
 def test_download_wacz():
     r = requests.get(HOST_PREFIX + wacz_path)
     assert r.status_code == 200
