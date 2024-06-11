@@ -47,6 +47,8 @@ export class ArchivedItemListItem extends TailwindElement {
     }
 
     sl-progress-ring {
+      /* Setting size to var(--font-size-base) breaks in chrome,
+      have cell contents inherit size from cell instead */
       --size: 1em;
       --track-width: 1px;
       --indicator-width: 2px;
