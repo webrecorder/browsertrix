@@ -31,18 +31,18 @@ function renderDiff(
           ${diff.map((part) => {
             if (part.added) {
               return html`<del
-                aria-label="Missing text on crawl"
+                aria-label="${msg("Missing text on crawl")}"
                 class="${removedText}"
                 >${part.value}</del
               >`;
             } else if (part.removed) {
               return html`<ins
-                aria-label="Added text on crawl"
+                aria-label="${msg("Added text on crawl")}"
                 class="${addedText}"
                 >${part.value}</ins
               >`;
             } else {
-              return html`<span aria-label="Identical text"
+              return html`<span aria-label="${msg("Identical text")}"
                 >${part.value}</span
               >`;
             }
@@ -55,18 +55,18 @@ function renderDiff(
           ${diff.map((part) => {
             if (part.added) {
               return html`<ins
-                aria-label="Added text on analysis"
+                aria-label="${msg("Added text on analysis")}"
                 class="${addedText}"
                 >${part.value}</ins
               >`;
             } else if (part.removed) {
               return html`<del
-                aria-label="Missing text on analysis"
+                aria-label="${msg("Missing text on analysis")}"
                 class="${removedText}"
                 >${part.value}</del
               >`;
             } else {
-              return html`<span aria-label="Identical text"
+              return html`<span aria-label="${msg("Identical text")}"
                 >${part.value}</span
               >`;
             }
