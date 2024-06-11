@@ -30,11 +30,15 @@ function renderDiff(
         >
           ${diff.map((part) => {
             if (part.added) {
-              return html`<del aria-label="Missing text" class="${removedText}"
+              return html`<del
+                aria-label="Missing text on crawl"
+                class="${removedText}"
                 >${part.value}</del
               >`;
             } else if (part.removed) {
-              return html`<ins aria-label="Added text" class="${addedText}"
+              return html`<ins
+                aria-label="Added text on crawl"
+                class="${addedText}"
                 >${part.value}</ins
               >`;
             } else {
@@ -50,11 +54,15 @@ function renderDiff(
         >
           ${diff.map((part) => {
             if (part.added) {
-              return html`<ins aria-label="Added text" class="${addedText}"
+              return html`<ins
+                aria-label="Added text on analysis"
+                class="${addedText}"
                 >${part.value}</ins
               >`;
             } else if (part.removed) {
-              return html`<del aria-label="Missing text" class="${removedText}"
+              return html`<del
+                aria-label="Missing text on analysis"
+                class="${removedText}"
                 >${part.value}</del
               >`;
             } else {
