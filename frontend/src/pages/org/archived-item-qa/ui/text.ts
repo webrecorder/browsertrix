@@ -20,7 +20,7 @@ function renderDiff(
     diffImport.then(({ diffWords }) => {
       const diff = diffWords(crawlText, qaText);
 
-      const addedText = tw`bg-red-100 text-red-700`;
+      const addedText = tw`bg-red-100 text-red-700 no-underline`;
       const removedText = tw`bg-red-100 text-red-100`;
 
       return html`
@@ -29,16 +29,19 @@ function renderDiff(
           aria-labelledby="crawlTextHeading"
         >
           ${diff.map((part) => {
-            return html`
-              <span
-                class=${part.added
-                  ? removedText
-                  : part.removed
-                    ? addedText
-                    : ""}
+            if (part.added) {
+              return html`<del aria-label="Missing text" class="${removedText}"
+                >${part.value}</del
+              >`;
+            } else if (part.removed) {
+              return html`<ins aria-label="Added text" class="${addedText}"
+                >${part.value}</ins
+              >`;
+            } else {
+              return html`<span aria-label="Identical text"
                 >${part.value}</span
-              >
-            `;
+              >`;
+            }
           })}
         </div>
         <div
@@ -46,16 +49,19 @@ function renderDiff(
           aria-labelledby="qaTextHeading"
         >
           ${diff.map((part) => {
-            return html`
-              <span
-                class=${part.added
-                  ? addedText
-                  : part.removed
-                    ? removedText
-                    : ""}
+            if (part.added) {
+              return html`<ins aria-label="Added text" class="${addedText}"
+                >${part.value}</ins
+              >`;
+            } else if (part.removed) {
+              return html`<del aria-label="Missing text" class="${removedText}"
+                >${part.value}</del
+              >`;
+            } else {
+              return html`<span aria-label="Identical text"
                 >${part.value}</span
-              >
-            `;
+              >`;
+            }
           })}
         </div>
       `;
