@@ -403,7 +403,7 @@ export class ConfigDetails extends LiteElement {
         () =>
           this.renderSetting(
             msg("Max Depth"),
-            primarySeedConfig?.depth
+            primarySeedConfig && primarySeedConfig.depth !== null
               ? msg(str`${primarySeedConfig.depth} hop(s)`)
               : msg("None"),
           ),
