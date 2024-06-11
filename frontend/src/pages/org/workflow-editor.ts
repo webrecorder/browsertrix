@@ -57,7 +57,7 @@ import type {
 } from "@/features/crawl-workflows/queue-exclusion-table";
 import { isApiError, type Detail } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
-import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
+import { DEFAULT_MAX_SCALE, DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
 import {
   getNextDate,
   getScheduleInterval,
@@ -134,8 +134,6 @@ type FormState = {
   userAgent: string | null;
   crawlerChannel: string;
 };
-
-const DEPTH_SUPPORTED_SCOPES = ["prefix", "host", "domain", "custom", "any"];
 
 const getDefaultProgressState = (hasConfigId = false): ProgressState => {
   let activeTab: StepName = "crawlSetup";
