@@ -387,7 +387,7 @@ def test_run_qa_not_running(
     count = 0
     while count < MAX_ATTEMPTS:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/activeQA",
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/qa/activeQA",
             headers=crawler_auth_headers,
         )
         data = r.json()
