@@ -1218,6 +1218,7 @@ class OrgImportExport(BaseModel):
     workflows: List[Dict[str, Any]]
     workflowRevisions: List[Dict[str, Any]]
     archivedItems: List[Dict[str, Any]]
+    pages: List[Dict[str, Any]]
     profiles: List[Dict[str, Any]]
     collections: List[Dict[str, Any]]
     dbVersion: str

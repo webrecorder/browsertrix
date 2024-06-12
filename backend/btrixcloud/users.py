@@ -275,7 +275,7 @@ class UserManager:
         email: str,
         password: str,
         name: str = "New user",
-        prevent_add_to_org: bool = False
+        prevent_add_to_org: bool = False,
     ) -> User:
         """create a regular user with given credentials"""
         if not email:
@@ -294,7 +294,9 @@ class UserManager:
                 is_verified=True,
             )
 
-            return await self._create(user_create, prevent_add_to_org=prevent_add_to_org)
+            return await self._create(
+                user_create, prevent_add_to_org=prevent_add_to_org
+            )
         except HTTPException as exc:
             print(f"User {email} already exists", flush=True)
             raise exc

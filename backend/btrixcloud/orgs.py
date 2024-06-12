@@ -82,6 +82,7 @@ class OrgOps:
         self.profiles_db = mdb["profiles"]
         self.colls_db = mdb["collections"]
         self.users_db = mdb["users"]
+        self.pages_db = mdb["pages"]
         self.version_db = mdb["version"]
 
         self.router = None
@@ -762,6 +763,9 @@ class OrgOps:
         cursor = self.crawls_db.find({"oid": org.id})
         items = await cursor.to_list(length=100_000)
 
+        cursor = self.pages_db.find({"oid": org.id})
+        pages = await cursor.to_list(length=10_000_000)
+
         cursor = self.profiles_db.find({"oid": org.id})
         profiles = await cursor.to_list(length=100_000)
 
@@ -775,6 +779,7 @@ class OrgOps:
             "workflows": workflows,
             "workflowRevisions": workflow_revs,
             "archivedItems": items,
+            "pages": pages,
             "profiles": profiles,
             "collections": collections,
             "dbVersion": version.get("version"),
@@ -903,6 +908,9 @@ class OrgOps:
             await self.base_crawl_ops.resolve_signed_urls(
                 item_obj.files, org, update_presigned_url=True, crawl_id=item_id
             )
+
+        for page in org_data.pages:
+            await self.pages_db.insert_one(Page.from_dict(page).to_dict())
 
         for collection in org_data.collections:
             await self.colls_db.insert_one(Collection.from_dict(collection).to_dict())
