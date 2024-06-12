@@ -12,7 +12,7 @@ import urllib.parse
 from uuid import UUID, uuid4
 from datetime import datetime
 
-from typing import Optional, TYPE_CHECKING, Dict
+from typing import Optional, TYPE_CHECKING, Dict, List, Any
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
