@@ -1251,7 +1251,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
             raise HTTPException(status_code=403, detail="Not Allowed")
         return await ops.get_org_slugs_by_ids()
 
-    @router.get("/export", tags=["organizations"], response_model=OrgImportExport)
+    @router.get("/export/json", tags=["organizations"], response_model=OrgImportExport)
     async def export_org(
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
@@ -1261,7 +1261,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
 
         return await ops.export_org(org, user_manager)
 
-    @app.post("/orgs/import", tags=["organizations"])
+    @app.post("/orgs/import/json", tags=["organizations"])
     async def import_org(
         org_data: OrgImportExport,
         user: User = Depends(user_dep),
