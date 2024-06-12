@@ -13,6 +13,7 @@ import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
 import type { Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
+import { DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import LiteElement, { html } from "@/utils/LiteElement";
 
@@ -406,15 +407,15 @@ export class ConfigDetails extends LiteElement {
         true,
       )}
       ${when(
-        ["host", "domain", "custom", "any"].includes(
+        DEPTH_SUPPORTED_SCOPES.includes(
           primarySeedConfig!.scopeType || seedsConfig.scopeType!,
         ),
         () =>
           this.renderSetting(
             msg("Max Depth"),
-            primarySeedConfig?.depth
+            primarySeedConfig && primarySeedConfig.depth !== null
               ? msg(str`${primarySeedConfig.depth} hop(s)`)
-              : msg("None"),
+              : msg("Unlimited (default)"),
           ),
       )}
       ${this.renderSetting(
