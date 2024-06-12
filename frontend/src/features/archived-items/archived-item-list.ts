@@ -45,6 +45,14 @@ export class ArchivedItemListItem extends TailwindElement {
         var(--btrix-border-radius-bottom, 0);
       height: 2.5rem;
     }
+
+    sl-progress-ring {
+      /* Setting size to var(--font-size-base) breaks in chrome,
+      have cell contents inherit size from cell instead */
+      --size: 1em;
+      --track-width: 1px;
+      --indicator-width: 2px;
+    }
   `;
 
   @property({ type: Object, attribute: false })
@@ -141,7 +149,7 @@ export class ArchivedItemListItem extends TailwindElement {
               </btrix-table-cell>
             `
           : nothing}
-        <btrix-table-cell class="pr-0">
+        <btrix-table-cell class="pr-0 text-base">
           ${this.showStatus
             ? html`
                 <btrix-crawl-status
@@ -158,7 +166,7 @@ export class ArchivedItemListItem extends TailwindElement {
                   hoist
                 >
                   <sl-icon
-                    class="text-base"
+                    class="text-inherit"
                     style="color: ${crawlStatus.cssColor}"
                     name=${typeIcon}
                     label=${typeLabel}
@@ -179,12 +187,12 @@ export class ArchivedItemListItem extends TailwindElement {
               ? html`
                   <sl-progress-ring
                     value="${activeProgress}"
-                    style="color: ${qaStatus.cssColor}; --size: var(--font-size-base); --track-width: 1px; --indicator-width: 2px;"
+                    style="color: ${qaStatus.cssColor};"
                   ></sl-progress-ring>
                 `
               : html`
                   <sl-icon
-                    class="text-base"
+                    class="text-inherit"
                     style="color: ${qaStatus.cssColor}"
                     name=${isUpload ? "slash" : "microscope"}
                     library=${isUpload ? "default" : "app"}
