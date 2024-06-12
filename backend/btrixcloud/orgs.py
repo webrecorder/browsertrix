@@ -752,25 +752,38 @@ class OrgOps:
         org_out_export = OrgOutExport.from_dict(org.to_dict())
         org_serialized = await org_out_export.serialize_for_export(user_manager)
 
-        cursor = self.crawl_configs_db.find({"oid": org.id})
-        workflows = await cursor.to_list(length=100_000)
+        workflows: List[Dict[str, Any]] = []
+        workflow_ids: List[str] = []
+        workflow_revs: List[Dict[str, Any]] = []
+        items: List[Dict[str, Any]] = []
+        pages: List[Dict[str, Any]] = []
+        profiles: List[Dict[str, Any]] = []
+        collections: List[Dict[str, Any]] = []
 
-        workflow_ids = [workflow["_id"] for workflow in workflows]
+        cursor = self.crawl_configs_db.find({"oid": org.id})
+        async for workflow in cursor:
+            workflow_ids.append(workflow["_id"])
+            workflows.append(workflow)
 
         cursor = self.configs_revs_db.find({"cid": {"$in": workflow_ids}})
-        workflow_revs = await cursor.to_list(length=100_000)
+        async for rev in cursor:
+            workflow_revs.append(rev)
 
         cursor = self.crawls_db.find({"oid": org.id})
-        items = await cursor.to_list(length=100_000)
+        async for item in cursor:
+            items.append(item)
 
         cursor = self.pages_db.find({"oid": org.id})
-        pages = await cursor.to_list(length=10_000_000)
+        async for page in cursor:
+            pages.append(page)
 
         cursor = self.profiles_db.find({"oid": org.id})
-        profiles = await cursor.to_list(length=100_000)
+        async for profile in cursor:
+            profiles.append(profile)
 
         cursor = self.colls_db.find({"oid": org.id})
-        collections = await cursor.to_list(length=100_000)
+        async for collection in cursor:
+            collections.append(collection)
 
         version = await self.version_db.find_one()
 
