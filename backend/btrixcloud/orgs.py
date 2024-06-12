@@ -49,6 +49,7 @@ from .models import (
     Profile,
     Collection,
     OrgOutExport,
+    Page,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import slug_from_name, validate_slug

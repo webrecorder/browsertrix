@@ -349,7 +349,7 @@ class UserManager:
         request: Optional[Request] = None,
     ) -> User:
         """create new user in db"""
-        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-branches,too-many-locals
         await self.validate_password(create.password)
 
         hashed_password = get_password_hash(create.password)
