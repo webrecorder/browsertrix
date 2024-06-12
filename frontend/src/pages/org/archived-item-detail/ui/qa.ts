@@ -507,7 +507,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                   <sl-tooltip
                     content=${mostRecentSelected
                       ? msg(
-                          "You’re viewing the latest results from an analysis run.",
+                          "You’re viewing the latest analysis run results.",
                         )
                       : msg(
                           "You’re viewing results from an older analysis run.",
