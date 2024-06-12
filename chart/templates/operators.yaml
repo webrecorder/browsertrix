@@ -23,7 +23,7 @@ spec:
   - apiVersion: v1
     resource: configmaps
     updateStrategy:
-      method: OnDelete
+      method: InPlace
 
   hooks:
     sync:
