@@ -117,7 +117,6 @@ export class ConfigDetails extends LiteElement {
       >`;
     };
 
-    console.log(this.crawlConfig?.jobType);
     return html`
       <section id="crawler-settings" class="mb-8">
         <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
