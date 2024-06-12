@@ -405,7 +405,7 @@ export class ConfigDetails extends LiteElement {
             msg("Max Depth"),
             primarySeedConfig && primarySeedConfig.depth !== null
               ? msg(str`${primarySeedConfig.depth} hop(s)`)
-              : msg("None"),
+              : msg("Unlimited (default)"),
           ),
       )}
       ${this.renderSetting(
