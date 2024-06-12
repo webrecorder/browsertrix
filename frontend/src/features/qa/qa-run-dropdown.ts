@@ -39,7 +39,9 @@ export class QaRunDropdown extends TailwindElement {
                   slot="prefix"
                   hoist
                 ></btrix-crawl-status>
-                ${formatISODateString(selectedRun.finished)} `
+                ${selectedRun.finished
+                  ? formatISODateString(selectedRun.finished)
+                  : msg("In progress")}`
             : msg("Select a QA run")}
         </sl-button>
         <sl-menu>
@@ -52,7 +54,9 @@ export class QaRunDropdown extends TailwindElement {
                 ?disabled=${isSelected}
                 ?checked=${isSelected}
               >
-                ${formatISODateString(run.finished)}
+                ${run.finished
+                  ? formatISODateString(run.finished)
+                  : msg("In progress")}
                 <btrix-crawl-status
                   type="qa"
                   hideLabel

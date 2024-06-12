@@ -957,12 +957,11 @@ class CrawlOps(BaseCrawlOps):
         thresholds: Dict[str, List[float]],
     ) -> QARunAggregateStatsOut:
         """Get aggregate stats for QA run"""
-        file_count = await self.page_ops.get_crawl_file_count(crawl_id)
         screenshot_results = await self.page_ops.get_qa_run_aggregate_counts(
-            crawl_id, qa_run_id, thresholds, file_count, key="screenshotMatch"
+            crawl_id, qa_run_id, thresholds, key="screenshotMatch"
         )
         text_results = await self.page_ops.get_qa_run_aggregate_counts(
-            crawl_id, qa_run_id, thresholds, file_count, key="textMatch"
+            crawl_id, qa_run_id, thresholds, key="textMatch"
         )
         return QARunAggregateStatsOut(
             screenshotMatch=screenshot_results,

@@ -44,7 +44,7 @@ import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 
 type QAStatsThreshold = {
-  lowerBoundary: `${number}` | "No data" | "Files";
+  lowerBoundary: `${number}` | "No data";
   count: number;
 };
 type QAStats = Record<"screenshotMatch" | "textMatch", QAStatsThreshold[]>;
@@ -64,11 +64,6 @@ const qaStatsThresholds = [
     lowerBoundary: "0.9",
     cssColor: "var(--sl-color-success-500)",
     label: msg("Good Match"),
-  },
-  {
-    lowerBoundary: "Files",
-    cssColor: "var(--sl-color-neutral-500)",
-    label: msg("Identical Files"),
   },
 ];
 
@@ -129,13 +124,28 @@ export class ArchivedItemDetailQA extends TailwindElement {
   private pages?: APIPaginatedList<ArchivedItemPage>;
 
   private readonly qaStats = new Task(this, {
-    task: async ([orgId, crawlId, qaRunId, authState]) => {
-      if (!qaRunId || !authState) throw new Error("Missing args");
+    // mostRecentNonFailedQARun passed as arg for reactivity so that meter will auto-update
+    // like progress bar as the analysis run finishes new pages
+    task: async ([
+      orgId,
+      crawlId,
+      qaRunId,
+      authState,
+      mostRecentNonFailedQARun,
+    ]) => {
+      if (!qaRunId || !authState || !mostRecentNonFailedQARun)
+        throw new Error("Missing args");
       const stats = await this.getQAStats(orgId, crawlId, qaRunId, authState);
       return stats;
     },
     args: () =>
-      [this.orgId!, this.crawlId!, this.qaRunId, this.authState] as const,
+      [
+        this.orgId!,
+        this.crawlId!,
+        this.qaRunId,
+        this.authState,
+        this.mostRecentNonFailedQARun,
+      ] as const,
   });
 
   @state()
@@ -473,13 +483,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
     }
 
     return html`
-      ${isRunning
-        ? html`<btrix-alert class="mb-3" variant="warning">
-            ${msg(
-              "This crawl is being analyzed. You're currently viewing results from an older analysis run.",
-            )}
-          </btrix-alert>`
-        : nothing}
       <btrix-card>
         <div slot="title" class="flex flex-wrap justify-between">
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -488,23 +491,23 @@ export class ArchivedItemDetailQA extends TailwindElement {
               const finishedQARuns = qaRuns.filter(({ state }) =>
                 finishedCrawlStates.includes(state),
               );
-
-              if (!finishedQARuns.length) {
-                return nothing;
-              }
-
-              const mostRecentSelected =
-                this.mostRecentNonFailedQARun &&
-                this.mostRecentNonFailedQARun.id === this.qaRunId;
               const latestFinishedSelected =
-                this.qaRunId === finishedQARuns[0].id;
+                this.qaRunId === finishedQARuns[0]?.id;
+
+              const finishedAndRunningQARuns = qaRuns.filter(
+                ({ state }) =>
+                  finishedCrawlStates.includes(state) ||
+                  QA_RUNNING_STATES.includes(state),
+              );
+              const mostRecentSelected =
+                this.qaRunId === finishedAndRunningQARuns[0]?.id;
 
               return html`
                 <div>
                   <sl-tooltip
                     content=${mostRecentSelected
                       ? msg(
-                          "You’re viewing the latest results from a finished analysis run.",
+                          "You’re viewing the latest analysis run results.",
                         )
                       : msg(
                           "You’re viewing results from an older analysis run.",
@@ -522,7 +525,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                     </sl-tag>
                   </sl-tooltip>
                   <btrix-qa-run-dropdown
-                    .items=${finishedQARuns}
+                    .items=${finishedAndRunningQARuns}
                     selectedId=${this.qaRunId || ""}
                     @btrix-select=${(e: CustomEvent<SelectDetail>) =>
                       (this.qaRunId = e.detail.item.id)}
@@ -566,12 +569,12 @@ export class ArchivedItemDetailQA extends TailwindElement {
                   ${msg("Screenshots")}
                 </btrix-table-cell>
                 <btrix-table-cell class="p-0">
-                  ${this.qaStats.render({
-                    complete: ({ screenshotMatch }) =>
-                      this.renderMeter(qaRun.stats.found, screenshotMatch),
-                    pending: () => this.renderMeter(),
-                    initial: () => this.renderMeter(),
-                  })}
+                  ${this.qaStats.value
+                    ? this.renderMeter(
+                        qaRun.stats.found,
+                        this.qaStats.value.screenshotMatch,
+                      )
+                    : this.renderMeter()}
                 </btrix-table-cell>
               </btrix-table-row>
               <btrix-table-row>
@@ -579,12 +582,12 @@ export class ArchivedItemDetailQA extends TailwindElement {
                   ${msg("Text")}
                 </btrix-table-cell>
                 <btrix-table-cell class="p-0">
-                  ${this.qaStats.render({
-                    complete: ({ textMatch }) =>
-                      this.renderMeter(qaRun.stats.found, textMatch),
-                    pending: () => this.renderMeter(),
-                    initial: () => this.renderMeter(),
-                  })}
+                  ${this.qaStats.value
+                    ? this.renderMeter(
+                        qaRun.stats.found,
+                        this.qaStats.value.textMatch,
+                      )
+                    : this.renderMeter()}
                 </btrix-table-cell>
               </btrix-table-row>
             </btrix-table-body>
@@ -627,30 +630,32 @@ export class ArchivedItemDetailQA extends TailwindElement {
           );
           const idx = threshold ? qaStatsThresholds.indexOf(threshold) : -1;
 
-          return html`
-            <btrix-meter-bar
-              value=${(bar.count / pageCount) * 100}
-              style="--background-color: ${threshold?.cssColor}"
-              aria-label=${bar.lowerBoundary}
-            >
-              <div class="text-center">
-                ${bar.lowerBoundary === "No data"
-                  ? msg("No Data")
-                  : threshold?.label}
-                <div class="text-xs opacity-80">
-                  ${!["No data", "Files"].includes(bar.lowerBoundary)
-                    ? html`${idx === 0
-                          ? `<${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`
-                          : idx === qaStatsThresholds.length - 1
-                            ? `>=${threshold ? +threshold.lowerBoundary * 100 : 0}%`
-                            : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100 || 100}%`}
-                        ${msg("match")} <br />`
-                    : nothing}
-                  ${formatNumber(bar.count)} ${pluralOf("pages", bar.count)}
-                </div>
-              </div>
-            </btrix-meter-bar>
-          `;
+          return bar.count !== 0
+            ? html`
+                <btrix-meter-bar
+                  value=${(bar.count / pageCount) * 100}
+                  style="--background-color: ${threshold?.cssColor}"
+                  aria-label=${bar.lowerBoundary}
+                >
+                  <div class="text-center">
+                    ${bar.lowerBoundary === "No data"
+                      ? msg("No Data")
+                      : threshold?.label}
+                    <div class="text-xs opacity-80">
+                      ${bar.lowerBoundary !== "No data"
+                        ? html`${idx === 0
+                              ? `<${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`
+                              : idx === qaStatsThresholds.length - 1
+                                ? `>=${threshold ? +threshold.lowerBoundary * 100 : 0}%`
+                                : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100 || 100}%`}
+                            match <br />`
+                        : nothing}
+                      ${formatNumber(bar.count)} ${pluralOf("pages", bar.count)}
+                    </div>
+                  </div>
+                </btrix-meter-bar>
+              `
+            : nothing;
         })}
       </btrix-meter>
     `;

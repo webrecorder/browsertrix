@@ -30,6 +30,7 @@ export class MeterBar extends TailwindElement {
       height: 1rem;
       background-color: var(--background-color, var(--sl-color-blue-500));
       min-width: 4px;
+      transition: 400ms width;
     }
   `;
 
@@ -151,6 +152,7 @@ export class Meter extends TailwindElement {
       display: flex;
       border-radius: var(--sl-border-radius-medium);
       overflow: hidden;
+      transition: 400ms width;
     }
 
     .labels {
