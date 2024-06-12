@@ -329,13 +329,11 @@ def test_qa_stats(
         {"lowerBoundary": "0.0", "count": 0},
         {"lowerBoundary": "0.7", "count": 0},
         {"lowerBoundary": "0.9", "count": 1},
-        {"lowerBoundary": "Files", "count": 0},
     ]
     assert data["textMatch"] == [
         {"lowerBoundary": "0.0", "count": 0},
         {"lowerBoundary": "0.7", "count": 0},
         {"lowerBoundary": "0.9", "count": 1},
-        {"lowerBoundary": "Files", "count": 0},
     ]
 
     # Test we get expected results with explicit 0 boundary
@@ -350,13 +348,11 @@ def test_qa_stats(
         {"lowerBoundary": "0.0", "count": 0},
         {"lowerBoundary": "0.7", "count": 0},
         {"lowerBoundary": "0.9", "count": 1},
-        {"lowerBoundary": "Files", "count": 0},
     ]
     assert data["textMatch"] == [
         {"lowerBoundary": "0.0", "count": 0},
         {"lowerBoundary": "0.7", "count": 0},
         {"lowerBoundary": "0.9", "count": 1},
-        {"lowerBoundary": "Files", "count": 0},
     ]
 
     # Test that missing threshold values result in 422 HTTPException
