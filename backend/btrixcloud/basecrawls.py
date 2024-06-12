@@ -64,7 +64,8 @@ class BaseCrawlOps:
     background_job_ops: BackgroundJobOps
     page_ops: PageOps
 
-    presign_duration: int
+    presign_duration_seconds: int
+    expire_at_duration_seconds: int
 
     def __init__(
         self,
@@ -94,6 +95,9 @@ class BaseCrawlOps:
         self.presign_duration_seconds = (
             min(presign_duration_minutes, PRESIGN_MINUTES_MAX) * 60
         )
+
+        # renew when <25% of time remaining
+        self.expire_at_duration_seconds = int(self.presign_duration_seconds * 0.75)
 
     def set_page_ops(self, page_ops):
         """set page ops reference"""
@@ -434,7 +438,7 @@ class BaseCrawlOps:
             print("no files")
             return []
 
-        delta = timedelta(seconds=self.presign_duration_seconds)
+        delta = timedelta(seconds=self.expire_at_duration_seconds)
 
         out_files = []
 

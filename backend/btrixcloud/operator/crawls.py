@@ -325,8 +325,15 @@ class CrawlOperator(BaseOperator):
         qa_source_crawl_id = params["qa_source_crawl_id"]
         name = f"qa-replay-{qa_source_crawl_id}"
 
-        if name in children[CMAP]:
-            return [children[CMAP][name]]
+        configmap = children[CMAP].get(name)
+        if configmap and not self._qa_configmap_update_needed(name, configmap):
+            metadata = configmap["metadata"]
+            configmap["metadata"] = {
+                "name": metadata["name"],
+                "namespace": metadata["namespace"],
+                "labels": metadata["labels"],
+            }
+            return [configmap]
 
         crawl_replay = await self.crawl_ops.get_internal_crawl_out(qa_source_crawl_id)
 
@@ -363,6 +370,22 @@ class CrawlOperator(BaseOperator):
             print(f"Restart {name}")
 
         return self.load_from_yaml("crawler.yaml", params)
+
+    def _qa_configmap_update_needed(self, name, configmap):
+        try:
+            now = dt_now()
+            resources = json.loads(configmap["data"]["qa-config.json"])["resources"]
+            for resource in resources:
+                expire_at = datetime.fromisoformat(resource["expireAt"])
+                if expire_at <= now:
+                    print(f"Refreshing QA configmap for QA run: {name}")
+                    return True
+
+        # pylint: disable=broad-exception-caught
+        except Exception as e:
+            print(e)
+
+        return False
 
     # pylint: disable=too-many-arguments
     async def _resolve_scale(
