@@ -548,7 +548,6 @@ class PageOps:
         crawl_id: str,
         qa_run_id: str,
         thresholds: Dict[str, List[float]],
-        file_count: int,
         key: str = "screenshotMatch",
     ):
         """Get counts for pages in QA run in buckets by score key based on thresholds"""
@@ -585,17 +584,11 @@ class PageOps:
         return_data = []
 
         for result in results:
-            key = str(result.get("_id"))
-            if key == "No data":
-                count = result.get("count", 0) - file_count
-                return_data.append(QARunBucketStats(lowerBoundary=key, count=count))
-            else:
-                return_data.append(
-                    QARunBucketStats(lowerBoundary=key, count=result.get("count", 0))
+            return_data.append(
+                QARunBucketStats(
+                    lowerBoundary=str(result.get("_id")), count=result.get("count", 0)
                 )
-
-        # Add file count
-        return_data.append(QARunBucketStats(lowerBoundary="Files", count=file_count))
+            )
 
         # Add missing boundaries to result and re-sort
         for boundary in boundaries:
