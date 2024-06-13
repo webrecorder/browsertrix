@@ -1,6 +1,6 @@
 # Org Import & Export
 
-This guide covers exporting an organization from Browsertrix Cloud and optionally importing it into another Browsertrix Cloud cluster.
+This guide covers exporting an organization from Browsertrix and optionally importing it into another Browsertrix cluster.
 
 Both export and import are two-step processes, which involve:
 
@@ -17,17 +17,17 @@ An organization's files are co-located within a "directory" in the S3 bucket bei
 aws s3 cp s3://current-bucket/<org-id> /path/to/local/directory/<org-id> --recursive --endpoint=https://ams3.digitaloceanspaces.com
 ```
 
-It is important to retain the directory structure to re-import an organization's files into another Browsertrix Cloud cluster later, as some assets such as browser profiles and uploads  have "subdirectory" prefixes.
+It is important to retain the directory structure to re-import an organization's files into another Browsertrix cluster later, as some assets such as browser profiles and uploads  have "subdirectory" prefixes.
 
 !!! note
 
-    Browsertrix Cloud uses S3-compatible object storage to manage files. In object storage systems, all files are stored flat in the underlying system but presented in logical "directories" based on file prefixes for user convenience.
+    Browsertrix uses S3-compatible object storage to manage files. In object storage systems, all files are stored flat in the underlying system but presented in logical "directories" based on file prefixes for user convenience.
 
     When we speak of a "directory" in an S3 bucket in this guide, we are referring to a consistent file prefix, in this case an organization's ID.
 
     When files are exported from an S3 bucket to a local filesystem such as a laptop or desktop computer, these logical "directories" will turn into folders in the local filesystem.
 
-To move an organization from one Browsertrix Cloud cluster to another, sync the org id "directory" from one S3 bucket to another directly, as there is no need to download files locally as an intermediary step.
+To move an organization from one Browsertrix cluster to another, sync the org id "directory" from one S3 bucket to another directly, as there is no need to download files locally as an intermediary step.
 
 ### Export database information
 
@@ -88,4 +88,3 @@ curl -X POST -H "Content-type: application/json" -H "Authorization: Bearer <jwt 
 ```
 
 If the JSON export is from an earlier database version than the cluster the org is being imported into, re-run migrations from the version in the JSON export after importing the org. To do this, re-install the application with helm, setting `rerun_from_migration` in the helm chart to the database version specified in the JSON export.
-
