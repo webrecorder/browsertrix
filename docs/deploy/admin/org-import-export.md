@@ -29,7 +29,7 @@ It is important to retain the directory structure to re-import an organization's
 
 To move an organization from one Browsertrix cluster to another, sync the org id "directory" from one S3 bucket to another directly, as there is no need to download files locally as an intermediary step.
 
-### Export database information
+### Export Database Information
 
 To generate a portable JSON representation of an org's database information, use the `GET /api/orgs/<org-id>/export/json` API endpoint and save the returned JSON to a file, e.g.:
 
@@ -41,7 +41,7 @@ This endpoint is available to superusers only.
 
 ## Import
 
-### Import files
+### Import Files
 
 If an organization's files have already been copied to the S3 bucket configured in the new cluster, skip this step. Otherwise, use a tool such as the `aws s3` command-line interface or `rclone` to sync the local organization directory to the new bucket, being careful to retain the org ID directory and logical structure within, e.g.:
 
@@ -49,7 +49,7 @@ If an organization's files have already been copied to the S3 bucket configured 
 aws s3 cp /path/to/local/directory/<org-id> s3://new-bucket/<org-id> --recursive
 ```
 
-### Import database information
+### Import Database Information
 
 To import an organization from a JSON export, use the `POST /api/orgs/import/json` API endpoint, passing in the contents of the JSON file as the POST data, e.g.:
 
@@ -65,7 +65,7 @@ In addition to importing the organization and its constituent parts such as work
 
 Newly created imported users are given a new secure random password. Prior to logging in on the new cluster for the first times, users will need to request a password reset from the login screen and follow the directions in the resulting email to create a new password.
 
-#### Storage configuration
+#### Storage Configuration
 
 The storage name referenced in the organization and files to be imported must match the storage configuration name for primary storage in the newly created cluster.
 
@@ -77,7 +77,7 @@ If the primary storage for the new cluster uses a different name than the origin
 curl -X POST -H "Content-type: application/json" -H "Authorization: Bearer <jwt token>" --data-binary "@org-export.json" https://app.browsertrix.com/api/orgs/import/json?storageName=newname
 ```
 
-#### Database versions
+#### Database Versions
 
 By default, the import API endpoint will fail and return a `400` status code if the database version in the imported JSON differs from the database version of the new cluster.
 
