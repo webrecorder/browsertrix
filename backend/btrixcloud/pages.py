@@ -501,6 +501,34 @@ class PageOps:
 
         return [PageOut.from_dict(data) for data in items], total
 
+    async def get_crawl_file_count(self, crawl_id: str):
+        """Get count of pages in crawl that are files and don't need to be QAed"""
+        aggregate = [
+            {
+                "$match": {
+                    "crawl_id": crawl_id,
+                    "loadState": 2,
+                    "mime": {"$not": {"$regex": "^.*html", "$options": "i"}},
+                }
+            },
+            {"$count": "count"},
+        ]
+
+        cursor = self.pages.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+
+        if not results:
+            return 0
+
+        result = results[0]
+
+        try:
+            total = int(result["count"])
+        except (IndexError, ValueError):
+            total = 0
+
+        return total
+
     async def re_add_crawl_pages(self, crawl_id: str, oid: UUID):
         """Delete existing pages for crawl and re-add from WACZs."""
         await self.delete_crawl_pages(crawl_id, oid)

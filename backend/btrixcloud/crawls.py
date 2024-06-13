@@ -964,7 +964,8 @@ class CrawlOps(BaseCrawlOps):
             crawl_id, qa_run_id, thresholds, key="textMatch"
         )
         return QARunAggregateStatsOut(
-            screenshotMatch=screenshot_results, textMatch=text_results
+            screenshotMatch=screenshot_results,
+            textMatch=text_results,
         )
 
 

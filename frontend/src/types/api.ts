@@ -1,3 +1,5 @@
+import type { SortDirection } from "./utils";
+
 /**
  * If no generic type is specified, `items` cannot exist.
  */
@@ -21,5 +23,5 @@ export type APIPaginationQuery = {
 
 export type APISortQuery = {
   sortBy?: string;
-  sortDirection?: number; // -1 | 1
+  sortDirection?: SortDirection;
 };

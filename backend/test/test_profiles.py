@@ -238,6 +238,8 @@ def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_con
             assert len(crawl_configs) == 1
             assert crawl_configs[0]["id"] == profile_config_id
             assert crawl_configs[0]["name"] == "Profile Test Crawl"
+            assert crawl_configs[0]["firstSeed"] == "https://webrecorder.net/"
+            assert crawl_configs[0]["seedCount"] == 1
             break
         except:
             if time.monotonic() - start_time > time_limit:
@@ -432,6 +434,10 @@ def test_commit_browser_to_existing_profile(
         ("name", -1, 0, 1),
         # Name, ascending
         ("name", 1, 1, 0),
+        # URL, descending
+        ("url", -1, 0, 1),
+        # URL, ascending
+        ("url", 1, 1, 0),
     ],
 )
 def test_sort_profiles(

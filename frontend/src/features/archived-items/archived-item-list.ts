@@ -226,7 +226,7 @@ export class ArchivedItemListItem extends TailwindElement {
                 </label>`
               : html`<div>${rowName}</div>`}
         </btrix-table-cell>
-        <btrix-table-cell>
+        <btrix-table-cell class="tabular-nums">
           <sl-tooltip
             content=${msg(str`By ${this.item.userName}`)}
             @click=${this.onTooltipClick}
@@ -239,12 +239,10 @@ export class ArchivedItemListItem extends TailwindElement {
               month="2-digit"
               day="2-digit"
               year="2-digit"
-              hour="2-digit"
-              minute="2-digit"
             ></sl-format-date>
           </sl-tooltip>
         </btrix-table-cell>
-        <btrix-table-cell>
+        <btrix-table-cell class="tabular-nums">
           <sl-tooltip
             hoist
             content=${formatNumber(this.item.fileSize || 0, {
@@ -261,7 +259,7 @@ export class ArchivedItemListItem extends TailwindElement {
             ></sl-format-bytes>
           </sl-tooltip>
         </btrix-table-cell>
-        <btrix-table-cell>
+        <btrix-table-cell class="tabular-nums">
           ${isUpload
             ? notApplicable
             : html`<sl-tooltip
@@ -283,7 +281,7 @@ export class ArchivedItemListItem extends TailwindElement {
                 </div>
               </sl-tooltip>`}
         </btrix-table-cell>
-        <btrix-table-cell>
+        <btrix-table-cell class="tabular-nums">
           ${isUpload
             ? notApplicable
             : lastQAStarted && qaRunCount
@@ -395,7 +393,7 @@ export class ArchivedItemList extends TailwindElement {
         </btrix-table-header-cell>`,
       },
       {
-        cssCol: "12rem",
+        cssCol: "1fr",
         cell: html`<btrix-table-header-cell>
           ${msg("Date Created")}
         </btrix-table-header-cell>`,
