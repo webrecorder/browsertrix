@@ -508,6 +508,7 @@ export class ArchivedItemQA extends TailwindElement {
 
         <div class="grid--tabGroup flex min-w-0 flex-col">
           <nav
+            aria-label="${msg("Page heuristics")}"
             class="-mx-3 my-0 flex gap-2 overflow-x-auto px-3 py-2 lg:mx-0 lg:px-0"
           >
             <btrix-navigation-button
