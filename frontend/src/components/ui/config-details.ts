@@ -13,6 +13,7 @@ import type { CrawlConfig, Seed, SeedConfig } from "@/pages/org/types";
 import type { Collection } from "@/types/collection";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
+import { DEPTH_SUPPORTED_SCOPES } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import LiteElement, { html } from "@/utils/LiteElement";
 
@@ -141,6 +142,9 @@ export class ConfigDetails extends LiteElement {
             `,
             () => this.renderSetting(msg("Exclusions"), msg("None")),
           )}
+          <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+            <h4>${msg("Per-Crawl Limits")}</h4>
+          </btrix-section-heading>
           ${this.renderSetting(
             msg("Max Pages"),
             when(
@@ -158,6 +162,21 @@ export class ConfigDetails extends LiteElement {
             ),
           )}
           ${this.renderSetting(
+            msg("Crawl Time Limit"),
+            renderTimeLimit(crawlConfig?.crawlTimeout, Infinity),
+          )}
+          ${this.renderSetting(
+            msg("Crawl Size Limit"),
+            renderSize(crawlConfig?.maxCrawlSize),
+          )}
+          ${this.renderSetting(
+            msg("Crawler Instances"),
+            crawlConfig?.scale ? `${crawlConfig.scale}×` : "",
+          )}
+          <btrix-section-heading style="--margin: var(--sl-spacing-medium)">
+            <h4>${msg("Per-Page Limits")}</h4>
+          </btrix-section-heading>
+          ${this.renderSetting(
             msg("Page Load Timeout"),
             renderTimeLimit(
               crawlConfig?.config.pageLoadTimeout,
@@ -169,7 +188,7 @@ export class ConfigDetails extends LiteElement {
             renderTimeLimit(crawlConfig?.config.postLoadDelay, 0),
           )}
           ${this.renderSetting(
-            msg("Page Behavior Timeout"),
+            msg("Behavior Timeout"),
             renderTimeLimit(
               crawlConfig?.config.behaviorTimeout,
               this.orgDefaults?.behaviorTimeoutSeconds ?? Infinity,
@@ -187,18 +206,6 @@ export class ConfigDetails extends LiteElement {
           ${this.renderSetting(
             msg("Delay Before Next Page"),
             renderTimeLimit(crawlConfig?.config.pageExtraDelay, 0),
-          )}
-          ${this.renderSetting(
-            msg("Crawl Time Limit"),
-            renderTimeLimit(crawlConfig?.crawlTimeout, Infinity),
-          )}
-          ${this.renderSetting(
-            msg("Crawl Size Limit"),
-            renderSize(crawlConfig?.maxCrawlSize),
-          )}
-          ${this.renderSetting(
-            msg("Crawler Instances"),
-            crawlConfig?.scale ? `${crawlConfig.scale}×` : "",
           )}
         </btrix-desc-list>
       </section>
@@ -221,7 +228,11 @@ export class ConfigDetails extends LiteElement {
                 >
                   ${crawlConfig?.profileName}
                 </a>`,
-              () => crawlConfig?.profileName || msg("Default Profile"),
+              () =>
+                crawlConfig?.profileName ||
+                html`<span class="text-neutral-400"
+                  >${msg("Default Profile")}</span
+                >`,
             ),
           )}
           ${this.renderSetting(
@@ -237,7 +248,7 @@ export class ConfigDetails extends LiteElement {
             msg("User Agent"),
             crawlConfig?.config.userAgent
               ? crawlConfig.config.userAgent
-              : msg("Default User Agent"),
+              : html`<span class="text-neutral-400">${msg("Default")}</span>`,
           )}
           ${crawlConfig?.config.lang
             ? this.renderSetting(
@@ -396,15 +407,15 @@ export class ConfigDetails extends LiteElement {
         true,
       )}
       ${when(
-        ["host", "domain", "custom", "any"].includes(
+        DEPTH_SUPPORTED_SCOPES.includes(
           primarySeedConfig!.scopeType || seedsConfig.scopeType!,
         ),
         () =>
           this.renderSetting(
             msg("Max Depth"),
-            primarySeedConfig?.depth
+            primarySeedConfig && primarySeedConfig.depth !== null
               ? msg(str`${primarySeedConfig.depth} hop(s)`)
-              : msg("None"),
+              : msg("Unlimited (default)"),
           ),
       )}
       ${this.renderSetting(

@@ -10,7 +10,7 @@
     "@lit/task": "^1.0.0",
     "@novnc/novnc": "^1.4.0-beta",
     "@rollup/plugin-commonjs": "^18.0.0",
-    "@shoelace-style/shoelace": "~2.15.0",
+    "@shoelace-style/shoelace": "~2.15.1",
     "@tailwindcss/container-queries": "^0.1.1",
     "@types/color": "^3.0.2",
     "@types/diff": "^5.0.9",

@@ -124,7 +124,7 @@ spec:
         - {{ redis_url }}
       {% if qa_source_crawl_id %}
         - --qaSource
-        - /tmp/qa-config.json
+        - /tmp/qa/qa-config.json
       {% elif profile_filename %}
         - --profile
         - "@{{ profile_filename }}"
@@ -137,8 +137,7 @@ spec:
 
       {% if qa_source_crawl_id %}
         - name: qa-config
-          mountPath: /tmp/qa-config.json
-          subPath: qa-config.json
+          mountPath: /tmp/qa/
           readOnly: True
       {% endif %}
 

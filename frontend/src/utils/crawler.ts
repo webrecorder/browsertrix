@@ -31,6 +31,14 @@ export const inactiveCrawlStates: CrawlState[] = [
 
 export const DEFAULT_MAX_SCALE = 3;
 
+export const DEPTH_SUPPORTED_SCOPES = [
+  "prefix",
+  "host",
+  "domain",
+  "custom",
+  "any",
+];
+
 export function isActive(state: CrawlState | null) {
   return state && activeCrawlStates.includes(state);
 }
