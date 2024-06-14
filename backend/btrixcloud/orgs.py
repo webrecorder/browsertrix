@@ -808,7 +808,7 @@ class OrgOps:
     ) -> Dict[str, bool]:
         """Import org from exported org JSON
 
-        :param org_data: Organization data exported as JSON from /export endpoint
+        :param stream: Stream of org JSON export
         :param ignore_version: Ignore db version mismatch between JSON and db
         :param storage_name: Update storage refs to use new name if provided
         """
