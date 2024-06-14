@@ -505,9 +505,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 <div>
                   <sl-tooltip
                     content=${mostRecentSelected
-                      ? msg(
-                          "You’re viewing the latest analysis run results.",
-                        )
+                      ? msg("You’re viewing the latest analysis run results.")
                       : msg(
                           "You’re viewing results from an older analysis run.",
                         )}
@@ -614,7 +612,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
   }
 
   private renderMeter(pageCount?: number, barData?: QAStatsThreshold[]) {
-    if (pageCount === undefined || !barData) {
+    if (!pageCount || !barData) {
       return html`<sl-skeleton
         class="h-4 flex-1 [--border-radius:var(--sl-border-radius-medium)]"
         effect="sheen"
