@@ -619,20 +619,39 @@ export class ArchivedItemDetailQA extends TailwindElement {
       ></sl-skeleton>`;
     }
 
+    const barTotal = barData.reduce((prev, cur) => prev + cur.count, 0);
+
+    // TODO remove this once we stop including identical files in "No data" counts
+    // see https://github.com/webrecorder/browsertrix/issues/1859
+    if (barTotal > pageCount) {
+      barData[
+        barData.findIndex((bar) => bar.lowerBoundary === "No data")
+      ].count -= barTotal - pageCount;
+    }
+
+    const analyzedPageCount =
+      pageCount -
+      (barData.find((bar) => bar.lowerBoundary === "No data")?.count ?? 0);
+
     return html`
-      <btrix-meter class="flex-1" value=${pageCount}>
+      <btrix-meter class="flex-1" value=${analyzedPageCount} max=${pageCount}>
         ${barData.map((bar) => {
           const threshold = qaStatsThresholds.find(
             ({ lowerBoundary }) => bar.lowerBoundary === lowerBoundary,
           );
           const idx = threshold ? qaStatsThresholds.indexOf(threshold) : -1;
 
+          const isNoDataBar = bar.lowerBoundary === "No data";
+
           return bar.count !== 0
             ? html`
                 <btrix-meter-bar
-                  value=${(bar.count / pageCount) * 100}
+                  value=${(bar.count /
+                    (isNoDataBar ? pageCount : analyzedPageCount)) *
+                  100}
                   style="--background-color: ${threshold?.cssColor}"
                   aria-label=${bar.lowerBoundary}
+                  slot=${ifDefined(isNoDataBar ? "available" : undefined)}
                 >
                   <div class="text-center">
                     ${bar.lowerBoundary === "No data"
