@@ -532,15 +532,13 @@ export class ArchivedItemDetailQA extends TailwindElement {
             })}
           </div>
           <div class="flex items-center gap-2 text-neutral-500">
-            ${when(
-              qaRun.stats,
-              (stats) => html`
-                <div class="text-sm font-normal">
-                  ${formatNumber(stats.done)} / ${formatNumber(stats.found)}
-                  ${pluralOf("pages", stats.found)} ${msg("analyzed")}
-                </div>
-              `,
-            )}
+            <div class="text-sm font-normal">
+              ${qaRun.state === "starting"
+                ? msg("Analysis starting")
+                : `${formatNumber(qaRun.stats.done)}/${formatNumber(qaRun.stats.found)}
+                  ${pluralOf("pages", qaRun.stats.found)} ${msg("analyzed")}`}
+            </div>
+
             <sl-tooltip
               content=${msg(
                 "Match analysis compares pages during a crawl against their replay during an analysis run. A good match indicates that the crawl is probably good, whereas severe inconsistencies may indicate a bad crawl.",
