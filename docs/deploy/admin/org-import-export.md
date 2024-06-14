@@ -51,10 +51,10 @@ aws s3 cp /path/to/local/directory/<org-id> s3://new-bucket/<org-id> --recursive
 
 ### Import Database Information
 
-To import an organization from a JSON export, use the `POST /api/orgs/import/json` API endpoint, passing in the contents of the JSON file as the POST data, e.g.:
+To import an organization from a JSON export, use the `POST /api/orgs/import/json` API endpoint, adding the JSON export file to the request as a stream, e.g.:
 
 ```sh
-curl -X POST -H "Content-type: application/json" -H "Authorization: Bearer <jwt token>" --data-binary "@org-export.json" https://app.browsertrix.com/api/orgs/import/json
+curl -X POST -H "Content-Type: application/octet-stream" -H "Authorization: Bearer <jwt token>" --data-binary "@org-export.json" https://app.browsertrix.com/api/orgs/import/json
 ```
 
 This endpoint is available to superusers only.

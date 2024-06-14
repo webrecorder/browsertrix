@@ -17,6 +17,7 @@ from typing import Optional, TYPE_CHECKING, Dict, List, Any
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
+import json_stream
 
 from .models import (
     SUCCESSFUL_STATES,
@@ -789,19 +790,19 @@ class OrgOps:
         version = await self.version_db.find_one()
 
         return {
+            "dbVersion": version.get("version"),
             "org": org_serialized.to_dict(),
+            "profiles": profiles,
             "workflows": workflows,
             "workflowRevisions": workflow_revs,
             "archivedItems": items,
             "pages": pages,
-            "profiles": profiles,
             "collections": collections,
-            "dbVersion": version.get("version"),
         }
 
     async def import_org(
         self,
-        org_data: OrgImportExport,
+        stream,
         ignore_version: bool = False,
         storage_name: Optional[str] = None,
     ) -> Dict[str, bool]:
@@ -812,26 +813,32 @@ class OrgOps:
         :param storage_name: Update storage refs to use new name if provided
         """
         # pylint: disable=too-many-branches, too-many-statements
-        oid = UUID(org_data.org.get("_id"))  # type: ignore
+        org_data = json_stream.load(stream)
+
+        # dbVersion
+        version_res = await self.version_db.find_one()
+        version = version_res["version"]
+        stream_db_version = org_data.get("dbVersion")
+        if version != stream_db_version and not ignore_version:
+            print(
+                f"Export db version: {stream_db_version} doesn't match db: {version}, quitting",
+                flush=True,
+            )
+            raise HTTPException(status_code=400, detail="db_version_mismatch")
+
+        # org
+        stream_org = org_data["org"]
+        oid = UUID(stream_org["_id"])
 
         if await self.get_org_by_id(oid):
             print(f"Org {oid} already exists, quitting", flush=True)
             raise HTTPException(status_code=400, detail="org_already_exists")
 
-        version_res = await self.version_db.find_one()
-        version = version_res["version"]
-        if version != org_data.dbVersion and not ignore_version:
-            print(
-                f"Export db version: {org_data.dbVersion} doesn't match db: {version}, quitting",
-                flush=True,
-            )
-            raise HTTPException(status_code=400, detail="db_version_mismatch")
-
         new_storage_ref = None
         if storage_name:
             new_storage_ref = StorageRef(name=storage_name, custom=False)
 
-        org = Organization.from_dict(org_data.org)
+        org = Organization.from_dict(stream_org)
         if storage_name and new_storage_ref:
             org.storage = new_storage_ref
         await self.orgs.insert_one(org.to_dict())
@@ -841,7 +848,7 @@ class OrgOps:
 
         # Users are imported with a random password and will need to go through
         # the reset password workflow using their email address after import.
-        for user in org_data.org.get("userDetails", []):  # type: ignore
+        for user in stream_org.get("userDetails", []):  # type: ignore
             try:
                 user_res = await self.user_manager.create_non_super_user(
                     email=user["email"],
@@ -859,7 +866,8 @@ class OrgOps:
                 org=org, userid=new_user.id, role=UserRole(int(user.get("role", 10)))
             )
 
-        for profile in org_data.profiles:
+        # profiles
+        for profile in org_data.get("profiles", []):
             profile_obj = Profile.from_dict(profile)
 
             # Update userid if necessarys
@@ -873,8 +881,9 @@ class OrgOps:
 
             await self.profiles_db.insert_one(profile_obj.to_dict())
 
+        # workflows
         workflow_userid_fields = ["createdBy", "modifiedBy", "lastStartedBy"]
-        for workflow in org_data.workflows:
+        for workflow in org_data.get("workflows", []):
             # Update userid fields if necessary
             for userid_field in workflow_userid_fields:
                 old_userid = workflow.get(userid_field)
@@ -884,7 +893,8 @@ class OrgOps:
             crawl_config = CrawlConfig.from_dict(workflow)
             await self.crawl_configs_db.insert_one(crawl_config.to_dict())
 
-        for rev in org_data.workflowRevisions:
+        # workflowRevisions
+        for rev in org_data.get("workflowRevisions", []):
             # Update userid if necessary
             old_userid = rev.get("modifiedBy")
             if old_userid and old_userid in user_id_map:
@@ -894,7 +904,8 @@ class OrgOps:
                 ConfigRevision.from_dict(rev).to_dict()
             )
 
-        for item in org_data.archivedItems:
+        # archivedItems
+        for item in org_data.get("archivedItems", []):
             item_id = str(item["_id"])
 
             item_obj = None
@@ -923,10 +934,12 @@ class OrgOps:
                 item_obj.files, org, update_presigned_url=True, crawl_id=item_id
             )
 
-        for page in org_data.pages:
+        # pages
+        for page in org_data.get("pages", []):
             await self.pages_db.insert_one(Page.from_dict(page).to_dict())
 
-        for collection in org_data.collections:
+        # collections
+        for collection in org_data.get("collections", []):
             await self.colls_db.insert_one(Collection.from_dict(collection).to_dict())
 
         return {"imported": True}
@@ -1263,7 +1276,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
 
     @app.post("/orgs/import/json", tags=["organizations"])
     async def import_org(
-        org_data: OrgImportExport,
+        request: Request,
         user: User = Depends(user_dep),
         ignoreVersion: bool = False,
         storageName: Optional[str] = None,
@@ -1272,7 +1285,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         return await ops.import_org(
-            org_data, ignore_version=ignoreVersion, storage_name=storageName
+            request.stream(), ignore_version=ignoreVersion, storage_name=storageName
         )
 
     return ops
