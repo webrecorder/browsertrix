@@ -29,6 +29,7 @@ from .models import (
     OrgWebhookUrls,
     CreateOrg,
     RenameOrg,
+    OrgPaymentSuspendedUpdate,
     UpdateRole,
     RemovePendingInvite,
     RemoveFromOrg,
@@ -272,6 +273,14 @@ class OrgOps:
         set_dict = org.dict(include={"customStorages": True})
 
         return await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
+
+    async def update_payment_suspended(
+        self, org: Organization, update: OrgPaymentSuspendedUpdate
+    ):
+        """Update paymentSuspended status in org"""
+        return await self.orgs.find_one_and_update(
+            {"_id": org.id}, {"$set": {"paymentSuspended": update.paymentSuspended}}
+        )
 
     async def update_quotas(self, org: Organization, quotas: OrgQuotas):
         """update organization quotas"""
@@ -802,6 +811,14 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="duplicate_org_name")
 
+        return {"updated": True}
+
+    @router.post("/update-payment-suspended", tags=["organizations"])
+    async def update_org_payment_suspended(
+        update: OrgPaymentSuspendedUpdate,
+        org: Organization = Depends(org_owner_dep),
+    ):
+        await ops.update_payment_suspended(org, update)
         return {"updated": True}
 
     @router.post("/quotas", tags=["organizations"])

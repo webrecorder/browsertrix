@@ -486,3 +486,28 @@ def test_get_org_slug_lookup_non_superadmin(crawler_auth_headers):
     r = requests.get(f"{API_PREFIX}/orgs/slug-lookup", headers=crawler_auth_headers)
     assert r.status_code == 403
     assert r.json()["detail"] == "Not Allowed"
+
+
+def test_update_payment_suspended(admin_auth_headers, default_org_id):
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    assert r.json()["paymentSuspended"] in (False, None)
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/update-payment-suspended",
+        headers=admin_auth_headers,
+        json={"paymentSuspended": True},
+    )
+    assert r.json()["updated"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    assert r.json()["paymentSuspended"] is True
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/update-payment-suspended",
+        headers=admin_auth_headers,
+        json={"paymentSuspended": False},
+    )
+    assert r.json()["updated"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    assert r.json()["paymentSuspended"] is False

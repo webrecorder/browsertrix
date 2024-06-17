@@ -966,6 +966,13 @@ class OrgQuotaUpdate(BaseModel):
 
 
 # ============================================================================
+class OrgPaymentSuspendedUpdate(BaseModel):
+    """Organization quota update (to track changes over time)"""
+
+    paymentSuspended: bool
+
+
+# ============================================================================
 class OrgWebhookUrls(BaseModel):
     """Organization webhook URLs"""
 
@@ -1019,6 +1026,8 @@ class OrgOut(BaseMongoModel):
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 
+    paymentSuspended: Optional[bool]
+
 
 # ============================================================================
 class Organization(BaseMongoModel):
@@ -1062,6 +1071,8 @@ class Organization(BaseMongoModel):
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 
     origin: Optional[AnyHttpUrl] = None
+
+    paymentSuspended: Optional[bool] = False
 
     def is_owner(self, user):
         """Check if user is owner"""
