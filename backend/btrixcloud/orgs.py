@@ -29,6 +29,7 @@ from .models import (
     OrgWebhookUrls,
     CreateOrg,
     RenameOrg,
+    OptionalRenameOrg,
     UpdateRole,
     RemovePendingInvite,
     RemoveFromOrg,
@@ -870,9 +871,19 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         return {"invited": "existing_user"}
 
     @app.post("/orgs/invite-accept/{token}", tags=["invites"])
-    async def accept_invite(token: str, user: User = Depends(user_dep)):
+    async def accept_invite(
+        token: str, rename: OptionalRenameOrg, user: User = Depends(user_dep)
+    ):
         invite = await invites.accept_user_invite(user, token, user_manager)
         org = await ops.add_user_by_invite(invite, user)
+
+        if rename.name or rename.slug:
+            if rename.name:
+                org.name = rename.name
+            if rename.slug:
+                org.slug = rename.slug
+            await ops.update_slug_and_name(org)
+
         return {
             "added": True,
             "orgName": org.name,
