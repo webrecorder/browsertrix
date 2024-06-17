@@ -328,6 +328,17 @@ class UserManager:
         if invite.oid:
             org = await self.org_ops.get_org_for_user_by_id(invite.oid, inviter)
             result["orgName"] = org.name
+            result["orgSlug"] = org.slug
+
+            result["firstOrgAdmin"] = False
+            org_owners = await self.org_ops.get_org_owners(org)
+            if not org_owners:
+                result["firstOrgAdmin"] = True
+
+            # Require rename in frontend if org name is set to id
+            result["orgNameRequired"] = False
+            if str(org.name) == str(org.id):
+                result["orgNameRequired"] = True
 
         return result
 

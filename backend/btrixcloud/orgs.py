@@ -365,7 +365,7 @@ class OrgOps:
             )
 
         await self.add_user_to_org(org, user.id, invite.role)
-        return True
+        return org
 
     async def add_user_to_org(self, org: Organization, userid: UUID, role: UserRole):
         """Add user to organization with specified role"""
@@ -872,9 +872,12 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     @app.post("/orgs/invite-accept/{token}", tags=["invites"])
     async def accept_invite(token: str, user: User = Depends(user_dep)):
         invite = await invites.accept_user_invite(user, token, user_manager)
-
-        await ops.add_user_by_invite(invite, user)
-        return {"added": True}
+        org = await ops.add_user_by_invite(invite, user)
+        return {
+            "added": True,
+            "orgName": org.name,
+            "orgSlug": org.slug,
+        }
 
     @router.get("/invites", tags=["invites"])
     async def get_pending_org_invites(
