@@ -60,6 +60,8 @@ data:
 
   BILLING_ENABLED: "{{ .Values.billing_enabled }}"
 
+  SALES_EMAIL: "{{ .Values.sales_email }}"
+
 ---
 apiVersion: v1
 kind: ConfigMap
