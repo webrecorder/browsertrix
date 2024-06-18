@@ -16,4 +16,5 @@ def test_settings():
         "maxPagesPerCrawl": 4,
         "maxScale": 3,
         "defaultPageLoadTimeSeconds": 120,
+        "billingEnabled": False,
     }

@@ -68,6 +68,7 @@ def main():
         ),
         "maxPagesPerCrawl": int(os.environ.get("MAX_PAGES_PER_CRAWL", 0)),
         "maxScale": int(os.environ.get("MAX_CRAWL_SCALE", 3)),
+        "billingEnabled": is_bool(os.environ.get("BILLING_ENABLED")),
     }
 
     invites = init_invites(mdb, email)

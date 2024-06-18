@@ -58,6 +58,8 @@ data:
 
   MAX_CRAWLER_MEMORY: "{{ .Values.max_crawler_memory }}"
 
+  BILLING_ENABLED: "{{ .Values.billing_enabled }}"
+
 ---
 apiVersion: v1
 kind: ConfigMap

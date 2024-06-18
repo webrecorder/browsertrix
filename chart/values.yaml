@@ -110,6 +110,8 @@ job_memory: "70Mi"
 
 profile_browser_idle_seconds: 60
 
+billing_enabled: false
+
 # if set, print last 'log_failed_crawl_lines' of each failed
 # crawl pod to backend operator stdout
 # mostly intended for debugging / testing
