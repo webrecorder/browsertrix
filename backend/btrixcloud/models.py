@@ -1211,17 +1211,24 @@ class OrgMetrics(BaseModel):
 
 
 # ============================================================================
-class OrgImportExport(BaseModel):
-    """Model for org import/export"""
+class OrgImportExportData(BaseModel):
+    """Model for org import/export data"""
 
+    dbVersion: str
     org: Dict[str, Any]
+    profiles: List[Dict[str, Any]]
     workflows: List[Dict[str, Any]]
     workflowRevisions: List[Dict[str, Any]]
     archivedItems: List[Dict[str, Any]]
     pages: List[Dict[str, Any]]
-    profiles: List[Dict[str, Any]]
     collections: List[Dict[str, Any]]
-    dbVersion: str
+
+
+# ============================================================================
+class OrgImportExport(BaseModel):
+    """Model for org import/export"""
+
+    data: OrgImportExportData
 
 
 # ============================================================================

@@ -11,6 +11,7 @@ import time
 import urllib.parse
 from uuid import UUID, uuid4
 from datetime import datetime
+from tempfile import NamedTemporaryFile
 
 from typing import Optional, TYPE_CHECKING, Dict, List, Any
 
@@ -802,10 +803,10 @@ class OrgOps:
 
     async def import_org(
         self,
-        stream,
+        stream_file_object,
         ignore_version: bool = False,
         storage_name: Optional[str] = None,
-    ) -> Dict[str, bool]:
+    ):
         """Import org from exported org JSON
 
         :param stream: Stream of org JSON export
@@ -813,7 +814,9 @@ class OrgOps:
         :param storage_name: Update storage refs to use new name if provided
         """
         # pylint: disable=too-many-branches, too-many-statements
-        org_data = json_stream.load(stream)
+
+        org_stream = json_stream.load(stream_file_object)
+        org_data = org_stream["data"]
 
         # dbVersion
         version_res = await self.version_db.find_one()
@@ -828,9 +831,16 @@ class OrgOps:
 
         # org
         stream_org = org_data["org"]
+        stream_org = json_stream.to_standard_types(stream_org)
         oid = UUID(stream_org["_id"])
 
-        if await self.get_org_by_id(oid):
+        existing_org: Optional[Organization] = None
+        try:
+            existing_org = await self.get_org_by_id(oid)
+        except HTTPException:
+            pass
+
+        if existing_org:
             print(f"Org {oid} already exists, quitting", flush=True)
             raise HTTPException(status_code=400, detail="org_already_exists")
 
@@ -868,6 +878,7 @@ class OrgOps:
 
         # profiles
         for profile in org_data.get("profiles", []):
+            profile = json_stream.to_standard_types(profile)
             profile_obj = Profile.from_dict(profile)
 
             # Update userid if necessarys
@@ -884,6 +895,7 @@ class OrgOps:
         # workflows
         workflow_userid_fields = ["createdBy", "modifiedBy", "lastStartedBy"]
         for workflow in org_data.get("workflows", []):
+            workflow = json_stream.to_standard_types(workflow)
             # Update userid fields if necessary
             for userid_field in workflow_userid_fields:
                 old_userid = workflow.get(userid_field)
@@ -895,6 +907,7 @@ class OrgOps:
 
         # workflowRevisions
         for rev in org_data.get("workflowRevisions", []):
+            rev = json_stream.to_standard_types(rev)
             # Update userid if necessary
             old_userid = rev.get("modifiedBy")
             if old_userid and old_userid in user_id_map:
@@ -906,6 +919,7 @@ class OrgOps:
 
         # archivedItems
         for item in org_data.get("archivedItems", []):
+            item = json_stream.to_standard_types(item)
             item_id = str(item["_id"])
 
             item_obj = None
@@ -936,13 +950,13 @@ class OrgOps:
 
         # pages
         for page in org_data.get("pages", []):
+            page = json_stream.to_standard_types(page)
             await self.pages_db.insert_one(Page.from_dict(page).to_dict())
 
         # collections
         for collection in org_data.get("collections", []):
+            collection = json_stream.to_standard_types(collection)
             await self.colls_db.insert_one(Collection.from_dict(collection).to_dict())
-
-        return {"imported": True}
 
 
 # ============================================================================
@@ -1284,8 +1298,20 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return await ops.import_org(
-            request.stream(), ignore_version=ignoreVersion, storage_name=storageName
-        )
+        temp_file = NamedTemporaryFile(delete=False)
+        async for chunk in request.stream():
+            temp_file.write(chunk)
+        temp_file.seek(0)
+
+        with open(temp_file.name, "rb") as stream_file_object:
+            await ops.import_org(
+                stream_file_object,
+                ignore_version=ignoreVersion,
+                storage_name=storageName,
+            )
+
+        temp_file.close()
+
+        return {"imported": True}
 
     return ops
