@@ -20,6 +20,7 @@ from pymongo.errors import AutoReconnect, DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
 import json_stream
 
+from .crawlconfigs import get_warc_prefix
 from .models import (
     SUCCESSFUL_STATES,
     RUNNING_STATES,
@@ -1298,6 +1299,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
+        # pylint: disable=consider-using-with
         temp_file = NamedTemporaryFile(delete=False)
         async for chunk in request.stream():
             temp_file.write(chunk)

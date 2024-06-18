@@ -907,21 +907,6 @@ class CrawlConfigOps:
         """Get crawler image name by id"""
         return self.crawler_images_map.get(crawler_channel or "")
 
-    def get_warc_prefix(self, org: Organization, crawlconfig: CrawlConfig) -> str:
-        """Generate WARC prefix slug from org slug, name or url
-        if no name is provided, hostname is used from url, otherwise
-        url is ignored"""
-        name = crawlconfig.name
-        if not name:
-            if crawlconfig.config.seeds and len(crawlconfig.config.seeds):
-                url = crawlconfig.config.seeds[0].url
-                parts = urllib.parse.urlsplit(url)
-                name = parts.netloc
-
-        name = slug_from_name(name or "")
-        prefix = org.slug + "-" + name
-        return prefix[:80]
-
 
 # ============================================================================
 # pylint: disable=too-many-locals
@@ -995,6 +980,23 @@ async def stats_recompute_all(crawl_configs, crawls, cid: UUID):
     )
 
     return result
+
+
+# ============================================================================
+def get_warc_prefix(org: Organization, crawlconfig: CrawlConfig) -> str:
+    """Generate WARC prefix slug from org slug, name or url
+    if no name is provided, hostname is used from url, otherwise
+    url is ignored"""
+    name = crawlconfig.name
+    if not name:
+        if crawlconfig.config.seeds and len(crawlconfig.config.seeds):
+            url = crawlconfig.config.seeds[0].url
+            parts = urllib.parse.urlsplit(url)
+            name = parts.netloc
+
+    name = slug_from_name(name or "")
+    prefix = org.slug + "-" + name
+    return prefix[:80]
 
 
 # ============================================================================
