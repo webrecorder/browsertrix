@@ -23,6 +23,7 @@ from .models import (
     PageNoteEdit,
     PageNoteDelete,
     QARunBucketStats,
+    Crawl,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import from_k8s_date, str_list_to_bools
@@ -191,9 +192,11 @@ class PageOps:
         if file_count == 0 and error_count == 0:
             return
 
-        crawl = await self.crawls.find_one({"_id": crawl_id, "type": "crawl"})
-        if not crawl:
+        crawl_dict = await self.crawls.find_one({"_id": crawl_id, "type": "crawl"})
+        if not crawl_dict:
             raise HTTPException(status_code=404, detail="crawl_not_found")
+
+        crawl = Crawl.from_dict(crawl_dict)
 
         file_update_operator = "$inc"
         if crawl.filePageCount is None:
