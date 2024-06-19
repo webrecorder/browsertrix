@@ -175,10 +175,18 @@ class PageOps:
         error_count = 0
 
         for page in pages:
-            if page.loadState == 0:
-                error_count += 1
             if page.loadState == 2 and "html" not in page.mime:
                 file_count += 1
+                page.isFile = True
+
+            if page.loadState == 0:
+                error_count += 1
+                page.isError = True
+
+            if page.isFile or page.isError:
+                await self.pages.find_one_and_update(
+                    {"_id": page.id}, {"$set": page.to_dict()}
+                )
 
         if file_count == 0 and error_count == 0:
             return
