@@ -1573,8 +1573,8 @@ class Page(BaseMongoModel):
     approved: Optional[bool] = None
     notes: List[PageNote] = []
 
-    isFile: bool = False
-    isError: bool = False
+    isFile: Optional[bool] = False
+    isError: Optional[bool] = False
 
 
 # ============================================================================
