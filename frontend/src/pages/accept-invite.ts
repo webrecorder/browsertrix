@@ -166,19 +166,10 @@ export class AcceptInvite extends TailwindElement {
     if (!this.authState) return;
 
     try {
-      // this.inviteInfo = await this.apiFetch<UserOrgInviteInfo>(
-      //   `/users/me/invite/${this.token}`,
-      //   this.authState,
-      // );
-
-      // TEMP test data
-      this.inviteInfo = {
-        ...this.inviteInfo!,
-        firstOrgAdmin: true,
-        orgName: "TEMP TEST ORG",
-        orgSlug: "temp-test-org",
-        orgNameRequired: true,
-      };
+      this.inviteInfo = await this.api.fetch<UserOrgInviteInfo>(
+        `/users/me/invite/${this.token}`,
+        this.authState,
+      );
     } catch {
       this.serverError = msg("This invitation is not valid");
     }

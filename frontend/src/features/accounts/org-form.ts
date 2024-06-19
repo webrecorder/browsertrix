@@ -53,6 +53,7 @@ export class OrgForm extends TailwindElement {
             minlength="2"
             maxlength="40"
             help-text=${msg("You can change this in your org settings later.")}
+            required
           >
             <sl-icon name="check-lg" slot="suffix"></sl-icon>
           </sl-input>
@@ -67,6 +68,7 @@ export class OrgForm extends TailwindElement {
             minlength="2"
             maxlength="30"
             help-text=${helpText(inviteInfo.orgSlug)}
+            required
             @sl-input=${(e: InputEvent) => {
               const input = e.target as SlInput;
               input.helpText = helpText(slugify(input.value, { strict: true }));

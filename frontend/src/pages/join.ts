@@ -3,18 +3,26 @@ import { type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
-import type { UserOrgInviteInfo } from "@/types/user";
+import type { OrgFormSubmitEventDetail } from "@/features/accounts/org-form";
+import type { CurrentUser, UserOrgInviteInfo } from "@/types/user";
+import { isApiError } from "@/utils/api";
 import AuthService, {
   type AuthState,
   type LoggedInEventDetail,
 } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 
+/**
+ * @fires btrix-update-user-info
+ */
 @localized()
 @customElement("btrix-join")
 export class Join extends LiteElement {
   @property({ type: Object })
   authState?: AuthState;
+
+  @property({ type: Object })
+  userInfo?: CurrentUser;
 
   @property({ type: String })
   token?: string;
@@ -55,8 +63,10 @@ export class Join extends LiteElement {
       >`;
     }
 
-    const isRegistered =
-      this.authState && this.authState.username === this.email;
+    // const isRegistered =
+    //   this.authState && this.authState.username === this.email;
+
+    const isRegistered = Boolean(this.authState);
 
     return html`
       <article
@@ -79,7 +89,7 @@ export class Join extends LiteElement {
             () => html`
               <btrix-org-form
                 .inviteInfo=${this.inviteInfo}
-                @submit=${this.onSubmitOrgForm}
+                @btrix-submit=${this.onSubmitOrgForm}
               ></btrix-org-form>
             `,
             () => html`
@@ -137,14 +147,6 @@ export class Join extends LiteElement {
 
     if (resp.status === 200) {
       this.inviteInfo = await resp.json();
-      // TEMP test data
-      // this.inviteInfo = {
-      //   ...this.inviteInfo!,
-      //   firstOrgAdmin: true,
-      //   orgName: "TEMP TEST ORG",
-      //   orgSlug: "temp-test-org",
-      //   orgNameRequired: true,
-      // };
     } else if (resp.status === 404) {
       this.serverError = msg(
         "This invite doesn't exist or has expired. Please ask the organization administrator to resend an invitation.",
@@ -163,10 +165,45 @@ export class Join extends LiteElement {
     );
   }
 
-  private onSubmitOrgForm(e: SubmitEvent) {
-    e.preventDefault();
-    e.stopPropagation();
+  private async onSubmitOrgForm(e: CustomEvent<OrgFormSubmitEventDetail>) {
+    if (!this.userInfo) {
+      console.debug("missing user info");
+      return;
+    }
 
-    console.log("TODO");
+    const org = this.userInfo.orgs[0];
+    const { values } = e.detail;
+
+    try {
+      await this.apiFetch(`/orgs/${org.id}/rename`, this.authState!, {
+        method: "POST",
+        body: JSON.stringify({
+          name: values.orgName,
+          slug: values.orgSlug,
+        }),
+      });
+
+      this.notify({
+        message: msg("Updated organization."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+
+      await this.dispatchEvent(
+        new CustomEvent("btrix-update-user-info", { bubbles: true }),
+      );
+      const newSlug = values.orgSlug;
+      if (newSlug) {
+        this.navTo(`/orgs/${newSlug}`);
+      }
+    } catch (e) {
+      this.notify({
+        message: isApiError(e)
+          ? e.message
+          : msg("Sorry, couldn't update organization at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 }
