@@ -68,7 +68,7 @@ class PageOps:
                     continue
 
                 if len(pages_buffer) > batch_size:
-                    await self._add_pages_to_db(pages_buffer)
+                    await self._add_pages_to_db(crawl_id, pages_buffer)
 
                 pages_buffer.append(
                     self._get_page_from_dict(page_dict, crawl_id, crawl.oid)
@@ -76,7 +76,7 @@ class PageOps:
 
             # Add any remaining pages in buffer to db
             if pages_buffer:
-                await self._add_pages_to_db(pages_buffer)
+                await self._add_pages_to_db(crawl_id, pages_buffer)
 
             print(f"Added pages for crawl {crawl_id} to db", flush=True)
         # pylint: disable=broad-exception-caught, raise-missing-from
@@ -110,7 +110,7 @@ class PageOps:
             ),
         )
 
-    async def _add_pages_to_db(self, pages: List[Page]):
+    async def _add_pages_to_db(self, crawl_id: str, pages: List[Page]):
         """Add batch of pages to db in one insert"""
         result = await self.pages.insert_many(
             [

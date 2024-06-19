@@ -26,14 +26,14 @@ class Migration(BaseMigration):
         pages_db = self.mdb["pages"]
         crawls_db = self.mdb["crawls"]
 
-        cursor = self.crawls_db.find({"type": "crawl", "filePageCount": None})
+        cursor = crawls_db.find({"type": "crawl", "filePageCount": None})
         async for crawl_dict in cursor:
             try:
                 crawl = Crawl.from_dict(crawl_dict)
                 crawl.filePageCount = 0
                 crawl.errorPageCount = 0
 
-                cursor = self.pages_db.find({"crawl_id": crawl.id})
+                cursor = pages_db.find({"crawl_id": crawl.id})
                 async for page_dict in cursor:
                     page = Page.from_dict(page_dict)
 
@@ -49,11 +49,11 @@ class Migration(BaseMigration):
                     else:
                         page.isError = False
 
-                    await self.pages_db.find_one_and_update(
+                    await pages_db.find_one_and_update(
                         {"_id": page.id}, {"$set": page.to_dict()}
                     )
 
-                await self.crawls_db.find_one_and_update(
+                await crawls_db.find_one_and_update(
                     {"_id": crawl.id, "type": "crawl"}, {"$set": crawl.to_dict()}
                 )
             # pylint: disable=broad-exception-caught
