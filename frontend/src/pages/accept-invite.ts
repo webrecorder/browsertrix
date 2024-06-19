@@ -1,18 +1,21 @@
 import { localized, msg, str } from "@lit/localize";
-import type { TemplateResult } from "lit";
+import { html, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
+import { TailwindElement } from "@/classes/TailwindElement";
+import { APIController } from "@/controllers/api";
+import { NavigateController } from "@/controllers/navigate";
+import { NotifyController } from "@/controllers/notify";
 import type { OrgFormSubmitEventDetail } from "@/features/accounts/org-form";
 import { ROUTES } from "@/routes";
 import type { UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 @localized()
 @customElement("btrix-accept-invite")
-export class AcceptInvite extends LiteElement {
+export class AcceptInvite extends TailwindElement {
   @property({ type: Object })
   authState?: AuthState;
 
@@ -27,6 +30,10 @@ export class AcceptInvite extends LiteElement {
 
   @state()
   private inviteInfo?: UserOrgInviteInfo;
+
+  private readonly api = new APIController(this);
+  private readonly navigate = new NavigateController(this);
+  private readonly notify = new NotifyController(this);
 
   private get orgNameRequired() {
     if (!this.inviteInfo) return null;
@@ -54,14 +61,14 @@ export class AcceptInvite extends LiteElement {
     if (this.isLoggedIn) {
       void this.getInviteInfo();
     } else {
-      this.notify({
+      this.notify.toast({
         message: msg("Log in to continue."),
         variant: "success",
         icon: "check2-circle",
         duration: 10000,
       });
 
-      this.navTo(
+      this.navigate.to(
         `/log-in?redirectUrl=${encodeURIComponent(
           `${window.location.pathname}${window.location.search}`,
         )}`,
@@ -186,13 +193,17 @@ export class AcceptInvite extends LiteElement {
     }
 
     try {
-      await this.apiFetch(`/orgs/invite-accept/${this.token}`, this.authState, {
-        method: "POST",
-        body: JSON.stringify(params || {}),
-      });
+      await this.api.fetch(
+        `/orgs/invite-accept/${this.token}`,
+        this.authState,
+        {
+          method: "POST",
+          body: JSON.stringify(params || {}),
+        },
+      );
 
       // TODO handle new org name
-      this.notify({
+      this.notify.toast({
         message: msg(
           str`You've joined ${this.inviteInfo?.orgName || msg("Browsertrix")}.`,
         ),
@@ -200,7 +211,7 @@ export class AcceptInvite extends LiteElement {
         icon: "check2-circle",
       });
 
-      this.navTo(ROUTES.home);
+      this.navigate.to(ROUTES.home);
     } catch (err) {
       if (isApiError(err) && err.message === "Invalid Invite Code") {
         this.serverError = msg("This invitation is not valid");
@@ -212,7 +223,7 @@ export class AcceptInvite extends LiteElement {
 
   private onDecline() {
     // TODO handle new org name
-    this.notify({
+    this.notify.toast({
       message: msg(
         str`You've declined to join ${this.inviteInfo?.orgName || msg("Browsertrix")}.`,
       ),
@@ -220,7 +231,7 @@ export class AcceptInvite extends LiteElement {
       icon: "info-circle",
     });
 
-    this.navTo(ROUTES.home);
+    this.navigate.to(ROUTES.home);
   }
 
   private onSubmitOrgForm(e: CustomEvent<OrgFormSubmitEventDetail>) {
