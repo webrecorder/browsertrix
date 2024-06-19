@@ -1,10 +1,8 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlInput } from "@shoelace-style/shoelace";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
-import slugify from "slugify";
 
 import type { Input as BtrixInput } from "@/components/ui/input";
 import type { UserOrgInviteInfo } from "@/types/user";
@@ -74,7 +72,7 @@ export class SignUpForm extends LiteElement {
 
     return html`
       <form @submit=${this.onSubmit} aria-describedby="formError">
-        ${when(this.inviteInfo, this.renderOrgFields)} ${serverError}
+        ${serverError}
 
         <div class="mb-5">
           ${this.email
@@ -155,60 +153,6 @@ export class SignUpForm extends LiteElement {
       </form>
     `;
   }
-
-  private readonly renderOrgFields = (inviteInfo: UserOrgInviteInfo) => {
-    if (!inviteInfo.firstOrgAdmin || !inviteInfo.orgNameRequired) return;
-
-    const helpText = (slug: unknown) =>
-      msg(
-        str`Your org home page will be
-        ${window.location.protocol}//${window.location.hostname}/orgs/${slug || ""}`,
-      );
-
-    return html`
-      <h2 class="mb-5 border-b pb-2 text-base font-medium leading-none">
-        ${msg("Your Organization")}
-      </h2>
-      <div class="mb-5">
-        <sl-input
-          name="orgName"
-          label=${msg("Org name")}
-          placeholder=${msg("My Organization")}
-          autocomplete="off"
-          value=${inviteInfo.orgName || ""}
-          minlength="2"
-          maxlength="40"
-          help-text=${msg("You can change this in your org settings later.")}
-          @sl-change=${() => {
-            console.log("TODO validate name");
-          }}
-        >
-          <sl-icon name="check-lg" slot="suffix"></sl-icon>
-        </sl-input>
-      </div>
-      <div class="mb-12">
-        <sl-input
-          name="orgSlug"
-          label=${msg("Custom URL identifier")}
-          placeholder="my-organization"
-          autocomplete="off"
-          value=${inviteInfo.orgSlug || ""}
-          minlength="2"
-          maxlength="30"
-          help-text=${helpText(inviteInfo.orgSlug)}
-          @sl-input=${(e: InputEvent) => {
-            const input = e.target as SlInput;
-            input.helpText = helpText(slugify(input.value, { strict: true }));
-          }}
-        >
-        </sl-input>
-      </div>
-      <h2 class="mb-5 border-b pb-2 text-base font-medium leading-none">
-        ${msg("Your Account")}
-      </h2>
-    `;
-  };
-
   private readonly renderPasswordStrength = () => html`
     <div class="my-3">
       <btrix-pw-strength-alert

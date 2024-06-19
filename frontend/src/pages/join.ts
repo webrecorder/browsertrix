@@ -1,14 +1,21 @@
 import { localized, msg } from "@lit/localize";
 import { type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import type { UserOrgInviteInfo } from "@/types/user";
-import AuthService, { type LoggedInEventDetail } from "@/utils/AuthService";
+import AuthService, {
+  type AuthState,
+  type LoggedInEventDetail,
+} from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 
 @localized()
 @customElement("btrix-join")
 export class Join extends LiteElement {
+  @property({ type: Object })
+  authState?: AuthState;
+
   @property({ type: String })
   token?: string;
 
@@ -20,6 +27,14 @@ export class Join extends LiteElement {
 
   @state()
   private inviteInfo?: UserOrgInviteInfo;
+
+  private get orgNameRequired() {
+    if (!this.inviteInfo) return null;
+
+    return Boolean(
+      this.inviteInfo.firstOrgAdmin && this.inviteInfo.orgNameRequired,
+    );
+  }
 
   connectedCallback(): void {
     if (this.token && this.email) {
@@ -40,11 +55,14 @@ export class Join extends LiteElement {
       >`;
     }
 
+    const isRegistered =
+      this.authState && this.authState.username === this.email;
+
     return html`
       <article
         class="flex w-full flex-col justify-center gap-12 p-5 md:flex-row md:gap-16"
       >
-        <header class="mt-12 max-w-sm">
+        <header class="mt-12 max-w-sm flex-1">
           <div class="md:sticky md:top-12">
             <h1 class="sticky top-0 mb-5 text-xl font-semibold">
               ${msg("Create your Browsertrix account")}
@@ -54,15 +72,24 @@ export class Join extends LiteElement {
         </header>
 
         <main
-          class="max-w-md md:rounded-lg md:border md:bg-white md:p-12 md:shadow-lg"
+          class="min-h-96 max-w-md flex-1 md:rounded-lg md:border md:bg-white md:p-12 md:shadow-lg"
         >
-          <h1></h1>
-          <btrix-sign-up-form
-            email=${this.email!}
-            inviteToken=${this.token!}
-            .inviteInfo=${this.inviteInfo}
-            @authenticated=${this.onAuthenticated}
-          ></btrix-sign-up-form>
+          ${when(
+            isRegistered,
+            () => html`
+              <btrix-org-setup-form
+                .inviteInfo=${this.inviteInfo}
+              ></btrix-org-setup-form>
+            `,
+            () => html`
+              <btrix-sign-up-form
+                email=${this.email!}
+                inviteToken=${this.token!}
+                .inviteInfo=${this.inviteInfo}
+                @authenticated=${this.onAuthenticated}
+              ></btrix-sign-up-form>
+            `,
+          )}
         </main>
       </article>
     `;
@@ -74,7 +101,9 @@ export class Join extends LiteElement {
     let message: string | TemplateResult = "";
 
     if (this.inviteInfo.firstOrgAdmin && this.inviteInfo.orgNameRequired) {
-      message = msg("Register your organization and user account.");
+      message = msg(
+        "You've been invited to join Browsertrix. Register your account and organization to start web archiving.",
+      );
     } else if (this.inviteInfo.inviterName && this.inviteInfo.orgName) {
       message = msg(
         html`You’ve been invited by
@@ -128,8 +157,7 @@ export class Join extends LiteElement {
     this.dispatchEvent(
       AuthService.createLoggedInEvent({
         ...event.detail,
-        // TODO separate logic for confirmation message
-        // firstLogin: true,
+        api: Boolean(this.orgNameRequired),
       }),
     );
   }

@@ -545,6 +545,7 @@ export class App extends LiteElement {
       case "join":
         return html`<btrix-join
           class="flex w-full items-center justify-center md:bg-neutral-50"
+          .authState="${this.authService.authState}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
         ></btrix-join>`;
