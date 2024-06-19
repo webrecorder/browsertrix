@@ -175,11 +175,12 @@ class OrgOps:
 
         return Organization.from_dict(res)
 
-    async def get_default_org(self):
+    async def get_default_org(self) -> Optional[Organization]:
         """Get default organization"""
         res = await self.orgs.find_one({"default": True})
         if res:
             return Organization.from_dict(res)
+        return None
 
     async def create_default_org(self):
         """Create default organization if doesn't exist."""
@@ -344,20 +345,24 @@ class OrgOps:
             return_document=ReturnDocument.AFTER,
         )
 
-    async def handle_new_user_invite(self, invite_token: UUID, user: User):
+    async def handle_new_user_invite(
+        self, invite_token: UUID, user: User
+    ) -> InvitePending:
         """Handle invite from a new user"""
         new_user_invite = await self.invites.get_valid_invite(invite_token, user.email)
         await self.add_user_by_invite(new_user_invite, user)
         await self.invites.remove_invite(invite_token)
         return new_user_invite
 
-    async def add_user_by_invite(self, invite: InvitePending, user: User):
+    async def add_user_by_invite(
+        self, invite: InvitePending, user: User
+    ) -> Optional[Organization]:
         """Add user to an org from an InvitePending, if any.
 
         If there's no org to add to (eg. superuser invite), just return.
         """
         if not invite.oid:
-            return
+            return None
 
         org = await self.get_org_by_id(invite.oid)
         if not org:
@@ -876,6 +881,8 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     ):
         invite = await invites.accept_user_invite(user, token, user_manager)
         org = await ops.add_user_by_invite(invite, user)
+        if not org:
+            raise HTTPException(detail="invalid_invite", status_code=400)
 
         if rename.name or rename.slug:
             if rename.name:
