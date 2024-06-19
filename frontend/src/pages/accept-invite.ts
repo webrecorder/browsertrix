@@ -1,16 +1,13 @@
 import { localized, msg, str } from "@lit/localize";
+import type { TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import { ROUTES } from "@/routes";
+import type { UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-
-type InviteInfo = {
-  inviterEmail: string;
-  inviterName: string;
-  orgName: string;
-};
 
 @localized()
 @customElement("btrix-accept-invite")
@@ -28,11 +25,15 @@ export class AcceptInvite extends LiteElement {
   serverError?: string;
 
   @state()
-  private inviteInfo: InviteInfo = {
-    inviterEmail: "",
-    inviterName: "",
-    orgName: "",
-  };
+  private inviteInfo?: UserOrgInviteInfo;
+
+  private get orgNameRequired() {
+    if (!this.inviteInfo) return null;
+
+    return Boolean(
+      this.inviteInfo.firstOrgAdmin && this.inviteInfo.orgNameRequired,
+    );
+  }
 
   connectedCallback(): void {
     if (this.token && this.email) {
@@ -68,11 +69,9 @@ export class AcceptInvite extends LiteElement {
   }
 
   render() {
-    let serverError;
-
     if (this.serverError) {
-      serverError = html`
-        <div>
+      return html`
+        <div class="mb-12">
           <btrix-alert id="formError" variant="danger"
             >${this.serverError}</btrix-alert
           >
@@ -80,64 +79,102 @@ export class AcceptInvite extends LiteElement {
       `;
     }
 
-    const hasInviteInfo = Boolean(this.inviteInfo.inviterEmail);
-    const placeholder = html`<span
-      class="inline-block rounded-full bg-gray-100"
-      style="width: 6em"
-      >&nbsp;</span
-    >`;
-
-    if (serverError && !hasInviteInfo) {
-      return serverError;
-    }
-
     return html`
-      <article class="grid w-full justify-center gap-5 p-5 text-center">
-        ${serverError}
-
-        <main class="md:rounded-lg md:bg-white md:px-12 md:py-12 md:shadow-xl">
-          <div class="mb-3 text-sm text-gray-400">
-            ${msg("Invited by ")}
-            ${this.inviteInfo.inviterName ||
-            this.inviteInfo.inviterEmail ||
-            placeholder}
+      <article
+        class="flex w-full flex-col justify-center gap-12 p-5 md:flex-row md:gap-16"
+      >
+        <header class="my-12 max-w-sm flex-1">
+          <div class="md:sticky md:top-12">
+            <h1 class="sticky top-0 mb-5 text-xl font-semibold">
+              ${msg("Welcome to Browsertrix")}
+            </h1>
+            ${this.renderInviteMessage()}
           </div>
-          <p class="mb-5 text-xl font-semibold">
-            ${msg(
-              html`You've been invited to join
-                <span class="break-words text-primary"
-                  >${hasInviteInfo
-                    ? this.inviteInfo.orgName || msg("Browsertrix")
-                    : placeholder}</span
-                >`,
-            )}
-          </p>
+        </header>
 
-          <div class="text-center">
-            <sl-button class="mr-2" variant="primary" @click=${this.onAccept}
-              >${msg("Accept invitation")}</sl-button
-            >
-            <sl-button @click=${this.onDecline}>${msg("Decline")}</sl-button>
-          </div>
+        <main
+          class="flex max-w-md flex-1 items-center justify-center md:rounded-lg md:border md:bg-white md:p-12 md:shadow-lg"
+        >
+          ${when(
+            this.orgNameRequired,
+            () => html`
+              <form @submit=${this.onSubmitOrgForm}>
+                <btrix-org-fields
+                  .inviteInfo=${this.inviteInfo}
+                ></btrix-org-fields>
+                <sl-button class="w-full" variant="primary" type="submit">
+                  ${msg("Go to Dashboard")}
+                </sl-button>
+              </form>
+            `,
+            () => html`
+              <div class="w-full text-center">
+                <sl-button
+                  class="my-3 block"
+                  variant="primary"
+                  @click=${this.onAccept}
+                >
+                  ${msg("Accept invitation")}
+                </sl-button>
+                <sl-button variant="text" @click=${this.onDecline}
+                  >${msg("Decline")}</sl-button
+                >
+              </div>
+            `,
+          )}
         </main>
       </article>
     `;
+  }
+
+  private renderInviteMessage() {
+    if (!this.inviteInfo) return;
+
+    let message: string | TemplateResult = "";
+
+    if (this.inviteInfo.firstOrgAdmin && this.inviteInfo.orgNameRequired) {
+      message = msg("Register your organization to start web archiving.");
+    } else if (this.inviteInfo.inviterName && this.inviteInfo.orgName) {
+      message = msg(
+        html`You’ve been invited by
+          <strong class="font-medium">${this.inviteInfo.inviterName}</strong>
+          to join the organization
+          <span class="font-medium text-primary">
+            ${this.inviteInfo.orgName}
+          </span>
+          on Browsertrix.`,
+      );
+    } else if (this.inviteInfo.orgName) {
+      message = msg(
+        html`You’ve been invited to join the organization
+          <span class="font-medium text-primary">
+            ${this.inviteInfo.orgName}</span
+          >.`,
+      );
+    }
+
+    if (!message) return;
+
+    return html` <p class="max-w-prose text-neutral-600">${message}</p> `;
   }
 
   private async getInviteInfo() {
     if (!this.authState) return;
 
     try {
-      const data = await this.apiFetch<InviteInfo>(
+      this.inviteInfo = await this.apiFetch<UserOrgInviteInfo>(
         `/users/me/invite/${this.token}`,
         this.authState,
       );
 
-      this.inviteInfo = {
-        inviterEmail: data.inviterEmail,
-        inviterName: data.inviterName,
-        orgName: data.orgName,
-      };
+      // TEMP test data
+      // this.inviteInfo = {
+      //   ...this.inviteInfo!,
+      //   firstOrgAdmin: true,
+      //   orgName: "TEMP TEST ORG",
+      //   orgSlug: "temp-test-org",
+      //   orgNameRequired: true,
+      // };
     } catch {
       this.serverError = msg("This invitation is not valid");
     }
@@ -156,8 +193,11 @@ export class AcceptInvite extends LiteElement {
         method: "POST",
       });
 
+      // TODO handle new org name
       this.notify({
-        message: msg(str`You've joined ${this.inviteInfo.orgName}.`),
+        message: msg(
+          str`You've joined ${this.inviteInfo?.orgName || msg("Browsertrix")}.`,
+        ),
         variant: "success",
         icon: "check2-circle",
       });
@@ -173,12 +213,22 @@ export class AcceptInvite extends LiteElement {
   }
 
   private onDecline() {
+    // TODO handle new org name
     this.notify({
-      message: msg(str`You've declined to join ${this.inviteInfo.orgName}.`),
+      message: msg(
+        str`You've declined to join ${this.inviteInfo?.orgName || msg("Browsertrix")}.`,
+      ),
       variant: "info",
       icon: "info-circle",
     });
 
     this.navTo(ROUTES.home);
+  }
+
+  private onSubmitOrgForm(e: SubmitEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    console.log("TODO");
   }
 }

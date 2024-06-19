@@ -1,4 +1,4 @@
 import("./account-settings");
 import("./invite-form");
-import("./org-setup-form");
+import("./org-fields");
 import("./sign-up-form");

@@ -62,24 +62,29 @@ export class Join extends LiteElement {
       <article
         class="flex w-full flex-col justify-center gap-12 p-5 md:flex-row md:gap-16"
       >
-        <header class="mt-12 max-w-sm flex-1">
+        <header class="my-12 max-w-sm flex-1">
           <div class="md:sticky md:top-12">
             <h1 class="sticky top-0 mb-5 text-xl font-semibold">
-              ${msg("Create your Browsertrix account")}
+              ${msg("Set up your Browsertrix account")}
             </h1>
-            ${this.renderWelcomeMessage()}
+            ${this.renderInviteMessage()}
           </div>
         </header>
 
         <main
-          class="min-h-96 max-w-md flex-1 md:rounded-lg md:border md:bg-white md:p-12 md:shadow-lg"
+          class="max-w-md flex-1 md:rounded-lg md:border md:bg-white md:p-12 md:shadow-lg"
         >
           ${when(
             isRegistered,
             () => html`
-              <btrix-org-setup-form
-                .inviteInfo=${this.inviteInfo}
-              ></btrix-org-setup-form>
+              <form @submit=${this.onSubmitOrgForm}>
+                <btrix-org-fields
+                  .inviteInfo=${this.inviteInfo}
+                ></btrix-org-fields>
+                <sl-button class="w-full" variant="primary" type="submit">
+                  ${msg("Go to Dashboard")}
+                </sl-button>
+              </form>
             `,
             () => html`
               <btrix-sign-up-form
@@ -95,14 +100,14 @@ export class Join extends LiteElement {
     `;
   }
 
-  private renderWelcomeMessage() {
+  private renderInviteMessage() {
     if (!this.inviteInfo) return;
 
     let message: string | TemplateResult = "";
 
-    if (this.inviteInfo.firstOrgAdmin && this.inviteInfo.orgNameRequired) {
+    if (this.orgNameRequired) {
       message = msg(
-        "You've been invited to join Browsertrix. Register your account and organization to start web archiving.",
+        "You're almost there! Register your account and organization to start web archiving.",
       );
     } else if (this.inviteInfo.inviterName && this.inviteInfo.orgName) {
       message = msg(
@@ -135,15 +140,15 @@ export class Join extends LiteElement {
     );
 
     if (resp.status === 200) {
-      // this.inviteInfo = await resp.json();
+      this.inviteInfo = await resp.json();
       // TEMP test data
-      this.inviteInfo = {
-        ...this.inviteInfo!,
-        firstOrgAdmin: true,
-        orgName: "TEMP TEST ORG",
-        orgSlug: "temp-test-org",
-        orgNameRequired: true,
-      };
+      // this.inviteInfo = {
+      //   ...this.inviteInfo!,
+      //   firstOrgAdmin: true,
+      //   orgName: "TEMP TEST ORG",
+      //   orgSlug: "temp-test-org",
+      //   orgNameRequired: true,
+      // };
     } else if (resp.status === 404) {
       this.serverError = msg(
         "This invite doesn't exist or has expired. Please ask the organization administrator to resend an invitation.",
@@ -160,5 +165,12 @@ export class Join extends LiteElement {
         api: Boolean(this.orgNameRequired),
       }),
     );
+  }
+
+  private onSubmitOrgForm(e: SubmitEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    console.log("TODO");
   }
 }
