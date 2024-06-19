@@ -151,7 +151,7 @@ export class SignUpForm extends LiteElement {
           ?disabled=${!this.pwStrengthResults ||
           this.pwStrengthResults.score < PASSWORD_MIN_SCORE}
           type="submit"
-          >${msg("Sign up")}</sl-button
+          >${msg("Create account & log in")}</sl-button
         >
       </form>
     `;

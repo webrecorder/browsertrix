@@ -1,8 +1,18 @@
-import { localized, msg, str } from "@lit/localize";
+import { localized, msg } from "@lit/localize";
 import { customElement, property, state } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import AuthService, { type LoggedInEventDetail } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
+
+type InviteResponseData = {
+  inviterEmail: string;
+  inviterName: string;
+  orgName: string;
+  orgSlug: string;
+  firstOrgAdmin: boolean;
+  orgNameRequired: boolean;
+};
 
 @localized()
 @customElement("btrix-join")
@@ -17,15 +27,7 @@ export class Join extends LiteElement {
   private serverError?: string;
 
   @state()
-  private inviteInfo: {
-    inviterEmail: string;
-    inviterName: string;
-    orgName: string;
-  } = {
-    inviterEmail: "",
-    inviterName: "",
-    orgName: "",
-  };
+  private inviteInfo?: InviteResponseData;
 
   connectedCallback(): void {
     if (this.token && this.email) {
@@ -46,7 +48,7 @@ export class Join extends LiteElement {
       >`;
     }
 
-    const hasInviteInfo = Boolean(this.inviteInfo.inviterEmail);
+    const hasInviteInfo = Boolean(this.inviteInfo?.inviterEmail);
     const placeholder = html`<span
       class="inline-block rounded-full bg-gray-100"
       style="width: 6em"
@@ -56,25 +58,30 @@ export class Join extends LiteElement {
     return html`
       <article class="flex w-full flex-col justify-center p-5 md:flex-row">
         <div class="max-w-sm md:mr-12 md:mt-12">
-          <div class="mb-3 text-gray-500">
-            ${msg(
-              str`Invited by ${
-                this.inviteInfo.inviterName ||
-                this.inviteInfo.inviterEmail ||
-                placeholder
-              }`,
-            )}
-          </div>
           <p class="mb-5 text-xl font-semibold md:text-2xl">
-            ${msg(
-              html`You’ve been invited to join
-                <span class="break-words text-primary"
-                  >${hasInviteInfo
-                    ? this.inviteInfo.orgName || msg("Browsertrix")
-                    : placeholder}</span
-                >.`,
-            )}
+            ${msg("Welcome to Browsertrix.")}
           </p>
+          ${when(
+            this.inviteInfo,
+            (inviteInfo) => html`
+              <p class="text-neutral-600">
+                ${inviteInfo.firstOrgAdmin
+                  ? msg("TODO")
+                  : msg(
+                      html`You’ve been invited by
+                        ${inviteInfo.inviterName ||
+                        inviteInfo.inviterEmail ||
+                        placeholder}
+                        to join
+                        <span class="break-words text-primary"
+                          >${hasInviteInfo
+                            ? inviteInfo.orgName || msg("Browsertrix")
+                            : placeholder}</span
+                        >.`,
+                    )}
+              </p>
+            `,
+          )}
         </div>
 
         <main
@@ -96,16 +103,12 @@ export class Join extends LiteElement {
     );
 
     if (resp.status === 200) {
-      const body = (await resp.json()) as {
-        inviterEmail: string;
-        inviterName: string;
-        orgName: string;
-      };
-
+      this.inviteInfo = await resp.json();
+      // TEMP test data
       this.inviteInfo = {
-        inviterEmail: body.inviterEmail,
-        inviterName: body.inviterName,
-        orgName: body.orgName,
+        ...this.inviteInfo!,
+        firstOrgAdmin: true,
+        orgNameRequired: false,
       };
     } else if (resp.status === 404) {
       this.serverError = msg(
