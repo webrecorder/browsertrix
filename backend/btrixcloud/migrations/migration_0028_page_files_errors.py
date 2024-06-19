@@ -37,6 +37,7 @@ class Migration(BaseMigration):
                 async for page_dict in cursor:
                     page = Page.from_dict(page_dict)
 
+                    # pylint: disable=unsupported-membership-test
                     if page.loadState == 2 and page.mime and "html" not in page.mime:
                         crawl.filePageCount += 1
                         page.isFile = True
