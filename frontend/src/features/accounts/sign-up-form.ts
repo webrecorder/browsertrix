@@ -1,10 +1,13 @@
 import { localized, msg, str } from "@lit/localize";
+import type { SlInput } from "@shoelace-style/shoelace";
 import type { ZxcvbnResult } from "@zxcvbn-ts/core";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
+import slugify from "slugify";
 
 import type { Input as BtrixInput } from "@/components/ui/input";
+import type { UserOrgInviteInfo } from "@/types/user";
 import type { UnderlyingFunction } from "@/types/utils";
 import AuthService from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -30,8 +33,8 @@ export class SignUpForm extends LiteElement {
   @property({ type: String })
   inviteToken?: string;
 
-  @property({ type: Boolean })
-  isOrgInvite?: boolean;
+  @property({ type: Object })
+  inviteInfo?: UserOrgInviteInfo;
 
   @state()
   private serverError?: string;
@@ -71,11 +74,13 @@ export class SignUpForm extends LiteElement {
 
     return html`
       <form @submit=${this.onSubmit} aria-describedby="formError">
+        ${when(this.inviteInfo, this.renderOrgFields)} ${serverError}
+
         <div class="mb-5">
           ${this.email
             ? html`
                 <div style="font-size: var(--sl-input-label-font-size-medium)">
-                  ${msg("Joining as")}
+                  ${msg("Email")}
                 </div>
                 <div class="py-1 font-medium">${this.email}</div>
                 <input
@@ -98,25 +103,6 @@ export class SignUpForm extends LiteElement {
                 </btrix-input>
               `}
         </div>
-        <div class="list- mb-5">
-          <btrix-input
-            id="name"
-            name="name"
-            label=${msg("Your name")}
-            placeholder=${msg("Lisa Simpson", {
-              desc: "Example user’s name",
-            })}
-            autocomplete="nickname"
-            minlength="2"
-            required
-          >
-          </btrix-input>
-          <p class="mt-2 text-gray-500">
-            ${msg(
-              "Your full name, nickname, or another name that org collaborators can see.",
-            )}
-          </p>
-        </div>
         <div class="mb-5">
           <btrix-input
             id="password"
@@ -132,15 +118,29 @@ export class SignUpForm extends LiteElement {
             >}
           >
           </btrix-input>
-          <p class="mt-2 text-gray-500">
+          <p class="mt-2 text-xs text-neutral-500">
             ${msg(
               str`Choose a strong password between ${PASSWORD_MINLENGTH}–${PASSWORD_MAXLENGTH} characters.`,
             )}
           </p>
           ${when(this.pwStrengthResults, this.renderPasswordStrength)}
         </div>
-
-        ${serverError}
+        <div class="mb-5">
+          <btrix-input
+            id="name"
+            name="name"
+            label=${msg("Your name")}
+            autocomplete="nickname"
+            minlength="2"
+            required
+          >
+          </btrix-input>
+          <p class="mt-2 text-xs text-neutral-500">
+            ${msg(
+              "Your full name, nickname, or another name that org collaborators can see.",
+            )}
+          </p>
+        </div>
 
         <sl-button
           class="w-full"
@@ -149,11 +149,65 @@ export class SignUpForm extends LiteElement {
           ?disabled=${!this.pwStrengthResults ||
           this.pwStrengthResults.score < PASSWORD_MIN_SCORE}
           type="submit"
-          >${msg("Create account & log in")}</sl-button
         >
+          ${msg("Create Account")}
+        </sl-button>
       </form>
     `;
   }
+
+  private readonly renderOrgFields = (inviteInfo: UserOrgInviteInfo) => {
+    if (!inviteInfo.firstOrgAdmin || !inviteInfo.orgNameRequired) return;
+
+    const helpText = (slug: unknown) =>
+      msg(
+        str`Your org home page will be
+        ${window.location.protocol}//${window.location.hostname}/orgs/${slug || ""}`,
+      );
+
+    return html`
+      <h2 class="mb-5 border-b pb-2 text-base font-medium leading-none">
+        ${msg("Your Organization")}
+      </h2>
+      <div class="mb-5">
+        <sl-input
+          name="orgName"
+          label=${msg("Org name")}
+          placeholder=${msg("My Organization")}
+          autocomplete="off"
+          value=${inviteInfo.orgName || ""}
+          minlength="2"
+          maxlength="40"
+          help-text=${msg("You can change this in your org settings later.")}
+          @sl-change=${() => {
+            console.log("TODO validate name");
+          }}
+        >
+          <sl-icon name="check-lg" slot="suffix"></sl-icon>
+        </sl-input>
+      </div>
+      <div class="mb-12">
+        <sl-input
+          name="orgSlug"
+          label=${msg("Custom URL identifier")}
+          placeholder="my-organization"
+          autocomplete="off"
+          value=${inviteInfo.orgSlug || ""}
+          minlength="2"
+          maxlength="30"
+          help-text=${helpText(inviteInfo.orgSlug)}
+          @sl-input=${(e: InputEvent) => {
+            const input = e.target as SlInput;
+            input.helpText = helpText(slugify(input.value, { strict: true }));
+          }}
+        >
+        </sl-input>
+      </div>
+      <h2 class="mb-5 border-b pb-2 text-base font-medium leading-none">
+        ${msg("Your Account")}
+      </h2>
+    `;
+  };
 
   private readonly renderPasswordStrength = () => html`
     <div class="my-3">
@@ -209,10 +263,7 @@ export class SignUpForm extends LiteElement {
 
     if (this.inviteToken) {
       registerParams.inviteToken = this.inviteToken;
-
-      if (this.isOrgInvite) {
-        registerParams.newOrg = false;
-      }
+      registerParams.newOrg = false;
     }
 
     const resp = await fetch("/api/auth/register", {
