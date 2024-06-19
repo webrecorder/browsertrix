@@ -90,6 +90,9 @@ export class Join extends LiteElement {
           <btrix-sign-up-form
             email=${this.email!}
             inviteToken=${this.token!}
+            ?isOrgInvite=${Boolean(
+              this.inviteInfo?.firstOrgAdmin || this.inviteInfo?.orgName,
+            )}
             @authenticated=${this.onAuthenticated}
           ></btrix-sign-up-form>
         </main>

@@ -31,8 +31,6 @@ export class SignUpForm extends LiteElement {
   inviteToken?: string;
 
   @property({ type: Boolean })
-  // TODO replace with org info
-  // https://github.com/ikreymer/browsertrix-cloud/issues/35
   isOrgInvite?: boolean;
 
   @state()
