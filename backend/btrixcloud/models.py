@@ -783,8 +783,8 @@ class Crawl(BaseCrawl, CrawlConfigCore):
     qa: Optional[QARun] = None
     qaFinished: Optional[Dict[str, QARun]] = {}
 
-    filePageCount: Optional[int]
-    errorPageCount: Optional[int]
+    filePageCount: Optional[int] = 0
+    errorPageCount: Optional[int] = 0
 
 
 # ============================================================================

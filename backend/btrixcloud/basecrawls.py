@@ -178,21 +178,6 @@ class BaseCrawlOps:
 
         crawl = CrawlOutWithResources.from_dict(res)
 
-        if (
-            crawl.type == "crawl"
-            and crawl.state in SUCCESSFUL_STATES
-            and (crawl.filePageCount is None or crawl.errorPageCount is None)
-        ):
-            crawl.filePageCount = await self.page_ops.get_crawl_file_count(crawl.id)
-            crawl.errorPageCount = await self.page_ops.get_crawl_error_count(crawl.id)
-
-            # If all crawl pages have been added to database, cache counts
-            pages_in_db = await self.page_ops.get_crawl_page_count(crawl.id)
-            if crawl.stats and crawl.stats.done == pages_in_db:
-                await self.page_ops.add_file_error_page_counts_to_crawl(
-                    crawl.id, crawl.filePageCount, crawl.errorPageCount
-                )
-
         if not skip_resources:
             crawl = await self._resolve_crawl_refs(crawl, org, files)
             if crawl.config and crawl.config.seeds:

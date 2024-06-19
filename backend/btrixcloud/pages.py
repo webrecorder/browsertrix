@@ -124,6 +124,8 @@ class PageOps:
             # pylint: disable=broad-exception-raised
             raise Exception("No pages inserted")
 
+        await self.update_crawl_file_and_error_counts(crawl_id, pages)
+
     async def add_page_to_db(
         self,
         page_dict: Dict[str, Any],
@@ -133,12 +135,9 @@ class PageOps:
     ):
         """Add page to database"""
         page = self._get_page_from_dict(page_dict, crawl_id, oid)
-        print(f"PAGE: {page}", flush=True)
-
         page_to_insert = page.to_dict(
             exclude_unset=True, exclude_none=True, exclude_defaults=True
         )
-        print(f"PAGE TO INSERT: {page_to_insert}")
 
         try:
             await self.pages.insert_one(page_to_insert)
@@ -153,6 +152,9 @@ class PageOps:
             )
             return
 
+        if not qa_run_id and page:
+            await self.update_crawl_file_and_error_counts(crawl_id, [page])
+
         # qa data
         if qa_run_id and page:
             compare_dict = page_dict.get("comparison")
@@ -164,6 +166,56 @@ class PageOps:
             print("Adding QA Run Data for Page", page_dict.get("url"), compare)
 
             await self.add_qa_run_for_page(page.id, oid, qa_run_id, compare)
+
+    async def update_crawl_file_and_error_counts(
+        self, crawl_id: str, pages: List[Page]
+    ):
+        """Update crawl filePageCount and errorPageCount for pages."""
+        file_count = 0
+        error_count = 0
+
+        for page in pages:
+            if page.loadState == 0:
+                error_count += 1
+            if page.loadState == 2 and "html" not in page.mime:
+                file_count += 1
+
+        if file_count == 0 and error_count == 0:
+            return
+
+        crawl = await self.crawls.find_one({"_id": crawl_id, "type": "crawl"})
+        if not crawl:
+            raise HTTPException(status_code=404, detail="crawl_not_found")
+
+        file_update_operator = "$inc"
+        if crawl.filePageCount is None:
+            file_update_operator = "$set"
+
+        if file_count > 0:
+            await self.crawls.find_one_and_update(
+                {
+                    "_id": crawl_id,
+                    "type": "crawl",
+                },
+                {
+                    file_update_operator: {"filePageCount": file_count},
+                },
+            )
+
+        error_update_operator = "$inc"
+        if crawl.errorPageCount is None:
+            error_update_operator = "$set"
+
+        if error_count > 0:
+            await self.crawls.find_one_and_update(
+                {
+                    "_id": crawl_id,
+                    "type": "crawl",
+                },
+                {
+                    error_update_operator: {"errorPageCount": error_count},
+                },
+            )
 
     async def delete_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
         """Delete crawl pages from db"""
@@ -500,94 +552,6 @@ class PageOps:
             return [PageOutWithSingleQA.from_dict(data) for data in items], total
 
         return [PageOut.from_dict(data) for data in items], total
-
-    async def get_crawl_page_count(self, crawl_id: str) -> int:
-        """Return total number of pages in db for crawl"""
-        return await self.pages.count_documents({"crawl_id": crawl_id})
-
-    async def get_crawl_file_count(self, crawl_id: str) -> int:
-        """Get count of pages in crawl that are files and don't need to be QAed"""
-        aggregate = [
-            {
-                "$match": {
-                    "crawl_id": crawl_id,
-                    "loadState": 2,
-                    "mime": {"$not": {"$regex": "^.*html", "$options": "i"}},
-                }
-            },
-            {"$count": "count"},
-        ]
-
-        cursor = self.pages.aggregate(aggregate)
-        results = await cursor.to_list(length=1)
-
-        if results is None:
-            raise HTTPException(status_code=404, detail="crawl_not_found")
-
-        if not results:
-            return 0
-
-        result = results[0]
-
-        try:
-            total = int(result["count"])
-        except (IndexError, ValueError):
-            total = 0
-
-        return total
-
-    async def get_crawl_error_count(self, crawl_id: str) -> int:
-        """Get count of pages in crawl that errored and don't need to be QAed"""
-        aggregate = [
-            {
-                "$match": {
-                    "crawl_id": crawl_id,
-                    "loadState": 0,
-                }
-            },
-            {"$count": "count"},
-        ]
-
-        cursor = self.pages.aggregate(aggregate)
-        results = await cursor.to_list(length=1)
-
-        if results is None:
-            raise HTTPException(status_code=404, detail="crawl_not_found")
-
-        if not results:
-            return 0
-
-        result = results[0]
-
-        try:
-            total = int(result["count"])
-        except (IndexError, ValueError):
-            total = 0
-
-        return total
-
-    async def add_file_error_page_counts_to_crawl(
-        self, crawl_id: str, page_count: int, error_count: int
-    ):
-        """Cache file and error page counts in crawl"""
-        await self.crawls.find_one_and_update(
-            {
-                "_id": crawl_id,
-                "type": "crawl",
-            },
-            {
-                "$set": {"filePageCount": page_count},
-            },
-        )
-        await self.crawls.find_one_and_update(
-            {
-                "_id": crawl_id,
-                "type": "crawl",
-            },
-            {
-                "$set": {"errorPageCount": error_count},
-            },
-        )
 
     async def re_add_crawl_pages(self, crawl_id: str, oid: UUID):
         """Delete existing pages for crawl and re-add from WACZs."""
