@@ -175,7 +175,7 @@ class PageOps:
         error_count = 0
 
         for page in pages:
-            if page.loadState == 2 and "html" not in page.mime:
+            if page.loadState == 2 and page.mime and "html" not in page.mime:
                 file_count += 1
                 page.isFile = True
 
