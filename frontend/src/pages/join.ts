@@ -77,14 +77,10 @@ export class Join extends LiteElement {
           ${when(
             isRegistered,
             () => html`
-              <form @submit=${this.onSubmitOrgForm}>
-                <btrix-org-fields
-                  .inviteInfo=${this.inviteInfo}
-                ></btrix-org-fields>
-                <sl-button class="w-full" variant="primary" type="submit">
-                  ${msg("Go to Dashboard")}
-                </sl-button>
-              </form>
+              <btrix-org-form
+                .inviteInfo=${this.inviteInfo}
+                @submit=${this.onSubmitOrgForm}
+              ></btrix-org-form>
             `,
             () => html`
               <btrix-sign-up-form

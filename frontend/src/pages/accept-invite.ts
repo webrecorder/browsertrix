@@ -3,6 +3,7 @@ import type { TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
+import type { OrgFormSubmitEventDetail } from "@/features/accounts/org-form";
 import { ROUTES } from "@/routes";
 import type { UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
@@ -98,14 +99,10 @@ export class AcceptInvite extends LiteElement {
           ${when(
             this.orgNameRequired,
             () => html`
-              <form @submit=${this.onSubmitOrgForm}>
-                <btrix-org-fields
-                  .inviteInfo=${this.inviteInfo}
-                ></btrix-org-fields>
-                <sl-button class="w-full" variant="primary" type="submit">
-                  ${msg("Go to Dashboard")}
-                </sl-button>
-              </form>
+              <btrix-org-form
+                .inviteInfo=${this.inviteInfo}
+                @btrix-submit=${this.onSubmitOrgForm}
+              ></btrix-org-form>
             `,
             () => html`
               <div class="w-full text-center">
@@ -162,25 +159,25 @@ export class AcceptInvite extends LiteElement {
     if (!this.authState) return;
 
     try {
-      this.inviteInfo = await this.apiFetch<UserOrgInviteInfo>(
-        `/users/me/invite/${this.token}`,
-        this.authState,
-      );
+      // this.inviteInfo = await this.apiFetch<UserOrgInviteInfo>(
+      //   `/users/me/invite/${this.token}`,
+      //   this.authState,
+      // );
 
       // TEMP test data
-      // this.inviteInfo = {
-      //   ...this.inviteInfo!,
-      //   firstOrgAdmin: true,
-      //   orgName: "TEMP TEST ORG",
-      //   orgSlug: "temp-test-org",
-      //   orgNameRequired: true,
-      // };
+      this.inviteInfo = {
+        ...this.inviteInfo!,
+        firstOrgAdmin: true,
+        orgName: "TEMP TEST ORG",
+        orgSlug: "temp-test-org",
+        orgNameRequired: true,
+      };
     } catch {
       this.serverError = msg("This invitation is not valid");
     }
   }
 
-  private async onAccept() {
+  private async onAccept(params?: OrgFormSubmitEventDetail["values"]) {
     if (!this.authState || !this.isLoggedIn) {
       // TODO handle error
       this.serverError = msg("Something unexpected went wrong");
@@ -191,6 +188,7 @@ export class AcceptInvite extends LiteElement {
     try {
       await this.apiFetch(`/orgs/invite-accept/${this.token}`, this.authState, {
         method: "POST",
+        body: JSON.stringify(params || {}),
       });
 
       // TODO handle new org name
@@ -225,10 +223,9 @@ export class AcceptInvite extends LiteElement {
     this.navTo(ROUTES.home);
   }
 
-  private onSubmitOrgForm(e: SubmitEvent) {
-    e.preventDefault();
-    e.stopPropagation();
+  private onSubmitOrgForm(e: CustomEvent<OrgFormSubmitEventDetail>) {
+    const { values } = e.detail;
 
-    console.log("TODO");
+    void this.onAccept(values);
   }
 }
