@@ -57,7 +57,7 @@ class Migration(BaseMigration):
                 await crawls_db.find_one_and_update(
                     {"_id": crawl.id, "type": "crawl"},
                     {
-                        "$inc": crawl.dict(
+                        "$set": crawl.dict(
                             include={"filePageCount": True, "errorPageCount": True}
                         )
                     },

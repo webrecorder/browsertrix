@@ -1581,8 +1581,12 @@ class Page(BaseMongoModel):
         self.isFile = False
         self.isError = False
         # pylint: disable=unsupported-membership-test
-        if self.loadState == 2 and (self.mime and "html" not in self.mime):
-            self.isFile = True
+        if self.loadState == 2:
+            if self.mime:
+                if "html" not in self.mime:
+                    self.isFile = True
+                elif self.title is None and self.status == 200:
+                    self.isFile = True
 
         elif self.loadState == 0:
             self.isError = True
