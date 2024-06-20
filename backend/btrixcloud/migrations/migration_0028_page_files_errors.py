@@ -37,25 +37,30 @@ class Migration(BaseMigration):
                 async for page_dict in cursor:
                     page = Page.from_dict(page_dict)
 
-                    # pylint: disable=unsupported-membership-test
-                    if page.loadState == 2 and page.mime and "html" not in page.mime:
+                    page.compute_page_type()
+                    if page.isFile:
                         crawl.filePageCount += 1
-                        page.isFile = True
-                    else:
-                        page.isFile = False
 
-                    if page.loadState == 0:
+                    if page.isError:
                         crawl.errorPageCount += 1
-                        page.isError = True
-                    else:
-                        page.isError = False
 
-                    await pages_db.find_one_and_update(
-                        {"_id": page.id}, {"$set": page.to_dict()}
-                    )
+                    if page.isFile or page.isError:
+                        await pages_db.find_one_and_update(
+                            {"_id": page.id},
+                            {
+                                "$set": page.dict(
+                                    include={"isFile": True, "isError": True}
+                                )
+                            },
+                        )
 
                 await crawls_db.find_one_and_update(
-                    {"_id": crawl.id, "type": "crawl"}, {"$set": crawl.to_dict()}
+                    {"_id": crawl.id, "type": "crawl"},
+                    {
+                        "$inc": crawl.dict(
+                            include={"filePageCount": True, "errorPageCount": True}
+                        )
+                    },
                 )
             # pylint: disable=broad-exception-caught
             except Exception as err:

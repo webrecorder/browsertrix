@@ -23,7 +23,6 @@ from .models import (
     PageNoteEdit,
     PageNoteDelete,
     QARunBucketStats,
-    Crawl,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import from_k8s_date, str_list_to_bools
@@ -85,7 +84,9 @@ class PageOps:
             traceback.print_exc()
             print(f"Error adding pages for crawl {crawl_id} to db: {err}", flush=True)
 
-    def _get_page_from_dict(self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID):
+    def _get_page_from_dict(
+        self, page_dict: Dict[str, Any], crawl_id: str, oid: UUID
+    ) -> Page:
         """Return Page object from dict"""
         page_id = page_dict.get("id")
         if not page_id:
@@ -95,7 +96,7 @@ class PageOps:
         if not status and page_dict.get("loadState"):
             status = 200
 
-        return Page(
+        p = Page(
             id=page_id,
             oid=oid,
             crawl_id=crawl_id,
@@ -110,6 +111,8 @@ class PageOps:
                 else datetime.now()
             ),
         )
+        p.compute_page_type()
+        return p
 
     async def _add_pages_to_db(self, crawl_id: str, pages: List[Page]):
         """Add batch of pages to db in one insert"""
@@ -176,57 +179,30 @@ class PageOps:
         error_count = 0
 
         for page in pages:
-            if page.loadState == 2 and page.mime and "html" not in page.mime:
+            if page.isFile:
                 file_count += 1
-                page.isFile = True
 
-            if page.loadState == 0:
+            if page.isError:
                 error_count += 1
-                page.isError = True
-
-            if page.isFile or page.isError:
-                await self.pages.find_one_and_update(
-                    {"_id": page.id}, {"$set": page.to_dict()}
-                )
 
         if file_count == 0 and error_count == 0:
             return
 
-        crawl_dict = await self.crawls.find_one({"_id": crawl_id, "type": "crawl"})
-        if not crawl_dict:
-            raise HTTPException(status_code=404, detail="crawl_not_found")
-
-        crawl = Crawl.from_dict(crawl_dict)
-
-        file_update_operator = "$inc"
-        if crawl.filePageCount is None:
-            file_update_operator = "$set"
+        inc_query = {}
 
         if file_count > 0:
-            await self.crawls.find_one_and_update(
-                {
-                    "_id": crawl_id,
-                    "type": "crawl",
-                },
-                {
-                    file_update_operator: {"filePageCount": file_count},
-                },
-            )
-
-        error_update_operator = "$inc"
-        if crawl.errorPageCount is None:
-            error_update_operator = "$set"
+            inc_query["filePageCount"] = file_count
 
         if error_count > 0:
-            await self.crawls.find_one_and_update(
-                {
-                    "_id": crawl_id,
-                    "type": "crawl",
-                },
-                {
-                    error_update_operator: {"errorPageCount": error_count},
-                },
-            )
+            inc_query["errorPageCount"] = error_count
+
+        await self.crawls.find_one_and_update(
+            {
+                "_id": crawl_id,
+                "type": "crawl",
+            },
+            {"$inc": inc_query},
+        )
 
     async def delete_crawl_pages(self, crawl_id: str, oid: Optional[UUID] = None):
         """Delete crawl pages from db"""
