@@ -617,16 +617,6 @@ export class ArchivedItemDetailQA extends TailwindElement {
       ></sl-skeleton>`;
     }
 
-    const barTotal = barData.reduce((prev, cur) => prev + cur.count, 0);
-
-    // TODO remove this once we stop including identical files in "No data" counts
-    // see https://github.com/webrecorder/browsertrix/issues/1859
-    if (barTotal > pageCount) {
-      barData[
-        barData.findIndex((bar) => bar.lowerBoundary === "No data")
-      ].count -= barTotal - pageCount;
-    }
-
     const analyzedPageCount =
       pageCount -
       (barData.find((bar) => bar.lowerBoundary === "No data")?.count ?? 0);
