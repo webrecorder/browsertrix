@@ -1585,7 +1585,7 @@ class Page(BaseMongoModel):
             if self.mime:
                 if "html" not in self.mime:
                     self.isFile = True
-                elif self.title is None and self.status == 200:
+                elif self.title is None and (not self.status or self.status == 200):
                     self.isFile = True
 
         elif self.loadState == 0:
