@@ -248,7 +248,7 @@ class CrawlOperator(BaseOperator):
             )
 
         else:
-            status.scale = crawl.scale
+            status.scale = 1
             now = dt_now()
             await self.crawl_ops.inc_crawl_exec_time(
                 crawl.db_crawl_id, crawl.is_qa, 0, now
@@ -730,7 +730,9 @@ class CrawlOperator(BaseOperator):
     ):
         """sync crawl state for running crawl"""
         # check if at least one crawler pod started running
-        crawler_running, redis_running, done = self.sync_pod_status(pods, status)
+        crawler_running, redis_running, pod_done_count = self.sync_pod_status(
+            pods, status
+        )
         redis = None
 
         try:
@@ -824,7 +826,9 @@ class CrawlOperator(BaseOperator):
             status.filesAddedSize = int(await redis.get("filesAddedSize") or 0)
 
             # update stats and get status
-            return await self.update_crawl_state(redis, crawl, status, pods, done)
+            return await self.update_crawl_state(
+                redis, crawl, status, pods, pod_done_count
+            )
 
         # pylint: disable=broad-except
         except Exception as exc:
@@ -836,11 +840,13 @@ class CrawlOperator(BaseOperator):
             if redis:
                 await redis.close()
 
-    def sync_pod_status(self, pods: dict[str, dict], status: CrawlStatus):
+    def sync_pod_status(
+        self, pods: dict[str, dict], status: CrawlStatus
+    ) -> tuple[bool, bool, int]:
         """check status of pods"""
         crawler_running = False
         redis_running = False
-        done = True
+        pod_done_count = 0
 
         try:
             for name, pod in pods.items():
@@ -871,7 +877,8 @@ class CrawlOperator(BaseOperator):
 
                 if role == "crawler":
                     crawler_running = crawler_running or running
-                    done = done and phase == "Succeeded"
+                    if phase == "Succeeded":
+                        pod_done_count += 1
                 elif role == "redis":
                     redis_running = redis_running or running
 
@@ -880,7 +887,7 @@ class CrawlOperator(BaseOperator):
             done = False
             print(exc)
 
-        return crawler_running, redis_running, done
+        return crawler_running, redis_running, pod_done_count
 
     def handle_terminated_pod(self, name, role, status: CrawlStatus, terminated):
         """handle terminated pod state"""
@@ -1231,7 +1238,7 @@ class CrawlOperator(BaseOperator):
         crawl: CrawlSpec,
         status: CrawlStatus,
         pods: dict[str, dict],
-        done: bool,
+        pod_done_count: int,
     ) -> CrawlStatus:
         """update crawl state and check if crawl is now done"""
         results = await redis.hgetall(f"{crawl.id}:status")
@@ -1274,13 +1281,19 @@ class CrawlOperator(BaseOperator):
 
         # check if done / failed
         status_count: dict[str, int] = {}
-        for i in range(crawl.scale):
+        for i in range(status.scale):
             res = results.get(f"crawl-{crawl.id}-{i}")
             if res:
                 status_count[res] = status_count.get(res, 0) + 1
 
-        # check if all crawlers are done
-        if done and status_count.get("done", 0) >= crawl.scale:
+        num_done = status_count.get("done", 0)
+        num_failed = status_count.get("failed", 0)
+        # all expected pods are either done or failed
+        all_completed = (num_done + num_failed) >= status.scale
+
+        # if at least one is done accordion to redis, consider crawl successful
+        # ensure pod successfully exited as well
+        if all_completed and num_done >= 1 and pod_done_count >= num_done:
             # check if one-page crawls actually succeeded
             # if only one page found, and no files, assume failed
             if status.pagesFound == 1 and not status.filesAdded:
@@ -1297,8 +1310,8 @@ class CrawlOperator(BaseOperator):
 
             await self.mark_finished(crawl, status, state, stats)
 
-        # check if all crawlers failed
-        elif status_count.get("failed", 0) >= crawl.scale:
+        # check if all crawlers failed -- no crawl data was generated
+        elif all_completed and num_done == 0 and num_failed > 0:
             # if stopping, and no pages finished, mark as canceled
             if status.stopping and not status.pagesDone:
                 await self.mark_finished(crawl, status, "canceled", stats)
