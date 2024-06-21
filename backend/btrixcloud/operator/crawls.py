@@ -884,7 +884,6 @@ class CrawlOperator(BaseOperator):
 
         # pylint: disable=broad-except
         except Exception as exc:
-            done = False
             print(exc)
 
         return crawler_running, redis_running, pod_done_count
@@ -1293,6 +1292,7 @@ class CrawlOperator(BaseOperator):
 
         # if at least one is done accordion to redis, consider crawl successful
         # ensure pod successfully exited as well
+        # pylint: disable=chained-comparison
         if all_completed and num_done >= 1 and pod_done_count >= num_done:
             # check if one-page crawls actually succeeded
             # if only one page found, and no files, assume failed
