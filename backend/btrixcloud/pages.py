@@ -577,7 +577,14 @@ class PageOps:
             boundaries.append(1.1)
 
         aggregate = [
-            {"$match": {"crawl_id": crawl_id, "isFile": False, "isError": False}},
+            {
+                "$match": {
+                    "crawl_id": crawl_id,
+                    "isFile": {"$ne": True},
+                    "isError": {"$ne": True},
+                }
+            },
+            # {"$match": {"crawl_id": crawl_id}},
             {
                 "$bucket": {
                     "groupBy": f"$qa.{qa_run_id}.{key}",
