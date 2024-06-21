@@ -674,20 +674,24 @@ export class ArchivedItemDetailQA extends TailwindElement {
               `
             : nothing;
         })}
-        <btrix-meter-bar
-          slot="available"
-          value=${(remainingPageCount / pageCount) * 100}
-          aria-label=${remainderBarLabel}
-          style="--background-color: none"
-        >
-          <div class="text-center">
-            ${remainderBarLabel}
-            <div class="text-xs opacity-80">
-              ${formatNumber(remainingPageCount)}
-              ${pluralOf("pages", remainingPageCount)}
-            </div>
-          </div>
-        </btrix-meter-bar>
+        ${remainingPageCount > 0
+          ? html`
+              <btrix-meter-bar
+                slot="available"
+                value=${(remainingPageCount / pageCount) * 100}
+                aria-label=${remainderBarLabel}
+                style="--background-color: none"
+              >
+                <div class="text-center">
+                  ${remainderBarLabel}
+                  <div class="text-xs opacity-80">
+                    ${formatNumber(remainingPageCount)}
+                    ${pluralOf("pages", remainingPageCount)}
+                  </div>
+                </div>
+              </btrix-meter-bar>
+            `
+          : nothing}
       </btrix-meter>
     `;
   }
