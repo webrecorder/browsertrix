@@ -654,8 +654,8 @@ export class ArchivedItemDetailQA extends TailwindElement {
             ? html`
                 <btrix-meter-bar
                   value=${(bar.count / analyzedPageCount) * 100}
-                  style="--background-color: ${threshold?.cssColor}"
-                  aria-label=${bar.lowerBoundary}
+                  style="--background-color: ${threshold?.cssColor ?? "none"}"
+                  aria-label=${threshold?.label ?? ""}
                 >
                   <div class="text-center">
                     ${threshold?.label}
