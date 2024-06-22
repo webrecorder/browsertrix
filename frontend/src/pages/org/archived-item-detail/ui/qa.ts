@@ -44,7 +44,7 @@ import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 
 type QAStatsThreshold = {
-  lowerBoundary: `${number}` | "No data";
+  lowerBoundary: `${number}`;
   count: number;
 };
 type QAStats = Record<"screenshotMatch" | "textMatch", QAStatsThreshold[]>;
@@ -505,9 +505,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                 <div>
                   <sl-tooltip
                     content=${mostRecentSelected
-                      ? msg(
-                          "You’re viewing the latest analysis run results.",
-                        )
+                      ? msg("You’re viewing the latest analysis run results.")
                       : msg(
                           "You’re viewing results from an older analysis run.",
                         )}
@@ -534,15 +532,13 @@ export class ArchivedItemDetailQA extends TailwindElement {
             })}
           </div>
           <div class="flex items-center gap-2 text-neutral-500">
-            ${when(
-              qaRun.stats,
-              (stats) => html`
-                <div class="text-sm font-normal">
-                  ${formatNumber(stats.done)} / ${formatNumber(stats.found)}
-                  ${pluralOf("pages", stats.found)} ${msg("analyzed")}
-                </div>
-              `,
-            )}
+            <div class="text-sm font-normal">
+              ${qaRun.state === "starting"
+                ? msg("Analysis starting")
+                : `${formatNumber(qaRun.stats.done)}/${formatNumber(qaRun.stats.found)}
+                  ${pluralOf("pages", qaRun.stats.found)} ${msg("analyzed")}`}
+            </div>
+
             <sl-tooltip
               content=${msg(
                 "Match analysis compares pages during a crawl against their replay during an analysis run. A good match indicates that the crawl is probably good, whereas severe inconsistencies may indicate a bad crawl.",
@@ -572,6 +568,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                     ? this.renderMeter(
                         qaRun.stats.found,
                         this.qaStats.value.screenshotMatch,
+                        isRunning,
                       )
                     : this.renderMeter()}
                 </btrix-table-cell>
@@ -585,6 +582,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
                     ? this.renderMeter(
                         qaRun.stats.found,
                         this.qaStats.value.textMatch,
+                        isRunning,
                       )
                     : this.renderMeter()}
                 </btrix-table-cell>
@@ -613,16 +611,39 @@ export class ArchivedItemDetailQA extends TailwindElement {
     `;
   }
 
-  private renderMeter(pageCount?: number, barData?: QAStatsThreshold[]) {
-    if (pageCount === undefined || !barData) {
+  private renderMeter(): TemplateResult<1>;
+  private renderMeter(
+    pageCount: number,
+    barData: QAStatsThreshold[],
+    qaIsRunning: boolean | undefined,
+  ): TemplateResult<1>;
+  private renderMeter(
+    pageCount?: number,
+    barData?: QAStatsThreshold[],
+    qaIsRunning?: boolean,
+  ) {
+    if (!pageCount || !barData) {
       return html`<sl-skeleton
         class="h-4 flex-1 [--border-radius:var(--sl-border-radius-medium)]"
         effect="sheen"
       ></sl-skeleton>`;
     }
 
+    barData = barData.filter(
+      (bar) => (bar.lowerBoundary as string) !== "No data",
+    );
+
+    const analyzedPageCount = barData.reduce(
+      (prev, cur) => prev + cur.count,
+      0,
+    );
+
+    const remainingPageCount = pageCount - analyzedPageCount;
+    const remainderBarLabel = qaIsRunning ? msg("Pending") : msg("Incomplete");
+
+    console.log({ pageCount, barData, analyzedPageCount });
     return html`
-      <btrix-meter class="flex-1" value=${pageCount}>
+      <btrix-meter class="flex-1" value=${analyzedPageCount} max=${pageCount}>
         ${barData.map((bar) => {
           const threshold = qaStatsThresholds.find(
             ({ lowerBoundary }) => bar.lowerBoundary === lowerBoundary,
@@ -632,23 +653,20 @@ export class ArchivedItemDetailQA extends TailwindElement {
           return bar.count !== 0
             ? html`
                 <btrix-meter-bar
-                  value=${(bar.count / pageCount) * 100}
-                  style="--background-color: ${threshold?.cssColor}"
-                  aria-label=${bar.lowerBoundary}
+                  value=${(bar.count / analyzedPageCount) * 100}
+                  style="--background-color: ${threshold?.cssColor ?? "none"}"
+                  aria-label=${threshold?.label ?? ""}
                 >
                   <div class="text-center">
-                    ${bar.lowerBoundary === "No data"
-                      ? msg("No Data")
-                      : threshold?.label}
+                    ${threshold?.label}
                     <div class="text-xs opacity-80">
-                      ${bar.lowerBoundary !== "No data"
-                        ? html`${idx === 0
-                              ? `<${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`
-                              : idx === qaStatsThresholds.length - 1
-                                ? `>=${threshold ? +threshold.lowerBoundary * 100 : 0}%`
-                                : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100 || 100}%`}
-                            match <br />`
-                        : nothing}
+                      ${idx === 0
+                        ? `<${+qaStatsThresholds[idx + 1].lowerBoundary * 100}%`
+                        : idx === qaStatsThresholds.length - 1
+                          ? `>=${threshold ? +threshold.lowerBoundary * 100 : 0}%`
+                          : `${threshold ? +threshold.lowerBoundary * 100 : 0}-${+qaStatsThresholds[idx + 1].lowerBoundary * 100 || 100}%`}
+                      ${msg("match", { desc: "label for match percentage" })}
+                      <br />
                       ${formatNumber(bar.count)} ${pluralOf("pages", bar.count)}
                     </div>
                   </div>
@@ -656,6 +674,24 @@ export class ArchivedItemDetailQA extends TailwindElement {
               `
             : nothing;
         })}
+        ${remainingPageCount > 0
+          ? html`
+              <btrix-meter-bar
+                slot="available"
+                value=${(remainingPageCount / pageCount) * 100}
+                aria-label=${remainderBarLabel}
+                style="--background-color: none"
+              >
+                <div class="text-center">
+                  ${remainderBarLabel}
+                  <div class="text-xs opacity-80">
+                    ${formatNumber(remainingPageCount)}
+                    ${pluralOf("pages", remainingPageCount)}
+                  </div>
+                </div>
+              </btrix-meter-bar>
+            `
+          : nothing}
       </btrix-meter>
     `;
   }
