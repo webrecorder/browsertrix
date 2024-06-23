@@ -12,6 +12,8 @@ default_crawl_filename_template: "@ts-testing-@hostsuffix.wacz"
 
 operator_resync_seconds: 3
 
+qa_scale: 2
+
 # for testing only
 crawler_extra_cpu_per_browser: 300m
 
