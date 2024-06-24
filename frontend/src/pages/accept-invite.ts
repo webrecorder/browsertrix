@@ -12,6 +12,7 @@ import { ROUTES } from "@/routes";
 import type { UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { Auth, AuthState } from "@/utils/AuthService";
+import { isOwner } from "@/utils/orgs";
 
 @localized()
 @customElement("btrix-accept-invite")
@@ -47,7 +48,10 @@ export class AcceptInvite extends TailwindElement {
     const inviteInfo = this.inviteInfo.value;
 
     if (inviteInfo) {
-      return Boolean(inviteInfo.firstOrgAdmin && inviteInfo.orgNameRequired);
+      return Boolean(
+        inviteInfo.firstOrgAdmin ||
+          (isOwner(inviteInfo.role) && inviteInfo.orgNameRequired),
+      );
     }
 
     return null;

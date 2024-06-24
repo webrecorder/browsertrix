@@ -11,6 +11,7 @@ import AuthService, {
   type LoggedInEventDetail,
 } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { isOwner } from "@/utils/orgs";
 
 /**
  * @fires btrix-update-user-info
@@ -43,7 +44,10 @@ export class Join extends LiteElement {
     const inviteInfo = this.inviteInfo.value;
 
     if (inviteInfo) {
-      return Boolean(inviteInfo.firstOrgAdmin && inviteInfo.orgNameRequired);
+      return Boolean(
+        inviteInfo.firstOrgAdmin ||
+          (isOwner(inviteInfo.role) && inviteInfo.orgNameRequired),
+      );
     }
 
     return null;
