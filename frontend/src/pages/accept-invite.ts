@@ -157,7 +157,7 @@ export class AcceptInvite extends TailwindElement {
 
     if (this.orgNameRequired) {
       message = msg(
-        "You're almost there! Register your account and organization to start web archiving.",
+        "You're almost there! Register your organization to start web archiving.",
       );
     } else if (this.inviteInfo.value) {
       const { inviterName, orgName, fromSuperuser } = this.inviteInfo.value;
@@ -203,14 +203,22 @@ export class AcceptInvite extends TailwindElement {
   }
 
   private async onAccept(params?: OrgFormSubmitEventDetail["values"]) {
-    if (!this.authState || !this.isLoggedIn) {
+    if (!this.authState || !this.isLoggedIn || !this.inviteInfo.value) {
       // TODO handle error
       this.serverError = msg("Something unexpected went wrong");
 
       return;
     }
 
-    const orgName = params?.orgName || this.inviteInfo.value?.orgName;
+    let { orgName, orgSlug } = this.inviteInfo.value;
+    if (params) {
+      if (params.orgName) {
+        orgName = params.orgName;
+      }
+      if (params.orgSlug) {
+        orgSlug = params.orgSlug;
+      }
+    }
 
     try {
       await this.api.fetch(
@@ -229,7 +237,7 @@ export class AcceptInvite extends TailwindElement {
         icon: "check2-circle",
       });
 
-      this.navigate.to(ROUTES.home);
+      this.navigate.to(`/orgs/${orgSlug}`);
     } catch (err) {
       if (isApiError(err) && err.message === "Invalid Invite Code") {
         this.serverError = msg("This invitation is not valid");
