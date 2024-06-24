@@ -2,7 +2,7 @@ import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import slugify from "slugify";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -29,6 +29,9 @@ export class OrgForm extends TailwindElement {
 
   @property({ type: String })
   slug = "";
+
+  @state()
+  private isSubmitting = false;
 
   render() {
     const helpText = (slug: unknown) =>
@@ -72,7 +75,12 @@ export class OrgForm extends TailwindElement {
           >
           </sl-input>
         </div>
-        <sl-button class="w-full" variant="primary" type="submit">
+        <sl-button
+          class="w-full"
+          variant="primary"
+          type="submit"
+          ?loading=${this.isSubmitting}
+        >
           ${msg("Go to Dashboard")}
         </sl-button>
       </form>
@@ -84,7 +92,10 @@ export class OrgForm extends TailwindElement {
 
     const form = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(form))) return;
+
     const params = serialize(form) as OrgFormSubmitEventDetail["values"];
+
+    this.isSubmitting = true;
 
     this.dispatchEvent(
       new CustomEvent<OrgFormSubmitEventDetail>("btrix-submit", {

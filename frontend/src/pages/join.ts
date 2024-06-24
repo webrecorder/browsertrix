@@ -2,10 +2,9 @@ import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import { type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
 
 import type { OrgFormSubmitEventDetail } from "@/features/accounts/org-form";
-import type { CurrentUser, UserOrg, UserOrgInviteInfo } from "@/types/user";
+import type { CurrentUser, UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import AuthService, {
   type AuthState,
@@ -33,42 +32,23 @@ export class Join extends LiteElement {
   email?: string;
 
   private readonly inviteInfo = new Task(this, {
-    task: async ([authState, token, email]) => {
-      if (authState) {
-        // we're now authenticated, but haven't navigated away
-        return;
-      }
+    task: async ([token, email]) => {
       if (!token || !email) throw new Error("Missing args");
       const inviteInfo = await this.getInviteInfo({ token, email });
       return inviteInfo;
     },
-    args: () => [this.authState, this.token, this.email] as const,
+    args: () => [this.token, this.email] as const,
   });
 
-  private get orgInfo(): Partial<UserOrg> {
+  private get orgNameRequired() {
     const inviteInfo = this.inviteInfo.value;
 
-    if (inviteInfo) {
-      return {
-        id: inviteInfo.oid,
-        name: inviteInfo.orgName,
-        slug: inviteInfo.orgSlug,
-        role: inviteInfo.role,
-      };
-    }
+    if (!inviteInfo) return null;
 
-    if (this.userInfo) {
-      return this.userInfo.orgs[0];
-    }
-
-    return {
-      name: "",
-      slug: "",
-    };
-  }
-
-  private get shouldShowOrgForm() {
-    return isOwner(this.orgInfo.role);
+    return Boolean(
+      inviteInfo.firstOrgAdmin ||
+        (isOwner(inviteInfo.role as number) && inviteInfo.orgNameRequired),
+    );
   }
 
   render() {
@@ -77,21 +57,40 @@ export class Join extends LiteElement {
 
     return html`
       <section
-        class="flex w-full flex-col justify-center gap-12 p-5 md:flex-row md:gap-16"
+        class="flex min-h-full w-full flex-col justify-center gap-12 p-5 md:flex-row md:gap-16 md:py-16"
       >
-        <header class="my-12 max-w-sm flex-1">
-          <div class="md:sticky md:top-12">
-            <h1 class="sticky top-0 mb-5 text-xl font-semibold">
-              ${msg("Set up your Browsertrix account")}
-            </h1>
-            ${this.renderInviteMessage()}
-          </div>
+        <header class="flex-1 pt-6 md:max-w-sm">
+          <h1 class="mb-5 text-xl font-semibold">
+            ${msg("Set up your Browsertrix account")}
+          </h1>
+          ${this.renderInviteMessage()}
         </header>
 
-        <div
-          class="flex min-h-[27rem] max-w-md flex-1 items-center justify-center transition-all md:rounded-lg md:border md:bg-white md:p-12 md:shadow-lg"
-        >
-          ${when(isRegistered, this.renderOrgSetup, this.renderSignUp)}
+        <div class="max-w-md flex-1">
+          <div class="md:rounded-lg md:border md:bg-white md:p-12 md:shadow-lg">
+            ${this.inviteInfo.render({
+              pending: this.renderPending,
+              complete: (inviteInfo) =>
+                isRegistered && this.orgNameRequired
+                  ? html`
+                      <btrix-org-form
+                        name=${inviteInfo?.orgName || ""}
+                        slug=${inviteInfo?.orgSlug || ""}
+                        @btrix-submit=${this.onSubmitOrgForm}
+                      ></btrix-org-form>
+                    `
+                  : html`
+                      <btrix-sign-up-form
+                        email=${this.email!}
+                        inviteToken=${this.token!}
+                        .inviteInfo=${inviteInfo || undefined}
+                        @authenticated=${this.onAuthenticated}
+                      ></btrix-sign-up-form>
+                    `,
+              error: (err) =>
+                html`<btrix-alert variant="danger">${err}</btrix-alert>`,
+            })}
+          </div>
         </div>
       </section>
     `;
@@ -100,7 +99,7 @@ export class Join extends LiteElement {
   private renderInviteMessage() {
     let message: string | TemplateResult = "";
 
-    if (this.shouldShowOrgForm) {
+    if (this.orgNameRequired) {
       message = msg(
         "You're almost there! Register your account and organization to start web archiving.",
       );
@@ -129,38 +128,10 @@ export class Join extends LiteElement {
     return html` <p class="max-w-prose text-neutral-600">${message}</p> `;
   }
 
-  private readonly renderOrgSetup = () => {
-    if (this.authState && !this.userInfo) {
-      // we're logged in but still loading user info
-      // TODO pass user info loading state instead
-      return this.renderPending();
-    }
-
-    const { name = "", slug = "" } = this.orgInfo;
-
-    return html`<btrix-org-form
-      name=${name}
-      slug=${slug}
-      @btrix-submit=${this.onSubmitOrgForm}
-    ></btrix-org-form>`;
-  };
-
-  private readonly renderSignUp = () =>
-    this.inviteInfo.render({
-      pending: this.renderPending,
-      complete: () => html`
-        <btrix-sign-up-form
-          email=${this.email!}
-          inviteToken=${this.token!}
-          .inviteInfo=${this.inviteInfo.value}
-          @authenticated=${this.onAuthenticated}
-        ></btrix-sign-up-form>
-      `,
-      error: (err) => html`<btrix-alert variant="danger">${err}</btrix-alert>`,
-    });
-
   private readonly renderPending = () => html`
-    <sl-spinner class="text-2xl"></sl-spinner>
+    <div class="flex items-center justify-center text-2xl">
+      <sl-spinner></sl-spinner>
+    </div>
   `;
 
   private async getInviteInfo({
@@ -191,23 +162,26 @@ export class Join extends LiteElement {
     this.dispatchEvent(
       AuthService.createLoggedInEvent({
         ...event.detail,
-        api: this.shouldShowOrgForm, // prevents navigation if org name is required
+        api: Boolean(this.orgNameRequired), // prevents navigation if org name is required
       }),
     );
   }
 
   private async onSubmitOrgForm(e: CustomEvent<OrgFormSubmitEventDetail>) {
-    const { values } = e.detail;
-    const { id, name, slug } = this.orgInfo;
+    const inviteInfo = this.inviteInfo.value;
+    if (!inviteInfo) return;
 
-    if (values.orgName === name && values.orgSlug === slug) {
-      this.navTo(`/orgs/${slug}`);
+    const { values } = e.detail;
+    const { oid, orgName, orgSlug } = inviteInfo;
+
+    if (values.orgName === orgName && values.orgSlug === orgSlug) {
+      this.navTo(`/orgs/${orgSlug}`);
 
       return;
     }
 
     try {
-      await this.apiFetch(`/orgs/${id}/rename`, this.authState!, {
+      await this.apiFetch(`/orgs/${oid}/rename`, this.authState!, {
         method: "POST",
         body: JSON.stringify({
           name: values.orgName,
@@ -216,7 +190,7 @@ export class Join extends LiteElement {
       });
 
       this.notify({
-        message: msg("Updated organization."),
+        message: msg("New org name saved."),
         variant: "success",
         icon: "check2-circle",
       });
