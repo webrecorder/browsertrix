@@ -34,6 +34,9 @@ export class SignUpForm extends LiteElement {
   @property({ type: Object })
   inviteInfo?: UserOrgInviteInfo;
 
+  @property({ type: String })
+  submitLabel?: string;
+
   @state()
   private serverError?: string;
 
@@ -148,7 +151,7 @@ export class SignUpForm extends LiteElement {
           this.pwStrengthResults.score < PASSWORD_MIN_SCORE}
           type="submit"
         >
-          ${msg("Create Account")}
+          ${this.submitLabel || msg("Create Account")}
         </sl-button>
       </form>
     `;

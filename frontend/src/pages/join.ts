@@ -2,6 +2,7 @@ import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import { type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
 
 import type { OrgFormSubmitEventDetail } from "@/features/accounts/org-form";
 import type { CurrentUser, UserOrgInviteInfo } from "@/types/user";
@@ -93,6 +94,7 @@ export class Join extends LiteElement {
                         email=${this.email!}
                         inviteToken=${this.token!}
                         .inviteInfo=${inviteInfo || undefined}
+                        submitLabel=${msg("Next")}
                         @authenticated=${this.onAuthenticated}
                       ></btrix-sign-up-form>
                     `,
@@ -110,7 +112,7 @@ export class Join extends LiteElement {
 
     if (this.orgNameRequired) {
       message = msg(
-        "You're almost there! Register your account and organization to start web archiving.",
+        "You're almost there! Finish setting up your account to start web archiving.",
       );
     } else if (this.inviteInfo.value) {
       const { inviterName, orgName, fromSuperuser } = this.inviteInfo.value;
@@ -134,7 +136,32 @@ export class Join extends LiteElement {
 
     if (!message) return;
 
-    return html` <p class="max-w-prose text-neutral-600">${message}</p> `;
+    return html`<p class="max-w-prose text-base text-neutral-600">${message}</p>
+      ${when(
+        this.orgNameRequired,
+        () => html`
+          <ul class="mt-6 text-base text-neutral-600">
+            <li class="mb-3 flex items-center gap-2">
+              <sl-icon
+                class="text-lg text-primary"
+                name=${this.isLoggedIn ? "check-circle" : "1-circle"}
+                label=${this.isLoggedIn
+                  ? msg("Step 1 complete")
+                  : msg("Step 1")}
+              ></sl-icon>
+              ${msg("Create a password and display name")}
+            </li>
+            <li class="flex items-center gap-2">
+              <sl-icon
+                class="text-lg text-primary"
+                name="2-circle"
+                label=${msg("Step 2")}
+              ></sl-icon>
+              ${msg("Configure organization")}
+            </li>
+          </ul>
+        `,
+      )} `;
   }
 
   private async getInviteInfo({
