@@ -109,9 +109,9 @@ export class Join extends LiteElement {
         "You're almost there! Register your account and organization to start web archiving.",
       );
     } else if (this.inviteInfo.value) {
-      const { inviterName, orgName } = this.inviteInfo.value;
+      const { inviterName, orgName, fromSuperuser } = this.inviteInfo.value;
 
-      if (inviterName && orgName) {
+      if (inviterName && !fromSuperuser && orgName) {
         message = msg(
           html`You’ve been invited by
             <strong class="font-medium">${inviterName}</strong>
