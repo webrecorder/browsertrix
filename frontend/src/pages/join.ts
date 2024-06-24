@@ -1,16 +1,18 @@
 import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
 import { type TemplateResult } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import type { OrgFormSubmitEventDetail } from "@/features/accounts/org-form";
-import type { CurrentUser, UserOrgInviteInfo } from "@/types/user";
+import type { CurrentUser, UserOrg, UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import AuthService, {
   type AuthState,
   type LoggedInEventDetail,
 } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
+import { isOwner } from "@/utils/orgs";
 
 /**
  * @fires btrix-update-user-info
@@ -30,46 +32,51 @@ export class Join extends LiteElement {
   @property({ type: String })
   email?: string;
 
-  @state()
-  private serverError?: string;
+  private readonly inviteInfo = new Task(this, {
+    task: async ([authState, token, email]) => {
+      if (authState) {
+        // we're now authenticated, but haven't navigated away
+        return;
+      }
+      if (!token || !email) throw new Error("Missing args");
+      const inviteInfo = await this.getInviteInfo({ token, email });
+      return inviteInfo;
+    },
+    args: () => [this.authState, this.token, this.email] as const,
+  });
 
-  @state()
-  private inviteInfo?: UserOrgInviteInfo;
+  private get orgInfo(): Partial<UserOrg> {
+    const inviteInfo = this.inviteInfo.value;
 
-  private get orgNameRequired() {
-    if (!this.inviteInfo) return null;
-
-    return Boolean(
-      this.inviteInfo.firstOrgAdmin && this.inviteInfo.orgNameRequired,
-    );
-  }
-
-  connectedCallback(): void {
-    if (this.token && this.email) {
-      super.connectedCallback();
-    } else {
-      throw new Error("Missing email or token");
+    if (inviteInfo) {
+      return {
+        id: inviteInfo.oid,
+        name: inviteInfo.orgName,
+        slug: inviteInfo.orgSlug,
+        role: inviteInfo.role,
+      };
     }
+
+    if (this.userInfo) {
+      return this.userInfo.orgs[0];
+    }
+
+    return {
+      name: "",
+      slug: "",
+    };
   }
 
-  firstUpdated() {
-    void this.getInviteInfo();
+  private get shouldShowOrgForm() {
+    return isOwner(this.orgInfo.role);
   }
 
   render() {
-    if (this.serverError) {
-      return html`<btrix-alert variant="danger"
-        >${this.serverError}</btrix-alert
-      >`;
-    }
-
-    // const isRegistered =
-    //   this.authState && this.authState.username === this.email;
-
-    const isRegistered = Boolean(this.authState);
+    const isRegistered =
+      this.authState && this.authState.username === this.email;
 
     return html`
-      <article
+      <section
         class="flex w-full flex-col justify-center gap-12 p-5 md:flex-row md:gap-16"
       >
         <header class="my-12 max-w-sm flex-1">
@@ -81,58 +88,40 @@ export class Join extends LiteElement {
           </div>
         </header>
 
-        <main
-          class="max-w-md flex-1 md:rounded-lg md:border md:bg-white md:p-12 md:shadow-lg"
+        <div
+          class="flex min-h-[27rem] max-w-md flex-1 items-center justify-center transition-all md:rounded-lg md:border md:bg-white md:p-12 md:shadow-lg"
         >
-          ${when(
-            isRegistered,
-            () => html`
-              <btrix-org-form
-                .inviteInfo=${this.inviteInfo}
-                @btrix-submit=${this.onSubmitOrgForm}
-              ></btrix-org-form>
-            `,
-            () => html`
-              <btrix-sign-up-form
-                email=${this.email!}
-                inviteToken=${this.token!}
-                .inviteInfo=${this.inviteInfo}
-                @authenticated=${this.onAuthenticated}
-              ></btrix-sign-up-form>
-            `,
-          )}
-        </main>
-      </article>
+          ${when(isRegistered, this.renderOrgSetup, this.renderSignUp)}
+        </div>
+      </section>
     `;
   }
 
   private renderInviteMessage() {
-    if (!this.inviteInfo) return;
-
     let message: string | TemplateResult = "";
 
-    if (this.orgNameRequired) {
+    if (this.shouldShowOrgForm) {
       message = msg(
         "You're almost there! Register your account and organization to start web archiving.",
       );
-    } else if (this.inviteInfo.inviterName && this.inviteInfo.orgName) {
-      message = msg(
-        html`You’ve been invited by
-          <strong class="font-medium">${this.inviteInfo.inviterName}</strong>
-          to join the organization
-          <span class="font-medium text-primary">
-            ${this.inviteInfo.orgName}
-          </span>
-          on Browsertrix.`,
-      );
-    } else if (this.inviteInfo.orgName) {
-      message = msg(
-        html`Register your user account for the organization
-          <span class="font-medium text-primary">
-            ${this.inviteInfo.orgName}
-          </span>
-          on Browsertrix.`,
-      );
+    } else if (this.inviteInfo.value) {
+      const { inviterName, orgName } = this.inviteInfo.value;
+
+      if (inviterName && orgName) {
+        message = msg(
+          html`You’ve been invited by
+            <strong class="font-medium">${inviterName}</strong>
+            to join the organization
+            <span class="font-medium text-primary"> ${orgName} </span>
+            on Browsertrix.`,
+        );
+      } else if (orgName) {
+        message = msg(
+          html`Register your user account for the organization
+            <span class="font-medium text-primary"> ${orgName} </span>
+            on Browsertrix.`,
+        );
+      }
     }
 
     if (!message) return;
@@ -140,19 +129,61 @@ export class Join extends LiteElement {
     return html` <p class="max-w-prose text-neutral-600">${message}</p> `;
   }
 
-  private async getInviteInfo() {
+  private readonly renderOrgSetup = () => {
+    if (this.authState && !this.userInfo) {
+      // we're logged in but still loading user info
+      // TODO pass user info loading state instead
+      return this.renderPending();
+    }
+
+    const { name = "", slug = "" } = this.orgInfo;
+
+    return html`<btrix-org-form
+      name=${name}
+      slug=${slug}
+      @btrix-submit=${this.onSubmitOrgForm}
+    ></btrix-org-form>`;
+  };
+
+  private readonly renderSignUp = () =>
+    this.inviteInfo.render({
+      pending: this.renderPending,
+      complete: () => html`
+        <btrix-sign-up-form
+          email=${this.email!}
+          inviteToken=${this.token!}
+          .inviteInfo=${this.inviteInfo.value}
+          @authenticated=${this.onAuthenticated}
+        ></btrix-sign-up-form>
+      `,
+      error: (err) => html`<btrix-alert variant="danger">${err}</btrix-alert>`,
+    });
+
+  private readonly renderPending = () => html`
+    <sl-spinner class="text-2xl"></sl-spinner>
+  `;
+
+  private async getInviteInfo({
+    token,
+    email,
+  }: {
+    token: string;
+    email: string;
+  }): Promise<UserOrgInviteInfo | void> {
     const resp = await fetch(
-      `/api/users/invite/${this.token}?email=${encodeURIComponent(this.email!)}`,
+      `/api/users/invite/${token}?email=${encodeURIComponent(email)}`,
     );
 
     if (resp.status === 200) {
-      this.inviteInfo = await resp.json();
+      return (await resp.json()) as UserOrgInviteInfo;
     } else if (resp.status === 404) {
-      this.serverError = msg(
-        "This invite doesn't exist or has expired. Please ask the organization administrator to resend an invitation.",
+      throw new Error(
+        msg(
+          "This invite doesn't exist or has expired. Please ask the organization administrator to resend an invitation.",
+        ),
       );
     } else {
-      this.serverError = msg("This invitation is not valid");
+      throw new Error(msg("This invitation is not valid."));
     }
   }
 
@@ -160,22 +191,23 @@ export class Join extends LiteElement {
     this.dispatchEvent(
       AuthService.createLoggedInEvent({
         ...event.detail,
-        api: Boolean(this.orgNameRequired),
+        api: this.shouldShowOrgForm, // prevents navigation if org name is required
       }),
     );
   }
 
   private async onSubmitOrgForm(e: CustomEvent<OrgFormSubmitEventDetail>) {
-    if (!this.userInfo) {
-      console.debug("missing user info");
+    const { values } = e.detail;
+    const { id, name, slug } = this.orgInfo;
+
+    if (values.orgName === name && values.orgSlug === slug) {
+      this.navTo(`/orgs/${slug}`);
+
       return;
     }
 
-    const org = this.userInfo.orgs[0];
-    const { values } = e.detail;
-
     try {
-      await this.apiFetch(`/orgs/${org.id}/rename`, this.authState!, {
+      await this.apiFetch(`/orgs/${id}/rename`, this.authState!, {
         method: "POST",
         body: JSON.stringify({
           name: values.orgName,

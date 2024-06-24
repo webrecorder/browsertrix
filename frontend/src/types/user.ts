@@ -3,10 +3,12 @@ import type { AccessCode, OrgData, UserRole } from "./org";
 export type UserOrgInviteInfo = {
   inviterEmail: string;
   inviterName: string;
-  orgName: string;
-  orgSlug: string;
   firstOrgAdmin: boolean;
   orgNameRequired: boolean;
+  role: (typeof AccessCode)[UserRole];
+  oid?: string;
+  orgName?: string;
+  orgSlug?: string;
 };
 
 export type UserOrg = OrgData & {
