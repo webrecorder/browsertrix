@@ -11,7 +11,6 @@ import AuthService, {
   type LoggedInEventDetail,
 } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { isOwner } from "@/utils/orgs";
 
 /**
  * @fires btrix-update-user-info
@@ -43,18 +42,20 @@ export class Join extends LiteElement {
   private get orgNameRequired() {
     const inviteInfo = this.inviteInfo.value;
 
-    if (!inviteInfo) return null;
+    if (inviteInfo) {
+      return Boolean(inviteInfo.firstOrgAdmin && inviteInfo.orgNameRequired);
+    }
 
+    return null;
+  }
+
+  private get isLoggedIn(): boolean {
     return Boolean(
-      inviteInfo.firstOrgAdmin ||
-        (isOwner(inviteInfo.role as number) && inviteInfo.orgNameRequired),
+      this.authState && this.email && this.authState.username === this.email,
     );
   }
 
   render() {
-    const isRegistered =
-      this.authState && this.authState.username === this.email;
-
     return html`
       <section
         class="flex min-h-full w-full flex-col justify-center gap-12 p-5 md:flex-row md:gap-16 md:py-16"
@@ -69,9 +70,13 @@ export class Join extends LiteElement {
         <div class="max-w-md flex-1">
           <div class="md:rounded-lg md:border md:bg-white md:p-12 md:shadow-lg">
             ${this.inviteInfo.render({
-              pending: this.renderPending,
+              pending: () => html`
+                <div class="flex items-center justify-center text-2xl">
+                  <sl-spinner></sl-spinner>
+                </div>
+              `,
               complete: (inviteInfo) =>
-                isRegistered && this.orgNameRequired
+                this.isLoggedIn && this.orgNameRequired
                   ? html`
                       <btrix-org-form
                         name=${inviteInfo?.orgName || ""}
@@ -111,13 +116,13 @@ export class Join extends LiteElement {
           html`You’ve been invited by
             <strong class="font-medium">${inviterName}</strong>
             to join the organization
-            <span class="font-medium text-primary"> ${orgName} </span>
+            <span class="font-medium text-primary">${orgName}</span>
             on Browsertrix.`,
         );
       } else if (orgName) {
         message = msg(
           html`Register your user account for the organization
-            <span class="font-medium text-primary"> ${orgName} </span>
+            <span class="font-medium text-primary">${orgName}</span>
             on Browsertrix.`,
         );
       }
@@ -127,12 +132,6 @@ export class Join extends LiteElement {
 
     return html` <p class="max-w-prose text-neutral-600">${message}</p> `;
   }
-
-  private readonly renderPending = () => html`
-    <div class="flex items-center justify-center text-2xl">
-      <sl-spinner></sl-spinner>
-    </div>
-  `;
 
   private async getInviteInfo({
     token,
