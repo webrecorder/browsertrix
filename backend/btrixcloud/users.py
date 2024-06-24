@@ -327,7 +327,7 @@ class UserManager:
         result["inviterName"] = inviter.name
         if invite.oid:
             result["oid"] = invite.oid
-            
+
             org = await self.org_ops.get_org_for_user_by_id(invite.oid, inviter)
             result["orgName"] = org.name
             result["orgSlug"] = org.slug
