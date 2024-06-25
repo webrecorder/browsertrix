@@ -37,7 +37,9 @@ How do I create a <a href="https://docs.browsertrix.com/user-guide/browser-profi
 How do I <a href="https://docs.browsertrix.com/user-guide/archived-items/#crawl-settings">export my archived items</a>?
 </p>
 
-<p>If you need any assistance, please direct your questions to <a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
+<p>
+If you need any assistance, please direct your questions to the <a href="https://github.com/webrecorder/browsertrix">Browsertrix GitHub repo</a> or the <a href="https://forum.webrecorder.net">Webrecorder community forum</a>. If included in your plan, you can also contact us at: <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+</p>
 
 <p>Best Regards,</p>
 <p>The Webrecorder Team</p>
@@ -74,7 +76,7 @@ How do I crawl my first website? (https://docs.browsertrix.com/user-guide/workfl
 How do I create a browser profile? (https://docs.browsertrix.com/user-guide/browser-profiles/)
 How do I export my archived items? (https://docs.browsertrix.com/user-guide/archived-items/#crawl-settings)
 
-If you need any assistance, please direct your questions to {{ support_email }}.
+If you need any assistance, please direct your questions to the Browsertrix GitHub repo (https://github.com/webrecorder/browsertrix) or the  Webrecorder community forum (https://forum.webrecorder.net). If included in your plan, you can also contact us at: {{ support_email }}.
 
 Best Regards,
 The Webrecorder Team
