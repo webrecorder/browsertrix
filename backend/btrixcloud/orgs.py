@@ -354,13 +354,15 @@ class OrgOps:
         await self.invites.remove_invite(invite_token)
         return new_user_invite
 
-    async def add_user_by_invite(self, invite: InvitePending, user: User) -> bool:
+    async def add_user_by_invite(
+        self, invite: InvitePending, user: User
+    ) -> Optional[Organization]:
         """Add user to an org from an InvitePending, if any.
 
         If there's no org to add to (eg. superuser invite), just return.
         """
         if not invite.oid:
-            return False
+            return None
 
         org = await self.get_org_by_id(invite.oid)
         if not org:
@@ -378,7 +380,7 @@ class OrgOps:
         ):
             await self.set_default_org_name_from_user_name(org, user.name)
 
-        return True
+        return org
 
     async def set_default_org_name_from_user_name(
         self, org: Organization, user_name: str
@@ -905,8 +907,8 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     async def accept_invite(token: str, user: User = Depends(user_dep)):
         invite = await invites.accept_user_invite(user, token, user_manager)
 
-        await ops.add_user_by_invite(invite, user)
-        return {"added": True}
+        org = await ops.add_user_by_invite(invite, user)
+        return {"added": True, "org": org}
 
     @router.get("/invites", tags=["invites"])
     async def get_pending_org_invites(
