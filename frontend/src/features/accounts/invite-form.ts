@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
-import type { SlSelect } from "@shoelace-style/shoelace";
+import type { SlChangeEvent, SlSelect } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import sortBy from "lodash/fp/sortBy";
@@ -41,6 +41,9 @@ export class InviteForm extends TailwindElement {
   @state()
   private serverError?: string;
 
+  @state()
+  private isFirstOrgMember: boolean | null = null;
+
   private readonly api = new APIController(this);
 
   render() {
@@ -75,6 +78,18 @@ export class InviteForm extends TailwindElement {
             )}
             ?disabled=${sortedOrgs.length === 1}
             required
+            @sl-change=${(e: SlChangeEvent) => {
+              const select = e.target as SlSelect | null;
+              const org = select?.value
+                ? this.orgs?.find(({ id }) => id === select.value)
+                : null;
+
+              if (org?.users) {
+                this.isFirstOrgMember = Object.keys(org.users).length === 0;
+              } else {
+                this.isFirstOrgMember = null;
+              }
+            }}
           >
             ${sortedOrgs.map(
               (org) => html`
@@ -88,10 +103,29 @@ export class InviteForm extends TailwindElement {
             label=${msg("Role")}
             value=${AccessCode.owner}
             name="inviteRole"
+            required
+            ?disabled=${this.isFirstOrgMember === null}
           >
-            <sl-option value=${AccessCode.owner}>${"Admin"}</sl-option>
-            <sl-option value=${AccessCode.crawler}>${"Crawler"}</sl-option>
-            <sl-option value=${AccessCode.viewer}>${"Viewer"}</sl-option>
+            <sl-option value=${AccessCode.owner}>
+              ${"Admin"}
+              ${this.isFirstOrgMember
+                ? html`<span slot="suffix">
+                    ${msg("Required for first member")}
+                  </span>`
+                : nothing}
+            </sl-option>
+            <sl-option
+              value=${AccessCode.crawler}
+              ?disabled=${this.isFirstOrgMember}
+            >
+              ${"Crawler"}
+            </sl-option>
+            <sl-option
+              value=${AccessCode.viewer}
+              ?disabled=${this.isFirstOrgMember}
+            >
+              ${"Viewer"}
+            </sl-option>
           </sl-select>
         </div>
         <div class="mb-5">
@@ -116,7 +150,7 @@ export class InviteForm extends TailwindElement {
             size="small"
             type="submit"
             ?loading=${this.isSubmitting}
-            ?disabled=${this.isSubmitting}
+            ?disabled=${this.isFirstOrgMember === null || this.isSubmitting}
             >${msg("Invite")}</sl-button
           >
         </div>

@@ -29,7 +29,6 @@ from .models import (
     OrgWebhookUrls,
     CreateOrg,
     RenameOrg,
-    OptionalRenameOrg,
     UpdateRole,
     RemovePendingInvite,
     RemoveFromOrg,
@@ -180,6 +179,7 @@ class OrgOps:
         res = await self.orgs.find_one({"default": True})
         if res:
             return Organization.from_dict(res)
+
         return None
 
     async def create_default_org(self):
@@ -354,15 +354,13 @@ class OrgOps:
         await self.invites.remove_invite(invite_token)
         return new_user_invite
 
-    async def add_user_by_invite(
-        self, invite: InvitePending, user: User
-    ) -> Optional[Organization]:
+    async def add_user_by_invite(self, invite: InvitePending, user: User) -> bool:
         """Add user to an org from an InvitePending, if any.
 
         If there's no org to add to (eg. superuser invite), just return.
         """
         if not invite.oid:
-            return None
+            return False
 
         org = await self.get_org_by_id(invite.oid)
         if not org:
@@ -371,7 +369,35 @@ class OrgOps:
             )
 
         await self.add_user_to_org(org, user.id, invite.role)
-        return org
+
+        # if just added first admin, and name == id, set default org name from user name
+        if (
+            len(org.users) == 1
+            and invite.role == UserRole.OWNER
+            and str(org.name) == str(org.id)
+        ):
+            await self.set_default_org_name_from_user_name(org, user.name)
+
+        return True
+
+    async def set_default_org_name_from_user_name(
+        self, org: Organization, user_name: str
+    ):
+        """set's the org name and slug as "<USERNAME>'s Archive", adding a suffix for duplicates"""
+        suffix = ""
+        count = 1
+
+        while True:
+            org.name = f"{user_name}'s Archive{suffix}"
+            org.slug = slug_from_name(org.name)
+
+            try:
+                await self.update_slug_and_name(org)
+                break
+            except DuplicateKeyError:
+                # pylint: disable=raise-missing-from
+                count += 1
+                suffix = f" {count}"
 
     async def add_user_to_org(self, org: Organization, userid: UUID, role: UserRole):
         """Add user to organization with specified role"""
@@ -876,26 +902,11 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         return {"invited": "existing_user"}
 
     @app.post("/orgs/invite-accept/{token}", tags=["invites"])
-    async def accept_invite(
-        token: str, rename: OptionalRenameOrg, user: User = Depends(user_dep)
-    ):
+    async def accept_invite(token: str, user: User = Depends(user_dep)):
         invite = await invites.accept_user_invite(user, token, user_manager)
-        org = await ops.add_user_by_invite(invite, user)
-        if not org:
-            raise HTTPException(detail="invalid_invite", status_code=400)
 
-        if rename.name or rename.slug:
-            if rename.name:
-                org.name = rename.name
-            if rename.slug:
-                org.slug = rename.slug
-            await ops.update_slug_and_name(org)
-
-        return {
-            "added": True,
-            "orgName": org.name,
-            "orgSlug": org.slug,
-        }
+        await ops.add_user_by_invite(invite, user)
+        return {"added": True}
 
     @router.get("/invites", tags=["invites"])
     async def get_pending_org_invites(

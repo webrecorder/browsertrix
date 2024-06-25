@@ -907,14 +907,6 @@ class RenameOrg(BaseModel):
 
 
 # ============================================================================
-class OptionalRenameOrg(BaseModel):
-    """Rename an existing org"""
-
-    name: Optional[str] = None
-    slug: Optional[str] = None
-
-
-# ============================================================================
 class CreateOrg(RenameOrg):
     """Create a new org"""
 

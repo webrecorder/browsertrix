@@ -327,6 +327,7 @@ class UserManager:
         result["inviterName"] = inviter.name
         if invite.oid:
             result["oid"] = invite.oid
+
             org = await self.org_ops.get_org_for_user_by_id(invite.oid, inviter)
             result["orgName"] = org.name
             result["orgSlug"] = org.slug
@@ -335,11 +336,6 @@ class UserManager:
             org_owners = await self.org_ops.get_org_owners(org)
             if not org_owners:
                 result["firstOrgAdmin"] = True
-
-            # Require rename in frontend if org name is set to id
-            result["orgNameRequired"] = False
-            if str(org.name) == str(org.id):
-                result["orgNameRequired"] = True
 
         return result
 
@@ -393,6 +389,7 @@ class UserManager:
             except HTTPException as exc:
                 print(exc)
 
+            # if no org specified, add to the auto-add org
             if new_user_invite and not new_user_invite.oid:
                 add_to_org = True
 

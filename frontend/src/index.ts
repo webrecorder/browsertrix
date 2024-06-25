@@ -545,8 +545,14 @@ export class App extends LiteElement {
       case "join":
         return html`<btrix-join
           class="flex w-full items-center justify-center md:bg-neutral-50"
+          .authState="${this.authService.authState}"
+          .userInfo="${this.appState.userInfo ?? undefined}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
+          @btrix-update-user-info=${(e: CustomEvent) => {
+            e.stopPropagation();
+            void this.updateUserInfo();
+          }}
         ></btrix-join>`;
 
       case "acceptInvite":
