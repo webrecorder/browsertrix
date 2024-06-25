@@ -2,7 +2,7 @@
 Migration 0005 - Updating scheduled cron jobs after Operator changes
 """
 
-from btrixcloud.models import CrawlConfig, UpdateCrawlConfig
+from btrixcloud.models import CrawlConfig
 from btrixcloud.crawlmanager import CrawlManager
 from btrixcloud.migrations import BaseMigration
 
@@ -46,14 +46,7 @@ class Migration(BaseMigration):
                 + f"timeout: {config.crawlTimeout}, scale: {config.scale}"
             )
             try:
-                await crawl_manager.update_crawl_config(
-                    config,
-                    UpdateCrawlConfig(
-                        scale=config.scale,
-                        crawlTimeout=config.crawlTimeout,
-                        schedule=config.schedule,
-                    ),
-                )
+                await crawl_manager.update_scheduled_job(config)
             # pylint: disable=broad-except
             except Exception as exc:
                 print(

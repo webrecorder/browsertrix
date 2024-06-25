@@ -5,7 +5,7 @@ from typing import Optional
 import yaml
 
 from btrixcloud.utils import to_k8s_date, dt_now
-from .models import MCBaseRequest, MCDecoratorSyncData, CJS, CMAP
+from .models import MCDecoratorSyncData, CJS
 from .baseoperator import BaseOperator
 
 
@@ -20,24 +20,6 @@ class CronJobOperator(BaseOperator):
         @app.post("/op/cronjob/sync")
         async def mc_sync_cronjob_crawls(data: MCDecoratorSyncData):
             return await self.sync_cronjob_crawl(data)
-
-        @app.post("/op/cronjob/customize")
-        async def mc_cronjob_related(data: MCBaseRequest):
-            return self.get_cronjob_crawl_related(data)
-
-    def get_cronjob_crawl_related(self, data: MCBaseRequest):
-        """return configmap related to crawl"""
-        labels = data.parent.get("metadata", {}).get("labels", {})
-        cid = labels.get("btrix.crawlconfig")
-        return {
-            "relatedResources": [
-                {
-                    "apiVersion": "v1",
-                    "resource": "configmaps",
-                    "labelSelector": {"matchLabels": {"btrix.crawlconfig": cid}},
-                }
-            ]
-        }
 
     def get_finished_response(
         self, metadata: dict[str, str], set_status=True, finished: Optional[str] = None
@@ -69,6 +51,8 @@ class CronJobOperator(BaseOperator):
         metadata = data.object["metadata"]
         labels = metadata.get("labels", {})
         cid = labels.get("btrix.crawlconfig")
+        # oid = labels.get("btrix.oid")
+        # userid = labels.get("btrix.user")
 
         name = metadata.get("name")
         crawl_id = name
@@ -86,30 +70,29 @@ class CronJobOperator(BaseOperator):
 
             return self.get_finished_response(metadata, set_status, finished_str)
 
-        configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
-
-        oid = configmap.get("ORG_ID")
-        userid = configmap.get("USER_ID")
+        # oid = configmap.get("ORG_ID")
+        # userid = configmap.get("USER_ID")
 
         crawljobs = data.attachments[CJS]
 
-        org = await self.org_ops.get_org_by_id(UUID(oid))
-
         warc_prefix = None
 
-        if not actual_state:
+        if not actual_state and not crawljobs:
             # cronjob doesn't exist yet
-            crawlconfig = await self.crawl_config_ops.get_crawl_config(
-                UUID(cid), UUID(oid)
-            )
+            crawlconfig = await self.crawl_config_ops.get_crawl_config(UUID(cid))
             if not crawlconfig:
                 print(
                     f"error: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
                 )
                 return self.get_finished_response(metadata)
 
+            # get org
+            oid = crawlconfig.oid
+            org = await self.org_ops.get_org_by_id(oid)
+
             # db create
-            user = await self.user_ops.get_by_id(UUID(userid))
+            userid = crawlconfig.lastModifiedBy
+            user = await self.user_ops.get_by_id(userid)
             if not user:
                 print(f"error: missing user for id {userid}")
                 return self.get_finished_response(metadata)
@@ -130,24 +113,34 @@ class CronJobOperator(BaseOperator):
             )
             print("Scheduled Crawl Created: " + crawl_id)
 
-        crawl_id, crawljob = self.k8s.new_crawl_job_yaml(
-            cid,
-            userid=userid,
-            oid=oid,
-            storage=org.storage,
-            crawler_channel=configmap.get("CRAWLER_CHANNEL", "default"),
-            scale=int(configmap.get("INITIAL_SCALE", 1)),
-            crawl_timeout=int(configmap.get("CRAWL_TIMEOUT", 0)),
-            max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),
-            manual=False,
-            crawl_id=crawl_id,
-            warc_prefix=warc_prefix,
-        )
+            profile_filename = await self.crawl_config_ops.get_profile_filename(
+                crawlconfig, org
+            )
 
-        attachments = list(yaml.safe_load_all(crawljob))
+            crawl_id, crawljob = self.k8s.new_crawl_job_yaml(
+                cid,
+                userid=userid,
+                oid=oid,
+                storage=org.storage,
+                crawler_channel=crawlconfig.crawlerChannel or "default",
+                scale=crawlconfig.scale,
+                crawl_timeout=crawlconfig.crawlTimeout,
+                max_crawl_size=crawlconfig.maxCrawlSize,
+                manual=False,
+                crawl_id=crawl_id,
+                warc_prefix=warc_prefix,
+                storage_filename=self.crawl_config_ops.default_filename_template,
+                profile_filename=profile_filename or "",
+            )
 
-        if crawl_id in crawljobs:
-            attachments[0]["status"] = crawljobs[CJS][crawl_id]["status"]
+            attachments = list(yaml.safe_load_all(crawljob))
+
+            if crawl_id in crawljobs:
+                attachments[0]["status"] = crawljobs[CJS][crawl_id]["status"]
+
+        else:
+            pprint(crawljobs)
+            attachments = crawljobs
 
         return {
             "attachments": attachments,

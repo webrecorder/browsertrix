@@ -20,8 +20,8 @@ spec:
   oid: "{{ oid }}"
   scale: {{ scale }}
 
-  profile: "{{ profile_filename }}"
-  store_filename: "{{ store_filename }}"
+  profile_filename: "{{ profile_filename }}"
+  storage_filename: "{{ storage_filename }}"
 
   maxCrawlSize: {{ max_crawl_size if not qa_source else 0 }}
   timeout: {{ timeout if not qa_source else 0 }}

@@ -2,9 +2,8 @@
 Migration 0021 - Profile filenames
 """
 
-from btrixcloud.crawlmanager import CrawlManager
 from btrixcloud.migrations import BaseMigration
-from btrixcloud.models import CrawlConfig, Profile, UpdateCrawlConfig
+from btrixcloud.models import Profile
 
 
 MIGRATION_VERSION = "0021"
@@ -21,11 +20,9 @@ class Migration(BaseMigration):
     async def migrate_up(self):
         """Perform migration up.
 
-        Add `profiles/` prefix to all profile filenames without it and
-        update configmaps.
+        Add `profiles/` prefix to all profile filenames without it
         """
         mdb_profiles = self.mdb["profiles"]
-        mdb_crawl_configs = self.mdb["crawl_configs"]
 
         async for profile_res in mdb_profiles.find({}):
             profile = Profile.from_dict(profile_res)
@@ -44,32 +41,3 @@ class Migration(BaseMigration):
                         f"Error updating filename for profile {profile.name}: {err}",
                         flush=True,
                     )
-
-        # Update profile filenames in configmaps
-        crawl_manager = CrawlManager()
-        match_query = {"profileid": {"$nin": ["", None]}}
-        async for config_dict in mdb_crawl_configs.find(match_query):
-            config = CrawlConfig.from_dict(config_dict)
-
-            profile_res = await mdb_profiles.find_one({"_id": config.profileid})
-            if not profile_res:
-                continue
-
-            profile = Profile.from_dict(profile_res)
-            if not profile.resource:
-                continue
-
-            updated_filename = profile.resource.filename
-            print(
-                f"Updating Crawl Config {config.id}: profile_filename: {updated_filename}"
-            )
-            try:
-                await crawl_manager.update_crawl_config(
-                    config, UpdateCrawlConfig(), profile_filename=updated_filename
-                )
-            # pylint: disable=broad-except
-            except Exception as exc:
-                print(
-                    "Skip crawl config migration due to error, likely missing config",
-                    exc,
-                )

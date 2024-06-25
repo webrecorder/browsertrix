@@ -3,18 +3,16 @@
 import os
 import asyncio
 import secrets
-import json
 
 from typing import Optional, Dict
 from datetime import timedelta
 
-from kubernetes_asyncio.client import V1ConfigMap
 from fastapi import HTTPException
 
-from .k8sapi import K8sAPI
 from .utils import dt_now, to_k8s_date
+from .k8sapi import K8sAPI
 
-from .models import StorageRef, CrawlConfig, UpdateCrawlConfig, BgJobType
+from .models import StorageRef, CrawlConfig, BgJobType
 
 
 # ============================================================================
@@ -112,36 +110,6 @@ class CrawlManager(K8sAPI):
 
         return job_id
 
-    async def add_crawl_config(
-        self,
-        crawlconfig: CrawlConfig,
-        storage: StorageRef,
-        run_now: bool,
-        storage_filename: str,
-        profile_filename: str,
-        warc_prefix: str,
-    ) -> Optional[str]:
-        """add new crawl, store crawl config in configmap"""
-
-        # Create Config Map
-        await self._create_config_map(crawlconfig)
-
-        crawl_id = None
-
-        if run_now:
-            crawl_id = await self.create_crawl_job(
-                crawlconfig,
-                storage,
-                str(crawlconfig.modifiedBy),
-                warc_prefix,
-                storage_filename,
-                profile_filename,
-            )
-
-        await self._update_scheduled_job(crawlconfig)
-
-        return crawl_id
-
     async def create_crawl_job(
         self,
         crawlconfig: CrawlConfig,
@@ -153,7 +121,6 @@ class CrawlManager(K8sAPI):
     ) -> str:
         """create new crawl job from config"""
         cid = str(crawlconfig.id)
-
         storage_secret = storage.get_storage_secret_name(str(crawlconfig.oid))
 
         await self.has_storage_secret(storage_secret)
@@ -205,40 +172,6 @@ class CrawlManager(K8sAPI):
             crawl_id=crawl_id,
             qa_source=qa_source,
         )
-
-    async def update_crawl_config(
-        self, crawlconfig: CrawlConfig, update: UpdateCrawlConfig, profile_filename=None
-    ) -> bool:
-        """Update the schedule or scale for existing crawl config"""
-
-        has_sched_update = update.schedule is not None
-        has_scale_update = update.scale is not None
-        has_timeout_update = update.crawlTimeout is not None
-        has_max_crawl_size_update = update.maxCrawlSize is not None
-        has_config_update = update.config is not None
-        has_crawlerid_update = update.crawlerChannel is not None
-
-        if has_sched_update:
-            # crawlconfig here has already been updated
-            await self._update_scheduled_job(crawlconfig)
-
-        # pylint: disable=too-many-boolean-expressions
-        if (
-            has_scale_update
-            or has_config_update
-            or has_timeout_update
-            or profile_filename is not None
-            or has_max_crawl_size_update
-            or has_crawlerid_update
-        ):
-            await self._update_config_map(
-                crawlconfig,
-                update,
-                profile_filename,
-                has_config_update,
-            )
-
-        return True
 
     async def remove_org_storage(self, storage: StorageRef, oid: str) -> bool:
         """Delete custom org storage secret"""
@@ -300,12 +233,6 @@ class CrawlManager(K8sAPI):
 
         return browser["metadata"]["labels"]
 
-    async def get_configmap(self, cid: str) -> V1ConfigMap:
-        """get configmap by id"""
-        return await self.core_api.read_namespaced_config_map(
-            name=f"crawl-config-{cid}", namespace=self.namespace
-        )
-
     async def ping_profile_browser(self, browserid: str) -> None:
         """return ping profile browser"""
         expire_at = dt_now() + timedelta(seconds=30)
@@ -341,29 +268,6 @@ class CrawlManager(K8sAPI):
 
     # ========================================================================
     # Internal Methods
-    async def _create_config_map(self, crawlconfig: CrawlConfig) -> None:
-        """Create Config Map based on CrawlConfig"""
-        data = {}
-        data["crawl-config.json"] = json.dumps(crawlconfig.get_raw_config())
-
-        labels = {
-            "btrix.crawlconfig": str(crawlconfig.id),
-            "btrix.org": str(crawlconfig.oid),
-        }
-
-        config_map = self.client.V1ConfigMap(
-            metadata={
-                "name": f"crawl-config-{crawlconfig.id}",
-                "namespace": self.namespace,
-                "labels": labels,
-            },
-            data=data,
-        )
-
-        await self.core_api.create_namespaced_config_map(
-            namespace=self.namespace, body=config_map
-        )
-
     async def _delete_crawl_configs(self, label) -> None:
         """Delete Crawl Cron Job and all dependent resources, including configmap and secrets"""
 
@@ -377,7 +281,7 @@ class CrawlManager(K8sAPI):
             label_selector=label,
         )
 
-    async def _update_scheduled_job(self, crawlconfig: CrawlConfig) -> Optional[str]:
+    async def update_scheduled_job(self, crawlconfig: CrawlConfig) -> Optional[str]:
         """create or remove cron job based on crawlconfig schedule"""
         cid = str(crawlconfig.id)
 
@@ -423,43 +327,3 @@ class CrawlManager(K8sAPI):
         await self.create_from_yaml(data, self.namespace)
 
         return cron_job_id
-
-    async def _update_config_map(
-        self,
-        crawlconfig: CrawlConfig,
-        update: UpdateCrawlConfig,
-        profile_filename: Optional[str] = None,
-        update_config: bool = False,
-    ) -> None:
-        try:
-            config_map = await self.get_configmap(str(crawlconfig.id))
-        # pylint: disable=raise-missing-from
-        except:
-            raise FileNotFoundError(str(crawlconfig.id))
-
-        if update.scale is not None:
-            config_map.data["INITIAL_SCALE"] = str(update.scale)
-
-        if update.crawlTimeout is not None:
-            config_map.data["CRAWL_TIMEOUT"] = str(update.crawlTimeout)
-
-        if update.maxCrawlSize is not None:
-            config_map.data["MAX_CRAWL_SIZE"] = str(update.maxCrawlSize)
-
-        if update.crawlFilenameTemplate is not None:
-            config_map.data["STORE_FILENAME"] = update.crawlFilenameTemplate
-
-        if update.crawlerChannel is not None:
-            config_map.data["CRAWLER_CHANNEL"] = update.crawlerChannel
-
-        if profile_filename is not None:
-            config_map.data["PROFILE_FILENAME"] = profile_filename
-
-        if update_config:
-            config_map.data["crawl-config.json"] = json.dumps(
-                crawlconfig.get_raw_config()
-            )
-
-        await self.core_api.patch_namespaced_config_map(
-            name=config_map.metadata.name, namespace=self.namespace, body=config_map
-        )

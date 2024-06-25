@@ -155,6 +155,13 @@ class CrawlConfigOps:
         """sanitize string for use in wacz filename"""
         return self._file_rx.sub("-", string.lower())
 
+    async def get_profile_filename(
+        self, profileid: Union[UUID, EmptyStr, None], org: Organization
+    ) -> Optional[str]:
+        """lookup filename from profileid"""
+        _, profile_filename = await self._lookup_profile(profileid, org)
+        return profile_filename
+
     async def _lookup_profile(
         self, profileid: Union[UUID, EmptyStr, None], org: Organization
     ) -> tuple[Optional[UUID], Optional[str]]:
@@ -231,16 +238,18 @@ class CrawlConfigOps:
             run_now = False
             print(f"Execution minutes quota exceeded for org {org.id}", flush=True)
 
-        crawl_id = await self.crawl_manager.add_crawl_config(
-            crawlconfig=crawlconfig,
-            storage=org.storage,
-            run_now=run_now,
-            storage_filename=storage_filename,
-            profile_filename=profile_filename or "",
-            warc_prefix=self.get_warc_prefix(org, crawlconfig),
-        )
+        await self.crawl_manager.update_scheduled_job(crawlconfig)
 
-        if crawl_id and run_now:
+        if run_now:
+            crawl_id = await self.crawl_manager.create_crawl_job(
+                crawlconfig,
+                org.storage,
+                userid=str(crawlconfig.modifiedBy),
+                warc_prefix=self.get_warc_prefix(org, crawlconfig),
+                storage_filename=storage_filename,
+                profile_filename=profile_filename or "",
+            )
+
             await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
 
         return (
@@ -284,29 +293,6 @@ class CrawlConfigOps:
 
         return False
 
-    async def readd_configmap(
-        self,
-        crawlconfig: CrawlConfig,
-        org: Organization,
-        profile_filename: Optional[str] = None,
-    ) -> None:
-        """readd configmap that may have been deleted / is invalid"""
-
-        if profile_filename is None:
-            _, profile_filename = await self._lookup_profile(crawlconfig.profileid, org)
-
-        if not self.get_channel_crawler_image(crawlconfig.crawlerChannel):
-            raise HTTPException(status_code=404, detail="crawler_not_found")
-
-        await self.crawl_manager.add_crawl_config(
-            crawlconfig=crawlconfig,
-            storage=org.storage,
-            run_now=False,
-            storage_filename=self.default_filename_template,
-            profile_filename=profile_filename or "",
-            warc_prefix=self.get_warc_prefix(org, crawlconfig),
-        )
-
     async def update_crawl_config(
         self, cid: UUID, org: Organization, user: User, update: UpdateCrawlConfig
     ) -> dict[str, bool]:
@@ -325,25 +311,24 @@ class CrawlConfigOps:
         changed = changed or (
             self.check_attr_changed(orig_crawl_config, update, "crawlTimeout")
         )
+
         changed = changed or (
             self.check_attr_changed(orig_crawl_config, update, "maxCrawlSize")
         )
         changed = changed or (
             self.check_attr_changed(orig_crawl_config, update, "crawlFilenameTemplate")
         )
-        changed = changed or (
-            self.check_attr_changed(orig_crawl_config, update, "schedule")
-        )
         changed = changed or self.check_attr_changed(orig_crawl_config, update, "scale")
+
+        schedule_changed = self.check_attr_changed(
+            orig_crawl_config, update, "schedule"
+        )
+        changed = changed or schedule_changed
 
         changed = changed or (
             update.profileid is not None
             and update.profileid != orig_crawl_config.profileid
             and ((not update.profileid) != (not orig_crawl_config.profileid))
-        )
-
-        changed = changed or self.check_attr_changed(
-            orig_crawl_config, update, "crawlerChannel"
         )
 
         metadata_changed = self.check_attr_changed(orig_crawl_config, update, "name")
@@ -383,9 +368,7 @@ class CrawlConfigOps:
         query["modifiedByName"] = user.name
         query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
 
-        query["profileid"], profile_filename = await self._lookup_profile(
-            update.profileid, org
-        )
+        query["profileid"], _ = await self._lookup_profile(update.profileid, org)
 
         if update.config is not None:
             query["config"] = update.config.dict()
@@ -402,15 +385,11 @@ class CrawlConfigOps:
                 status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
 
-        # update in crawl manager if config, schedule, scale, maxCrawlSize or crawlTimeout changed
-        if changed:
-            crawlconfig = CrawlConfig.from_dict(result)
+        # update in crawl manager to change schedule
+        if schedule_changed:
             try:
-                await self.crawl_manager.update_crawl_config(
-                    crawlconfig, update, profile_filename
-                )
-            except FileNotFoundError:
-                await self.readd_configmap(crawlconfig, org, profile_filename)
+                crawlconfig = CrawlConfig.from_dict(result)
+                await self.crawl_manager.update_scheduled_job(crawlconfig)
 
             except Exception as exc:
                 print(exc, flush=True)
@@ -693,7 +672,7 @@ class CrawlConfigOps:
     async def get_crawl_config(
         self,
         cid: UUID,
-        oid: Optional[UUID],
+        oid: Optional[UUID] = None,
         active_only: bool = True,
         config_cls=CrawlConfig,
     ):
@@ -840,13 +819,6 @@ class CrawlConfigOps:
                 status_code=404, detail=f"Crawl Config '{cid}' not found"
             )
 
-        # ensure crawlconfig exists
-        try:
-            await self.crawl_manager.get_configmap(crawlconfig.id)
-        # pylint: disable=bare-except
-        except:
-            await self.readd_configmap(crawlconfig, org)
-
         if org.readOnly:
             raise HTTPException(status_code=403, detail="org_set_to_read_only")
 
@@ -865,7 +837,7 @@ class CrawlConfigOps:
         if await self.get_running_crawl(crawlconfig):
             raise HTTPException(status_code=400, detail="crawl_already_running")
 
-        _, profile_filename = await self._lookup_profile(crawlconfig.profileid, org)
+        profile_filename = await self.get_profile_filename(crawlconfig.profileid, org)
 
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(

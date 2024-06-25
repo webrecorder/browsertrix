@@ -127,6 +127,7 @@ class CrawlOperator(BaseOperator):
         params.update(self.k8s.shared_params)
         params["id"] = crawl_id
         params["cid"] = cid
+        params["oid"] = oid
         params["userid"] = spec.get("userid", "")
 
         pods = data.children[POD]
@@ -252,7 +253,7 @@ class CrawlOperator(BaseOperator):
         storage_secret = crawl.storage.get_storage_secret_name(oid)
 
         if not crawl.is_qa:
-            params["profile_filename"] = spec.get("profile", "")
+            params["profile_filename"] = spec.get("profile_filename", "")
         else:
             storage_path += "qa/"
 
@@ -268,7 +269,7 @@ class CrawlOperator(BaseOperator):
 
         params["crawler_image"] = status.crawlerImage
 
-        params["storage_filename"] = spec.get("storage_filename")
+        params["storage_filename"] = spec["storage_filename"]
         params["restart_time"] = spec.get("restartTime")
 
         params["warc_prefix"] = spec.get("warcPrefix")
@@ -282,6 +283,8 @@ class CrawlOperator(BaseOperator):
             params["force_restart"] = True
         else:
             params["force_restart"] = False
+
+        children.extend(await self._load_crawl_configmap(crawl, data.children, params))
 
         if crawl.qa_source_crawl_id:
             params["qa_source_crawl_id"] = crawl.qa_source_crawl_id
@@ -312,6 +315,27 @@ class CrawlOperator(BaseOperator):
 
         return self.load_from_yaml("redis.yaml", params)
 
+    async def _load_crawl_configmap(self, crawl: CrawlSpec, children, params):
+        name = f"crawl-config-{crawl.id}"
+
+        configmap = children[CMAP].get(name)
+        if configmap:
+            metadata = configmap["metadata"]
+            configmap["metadata"] = {
+                "name": metadata["name"],
+                "namespace": metadata["namespace"],
+                "labels": metadata["labels"],
+            }
+            return [configmap]
+
+        params["name"] = name
+
+        crawlconfig = await self.crawl_config_ops.get_crawl_config(crawl.cid, crawl.oid)
+
+        params["config"] = json.dumps(crawlconfig.get_raw_config())
+
+        return self.load_from_yaml("crawl_configmap.yaml", params)
+
     async def _load_qa_configmap(self, params, children):
         qa_source_crawl_id = params["qa_source_crawl_id"]
         name = f"qa-replay-{qa_source_crawl_id}"
@@ -330,6 +354,7 @@ class CrawlOperator(BaseOperator):
 
         params["name"] = name
         params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})
+        print(params["qa_source_replay_json"])
         return self.load_from_yaml("qa_configmap.yaml", params)
 
     def _load_crawler(self, params, i, status, children):
