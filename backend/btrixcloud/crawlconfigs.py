@@ -219,6 +219,10 @@ class CrawlConfigOps:
         storage_quota_reached = await self.org_ops.storage_quota_reached(org.id)
         exec_mins_quota_reached = await self.org_ops.exec_mins_quota_reached(org.id)
 
+        if org.readOnly:
+            run_now = False
+            print(f"Org {org.id} set to read-only", flush=True)
+
         if storage_quota_reached:
             run_now = False
             print(f"Storage quota exceeded for org {org.id}", flush=True)
@@ -842,6 +846,9 @@ class CrawlConfigOps:
         # pylint: disable=bare-except
         except:
             await self.readd_configmap(crawlconfig, org)
+
+        if org.readOnly:
+            raise HTTPException(status_code=400, detail="org_set_to_read_only")
 
         if await self.org_ops.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")

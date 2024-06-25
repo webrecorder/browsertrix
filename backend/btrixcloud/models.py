@@ -972,6 +972,14 @@ class OrgQuotaUpdate(BaseModel):
 
 
 # ============================================================================
+class OrgReadOnlyUpdate(BaseModel):
+    """Organization readonly update"""
+
+    readOnly: bool
+    readOnlyReason: Optional[str] = None
+
+
+# ============================================================================
 class OrgWebhookUrls(BaseModel):
     """Organization webhook URLs"""
 
@@ -1025,6 +1033,9 @@ class OrgOut(BaseMongoModel):
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 
+    readOnly: Optional[bool]
+    readOnlyReason: Optional[str]
+
 
 # ============================================================================
 class Organization(BaseMongoModel):
@@ -1068,6 +1079,9 @@ class Organization(BaseMongoModel):
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 
     origin: Optional[AnyHttpUrl] = None
+
+    readOnly: Optional[bool] = False
+    readOnlyReason: Optional[str] = None
 
     def is_owner(self, user):
         """Check if user is owner"""

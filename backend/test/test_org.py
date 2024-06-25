@@ -486,3 +486,58 @@ def test_get_org_slug_lookup_non_superadmin(crawler_auth_headers):
     r = requests.get(f"{API_PREFIX}/orgs/slug-lookup", headers=crawler_auth_headers)
     assert r.status_code == 403
     assert r.json()["detail"] == "Not Allowed"
+
+
+def test_update_read_only(admin_auth_headers, default_org_id):
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    data = r.json()
+    assert data["readOnly"] in (False, None)
+    assert data["readOnlyReason"] in (None, "")
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/read-only",
+        headers=admin_auth_headers,
+        json={"readOnly": True, "readOnlyReason": "Payment suspended"},
+    )
+    assert r.json()["updated"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    data = r.json()
+    assert data["readOnly"] is True
+    assert data["readOnlyReason"] == "Payment suspended"
+
+    # Try to start crawls, should fail
+    crawl_data = {
+        "runNow": True,
+        "name": "Read Only Test Crawl",
+        "description": "Should not run now",
+        "tags": [],
+        "config": {
+            "seeds": [{"url": "https://webrecorder.net/", "depth": 1}],
+            "exclude": "community",
+        },
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    assert data["added"]
+    assert data["id"]
+    assert data["run_now_job"] is None
+
+    # Reset back to False, future crawls in tests should run fine
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/read-only",
+        headers=admin_auth_headers,
+        json={"readOnly": False},
+    )
+    assert r.json()["updated"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{default_org_id}", headers=admin_auth_headers)
+    data = r.json()
+    assert data["readOnly"] is False
+    # Test that reason is unset when readOnly is set to false, even implicitly
+    assert data["readOnlyReason"] == ""

@@ -98,6 +98,12 @@ class CronJobOperator(BaseOperator):
 
             warc_prefix = self.crawl_config_ops.get_warc_prefix(org, crawlconfig)
 
+            if org.readOnly:
+                print(
+                    f"org {org.id} set to read-only. skipping scheduled crawl for workflow {cid}"
+                )
+                return {"attachments": []}
+
             await self.crawl_config_ops.add_new_crawl(
                 crawl_id,
                 crawlconfig,
