@@ -41,11 +41,11 @@ export const renderInviteMessage = (
 
   if (!message) return;
 
-  return html`<p class="max-w-prose text-base text-neutral-600">${message}</p>
+  return html`<p class="max-w-prose text-base text-neutral-700">${message}</p>
     ${when(
       inviteInfo.firstOrgAdmin,
       () => html`
-        <ul class="mt-6 text-base text-neutral-600">
+        <ul class="mt-6 text-base text-neutral-700">
           <li class="mb-3 flex items-center gap-2">
             <sl-icon
               class="text-lg text-primary"
@@ -62,9 +62,30 @@ export const renderInviteMessage = (
               name="2-circle"
               label=${msg("Step 2")}
             ></sl-icon>
-            ${msg("Configure your organization")}
+            ${msg("Configure organization")}
           </li>
         </ul>
+        <sl-divider></sl-divider>
+        <h2 class="mb-3 italic text-primary">${msg("What is an org?")}</h2>
+        <p class="mb-3 text-neutral-600">
+          ${msg(
+            "An org, or organization, is a workspace for web archiving. If you’re archiving collaboratively, an org workspace can be shared between team members.",
+          )}
+        </p>
+        <p class="text-neutral-600">
+          ${msg(
+            html`Refer to our user guide on
+              <a
+                class="text-neutral-500 underline hover:text-primary"
+                href="https://docs.browsertrix.com/user-guide/org-settings/"
+                target="_blank"
+                rel="noopener"
+              >
+                org settings
+              </a>
+              for details.`,
+          )}
+        </p>
       `,
     )}`;
 };
