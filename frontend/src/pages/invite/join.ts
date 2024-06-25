@@ -1,8 +1,8 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import { type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
+
+import { renderInviteMessage } from "./ui/inviteMessage";
 
 import type { OrgFormSubmitEventDetail } from "@/features/accounts/org-form";
 import type { CurrentUser, UserOrgInviteInfo } from "@/types/user";
@@ -12,7 +12,6 @@ import AuthService, {
   type LoggedInEventDetail,
 } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { isOwner } from "@/utils/orgs";
 
 /**
  * @fires btrix-update-user-info
@@ -41,19 +40,6 @@ export class Join extends LiteElement {
     args: () => [this.token, this.email] as const,
   });
 
-  private get orgNameRequired() {
-    const inviteInfo = this.inviteInfo.value;
-
-    if (inviteInfo) {
-      return Boolean(
-        inviteInfo.firstOrgAdmin ||
-          (isOwner(inviteInfo.role) && inviteInfo.orgNameRequired),
-      );
-    }
-
-    return null;
-  }
-
   private get isLoggedIn(): boolean {
     return Boolean(
       this.authState && this.email && this.authState.username === this.email,
@@ -69,7 +55,13 @@ export class Join extends LiteElement {
           <h1 class="mb-5 text-xl font-semibold">
             ${msg("Set up your Browsertrix account")}
           </h1>
-          ${this.renderInviteMessage()}
+          ${this.inviteInfo.render({
+            complete: (inviteInfo) =>
+              renderInviteMessage(inviteInfo, {
+                isExistingUser: false,
+                isLoggedIn: this.isLoggedIn,
+              }),
+          })}
         </header>
 
         <div class="max-w-md flex-1">
@@ -81,11 +73,11 @@ export class Join extends LiteElement {
                 </div>
               `,
               complete: (inviteInfo) =>
-                this.isLoggedIn && this.orgNameRequired
+                this.isLoggedIn && inviteInfo && inviteInfo.firstOrgAdmin
                   ? html`
                       <btrix-org-form
-                        name=${inviteInfo?.orgName || ""}
-                        slug=${inviteInfo?.orgSlug || ""}
+                        name=${inviteInfo.orgName || ""}
+                        slug=${inviteInfo.orgSlug || ""}
                         @btrix-submit=${this.onSubmitOrgForm}
                       ></btrix-org-form>
                     `
@@ -105,63 +97,6 @@ export class Join extends LiteElement {
         </div>
       </section>
     `;
-  }
-
-  private renderInviteMessage() {
-    let message: string | TemplateResult = "";
-
-    if (this.orgNameRequired) {
-      message = msg(
-        "You're almost there! Finish setting up your account to start web archiving.",
-      );
-    } else if (this.inviteInfo.value) {
-      const { inviterName, orgName, fromSuperuser } = this.inviteInfo.value;
-
-      if (inviterName && !fromSuperuser && orgName) {
-        message = msg(
-          html`You’ve been invited by
-            <strong class="font-medium">${inviterName}</strong>
-            to join the organization
-            <span class="font-medium text-primary">${orgName}</span>
-            on Browsertrix.`,
-        );
-      } else if (orgName) {
-        message = msg(
-          html`Register your user account for the organization
-            <span class="font-medium text-primary">${orgName}</span>
-            on Browsertrix.`,
-        );
-      }
-    }
-
-    if (!message) return;
-
-    return html`<p class="max-w-prose text-base text-neutral-600">${message}</p>
-      ${when(
-        this.orgNameRequired,
-        () => html`
-          <ul class="mt-6 text-base text-neutral-600">
-            <li class="mb-3 flex items-center gap-2">
-              <sl-icon
-                class="text-lg text-primary"
-                name=${this.isLoggedIn ? "check-circle" : "1-circle"}
-                label=${this.isLoggedIn
-                  ? msg("Step 1 complete")
-                  : msg("Step 1")}
-              ></sl-icon>
-              ${msg("Create a password and display name")}
-            </li>
-            <li class="flex items-center gap-2">
-              <sl-icon
-                class="text-lg text-primary"
-                name="2-circle"
-                label=${msg("Step 2")}
-              ></sl-icon>
-              ${msg("Configure organization")}
-            </li>
-          </ul>
-        `,
-      )} `;
   }
 
   private async getInviteInfo({
@@ -192,7 +127,7 @@ export class Join extends LiteElement {
     this.dispatchEvent(
       AuthService.createLoggedInEvent({
         ...event.detail,
-        api: Boolean(this.orgNameRequired), // prevents navigation if org name is required
+        api: Boolean(this.inviteInfo.value?.firstOrgAdmin), // prevents navigation if org name is required
       }),
     );
   }

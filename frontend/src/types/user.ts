@@ -5,7 +5,6 @@ export type UserOrgInviteInfo = {
   inviterName: string;
   fromSuperuser?: boolean;
   firstOrgAdmin: boolean;
-  orgNameRequired: boolean;
   role: (typeof AccessCode)[UserRole];
   oid?: string;
   orgName?: string;

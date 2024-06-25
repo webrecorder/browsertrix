@@ -1,7 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
-import { html, type TemplateResult } from "lit";
+import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+
+import { renderInviteMessage } from "./ui/inviteMessage";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
@@ -12,7 +14,6 @@ import { ROUTES } from "@/routes";
 import type { UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { Auth, AuthState } from "@/utils/AuthService";
-import { isOwner } from "@/utils/orgs";
 
 @localized()
 @customElement("btrix-accept-invite")
@@ -43,19 +44,6 @@ export class AcceptInvite extends TailwindElement {
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
   private readonly notify = new NotifyController(this);
-
-  private get orgNameRequired() {
-    const inviteInfo = this.inviteInfo.value;
-
-    if (inviteInfo) {
-      return Boolean(
-        inviteInfo.firstOrgAdmin ||
-          (isOwner(inviteInfo.role) && inviteInfo.orgNameRequired),
-      );
-    }
-
-    return null;
-  }
 
   connectedCallback(): void {
     if (this.token && this.email) {
@@ -106,9 +94,15 @@ export class AcceptInvite extends TailwindElement {
         <header class="my-12 max-w-sm flex-1">
           <div class="md:sticky md:top-12">
             <h1 class="sticky top-0 mb-5 text-xl font-semibold">
-              ${msg("Welcome to Browsertrix")}
+              ${msg("You’ve been invited to join an org")}
             </h1>
-            ${this.renderInviteMessage()}
+            ${this.inviteInfo.render({
+              complete: (inviteInfo) =>
+                renderInviteMessage(inviteInfo, {
+                  isExistingUser: true,
+                  isLoggedIn: this.isLoggedIn,
+                }),
+            })}
           </div>
         </header>
 
@@ -122,11 +116,11 @@ export class AcceptInvite extends TailwindElement {
               </div>
             `,
             complete: (inviteInfo) =>
-              this.isLoggedIn && this.orgNameRequired
+              this.isLoggedIn && inviteInfo && inviteInfo.firstOrgAdmin
                 ? html`
                     <btrix-org-form
-                      name=${inviteInfo?.orgName || ""}
-                      slug=${inviteInfo?.orgSlug || ""}
+                      name=${inviteInfo.orgName || ""}
+                      slug=${inviteInfo.orgSlug || ""}
                       @btrix-submit=${this.onSubmitOrgForm}
                     ></btrix-org-form>
                   `
@@ -137,7 +131,7 @@ export class AcceptInvite extends TailwindElement {
                         variant="primary"
                         @click=${this.onAccept}
                       >
-                        ${msg("Accept invitation")}
+                        ${msg("Accept Invitation")}
                       </sl-button>
                       <sl-button variant="text" @click=${this.onDecline}
                         >${msg("Decline")}</sl-button
@@ -150,38 +144,6 @@ export class AcceptInvite extends TailwindElement {
         </div>
       </section>
     `;
-  }
-
-  private renderInviteMessage() {
-    let message: string | TemplateResult = "";
-
-    if (this.orgNameRequired) {
-      message = msg(
-        "You're almost there! Register your organization to start web archiving.",
-      );
-    } else if (this.inviteInfo.value) {
-      const { inviterName, orgName, fromSuperuser } = this.inviteInfo.value;
-
-      if (inviterName && !fromSuperuser && orgName) {
-        message = msg(
-          html`You’ve been invited by
-            <strong class="font-medium">${inviterName}</strong>
-            to join the organization
-            <span class="font-medium text-primary">${orgName}</span>
-            on Browsertrix.`,
-        );
-      } else if (orgName) {
-        message = msg(
-          html`You’ve been invited to join the organization
-            <span class="font-medium text-primary">${orgName}</span>
-            on Browsertrix.`,
-        );
-      }
-    }
-
-    if (!message) return;
-
-    return html` <p class="max-w-prose text-neutral-600">${message}</p> `;
   }
 
   private async getInviteInfo({
