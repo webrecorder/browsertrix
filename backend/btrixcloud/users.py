@@ -337,11 +337,6 @@ class UserManager:
             if not org_owners:
                 result["firstOrgAdmin"] = True
 
-            # Require rename in frontend if org name is set to id
-            result["orgNameRequired"] = False
-            if str(org.name) == str(org.id):
-                result["orgNameRequired"] = True
-
         return result
 
     async def _create(
@@ -394,6 +389,7 @@ class UserManager:
             except HTTPException as exc:
                 print(exc)
 
+            # if no org specified, add to the auto-add org
             if new_user_invite and not new_user_invite.oid:
                 add_to_org = True
 
