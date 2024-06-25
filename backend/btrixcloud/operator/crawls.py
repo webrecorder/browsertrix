@@ -410,8 +410,8 @@ class CrawlOperator(BaseOperator):
             actual_scale -= 1
 
         # ensure at least enough pages for the scale
-        if status.pagesFound and status.pagesFound < desired_scale:
-            desired_scale = status.pagesFound
+        if status.pagesFound < desired_scale:
+            desired_scale = max(1, status.pagesFound)
 
         # if desired_scale same or scaled up, return desired_scale
         if desired_scale >= actual_scale:
