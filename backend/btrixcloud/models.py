@@ -967,7 +967,7 @@ class OrgQuotaUpdate(BaseModel):
 
 # ============================================================================
 class OrgPaymentSuspendedUpdate(BaseModel):
-    """Organization quota update (to track changes over time)"""
+    """Organization update for paymentSuspended field"""
 
     paymentSuspended: bool
 
