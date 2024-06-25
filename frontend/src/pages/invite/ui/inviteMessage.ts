@@ -16,9 +16,13 @@ export const renderInviteMessage = (
   let message: string | TemplateResult = "";
 
   if (inviteInfo.firstOrgAdmin) {
-    message = msg(
-      "Finish setting up your Browsertrix account to start web archiving.",
-    );
+    if (isExistingUser) {
+      message = msg("Set up your organization to start web archiving.");
+    } else {
+      message = msg(
+        "Finish setting up your Browsertrix account to start web archiving.",
+      );
+    }
   } else {
     const { inviterName, orgName, fromSuperuser } = inviteInfo;
 

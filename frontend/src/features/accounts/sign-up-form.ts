@@ -67,7 +67,7 @@ export class SignUpForm extends LiteElement {
           <btrix-alert id="formError" variant="danger"
             >${this.serverError}
             ${this.showLoginLink
-              ? html` <p>
+              ? html`<p>
                   Go to the
                   <a class="underline" href="/log-in">Log-In Page</a> and try
                   again.

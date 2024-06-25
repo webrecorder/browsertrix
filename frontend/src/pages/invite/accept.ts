@@ -10,7 +10,7 @@ import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import { ROUTES } from "@/routes";
-import type { UserOrgInviteInfo } from "@/types/user";
+import type { UserOrg, UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { Auth, AuthState } from "@/utils/AuthService";
 
@@ -94,7 +94,7 @@ export class AcceptInvite extends TailwindElement {
       >
         <header class="flex-1 pt-6 md:max-w-sm">
           <h1 class="mb-5 text-2xl font-semibold">
-            ${msg("You’ve been invited to join an org")}
+            ${msg("You’ve been invited to join a new org")}
           </h1>
           ${this.inviteInfo.render({
             complete: (inviteInfo) =>
@@ -175,7 +175,7 @@ export class AcceptInvite extends TailwindElement {
     }
 
     try {
-      const data = await this.api.fetch<{ orgName: string; orgSlug: string }>(
+      const { org } = await this.api.fetch<{ org: UserOrg }>(
         `/orgs/invite-accept/${this.token}`,
         this.authState,
         {
@@ -188,13 +188,13 @@ export class AcceptInvite extends TailwindElement {
       } else {
         this.notify.toast({
           message: msg(
-            str`You've joined ${data.orgName || inviteInfo.orgName || msg("Browsertrix")}.`,
+            str`You've joined ${org.name || inviteInfo.orgName || msg("Browsertrix")}.`,
           ),
           variant: "success",
           icon: "check2-circle",
         });
 
-        this.navigate.to(`/orgs/${data.orgSlug || inviteInfo.orgSlug}`);
+        this.navigate.to(`/orgs/${org.slug || inviteInfo.orgSlug}`);
       }
     } catch (err) {
       if (isApiError(err) && err.message === "Invalid Invite Code") {

@@ -141,9 +141,7 @@ export class OrgForm extends TailwindElement {
       await this.dispatchEvent(
         new CustomEvent("btrix-update-user-info", { bubbles: true }),
       );
-      if (slug) {
-        this.navigate.to(`/orgs/${slug}`);
-      }
+      this.navigate.to(`/orgs/${slug || this.slug}`);
     } catch (e) {
       console.debug(e);
       if (isApiError(e) && e.details === "duplicate_org_name") {

@@ -17,7 +17,7 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import type { Crawl, JobType } from "@/types/crawler";
-import type { CurrentUser } from "@/types/user";
+import type { CurrentUser, UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import { needLogin } from "@/utils/auth";
@@ -197,7 +197,22 @@ export class Org extends LiteElement {
         void this.updateOrg();
       } else {
         // Couldn't find org with slug, redirect to first org
-        this.navTo(`/orgs/${this.userInfo.orgs[0].slug}`);
+        const org = this.userInfo.orgs[0] as UserOrg | undefined;
+        if (org) {
+          this.navTo(`/orgs/${org.slug}`);
+        } else {
+          // Handle edge case where user does not belong
+          // to any orgs but is attempting to log in
+          // TODO check if hosted instance and show support email if so
+          this.notify({
+            message: msg(
+              "You must belong to at least one org in order to log in. Please contact your Browsertrix admin to resolve the issue.",
+            ),
+            variant: "danger",
+            icon: "exclamation-octagon",
+          });
+        }
+
         return;
       }
     }
