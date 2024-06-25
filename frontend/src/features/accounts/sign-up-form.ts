@@ -11,6 +11,11 @@ import AuthService from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import PasswordService from "@/utils/PasswordService";
 
+export type SignUpSuccessDetail = {
+  orgName?: string;
+  orgSlug?: string;
+};
+
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
 
@@ -219,11 +224,16 @@ export class SignUpForm extends LiteElement {
       body: JSON.stringify(registerParams),
     });
 
+    let data;
     let shouldLogIn = false;
 
     switch (resp.status) {
       case 201: {
-        const data = (await resp.json()) as { id: unknown };
+        data = (await resp.json()) as {
+          id: unknown;
+          orgName?: string;
+          orgSlug?: string;
+        };
 
         if (data.id) {
           shouldLogIn = true;
@@ -258,7 +268,14 @@ export class SignUpForm extends LiteElement {
     if (this.serverError) {
       this.dispatchEvent(new CustomEvent("error"));
     } else {
-      this.dispatchEvent(new CustomEvent("success"));
+      this.dispatchEvent(
+        new CustomEvent<SignUpSuccessDetail>("success", {
+          detail: {
+            orgName: data?.orgName,
+            orgSlug: data?.orgSlug,
+          },
+        }),
+      );
 
       if (shouldLogIn) {
         try {

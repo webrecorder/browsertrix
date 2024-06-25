@@ -1,10 +1,11 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 
 import { renderInviteMessage } from "./ui/inviteMessage";
 
 import type { OrgFormSubmitEventDetail } from "@/features/accounts/org-form";
+import { type SignUpSuccessDetail } from "@/features/accounts/sign-up-form";
 import type { CurrentUser, UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import AuthService, {
@@ -31,6 +32,12 @@ export class Join extends LiteElement {
   @property({ type: String })
   email?: string;
 
+  @state()
+  signUpOrgDefaults?: {
+    name: string;
+    slug: string;
+  };
+
   private readonly inviteInfo = new Task(this, {
     task: async ([token, email]) => {
       if (!token || !email) throw new Error("Missing args");
@@ -52,8 +59,8 @@ export class Join extends LiteElement {
         class="flex min-h-full w-full flex-col justify-center gap-12 p-5 md:flex-row md:gap-16 md:py-16"
       >
         <header class="flex-1 pt-6 md:max-w-sm">
-          <h1 class="mb-5 text-xl font-semibold">
-            ${msg("Set up your Browsertrix account")}
+          <h1 class="mb-5 text-2xl font-semibold">
+            ${msg("Welcome to Browsertrix")}
           </h1>
           ${this.inviteInfo.render({
             complete: (inviteInfo) =>
@@ -76,8 +83,12 @@ export class Join extends LiteElement {
                 this.isLoggedIn && inviteInfo && inviteInfo.firstOrgAdmin
                   ? html`
                       <btrix-org-form
-                        name=${inviteInfo.orgName || ""}
-                        slug=${inviteInfo.orgSlug || ""}
+                        name=${inviteInfo.orgName ||
+                        this.signUpOrgDefaults?.name ||
+                        ""}
+                        slug=${inviteInfo.orgSlug ||
+                        this.signUpOrgDefaults?.slug ||
+                        ""}
                         @btrix-submit=${this.onSubmitOrgForm}
                       ></btrix-org-form>
                     `
@@ -87,6 +98,7 @@ export class Join extends LiteElement {
                         inviteToken=${this.token!}
                         .inviteInfo=${inviteInfo || undefined}
                         submitLabel=${msg("Next")}
+                        @success=${this.onSignUpSuccess}
                         @authenticated=${this.onAuthenticated}
                       ></btrix-sign-up-form>
                     `,
@@ -121,6 +133,14 @@ export class Join extends LiteElement {
     } else {
       throw new Error(msg("This invitation is not valid."));
     }
+  }
+
+  private onSignUpSuccess(e: CustomEvent<SignUpSuccessDetail>) {
+    const { orgName, orgSlug } = e.detail;
+    this.signUpOrgDefaults = {
+      name: orgName || "",
+      slug: orgSlug || "",
+    };
   }
 
   private onAuthenticated(event: CustomEvent<LoggedInEventDetail>) {

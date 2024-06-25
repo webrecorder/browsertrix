@@ -14,7 +14,7 @@ export const renderInviteMessage = (
 
   if (inviteInfo.firstOrgAdmin) {
     message = msg(
-      "You're almost there! Finish setting up your account to start web archiving.",
+      "Finish setting up your Browsertrix account to start web archiving.",
     );
   } else {
     const { inviterName, orgName, fromSuperuser } = inviteInfo;
@@ -38,7 +38,7 @@ export const renderInviteMessage = (
 
   if (!message) return;
 
-  return html`<p class="max-w-prose text-neutral-600">${message}</p>
+  return html`<p class="max-w-prose text-base text-neutral-600">${message}</p>
     ${when(
       inviteInfo.firstOrgAdmin,
       () => html`
@@ -59,7 +59,7 @@ export const renderInviteMessage = (
               name="2-circle"
               label=${msg("Step 2")}
             ></sl-icon>
-            ${msg("Configure organization")}
+            ${msg("Configure your organization")}
           </li>
         </ul>
       `,
