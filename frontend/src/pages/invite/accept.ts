@@ -28,7 +28,10 @@ export class AcceptInvite extends TailwindElement {
   email?: string;
 
   @state()
-  serverError?: string;
+  private serverError?: string;
+
+  @state()
+  private isFirstOrgAdminJoined = false;
 
   @state()
   private readonly inviteInfo = new Task(this, {
@@ -89,58 +92,56 @@ export class AcceptInvite extends TailwindElement {
 
     return html`
       <section
-        class="flex w-full flex-col justify-center gap-12 p-5 md:flex-row md:gap-16"
+        class="flex min-h-full w-full flex-col justify-center gap-12 p-5 md:flex-row md:gap-16 md:py-16"
       >
-        <header class="my-12 max-w-sm flex-1">
-          <div class="md:sticky md:top-12">
-            <h1 class="sticky top-0 mb-5 text-xl font-semibold">
-              ${msg("You’ve been invited to join an org")}
-            </h1>
-            ${this.inviteInfo.render({
-              complete: (inviteInfo) =>
-                renderInviteMessage(inviteInfo, {
-                  isExistingUser: true,
-                  isLoggedIn: this.isLoggedIn,
-                }),
-            })}
-          </div>
+        <header class="flex-1 pt-6 md:max-w-sm">
+          <h1 class="mb-5 text-2xl font-semibold">
+            ${msg("You’ve been invited to join an org")}
+          </h1>
+          ${this.inviteInfo.render({
+            complete: (inviteInfo) =>
+              renderInviteMessage(inviteInfo, {
+                isExistingUser: true,
+                isOrgMember: this.isFirstOrgAdminJoined,
+              }),
+          })}
         </header>
 
-        <div
-          class="flex max-w-md flex-1 items-center justify-center md:rounded-lg md:border md:bg-white md:p-12 md:shadow-lg"
-        >
-          ${this.inviteInfo.render({
-            pending: () => html`
-              <div class="flex items-center justify-center text-2xl">
-                <sl-spinner></sl-spinner>
-              </div>
-            `,
-            complete: (inviteInfo) =>
-              this.isLoggedIn && inviteInfo && inviteInfo.firstOrgAdmin
-                ? html`
-                    <btrix-org-form
-                      name=${inviteInfo.orgName || ""}
-                      slug=${inviteInfo.orgSlug || ""}
-                      @btrix-submit=${this.onSubmitOrgForm}
-                    ></btrix-org-form>
-                  `
-                : html`
-                    <div class="w-full text-center">
-                      <sl-button
-                        class="my-3 block"
-                        variant="primary"
-                        @click=${this.onAccept}
-                      >
-                        ${msg("Accept Invitation")}
-                      </sl-button>
-                      <sl-button variant="text" @click=${this.onDecline}
-                        >${msg("Decline")}</sl-button
-                      >
-                    </div>
-                  `,
-            error: (err) =>
-              html`<btrix-alert variant="danger">${err}</btrix-alert>`,
-          })}
+        <div class="max-w-md flex-1">
+          <div class="md:rounded-lg md:border md:bg-white md:p-12 md:shadow-lg">
+            ${this.inviteInfo.render({
+              pending: () => html`
+                <div class="flex items-center justify-center text-2xl">
+                  <sl-spinner></sl-spinner>
+                </div>
+              `,
+              complete: (inviteInfo) =>
+                inviteInfo && this.isFirstOrgAdminJoined
+                  ? html`
+                      <btrix-org-form
+                        name=${inviteInfo.orgName || ""}
+                        slug=${inviteInfo.orgSlug || ""}
+                        @btrix-submit=${this.onSubmitOrgForm}
+                      ></btrix-org-form>
+                    `
+                  : html`
+                      <div class="w-full text-center">
+                        <sl-button
+                          class="my-3 block"
+                          variant="primary"
+                          @click=${this.onAccept}
+                        >
+                          ${msg("Accept Invitation")}
+                        </sl-button>
+                        <sl-button variant="text" @click=${this.onDecline}
+                          >${msg("Decline")}</sl-button
+                        >
+                      </div>
+                    `,
+              error: (err) =>
+                html`<btrix-alert variant="danger">${err}</btrix-alert>`,
+            })}
+          </div>
         </div>
       </section>
     `;
@@ -164,42 +165,38 @@ export class AcceptInvite extends TailwindElement {
     }
   }
 
-  private async onAccept(params?: OrgFormSubmitEventDetail["values"]) {
-    if (!this.authState || !this.isLoggedIn || !this.inviteInfo.value) {
+  private async onAccept() {
+    const inviteInfo = this.inviteInfo.value;
+
+    if (!this.authState || !this.isLoggedIn || !inviteInfo) {
       // TODO handle error
       this.serverError = msg("Something unexpected went wrong");
 
       return;
     }
 
-    let { orgName, orgSlug } = this.inviteInfo.value;
-    if (params) {
-      if (params.orgName) {
-        orgName = params.orgName;
-      }
-      if (params.orgSlug) {
-        orgSlug = params.orgSlug;
-      }
-    }
-
     try {
-      await this.api.fetch(
+      const data = await this.api.fetch<{ orgName: string; orgSlug: string }>(
         `/orgs/invite-accept/${this.token}`,
         this.authState,
         {
           method: "POST",
-          body: JSON.stringify(params || {}),
         },
       );
 
-      // TODO handle new org name
-      this.notify.toast({
-        message: msg(str`You've joined ${orgName || msg("Browsertrix")}.`),
-        variant: "success",
-        icon: "check2-circle",
-      });
+      if (inviteInfo.firstOrgAdmin) {
+        this.isFirstOrgAdminJoined = true;
+      } else {
+        this.notify.toast({
+          message: msg(
+            str`You've joined ${data.orgName || inviteInfo.orgName || msg("Browsertrix")}.`,
+          ),
+          variant: "success",
+          icon: "check2-circle",
+        });
 
-      this.navigate.to(`/orgs/${orgSlug}`);
+        this.navigate.to(`/orgs/${data.orgSlug || inviteInfo.orgSlug}`);
+      }
     } catch (err) {
       if (isApiError(err) && err.message === "Invalid Invite Code") {
         this.serverError = msg("This invitation is not valid");
@@ -223,9 +220,49 @@ export class AcceptInvite extends TailwindElement {
     this.navigate.to(ROUTES.home);
   }
 
-  private onSubmitOrgForm(e: CustomEvent<OrgFormSubmitEventDetail>) {
-    const { values } = e.detail;
+  private async onSubmitOrgForm(e: CustomEvent<OrgFormSubmitEventDetail>) {
+    const inviteInfo = this.inviteInfo.value;
+    if (!inviteInfo) return;
 
-    void this.onAccept(values);
+    const { values } = e.detail;
+    const { oid, orgName, orgSlug } = inviteInfo;
+
+    if (values.orgName === orgName && values.orgSlug === orgSlug) {
+      this.navigate.to(`/orgs/${orgSlug}`);
+
+      return;
+    }
+
+    try {
+      await this.api.fetch(`/orgs/${oid}/rename`, this.authState!, {
+        method: "POST",
+        body: JSON.stringify({
+          name: values.orgName,
+          slug: values.orgSlug,
+        }),
+      });
+
+      this.notify.toast({
+        message: msg("New org name saved."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+
+      await this.dispatchEvent(
+        new CustomEvent("btrix-update-user-info", { bubbles: true }),
+      );
+      const newSlug = values.orgSlug;
+      if (newSlug) {
+        this.navigate.to(`/orgs/${newSlug}`);
+      }
+    } catch (e) {
+      this.notify.toast({
+        message: isApiError(e)
+          ? e.message
+          : msg("Sorry, couldn't update organization at this time."),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
   }
 }

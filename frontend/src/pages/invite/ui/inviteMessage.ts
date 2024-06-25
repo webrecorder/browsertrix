@@ -6,7 +6,10 @@ import type { UserOrgInviteInfo } from "@/types/user";
 
 export const renderInviteMessage = (
   inviteInfo: void | UserOrgInviteInfo,
-  { isExistingUser, isLoggedIn } = { isExistingUser: false, isLoggedIn: false },
+  { isExistingUser, isOrgMember } = {
+    isExistingUser: false,
+    isOrgMember: false,
+  },
 ) => {
   if (!inviteInfo) return;
 
@@ -46,8 +49,8 @@ export const renderInviteMessage = (
           <li class="mb-3 flex items-center gap-2">
             <sl-icon
               class="text-lg text-primary"
-              name=${isLoggedIn ? "check-circle" : "1-circle"}
-              label=${isLoggedIn ? msg("Step 1 complete") : msg("Step 1")}
+              name=${isOrgMember ? "check-circle" : "1-circle"}
+              label=${isOrgMember ? msg("Step 1 complete") : msg("Step 1")}
             ></sl-icon>
             ${isExistingUser
               ? msg("Join organization")

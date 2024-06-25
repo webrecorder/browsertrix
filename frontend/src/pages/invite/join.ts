@@ -33,7 +33,7 @@ export class Join extends LiteElement {
   email?: string;
 
   @state()
-  signUpOrgDefaults?: {
+  private signUpOrgDefaults?: {
     name: string;
     slug: string;
   };
@@ -66,7 +66,7 @@ export class Join extends LiteElement {
             complete: (inviteInfo) =>
               renderInviteMessage(inviteInfo, {
                 isExistingUser: false,
-                isLoggedIn: this.isLoggedIn,
+                isOrgMember: this.isLoggedIn,
               }),
           })}
         </header>
