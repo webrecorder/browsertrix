@@ -813,7 +813,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
         return {"updated": True}
 
-    @router.post("/update-payment-suspended", tags=["organizations"])
+    @router.post("/payment-suspended", tags=["organizations"])
     async def update_org_payment_suspended(
         update: OrgPaymentSuspendedUpdate,
         org: Organization = Depends(org_owner_dep),

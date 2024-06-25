@@ -493,7 +493,7 @@ def test_update_payment_suspended(admin_auth_headers, default_org_id):
     assert r.json()["paymentSuspended"] in (False, None)
 
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/update-payment-suspended",
+        f"{API_PREFIX}/orgs/{default_org_id}/payment-suspended",
         headers=admin_auth_headers,
         json={"paymentSuspended": True},
     )
@@ -503,7 +503,7 @@ def test_update_payment_suspended(admin_auth_headers, default_org_id):
     assert r.json()["paymentSuspended"] is True
 
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/update-payment-suspended",
+        f"{API_PREFIX}/orgs/{default_org_id}/payment-suspended",
         headers=admin_auth_headers,
         json={"paymentSuspended": False},
     )
