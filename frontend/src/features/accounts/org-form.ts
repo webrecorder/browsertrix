@@ -67,7 +67,7 @@ export class OrgForm extends TailwindElement {
             label=${msg("Org name")}
             placeholder=${msg("My Organization")}
             autocomplete="off"
-            value=${this.name}
+            value=${this.name === this.orgId ? "" : this.name}
             minlength="2"
             maxlength="40"
             help-text=${msg("You can change this in your org settings later.")}
@@ -133,7 +133,7 @@ export class OrgForm extends TailwindElement {
         body: JSON.stringify({ name, slug }),
       });
       this.notify.toast({
-        message: msg("New org name saved."),
+        message: msg("Org successfully updated."),
         variant: "success",
         icon: "check2-circle",
       });
@@ -148,7 +148,7 @@ export class OrgForm extends TailwindElement {
       console.debug(e);
       if (isApiError(e) && e.details === "duplicate_org_name") {
         throw new Error(
-          msg("This org name is already taken, try another one."),
+          msg("This org name or URL is already taken, try another one."),
         );
       }
 

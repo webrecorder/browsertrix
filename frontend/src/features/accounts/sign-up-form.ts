@@ -5,7 +5,7 @@ import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
 import type { Input as BtrixInput } from "@/components/ui/input";
-import type { UserOrgInviteInfo } from "@/types/user";
+import type { UserOrgInviteInfo, UserRegisterResponseData } from "@/types/user";
 import type { UnderlyingFunction } from "@/types/utils";
 import AuthService from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -229,11 +229,7 @@ export class SignUpForm extends LiteElement {
 
     switch (resp.status) {
       case 201: {
-        data = (await resp.json()) as {
-          id: unknown;
-          orgName?: string;
-          orgSlug?: string;
-        };
+        data = (await resp.json()) as UserRegisterResponseData;
 
         if (data.id) {
           shouldLogIn = true;
@@ -268,11 +264,16 @@ export class SignUpForm extends LiteElement {
     if (this.serverError) {
       this.dispatchEvent(new CustomEvent("error"));
     } else {
+      const org =
+        data &&
+        this.inviteInfo &&
+        data.orgs.find(({ id }) => this.inviteInfo?.oid === id);
+
       this.dispatchEvent(
         new CustomEvent<SignUpSuccessDetail>("success", {
           detail: {
-            orgName: data?.orgName,
-            orgSlug: data?.orgSlug,
+            orgName: org?.name,
+            orgSlug: org?.slug,
           },
         }),
       );

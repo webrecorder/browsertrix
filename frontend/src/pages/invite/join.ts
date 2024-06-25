@@ -82,11 +82,12 @@ export class Join extends LiteElement {
                   ? html`
                       <btrix-org-form
                         .authState=${this.authState}
-                        name=${inviteInfo.orgName ||
-                        this.signUpOrgDefaults?.name ||
+                        .orgId=${inviteInfo.oid}
+                        name=${this.signUpOrgDefaults?.name ||
+                        inviteInfo.orgName ||
                         ""}
-                        slug=${inviteInfo.orgSlug ||
-                        this.signUpOrgDefaults?.slug ||
+                        slug=${this.signUpOrgDefaults?.slug ||
+                        inviteInfo.orgSlug ||
                         ""}
                       ></btrix-org-form>
                     `
@@ -101,7 +102,16 @@ export class Join extends LiteElement {
                       ></btrix-sign-up-form>
                     `,
               error: (err) =>
-                html`<btrix-alert variant="danger">${err}</btrix-alert>`,
+                html`<btrix-alert variant="danger">
+                  <div>${err instanceof Error ? err.message : err}</div>
+                  <a
+                    href=${this.orgBasePath}
+                    @click=${this.navLink}
+                    class="mt-3 inline-block underline hover:no-underline"
+                  >
+                    ${msg("Go to home page")}
+                  </a>
+                </btrix-alert> `,
             })}
           </div>
         </div>

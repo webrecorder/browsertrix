@@ -64,9 +64,9 @@ export class AcceptInvite extends TailwindElement {
     if (!this.isLoggedIn) {
       this.notify.toast({
         message: msg("Log in to continue."),
-        variant: "success",
-        icon: "check2-circle",
-        duration: Infinity,
+        variant: "warning",
+        icon: "exclamation-triangle",
+        duration: 10000,
       });
 
       this.navigate.to(

@@ -11,6 +11,15 @@ export type UserOrgInviteInfo = {
   orgSlug?: string;
 };
 
+export type UserRegisterResponseData = {
+  id: string;
+  name: string;
+  email: string;
+  is_superuser: boolean;
+  is_verified: boolean;
+  orgs: UserOrg[];
+};
+
 export type UserOrg = OrgData & {
   default?: boolean;
   role: (typeof AccessCode)[UserRole];
