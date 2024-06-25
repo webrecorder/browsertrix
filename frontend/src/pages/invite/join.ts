@@ -4,10 +4,8 @@ import { customElement, property, state } from "lit/decorators.js";
 
 import { renderInviteMessage } from "./ui/inviteMessage";
 
-import type { OrgFormSubmitEventDetail } from "@/features/accounts/org-form";
 import { type SignUpSuccessDetail } from "@/features/accounts/sign-up-form";
 import type { CurrentUser, UserOrgInviteInfo } from "@/types/user";
-import { isApiError } from "@/utils/api";
 import AuthService, {
   type AuthState,
   type LoggedInEventDetail,
@@ -83,13 +81,13 @@ export class Join extends LiteElement {
                 this.isLoggedIn && inviteInfo && inviteInfo.firstOrgAdmin
                   ? html`
                       <btrix-org-form
+                        .authState=${this.authState}
                         name=${inviteInfo.orgName ||
                         this.signUpOrgDefaults?.name ||
                         ""}
                         slug=${inviteInfo.orgSlug ||
                         this.signUpOrgDefaults?.slug ||
                         ""}
-                        @btrix-submit=${this.onSubmitOrgForm}
                       ></btrix-org-form>
                     `
                   : html`
@@ -150,51 +148,5 @@ export class Join extends LiteElement {
         api: Boolean(this.inviteInfo.value?.firstOrgAdmin), // prevents navigation if org name is required
       }),
     );
-  }
-
-  private async onSubmitOrgForm(e: CustomEvent<OrgFormSubmitEventDetail>) {
-    const inviteInfo = this.inviteInfo.value;
-    if (!inviteInfo) return;
-
-    const { values } = e.detail;
-    const { oid, orgName, orgSlug } = inviteInfo;
-
-    if (values.orgName === orgName && values.orgSlug === orgSlug) {
-      this.navTo(`/orgs/${orgSlug}`);
-
-      return;
-    }
-
-    try {
-      await this.apiFetch(`/orgs/${oid}/rename`, this.authState!, {
-        method: "POST",
-        body: JSON.stringify({
-          name: values.orgName,
-          slug: values.orgSlug,
-        }),
-      });
-
-      this.notify({
-        message: msg("New org name saved."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-
-      await this.dispatchEvent(
-        new CustomEvent("btrix-update-user-info", { bubbles: true }),
-      );
-      const newSlug = values.orgSlug;
-      if (newSlug) {
-        this.navTo(`/orgs/${newSlug}`);
-      }
-    } catch (e) {
-      this.notify({
-        message: isApiError(e)
-          ? e.message
-          : msg("Sorry, couldn't update organization at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
   }
 }

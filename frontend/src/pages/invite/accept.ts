@@ -9,7 +9,6 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
-import type { OrgFormSubmitEventDetail } from "@/features/accounts/org-form";
 import { ROUTES } from "@/routes";
 import type { UserOrgInviteInfo } from "@/types/user";
 import { isApiError } from "@/utils/api";
@@ -33,7 +32,6 @@ export class AcceptInvite extends TailwindElement {
   @state()
   private isFirstOrgAdminJoined = false;
 
-  @state()
   private readonly inviteInfo = new Task(this, {
     task: async ([authState, token]) => {
       if (!authState) return;
@@ -119,9 +117,10 @@ export class AcceptInvite extends TailwindElement {
                 inviteInfo && this.isFirstOrgAdminJoined
                   ? html`
                       <btrix-org-form
+                        .authState=${this.authState}
+                        .orgId=${inviteInfo.oid}
                         name=${inviteInfo.orgName || ""}
                         slug=${inviteInfo.orgSlug || ""}
-                        @btrix-submit=${this.onSubmitOrgForm}
                       ></btrix-org-form>
                     `
                   : html`
@@ -218,51 +217,5 @@ export class AcceptInvite extends TailwindElement {
     });
 
     this.navigate.to(ROUTES.home);
-  }
-
-  private async onSubmitOrgForm(e: CustomEvent<OrgFormSubmitEventDetail>) {
-    const inviteInfo = this.inviteInfo.value;
-    if (!inviteInfo) return;
-
-    const { values } = e.detail;
-    const { oid, orgName, orgSlug } = inviteInfo;
-
-    if (values.orgName === orgName && values.orgSlug === orgSlug) {
-      this.navigate.to(`/orgs/${orgSlug}`);
-
-      return;
-    }
-
-    try {
-      await this.api.fetch(`/orgs/${oid}/rename`, this.authState!, {
-        method: "POST",
-        body: JSON.stringify({
-          name: values.orgName,
-          slug: values.orgSlug,
-        }),
-      });
-
-      this.notify.toast({
-        message: msg("New org name saved."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-
-      await this.dispatchEvent(
-        new CustomEvent("btrix-update-user-info", { bubbles: true }),
-      );
-      const newSlug = values.orgSlug;
-      if (newSlug) {
-        this.navigate.to(`/orgs/${newSlug}`);
-      }
-    } catch (e) {
-      this.notify.toast({
-        message: isApiError(e)
-          ? e.message
-          : msg("Sorry, couldn't update organization at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
   }
 }
