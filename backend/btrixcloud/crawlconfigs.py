@@ -211,7 +211,7 @@ class CrawlConfigOps:
 
         crawlconfig = CrawlConfig.from_dict(data)
 
-        out_filename = (
+        storage_filename = (
             data.get("crawlFilenameTemplate") or self.default_filename_template
         )
 
@@ -235,7 +235,7 @@ class CrawlConfigOps:
             crawlconfig=crawlconfig,
             storage=org.storage,
             run_now=run_now,
-            out_filename=out_filename,
+            storage_filename=storage_filename,
             profile_filename=profile_filename or "",
             warc_prefix=self.get_warc_prefix(org, crawlconfig),
         )
@@ -302,7 +302,7 @@ class CrawlConfigOps:
             crawlconfig=crawlconfig,
             storage=org.storage,
             run_now=False,
-            out_filename=self.default_filename_template,
+            storage_filename=self.default_filename_template,
             profile_filename=profile_filename or "",
             warc_prefix=self.get_warc_prefix(org, crawlconfig),
         )
@@ -865,12 +865,16 @@ class CrawlConfigOps:
         if await self.get_running_crawl(crawlconfig):
             raise HTTPException(status_code=400, detail="crawl_already_running")
 
+        _, profile_filename = await self._lookup_profile(crawlconfig.profileid, org)
+
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
                 crawlconfig,
                 org.storage,
                 userid=str(user.id),
                 warc_prefix=self.get_warc_prefix(org, crawlconfig),
+                storage_filename=self.default_filename_template,
+                profile_filename=profile_filename or "",
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user, manual=True)
             return crawl_id

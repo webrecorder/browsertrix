@@ -774,6 +774,7 @@ class CrawlOps(BaseCrawlOps):
                 org.storage,
                 userid=str(user.id),
                 qa_source=crawl_id,
+                storage_filename=self.crawl_configs.default_filename_template,
             )
 
             image = self.crawl_configs.get_channel_crawler_image(

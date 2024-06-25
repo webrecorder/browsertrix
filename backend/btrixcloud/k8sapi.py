@@ -3,6 +3,7 @@
 import os
 import traceback
 
+from typing import Optional
 import yaml
 
 from kubernetes_asyncio import client, config
@@ -78,18 +79,20 @@ class K8sAPI:
     # pylint: disable=too-many-arguments, too-many-locals
     def new_crawl_job_yaml(
         self,
-        cid,
-        userid,
-        oid,
-        storage,
-        crawler_channel,
-        scale=1,
-        crawl_timeout=0,
-        max_crawl_size=0,
-        manual=True,
-        crawl_id=None,
-        warc_prefix="",
-        qa_source="",
+        cid: str,
+        userid: str,
+        oid: str,
+        storage: str,
+        crawler_channel: Optional[str] = "",
+        scale: Optional[int] = 1,
+        crawl_timeout: Optional[int] = 0,
+        max_crawl_size: Optional[int] = 0,
+        manual: bool = True,
+        crawl_id: Optional[str] = None,
+        warc_prefix: Optional[str] = "",
+        storage_filename: str = "",
+        profile_filename: str = "",
+        qa_source: str = "",
     ):
         """load job template from yaml"""
         if not crawl_id:
@@ -105,24 +108,57 @@ class K8sAPI:
             "scale": scale,
             "timeout": crawl_timeout,
             "max_crawl_size": max_crawl_size or 0,
-            "storage_name": str(storage),
+            "storage_name": storage,
             "manual": "1" if manual else "0",
             "crawler_channel": crawler_channel,
             "warc_prefix": warc_prefix,
+            "storage_filename": storage_filename,
+            "profile_filename": profile_filename,
             "qa_source": qa_source,
         }
 
         data = self.templates.env.get_template("crawl_job.yaml").render(params)
         return crawl_id, data
 
-    async def new_crawl_job(self, *args, **kwargs) -> str:
+    async def new_crawl_job(
+        self,
+        cid: str,
+        userid: str,
+        oid: str,
+        storage: str,
+        crawler_channel: Optional[str] = "",
+        scale: Optional[int] = 1,
+        crawl_timeout: Optional[int] = 0,
+        max_crawl_size: Optional[int] = 0,
+        manual: bool = True,
+        crawl_id: Optional[str] = None,
+        warc_prefix: Optional[str] = "",
+        storage_filename: str = "",
+        profile_filename: str = "",
+        qa_source: str = "",
+    ) -> str:
         """load and init crawl job via k8s api"""
-        crawl_id, data = self.new_crawl_job_yaml(*args, **kwargs)
+        crawl_id, data = self.new_crawl_job_yaml(
+            cid=cid,
+            userid=userid,
+            oid=oid,
+            storage=storage,
+            crawler_channel=crawler_channel,
+            scale=scale,
+            crawl_timeout=crawl_timeout,
+            max_crawl_size=max_crawl_size,
+            manual=manual,
+            crawl_id=crawl_id,
+            warc_prefix=warc_prefix or "",
+            storage_filename=storage_filename,
+            profile_filename=profile_filename,
+            qa_source=qa_source,
+        )
 
         # create job directly
         await self.create_from_yaml(data)
 
-        return crawl_id
+        return crawl_id or ""
 
     async def create_from_yaml(self, doc, namespace=None):
         """init k8s objects from yaml"""

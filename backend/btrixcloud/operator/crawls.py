@@ -182,15 +182,6 @@ class CrawlOperator(BaseOperator):
                 params,
             )
 
-        try:
-            configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
-        # pylint: disable=bare-except, broad-except
-        except:
-            # fail crawl if config somehow missing, shouldn't generally happen
-            await self.fail_crawl(crawl, status, pods)
-
-            return self._empty_response(status)
-
         # shouldn't get here, crawl should already be finalizing when canceled
         # just in case, handle canceled-but-not-finalizing here
         if status.state == "canceled":
@@ -261,7 +252,7 @@ class CrawlOperator(BaseOperator):
         storage_secret = crawl.storage.get_storage_secret_name(oid)
 
         if not crawl.is_qa:
-            params["profile_filename"] = configmap["PROFILE_FILENAME"]
+            params["profile_filename"] = spec.get("profile", "")
         else:
             storage_path += "qa/"
 
@@ -277,7 +268,7 @@ class CrawlOperator(BaseOperator):
 
         params["crawler_image"] = status.crawlerImage
 
-        params["storage_filename"] = configmap["STORE_FILENAME"]
+        params["storage_filename"] = spec.get("storage_filename")
         params["restart_time"] = spec.get("restartTime")
 
         params["warc_prefix"] = spec.get("warcPrefix")
@@ -529,15 +520,9 @@ class CrawlOperator(BaseOperator):
     def get_related(self, data: MCBaseRequest):
         """return objects related to crawl pods"""
         spec = data.parent.get("spec", {})
-        cid = spec["cid"]
         crawl_id = spec["id"]
         oid = spec.get("oid")
         related_resources = [
-            {
-                "apiVersion": "v1",
-                "resource": "configmaps",
-                "labelSelector": {"matchLabels": {"btrix.crawlconfig": cid}},
-            },
             {
                 "apiVersion": BTRIX_API,
                 "resource": "crawljobs",
