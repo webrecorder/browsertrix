@@ -65,7 +65,7 @@ export const renderInviteMessage = (
             ${msg("Configure organization")}
           </li>
         </ul>
-        <sl-divider></sl-divider>
+        <sl-divider class="mt-8"></sl-divider>
         <h2 class="mb-3 italic text-primary">${msg("What is an org?")}</h2>
         <p class="mb-3 text-neutral-600">
           ${msg(
