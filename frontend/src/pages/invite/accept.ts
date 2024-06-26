@@ -30,7 +30,7 @@ export class AcceptInvite extends TailwindElement {
   private serverError?: string;
 
   @state()
-  private isFirstOrgAdminJoined = false;
+  private firstAdminOrgInfo: null | UserOrg = null;
 
   private readonly inviteInfo = new Task(this, {
     task: async ([authState, token]) => {
@@ -100,7 +100,7 @@ export class AcceptInvite extends TailwindElement {
             complete: (inviteInfo) =>
               renderInviteMessage(inviteInfo, {
                 isExistingUser: true,
-                isOrgMember: this.isFirstOrgAdminJoined,
+                isOrgMember: this.firstAdminOrgInfo !== null,
               }),
           })}
         </header>
@@ -113,14 +113,14 @@ export class AcceptInvite extends TailwindElement {
                   <sl-spinner></sl-spinner>
                 </div>
               `,
-              complete: (inviteInfo) =>
-                inviteInfo && this.isFirstOrgAdminJoined
+              complete: () =>
+                this.firstAdminOrgInfo
                   ? html`
                       <btrix-org-form
                         .authState=${this.authState}
-                        .orgId=${inviteInfo.oid}
-                        name=${inviteInfo.orgName || ""}
-                        slug=${inviteInfo.orgSlug || ""}
+                        .orgId=${this.firstAdminOrgInfo.id}
+                        name=${this.firstAdminOrgInfo.name}
+                        slug=${this.firstAdminOrgInfo.slug}
                       ></btrix-org-form>
                     `
                   : html`
@@ -184,7 +184,7 @@ export class AcceptInvite extends TailwindElement {
       );
 
       if (inviteInfo.firstOrgAdmin) {
-        this.isFirstOrgAdminJoined = true;
+        this.firstAdminOrgInfo = org;
       } else {
         this.notify.toast({
           message: msg(
