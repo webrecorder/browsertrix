@@ -608,7 +608,6 @@ export class OrgSettings extends LiteElement {
         new CustomEvent<UpdateUserInfoDetail>("btrix-update-user-info", {
           detail: {
             updateComplete: () => {
-              console.log("slug changed?", slug, this.org.slug);
               if (slug !== this.org.slug) {
                 this.navTo(`/orgs/${slug}/settings/${this.activePanel}`);
               }
