@@ -72,6 +72,20 @@ def test_rename_org(admin_auth_headers, default_org_id):
     assert data["slug"] == UPDATED_SLUG
 
 
+def test_rename_org_invalid_slug(admin_auth_headers, default_org_id):
+    UPDATED_NAME = "updated org name"
+    UPDATED_SLUG = "not a valid slug"
+    rename_data = {"name": UPDATED_NAME, "slug": UPDATED_SLUG}
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/rename",
+        headers=admin_auth_headers,
+        json=rename_data,
+    )
+
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_slug"
+
+
 def test_create_org(admin_auth_headers):
     NEW_ORG_NAME = "New Org"
     r = requests.post(

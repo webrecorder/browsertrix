@@ -41,7 +41,7 @@ from .models import (
     PaginatedResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import slug_from_name
+from .utils import slug_from_name, validate_slug
 
 if TYPE_CHECKING:
     from .invites import InviteOps
@@ -775,8 +775,10 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
         id_ = uuid4()
 
-        slug = new_org.slug
-        if not slug:
+        if new_org.slug:
+            validate_slug(new_org.slug)
+            slug = new_org.slug
+        else:
             slug = slug_from_name(new_org.name)
 
         org = Organization(
@@ -803,6 +805,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     ):
         org.name = rename.name
         if rename.slug:
+            validate_slug(rename.slug)
             org.slug = rename.slug
         else:
             org.slug = slug_from_name(rename.name)

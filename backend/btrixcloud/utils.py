@@ -8,6 +8,7 @@ import json
 import signal
 import os
 import sys
+import re
 
 from datetime import datetime
 from typing import Optional, Dict, Union, List
@@ -121,6 +122,15 @@ def str_list_to_bools(str_list: List[str], allow_none=True) -> List[Union[bool, 
 def slug_from_name(name: str) -> str:
     """Generate slug from name"""
     return slugify(name.replace("'", ""))
+
+
+def validate_slug(slug: str) -> None:
+    """Validate org slug, raise HTTPException if invalid
+
+    Slugs must contain alphanumeric characters and dashes (-) only.
+    """
+    if re.match(r"^[\w-]+$", slug) is None:
+        raise HTTPException(status_code=400, detail="invalid_slug")
 
 
 def stream_dict_list_as_csv(data: List[Dict[str, Union[str, int]]], filename: str):
