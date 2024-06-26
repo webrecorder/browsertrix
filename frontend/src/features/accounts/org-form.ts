@@ -120,7 +120,11 @@ export class OrgForm extends TailwindElement {
 
     const params = serialize(form) as OrgFormSubmitEventDetail["values"];
 
-    void this.renameOrgTask.run([this.orgId, params.orgName, params.orgSlug]);
+    void this.renameOrgTask.run([
+      this.orgId,
+      params.orgName,
+      slugify(params.orgSlug),
+    ]);
   }
 
   private async renameOrg(
