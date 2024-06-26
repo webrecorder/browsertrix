@@ -109,7 +109,9 @@ class EmailSender:
         self._send_encrypted(receiver_email, "validate", origin=origin, token=token)
 
     # pylint: disable=too-many-arguments
-    def send_new_user_invite(self, invite: InvitePending, org_name: str, headers=None):
+    def send_new_user_invite(
+        self, invite: InvitePending, org_name: str, headers: Optional[dict] = None
+    ):
         """Send email to invite new user"""
 
         origin = self.get_origin(headers)
@@ -130,7 +132,12 @@ class EmailSender:
 
     # pylint: disable=too-many-arguments
     def send_existing_user_invite(
-        self, receiver_email, sender, org_name, token, headers=None
+        self,
+        invite: InvitePending,
+        org_name: str,
+        receiver_email: str,
+        token: str,
+        headers: Optional[dict] = None,
     ):
         """Send email to invite new user"""
         origin = self.get_origin(headers)
@@ -142,7 +149,7 @@ class EmailSender:
             "invite",
             invite_url=invite_url,
             is_new=False,
-            sender=sender,
+            sender=invite.inviterEmail if not invite.fromSuperuser else "",
             org_name=org_name,
         )
 
