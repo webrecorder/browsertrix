@@ -125,7 +125,7 @@ def slug_from_name(name: str) -> str:
 
 
 def validate_slug(slug: str) -> None:
-    """Validate org slug, raise HTTPException if invalid or already exists
+    """Validate org slug, raise HTTPException if invalid
 
     Slugs must contain alphanumeric characters and dashes (-) only.
     """
