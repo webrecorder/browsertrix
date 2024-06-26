@@ -1,9 +1,10 @@
 """ Operator handler for crawl CronJobs """
 
 from uuid import UUID
+from typing import Optional
 import yaml
 
-from btrixcloud.utils import to_k8s_date
+from btrixcloud.utils import to_k8s_date, dt_now
 from .models import MCBaseRequest, MCDecoratorSyncData, CJS, CMAP
 from .baseoperator import BaseOperator
 
@@ -38,6 +39,30 @@ class CronJobOperator(BaseOperator):
             ]
         }
 
+    def get_finished_response(
+        self, metadata: dict[str, str], set_status=True, finished: Optional[str] = None
+    ):
+        """get final response to indicate cronjob created job is finished"""
+
+        if not finished:
+            finished = to_k8s_date(dt_now())
+
+        status = None
+        # set status on decorated job to indicate that its finished
+        if set_status:
+            status = {
+                "succeeded": 1,
+                "startTime": metadata.get("creationTimestamp"),
+                "completionTime": finished,
+            }
+
+        return {
+            "attachments": [],
+            # set on job to match default behavior when job finishes
+            "annotations": {"finished": finished},
+            "status": status,
+        }
+
     async def sync_cronjob_crawl(self, data: MCDecoratorSyncData):
         """create crawljobs from a job object spawned by cronjob"""
 
@@ -52,21 +77,14 @@ class CronJobOperator(BaseOperator):
             crawl_id, is_qa=False
         )
         if finished:
-            status = None
+            finished_str = to_k8s_date(finished)
+            set_status = False
             # mark job as completed
             if not data.object["status"].get("succeeded"):
                 print("Cron Job Complete!", finished)
-                status = {
-                    "succeeded": 1,
-                    "startTime": metadata.get("creationTimestamp"),
-                    "completionTime": to_k8s_date(finished),
-                }
+                set_status = True
 
-            return {
-                "attachments": [],
-                "annotations": {"finished": finished},
-                "status": status,
-            }
+            return self.get_finished_response(metadata, set_status, finished_str)
 
         configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
 
@@ -88,13 +106,13 @@ class CronJobOperator(BaseOperator):
                 print(
                     f"error: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
                 )
-                return {"attachments": []}
+                return self.get_finished_response(metadata)
 
             # db create
             user = await self.user_ops.get_by_id(UUID(userid))
             if not user:
                 print(f"error: missing user for id {userid}")
-                return {"attachments": []}
+                return self.get_finished_response(metadata)
 
             warc_prefix = self.crawl_config_ops.get_warc_prefix(org, crawlconfig)
 
@@ -102,7 +120,7 @@ class CronJobOperator(BaseOperator):
                 print(
                     f"org {org.id} set to read-only. skipping scheduled crawl for workflow {cid}"
                 )
-                return {"attachments": []}
+                return self.get_finished_response(metadata)
 
             await self.crawl_config_ops.add_new_crawl(
                 crawl_id,
