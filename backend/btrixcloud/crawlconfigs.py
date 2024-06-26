@@ -240,6 +240,8 @@ class CrawlConfigOps:
 
         await self.crawl_manager.update_scheduled_job(crawlconfig)
 
+        crawl_id = None
+
         if run_now:
             crawl_id = await self.crawl_manager.create_crawl_job(
                 crawlconfig,
@@ -254,7 +256,7 @@ class CrawlConfigOps:
 
         return (
             result.inserted_id,
-            crawl_id or None,
+            crawl_id,
             storage_quota_reached,
             exec_mins_quota_reached,
         )

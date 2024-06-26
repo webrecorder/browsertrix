@@ -47,6 +47,81 @@ class CronJobOperator(BaseOperator):
             "status": status,
         }
 
+    async def make_new_crawljob(
+        self,
+        cid: str,
+        crawl_id: str,
+        metadata: dict[str, str],
+        state: Optional[str],
+    ):
+        """declare new CrawlJob from cid, based on db data"""
+        # cronjob doesn't exist yet
+        crawlconfig: CrawlConfig
+
+        try:
+            crawlconfig = await self.crawl_config_ops.get_crawl_config(UUID(cid))
+        # pylint: disable=bare-except
+        except:
+            print(
+                f"error: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
+            )
+            return self.get_finished_response(metadata)
+
+        # get org
+        oid = crawlconfig.oid
+        org = await self.org_ops.get_org_by_id(oid)
+
+        # db create
+        user = None
+
+        userid = crawlconfig.modifiedBy
+        if userid:
+            user = await self.user_ops.get_by_id(userid)
+
+        if not userid or not user:
+            print(f"error: missing user for id {userid}")
+            return self.get_finished_response(metadata)
+
+        warc_prefix = self.crawl_config_ops.get_warc_prefix(org, crawlconfig)
+
+        if org.readOnly:
+            print(
+                f"org {org.id} set to read-only. skipping scheduled crawl for workflow {cid}"
+            )
+            return self.get_finished_response(metadata)
+
+        # if no db state, crawl crawl in the db
+        if not state:
+            await self.crawl_config_ops.add_new_crawl(
+                crawl_id,
+                crawlconfig,
+                user,
+                manual=False,
+            )
+            print("Scheduled Crawl Created: " + crawl_id)
+
+        profile_filename = await self.crawl_config_ops.get_profile_filename(
+            crawlconfig.profileid, org
+        )
+
+        crawl_id, crawljob = self.k8s.new_crawl_job_yaml(
+            cid,
+            userid=str(userid),
+            oid=str(oid),
+            storage=org.storage,
+            crawler_channel=crawlconfig.crawlerChannel or "default",
+            scale=crawlconfig.scale,
+            crawl_timeout=crawlconfig.crawlTimeout,
+            max_crawl_size=crawlconfig.maxCrawlSize,
+            manual=False,
+            crawl_id=crawl_id,
+            warc_prefix=warc_prefix,
+            storage_filename=self.crawl_config_ops.default_filename_template,
+            profile_filename=profile_filename or "",
+        )
+
+        return list(yaml.safe_load_all(crawljob))
+
     async def sync_cronjob_crawl(self, data: MCDecoratorSyncData):
         """create crawljobs from a job object spawned by cronjob"""
 
@@ -77,81 +152,23 @@ class CronJobOperator(BaseOperator):
 
         crawljobs = data.attachments[CJS]
 
-        warc_prefix = None
+        crawljob_id = f"crawljob-{crawl_id}"
 
-        if not actual_state and not crawljobs:
-            # cronjob doesn't exist yet
-            crawlconfig : CrawlConfig
-
-            try:
-                crawlconfig = await self.crawl_config_ops.get_crawl_config(UUID(cid))
-            # pylint: disable=bare-except
-            except:
-                print(
-                    f"error: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
-                )
-                return self.get_finished_response(metadata)
-
-            # get org
-            oid = crawlconfig.oid
-            org = await self.org_ops.get_org_by_id(oid)
-
-            # db create
-            user = None
-
-            userid = crawlconfig.modifiedBy
-            if userid:
-                user = await self.user_ops.get_by_id(userid)
-
-            if not userid or not user:
-                print(f"error: missing user for id {userid}")
-                return self.get_finished_response(metadata)
-
-            warc_prefix = self.crawl_config_ops.get_warc_prefix(org, crawlconfig)
-
-            if org.readOnly:
-                print(
-                    f"org {org.id} set to read-only. skipping scheduled crawl for workflow {cid}"
-                )
-                return self.get_finished_response(metadata)
-
-            await self.crawl_config_ops.add_new_crawl(
-                crawl_id,
-                crawlconfig,
-                user,
-                manual=False,
+        if crawljob_id not in crawljobs:
+            attachments = await self.make_new_crawljob(
+                cid, crawl_id, metadata, actual_state
             )
-            print("Scheduled Crawl Created: " + crawl_id)
-
-            profile_filename = await self.crawl_config_ops.get_profile_filename(
-                crawlconfig.profileid, org
-            )
-
-            crawl_id, crawljob = self.k8s.new_crawl_job_yaml(
-                cid,
-                userid=str(userid),
-                oid=str(oid),
-                storage=org.storage,
-                crawler_channel=crawlconfig.crawlerChannel or "default",
-                scale=crawlconfig.scale,
-                crawl_timeout=crawlconfig.crawlTimeout,
-                max_crawl_size=crawlconfig.maxCrawlSize,
-                manual=False,
-                crawl_id=crawl_id,
-                warc_prefix=warc_prefix,
-                storage_filename=self.crawl_config_ops.default_filename_template,
-                profile_filename=profile_filename or "",
-            )
-
-            attachments = list(yaml.safe_load_all(crawljob))
-
-            if crawl_id in crawljobs:
-                attachments[0]["status"] = crawljobs[CJS][crawl_id]["status"]
-
         else:
-            pprint(crawljobs)
-            attachments = crawljobs
+            # just return existing crawljob, after removing annotation
+            # should use OnDelete policy so should just not change crawljob anyway
+            crawljob = crawljobs[crawljob_id]
+            try:
+                del crawljob["metadata"]["annotations"][
+                    "metacontroller.k8s.io/last-applied-configuration"
+                ]
+            except KeyError:
+                pass
 
-        return {
-            "attachments": attachments,
-        }
+            attachments = [crawljob]
+
+        return {"attachments": attachments}

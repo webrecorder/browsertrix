@@ -94,7 +94,7 @@ spec:
   - apiVersion: btrix.cloud/v1
     resource: crawljobs
     updateStrategy:
-      method: InPlace
+      method: OnDelete
 
   hooks:
     sync:
