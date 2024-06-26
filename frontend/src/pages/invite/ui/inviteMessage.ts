@@ -17,10 +17,10 @@ export const renderInviteMessage = (
 
   if (inviteInfo.firstOrgAdmin) {
     if (isExistingUser) {
-      message = msg("Set up your organization to start web archiving.");
+      message = msg("Set up your organization to start crawling.");
     } else {
       message = msg(
-        "Finish setting up your Browsertrix account to start web archiving.",
+        "Finish setting up your Browsertrix account to start crawling.",
       );
     }
   } else {
@@ -78,7 +78,7 @@ export const renderInviteMessage = (
           <h2 class="mb-3 italic text-primary">${msg("What is an org?")}</h2>
           <p class="mb-3 text-neutral-600">
             ${msg(
-              "An org, or organization, is a workspace for web archiving. If you’re archiving collaboratively, an org workspace can be shared between team members.",
+              "An org, or organization, is your workspace for web archiving. If you’re archiving collaboratively, an org workspace can be shared between team members.",
             )}
           </p>
           <p class="text-neutral-600">
