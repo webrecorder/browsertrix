@@ -21,8 +21,10 @@ export type UserRegisterResponseData = {
 };
 
 export type UpdateUserInfoDetail = {
-  // This is a bit hacky, but we need the user info to finish updating
-  // before navigating to a new org slug
+  // This callback is a bit hacky, but we need the user info update to
+  // complete before navigating to a new org slug.
+  // This could potentially be refactored in:
+  // https://github.com/webrecorder/browsertrix/issues/1741
   updateComplete?: () => void;
 };
 
