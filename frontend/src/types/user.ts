@@ -20,6 +20,12 @@ export type UserRegisterResponseData = {
   orgs: UserOrg[];
 };
 
+export type UpdateUserInfoDetail = {
+  // This is a bit hacky, but we need the user info to finish updating
+  // before navigating to a new org slug
+  updateComplete?: () => void;
+};
+
 export type UserOrg = OrgData & {
   default?: boolean;
   role: (typeof AccessCode)[UserRole];

@@ -10,7 +10,7 @@ import "./utils/polyfills";
 
 import type { OrgTab } from "./pages/org";
 import { ROUTES } from "./routes";
-import type { CurrentUser, UserOrg } from "./types/user";
+import type { CurrentUser, UpdateUserInfoDetail, UserOrg } from "./types/user";
 import APIRouter, { type ViewState } from "./utils/APIRouter";
 import AuthService, {
   type Auth,
@@ -146,7 +146,7 @@ export class App extends LiteElement {
     this.isAppSettingsLoaded = true;
   }
 
-  private async updateUserInfo(e?: CustomEvent) {
+  private async updateUserInfo(e?: CustomEvent<UpdateUserInfoDetail>) {
     if (e) {
       e.stopPropagation();
     }
@@ -161,7 +161,12 @@ export class App extends LiteElement {
         orgs: userInfo.orgs,
       });
       const orgs = userInfo.orgs;
-      if (
+      const { updateComplete } = e?.detail || {};
+      if (updateComplete) {
+        // This is a bit hacky, but we need the user info to finish updating
+        // before navigating to a new org slug
+        updateComplete();
+      } else if (
         orgs.length &&
         !this.appState.userInfo!.isAdmin &&
         !this.appState.orgSlug

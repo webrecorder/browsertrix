@@ -8,7 +8,7 @@ import { when } from "lit/directives/when.js";
 import slugify from "slugify";
 
 import type { APIPaginatedList } from "@/types/api";
-import type { CurrentUser } from "@/types/user";
+import type { CurrentUser, UpdateUserInfoDetail } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
@@ -27,11 +27,6 @@ type Invite = User & {
 export type Member = User & {
   name: string;
 };
-type OrgInfoChangeEventDetail = {
-  name: string;
-  slug?: string;
-};
-export type OrgInfoChangeEvent = CustomEvent<OrgInfoChangeEventDetail>;
 export type UserRoleChangeEvent = CustomEvent<{
   user: Member;
   newRole: number;
@@ -52,10 +47,8 @@ export type OrgRemoveMemberEvent = CustomEvent<{
  * ></btrix-org-settings>
  * ```
  *
- * @events
- * org-info-change
- * org-user-role-change
- * org-remove-member
+ * @fires org-user-role-change
+ * @fires org-remove-member
  */
 @localized()
 @customElement("btrix-org-settings")
@@ -78,11 +71,11 @@ export class OrgSettings extends LiteElement {
   @property({ type: Boolean })
   isAddingMember = false;
 
-  @property({ type: Boolean })
-  isSavingOrgName = false;
+  @state()
+  private isSavingOrgName = false;
 
   @state()
-  pendingInvites: Invite[] = [];
+  private pendingInvites: Invite[] = [];
 
   @state()
   private isAddMemberFormVisible = false;
@@ -490,18 +483,21 @@ export class OrgSettings extends LiteElement {
     if (!(await this.checkFormValidity(formEl))) return;
 
     const { orgName } = serialize(formEl) as { orgName: string };
-    const orgSlug = this.slugify(this.slugValue);
-    const detail: OrgInfoChangeEventDetail = { name: orgName };
 
-    if (orgSlug !== this.org.slug) {
-      detail.slug = orgSlug;
+    const params = {
+      name: orgName,
+      slug: this.org.slug,
+    };
+
+    if (this.slugValue) {
+      params.slug = this.slugify(this.slugValue);
     }
 
-    this.dispatchEvent(
-      new CustomEvent<OrgInfoChangeEventDetail>("org-info-change", {
-        detail,
-      }),
-    );
+    this.isSavingOrgName = true;
+
+    await this.renameOrg(params);
+
+    this.isSavingOrgName = false;
   }
 
   private readonly selectUserRole = (user: User) => (e: Event) => {
@@ -590,6 +586,47 @@ export class OrgSettings extends LiteElement {
         message: isApiError(e)
           ? e.message
           : msg(str`Sorry, couldn't remove ${invite.email} at this time.`),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async renameOrg({ name, slug }: { name: string; slug: string }) {
+    try {
+      await this.apiFetch(`/orgs/${this.orgId}/rename`, this.authState!, {
+        method: "POST",
+        body: JSON.stringify({ name, slug }),
+      });
+      this.notify({
+        message: msg("Org successfully updated."),
+        variant: "success",
+        icon: "check2-circle",
+      });
+
+      this.dispatchEvent(
+        new CustomEvent<UpdateUserInfoDetail>("btrix-update-user-info", {
+          detail: {
+            updateComplete: () => {
+              console.log("slug changed?", slug, this.org.slug);
+              if (slug !== this.org.slug) {
+                this.navTo(`/orgs/${slug}/settings/${this.activePanel}`);
+              }
+            },
+          },
+          bubbles: true,
+        }),
+      );
+    } catch (e) {
+      console.debug(e);
+
+      this.notify({
+        message:
+          isApiError(e) && e.details === "duplicate_org_name"
+            ? msg("This org name or URL is already taken, try another one.")
+            : msg(
+                "Sorry, couldn't rename organization at this time. Try again later from org settings.",
+              ),
         variant: "danger",
         icon: "exclamation-octagon",
       });

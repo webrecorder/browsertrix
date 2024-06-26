@@ -10,8 +10,10 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
+import type { UpdateUserInfoDetail } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
+import { AppStateService } from "@/utils/state";
 
 export type OrgFormSubmitEventDetail = {
   values: {
@@ -119,18 +121,19 @@ export class OrgForm extends TailwindElement {
     if (!(await this.checkFormValidity(form))) return;
 
     const params = serialize(form) as OrgFormSubmitEventDetail["values"];
+    const orgName = params.orgName;
+    const orgSlug = slugify(params.orgSlug);
 
-    void this.renameOrgTask.run([
-      this.orgId,
-      params.orgName,
-      slugify(params.orgSlug),
-    ]);
+    void this.renameOrgTask.run([this.orgId, orgName, orgSlug]);
   }
 
   private async renameOrg(
     id: string,
-    { name, slug }: { name?: string; slug?: string },
+    params: { name?: string; slug?: string },
   ) {
+    const name = params.name || this.name;
+    const slug = params.slug || this.slug;
+
     try {
       await this.api.fetch(`/orgs/${id}/rename`, this.authState!, {
         method: "POST",
@@ -142,10 +145,16 @@ export class OrgForm extends TailwindElement {
         icon: "check2-circle",
       });
 
-      await this.dispatchEvent(
-        new CustomEvent("btrix-update-user-info", { bubbles: true }),
+      this.dispatchEvent(
+        new CustomEvent<UpdateUserInfoDetail>("btrix-update-user-info", {
+          detail: {
+            updateComplete: () => {
+              this.goToOrgDashboard(slug);
+            },
+          },
+          bubbles: true,
+        }),
       );
-      this.navigate.to(`/orgs/${slug || this.slug}`);
     } catch (e) {
       console.debug(e);
       if (isApiError(e) && e.details === "duplicate_org_name") {
@@ -162,8 +171,13 @@ export class OrgForm extends TailwindElement {
         icon: "exclamation-octagon",
       });
 
-      this.navigate.to(`/orgs/${this.slug}`);
+      this.goToOrgDashboard(slug);
     }
+  }
+
+  private goToOrgDashboard(orgSlug: string) {
+    AppStateService.updateOrgSlug(orgSlug);
+    this.navigate.to(`/orgs/${orgSlug}`);
   }
 
   private async checkFormValidity(formEl: HTMLFormElement) {
