@@ -514,13 +514,15 @@ class CrawlOperator(BaseOperator):
                 status.finished = to_k8s_date(finished)
 
             if actual_state != state:
-                print(f"state mismatch, actual state {actual_state}, requested {state}")
+                print(
+                    f"State mismatch, actual state {actual_state}, requested {state}, {crawl.id}"
+                )
                 if not actual_state and state == "canceled":
                     return True
 
         if status.state != state:
             print(
-                f"Not setting state: {status.state} -> {state}, {crawl.id} not allowed"
+                f"Not setting state: {status.state} -> {state}, not allowed, {crawl.id}"
             )
         return False
 
@@ -745,7 +747,7 @@ class CrawlOperator(BaseOperator):
             if status.anyCrawlPodNewExit:
                 await self.log_crashes(crawl.id, status.podStatus, redis)
 
-            if not crawler_running or not redis:
+            if not pod_done_count and (not crawler_running or not redis):
                 # if either crawler is not running or redis is inaccessible
                 if self.should_mark_waiting(status.state, crawl.started):
                     # mark as waiting (if already running)
@@ -757,8 +759,8 @@ class CrawlOperator(BaseOperator):
                     )
 
                 if not crawler_running and redis:
-                    # if crawler running, but no redis, stop redis instance until crawler
-                    # is running
+                    # if crawler is not running, but redis is, stop redis instance until crawler
+                    # is running, and REDIS_TTL has elapsed, stop redis
                     if status.lastActiveTime and (
                         (
                             dt_now() - from_k8s_date(status.lastActiveTime)
@@ -792,6 +794,9 @@ class CrawlOperator(BaseOperator):
                             crawl.id, crawl.oid, scheduled=crawl.scheduled
                         )
                     )
+
+            if crawler_running:
+                status.lastActiveTime = to_k8s_date(dt_now())
 
             file_done = await redis.lpop(self.done_key)
             while file_done:
@@ -1331,6 +1336,7 @@ class CrawlOperator(BaseOperator):
                 new_status = "uploading-wacz"
             elif status_count.get("pending-wait"):
                 new_status = "pending-wait"
+
             if new_status:
                 await self.set_state(
                     new_status, status, crawl, allowed_from=RUNNING_STATES
