@@ -684,6 +684,9 @@ class CrawlConfigOps:
             query["inactive"] = {"$ne": True}
 
         res = await self.crawl_configs.find_one(query)
+        if not res:
+            raise HTTPException(status_code=404, detail="crawl_config_not_found")
+
         return config_cls.from_dict(res)
 
     async def get_crawl_config_revs(

@@ -8,6 +8,8 @@ from btrixcloud.utils import to_k8s_date, dt_now
 from .models import MCDecoratorSyncData, CJS
 from .baseoperator import BaseOperator
 
+from ..models import CrawlConfig
+
 
 # pylint: disable=too-many-locals
 # ============================================================================
@@ -79,8 +81,12 @@ class CronJobOperator(BaseOperator):
 
         if not actual_state and not crawljobs:
             # cronjob doesn't exist yet
-            crawlconfig = await self.crawl_config_ops.get_crawl_config(UUID(cid))
-            if not crawlconfig:
+            crawlconfig : CrawlConfig
+
+            try:
+                crawlconfig = await self.crawl_config_ops.get_crawl_config(UUID(cid))
+            # pylint: disable=bare-except
+            except:
                 print(
                     f"error: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
                 )
@@ -91,9 +97,13 @@ class CronJobOperator(BaseOperator):
             org = await self.org_ops.get_org_by_id(oid)
 
             # db create
-            userid = crawlconfig.lastModifiedBy
-            user = await self.user_ops.get_by_id(userid)
-            if not user:
+            user = None
+
+            userid = crawlconfig.modifiedBy
+            if userid:
+                user = await self.user_ops.get_by_id(userid)
+
+            if not userid or not user:
                 print(f"error: missing user for id {userid}")
                 return self.get_finished_response(metadata)
 
@@ -114,13 +124,13 @@ class CronJobOperator(BaseOperator):
             print("Scheduled Crawl Created: " + crawl_id)
 
             profile_filename = await self.crawl_config_ops.get_profile_filename(
-                crawlconfig, org
+                crawlconfig.profileid, org
             )
 
             crawl_id, crawljob = self.k8s.new_crawl_job_yaml(
                 cid,
-                userid=userid,
-                oid=oid,
+                userid=str(userid),
+                oid=str(oid),
                 storage=org.storage,
                 crawler_channel=crawlconfig.crawlerChannel or "default",
                 scale=crawlconfig.scale,
