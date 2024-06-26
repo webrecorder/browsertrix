@@ -761,8 +761,10 @@ class CrawlOperator(BaseOperator):
                     )
 
                 if not crawler_running and redis:
-                    # if crawler is not running, but redis is, stop redis instance until crawler
-                    # is running, and REDIS_TTL has elapsed, stop redis
+                    # if crawler is not running for REDIS_TTL seconds, also stop redis
+                    # but not right away in case crawler pod is just restarting.
+                    # avoids keeping redis pods around while no crawler pods are up
+                    # (eg. due to resource constraints)
                     if status.lastActiveTime and (
                         (
                             dt_now() - from_k8s_date(status.lastActiveTime)
@@ -776,7 +778,6 @@ class CrawlOperator(BaseOperator):
                 elif crawler_running and not redis:
                     # if crawler is running, but no redis, init redis
                     status.initRedis = True
-                    status.lastActiveTime = to_k8s_date(dt_now())
 
                 # if no crawler / no redis, resync after N seconds
                 status.resync_after = self.fast_retry_secs
@@ -797,6 +798,7 @@ class CrawlOperator(BaseOperator):
                         )
                     )
 
+            # update lastActiveTime if crawler is running
             if crawler_running:
                 status.lastActiveTime = to_k8s_date(dt_now())
 
