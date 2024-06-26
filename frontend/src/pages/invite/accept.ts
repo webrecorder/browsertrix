@@ -138,7 +138,16 @@ export class AcceptInvite extends TailwindElement {
                       </div>
                     `,
               error: (err) =>
-                html`<btrix-alert variant="danger">${err}</btrix-alert>`,
+                html`<btrix-alert variant="danger">
+                  <div>${err instanceof Error ? err.message : err}</div>
+                  <a
+                    href=${ROUTES.home}
+                    @click=${this.navigate.link}
+                    class="mt-3 inline-block underline hover:no-underline"
+                  >
+                    ${msg("Go to home page")}
+                  </a>
+                </btrix-alert> `,
             })}
           </div>
         </div>

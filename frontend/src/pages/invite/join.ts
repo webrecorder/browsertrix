@@ -5,6 +5,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { renderInviteMessage } from "./ui/inviteMessage";
 
 import { type SignUpSuccessDetail } from "@/features/accounts/sign-up-form";
+import { ROUTES } from "@/routes";
 import type { CurrentUser, UserOrgInviteInfo } from "@/types/user";
 import AuthService, {
   type AuthState,
@@ -105,7 +106,7 @@ export class Join extends LiteElement {
                 html`<btrix-alert variant="danger">
                   <div>${err instanceof Error ? err.message : err}</div>
                   <a
-                    href=${this.orgBasePath}
+                    href=${ROUTES.home}
                     @click=${this.navLink}
                     class="mt-3 inline-block underline hover:no-underline"
                   >
