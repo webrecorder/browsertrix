@@ -10,10 +10,18 @@ import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
 import { ROUTES } from "@/routes";
-import type { UserOrg, UserOrgInviteInfo } from "@/types/user";
+import type {
+  UpdateUserInfoDetail,
+  UserOrg,
+  UserOrgInviteInfo,
+} from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { Auth, AuthState } from "@/utils/AuthService";
+import { AppStateService } from "@/utils/state";
 
+/**
+ * @fires btrix-update-user-info
+ */
 @localized()
 @customElement("btrix-accept-invite")
 export class AcceptInvite extends TailwindElement {
@@ -203,7 +211,16 @@ export class AcceptInvite extends TailwindElement {
           icon: "check2-circle",
         });
 
-        this.navigate.to(`/orgs/${org.slug || inviteInfo.orgSlug}`);
+        this.dispatchEvent(
+          new CustomEvent<UpdateUserInfoDetail>("btrix-update-user-info", {
+            detail: {
+              updateComplete: () => {
+                this.goToOrgDashboard(org.slug);
+              },
+            },
+            bubbles: true,
+          }),
+        );
       }
     } catch (err) {
       if (isApiError(err) && err.message === "Invalid Invite Code") {
@@ -226,5 +243,10 @@ export class AcceptInvite extends TailwindElement {
     });
 
     this.navigate.to(ROUTES.home);
+  }
+
+  private goToOrgDashboard(orgSlug: string) {
+    AppStateService.updateOrgSlug(orgSlug);
+    this.navigate.to(`/orgs/${orgSlug}`);
   }
 }

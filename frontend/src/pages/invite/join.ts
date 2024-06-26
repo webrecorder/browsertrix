@@ -97,7 +97,9 @@ export class Join extends LiteElement {
                         email=${this.email!}
                         inviteToken=${this.token!}
                         .inviteInfo=${inviteInfo || undefined}
-                        submitLabel=${msg("Next")}
+                        submitLabel=${inviteInfo?.firstOrgAdmin
+                          ? msg("Next")
+                          : msg("Create Account")}
                         @success=${this.onSignUpSuccess}
                         @authenticated=${this.onAuthenticated}
                       ></btrix-sign-up-form>
