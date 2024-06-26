@@ -25,6 +25,7 @@ from .models import (
     StorageRef,
     OrgQuotas,
     OrgQuotaUpdate,
+    OrgReadOnlyUpdate,
     OrgMetrics,
     OrgWebhookUrls,
     CreateOrg,
@@ -679,6 +680,16 @@ class OrgOps:
             slug_id_map[org["_id"]] = org["slug"]
         return slug_id_map
 
+    async def update_read_only(self, org: Organization, update: OrgReadOnlyUpdate):
+        """Set readOnly field for Organization"""
+        if update.readOnly is False:
+            # Set reason to empty string if readOnly is false
+            update.readOnlyReason = ""
+
+        query = update.dict(exclude_unset=True)
+
+        return await self.orgs.find_one_and_update({"_id": org.id}, {"$set": query})
+
 
 # ============================================================================
 # pylint: disable=too-many-statements
@@ -814,6 +825,19 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         await ops.update_quotas(org, quotas)
+
+        return {"updated": True}
+
+    @router.post("/read-only", tags=["organizations"])
+    async def update_read_only(
+        update: OrgReadOnlyUpdate,
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        await ops.update_read_only(org, update)
 
         return {"updated": True}
 
