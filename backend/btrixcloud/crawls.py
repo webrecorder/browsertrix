@@ -740,7 +740,7 @@ class CrawlOps(BaseCrawlOps):
 
         # ensure org execution is allowed
         if org.readOnly:
-            raise HTTPException(status_code=400, detail="org_set_to_read_only")
+            raise HTTPException(status_code=403, detail="org_set_to_read_only")
 
         # can only QA finished crawls
         if not crawl.finished:
