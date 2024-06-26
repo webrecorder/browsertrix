@@ -1299,7 +1299,7 @@ class CrawlOperator(BaseOperator):
         # all expected pods are either done or failed
         all_completed = (num_done + num_failed) >= status.scale
 
-        # if at least one is done accordion to redis, consider crawl successful
+        # if at least one is done according to redis, consider crawl successful
         # ensure pod successfully exited as well
         # pylint: disable=chained-comparison
         if all_completed and num_done >= 1 and pod_done_count >= num_done:
