@@ -738,6 +738,10 @@ class CrawlOps(BaseCrawlOps):
 
         crawl = await self.get_crawl(crawl_id, org)
 
+        # ensure org execution is allowed
+        if org.readOnly:
+            raise HTTPException(status_code=403, detail="org_set_to_read_only")
+
         # can only QA finished crawls
         if not crawl.finished:
             raise HTTPException(status_code=400, detail="crawl_not_finished")
