@@ -22,12 +22,12 @@ def get_templates_dir():
     return os.path.join(os.path.dirname(__file__), "templates")
 
 
-def from_k8s_date(string):
+def from_k8s_date(string: str) -> Optional[datetime]:
     """convert k8s date string to datetime"""
     return datetime.fromisoformat(string[:-1]) if string else None
 
 
-def to_k8s_date(dt_val):
+def to_k8s_date(dt_val: datetime) -> str:
     """convert datetime to string for k8s"""
     return dt_val.isoformat("T") + "Z"
 
