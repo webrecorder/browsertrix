@@ -310,8 +310,6 @@ class CrawlConfigOps:
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
 
         orig_crawl_config = await self.get_crawl_config(cid, org.id)
-        if not orig_crawl_config:
-            raise HTTPException(status_code=400, detail="config_not_found")
 
         # indicates if any k8s crawl config settings changed
         changed = False
@@ -647,10 +645,6 @@ class CrawlConfigOps:
         crawlconfig = await self.get_crawl_config(
             cid, org.id, active_only=False, config_cls=CrawlConfigOut
         )
-        if not crawlconfig:
-            raise HTTPException(
-                status_code=404, detail=f"Crawl Config '{cid}' not found"
-            )
 
         if not crawlconfig.inactive:
             self._add_curr_crawl_stats(
@@ -701,6 +695,9 @@ class CrawlConfigOps:
             query["inactive"] = {"$ne": True}
 
         res = await self.crawl_configs.find_one(query)
+        if not res:
+            raise HTTPException(status_code=404, detail="crawl_config_not_found")
+
         return config_cls.from_dict(res)
 
     async def get_crawl_config_revs(
@@ -1158,11 +1155,6 @@ def init_crawl_config_api(
     @router.delete("/{cid}")
     async def make_inactive(cid: UUID, org: Organization = Depends(org_crawl_dep)):
         crawlconfig = await ops.get_crawl_config(cid, org.id)
-
-        if not crawlconfig:
-            raise HTTPException(
-                status_code=404, detail=f"Crawl Config '{cid}' not found"
-            )
 
         return await ops.do_make_inactive(crawlconfig)
 

@@ -778,11 +778,13 @@ class BaseCrawlOps:
         for cid in cids:
             if not cid:
                 continue
-            config = await self.crawl_configs.get_crawl_config(cid, org.id)
-            if not config:
-                continue
-            first_seed = config.config.seeds[0]
-            first_seeds.add(first_seed.url)
+            try:
+                config = await self.crawl_configs.get_crawl_config(cid, org.id)
+                first_seed = config.config.seeds[0]
+                first_seeds.add(first_seed.url)
+            # pylint: disable=bare-except
+            except:
+                pass
 
         return {
             "names": names,
