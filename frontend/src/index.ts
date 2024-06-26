@@ -146,7 +146,10 @@ export class App extends LiteElement {
     this.isAppSettingsLoaded = true;
   }
 
-  private async updateUserInfo() {
+  private async updateUserInfo(e?: CustomEvent) {
+    if (e) {
+      e.stopPropagation();
+    }
     try {
       const userInfo = await this.getUserInfo();
       AppStateService.updateUserInfo({
@@ -549,10 +552,7 @@ export class App extends LiteElement {
           .userInfo="${this.appState.userInfo ?? undefined}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
-          @btrix-update-user-info=${(e: CustomEvent) => {
-            e.stopPropagation();
-            void this.updateUserInfo();
-          }}
+          @btrix-update-user-info=${this.updateUserInfo}
         ></btrix-join>`;
 
       case "acceptInvite":
@@ -561,6 +561,7 @@ export class App extends LiteElement {
           .authState="${this.authService.authState}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
+          @btrix-update-user-info=${this.updateUserInfo}
         ></btrix-accept-invite>`;
 
       case "login":
@@ -582,10 +583,7 @@ export class App extends LiteElement {
       case "home":
         return html`<btrix-home
           class="w-full md:bg-neutral-50"
-          @btrix-update-user-info=${(e: CustomEvent) => {
-            e.stopPropagation();
-            void this.updateUserInfo();
-          }}
+          @btrix-update-user-info=${this.updateUserInfo}
           .authState=${this.authService.authState}
           .userInfo=${this.appState.userInfo ?? undefined}
           slug=${ifDefined(this.appState.orgSlug ?? undefined)}
@@ -608,10 +606,7 @@ export class App extends LiteElement {
             .split("/")[0] || "home";
         return html`<btrix-org
           class="w-full"
-          @btrix-update-user-info=${(e: CustomEvent) => {
-            e.stopPropagation();
-            void this.updateUserInfo();
-          }}
+          @btrix-update-user-info=${this.updateUserInfo}
           .authState=${this.authService.authState}
           .userInfo=${this.appState.userInfo ?? undefined}
           .viewStateData=${this.viewState.data}
@@ -626,10 +621,7 @@ export class App extends LiteElement {
       case "accountSettings":
         return html`<btrix-account-settings
           class="mx-auto box-border w-full max-w-screen-desktop p-2 md:py-8"
-          @btrix-update-user-info=${(e: CustomEvent) => {
-            e.stopPropagation();
-            void this.updateUserInfo();
-          }}
+          @btrix-update-user-info=${this.updateUserInfo}
           .authState="${this.authService.authState}"
           .userInfo="${this.appState.userInfo ?? undefined}"
         ></btrix-account-settings>`;
