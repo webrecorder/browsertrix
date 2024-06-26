@@ -1,7 +1,7 @@
 """ Operator handler for crawl CronJobs """
 
 from uuid import UUID
-from typing import Optional
+from typing import Optional, Any
 import yaml
 
 from btrixcloud.utils import to_k8s_date, dt_now
@@ -47,19 +47,22 @@ class CronJobOperator(BaseOperator):
             "status": status,
         }
 
+    # pylint: disable=too-many-arguments
     async def make_new_crawljob(
         self,
-        cid: str,
+        cid: UUID,
+        oid: Optional[UUID],
+        userid: Optional[UUID],
         crawl_id: str,
         metadata: dict[str, str],
         state: Optional[str],
-    ):
+    ) -> list[dict[str, Any]]:
         """declare new CrawlJob from cid, based on db data"""
         # cronjob doesn't exist yet
         crawlconfig: CrawlConfig
 
         try:
-            crawlconfig = await self.crawl_config_ops.get_crawl_config(UUID(cid))
+            crawlconfig = await self.crawl_config_ops.get_crawl_config(cid, oid)
         # pylint: disable=bare-except
         except:
             print(
@@ -74,7 +77,9 @@ class CronJobOperator(BaseOperator):
         # db create
         user = None
 
-        userid = crawlconfig.modifiedBy
+        if not userid:
+            userid = crawlconfig.modifiedBy
+
         if userid:
             user = await self.user_ops.get_by_id(userid)
 
@@ -105,7 +110,7 @@ class CronJobOperator(BaseOperator):
         )
 
         crawl_id, crawljob = self.k8s.new_crawl_job_yaml(
-            cid,
+            cid=str(cid),
             userid=str(userid),
             oid=str(oid),
             storage=org.storage,
@@ -127,9 +132,13 @@ class CronJobOperator(BaseOperator):
 
         metadata = data.object["metadata"]
         labels = metadata.get("labels", {})
-        cid = labels.get("btrix.crawlconfig")
-        # oid = labels.get("btrix.oid")
-        # userid = labels.get("btrix.user")
+        cid: str = labels.get("btrix.crawlconfig", "")
+        oid: str = labels.get("btrix.oid", "")
+        userid: str = labels.get("btrix.userid", "")
+
+        if not cid:
+            print("error: cronjob missing 'cid', invalid cronjob")
+            return self.get_finished_response(metadata)
 
         name = metadata.get("name")
         crawl_id = name
@@ -147,16 +156,18 @@ class CronJobOperator(BaseOperator):
 
             return self.get_finished_response(metadata, set_status, finished_str)
 
-        # oid = configmap.get("ORG_ID")
-        # userid = configmap.get("USER_ID")
-
         crawljobs = data.attachments[CJS]
 
         crawljob_id = f"crawljob-{crawl_id}"
 
         if crawljob_id not in crawljobs:
             attachments = await self.make_new_crawljob(
-                cid, crawl_id, metadata, actual_state
+                UUID(cid),
+                UUID(oid) if oid else None,
+                UUID(userid) if userid else None,
+                crawl_id,
+                metadata,
+                actual_state,
             )
         else:
             # just return existing crawljob, after removing annotation

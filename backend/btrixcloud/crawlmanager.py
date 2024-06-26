@@ -281,7 +281,9 @@ class CrawlManager(K8sAPI):
             label_selector=label,
         )
 
-    async def update_scheduled_job(self, crawlconfig: CrawlConfig) -> Optional[str]:
+    async def update_scheduled_job(
+        self, crawlconfig: CrawlConfig, userid: Optional[str] = None
+    ) -> Optional[str]:
         """create or remove cron job based on crawlconfig schedule"""
         cid = str(crawlconfig.id)
 
@@ -319,7 +321,9 @@ class CrawlManager(K8sAPI):
         params = {
             "id": cron_job_id,
             "cid": str(crawlconfig.id),
+            "oid": str(crawlconfig.oid),
             "schedule": crawlconfig.schedule,
+            "userid": userid,
         }
 
         data = self.templates.env.get_template("crawl_cron_job.yaml").render(params)

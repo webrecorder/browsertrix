@@ -238,7 +238,7 @@ class CrawlConfigOps:
             run_now = False
             print(f"Execution minutes quota exceeded for org {org.id}", flush=True)
 
-        await self.crawl_manager.update_scheduled_job(crawlconfig)
+        await self.crawl_manager.update_scheduled_job(crawlconfig, str(user.id))
 
         crawl_id = None
 
@@ -391,7 +391,7 @@ class CrawlConfigOps:
         if schedule_changed:
             try:
                 crawlconfig = CrawlConfig.from_dict(result)
-                await self.crawl_manager.update_scheduled_job(crawlconfig)
+                await self.crawl_manager.update_scheduled_job(crawlconfig, str(user.id))
 
             except Exception as exc:
                 print(exc, flush=True)

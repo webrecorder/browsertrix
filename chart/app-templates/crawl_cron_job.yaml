@@ -4,6 +4,10 @@ metadata:
   name: "{{ id }}"
   labels:
     btrix.crawlconfig: "{{ cid }}"
+    btrix.oid: "{{ oid }}"
+{% if userid %}
+    btrix.userid: "{{ userid }}"
+{% endif %}
     role: "cron-job"
 
 spec:
