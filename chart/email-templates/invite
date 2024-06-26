@@ -4,7 +4,9 @@ Welcome to Browsertrix!
 <body>
 <p>Hello!</p>
 
+{% if is_new %}
 <p>Welcome to Browsertrix!</p>
+{% endif %}
 
 {% if sender and org_name %}
 <p>You have been invited {{ sender }} to join "{{ org_name }}" on Browsertrix!</p>
@@ -52,7 +54,9 @@ If you need any assistance, please direct your questions to the <a href="https:/
 ~~~
 Hello!
 
+{% if is_new %}
 Welcome to Browsertrix!
+{% endif %}
 
 {% if sender and org_name %}
 You have been invited {{ sender }} to join "{{ org_name }}" on Browsertrix!
