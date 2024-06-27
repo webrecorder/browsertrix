@@ -602,7 +602,6 @@ export class App extends LiteElement {
             .split("/")[0] || "home";
         return html`<btrix-org
           class="w-full"
-          @btrix-update-user-info=${this.updateUserInfo}
           .authState=${this.authService.authState}
           .userInfo=${this.appState.userInfo ?? undefined}
           .viewStateData=${this.viewState.data}
