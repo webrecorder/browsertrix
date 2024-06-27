@@ -52,7 +52,7 @@ export const renderInviteMessage = (
         <ul class="mt-6 text-base text-neutral-700">
           <li class="mb-3 flex items-center gap-2">
             <sl-icon
-              class="text-lg text-primary"
+              class="${isOrgMember ? "text-success" : "text-primary"} text-lg"
               name=${isOrgMember ? "check-circle" : "1-circle"}
               label=${isOrgMember ? msg("Step 1 complete") : msg("Step 1")}
             ></sl-icon>
@@ -89,9 +89,8 @@ export const renderInviteMessage = (
                   href="https://docs.browsertrix.com/user-guide/org-settings/"
                   target="_blank"
                   rel="noopener"
+                  >org settings</a
                 >
-                  org settings
-                </a>
                 for details.`,
             )}
           </p>
