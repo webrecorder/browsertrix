@@ -65,7 +65,7 @@ describe("btrix-accept-invite", () => {
 
   describe("when inviting the first admin", () => {
     beforeEach(() => {
-      stub(AcceptInvite.prototype, "_getInviteInfo").callsFake(() =>
+      stub(AcceptInvite.prototype, "_getInviteInfo").callsFake(async () =>
         Promise.resolve({
           ...mockInviteInfo,
           firstOrgAdmin: true,
@@ -82,7 +82,7 @@ describe("btrix-accept-invite", () => {
         ></btrix-accept-invite>`,
       );
 
-      expect(el.shadowRoot?.querySelector("#acceptButton")).to.exist;
+      expect(el.shadowRoot!.querySelector("#acceptButton")).to.exist;
     });
 
     it("redirects to home on decline", async () => {
@@ -110,7 +110,7 @@ describe("btrix-accept-invite", () => {
         ></btrix-accept-invite>`,
       );
 
-      stub(el._api, "fetch").callsFake(() =>
+      stub(el._api, "fetch").callsFake(async () =>
         Promise.resolve({
           org: {
             id: mockInviteInfo.oid,
@@ -122,7 +122,7 @@ describe("btrix-accept-invite", () => {
 
       await el._onAccept();
 
-      expect(el.shadowRoot?.querySelector<OrgForm>("btrix-org-form")).to.exist;
+      expect(el.shadowRoot!.querySelector<OrgForm>("btrix-org-form")).to.exist;
     });
 
     it("renders org settings form with the correct attributes", async () => {
@@ -134,7 +134,7 @@ describe("btrix-accept-invite", () => {
         ></btrix-accept-invite>`,
       );
 
-      stub(el._api, "fetch").callsFake(() =>
+      stub(el._api, "fetch").callsFake(async () =>
         Promise.resolve({
           org: {
             id: mockInviteInfo.oid,
@@ -146,7 +146,7 @@ describe("btrix-accept-invite", () => {
 
       await el._onAccept();
 
-      const orgFormEl = el.shadowRoot?.querySelector<OrgForm>("btrix-org-form");
+      const orgFormEl = el.shadowRoot!.querySelector<OrgForm>("btrix-org-form");
 
       expect(orgFormEl).attribute("orgId", "fake_oid");
       expect(orgFormEl).attribute("name", "Fake Org Name 2");
@@ -172,7 +172,7 @@ describe("btrix-accept-invite", () => {
       await el.updateComplete;
 
       const orgFormEl =
-        el.shadowRoot?.querySelector<OrgForm>("btrix-org-form")!;
+        el.shadowRoot!.querySelector<OrgForm>("btrix-org-form")!;
 
       setTimeout(() => {
         orgFormEl.dispatchEvent(
@@ -195,7 +195,7 @@ describe("btrix-accept-invite", () => {
 
   describe("when inviting a non-first admin", () => {
     beforeEach(() => {
-      stub(AcceptInvite.prototype, "_getInviteInfo").callsFake(() =>
+      stub(AcceptInvite.prototype, "_getInviteInfo").callsFake(async () =>
         Promise.resolve({
           ...mockInviteInfo,
           firstOrgAdmin: false,
@@ -212,7 +212,7 @@ describe("btrix-accept-invite", () => {
         ></btrix-accept-invite>`,
       );
 
-      expect(el.shadowRoot?.querySelector("#acceptButton")).to.exist;
+      expect(el.shadowRoot!.querySelector("#acceptButton")).to.exist;
     });
 
     it("updates user app state on accept", async () => {
@@ -225,7 +225,7 @@ describe("btrix-accept-invite", () => {
       );
 
       stub(el._navigate, "to");
-      stub(el._api, "fetch").callsFake(() =>
+      stub(el._api, "fetch").callsFake(async () =>
         Promise.resolve({
           org: {
             id: mockInviteInfo.oid,
@@ -234,7 +234,7 @@ describe("btrix-accept-invite", () => {
           },
         }),
       );
-      stub(el, "_getCurrentUser").callsFake(() =>
+      stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
           id: "fake_user_id",
           email: "fake@example.com",
@@ -263,7 +263,7 @@ describe("btrix-accept-invite", () => {
       );
 
       stub(el._navigate, "to");
-      stub(el._api, "fetch").callsFake(() =>
+      stub(el._api, "fetch").callsFake(async () =>
         Promise.resolve({
           org: {
             id: mockInviteInfo.oid,

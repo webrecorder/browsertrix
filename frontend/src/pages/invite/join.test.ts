@@ -44,7 +44,7 @@ describe("btrix-join", () => {
 
   describe("when inviting the first admin", () => {
     beforeEach(() => {
-      stub(Join.prototype, "_getInviteInfo").callsFake(() =>
+      stub(Join.prototype, "_getInviteInfo").callsFake(async () =>
         Promise.resolve({
           ...mockInviteInfo,
           firstOrgAdmin: true,
@@ -147,7 +147,7 @@ describe("btrix-join", () => {
 
   describe("when inviting a non-first admin", () => {
     beforeEach(() => {
-      stub(Join.prototype, "_getInviteInfo").callsFake(() =>
+      stub(Join.prototype, "_getInviteInfo").callsFake(async () =>
         Promise.resolve({
           ...mockInviteInfo,
           firstOrgAdmin: false,

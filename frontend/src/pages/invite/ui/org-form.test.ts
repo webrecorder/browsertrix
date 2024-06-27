@@ -62,8 +62,8 @@ describe("btrix-org-form", () => {
       const el = await fixture<OrgForm>(
         html`<btrix-org-form id="fake_oid"></btrix-org-form>`,
       );
-      stub(el._api, "fetch").callsFake(() => Promise.resolve());
-      stub(el, "_getCurrentUser").callsFake(() =>
+      stub(el._api, "fetch").callsFake(async () => Promise.resolve());
+      stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
           id: "fake_user_id",
           email: "fake@example.com",
@@ -89,8 +89,8 @@ describe("btrix-org-form", () => {
       const el = await fixture<OrgForm>(
         html`<btrix-org-form id="fake_oid"></btrix-org-form>`,
       );
-      stub(el._api, "fetch").callsFake(() => Promise.resolve());
-      stub(el, "_getCurrentUser").callsFake(() =>
+      stub(el._api, "fetch").callsFake(async () => Promise.resolve());
+      stub(el, "_getCurrentUser").callsFake(async () =>
         Promise.resolve({
           id: "fake_user_id",
           email: "fake@example.com",
