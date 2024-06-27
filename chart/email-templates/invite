@@ -9,7 +9,7 @@ Welcome to Browsertrix!
 {% endif %}
 
 {% if sender and org_name %}
-<p>You have been invited {{ sender }} to join "{{ org_name }}" on Browsertrix!</p>
+<p>You have been invited by {{ sender }} to join "{{ org_name }}" on Browsertrix!</p>
 {% elif org_name %}
 <p>You have been invited to join "{{ org_name }}" on Browsertrix!</p>
 {% elif not is_new %}
@@ -65,7 +65,7 @@ Welcome to Browsertrix!
 {% endif %}
 
 {% if sender and org_name %}
-You have been invited {{ sender }} to join "{{ org_name }}" on Browsertrix!
+You have been invited by {{ sender }} to join "{{ org_name }}" on Browsertrix!
 {% elif org_name %}
 You have been invited to join "{{ org_name }}" on Browsertrix!
 {% elif not is_new %}
