@@ -99,7 +99,7 @@ How do I export my archived items? (https://docs.browsertrix.com/user-guide/arch
 If you need any assistance, please direct your questions to the Browsertrix GitHub repo (https://github.com/webrecorder/browsertrix) or the Webrecorder community forum (https://forum.webrecorder.net).
 
 {% if support_email %}
-If you're having trouble accessing the service, or if dedicated support is included in your plan, you can also contact us at: {{ support_email }}.
+If you're having trouble accessing the service, or if dedicated support is included in your plan, you can also contact us at {{ support_email }}.
 {% endif %}
 
 Best Regards,
