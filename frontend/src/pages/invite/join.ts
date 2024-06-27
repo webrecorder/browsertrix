@@ -4,18 +4,18 @@ import { customElement, property, state } from "lit/decorators.js";
 
 import { renderInviteMessage } from "./ui/inviteMessage";
 
-import { type SignUpSuccessDetail } from "@/features/accounts/sign-up-form";
+import type { SignUpSuccessDetail } from "@/features/accounts/sign-up-form";
+import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
 import { ROUTES } from "@/routes";
-import type { CurrentUser, UserOrgInviteInfo } from "@/types/user";
+import type { CurrentUser, UserOrg, UserOrgInviteInfo } from "@/types/user";
 import AuthService, {
   type AuthState,
   type LoggedInEventDetail,
 } from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 
-/**
- * @fires btrix-update-user-info
- */
+import "./ui/org-form";
+
 @localized()
 @customElement("btrix-join")
 export class Join extends LiteElement {
@@ -32,21 +32,18 @@ export class Join extends LiteElement {
   email?: string;
 
   @state()
-  private signUpOrgDefaults?: {
-    name: string;
-    slug: string;
-  };
+  _firstAdminOrgInfo: null | Pick<UserOrg, "id" | "name" | "slug"> = null;
 
   private readonly inviteInfo = new Task(this, {
     task: async ([token, email]) => {
       if (!token || !email) throw new Error("Missing args");
-      const inviteInfo = await this.getInviteInfo({ token, email });
+      const inviteInfo = await this._getInviteInfo({ token, email });
       return inviteInfo;
     },
     args: () => [this.token, this.email] as const,
   });
 
-  private get isLoggedIn(): boolean {
+  get _isLoggedIn(): boolean {
     return Boolean(
       this.authState && this.email && this.authState.username === this.email,
     );
@@ -65,7 +62,7 @@ export class Join extends LiteElement {
             complete: (inviteInfo) =>
               renderInviteMessage(inviteInfo, {
                 isExistingUser: false,
-                isOrgMember: this.isLoggedIn,
+                isOrgMember: this._isLoggedIn,
               }),
           })}
         </header>
@@ -79,17 +76,19 @@ export class Join extends LiteElement {
                 </div>
               `,
               complete: (inviteInfo) =>
-                this.isLoggedIn && inviteInfo && inviteInfo.firstOrgAdmin
+                this._isLoggedIn && this._firstAdminOrgInfo
                   ? html`
                       <btrix-org-form
                         .authState=${this.authState}
-                        .orgId=${inviteInfo.oid}
-                        name=${this.signUpOrgDefaults?.name ||
-                        inviteInfo.orgName ||
-                        ""}
-                        slug=${this.signUpOrgDefaults?.slug ||
-                        inviteInfo.orgSlug ||
-                        ""}
+                        orgId=${this._firstAdminOrgInfo.id}
+                        name=${this._firstAdminOrgInfo.name}
+                        slug=${this._firstAdminOrgInfo.slug}
+                        @btrix-org-updated=${(
+                          e: CustomEvent<OrgUpdatedDetail>,
+                        ) => {
+                          e.stopPropagation();
+                          this.navTo(`/orgs/${e.detail.data.slug}`);
+                        }}
                       ></btrix-org-form>
                     `
                   : html`
@@ -100,8 +99,8 @@ export class Join extends LiteElement {
                         submitLabel=${inviteInfo?.firstOrgAdmin
                           ? msg("Next")
                           : msg("Create Account")}
-                        @success=${this.onSignUpSuccess}
-                        @authenticated=${this.onAuthenticated}
+                        @success=${this._onSignUpSuccess}
+                        @authenticated=${this._onAuthenticated}
                       ></btrix-sign-up-form>
                     `,
               error: (err) =>
@@ -122,7 +121,7 @@ export class Join extends LiteElement {
     `;
   }
 
-  private async getInviteInfo({
+  async _getInviteInfo({
     token,
     email,
   }: {
@@ -146,20 +145,36 @@ export class Join extends LiteElement {
     }
   }
 
-  private onSignUpSuccess(e: CustomEvent<SignUpSuccessDetail>) {
-    const { orgName, orgSlug } = e.detail;
-    this.signUpOrgDefaults = {
-      name: orgName || "",
-      slug: orgSlug || "",
-    };
+  _onSignUpSuccess(e: CustomEvent<SignUpSuccessDetail>) {
+    const inviteInfo = this.inviteInfo.value;
+    if (!inviteInfo) return;
+
+    if (inviteInfo.firstOrgAdmin) {
+      const { orgName, orgSlug } = e.detail;
+      this._firstAdminOrgInfo = {
+        id: inviteInfo.oid,
+        name: orgName || inviteInfo.orgName || "",
+        slug: orgSlug || inviteInfo.orgSlug || "",
+      };
+    }
   }
 
-  private onAuthenticated(event: CustomEvent<LoggedInEventDetail>) {
+  _onAuthenticated(event: CustomEvent<LoggedInEventDetail>) {
     this.dispatchEvent(
       AuthService.createLoggedInEvent({
         ...event.detail,
-        api: Boolean(this.inviteInfo.value?.firstOrgAdmin), // prevents navigation if org name is required
+        api: true, // Prevent default navigation
       }),
     );
+
+    const inviteInfo = this.inviteInfo.value;
+
+    if (!inviteInfo?.firstOrgAdmin) {
+      if (inviteInfo?.orgSlug) {
+        this.navTo(`/orgs/${inviteInfo.orgSlug}`);
+      } else {
+        this.navTo(ROUTES.home);
+      }
+    }
   }
 }

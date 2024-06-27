@@ -7,13 +7,16 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import slugify from "slugify";
 
+import type { APIUser } from "@/index";
 import type { APIPaginatedList } from "@/types/api";
-import type { CurrentUser, UpdateUserInfoDetail } from "@/types/user";
+import type { CurrentUser } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import LiteElement, { html } from "@/utils/LiteElement";
 import { AccessCode, isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
+import { AppStateService } from "@/utils/state";
+import { formatAPIUser } from "@/utils/user";
 
 type Tab = "information" | "members";
 type User = {
@@ -598,24 +601,19 @@ export class OrgSettings extends LiteElement {
         method: "POST",
         body: JSON.stringify({ name, slug }),
       });
+
+      const user = await this.getCurrentUser();
+
+      AppStateService.updateUserInfo(formatAPIUser(user));
+      AppStateService.updateOrgSlug(slug);
+
+      this.navTo(`${this.orgBasePath}/settings`);
+
       this.notify({
         message: msg("Org successfully updated."),
         variant: "success",
         icon: "check2-circle",
       });
-
-      this.dispatchEvent(
-        new CustomEvent<UpdateUserInfoDetail>("btrix-update-user-info", {
-          detail: {
-            updateComplete: () => {
-              if (slug !== this.org.slug) {
-                this.navTo(`/orgs/${slug}/settings/${this.activePanel}`);
-              }
-            },
-          },
-          bubbles: true,
-        }),
-      );
     } catch (e) {
       console.debug(e);
 
@@ -630,5 +628,9 @@ export class OrgSettings extends LiteElement {
         icon: "exclamation-octagon",
       });
     }
+  }
+
+  private async getCurrentUser(): Promise<APIUser> {
+    return this.apiFetch("/users/me", this.authState!);
   }
 }

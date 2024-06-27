@@ -10,7 +10,7 @@ import "./utils/polyfills";
 
 import type { OrgTab } from "./pages/org";
 import { ROUTES } from "./routes";
-import type { CurrentUser, UpdateUserInfoDetail, UserOrg } from "./types/user";
+import type { CurrentUser, UserOrg } from "./types/user";
 import APIRouter, { type ViewState } from "./utils/APIRouter";
 import AuthService, {
   type Auth,
@@ -22,6 +22,7 @@ import AuthService, {
 import { DEFAULT_MAX_SCALE } from "./utils/crawler";
 import LiteElement, { html } from "./utils/LiteElement";
 import appState, { AppStateService, use } from "./utils/state";
+import { formatAPIUser } from "./utils/user";
 
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import type { NotifyEventDetail } from "@/controllers/notify";
@@ -146,29 +147,19 @@ export class App extends LiteElement {
     this.isAppSettingsLoaded = true;
   }
 
-  private async updateUserInfo(e?: CustomEvent<UpdateUserInfoDetail>) {
+  /**
+   * @deprecate Components should update user info directly through `AppStateService`
+   */
+  private async updateUserInfo(e?: CustomEvent) {
     if (e) {
       e.stopPropagation();
     }
     try {
       const userInfo = await this.getUserInfo();
-      AppStateService.updateUserInfo({
-        id: userInfo.id,
-        email: userInfo.email,
-        name: userInfo.name,
-        isVerified: userInfo.is_verified,
-        isAdmin: userInfo.is_superuser,
-        orgs: userInfo.orgs,
-      });
+      AppStateService.updateUserInfo(formatAPIUser(userInfo));
       const orgs = userInfo.orgs;
-      const { updateComplete } = e?.detail || {};
-      if (updateComplete) {
-        // This callback is a bit hacky, but we need the user info update to
-        // complete before navigating to a new org slug.
-        // This could potentially be refactored in:
-        // https://github.com/webrecorder/browsertrix/issues/1741
-        updateComplete();
-      } else if (
+
+      if (
         orgs.length &&
         !this.appState.userInfo!.isAdmin &&
         !this.appState.orgSlug
@@ -559,7 +550,6 @@ export class App extends LiteElement {
           .userInfo="${this.appState.userInfo ?? undefined}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
-          @btrix-update-user-info=${this.updateUserInfo}
         ></btrix-join>`;
 
       case "acceptInvite":
@@ -568,7 +558,6 @@ export class App extends LiteElement {
           .authState="${this.authService.authState}"
           token="${this.viewState.params.token}"
           email="${this.viewState.params.email}"
-          @btrix-update-user-info=${this.updateUserInfo}
         ></btrix-accept-invite>`;
 
       case "login":

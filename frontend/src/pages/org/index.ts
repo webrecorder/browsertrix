@@ -84,9 +84,6 @@ const defaultTab = "home";
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-/**
- * @fires btrix-update-user-info
- */
 @localized()
 @customElement("btrix-org")
 @needLogin

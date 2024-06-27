@@ -26,6 +26,13 @@ glob.sync("./src/assets/**/*").forEach((filepath) => {
     new URL("./src/__mocks__/_empty.js", import.meta.url),
   );
 });
+const anonSpyImports = ["slugify"].reduce(
+  (acc, val) => ({
+    ...acc,
+    [val]: fileURLToPath(new URL("./src/__mocks__/_spy.js", import.meta.url)),
+  }),
+  {},
+);
 
 export default {
   nodeResolve: true,
@@ -56,6 +63,7 @@ export default {
         importMap: {
           imports: {
             ...emptyImports,
+            ...anonSpyImports,
             "./src/shoelace": fileURLToPath(
               new URL("./src/__mocks__/shoelace.js", import.meta.url),
             ),

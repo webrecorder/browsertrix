@@ -8,22 +8,24 @@ import slugify from "slugify";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
 import { NotifyController } from "@/controllers/notify";
-import type { UpdateUserInfoDetail } from "@/types/user";
+import { type APIUser } from "@/index";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { AppStateService } from "@/utils/state";
+import { formatAPIUser } from "@/utils/user";
 
-export type OrgFormSubmitEventDetail = {
-  values: {
-    orgName: string;
-    orgSlug: string;
-  };
+type FormValues = {
+  orgName: string;
+  orgSlug: string;
+};
+
+export type OrgUpdatedDetail = {
+  data: { name: string; slug: string };
 };
 
 /**
- * @fires btrix-submit OrgFormSubmitEventDetail
+ * @fires btrix-org-updated
  */
 @localized()
 @customElement("btrix-org-form")
@@ -40,15 +42,14 @@ export class OrgForm extends TailwindElement {
   @property({ type: String })
   slug = "";
 
-  private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
-  private readonly notify = new NotifyController(this);
+  readonly _api = new APIController(this);
+  readonly _notify = new NotifyController(this);
 
   private readonly renameOrgTask = new Task(this, {
     autoRun: false,
     task: async ([id, name, slug]) => {
       if (!id) throw new Error("Missing args");
-      const inviteInfo = await this.renameOrg(id, { name, slug });
+      const inviteInfo = await this._renameOrg(id, { name, slug });
       return inviteInfo;
     },
     args: () => [this.orgId, this.name, this.slug] as const,
@@ -120,41 +121,30 @@ export class OrgForm extends TailwindElement {
     const form = e.target as HTMLFormElement;
     if (!(await this.checkFormValidity(form))) return;
 
-    const params = serialize(form) as OrgFormSubmitEventDetail["values"];
+    const params = serialize(form) as FormValues;
     const orgName = params.orgName;
-    const orgSlug = slugify(params.orgSlug);
+    const orgSlug = slugify(params.orgSlug, { strict: true });
 
     void this.renameOrgTask.run([this.orgId, orgName, orgSlug]);
   }
 
-  private async renameOrg(
-    id: string,
-    params: { name?: string; slug?: string },
-  ) {
+  async _renameOrg(id: string, params: { name?: string; slug?: string }) {
     const name = params.name || this.name;
     const slug = params.slug || this.slug;
+    const payload = { name, slug };
 
     try {
-      await this.api.fetch(`/orgs/${id}/rename`, this.authState!, {
+      await this._api.fetch(`/orgs/${id}/rename`, this.authState!, {
         method: "POST",
-        body: JSON.stringify({ name, slug }),
+        body: JSON.stringify(payload),
       });
-      this.notify.toast({
+      this._notify.toast({
         message: msg("Org successfully updated."),
         variant: "success",
         icon: "check2-circle",
       });
 
-      this.dispatchEvent(
-        new CustomEvent<UpdateUserInfoDetail>("btrix-update-user-info", {
-          detail: {
-            updateComplete: () => {
-              this.goToOrgDashboard(slug);
-            },
-          },
-          bubbles: true,
-        }),
-      );
+      await this.onRenameSuccess(payload);
     } catch (e) {
       console.debug(e);
       if (isApiError(e) && e.details === "duplicate_org_name") {
@@ -163,25 +153,41 @@ export class OrgForm extends TailwindElement {
         );
       }
 
-      this.notify.toast({
+      this._notify.toast({
         message: msg(
           "Sorry, couldn't rename organization at this time. Try again later from org settings.",
         ),
         variant: "danger",
         icon: "exclamation-octagon",
       });
-
-      this.goToOrgDashboard(slug);
     }
-  }
-
-  private goToOrgDashboard(orgSlug: string) {
-    AppStateService.updateOrgSlug(orgSlug);
-    this.navigate.to(`/orgs/${orgSlug}`);
   }
 
   private async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;
     return !formEl.querySelector("[data-invalid]");
+  }
+
+  private async onRenameSuccess(data: OrgUpdatedDetail["data"]) {
+    try {
+      const user = await this._getCurrentUser();
+
+      AppStateService.updateUserInfo(formatAPIUser(user));
+      AppStateService.updateOrgSlug(data.slug);
+    } catch (e) {
+      console.debug(e);
+    }
+
+    await this.updateComplete;
+
+    this.dispatchEvent(
+      new CustomEvent<OrgUpdatedDetail>("btrix-org-updated", {
+        detail: { data },
+      }),
+    );
+  }
+
+  async _getCurrentUser(): Promise<APIUser> {
+    return this._api.fetch("/users/me", this.authState!);
   }
 }
