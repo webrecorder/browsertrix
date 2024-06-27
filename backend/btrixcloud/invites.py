@@ -73,7 +73,7 @@ class InviteOps:
 
         self.email.send_new_user_invite(new_user_invite, org_name, headers)
 
-    async def get_valid_invite(self, invite_token: UUID, email):
+    async def get_valid_invite(self, invite_token: UUID, email: str):
         """Retrieve a valid invite data from db, or throw if invalid"""
         invite_data = await self.invites.find_one({"_id": invite_token})
         if not invite_data:
@@ -126,10 +126,11 @@ class InviteOps:
         :returns: is_new_user (bool), invite token (str)
         """
         invite_code = uuid4().hex
+        org_name: str
 
         if org:
             oid = org.id
-            org_name = org.name
+            org_name = org.name if str(org.name) != str(org.id) else ""
         else:
             default_org = await self.orgs.find_one({"default": True})
             oid = default_org["_id"]
@@ -146,9 +147,10 @@ class InviteOps:
             fromSuperuser=user.is_superuser,
         )
 
-        other_user = await user_manager.get_by_email(invite.email)
+        # user being invited
+        invitee_user = await user_manager.get_by_email(invite.email)
 
-        if not other_user:
+        if not invitee_user:
             await self.add_new_user_invite(
                 invite_pending,
                 org_name,
@@ -159,22 +161,23 @@ class InviteOps:
         if not allow_existing:
             raise HTTPException(status_code=400, detail="User already registered")
 
-        if other_user.email == user.email:
+        if invitee_user.email == user.email:
             raise HTTPException(status_code=400, detail="Can't invite ourselves!")
 
-        if org.users.get(str(other_user.id)):
+        if org.users.get(str(invitee_user.id)):
             raise HTTPException(
                 status_code=400, detail="User already a member of this organization."
             )
 
-        # no need to store our own email as adding invite to user
+        # no need to store invitee's email as adding to an existing invitee
         invite_pending.email = None
-        other_user.invites[invite_code] = invite_pending
 
-        await user_manager.update_invites(other_user)
+        invitee_user.invites[invite_code] = invite_pending
+
+        await user_manager.update_invites(invitee_user)
 
         self.email.send_existing_user_invite(
-            other_user.email, user.name, org_name, invite_code, headers
+            invite_pending, org_name, invitee_user.email, invite_code, headers
         )
 
         return False

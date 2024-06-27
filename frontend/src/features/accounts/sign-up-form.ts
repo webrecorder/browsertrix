@@ -5,10 +5,16 @@ import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 
 import type { Input as BtrixInput } from "@/components/ui/input";
+import type { UserOrgInviteInfo, UserRegisterResponseData } from "@/types/user";
 import type { UnderlyingFunction } from "@/types/utils";
 import AuthService from "@/utils/AuthService";
 import LiteElement, { html } from "@/utils/LiteElement";
 import PasswordService from "@/utils/PasswordService";
+
+export type SignUpSuccessDetail = {
+  orgName?: string;
+  orgSlug?: string;
+};
 
 const { PASSWORD_MINLENGTH, PASSWORD_MAXLENGTH, PASSWORD_MIN_SCORE } =
   PasswordService;
@@ -30,10 +36,11 @@ export class SignUpForm extends LiteElement {
   @property({ type: String })
   inviteToken?: string;
 
-  @property({ type: Boolean })
-  // TODO replace with org info
-  // https://github.com/ikreymer/browsertrix-cloud/issues/35
-  isOrgInvite?: boolean;
+  @property({ type: Object })
+  inviteInfo?: UserOrgInviteInfo;
+
+  @property({ type: String })
+  submitLabel?: string;
 
   @state()
   private serverError?: string;
@@ -60,7 +67,7 @@ export class SignUpForm extends LiteElement {
           <btrix-alert id="formError" variant="danger"
             >${this.serverError}
             ${this.showLoginLink
-              ? html` <p>
+              ? html`<p>
                   Go to the
                   <a class="underline" href="/log-in">Log-In Page</a> and try
                   again.
@@ -73,11 +80,13 @@ export class SignUpForm extends LiteElement {
 
     return html`
       <form @submit=${this.onSubmit} aria-describedby="formError">
+        ${serverError}
+
         <div class="mb-5">
           ${this.email
             ? html`
                 <div style="font-size: var(--sl-input-label-font-size-medium)">
-                  ${msg("Joining as")}
+                  ${msg("Email")}
                 </div>
                 <div class="py-1 font-medium">${this.email}</div>
                 <input
@@ -100,25 +109,6 @@ export class SignUpForm extends LiteElement {
                 </btrix-input>
               `}
         </div>
-        <div class="list- mb-5">
-          <btrix-input
-            id="name"
-            name="name"
-            label=${msg("Your name")}
-            placeholder=${msg("Lisa Simpson", {
-              desc: "Example user’s name",
-            })}
-            autocomplete="nickname"
-            minlength="2"
-            required
-          >
-          </btrix-input>
-          <p class="mt-2 text-gray-500">
-            ${msg(
-              "Your full name, nickname, or another name that org collaborators can see.",
-            )}
-          </p>
-        </div>
         <div class="mb-5">
           <btrix-input
             id="password"
@@ -134,15 +124,29 @@ export class SignUpForm extends LiteElement {
             >}
           >
           </btrix-input>
-          <p class="mt-2 text-gray-500">
+          <p class="mt-2 text-xs text-neutral-500">
             ${msg(
               str`Choose a strong password between ${PASSWORD_MINLENGTH}–${PASSWORD_MAXLENGTH} characters.`,
             )}
           </p>
           ${when(this.pwStrengthResults, this.renderPasswordStrength)}
         </div>
-
-        ${serverError}
+        <div class="mb-5">
+          <btrix-input
+            id="name"
+            name="name"
+            label=${msg("Your name")}
+            autocomplete="nickname"
+            minlength="2"
+            required
+          >
+          </btrix-input>
+          <p class="mt-2 text-xs text-neutral-500">
+            ${msg(
+              "Your full name, nickname, or another name that org collaborators can see.",
+            )}
+          </p>
+        </div>
 
         <sl-button
           class="w-full"
@@ -151,12 +155,12 @@ export class SignUpForm extends LiteElement {
           ?disabled=${!this.pwStrengthResults ||
           this.pwStrengthResults.score < PASSWORD_MIN_SCORE}
           type="submit"
-          >${msg("Sign up")}</sl-button
         >
+          ${this.submitLabel || msg("Create Account")}
+        </sl-button>
       </form>
     `;
   }
-
   private readonly renderPasswordStrength = () => html`
     <div class="my-3">
       <btrix-pw-strength-alert
@@ -211,10 +215,7 @@ export class SignUpForm extends LiteElement {
 
     if (this.inviteToken) {
       registerParams.inviteToken = this.inviteToken;
-
-      if (this.isOrgInvite) {
-        registerParams.newOrg = false;
-      }
+      registerParams.newOrg = false;
     }
 
     const resp = await fetch("/api/auth/register", {
@@ -223,11 +224,12 @@ export class SignUpForm extends LiteElement {
       body: JSON.stringify(registerParams),
     });
 
+    let data;
     let shouldLogIn = false;
 
     switch (resp.status) {
       case 201: {
-        const data = (await resp.json()) as { id: unknown };
+        data = (await resp.json()) as UserRegisterResponseData;
 
         if (data.id) {
           shouldLogIn = true;
@@ -262,7 +264,19 @@ export class SignUpForm extends LiteElement {
     if (this.serverError) {
       this.dispatchEvent(new CustomEvent("error"));
     } else {
-      this.dispatchEvent(new CustomEvent("success"));
+      const org =
+        data &&
+        this.inviteInfo &&
+        data.orgs.find(({ id }) => this.inviteInfo?.oid === id);
+
+      this.dispatchEvent(
+        new CustomEvent<SignUpSuccessDetail>("success", {
+          detail: {
+            orgName: org?.name,
+            orgSlug: org?.slug,
+          },
+        }),
+      );
 
       if (shouldLogIn) {
         try {

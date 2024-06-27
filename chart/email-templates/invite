@@ -4,11 +4,16 @@ Welcome to Browsertrix!
 <body>
 <p>Hello!</p>
 
+{% if is_new %}
 <p>Welcome to Browsertrix!</p>
+{% endif %}
 
-{% if sender %}
-<p>You have been invited by {{ sender }} to join "{{ org_name }}" on Browsertrix!
-</p>
+{% if sender and org_name %}
+<p>You have been invited by {{ sender }} to join "{{ org_name }}" on Browsertrix!</p>
+{% elif org_name %}
+<p>You have been invited to join "{{ org_name }}" on Browsertrix!</p>
+{% elif not is_new %}
+<p>You have been invited to join a new organization on Browsertrix!</p>
 {% endif %}
 
 {% if is_new %}
@@ -16,6 +21,7 @@ Welcome to Browsertrix!
 
 <p style="font-weight: bold; padding: 12px; background-color: lightgrey"><a href="{{ invite_url }}">Click here to create an account.</a></p>
 {% else %}
+
 <p style="font-weight: bold; padding: 12px; background-color: lightgrey"><a href="{{ invite_url }}">Click here to accept this invite.</a></p>
 {% endif %}
 
@@ -38,7 +44,13 @@ How do I <a href="https://docs.browsertrix.com/user-guide/archived-items/#crawl-
 </p>
 
 <p>
-If you need any assistance, please direct your questions to the <a href="https://github.com/webrecorder/browsertrix">Browsertrix GitHub repo</a> or the <a href="https://forum.webrecorder.net">Webrecorder community forum</a>. If dedicated support is included in your plan, you can also contact us at: <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+If you need any assistance, please direct your questions to the <a href="https://github.com/webrecorder/browsertrix">Browsertrix GitHub repo</a> or the <a href="https://forum.webrecorder.net">Webrecorder community forum</a>.
+
+{% if support_email %}
+<br/>
+If you're having trouble accessing the service, or if dedicated support is included in your plan, you can also contact us at <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+{% endif %}
+
 </p>
 
 <p>Best Regards,</p>
@@ -48,17 +60,25 @@ If you need any assistance, please direct your questions to the <a href="https:/
 ~~~
 Hello!
 
+{% if is_new %}
 Welcome to Browsertrix!
+{% endif %}
 
-{% if sender %}
-You have been invited by {{ sender }} to join their organization, "{{ org_name }}" on Browsertrix!
+{% if sender and org_name %}
+You have been invited by {{ sender }} to join "{{ org_name }}" on Browsertrix!
+{% elif org_name %}
+You have been invited to join "{{ org_name }}" on Browsertrix!
+{% elif not is_new %}
+You have been invited to join a new organization on Browsertrix!
+{% endif %}
 
-{% else %}
-
+{% if is_new %}
 We're excited you're here and can't wait to help you get started crawling! You can now set up your account using the link below.
+{% else %}
+Use the link below to accept this invite.
+{% endif %}
 
 {{ invite_url }}
-{% endif %}
 
 Here's what you should do first off to get the most value out of your experience:
 
@@ -76,7 +96,11 @@ How do I crawl my first website? (https://docs.browsertrix.com/user-guide/workfl
 How do I create a browser profile? (https://docs.browsertrix.com/user-guide/browser-profiles/)
 How do I export my archived items? (https://docs.browsertrix.com/user-guide/archived-items/#crawl-settings)
 
-If you need any assistance, please direct your questions to the Browsertrix GitHub repo (https://github.com/webrecorder/browsertrix) or the Webrecorder community forum (https://forum.webrecorder.net). If dedicated support is included in your plan, you can also contact us at: {{ support_email }}.
+If you need any assistance, please direct your questions to the Browsertrix GitHub repo (https://github.com/webrecorder/browsertrix) or the Webrecorder community forum (https://forum.webrecorder.net).
+
+{% if support_email %}
+If you're having trouble accessing the service, or if dedicated support is included in your plan, you can also contact us at {{ support_email }}.
+{% endif %}
 
 Best Regards,
 The Webrecorder Team

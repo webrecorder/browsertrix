@@ -175,11 +175,13 @@ class OrgOps:
 
         return Organization.from_dict(res)
 
-    async def get_default_org(self):
+    async def get_default_org(self) -> Optional[Organization]:
         """Get default organization"""
         res = await self.orgs.find_one({"default": True})
         if res:
             return Organization.from_dict(res)
+
+        return None
 
     async def create_default_org(self):
         """Create default organization if doesn't exist."""
@@ -344,20 +346,24 @@ class OrgOps:
             return_document=ReturnDocument.AFTER,
         )
 
-    async def handle_new_user_invite(self, invite_token: UUID, user: User):
+    async def handle_new_user_invite(
+        self, invite_token: UUID, user: User
+    ) -> InvitePending:
         """Handle invite from a new user"""
         new_user_invite = await self.invites.get_valid_invite(invite_token, user.email)
         await self.add_user_by_invite(new_user_invite, user)
         await self.invites.remove_invite(invite_token)
         return new_user_invite
 
-    async def add_user_by_invite(self, invite: InvitePending, user: User):
+    async def add_user_by_invite(
+        self, invite: InvitePending, user: User
+    ) -> Optional[Organization]:
         """Add user to an org from an InvitePending, if any.
 
         If there's no org to add to (eg. superuser invite), just return.
         """
         if not invite.oid:
-            return
+            return None
 
         org = await self.get_org_by_id(invite.oid)
         if not org:
@@ -366,7 +372,35 @@ class OrgOps:
             )
 
         await self.add_user_to_org(org, user.id, invite.role)
-        return True
+
+        # if just added first admin, and name == id, set default org name from user name
+        if (
+            len(org.users) == 1
+            and invite.role == UserRole.OWNER
+            and str(org.name) == str(org.id)
+        ):
+            await self.set_default_org_name_from_user_name(org, user.name)
+
+        return org
+
+    async def set_default_org_name_from_user_name(
+        self, org: Organization, user_name: str
+    ):
+        """set's the org name and slug as "<USERNAME>'s Archive", adding a suffix for duplicates"""
+        suffix = ""
+        count = 1
+
+        while True:
+            org.name = f"{user_name}'s Archive{suffix}"
+            org.slug = slug_from_name(org.name)
+
+            try:
+                await self.update_slug_and_name(org)
+                break
+            except DuplicateKeyError:
+                # pylint: disable=raise-missing-from
+                count += 1
+                suffix = f" {count}"
 
     async def add_user_to_org(self, org: Organization, userid: UUID, role: UserRole):
         """Add user to organization with specified role"""
@@ -900,8 +934,8 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     async def accept_invite(token: str, user: User = Depends(user_dep)):
         invite = await invites.accept_user_invite(user, token, user_manager)
 
-        await ops.add_user_by_invite(invite, user)
-        return {"added": True}
+        org = await ops.add_user_by_invite(invite, user)
+        return {"added": True, "org": org}
 
     @router.get("/invites", tags=["invites"])
     async def get_pending_org_invites(

@@ -8,7 +8,6 @@ import type { QATab } from "./archived-item-qa/types";
 import type { Tab as CollectionTab } from "./collection-detail";
 import type {
   Member,
-  OrgInfoChangeEvent,
   OrgRemoveMemberEvent,
   UserRoleChangeEvent,
 } from "./settings";
@@ -17,7 +16,7 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
 import type { Crawl, JobType } from "@/types/crawler";
-import type { CurrentUser } from "@/types/user";
+import type { CurrentUser, UserOrg } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import { needLogin } from "@/utils/auth";
@@ -85,9 +84,6 @@ const defaultTab = "home";
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-/**
- * @fires btrix-update-user-info
- */
 @localized()
 @customElement("btrix-org")
 @needLogin
@@ -137,9 +133,6 @@ export class Org extends LiteElement {
 
   @state()
   private org?: OrgData | null;
-
-  @state()
-  private isSavingOrgInfo = false;
 
   get userOrg() {
     if (!this.userInfo) return null;
@@ -197,7 +190,22 @@ export class Org extends LiteElement {
         void this.updateOrg();
       } else {
         // Couldn't find org with slug, redirect to first org
-        this.navTo(`/orgs/${this.userInfo.orgs[0].slug}`);
+        const org = this.userInfo.orgs[0] as UserOrg | undefined;
+        if (org) {
+          this.navTo(`/orgs/${org.slug}`);
+        } else {
+          // Handle edge case where user does not belong
+          // to any orgs but is attempting to log in
+          // TODO check if hosted instance and show support email if so
+          this.notify({
+            message: msg(
+              "You must belong to at least one org in order to log in. Please contact your Browsertrix admin to resolve the issue.",
+            ),
+            variant: "danger",
+            icon: "exclamation-octagon",
+          });
+        }
+
         return;
       }
     }
@@ -703,8 +711,6 @@ export class Org extends LiteElement {
       .orgId=${this.orgId}
       activePanel=${activePanel}
       ?isAddingMember=${isAddingMember}
-      ?isSavingOrgName=${this.isSavingOrgInfo}
-      @org-info-change=${this.onOrgInfoChange}
       @org-user-role-change=${this.onUserRoleChange}
       @org-remove-member=${this.onOrgRemoveMember}
     ></btrix-org-settings>`;
@@ -724,40 +730,6 @@ export class Org extends LiteElement {
     );
 
     return data;
-  }
-  private async onOrgInfoChange(e: OrgInfoChangeEvent) {
-    this.isSavingOrgInfo = true;
-
-    try {
-      await this.apiFetch(`/orgs/${this.org!.id}/rename`, this.authState!, {
-        method: "POST",
-        body: JSON.stringify(e.detail),
-      });
-
-      this.notify({
-        message: msg("Updated organization."),
-        variant: "success",
-        icon: "check2-circle",
-      });
-
-      await this.dispatchEvent(
-        new CustomEvent("btrix-update-user-info", { bubbles: true }),
-      );
-      const newSlug = e.detail.slug;
-      if (newSlug) {
-        this.navTo(`/orgs/${newSlug}${this.orgPath}`);
-      }
-    } catch (e) {
-      this.notify({
-        message: isApiError(e)
-          ? e.message
-          : msg("Sorry, couldn't update organization at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-
-    this.isSavingOrgInfo = false;
   }
 
   private async onOrgRemoveMember(e: OrgRemoveMemberEvent) {

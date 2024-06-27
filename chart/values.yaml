@@ -355,7 +355,9 @@ email:
   password: password
   reply_to_email: example@example.com
   use_tls: True
-  support_email: support@example.com
+
+  # use to provide an additional support email in email templates
+  support_email: ""
 
 
 # Deployment options

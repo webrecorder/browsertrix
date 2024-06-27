@@ -326,8 +326,16 @@ class UserManager:
         result = invite.serialize()
         result["inviterName"] = inviter.name
         if invite.oid:
+            result["oid"] = invite.oid
+
             org = await self.org_ops.get_org_for_user_by_id(invite.oid, inviter)
             result["orgName"] = org.name
+            result["orgSlug"] = org.slug
+
+            result["firstOrgAdmin"] = False
+            org_owners = await self.org_ops.get_org_owners(org)
+            if not org_owners:
+                result["firstOrgAdmin"] = True
 
         return result
 
@@ -381,6 +389,7 @@ class UserManager:
             except HTTPException as exc:
                 print(exc)
 
+            # if no org specified, add to the auto-add org
             if new_user_invite and not new_user_invite.oid:
                 add_to_org = True
 

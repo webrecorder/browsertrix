@@ -68,6 +68,9 @@ export default {
             color: fileURLToPath(
               new URL("./src/__mocks__/color.js", import.meta.url),
             ),
+            slugify: fileURLToPath(
+              new URL("./src/__mocks__/slugify.js", import.meta.url),
+            ),
           },
         },
       },
