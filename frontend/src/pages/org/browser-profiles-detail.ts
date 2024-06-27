@@ -3,7 +3,7 @@ import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import capitalize from "lodash/fp/capitalize";
+import { capitalize } from "lodash/fp";
 import queryString from "query-string";
 
 import type { Profile, ProfileWorkflow } from "./types";
