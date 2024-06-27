@@ -57,6 +57,46 @@ describe("btrix-org-form", () => {
     expect(inputEl).attribute("value", "fake-org-name");
   });
 
+  it("runs rename task on submit", async () => {
+    const el = await fixture<OrgForm>(
+      html`<btrix-org-form id="fake_oid"></btrix-org-form>`,
+    );
+    stub(el._renameOrgTask, "run");
+
+    const form = el.shadowRoot!.querySelector<HTMLFormElement>("form")!;
+
+    form
+      .querySelector('sl-input[name="orgName"]')
+      ?.setAttribute("value", "Fake Org Name");
+    form
+      .querySelector('sl-input[name="orgSlug"]')
+      ?.setAttribute("value", "fake-org-name");
+
+    const listener = oneEvent(form, "submit");
+
+    form.requestSubmit();
+
+    await el.updateComplete;
+    await listener;
+
+    expect(el._renameOrgTask.run).to.have.callCount(1);
+  });
+
+  it("renders rename org error", async () => {
+    const el = await fixture<OrgForm>(
+      html`<btrix-org-form id="fake_oid"></btrix-org-form>`,
+    );
+    stub(el, "_renameOrg").callsFake(async () =>
+      Promise.reject(new Error("Fake error")),
+    );
+
+    await el._renameOrgTask.run(["fake_oid", "Fake Org Name", "fake-org-name"]);
+
+    expect(el.shadowRoot?.querySelector("btrix-alert")).to.have.text(
+      "Fake error",
+    );
+  });
+
   describe("#_renameOrg", () => {
     it("updates user app state on success", async () => {
       const el = await fixture<OrgForm>(

@@ -82,6 +82,8 @@ describe("btrix-accept-invite", () => {
         ></btrix-accept-invite>`,
       );
 
+      await el.updateComplete;
+
       expect(el.shadowRoot!.querySelector("#acceptButton")).to.exist;
     });
 
@@ -211,6 +213,8 @@ describe("btrix-accept-invite", () => {
           email="my_fake_email@example.com"
         ></btrix-accept-invite>`,
       );
+
+      await el.updateComplete;
 
       expect(el.shadowRoot!.querySelector("#acceptButton")).to.exist;
     });

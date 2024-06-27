@@ -45,7 +45,7 @@ export class OrgForm extends TailwindElement {
   readonly _api = new APIController(this);
   readonly _notify = new NotifyController(this);
 
-  private readonly renameOrgTask = new Task(this, {
+  readonly _renameOrgTask = new Task(this, {
     autoRun: false,
     task: async ([id, name, slug]) => {
       if (!id) throw new Error("Missing args");
@@ -63,7 +63,7 @@ export class OrgForm extends TailwindElement {
       );
 
     return html`
-      <form @submit=${this.onSubmit} aria-describedby="formError">
+      <form id="orgForm" @submit=${this.onSubmit} aria-describedby="formError">
         <div class="mb-5">
           <sl-input
             name="orgName"
@@ -95,7 +95,7 @@ export class OrgForm extends TailwindElement {
           >
           </sl-input>
         </div>
-        ${this.renameOrgTask.render({
+        ${this._renameOrgTask.render({
           error: (err) =>
             html`<div class="my-5">
               <btrix-alert id="formError" variant="danger"
@@ -107,7 +107,7 @@ export class OrgForm extends TailwindElement {
           class="w-full"
           variant="primary"
           type="submit"
-          ?loading=${this.renameOrgTask.status === TaskStatus.PENDING}
+          ?loading=${this._renameOrgTask.status === TaskStatus.PENDING}
         >
           ${msg("Go to Dashboard")}
         </sl-button>
@@ -125,7 +125,7 @@ export class OrgForm extends TailwindElement {
     const orgName = params.orgName;
     const orgSlug = slugify(params.orgSlug, { strict: true });
 
-    void this.renameOrgTask.run([this.orgId, orgName, orgSlug]);
+    void this._renameOrgTask.run([this.orgId, orgName, orgSlug]);
   }
 
   async _renameOrg(id: string, params: { name?: string; slug?: string }) {

@@ -60,6 +60,8 @@ describe("btrix-join", () => {
         ></btrix-join>`,
       );
 
+      await el.updateComplete;
+
       expect(el).lightDom.to.contain("btrix-sign-up-form");
     });
 
@@ -162,6 +164,8 @@ describe("btrix-join", () => {
           email="my_fake_email@example.com"
         ></btrix-join>`,
       );
+
+      await el.updateComplete;
 
       expect(el).lightDom.to.contain("btrix-sign-up-form");
     });
