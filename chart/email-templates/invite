@@ -48,7 +48,7 @@ If you need any assistance, please direct your questions to the <a href="https:/
 
 {% if support_email %}
 <br/>
-If you're having trouble accessing the service, or if dedicated support is included in your plan, you can also contact us at: <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+If you're having trouble accessing the service, or if dedicated support is included in your plan, you can also contact us at <a href="mailto:{{ support_email }}">{{ support_email }}</a>
 {% endif %}
 
 </p>
