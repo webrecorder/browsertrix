@@ -29,6 +29,8 @@ PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid4().hex)
 
 JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60)) * 60
 
+AUTH_SHARED_SECRET = os.environ.get("AUTH_SHARED_SECRET", "")
+
 ALGORITHM = "HS256"
 
 RESET_VERIFY_TOKEN_LIFETIME_MINUTES = 60
@@ -143,7 +145,9 @@ def init_jwt_auth(user_manager):
     """init jwt auth router + current_active_user dependency"""
     oauth2_scheme = OA2BearerOrQuery(tokenUrl="/api/auth/jwt/login", auto_error=False)
 
-    async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+    async def get_current_user(
+        token: str = Depends(oauth2_scheme),
+    ) -> User:
         try:
             payload = decode_jwt(token, AUTH_ALLOW_AUD)
             uid: Optional[str] = payload.get("sub") or payload.get("user_id")
@@ -156,6 +160,17 @@ def init_jwt_auth(user_manager):
                 detail="invalid_credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+
+    async def shared_secret_or_active_user(
+        token: str = Depends(oauth2_scheme),
+    ) -> User:
+        # allow superadmin access if token matches the known shared secret
+        # if the shared secret is set
+        # ensure using a long shared secret (eg. uuid4)
+        if AUTH_SHARED_SECRET and token == AUTH_SHARED_SECRET:
+            return await user_manager.get_superuser()
+
+        return await get_current_user(token)
 
     current_active_user = get_current_user
 
@@ -232,4 +247,4 @@ def init_jwt_auth(user_manager):
     async def refresh_jwt(user=Depends(current_active_user)):
         return get_bearer_response(user)
 
-    return auth_jwt_router, current_active_user
+    return auth_jwt_router, current_active_user, shared_secret_or_active_user

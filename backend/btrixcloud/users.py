@@ -643,10 +643,12 @@ def init_user_manager(mdb, emailsender, invites):
 
 # ============================================================================
 # pylint: disable=too-many-locals, raise-missing-from
-def init_users_api(app, user_manager: UserManager) -> APIRouter:
+def init_users_api(app, user_manager: UserManager):
     """init fastapi_users"""
 
-    auth_jwt_router, current_active_user = init_jwt_auth(user_manager)
+    auth_jwt_router, current_active_user, shared_secret_or_active_user = init_jwt_auth(
+        user_manager
+    )
 
     app.include_router(
         auth_jwt_router,
@@ -666,7 +668,7 @@ def init_users_api(app, user_manager: UserManager) -> APIRouter:
         tags=["users"],
     )
 
-    return current_active_user
+    return current_active_user, shared_secret_or_active_user
 
 
 # ============================================================================
