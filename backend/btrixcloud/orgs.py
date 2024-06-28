@@ -43,6 +43,7 @@ from .models import (
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import slug_from_name, validate_slug
 
+
 if TYPE_CHECKING:
     from .invites import InviteOps
 else:
@@ -727,7 +728,7 @@ class OrgOps:
 
 # ============================================================================
 # pylint: disable=too-many-statements
-def init_orgs_api(app, mdb, user_manager, invites, user_dep):
+def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secret_dep):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
 
@@ -803,7 +804,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
     async def create_org(
         new_org: OrgCreate,
         request: Request,
-        user: User = Depends(user_dep),
+        user: User = Depends(user_or_shared_secret_dep),
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
