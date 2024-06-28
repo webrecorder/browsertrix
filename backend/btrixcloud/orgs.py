@@ -754,12 +754,7 @@ class OrgOps:
     async def export_org(
         self, org: Organization, user_manager: UserManager
     ) -> Dict[str, object]:
-        """Export all data related to org as JSON
-
-        TODO:
-        - Format check (write tests to ensure it's valid JSON and the syntax we expect)
-        - Workflow revisions (relies on having workflow_ids)
-        """
+        """Export all data related to org as JSON"""
         export_stream_generators: List[Dict[str, AsyncGenerator]] = []
 
         oid_query = {"oid": org.id}
@@ -810,10 +805,19 @@ class OrgOps:
         cursor = self.crawl_configs_db.find(oid_query)
         export_stream_generators.append(json_items_gen("workflows", cursor, count))
 
-        # TODO: Need to have list of workflow ids for this to work, or make a more
-        # complicated query
-        # workflow_revs_cursor = self.configs_revs_db.find({"cid": {"$in": workflow_ids}})
-        # export_stream_generators.append(json_items_gen("workflowRevisions", workflow_revs_cursor))
+        # Workflow IDs (needed for revisions)
+        workflow_ids = []
+        cursor = self.crawl_configs_db.find(oid_query, projection=["_id"])
+        async for workflow_dict in cursor:
+            workflow_ids.append(workflow_dict.get("_id"))
+
+        # Workflow revisions
+        workflow_revs_query = {"cid": {"$in": workflow_ids}}
+        count = await self.configs_revs_db.count_documents(workflow_revs_query)
+        cursor = self.configs_revs_db.find(workflow_revs_query)
+        export_stream_generators.append(
+            json_items_gen("workflowRevisions", cursor, count)
+        )
 
         # Items
         count = await self.crawls_db.count_documents(oid_query)
