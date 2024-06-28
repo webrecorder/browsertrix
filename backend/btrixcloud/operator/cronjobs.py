@@ -133,7 +133,7 @@ class CronJobOperator(BaseOperator):
         metadata = data.object["metadata"]
         labels = metadata.get("labels", {})
         cid: str = labels.get("btrix.crawlconfig", "")
-        oid: str = labels.get("btrix.oid", "")
+        oid: str = labels.get("btrix.org", "")
         userid: str = labels.get("btrix.userid", "")
 
         if not cid:

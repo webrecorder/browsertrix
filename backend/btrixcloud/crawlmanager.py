@@ -269,14 +269,9 @@ class CrawlManager(K8sAPI):
     # ========================================================================
     # Internal Methods
     async def _delete_crawl_configs(self, label) -> None:
-        """Delete Crawl Cron Job and all dependent resources, including configmap and secrets"""
+        """Delete any crawl config specific resources (now only cron jobs)"""
 
         await self.batch_api.delete_collection_namespaced_cron_job(
-            namespace=self.namespace,
-            label_selector=label,
-        )
-
-        await self.core_api.delete_collection_namespaced_config_map(
             namespace=self.namespace,
             label_selector=label,
         )
