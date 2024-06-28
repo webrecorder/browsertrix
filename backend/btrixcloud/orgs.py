@@ -15,6 +15,7 @@ from typing import Optional, TYPE_CHECKING
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
+import aiohttp
 
 from .models import (
     SUCCESSFUL_STATES,
@@ -51,6 +52,10 @@ else:
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
+
+SUBSCRIPTION_LOOKUP_URL = os.environ.get("SUBSCRIPTION_LOOKUP_URL", "")
+
+AUTH_SHARED_SECRET = os.environ.get("AUTH_SHARED_SECRET", "")
 
 
 # ============================================================================
@@ -725,6 +730,22 @@ class OrgOps:
 
         return await self.orgs.find_one_and_update({"_id": org.id}, {"$set": query})
 
+    async def lookup_sub_data(self, org: Organization):
+        """subscription info"""
+        if not org.subData or not SUBSCRIPTION_LOOKUP_URL:
+            return {}
+
+        async with aiohttp.ClientSession() as session:
+            async with session.request(
+                "POST",
+                SUBSCRIPTION_LOOKUP_URL,
+                headers={"Authorization": "bearer " + AUTH_SHARED_SECRET},
+                json=org.subData,
+                raise_for_status=True,
+            ) as resp:
+                res = await resp.json()
+                return {"res": res}
+
 
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-arguments
@@ -1040,5 +1061,9 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
         return await ops.get_org_slugs_by_ids()
+
+    @app.post("/orgs/sub-info", tags=["organizations"])
+    async def get_sub_info(org: Organization = Depends(org_owner_dep)):
+        return await ops.lookup_sub_data(org)
 
     return ops
