@@ -156,7 +156,7 @@ class CrawlConfigOps:
         return self._file_rx.sub("-", string.lower())
 
     async def get_profile_filename(
-        self, profileid: Union[UUID, EmptyStr, None], org: Organization
+        self, profileid: Optional[UUID], org: Organization
     ) -> Optional[str]:
         """lookup filename from profileid"""
         _, profile_filename = await self._lookup_profile(profileid, org)
