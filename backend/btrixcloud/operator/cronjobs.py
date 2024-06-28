@@ -1,12 +1,14 @@
 """ Operator handler for crawl CronJobs """
 
 from uuid import UUID
-from typing import Optional
+from typing import Optional, Any
 import yaml
 
 from btrixcloud.utils import to_k8s_date, dt_now
-from .models import MCBaseRequest, MCDecoratorSyncData, CJS, CMAP
+from .models import MCDecoratorSyncData, CJS
 from .baseoperator import BaseOperator
+
+from ..models import CrawlConfig
 
 
 # pylint: disable=too-many-locals
@@ -20,24 +22,6 @@ class CronJobOperator(BaseOperator):
         @app.post("/op/cronjob/sync")
         async def mc_sync_cronjob_crawls(data: MCDecoratorSyncData):
             return await self.sync_cronjob_crawl(data)
-
-        @app.post("/op/cronjob/customize")
-        async def mc_cronjob_related(data: MCBaseRequest):
-            return self.get_cronjob_crawl_related(data)
-
-    def get_cronjob_crawl_related(self, data: MCBaseRequest):
-        """return configmap related to crawl"""
-        labels = data.parent.get("metadata", {}).get("labels", {})
-        cid = labels.get("btrix.crawlconfig")
-        return {
-            "relatedResources": [
-                {
-                    "apiVersion": "v1",
-                    "resource": "configmaps",
-                    "labelSelector": {"matchLabels": {"btrix.crawlconfig": cid}},
-                }
-            ]
-        }
 
     def get_finished_response(
         self, metadata: dict[str, str], set_status=True, finished: Optional[str] = None
@@ -63,12 +47,98 @@ class CronJobOperator(BaseOperator):
             "status": status,
         }
 
+    # pylint: disable=too-many-arguments
+    async def make_new_crawljob(
+        self,
+        cid: UUID,
+        oid: Optional[UUID],
+        userid: Optional[UUID],
+        crawl_id: str,
+        metadata: dict[str, str],
+        state: Optional[str],
+    ) -> list[dict[str, Any]]:
+        """declare new CrawlJob from cid, based on db data"""
+        # cronjob doesn't exist yet
+        crawlconfig: CrawlConfig
+
+        try:
+            crawlconfig = await self.crawl_config_ops.get_crawl_config(cid, oid)
+        # pylint: disable=bare-except
+        except:
+            print(
+                f"error: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
+            )
+            return self.get_finished_response(metadata)
+
+        # get org
+        oid = crawlconfig.oid
+        org = await self.org_ops.get_org_by_id(oid)
+
+        # db create
+        user = None
+
+        if not userid:
+            userid = crawlconfig.modifiedBy
+
+        if userid:
+            user = await self.user_ops.get_by_id(userid)
+
+        if not userid or not user:
+            print(f"error: missing user for id {userid}")
+            return self.get_finished_response(metadata)
+
+        warc_prefix = self.crawl_config_ops.get_warc_prefix(org, crawlconfig)
+
+        if org.readOnly:
+            print(
+                f"org {org.id} set to read-only. skipping scheduled crawl for workflow {cid}"
+            )
+            return self.get_finished_response(metadata)
+
+        # if no db state, crawl crawl in the db
+        if not state:
+            await self.crawl_config_ops.add_new_crawl(
+                crawl_id,
+                crawlconfig,
+                user,
+                manual=False,
+            )
+            print("Scheduled Crawl Created: " + crawl_id)
+
+        profile_filename = await self.crawl_config_ops.get_profile_filename(
+            crawlconfig.profileid, org
+        )
+
+        crawl_id, crawljob = self.k8s.new_crawl_job_yaml(
+            cid=str(cid),
+            userid=str(userid),
+            oid=str(oid),
+            storage=org.storage,
+            crawler_channel=crawlconfig.crawlerChannel or "default",
+            scale=crawlconfig.scale,
+            crawl_timeout=crawlconfig.crawlTimeout,
+            max_crawl_size=crawlconfig.maxCrawlSize,
+            manual=False,
+            crawl_id=crawl_id,
+            warc_prefix=warc_prefix,
+            storage_filename=self.crawl_config_ops.default_filename_template,
+            profile_filename=profile_filename or "",
+        )
+
+        return list(yaml.safe_load_all(crawljob))
+
     async def sync_cronjob_crawl(self, data: MCDecoratorSyncData):
         """create crawljobs from a job object spawned by cronjob"""
 
         metadata = data.object["metadata"]
         labels = metadata.get("labels", {})
-        cid = labels.get("btrix.crawlconfig")
+        cid: str = labels.get("btrix.crawlconfig", "")
+        oid: str = labels.get("btrix.org", "")
+        userid: str = labels.get("btrix.userid", "")
+
+        if not cid:
+            print("error: cronjob missing 'cid', invalid cronjob")
+            return self.get_finished_response(metadata)
 
         name = metadata.get("name")
         crawl_id = name
@@ -86,69 +156,30 @@ class CronJobOperator(BaseOperator):
 
             return self.get_finished_response(metadata, set_status, finished_str)
 
-        configmap = data.related[CMAP][f"crawl-config-{cid}"]["data"]
-
-        oid = configmap.get("ORG_ID")
-        userid = configmap.get("USER_ID")
-
         crawljobs = data.attachments[CJS]
 
-        org = await self.org_ops.get_org_by_id(UUID(oid))
+        crawljob_id = f"crawljob-{crawl_id}"
 
-        warc_prefix = None
-
-        if not actual_state:
-            # cronjob doesn't exist yet
-            crawlconfig = await self.crawl_config_ops.get_crawl_config(
-                UUID(cid), UUID(oid)
-            )
-            if not crawlconfig:
-                print(
-                    f"error: no crawlconfig {cid}. skipping scheduled job. old cronjob left over?"
-                )
-                return self.get_finished_response(metadata)
-
-            # db create
-            user = await self.user_ops.get_by_id(UUID(userid))
-            if not user:
-                print(f"error: missing user for id {userid}")
-                return self.get_finished_response(metadata)
-
-            warc_prefix = self.crawl_config_ops.get_warc_prefix(org, crawlconfig)
-
-            if org.readOnly:
-                print(
-                    f"org {org.id} set to read-only. skipping scheduled crawl for workflow {cid}"
-                )
-                return self.get_finished_response(metadata)
-
-            await self.crawl_config_ops.add_new_crawl(
+        if crawljob_id not in crawljobs:
+            attachments = await self.make_new_crawljob(
+                UUID(cid),
+                UUID(oid) if oid else None,
+                UUID(userid) if userid else None,
                 crawl_id,
-                crawlconfig,
-                user,
-                manual=False,
+                metadata,
+                actual_state,
             )
-            print("Scheduled Crawl Created: " + crawl_id)
+        else:
+            # just return existing crawljob, after removing annotation
+            # should use OnDelete policy so should just not change crawljob anyway
+            crawljob = crawljobs[crawljob_id]
+            try:
+                del crawljob["metadata"]["annotations"][
+                    "metacontroller.k8s.io/last-applied-configuration"
+                ]
+            except KeyError:
+                pass
 
-        crawl_id, crawljob = self.k8s.new_crawl_job_yaml(
-            cid,
-            userid=userid,
-            oid=oid,
-            storage=org.storage,
-            crawler_channel=configmap.get("CRAWLER_CHANNEL", "default"),
-            scale=int(configmap.get("INITIAL_SCALE", 1)),
-            crawl_timeout=int(configmap.get("CRAWL_TIMEOUT", 0)),
-            max_crawl_size=int(configmap.get("MAX_CRAWL_SIZE", "0")),
-            manual=False,
-            crawl_id=crawl_id,
-            warc_prefix=warc_prefix,
-        )
+            attachments = [crawljob]
 
-        attachments = list(yaml.safe_load_all(crawljob))
-
-        if crawl_id in crawljobs:
-            attachments[0]["status"] = crawljobs[CJS][crawl_id]["status"]
-
-        return {
-            "attachments": attachments,
-        }
+        return {"attachments": attachments}

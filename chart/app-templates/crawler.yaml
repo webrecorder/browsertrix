@@ -61,7 +61,7 @@ spec:
   volumes:
     - name: crawl-config
       configMap:
-        name: crawl-config-{{ cid }}
+        name: crawl-config-{{ id }}
     {% if qa_source_crawl_id %}
     - name: qa-config
       configMap:

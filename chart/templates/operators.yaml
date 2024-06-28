@@ -94,7 +94,7 @@ spec:
   - apiVersion: btrix.cloud/v1
     resource: crawljobs
     updateStrategy:
-      method: InPlace
+      method: OnDelete
 
   hooks:
     sync:
@@ -105,13 +105,6 @@ spec:
           port: {{ .Values.opPort }}
         path: /op/cronjob/sync
 
-    customize:
-      webhook:
-        service:
-          namespace: {{ .Release.Namespace }}
-          name: {{ .Values.name }}-backend
-          port: {{ .Values.opPort }}
-        path: /op/cronjob/customize
 ---
 apiVersion: metacontroller.k8s.io/v1alpha1
 kind: DecoratorController

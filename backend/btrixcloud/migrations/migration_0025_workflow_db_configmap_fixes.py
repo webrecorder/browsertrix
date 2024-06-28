@@ -2,9 +2,7 @@
 Migration 0025 -- fix workflow database and configmap issues.
 """
 
-from btrixcloud.crawlmanager import CrawlManager
 from btrixcloud.migrations import BaseMigration
-from btrixcloud.models import CrawlConfig, UpdateCrawlConfig
 
 
 MIGRATION_VERSION = "0025"
@@ -35,17 +33,3 @@ class Migration(BaseMigration):
                 "Error updating null crawlconfig crawlTimeouts to 0",
                 flush=True,
             )
-
-        crawl_manager = CrawlManager()
-        async for config_dict in mdb_crawl_configs.find({}):
-            config = CrawlConfig.from_dict(config_dict)
-            try:
-                await crawl_manager.update_crawl_config(
-                    config, UpdateCrawlConfig(crawlerChannel=config.crawlerChannel)
-                )
-            # pylint: disable=broad-except
-            except Exception as exc:
-                print(
-                    f"Skipping configmap migration for config {config.id} due to error",
-                    exc,
-                )
