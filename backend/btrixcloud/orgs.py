@@ -825,7 +825,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
             slug=slug,
             users={},
             storage=ops.default_primary,
-            org_quotas=new_org.quotas or OrgQuotas(),
+            quotas=new_org.quotas or OrgQuotas(),
             subData=new_org.subData,
         )
         if not await ops.add_org(org):
