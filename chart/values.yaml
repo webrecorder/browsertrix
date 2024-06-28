@@ -381,7 +381,7 @@ ingress_class: nginx
 # optionally enable signer
 signer:
   enabled: false
-  image: webrecorder/authsign:0.5.0
+  image: webrecorder/authsign:0.5.2
   # host: <set to signer domain>
   # cert_email: "test@example.com
   # image_pull_policy: "IfNotPresent"
@@ -389,7 +389,7 @@ signer:
 
 signer_cpu: "5m"
 
-signer_memory: "40Mi"
+signer_memory: "50Mi"
 
 
 # Optional: configure load balancing annotations
