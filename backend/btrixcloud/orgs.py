@@ -28,7 +28,7 @@ from .models import (
     OrgReadOnlyUpdate,
     OrgMetrics,
     OrgWebhookUrls,
-    CreateOrg,
+    OrgCreate,
     RenameOrg,
     UpdateRole,
     RemovePendingInvite,
@@ -801,7 +801,8 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
     @app.post("/orgs/create", tags=["organizations"])
     async def create_org(
-        new_org: CreateOrg,
+        new_org: OrgCreate,
+        request: Request,
         user: User = Depends(user_dep),
     ):
         if not user.is_superuser:
@@ -809,19 +810,44 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
         id_ = uuid4()
 
+        name = new_org.name or str(id_)
+
         if new_org.slug:
             validate_slug(new_org.slug)
             slug = new_org.slug
         else:
-            slug = slug_from_name(new_org.name)
+            slug = slug_from_name(name)
 
         org = Organization(
-            id=id_, name=new_org.name, slug=slug, users={}, storage=ops.default_primary
+            id=id_,
+            name=name,
+            slug=slug,
+            users={},
+            storage=ops.default_primary,
+            org_quotas=new_org.quotas or OrgQuotas(),
+            subData=new_org.subData,
         )
         if not await ops.add_org(org):
             return {"added": False, "error": "already_exists"}
 
-        return {"id": id_, "added": True}
+        result = {"added": True, "id": id_}
+
+        if new_org.firstAdminInviteEmail:
+            if await invites.invite_user(
+                InviteToOrgRequest(
+                    email=new_org.firstAdminInviteEmail, role=UserRole.OWNER
+                ),
+                user,
+                user_manager,
+                org=org,
+                allow_existing=True,
+                headers=request.headers,
+            ):
+                result["invited"] = "new_user"
+            else:
+                result["invited"] = "existing_user"
+
+        return result
 
     @router.get("", tags=["organizations"])
     async def get_org(
