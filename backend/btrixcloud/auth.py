@@ -29,7 +29,7 @@ PASSWORD_SECRET = os.environ.get("PASSWORD_SECRET", uuid4().hex)
 
 JWT_TOKEN_LIFETIME = int(os.environ.get("JWT_TOKEN_LIFETIME_MINUTES", 60)) * 60
 
-AUTH_SHARED_SECRET = os.environ.get("AUTH_SHARED_SECRET", "")
+BTRIX_SUBS_APP_API_KEY = os.environ.get("BTRIX_SUBS_APP_API_KEY", "")
 
 ALGORITHM = "HS256"
 
@@ -167,7 +167,7 @@ def init_jwt_auth(user_manager):
         # allow superadmin access if token matches the known shared secret
         # if the shared secret is set
         # ensure using a long shared secret (eg. uuid4)
-        if AUTH_SHARED_SECRET and token == AUTH_SHARED_SECRET:
+        if BTRIX_SUBS_APP_API_KEY and token == BTRIX_SUBS_APP_API_KEY:
             return await user_manager.get_superuser()
 
         return await get_current_user(token)
