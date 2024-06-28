@@ -4,6 +4,7 @@ Organization API handling
 
 # pylint: disable=too-many-lines
 
+import json
 import math
 import os
 import secrets
@@ -13,12 +14,14 @@ from uuid import UUID, uuid4
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 
-from typing import Optional, TYPE_CHECKING, Dict, List, Any
+from typing import Optional, TYPE_CHECKING, Dict, List, AsyncGenerator
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
 import json_stream
+from aiostream import stream
 
 from .crawlconfigs import get_warc_prefix
 from .models import (
@@ -55,8 +58,7 @@ from .models import (
     Page,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import slug_from_name, validate_slug
-
+from .utils import slug_from_name, validate_slug, JSONSerializer
 
 if TYPE_CHECKING:
     from .invites import InviteOps
@@ -752,55 +754,91 @@ class OrgOps:
     async def export_org(
         self, org: Organization, user_manager: UserManager
     ) -> Dict[str, object]:
-        """Export all data related to org as JSON"""
+        """Export all data related to org as JSON
+
+        TODO:
+        - Format check (write tests to ensure it's valid JSON and the syntax we expect)
+        - Workflow revisions (relies on having workflow_ids)
+        """
+        export_stream_generators: List[Dict[str, AsyncGenerator]] = []
+
+        oid_query = {"oid": org.id}
+
         org_out_export = OrgOutExport.from_dict(org.to_dict())
         org_serialized = await org_out_export.serialize_for_export(user_manager)
 
-        workflows: List[Dict[str, Any]] = []
-        workflow_ids: List[str] = []
-        workflow_revs: List[Dict[str, Any]] = []
-        items: List[Dict[str, Any]] = []
-        pages: List[Dict[str, Any]] = []
-        profiles: List[Dict[str, Any]] = []
-        collections: List[Dict[str, Any]] = []
-
-        cursor = self.crawl_configs_db.find({"oid": org.id})
-        async for workflow in cursor:
-            workflow_ids.append(workflow["_id"])
-            workflows.append(workflow)
-
-        cursor = self.configs_revs_db.find({"cid": {"$in": workflow_ids}})
-        async for rev in cursor:
-            workflow_revs.append(rev)
-
-        cursor = self.crawls_db.find({"oid": org.id})
-        async for item in cursor:
-            items.append(item)
-
-        cursor = self.pages_db.find({"oid": org.id})
-        async for page in cursor:
-            pages.append(page)
-
-        cursor = self.profiles_db.find({"oid": org.id})
-        async for profile in cursor:
-            profiles.append(profile)
-
-        cursor = self.colls_db.find({"oid": org.id})
-        async for collection in cursor:
-            collections.append(collection)
-
         version = await self.version_db.find_one()
 
-        return {
-            "dbVersion": version.get("version"),
-            "org": org_serialized.to_dict(),
-            "profiles": profiles,
-            "workflows": workflows,
-            "workflowRevisions": workflow_revs,
-            "archivedItems": items,
-            "pages": pages,
-            "collections": collections,
-        }
+        # Start JSON stream, add dbVersion and org
+        async def opening_gen():
+            opening_section = '{{"data": {{\n"dbVersion": "{0}",\n"org": {1},\n'.format(
+                version.get("version"),
+                json.dumps(org_serialized.to_dict(), cls=JSONSerializer),
+            )
+            yield opening_section.encode("utf-8")
+
+        export_stream_generators.append(opening_gen())
+
+        # TODO: Add typing for MotorCursor
+        async def json_items_gen(
+            key: str, cursor, doc_count: int, skip_closing_comma=False
+        ):
+            """Async generator to add json items in list keyed by supplied str"""
+            yield f'"{key}": [\n'.encode("utf-8")
+
+            doc_index = 1
+
+            async for json_item in cursor:
+                yield json.dumps(json_item, cls=JSONSerializer).encode("utf-8")
+
+                if doc_index < doc_count:
+                    yield b",\n"
+                else:
+                    yield b"\n"
+
+                doc_index += 1
+
+            yield f']{"" if skip_closing_comma else ","}\n'.encode("utf-8")
+
+        # Profiles
+        count = await self.profiles_db.count_documents(oid_query)
+        cursor = self.profiles_db.find(oid_query)
+        export_stream_generators.append(json_items_gen("profiles", cursor, count))
+
+        # Workflows
+        count = await self.crawl_configs_db.count_documents(oid_query)
+        cursor = self.crawl_configs_db.find(oid_query)
+        export_stream_generators.append(json_items_gen("workflows", cursor, count))
+
+        # TODO: Need to have list of workflow ids for this to work, or make a more
+        # complicated query
+        # workflow_revs_cursor = self.configs_revs_db.find({"cid": {"$in": workflow_ids}})
+        # export_stream_generators.append(json_items_gen("workflowRevisions", workflow_revs_cursor))
+
+        # Items
+        count = await self.crawls_db.count_documents(oid_query)
+        cursor = self.crawls_db.find(oid_query)
+        export_stream_generators.append(json_items_gen("items", cursor, count))
+
+        # Pages
+        count = await self.pages_db.count_documents(oid_query)
+        cursor = self.pages_db.find(oid_query)
+        export_stream_generators.append(json_items_gen("pages", cursor, count))
+
+        # Collections
+        count = await self.colls_db.count_documents(oid_query)
+        cursor = self.colls_db.find(oid_query)
+        export_stream_generators.append(
+            json_items_gen("collections", cursor, count, True)
+        )
+
+        # Close JSON document
+        async def closing_gen():
+            yield b"}}"
+
+        export_stream_generators.append(closing_gen())
+
+        return StreamingResponse(stream.chain(*export_stream_generators))
 
     async def import_org(
         self,

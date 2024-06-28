@@ -30,3 +30,4 @@ types-python-slugify
 types-pyYAML
 remotezip
 json-stream
+aiostream
