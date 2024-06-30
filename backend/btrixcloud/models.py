@@ -1291,7 +1291,7 @@ class UserCreateIn(BaseModel):
 
     inviteToken: Optional[UUID] = None
 
-    newOrg: bool
+    newOrg: Optional[bool] = False
     newOrgName: Optional[str] = ""
 
 

@@ -834,7 +834,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         result = {"added": True, "id": id_}
 
         if new_org.firstAdminInviteEmail:
-            if await invites.invite_user(
+            new_user, token = await invites.invite_user(
                 InviteToOrgRequest(
                     email=new_org.firstAdminInviteEmail, role=UserRole.OWNER
                 ),
@@ -843,10 +843,12 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
                 org=org,
                 allow_existing=True,
                 headers=request.headers,
-            ):
+            )
+            if new_user:
                 result["invited"] = "new_user"
             else:
                 result["invited"] = "existing_user"
+            result["token"] = token
 
         return result
 
@@ -945,14 +947,15 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
-        if await invites.invite_user(
+        new_user, _ = await invites.invite_user(
             invite,
             user,
             user_manager,
             org=org,
             allow_existing=True,
             headers=request.headers,
-        ):
+        )
+        if new_user:
             return {"invited": "new_user"}
 
         return {"invited": "existing_user"}
@@ -962,7 +965,8 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         invite = await invites.accept_user_invite(user, token, user_manager)
 
         org = await ops.add_user_by_invite(invite, user)
-        return {"added": True, "org": org}
+        org_out = await org.serialize_for_user(user, user_manager)
+        return {"added": True, "org": org_out}
 
     @router.get("/invites", tags=["invites"])
     async def get_pending_org_invites(
