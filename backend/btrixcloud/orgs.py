@@ -358,15 +358,12 @@ class OrgOps:
 
     async def add_user_by_invite(
         self, invite: InvitePending, user: User
-    ) -> Optional[Organization]:
+    ) -> Organization:
         """Add user to an org from an InvitePending, if any.
 
-        If there's no org to add to (eg. superuser invite), just return.
+        If there's no org to add to, raise exception
         """
-        if not invite.oid:
-            return None
-
-        org = await self.get_org_by_id(invite.oid)
+        org = invite.oid and await self.get_org_by_id(invite.oid)
         if not org:
             raise HTTPException(
                 status_code=400, detail="Invalid Invite Code, No Such Organization"
