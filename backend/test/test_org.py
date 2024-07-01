@@ -196,21 +196,22 @@ def test_get_pending_org_invites(
     admin_auth_headers, default_org_id, non_default_org_id
 ):
     # Invite user to non-default org
-    INVITE_EMAIL = "non-default-invite@example.com"
+    NON_DEFAULT_INVITE_EMAIL = "non-default-invite@example.com"
     r = requests.post(
         f"{API_PREFIX}/orgs/{non_default_org_id}/invite",
         headers=admin_auth_headers,
-        json={"email": INVITE_EMAIL, "role": 20},
+        json={"email": NON_DEFAULT_INVITE_EMAIL, "role": 20},
     )
     assert r.status_code == 200
     data = r.json()
     assert data["invited"] == "new_user"
 
     # Invite user to default org
+    DEFAULT_INVITE_EMAIL = "default-invite@example.com"
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/invite",
         headers=admin_auth_headers,
-        json={"email": "default-invite@example.com", "role": 10},
+        json={"email": DEFAULT_INVITE_EMAIL, "role": 10},
     )
     assert r.status_code == 200
     data = r.json()
@@ -227,10 +228,25 @@ def test_get_pending_org_invites(
     assert len(invites) == 1
     assert data["total"] == 1
     invite = invites[0]
-    assert invite["email"] == INVITE_EMAIL
+    assert invite["email"] == NON_DEFAULT_INVITE_EMAIL
     assert invite["oid"] == non_default_org_id
     assert invite["created"]
     assert invite["role"]
+
+    # Delete Invites
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invites/delete",
+        headers=admin_auth_headers,
+        json={"email": NON_DEFAULT_INVITE_EMAIL},
+    )
+    assert r.status_code == 200
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/invites/delete",
+        headers=admin_auth_headers,
+        json={"email": DEFAULT_INVITE_EMAIL},
+    )
+    assert r.status_code == 200
 
 
 @pytest.mark.parametrize(
