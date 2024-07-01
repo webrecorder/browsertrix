@@ -127,6 +127,13 @@ def test_import_org(admin_auth_headers):
     data = r.json()
     assert data["name"] == "dev"
 
+    # Ensure org users were added
+    assert data["users"] == {
+        "1282554d-9740-4da3-aba9-de2082e16a41": 20,
+        "5dffc74c-4c82-4e03-8edf-6f29ea406f0d": 20,
+        "d2c7e8d4-c0a8-4615-9b8a-f544d2820933": 40,
+    }
+
     # Check profiles
     r = requests.get(
         f"{API_PREFIX}/orgs/{ORG_FIXTURE_UUID}/profiles",
@@ -187,6 +194,8 @@ def test_import_org(admin_auth_headers):
     assert r.status_code == 200
     data = r.json()
     assert data["total"] == 2
+
+    # Check that org users were added
 
 
 def test_import_org_insufficient_credentials(crawler_auth_headers):
