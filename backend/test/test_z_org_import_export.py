@@ -5,7 +5,7 @@ import tempfile
 import time
 
 from .conftest import API_PREFIX
-from ..btrixcloud.models import (
+from btrixcloud.models import (
     Organization,
     Profile,
     CrawlConfig,
