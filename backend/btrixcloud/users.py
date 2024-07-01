@@ -120,10 +120,6 @@ class UserManager:
         if not self.registration_enabled and not user.inviteToken:
             raise HTTPException(status_code=400, detail="invite_token_required")
 
-        if user.inviteToken:
-            # will raise if invite is invalid
-            await self.invites.get_valid_invite(user.inviteToken, user.email)
-
         # Don't create a new org for registered users.
         user.newOrg = False
 
@@ -363,8 +359,8 @@ class UserManager:
         if create.inviteToken:
             new_user_invite = None
             try:
-                new_user_invite = await self.org_ops.handle_new_user_invite(
-                    create.inviteToken, user
+                new_user_invite, _ = await self.org_ops.add_user_by_invite(
+                    create.inviteToken, user, is_new=True
                 )
             except HTTPException as exc:
                 print(exc)

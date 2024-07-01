@@ -348,29 +348,34 @@ class OrgOps:
             return_document=ReturnDocument.AFTER,
         )
 
-    async def handle_new_user_invite(
-        self, invite_token: UUID, user: User
-    ) -> InvitePending:
-        """Handle invite from a new user"""
-        new_user_invite = await self.invites.get_valid_invite(invite_token, user.email)
-        await self.add_user_by_invite(new_user_invite, user)
-        await self.invites.remove_invite(invite_token)
-        return new_user_invite
-
     async def add_user_by_invite(
-        self, invite: InvitePending, user: User
-    ) -> Organization:
-        """Add user to an org from an InvitePending, if any.
+        self, invite_token: UUID, user: User, is_new: bool
+    ) -> tuple[InvitePending, Optional[Organization]]:
+        """Lookup an invite by user email (if new) or userid (if existing)
 
-        If there's no org to add to, raise exception
+        If there's no org, return None
+
+        Remove invite after successful add
         """
-        org = invite.oid and await self.get_org_by_id(invite.oid)
+        # only lookup by userid for existing users
+        userid = user.id if not is_new else None
+        invite = await self.invites.get_valid_invite(
+            invite_token, email=user.email, userid=userid
+        )
+
+        if not invite.oid:
+            await self.invites.remove_invite(invite.id)
+            return invite, None
+
+        org = await self.get_org_by_id(invite.oid)
         if not org:
             raise HTTPException(
                 status_code=400, detail="Invalid Invite Code, No Such Organization"
             )
 
         await self.add_user_to_org(org, user.id, invite.role)
+
+        await self.invites.remove_invite(invite.id)
 
         # if just added first admin, and name == id, set default org name from user name
         if (
@@ -380,7 +385,7 @@ class OrgOps:
         ):
             await self.set_default_org_name_from_user_name(org, user.name)
 
-        return org
+        return invite, org
 
     async def set_default_org_name_from_user_name(
         self, org: Organization, user_name: str
@@ -839,7 +844,7 @@ def init_orgs_api(
         result = {"added": True, "id": id_}
 
         if new_org.firstAdminInviteEmail:
-            if await invites.invite_user(
+            is_new, token = await invites.invite_user(
                 InviteToOrgRequest(
                     email=new_org.firstAdminInviteEmail, role=UserRole.OWNER
                 ),
@@ -847,10 +852,12 @@ def init_orgs_api(
                 user_manager,
                 org=org,
                 headers=dict(request.headers),
-            ):
+            )
+            if is_new:
                 result["invited"] = "new_user"
             else:
                 result["invited"] = "existing_user"
+            result["token"] = token
 
         return result
 
@@ -949,24 +956,21 @@ def init_orgs_api(
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
-        new_user, token = await invites.invite_user(
+        is_new, token = await invites.invite_user(
             invite,
             user,
             user_manager,
             org=org,
             headers=dict(request.headers),
         )
-        if new_user:
+        if is_new:
             return {"invited": "new_user", "token": token}
 
         return {"invited": "existing_user", "token": token}
 
     @app.post("/orgs/invite-accept/{token}", tags=["invites"])
     async def accept_invite(token: UUID, user: User = Depends(user_dep)):
-        # invite = await invites.accept_user_invite(user, token, user_manager)
-        invite = await invites.get_valid_invite(token, email=None, userid=user.id)
-
-        org = await ops.add_user_by_invite(invite, user)
+        _, org = await ops.add_user_by_invite(token, user, is_new=False)
         org_out = await org.serialize_for_user(user, user_manager) if org else None
         return {"added": True, "org": org_out}
 

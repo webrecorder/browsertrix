@@ -46,6 +46,7 @@ class UserRole(IntEnum):
 class InvitePending(BaseMongoModel):
     """An invite for a new user, with an email and invite token as id"""
 
+    id: UUID
     created: datetime
     tokenHash: str
     inviterEmail: str

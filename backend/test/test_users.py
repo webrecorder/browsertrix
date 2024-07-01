@@ -11,6 +11,7 @@ from .conftest import (
     FINISHED_STATES,
 )
 
+INVALID_PASSWORD_EMAIL = "invalidpassword@example.com"
 VALID_USER_EMAIL = "validpassword@example.com"
 VALID_USER_PW = "validpassw0rd!"
 VALID_USER_PW_RESET = "new!password"
@@ -93,7 +94,7 @@ def test_add_user_to_org_invalid_password(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/add-user",
         json={
-            "email": "invalidpassword@example.com",
+            "email": INVALID_PASSWORD_EMAIL,
             "password": "pw",
             "name": "invalid pw user",
             "description": "test invalid password",
@@ -106,7 +107,7 @@ def test_add_user_to_org_invalid_password(admin_auth_headers, default_org_id):
 
 
 def test_register_user_invalid_password(admin_auth_headers, default_org_id):
-    email = "invalidpassword@example.com"
+    email = INVALID_PASSWORD_EMAIL
     # Send invite
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/invite",
@@ -151,6 +152,24 @@ def test_new_user_send_invite(admin_auth_headers, default_org_id):
     new_user_invite_token = data["token"]
 
 
+def test_pending_invite_new_user(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/invites", headers=admin_auth_headers
+    )
+    assert r.status_code == 200
+    data = r.json()
+    invites = data["items"]
+    assert len(invites) == 2
+
+    assert data["total"] == 2
+    for invite in invites:
+        assert invite["email"] in (VALID_USER_EMAIL, INVALID_PASSWORD_EMAIL)
+        assert invite["oid"] == default_org_id
+        assert invite["created"]
+        assert invite["role"]
+        assert invite["firstOrgAdmin"] == None
+
+
 def test_new_user_token():
     # Must include email to validate token
     r = requests.get(
@@ -178,6 +197,38 @@ def test_register_user_valid_password():
         },
     )
     assert r.status_code == 201
+
+
+def test_delete_invite(admin_auth_headers, default_org_id):
+    email = INVALID_PASSWORD_EMAIL
+    # Delete unused invite
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/invites/delete",
+        headers=admin_auth_headers,
+        json={"email": email},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["removed"] == True
+    assert data["count"] == 1
+
+    # now 404
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/invites/delete",
+        headers=admin_auth_headers,
+        json={"email": email},
+    )
+    assert r.status_code == 404
+
+
+def test_pending_invites_clear_new_user(admin_auth_headers, default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/invites", headers=admin_auth_headers
+    )
+    assert r.status_code == 200
+    data = r.json()
+    invites = data["items"]
+    assert len(invites) == 0
 
 
 def test_existing_user_send_invite(admin_auth_headers, non_default_org_id):
