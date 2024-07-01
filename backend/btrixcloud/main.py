@@ -74,8 +74,6 @@ def main():
 
     invites = init_invites(mdb, email)
 
-    crawl_manager = CrawlManager()
-
     user_manager = init_user_manager(mdb, email, invites)
 
     current_active_user, shared_secret_or_active_user = init_users_api(
@@ -100,6 +98,8 @@ def main():
              Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
         )
         sys.exit(1)
+
+    crawl_manager = CrawlManager()
 
     storage_ops = init_storages_api(org_ops, crawl_manager)
 
