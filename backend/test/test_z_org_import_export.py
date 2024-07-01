@@ -20,6 +20,7 @@ curr_dir = os.path.dirname(os.path.realpath(__file__))
 
 ORG_EXPORT_FIXTURE = os.path.join(curr_dir, "data", "org-export.json")
 ORG_FIXTURE_UUID = "4c880741-c1b7-47ae-b825-3fb15d52a760"
+CRAWL_FIXTURE_ID = "manual-20240701173130-64000a3d-c39"
 
 
 def test_export_org(admin_auth_headers, default_org_id):
@@ -193,12 +194,12 @@ def test_import_org(admin_auth_headers):
 
     # Check pages
     r = requests.get(
-        f"{API_PREFIX}/orgs/{ORG_FIXTURE_UUID}/pages",
+        f"{API_PREFIX}/orgs/{ORG_FIXTURE_UUID}/crawls/{CRAWL_FIXTURE_ID}/pages",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 67
+    assert data["total"] == 47
 
     # Check collections
     r = requests.get(
