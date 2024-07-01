@@ -129,9 +129,21 @@ def test_import_org(admin_auth_headers):
 
     # Ensure org users were added
     assert data["users"] == {
-        "1282554d-9740-4da3-aba9-de2082e16a41": 20,
-        "5dffc74c-4c82-4e03-8edf-6f29ea406f0d": 20,
-        "d2c7e8d4-c0a8-4615-9b8a-f544d2820933": 40,
+        "8c37f608-6a47-4738-b7c5-0929db185bfb": {
+            "email": "orgadmin@example.com",
+            "name": "Org Admin",
+            "role": 40,
+        },
+        "b7473377-5664-480f-be91-f247e83aaf17": {
+            "email": "orgcrawler2@example.com",
+            "name": "Crawler 2",
+            "role": 20,
+        },
+        "e1d12a4d-3635-4012-9e2c-c173b03347eb": {
+            "email": "orgcrawler@example.com",
+            "name": "Crawler",
+            "role": 20,
+        },
     }
 
     # Check profiles
