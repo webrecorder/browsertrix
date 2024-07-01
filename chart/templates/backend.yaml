@@ -79,6 +79,13 @@ spec:
             - name: MOTOR_MAX_WORKERS
               value: "{{ .Values.backend_mongodb_workers | default 1 }}"
 
+            - name: BTRIX_SUBS_APP_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: btrix-subs-app-secret
+                  key: BTRIX_SUBS_APP_API_KEY
+                  optional: true
+
           volumeMounts:
             - name: ops-configs
               mountPath: /ops-configs/

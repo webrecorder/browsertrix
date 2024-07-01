@@ -28,7 +28,7 @@ from .models import (
     OrgReadOnlyUpdate,
     OrgMetrics,
     OrgWebhookUrls,
-    CreateOrg,
+    OrgCreate,
     RenameOrg,
     UpdateRole,
     RemovePendingInvite,
@@ -42,6 +42,7 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import slug_from_name, validate_slug
+
 
 if TYPE_CHECKING:
     from .invites import InviteOps
@@ -357,15 +358,12 @@ class OrgOps:
 
     async def add_user_by_invite(
         self, invite: InvitePending, user: User
-    ) -> Optional[Organization]:
+    ) -> Organization:
         """Add user to an org from an InvitePending, if any.
 
-        If there's no org to add to (eg. superuser invite), just return.
+        If there's no org to add to, raise exception
         """
-        if not invite.oid:
-            return None
-
-        org = await self.get_org_by_id(invite.oid)
+        org = invite.oid and await self.get_org_by_id(invite.oid)
         if not org:
             raise HTTPException(
                 status_code=400, detail="Invalid Invite Code, No Such Organization"
@@ -726,8 +724,8 @@ class OrgOps:
 
 
 # ============================================================================
-# pylint: disable=too-many-statements
-def init_orgs_api(app, mdb, user_manager, invites, user_dep):
+# pylint: disable=too-many-statements, too-many-arguments
+def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secret_dep):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
 
@@ -801,27 +799,55 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
 
     @app.post("/orgs/create", tags=["organizations"])
     async def create_org(
-        new_org: CreateOrg,
-        user: User = Depends(user_dep),
+        new_org: OrgCreate,
+        request: Request,
+        user: User = Depends(user_or_shared_secret_dep),
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         id_ = uuid4()
 
+        name = new_org.name or str(id_)
+
         if new_org.slug:
             validate_slug(new_org.slug)
             slug = new_org.slug
         else:
-            slug = slug_from_name(new_org.name)
+            slug = slug_from_name(name)
 
         org = Organization(
-            id=id_, name=new_org.name, slug=slug, users={}, storage=ops.default_primary
+            id=id_,
+            name=name,
+            slug=slug,
+            users={},
+            storage=ops.default_primary,
+            quotas=new_org.quotas or OrgQuotas(),
+            subData=new_org.subData,
         )
         if not await ops.add_org(org):
             return {"added": False, "error": "already_exists"}
 
-        return {"id": id_, "added": True}
+        result = {"added": True, "id": id_}
+
+        if new_org.firstAdminInviteEmail:
+            new_user, token = await invites.invite_user(
+                InviteToOrgRequest(
+                    email=new_org.firstAdminInviteEmail, role=UserRole.OWNER
+                ),
+                user,
+                user_manager,
+                org=org,
+                allow_existing=True,
+                headers=request.headers,
+            )
+            if new_user:
+                result["invited"] = "new_user"
+            else:
+                result["invited"] = "existing_user"
+            result["token"] = token
+
+        return result
 
     @router.get("", tags=["organizations"])
     async def get_org(
@@ -918,14 +944,15 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
-        if await invites.invite_user(
+        new_user, _ = await invites.invite_user(
             invite,
             user,
             user_manager,
             org=org,
             allow_existing=True,
             headers=request.headers,
-        ):
+        )
+        if new_user:
             return {"invited": "new_user"}
 
         return {"invited": "existing_user"}
@@ -935,7 +962,8 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep):
         invite = await invites.accept_user_invite(user, token, user_manager)
 
         org = await ops.add_user_by_invite(invite, user)
-        return {"added": True, "org": org}
+        org_out = await org.serialize_for_user(user, user_manager)
+        return {"added": True, "org": org_out}
 
     @router.get("/invites", tags=["invites"])
     async def get_pending_org_invites(

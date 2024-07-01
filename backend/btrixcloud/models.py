@@ -907,11 +907,6 @@ class RenameOrg(BaseModel):
 
 
 # ============================================================================
-class CreateOrg(RenameOrg):
-    """Create a new org"""
-
-
-# ============================================================================
 class OrgStorageRefs(BaseModel):
     """Input model for setting primary storage + optional replicas"""
 
@@ -961,6 +956,19 @@ class OrgQuotas(BaseModel):
     maxExecMinutesPerMonth: Optional[int] = 0
     extraExecMinutes: Optional[int] = 0
     giftedExecMinutes: Optional[int] = 0
+
+
+# ============================================================================
+class OrgCreate(BaseModel):
+    """Create a new org"""
+
+    name: Optional[str] = None
+    slug: Optional[str] = None
+
+    firstAdminInviteEmail: Optional[str] = None
+    quotas: Optional[OrgQuotas] = None
+
+    subData: Optional[Dict[str, Any]] = None
 
 
 # ============================================================================
@@ -1082,6 +1090,8 @@ class Organization(BaseMongoModel):
 
     readOnly: Optional[bool] = False
     readOnlyReason: Optional[str] = None
+
+    subData: Optional[Dict[str, Any]] = None
 
     def is_owner(self, user):
         """Check if user is owner"""
@@ -1281,7 +1291,7 @@ class UserCreateIn(BaseModel):
 
     inviteToken: Optional[UUID] = None
 
-    newOrg: bool
+    newOrg: Optional[bool] = False
     newOrgName: Optional[str] = ""
 
 

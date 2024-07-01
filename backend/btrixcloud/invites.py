@@ -118,7 +118,7 @@ class InviteOps:
         org=None,
         allow_existing=False,
         headers: Optional[dict] = None,
-    ):
+    ) -> tuple[bool, str]:
         """Invite user to org (if not specified, to default org).
 
         If allow_existing is false, don't allow invites to existing users.
@@ -156,7 +156,7 @@ class InviteOps:
                 org_name,
                 headers,
             )
-            return True
+            return True, str(invite_pending.id)
 
         if not allow_existing:
             raise HTTPException(status_code=400, detail="User already registered")
@@ -180,7 +180,7 @@ class InviteOps:
             invite_pending, org_name, invitee_user.email, invite_code, headers
         )
 
-        return False
+        return False, invite_code
 
     async def get_pending_invites(
         self, org=None, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1

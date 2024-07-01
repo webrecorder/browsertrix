@@ -7,6 +7,10 @@ from .conftest import API_PREFIX
 
 new_oid = None
 
+new_subs_oid = None
+
+VALID_PASSWORD = "ValidPassW0rd!"
+
 
 def test_ensure_only_one_default_org(admin_auth_headers):
     r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
@@ -555,3 +559,147 @@ def test_update_read_only(admin_auth_headers, default_org_id):
     assert data["readOnly"] is False
     # Test that reason is unset when readOnly is set to false, even implicitly
     assert data["readOnlyReason"] == ""
+
+
+def test_create_org_and_invite_new_user(admin_auth_headers):
+    invite_email = "new-user@example.com"
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "firstAdminInviteEmail": invite_email,
+            "quotas": {
+                "maxPagesPerCrawl": 100,
+                "maxConcurrentCrawls": 1,
+                "storageQuota": 1000000,
+                "maxExecMinutesPerMonth": 1000,
+            },
+            "subData": {"extra": "data", "sub": {"id": 123}},
+        },
+    )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+
+    org_id = data["id"]
+
+    assert data["invited"] == "new_user"
+    token = data["token"]
+
+    # Look up token
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{org_id}/invites",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] == 1
+
+    invites = data["items"]
+    assert len(invites) == 1
+    invite = invites[0]
+
+    assert invite["email"] == invite_email
+    assert token == invite["id"]
+
+    global new_subs_oid
+    new_subs_oid = org_id
+
+    # Create user with invite
+    r = requests.post(
+        f"{API_PREFIX}/auth/register",
+        headers=admin_auth_headers,
+        json={
+            "name": "Test User",
+            "email": invite_email,
+            "password": VALID_PASSWORD,
+            "inviteToken": token,
+        },
+    )
+    assert r.status_code == 201
+
+
+def test_validate_new_org_with_quotas_and_user(admin_auth_headers):
+    r = requests.get(f"{API_PREFIX}/orgs/{new_subs_oid}", headers=admin_auth_headers)
+    assert r.status_code == 200
+
+    data = r.json()
+    assert data["slug"] == "test-users-archive"
+    assert data["name"] == "Test User's Archive"
+
+    assert data["quotas"] == {
+        "maxPagesPerCrawl": 100,
+        "maxConcurrentCrawls": 1,
+        "storageQuota": 1000000,
+        "maxExecMinutesPerMonth": 1000,
+        "extraExecMinutes": 0,
+        "giftedExecMinutes": 0,
+    }
+    assert "subData" not in data
+
+
+def test_create_org_and_invite_existing_user(admin_auth_headers):
+    invite_email = "new-user@example.com"
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "firstAdminInviteEmail": invite_email,
+            "quotas": {
+                "maxPagesPerCrawl": 100,
+                "maxConcurrentCrawls": 1,
+                "storageQuota": 1000000,
+                "maxExecMinutesPerMonth": 1000,
+            },
+            "subData": {"extra": "data", "sub": {"id": 123}},
+        },
+    )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+
+    org_id = data["id"]
+
+    assert data["invited"] == "existing_user"
+    token = data["token"]
+
+    r = requests.post(
+        f"{API_PREFIX}/auth/jwt/login",
+        data={
+            "username": invite_email,
+            "password": VALID_PASSWORD,
+            "grant_type": "password",
+        },
+    )
+    data = r.json()
+    assert r.status_code == 200
+    login_token = data["access_token"]
+
+    auth_headers = {"Authorization": "bearer " + login_token}
+
+    # Accept existing user invite
+    r = requests.post(
+        f"{API_PREFIX}/orgs/invite-accept/{token}",
+        headers=auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+    org = data["org"]
+
+    assert org["id"] == org_id
+    assert org["name"] == "Test User's Archive 2"
+    assert org["slug"] == "test-users-archive-2"
+
+    assert org["quotas"] == {
+        "maxPagesPerCrawl": 100,
+        "maxConcurrentCrawls": 1,
+        "storageQuota": 1000000,
+        "maxExecMinutesPerMonth": 1000,
+        "extraExecMinutes": 0,
+        "giftedExecMinutes": 0,
+    }
+    assert "subData" not in org
