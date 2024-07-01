@@ -140,8 +140,8 @@ def test_import_org(admin_auth_headers):
         "orgcrawler2@example.com": {"name": "Crawler 2", "role": 20},
     }
 
-    users = data["users"]
-    for _, value in users.items():
+    for _, value in data["users"].items():
+        # Value is dict with email, name, role keys
         user_email = value["email"]
         expected_user = expected_users[user_email]
         assert expected_user
