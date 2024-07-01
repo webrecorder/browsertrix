@@ -14,7 +14,7 @@ ORG_FIXTURE_UUID = "4c880741-c1b7-47ae-b825-3fb15d52a760"
 
 def test_export_org(admin_auth_headers, default_org_id):
     tf = tempfile.NamedTemporaryFile(delete=False)
-    with open(tf, "wb") as json_export:
+    with open(tf.name, "wb") as json_export:
         r = requests.get(
             f"{API_PREFIX}/orgs/{default_org_id}/export/json",
             headers=admin_auth_headers,
@@ -42,12 +42,11 @@ def test_export_org(admin_auth_headers, default_org_id):
 
 
 def test_export_org_insufficient_credentials(crawler_auth_headers, default_org_id):
-    with open(tf, "wb") as json_export:
-        r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/export/json",
-            headers=crawler_auth_headers,
-        )
-        assert r.status_code == 403
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/export/json",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 403
 
 
 def test_import_org(admin_auth_headers):
