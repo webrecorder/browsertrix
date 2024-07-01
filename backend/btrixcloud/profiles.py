@@ -154,7 +154,7 @@ class ProfileOps:
     async def commit_to_profile(
         self,
         browser_commit: ProfileCreate,
-        storage: StorageRef,
+        org: Organization,
         user: User,
         metadata: dict,
         existing_profile: Optional[Profile] = None,
@@ -196,7 +196,7 @@ class ProfileOps:
             hash=resource["hash"],
             size=file_size,
             filename=resource["path"],
-            storage=storage,
+            storage=org.storage,
         )
 
         baseid = metadata.get("btrix.baseprofile")
@@ -205,6 +205,9 @@ class ProfileOps:
             baseid = UUID(baseid)
 
         oid = UUID(metadata.get("btrix.org"))
+
+        if org.readOnly:
+            raise HTTPException(status_code=403, detail="org_set_to_read_only")
 
         if await self.orgs.storage_quota_reached(oid):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
@@ -493,7 +496,7 @@ def init_profiles_api(
     ):
         metadata = await browser_get_metadata(browser_commit.browserid, org)
 
-        return await ops.commit_to_profile(browser_commit, org.storage, user, metadata)
+        return await ops.commit_to_profile(browser_commit, org, user, metadata)
 
     @router.patch("/{profileid}")
     async def commit_browser_to_existing(
@@ -515,7 +518,7 @@ def init_profiles_api(
                     description=browser_commit.description or profile.description,
                     crawlerChannel=profile.crawlerChannel,
                 ),
-                storage=org.storage,
+                org=org,
                 user=user,
                 metadata=metadata,
                 existing_profile=profile,
