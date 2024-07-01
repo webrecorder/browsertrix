@@ -967,7 +967,7 @@ class OrgOps:
             )
 
         # archivedItems
-        for item in org_data.get("archivedItems", []):
+        for item in org_data.get("items", []):
             item = json_stream.to_standard_types(item)
             item_id = str(item["_id"])
 
