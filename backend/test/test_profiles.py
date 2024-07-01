@@ -504,3 +504,54 @@ def test_delete_profile(admin_auth_headers, default_org_id, profile_2_id):
     )
     assert r.status_code == 404
     assert r.json()["detail"] == "profile_not_found"
+
+
+def test_create_profile_read_only_org(
+    admin_auth_headers, default_org_id, profile_browser_4_id
+):
+    # Set org to read-only
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/read-only",
+        headers=admin_auth_headers,
+        json={"readOnly": True, "readOnlyReason": "For testing purposes"},
+    )
+    assert r.json()["updated"]
+
+    prepare_browser_for_profile_commit(
+        profile_browser_4_id, admin_auth_headers, default_org_id
+    )
+
+    # Try to create profile, verify we get 403 forbidden
+    start_time = time.monotonic()
+    time_limit = 300
+    while True:
+        try:
+            r = requests.post(
+                f"{API_PREFIX}/orgs/{default_org_id}/profiles",
+                headers=admin_auth_headers,
+                json={
+                    "browserid": profile_browser_4_id,
+                    "name": "uncreatable",
+                    "description": "because org is read-only",
+                },
+                timeout=10,
+            )
+            detail = r.json().get("detail")
+            if detail == "waiting_for_browser":
+                time.sleep(5)
+                continue
+            if detail == "org_set_to_read_only":
+                assert r.status_code == 403
+                break
+        except:
+            if time.monotonic() - start_time > time_limit:
+                raise
+            time.sleep(5)
+
+    # Set readOnly back to false on org
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/read-only",
+        headers=admin_auth_headers,
+        json={"readOnly": False},
+    )
+    assert r.json()["updated"]
