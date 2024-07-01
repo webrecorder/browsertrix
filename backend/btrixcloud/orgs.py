@@ -14,7 +14,7 @@ from uuid import UUID, uuid4
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 
-from typing import Optional, TYPE_CHECKING, Dict, List, AsyncGenerator
+from typing import Optional, TYPE_CHECKING, List, AsyncGenerator
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -22,6 +22,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 import json_stream
 from aiostream import stream
+from motor.motor_asyncio import AsyncIOMotorCursor
 
 from .crawlconfigs import get_warc_prefix
 from .models import (
@@ -753,9 +754,13 @@ class OrgOps:
 
     async def export_org(
         self, org: Organization, user_manager: UserManager
-    ) -> Dict[str, object]:
-        """Export all data related to org as JSON"""
-        export_stream_generators: List[Dict[str, AsyncGenerator]] = []
+    ) -> StreamingResponse:
+        """Export all data related to org as JSON
+
+        Append async generators to list in order that we want them to be
+        exhausted in order to stream a semantically correct JSON document.
+        """
+        export_stream_generators: List[AsyncGenerator] = []
 
         oid_query = {"oid": org.id}
 
@@ -764,36 +769,41 @@ class OrgOps:
 
         version = await self.version_db.find_one()
 
-        # Start JSON stream, add dbVersion and org
-        async def opening_gen():
+        async def json_opening_gen() -> AsyncGenerator:
+            """Async generator that opens JSON document, writes dbVersion and org"""
+            # pylint: disable=consider-using-f-string
             opening_section = '{{"data": {{\n"dbVersion": "{0}",\n"org": {1},\n'.format(
                 version.get("version"),
                 json.dumps(org_serialized.to_dict(), cls=JSONSerializer),
             )
             yield opening_section.encode("utf-8")
 
-        export_stream_generators.append(opening_gen())
-
-        # TODO: Add typing for MotorCursor
         async def json_items_gen(
-            key: str, cursor, doc_count: int, skip_closing_comma=False
-        ):
-            """Async generator to add json items in list keyed by supplied str"""
+            key: str,
+            cursor: AsyncIOMotorCursor,
+            doc_count: int,
+            skip_closing_comma=False,
+        ) -> AsyncGenerator:
+            """Async generator to add json items in list, keyed by supplied str"""
             yield f'"{key}": [\n'.encode("utf-8")
 
             doc_index = 1
 
             async for json_item in cursor:
                 yield json.dumps(json_item, cls=JSONSerializer).encode("utf-8")
-
                 if doc_index < doc_count:
                     yield b",\n"
                 else:
                     yield b"\n"
-
                 doc_index += 1
 
             yield f']{"" if skip_closing_comma else ","}\n'.encode("utf-8")
+
+        async def json_closing_gen() -> AsyncGenerator:
+            """Async generator to close JSON document"""
+            yield b"}}"
+
+        export_stream_generators.append(json_opening_gen())
 
         # Profiles
         count = await self.profiles_db.count_documents(oid_query)
@@ -836,11 +846,7 @@ class OrgOps:
             json_items_gen("collections", cursor, count, True)
         )
 
-        # Close JSON document
-        async def closing_gen():
-            yield b"}}"
-
-        export_stream_generators.append(closing_gen())
+        export_stream_generators.append(json_closing_gen())
 
         return StreamingResponse(stream.chain(*export_stream_generators))
 
