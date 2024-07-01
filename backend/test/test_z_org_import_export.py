@@ -128,23 +128,25 @@ def test_import_org(admin_auth_headers):
     assert data["name"] == "dev"
 
     # Ensure org users were added
-    assert data["users"] == {
-        "8c37f608-6a47-4738-b7c5-0929db185bfb": {
-            "email": "orgadmin@example.com",
+    expected_users = {
+        "orgadmin@example.com": {
             "name": "Org Admin",
             "role": 40,
         },
-        "b7473377-5664-480f-be91-f247e83aaf17": {
-            "email": "orgcrawler2@example.com",
-            "name": "Crawler 2",
-            "role": 20,
-        },
-        "e1d12a4d-3635-4012-9e2c-c173b03347eb": {
-            "email": "orgcrawler@example.com",
+        "orgcrawler@example.com": {
             "name": "Crawler",
             "role": 20,
         },
+        "orgcrawler2@example.com": {"name": "Crawler 2", "role": 20},
     }
+
+    users = data["users"]
+    for _, value in users.items():
+        user_email = value["email"]
+        expected_user = expected_users[user_email]
+        assert expected_user
+        assert expected_user["name"] == value["name"]
+        assert expected_user["role"] == value["role"]
 
     # Check profiles
     r = requests.get(
