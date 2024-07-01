@@ -34,7 +34,7 @@ To move an organization from one Browsertrix cluster to another, sync the org id
 To generate a portable JSON representation of an org's database information, use the `GET /api/orgs/<org-id>/export/json` API endpoint and save the returned JSON to a file, e.g.:
 
 ```sh
-curl -H "Content-type: application/json" -H "Authorization: Bearer <jwt token>" https://app.browsertrix.com/api/orgs/<org-id>/export/json > org-export.json
+curl -H "Content-type: application/json" -H "Authorization: Bearer <jwt token>" https://app.browsertrix.com/api/orgs/<org-id>/export/json -o org-export.json
 ```
 
 This endpoint is available to superusers only.
