@@ -5,6 +5,15 @@ import tempfile
 import time
 
 from .conftest import API_PREFIX
+from ..btrixcloud.models import (
+    Organization,
+    Profile,
+    CrawlConfig,
+    ConfigRevision,
+    BaseCrawl,
+    Collection,
+    Page,
+)
 
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -29,15 +38,62 @@ def test_export_org(admin_auth_headers, default_org_id):
     org_data = org_json["data"]
     assert org_data
 
-    # TODO: Check data more thoroughly
-    assert org_data["dbVersion"]
-    assert org_data["org"]
-    assert org_data["profiles"]
-    assert org_data["workflows"]
-    assert org_data["workflowRevisions"]
-    assert org_data["items"]
-    assert org_data["pages"]
-    assert org_data["collections"]
+    assert isinstance(org_data["dbVersion"], str)
+
+    assert isinstance(org_data["org"], dict)
+    org_dict = org_data["org"]
+    org = Organization.from_dict(org_dict)
+    assert org
+
+    user_details = org_dict["userDetails"]
+    assert user_details
+    for user in user_details:
+        assert user["id"]
+        assert user["role"]
+        assert user["name"]
+        assert user["email"]
+
+    profiles = org_data["profiles"]
+    assert profiles
+    assert isinstance(profiles, list)
+    for profile_dict in profiles:
+        profile = Profile.from_dict(profile_dict)
+        assert profile
+
+    workflows = org_data["workflows"]
+    assert workflows
+    assert isinstance(workflows, list)
+    for workflow_dict in workflows:
+        workflow = CrawlConfig.from_dict(workflow_dict)
+        assert workflow
+
+    revisions = org_data["workflowRevisions"]
+    assert revisions
+    assert isinstance(revisions, list)
+    for rev_dict in revisions:
+        revision = ConfigRevision.from_dict(rev_dict)
+        assert revision
+
+    items = org_data["items"]
+    assert items
+    assert isinstance(items, list)
+    for item_dict in items:
+        item = BaseCrawl.from_dict(item_dict)
+        assert item
+
+    pages = org_data["pages"]
+    assert pages
+    assert isinstance(pages, list)
+    for page_dict in pages:
+        page = Page.from_dict(page_dict)
+        assert page
+
+    collections = org_data["collections"]
+    assert collections
+    assert isinstance(collections, list)
+    for coll_dict in collections:
+        coll = Collection.from_dict(coll_dict)
+        assert coll
 
     tf.close()
 
@@ -60,14 +116,84 @@ def test_import_org(admin_auth_headers):
         )
         assert r.status_code == 200
 
-    time.sleep(20)
+    time.sleep(10)
 
+    # Check org
     r = requests.get(
         f"{API_PREFIX}/orgs/{ORG_FIXTURE_UUID}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
-
-    # TODO: Check imported data more thoroughly
     assert data["name"] == "dev"
+
+    # Check profiles
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{ORG_FIXTURE_UUID}/profiles",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+
+    # Check workflows
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{ORG_FIXTURE_UUID}/crawlconfigs",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+
+    # Check items
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{ORG_FIXTURE_UUID}/all-crawls",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 4
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{ORG_FIXTURE_UUID}/crawls",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 3
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{ORG_FIXTURE_UUID}/uploads",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+
+    # Check pages
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{ORG_FIXTURE_UUID}/uploads",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 67
+
+    # Check collections
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{ORG_FIXTURE_UUID}/collections",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 2
+
+
+def test_import_org_insufficient_credentials(crawler_auth_headers):
+    with open(ORG_EXPORT_FIXTURE, "rb") as f:
+        r = requests.post(
+            f"{API_PREFIX}/orgs/import/json?ignoreVersion=true",
+            headers=crawler_auth_headers,
+            data=f,
+        )
+        assert r.status_code == 403
