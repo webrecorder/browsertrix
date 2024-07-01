@@ -193,7 +193,7 @@ def test_import_org(admin_auth_headers):
 
     # Check pages
     r = requests.get(
-        f"{API_PREFIX}/orgs/{ORG_FIXTURE_UUID}/uploads",
+        f"{API_PREFIX}/orgs/{ORG_FIXTURE_UUID}/pages",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
