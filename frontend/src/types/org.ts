@@ -13,12 +13,21 @@ export const AccessCode: Record<UserRole, number> = {
 /** `${4-digit year}-${2-digit month}` */
 export type YearMonth = `${number}-${Range<0, 2>}${Range<0, 10>}`;
 
+export type OrgQuotas = {
+  extraExecMinutes: number;
+  giftedExecMinutes: number;
+  maxConcurrentCrawls: number;
+  maxExecMinutesPerMonth: number;
+  maxPagesPerCrawl: number;
+  storageQuota: number;
+};
+
 export type OrgData = {
   id: string;
   name: string;
   slug: string;
   default: boolean;
-  quotas?: Record<string, number>;
+  quotas: OrgQuotas;
   bytesStored: number;
   bytesStoredCrawls: number;
   bytesStoredUploads: number;
