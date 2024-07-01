@@ -195,8 +195,6 @@ def test_import_org(admin_auth_headers):
     data = r.json()
     assert data["total"] == 2
 
-    # Check that org users were added
-
 
 def test_import_org_insufficient_credentials(crawler_auth_headers):
     with open(ORG_EXPORT_FIXTURE, "rb") as f:
