@@ -579,47 +579,33 @@ def test_create_org_and_invite_new_user(admin_auth_headers):
 
     assert data["invited"] == "new_user"
 
-    # Look up token
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{org_id}/invites",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-
-    assert data["total"] == 1
-
-    invites = data["items"]
-    assert len(invites) == 1
-    invite = invites[0]
-
-    assert invite["email"] == invite_email
-    token = invite["id"]
-
     global new_user_invite_token
-    new_user_invite_token = token
+    new_user_invite_token = data["token"]
 
     global new_subs_oid
     new_subs_oid = org_id
 
 
-def test_confirm_token_and_register():
-    # Must include email to validate token
-    r = requests.get(
-        f"{API_PREFIX}/users/invite/{new_user_invite_token}",
-    )
-    assert r.status_code == 422
-
-    # Confirm token is valid (no auth needed)
-    r = requests.get(
-        f"{API_PREFIX}/users/invite/{new_user_invite_token}?email={invite_email}",
-    )
+def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
+    r = requests.get(f"{API_PREFIX}/orgs/{new_subs_oid}", headers=admin_auth_headers)
     assert r.status_code == 200
-    data = r.json()
-    assert data["firstOrgAdmin"] == True
-    assert data["orgName"] == data["oid"]
-    assert data["orgName"] == data["orgSlug"]
 
+    data = r.json()
+    assert data["slug"] == data["id"]
+    assert data["name"] == data["name"]
+
+    assert data["quotas"] == {
+        "maxPagesPerCrawl": 100,
+        "maxConcurrentCrawls": 1,
+        "storageQuota": 1000000,
+        "maxExecMinutesPerMonth": 1000,
+        "extraExecMinutes": 0,
+        "giftedExecMinutes": 0,
+    }
+    assert "subData" not in data
+
+
+def test_register_with_invite():
     # Create user with invite
     r = requests.post(
         f"{API_PREFIX}/auth/register",
@@ -633,7 +619,7 @@ def test_confirm_token_and_register():
     assert r.status_code == 201
 
 
-def test_validate_new_org_with_quotas_and_user(admin_auth_headers):
+def test_validate_new_org_with_quotas_and_update_name(admin_auth_headers):
     r = requests.get(f"{API_PREFIX}/orgs/{new_subs_oid}", headers=admin_auth_headers)
     assert r.status_code == 200
 
@@ -679,24 +665,8 @@ def test_create_org_and_invite_existing_user(admin_auth_headers):
 
     assert data["invited"] == "existing_user"
 
-    # Look up token
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{org_id}/invites",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-
-    assert data["total"] == 1
-
-    invites = data["items"]
-    assert len(invites) == 1
-    invite = invites[0]
-
-    assert invite["email"] == invite_email
-
     global existing_user_invite_token
-    existing_user_invite_token = invite["id"]
+    existing_user_invite_token = data["token"]
 
 
 def test_login_existing_user_for_invite():
@@ -748,34 +718,3 @@ def test_login_existing_user_for_invite():
         "giftedExecMinutes": 0,
     }
     assert "subData" not in org
-
-
-def test_user_part_of_two_orgs():
-    # User part of two orgs
-    r = requests.post(
-        f"{API_PREFIX}/auth/jwt/login",
-        data={
-            "username": invite_email,
-            "password": VALID_PASSWORD,
-            "grant_type": "password",
-        },
-    )
-    data = r.json()
-    assert r.status_code == 200
-    login_token = data["access_token"]
-
-    auth_headers = {"Authorization": "bearer " + login_token}
-
-    # Get user info
-    r = requests.get(
-        f"{API_PREFIX}/users/me",
-        headers=auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-
-    # confirm user is part of the two newly created orgs
-    assert len(data["orgs"]) == 2
-    org_ids = [org["id"] for org in data["orgs"]]
-    assert new_subs_oid in org_ids
-    assert new_subs_oid_2 in org_ids

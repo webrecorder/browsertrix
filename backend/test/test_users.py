@@ -248,6 +248,16 @@ def test_login_existing_user_for_invite():
     )
 
 
+def test_pending_invites_clear(admin_auth_headers, non_default_org_id):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/invites", headers=admin_auth_headers
+    )
+    assert r.status_code == 200
+    data = r.json()
+    invites = data["items"]
+    assert len(invites) == 0
+
+
 def test_user_part_of_two_orgs(default_org_id, non_default_org_id):
     # User part of two orgs
     r = requests.post(
