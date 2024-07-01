@@ -247,7 +247,7 @@ class CrawlConfigOps:
                 crawlconfig,
                 org.storage,
                 userid=str(crawlconfig.modifiedBy),
-                warc_prefix=self.get_warc_prefix(org, crawlconfig),
+                warc_prefix=get_warc_prefix(org, crawlconfig),
                 storage_filename=storage_filename,
                 profile_filename=profile_filename or "",
             )
@@ -849,7 +849,7 @@ class CrawlConfigOps:
                 crawlconfig,
                 org.storage,
                 userid=str(user.id),
-                warc_prefix=self.get_warc_prefix(org, crawlconfig),
+                warc_prefix=get_warc_prefix(org, crawlconfig),
                 storage_filename=self.default_filename_template,
                 profile_filename=profile_filename or "",
             )
