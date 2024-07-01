@@ -22,7 +22,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 import json_stream
 from aiostream import stream
-from motor.motor_asyncio import AsyncIOMotorCursor
 
 from .crawlconfigs import get_warc_prefix
 from .models import (
@@ -780,7 +779,7 @@ class OrgOps:
 
         async def json_items_gen(
             key: str,
-            cursor: AsyncIOMotorCursor,
+            cursor,
             doc_count: int,
             skip_closing_comma=False,
         ) -> AsyncGenerator:
