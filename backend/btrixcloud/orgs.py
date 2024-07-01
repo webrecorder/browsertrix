@@ -77,6 +77,7 @@ class OrgOps:
         self.default_primary = None
 
         self.invites = invites
+        self.register_to_org_id = os.environ.get("REGISTER_TO_ORG_ID")
 
     def set_default_primary_storage(self, storage: StorageRef):
         """set default primary storage"""
@@ -102,31 +103,6 @@ class OrgOps:
             return await self.orgs.insert_one(org.to_dict())
         except DuplicateKeyError:
             print(f"Organization name {org.name} already in use - skipping", flush=True)
-
-    async def create_new_org_for_user(
-        self,
-        org_name: str,
-        user: User,
-    ) -> Organization:
-        # pylint: disable=too-many-arguments
-        """Create new organization with default storage for new user"""
-        id_ = uuid4()
-
-        org = Organization(
-            id=id_,
-            name=org_name,
-            slug=slug_from_name(org_name),
-            users={str(user.id): UserRole.OWNER},
-            storage=self.default_primary,
-        )
-        primary_name = self.default_primary and self.default_primary.name
-
-        print(
-            f"Creating new org {org_name} with storage {primary_name}",
-            flush=True,
-        )
-        await self.add_org(org)
-        return org
 
     async def get_orgs_for_user(
         # pylint: disable=too-many-arguments
@@ -177,20 +153,31 @@ class OrgOps:
 
         return Organization.from_dict(res)
 
-    async def get_default_org(self) -> Optional[Organization]:
+    async def get_default_org(self) -> Organization:
         """Get default organization"""
         res = await self.orgs.find_one({"default": True})
-        if res:
-            return Organization.from_dict(res)
+        if not res:
+            raise HTTPException(status_code=500, detail="default_org_missing")
 
-        return None
+        return Organization.from_dict(res)
+
+    async def get_default_register_org(self) -> Organization:
+        """Get default organiation for new user registration, or default org"""
+        if self.register_to_org_id:
+            res = await self.get_org_by_id(UUID(self.register_to_org_id))
+            if not res:
+                raise HTTPException(
+                    status_code=500, detail="default_register_org_not_found"
+                )
+
+        return await self.get_default_org()
 
     async def create_default_org(self):
         """Create default organization if doesn't exist."""
         await self.init_index()
 
-        default_org = await self.get_default_org()
-        if default_org:
+        try:
+            default_org = await self.get_default_org()
             if default_org.name == DEFAULT_ORG:
                 print("Default organization already exists - skipping", flush=True)
             else:
@@ -199,6 +186,9 @@ class OrgOps:
                 await self.update_full(default_org)
                 print(f'Default organization renamed to "{DEFAULT_ORG}"', flush=True)
             return
+        except HTTPException:
+            # default org does not exist, create below
+            pass
 
         id_ = uuid4()
         org = Organization(
@@ -349,29 +339,22 @@ class OrgOps:
         )
 
     async def add_user_by_invite(
-        self, invite_token: UUID, user: User, is_new: bool
-    ) -> tuple[InvitePending, Optional[Organization]]:
+        self,
+        invite: InvitePending,
+        user: User,
+        default_org: Optional[Organization] = None,
+    ) -> Organization:
         """Lookup an invite by user email (if new) or userid (if existing)
-
-        If there's no org, return None
 
         Remove invite after successful add
         """
-        # only lookup by userid for existing users
-        userid = user.id if not is_new else None
-        invite = await self.invites.get_valid_invite(
-            invite_token, email=user.email, userid=userid
-        )
-
         if not invite.oid:
-            await self.invites.remove_invite(invite.id)
-            return invite, None
+            org = default_org
+        else:
+            org = await self.get_org_by_id(invite.oid)
 
-        org = await self.get_org_by_id(invite.oid)
         if not org:
-            raise HTTPException(
-                status_code=400, detail="Invalid Invite Code, No Such Organization"
-            )
+            raise HTTPException(status_code=400, detail="invalid_invite")
 
         await self.add_user_to_org(org, user.id, invite.role)
 
@@ -385,7 +368,7 @@ class OrgOps:
         ):
             await self.set_default_org_name_from_user_name(org, user.name)
 
-        return invite, org
+        return org
 
     async def set_default_org_name_from_user_name(
         self, org: Organization, user_name: str
@@ -970,8 +953,11 @@ def init_orgs_api(
 
     @app.post("/orgs/invite-accept/{token}", tags=["invites"])
     async def accept_invite(token: UUID, user: User = Depends(user_dep)):
-        _, org = await ops.add_user_by_invite(token, user, is_new=False)
-        org_out = await org.serialize_for_user(user, user_manager) if org else None
+        invite = await ops.invites.get_valid_invite(
+            token, email=user.email, userid=user.id
+        )
+        org = await ops.add_user_by_invite(invite, user)
+        org_out = await org.serialize_for_user(user, user_manager)
         return {"added": True, "org": org_out}
 
     @router.get("/invites", tags=["invites"])

@@ -23,15 +23,14 @@ from pymongo.collation import Collation
 
 from .models import (
     UserCreate,
-    UserCreateIn,
     UserUpdateEmailName,
     UserUpdatePassword,
     User,
     UserOrgInfoOut,
     UserOut,
     UserRole,
+    InvitePending,
     InviteOut,
-    Organization,
     PaginatedResponse,
     FailedLogin,
 )
@@ -87,7 +86,6 @@ class UserManager:
         self.email_collation = Collation("en", strength=2)
 
         self.registration_enabled = is_bool(os.environ.get("REGISTRATION_ENABLED"))
-        self.register_to_org_id = os.environ.get("REGISTER_TO_ORG_ID")
 
     # pylint: disable=attribute-defined-outside-init
     def set_ops(self, org_ops, crawl_config_ops, base_crawl_ops):
@@ -111,7 +109,7 @@ class UserManager:
         await self.failed_logins.create_index("attempted", expireAfterSeconds=3600)
 
     async def register(
-        self, user: UserCreateIn, request: Optional[Request] = None
+        self, user: UserCreate, request: Optional[Request] = None
     ) -> User:
         """override user creation to check if invite token is present"""
         user.name = user.name or user.email
@@ -120,10 +118,7 @@ class UserManager:
         if not self.registration_enabled and not user.inviteToken:
             raise HTTPException(status_code=400, detail="invite_token_required")
 
-        # Don't create a new org for registered users.
-        user.newOrg = False
-
-        return await self._create(user, request)
+        return await self._create(user, request=request)
 
     async def get_user_info_with_orgs(self, user: User) -> UserOut:
         """return User info"""
@@ -255,10 +250,8 @@ class UserManager:
                     name=name,
                     email=email,
                     password=password,
-                    is_superuser=True,
-                    newOrg=False,
-                    is_verified=True,
-                )
+                ),
+                is_superuser=True,
             )
             print(f"Super user {email} created", flush=True)
             print(res, flush=True)
@@ -284,12 +277,9 @@ class UserManager:
                 name=name,
                 email=email,
                 password=password,
-                is_superuser=False,
-                newOrg=False,
-                is_verified=True,
             )
 
-            return await self._create(user_create)
+            return await self._create(user_create, is_verified=True)
         except HTTPException as exc:
             print(f"User {email} already exists", flush=True)
             raise exc
@@ -316,20 +306,26 @@ class UserManager:
         )
 
     async def _create(
-        self, create: UserCreateIn, request: Optional[Request] = None
+        self,
+        create: UserCreate,
+        request: Optional[Request] = None,
+        is_superuser=False,
+        is_verified=False,
     ) -> User:
         """create new user in db"""
-        # pylint: disable=too-many-branches
+
+        invite: Optional[InvitePending] = None
+
+        if create.inviteToken:
+            # this will raise if invite is invalid
+            invite = await self.invites.get_valid_invite(
+                create.inviteToken, create.email
+            )
+            is_verified = True
+
         await self.validate_password(create.password)
 
         hashed_password = get_password_hash(create.password)
-
-        if isinstance(create, UserCreate):
-            is_superuser = create.is_superuser
-            is_verified = create.is_verified
-        else:
-            is_superuser = False
-            is_verified = create.inviteToken is not None
 
         id_ = uuid4()
 
@@ -342,7 +338,7 @@ class UserManager:
             is_verified=is_verified,
         )
 
-        user_already_exists = False
+        default_register_org = await self.org_ops.get_default_register_org()
 
         try:
             await self.users.insert_one(user.dict())
@@ -351,59 +347,25 @@ class UserManager:
             # shouldn't happen since user should exist if we have duplicate key, but just in case!
             if not maybe_user:
                 raise HTTPException(status_code=400, detail="user_missing")
+
+            await self.check_password(maybe_user, create.password)
+
             user = maybe_user
-            user_already_exists = True
 
-        add_to_org = False
-
-        if create.inviteToken:
-            new_user_invite = None
-            try:
-                new_user_invite, _ = await self.org_ops.add_user_by_invite(
-                    create.inviteToken, user, is_new=True
-                )
-            except HTTPException as exc:
-                print(exc)
-
-            # if no org specified, add to the auto-add org
-            if new_user_invite and not new_user_invite.oid:
-                add_to_org = True
-
-        else:
-            add_to_org = True
-            if not is_verified and not user_already_exists:
-                asyncio.create_task(self.request_verify(user, request))
-
-        # org to auto-add user to, if any
-        auto_add_org: Optional[Organization] = None
-
-        # if user already exists, and not adding to a new org, error
-        if user_already_exists and not add_to_org:
-            raise HTTPException(status_code=400, detail="user_already_exists")
-
-        # if add to default, then get default org
-        if add_to_org:
-            if self.register_to_org_id:
-                auto_add_org = await self.org_ops.get_org_by_id(
-                    UUID(self.register_to_org_id)
-                )
-            else:
-                auto_add_org = await self.org_ops.get_default_org()
-
-        # if creating new org, create here
-        elif create.newOrg is True:
-            print(f"Creating new organization for {user.id}")
-
-            org_name = create.newOrgName or f"{user.name or user.email}'s Organization"
-
-            auto_add_org = await self.org_ops.create_new_org_for_user(
-                org_name=org_name,
-                user=user,
+        # if invite, add via invite path
+        if invite:
+            await self.org_ops.add_user_by_invite(
+                invite, user, default_org=default_register_org
             )
 
-        # if org set, add user to org
-        if auto_add_org:
-            await self.org_ops.add_user_to_org(auto_add_org, user.id, UserRole.CRAWLER)
+        # else, add to default register org as CRAWLER
+        else:
+            await self.org_ops.add_user_to_org(
+                default_register_org, user.id, UserRole.CRAWLER
+            )
+
+            if not is_verified:
+                asyncio.create_task(self.request_verify(user, request))
 
         return user
 
@@ -648,7 +610,7 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
     auth_router = APIRouter()
 
     @auth_router.post("/register", status_code=201, response_model=UserOut)
-    async def register(request: Request, create: UserCreateIn):
+    async def register(request: Request, create: UserCreate):
         user = await user_manager.register(create, request=request)
         return await user_manager.get_user_info_with_orgs(user)
 

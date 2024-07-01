@@ -1297,7 +1297,7 @@ class ProfileUpdate(BaseModel):
 
 
 # ============================================================================
-class UserCreateIn(BaseModel):
+class UserCreate(BaseModel):
     """
     User Creation Model exposed to API
     """
@@ -1308,19 +1308,6 @@ class UserCreateIn(BaseModel):
     name: Optional[str] = ""
 
     inviteToken: Optional[UUID] = None
-
-    newOrg: Optional[bool] = False
-    newOrgName: Optional[str] = ""
-
-
-# ============================================================================
-class UserCreate(UserCreateIn):
-    """
-    User Creation Model
-    """
-
-    is_superuser: Optional[bool] = False
-    is_verified: Optional[bool] = False
 
 
 # ============================================================================
