@@ -23,7 +23,6 @@ from fastapi.responses import StreamingResponse
 import json_stream
 from aiostream import stream
 
-from .crawlconfigs import get_warc_prefix
 from .models import (
     SUCCESSFUL_STATES,
     RUNNING_STATES,
