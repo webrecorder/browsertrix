@@ -1,8 +1,7 @@
 import json
+import os
 import requests
 import tempfile
-
-import pytest
 
 from .conftest import API_PREFIX
 
