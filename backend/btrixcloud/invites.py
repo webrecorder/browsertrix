@@ -178,7 +178,7 @@ class InviteOps:
     ) -> tuple[bool, UUID]:
         """Invite user to org (if not specified, to default org).
 
-        :returns: is_new_user (bool)
+        :returns: is_new_user (bool), invite token (UUID)
         """
         org_name: str
 
