@@ -1,5 +1,9 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlChangeEvent, SlInput } from "@shoelace-style/shoelace";
+import type {
+  SlChangeEvent,
+  SlInput,
+  SlMenuItem,
+} from "@shoelace-style/shoelace";
 import { css, html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -20,7 +24,7 @@ import type { OrgData } from "@/utils/orgs";
 export class OrgsList extends TailwindElement {
   static styles = css`
     btrix-table {
-      grid-template-columns: min-content [clickable-start] auto auto auto [clickable-end] min-content;
+      grid-template-columns: min-content [clickable-start] 50ch auto auto [clickable-end] min-content;
     }
   `;
   @property({ type: Object })
@@ -292,7 +296,7 @@ export class OrgsList extends TailwindElement {
                 </sl-tooltip>
               `
             : html`
-                <sl-tooltip content=${msg("Under quota")}>
+                <sl-tooltip content=${msg("No quotas exceeded")}>
                   <sl-icon class="text-base text-success" name="check-circle">
                   </sl-icon>
                 </sl-tooltip>
@@ -337,10 +341,12 @@ export class OrgsList extends TailwindElement {
               </sl-menu-item>
               <sl-menu-item
                 style="--sl-color-neutral-700: var(--danger)"
-                @click=${() => {
+                @click=${(e: MouseEvent) => {
+                  if ((e.target as SlMenuItem).disabled) return;
                   this.currOrg = org;
                   void this.orgDeleteDialog?.show();
                 }}
+                disabled
               >
                 <sl-icon slot="prefix" name="trash3"></sl-icon>
                 ${msg("Delete Org")}

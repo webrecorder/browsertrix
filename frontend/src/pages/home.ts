@@ -138,8 +138,8 @@ export class Home extends LiteElement {
         </form>
       </section>
 
-      <div class="grid grid-cols-5 gap-8">
-        <div class="col-span-5 md:col-span-3">
+      <div class="grid grid-cols-3 gap-6">
+        <div class="col-span-3 md:col-span-2">
           <section>
             <header
               class="mb-3 flex items-center justify-between border-b pb-3"
@@ -161,7 +161,7 @@ export class Home extends LiteElement {
             ></btrix-orgs-list>
           </section>
         </div>
-        <div class="col-span-5 md:col-span-2">
+        <div class="col-span-3 md:col-span-1">
           <section class="p-3 md:rounded-lg md:border md:bg-white md:p-8">
             <h2 class="mb-3 text-lg font-medium">
               ${msg("Invite User to Org")}
