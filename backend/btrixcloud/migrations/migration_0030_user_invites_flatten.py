@@ -26,13 +26,13 @@ class Migration(BaseMigration):
         invites_db = self.mdb["invites"]
 
         # flatten user invites
-        async for user in users_db.find({"invites": {"$ne": {}}}):
+        async for user in users_db.find({"invites": {"$nin": [None, {}]}}):
             for user_invite in user["invites"].values():
+                user_invite["email"] = user["email"]
+                print("Migrating existing user invite", user_invite)
                 invite = InvitePending(
-                    id=user_invite["_id"],
-                    email=user["email"],
                     userid=user["id"],
-                    tokenHash=get_hash(user_invite["_id"]),
+                    tokenHash=get_hash(user_invite["id"]),
                     **user_invite
                 )
                 await invites_db.insert_one(invite.to_dict())
@@ -45,6 +45,7 @@ class Migration(BaseMigration):
         # note that tokenHash is of the existing _id
         # for new invites, the tokenHash will be of a separate uuid that is not stored
         async for invite_data in invites_db.find({"tokenHash": {"$eq": None}}):
+            print("Migrating new user invite", invite_data)
             await invites_db.find_one_and_update(
                 {"_id": invite_data["_id"]},
                 {"$set": {"tokenHash": get_hash(invite_data["_id"])}},
