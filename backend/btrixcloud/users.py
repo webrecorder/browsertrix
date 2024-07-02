@@ -134,7 +134,8 @@ class UserManager:
             if not maybe_user:
                 raise HTTPException(status_code=400, detail="user_missing")
 
-            await self.check_password(maybe_user, create.password)
+            if not await self.check_password(maybe_user, create.password):
+                raise HTTPException(status_code=400, detail="invalid_current_password")
 
             user = maybe_user
 
@@ -230,7 +231,6 @@ class UserManager:
         if await self.check_password(user, password):
             return user
 
-        print("NO PASS?")
         return None
 
     async def get_user_names_by_ids(self, user_ids: List[str]) -> dict[str, str]:

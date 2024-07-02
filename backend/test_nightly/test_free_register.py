@@ -94,6 +94,18 @@ def test_user_part_of_one_orgs(default_org_id):
 
 
 def test_register_user_different_org():
+    # Register existing user wrong password
+    r = requests.post(
+        f"{API_PREFIX}/auth/register",
+        json={
+            "name": "another-user",
+            "email": USER_EMAIL_2,
+            "password": USER_PW,
+        },
+    )
+    assert r.status_code == 400
+    assert r.json() == {"detail": "invalid_current_password"}
+
     # Register existing user in default org
     r = requests.post(
         f"{API_PREFIX}/auth/register",
