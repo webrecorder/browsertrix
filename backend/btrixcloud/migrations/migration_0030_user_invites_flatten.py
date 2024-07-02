@@ -3,7 +3,8 @@ Migration 0030 - Move user invites from user.invites to invites collection
 """
 
 from btrixcloud.migrations import BaseMigration
-
+from btrixcloud.models import InvitePending
+from btrixcloud.invites import get_hash
 
 MIGRATION_VERSION = "0030"
 
@@ -24,13 +25,25 @@ class Migration(BaseMigration):
         users_db = self.mdb["users"]
         invites_db = self.mdb["invites"]
 
-        cursor = users_db.find({"invites": {"$ne": {}}})
-        async for user_data in cursor:
-            for user_invite in user_data["invites"].values():
-                user_invite["email"] = user_data["email"]
-                user_invite["userid"] = user_data["id"]
-                await invites_db.insert_one(user_invite)
+        # flatten user invites
+        async for user in users_db.find({"invites": {"$ne": {}}}):
+            for user_invite in user["invites"].values():
+                invite = InvitePending(
+                    id=user_invite["_id"],
+                    email=user["email"],
+                    userid=user["id"],
+                    tokenHash=get_hash(user_invite["_id"]),
+                    **user_invite
+                )
+                await invites_db.insert_one(invite.to_dict())
 
             await users_db.find_one_and_update(
-                {"_id": user_data["_id"]}, {"$unset": {"invites": 1}}
+                {"_id": user["_id"]}, {"$unset": {"invites": 1}}
+            )
+
+        # add tokenHash to existing invites without it
+        async for invite_data in invites_db.find({"tokenHash": {"$eq": None}}):
+            await invites_db.find_one_and_update(
+                {"_id": invite_data["_id"]},
+                {"$set": {"tokenHash": get_hash(invite_data["_id"])}},
             )

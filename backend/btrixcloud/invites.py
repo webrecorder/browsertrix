@@ -137,7 +137,7 @@ class InviteOps:
         self, invite_token: UUID, email: Optional[str], userid: Optional[UUID] = None
     ) -> InvitePending:
         """Retrieve a valid invite data from db, or throw if invalid"""
-        token_hash = self.get_hash(invite_token)
+        token_hash = get_hash(invite_token)
         invite_data = await self.invites.find_one({"tokenHash": token_hash})
         if not invite_data:
             raise HTTPException(status_code=400, detail="invalid_invite")
@@ -201,7 +201,7 @@ class InviteOps:
             email=urllib.parse.unquote(invite.email),
             inviterEmail=user.email,
             fromSuperuser=user.is_superuser,
-            tokenHash=self.get_hash(invite_token),
+            tokenHash=get_hash(invite_token),
         )
 
         # user being invited
@@ -226,10 +226,6 @@ class InviteOps:
             headers,
         )
         return True, invite_token
-
-    def get_hash(self, token: UUID):
-        """get hash for token"""
-        return hashlib.sha256(str(token).encode("utf-8")).hexdigest()
 
     async def get_pending_invites(
         self,
@@ -294,3 +290,8 @@ class InviteOps:
 def init_invites(mdb, email: EmailSender) -> InviteOps:
     """init InviteOps"""
     return InviteOps(mdb, email)
+
+
+def get_hash(token: UUID) -> str:
+    """get hash for token"""
+    return hashlib.sha256(str(token).encode("utf-8")).hexdigest()
