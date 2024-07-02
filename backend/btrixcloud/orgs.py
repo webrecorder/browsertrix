@@ -935,6 +935,14 @@ class OrgOps:
             if old_userid and old_userid in user_id_map:
                 profile_obj.userid = user_id_map[old_userid]
 
+            old_created_by = profile.get("createdBy")
+            if old_created_by and old_created_by in user_id_map:
+                profile_obj.createdBy = user_id_map[old_created_by]
+
+            old_modified_by = profile.get("modifiedBy")
+            if old_modified_by and old_modified_by in user_id_map:
+                profile_obj.modifiedBy = user_id_map[old_modified_by]
+
             # Update storage ref if necessary
             if profile_obj.resource and storage_name and new_storage_ref:
                 profile_obj.resource.storage = new_storage_ref
