@@ -109,16 +109,51 @@ class UserManager:
         await self.failed_logins.create_index("attempted", expireAfterSeconds=3600)
 
     async def register(
-        self, user: UserCreate, request: Optional[Request] = None
+        self, create: UserCreate, request: Optional[Request] = None
     ) -> User:
         """override user creation to check if invite token is present"""
-        user.name = user.name or user.email
+        create.name = create.name or create.email
 
         # if open registration not enabled, can only register with an invite
-        if not self.registration_enabled and not user.inviteToken:
+        if not self.registration_enabled and not create.inviteToken:
             raise HTTPException(status_code=400, detail="invite_token_required")
 
-        return await self._create(user, request=request)
+        invite: Optional[InvitePending] = None
+        if create.inviteToken:
+            # raises if invite is invalid
+            invite = await self.invites.get_valid_invite(
+                create.inviteToken, email=create.email
+            )
+
+        try:
+            user = await self.create_user(create)
+
+        except DuplicateKeyError:
+            maybe_user = await self.get_by_email(create.email)
+            # shouldn't happen since user should exist if we have duplicate key, but just in case!
+            if not maybe_user:
+                raise HTTPException(status_code=400, detail="user_missing")
+
+            await self.check_password(maybe_user, create.password)
+
+            user = maybe_user
+
+        default_register_org = await self.org_ops.get_default_register_org()
+
+        # if invite, add via invite path
+        if invite:
+            await self.org_ops.add_user_by_invite(
+                invite, user, default_org=default_register_org
+            )
+
+        else:
+            await self.org_ops.add_user_to_org(
+                default_register_org, user.id, UserRole.CRAWLER
+            )
+
+            asyncio.create_task(self.request_verify(user, request))
+
+        return user
 
     async def get_user_info_with_orgs(self, user: User) -> UserOut:
         """return User info"""
@@ -187,6 +222,7 @@ class UserManager:
         """authenticate user via login form"""
         user = await self.get_by_email(email)
         if not user:
+            print("NO USER?")
             # Run the hasher to mitigate timing attack
             # Inspired from Django: https://code.djangoproject.com/ticket/20760
             get_password_hash(password)
@@ -195,6 +231,7 @@ class UserManager:
         if await self.check_password(user, password):
             return user
 
+        print("NO PASS?")
         return None
 
     async def get_user_names_by_ids(self, user_ids: List[str]) -> dict[str, str]:
@@ -245,7 +282,7 @@ class UserManager:
             return
 
         try:
-            res = await self._create(
+            res = await self.create_user(
                 UserCreate(
                     name=name,
                     email=email,
@@ -255,34 +292,9 @@ class UserManager:
             )
             print(f"Super user {email} created", flush=True)
             print(res, flush=True)
-        except HTTPException as exc:
+        except DuplicateKeyError as exc:
             print(exc)
             print(f"User {email} already exists", flush=True)
-
-    async def create_non_super_user(
-        self,
-        email: str,
-        password: str,
-        name: str = "New user",
-    ) -> User:
-        """create a regular user with given credentials"""
-        if not email:
-            raise HTTPException(status_code=400, detail="missing_user_email")
-
-        if not password:
-            password = generate_password()
-
-        try:
-            user_create = UserCreate(
-                name=name,
-                email=email,
-                password=password,
-            )
-
-            return await self._create(user_create, is_verified=True)
-        except HTTPException as exc:
-            print(f"User {email} already exists", flush=True)
-            raise exc
 
     async def request_verify(
         self, user: User, request: Optional[Request] = None
@@ -305,23 +317,19 @@ class UserManager:
             user.email, token, dict(request.headers) if request else None
         )
 
-    async def _create(
+    async def create_user(
         self,
         create: UserCreate,
-        request: Optional[Request] = None,
         is_superuser=False,
         is_verified=False,
     ) -> User:
         """create new user in db"""
 
-        invite: Optional[InvitePending] = None
+        if not create.email:
+            raise HTTPException(status_code=400, detail="missing_user_email")
 
-        if create.inviteToken:
-            # this will raise if invite is invalid
-            invite = await self.invites.get_valid_invite(
-                create.inviteToken, create.email
-            )
-            is_verified = True
+        if not create.password:
+            create.password = generate_password()
 
         await self.validate_password(create.password)
 
@@ -338,34 +346,7 @@ class UserManager:
             is_verified=is_verified,
         )
 
-        default_register_org = await self.org_ops.get_default_register_org()
-
-        try:
-            await self.users.insert_one(user.dict())
-        except DuplicateKeyError:
-            maybe_user = await self.get_by_email(create.email)
-            # shouldn't happen since user should exist if we have duplicate key, but just in case!
-            if not maybe_user:
-                raise HTTPException(status_code=400, detail="user_missing")
-
-            await self.check_password(maybe_user, create.password)
-
-            user = maybe_user
-
-        # if invite, add via invite path
-        if invite:
-            await self.org_ops.add_user_by_invite(
-                invite, user, default_org=default_register_org
-            )
-
-        # else, add to default register org as CRAWLER
-        else:
-            await self.org_ops.add_user_to_org(
-                default_register_org, user.id, UserRole.CRAWLER
-            )
-
-            if not is_verified:
-                asyncio.create_task(self.request_verify(user, request))
+        await self.users.insert_one(user.dict())
 
         return user
 

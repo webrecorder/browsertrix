@@ -37,6 +37,7 @@ from .models import (
     InvitePending,
     InviteToOrgRequest,
     UserRole,
+    UserCreate,
     User,
     PaginatedResponse,
 )
@@ -60,9 +61,10 @@ class OrgOps:
     """Organization API operations"""
 
     invites: InviteOps
+    user_manaegr: UserManager
     default_primary: Optional[StorageRef]
 
-    def __init__(self, mdb, invites):
+    def __init__(self, mdb, invites, user_manager):
         self.orgs = mdb["organizations"]
         self.crawls_db = mdb["crawls"]
         self.profiles_db = mdb["profiles"]
@@ -77,6 +79,7 @@ class OrgOps:
         self.default_primary = None
 
         self.invites = invites
+        self.user_manager = user_manager
         self.register_to_org_id = os.environ.get("REGISTER_TO_ORG_ID")
 
     def set_default_primary_storage(self, storage: StorageRef):
@@ -369,6 +372,24 @@ class OrgOps:
             await self.set_default_org_name_from_user_name(org, user.name)
 
         return org
+
+    async def create_new_user_for_org(
+        self, add: AddToOrgRequest, org: Organization
+    ) -> User:
+        """create a regular user with given credentials"""
+        try:
+            user_create = UserCreate(
+                name=add.name,
+                email=add.email,
+                password=add.password,
+            )
+
+            user = await self.user_manager.create_user(user_create, is_verified=True)
+            await self.add_user_to_org(org, user.id, add.role)
+            return user
+        except HTTPException as exc:
+            print("Error adding user to org", exc)
+            raise exc
 
     async def set_default_org_name_from_user_name(
         self, org: Organization, user_name: str
@@ -725,7 +746,7 @@ def init_orgs_api(
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
 
-    ops = OrgOps(mdb, invites)
+    ops = OrgOps(mdb, invites, user_manager)
 
     async def org_dep(oid: UUID, user: User = Depends(user_dep)):
         org = await ops.get_org_for_user_by_id(oid, user)
@@ -1010,17 +1031,14 @@ def init_orgs_api(
 
     @router.post("/add-user", tags=["invites"])
     async def add_new_user_to_org(
-        invite: AddToOrgRequest,
+        add_to_org: AddToOrgRequest,
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        new_user = await user_manager.create_non_super_user(
-            invite.email, invite.password, invite.name
-        )
-        await ops.add_user_to_org(org, new_user.id, invite.role)
+        await ops.create_new_user_for_org(add_to_org, org)
         return {"added": True}
 
     @router.get("/metrics", tags=["organizations"], response_model=OrgMetrics)

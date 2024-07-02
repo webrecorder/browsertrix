@@ -295,7 +295,6 @@ def test_send_and_accept_org_invite(
             "email": expected_stored_email,
             "password": "testingpassword",
             "inviteToken": token,
-            "newOrg": False,
         },
     )
     assert r.status_code == 201
