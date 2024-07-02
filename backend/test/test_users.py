@@ -23,6 +23,7 @@ valid_user_headers = None
 
 new_user_invite_token = None
 existing_user_invite_token = None
+wrong_token = None
 
 
 def test_create_super_user(admin_auth_headers):
@@ -130,7 +131,7 @@ def test_register_user_invalid_password(admin_auth_headers, default_org_id):
             "name": "invalid",
             "email": email,
             "password": "passwd",
-            "inviteToken": token,
+            "inviteToken": wrong_token,
         },
     )
     assert r.status_code == 400
