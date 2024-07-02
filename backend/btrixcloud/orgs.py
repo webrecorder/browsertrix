@@ -73,6 +73,9 @@ DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 
 MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
 
+# number of items to delete at a time
+DEL_ITEMS = 1000
+
 
 # ============================================================================
 # pylint: disable=too-many-public-methods, too-many-instance-attributes, too-many-locals
@@ -1037,38 +1040,38 @@ class OrgOps:
     async def delete_org_and_data(self, org: Organization, user_manager: UserManager):
         """Delete org and all of its associated data."""
         # Delete archived items
-        cursor = self.crawls_db.find({"oid": org.id})
-        items = await cursor.to_list(length=100_000)
-        item_ids = [item["_id"] for item in items]
+        cursor = self.crawls_db.find({"oid": org.id}, projection=["_id"])
+        items = await cursor.to_list(length=DEL_ITEMS)
+        while items:
+            item_ids = [item["_id"] for item in items]
 
-        await self.base_crawl_ops.delete_crawls_all_types(
-            delete_list=DeleteCrawlList(crawl_ids=item_ids), org=org
-        )
+            await self.base_crawl_ops.delete_crawls_all_types(
+                delete_list=DeleteCrawlList(crawl_ids=item_ids), org=org
+            )
+
+            items = await cursor.to_list(length=DEL_ITEMS)
 
         # Delete workflows and revisions
-        cursor = self.crawl_configs_db.find({"oid": org.id})
-        workflows = await cursor.to_list(length=100_000)
-        workflow_ids = [workflow["_id"] for workflow in workflows]
+        cursor = self.crawl_configs_db.find({"oid": org.id}, projection=["_id"])
+        workflows = await cursor.to_list(length=DEL_ITEMS)
+        while workflows:
+            workflow_ids = [workflow["_id"] for workflow in workflows]
+            await self.configs_revs_db.delete_many({"cid": {"$in": workflow_ids}})
+
+            workflows = await cursor.to_list(length=DEL_ITEMS)
 
         await self.crawl_configs_db.delete_many({"oid": org.id})
-        await self.configs_revs_db.delete_many({"cid": {"$in": workflow_ids}})
 
         # Delete profiles
-        cursor = self.profiles_db.find({"oid": org.id})
-        profiles = await cursor.to_list(length=100_000)
-
-        for profile in profiles:
+        async for profile in self.profiles_db.find({"oid": org.id}, projection=["_id"]):
             await self.profile_ops.delete_profile(profile["_id"], org)
 
         # Delete collections
-        cursor = self.colls_db.find({"oid": org.id})
-        collections = await cursor.to_list(length=100_000)
-
-        for coll in collections:
+        async for coll in self.colls_db.find({"oid": org.id}, projection=["_id"]):
             await self.coll_ops.delete_collection(coll["_id"], org)
 
         # Delete users that only belong to this org
-        for org_user_id in list(org.users.keys()):
+        for org_user_id in org.users.keys():
             user = await user_manager.get_by_id(UUID(org_user_id))
             if not user:
                 continue
