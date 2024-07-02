@@ -63,6 +63,9 @@ class UploadOps(BaseCrawlOps):
         replaceId: Optional[str],
     ) -> dict[str, Any]:
         """Upload streaming file, length unknown"""
+        if org.readOnly:
+            raise HTTPException(status_code=403, detail="org_set_to_read_only")
+
         if await self.orgs.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 
@@ -122,6 +125,9 @@ class UploadOps(BaseCrawlOps):
         user: User,
     ) -> dict[str, Any]:
         """handle uploading content to uploads subdir + request subdir"""
+        if org.readOnly:
+            raise HTTPException(status_code=403, detail="org_set_to_read_only")
+
         if await self.orgs.storage_quota_reached(org.id):
             raise HTTPException(status_code=403, detail="storage_quota_reached")
 

@@ -1,9 +1,13 @@
+import os
 import requests
 import uuid
 
 import pytest
 
 from .conftest import API_PREFIX
+from .utils import read_in_chunks
+
+curr_dir = os.path.dirname(os.path.realpath(__file__))
 
 new_oid = None
 
@@ -533,7 +537,7 @@ def test_update_read_only(admin_auth_headers, default_org_id):
     assert data["readOnly"] is True
     assert data["readOnlyReason"] == "Payment suspended"
 
-    # Try to start crawls, should fail
+    # Try to start crawl from new workflow, should fail
     crawl_data = {
         "runNow": True,
         "name": "Read Only Test Crawl",
@@ -552,10 +556,32 @@ def test_update_read_only(admin_auth_headers, default_org_id):
     data = r.json()
 
     assert data["added"]
-    assert data["id"]
     assert data["run_now_job"] is None
 
-    # Reset back to False, future crawls in tests should run fine
+    cid = data["id"]
+    assert cid
+
+    # Try to start crawl from existing workflow, should fail
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/run",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "org_set_to_read_only"
+
+    # Try to upload a WACZ, should fail
+    with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
+        r = requests.put(
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream?filename=test.wacz&name=My%20New%20Upload&description=Should%20Fail&collections=&tags=",
+            headers=admin_auth_headers,
+            data=read_in_chunks(fh),
+        )
+
+    assert r.status_code == 403
+    assert r.json()["detail"] == "org_set_to_read_only"
+
+    # Reset back to False, future tests should be unaffected
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/read-only",
         headers=admin_auth_headers,
