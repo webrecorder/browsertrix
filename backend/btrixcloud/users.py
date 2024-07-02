@@ -126,7 +126,7 @@ class UserManager:
             )
 
         try:
-            user = await self.create_user(create)
+            user = await self.create_user(create, is_verified=invite is not None)
 
         except DuplicateKeyError:
             maybe_user = await self.get_by_email(create.email)

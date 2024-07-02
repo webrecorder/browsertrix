@@ -253,6 +253,7 @@ def test_register_user_valid_password():
         },
     )
     assert r.status_code == 201
+    assert r.json()["is_verified"] == True
 
 
 def test_register_dupe():
