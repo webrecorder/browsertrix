@@ -55,6 +55,7 @@ from .models import (
     Collection,
     OrgOutExport,
     Page,
+    PageWithAllQA,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import slug_from_name, validate_slug, JSONSerializer
@@ -1019,7 +1020,7 @@ class OrgOps:
         # pages
         for page in org_data.get("pages", []):
             page = json_stream.to_standard_types(page)
-            await self.pages_db.insert_one(Page.from_dict(page).to_dict())
+            await self.pages_db.insert_one(PageWithAllQA.from_dict(page).to_dict())
 
         # collections
         for collection in org_data.get("collections", []):
