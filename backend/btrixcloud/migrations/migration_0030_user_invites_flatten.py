@@ -42,6 +42,8 @@ class Migration(BaseMigration):
             )
 
         # add tokenHash to existing invites without it
+        # note that tokenHash is of the existing _id
+        # for new invites, the tokenHash will be of a separate uuid that is not stored
         async for invite_data in invites_db.find({"tokenHash": {"$eq": None}}):
             await invites_db.find_one_and_update(
                 {"_id": invite_data["_id"]},
