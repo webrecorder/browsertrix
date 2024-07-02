@@ -69,6 +69,8 @@ else:
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 
+MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
+
 
 # ============================================================================
 # pylint: disable=too-many-public-methods, too-many-instance-attributes, too-many-locals
@@ -949,6 +951,14 @@ class OrgOps:
                 if old_userid and old_userid in user_id_map:
                     workflow[userid_field] = user_id_map[old_userid]
 
+            # Ensure scale isn't above max_scale
+            workflow_scale = workflow.get("scale", 1)
+            workflow["scale"] = max(workflow_scale, MAX_CRAWL_SCALE)
+
+            # Ensure crawlerChannel is set
+            if not workflow.get("crawlerChannel"):
+                workflow["crawlerChannel"] = "default"
+
             crawl_config = CrawlConfig.from_dict(workflow)
             await self.crawl_configs_db.insert_one(crawl_config.to_dict())
 
@@ -971,6 +981,9 @@ class OrgOps:
 
             item_obj = None
             if item["type"] == "crawl":
+                # Ensure crawlerChannel is set
+                if not item.get("crawlerChannel"):
+                    item["crawlerChannel"] = "default"
                 item_obj = Crawl.from_dict(item)
             if item["type"] == "upload":
                 item_obj = UploadedCrawl.from_dict(item)  # type: ignore
