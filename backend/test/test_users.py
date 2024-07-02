@@ -222,7 +222,7 @@ def test_register_user_wrong_invite():
             "name": "valid",
             "email": VALID_USER_EMAIL,
             "password": VALID_USER_PW,
-            "inviteToken": uuid4(),
+            "inviteToken": str(uuid4()),
         },
     )
     assert r.json()["detail"] == "invalid_invite"
