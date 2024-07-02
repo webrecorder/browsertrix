@@ -7,14 +7,13 @@ Organization API handling
 import json
 import math
 import os
-import secrets
 import time
 import urllib.parse
 from uuid import UUID, uuid4
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 
-from typing import Optional, TYPE_CHECKING, List, AsyncGenerator
+from typing import Optional, TYPE_CHECKING, Callable, List, AsyncGenerator
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -78,6 +77,7 @@ class OrgOps:
     """Organization API operations"""
 
     invites: InviteOps
+    user_manager: UserManager
     base_crawl_ops: BaseCrawlOps
     default_primary: Optional[StorageRef]
 
@@ -102,6 +102,7 @@ class OrgOps:
 
         self.invites = invites
         self.user_manager = user_manager
+        self.register_to_org_id = os.environ.get("REGISTER_TO_ORG_ID")
 
     def set_base_crawl_ops(self, base_crawl_ops: BaseCrawlOps) -> None:
         """Set base crawl ops"""
@@ -131,31 +132,6 @@ class OrgOps:
             return await self.orgs.insert_one(org.to_dict())
         except DuplicateKeyError:
             print(f"Organization name {org.name} already in use - skipping", flush=True)
-
-    async def create_new_org_for_user(
-        self,
-        org_name: str,
-        user: User,
-    ) -> Organization:
-        # pylint: disable=too-many-arguments
-        """Create new organization with default storage for new user"""
-        id_ = uuid4()
-
-        org = Organization(
-            id=id_,
-            name=org_name,
-            slug=slug_from_name(org_name),
-            users={str(user.id): UserRole.OWNER},
-            storage=self.default_primary,
-        )
-        primary_name = self.default_primary and self.default_primary.name
-
-        print(
-            f"Creating new org {org_name} with storage {primary_name}",
-            flush=True,
-        )
-        await self.add_org(org)
-        return org
 
     async def get_orgs_for_user(
         # pylint: disable=too-many-arguments
@@ -206,20 +182,31 @@ class OrgOps:
 
         return Organization.from_dict(res)
 
-    async def get_default_org(self) -> Optional[Organization]:
+    async def get_default_org(self) -> Organization:
         """Get default organization"""
         res = await self.orgs.find_one({"default": True})
-        if res:
-            return Organization.from_dict(res)
+        if not res:
+            raise HTTPException(status_code=500, detail="default_org_missing")
 
-        return None
+        return Organization.from_dict(res)
+
+    async def get_default_register_org(self) -> Organization:
+        """Get default organiation for new user registration, or default org"""
+        if self.register_to_org_id:
+            res = await self.get_org_by_id(UUID(self.register_to_org_id))
+            if not res:
+                raise HTTPException(
+                    status_code=500, detail="default_register_org_not_found"
+                )
+
+        return await self.get_default_org()
 
     async def create_default_org(self):
         """Create default organization if doesn't exist."""
         await self.init_index()
 
-        default_org = await self.get_default_org()
-        if default_org:
+        try:
+            default_org = await self.get_default_org()
             if default_org.name == DEFAULT_ORG:
                 print("Default organization already exists - skipping", flush=True)
             else:
@@ -228,6 +215,9 @@ class OrgOps:
                 await self.update_full(default_org)
                 print(f'Default organization renamed to "{DEFAULT_ORG}"', flush=True)
             return
+        except HTTPException:
+            # default org does not exist, create below
+            pass
 
         id_ = uuid4()
         org = Organization(
@@ -377,29 +367,27 @@ class OrgOps:
             return_document=ReturnDocument.AFTER,
         )
 
-    async def handle_new_user_invite(
-        self, invite_token: UUID, user: User
-    ) -> InvitePending:
-        """Handle invite from a new user"""
-        new_user_invite = await self.invites.get_valid_invite(invite_token, user.email)
-        await self.add_user_by_invite(new_user_invite, user)
-        await self.invites.remove_invite(invite_token)
-        return new_user_invite
-
     async def add_user_by_invite(
-        self, invite: InvitePending, user: User
+        self,
+        invite: InvitePending,
+        user: User,
+        default_org: Optional[Organization] = None,
     ) -> Organization:
-        """Add user to an org from an InvitePending, if any.
+        """Lookup an invite by user email (if new) or userid (if existing)
 
-        If there's no org to add to, raise exception
+        Remove invite after successful add
         """
-        org = invite.oid and await self.get_org_by_id(invite.oid)
+        if not invite.oid:
+            org = default_org
+        else:
+            org = await self.get_org_by_id(invite.oid)
+
         if not org:
-            raise HTTPException(
-                status_code=400, detail="Invalid Invite Code, No Such Organization"
-            )
+            raise HTTPException(status_code=400, detail="invalid_invite")
 
         await self.add_user_to_org(org, user.id, invite.role)
+
+        await self.invites.remove_invite(invite.id)
 
         # if just added first admin, and name == id, set default org name from user name
         if (
@@ -410,6 +398,20 @@ class OrgOps:
             await self.set_default_org_name_from_user_name(org, user.name)
 
         return org
+
+    async def create_new_user_for_org(
+        self, add: AddToOrgRequest, org: Organization
+    ) -> User:
+        """create a regular user with given credentials"""
+        try:
+            user = await self.user_manager.create_user(
+                name=add.name, email=add.email, password=add.password, is_verified=True
+            )
+            await self.add_user_to_org(org, user.id, add.role)
+            return user
+        except HTTPException as exc:
+            print("Error adding user to org", exc)
+            raise exc
 
     async def set_default_org_name_from_user_name(
         self, org: Organization, user_name: str
@@ -909,17 +911,16 @@ class OrgOps:
         # the reset password workflow using their email address after import.
         for user in stream_org.get("userDetails", []):  # type: ignore
             try:
-                user_res = await self.user_manager.create_non_super_user(
+                new_user = await self.user_manager.create_user(
                     email=user["email"],
-                    password=secrets.token_hex(20),
                     name=user["name"],
-                    prevent_add_to_org=True,
                 )
-                new_user = User(**user_res)
                 user_id_map[user.get("id")] = new_user.id
             # pylint: disable=broad-exception-caught
             except Exception:
-                new_user = await self.user_manager.get_by_email(user["email"])
+                maybe_user = await self.user_manager.get_by_email(user["email"])
+                assert maybe_user
+                new_user = maybe_user
 
             await self.add_user_to_org(
                 org=org, userid=new_user.id, role=UserRole(int(user.get("role", 10)))
@@ -1025,7 +1026,14 @@ class OrgOps:
 
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-arguments
-def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secret_dep):
+def init_orgs_api(
+    app,
+    mdb,
+    user_manager: UserManager,
+    invites: InviteOps,
+    user_dep: Callable,
+    user_or_shared_secret_dep: Callable,
+):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
 
@@ -1131,17 +1139,16 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         result = {"added": True, "id": id_}
 
         if new_org.firstAdminInviteEmail:
-            new_user, token = await invites.invite_user(
+            is_new, token = await invites.invite_user(
                 InviteToOrgRequest(
                     email=new_org.firstAdminInviteEmail, role=UserRole.OWNER
                 ),
                 user,
                 user_manager,
                 org=org,
-                allow_existing=True,
-                headers=request.headers,
+                headers=dict(request.headers),
             )
-            if new_user:
+            if is_new:
                 result["invited"] = "new_user"
             else:
                 result["invited"] = "existing_user"
@@ -1244,23 +1251,23 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
-        new_user, _ = await invites.invite_user(
+        is_new, token = await invites.invite_user(
             invite,
             user,
             user_manager,
             org=org,
-            allow_existing=True,
-            headers=request.headers,
+            headers=dict(request.headers),
         )
-        if new_user:
-            return {"invited": "new_user"}
+        if is_new:
+            return {"invited": "new_user", "token": token}
 
-        return {"invited": "existing_user"}
+        return {"invited": "existing_user", "token": token}
 
     @app.post("/orgs/invite-accept/{token}", tags=["invites"])
-    async def accept_invite(token: str, user: User = Depends(user_dep)):
-        invite = await invites.accept_user_invite(user, token, user_manager)
-
+    async def accept_invite(token: UUID, user: User = Depends(user_dep)):
+        invite = await ops.invites.get_valid_invite(
+            token, email=user.email, userid=user.id
+        )
         org = await ops.add_user_by_invite(invite, user)
         org_out = await org.serialize_for_user(user, user_manager)
         return {"added": True, "org": org_out}
@@ -1272,7 +1279,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         page: int = 1,
     ):
         pending_invites, total = await user_manager.invites.get_pending_invites(
-            org, page_size=pageSize, page=page
+            user_manager, org, page_size=pageSize, page=page
         )
         return paginated_format(pending_invites, total, page, pageSize)
 
@@ -1295,6 +1302,8 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         remove: RemoveFromOrg, org: Organization = Depends(org_owner_dep)
     ) -> dict[str, bool]:
         other_user = await user_manager.get_by_email(remove.email)
+        if not other_user:
+            raise HTTPException(status_code=404, detail="no_such_org_user")
 
         if org.is_owner(other_user):
             org_owners = await ops.get_org_owners(org)
@@ -1313,17 +1322,14 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
 
     @router.post("/add-user", tags=["invites"])
     async def add_new_user_to_org(
-        invite: AddToOrgRequest,
+        add_to_org: AddToOrgRequest,
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        new_user = await user_manager.create_non_super_user(
-            invite.email, invite.password, invite.name
-        )
-        await ops.add_user_to_org(org, new_user.id, invite.role)
+        await ops.create_new_user_for_org(add_to_org, org)
         return {"added": True}
 
     @router.get("/metrics", tags=["organizations"], response_model=OrgMetrics)
