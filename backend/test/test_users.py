@@ -1,5 +1,6 @@
 import requests
 import time
+from uuid import uuid4
 
 from .conftest import (
     API_PREFIX,
@@ -117,7 +118,9 @@ def test_register_user_invalid_password(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     assert data["invited"] == "new_user"
-    token = data["token"]
+
+    global wrong_token
+    wrong_token = data["token"]
 
     # Create user with invite
     r = requests.post(
@@ -191,11 +194,50 @@ def test_register_user_no_invite():
             "name": "valid",
             "email": VALID_USER_EMAIL,
             "password": VALID_USER_PW,
-            "inviteToken": new_user_invite_token,
         },
     )
     assert r.json()["detail"] == "invite_token_required"
     assert r.status_code == 400
+
+
+def test_register_user_wrong_invite():
+    # Create with wrong invite
+    r = requests.post(
+        f"{API_PREFIX}/auth/register",
+        json={
+            "name": "valid",
+            "email": VALID_USER_EMAIL,
+            "password": VALID_USER_PW,
+            "inviteToken": wrong_token,
+        },
+    )
+    assert r.json()["detail"] == "invalid_invite"
+    assert r.status_code == 400
+
+    # Create with wrong invite
+    r = requests.post(
+        f"{API_PREFIX}/auth/register",
+        json={
+            "name": "valid",
+            "email": VALID_USER_EMAIL,
+            "password": VALID_USER_PW,
+            "inviteToken": uuid4(),
+        },
+    )
+    assert r.json()["detail"] == "invalid_invite"
+    assert r.status_code == 400
+
+    # Create with wrong invite
+    r = requests.post(
+        f"{API_PREFIX}/auth/register",
+        json={
+            "name": "valid",
+            "email": VALID_USER_EMAIL,
+            "password": VALID_USER_PW,
+            "inviteToken": "abcdefg",
+        },
+    )
+    assert r.status_code == 422
 
 
 def test_register_user_valid_password():
