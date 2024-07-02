@@ -926,22 +926,17 @@ class OrgOps:
             )
 
         # profiles
+        profile_userid_fields = ["userid", "createdBy", "modifiedBy"]
         for profile in org_data.get("profiles", []):
             profile = json_stream.to_standard_types(profile)
+
+            # Update userid if necessary
+            for userid_field in profile_userid_fields:
+                old_userid = profile.get(userid_field)
+                if old_userid and old_userid in user_id_map:
+                    profile[userid_field] = user_id_map[old_userid]
+
             profile_obj = Profile.from_dict(profile)
-
-            # Update userid if necessarys
-            old_userid = profile.get("userid")
-            if old_userid and old_userid in user_id_map:
-                profile_obj.userid = user_id_map[old_userid]
-
-            old_created_by = profile.get("createdBy")
-            if old_created_by and old_created_by in user_id_map:
-                profile_obj.createdBy = user_id_map[old_created_by]
-
-            old_modified_by = profile.get("modifiedBy")
-            if old_modified_by and old_modified_by in user_id_map:
-                profile_obj.modifiedBy = user_id_map[old_modified_by]
 
             # Update storage ref if necessary
             if profile_obj.resource and storage_name and new_storage_ref:
@@ -953,6 +948,7 @@ class OrgOps:
         workflow_userid_fields = ["createdBy", "modifiedBy", "lastStartedBy"]
         for workflow in org_data.get("workflows", []):
             workflow = json_stream.to_standard_types(workflow)
+
             # Update userid fields if necessary
             for userid_field in workflow_userid_fields:
                 old_userid = workflow.get(userid_field)
