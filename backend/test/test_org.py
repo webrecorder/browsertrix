@@ -706,7 +706,7 @@ def test_login_existing_user_for_invite():
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["firstOrgAdmin"] == True
+    assert data["firstOrgOwner"] == True
     assert data["orgName"] == data["oid"]
     assert data["orgName"] == data["orgSlug"]
 
