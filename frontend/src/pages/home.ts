@@ -2,7 +2,7 @@ import { localized, msg, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { sortBy } from "lodash/fp";
+import sortBy from "lodash/fp/sortBy";
 
 import type { InviteSuccessDetail } from "@/features/accounts/invite-form";
 import type { APIPaginatedList } from "@/types/api";

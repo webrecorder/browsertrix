@@ -4,7 +4,7 @@ import { render, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import { sortBy } from "lodash/fp";
+import sortBy from "lodash/fp/sortBy";
 
 import "broadcastchannel-polyfill";
 import "./utils/polyfills";
