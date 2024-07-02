@@ -155,6 +155,7 @@ export class Home extends LiteElement {
               </sl-button>
             </header>
             <btrix-orgs-list
+              .authState=${this.authState}
               .userInfo=${this.userInfo}
               .orgList=${this.orgList}
               @update-quotas=${this.onUpdateOrgQuotas}

@@ -39,6 +39,8 @@ export type OrgData = {
       email: string;
     };
   };
+  readOnly: boolean | null;
+  readOnlyReason: string | null;
 };
 
 export type OrgConfig = unknown;

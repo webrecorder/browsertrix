@@ -1,18 +1,21 @@
 import { localized, msg, str } from "@lit/localize";
-import type {
-  SlChangeEvent,
-  SlInput,
-  SlMenuItem,
+import {
+  // type SlChangeEvent,
+  type SlInput,
+  // type SlMenuItem,
 } from "@shoelace-style/shoelace";
+import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { css, html, nothing } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import { customElement, property, query } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { APIController } from "@/controllers/api";
 import { NavigateController } from "@/controllers/navigate";
+import { NotifyController } from "@/controllers/notify";
 import type { CurrentUser } from "@/types/user";
+import type { AuthState } from "@/utils/AuthService";
 import { formatNumber } from "@/utils/localization";
 import type { OrgData } from "@/utils/orgs";
 
@@ -27,6 +30,10 @@ export class OrgsList extends TailwindElement {
       grid-template-columns: min-content [clickable-start] 50ch auto auto [clickable-end] min-content;
     }
   `;
+
+  @property({ type: Object })
+  authState?: AuthState;
+
   @property({ type: Object })
   userInfo?: CurrentUser;
 
@@ -39,17 +46,15 @@ export class OrgsList extends TailwindElement {
   @property({ type: Object })
   currOrg?: OrgData | null = null;
 
-  @state()
-  enableDeleteButton = false;
-
-  @query("#orgDeleteDialog")
-  orgDeleteDialog?: Dialog | null;
-
   @query("#orgQuotaDialog")
-  orgQuotaDialog?: Dialog | null;
+  private readonly orgQuotaDialog?: Dialog | null;
+
+  @query("#orgReadOnlyDialog")
+  private readonly orgReadOnlyDialog?: Dialog | null;
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
+  private readonly notify = new NotifyController(this);
 
   render() {
     if (this.skeleton) {
@@ -80,107 +85,7 @@ export class OrgsList extends TailwindElement {
         </btrix-table-body>
       </btrix-table>
 
-      ${this.renderOrgDelete()} ${this.renderOrgQuotas()}
-    `;
-  }
-
-  private renderOrgDelete() {
-    return html`
-      <btrix-dialog
-        class="[--width:36rem]"
-        id="orgDeleteDialog"
-        .label=${msg(str`Confirm Org Deletion: ${this.currOrg?.name || ""}`)}
-        @sl-after-hide=${() => (this.currOrg = null)}
-      >
-        ${when(this.currOrg, (org) => {
-          const confirmationStr = msg(str`Delete ${org.name}`);
-          return html`
-            <p class="mb-3">
-              ${msg(
-                html`Are you sure you want to delete
-                  <a
-                    class="font-semibold text-primary"
-                    href="/orgs/${org.slug}"
-                    target="_blank"
-                  >
-                    ${org.name}
-                    <sl-icon
-                      name="box-arrow-up-right"
-                      label=${msg("Open in new window")}
-                    ></sl-icon> </a
-                  >? This cannot be undone.`,
-              )}
-            </p>
-            <ul class="mb-3 text-neutral-600">
-              <li>${msg(str`Slug: ${org.slug}`)}</li>
-              <li>
-                ${msg(
-                  str`Members: ${Object.keys(org.users || {}).length.toLocaleString()}`,
-                )}
-              </li>
-            </ul>
-            <p class="mb-3">
-              ${msg(
-                html`Deleting an org will delete all
-                  <strong class="font-semibold">
-                    <sl-format-bytes value=${org.bytesStored}></sl-format-bytes>
-                  </strong>
-                  of data associated with the org.`,
-              )}
-            </p>
-            <ul class="mb-3 text-neutral-600">
-              <li>
-                ${msg(
-                  html`Crawls:
-                    <sl-format-bytes
-                      value=${org.bytesStoredCrawls}
-                    ></sl-format-bytes>`,
-                )}
-              </li>
-              <li>
-                ${msg(
-                  html`Uploads:
-                    <sl-format-bytes
-                      value=${org.bytesStoredUploads}
-                    ></sl-format-bytes>`,
-                )}
-              </li>
-              <li>
-                ${msg(
-                  html`Profiles:
-                    <sl-format-bytes
-                      value=${org.bytesStoredProfiles}
-                    ></sl-format-bytes>`,
-                )}
-              </li>
-            </ul>
-            <sl-divider></sl-divider>
-            <sl-input
-              placeholder=${confirmationStr}
-              @sl-input=${(e: SlChangeEvent) => {
-                const { value } = e.target as SlInput;
-                this.enableDeleteButton = value === confirmationStr;
-              }}
-            >
-              <strong slot="label" class="font-semibold">
-                ${msg(str`Type "${confirmationStr}" to confirm`)}
-              </strong>
-            </sl-input>
-          `;
-        })}
-        <div slot="footer" class="flex justify-end">
-          <sl-button
-            size="small"
-            @click=${() => {
-              console.log("TODO");
-            }}
-            variant="danger"
-            ?disabled=${!this.enableDeleteButton}
-          >
-            ${msg("Delete Org")}
-          </sl-button>
-        </div>
-      </btrix-dialog>
+      ${this.renderOrgQuotas()} ${this.renderOrgReadOnly()}
     `;
   }
 
@@ -239,6 +144,70 @@ export class OrgsList extends TailwindElement {
     `;
   }
 
+  private renderOrgReadOnly() {
+    return html`
+      <btrix-dialog
+        class="[--width:36rem]"
+        id="orgReadOnlyDialog"
+        .label=${msg(str`Make Read-Only?`)}
+        @sl-after-hide=${() => (this.currOrg = null)}
+      >
+        ${when(this.currOrg, (org) => {
+          return html`
+            <p class="mb-3">
+              ${msg(
+                html`Are you sure you want to make
+                  <span class="font-semibold">${org.name}</span>
+                  read-only? All members' access will be reduced to the viewer
+                  role.`,
+              )}
+            </p>
+            <ul class="mb-3 text-neutral-600">
+              <li>
+                ${msg("Slug:")}
+                <a
+                  class="font-semibold text-primary hover:text-primary-500"
+                  href="/orgs/${org.slug}"
+                  target="_blank"
+                >
+                  ${org.slug}
+                </a>
+              </li>
+              <li>
+                ${msg("Members:")}
+                <a
+                  class="font-semibold text-primary hover:text-primary-500"
+                  href="/orgs/${org.slug}/settings/members"
+                  target="_blank"
+                >
+                  ${formatNumber(Object.keys(org.users || {}).length)}
+                </a>
+              </li>
+            </ul>
+            <form @submit=${this.onSubmitReadOnly}>
+              <sl-input
+                name="readOnlyReason"
+                label=${msg("Reason")}
+                placeholder=${msg("Enter reason for making org read-only")}
+                required
+              ></sl-input>
+            </form>
+
+            <div slot="footer" class="flex justify-end">
+              <sl-button
+                size="small"
+                @click=${this.orgReadOnlyDialog?.submit}
+                variant="primary"
+              >
+                ${msg("Make Read-Only")}
+              </sl-button>
+            </div>
+          `;
+        })}
+      </btrix-dialog>
+    `;
+  }
+
   private onUpdateQuota(e: CustomEvent) {
     const inputEl = e.target as SlInput;
     const quotas = this.currOrg?.quotas;
@@ -261,6 +230,64 @@ export class OrgsList extends TailwindElement {
     }
   }
 
+  private async onSubmitReadOnly(e: SubmitEvent) {
+    e.preventDefault();
+
+    if (!this.currOrg) return;
+
+    const formEl = e.target as HTMLFormElement;
+    if (!(await this.checkFormValidity(formEl))) return;
+
+    const { readOnlyReason } = serialize(formEl) as { readOnlyReason: string };
+
+    await this.updateReadOnly(this.currOrg, {
+      readOnly: true,
+      readOnlyReason: readOnlyReason,
+    });
+
+    void this.orgReadOnlyDialog?.hide();
+  }
+
+  private async updateReadOnly(
+    org: OrgData,
+    params: Pick<OrgData, "readOnly" | "readOnlyReason">,
+  ) {
+    try {
+      await this.api.fetch(`/orgs/${org.id}/read-only`, this.authState!, {
+        method: "POST",
+        body: JSON.stringify(params),
+      });
+
+      this.orgList = this.orgList?.map((o) => {
+        if (o.id === org.id) {
+          return {
+            ...o,
+            ...params,
+          };
+        }
+        return o;
+      });
+
+      this.notify.toast({
+        message: params.readOnly
+          ? msg(str`Org "${org.name}" is read-only.`)
+          : msg(str`Org "${org.name}" is no longer read-only.`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e) {
+      console.debug(e);
+
+      this.notify.toast({
+        message: msg(
+          "Sorry, couldn't update org read-only state at this time.",
+        ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
   private readonly renderOrg = (org: OrgData) => {
     if (!this.userInfo) return;
 
@@ -278,6 +305,43 @@ export class OrgsList extends TailwindElement {
       ></sl-icon>
     `;
 
+    let status = {
+      icon: html`<sl-icon
+        class="text-base text-success"
+        name="check-circle"
+        label=${msg("Good")}
+      ></sl-icon>`,
+      description: msg("Active"),
+    };
+
+    if (org.storageQuotaReached || org.execMinutesQuotaReached) {
+      status = {
+        icon: html`<sl-icon
+          class="text-base text-danger"
+          name="exclamation-triangle-fill"
+          label=${msg("Issue")}
+        >
+        </sl-icon>`,
+        description: org.storageQuotaReached
+          ? msg("Active with issue: Storage quota reached")
+          : msg("Active with issue: Execution minutes quota reached"),
+      };
+    }
+
+    if (org.readOnly) {
+      status = {
+        icon: html`<sl-icon
+          class="text-base text-neutral-400"
+          name="slash-circle"
+          label=${msg("Read-only")}
+        >
+        </sl-icon>`,
+        description: org.readOnlyReason
+          ? `${msg("Read-only:")} ${org.readOnlyReason}`
+          : msg("Read-only (no reason specified)"),
+      };
+    }
+
     return html`
       <btrix-table-row
         class="${isUserOrg
@@ -285,25 +349,13 @@ export class OrgsList extends TailwindElement {
           : "opacity-50"} cursor-pointer select-none border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
         <btrix-table-cell class="min-w-6 pl-2">
-          ${org.storageQuotaReached || org.execMinutesQuotaReached
-            ? html`
-                <sl-tooltip content=${msg("Quota reached")}>
-                  <sl-icon
-                    class="text-base text-danger"
-                    name="exclamation-triangle-fill"
-                  >
-                  </sl-icon>
-                </sl-tooltip>
-              `
-            : html`
-                <sl-tooltip content=${msg("No quotas exceeded")}>
-                  <sl-icon class="text-base text-success" name="check-circle">
-                  </sl-icon>
-                </sl-tooltip>
-              `}
+          <sl-tooltip content=${status.description}>
+            ${status.icon}
+          </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="p-2" rowClickTarget="a">
           <a
+            class=${org.readOnly ? "text-neutral-400" : "text-neutral-900"}
             href="/orgs/${org.slug}"
             @click=${this.navigate.link}
             aria-disabled="${!isUserOrg}"
@@ -339,18 +391,34 @@ export class OrgsList extends TailwindElement {
                 <sl-icon slot="prefix" name="gear"></sl-icon>
                 ${msg("Edit Quotas")}
               </sl-menu-item>
-              <sl-menu-item
-                style="--sl-color-neutral-700: var(--danger)"
-                @click=${(e: MouseEvent) => {
-                  if ((e.target as SlMenuItem).disabled) return;
-                  this.currOrg = org;
-                  void this.orgDeleteDialog?.show();
-                }}
-                disabled
-              >
-                <sl-icon slot="prefix" name="trash3"></sl-icon>
-                ${msg("Delete Org")}
-              </sl-menu-item>
+              ${org.readOnly
+                ? html`
+                    <sl-menu-item
+                      @click=${() => {
+                        void this.updateReadOnly(org, {
+                          readOnly: false,
+                          readOnlyReason: "",
+                        });
+                      }}
+                    >
+                      <sl-icon
+                        slot="prefix"
+                        name="arrow-counterclockwise"
+                      ></sl-icon>
+                      ${msg("Undo Read-Only")}
+                    </sl-menu-item>
+                  `
+                : html`
+                    <sl-menu-item
+                      @click=${() => {
+                        this.currOrg = org;
+                        void this.orgReadOnlyDialog?.show();
+                      }}
+                    >
+                      <sl-icon slot="prefix" name="eye"></sl-icon>
+                      ${msg("Make Read-Only")}
+                    </sl-menu-item>
+                  `}
             </sl-menu>
           </btrix-overflow-dropdown>
         </btrix-table-cell>
@@ -366,5 +434,10 @@ export class OrgsList extends TailwindElement {
         </div>
       </div>
     `;
+  }
+
+  async checkFormValidity(formEl: HTMLFormElement) {
+    await this.updateComplete;
+    return !formEl.querySelector("[data-invalid]");
   }
 }
