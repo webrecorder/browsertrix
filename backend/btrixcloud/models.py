@@ -1219,7 +1219,7 @@ class OrgImportExportData(BaseModel):
     profiles: List[Dict[str, Any]]
     workflows: List[Dict[str, Any]]
     workflowRevisions: List[Dict[str, Any]]
-    archivedItems: List[Dict[str, Any]]
+    items: List[Dict[str, Any]]
     pages: List[Dict[str, Any]]
     collections: List[Dict[str, Any]]
 
