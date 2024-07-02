@@ -222,7 +222,6 @@ class UserManager:
         """authenticate user via login form"""
         user = await self.get_by_email(email)
         if not user:
-            print("NO USER?")
             # Run the hasher to mitigate timing attack
             # Inspired from Django: https://code.djangoproject.com/ticket/20760
             get_password_hash(password)

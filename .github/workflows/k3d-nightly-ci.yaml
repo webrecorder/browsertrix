@@ -5,6 +5,9 @@ on:
     # Run daily at 8am UTC
     - cron:  '0 8 * * *'
 
+  workflow_dispatch:
+  push:
+
 jobs:
   btrix-k3d-nightly-test:
     runs-on: ubuntu-latest
