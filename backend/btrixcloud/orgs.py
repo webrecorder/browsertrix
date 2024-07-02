@@ -37,7 +37,6 @@ from .models import (
     InvitePending,
     InviteToOrgRequest,
     UserRole,
-    UserCreate,
     User,
     PaginatedResponse,
 )
@@ -378,13 +377,9 @@ class OrgOps:
     ) -> User:
         """create a regular user with given credentials"""
         try:
-            user_create = UserCreate(
-                name=add.name,
-                email=add.email,
-                password=add.password,
+            user = await self.user_manager.create_user(
+                name=add.name, email=add.email, password=add.password, is_verified=True
             )
-
-            user = await self.user_manager.create_user(user_create, is_verified=True)
             await self.add_user_to_org(org, user.id, add.role)
             return user
         except HTTPException as exc:

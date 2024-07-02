@@ -126,7 +126,12 @@ class UserManager:
             )
 
         try:
-            user = await self.create_user(create, is_verified=invite is not None)
+            user = await self.create_user(
+                name=create.name,
+                email=create.email,
+                password=create.password,
+                is_verified=invite is not None,
+            )
 
         except DuplicateKeyError:
             maybe_user = await self.get_by_email(create.email)
@@ -282,12 +287,7 @@ class UserManager:
 
         try:
             res = await self.create_user(
-                UserCreate(
-                    name=name,
-                    email=email,
-                    password=password,
-                ),
-                is_superuser=True,
+                name=name, email=email, password=password, is_superuser=True
             )
             print(f"Super user {email} created", flush=True)
             print(res, flush=True)
@@ -316,30 +316,33 @@ class UserManager:
             user.email, token, dict(request.headers) if request else None
         )
 
+    # pylint: disable=too-many-arguments
     async def create_user(
         self,
-        create: UserCreate,
+        name: str,
+        email: str,
+        password: Optional[str] = None,
         is_superuser=False,
         is_verified=False,
     ) -> User:
         """create new user in db"""
 
-        if not create.email:
+        if not email:
             raise HTTPException(status_code=400, detail="missing_user_email")
 
-        if not create.password:
-            create.password = generate_password()
+        if not password:
+            password = generate_password()
 
-        await self.validate_password(create.password)
+        await self.validate_password(password)
 
-        hashed_password = get_password_hash(create.password)
+        hashed_password = get_password_hash(password)
 
         id_ = uuid4()
 
         user = User(
             id=id_,
-            email=create.email,
-            name=create.name,
+            email=email,
+            name=name,
             hashed_password=hashed_password,
             is_superuser=is_superuser,
             is_verified=is_verified,
