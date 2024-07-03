@@ -197,7 +197,8 @@ class BackgroundJobOps:
             job_id = await self.create_delete_replica_job(
                 org, file, object_id, object_type, replica_ref
             )
-            ids.append(job_id)
+            if job_id:
+                ids.append(job_id)
 
         return {"added": True, "ids": ids}
 
@@ -209,17 +210,17 @@ class BackgroundJobOps:
         object_type: str,
         replica_ref: StorageRef,
         existing_job_id: Optional[str] = None,
-    ) -> str:
+    ) -> Optional[str]:
         """Create a job to delete one replica of a given file"""
-        replica_storage = self.storage_ops.get_org_storage_by_ref(org, replica_ref)
-        replica_endpoint, bucket_suffix = self.strip_bucket(
-            replica_storage.endpoint_url
-        )
-        replica_file_path = bucket_suffix + file.filename
-
-        job_type = BgJobType.DELETE_REPLICA.value
-
         try:
+            replica_storage = self.storage_ops.get_org_storage_by_ref(org, replica_ref)
+            replica_endpoint, bucket_suffix = self.strip_bucket(
+                replica_storage.endpoint_url
+            )
+            replica_file_path = bucket_suffix + file.filename
+
+            job_type = BgJobType.DELETE_REPLICA.value
+
             job_id = await self.crawl_manager.run_replica_job(
                 oid=str(org.id),
                 job_type=job_type,
@@ -262,11 +263,13 @@ class BackgroundJobOps:
 
             return job_id
 
+        # pylint: disable=broad-exception-caught
         except Exception as exc:
-            # pylint: disable=raise-missing-from
-            raise HTTPException(
-                status_code=400, detail=f"Error starting background job: {exc}"
+            print(
+                "warning: replica deletion job could not be started "
+                + f"for {object_type} {file}: {exc}"
             )
+            return None
 
     async def job_finished(
         self,
