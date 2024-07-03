@@ -51,7 +51,6 @@ spec:
           protocol: TCP
 
 
-
     # allow other redis
     - to:
       - namespaceSelector:
@@ -60,6 +59,11 @@ spec:
         podSelector:
           matchLabels:
             role: redis
+
+      ports:
+        - port: 6379
+          protocol: TCP
+
 
     {{ if .Values.minio_local }}
     # allow minio
@@ -70,7 +74,13 @@ spec:
         podSelector:
           matchLabels:
             app: local-minio
+
+      ports:
+        - port: 9000
+          protocol: TCP
+
     {{- end -}}
+
 
     {{ if .Values.signer.enabled }}
     # allow auth signer
@@ -81,6 +91,11 @@ spec:
        podSelector:
           matchLabels:
             app: auth-signer
+
+      ports:
+        - port: {{ .Values.signer.port | default "5053" }}
+          protocol: TCP
+
     {{- end -}}
   {{- end -}}
 {{- end -}}
