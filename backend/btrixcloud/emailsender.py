@@ -33,6 +33,8 @@ class EmailSender:
 
     log_sent_emails: bool
 
+    default_origin: str
+
     def __init__(self):
         self.sender = os.environ.get("EMAIL_SENDER") or "Browsertrix admin"
         self.password = os.environ.get("EMAIL_PASSWORD") or ""
@@ -44,7 +46,7 @@ class EmailSender:
 
         self.log_sent_emails = is_bool(os.environ.get("LOG_SENT_EMAILS"))
 
-        self.default_origin = os.environ.get("APP_ORIGIN")
+        self.default_origin = os.environ.get("APP_ORIGIN", "")
 
         self.templates = Jinja2Templates(
             directory=os.path.join(os.path.dirname(__file__), "email-templates")
@@ -99,7 +101,7 @@ class EmailSender:
             server.send_message(msg)
             # server.sendmail(self.sender, receiver, message)
 
-    def get_origin(self, headers):
+    def get_origin(self, headers) -> str:
         """Return origin of the received request"""
         if not headers:
             return self.default_origin

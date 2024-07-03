@@ -402,7 +402,7 @@ class PageOps:
 
         remaining_notes = []
         for note in page_notes:
-            if not note.get("id") in delete.delete_list:
+            if note.get("id") not in delete.delete_list:
                 remaining_notes.append(note)
 
         modified = dt_now()
