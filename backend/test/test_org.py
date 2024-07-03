@@ -703,3 +703,60 @@ def test_create_org_and_invite_existing_user(admin_auth_headers):
         "giftedExecMinutes": 0,
     }
     assert "subData" not in org
+
+
+def test_sort_orgs(admin_auth_headers):
+    # Create a few new orgs for testing
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={"name": "abc", "slug": "abc"},
+    )
+    assert r.status_code == 200
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={"name": "mno", "slug": "mno"},
+    )
+    assert r.status_code == 200
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={"name": "xyz", "slug": "xyz"},
+    )
+    assert r.status_code == 200
+
+    # Check default sorting
+    # Default org should come first, followed by alphabetical sorting ascending
+    r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
+    data = r.json()
+    orgs = data["items"]
+
+    assert orgs[0]["default"]
+
+    other_orgs = orgs[1:]
+    last_name = None
+    for org in other_orgs:
+        org_name = org["name"]
+        if last_name:
+            assert org_name > last_name
+        last_name = org_name
+
+    # Sort by name descending, ensure default org still first
+    r = requests.get(
+        f"{API_PREFIX}/orgs?sortBy=name&sortDirection=-1", headers=admin_auth_headers
+    )
+    data = r.json()
+    orgs = data["items"]
+
+    assert orgs[0]["default"]
+
+    other_orgs = orgs[1:]
+    last_name = None
+    for org in other_orgs:
+        org_name = org["name"]
+        if last_name:
+            assert org_name < last_name
+        last_name = org_name
