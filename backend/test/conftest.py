@@ -175,7 +175,6 @@ def crawler_auth_headers(admin_auth_headers, default_org_id):
             "email": CRAWLER_USERNAME,
             "password": CRAWLER_PW,
             "name": "new-crawler",
-            "description": "crawler test crawl",
             "role": 20,
         },
         headers=admin_auth_headers,
@@ -519,6 +518,11 @@ def profile_browser_2_id(admin_auth_headers, default_org_id):
 
 @pytest.fixture(scope="session")
 def profile_browser_3_id(admin_auth_headers, default_org_id):
+    return _create_profile_browser(admin_auth_headers, default_org_id)
+
+
+@pytest.fixture(scope="session")
+def profile_browser_4_id(admin_auth_headers, default_org_id):
     return _create_profile_browser(admin_auth_headers, default_org_id)
 
 

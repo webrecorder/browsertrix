@@ -3,18 +3,24 @@ Organization API handling
 """
 
 # pylint: disable=too-many-lines
+
+import json
 import math
 import os
 import time
 import urllib.parse
 from uuid import UUID, uuid4
 from datetime import datetime
+from tempfile import NamedTemporaryFile
 
-from typing import Optional, TYPE_CHECKING, Dict
+from typing import Optional, TYPE_CHECKING, Dict, Callable, List, AsyncGenerator
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
+import json_stream
+from aiostream import stream
 
 from .models import (
     SUCCESSFUL_STATES,
@@ -39,33 +45,52 @@ from .models import (
     UserRole,
     User,
     PaginatedResponse,
+    OrgImportExport,
+    CrawlConfig,
+    Crawl,
+    UploadedCrawl,
+    ConfigRevision,
+    Profile,
+    Collection,
+    OrgOutExport,
+    PageWithAllQA,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import slug_from_name, validate_slug
-
+from .utils import slug_from_name, validate_slug, JSONSerializer
 
 if TYPE_CHECKING:
     from .invites import InviteOps
+    from .basecrawls import BaseCrawlOps
+    from .users import UserManager
 else:
-    InviteOps = object
+    InviteOps = BaseCrawlOps = UserManager = object
 
 
 DEFAULT_ORG = os.environ.get("DEFAULT_ORG", "My Organization")
 
+MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
+
 
 # ============================================================================
-# pylint: disable=too-many-public-methods, too-many-instance-attributes
+# pylint: disable=too-many-public-methods, too-many-instance-attributes, too-many-locals
 class OrgOps:
     """Organization API operations"""
 
     invites: InviteOps
+    user_manager: UserManager
+    base_crawl_ops: BaseCrawlOps
     default_primary: Optional[StorageRef]
 
-    def __init__(self, mdb, invites):
+    def __init__(self, mdb, invites, user_manager):
         self.orgs = mdb["organizations"]
         self.crawls_db = mdb["crawls"]
+        self.crawl_configs_db = mdb["crawl_configs"]
+        self.configs_revs_db = mdb["configs_revs"]
         self.profiles_db = mdb["profiles"]
         self.colls_db = mdb["collections"]
+        self.users_db = mdb["users"]
+        self.pages_db = mdb["pages"]
+        self.version_db = mdb["version"]
 
         self.router = None
         self.org_viewer_dep = None
@@ -76,6 +101,12 @@ class OrgOps:
         self.default_primary = None
 
         self.invites = invites
+        self.user_manager = user_manager
+        self.register_to_org_id = os.environ.get("REGISTER_TO_ORG_ID")
+
+    def set_base_crawl_ops(self, base_crawl_ops: BaseCrawlOps) -> None:
+        """Set base crawl ops"""
+        self.base_crawl_ops = base_crawl_ops
 
     def set_default_primary_storage(self, storage: StorageRef):
         """set default primary storage"""
@@ -101,31 +132,6 @@ class OrgOps:
             return await self.orgs.insert_one(org.to_dict())
         except DuplicateKeyError:
             print(f"Organization name {org.name} already in use - skipping", flush=True)
-
-    async def create_new_org_for_user(
-        self,
-        org_name: str,
-        user: User,
-    ) -> Organization:
-        # pylint: disable=too-many-arguments
-        """Create new organization with default storage for new user"""
-        id_ = uuid4()
-
-        org = Organization(
-            id=id_,
-            name=org_name,
-            slug=slug_from_name(org_name),
-            users={str(user.id): UserRole.OWNER},
-            storage=self.default_primary,
-        )
-        primary_name = self.default_primary and self.default_primary.name
-
-        print(
-            f"Creating new org {org_name} with storage {primary_name}",
-            flush=True,
-        )
-        await self.add_org(org)
-        return org
 
     async def get_orgs_for_user(
         # pylint: disable=too-many-arguments
@@ -212,20 +218,31 @@ class OrgOps:
 
         return Organization.from_dict(res)
 
-    async def get_default_org(self) -> Optional[Organization]:
+    async def get_default_org(self) -> Organization:
         """Get default organization"""
         res = await self.orgs.find_one({"default": True})
-        if res:
-            return Organization.from_dict(res)
+        if not res:
+            raise HTTPException(status_code=500, detail="default_org_missing")
 
-        return None
+        return Organization.from_dict(res)
+
+    async def get_default_register_org(self) -> Organization:
+        """Get default organiation for new user registration, or default org"""
+        if self.register_to_org_id:
+            res = await self.get_org_by_id(UUID(self.register_to_org_id))
+            if not res:
+                raise HTTPException(
+                    status_code=500, detail="default_register_org_not_found"
+                )
+
+        return await self.get_default_org()
 
     async def create_default_org(self):
         """Create default organization if doesn't exist."""
         await self.init_index()
 
-        default_org = await self.get_default_org()
-        if default_org:
+        try:
+            default_org = await self.get_default_org()
             if default_org.name == DEFAULT_ORG:
                 print("Default organization already exists - skipping", flush=True)
             else:
@@ -234,6 +251,9 @@ class OrgOps:
                 await self.update_full(default_org)
                 print(f'Default organization renamed to "{DEFAULT_ORG}"', flush=True)
             return
+        except HTTPException:
+            # default org does not exist, create below
+            pass
 
         id_ = uuid4()
         org = Organization(
@@ -383,29 +403,27 @@ class OrgOps:
             return_document=ReturnDocument.AFTER,
         )
 
-    async def handle_new_user_invite(
-        self, invite_token: UUID, user: User
-    ) -> InvitePending:
-        """Handle invite from a new user"""
-        new_user_invite = await self.invites.get_valid_invite(invite_token, user.email)
-        await self.add_user_by_invite(new_user_invite, user)
-        await self.invites.remove_invite(invite_token)
-        return new_user_invite
-
     async def add_user_by_invite(
-        self, invite: InvitePending, user: User
+        self,
+        invite: InvitePending,
+        user: User,
+        default_org: Optional[Organization] = None,
     ) -> Organization:
-        """Add user to an org from an InvitePending, if any.
+        """Lookup an invite by user email (if new) or userid (if existing)
 
-        If there's no org to add to, raise exception
+        Remove invite after successful add
         """
-        org = invite.oid and await self.get_org_by_id(invite.oid)
+        if not invite.oid:
+            org = default_org
+        else:
+            org = await self.get_org_by_id(invite.oid)
+
         if not org:
-            raise HTTPException(
-                status_code=400, detail="Invalid Invite Code, No Such Organization"
-            )
+            raise HTTPException(status_code=400, detail="invalid_invite")
 
         await self.add_user_to_org(org, user.id, invite.role)
+
+        await self.invites.remove_invite(invite.id)
 
         # if just added first admin, and name == id, set default org name from user name
         if (
@@ -416,6 +434,20 @@ class OrgOps:
             await self.set_default_org_name_from_user_name(org, user.name)
 
         return org
+
+    async def create_new_user_for_org(
+        self, add: AddToOrgRequest, org: Organization
+    ) -> User:
+        """create a regular user with given credentials"""
+        try:
+            user = await self.user_manager.create_user(
+                name=add.name, email=add.email, password=add.password, is_verified=True
+            )
+            await self.add_user_to_org(org, user.id, add.role)
+            return user
+        except HTTPException as exc:
+            print("Error adding user to org", exc)
+            raise exc
 
     async def set_default_org_name_from_user_name(
         self, org: Organization, user_name: str
@@ -758,14 +790,290 @@ class OrgOps:
 
         return await self.orgs.find_one_and_update({"_id": org.id}, {"$set": query})
 
+    async def export_org(
+        self, org: Organization, user_manager: UserManager
+    ) -> StreamingResponse:
+        """Export all data related to org as JSON
+
+        Append async generators to list in order that we want them to be
+        exhausted in order to stream a semantically correct JSON document.
+        """
+        export_stream_generators: List[AsyncGenerator] = []
+
+        oid_query = {"oid": org.id}
+
+        org_out_export = OrgOutExport.from_dict(org.to_dict())
+        org_serialized = await org_out_export.serialize_for_export(user_manager)
+
+        version = await self.version_db.find_one()
+
+        async def json_opening_gen() -> AsyncGenerator:
+            """Async generator that opens JSON document, writes dbVersion and org"""
+            # pylint: disable=consider-using-f-string
+            opening_section = '{{"data": {{\n"dbVersion": "{0}",\n"org": {1},\n'.format(
+                version.get("version"),
+                json.dumps(org_serialized.to_dict(), cls=JSONSerializer),
+            )
+            yield opening_section.encode("utf-8")
+
+        async def json_items_gen(
+            key: str,
+            cursor,
+            doc_count: int,
+            skip_closing_comma=False,
+        ) -> AsyncGenerator:
+            """Async generator to add json items in list, keyed by supplied str"""
+            yield f'"{key}": [\n'.encode("utf-8")
+
+            doc_index = 1
+
+            async for json_item in cursor:
+                yield json.dumps(json_item, cls=JSONSerializer).encode("utf-8")
+                if doc_index < doc_count:
+                    yield b",\n"
+                else:
+                    yield b"\n"
+                doc_index += 1
+
+            yield f']{"" if skip_closing_comma else ","}\n'.encode("utf-8")
+
+        async def json_closing_gen() -> AsyncGenerator:
+            """Async generator to close JSON document"""
+            yield b"}}"
+
+        export_stream_generators.append(json_opening_gen())
+
+        # Profiles
+        count = await self.profiles_db.count_documents(oid_query)
+        cursor = self.profiles_db.find(oid_query)
+        export_stream_generators.append(json_items_gen("profiles", cursor, count))
+
+        # Workflows
+        count = await self.crawl_configs_db.count_documents(oid_query)
+        cursor = self.crawl_configs_db.find(oid_query)
+        export_stream_generators.append(json_items_gen("workflows", cursor, count))
+
+        # Workflow IDs (needed for revisions)
+        workflow_ids = []
+        cursor = self.crawl_configs_db.find(oid_query, projection=["_id"])
+        async for workflow_dict in cursor:
+            workflow_ids.append(workflow_dict.get("_id"))
+
+        # Workflow revisions
+        workflow_revs_query = {"cid": {"$in": workflow_ids}}
+        count = await self.configs_revs_db.count_documents(workflow_revs_query)
+        cursor = self.configs_revs_db.find(workflow_revs_query)
+        export_stream_generators.append(
+            json_items_gen("workflowRevisions", cursor, count)
+        )
+
+        # Items
+        count = await self.crawls_db.count_documents(oid_query)
+        cursor = self.crawls_db.find(oid_query)
+        export_stream_generators.append(json_items_gen("items", cursor, count))
+
+        # Pages
+        count = await self.pages_db.count_documents(oid_query)
+        cursor = self.pages_db.find(oid_query)
+        export_stream_generators.append(json_items_gen("pages", cursor, count))
+
+        # Collections
+        count = await self.colls_db.count_documents(oid_query)
+        cursor = self.colls_db.find(oid_query)
+        export_stream_generators.append(
+            json_items_gen("collections", cursor, count, True)
+        )
+
+        export_stream_generators.append(json_closing_gen())
+
+        return StreamingResponse(stream.chain(*export_stream_generators))
+
+    async def import_org(
+        self,
+        stream_file_object,
+        ignore_version: bool = False,
+        storage_name: Optional[str] = None,
+    ):
+        """Import org from exported org JSON
+
+        :param stream: Stream of org JSON export
+        :param ignore_version: Ignore db version mismatch between JSON and db
+        :param storage_name: Update storage refs to use new name if provided
+        """
+        # pylint: disable=too-many-branches, too-many-statements
+
+        org_stream = json_stream.load(stream_file_object)
+        org_data = org_stream["data"]
+
+        # dbVersion
+        version_res = await self.version_db.find_one()
+        version = version_res["version"]
+        stream_db_version = org_data.get("dbVersion")
+        if version != stream_db_version and not ignore_version:
+            print(
+                f"Export db version: {stream_db_version} doesn't match db: {version}, quitting",
+                flush=True,
+            )
+            raise HTTPException(status_code=400, detail="db_version_mismatch")
+
+        # org
+        stream_org = org_data["org"]
+        stream_org = json_stream.to_standard_types(stream_org)
+        oid = UUID(stream_org["_id"])
+
+        existing_org: Optional[Organization] = None
+        try:
+            existing_org = await self.get_org_by_id(oid)
+        except HTTPException:
+            pass
+
+        if existing_org:
+            print(f"Org {oid} already exists, quitting", flush=True)
+            raise HTTPException(status_code=400, detail="org_already_exists")
+
+        new_storage_ref = None
+        if storage_name:
+            new_storage_ref = StorageRef(name=storage_name, custom=False)
+
+        org = Organization.from_dict(stream_org)
+        if storage_name and new_storage_ref:
+            org.storage = new_storage_ref
+        await self.orgs.insert_one(org.to_dict())
+
+        # Track old->new userids so that we can update as necessary in db docs
+        user_id_map = {}
+
+        # Users are imported with a random password and will need to go through
+        # the reset password workflow using their email address after import.
+        for user in stream_org.get("userDetails", []):  # type: ignore
+            try:
+                new_user = await self.user_manager.create_user(
+                    email=user["email"],
+                    name=user["name"],
+                )
+                user_id_map[user.get("id")] = new_user.id
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                maybe_user = await self.user_manager.get_by_email(user["email"])
+                assert maybe_user
+                new_user = maybe_user
+
+            await self.add_user_to_org(
+                org=org, userid=new_user.id, role=UserRole(int(user.get("role", 10)))
+            )
+
+        # profiles
+        profile_userid_fields = ["userid", "createdBy", "modifiedBy"]
+        for profile in org_data.get("profiles", []):
+            profile = json_stream.to_standard_types(profile)
+
+            # Update userid if necessary
+            for userid_field in profile_userid_fields:
+                old_userid = profile.get(userid_field)
+                if old_userid and old_userid in user_id_map:
+                    profile[userid_field] = user_id_map[old_userid]
+
+            profile_obj = Profile.from_dict(profile)
+
+            # Update storage ref if necessary
+            if profile_obj.resource and storage_name and new_storage_ref:
+                profile_obj.resource.storage = new_storage_ref
+
+            await self.profiles_db.insert_one(profile_obj.to_dict())
+
+        # workflows
+        workflow_userid_fields = ["createdBy", "modifiedBy", "lastStartedBy"]
+        for workflow in org_data.get("workflows", []):
+            workflow = json_stream.to_standard_types(workflow)
+
+            # Update userid fields if necessary
+            for userid_field in workflow_userid_fields:
+                old_userid = workflow.get(userid_field)
+                if old_userid and old_userid in user_id_map:
+                    workflow[userid_field] = user_id_map[old_userid]
+
+            # Ensure scale isn't above max_scale
+            workflow_scale = workflow.get("scale", 1)
+            workflow["scale"] = max(workflow_scale, MAX_CRAWL_SCALE)
+
+            # Ensure crawlerChannel is set
+            if not workflow.get("crawlerChannel"):
+                workflow["crawlerChannel"] = "default"
+
+            crawl_config = CrawlConfig.from_dict(workflow)
+            await self.crawl_configs_db.insert_one(crawl_config.to_dict())
+
+        # workflowRevisions
+        for rev in org_data.get("workflowRevisions", []):
+            rev = json_stream.to_standard_types(rev)
+            # Update userid if necessary
+            old_userid = rev.get("modifiedBy")
+            if old_userid and old_userid in user_id_map:
+                rev["modifiedBy"] = user_id_map[old_userid]
+
+            await self.configs_revs_db.insert_one(
+                ConfigRevision.from_dict(rev).to_dict()
+            )
+
+        # archivedItems
+        for item in org_data.get("items", []):
+            item = json_stream.to_standard_types(item)
+            item_id = str(item["_id"])
+
+            item_obj = None
+            if item["type"] == "crawl":
+                # Ensure crawlerChannel is set
+                if not item.get("crawlerChannel"):
+                    item["crawlerChannel"] = "default"
+                item_obj = Crawl.from_dict(item)
+            if item["type"] == "upload":
+                item_obj = UploadedCrawl.from_dict(item)  # type: ignore
+            if not item_obj:
+                print(f"Archived item {item_id} has no type, skipping", flush=True)
+                continue
+
+            # Update userid if necessary
+            old_userid = item.get("modifiedBy")
+            if old_userid and old_userid in user_id_map:
+                item_obj.userid = user_id_map[old_userid]
+
+            # Update storage refs if necessary
+            if storage_name and new_storage_ref:
+                for file_ in item_obj.files:
+                    file_.storage = new_storage_ref
+
+            await self.crawls_db.insert_one(item_obj.to_dict())
+
+            # Regenerate presigned URLs
+            await self.base_crawl_ops.resolve_signed_urls(
+                item_obj.files, org, update_presigned_url=True, crawl_id=item_id
+            )
+
+        # pages
+        for page in org_data.get("pages", []):
+            page = json_stream.to_standard_types(page)
+            await self.pages_db.insert_one(PageWithAllQA.from_dict(page).to_dict())
+
+        # collections
+        for collection in org_data.get("collections", []):
+            collection = json_stream.to_standard_types(collection)
+            await self.colls_db.insert_one(Collection.from_dict(collection).to_dict())
+
 
 # ============================================================================
 # pylint: disable=too-many-statements, too-many-arguments
-def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secret_dep):
+def init_orgs_api(
+    app,
+    mdb,
+    user_manager: UserManager,
+    invites: InviteOps,
+    user_dep: Callable,
+    user_or_shared_secret_dep: Callable,
+):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
 
-    ops = OrgOps(mdb, invites)
+    ops = OrgOps(mdb, invites, user_manager)
 
     async def org_dep(oid: UUID, user: User = Depends(user_dep)):
         org = await ops.get_org_for_user_by_id(oid, user)
@@ -873,17 +1181,16 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         result = {"added": True, "id": id_}
 
         if new_org.firstAdminInviteEmail:
-            new_user, token = await invites.invite_user(
+            is_new, token = await invites.invite_user(
                 InviteToOrgRequest(
                     email=new_org.firstAdminInviteEmail, role=UserRole.OWNER
                 ),
                 user,
                 user_manager,
                 org=org,
-                allow_existing=True,
-                headers=request.headers,
+                headers=dict(request.headers),
             )
-            if new_user:
+            if is_new:
                 result["invited"] = "new_user"
             else:
                 result["invited"] = "existing_user"
@@ -986,23 +1293,23 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
-        new_user, _ = await invites.invite_user(
+        is_new, token = await invites.invite_user(
             invite,
             user,
             user_manager,
             org=org,
-            allow_existing=True,
-            headers=request.headers,
+            headers=dict(request.headers),
         )
-        if new_user:
-            return {"invited": "new_user"}
+        if is_new:
+            return {"invited": "new_user", "token": token}
 
-        return {"invited": "existing_user"}
+        return {"invited": "existing_user", "token": token}
 
     @app.post("/orgs/invite-accept/{token}", tags=["invites"])
-    async def accept_invite(token: str, user: User = Depends(user_dep)):
-        invite = await invites.accept_user_invite(user, token, user_manager)
-
+    async def accept_invite(token: UUID, user: User = Depends(user_dep)):
+        invite = await ops.invites.get_valid_invite(
+            token, email=user.email, userid=user.id
+        )
         org = await ops.add_user_by_invite(invite, user)
         org_out = await org.serialize_for_user(user, user_manager)
         return {"added": True, "org": org_out}
@@ -1014,7 +1321,7 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         page: int = 1,
     ):
         pending_invites, total = await user_manager.invites.get_pending_invites(
-            org, page_size=pageSize, page=page
+            user_manager, org, page_size=pageSize, page=page
         )
         return paginated_format(pending_invites, total, page, pageSize)
 
@@ -1037,6 +1344,8 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         remove: RemoveFromOrg, org: Organization = Depends(org_owner_dep)
     ) -> dict[str, bool]:
         other_user = await user_manager.get_by_email(remove.email)
+        if not other_user:
+            raise HTTPException(status_code=404, detail="no_such_org_user")
 
         if org.is_owner(other_user):
             org_owners = await ops.get_org_owners(org)
@@ -1055,17 +1364,14 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
 
     @router.post("/add-user", tags=["invites"])
     async def add_new_user_to_org(
-        invite: AddToOrgRequest,
+        add_to_org: AddToOrgRequest,
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        new_user = await user_manager.create_non_super_user(
-            invite.email, invite.password, invite.name
-        )
-        await ops.add_user_to_org(org, new_user.id, invite.role)
+        await ops.create_new_user_for_org(add_to_org, org)
         return {"added": True}
 
     @router.get("/metrics", tags=["organizations"], response_model=OrgMetrics)
@@ -1083,5 +1389,42 @@ def init_orgs_api(app, mdb, user_manager, invites, user_dep, user_or_shared_secr
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
         return await ops.get_org_slugs_by_ids()
+
+    @router.get("/export/json", tags=["organizations"], response_model=OrgImportExport)
+    async def export_org(
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return await ops.export_org(org, user_manager)
+
+    @app.post("/orgs/import/json", tags=["organizations"])
+    async def import_org(
+        request: Request,
+        user: User = Depends(user_dep),
+        ignoreVersion: bool = False,
+        storageName: Optional[str] = None,
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        # pylint: disable=consider-using-with
+        temp_file = NamedTemporaryFile(delete=False)
+        async for chunk in request.stream():
+            temp_file.write(chunk)
+        temp_file.seek(0)
+
+        with open(temp_file.name, "rb") as stream_file_object:
+            await ops.import_org(
+                stream_file_object,
+                ignore_version=ignoreVersion,
+                storage_name=storageName,
+            )
+
+        temp_file.close()
+
+        return {"imported": True}
 
     return ops
