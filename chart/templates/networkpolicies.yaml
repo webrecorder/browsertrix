@@ -85,10 +85,10 @@ spec:
     {{ if .Values.signer.enabled }}
     # allow auth signer
     - to:
-     - namespaceSelector:
+      - namespaceSelector:
           matchLabels:
             kubernetes.io/metadata.name: {{ .Release.Namespace }}
-       podSelector:
+        podSelector:
           matchLabels:
             app: auth-signer
 
