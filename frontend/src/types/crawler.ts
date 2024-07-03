@@ -175,6 +175,8 @@ type ArchivedItemBase = {
   activeQAStats: { done: number; found: number } | null;
   lastQAState: CrawlState | null;
   lastQAStarted: string | null;
+  filePageCount?: number;
+  errorPageCount?: number;
 };
 
 export type Crawl = ArchivedItemBase &
