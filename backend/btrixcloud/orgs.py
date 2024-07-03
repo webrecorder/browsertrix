@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 
-from typing import Optional, TYPE_CHECKING, Dict, Callable, List, AsyncGenerator
+from typing import Optional, TYPE_CHECKING, Dict, Callable, List, AsyncGenerator, Any
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -140,7 +140,7 @@ class OrgOps:
         role: UserRole = UserRole.VIEWER,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sort_by: Optional[str] = "name",
+        sort_by: str = "name",
         sort_direction: int = 1,
     ):
         """Get all orgs a user is a member of"""
@@ -150,12 +150,11 @@ class OrgOps:
         page = page - 1
         skip = page_size * page
 
-        if user.is_superuser:
-            query: Dict[str, object] = {}
-        else:
-            query: Dict[str, object] = {f"users.{user.id}": {"$gte": role.value}}
+        query: Dict[str, Any] = {}
+        if not user.is_superuser:
+            query[f"users.{user.id}"] = {"$gte": role.value}
 
-        aggregate = [{"$match": query}]
+        aggregate: List[Dict[str, Any]] = [{"$match": query}]
 
         # Ensure default org is always first, then sort on sort_by if set
         sort_query = {"default": -1}
@@ -1132,8 +1131,8 @@ def init_orgs_api(
         user: User = Depends(user_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        sortBy: Optional[str] = "name",
-        sortDirection: Optional[int] = 1,
+        sortBy: str = "name",
+        sortDirection: int = 1,
     ):
         results, total = await ops.get_orgs_for_user(
             user,
