@@ -138,7 +138,7 @@ class OrgOps:
         sort_direction: int = 1,
     ):
         """Get all orgs a user is a member of"""
-        # pylint: disable=duplicate-code
+        # pylint: disable=duplicate-code,too-many-locals
 
         # Zero-index page for query
         page = page - 1
