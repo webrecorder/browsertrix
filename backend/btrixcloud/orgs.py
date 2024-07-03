@@ -10,7 +10,7 @@ import urllib.parse
 from uuid import UUID, uuid4
 from datetime import datetime
 
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Dict
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -136,9 +136,10 @@ class OrgOps:
         page: int = 1,
         sort_by: Optional[str] = "name",
         sort_direction: int = 1,
-        calculate_total=True,
     ):
         """Get all orgs a user is a member of"""
+        # pylint: disable=duplicate-code
+
         # Zero-index page for query
         page = page - 1
         skip = page_size * page

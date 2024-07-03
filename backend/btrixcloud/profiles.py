@@ -274,7 +274,7 @@ class ProfileOps:
         sort_direction: int = -1,
     ):
         """list all profiles"""
-        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-locals,duplicate-code
 
         # Zero-index page for query
         page = page - 1
