@@ -1,12 +1,8 @@
 import { localized, msg, str } from "@lit/localize";
-import {
-  // type SlChangeEvent,
-  type SlInput,
-  // type SlMenuItem,
-} from "@shoelace-style/shoelace";
+import type { SlChangeEvent, SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { css, html, nothing } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -46,11 +42,17 @@ export class OrgsList extends TailwindElement {
   @property({ type: Object })
   currOrg?: OrgData | null = null;
 
+  @state()
+  private enableDeleteButton = false;
+
   @query("#orgQuotaDialog")
   private readonly orgQuotaDialog?: Dialog | null;
 
   @query("#orgReadOnlyDialog")
   private readonly orgReadOnlyDialog?: Dialog | null;
+
+  @query("#orgDeleteDialog")
+  private readonly orgDeleteDialog?: Dialog | null;
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
@@ -86,6 +88,7 @@ export class OrgsList extends TailwindElement {
       </btrix-table>
 
       ${this.renderOrgQuotas()} ${this.renderOrgReadOnly()}
+      ${this.renderOrgDelete()}
     `;
   }
 
@@ -157,7 +160,7 @@ export class OrgsList extends TailwindElement {
             <p class="mb-3">
               ${msg(
                 html`Are you sure you want to make
-                  <span class="font-semibold">${org.name}</span>
+                  <strong class="font-semibold">${org.name}</strong>
                   read-only? Members will no longer be able to crawl, upload
                   files, create browser profiles, or create collections.`,
               )}
@@ -204,6 +207,109 @@ export class OrgsList extends TailwindElement {
             </div>
           `;
         })}
+      </btrix-dialog>
+    `;
+  }
+
+  private renderOrgDelete() {
+    return html`
+      <btrix-dialog
+        class="[--width:36rem]"
+        id="orgDeleteDialog"
+        .label=${msg(str`Confirm Org Deletion: ${this.currOrg?.name || ""}`)}
+        @sl-after-hide=${() => (this.currOrg = null)}
+      >
+        ${when(this.currOrg, (org) => {
+          const confirmationStr = msg(str`Delete ${org.name}`);
+          return html`
+            <p class="mb-3">
+              ${msg(
+                html`Are you sure you want to delete
+                  <strong class="font-semibold">${org.name}</strong>? This
+                  cannot be undone.`,
+              )}
+            </p>
+            <ul class="mb-3 text-neutral-600">
+              <li>
+                ${msg(str`Slug:`)}
+                <a
+                  class="font-semibold text-primary hover:text-primary-500"
+                  href="/orgs/${org.slug}"
+                  target="_blank"
+                >
+                  ${org.slug}
+                </a>
+              </li>
+              <li>
+                ${msg("Members:")}
+                <a
+                  class="font-semibold text-primary hover:text-primary-500"
+                  href="/orgs/${org.slug}/settings/members"
+                  target="_blank"
+                >
+                  ${formatNumber(Object.keys(org.users || {}).length)}
+                </a>
+              </li>
+            </ul>
+            <p class="mb-3">
+              ${msg(
+                html`Deleting an org will delete all
+                  <strong class="font-semibold">
+                    <sl-format-bytes value=${org.bytesStored}></sl-format-bytes>
+                  </strong>
+                  of data associated with the org.`,
+              )}
+            </p>
+            <ul class="mb-3 text-neutral-600">
+              <li>
+                ${msg(
+                  html`Crawls:
+                    <sl-format-bytes
+                      value=${org.bytesStoredCrawls}
+                    ></sl-format-bytes>`,
+                )}
+              </li>
+              <li>
+                ${msg(
+                  html`Uploads:
+                    <sl-format-bytes
+                      value=${org.bytesStoredUploads}
+                    ></sl-format-bytes>`,
+                )}
+              </li>
+              <li>
+                ${msg(
+                  html`Profiles:
+                    <sl-format-bytes
+                      value=${org.bytesStoredProfiles}
+                    ></sl-format-bytes>`,
+                )}
+              </li>
+            </ul>
+            <sl-divider></sl-divider>
+            <sl-input
+              placeholder=${confirmationStr}
+              @sl-input=${(e: SlChangeEvent) => {
+                const { value } = e.target as SlInput;
+                this.enableDeleteButton = value === confirmationStr;
+              }}
+            >
+              <strong slot="label" class="font-semibold">
+                ${msg(str`Type "${confirmationStr}" to confirm`)}
+              </strong>
+            </sl-input>
+          `;
+        })}
+        <div slot="footer" class="flex justify-end">
+          <sl-button
+            size="small"
+            @click=${this.deleteOrg}
+            variant="danger"
+            ?disabled=${!this.enableDeleteButton}
+          >
+            ${msg("Delete Org")}
+          </sl-button>
+        </div>
       </btrix-dialog>
     `;
   }
@@ -282,6 +388,30 @@ export class OrgsList extends TailwindElement {
         message: msg(
           "Sorry, couldn't update org read-only state at this time.",
         ),
+        variant: "danger",
+        icon: "exclamation-octagon",
+      });
+    }
+  }
+
+  private async deleteOrg(org: OrgData) {
+    try {
+      await this.api.fetch(`/orgs/${org.id}`, this.authState!, {
+        method: "DELETE",
+      });
+
+      this.orgList = this.orgList?.filter((o) => o.id !== org.id);
+
+      this.notify.toast({
+        message: msg(str`Org "${org.name}" has been deleted.`),
+        variant: "success",
+        icon: "check2-circle",
+      });
+    } catch (e) {
+      console.debug(e);
+
+      this.notify.toast({
+        message: msg("Sorry, couldn't delete org at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
       });
@@ -419,6 +549,17 @@ export class OrgsList extends TailwindElement {
                       ${msg("Make Read-Only")}
                     </sl-menu-item>
                   `}
+              <sl-divider></sl-divider>
+              <sl-menu-item
+                style="--sl-color-neutral-700: var(--danger)"
+                @click=${() => {
+                  this.currOrg = org;
+                  void this.orgDeleteDialog?.show();
+                }}
+              >
+                <sl-icon slot="prefix" name="trash3"></sl-icon>
+                ${msg("Delete Org")}
+              </sl-menu-item>
             </sl-menu>
           </btrix-overflow-dropdown>
         </btrix-table-cell>
