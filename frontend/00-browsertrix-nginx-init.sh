@@ -13,6 +13,6 @@ else
 fi
 
 mkdir -p /etc/nginx/resolvers/
-echo resolver $(awk 'BEGIN{ORS=" "} $1=="nameserver" {print $2}' /etc/resolv.conf) valid=10s ipv6=off";" > /etc/nginx/resolvers/resolvers.conf
+echo resolver $(grep -oP '(?<=nameserver\s)[^\s]+' /etc/resolv.conf | awk '{ if ($1 ~ /:/) { printf "[" $1 "] "; } else { printf $1 " "; } }') valid=10s ipv6=off";" > /etc/nginx/resolvers/resolvers.conf
 
 cat /etc/nginx/resolvers/resolvers.conf
