@@ -269,7 +269,18 @@ export class ArchivedItemDetailQA extends TailwindElement {
 
         <btrix-tab-group-panel name="pages" class="block">
           <btrix-card class="gap-y-1">
-            <div slot="title">${msg("Crawl Results")}</div>
+            <div slot="title" class="flex flex-wrap justify-between">
+              ${msg("Crawl Results")}
+              <div class="text-neutral-500">
+                <sl-tooltip
+                  content=${msg(
+                    "Non-HTML files captured as pages are known good files that the crawler found as clickable links on a page and don't need to be analyzed. Failed pages did not respond when the crawler tried to visit them.",
+                  )}
+                >
+                  <sl-icon class="text-base" name="info-circle"></sl-icon>
+                </sl-tooltip>
+              </div>
+            </div>
             <div>
               <p>
                 <span class="text-primary">${htmlCount}</span> ${msg(
