@@ -998,8 +998,8 @@ class SubscriptionUpdate(BaseModel):
 
     subId: str
     status: str
-    futureCancelDate: datetime
-    details: Optional[Dict[str, Any]] = {}
+    futureCancelDate: Optional[datetime] = None
+    details: Optional[Dict[str, Any]] = None
 
 
 # ============================================================================

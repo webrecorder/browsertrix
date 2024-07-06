@@ -67,12 +67,14 @@ class SubOps:
     async def update_subscription(self, update: SubscriptionUpdate):
         """update subs"""
 
-        result = await self.org_ops.update_subscription_data(update)
+        org = await self.org_ops.update_subscription_data(update)
 
-        if not result:
+        if not org:
             raise HTTPException(
                 status_code=404, detail="org_for_subscription_not_found"
             )
+
+        print("ORG SUB", org.subData)
 
         await self.add_sub_event(update)
         return {"updated": True}
@@ -110,7 +112,7 @@ class SubOps:
         self, event: Union[SubscriptionCreate, SubscriptionUpdate, SubscriptionCancel]
     ) -> None:
         """add a subscription event to the db"""
-        data = event.dict()
+        data = event.dict(exclude_unset=True)
         data["_id"] = uuid4()
         await self.subs.insert_one(data)
 

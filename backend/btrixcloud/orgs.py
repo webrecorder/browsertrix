@@ -354,13 +354,16 @@ class OrgOps:
         res = await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
         return res is not None
 
-    async def update_subscription_data(self, update: SubscriptionUpdate) -> bool:
+    async def update_subscription_data(
+        self, update: SubscriptionUpdate
+    ) -> Optional[Organization]:
         """Update subscription by id"""
-        res = await self.orgs.find_one_and_update(
+        org_data = await self.orgs.find_one_and_update(
             {"subData.subId": update.subId},
-            {"$set": {"subData": update.dict()}},
+            {"$set": {"subData": update.dict(exclude_unset=True)}},
+            return_document=ReturnDocument.AFTER,
         )
-        return res is not None
+        return Organization.from_dict(org_data) if org_data else None
 
     async def cancel_subscription_data(
         self, cancel: SubscriptionCancel
@@ -1147,7 +1150,7 @@ class OrgOps:
 
     async def delete_org_and_data(
         self, org: Organization, user_manager: UserManager
-    ) -> bool:
+    ) -> None:
         """Delete org and all of its associated data."""
         print(f"Deleting org: {org.slug} {org.name} {org.id}")
         # Delete archived items
@@ -1198,8 +1201,6 @@ class OrgOps:
 
         # Delete org
         await self.orgs.delete_one({"_id": org.id})
-
-        return True
 
 
 # ============================================================================
@@ -1309,8 +1310,8 @@ def init_orgs_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        res = await ops.delete_org_and_data(org, user_manager)
-        return {"deleted": res}
+        await ops.delete_org_and_data(org, user_manager)
+        return {"deleted": True}
 
     @router.post("/rename", tags=["organizations"])
     async def rename_org(

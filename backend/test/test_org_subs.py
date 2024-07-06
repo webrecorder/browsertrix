@@ -14,6 +14,27 @@ VALID_PASSWORD = "ValidPassW0rd!"
 invite_email = "test-user@example.com"
 
 
+def test_create_sub_org_invalid_auth(crawler_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/create",
+        headers=crawler_auth_headers,
+        json={
+            "subId": "123",
+            "status": "active",
+            "firstAdminInviteEmail": invite_email,
+            "quotas": {
+                "maxPagesPerCrawl": 100,
+                "maxConcurrentCrawls": 1,
+                "storageQuota": 1000000,
+                "maxExecMinutesPerMonth": 1000,
+            },
+            "details": {"extra": "data"},
+        },
+    )
+
+    assert r.status_code == 403
+
+
 def test_create_sub_org_and_invite_new_user(admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/subscriptions/create",
@@ -205,6 +226,20 @@ def test_login_existing_user_for_invite():
     assert "subData" not in org
 
 
+def test_update_sub(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/update",
+        headers=admin_auth_headers,
+        json={
+            "subId": "123",
+            "status": "payment-failed",
+        },
+    )
+
+    assert r.status_code == 200
+    assert r.json() == {"updated": True}
+
+
 def test_cancel_sub_and_delete_org(admin_auth_headers):
     # cancel, resulting in org deletion
     r = requests.post(
@@ -253,7 +288,7 @@ def test_cancel_sub_and_no_delete_org(admin_auth_headers):
     assert data["readOnlyReason"] == "canceled"
 
     r = requests.post(
-        f"{API_PREFIX}/subscriptions/delete",
+        f"{API_PREFIX}/subscriptions/cancel",
         headers=admin_auth_headers,
         json={
             "subId": "234",
