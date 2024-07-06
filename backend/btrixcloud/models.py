@@ -1025,6 +1025,8 @@ class SubscriptionData(BaseModel):
 
 # ============================================================================
 class SubscriptionDataOut(BaseModel):
+    """Subscription info output model"""
+
     status: str
     portalUrl: str = ""
 

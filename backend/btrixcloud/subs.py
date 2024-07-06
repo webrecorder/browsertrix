@@ -3,7 +3,6 @@ Subscription API handling
 """
 
 from typing import Callable, Union
-from uuid import uuid4
 
 from fastapi import Depends, HTTPException, Request
 
