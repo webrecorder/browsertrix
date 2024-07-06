@@ -138,13 +138,14 @@ class OrgOps:
         """set default primary storage"""
         self.default_primary = storage
 
-    async def init_index(self):
+    async def init_index(self) -> None:
         """init lookup index"""
         while True:
             try:
                 await self.orgs.create_index("name", unique=True)
                 await self.orgs.create_index("subData.subId", unique=True, sparse=True)
-                return await self.orgs.create_index("slug", unique=True)
+                await self.orgs.create_index("slug", unique=True)
+                break
             # pylint: disable=duplicate-code
             except AutoReconnect:
                 print(
@@ -161,7 +162,7 @@ class OrgOps:
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         calculate_total=True,
-    ):
+    ) -> tuple[List[Organization], int]:
         """Get all orgs a user is a member of"""
         # Zero-index page for query
         page = page - 1
@@ -184,7 +185,7 @@ class OrgOps:
 
     async def get_org_for_user_by_id(
         self, oid: UUID, user: User, role: UserRole = UserRole.VIEWER
-    ):
+    ) -> Optional[Organization]:
         """Get an org for user by unique id"""
         query: dict[str, object]
         if user.is_superuser:
@@ -192,9 +193,12 @@ class OrgOps:
         else:
             query = {f"users.{user.id}": {"$gte": role.value}, "_id": oid}
         res = await self.orgs.find_one(query)
+        if not res:
+            return None
+
         return Organization.from_dict(res)
 
-    async def get_org_by_id(self, oid: UUID):
+    async def get_org_by_id(self, oid: UUID) -> Organization:
         """Get an org by id"""
         res = await self.orgs.find_one({"_id": oid})
         if not res:
@@ -221,7 +225,7 @@ class OrgOps:
 
         return await self.get_default_org()
 
-    async def create_default_org(self):
+    async def create_default_org(self) -> None:
         """Create default organization if doesn't exist."""
         await self.init_index()
 
@@ -321,29 +325,33 @@ class OrgOps:
                 + " Please check the 'storages' array in your config"
             )
 
-    async def update_full(self, org: Organization):
+    async def update_full(self, org: Organization) -> bool:
         """Update existing org"""
-        await self.orgs.find_one_and_update(
+        res = await self.orgs.find_one_and_update(
             {"_id": org.id}, {"$set": org.to_dict()}, upsert=True
         )
+        return res is not None
 
-    async def update_users(self, org: Organization):
+    async def update_users(self, org: Organization) -> bool:
         """Update org users"""
-        return await self.orgs.find_one_and_update(
+        res = await self.orgs.find_one_and_update(
             {"_id": org.id}, {"$set": org.dict(include={"users"})}
         )
+        return res is not None
 
-    async def update_slug_and_name(self, org: Organization):
+    async def update_slug_and_name(self, org: Organization) -> bool:
         """Update org slug"""
-        return await self.orgs.find_one_and_update(
+        res = await self.orgs.find_one_and_update(
             {"_id": org.id}, {"$set": {"slug": org.slug, "name": org.name}}
         )
+        return res is not None
 
-    async def update_storage_refs(self, org: Organization):
+    async def update_storage_refs(self, org: Organization) -> bool:
         """Update storage + replicas for given org"""
         set_dict = org.dict(include={"storage": True, "storageReplicas": True})
 
-        return await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
+        res = await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
+        return res is not None
 
     async def update_subscription_data(self, update: SubscriptionUpdate) -> bool:
         """Update subscription by id"""
@@ -367,14 +375,15 @@ class OrgOps:
 
         return Organization.from_dict(org_data)
 
-    async def update_custom_storages(self, org: Organization):
+    async def update_custom_storages(self, org: Organization) -> bool:
         """Update storage on an existing organization"""
 
         set_dict = org.dict(include={"customStorages": True})
 
-        return await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
+        res = await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
+        return res is not None
 
-    async def update_quotas(self, org: Organization, quotas: OrgQuotas):
+    async def update_quotas(self, org: Organization, quotas: OrgQuotas) -> None:
         """update organization quotas"""
 
         previous_extra_mins = (
@@ -436,13 +445,16 @@ class OrgOps:
                     {"$inc": {"giftedExecSecondsAvailable": gifted_secs_diff}},
                 )
 
-    async def update_event_webhook_urls(self, org: Organization, urls: OrgWebhookUrls):
+    async def update_event_webhook_urls(
+        self, org: Organization, urls: OrgWebhookUrls
+    ) -> bool:
         """Update organization event webhook URLs"""
-        return await self.orgs.find_one_and_update(
+        res = await self.orgs.find_one_and_update(
             {"_id": org.id},
             {"$set": {"webhookUrls": urls.dict(exclude_unset=True)}},
             return_document=ReturnDocument.AFTER,
         )
+        return res is not None
 
     async def add_user_by_invite(
         self,
@@ -492,7 +504,7 @@ class OrgOps:
 
     async def set_default_org_name_from_user_name(
         self, org: Organization, user_name: str
-    ):
+    ) -> None:
         """set's the org name and slug as "<USERNAME>'s Archive", adding a suffix for duplicates"""
         suffix = ""
         count = 1
@@ -509,7 +521,9 @@ class OrgOps:
                 count += 1
                 suffix = f" {count}"
 
-    async def add_user_to_org(self, org: Organization, userid: UUID, role: UserRole):
+    async def add_user_to_org(
+        self, org: Organization, userid: UUID, role: UserRole
+    ) -> None:
         """Add user to organization with specified role"""
         if str(userid) in org.users:
             raise HTTPException(status_code=400, detail="user_already_is_org_member")
@@ -517,7 +531,9 @@ class OrgOps:
         org.users[str(userid)] = role
         await self.update_users(org)
 
-    async def change_user_role(self, org: Organization, userid: UUID, role: UserRole):
+    async def change_user_role(
+        self, org: Organization, userid: UUID, role: UserRole
+    ) -> None:
         """Change role of existing user in organization"""
         if str(userid) not in org.users:
             raise HTTPException(status_code=400, detail="no_such_user")
@@ -525,7 +541,7 @@ class OrgOps:
         org.users[str(userid)] = role
         await self.update_users(org)
 
-    async def get_org_owners(self, org: Organization):
+    async def get_org_owners(self, org: Organization) -> List[str]:
         """Return list of org's Owner users."""
         org_owners = []
         for key, value in org.users.items():
@@ -533,7 +549,7 @@ class OrgOps:
                 org_owners.append(key)
         return org_owners
 
-    async def get_max_pages_per_crawl(self, oid: UUID):
+    async def get_max_pages_per_crawl(self, oid: UUID) -> int:
         """Return org-specific max pages per crawl setting or 0."""
         org = await self.orgs.find_one({"_id": oid})
         if org:
@@ -541,7 +557,7 @@ class OrgOps:
             return org.quotas.maxPagesPerCrawl
         return 0
 
-    async def inc_org_bytes_stored(self, oid: UUID, size: int, type_="crawl"):
+    async def inc_org_bytes_stored(self, oid: UUID, size: int, type_="crawl") -> bool:
         """Increase org bytesStored count (pass negative value to subtract)."""
         if type_ == "crawl":
             await self.orgs.find_one_and_update(
@@ -638,7 +654,7 @@ class OrgOps:
             return org.giftedExecSecondsAvailable
         return 0
 
-    async def set_origin(self, org: Organization, request: Request):
+    async def set_origin(self, org: Organization, request: Request) -> None:
         """Get origin from request and store in db for use in event webhooks"""
         headers = request.headers
         scheme = headers.get("X-Forwarded-Proto")
@@ -653,7 +669,9 @@ class OrgOps:
             {"_id": org.id}, {"$set": {"origin": origin}}
         )
 
-    async def inc_org_time_stats(self, oid, duration, is_exec_time=False, is_qa=False):
+    async def inc_org_time_stats(
+        self, oid: UUID, duration: int, is_exec_time=False, is_qa=False
+    ) -> None:
         """inc crawl duration stats for org
 
         Overage is applied only to crawlExecSeconds - monthlyExecSeconds,
@@ -691,9 +709,10 @@ class OrgOps:
 
         # If adding duration won't pass monthly quota, add duration and return
         if duration <= monthly_remaining_time:
-            return await self.orgs.find_one_and_update(
+            await self.orgs.find_one_and_update(
                 {"_id": oid}, {"$inc": {f"monthlyExecSeconds.{yymm}": duration}}
             )
+            return
 
         # Otherwise, add execution seconds to monthlyExecSeconds up to quota
         await self.orgs.find_one_and_update(
@@ -712,7 +731,7 @@ class OrgOps:
         gifted_secs_available = org.giftedExecSecondsAvailable
         if gifted_secs_available:
             if secs_over_quota <= gifted_secs_available:
-                return await self.orgs.find_one_and_update(
+                await self.orgs.find_one_and_update(
                     {"_id": oid},
                     {
                         "$inc": {
@@ -721,6 +740,7 @@ class OrgOps:
                         }
                     },
                 )
+                return
 
             # If seconds over quota is higher than gifted seconds available,
             # use remaining gifted gifted time and then move on
@@ -736,7 +756,7 @@ class OrgOps:
         # If we still have an overage, apply to extra up to quota
         secs_to_use = min(secs_over_quota, org.extraExecSecondsAvailable)
         if secs_to_use:
-            return await self.orgs.find_one_and_update(
+            await self.orgs.find_one_and_update(
                 {"_id": oid},
                 {
                     "$inc": {
@@ -746,7 +766,7 @@ class OrgOps:
                 },
             )
 
-    async def get_max_concurrent_crawls(self, oid):
+    async def get_max_concurrent_crawls(self, oid) -> int:
         """return max allowed concurrent crawls, if any"""
         org = await self.orgs.find_one({"_id": oid})
         if org:
@@ -754,7 +774,7 @@ class OrgOps:
             return org.quotas.maxConcurrentCrawls
         return 0
 
-    async def get_org_metrics(self, org: Organization):
+    async def get_org_metrics(self, org: Organization) -> dict[str, int]:
         """Calculate and return org metrics"""
         # pylint: disable=too-many-locals
         storage_quota = await self.get_org_storage_quota(org.id)
@@ -809,12 +829,12 @@ class OrgOps:
             "publicCollectionsCount": public_collections_count,
         }
 
-    async def get_all_org_slugs(self):
+    async def get_all_org_slugs(self) -> dict[str, list[str]]:
         """Return list of all org slugs."""
         slugs = await self.orgs.distinct("slug", {})
         return {"slugs": slugs}
 
-    async def get_org_slugs_by_ids(self):
+    async def get_org_slugs_by_ids(self) -> dict[UUID, str]:
         """Return dict with {id: slug} for all orgs."""
         slug_id_map = {}
         async for org in self.orgs.find({}):
@@ -823,25 +843,27 @@ class OrgOps:
 
     async def update_read_only(
         self, org: Organization, readOnly: bool, readOnlyReason=""
-    ):
+    ) -> bool:
         """Set readOnly field for Organization"""
         if not readOnly:
             # Set reason to empty string if readOnly is false
             readOnlyReason = ""
 
-        return await self.orgs.find_one_and_update(
+        res = await self.orgs.find_one_and_update(
             {"_id": org.id},
             {"$set": {"readOnly": readOnly, "readOnlyReason": readOnlyReason}},
         )
+        return res is not None
 
     async def update_read_only_on_cancel(
         self, org: Organization, update: OrgReadOnlyOnCancel
-    ):
+    ) -> bool:
         """Set to readOnly on subscription cancelation, instead of deleting"""
-        return await self.orgs.find_one_and_update(
+        res = await self.orgs.find_one_and_update(
             {"_id": org.id, "subData.readOnlyOnCancel": False},
             {"$set": {"subData.readOnlyOnCancel": update.readOnlyOnCancel}},
         )
+        return res is not None
 
     async def export_org(
         self, org: Organization, user_manager: UserManager
@@ -946,7 +968,7 @@ class OrgOps:
         stream_file_object,
         ignore_version: bool = False,
         storage_name: Optional[str] = None,
-    ):
+    ) -> None:
         """Import org from exported org JSON
 
         :param stream: Stream of org JSON export
@@ -1112,7 +1134,9 @@ class OrgOps:
             collection = json_stream.to_standard_types(collection)
             await self.colls_db.insert_one(Collection.from_dict(collection).to_dict())
 
-    async def delete_org_and_data(self, org: Organization, user_manager: UserManager):
+    async def delete_org_and_data(
+        self, org: Organization, user_manager: UserManager
+    ) -> bool:
         """Delete org and all of its associated data."""
         # Delete archived items
         cursor = self.crawls_db.find({"oid": org.id}, projection=["_id"])
@@ -1143,7 +1167,7 @@ class OrgOps:
 
         # Delete collections
         async for coll in self.colls_db.find({"oid": org.id}, projection=["_id"]):
-            await self.coll_ops.delete_collection(coll["_id"], org)
+            await self.coll_ops.delete_collection(coll["_id"], org, ignore_missing=True)
 
         # Delete users that only belong to this org
         for org_user_id in org.users.keys():
@@ -1163,7 +1187,7 @@ class OrgOps:
         # Delete org
         await self.orgs.delete_one({"_id": org.id})
 
-        return {"deleted": True}
+        return True
 
 
 # ============================================================================
@@ -1273,7 +1297,8 @@ def init_orgs_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        return await ops.delete_org_and_data(org, user_manager)
+        res = await ops.delete_org_and_data(org, user_manager)
+        return {"deleted": res}
 
     @router.post("/rename", tags=["organizations"])
     async def rename_org(
