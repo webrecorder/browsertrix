@@ -1182,7 +1182,7 @@ class OrgOps:
 
         # Delete collections
         async for coll in self.colls_db.find({"oid": org.id}, projection=["_id"]):
-            await self.coll_ops.delete_collection(coll["_id"], org, ignore_missing=True)
+            await self.coll_ops.delete_collection(coll["_id"], org)
 
         # Delete users that only belong to this org
         for org_user_id in org.users.keys():
