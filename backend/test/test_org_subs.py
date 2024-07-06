@@ -19,6 +19,8 @@ def test_create_sub_org_and_invite_new_user(admin_auth_headers):
         f"{API_PREFIX}/subscriptions/create",
         headers=admin_auth_headers,
         json={
+            "subId": "123",
+            "status": "active",
             "firstAdminInviteEmail": invite_email,
             "quotas": {
                 "maxPagesPerCrawl": 100,
@@ -26,11 +28,7 @@ def test_create_sub_org_and_invite_new_user(admin_auth_headers):
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
             },
-            "subData": {
-                "subId": "123",
-                "status": "active",
-                "details": {"extra": "data"},
-            },
+            "details": {"extra": "data"},
         },
     )
 
@@ -106,6 +104,8 @@ def test_create_sub_org_and_invite_existing_user_dupe_sub(admin_auth_headers):
         f"{API_PREFIX}/orgs/create",
         headers=admin_auth_headers,
         json={
+            "subId": "123",
+            "status": "test",
             "firstAdminInviteEmail": invite_email,
             "quotas": {
                 "maxPagesPerCrawl": 100,
@@ -113,11 +113,7 @@ def test_create_sub_org_and_invite_existing_user_dupe_sub(admin_auth_headers):
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
             },
-            "subData": {
-                "subId": "123",
-                "status": "test",
-                "details": {"extra": "data"},
-            },
+            "details": {"extra": "data"},
         },
     )
 
@@ -130,6 +126,8 @@ def test_create_sub_org_and_invite_existing_user(admin_auth_headers):
         f"{API_PREFIX}/orgs/create",
         headers=admin_auth_headers,
         json={
+            "subId": "234",
+            "status": "active",
             "firstAdminInviteEmail": invite_email,
             "quotas": {
                 "maxPagesPerCrawl": 100,
@@ -137,11 +135,7 @@ def test_create_sub_org_and_invite_existing_user(admin_auth_headers):
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
             },
-            "subData": {
-                "subId": "234",
-                "status": "active",
-                "details": {"extra": "data"},
-            },
+            "details": {"extra": "data"},
         },
     )
 
