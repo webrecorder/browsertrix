@@ -101,7 +101,7 @@ def test_validate_new_org_with_quotas_and_update_name(admin_auth_headers):
 
 def test_create_sub_org_and_invite_existing_user_dupe_sub(admin_auth_headers):
     r = requests.post(
-        f"{API_PREFIX}/orgs/create",
+        f"{API_PREFIX}/subscriptions/create",
         headers=admin_auth_headers,
         json={
             "subId": "123",
@@ -123,7 +123,7 @@ def test_create_sub_org_and_invite_existing_user_dupe_sub(admin_auth_headers):
 
 def test_create_sub_org_and_invite_existing_user(admin_auth_headers):
     r = requests.post(
-        f"{API_PREFIX}/orgs/create",
+        f"{API_PREFIX}/subscriptions/create",
         headers=admin_auth_headers,
         json={
             "subId": "234",
