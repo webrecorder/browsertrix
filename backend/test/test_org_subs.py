@@ -240,6 +240,18 @@ def test_update_sub(admin_auth_headers):
     assert r.json() == {"updated": True}
 
 
+def test_get_sub_info(admin_auth_headers):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{new_subs_oid}/subscription", headers=admin_auth_headers
+    )
+    assert r.status_code == 200
+
+    sub = r.json()["subscription"]
+    assert sub["status"] == "payment-failed"
+    assert sub["readOnlyOnCancel"] == False
+    assert sub["futureCancelDate"] == None
+
+
 def test_cancel_sub_and_delete_org(admin_auth_headers):
     # cancel, resulting in org deletion
     r = requests.post(

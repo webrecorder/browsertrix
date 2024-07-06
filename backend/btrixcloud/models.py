@@ -1024,6 +1024,15 @@ class SubscriptionData(BaseModel):
 
 
 # ============================================================================
+class SubscriptionDataOut(BaseModel):
+    status: str
+    portalUrl: str = ""
+
+    futureCancelDate: Optional[datetime] = None
+    readOnlyOnCancel: bool = False
+
+
+# ============================================================================
 class OrgReadOnlyOnCancel(BaseModel):
     """Make org readOnly on subscription cancellation instead of deleting"""
 

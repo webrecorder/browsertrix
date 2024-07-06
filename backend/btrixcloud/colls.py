@@ -299,16 +299,12 @@ class CollectionOps:
         names = [name for name in names if name]
         return {"names": names}
 
-    async def delete_collection(
-        self, coll_id: UUID, org: Organization, ignore_missing=False
-    ):
+    async def delete_collection(self, coll_id: UUID, org: Organization):
         """Delete collection and remove from associated crawls."""
         await self.crawl_ops.remove_collection_from_all_crawls(coll_id)
 
         result = await self.collections.delete_one({"_id": coll_id, "oid": org.id})
         if result.deleted_count < 1:
-            if ignore_missing:
-                return
             raise HTTPException(status_code=404, detail="collection_not_found")
 
         asyncio.create_task(

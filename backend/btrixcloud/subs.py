@@ -9,11 +9,14 @@ from fastapi import Depends, HTTPException, Request
 
 from .orgs import OrgOps
 from .users import UserManager
+from .utils import dt_now
 from .models import (
     SubscriptionCreate,
     SubscriptionUpdate,
     SubscriptionCancel,
     SubscriptionData,
+    SubscriptionDataOut,
+    Organization,
     InviteToOrgRequest,
     User,
     UserRole,
@@ -113,7 +116,7 @@ class SubOps:
     ) -> None:
         """add a subscription event to the db"""
         data = event.dict(exclude_unset=True)
-        data["_id"] = uuid4()
+        data["timestamp"] = dt_now()
         await self.subs.insert_one(data)
 
 
@@ -154,5 +157,19 @@ def init_subs_api(
         cancel: SubscriptionCancel,
     ):
         return await ops.cancel_subscription(cancel)
+
+    assert org_ops.router
+
+    @org_ops.router.get("/subscription", tags=["organizations"])
+    async def get_sub_info(org: Organization = Depends(org_ops.org_owner_dep)):
+        sub_out = None
+        if org.subData:
+            sub_out = SubscriptionDataOut(
+                status=org.subData.status,
+                futureCancelDate=org.subData.futureCancelDate,
+                readOnlyOnCancel=org.subData.readOnlyOnCancel,
+            )
+
+        return {"subscription": sub_out}
 
     return ops
