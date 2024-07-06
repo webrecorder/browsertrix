@@ -118,7 +118,7 @@ def test_create_sub_org_and_invite_existing_user_dupe_sub(admin_auth_headers):
     )
 
     assert r.status_code == 400
-    assert r.json()["detail"] == "subscription_already_exists"
+    assert r.json()["detail"] == "already_exists"
 
 
 def test_create_sub_org_and_invite_existing_user(admin_auth_headers):

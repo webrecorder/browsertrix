@@ -9,6 +9,7 @@ import math
 import os
 import time
 import urllib.parse
+
 from uuid import UUID, uuid4
 from datetime import datetime
 from tempfile import NamedTemporaryFile
@@ -90,7 +91,13 @@ class OrgOps:
     base_crawl_ops: BaseCrawlOps
     default_primary: Optional[StorageRef]
 
-    def __init__(self, mdb, invites, user_manager):
+    router: Optional[APIRouter]
+    org_viewer_dep: Optional[Callable]
+    org_crawl_dep: Optional[Callable]
+    org_owner_dep: Optional[Callable]
+    org_public: Optional[Callable]
+
+    def __init__(self, mdb, invites: InviteOps, user_manager: UserManager):
         self.orgs = mdb["organizations"]
         self.crawls_db = mdb["crawls"]
         self.crawl_configs_db = mdb["crawl_configs"]
@@ -144,13 +151,6 @@ class OrgOps:
                     flush=True,
                 )
                 time.sleep(5)
-
-    async def add_org(self, org: Organization):
-        """Add new org"""
-        try:
-            return await self.orgs.insert_one(org.to_dict())
-        except DuplicateKeyError:
-            print(f"Organization name {org.name} already in use - skipping", flush=True)
 
     async def get_orgs_for_user(
         # pylint: disable=too-many-arguments
@@ -252,7 +252,10 @@ class OrgOps:
             f'Creating Default Organization "{DEFAULT_ORG}". Storage: {primary_name}',
             flush=True,
         )
-        await self.add_org(org)
+        try:
+            await self.orgs.insert_one(org.to_dict())
+        except DuplicateKeyError:
+            print(f"Organization name {org.name} already in use - skipping", flush=True)
 
     async def create_org(
         self,
@@ -279,8 +282,10 @@ class OrgOps:
             quotas=quotas or OrgQuotas(),
             subData=sub_data,
         )
-        if not await self.add_org(org):
-            raise HTTPException(status_code=400, detail="already_exists")
+        try:
+            await self.orgs.insert_one(org.to_dict())
+        except DuplicateKeyError as dupe:
+            raise HTTPException(status_code=400, detail="already_exists") from dupe
 
         return org
 

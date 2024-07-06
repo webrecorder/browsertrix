@@ -6,7 +6,6 @@ from typing import Callable
 import asyncio
 
 from fastapi import Depends, HTTPException, Request
-from pymongo.errors import DuplicateKeyError
 
 from .orgs import OrgOps
 from .users import UserManager
@@ -44,14 +43,7 @@ class SubOps:
             subId=create.subId, status=create.status, details=create.details
         )
 
-        try:
-            new_org = await self.org_ops.create_org(
-                quotas=create.quotas, sub_data=sub_data
-            )
-        except DuplicateKeyError as exc:
-            raise HTTPException(
-                status_code=400, detail="subscription_already_exists"
-            ) from exc
+        new_org = await self.org_ops.create_org(quotas=create.quotas, sub_data=sub_data)
 
         result = {"added": True, "id": new_org.id}
 
