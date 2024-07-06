@@ -208,7 +208,7 @@ def test_login_existing_user_for_invite():
 def test_cancel_sub_and_delete_org(admin_auth_headers):
     # cancel, resulting in org deletion
     r = requests.post(
-        f"{API_PREFIX}/subscriptions/delete",
+        f"{API_PREFIX}/subscriptions/cancel",
         headers=admin_auth_headers,
         json={
             "subId": "123",
@@ -236,7 +236,7 @@ def test_cancel_sub_and_no_delete_org(admin_auth_headers):
     assert r.json() == {"updated": True}
 
     r = requests.post(
-        f"{API_PREFIX}/subscriptions/delete",
+        f"{API_PREFIX}/subscriptions/cancel",
         headers=admin_auth_headers,
         json={
             "subId": "234",
