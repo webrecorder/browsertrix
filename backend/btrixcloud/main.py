@@ -30,6 +30,7 @@ from .basecrawls import init_base_crawls_api
 from .webhooks import init_event_webhooks_api
 from .background_jobs import init_background_jobs_api
 from .pages import init_pages_api
+from .subs import init_subs_api
 
 from .crawlmanager import CrawlManager
 from .utils import run_once_lock, register_exit_handler, is_bool
@@ -86,8 +87,9 @@ def main():
         user_manager,
         invites,
         current_active_user,
-        shared_secret_or_active_user,
     )
+
+    init_subs_api(app, mdb, org_ops, user_manager, shared_secret_or_active_user)
 
     event_webhook_ops = init_event_webhooks_api(mdb, org_ops, app_root)
 

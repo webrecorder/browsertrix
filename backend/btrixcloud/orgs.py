@@ -35,6 +35,9 @@ from .models import (
     OrgMetrics,
     OrgWebhookUrls,
     OrgCreate,
+    SubscriptionData,
+    SubscriptionUpdate,
+    SubscriptionCancel,
     RenameOrg,
     UpdateRole,
     RemovePendingInvite,
@@ -132,6 +135,7 @@ class OrgOps:
         while True:
             try:
                 await self.orgs.create_index("name", unique=True)
+                await self.orgs.create_index("subData.subId", unique=True, sparse=True)
                 return await self.orgs.create_index("slug", unique=True)
             # pylint: disable=duplicate-code
             except AutoReconnect:
@@ -250,6 +254,36 @@ class OrgOps:
         )
         await self.add_org(org)
 
+    async def create_org(
+        self,
+        name: Optional[str] = None,
+        slug: Optional[str] = None,
+        quotas: Optional[OrgQuotas] = None,
+        sub_data: Optional[SubscriptionData] = None,
+    ) -> Organization:
+        """create new org"""
+        id_ = uuid4()
+
+        name = name or str(id_)
+
+        if slug:
+            validate_slug(slug)
+        else:
+            slug = slug_from_name(name)
+
+        org = Organization(
+            id=id_,
+            name=name,
+            slug=slug,
+            storage=self.default_primary,
+            quotas=quotas or OrgQuotas(),
+            subData=sub_data,
+        )
+        if not await self.add_org(org):
+            raise HTTPException(status_code=400, detail="already_exists")
+
+        return org
+
     async def check_all_org_default_storages(self, storage_ops) -> None:
         """ensure all default storages references by this org actually exist
 
@@ -304,6 +338,28 @@ class OrgOps:
         set_dict = org.dict(include={"storage": True, "storageReplicas": True})
 
         return await self.orgs.find_one_and_update({"_id": org.id}, {"$set": set_dict})
+
+    async def update_subscription_data(self, update: SubscriptionUpdate) -> bool:
+        """Update subscription by id"""
+        res = await self.orgs.find_one_and_update(
+            {"subscription.id": update.id},
+            {"$set": {"subscription": update.dict()}},
+        )
+        return res is not None
+
+    async def cancel_subscription_data(
+        self, cancel: SubscriptionCancel
+    ) -> Optional[Organization]:
+        """Find org by subscription by id and delete subscription data, return org"""
+        org_data = await self.orgs.find_one_and_update(
+            {"subscription.id": cancel.id},
+            {"$set": {"subscription": None}},
+            return_document=ReturnDocument.BEFORE,
+        )
+        if not org_data:
+            return None
+
+        return Organization.from_dict(org_data)
 
     async def update_custom_storages(self, org: Organization):
         """Update storage on an existing organization"""
@@ -1100,7 +1156,6 @@ def init_orgs_api(
     user_manager: UserManager,
     invites: InviteOps,
     user_dep: Callable,
-    user_or_shared_secret_dep: Callable,
 ):
     """Init organizations api router for /orgs"""
     # pylint: disable=too-many-locals,invalid-name
@@ -1176,53 +1231,13 @@ def init_orgs_api(
     @app.post("/orgs/create", tags=["organizations"])
     async def create_org(
         new_org: OrgCreate,
-        request: Request,
-        user: User = Depends(user_or_shared_secret_dep),
+        user: User = Depends(user_dep),
     ):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        id_ = uuid4()
-
-        name = new_org.name or str(id_)
-
-        if new_org.slug:
-            validate_slug(new_org.slug)
-            slug = new_org.slug
-        else:
-            slug = slug_from_name(name)
-
-        org = Organization(
-            id=id_,
-            name=name,
-            slug=slug,
-            users={},
-            storage=ops.default_primary,
-            quotas=new_org.quotas or OrgQuotas(),
-            subData=new_org.subData,
-        )
-        if not await ops.add_org(org):
-            return {"added": False, "error": "already_exists"}
-
-        result = {"added": True, "id": id_}
-
-        if new_org.firstAdminInviteEmail:
-            is_new, token = await invites.invite_user(
-                InviteToOrgRequest(
-                    email=new_org.firstAdminInviteEmail, role=UserRole.OWNER
-                ),
-                user,
-                user_manager,
-                org=org,
-                headers=dict(request.headers),
-            )
-            if is_new:
-                result["invited"] = "new_user"
-            else:
-                result["invited"] = "existing_user"
-            result["token"] = token
-
-        return result
+        org = await ops.create_org(new_org.name, new_org.slug)
+        return {"added": True, "id": org.id}
 
     @router.get("", tags=["organizations"])
     async def get_org(

@@ -977,16 +977,58 @@ class OrgQuotas(BaseModel):
 
 
 # ============================================================================
+class SubscriptionCreate(BaseMongoModel):
+    """create new subscription"""
+
+    type: Literal["create"] = "create"
+
+    subId: str
+    status: str
+    details: Optional[Dict[str, Any]] = {}
+
+    firstAdminInviteEmail: str
+    quotas: Optional[OrgQuotas] = None
+
+
+# ============================================================================
+class SubscriptionUpdate(BaseMongoModel):
+    """update subscription data"""
+
+    type: Literal["update"] = "update"
+
+    subId: str
+    status: str
+    futureCancelDate: datetime
+    details: Optional[Dict[str, Any]] = {}
+
+
+# ============================================================================
+class SubscriptionCancel(BaseMongoModel):
+    """cancel subscription"""
+
+    type: Literal["cancel"] = "cancel"
+
+    subId: str
+
+
+# ============================================================================
+class SubscriptionData(BaseModel):
+    """subscription data"""
+
+    subId: str
+    status: str
+    details: Optional[Dict[str, Any]] = {}
+
+    futureCancelDate: Optional[datetime] = None
+    deleteOnCancel: bool = True
+
+
+# ============================================================================
 class OrgCreate(BaseModel):
     """Create a new org"""
 
-    name: Optional[str] = None
+    name: str
     slug: Optional[str] = None
-
-    firstAdminInviteEmail: Optional[str] = None
-    quotas: Optional[OrgQuotas] = None
-
-    subData: Optional[Dict[str, Any]] = None
 
 
 # ============================================================================
@@ -1070,7 +1112,7 @@ class Organization(BaseMongoModel):
     id: UUID
     name: str
     slug: str
-    users: Dict[str, UserRole]
+    users: Dict[str, UserRole] = {}
 
     default: bool = False
 
@@ -1109,7 +1151,7 @@ class Organization(BaseMongoModel):
     readOnly: Optional[bool] = False
     readOnlyReason: Optional[str] = None
 
-    subData: Optional[Dict[str, Any]] = None
+    subData: Optional[SubscriptionData] = None
 
     def is_owner(self, user):
         """Check if user is owner"""
