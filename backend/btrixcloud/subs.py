@@ -41,7 +41,7 @@ class SubOps:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         sub_data = SubscriptionData(
-            subId=create.id, status=create.status, details=create.details
+            subId=create.subId, status=create.status, details=create.details
         )
 
         try:
