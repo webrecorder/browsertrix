@@ -58,10 +58,10 @@ class EmailSender:
         else:
             raise HTTPException(status_code=500, detail="invalid_email_template")
 
-        print(full, flush=True)
+        # print(full, flush=True)
 
         if not self.smtp_server:
-            print("Email: No SMTP Server, not sending", flush=True)
+            # print("Email: No SMTP Server, not sending", flush=True)
             return
 
         msg: Union[EmailMessage, MIMEMultipart]

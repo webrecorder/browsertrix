@@ -977,7 +977,7 @@ class OrgQuotas(BaseModel):
 
 
 # ============================================================================
-class SubscriptionCreate(BaseMongoModel):
+class SubscriptionCreate(BaseModel):
     """create new subscription"""
 
     type: Literal["create"] = "create"
@@ -991,7 +991,7 @@ class SubscriptionCreate(BaseMongoModel):
 
 
 # ============================================================================
-class SubscriptionUpdate(BaseMongoModel):
+class SubscriptionUpdate(BaseModel):
     """update subscription data"""
 
     type: Literal["update"] = "update"
@@ -1003,7 +1003,7 @@ class SubscriptionUpdate(BaseMongoModel):
 
 
 # ============================================================================
-class SubscriptionCancel(BaseMongoModel):
+class SubscriptionCancel(BaseModel):
     """cancel subscription"""
 
     type: Literal["cancel"] = "cancel"
@@ -1103,7 +1103,7 @@ class OrgOut(BaseMongoModel):
     extraExecSecondsAvailable: int = 0
     giftedExecSecondsAvailable: int = 0
 
-    quotas: Optional[OrgQuotas] = OrgQuotas()
+    quotas: OrgQuotas = OrgQuotas()
     quotaUpdates: Optional[List[OrgQuotaUpdate]] = []
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
@@ -1148,7 +1148,7 @@ class Organization(BaseMongoModel):
     extraExecSecondsAvailable: int = 0
     giftedExecSecondsAvailable: int = 0
 
-    quotas: Optional[OrgQuotas] = OrgQuotas()
+    quotas: OrgQuotas = OrgQuotas()
     quotaUpdates: Optional[List[OrgQuotaUpdate]] = []
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()

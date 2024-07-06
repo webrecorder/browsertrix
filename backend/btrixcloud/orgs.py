@@ -18,6 +18,7 @@ from typing import Optional, TYPE_CHECKING, Callable, List, AsyncGenerator
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 import json_stream
@@ -356,8 +357,8 @@ class OrgOps:
     async def update_subscription_data(self, update: SubscriptionUpdate) -> bool:
         """Update subscription by id"""
         res = await self.orgs.find_one_and_update(
-            {"subscription.id": update.id},
-            {"$set": {"subscription": update.dict()}},
+            {"subData.subId": update.subId},
+            {"$set": {"subData": update.dict()}},
         )
         return res is not None
 
@@ -366,8 +367,8 @@ class OrgOps:
     ) -> Optional[Organization]:
         """Find org by subscription by id and delete subscription data, return org"""
         org_data = await self.orgs.find_one_and_update(
-            {"subscription.id": cancel.id},
-            {"$set": {"subscription": None}},
+            {"subData.subId": cancel.subId},
+            {"$set": {"subData": None}},
             return_document=ReturnDocument.BEFORE,
         )
         if not org_data:
@@ -551,10 +552,10 @@ class OrgOps:
 
     async def get_max_pages_per_crawl(self, oid: UUID) -> int:
         """Return org-specific max pages per crawl setting or 0."""
-        org = await self.orgs.find_one({"_id": oid})
-        if org:
-            org = Organization.from_dict(org)
-            return org.quotas.maxPagesPerCrawl
+        org_data = await self.orgs.find_one({"_id": oid})
+        if org_data:
+            org = Organization.from_dict(org_data)
+            return org.quotas.maxPagesPerCrawl or 0
         return 0
 
     async def inc_org_bytes_stored(self, oid: UUID, size: int, type_="crawl") -> bool:
@@ -582,8 +583,11 @@ class OrgOps:
         if not quota:
             return False
 
-        org = await self.orgs.find_one({"_id": oid})
-        org = Organization.from_dict(org)
+        org_data = await self.orgs.find_one({"_id": oid})
+        if not org_data:
+            return False
+
+        org = Organization.from_dict(org_data)
 
         if org.bytesStored >= quota:
             return True
@@ -592,8 +596,10 @@ class OrgOps:
 
     async def get_monthly_crawl_exec_seconds(self, oid: UUID) -> int:
         """Return monthlyExecSeconds for current month"""
-        org = await self.orgs.find_one({"_id": oid})
-        org = Organization.from_dict(org)
+        org_data = await self.orgs.find_one({"_id": oid})
+        if not org_data:
+            return 0
+        org = Organization.from_dict(org_data)
         yymm = datetime.utcnow().strftime("%Y-%m")
         try:
             return org.monthlyExecSeconds[yymm]
@@ -624,33 +630,33 @@ class OrgOps:
 
     async def get_org_storage_quota(self, oid: UUID) -> int:
         """return max allowed concurrent crawls, if any"""
-        org = await self.orgs.find_one({"_id": oid})
-        if org:
-            org = Organization.from_dict(org)
-            return org.quotas.storageQuota
+        org_data = await self.orgs.find_one({"_id": oid})
+        if org_data:
+            org = Organization.from_dict(org_data)
+            return org.quotas.storageQuota or 0
         return 0
 
     async def get_org_exec_mins_monthly_quota(self, oid: UUID) -> int:
         """return max allowed execution mins per month, if any"""
-        org = await self.orgs.find_one({"_id": oid})
-        if org:
-            org = Organization.from_dict(org)
-            return org.quotas.maxExecMinutesPerMonth
+        org_data = await self.orgs.find_one({"_id": oid})
+        if org_data:
+            org = Organization.from_dict(org_data)
+            return org.quotas.maxExecMinutesPerMonth or 0
         return 0
 
     async def get_extra_exec_secs_available(self, oid: UUID) -> int:
         """return extra billable rollover seconds available, if any"""
-        org = await self.orgs.find_one({"_id": oid})
-        if org:
-            org = Organization.from_dict(org)
+        org_data = await self.orgs.find_one({"_id": oid})
+        if org_data:
+            org = Organization.from_dict(org_data)
             return org.extraExecSecondsAvailable
         return 0
 
     async def get_gifted_exec_secs_available(self, oid: UUID) -> int:
         """return gifted rollover seconds available, if any"""
-        org = await self.orgs.find_one({"_id": oid})
-        if org:
-            org = Organization.from_dict(org)
+        org_data = await self.orgs.find_one({"_id": oid})
+        if org_data:
+            org = Organization.from_dict(org_data)
             return org.giftedExecSecondsAvailable
         return 0
 
@@ -768,10 +774,10 @@ class OrgOps:
 
     async def get_max_concurrent_crawls(self, oid) -> int:
         """return max allowed concurrent crawls, if any"""
-        org = await self.orgs.find_one({"_id": oid})
-        if org:
-            org = Organization.from_dict(org)
-            return org.quotas.maxConcurrentCrawls
+        org_data = await self.orgs.find_one({"_id": oid})
+        if org_data:
+            org = Organization.from_dict(org_data)
+            return org.quotas.maxConcurrentCrawls or 0
         return 0
 
     async def get_org_metrics(self, org: Organization) -> dict[str, int]:
@@ -881,6 +887,8 @@ class OrgOps:
         org_serialized = await org_out_export.serialize_for_export(user_manager)
 
         version = await self.version_db.find_one()
+        if not version:
+            raise HTTPException(status_code=400, detail="invalid_db")
 
         async def json_opening_gen() -> AsyncGenerator:
             """Async generator that opens JSON document, writes dbVersion and org"""
@@ -982,6 +990,9 @@ class OrgOps:
 
         # dbVersion
         version_res = await self.version_db.find_one()
+        if not version_res:
+            raise HTTPException(status_code=400, detail="invalid_db")
+
         version = version_res["version"]
         stream_db_version = org_data.get("dbVersion")
         if version != stream_db_version and not ignore_version:
@@ -1138,6 +1149,7 @@ class OrgOps:
         self, org: Organization, user_manager: UserManager
     ) -> bool:
         """Delete org and all of its associated data."""
+        print(f"Deleting org: {org.slug} {org.name} {org.id}")
         # Delete archived items
         cursor = self.crawls_db.find({"oid": org.id}, projection=["_id"])
         items = await cursor.to_list(length=DEL_ITEMS)

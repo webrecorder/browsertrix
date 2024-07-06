@@ -250,7 +250,7 @@ def test_cancel_sub_and_no_delete_org(admin_auth_headers):
     assert r.status_code == 200
     data = r.json()
     assert data["readOnly"] == True
-    assert data["readOnlyReason"] == "cancelled"
+    assert data["readOnlyReason"] == "canceled"
 
     r = requests.post(
         f"{API_PREFIX}/subscriptions/delete",

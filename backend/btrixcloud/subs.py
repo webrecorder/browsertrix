@@ -2,8 +2,8 @@
 Subscription API handling
 """
 
-from typing import Callable
-import asyncio
+from typing import Callable, Union
+from uuid import uuid4
 
 from fastapi import Depends, HTTPException, Request
 
@@ -60,7 +60,7 @@ class SubOps:
                 result["invited"] = "existing_user"
             result["token"] = token
 
-        await self.subs.insert_one(create.to_dict())
+        await self.add_sub_event(create)
 
         return result
 
@@ -74,7 +74,7 @@ class SubOps:
                 status_code=404, detail="org_for_subscription_not_found"
             )
 
-        await self.subs.insert_one(update.to_dict())
+        await self.add_sub_event(update)
         return {"updated": True}
 
     async def cancel_subscription(self, cancel: SubscriptionCancel):
@@ -87,19 +87,32 @@ class SubOps:
                 status_code=404, detail="org_for_subscription_not_found"
             )
 
-        if org.subData and org.subData.readOnlyOnCancel:
-            await self.org_ops.update_read_only(
-                org, readOnly=True, readOnlyReason="canceled"
-            )
-            deleted = False
-        else:
-            asyncio.create_task(
-                self.org_ops.delete_org_and_data(org, self.user_manager)
-            )
+        # extra sanity check
+        if not org.subData or org.subData.subId != cancel.subId:
+            return {"canceled": False, "deleted": False}
+
+        # mark as read-only even if deleting, in case deletion
+        # takes some time
+        deleted = False
+
+        await self.org_ops.update_read_only(
+            org, readOnly=True, readOnlyReason="canceled"
+        )
+
+        if not org.subData.readOnlyOnCancel:
+            await self.org_ops.delete_org_and_data(org, self.user_manager)
             deleted = True
 
-        await self.subs.insert_one(cancel.to_dict())
+        await self.add_sub_event(cancel)
         return {"canceled": True, "deleted": deleted}
+
+    async def add_sub_event(
+        self, event: Union[SubscriptionCreate, SubscriptionUpdate, SubscriptionCancel]
+    ) -> None:
+        """add a subscription event to the db"""
+        data = event.dict()
+        data["_id"] = uuid4()
+        await self.subs.insert_one(data)
 
 
 def init_subs_api(
