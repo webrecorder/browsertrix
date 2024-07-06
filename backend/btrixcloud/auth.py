@@ -170,7 +170,11 @@ def init_jwt_auth(user_manager):
         if BTRIX_SUBS_APP_API_KEY and token == BTRIX_SUBS_APP_API_KEY:
             return await user_manager.get_superuser()
 
-        return await get_current_user(token)
+        user = await get_current_user(token)
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="not_allowed")
+
+        return user
 
     current_active_user = get_current_user
 

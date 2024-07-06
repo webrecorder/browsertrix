@@ -33,6 +33,7 @@ from .models import (
     OrgQuotas,
     OrgQuotaUpdate,
     OrgReadOnlyUpdate,
+    OrgReadOnlyOnCancel,
     OrgMetrics,
     OrgWebhookUrls,
     OrgCreate,
@@ -820,15 +821,27 @@ class OrgOps:
             slug_id_map[org["_id"]] = org["slug"]
         return slug_id_map
 
-    async def update_read_only(self, org: Organization, update: OrgReadOnlyUpdate):
+    async def update_read_only(
+        self, org: Organization, readOnly: bool, readOnlyReason=""
+    ):
         """Set readOnly field for Organization"""
-        if update.readOnly is False:
+        if not readOnly:
             # Set reason to empty string if readOnly is false
-            update.readOnlyReason = ""
+            readOnlyReason = ""
 
-        query = update.dict(exclude_unset=True)
+        return await self.orgs.find_one_and_update(
+            {"_id": org.id},
+            {"$set": {"readOnly": readOnly, "readOnlyReason": readOnlyReason}},
+        )
 
-        return await self.orgs.find_one_and_update({"_id": org.id}, {"$set": query})
+    async def update_read_only_on_cancel(
+        self, org: Organization, update: OrgReadOnlyOnCancel
+    ):
+        """Set to readOnly on subscription cancelation, instead of deleting"""
+        return await self.orgs.find_one_and_update(
+            {"_id": org.id, "subData.readOnlyOnCancel": False},
+            {"$set": {"subData.readOnlyOnCancel": update.readOnlyOnCancel}},
+        )
 
     async def export_org(
         self, org: Organization, user_manager: UserManager
@@ -1304,7 +1317,20 @@ def init_orgs_api(
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
 
-        await ops.update_read_only(org, update)
+        await ops.update_read_only(org, update.readOnly, update.readOnlyReason)
+
+        return {"updated": True}
+
+    @router.post("/read-only-on-cancel", tags=["organizations"])
+    async def update_read_only_on_cancel(
+        update: OrgReadOnlyOnCancel,
+        org: Organization = Depends(org_owner_dep),
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        await ops.update_read_only_on_cancel(org, update)
 
         return {"updated": True}
 

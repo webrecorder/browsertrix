@@ -1020,7 +1020,14 @@ class SubscriptionData(BaseModel):
     details: Optional[Dict[str, Any]] = {}
 
     futureCancelDate: Optional[datetime] = None
-    deleteOnCancel: bool = True
+    readOnlyOnCancel: bool = False
+
+
+# ============================================================================
+class OrgReadOnlyOnCancel(BaseModel):
+    """Make org readOnly on subscription cancellation instead of deleting"""
+
+    readOnlyOnCancel: bool
 
 
 # ============================================================================

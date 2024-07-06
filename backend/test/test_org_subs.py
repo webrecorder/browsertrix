@@ -203,3 +203,61 @@ def test_login_existing_user_for_invite():
         "giftedExecMinutes": 0,
     }
     assert "subData" not in org
+
+
+def test_cancel_sub_and_delete_org(admin_auth_headers):
+    # cancel, resulting in org deletion
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/delete",
+        headers=admin_auth_headers,
+        json={
+            "subId": "123",
+        },
+    )
+
+    assert r.status_code == 200
+    assert r.json() == {"canceled": True, "deleted": True}
+
+    r = requests.get(f"{API_PREFIX}/orgs/{new_subs_oid}", headers=admin_auth_headers)
+    assert r.status_code == 404
+    assert r.json()["detail"] == "org_not_found"
+
+
+def test_cancel_sub_and_no_delete_org(admin_auth_headers):
+    # mark org as read-only on cancel, then cancel to avoid deletion
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{new_subs_oid_2}/read-only-on-cancel",
+        headers=admin_auth_headers,
+        json={
+            "readOnlyOnCancel": True,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json() == {"updated": True}
+
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/delete",
+        headers=admin_auth_headers,
+        json={
+            "subId": "234",
+        },
+    )
+
+    assert r.status_code == 200
+    assert r.json() == {"canceled": True, "deleted": False}
+
+    r = requests.get(f"{API_PREFIX}/orgs/{new_subs_oid_2}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["readOnly"] == True
+    assert data["readOnlyReason"] == "cancelled"
+
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/delete",
+        headers=admin_auth_headers,
+        json={
+            "subId": "234",
+        },
+    )
+    assert r.status_code == 404
+    assert r.json() == {"detail": "org_for_subscription_not_found"}

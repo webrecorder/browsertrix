@@ -36,9 +36,6 @@ class SubOps:
         self, create: SubscriptionCreate, user: User, request: Request
     ):
         """create org for new subscription"""
-        if not user.is_superuser:
-            raise HTTPException(status_code=403, detail="Not Allowed")
-
         sub_data = SubscriptionData(
             subId=create.subId, status=create.status, details=create.details
         )
@@ -81,7 +78,7 @@ class SubOps:
         return {"updated": True}
 
     async def cancel_subscription(self, cancel: SubscriptionCancel):
-        """delete subscription data, and if deleteOnCancel is true, the entire org"""
+        """delete subscription data, and if readOnlyOnCancel is true, the entire org"""
 
         org = await self.org_ops.cancel_subscription_data(cancel)
 
@@ -90,13 +87,16 @@ class SubOps:
                 status_code=404, detail="org_for_subscription_not_found"
             )
 
-        if org.subData and org.subData.deleteOnCancel:
+        if org.subData and org.subData.readOnlyOnCancel:
+            await self.org_ops.update_read_only(
+                org, readOnly=True, readOnlyReason="canceled"
+            )
+            deleted = False
+        else:
             asyncio.create_task(
                 self.org_ops.delete_org_and_data(org, self.user_manager)
             )
             deleted = True
-        else:
-            deleted = False
 
         await self.subs.insert_one(cancel.to_dict())
         return {"canceled": True, "deleted": deleted}
@@ -120,24 +120,24 @@ def init_subs_api(
     ):
         return await ops.create_new_subscription(create, user, request)
 
-    @app.post("/subscriptions/update", tags=["subscriptions"])
+    @app.post(
+        "/subscriptions/update",
+        tags=["subscriptions"],
+        dependencies=[Depends(user_or_shared_secret_dep)],
+    )
     async def update_subscription(
         update: SubscriptionUpdate,
-        user: User = Depends(user_or_shared_secret_dep),
     ):
-        if not user.is_superuser:
-            raise HTTPException(status_code=403, detail="Not Allowed")
-
         return await ops.update_subscription(update)
 
-    @app.post("/subscriptions/cancel", tags=["subscriptions"])
+    @app.post(
+        "/subscriptions/cancel",
+        tags=["subscriptions"],
+        dependencies=[Depends(user_or_shared_secret_dep)],
+    )
     async def cancel_subscription(
         cancel: SubscriptionCancel,
-        user: User = Depends(user_or_shared_secret_dep),
     ):
-        if not user.is_superuser:
-            raise HTTPException(status_code=403, detail="Not Allowed")
-
         return await ops.cancel_subscription(cancel)
 
     return ops
