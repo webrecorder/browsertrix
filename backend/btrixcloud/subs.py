@@ -2,7 +2,7 @@
 Subscription API handling
 """
 
-from typing import Callable, Union
+from typing import Callable, Union, Any
 
 from fastapi import Depends, HTTPException, Request
 
@@ -36,7 +36,7 @@ class SubOps:
 
     async def create_new_subscription(
         self, create: SubscriptionCreate, user: User, request: Request
-    ):
+    ) -> dict[str, Any]:
         """create org for new subscription"""
         sub_data = SubscriptionData(
             subId=create.subId, status=create.status, details=create.details
@@ -66,7 +66,7 @@ class SubOps:
 
         return result
 
-    async def update_subscription(self, update: SubscriptionUpdate):
+    async def update_subscription(self, update: SubscriptionUpdate) -> dict[str, bool]:
         """update subs"""
 
         org = await self.org_ops.update_subscription_data(update)
@@ -76,15 +76,15 @@ class SubOps:
                 status_code=404, detail="org_for_subscription_not_found"
             )
 
-        print("ORG SUB", org.subData)
-
         await self.add_sub_event(update)
         return {"updated": True}
 
-    async def cancel_subscription(self, cancel: SubscriptionCancel):
+    async def cancel_subscription(self, cancel: SubscriptionCancel) -> dict[str, bool]:
         """delete subscription data, and if readOnlyOnCancel is true, the entire org"""
 
-        org = await self.org_ops.cancel_subscription_data(cancel)
+        org = await self.org_ops.update_subscription_data(
+            SubscriptionUpdate(subId=cancel.subId, status="canceled")
+        )
 
         if not org:
             raise HTTPException(
@@ -125,7 +125,7 @@ def init_subs_api(
     org_ops: OrgOps,
     user_manager: UserManager,
     user_or_shared_secret_dep: Callable,
-):
+) -> SubOps:
     """init subs API"""
     ops = SubOps(mdb, org_ops, user_manager)
 
