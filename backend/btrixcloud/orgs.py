@@ -14,7 +14,7 @@ from uuid import UUID, uuid4
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 
-from typing import Optional, TYPE_CHECKING, Callable, List, AsyncGenerator
+from typing import Optional, TYPE_CHECKING, Callable, List, AsyncGenerator, Any
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -357,9 +357,16 @@ class OrgOps:
         self, update: SubscriptionUpdate
     ) -> Optional[Organization]:
         """Update subscription by id"""
+
+        query: dict[str, Any] = {"subData.status": update.status}
+        if update.futureCancelDate:
+            query["subData.futureCancelDate"] = update.futureCancelDate
+        if update.details:
+            query["subData.details"] = update.details
+
         org_data = await self.orgs.find_one_and_update(
             {"subData.subId": update.subId},
-            {"$set": {"subData": update.dict(exclude_unset=True)}},
+            {"$set": query},
             return_document=ReturnDocument.AFTER,
         )
         return Organization.from_dict(org_data) if org_data else None
