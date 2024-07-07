@@ -82,16 +82,14 @@ class SubOps:
     async def cancel_subscription(self, cancel: SubscriptionCancel) -> dict[str, bool]:
         """delete subscription data, and if readOnlyOnCancel is true, the entire org"""
 
-        org = await self.org_ops.update_subscription_data(
-            SubscriptionUpdate(subId=cancel.subId, status="canceled")
-        )
+        org = await self.org_ops.cancel_subscription_data(cancel)
 
         if not org:
             raise HTTPException(
                 status_code=404, detail="org_for_subscription_not_found"
             )
 
-        # extra sanity check
+        # extra sanity check, shouldn't ever be true
         if not org.subData or org.subData.subId != cancel.subId:
             return {"canceled": False, "deleted": False}
 
@@ -100,7 +98,7 @@ class SubOps:
         deleted = False
 
         await self.org_ops.update_read_only(
-            org, readOnly=True, readOnlyReason="canceled"
+            org, readOnly=True, readOnlyReason="subscriptionCanceled"
         )
 
         if not org.subData.readOnlyOnCancel:

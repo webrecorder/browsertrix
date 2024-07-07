@@ -40,6 +40,7 @@ from .models import (
     OrgCreate,
     SubscriptionData,
     SubscriptionUpdate,
+    SubscriptionCancel,
     RenameOrg,
     UpdateRole,
     RemovePendingInvite,
@@ -368,6 +369,17 @@ class OrgOps:
             {"subData.subId": update.subId},
             {"$set": query},
             return_document=ReturnDocument.AFTER,
+        )
+        return Organization.from_dict(org_data) if org_data else None
+
+    async def cancel_subscription_data(
+        self, cancel: SubscriptionCancel
+    ) -> Optional[Organization]:
+        """Find org by subscription by id and delete subscription data, return org"""
+        org_data = await self.orgs.find_one_and_update(
+            {"subData.subId": cancel.subId},
+            {"$set": {"subData": None}},
+            return_document=ReturnDocument.BEFORE,
         )
         return Organization.from_dict(org_data) if org_data else None
 
