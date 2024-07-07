@@ -115,7 +115,7 @@ class CrawlConfigOps:
         self.crawler_images_map = {}
         channels = []
         with open(os.environ["CRAWLER_CHANNELS_JSON"], encoding="utf-8") as fh:
-            crawler_list: list[dict] = json.loads(fh.read())
+            crawler_list = json.loads(fh.read())
             for channel_data in crawler_list:
                 channel = CrawlerChannel(**channel_data)
                 channels.append(channel)
@@ -441,7 +441,7 @@ class CrawlConfigOps:
         schedule: Optional[bool] = None,
         sort_by: str = "lastRun",
         sort_direction: int = -1,
-    ):
+    ) -> tuple[list[CrawlConfigOut], int]:
         """Get all crawl configs for an organization is a member of"""
         # pylint: disable=too-many-locals,too-many-branches
         # Zero-index page for query
