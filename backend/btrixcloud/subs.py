@@ -10,7 +10,7 @@ import aiohttp
 
 from .orgs import OrgOps
 from .users import UserManager
-from .utils import dt_now
+from .utils import dt_now, is_bool
 from .models import (
     SubscriptionCreate,
     SubscriptionUpdate,
@@ -24,6 +24,10 @@ from .models import (
     User,
     UserRole,
 )
+
+
+# if set, will enable this api
+subscriptions_enabled = is_bool(os.environ.get("BILLING_ENABLED"))
 
 
 # if set, will lookup external portalUrl from this endpoint
@@ -169,8 +173,12 @@ def init_subs_api(
     org_ops: OrgOps,
     user_manager: UserManager,
     user_or_shared_secret_dep: Callable,
-) -> SubOps:
+) -> Optional[SubOps]:
     """init subs API"""
+
+    if not subscriptions_enabled:
+        return None
+
     ops = SubOps(mdb, org_ops, user_manager)
 
     @app.post("/subscriptions/create", tags=["subscriptions"])
