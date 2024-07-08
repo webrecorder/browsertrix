@@ -176,7 +176,7 @@ def get_duplicate_key_error_field(err: DuplicateKeyError) -> str:
         key_value = err.details.get("keyValue")
         if key_value:
             try:
-                dupe_field = key_value.keys()[0]
+                dupe_field = list(key_value.keys())[0]
             except IndexError:
                 pass
     return dupe_field
