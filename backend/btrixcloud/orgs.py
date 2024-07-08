@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 
-from typing import Optional, TYPE_CHECKING, Callable, List, AsyncGenerator
+from typing import Optional, TYPE_CHECKING, Dict, Callable, List, AsyncGenerator, Any
 
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect, DuplicateKeyError
@@ -155,27 +155,62 @@ class OrgOps:
         role: UserRole = UserRole.VIEWER,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
-        calculate_total=True,
+        sort_by: str = "name",
+        sort_direction: int = 1,
     ):
         """Get all orgs a user is a member of"""
+        # pylint: disable=duplicate-code,too-many-locals
+
         # Zero-index page for query
         page = page - 1
         skip = page_size * page
 
-        if user.is_superuser:
-            query = {}
-        else:
-            query = {f"users.{user.id}": {"$gte": role.value}}
+        query: Dict[str, Any] = {}
+        if not user.is_superuser:
+            query[f"users.{user.id}"] = {"$gte": role.value}
 
-        total = 0
-        if calculate_total:
-            total = await self.orgs.count_documents(query)
+        aggregate: List[Dict[str, Any]] = [{"$match": query}]
 
-        cursor = self.orgs.find(query, skip=skip, limit=page_size)
-        results = await cursor.to_list(length=page_size)
-        orgs = [Organization.from_dict(res) for res in results]
+        # Ensure default org is always first, then sort on sort_by if set
+        sort_query = {"default": -1}
 
-        return orgs, total
+        if sort_by:
+            sort_fields = ("name", "slug", "readOnly")
+            if sort_by not in sort_fields:
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            sort_query[sort_by] = sort_direction
+
+        aggregate.extend([{"$sort": sort_query}])
+
+        aggregate.extend(
+            [
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
+            ]
+        )
+
+        # Get total
+        cursor = self.orgs.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
+
+        return [Organization.from_dict(data) for data in items], total
 
     async def get_org_for_user_by_id(
         self, oid: UUID, user: User, role: UserRole = UserRole.VIEWER
@@ -1164,9 +1199,15 @@ def init_orgs_api(
         user: User = Depends(user_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
+        sortBy: str = "name",
+        sortDirection: int = 1,
     ):
         results, total = await ops.get_orgs_for_user(
-            user, page_size=pageSize, page=page
+            user,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
         )
         serialized_results = [
             await res.serialize_for_user(user, user_manager) for res in results
