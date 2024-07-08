@@ -617,7 +617,7 @@ export class OrgSettings extends LiteElement {
     } catch (e) {
       console.debug(e);
 
-      message = msg(
+      let message = msg(
         "Sorry, couldn't rename organization at this time. Try again later from org settings.",
       );
 
