@@ -168,6 +168,13 @@ export class ArchivedItemDetailQA extends TailwindElement {
   }
 
   render() {
+    const fileCount = this.crawl?.filePageCount || 0;
+    const errorCount = this.crawl?.errorPageCount || 0;
+    const doneCount = this.crawl?.stats?.done
+      ? parseInt(this.crawl.stats.done)
+      : 0;
+    const htmlCount = doneCount - fileCount - errorCount;
+
     return html`
       <div class="mb-5 rounded-lg border p-2">
         <btrix-desc-list horizontal>
@@ -261,9 +268,40 @@ export class ArchivedItemDetailQA extends TailwindElement {
         <sl-divider></sl-divider>
 
         <btrix-tab-group-panel name="pages" class="block">
-          ${when(this.mostRecentNonFailedQARun && this.qaRuns, (qaRuns) =>
-            this.renderAnalysis(qaRuns),
-          )}
+          <btrix-card class="gap-y-1">
+            <div slot="title" class="flex flex-wrap justify-between">
+              ${msg("Crawl Results")}
+              <div class="text-neutral-500">
+                <sl-tooltip
+                  content=${msg(
+                    "Non-HTML files captured as pages are known good files that the crawler found as clickable links on a page and don't need to be analyzed. Failed pages did not respond when the crawler tried to visit them.",
+                  )}
+                >
+                  <sl-icon class="text-base" name="info-circle"></sl-icon>
+                </sl-tooltip>
+              </div>
+            </div>
+            <div>
+              <p>
+                <span class="text-primary">${htmlCount}</span> ${msg(
+                  "HTML Pages",
+                )}
+              </p>
+              <p>
+                <span class="text-neutral-600">${fileCount}</span> ${msg(
+                  "Non-HTML Files Captured As Pages",
+                )}
+              </p>
+              <p>
+                <span class="text-danger">${errorCount}</span> ${msg(
+                  "Failed Pages",
+                )}
+              </p>
+            </div>
+            ${when(this.mostRecentNonFailedQARun && this.qaRuns, (qaRuns) =>
+              this.renderAnalysis(qaRuns),
+            )}
+          </btrix-card>
 
           <div>
             <h4 class="mb-2 mt-4 text-lg leading-8">
@@ -482,132 +520,128 @@ export class ArchivedItemDetailQA extends TailwindElement {
     }
 
     return html`
-      <btrix-card>
-        <div slot="title" class="flex flex-wrap justify-between">
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-            ${msg("Page Match Analysis")}
-            ${when(this.qaRuns, (qaRuns) => {
-              const finishedQARuns = qaRuns.filter(({ state }) =>
-                finishedCrawlStates.includes(state),
-              );
-              const latestFinishedSelected =
-                this.qaRunId === finishedQARuns[0]?.id;
+      <div
+        class="mb-3 mt-6 flex flex-wrap justify-between border-b pb-3 text-base font-semibold leading-none"
+      >
+        <div class="flex flex-wrap items-center gap-x-3">
+          ${msg("HTML Page Match Analysis")}
+          ${when(this.qaRuns, (qaRuns) => {
+            const finishedQARuns = qaRuns.filter(({ state }) =>
+              finishedCrawlStates.includes(state),
+            );
+            const latestFinishedSelected =
+              this.qaRunId === finishedQARuns[0]?.id;
 
-              const finishedAndRunningQARuns = qaRuns.filter(
-                ({ state }) =>
-                  finishedCrawlStates.includes(state) ||
-                  QA_RUNNING_STATES.includes(state),
-              );
-              const mostRecentSelected =
-                this.qaRunId === finishedAndRunningQARuns[0]?.id;
+            const finishedAndRunningQARuns = qaRuns.filter(
+              ({ state }) =>
+                finishedCrawlStates.includes(state) ||
+                QA_RUNNING_STATES.includes(state),
+            );
+            const mostRecentSelected =
+              this.qaRunId === finishedAndRunningQARuns[0]?.id;
 
-              return html`
-                <div>
-                  <sl-tooltip
-                    content=${mostRecentSelected
-                      ? msg("You’re viewing the latest analysis run results.")
-                      : msg(
-                          "You’re viewing results from an older analysis run.",
-                        )}
+            return html`
+              <div>
+                <sl-tooltip
+                  content=${mostRecentSelected
+                    ? msg("You’re viewing the latest analysis run results.")
+                    : msg("You’re viewing results from an older analysis run.")}
+                >
+                  <sl-tag
+                    size="small"
+                    variant=${mostRecentSelected ? "success" : "warning"}
                   >
-                    <sl-tag
-                      size="small"
-                      variant=${mostRecentSelected ? "success" : "warning"}
-                    >
-                      ${mostRecentSelected
-                        ? msg("Current")
-                        : latestFinishedSelected
-                          ? msg("Last Finished")
-                          : msg("Outdated")}
-                    </sl-tag>
-                  </sl-tooltip>
-                  <btrix-qa-run-dropdown
-                    .items=${finishedAndRunningQARuns}
-                    selectedId=${this.qaRunId || ""}
-                    @btrix-select=${(e: CustomEvent<SelectDetail>) =>
-                      (this.qaRunId = e.detail.item.id)}
-                  ></btrix-qa-run-dropdown>
-                </div>
-              `;
-            })}
-          </div>
-          <div class="flex items-center gap-2 text-neutral-500">
-            <div class="text-sm font-normal">
-              ${qaRun.state === "starting"
-                ? msg("Analysis starting")
-                : `${formatNumber(qaRun.stats.done)}/${formatNumber(qaRun.stats.found)}
-                  ${pluralOf("pages", qaRun.stats.found)} ${msg("analyzed")}`}
-            </div>
-
-            <sl-tooltip
-              content=${msg(
-                "Match analysis compares pages during a crawl against their replay during an analysis run. A good match indicates that the crawl is probably good, whereas severe inconsistencies may indicate a bad crawl.",
-              )}
-            >
-              <sl-icon class="text-base" name="info-circle"></sl-icon>
-            </sl-tooltip>
-          </div>
+                    ${mostRecentSelected
+                      ? msg("Current")
+                      : latestFinishedSelected
+                        ? msg("Last Finished")
+                        : msg("Outdated")}
+                  </sl-tag>
+                </sl-tooltip>
+                <btrix-qa-run-dropdown
+                  .items=${finishedAndRunningQARuns}
+                  selectedId=${this.qaRunId || ""}
+                  @btrix-select=${(e: CustomEvent<SelectDetail>) =>
+                    (this.qaRunId = e.detail.item.id)}
+                ></btrix-qa-run-dropdown>
+              </div>
+            `;
+          })}
         </div>
-        <figure>
-          <btrix-table class="grid-cols-[min-content_1fr]">
-            <btrix-table-head class="sr-only">
-              <btrix-table-header-cell>
-                ${msg("Statistic")}
-              </btrix-table-header-cell>
-              <btrix-table-header-cell>
-                ${msg("Chart")}
-              </btrix-table-header-cell>
-            </btrix-table-head>
-            <btrix-table-body>
-              <btrix-table-row>
-                <btrix-table-cell class="font-medium">
-                  ${msg("Screenshots")}
-                </btrix-table-cell>
-                <btrix-table-cell class="p-0">
-                  ${this.qaStats.value
-                    ? this.renderMeter(
-                        qaRun.stats.found,
-                        this.qaStats.value.screenshotMatch,
-                        isRunning,
-                      )
-                    : this.renderMeter()}
-                </btrix-table-cell>
-              </btrix-table-row>
-              <btrix-table-row>
-                <btrix-table-cell class="font-medium">
-                  ${msg("Text")}
-                </btrix-table-cell>
-                <btrix-table-cell class="p-0">
-                  ${this.qaStats.value
-                    ? this.renderMeter(
-                        qaRun.stats.found,
-                        this.qaStats.value.textMatch,
-                        isRunning,
-                      )
-                    : this.renderMeter()}
-                </btrix-table-cell>
-              </btrix-table-row>
-            </btrix-table-body>
-          </btrix-table>
-        </figure>
-        <figcaption slot="footer" class="mt-2">
-          <dl class="flex flex-wrap items-center justify-end gap-4">
-            ${qaStatsThresholds.map(
-              (threshold) => html`
-                <div class="flex items-center gap-2">
-                  <dt
-                    class="size-4 flex-shrink-0 rounded"
-                    style="background-color: ${threshold.cssColor}"
-                  >
-                    <span class="sr-only">${threshold.lowerBoundary}</span>
-                  </dt>
-                  <dd>${threshold.label}</dd>
-                </div>
-              `,
+        <div class="flex items-center gap-2 text-neutral-500">
+          <div class="text-sm font-normal">
+            ${qaRun.state === "starting"
+              ? msg("Analysis starting")
+              : `${formatNumber(qaRun.stats.done)}/${formatNumber(qaRun.stats.found)}
+                ${pluralOf("pages", qaRun.stats.found)} ${msg("analyzed")}`}
+          </div>
+
+          <sl-tooltip
+            content=${msg(
+              "Match analysis compares pages during a crawl against their replay during an analysis run. A good match indicates that the crawl is probably good, whereas severe inconsistencies may indicate a bad crawl.",
             )}
-          </dl>
-        </figcaption>
-      </btrix-card>
+          >
+            <sl-icon class="text-base" name="info-circle"></sl-icon>
+          </sl-tooltip>
+        </div>
+      </div>
+      <figure>
+        <btrix-table class="grid-cols-[min-content_1fr]">
+          <btrix-table-head class="sr-only">
+            <btrix-table-header-cell>
+              ${msg("Statistic")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell> ${msg("Chart")} </btrix-table-header-cell>
+          </btrix-table-head>
+          <btrix-table-body>
+            <btrix-table-row>
+              <btrix-table-cell class="font-medium">
+                ${msg("Screenshots")}
+              </btrix-table-cell>
+              <btrix-table-cell class="p-0">
+                ${this.qaStats.value
+                  ? this.renderMeter(
+                      qaRun.stats.found,
+                      this.qaStats.value.screenshotMatch,
+                      isRunning,
+                    )
+                  : this.renderMeter()}
+              </btrix-table-cell>
+            </btrix-table-row>
+            <btrix-table-row>
+              <btrix-table-cell class="font-medium">
+                ${msg("Text")}
+              </btrix-table-cell>
+              <btrix-table-cell class="p-0">
+                ${this.qaStats.value
+                  ? this.renderMeter(
+                      qaRun.stats.found,
+                      this.qaStats.value.textMatch,
+                      isRunning,
+                    )
+                  : this.renderMeter()}
+              </btrix-table-cell>
+            </btrix-table-row>
+          </btrix-table-body>
+        </btrix-table>
+      </figure>
+      <figcaption slot="footer" class="mt-2">
+        <dl class="flex flex-wrap items-center justify-end gap-4">
+          ${qaStatsThresholds.map(
+            (threshold) => html`
+              <div class="flex items-center gap-2">
+                <dt
+                  class="size-4 flex-shrink-0 rounded"
+                  style="background-color: ${threshold.cssColor}"
+                >
+                  <span class="sr-only">${threshold.lowerBoundary}</span>
+                </dt>
+                <dd>${threshold.label}</dd>
+              </div>
+            `,
+          )}
+        </dl>
+      </figcaption>
     `;
   }
 

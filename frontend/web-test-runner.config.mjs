@@ -66,12 +66,6 @@ export default {
             "@shoelace-style/shoelace/dist/themes/light.css": fileURLToPath(
               new URL("./src/__mocks__/_empty.js", import.meta.url),
             ),
-            color: fileURLToPath(
-              new URL("./src/__mocks__/color.js", import.meta.url),
-            ),
-            slugify: fileURLToPath(
-              new URL("./src/__mocks__/slugify.js", import.meta.url),
-            ),
           },
         },
       },

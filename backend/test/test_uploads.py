@@ -1028,5 +1028,5 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
         if count + 1 == MAX_ATTEMPTS:
             assert False
 
-        time.sleep(5)
+        time.sleep(10)
         count += 1
