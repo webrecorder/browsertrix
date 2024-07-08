@@ -50,8 +50,6 @@ export default {
         // include umd/commonjs modules here:
         "node_modules/url-pattern/**/*",
         "node_modules/lodash/**/*",
-        "node_modules/color/**/*",
-        "node_modules/slugify/**/*",
       ],
     }),
     importMapsPlugin({

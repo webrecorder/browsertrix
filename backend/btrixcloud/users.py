@@ -167,7 +167,6 @@ class UserManager:
             user,
             # Set high so that we get all orgs even after reducing default page size
             page_size=1_000,
-            calculate_total=False,
         )
 
         if user_orgs:
