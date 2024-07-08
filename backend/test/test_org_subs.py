@@ -87,7 +87,7 @@ def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
         "subId": "123",
         "status": "active",
         "planId": "basic",
-        "futureCancelData": None,
+        "futureCancelDate": None,
         "readOnlyOnCancel": False,
     }
 
