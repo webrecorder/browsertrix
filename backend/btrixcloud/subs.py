@@ -5,12 +5,14 @@ Subscription API handling
 from typing import Callable, Union, Any, Optional
 import os
 
+from datetime import datetime
+
 from fastapi import Depends, HTTPException, Request
 import aiohttp
 
 from .orgs import OrgOps
 from .users import UserManager
-from .utils import dt_now, is_bool
+from .utils import is_bool
 from .models import (
     SubscriptionCreate,
     SubscriptionUpdate,
@@ -127,8 +129,17 @@ class SubOps:
     ) -> None:
         """add a subscription event to the db"""
         data = event.dict(exclude_unset=True)
-        data["timestamp"] = dt_now()
+        data["type"] = event.type
+        data["timestamp"] = datetime.utcnow()
         await self.subs.insert_one(data)
+
+    async def list_sub_events(self):
+        """list subscription events"""
+        # note: should add sorting/filtering eventually
+        cursor = self.subs.find({}, projection={"_id": False})
+        res = await cursor.to_list(length=1000)
+        print("res", res)
+        return res
 
     async def get_sub_info(
         self, org: Organization
@@ -208,6 +219,15 @@ def init_subs_api(
         return await ops.cancel_subscription(cancel)
 
     assert org_ops.router
+
+    @app.get(
+        "/subscriptions/events",
+        tags=["subscriptions"],
+        dependencies=[Depends(user_or_shared_secret_dep)],
+    )
+    async def get_sub_events():
+        events = await ops.list_sub_events()
+        return {"events": events}
 
     @org_ops.router.get("/subscription", tags=["organizations"])
     async def get_sub_info(org: Organization = Depends(org_ops.org_owner_dep)):

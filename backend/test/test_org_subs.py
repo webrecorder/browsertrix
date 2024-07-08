@@ -313,3 +313,48 @@ def test_cancel_sub_and_no_delete_org(admin_auth_headers):
     )
     assert r.status_code == 404
     assert r.json() == {"detail": "org_for_subscription_not_found"}
+
+
+def test_subscription_events_log(admin_auth_headers):
+    r = requests.get(f"{API_PREFIX}/subscriptions/events", headers=admin_auth_headers)
+    assert r.status_code == 200
+    events = r.json()["events"]
+
+    for event in events:
+        del event["timestamp"]
+
+    assert events == [
+        {
+            "type": "create",
+            "subId": "123",
+            "status": "active",
+            "planId": "basic",
+            "firstAdminInviteEmail": "test-user@example.com",
+            "quotas": {
+                "maxConcurrentCrawls": 1,
+                "maxPagesPerCrawl": 100,
+                "storageQuota": 1000000,
+                "maxExecMinutesPerMonth": 1000,
+            },
+        },
+        {
+            "type": "create",
+            "subId": "234",
+            "status": "active",
+            "planId": "basic",
+            "firstAdminInviteEmail": "test-user@example.com",
+            "quotas": {
+                "maxConcurrentCrawls": 1,
+                "maxPagesPerCrawl": 100,
+                "storageQuota": 1000000,
+                "maxExecMinutesPerMonth": 1000,
+            },
+        },
+        {
+            "type": "update",
+            "subId": "123",
+            "status": "payment-failed",
+        },
+        {"subId": "123", "type": "cancel"},
+        {"subId": "234", "type": "cancel"},
+    ]
