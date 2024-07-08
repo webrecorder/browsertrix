@@ -156,6 +156,12 @@ export class OrgForm extends TailwindElement {
           throw new Error(
             msg("This org URL is already taken, try another one."),
           );
+        } else if (e.details === "invalid_slug") {
+          throw new Error(
+            msg(
+              "This org URL is invalid. Please use alphanumeric characters and dashes (-) only.",
+            ),
+          );
         }
       }
 

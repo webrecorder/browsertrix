@@ -626,6 +626,10 @@ export class OrgSettings extends LiteElement {
           message = msg("This org name is already taken, try another one.");
         } else if (e.details === "duplicate_org_slug") {
           message = msg("This org URL is already taken, try another one.");
+        } else if (e.details === "invalid_slug") {
+          message = msg(
+            "This org URL is invalid. Please use alphanumeric characters and dashes (-) only.",
+          );
         }
       }
 
