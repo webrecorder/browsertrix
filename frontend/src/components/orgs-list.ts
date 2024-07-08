@@ -158,8 +158,8 @@ export class OrgsList extends TailwindElement {
               ${msg(
                 html`Are you sure you want to make
                   <span class="font-semibold">${org.name}</span>
-                  read-only? All members' access will be reduced to the viewer
-                  role.`,
+                  read-only? Members will no longer be able to crawl, upload
+                  files, create browser profiles, or create collections.`,
               )}
             </p>
             <ul class="mb-3 text-neutral-600">
