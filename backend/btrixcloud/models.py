@@ -965,6 +965,8 @@ class S3Storage(BaseModel):
 
 
 # ============================================================================
+# Subscriptions
+# ============================================================================
 class OrgQuotas(BaseModel):
     """Organization quotas (settable by superadmin)"""
 
@@ -1045,6 +1047,8 @@ class SubscriptionOut(Subscription):
     portalUrl: str = ""
 
 
+# ============================================================================
+# ORGS
 # ============================================================================
 class OrgReadOnlyOnCancel(BaseModel):
     """Make org readOnly on subscription cancellation instead of deleting"""
