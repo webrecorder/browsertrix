@@ -1137,6 +1137,8 @@ class OrgOut(BaseMongoModel):
     readOnly: Optional[bool]
     readOnlyReason: Optional[str]
 
+    subscription: Optional[Subscription]
+
 
 # ============================================================================
 class Organization(BaseMongoModel):
