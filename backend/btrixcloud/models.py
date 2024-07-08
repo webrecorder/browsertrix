@@ -1012,6 +1012,21 @@ class SubscriptionCancel(BaseModel):
 
 
 # ============================================================================
+class SubscriptionPullUpdateRequest(BaseModel):
+    """Request for subscription update pull"""
+
+    subId: str
+    details: Optional[Dict[str, Any]] = None
+
+
+# ============================================================================
+class SubscriptionPullUpdateResponse(BaseModel):
+    """Response for subscription update pull"""
+
+    portalUrl: str = ""
+
+
+# ============================================================================
 class SubscriptionData(BaseModel):
     """subscription data"""
 

@@ -2,9 +2,11 @@
 Subscription API handling
 """
 
-from typing import Callable, Union, Any
+from typing import Callable, Union, Any, Optional
+import os
 
 from fastapi import Depends, HTTPException, Request
+import aiohttp
 
 from .orgs import OrgOps
 from .users import UserManager
@@ -15,11 +17,17 @@ from .models import (
     SubscriptionCancel,
     SubscriptionData,
     SubscriptionDataOut,
+    SubscriptionPullUpdateRequest,
+    SubscriptionPullUpdateResponse,
     Organization,
     InviteToOrgRequest,
     User,
     UserRole,
 )
+
+
+# if set, will lookup external portalUrl from this endpoint
+external_subs_app_api_url = os.environ.get("BTRIX_SUBS_APP_URL")
 
 
 # ============================================================================
@@ -116,6 +124,42 @@ class SubOps:
         data["timestamp"] = dt_now()
         await self.subs.insert_one(data)
 
+    async def get_sub_info(
+        self, org: Organization
+    ) -> dict[str, Optional[SubscriptionDataOut]]:
+        """Get subscription info, fetching portal url if available"""
+        if not org.subData:
+            return {"subscription": None}
+
+        portal_url = ""
+
+        if external_subs_app_api_url:
+            try:
+                req = SubscriptionPullUpdateRequest(
+                    subId=org.subData.subId, details=org.subData.details
+                )
+                async with aiohttp.ClientSession() as session:
+                    async with session.request(
+                        "POST",
+                        external_subs_app_api_url,
+                        json=req.json(),
+                    ) as resp:
+                        json = await resp.json()
+                        sub_resp = SubscriptionPullUpdateResponse(**json)
+                        portal_url = sub_resp.portalUrl
+            # pylint: disable=broad-exception-caught
+            except Exception as exc:
+                print("Error fetching portal url", exc)
+
+        sub_out = SubscriptionDataOut(
+            status=org.subData.status,
+            futureCancelDate=org.subData.futureCancelDate,
+            readOnlyOnCancel=org.subData.readOnlyOnCancel,
+            portalUrl=portal_url,
+        )
+
+        return {"subscription": sub_out}
+
 
 def init_subs_api(
     app,
@@ -159,14 +203,6 @@ def init_subs_api(
 
     @org_ops.router.get("/subscription", tags=["organizations"])
     async def get_sub_info(org: Organization = Depends(org_ops.org_owner_dep)):
-        sub_out = None
-        if org.subData:
-            sub_out = SubscriptionDataOut(
-                status=org.subData.status,
-                futureCancelDate=org.subData.futureCancelDate,
-                readOnlyOnCancel=org.subData.readOnlyOnCancel,
-            )
-
-        return {"subscription": sub_out}
+        return await ops.get_sub_info(org)
 
     return ops
