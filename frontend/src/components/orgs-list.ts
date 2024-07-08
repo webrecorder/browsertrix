@@ -308,7 +308,7 @@ export class OrgsList extends TailwindElement {
     let status = {
       icon: html`<sl-icon
         class="text-base text-success"
-        name="check-circle"
+        name="check-circle-fill"
         label=${msg("Good")}
       ></sl-icon>`,
       description: msg("Active"),
