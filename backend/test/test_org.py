@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from .conftest import API_PREFIX
+from .conftest import API_PREFIX, NON_DEFAULT_ORG_NAME, NON_DEFAULT_ORG_SLUG
 from .utils import read_in_chunks
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
@@ -100,6 +100,34 @@ def test_rename_org_invalid_slug(admin_auth_headers, default_org_id):
     assert r.json()["detail"] == "invalid_slug"
 
 
+def test_rename_org_duplicate_name(
+    admin_auth_headers, default_org_id, non_default_org_id
+):
+    rename_data = {"name": NON_DEFAULT_ORG_NAME, "slug": "this-slug-should-be-okay"}
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/rename",
+        headers=admin_auth_headers,
+        json=rename_data,
+    )
+
+    assert r.status_code == 400
+    assert r.json()["detail"] == "duplicate_org_name"
+
+
+def test_rename_org_duplicate_name(
+    admin_auth_headers, default_org_id, non_default_org_id
+):
+    rename_data = {"name": "Should be okay", "slug": NON_DEFAULT_ORG_SLUG}
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/rename",
+        headers=admin_auth_headers,
+        json=rename_data,
+    )
+
+    assert r.status_code == 400
+    assert r.json()["detail"] == "duplicate_org_slug"
+
+
 def test_create_org(admin_auth_headers):
     NEW_ORG_NAME = "New Org"
     r = requests.post(
@@ -124,6 +152,32 @@ def test_create_org(admin_auth_headers):
     for org in data["items"]:
         org_names.append(org["name"])
     assert NEW_ORG_NAME in org_names
+
+
+def test_create_org_duplicate_name(admin_auth_headers, non_default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={"name": NON_DEFAULT_ORG_NAME, "slug": "another-new-org"},
+    )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"] is False
+    assert data["error"] == "already_exists"
+
+
+def test_create_org_duplicate_slug(admin_auth_headers, non_default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={"name": "Yet another new org", "slug": NON_DEFAULT_ORG_SLUG},
+    )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"] is False
+    assert data["error"] == "already_exists"
 
 
 # disable until storage customization is enabled

@@ -16,6 +16,7 @@ from uuid import UUID
 
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
+from pymongo.errors import DuplicateKeyError
 from slugify import slugify
 
 
@@ -166,3 +167,16 @@ def stream_dict_list_as_csv(data: List[Dict[str, Union[str, int]]], filename: st
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment;filename={filename}"},
     )
+
+
+def get_duplicate_key_error_field(err: DuplicateKeyError) -> str:
+    """Get name of duplicate field from pymongo DuplicateKeyError"""
+    dupe_field = "name"
+    if err.details:
+        key_value = err.details.get("keyValue")
+        if key_value:
+            try:
+                dupe_field = key_value.keys()[0]
+            except IndexError:
+                pass
+    return dupe_field

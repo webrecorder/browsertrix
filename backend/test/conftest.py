@@ -28,6 +28,7 @@ _all_crawls_config_id = None
 _all_crawls_delete_config_id = None
 
 NON_DEFAULT_ORG_NAME = "Non-default org"
+NON_DEFAULT_ORG_SLUG = "non-default-org"
 
 FAILED_STATES = ["canceled", "failed", "skipped_quota_reached"]
 
@@ -77,7 +78,7 @@ def non_default_org_id(admin_auth_headers):
     r = requests.post(
         f"{API_PREFIX}/orgs/create",
         headers=admin_auth_headers,
-        json={"name": NON_DEFAULT_ORG_NAME, "slug": "non-default-org"},
+        json={"name": NON_DEFAULT_ORG_NAME, "slug": NON_DEFAULT_ORG_SLUG},
     )
     assert r.status_code == 200
 

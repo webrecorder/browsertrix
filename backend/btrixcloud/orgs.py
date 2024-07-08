@@ -57,7 +57,12 @@ from .models import (
     DeleteCrawlList,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import slug_from_name, validate_slug, JSONSerializer
+from .utils import (
+    slug_from_name,
+    validate_slug,
+    get_duplicate_key_error_field,
+    JSONSerializer,
+)
 
 if TYPE_CHECKING:
     from .invites import InviteOps
@@ -145,8 +150,15 @@ class OrgOps:
         """Add new org"""
         try:
             return await self.orgs.insert_one(org.to_dict())
-        except DuplicateKeyError:
-            print(f"Organization name {org.name} already in use - skipping", flush=True)
+        except DuplicateKeyError as err:
+            field = get_duplicate_key_error_field(err)
+            value = org.name
+            if field == "slug":
+                value = org.slug
+            print(
+                f"Organization {field} {value} already in use - skipping",
+                flush=True,
+            )
 
     async def get_orgs_for_user(
         # pylint: disable=too-many-arguments
@@ -1297,9 +1309,10 @@ def init_orgs_api(
 
         try:
             await ops.update_slug_and_name(org)
-        except DuplicateKeyError:
+        except DuplicateKeyError as err:
+            field = get_duplicate_key_error_field(err)
             # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=400, detail="duplicate_org_name")
+            raise HTTPException(status_code=400, detail=f"duplicate_org_{field}")
 
         return {"updated": True}
 
