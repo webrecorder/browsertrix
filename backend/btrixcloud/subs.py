@@ -158,9 +158,7 @@ class SubOps:
                 print("Error fetching portal url", exc)
 
         sub_out = SubscriptionOut(
-            status=org.subscription.status,
-            futureCancelDate=org.subscription.futureCancelDate,
-            readOnlyOnCancel=org.subscription.readOnlyOnCancel,
+            **org.subscription.dict(),
             portalUrl=portal_url,
         )
 

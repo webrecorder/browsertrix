@@ -1039,14 +1039,10 @@ class Subscription(BaseModel):
 
 
 # ============================================================================
-class SubscriptionOut(BaseModel):
+class SubscriptionOut(Subscription):
     """Subscription info output model"""
 
-    status: str
     portalUrl: str = ""
-
-    futureCancelDate: Optional[datetime] = None
-    readOnlyOnCancel: bool = False
 
 
 # ============================================================================
