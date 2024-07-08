@@ -15,10 +15,10 @@ from .models import (
     SubscriptionCreate,
     SubscriptionUpdate,
     SubscriptionCancel,
-    SubscriptionData,
-    SubscriptionDataOut,
-    SubscriptionPullUpdateRequest,
-    SubscriptionPullUpdateResponse,
+    Subscription,
+    SubscriptionOut,
+    SubscriptionPortalUrlRequest,
+    SubscriptionPortalUrlResponse,
     Organization,
     InviteToOrgRequest,
     User,
@@ -46,11 +46,13 @@ class SubOps:
         self, create: SubscriptionCreate, user: User, request: Request
     ) -> dict[str, Any]:
         """create org for new subscription"""
-        sub_data = SubscriptionData(
-            subId=create.subId, status=create.status, details=create.details
+        subscription = Subscription(
+            subId=create.subId, status=create.status, planId=create.planId
         )
 
-        new_org = await self.org_ops.create_org(quotas=create.quotas, sub_data=sub_data)
+        new_org = await self.org_ops.create_org(
+            quotas=create.quotas, subscription=subscription
+        )
 
         result = {"added": True, "id": new_org.id}
 
@@ -98,7 +100,7 @@ class SubOps:
             )
 
         # extra sanity check, shouldn't ever be true
-        if not org.subData or org.subData.subId != cancel.subId:
+        if not org.subscription or org.subscription.subId != cancel.subId:
             return {"canceled": False, "deleted": False}
 
         # mark as read-only even if deleting, in case deletion
@@ -109,7 +111,7 @@ class SubOps:
             org, readOnly=True, readOnlyReason="subscriptionCanceled"
         )
 
-        if not org.subData.readOnlyOnCancel:
+        if not org.subscription.readOnlyOnCancel:
             await self.org_ops.delete_org_and_data(org, self.user_manager)
             deleted = True
 
@@ -126,17 +128,17 @@ class SubOps:
 
     async def get_sub_info(
         self, org: Organization
-    ) -> dict[str, Optional[SubscriptionDataOut]]:
+    ) -> dict[str, Optional[SubscriptionOut]]:
         """Get subscription info, fetching portal url if available"""
-        if not org.subData:
+        if not org.subscription:
             return {"subscription": None}
 
         portal_url = ""
 
         if external_subs_app_api_url:
             try:
-                req = SubscriptionPullUpdateRequest(
-                    subId=org.subData.subId, details=org.subData.details
+                req = SubscriptionPortalUrlRequest(
+                    subId=org.subscription.subId, planId=org.subscription.planId
                 )
                 async with aiohttp.ClientSession() as session:
                     async with session.request(
@@ -145,16 +147,16 @@ class SubOps:
                         json=req.json(),
                     ) as resp:
                         json = await resp.json()
-                        sub_resp = SubscriptionPullUpdateResponse(**json)
+                        sub_resp = SubscriptionPortalUrlResponse(**json)
                         portal_url = sub_resp.portalUrl
             # pylint: disable=broad-exception-caught
             except Exception as exc:
                 print("Error fetching portal url", exc)
 
-        sub_out = SubscriptionDataOut(
-            status=org.subData.status,
-            futureCancelDate=org.subData.futureCancelDate,
-            readOnlyOnCancel=org.subData.readOnlyOnCancel,
+        sub_out = SubscriptionOut(
+            status=org.subscription.status,
+            futureCancelDate=org.subscription.futureCancelDate,
+            readOnlyOnCancel=org.subscription.readOnlyOnCancel,
             portalUrl=portal_url,
         )
 

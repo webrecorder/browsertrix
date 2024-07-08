@@ -38,7 +38,7 @@ from .models import (
     OrgMetrics,
     OrgWebhookUrls,
     OrgCreate,
-    SubscriptionData,
+    Subscription,
     SubscriptionUpdate,
     SubscriptionCancel,
     RenameOrg,
@@ -144,7 +144,9 @@ class OrgOps:
         while True:
             try:
                 await self.orgs.create_index("name", unique=True)
-                await self.orgs.create_index("subData.subId", unique=True, sparse=True)
+                await self.orgs.create_index(
+                    "subscription.subId", unique=True, sparse=True
+                )
                 await self.orgs.create_index("slug", unique=True)
                 break
             # pylint: disable=duplicate-code
@@ -268,7 +270,7 @@ class OrgOps:
         name: Optional[str] = None,
         slug: Optional[str] = None,
         quotas: Optional[OrgQuotas] = None,
-        sub_data: Optional[SubscriptionData] = None,
+        subscription: Optional[Subscription] = None,
     ) -> Organization:
         """create new org"""
         id_ = uuid4()
@@ -286,7 +288,7 @@ class OrgOps:
             slug=slug,
             storage=self.default_primary,
             quotas=quotas or OrgQuotas(),
-            subData=sub_data,
+            subscription=subscription,
         )
         try:
             await self.orgs.insert_one(org.to_dict())
@@ -359,14 +361,14 @@ class OrgOps:
     ) -> Optional[Organization]:
         """Update subscription by id"""
 
-        query: dict[str, Any] = {"subData.status": update.status}
+        query: dict[str, Any] = {"subscription.status": update.status}
         if update.futureCancelDate:
-            query["subData.futureCancelDate"] = update.futureCancelDate
-        if update.details:
-            query["subData.details"] = update.details
+            query["subscription.futureCancelDate"] = update.futureCancelDate
+        if update.planId:
+            query["subscription.planId"] = update.planId
 
         org_data = await self.orgs.find_one_and_update(
-            {"subData.subId": update.subId},
+            {"subscription.subId": update.subId},
             {"$set": query},
             return_document=ReturnDocument.AFTER,
         )
@@ -377,8 +379,8 @@ class OrgOps:
     ) -> Optional[Organization]:
         """Find org by subscription by id and delete subscription data, return org"""
         org_data = await self.orgs.find_one_and_update(
-            {"subData.subId": cancel.subId},
-            {"$set": {"subData": None}},
+            {"subscription.subId": cancel.subId},
+            {"$set": {"subscription": None}},
             return_document=ReturnDocument.BEFORE,
         )
         return Organization.from_dict(org_data) if org_data else None
@@ -873,8 +875,8 @@ class OrgOps:
     ) -> bool:
         """Set to readOnly on subscription cancelation, instead of deleting"""
         res = await self.orgs.find_one_and_update(
-            {"_id": org.id, "subData.readOnlyOnCancel": False},
-            {"$set": {"subData.readOnlyOnCancel": update.readOnlyOnCancel}},
+            {"_id": org.id, "subscription.readOnlyOnCancel": False},
+            {"$set": {"subscription.readOnlyOnCancel": update.readOnlyOnCancel}},
         )
         return res is not None
 

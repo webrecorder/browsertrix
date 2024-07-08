@@ -984,7 +984,7 @@ class SubscriptionCreate(BaseModel):
 
     subId: str
     status: str
-    details: Optional[Dict[str, Any]] = {}
+    planId: str
 
     firstAdminInviteEmail: str
     quotas: Optional[OrgQuotas] = None
@@ -999,7 +999,7 @@ class SubscriptionUpdate(BaseModel):
     subId: str
     status: str
     futureCancelDate: Optional[datetime] = None
-    details: Optional[Dict[str, Any]] = None
+    planId: Optional[str]
 
 
 # ============================================================================
@@ -1012,34 +1012,34 @@ class SubscriptionCancel(BaseModel):
 
 
 # ============================================================================
-class SubscriptionPullUpdateRequest(BaseModel):
+class SubscriptionPortalUrlRequest(BaseModel):
     """Request for subscription update pull"""
 
     subId: str
-    details: Optional[Dict[str, Any]] = None
+    planId: str
 
 
 # ============================================================================
-class SubscriptionPullUpdateResponse(BaseModel):
+class SubscriptionPortalUrlResponse(BaseModel):
     """Response for subscription update pull"""
 
     portalUrl: str = ""
 
 
 # ============================================================================
-class SubscriptionData(BaseModel):
+class Subscription(BaseModel):
     """subscription data"""
 
     subId: str
     status: str
-    details: Optional[Dict[str, Any]] = {}
+    planId: str
 
     futureCancelDate: Optional[datetime] = None
     readOnlyOnCancel: bool = False
 
 
 # ============================================================================
-class SubscriptionDataOut(BaseModel):
+class SubscriptionOut(BaseModel):
     """Subscription info output model"""
 
     status: str
@@ -1184,7 +1184,7 @@ class Organization(BaseMongoModel):
     readOnly: Optional[bool] = False
     readOnlyReason: Optional[str] = None
 
-    subData: Optional[SubscriptionData] = None
+    subscription: Optional[Subscription] = None
 
     def is_owner(self, user):
         """Check if user is owner"""

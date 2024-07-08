@@ -28,7 +28,6 @@ def test_create_sub_org_invalid_auth(crawler_auth_headers):
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
             },
-            "details": {"extra": "data"},
         },
     )
 
@@ -42,6 +41,7 @@ def test_create_sub_org_and_invite_new_user(admin_auth_headers):
         json={
             "subId": "123",
             "status": "active",
+            "planId": "basic",
             "firstAdminInviteEmail": invite_email,
             "quotas": {
                 "maxPagesPerCrawl": 100,
@@ -49,7 +49,6 @@ def test_create_sub_org_and_invite_new_user(admin_auth_headers):
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
             },
-            "details": {"extra": "data"},
         },
     )
 
@@ -84,7 +83,13 @@ def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
     }
-    assert "subData" not in data
+    assert data["subscription"] == {
+        "subId": "123",
+        "status": "active",
+        "planId": "basic",
+        "futureCancelData": None,
+        "readOnlyOnCancel": False,
+    }
 
 
 def test_register_with_invite():
@@ -117,7 +122,7 @@ def test_validate_new_org_with_quotas_and_update_name(admin_auth_headers):
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
     }
-    assert "subData" not in data
+    assert "subscription" in data
 
 
 def test_create_sub_org_and_invite_existing_user_dupe_sub(admin_auth_headers):
@@ -127,6 +132,7 @@ def test_create_sub_org_and_invite_existing_user_dupe_sub(admin_auth_headers):
         json={
             "subId": "123",
             "status": "test",
+            "planId": "basic",
             "firstAdminInviteEmail": invite_email,
             "quotas": {
                 "maxPagesPerCrawl": 100,
@@ -134,7 +140,6 @@ def test_create_sub_org_and_invite_existing_user_dupe_sub(admin_auth_headers):
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
             },
-            "details": {"extra": "data"},
         },
     )
 
@@ -149,6 +154,7 @@ def test_create_sub_org_and_invite_existing_user(admin_auth_headers):
         json={
             "subId": "234",
             "status": "active",
+            "planId": "basic",
             "firstAdminInviteEmail": invite_email,
             "quotas": {
                 "maxPagesPerCrawl": 100,
@@ -156,7 +162,6 @@ def test_create_sub_org_and_invite_existing_user(admin_auth_headers):
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
             },
-            "details": {"extra": "data"},
         },
     )
 
@@ -223,7 +228,7 @@ def test_login_existing_user_for_invite():
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
     }
-    assert "subData" not in org
+    assert "subscription" in org
 
 
 def test_update_sub(admin_auth_headers):
