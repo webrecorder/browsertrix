@@ -143,10 +143,13 @@ def test_delete_org_crawl_running(
     assert r.status_code == 200
     assert r.json()["deleted"]
 
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{non_default_org_id}", headers=admin_auth_headers
-    )
-    assert r.status_code == 404
+    time.sleep(5)
+
+    r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
+    data = r.json()
+    for org in data["items"]:
+        if org["id"] == non_default_org_id:
+            assert False
 
 
 def test_delete_org_qa_running(
@@ -158,10 +161,13 @@ def test_delete_org_qa_running(
     assert r.status_code == 200
     assert r.json()["deleted"]
 
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{non_default_org_id}", headers=admin_auth_headers
-    )
-    assert r.status_code == 404
+    time.sleep(5)
+
+    r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
+    data = r.json()
+    for org in data["items"]:
+        if org["id"] == non_default_org_id:
+            assert False
 
 
 def test_delete_org_profile_running(
@@ -173,7 +179,10 @@ def test_delete_org_profile_running(
     assert r.status_code == 200
     assert r.json()["deleted"]
 
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{non_default_org_id}", headers=admin_auth_headers
-    )
-    assert r.status_code == 404
+    time.sleep(5)
+
+    r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
+    data = r.json()
+    for org in data["items"]:
+        if org["id"] == non_default_org_id:
+            assert False
