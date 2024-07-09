@@ -1,8 +1,12 @@
 import { localized, msg, str } from "@lit/localize";
-import type { SlChangeEvent, SlInput } from "@shoelace-style/shoelace";
+import type {
+  SlButton,
+  SlChangeEvent,
+  SlInput,
+} from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { css, html, nothing } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import { customElement, property, query } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -42,9 +46,6 @@ export class OrgsList extends TailwindElement {
   @property({ type: Object })
   currOrg?: OrgData | null = null;
 
-  @state()
-  private enableDeleteButton = false;
-
   @query("#orgQuotaDialog")
   private readonly orgQuotaDialog?: Dialog | null;
 
@@ -53,6 +54,9 @@ export class OrgsList extends TailwindElement {
 
   @query("#orgDeleteDialog")
   private readonly orgDeleteDialog?: Dialog | null;
+
+  @query("#orgDeleteButton")
+  private readonly orgDeleteButton?: SlButton | null;
 
   private readonly api = new APIController(this);
   private readonly navigate = new NavigateController(this);
@@ -291,25 +295,29 @@ export class OrgsList extends TailwindElement {
               placeholder=${confirmationStr}
               @sl-input=${(e: SlChangeEvent) => {
                 const { value } = e.target as SlInput;
-                this.enableDeleteButton = value === confirmationStr;
+                this.orgDeleteButton!.disabled = value !== confirmationStr;
               }}
             >
               <strong slot="label" class="font-semibold">
                 ${msg(str`Type "${confirmationStr}" to confirm`)}
               </strong>
             </sl-input>
+            <div slot="footer" class="flex justify-end">
+              <sl-button
+                id="orgDeleteButton"
+                size="small"
+                variant="danger"
+                disabled
+                @click=${async () => {
+                  await this.deleteOrg(org);
+                  void this.orgDeleteDialog?.hide();
+                }}
+              >
+                ${msg("Delete Org")}
+              </sl-button>
+            </div>
           `;
         })}
-        <div slot="footer" class="flex justify-end">
-          <sl-button
-            size="small"
-            @click=${this.deleteOrg}
-            variant="danger"
-            ?disabled=${!this.enableDeleteButton}
-          >
-            ${msg("Delete Org")}
-          </sl-button>
-        </div>
       </btrix-dialog>
     `;
   }
