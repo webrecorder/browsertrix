@@ -58,6 +58,7 @@ from .models import (
     ConfigRevision,
     Profile,
     Collection,
+    OrgOut,
     OrgOutExport,
     PageWithAllQA,
     DeleteCrawlList,
@@ -1356,7 +1357,7 @@ def init_orgs_api(
         org = await ops.create_org(new_org.name, new_org.slug)
         return {"added": True, "id": org.id}
 
-    @router.get("", tags=["organizations"])
+    @router.get("", tags=["organizations"], response_model=OrgOut)
     async def get_org(
         org: Organization = Depends(org_dep), user: User = Depends(user_dep)
     ):
