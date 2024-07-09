@@ -1002,6 +1002,13 @@ class SubscriptionCreate(BaseModel):
 
 
 # ============================================================================
+class SubscriptionCreateOut(SubscriptionCreate):
+    """Output model for subscription creation event"""
+
+    timestamp: datetime
+
+
+# ============================================================================
 class SubscriptionUpdate(BaseModel):
     """update subscription data"""
 
@@ -1015,12 +1022,26 @@ class SubscriptionUpdate(BaseModel):
 
 
 # ============================================================================
+class SubscriptionUpdateOut(SubscriptionUpdate):
+    """Output model for subscription update event"""
+
+    timestamp: datetime
+
+
+# ============================================================================
 class SubscriptionCancel(BaseModel):
     """cancel subscription"""
 
     type: Literal["cancel"] = "cancel"
 
     subId: str
+
+
+# ============================================================================
+class SubscriptionCancelOut(SubscriptionCancel):
+    """Output model for subscription cancellation event"""
+
+    timestamp: datetime
 
 
 # ============================================================================

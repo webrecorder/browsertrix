@@ -379,9 +379,14 @@ def test_cancel_sub_and_no_delete_org(admin_auth_headers):
 def test_subscription_events_log(admin_auth_headers):
     r = requests.get(f"{API_PREFIX}/subscriptions/events", headers=admin_auth_headers)
     assert r.status_code == 200
-    events = r.json()["events"]
+    data = r.json()
+    events = data["items"]
+    total = data["total"]
+
+    assert total == 6
 
     for event in events:
+        assert event["timestamp"]
         del event["timestamp"]
 
     assert events == [
@@ -396,6 +401,8 @@ def test_subscription_events_log(admin_auth_headers):
                 "maxPagesPerCrawl": 100,
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
+                "extraExecMinutes": 0,
+                "giftedExecMinutes": 0,
             },
         },
         {
@@ -409,6 +416,8 @@ def test_subscription_events_log(admin_auth_headers):
                 "maxPagesPerCrawl": 100,
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
+                "extraExecMinutes": 0,
+                "giftedExecMinutes": 0,
             },
         },
         {
@@ -428,3 +437,268 @@ def test_subscription_events_log(admin_auth_headers):
         {"subId": "123", "type": "cancel"},
         {"subId": "234", "type": "cancel"},
     ]
+
+
+def test_subscription_events_log_filter_sub_id(admin_auth_headers):
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?subId=123", headers=admin_auth_headers
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+    total = data["total"]
+
+    assert total == 4
+
+    for event in events:
+        del event["timestamp"]
+
+    assert events == [
+        {
+            "type": "create",
+            "subId": "123",
+            "status": "active",
+            "planId": "basic",
+            "firstAdminInviteEmail": "test-user@example.com",
+            "quotas": {
+                "maxConcurrentCrawls": 1,
+                "maxPagesPerCrawl": 100,
+                "storageQuota": 1000000,
+                "maxExecMinutesPerMonth": 1000,
+                "extraExecMinutes": 0,
+                "giftedExecMinutes": 0,
+            },
+        },
+        {
+            "type": "update",
+            "subId": "123",
+            "status": "paused_payment_failed",
+            "planId": "basic",
+            "futureCancelDate": "2028-12-26T01:02:03",
+        },
+        {
+            "type": "update",
+            "subId": "123",
+            "status": "active",
+            "planId": "basic2",
+            "futureCancelDate": None,
+        },
+        {"subId": "123", "type": "cancel"},
+    ]
+
+
+def test_subscription_events_log_filter_plan_id(admin_auth_headers):
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?planId=basic2", headers=admin_auth_headers
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+    total = data["total"]
+
+    assert total == 1
+
+    for event in events:
+        del event["timestamp"]
+
+    assert events == [
+        {
+            "type": "update",
+            "subId": "123",
+            "status": "active",
+            "planId": "basic2",
+            "futureCancelDate": None,
+        },
+    ]
+
+
+def test_subscription_events_log_filter_status(admin_auth_headers):
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?subId=123&status=active",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+    total = data["total"]
+
+    assert total == 2
+
+    for event in events:
+        del event["timestamp"]
+
+    assert events == [
+        {
+            "type": "create",
+            "subId": "123",
+            "status": "active",
+            "planId": "basic",
+            "firstAdminInviteEmail": "test-user@example.com",
+            "quotas": {
+                "maxConcurrentCrawls": 1,
+                "maxPagesPerCrawl": 100,
+                "storageQuota": 1000000,
+                "maxExecMinutesPerMonth": 1000,
+                "extraExecMinutes": 0,
+                "giftedExecMinutes": 0,
+            },
+        },
+        {
+            "type": "update",
+            "subId": "123",
+            "status": "active",
+            "planId": "basic2",
+            "futureCancelDate": None,
+        },
+    ]
+
+
+def test_subscription_events_log_filter_sort(admin_auth_headers):
+    # Timestamp, descending
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?sortBy=timestamp&sortDirection=-1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+
+    last_timestamp = None
+    for event in events:
+        timestamp = event["timestamp"]
+        if last_timestamp:
+            assert last_timestamp >= timestamp
+        last_timestamp = timestamp
+
+    # subId, ascending
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?sortBy=subId&sortDirection=1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+
+    last_id = None
+    for event in events:
+        sub_id = event["subId"]
+        if last_id:
+            assert last_id <= sub_id
+        last_id = sub_id
+
+    # subId, descending
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?sortBy=subId&sortDirection=-1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+
+    last_id = None
+    for event in events:
+        sub_id = event["subId"]
+        if last_id:
+            assert last_id >= sub_id
+        last_id = sub_id
+
+    # Status, ascending
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?sortBy=status", headers=admin_auth_headers
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+
+    last_status = None
+    for event in events:
+        event_status = event.get("status")
+        if event_status and last_status:
+            assert last_status <= event_status
+        if event_status:
+            last_status = event_status
+
+    # Status, descending
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?sortBy=status&sortDirection=-1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+
+    last_status = None
+    for event in events:
+        event_status = event.get("status")
+        if event_status and last_status:
+            assert last_status >= event_status
+        if event_status:
+            last_status = event_status
+
+    # planId, ascending
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?sortBy=planId&sortDirection=1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+
+    last_id = None
+    for event in events:
+        plan_id = event.get("planId")
+        if plan_id and last_id:
+            assert last_id <= plan_id
+        if plan_id:
+            last_id = plan_id
+
+    # planId, descending
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?sortBy=planId&sortDirection=-1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+
+    last_id = None
+    for event in events:
+        plan_id = event.get("planId")
+        if plan_id and last_id:
+            assert last_id >= plan_id
+        if plan_id:
+            last_id = plan_id
+
+    # futureCancelDate, ascending
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?sortBy=futureCancelDate&sortDirection=1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+
+    last_date = None
+    for event in events:
+        cancel_date = event.get("futureCancelDate")
+        if cancel_date and last_date:
+            assert last_id <= cancel_date
+        if cancel_date:
+            last_date = cancel_date
+
+    # futureCancelDate, descending
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?sortBy=futureCancelDate&sortDirection=-1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+
+    last_date = None
+    for event in events:
+        cancel_date = event.get("futureCancelDate")
+        if cancel_date and last_date:
+            assert last_id >= cancel_date
+        if cancel_date:
+            last_date = cancel_date

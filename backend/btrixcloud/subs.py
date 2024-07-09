@@ -2,7 +2,7 @@
 Subscription API handling
 """
 
-from typing import Callable, Union, Any, Optional
+from typing import Callable, Union, Any, Optional, Tuple, List
 import os
 
 from datetime import datetime
@@ -17,6 +17,9 @@ from .models import (
     SubscriptionCreate,
     SubscriptionUpdate,
     SubscriptionCancel,
+    SubscriptionCreateOut,
+    SubscriptionUpdateOut,
+    SubscriptionCancelOut,
     Subscription,
     SubscriptionOut,
     SubscriptionPortalUrlRequest,
@@ -26,6 +29,7 @@ from .models import (
     User,
     UserRole,
 )
+from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
 
 # if set, will enable this api
@@ -133,13 +137,85 @@ class SubOps:
         data["timestamp"] = datetime.utcnow()
         await self.subs.insert_one(data)
 
-    async def list_sub_events(self):
+    def _get_sub_by_type_from_data(
+        self, data: dict[str, object]
+    ) -> Union[SubscriptionCreateOut, SubscriptionUpdateOut, SubscriptionCancelOut]:
+        """convert dict to propert background job type"""
+        if data["type"] == "create":
+            return SubscriptionCreateOut(**data)
+        elif data["type"] == "update":
+            return SubscriptionUpdateOut(**data)
+        else:
+            return SubscriptionCancelOut(**data)
+
+    async def list_sub_events(
+        self,
+        status: Optional[str] = None,
+        sub_id: Optional[str] = None,
+        plan_id: Optional[str] = None,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sort_by: Optional[str] = None,
+        sort_direction: Optional[int] = -1,
+    ) -> Tuple[
+        List[
+            Union[SubscriptionCreateOut, SubscriptionUpdateOut, SubscriptionCancelOut]
+        ],
+        int,
+    ]:
         """list subscription events"""
-        # note: should add sorting/filtering eventually
-        cursor = self.subs.find({}, projection={"_id": False})
-        res = await cursor.to_list(length=1000)
-        print("res", res)
-        return res
+        # pylint: disable=duplicate-code, too-many-locals, too-many-branches, too-many-statements
+        # Zero-index page for query
+        page = page - 1
+        skip = page_size * page
+
+        query: dict[str, object] = {}
+        if status:
+            query["status"] = status
+        if sub_id:
+            query["subId"] = sub_id
+        if plan_id:
+            query["planId"] = plan_id
+
+        aggregate = [{"$match": query}]
+
+        if sort_by:
+            sort_fields = ("timestamp", "subId", "status", "planId", "futureCancelDate")
+            if sort_by not in sort_fields:
+                raise HTTPException(status_code=400, detail="invalid_sort_by")
+            if sort_direction not in (1, -1):
+                raise HTTPException(status_code=400, detail="invalid_sort_direction")
+
+            aggregate.extend([{"$sort": {sort_by: sort_direction}}])
+
+        aggregate.extend(
+            [
+                {
+                    "$facet": {
+                        "items": [
+                            {"$skip": skip},
+                            {"$limit": page_size},
+                        ],
+                        "total": [{"$count": "count"}],
+                    }
+                },
+            ]
+        )
+
+        # Get total
+        cursor = self.subs.aggregate(aggregate)
+        results = await cursor.to_list(length=1)
+        result = results[0]
+        items = result["items"]
+
+        try:
+            total = int(result["total"][0]["count"])
+        except (IndexError, ValueError):
+            total = 0
+
+        subs = [self._get_sub_by_type_from_data(data) for data in items]
+
+        return subs, total
 
     async def get_sub_info(
         self, org: Organization
@@ -225,9 +301,25 @@ def init_subs_api(
         tags=["subscriptions"],
         dependencies=[Depends(user_or_shared_secret_dep)],
     )
-    async def get_sub_events():
-        events = await ops.list_sub_events()
-        return {"events": events}
+    async def get_sub_events(
+        status: Optional[str] = None,
+        subId: Optional[str] = None,
+        planId: Optional[str] = None,
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
+        sortBy: Optional[str] = "timestamp",
+        sortDirection: Optional[int] = 1,
+    ):
+        events, total = await ops.list_sub_events(
+            status=status,
+            sub_id=subId,
+            plan_id=planId,
+            page_size=pageSize,
+            page=page,
+            sort_by=sortBy,
+            sort_direction=sortDirection,
+        )
+        return paginated_format(events, total, page, pageSize)
 
     @org_ops.router.get("/subscription", tags=["organizations"])
     async def get_sub_info(org: Organization = Depends(org_ops.org_owner_dep)):
