@@ -302,7 +302,13 @@ export class OrgsList extends TailwindElement {
                 ${msg(str`Type "${confirmationStr}" to confirm`)}
               </strong>
             </sl-input>
-            <div slot="footer" class="flex justify-end">
+            <div slot="footer" class="flex justify-between">
+              <sl-button
+                size="small"
+                @click=${() => void this.orgDeleteDialog?.hide()}
+              >
+                ${msg("Cancel")}
+              </sl-button>
               <sl-button
                 id="orgDeleteButton"
                 size="small"
