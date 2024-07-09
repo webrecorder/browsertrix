@@ -70,7 +70,7 @@ class InviteOut(BaseModel):
     orgSlug: Optional[str]
     role: UserRole = UserRole.VIEWER
     email: Optional[str]
-    firstOrgOwner: Optional[bool] = None
+    firstOrgAdmin: Optional[bool] = None
 
 
 # ============================================================================
@@ -1000,8 +1000,9 @@ class SubscriptionUpdate(BaseModel):
 
     subId: str
     status: str
-    futureCancelDate: Optional[datetime] = None
-    planId: Optional[str] = None
+    planId: str
+
+    futureCancelDate: Optional[datetime]
 
 
 # ============================================================================

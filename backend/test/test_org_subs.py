@@ -202,7 +202,7 @@ def test_login_existing_user_for_invite():
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["firstOrgOwner"] == True
+    assert data["firstOrgAdmin"] == True
     assert data["orgName"] == data["oid"]
     assert data["orgName"] == data["orgSlug"]
 
@@ -238,23 +238,61 @@ def test_update_sub(admin_auth_headers):
         json={
             "subId": "123",
             "status": "payment-failed",
+            "planId": "basic",
+            "futureCancelDate": "2028-12-26T01:02:03Z",
         },
     )
 
     assert r.status_code == 200
     assert r.json() == {"updated": True}
 
-
-def test_get_sub_info(admin_auth_headers):
     r = requests.get(
         f"{API_PREFIX}/orgs/{new_subs_oid}/subscription", headers=admin_auth_headers
     )
     assert r.status_code == 200
 
     sub = r.json()["subscription"]
-    assert sub["status"] == "payment-failed"
-    assert sub["readOnlyOnCancel"] == False
-    assert sub["futureCancelDate"] == None
+    assert sub == {
+        "subId": "123",
+        "status": "payment-failed",
+        "planId": "basic",
+        "futureCancelDate": "2028-12-26T01:02:03",
+        "readOnlyOnCancel": False,
+        "portalUrl": "",
+    }
+
+
+def test_update_sub_2(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/update",
+        headers=admin_auth_headers,
+        json={
+            "subId": "123",
+            "status": "active",
+            "planId": "basic2",
+            "futureCancelDate": None,
+            # not updateable
+            "readOnlyOnCancel": True,
+        },
+    )
+
+    assert r.status_code == 200
+    assert r.json() == {"updated": True}
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{new_subs_oid}/subscription", headers=admin_auth_headers
+    )
+    assert r.status_code == 200
+
+    sub = r.json()["subscription"]
+    assert sub == {
+        "subId": "123",
+        "status": "active",
+        "planId": "basic2",
+        "futureCancelDate": None,
+        "readOnlyOnCancel": False,
+        "portalUrl": "",
+    }
 
 
 def test_cancel_sub_and_delete_org(admin_auth_headers):
@@ -354,6 +392,15 @@ def test_subscription_events_log(admin_auth_headers):
             "type": "update",
             "subId": "123",
             "status": "payment-failed",
+            "planId": "basic",
+            "futureCancelDate": "2028-12-26T01:02:03",
+        },
+        {
+            "type": "update",
+            "subId": "123",
+            "status": "active",
+            "planId": "basic2",
+            "futureCancelDate": None,
         },
         {"subId": "123", "type": "cancel"},
         {"subId": "234", "type": "cancel"},

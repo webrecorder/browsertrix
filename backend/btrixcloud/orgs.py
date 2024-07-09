@@ -396,15 +396,15 @@ class OrgOps:
     ) -> Optional[Organization]:
         """Update subscription by id"""
 
-        query: dict[str, Any] = {"subscription.status": update.status}
-        if update.futureCancelDate:
-            query["subscription.futureCancelDate"] = update.futureCancelDate
-        if update.planId:
-            query["subscription.planId"] = update.planId
-
         org_data = await self.orgs.find_one_and_update(
             {"subscription.subId": update.subId},
-            {"$set": query},
+            {
+                "$set": {
+                    "subscription.status": update.status,
+                    "subscription.planId": update.planId,
+                    "subscription.futureCancelDate": update.futureCancelDate,
+                }
+            },
             return_document=ReturnDocument.AFTER,
         )
         return Organization.from_dict(org_data) if org_data else None
