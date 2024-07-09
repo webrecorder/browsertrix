@@ -61,6 +61,9 @@ from .models import (
     OrgOutExport,
     PageWithAllQA,
     DeleteCrawlList,
+    PAUSED_PAYMENT_FAILED,
+    REASON_PAUSED,
+    ACTIVE,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import slug_from_name, validate_slug, JSONSerializer
@@ -325,6 +328,11 @@ class OrgOps:
             quotas=quotas or OrgQuotas(),
             subscription=subscription,
         )
+
+        if subscription and subscription.status == PAUSED_PAYMENT_FAILED:
+            org.readOnly = True
+            org.readOnlyReason = REASON_PAUSED
+
         try:
             await self.orgs.insert_one(org.to_dict())
         except DuplicateKeyError as dupe:
@@ -396,15 +404,22 @@ class OrgOps:
     ) -> Optional[Organization]:
         """Update subscription by id"""
 
+        query: dict[str, Any] = {
+            "subscription.status": update.status,
+            "subscription.planId": update.planId,
+            "subscription.futureCancelDate": update.futureCancelDate,
+        }
+
+        if update.status == PAUSED_PAYMENT_FAILED:
+            query["readOnly"] = True
+            query["readOnlyReason"] = REASON_PAUSED
+        elif update.status == ACTIVE:
+            query["readOnly"] = False
+            query["readOnlyReason"] = ""
+
         org_data = await self.orgs.find_one_and_update(
             {"subscription.subId": update.subId},
-            {
-                "$set": {
-                    "subscription.status": update.status,
-                    "subscription.planId": update.planId,
-                    "subscription.futureCancelDate": update.futureCancelDate,
-                }
-            },
+            {"$set": query},
             return_document=ReturnDocument.AFTER,
         )
         return Organization.from_dict(org_data) if org_data else None

@@ -967,6 +967,15 @@ class S3Storage(BaseModel):
 # ============================================================================
 # Subscriptions
 # ============================================================================
+
+PAUSED_PAYMENT_FAILED = "paused_payment_failed"
+ACTIVE = "active"
+
+REASON_PAUSED = "subscriptionPaused"
+REASON_CANCELED = "subscriptionCanceled"
+
+
+# ============================================================================
 class OrgQuotas(BaseModel):
     """Organization quotas (settable by superadmin)"""
 

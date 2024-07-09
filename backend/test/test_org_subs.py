@@ -237,7 +237,7 @@ def test_update_sub(admin_auth_headers):
         headers=admin_auth_headers,
         json={
             "subId": "123",
-            "status": "payment-failed",
+            "status": "paused_payment_failed",
             "planId": "basic",
             "futureCancelDate": "2028-12-26T01:02:03Z",
         },
@@ -246,20 +246,22 @@ def test_update_sub(admin_auth_headers):
     assert r.status_code == 200
     assert r.json() == {"updated": True}
 
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{new_subs_oid}/subscription", headers=admin_auth_headers
-    )
+    r = requests.get(f"{API_PREFIX}/orgs/{new_subs_oid}", headers=admin_auth_headers)
     assert r.status_code == 200
 
-    sub = r.json()["subscription"]
+    data = r.json()
+
+    sub = data["subscription"]
     assert sub == {
         "subId": "123",
-        "status": "payment-failed",
+        "status": "paused_payment_failed",
         "planId": "basic",
         "futureCancelDate": "2028-12-26T01:02:03",
         "readOnlyOnCancel": False,
-        "portalUrl": "",
     }
+
+    assert data["readOnly"] == True
+    assert data["readOnlyReason"] == "subscriptionPaused"
 
 
 def test_update_sub_2(admin_auth_headers):
@@ -279,12 +281,33 @@ def test_update_sub_2(admin_auth_headers):
     assert r.status_code == 200
     assert r.json() == {"updated": True}
 
+    r = requests.get(f"{API_PREFIX}/orgs/{new_subs_oid}", headers=admin_auth_headers)
+    assert r.status_code == 200
+
+    data = r.json()
+
+    sub = data["subscription"]
+    assert sub == {
+        "subId": "123",
+        "status": "active",
+        "planId": "basic2",
+        "futureCancelDate": None,
+        "readOnlyOnCancel": False,
+    }
+
+    assert data["readOnly"] == False
+    assert data["readOnlyReason"] == ""
+
+
+def test_get_subscription_info(admin_auth_headers):
     r = requests.get(
         f"{API_PREFIX}/orgs/{new_subs_oid}/subscription", headers=admin_auth_headers
     )
     assert r.status_code == 200
 
-    sub = r.json()["subscription"]
+    data = r.json()
+
+    sub = data["subscription"]
     assert sub == {
         "subId": "123",
         "status": "active",
@@ -391,7 +414,7 @@ def test_subscription_events_log(admin_auth_headers):
         {
             "type": "update",
             "subId": "123",
-            "status": "payment-failed",
+            "status": "paused_payment_failed",
             "planId": "basic",
             "futureCancelDate": "2028-12-26T01:02:03",
         },
