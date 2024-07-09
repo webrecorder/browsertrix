@@ -1001,7 +1001,7 @@ class SubscriptionUpdate(BaseModel):
     subId: str
     status: str
     futureCancelDate: Optional[datetime] = None
-    planId: Optional[str]
+    planId: Optional[str] = None
 
 
 # ============================================================================
