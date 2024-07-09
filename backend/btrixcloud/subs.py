@@ -147,12 +147,13 @@ class SubOps:
         """convert dict to propert background job type"""
         if data["type"] == "create":
             return SubscriptionCreateOut(**data)
-        elif data["type"] == "update":
+        if data["type"] == "update":
             return SubscriptionUpdateOut(**data)
         else:
             return SubscriptionCancelOut(**data)
 
     async def list_sub_events(
+        # pylint: disable=too-many-arguments
         self,
         status: Optional[str] = None,
         sub_id: Optional[str] = None,
@@ -316,6 +317,7 @@ def init_subs_api(
         dependencies=[Depends(user_or_shared_secret_dep)],
     )
     async def get_sub_events(
+        # pylint: disable=invalid-name,too-many-arguments
         status: Optional[str] = None,
         subId: Optional[str] = None,
         oid: Optional[UUID] = None,
