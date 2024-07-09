@@ -28,7 +28,10 @@ class EmailSender:
     smtp_port: int
     smtp_use_tls: bool
     support_email: str
+
     templates: Jinja2Templates
+
+    log_sent_emails: bool
 
     def __init__(self):
         self.sender = os.environ.get("EMAIL_SENDER") or "Browsertrix admin"
@@ -38,6 +41,8 @@ class EmailSender:
         self.smtp_server = os.environ.get("EMAIL_SMTP_HOST")
         self.smtp_port = int(os.environ.get("EMAIL_SMTP_PORT", 587))
         self.smtp_use_tls = is_bool(os.environ.get("EMAIL_SMTP_USE_TLS"))
+
+        self.log_sent_emails = is_bool(os.environ.get("LOG_SENT_EMAILS"))
 
         self.default_origin = os.environ.get("APP_ORIGIN")
 
@@ -58,10 +63,14 @@ class EmailSender:
         else:
             raise HTTPException(status_code=500, detail="invalid_email_template")
 
-        # print(full, flush=True)
+        if self.log_sent_emails:
+            print(full, flush=True)
 
         if not self.smtp_server:
-            # print("Email: No SMTP Server, not sending", flush=True)
+            print(
+                f'Email: created "{name}" msg for "{receiver}", but not sent (no SMTP server set)',
+                flush=True,
+            )
             return
 
         msg: Union[EmailMessage, MIMEMultipart]

@@ -365,6 +365,9 @@ email:
   reply_to_email: example@example.com
   use_tls: True
 
+  # if True, will print contents of all emails sent to stdout log
+  log_sent_emails: False
+
   # use to provide an additional support email in email templates
   support_email: ""
 

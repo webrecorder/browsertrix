@@ -62,6 +62,8 @@ data:
 
   SALES_EMAIL: "{{ .Values.sales_email }}"
 
+  LOG_SENT_EMAILS: "{{ .Values.email.log_sent_emails }}"
+
 ---
 apiVersion: v1
 kind: ConfigMap
