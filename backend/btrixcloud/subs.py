@@ -149,11 +149,10 @@ class SubOps:
             return SubscriptionCreateOut(**data)
         if data["type"] == "update":
             return SubscriptionUpdateOut(**data)
-        else:
-            return SubscriptionCancelOut(**data)
+        return SubscriptionCancelOut(**data)
 
+    # pylint: disable=too-many-arguments
     async def list_sub_events(
-        # pylint: disable=too-many-arguments
         self,
         status: Optional[str] = None,
         sub_id: Optional[str] = None,
@@ -267,6 +266,7 @@ class SubOps:
         return {"subscription": sub_out}
 
 
+# pylint: disable=invalid-name,too-many-arguments
 def init_subs_api(
     app,
     mdb,
@@ -317,7 +317,6 @@ def init_subs_api(
         dependencies=[Depends(user_or_shared_secret_dep)],
     )
     async def get_sub_events(
-        # pylint: disable=invalid-name,too-many-arguments
         status: Optional[str] = None,
         subId: Optional[str] = None,
         oid: Optional[UUID] = None,
