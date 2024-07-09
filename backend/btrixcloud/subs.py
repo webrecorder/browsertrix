@@ -101,7 +101,7 @@ class SubOps:
         return {"updated": True}
 
     async def cancel_subscription(self, cancel: SubscriptionCancel) -> dict[str, bool]:
-        """delete subscription data, and if readOnlyOnCancel is true, the entire org"""
+        """delete subscription data, and unless if readOnlyOnCancel is true, the entire org"""
 
         org = await self.org_ops.cancel_subscription_data(cancel)
 
