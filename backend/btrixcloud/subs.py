@@ -4,6 +4,7 @@ Subscription API handling
 
 from typing import Callable, Union, Any, Optional, Tuple, List
 import os
+from uuid import UUID
 
 from datetime import datetime
 
@@ -82,7 +83,7 @@ class SubOps:
                 result["invited"] = "existing_user"
             result["token"] = token
 
-        await self.add_sub_event(create)
+        await self.add_sub_event(create, new_org.id)
 
         return result
 
@@ -96,7 +97,7 @@ class SubOps:
                 status_code=404, detail="org_for_subscription_not_found"
             )
 
-        await self.add_sub_event(update)
+        await self.add_sub_event(update, org.id)
         return {"updated": True}
 
     async def cancel_subscription(self, cancel: SubscriptionCancel) -> dict[str, bool]:
@@ -125,16 +126,19 @@ class SubOps:
             await self.org_ops.delete_org_and_data(org, self.user_manager)
             deleted = True
 
-        await self.add_sub_event(cancel)
+        await self.add_sub_event(cancel, org.id)
         return {"canceled": True, "deleted": deleted}
 
     async def add_sub_event(
-        self, event: Union[SubscriptionCreate, SubscriptionUpdate, SubscriptionCancel]
+        self,
+        event: Union[SubscriptionCreate, SubscriptionUpdate, SubscriptionCancel],
+        oid: UUID,
     ) -> None:
         """add a subscription event to the db"""
         data = event.dict(exclude_unset=True)
         data["type"] = event.type
         data["timestamp"] = datetime.utcnow()
+        data["oid"] = oid
         await self.subs.insert_one(data)
 
     def _get_sub_by_type_from_data(
@@ -152,6 +156,7 @@ class SubOps:
         self,
         status: Optional[str] = None,
         sub_id: Optional[str] = None,
+        oid: Optional[UUID] = None,
         plan_id: Optional[str] = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -176,11 +181,20 @@ class SubOps:
             query["subId"] = sub_id
         if plan_id:
             query["planId"] = plan_id
+        if oid:
+            query["oid"] = oid
 
         aggregate = [{"$match": query}]
 
         if sort_by:
-            sort_fields = ("timestamp", "subId", "status", "planId", "futureCancelDate")
+            sort_fields = (
+                "timestamp",
+                "subId",
+                "oid",
+                "status",
+                "planId",
+                "futureCancelDate",
+            )
             if sort_by not in sort_fields:
                 raise HTTPException(status_code=400, detail="invalid_sort_by")
             if sort_direction not in (1, -1):
@@ -304,6 +318,7 @@ def init_subs_api(
     async def get_sub_events(
         status: Optional[str] = None,
         subId: Optional[str] = None,
+        oid: Optional[UUID] = None,
         planId: Optional[str] = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -313,6 +328,7 @@ def init_subs_api(
         events, total = await ops.list_sub_events(
             status=status,
             sub_id=subId,
+            oid=oid,
             plan_id=planId,
             page_size=pageSize,
             page=page,

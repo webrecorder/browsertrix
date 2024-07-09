@@ -988,6 +988,14 @@ class OrgQuotas(BaseModel):
 
 
 # ============================================================================
+class SubscriptionEventOut(BaseModel):
+    """Fields to add to output models for subscription events"""
+
+    oid: UUID
+    timestamp: datetime
+
+
+# ============================================================================
 class SubscriptionCreate(BaseModel):
     """create new subscription"""
 
@@ -1002,10 +1010,8 @@ class SubscriptionCreate(BaseModel):
 
 
 # ============================================================================
-class SubscriptionCreateOut(SubscriptionCreate):
+class SubscriptionCreateOut(SubscriptionCreate, SubscriptionEventOut):
     """Output model for subscription creation event"""
-
-    timestamp: datetime
 
 
 # ============================================================================
@@ -1022,10 +1028,8 @@ class SubscriptionUpdate(BaseModel):
 
 
 # ============================================================================
-class SubscriptionUpdateOut(SubscriptionUpdate):
+class SubscriptionUpdateOut(SubscriptionUpdate, SubscriptionEventOut):
     """Output model for subscription update event"""
-
-    timestamp: datetime
 
 
 # ============================================================================
@@ -1038,10 +1042,8 @@ class SubscriptionCancel(BaseModel):
 
 
 # ============================================================================
-class SubscriptionCancelOut(SubscriptionCancel):
+class SubscriptionCancelOut(SubscriptionCancel, SubscriptionEventOut):
     """Output model for subscription cancellation event"""
-
-    timestamp: datetime
 
 
 # ============================================================================

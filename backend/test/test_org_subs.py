@@ -393,6 +393,7 @@ def test_subscription_events_log(admin_auth_headers):
         {
             "type": "create",
             "subId": "123",
+            "oid": new_subs_oid,
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
@@ -408,6 +409,7 @@ def test_subscription_events_log(admin_auth_headers):
         {
             "type": "create",
             "subId": "234",
+            "oid": new_subs_oid_2,
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
@@ -423,6 +425,7 @@ def test_subscription_events_log(admin_auth_headers):
         {
             "type": "update",
             "subId": "123",
+            "oid": new_subs_oid,
             "status": "paused_payment_failed",
             "planId": "basic",
             "futureCancelDate": "2028-12-26T01:02:03",
@@ -430,12 +433,13 @@ def test_subscription_events_log(admin_auth_headers):
         {
             "type": "update",
             "subId": "123",
+            "oid": new_subs_oid,
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
         },
-        {"subId": "123", "type": "cancel"},
-        {"subId": "234", "type": "cancel"},
+        {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
+        {"subId": "234", "oid": new_subs_oid_2, "type": "cancel"},
     ]
 
 
@@ -457,6 +461,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
         {
             "type": "create",
             "subId": "123",
+            "oid": new_subs_oid,
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
@@ -472,6 +477,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
         {
             "type": "update",
             "subId": "123",
+            "oid": new_subs_oid,
             "status": "paused_payment_failed",
             "planId": "basic",
             "futureCancelDate": "2028-12-26T01:02:03",
@@ -479,11 +485,64 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
         {
             "type": "update",
             "subId": "123",
+            "oid": new_subs_oid,
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
         },
-        {"subId": "123", "type": "cancel"},
+        {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
+    ]
+
+
+def test_subscription_events_log_filter_oid(admin_auth_headers):
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?oid={new_subs_oid}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+    total = data["total"]
+
+    assert total == 4
+
+    for event in events:
+        del event["timestamp"]
+
+    assert events == [
+        {
+            "type": "create",
+            "subId": "123",
+            "oid": new_subs_oid,
+            "status": "active",
+            "planId": "basic",
+            "firstAdminInviteEmail": "test-user@example.com",
+            "quotas": {
+                "maxConcurrentCrawls": 1,
+                "maxPagesPerCrawl": 100,
+                "storageQuota": 1000000,
+                "maxExecMinutesPerMonth": 1000,
+                "extraExecMinutes": 0,
+                "giftedExecMinutes": 0,
+            },
+        },
+        {
+            "type": "update",
+            "subId": "123",
+            "oid": new_subs_oid,
+            "status": "paused_payment_failed",
+            "planId": "basic",
+            "futureCancelDate": "2028-12-26T01:02:03",
+        },
+        {
+            "type": "update",
+            "subId": "123",
+            "oid": new_subs_oid,
+            "status": "active",
+            "planId": "basic2",
+            "futureCancelDate": None,
+        },
+        {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
     ]
 
 
@@ -505,6 +564,7 @@ def test_subscription_events_log_filter_plan_id(admin_auth_headers):
         {
             "type": "update",
             "subId": "123",
+            "oid": new_subs_oid,
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
@@ -531,6 +591,7 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
         {
             "type": "create",
             "subId": "123",
+            "oid": new_subs_oid,
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
@@ -546,6 +607,7 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
         {
             "type": "update",
             "subId": "123",
+            "oid": new_subs_oid,
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
@@ -601,6 +663,38 @@ def test_subscription_events_log_filter_sort(admin_auth_headers):
         if last_id:
             assert last_id >= sub_id
         last_id = sub_id
+
+    # oid, ascending
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?sortBy=oid&sortDirection=1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+
+    last_id = None
+    for event in events:
+        oid = event["oid"]
+        if last_id:
+            assert last_id <= oid
+        last_id = oid
+
+    # oid, descending
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?sortBy=oid&sortDirection=-1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    events = data["items"]
+
+    last_id = None
+    for event in events:
+        oid = event["oid"]
+        if last_id:
+            assert last_id >= oid
+        last_id = oid
 
     # Status, ascending
     r = requests.get(
