@@ -246,7 +246,8 @@ class SubOps:
                         headers={
                             "Authorization": "bearer " + external_subs_app_api_key
                         },
-                        json=req.json(),
+                        json=req,
+                        raise_for_status=True,
                     ) as resp:
                         json = await resp.json()
                         return SubscriptionPortalUrlResponse(**json)
