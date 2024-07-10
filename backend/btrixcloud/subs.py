@@ -328,7 +328,9 @@ def init_subs_api(
         tags=["organizations"],
         response_model=SubscriptionPortalUrlResponse,
     )
-    async def get_sub_info(org: Organization = Depends(org_ops.org_owner_dep)):
+    async def get_billing_portal_url(
+        org: Organization = Depends(org_ops.org_owner_dep),
+    ):
         return await ops.get_billing_portal_url(org)
 
     return ops
