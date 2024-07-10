@@ -22,7 +22,6 @@ from .models import (
     SubscriptionUpdateOut,
     SubscriptionCancelOut,
     Subscription,
-    SubscriptionOut,
     SubscriptionPortalUrlRequest,
     SubscriptionPortalUrlResponse,
     Organization,
@@ -231,14 +230,12 @@ class SubOps:
 
         return subs, total
 
-    async def get_sub_info(
+    async def get_billing_portal_url(
         self, org: Organization
-    ) -> dict[str, Optional[SubscriptionOut]]:
+    ) -> SubscriptionPortalUrlResponse:
         """Get subscription info, fetching portal url if available"""
         if not org.subscription:
-            return {"subscription": None}
-
-        portal_url = ""
+            return SubscriptionPortalUrlResponse()
 
         if external_subs_app_api_url:
             try:
@@ -252,18 +249,12 @@ class SubOps:
                         json=req.json(),
                     ) as resp:
                         json = await resp.json()
-                        sub_resp = SubscriptionPortalUrlResponse(**json)
-                        portal_url = sub_resp.portalUrl
+                        return SubscriptionPortalUrlResponse(**json)
             # pylint: disable=broad-exception-caught
             except Exception as exc:
                 print("Error fetching portal url", exc)
 
-        sub_out = SubscriptionOut(
-            **org.subscription.dict(),
-            portalUrl=portal_url,
-        )
-
-        return {"subscription": sub_out}
+        return SubscriptionPortalUrlResponse()
 
 
 # pylint: disable=invalid-name,too-many-arguments
@@ -338,8 +329,12 @@ def init_subs_api(
         )
         return paginated_format(events, total, page, pageSize)
 
-    @org_ops.router.get("/subscription", tags=["organizations"])
+    @org_ops.router.get(
+        "/billing-portal",
+        tags=["organizations"],
+        response_model=SubscriptionPortalUrlResponse,
+    )
     async def get_sub_info(org: Organization = Depends(org_ops.org_owner_dep)):
-        return await ops.get_sub_info(org)
+        return await ops.get_billing_portal_url(org)
 
     return ops

@@ -1074,13 +1074,6 @@ class Subscription(BaseModel):
 
 
 # ============================================================================
-class SubscriptionOut(Subscription):
-    """Subscription info output model"""
-
-    portalUrl: str = ""
-
-
-# ============================================================================
 # ORGS
 # ============================================================================
 class OrgReadOnlyOnCancel(BaseModel):

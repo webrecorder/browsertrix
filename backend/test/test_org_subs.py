@@ -273,7 +273,7 @@ def test_update_sub_2(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
-            # not updateable
+            # not updateable here, only by superadmin
             "readOnlyOnCancel": True,
         },
     )
@@ -299,23 +299,13 @@ def test_update_sub_2(admin_auth_headers):
     assert data["readOnlyReason"] == ""
 
 
-def test_get_subscription_info(admin_auth_headers):
+def test_get_billing_portal_url(admin_auth_headers):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{new_subs_oid}/subscription", headers=admin_auth_headers
+        f"{API_PREFIX}/orgs/{new_subs_oid}/billing-portal", headers=admin_auth_headers
     )
     assert r.status_code == 200
 
-    data = r.json()
-
-    sub = data["subscription"]
-    assert sub == {
-        "subId": "123",
-        "status": "active",
-        "planId": "basic2",
-        "futureCancelDate": None,
-        "readOnlyOnCancel": False,
-        "portalUrl": "",
-    }
+    assert r.json() == {"portalUrl": ""}
 
 
 def test_cancel_sub_and_delete_org(admin_auth_headers):
