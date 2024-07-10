@@ -73,6 +73,9 @@ jobs:
         with:
           version: 3.10.2
 
+      - name: Create secret
+        run: kubectl create secret generic btrix-subs-app-secret --from-literal=BTRIX_SUBS_APP_URL=${{ env.ECHO_SERVER_HOST_URL }}/portalUrl
+
       - name: Start Cluster with Helm
         run: |
           helm upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml btrix ./chart/
@@ -90,7 +93,7 @@ jobs:
 
       - name: Run Tests
         timeout-minutes: 30
-        run: pytest -s -vv ./backend/test/test_*.py
+        run: pytest -vv ./backend/test/test_*.py
 
       - name: Print Backend Logs (API)
         if: ${{ failure() }}

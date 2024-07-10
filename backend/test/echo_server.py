@@ -21,7 +21,17 @@ class EchoServerHTTPRequestHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers.get("content-length", 0))
         body = self.rfile.read(content_length)
         self.send_response(200)
-        self.end_headers()
+        if self.path.endswith("/portalUrl"):
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(
+                json.dumps({"portalUrl": "https://portal.example.com/path/"}).encode(
+                    "utf-8"
+                )
+            )
+        else:
+            self.end_headers()
+
         post_bodies.append(json.loads(body.decode("utf-8").replace("'", '"')))
 
 

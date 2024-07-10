@@ -48,6 +48,9 @@ jobs:
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
 
+      - name: Create Secret
+        run: sudo microk8s kubectl create secret generic btrix-subs-app-secret --from-literal=BTRIX_SUBS_APP_URL=${{ env.ECHO_SERVER_HOST_URL }}/portalUrl
+
       - name: Start Cluster with Helm
         run: |
           sudo microk8s helm3 upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml -f ./chart/test/microk8s-ci.yaml btrix ./chart/

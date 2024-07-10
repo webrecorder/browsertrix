@@ -299,13 +299,13 @@ def test_update_sub_2(admin_auth_headers):
     assert data["readOnlyReason"] == ""
 
 
-def test_get_billing_portal_url(admin_auth_headers):
+def test_get_billing_portal_url(admin_auth_headers, echo_server):
     r = requests.get(
         f"{API_PREFIX}/orgs/{new_subs_oid}/billing-portal", headers=admin_auth_headers
     )
     assert r.status_code == 200
 
-    assert r.json() == {"portalUrl": ""}
+    assert r.json() == {"portalUrl": "https://portal.example.com/path/"}
 
 
 def test_cancel_sub_and_delete_org(admin_auth_headers):
