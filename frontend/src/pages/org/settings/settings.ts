@@ -168,9 +168,8 @@ export class OrgSettings extends TailwindElement {
         </btrix-tab-panel>
         <btrix-tab-panel name="billing">
           <btrix-org-settings-billing
-            .orgId=${this.orgId}
+            .org=${this.org}
             .authState=${this.authState}
-            .quotas=${this.org.quotas}
             .salesEmail=${this.appState.settings?.salesEmail}
           ></btrix-org-settings-billing>
         </btrix-tab-panel>

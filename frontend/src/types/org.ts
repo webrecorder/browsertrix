@@ -1,3 +1,4 @@
+import type { Subscription } from "./billing";
 import type { Range } from "./utils";
 
 // From UserRole in backend
@@ -50,6 +51,7 @@ export type OrgData = {
   };
   readOnly: boolean | null;
   readOnlyReason: string | null;
+  subscription: null | Subscription;
 };
 
 export type OrgConfig = unknown;

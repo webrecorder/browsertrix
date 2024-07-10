@@ -6,9 +6,9 @@ export enum SubscriptionStatus {
 
 export type Subscription = {
   status: SubscriptionStatus;
-  portalUrl: string;
+  futureCancelDate: null | string; // UTC datetime string
 };
 
-export type Plan = {
-  subscription: Subscription | null;
+export type BillingPortal = {
+  portalUrl: string;
 };

@@ -49,11 +49,7 @@ export default appState;
 export class AppStateService {
   static updateSettings = (settings: AppState["settings"]) => {
     unlock(() => {
-      appState.settings = {
-        ...settings,
-        // TODO remove temp data
-        billingEnabled: true,
-      } as AppState["settings"];
+      appState.settings = settings;
     });
   };
   static updateUserInfo = (userInfo: AppState["userInfo"]) => {

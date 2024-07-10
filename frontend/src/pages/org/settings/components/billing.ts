@@ -1,5 +1,4 @@
 import { localized, msg, str } from "@lit/localize";
-import { Task } from "@lit/task";
 import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -8,9 +7,9 @@ import { columns } from "../ui/columns";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
-import { SubscriptionStatus, type Plan } from "@/types/billing";
-import type { OrgQuotas } from "@/types/org";
-import type { Auth, AuthState } from "@/utils/AuthService";
+import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
+import type { OrgData, OrgQuotas } from "@/types/org";
+import type { AuthState } from "@/utils/AuthService";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
 import { formatNumber } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
@@ -27,53 +26,32 @@ export class OrgSettingsBilling extends TailwindElement {
   @property({ type: Object })
   authState?: AuthState;
 
-  @property({ type: String, noAccessor: true })
-  orgId?: string;
-
-  @property({ type: Object })
-  quotas?: OrgQuotas;
+  @property({ type: Object, noAccessor: true })
+  org?: OrgData;
 
   @property({ type: String, noAccessor: true })
   salesEmail?: string;
 
   private readonly api = new APIController(this);
 
-  private readonly planTask = new Task(this, {
-    task: async ([orgId, authState]) => {
-      if (!orgId || !authState) throw new Error("Missing args");
-      try {
-        return await this.getPlan({ orgId, auth: authState });
-      } catch (e) {
-        console.debug(e);
+  get portalUrlLabel() {
+    const subscription = this.org?.subscription;
 
-        throw new Error(
-          msg("Sorry, couldn't retrieve current plan at this time."),
-        );
+    if (!subscription) return;
+
+    let label = msg("Manage Plan");
+
+    switch (subscription.status) {
+      case SubscriptionStatus.PausedPaymentFailed: {
+        label = msg("Update Billing");
+        break;
       }
-    },
-    args: () => [this.orgId, this.authState] as const,
-  });
-
-  get manageLinkLabel() {
-    let label = msg("Contact Sales");
-
-    const subscription = this.planTask.value?.subscription;
-
-    if (subscription) {
-      switch (subscription.status) {
-        case SubscriptionStatus.PausedPaymentFailed: {
-          label = msg("Update Billing");
-          break;
-        }
-        case SubscriptionStatus.Cancelled: {
-          label = msg("Choose Plan");
-          break;
-        }
-        default: {
-          label = msg("Manage Plan");
-          break;
-        }
+      case SubscriptionStatus.Cancelled: {
+        label = msg("Choose Plan");
+        break;
       }
+      default:
+        break;
     }
 
     return label;
@@ -88,52 +66,42 @@ export class OrgSettingsBilling extends TailwindElement {
               <h4 class="form-label text-neutral-800">
                 ${msg("Current Plan")}
               </h4>
-              ${this.planTask.render({
-                complete: (plan) => html`
-                  <btrix-card>
-                    <div slot="title" class="flex items-center justify-between">
-                      <div class="flex items-center gap-2">
-                        ${this.renderPlanDetails(plan)}
+              <div class="rounded border px-4 pb-4">
+                ${when(
+                  this.org,
+                  (org) => html`
+                    <div
+                      class="mb-3 flex items-center justify-between border-b py-2"
+                    >
+                      <div
+                        class="flex items-center gap-2 text-base font-semibold leading-none"
+                      >
+                        ${this.renderSubscriptionDetails(org.subscription)}
                       </div>
-                      ${when(
-                        plan.subscription
-                          ? plan.subscription.portalUrl
-                          : this.salesEmail && `mailto:${this.salesEmail}`,
-                        (href) => html`
-                          <a
-                            class="transition-color flex items-center gap-2 px-2 py-1 text-sm leading-none text-primary hover:text-primary-500"
-                            href=${href}
-                            target="_blank"
-                            rel="noopener noreferrer nofollow"
-                          >
-                            ${this.manageLinkLabel}
-                            <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-                          </a>
-                        `,
-                      )}
+                      ${org.subscription
+                        ? this.renderPortalLink()
+                        : this.salesEmail
+                          ? this.renderContactSalesLink(this.salesEmail)
+                          : nothing}
                     </div>
-                    ${when(this.quotas, this.renderQuotas)}
-                  </btrix-card>
-                `,
-                error: (err) => html`
-                  <btrix-alert variant="danger">
-                    ${err instanceof Error ? err.message : err}
-                  </btrix-alert>
-                `,
-              })}
+                    ${this.renderQuotas(org.quotas)}
+                  `,
+                )}
+              </div>
             `,
             html`
               <p class="mb-3">
                 ${msg(
-                  "Hosted plan status, features, and add-ons, if applicable.",
+                  "Subscription status, features, and add-ons, if applicable.",
                 )}
               </p>
-              ${this.planTask.render({
-                complete: (plan) => html`
+              ${when(
+                this.org,
+                (org) => html`
                   <p class="leading-normal">
-                    ${plan.subscription
+                    ${org.subscription
                       ? msg(
-                          str`You can view plan details, update payment methods, and update billing information by clicking “${this.manageLinkLabel}”. This will redirect you to our payment processor in a new tab.`,
+                          str`You can view plan details, update payment methods, and update billing information by clicking “${this.portalUrlLabel}”.`,
                         )
                       : this.salesEmail
                         ? msg(
@@ -144,7 +112,7 @@ export class OrgSettingsBilling extends TailwindElement {
                           )}
                   </p>
                 `,
-              })}
+              )}
             `,
           ],
         ])}
@@ -152,17 +120,19 @@ export class OrgSettingsBilling extends TailwindElement {
     `;
   }
 
-  private readonly renderPlanDetails = (plan: Plan) => {
+  private readonly renderSubscriptionDetails = (
+    subscription: OrgData["subscription"],
+  ) => {
     let tierLabel;
     let statusLabel;
 
-    if (plan.subscription) {
+    if (subscription) {
       tierLabel = html`
         <sl-icon class="text-neutral-500" name="nut"></sl-icon>
         ${msg("Starter")}
       `;
 
-      switch (plan.subscription.status) {
+      switch (subscription.status) {
         case SubscriptionStatus.Active: {
           statusLabel = html`
             <span class="text-success-700">${msg("Active")}</span>
@@ -194,7 +164,7 @@ export class OrgSettingsBilling extends TailwindElement {
     }
 
     return html`${tierLabel}${statusLabel
-      ? html`<hr class="h-5 border-l" aria-orientation="vertical" />
+      ? html`<hr class="h-6 border-l" aria-orientation="vertical" />
           <span class="text-sm font-medium">${statusLabel}</span>`
       : nothing}`;
   };
@@ -229,21 +199,46 @@ export class OrgSettingsBilling extends TailwindElement {
     </ul>
   `;
 
-  private async getPlan({
-    orgId,
-    auth,
-  }: {
-    orgId: string;
-    auth: Auth;
-  }): Promise<Plan> {
+  private renderPortalLink() {
+    return html`
+      <sl-button
+        variant="text"
+        size="small"
+        @click=${async () => {
+          const { portalUrl } = await this.getPortalUrl();
+          window
+            .open(portalUrl, "btrixPaymentTab", "noopener=true,noreferrer=true")
+            ?.focus();
+        }}
+      >
+        ${this.portalUrlLabel}
+        <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+      </sl-button>
+    `;
+  }
+
+  private renderContactSalesLink(salesEmail: string) {
+    return html`
+      <sl-button
+        variant="text"
+        size="small"
+        href=${`mailto:${salesEmail}`}
+        rel="noopener noreferrer nofollow"
+      >
+        ${msg("Contact Sales")}
+        <sl-icon slot="prefix" name="envelope"></sl-icon>
+      </sl-button>
+    `;
+  }
+
+  private async getPortalUrl(): Promise<BillingPortal> {
     // TODO replace with real data
-    console.log(orgId, auth);
-    return Promise.resolve({
-      // subscription: {
-      //   status: SubscriptionStatus.Active,
-      //   portalUrl: "",
-      // },
-      subscription: null,
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          portalUrl: "https://dev.browsertrix.com",
+        });
+      }, 500);
     });
     // return this.api.fetch(`/orgs/${orgId}/billing`, auth);
   }
