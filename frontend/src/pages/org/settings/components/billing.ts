@@ -1,19 +1,26 @@
 import { localized, msg, str } from "@lit/localize";
 import { css, html, nothing } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, query } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { columns } from "../ui/columns";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { APIController } from "@/controllers/api";
-import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
+import type { Dialog } from "@/components/ui/dialog";
+import { NavigateController } from "@/controllers/navigate";
+import { SubscriptionStatus } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
 import type { AuthState } from "@/utils/AuthService";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
 import { formatNumber } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
+import { tw } from "@/utils/tailwind";
 
+const manageLinkClasslist = tw`transition-color flex items-center gap-2 p-2 text-sm font-semibold leading-none text-primary hover:text-primary-500`;
+
+/**
+ * @fires btrix-update-org
+ */
 @localized()
 @customElement("btrix-org-settings-billing")
 export class OrgSettingsBilling extends TailwindElement {
@@ -32,7 +39,10 @@ export class OrgSettingsBilling extends TailwindElement {
   @property({ type: String, noAccessor: true })
   salesEmail?: string;
 
-  private readonly api = new APIController(this);
+  @query("#portalLinkInfoDialog")
+  private readonly portalLinkInfoDialog?: Dialog | null;
+
+  private readonly navigate = new NavigateController(this);
 
   get portalUrlLabel() {
     const subscription = this.org?.subscription;
@@ -201,45 +211,52 @@ export class OrgSettingsBilling extends TailwindElement {
 
   private renderPortalLink() {
     return html`
-      <sl-button
-        variant="text"
-        size="small"
-        @click=${async () => {
-          const { portalUrl } = await this.getPortalUrl();
-          window
-            .open(portalUrl, "btrixPaymentTab", "noopener=true,noreferrer=true")
-            ?.focus();
-        }}
+      <a
+        class=${manageLinkClasslist}
+        href=${`${this.navigate.orgBasePath}/payment-portal-redirect`}
+        target="btrixPaymentTab"
+        @click=${() => void this.portalLinkInfoDialog?.show()}
       >
         ${this.portalUrlLabel}
         <sl-icon slot="suffix" name="arrow-right"></sl-icon>
-      </sl-button>
+      </a>
+
+      <btrix-dialog
+        id="portalLinkInfoDialog"
+        .label=${this.portalUrlLabel!}
+        @sl-hide=${async () => {
+          await this.updateComplete;
+          this.dispatchEvent(
+            new CustomEvent("btrix-update-org", {
+              bubbles: true,
+              composed: true,
+            }),
+          );
+        }}
+      >
+        ${msg(
+          "Check your open tabs for your billing portal. You can close the tab when you're done.",
+        )}
+        <sl-button
+          size="small"
+          slot="footer"
+          @click=${async () => void this.portalLinkInfoDialog?.hide()}
+          >${msg("Done")}</sl-button
+        >
+      </btrix-dialog>
     `;
   }
 
   private renderContactSalesLink(salesEmail: string) {
     return html`
-      <sl-button
-        variant="text"
-        size="small"
+      <a
+        class=${manageLinkClasslist}
         href=${`mailto:${salesEmail}`}
         rel="noopener noreferrer nofollow"
       >
         ${msg("Contact Sales")}
         <sl-icon slot="prefix" name="envelope"></sl-icon>
-      </sl-button>
+      </a>
     `;
-  }
-
-  private async getPortalUrl(): Promise<BillingPortal> {
-    // TODO replace with real data
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          portalUrl: "https://dev.browsertrix.com",
-        });
-      }, 500);
-    });
-    // return this.api.fetch(`/orgs/${orgId}/billing`, auth);
   }
 }

@@ -38,6 +38,7 @@ import "./browser-profiles-list";
 import "./browser-profiles-new";
 import "./settings/settings";
 import "./dashboard";
+import "./payment-portal-redirect";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -76,6 +77,7 @@ export type OrgParams = {
   settings: {
     settingsTab?: "information" | "members";
   };
+  "payment-portal-redirect": {};
 };
 export type OrgTab = keyof OrgParams;
 
@@ -230,7 +232,11 @@ export class Org extends LiteElement {
     }
   }
 
-  private async updateOrg() {
+  private async updateOrg(e?: CustomEvent) {
+    if (e) {
+      e.stopPropagation();
+    }
+
     if (!this.userInfo || !this.orgId) return;
     try {
       this.org = await this.getOrg(this.orgId);
@@ -304,6 +310,9 @@ export class Org extends LiteElement {
         }
         // falls through
       }
+      case "payment-portal-redirect":
+        tabPanelContent = this.renderPaymentPortalRedirect();
+        break;
       default:
         tabPanelContent = html`<btrix-not-found
           class="flex items-center justify-center"
@@ -713,6 +722,7 @@ export class Org extends LiteElement {
       ?isAddingMember=${isAddingMember}
       @org-user-role-change=${this.onUserRoleChange}
       @org-remove-member=${this.onOrgRemoveMember}
+      @btrix-update-org=${this.updateOrg}
     ></btrix-org-settings>`;
   }
 
@@ -730,6 +740,13 @@ export class Org extends LiteElement {
     );
 
     return data;
+  }
+
+  private renderPaymentPortalRedirect() {
+    return html`<btrix-org-payment-portal-redirect
+      orgId=${this.orgId}
+      .authState=${this.authState}
+    ></btrix-org-payment-portal-redirect>`;
   }
 
   private async onOrgRemoveMember(e: OrgRemoveMemberEvent) {
