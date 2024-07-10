@@ -1,13 +1,12 @@
 import { localized, msg, str } from "@lit/localize";
 import clsx from "clsx";
 import { css, html, nothing } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { columns } from "../ui/columns";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import type { Dialog } from "@/components/ui/dialog";
 import { NavigateController } from "@/controllers/navigate";
 import { SubscriptionStatus } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
@@ -43,9 +42,6 @@ export class OrgSettingsBilling extends TailwindElement {
 
   @property({ type: String, noAccessor: true })
   salesEmail?: string;
-
-  @query("#portalLinkInfoDialog")
-  private readonly portalLinkInfoDialog?: Dialog | null;
 
   private readonly navigate = new NavigateController(this);
 
@@ -250,46 +246,10 @@ export class OrgSettingsBilling extends TailwindElement {
         class=${manageLinkClasslist}
         href=${`${this.navigate.orgBasePath}/payment-portal-redirect`}
         target="btrixPaymentTab"
-        @click=${() => {
-          const onVisibilityChange = () => {
-            if (document.visibilityState === "hidden") {
-              void this.portalLinkInfoDialog?.show();
-              window.removeEventListener(
-                "visibilitychange",
-                onVisibilityChange,
-              );
-            }
-          };
-          window.addEventListener("visibilitychange", onVisibilityChange);
-        }}
       >
         ${this.portalUrlLabel}
         <sl-icon name="arrow-right"></sl-icon>
       </a>
-
-      <btrix-dialog
-        id="portalLinkInfoDialog"
-        .label=${this.portalUrlLabel!}
-        @sl-hide=${async () => {
-          await this.updateComplete;
-          this.dispatchEvent(
-            new CustomEvent("btrix-update-org", {
-              bubbles: true,
-              composed: true,
-            }),
-          );
-        }}
-      >
-        ${msg(
-          "Check your open tabs for your billing portal. You can close the tab when you're done.",
-        )}
-        <sl-button
-          size="small"
-          slot="footer"
-          @click=${async () => void this.portalLinkInfoDialog?.hide()}
-          >${msg("Done")}</sl-button
-        >
-      </btrix-dialog>
     `;
   }
 
