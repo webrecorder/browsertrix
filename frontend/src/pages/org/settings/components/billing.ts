@@ -250,28 +250,17 @@ export class OrgSettingsBilling extends TailwindElement {
         class=${manageLinkClasslist}
         href=${`${this.navigate.orgBasePath}/payment-portal-redirect`}
         target="btrixPaymentTab"
-        @click=${(e: MouseEvent) => {
-          e.preventDefault();
-          const el = e.target as HTMLAnchorElement;
-          const tabWindow = window.open(el.href, el.target);
-
-          if (tabWindow) {
-            const onVisibilityChange = () => {
-              if (document.visibilityState === "hidden") {
-                void this.portalLinkInfoDialog?.show();
-                window.removeEventListener(
-                  "visibilitychange",
-                  onVisibilityChange,
-                );
-              }
-            };
-            window.addEventListener("visibilitychange", onVisibilityChange);
-
-            tabWindow.focus();
-            tabWindow.addEventListener("beforeunload", () => {
-              void this.portalLinkInfoDialog?.hide();
-            });
-          }
+        @click=${() => {
+          const onVisibilityChange = () => {
+            if (document.visibilityState === "hidden") {
+              void this.portalLinkInfoDialog?.show();
+              window.removeEventListener(
+                "visibilitychange",
+                onVisibilityChange,
+              );
+            }
+          };
+          window.addEventListener("visibilitychange", onVisibilityChange);
         }}
       >
         ${this.portalUrlLabel}
