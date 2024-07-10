@@ -56,7 +56,7 @@ export class OrgPaymentPortalRedirect extends TailwindElement {
         `,
         error: () => html`
           <sl-icon
-            name="exclamation-triangle"
+            name="exclamation-triangle-fill"
             class="text-2xl text-danger-400"
           ></sl-icon>
           <p class="text-neutral-500">

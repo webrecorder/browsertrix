@@ -159,7 +159,7 @@ export class OrgSettingsBilling extends TailwindElement {
         case SubscriptionStatus.Active: {
           if (subscription.futureCancelDate) {
             statusLabel = html`
-              <span class="text-warning-600"
+              <span class="text-danger"
                 >${msg(
                   html`Canceling on
                     <sl-format-date
