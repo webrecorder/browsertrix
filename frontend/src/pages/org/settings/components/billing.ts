@@ -218,20 +218,29 @@ export class OrgSettingsBilling extends TailwindElement {
         @click=${(e: MouseEvent) => {
           e.preventDefault();
           const el = e.target as HTMLAnchorElement;
-          const win = window.open(el.href, el.target);
+          const tabWindow = window.open(el.href, el.target);
 
-          if (win) {
-            win.focus();
-            win.addEventListener("beforeunload", () => {
+          if (tabWindow) {
+            const onVisibilityChange = () => {
+              if (document.visibilityState === "hidden") {
+                void this.portalLinkInfoDialog?.show();
+                window.removeEventListener(
+                  "visibilitychange",
+                  onVisibilityChange,
+                );
+              }
+            };
+            window.addEventListener("visibilitychange", onVisibilityChange);
+
+            tabWindow.focus();
+            tabWindow.addEventListener("beforeunload", () => {
               void this.portalLinkInfoDialog?.hide();
             });
           }
-
-          void this.portalLinkInfoDialog?.show();
         }}
       >
         ${this.portalUrlLabel}
-        <sl-icon slot="suffix" name="arrow-right"></sl-icon>
+        <sl-icon name="arrow-right"></sl-icon>
       </a>
 
       <btrix-dialog
@@ -267,8 +276,8 @@ export class OrgSettingsBilling extends TailwindElement {
         href=${`mailto:${salesEmail}`}
         rel="noopener noreferrer nofollow"
       >
+        <sl-icon name="envelope"></sl-icon>
         ${msg("Contact Sales")}
-        <sl-icon slot="prefix" name="envelope"></sl-icon>
       </a>
     `;
   }
