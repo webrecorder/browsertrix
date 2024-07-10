@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import clsx from "clsx";
 import { css, html, nothing } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -16,7 +17,11 @@ import { formatNumber } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
-const manageLinkClasslist = tw`transition-color flex items-center gap-2 p-2 text-sm font-semibold leading-none text-primary hover:text-primary-500`;
+const linkClassList = tw`transition-color text-primary hover:text-primary-500`;
+const manageLinkClasslist = clsx(
+  linkClassList,
+  tw`flex items-center gap-2 p-2 text-sm font-semibold leading-none`,
+);
 
 /**
  * @fires btrix-update-org
@@ -110,9 +115,20 @@ export class OrgSettingsBilling extends TailwindElement {
                 (org) => html`
                   <p class="leading-normal">
                     ${org.subscription
-                      ? msg(
+                      ? html`${msg(
                           str`You can view plan details, update payment methods, and update billing information by clicking “${this.portalUrlLabel}”.`,
-                        )
+                        )}
+                        ${this.salesEmail
+                          ? msg(
+                              html`To upgrade to Pro, contact us at
+                                <a
+                                  class=${linkClassList}
+                                  href=${`mailto:${this.salesEmail}?subject=${msg(str`Upgrade Starter plan (${this.org?.name})`)}`}
+                                  rel="noopener noreferrer nofollow"
+                                  >${this.salesEmail}</a
+                                >.`,
+                            )
+                          : nothing}`
                       : this.salesEmail
                         ? msg(
                             str`Contact us at ${this.salesEmail} to make changes to your plan.`,
@@ -273,7 +289,7 @@ export class OrgSettingsBilling extends TailwindElement {
     return html`
       <a
         class=${manageLinkClasslist}
-        href=${`mailto:${salesEmail}`}
+        href=${`mailto:${salesEmail}?subject=${msg(str`Pro plan change request (${this.org?.name})`)}`}
         rel="noopener noreferrer nofollow"
       >
         <sl-icon name="envelope"></sl-icon>
