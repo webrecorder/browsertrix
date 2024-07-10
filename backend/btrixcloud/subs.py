@@ -64,27 +64,21 @@ class SubOps:
             quotas=create.quotas, subscription=subscription
         )
 
-        result = {"added": True, "id": new_org.id}
-
-        if create.firstAdminInviteEmail:
-            is_new, token = await self.org_ops.invites.invite_user(
-                InviteToOrgRequest(
-                    email=create.firstAdminInviteEmail, role=UserRole.OWNER
-                ),
-                user,
-                self.user_manager,
-                org=new_org,
-                headers=dict(request.headers),
-            )
-            if is_new:
-                result["invited"] = "new_user"
-            else:
-                result["invited"] = "existing_user"
-            result["token"] = token
+        is_new, token = await self.org_ops.invites.invite_user(
+            InviteToOrgRequest(email=create.firstAdminInviteEmail, role=UserRole.OWNER),
+            user,
+            self.user_manager,
+            org=new_org,
+            headers=dict(request.headers),
+        )
+        if is_new:
+            invited = "new_user"
+        else:
+            invited = "existing_user"
 
         await self.add_sub_event(create, new_org.id)
 
-        return result
+        return {"added": True, "id": new_org.id, "invited": invited, "token": token}
 
     async def update_subscription(self, update: SubscriptionUpdate) -> dict[str, bool]:
         """update subs"""
