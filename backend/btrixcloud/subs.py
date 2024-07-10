@@ -79,7 +79,7 @@ class SubOps:
         else:
             invited = "existing_user"
 
-        await self.add_sub_event(create, new_org.id)
+        await self.add_sub_event("create", create, new_org.id)
 
         return {"added": True, "id": new_org.id, "invited": invited, "token": token}
 
@@ -93,7 +93,7 @@ class SubOps:
                 status_code=404, detail="org_for_subscription_not_found"
             )
 
-        await self.add_sub_event(update, org.id)
+        await self.add_sub_event("update", update, org.id)
         return {"updated": True}
 
     async def cancel_subscription(self, cancel: SubscriptionCancel) -> dict[str, bool]:
@@ -122,17 +122,18 @@ class SubOps:
             await self.org_ops.delete_org_and_data(org, self.user_manager)
             deleted = True
 
-        await self.add_sub_event(cancel, org.id)
+        await self.add_sub_event("cancel", cancel, org.id)
         return {"canceled": True, "deleted": deleted}
 
     async def add_sub_event(
         self,
+        type_: str,
         event: Union[SubscriptionCreate, SubscriptionUpdate, SubscriptionCancel],
         oid: UUID,
     ) -> None:
         """add a subscription event to the db"""
         data = event.dict(exclude_unset=True)
-        data["type"] = event.type
+        data["type"] = type_
         data["timestamp"] = datetime.utcnow()
         data["oid"] = oid
         await self.subs.insert_one(data)

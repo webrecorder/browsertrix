@@ -999,8 +999,6 @@ class SubscriptionEventOut(BaseModel):
 class SubscriptionCreate(BaseModel):
     """create new subscription"""
 
-    type: Literal["create"] = "create"
-
     subId: str
     status: str
     planId: str
@@ -1013,12 +1011,12 @@ class SubscriptionCreate(BaseModel):
 class SubscriptionCreateOut(SubscriptionCreate, SubscriptionEventOut):
     """Output model for subscription creation event"""
 
+    type: Literal["create"] = "create"
+
 
 # ============================================================================
 class SubscriptionUpdate(BaseModel):
     """update subscription data"""
-
-    type: Literal["update"] = "update"
 
     subId: str
     status: str
@@ -1031,12 +1029,12 @@ class SubscriptionUpdate(BaseModel):
 class SubscriptionUpdateOut(SubscriptionUpdate, SubscriptionEventOut):
     """Output model for subscription update event"""
 
+    type: Literal["update"] = "update"
+
 
 # ============================================================================
 class SubscriptionCancel(BaseModel):
     """cancel subscription"""
-
-    type: Literal["cancel"] = "cancel"
 
     subId: str
 
@@ -1044,6 +1042,8 @@ class SubscriptionCancel(BaseModel):
 # ============================================================================
 class SubscriptionCancelOut(SubscriptionCancel, SubscriptionEventOut):
     """Output model for subscription cancellation event"""
+
+    type: Literal["cancel"] = "cancel"
 
 
 # ============================================================================
