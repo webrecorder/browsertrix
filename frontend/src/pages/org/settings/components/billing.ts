@@ -101,21 +101,21 @@ export class OrgSettingsBilling extends TailwindElement {
               </div>
             `,
             html`
-              <p class="mb-3">
+              <p class="mb-3 leading-normal">
                 ${msg(
                   "Subscription status, features, and add-ons, if applicable.",
                 )}
               </p>
-              ${when(
-                this.org,
-                (org) => html`
-                  <p class="leading-normal">
-                    ${org.subscription
-                      ? html`${msg(
+              ${when(this.org, (org) =>
+                org.subscription
+                  ? html`<p class="mb-3 leading-normal">
+                        ${msg(
                           str`You can view plan details, update payment methods, and update billing information by clicking “${this.portalUrlLabel}”.`,
                         )}
-                        ${this.salesEmail
-                          ? msg(
+                      </p>
+                      ${this.salesEmail
+                        ? html`<p class="leading-normal">
+                            ${msg(
                               html`To upgrade to Pro, contact us at
                                 <a
                                   class=${linkClassList}
@@ -123,17 +123,18 @@ export class OrgSettingsBilling extends TailwindElement {
                                   rel="noopener noreferrer nofollow"
                                   >${this.salesEmail}</a
                                 >.`,
-                            )
-                          : nothing}`
-                      : this.salesEmail
+                            )}
+                          </p>`
+                        : nothing}`
+                  : html`<p class="leading-normal">
+                      ${this.salesEmail
                         ? msg(
                             str`Contact us at ${this.salesEmail} to make changes to your plan.`,
                           )
                         : msg(
                             str`Contact your Browsertrix host administrator to make changes to your plan.`,
                           )}
-                  </p>
-                `,
+                    </p>`,
               )}
             `,
           ],
