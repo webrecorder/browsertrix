@@ -726,6 +726,14 @@ export class Org extends LiteElement {
     ></btrix-org-settings>`;
   }
 
+  private renderPaymentPortalRedirect() {
+    return html`<btrix-org-payment-portal-redirect
+      class="flex flex-1"
+      orgId=${this.orgId}
+      .authState=${this.authState}
+    ></btrix-org-payment-portal-redirect>`;
+  }
+
   private async onSelectNewDialog(e: SelectNewDialogEvent) {
     e.stopPropagation();
     this.isCreateDialogVisible = true;
@@ -740,13 +748,6 @@ export class Org extends LiteElement {
     );
 
     return data;
-  }
-
-  private renderPaymentPortalRedirect() {
-    return html`<btrix-org-payment-portal-redirect
-      orgId=${this.orgId}
-      .authState=${this.authState}
-    ></btrix-org-payment-portal-redirect>`;
   }
 
   private async onOrgRemoveMember(e: OrgRemoveMemberEvent) {
