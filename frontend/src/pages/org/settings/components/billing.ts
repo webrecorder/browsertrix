@@ -13,7 +13,7 @@ import { SubscriptionStatus } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
 import type { AuthState } from "@/utils/AuthService";
 import { humanizeSeconds } from "@/utils/executionTimeFormatter";
-import { formatNumber } from "@/utils/localization";
+import { formatNumber, getLocale } from "@/utils/localization";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -160,9 +160,28 @@ export class OrgSettingsBilling extends TailwindElement {
 
       switch (subscription.status) {
         case SubscriptionStatus.Active: {
-          statusLabel = html`
-            <span class="text-success-700">${msg("Active")}</span>
-          `;
+          if (subscription.futureCancelDate) {
+            statusLabel = html`
+              <span class="text-warning-600"
+                >${msg(
+                  html`Canceling on
+                    <sl-format-date
+                      lang=${getLocale()}
+                      class="truncate"
+                      date=${subscription.futureCancelDate}
+                      month="2-digit"
+                      day="2-digit"
+                      year="2-digit"
+                    >
+                    </sl-format-date>`,
+                )}</span
+              >
+            `;
+          } else {
+            statusLabel = html`
+              <span class="text-success-700">${msg("Active")}</span>
+            `;
+          }
           break;
         }
         case SubscriptionStatus.PausedPaymentFailed: {
