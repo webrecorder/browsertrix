@@ -39,6 +39,9 @@ subscriptions_enabled = is_bool(os.environ.get("BILLING_ENABLED"))
 # if set, will lookup external portalUrl from this endpoint
 external_subs_app_api_url = os.environ.get("BTRIX_SUBS_APP_URL")
 
+# with this key
+external_subs_app_api_key = os.environ.get("BTRIX_SUBS_APP_API_KEY", "")
+
 
 # ============================================================================
 class SubOps:
@@ -240,6 +243,9 @@ class SubOps:
                     async with session.request(
                         "POST",
                         external_subs_app_api_url,
+                        headers={
+                            "Authorization": "bearer " + external_subs_app_api_key
+                        },
                         json=req.json(),
                     ) as resp:
                         json = await resp.json()
