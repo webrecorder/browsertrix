@@ -110,8 +110,11 @@ job_memory: "70Mi"
 
 profile_browser_idle_seconds: 60
 
+# set to true to enable subscriptions API and Billing tab
 billing_enabled: false
-sales_email: "sales@webrecorder.org"
+
+# set e-mail to show for subscriptions related info
+sales_email: ""
 
 # if set, print last 'log_failed_crawl_lines' of each failed
 # crawl pod to backend operator stdout
@@ -361,6 +364,9 @@ email:
   password: password
   reply_to_email: example@example.com
   use_tls: True
+
+  # if True, will print contents of all emails sent to stdout log
+  log_sent_emails: False
 
   # use to provide an additional support email in email templates
   support_email: ""

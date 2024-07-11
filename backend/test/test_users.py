@@ -170,7 +170,7 @@ def test_pending_invite_new_user(admin_auth_headers, default_org_id):
         assert invite["oid"] == default_org_id
         assert invite["created"]
         assert invite["role"]
-        assert invite["firstOrgOwner"] == None
+        assert invite["firstOrgAdmin"] == None
 
 
 def test_new_user_token():
@@ -332,7 +332,7 @@ def test_pending_invite_existing_user(admin_auth_headers, non_default_org_id):
     assert invite["oid"] == non_default_org_id
     assert invite["created"]
     assert invite["role"]
-    assert invite["firstOrgOwner"] == None
+    assert invite["firstOrgAdmin"] == None
 
 
 def test_pending_invites_crawler(crawler_auth_headers, default_org_id):
