@@ -330,12 +330,13 @@ export class OrgsList extends TailwindElement {
 
   private onUpdateQuota(e: CustomEvent) {
     const inputEl = e.target as SlInput;
+    const name = inputEl.name as keyof OrgData["quotas"];
     const quotas = this.currOrg?.quotas;
     if (quotas) {
-      if (inputEl.name === "storageQuota") {
-        quotas[inputEl.name] = Number(inputEl.value) * 1e9;
+      if (name === "storageQuota") {
+        quotas[name] = Number(inputEl.value) * 1e9;
       } else {
-        quotas[inputEl.name] = Number(inputEl.value);
+        quotas[name] = Number(inputEl.value);
       }
     }
   }
