@@ -21,6 +21,7 @@ from pydantic import (
 # from fastapi_users import models as fastapi_users_models
 
 from .db import BaseMongoModel
+from .utils import dt_now
 
 # crawl scale for constraint
 MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
@@ -130,7 +131,7 @@ class FailedLogin(BaseMongoModel):
     Failed login model
     """
 
-    attempted: datetime = datetime.now()
+    attempted: datetime = dt_now()
     email: str
 
     # Consecutive failed logins, reset to 0 on successful login or after
@@ -1728,7 +1729,7 @@ class PageNote(BaseModel):
 
     id: UUID
     text: str
-    created: datetime = datetime.now()
+    created: datetime = dt_now()
     userid: UUID
     userName: str
 

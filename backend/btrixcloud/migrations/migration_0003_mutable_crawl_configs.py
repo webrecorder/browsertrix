@@ -2,10 +2,9 @@
 Migration 0003 - Mutable crawl configs and crawl revision history
 """
 
-from datetime import datetime
-
 from btrixcloud.models import Crawl, CrawlConfig
 from btrixcloud.migrations import BaseMigration, MigrationError
+from btrixcloud.utils import dt_now
 
 
 MIGRATION_VERSION = "0003"
@@ -31,7 +30,7 @@ class Migration(BaseMigration):
         if not await crawl_configs.count_documents({}):
             return
 
-        utc_now_datetime = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        utc_now_datetime = dt_now()
 
         await crawl_configs.update_many(
             {"createdBy": None}, [{"$set": {"createdBy": "$userid"}}]

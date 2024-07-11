@@ -1,6 +1,5 @@
 """ Invite system management """
 
-from datetime import datetime
 from typing import Optional, Any
 import os
 import urllib.parse
@@ -23,7 +22,7 @@ from .models import (
 )
 from .users import UserManager
 from .emailsender import EmailSender
-from .utils import is_bool
+from .utils import is_bool, dt_now
 
 
 # ============================================================================
@@ -195,7 +194,7 @@ class InviteOps:
         invite_pending = InvitePending(
             id=uuid4(),
             oid=oid,
-            created=datetime.utcnow(),
+            created=dt_now(),
             role=invite.role if hasattr(invite, "role") else None,
             # URL decode email address just in case
             email=urllib.parse.unquote(invite.email),

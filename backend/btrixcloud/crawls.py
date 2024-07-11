@@ -783,7 +783,7 @@ class CrawlOps(BaseCrawlOps):
 
             qa_run = QARun(
                 id=qa_run_id,
-                started=datetime.now(),
+                started=dt_now(),
                 userid=user.id,
                 userName=user.name,
                 state="starting",

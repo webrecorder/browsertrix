@@ -6,8 +6,6 @@ from typing import Callable, Union, Any, Optional, Tuple, List
 import os
 from uuid import UUID
 
-from datetime import datetime
-
 from fastapi import Depends, HTTPException, Request
 import aiohttp
 
@@ -30,6 +28,7 @@ from .models import (
     UserRole,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
+from .utils import dt_now
 
 
 # if set, will enable this api
@@ -134,7 +133,7 @@ class SubOps:
         """add a subscription event to the db"""
         data = event.dict(exclude_unset=True)
         data["type"] = type_
-        data["timestamp"] = datetime.utcnow()
+        data["timestamp"] = dt_now()
         data["oid"] = oid
         await self.subs.insert_one(data)
 

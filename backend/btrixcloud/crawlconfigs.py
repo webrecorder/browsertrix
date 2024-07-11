@@ -192,7 +192,7 @@ class CrawlConfigOps:
         data["modifiedBy"] = user.id
         data["modifiedByName"] = user.name
         data["_id"] = uuid4()
-        data["created"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        data["created"] = dt_now()
         data["modified"] = data["created"]
 
         if config.runNow:
@@ -368,7 +368,7 @@ class CrawlConfigOps:
         query = update.dict(exclude_unset=True)
         query["modifiedBy"] = user.id
         query["modifiedByName"] = user.name
-        query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        query["modified"] = dt_now()
 
         query["profileid"], _ = await self._lookup_profile(update.profileid, org)
 
