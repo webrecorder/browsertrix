@@ -153,10 +153,10 @@ def test_create_org_duplicate_name(admin_auth_headers, non_default_org_id):
         json={"name": NON_DEFAULT_ORG_NAME, "slug": "another-new-org"},
     )
 
-    assert r.status_code == 200
+    assert r.status_code == 400
     data = r.json()
     assert data["added"] is False
-    assert data["error"] == "already_exists"
+    assert data["error"] == "duplicate_org_name"
 
 
 def test_create_org_duplicate_slug(admin_auth_headers, non_default_org_id):
@@ -166,10 +166,10 @@ def test_create_org_duplicate_slug(admin_auth_headers, non_default_org_id):
         json={"name": "Yet another new org", "slug": NON_DEFAULT_ORG_SLUG},
     )
 
-    assert r.status_code == 200
+    assert r.status_code == 400
     data = r.json()
     assert data["added"] is False
-    assert data["error"] == "already_exists"
+    assert data["error"] == "duplicate_org_slug"
 
 
 # disable until storage customization is enabled
