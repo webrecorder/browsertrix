@@ -1,24 +1,31 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
-import { type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import slugify from "slugify";
 
+import { columns } from "./ui/columns";
+
+import { TailwindElement } from "@/classes/TailwindElement";
+import { APIController } from "@/controllers/api";
+import { NavigateController } from "@/controllers/navigate";
+import { NotifyController } from "@/controllers/notify";
 import type { APIUser } from "@/index";
 import type { APIPaginatedList } from "@/types/api";
 import type { CurrentUser } from "@/types/user";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
-import LiteElement, { html } from "@/utils/LiteElement";
 import { AccessCode, isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
-import { AppStateService } from "@/utils/state";
+import appState, { AppStateService, use } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
-type Tab = "information" | "members";
+import "./components/billing";
+
+type Tab = "information" | "members" | "billing";
 type User = {
   email: string;
   role: number;
@@ -55,7 +62,7 @@ export type OrgRemoveMemberEvent = CustomEvent<{
  */
 @localized()
 @customElement("btrix-org-settings")
-export class OrgSettings extends LiteElement {
+export class OrgSettings extends TailwindElement {
   @property({ type: Object })
   authState?: AuthState;
 
@@ -74,6 +81,9 @@ export class OrgSettings extends LiteElement {
   @property({ type: Boolean })
   isAddingMember = false;
 
+  @use()
+  appState = appState;
+
   @state()
   private isSavingOrgName = false;
 
@@ -89,10 +99,15 @@ export class OrgSettings extends LiteElement {
   @state()
   private slugValue = "";
 
+  private readonly api = new APIController(this);
+  private readonly navigate = new NavigateController(this);
+  private readonly notify = new NotifyController(this);
+
   private get tabLabels(): Record<Tab, string> {
     return {
       information: msg("General"),
       members: msg("Members"),
+      billing: msg("Billing"),
     };
   }
 
@@ -122,10 +137,10 @@ export class OrgSettings extends LiteElement {
             () => html`
               <h3>${msg("Active Members")}</h3>
               <sl-button
-                href=${`${this.orgBasePath}/settings/members?invite`}
+                href=${`${this.navigate.orgBasePath}/settings/members?invite`}
                 variant="primary"
                 size="small"
-                @click=${this.navLink}
+                @click=${this.navigate.link}
               >
                 <sl-icon
                   slot="prefix"
@@ -141,13 +156,23 @@ export class OrgSettings extends LiteElement {
         </header>
         ${this.renderTab("information", "settings")}
         ${this.renderTab("members", "settings/members")}
+        ${when(this.appState.settings?.billingEnabled, () =>
+          this.renderTab("billing", "settings/billing"),
+        )}
 
-        <btrix-tab-panel name="information"
-          >${this.renderInformation()}</btrix-tab-panel
-        >
-        <btrix-tab-panel name="members"
-          >${this.renderMembers()}</btrix-tab-panel
-        >
+        <btrix-tab-panel name="information">
+          ${this.renderInformation()}
+        </btrix-tab-panel>
+        <btrix-tab-panel name="members">
+          ${this.renderMembers()}
+        </btrix-tab-panel>
+        <btrix-tab-panel name="billing">
+          <btrix-org-settings-billing
+            .org=${this.org}
+            .authState=${this.authState}
+            .salesEmail=${this.appState.settings?.salesEmail}
+          ></btrix-org-settings-billing>
+        </btrix-tab-panel>
       </btrix-tab-list>`;
   }
 
@@ -156,9 +181,9 @@ export class OrgSettings extends LiteElement {
     return html`
       <btrix-navigation-button
         slot="nav"
-        href=${`${this.orgBasePath}/${path}`}
+        href=${`${this.navigate.orgBasePath}/${path}`}
         .active=${isActive}
-        @click=${this.navLink}
+        @click=${this.navigate.link}
         aria-selected=${isActive}
       >
         ${this.tabLabels[name]}
@@ -167,88 +192,72 @@ export class OrgSettings extends LiteElement {
   }
 
   private renderInformation() {
-    return html`<div class="rounded border">
+    return html`<div class="rounded-lg border">
       <form @submit=${this.onOrgInfoSubmit}>
-        <div class="grid grid-cols-5 gap-x-4 p-4">
-          <div class="col-span-5 self-baseline md:col-span-3">
-            <sl-input
-              class="with-max-help-text mb-2"
-              name="orgName"
-              size="small"
-              label=${msg("Org Name")}
-              placeholder=${msg("My Organization")}
-              autocomplete="off"
-              value=${this.org.name}
-              minlength="2"
-              required
-              help-text=${this.validateOrgNameMax.helpText}
-              @sl-input=${this.validateOrgNameMax.validate}
-            ></sl-input>
-          </div>
-          <div class="col-span-5 flex gap-2 md:col-span-2 md:mt-8">
-            <div class="text-base">
-              <sl-icon name="info-circle"></sl-icon>
-            </div>
-            <div class="mt-0.5 text-xs text-neutral-500">
-              ${msg(
-                "Name of your organization that is visible to all org members.",
-              )}
-            </div>
-          </div>
-          <div class="col-span-5 mt-6 md:col-span-3">
-            <sl-input
-              class="mb-2"
-              name="orgSlug"
-              size="small"
-              label=${msg("Custom URL Identifier")}
-              placeholder="my-organization"
-              autocomplete="off"
-              value=${this.org.slug}
-              minlength="2"
-              maxlength="30"
-              required
-              help-text=${msg(
-                str`Org home page: ${window.location.protocol}//${
-                  window.location.hostname
-                }/orgs/${
-                  this.slugValue ? this.slugify(this.slugValue) : this.org.slug
-                }`,
-              )}
-              @sl-input=${(e: InputEvent) => {
-                const input = e.target as SlInput;
-                this.slugValue = input.value;
-              }}
-            ></sl-input>
-          </div>
-
-          <div class="col-span-5 flex gap-2 md:col-span-2 md:mt-14">
-            <div class="text-base">
-              <sl-icon name="info-circle"></sl-icon>
-            </div>
-            <div class="mt-0.5 text-xs text-neutral-500">
-              ${msg(
-                "Customize your organization's web address for accessing Browsertrix.",
-              )}
-            </div>
-          </div>
-          <div class="col-span-5 mt-6 md:col-span-3">
-            <btrix-copy-field
-              class="mb-2"
-              label=${msg("Org ID")}
-              value=${this.org.id}
-            ></btrix-copy-field>
-          </div>
-          <div class="col-span-5 flex gap-2 md:col-span-2 md:mt-14">
-            <div class="text-base">
-              <sl-icon name="info-circle"></sl-icon>
-            </div>
-            <div class="mt-0.5 text-xs text-neutral-500">
-              ${msg(
-                "Use this ID to reference this org in the Browsertrix API.",
-              )}
-            </div>
-          </div>
-        </div>
+        ${columns([
+          [
+            html`
+              <sl-input
+                class="with-max-help-text mb-2"
+                name="orgName"
+                size="small"
+                label=${msg("Org Name")}
+                placeholder=${msg("My Organization")}
+                autocomplete="off"
+                value=${this.org.name}
+                minlength="2"
+                required
+                help-text=${this.validateOrgNameMax.helpText}
+                @sl-input=${this.validateOrgNameMax.validate}
+              ></sl-input>
+            `,
+            msg(
+              "Name of your organization that is visible to all org members.",
+            ),
+          ],
+          [
+            html`
+              <sl-input
+                class="mb-2"
+                name="orgSlug"
+                size="small"
+                label=${msg("Custom URL Identifier")}
+                placeholder="my-organization"
+                autocomplete="off"
+                value=${this.org.slug}
+                minlength="2"
+                maxlength="30"
+                required
+                help-text=${msg(
+                  str`Org home page: ${window.location.protocol}//${
+                    window.location.hostname
+                  }/orgs/${
+                    this.slugValue
+                      ? this.slugify(this.slugValue)
+                      : this.org.slug
+                  }`,
+                )}
+                @sl-input=${(e: InputEvent) => {
+                  const input = e.target as SlInput;
+                  this.slugValue = input.value;
+                }}
+              ></sl-input>
+            `,
+            msg(
+              "Customize your organization's web address for accessing Browsertrix.",
+            ),
+          ],
+          [
+            html`
+              <btrix-copy-field
+                class="mb-2"
+                label=${msg("Org ID")}
+                value=${this.org.id}
+              ></btrix-copy-field>
+            `,
+            msg("Use this ID to reference this org in the Browsertrix API."),
+          ],
+        ])}
         <footer class="flex justify-end border-t px-4 py-3">
           <sl-button
             class="inline-control-button"
@@ -387,7 +396,7 @@ export class OrgSettings extends LiteElement {
   }
 
   private hideInviteDialog() {
-    this.navTo(`${this.orgBasePath}/settings/members`);
+    this.navigate.to(`${this.navigate.orgBasePath}/settings/members`);
   }
 
   private renderInviteForm() {
@@ -457,7 +466,7 @@ export class OrgSettings extends LiteElement {
   }
 
   private async getPendingInvites() {
-    const data = await this.apiFetch<APIPaginatedList<Invite>>(
+    const data = await this.api.fetch<APIPaginatedList<Invite>>(
       `/orgs/${this.org.id}/invites`,
       this.authState!,
     );
@@ -471,7 +480,7 @@ export class OrgSettings extends LiteElement {
     } catch (e) {
       console.debug(e);
 
-      this.notify({
+      this.notify.toast({
         message: msg("Sorry, couldn't retrieve pending invites at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
@@ -525,7 +534,7 @@ export class OrgSettings extends LiteElement {
     this.isSubmittingInvite = true;
 
     try {
-      const _data = await this.apiFetch(
+      const _data = await this.api.fetch(
         `/orgs/${this.orgId}/invite`,
         this.authState!,
         {
@@ -537,7 +546,7 @@ export class OrgSettings extends LiteElement {
         },
       );
 
-      this.notify({
+      this.notify.toast({
         message: msg(str`Successfully invited ${inviteEmail}.`),
         variant: "success",
         icon: "check2-circle",
@@ -546,7 +555,7 @@ export class OrgSettings extends LiteElement {
       void this.fetchPendingInvites();
       this.hideInviteDialog();
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message: isApiError(e)
           ? e.message
           : msg("Sorry, couldn't invite user at this time."),
@@ -560,7 +569,7 @@ export class OrgSettings extends LiteElement {
 
   private async removeInvite(invite: Invite) {
     try {
-      await this.apiFetch(
+      await this.api.fetch(
         `/orgs/${this.orgId}/invites/delete`,
         this.authState!,
         {
@@ -571,7 +580,7 @@ export class OrgSettings extends LiteElement {
         },
       );
 
-      this.notify({
+      this.notify.toast({
         message: msg(
           str`Successfully removed ${invite.email} from ${this.org.name}.`,
         ),
@@ -585,7 +594,7 @@ export class OrgSettings extends LiteElement {
     } catch (e) {
       console.debug(e);
 
-      this.notify({
+      this.notify.toast({
         message: isApiError(e)
           ? e.message
           : msg(str`Sorry, couldn't remove ${invite.email} at this time.`),
@@ -597,7 +606,7 @@ export class OrgSettings extends LiteElement {
 
   private async renameOrg({ name, slug }: { name: string; slug: string }) {
     try {
-      await this.apiFetch(`/orgs/${this.orgId}/rename`, this.authState!, {
+      await this.api.fetch(`/orgs/${this.orgId}/rename`, this.authState!, {
         method: "POST",
         body: JSON.stringify({ name, slug }),
       });
@@ -607,9 +616,9 @@ export class OrgSettings extends LiteElement {
       AppStateService.updateUserInfo(formatAPIUser(user));
       AppStateService.updateOrgSlug(slug);
 
-      this.navTo(`${this.orgBasePath}/settings`);
+      this.navigate.to(`${this.navigate.orgBasePath}/settings`);
 
-      this.notify({
+      this.notify.toast({
         message: msg("Org successfully updated."),
         variant: "success",
         icon: "check2-circle",
@@ -633,7 +642,7 @@ export class OrgSettings extends LiteElement {
         }
       }
 
-      this.notify({
+      this.notify.toast({
         message: message,
         variant: "danger",
         icon: "exclamation-octagon",
@@ -642,6 +651,6 @@ export class OrgSettings extends LiteElement {
   }
 
   private async getCurrentUser(): Promise<APIUser> {
-    return this.apiFetch("/users/me", this.authState!);
+    return this.api.fetch("/users/me", this.authState!);
   }
 }

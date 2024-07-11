@@ -6,7 +6,7 @@ import importlib.util
 import os
 import urllib
 import asyncio
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from typing import Optional, Union, TypeVar, Type
 
@@ -238,4 +238,6 @@ class BaseMongoModel(BaseModel):
         """convert to dict for mongo"""
         res = self.dict(**opts)
         res["_id"] = res.pop("id", "")
+        if not res["_id"]:
+            res["_id"] = uuid4()
         return res

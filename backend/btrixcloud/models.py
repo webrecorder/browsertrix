@@ -70,7 +70,7 @@ class InviteOut(BaseModel):
     orgSlug: Optional[str]
     role: UserRole = UserRole.VIEWER
     email: Optional[str]
-    firstOrgOwner: Optional[bool] = None
+    firstOrgAdmin: Optional[bool] = None
 
 
 # ============================================================================
@@ -965,6 +965,17 @@ class S3Storage(BaseModel):
 
 
 # ============================================================================
+# Subscriptions
+# ============================================================================
+
+PAUSED_PAYMENT_FAILED = "paused_payment_failed"
+ACTIVE = "active"
+
+REASON_PAUSED = "subscriptionPaused"
+REASON_CANCELED = "subscriptionCanceled"
+
+
+# ============================================================================
 class OrgQuotas(BaseModel):
     """Organization quotas (settable by superadmin)"""
 
@@ -977,16 +988,106 @@ class OrgQuotas(BaseModel):
 
 
 # ============================================================================
+class SubscriptionEventOut(BaseModel):
+    """Fields to add to output models for subscription events"""
+
+    oid: UUID
+    timestamp: datetime
+
+
+# ============================================================================
+class SubscriptionCreate(BaseModel):
+    """create new subscription"""
+
+    subId: str
+    status: str
+    planId: str
+
+    firstAdminInviteEmail: str
+    quotas: Optional[OrgQuotas] = None
+
+
+# ============================================================================
+class SubscriptionCreateOut(SubscriptionCreate, SubscriptionEventOut):
+    """Output model for subscription creation event"""
+
+    type: Literal["create"] = "create"
+
+
+# ============================================================================
+class SubscriptionUpdate(BaseModel):
+    """update subscription data"""
+
+    subId: str
+    status: str
+    planId: str
+
+    futureCancelDate: Optional[datetime]
+
+
+# ============================================================================
+class SubscriptionUpdateOut(SubscriptionUpdate, SubscriptionEventOut):
+    """Output model for subscription update event"""
+
+    type: Literal["update"] = "update"
+
+
+# ============================================================================
+class SubscriptionCancel(BaseModel):
+    """cancel subscription"""
+
+    subId: str
+
+
+# ============================================================================
+class SubscriptionCancelOut(SubscriptionCancel, SubscriptionEventOut):
+    """Output model for subscription cancellation event"""
+
+    type: Literal["cancel"] = "cancel"
+
+
+# ============================================================================
+class SubscriptionPortalUrlRequest(BaseModel):
+    """Request for subscription update pull"""
+
+    subId: str
+    planId: str
+
+
+# ============================================================================
+class SubscriptionPortalUrlResponse(BaseModel):
+    """Response for subscription update pull"""
+
+    portalUrl: str = ""
+
+
+# ============================================================================
+class Subscription(BaseModel):
+    """subscription data"""
+
+    subId: str
+    status: str
+    planId: str
+
+    futureCancelDate: Optional[datetime] = None
+    readOnlyOnCancel: bool = False
+
+
+# ============================================================================
+# ORGS
+# ============================================================================
+class OrgReadOnlyOnCancel(BaseModel):
+    """Make org readOnly on subscription cancellation instead of deleting"""
+
+    readOnlyOnCancel: bool
+
+
+# ============================================================================
 class OrgCreate(BaseModel):
     """Create a new org"""
 
-    name: Optional[str] = None
+    name: str
     slug: Optional[str] = None
-
-    firstAdminInviteEmail: Optional[str] = None
-    quotas: Optional[OrgQuotas] = None
-
-    subData: Optional[Dict[str, Any]] = None
 
 
 # ============================================================================
@@ -1054,13 +1155,15 @@ class OrgOut(BaseMongoModel):
     extraExecSecondsAvailable: int = 0
     giftedExecSecondsAvailable: int = 0
 
-    quotas: Optional[OrgQuotas] = OrgQuotas()
+    quotas: OrgQuotas = OrgQuotas()
     quotaUpdates: Optional[List[OrgQuotaUpdate]] = []
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
 
     readOnly: Optional[bool]
     readOnlyReason: Optional[str]
+
+    subscription: Optional[Subscription]
 
 
 # ============================================================================
@@ -1070,7 +1173,7 @@ class Organization(BaseMongoModel):
     id: UUID
     name: str
     slug: str
-    users: Dict[str, UserRole]
+    users: Dict[str, UserRole] = {}
 
     default: bool = False
 
@@ -1099,7 +1202,7 @@ class Organization(BaseMongoModel):
     extraExecSecondsAvailable: int = 0
     giftedExecSecondsAvailable: int = 0
 
-    quotas: Optional[OrgQuotas] = OrgQuotas()
+    quotas: OrgQuotas = OrgQuotas()
     quotaUpdates: Optional[List[OrgQuotaUpdate]] = []
 
     webhookUrls: Optional[OrgWebhookUrls] = OrgWebhookUrls()
@@ -1109,7 +1212,7 @@ class Organization(BaseMongoModel):
     readOnly: Optional[bool] = False
     readOnlyReason: Optional[str] = None
 
-    subData: Optional[Dict[str, Any]] = None
+    subscription: Optional[Subscription] = None
 
     def is_owner(self, user):
         """Check if user is owner"""

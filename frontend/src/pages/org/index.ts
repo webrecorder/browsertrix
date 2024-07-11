@@ -10,7 +10,7 @@ import type {
   Member,
   OrgRemoveMemberEvent,
   UserRoleChangeEvent,
-} from "./settings";
+} from "./settings/settings";
 
 import type { QuotaUpdateDetail } from "@/controllers/api";
 import type { CollectionSavedEvent } from "@/features/collections/collection-metadata-dialog";
@@ -36,8 +36,9 @@ import "./collection-detail";
 import "./browser-profiles-detail";
 import "./browser-profiles-list";
 import "./browser-profiles-new";
-import "./settings";
+import "./settings/settings";
 import "./dashboard";
+import "./payment-portal-redirect";
 
 const RESOURCE_NAMES = ["workflow", "collection", "browser-profile", "upload"];
 type ResourceName = (typeof RESOURCE_NAMES)[number];
@@ -76,6 +77,7 @@ export type OrgParams = {
   settings: {
     settingsTab?: "information" | "members";
   };
+  "payment-portal-redirect": {};
 };
 export type OrgTab = keyof OrgParams;
 
@@ -230,7 +232,11 @@ export class Org extends LiteElement {
     }
   }
 
-  private async updateOrg() {
+  private async updateOrg(e?: CustomEvent) {
+    if (e) {
+      e.stopPropagation();
+    }
+
     if (!this.userInfo || !this.orgId) return;
     try {
       this.org = await this.getOrg(this.orgId);
@@ -304,6 +310,9 @@ export class Org extends LiteElement {
         }
         // falls through
       }
+      case "payment-portal-redirect":
+        tabPanelContent = this.renderPaymentPortalRedirect();
+        break;
       default:
         tabPanelContent = html`<btrix-not-found
           class="flex items-center justify-center"
@@ -713,7 +722,16 @@ export class Org extends LiteElement {
       ?isAddingMember=${isAddingMember}
       @org-user-role-change=${this.onUserRoleChange}
       @org-remove-member=${this.onOrgRemoveMember}
+      @btrix-update-org=${this.updateOrg}
     ></btrix-org-settings>`;
+  }
+
+  private renderPaymentPortalRedirect() {
+    return html`<btrix-org-payment-portal-redirect
+      class="flex flex-1"
+      orgId=${this.orgId}
+      .authState=${this.authState}
+    ></btrix-org-payment-portal-redirect>`;
   }
 
   private async onSelectNewDialog(e: SelectNewDialogEvent) {

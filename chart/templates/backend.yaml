@@ -86,6 +86,13 @@ spec:
                   key: BTRIX_SUBS_APP_API_KEY
                   optional: true
 
+            - name: BTRIX_SUBS_APP_URL
+              valueFrom:
+                secretKeyRef:
+                  name: btrix-subs-app-secret
+                  key: BTRIX_SUBS_APP_URL
+                  optional: true
+
           volumeMounts:
             - name: ops-configs
               mountPath: /ops-configs/
