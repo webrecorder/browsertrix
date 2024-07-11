@@ -16,13 +16,19 @@ from .models import (
     PageReviewUpdate,
     PageQACompare,
     Organization,
-    PaginatedResponse,
+    PaginatedPageOutResponse,
+    PaginatedPageOutWithQAResponse,
     User,
     PageNote,
     PageNoteIn,
     PageNoteEdit,
     PageNoteDelete,
     QARunBucketStats,
+    StartedResponse,
+    UpdatedResponse,
+    DeletedResponse,
+    PageNoteAddedResponse,
+    PageNoteUpdatedResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import from_k8s_date, str_list_to_bools
@@ -633,7 +639,11 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
 
     org_crawl_dep = org_ops.org_crawl_dep
 
-    @app.post("/orgs/{oid}/crawls/all/pages/reAdd", tags=["pages"])
+    @app.post(
+        "/orgs/{oid}/crawls/all/pages/reAdd",
+        tags=["pages"],
+        response_model=StartedResponse,
+    )
     async def re_add_all_crawl_pages(
         org: Organization = Depends(org_crawl_dep), user: User = Depends(user_dep)
     ):
@@ -644,7 +654,11 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
         asyncio.create_task(ops.re_add_all_crawl_pages(org.id))
         return {"started": True}
 
-    @app.post("/orgs/{oid}/crawls/{crawl_id}/pages/reAdd", tags=["pages"])
+    @app.post(
+        "/orgs/{oid}/crawls/{crawl_id}/pages/reAdd",
+        tags=["pages"],
+        response_model=StartedResponse,
+    )
     async def re_add_crawl_pages(
         crawl_id: str, org: Organization = Depends(org_crawl_dep)
     ):
@@ -682,6 +696,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     @app.patch(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}",
         tags=["pages"],
+        response_model=UpdatedResponse,
     )
     async def update_page_approval(
         crawl_id: str,
@@ -698,6 +713,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}/notes",
         tags=["pages"],
+        response_model=PageNoteAddedResponse,
     )
     async def add_page_note(
         crawl_id: str,
@@ -712,6 +728,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     @app.patch(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}/notes",
         tags=["pages"],
+        response_model=PageNoteUpdatedResponse,
     )
     async def edit_page_note(
         crawl_id: str,
@@ -726,6 +743,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}/notes/delete",
         tags=["pages"],
+        response_model=DeletedResponse,
     )
     async def delete_page_notes(
         crawl_id: str,
@@ -739,7 +757,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/pages",
         tags=["pages"],
-        response_model=PaginatedResponse,
+        response_model=PaginatedPageOutResponse,
     )
     async def get_pages_list(
         crawl_id: str,
@@ -773,7 +791,7 @@ def init_pages_api(app, mdb, crawl_ops, org_ops, storage_ops, user_dep):
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/pages",
         tags=["pages", "qa"],
-        response_model=PaginatedResponse,
+        response_model=PaginatedPageOutWithQAResponse,
     )
     async def get_pages_list_with_qa(
         crawl_id: str,
