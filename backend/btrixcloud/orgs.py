@@ -11,7 +11,7 @@ import time
 import urllib.parse
 
 from uuid import UUID, uuid4
-from datetime import datetime
+from datetime import datetime, timezone
 from tempfile import NamedTemporaryFile
 
 from typing import Optional, TYPE_CHECKING, Dict, Callable, List, AsyncGenerator, Any
@@ -337,6 +337,7 @@ class OrgOps:
             id=id_,
             name=name,
             slug=slug,
+            created=datetime.now(timezone.utc),
             storage=self.default_primary,
             quotas=quotas or OrgQuotas(),
             subscription=subscription,

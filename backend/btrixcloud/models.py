@@ -1129,6 +1129,8 @@ class OrgOut(BaseMongoModel):
     slug: str
     users: Optional[Dict[str, Any]]
 
+    created: Optional[datetime]
+
     default: bool = False
     bytesStored: int
     bytesStoredCrawls: int
@@ -1174,6 +1176,8 @@ class Organization(BaseMongoModel):
     name: str
     slug: str
     users: Dict[str, UserRole] = {}
+
+    created: Optional[datetime]
 
     default: bool = False
 
