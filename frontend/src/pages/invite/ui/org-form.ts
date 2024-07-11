@@ -147,10 +147,22 @@ export class OrgForm extends TailwindElement {
       await this.onRenameSuccess(payload);
     } catch (e) {
       console.debug(e);
-      if (isApiError(e) && e.details === "duplicate_org_name") {
-        throw new Error(
-          msg("This org name or URL is already taken, try another one."),
-        );
+      if (isApiError(e)) {
+        if (e.details === "duplicate_org_name") {
+          throw new Error(
+            msg("This org name is already taken, try another one."),
+          );
+        } else if (e.details === "duplicate_org_slug") {
+          throw new Error(
+            msg("This org URL is already taken, try another one."),
+          );
+        } else if (e.details === "invalid_slug") {
+          throw new Error(
+            msg(
+              "This org URL is invalid. Please use alphanumeric characters and dashes (-) only.",
+            ),
+          );
+        }
       }
 
       this._notify.toast({

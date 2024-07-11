@@ -626,13 +626,24 @@ export class OrgSettings extends TailwindElement {
     } catch (e) {
       console.debug(e);
 
+      let message = msg(
+        "Sorry, couldn't rename organization at this time. Try again later from org settings.",
+      );
+
+      if (isApiError(e)) {
+        if (e.details === "duplicate_org_name") {
+          message = msg("This org name is already taken, try another one.");
+        } else if (e.details === "duplicate_org_slug") {
+          message = msg("This org URL is already taken, try another one.");
+        } else if (e.details === "invalid_slug") {
+          message = msg(
+            "This org URL is invalid. Please use alphanumeric characters and dashes (-) only.",
+          );
+        }
+      }
+
       this.notify.toast({
-        message:
-          isApiError(e) && e.details === "duplicate_org_name"
-            ? msg("This org name or URL is already taken, try another one.")
-            : msg(
-                "Sorry, couldn't rename organization at this time. Try again later from org settings.",
-              ),
+        message: message,
         variant: "danger",
         icon: "exclamation-octagon",
       });
