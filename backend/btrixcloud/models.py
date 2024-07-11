@@ -10,14 +10,7 @@ import os
 from typing import Optional, List, Dict, Union, Literal, Any, get_args
 from typing_extensions import Annotated
 
-from pydantic import (
-    BaseModel,
-    conint,
-    Field,
-    HttpUrl,
-    AnyHttpUrl,
-    EmailStr,
-)
+from pydantic import BaseModel, conint, Field, HttpUrl, AnyHttpUrl, EmailStr, RootModel
 
 # from fastapi_users import models as fastapi_users_models
 
@@ -550,7 +543,7 @@ class StorageRef(BaseModel):
     """Reference to actual storage"""
 
     name: str
-    custom: Optional[bool]
+    custom: Optional[bool] = False
 
     def __init__(self, *args, **kwargs):
         if args:
@@ -1889,10 +1882,9 @@ class DeleteReplicaJob(BackgroundJob):
 
 
 # ============================================================================
-class AnyJob(BaseModel):
-    """Union of all job types, for response model"""
+# Union of all job types, for response model
 
-    __root__: Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob]
+AnyJob = RootModel[Union[CreateReplicaJob, DeleteReplicaJob, BackgroundJob]]
 
 
 # ============================================================================
