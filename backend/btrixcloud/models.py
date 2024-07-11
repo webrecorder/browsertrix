@@ -17,7 +17,6 @@ from pydantic import (
     HttpUrl,
     AnyHttpUrl,
     EmailStr,
-    ConstrainedStr,
 )
 
 # from fastapi_users import models as fastapi_users_models
