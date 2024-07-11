@@ -904,7 +904,7 @@ class CrawlConfigOps:
         name = crawlconfig.name
         if not name:
             if crawlconfig.config.seeds and len(crawlconfig.config.seeds):
-                url = crawlconfig.config.seeds[0].url
+                url = str(crawlconfig.config.seeds[0].url)
                 parts = urllib.parse.urlsplit(url)
                 name = parts.netloc
 

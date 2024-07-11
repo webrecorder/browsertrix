@@ -8,6 +8,8 @@ from uuid import UUID
 import os
 
 from typing import Optional, List, Dict, Union, Literal, Any, get_args
+from typing_extensions import Annotated
+
 from pydantic import (
     BaseModel,
     conint,
@@ -56,7 +58,7 @@ class InvitePending(BaseMongoModel):
     role: UserRole = UserRole.VIEWER
     email: Optional[str]
     # set if existing user
-    userid: Optional[UUID]
+    userid: Optional[UUID] = None
 
 
 # ============================================================================
@@ -67,8 +69,8 @@ class InviteOut(BaseModel):
     inviterEmail: str
     inviterName: str
     oid: Optional[UUID]
-    orgName: Optional[str]
-    orgSlug: Optional[str]
+    orgName: Optional[str] = None
+    orgSlug: Optional[str] = None
     role: UserRole = UserRole.VIEWER
     email: Optional[str]
     firstOrgAdmin: Optional[bool] = None
@@ -238,11 +240,7 @@ class ScopeType(str, Enum):
 
 
 # ============================================================================
-class EmptyStr(ConstrainedStr):
-    """empty string only"""
-
-    min_length = 0
-    max_length = 0
+EmptyStr = Annotated[str, Field(min_length=0, max_length=0)]
 
 
 # ============================================================================
@@ -599,8 +597,8 @@ class BaseFile(BaseModel):
 class CrawlFile(BaseFile):
     """file from a crawl"""
 
-    presignedUrl: Optional[str]
-    expireAt: Optional[datetime]
+    presignedUrl: Optional[str] = None
+    expireAt: Optional[datetime] = None
     crc32: int = 0
 
 
@@ -951,6 +949,7 @@ class UploadedCrawl(BaseCrawl):
     """Store State of a Crawl Upload"""
 
     type: Literal["upload"] = "upload"
+    image: None = None
 
 
 # ============================================================================
