@@ -1405,10 +1405,11 @@ def init_orgs_api(
 
         try:
             await ops.update_slug_and_name(org)
-        except DuplicateKeyError as err:
-            field = get_duplicate_key_error_field(err)
-            # pylint: disable=raise-missing-from
-            raise HTTPException(status_code=400, detail=f"duplicate_org_{field}")
+        except DuplicateKeyError as dupe:
+            field = get_duplicate_key_error_field(dupe)
+            raise HTTPException(
+                status_code=400, detail=f"duplicate_org_{field}"
+            ) from dupe
 
         return {"updated": True}
 

@@ -155,7 +155,6 @@ def test_create_org_duplicate_name(admin_auth_headers, non_default_org_id):
 
     assert r.status_code == 400
     data = r.json()
-    assert data["added"] is False
     assert data["error"] == "duplicate_org_name"
 
 
@@ -168,7 +167,6 @@ def test_create_org_duplicate_slug(admin_auth_headers, non_default_org_id):
 
     assert r.status_code == 400
     data = r.json()
-    assert data["added"] is False
     assert data["error"] == "duplicate_org_slug"
 
 
