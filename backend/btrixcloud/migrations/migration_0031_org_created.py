@@ -20,7 +20,7 @@ class Migration(BaseMigration):
 
         Add created field to orgs without one, based on first workflow creation date.
         """
-        # pylint: disable=duplicate-code
+        # pylint: disable=duplicate-code, line-too-long
         orgs_db = self.mdb["organizations"]
         crawl_configs_db = self.mdb["crawl_configs"]
 
