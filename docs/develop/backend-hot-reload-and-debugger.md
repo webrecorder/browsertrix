@@ -26,24 +26,46 @@ skaffold dev
 ```
 
 This will deploy Browsertrix into the cluster and port forward the API with hot reloading. 
-Navigate to `localhost:8000/api/redoc` or `localhost:8000/api/docs` to see the documentation.
-Changing any code in `backend/btrixcloud` will trigger a reload.
+
+Navigate to `localhost:8000/api/redoc` or `localhost:8000/api/docs` to see the documentation 
+for the api container.
+
+Navigate to `http://localhost:8756/redoc` or `http://localhost:8756/docs` to see the documentation
+for the op container.
+
+Changing any code in `backend/btrixcloud` will trigger a reload in both the op and api containers.
 
 ### Debugger
 
 Interactive debugging uses [debugpy](https://github.com/microsoft/debugpy), which 
 works on VSCode but not PyCharm.
 
-Use this debug configuration in VSCode:
+Use these debug configurations in VSCode:
 
 ```JSON
 {
-    "name": "Attach to Browsertrix Backend",
+    "name": "Attach to Browsertrix Backend API",
     "type": "debugpy",
     "request": "attach",
     "connect": {
         "host": "127.0.0.1",
         "port": 5678
+    },
+    "pathMappings": [
+        {
+        "localRoot": "${workspaceFolder}/backend/btrixcloud/",
+        "remoteRoot": "/app/btrixcloud/"
+        }
+    ],
+    "justMyCode": false
+},
+{
+    "name": "Attach to Browsertrix Backend OP",
+    "type": "debugpy",
+    "request": "attach",
+    "connect": {
+        "host": "127.0.0.1",
+        "port": 5679
     },
     "pathMappings": [
         {

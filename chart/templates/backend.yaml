@@ -147,6 +147,12 @@ spec:
         - name: op
           image: {{ .Values.backend_image }}
           imagePullPolicy: {{ .Values.backend_pull_policy }}
+          {{- if .Values.backend_op_command_override }}
+          command:
+            {{- range .Values.backend_op_command_override }}
+            - {{ . | quote }}
+            {{- end }}
+          {{- else }}
           command:
               - gunicorn
               - btrixcloud.main_op:app_root
@@ -158,7 +164,7 @@ spec:
               - "{{ .Values.backend_workers | default 1 }}"
               - --worker-class
               - uvicorn.workers.UvicornWorker
-
+          {{- end }}
           envFrom:
             - configMapRef:
                 name: backend-env-config
