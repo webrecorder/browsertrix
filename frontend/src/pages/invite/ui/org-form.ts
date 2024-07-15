@@ -4,7 +4,6 @@ import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
-import slugify from "slugify";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
@@ -13,6 +12,7 @@ import { type APIUser } from "@/index";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
+import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
@@ -96,7 +96,7 @@ export class OrgForm extends TailwindElement {
             required
             @sl-input=${(e: InputEvent) => {
               const input = e.target as SlInput;
-              input.helpText = helpText(slugify(input.value, { strict: true }));
+              input.helpText = helpText(slugifyStrict(input.value));
             }}
           >
           </sl-input>
@@ -129,7 +129,7 @@ export class OrgForm extends TailwindElement {
 
     const params = serialize(form) as FormValues;
     const orgName = params.orgName;
-    const orgSlug = slugify(params.orgSlug, { strict: true });
+    const orgSlug = slugifyStrict(params.orgSlug);
 
     void this._renameOrgTask.run([this.orgId, orgName, orgSlug]);
   }
