@@ -365,7 +365,7 @@ class OrgOps:
             org.readOnly = True
             org.readOnlyReason = REASON_PAUSED
 
-        await self.orgs.find_one_and_update({"_id": orgid}, {"$set": org.to_dict()})
+        await self.orgs.find_one_and_update({"_id": org.id}, {"$set": org.to_dict()})
 
         return org
 
