@@ -121,7 +121,7 @@ def test_rename_org_duplicate_name(
         # Identical slug
         (NON_DEFAULT_ORG_SLUG),
         # Identical slug, different case
-        ("Non-Default-Slug"),
+        ("Non-Default-Org"),
     ],
 )
 def test_rename_org_duplicate_slug(
@@ -191,7 +191,7 @@ def test_create_org_duplicate_name(admin_auth_headers, non_default_org_id, name)
         # Identical slug
         (NON_DEFAULT_ORG_SLUG),
         # Identical slug, different case
-        ("Non-Default-Slug"),
+        ("Non-Default-Org"),
     ],
 )
 def test_create_org_duplicate_slug(admin_auth_headers, non_default_org_id, slug):
