@@ -12,6 +12,7 @@ import { NotifyController } from "@/controllers/notify";
 import { type APIUser } from "@/index";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
+import { maxLengthValidator } from "@/utils/form";
 import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
@@ -45,6 +46,8 @@ export class OrgForm extends TailwindElement {
   readonly _api = new APIController(this);
   readonly _notify = new NotifyController(this);
 
+  private readonly validateOrgNameMax = maxLengthValidator(40);
+
   readonly _renameOrgTask = new Task(this, {
     autoRun: false,
     task: async ([id, name, slug]) => {
@@ -72,9 +75,9 @@ export class OrgForm extends TailwindElement {
             autocomplete="off"
             value=${this.name === this.orgId ? "" : this.name}
             minlength="2"
-            maxlength="40"
             help-text=${msg("You can change this in your org settings later.")}
             required
+            @sl-input=${this.validateOrgNameMax.validate}
           ></sl-input>
         </div>
         <div class="mb-5">
