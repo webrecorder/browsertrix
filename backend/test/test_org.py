@@ -92,10 +92,19 @@ def test_rename_org_invalid_slug(admin_auth_headers, default_org_id):
     assert r.json()["detail"] == "invalid_slug"
 
 
+@pytest.mark.parametrize(
+    "name",
+    [
+        # Identical name
+        (NON_DEFAULT_ORG_NAME),
+        # Identical name, different case
+        ("Non-Default Org"),
+    ],
+)
 def test_rename_org_duplicate_name(
-    admin_auth_headers, default_org_id, non_default_org_id
+    admin_auth_headers, default_org_id, non_default_org_id, name
 ):
-    rename_data = {"name": NON_DEFAULT_ORG_NAME, "slug": "this-slug-should-be-okay"}
+    rename_data = {"name": name, "slug": "this-slug-should-be-okay"}
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/rename",
         headers=admin_auth_headers,
@@ -106,10 +115,19 @@ def test_rename_org_duplicate_name(
     assert r.json()["detail"] == "duplicate_org_name"
 
 
-def test_rename_org_duplicate_name(
-    admin_auth_headers, default_org_id, non_default_org_id
+@pytest.mark.parametrize(
+    "slug",
+    [
+        # Identical slug
+        (NON_DEFAULT_ORG_SLUG),
+        # Identical slug, different case
+        ("Non-Default-Slug"),
+    ],
+)
+def test_rename_org_duplicate_slug(
+    admin_auth_headers, default_org_id, non_default_org_id, slug
 ):
-    rename_data = {"name": "Should be okay", "slug": NON_DEFAULT_ORG_SLUG}
+    rename_data = {"name": "Should be okay", "slug": slug}
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/rename",
         headers=admin_auth_headers,
@@ -146,11 +164,20 @@ def test_create_org(admin_auth_headers):
     assert data["created"]
 
 
-def test_create_org_duplicate_name(admin_auth_headers, non_default_org_id):
+@pytest.mark.parametrize(
+    "name",
+    [
+        # Identical name
+        (NON_DEFAULT_ORG_NAME),
+        # Identical name, different case
+        ("Non-Default Org"),
+    ],
+)
+def test_create_org_duplicate_name(admin_auth_headers, non_default_org_id, name):
     r = requests.post(
         f"{API_PREFIX}/orgs/create",
         headers=admin_auth_headers,
-        json={"name": NON_DEFAULT_ORG_NAME, "slug": "another-new-org"},
+        json={"name": name, "slug": "another-new-org"},
     )
 
     assert r.status_code == 400
@@ -158,11 +185,20 @@ def test_create_org_duplicate_name(admin_auth_headers, non_default_org_id):
     assert data["detail"] == "duplicate_org_name"
 
 
-def test_create_org_duplicate_slug(admin_auth_headers, non_default_org_id):
+@pytest.mark.parametrize(
+    "slug",
+    [
+        # Identical slug
+        (NON_DEFAULT_ORG_SLUG),
+        # Identical slug, different case
+        ("Non-Default-Slug"),
+    ],
+)
+def test_create_org_duplicate_slug(admin_auth_headers, non_default_org_id, slug):
     r = requests.post(
         f"{API_PREFIX}/orgs/create",
         headers=admin_auth_headers,
-        json={"name": "Yet another new org", "slug": NON_DEFAULT_ORG_SLUG},
+        json={"name": "Yet another new org", "slug": slug},
     )
 
     assert r.status_code == 400

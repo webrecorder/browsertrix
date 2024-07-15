@@ -16,6 +16,7 @@ from tempfile import NamedTemporaryFile
 from typing import Optional, TYPE_CHECKING, Dict, Callable, List, AsyncGenerator, Any
 
 from pymongo import ReturnDocument
+from pymongo.collation import Collation
 from pymongo.errors import AutoReconnect, DuplicateKeyError
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -160,13 +161,18 @@ class OrgOps:
 
     async def init_index(self) -> None:
         """init lookup index"""
+        case_insensitive_collation = Collation(locale="en", strength=1)
         while True:
             try:
-                await self.orgs.create_index("name", unique=True)
+                await self.orgs.create_index(
+                    "name", unique=True, collation=case_insensitive_collation
+                )
                 await self.orgs.create_index(
                     "subscription.subId", unique=True, sparse=True
                 )
-                await self.orgs.create_index("slug", unique=True)
+                await self.orgs.create_index(
+                    "slug", unique=True, collation=case_insensitive_collation
+                )
                 break
             # pylint: disable=duplicate-code
             except AutoReconnect:
