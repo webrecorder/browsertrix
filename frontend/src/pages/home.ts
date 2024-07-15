@@ -39,7 +39,7 @@ export class Home extends LiteElement {
   @state()
   private isSubmittingNewOrg = false;
 
-  private readonly validateOrgNameMax = maxLengthValidator(50);
+  private readonly validateOrgNameMax = maxLengthValidator(40);
 
   connectedCallback() {
     if (this.authState) {

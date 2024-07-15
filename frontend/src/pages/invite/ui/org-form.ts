@@ -73,7 +73,7 @@ export class OrgForm extends TailwindElement {
         <div class="mb-5">
           <sl-input
             name="orgName"
-            label=${msg("Org name")}
+            label=${msg("Org Name")}
             placeholder=${msg("My Organization")}
             autocomplete="off"
             value=${this.name === this.orgId ? "" : this.name}
@@ -86,7 +86,7 @@ export class OrgForm extends TailwindElement {
         <div class="mb-5">
           <sl-input
             name="orgSlug"
-            label=${msg("Custom URL identifier")}
+            label=${msg("Custom URL Identifier")}
             placeholder="my-organization"
             autocomplete="off"
             value=${this.slug}
