@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import type { SlInput, SlInputEvent } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -11,6 +12,7 @@ import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import LiteElement, { html } from "@/utils/LiteElement";
 import type { OrgData } from "@/utils/orgs";
+import slugifyStrict from "@/utils/slugify";
 
 /**
  * @fires btrix-update-user-info
@@ -31,6 +33,9 @@ export class Home extends LiteElement {
   private orgList?: OrgData[];
 
   @state()
+  private orgSlugs: string[] = [];
+
+  @state()
   private isAddingOrg = false;
 
   @state()
@@ -38,6 +43,9 @@ export class Home extends LiteElement {
 
   @state()
   private isSubmittingNewOrg = false;
+
+  @state()
+  private isOrgNameValid: boolean | null = null;
 
   private readonly validateOrgNameMax = maxLengthValidator(40);
 
@@ -171,6 +179,29 @@ export class Home extends LiteElement {
         </div>
       </div>
 
+      ${this.renderAddOrgDialog()}
+    `;
+  }
+
+  private renderAddOrgDialog() {
+    let orgNameStatusLabel = msg("Start typing to see availability");
+    let orgNameStatusIcon = html`
+      <sl-icon class="mr-3 text-neutral-300" name="check-lg"></sl-icon>
+    `;
+
+    if (this.isOrgNameValid) {
+      orgNameStatusLabel = msg("This org name is available");
+      orgNameStatusIcon = html`
+        <sl-icon class="mr-3 text-success" name="check-lg"></sl-icon>
+      `;
+    } else if (this.isOrgNameValid === false) {
+      orgNameStatusLabel = msg("This org name is taken");
+      orgNameStatusIcon = html`
+        <sl-icon class="mr-3 text-danger" name="x-lg"></sl-icon>
+      `;
+    }
+
+    return html`
       <btrix-dialog
         .label=${msg("New Organization")}
         .open=${this.isAddingOrg}
@@ -183,7 +214,10 @@ export class Home extends LiteElement {
           }
         }}
         @sl-show=${() => (this.isAddOrgFormVisible = true)}
-        @sl-after-hide=${() => (this.isAddOrgFormVisible = false)}
+        @sl-after-hide=${() => {
+          this.isAddOrgFormVisible = false;
+          this.isOrgNameValid = null;
+        }}
       >
         ${this.isAddOrgFormVisible
           ? html`
@@ -201,8 +235,17 @@ export class Home extends LiteElement {
                     autocomplete="off"
                     required
                     help-text=${this.validateOrgNameMax.helpText}
-                    @sl-input=${this.validateOrgNameMax.validate}
+                    @sl-input=${this.onOrgNameInput}
                   >
+                    <sl-tooltip
+                      slot="suffix"
+                      content=${orgNameStatusLabel}
+                      @sl-hide=${(e: CustomEvent) => e.stopPropagation()}
+                      @sl-after-hide=${(e: CustomEvent) => e.stopPropagation()}
+                      hoist
+                    >
+                      ${orgNameStatusIcon}
+                    </sl-tooltip>
                   </sl-input>
                 </div>
               </form>
@@ -277,7 +320,12 @@ export class Home extends LiteElement {
   }
 
   private async fetchOrgs() {
-    this.orgList = await this.getOrgs();
+    try {
+      this.orgList = await this.getOrgs();
+      this.orgSlugs = await this.getOrgSlugs();
+    } catch (e) {
+      console.debug(e);
+    }
   }
 
   private async getOrgs() {
@@ -287,6 +335,31 @@ export class Home extends LiteElement {
     );
 
     return data.items;
+  }
+
+  private async getOrgSlugs() {
+    const data = await this.apiFetch<{ slugs: string[] }>(
+      "/orgs/slugs",
+      this.authState!,
+    );
+
+    return data.slugs;
+  }
+
+  private async onOrgNameInput(e: SlInputEvent) {
+    this.validateOrgNameMax.validate(e);
+
+    const input = e.target as SlInput;
+    const slug = slugifyStrict(input.value);
+    const isInvalid = this.orgSlugs.includes(slug);
+
+    if (isInvalid) {
+      input.setCustomValidity(msg("This org name is already taken."));
+    } else {
+      input.setCustomValidity("");
+    }
+
+    this.isOrgNameValid = !isInvalid;
   }
 
   private async onSubmitNewOrg(e: SubmitEvent) {
