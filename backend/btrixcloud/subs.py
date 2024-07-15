@@ -16,9 +16,11 @@ from .users import UserManager
 from .utils import is_bool
 from .models import (
     SubscriptionCreate,
+    SubscriptionImport,
     SubscriptionUpdate,
     SubscriptionCancel,
     SubscriptionCreateOut,
+    SubscriptionImportOut,
     SubscriptionUpdateOut,
     SubscriptionCancelOut,
     Subscription,
@@ -83,6 +85,19 @@ class SubOps:
 
         return {"added": True, "id": new_org.id, "invited": invited, "token": token}
 
+    async def import_subscription(
+        self, sub_import: SubscriptionImport
+    ) -> dict[str, Any]:
+        """import subscription to existing org"""
+        subscription = Subscription(
+            subId=sub_import.subId, status=sub_import.status, planId=sub_import.planId
+        )
+        org = await self.org_ops.add_subscription_to_org(subscription, sub_import.oid)
+
+        await self.add_sub_event("import", sub_import, org.id)
+
+        return {"added": True, "id": org.id}
+
     async def update_subscription(self, update: SubscriptionUpdate) -> dict[str, bool]:
         """update subs"""
 
@@ -128,7 +143,12 @@ class SubOps:
     async def add_sub_event(
         self,
         type_: str,
-        event: Union[SubscriptionCreate, SubscriptionUpdate, SubscriptionCancel],
+        event: Union[
+            SubscriptionCreate,
+            SubscriptionImport,
+            SubscriptionUpdate,
+            SubscriptionCancel,
+        ],
         oid: UUID,
     ) -> None:
         """add a subscription event to the db"""
@@ -138,12 +158,17 @@ class SubOps:
         data["oid"] = oid
         await self.subs.insert_one(data)
 
-    def _get_sub_by_type_from_data(
-        self, data: dict[str, object]
-    ) -> Union[SubscriptionCreateOut, SubscriptionUpdateOut, SubscriptionCancelOut]:
+    def _get_sub_by_type_from_data(self, data: dict[str, object]) -> Union[
+        SubscriptionCreateOut,
+        SubscriptionImportOut,
+        SubscriptionUpdateOut,
+        SubscriptionCancelOut,
+    ]:
         """convert dict to propert background job type"""
         if data["type"] == "create":
             return SubscriptionCreateOut(**data)
+        if data["type"] == "import":
+            return SubscriptionImportOut(**data)
         if data["type"] == "update":
             return SubscriptionUpdateOut(**data)
         return SubscriptionCancelOut(**data)
@@ -161,7 +186,12 @@ class SubOps:
         sort_direction: Optional[int] = -1,
     ) -> Tuple[
         List[
-            Union[SubscriptionCreateOut, SubscriptionUpdateOut, SubscriptionCancelOut]
+            Union[
+                SubscriptionCreateOut,
+                SubscriptionImportOut,
+                SubscriptionUpdateOut,
+                SubscriptionCancelOut,
+            ]
         ],
         int,
     ]:
@@ -281,6 +311,14 @@ def init_subs_api(
         user: User = Depends(user_or_shared_secret_dep),
     ):
         return await ops.create_new_subscription(create, user, request)
+
+    @app.post(
+        "/subscriptions/import",
+        tags=["subscriptions"],
+        dependencies=[Depends(user_or_shared_secret_dep)],
+    )
+    async def import_sub(sub_import: SubscriptionImport):
+        return await ops.import_subscription(sub_import)
 
     @app.post(
         "/subscriptions/update",

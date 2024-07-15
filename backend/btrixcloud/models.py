@@ -1015,6 +1015,23 @@ class SubscriptionCreateOut(SubscriptionCreate, SubscriptionEventOut):
 
 
 # ============================================================================
+class SubscriptionImport(BaseModel):
+    """import subscription to existing org"""
+
+    subId: str
+    status: str
+    planId: str
+    oid: UUID
+
+
+# ============================================================================
+class SubscriptionImportOut(SubscriptionImport, SubscriptionEventOut):
+    """Output model for subscription import event"""
+
+    type: Literal["import"] = "import"
+
+
+# ============================================================================
 class SubscriptionUpdate(BaseModel):
     """update subscription data"""
 
