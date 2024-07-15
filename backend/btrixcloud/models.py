@@ -1816,3 +1816,11 @@ class PageOutWithSingleQA(Page):
     """Page out with single QA entry"""
 
     qa: Optional[PageQACompare] = None
+
+
+# ============================================================================
+class AddedResponseId(BaseModel):
+    """Response for API endpoints that return added + id"""
+
+    added: bool
+    id: UUID

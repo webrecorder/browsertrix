@@ -30,6 +30,7 @@ from .models import (
     InviteToOrgRequest,
     User,
     UserRole,
+    AddedResponseId,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 
@@ -316,6 +317,7 @@ def init_subs_api(
         "/subscriptions/import",
         tags=["subscriptions"],
         dependencies=[Depends(user_or_shared_secret_dep)],
+        response_model=AddedResponseId,
     )
     async def import_sub(sub_import: SubscriptionImport):
         return await ops.import_subscription(sub_import)
