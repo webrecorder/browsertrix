@@ -3,7 +3,7 @@ import { Task, TaskStatus } from "@lit/task";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, query } from "lit/decorators.js";
 import slugify from "slugify";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -42,6 +42,9 @@ export class OrgForm extends TailwindElement {
 
   @property({ type: String })
   slug = "";
+
+  @query("#orgForm")
+  private readonly form?: HTMLFormElement | null;
 
   readonly _api = new APIController(this);
   readonly _notify = new NotifyController(this);
@@ -151,20 +154,33 @@ export class OrgForm extends TailwindElement {
     } catch (e) {
       console.debug(e);
       if (isApiError(e)) {
+        let error: Error | null = null;
+        let fieldName = "";
+
         if (e.details === "duplicate_org_name") {
-          throw new Error(
-            msg("This org name is already taken, try another one."),
+          fieldName = "orgName";
+          error = new Error(
+            msg(str`The org name "${name}" is already taken, try another one.`),
           );
         } else if (e.details === "duplicate_org_slug") {
-          throw new Error(
-            msg("This org URL is already taken, try another one."),
+          fieldName = "orgSlug";
+          error = new Error(
+            msg(str`The org URL "${slug}" is already taken, try another one.`),
           );
         } else if (e.details === "invalid_slug") {
-          throw new Error(
+          fieldName = "orgSlug";
+          error = new Error(
             msg(
-              "This org URL is invalid. Please use alphanumeric characters and dashes (-) only.",
+              str`The org URL "${slug}" is not a valid URL. Please use alphanumeric characters and dashes (-) only`,
             ),
           );
+        }
+
+        if (error) {
+          if (fieldName) {
+            this.highlightErrorField(fieldName, error);
+          }
+          throw error;
         }
       }
 
@@ -175,6 +191,20 @@ export class OrgForm extends TailwindElement {
         variant: "danger",
         icon: "exclamation-octagon",
       });
+    }
+  }
+
+  private highlightErrorField(fieldName: string, error: Error) {
+    const input = this.form?.querySelector<SlInput>(`[name="${fieldName}"]`);
+
+    if (input) {
+      input.setCustomValidity(error.message);
+
+      const onOneInput = () => {
+        input.setCustomValidity("");
+        input.removeEventListener("sl-input", onOneInput);
+      };
+      input.addEventListener("sl-input", onOneInput);
     }
   }
 
