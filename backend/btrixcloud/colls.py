@@ -3,7 +3,6 @@ Collections API
 """
 
 from collections import Counter
-from datetime import datetime
 from uuid import UUID, uuid4
 from typing import Optional, List, TYPE_CHECKING, cast
 
@@ -26,6 +25,7 @@ from .models import (
     PaginatedResponse,
     SUCCESSFUL_STATES,
 )
+from .utils import dt_now
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -75,7 +75,7 @@ class CollectionOps:
         """Add new collection"""
         crawl_ids = coll_in.crawlIds if coll_in.crawlIds else []
         coll_id = uuid4()
-        modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        modified = dt_now()
 
         coll = Collection(
             id=coll_id,
@@ -111,7 +111,7 @@ class CollectionOps:
         if len(query) == 0:
             raise HTTPException(status_code=400, detail="no_update_data")
 
-        query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        query["modified"] = dt_now()
 
         try:
             result = await self.collections.find_one_and_update(
@@ -134,7 +134,7 @@ class CollectionOps:
         """Add crawls to collection"""
         await self.crawl_ops.add_to_collection(crawl_ids, coll_id, org)
 
-        modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        modified = dt_now()
         result = await self.collections.find_one_and_update(
             {"_id": coll_id},
             {"$set": {"modified": modified}},
@@ -158,7 +158,7 @@ class CollectionOps:
     ) -> CollOut:
         """Remove crawls from collection"""
         await self.crawl_ops.remove_from_collection(crawl_ids, coll_id)
-        modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        modified = dt_now()
         result = await self.collections.find_one_and_update(
             {"_id": coll_id},
             {"$set": {"modified": modified}},

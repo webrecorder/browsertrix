@@ -25,7 +25,7 @@ from .models import (
     QARunBucketStats,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
-from .utils import from_k8s_date, str_list_to_bools
+from .utils import from_k8s_date, str_list_to_bools, dt_now
 
 if TYPE_CHECKING:
     from .crawls import CrawlOps
@@ -106,9 +106,7 @@ class PageOps:
             status=status,
             mime=page_dict.get("mime", "text/html"),
             ts=(
-                from_k8s_date(page_dict.get("ts"))
-                if page_dict.get("ts")
-                else datetime.now()
+                from_k8s_date(page_dict.get("ts")) if page_dict.get("ts") else dt_now()
             ),
         )
         p.compute_page_type()
@@ -271,7 +269,7 @@ class PageOps:
     ) -> bool:
         """Update page heuristics and mime/type from QA run"""
 
-        # modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        # modified = dt_now()
 
         result = await self.pages.find_one_and_update(
             {"_id": page_id, "oid": oid},
@@ -303,7 +301,7 @@ class PageOps:
         query: Dict[str, Union[Optional[bool], str, datetime, UUID]] = {
             "approved": approved
         }
-        query["modified"] = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        query["modified"] = dt_now()
         if user:
             query["userid"] = user.id
 
@@ -329,7 +327,7 @@ class PageOps:
         """Add note to page"""
         note = PageNote(id=uuid4(), text=text, userid=user.id, userName=user.name)
 
-        modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        modified = dt_now()
 
         result = await self.pages.find_one_and_update(
             {"_id": page_id, "oid": oid, "crawl_id": crawl_id},
@@ -373,7 +371,7 @@ class PageOps:
         )
         page_notes[matching_index] = new_note.dict()
 
-        modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        modified = dt_now()
 
         result = await self.pages.find_one_and_update(
             {"_id": page_id, "oid": oid, "crawl_id": crawl_id},
@@ -402,7 +400,7 @@ class PageOps:
             if not note.get("id") in delete.delete_list:
                 remaining_notes.append(note)
 
-        modified = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        modified = dt_now()
 
         result = await self.pages.find_one_and_update(
             {"_id": page_id, "oid": oid, "crawl_id": crawl_id},

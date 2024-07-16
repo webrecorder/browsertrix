@@ -11,7 +11,6 @@ import time
 import urllib.parse
 
 from uuid import UUID, uuid4
-from datetime import datetime
 from tempfile import NamedTemporaryFile
 
 from typing import Optional, TYPE_CHECKING, Dict, Callable, List, AsyncGenerator, Any
@@ -68,6 +67,7 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
+    dt_now,
     slug_from_name,
     validate_slug,
     get_duplicate_key_error_field,
@@ -337,6 +337,7 @@ class OrgOps:
             id=id_,
             name=name,
             slug=slug,
+            created=dt_now(),
             storage=self.default_primary,
             quotas=quotas or OrgQuotas(),
             subscription=subscription,
@@ -480,9 +481,7 @@ class OrgOps:
         quota_updates = []
         for prev_update in org.quotaUpdates or []:
             quota_updates.append(prev_update.dict())
-        quota_updates.append(
-            OrgQuotaUpdate(update=update, modified=datetime.now()).dict()
-        )
+        quota_updates.append(OrgQuotaUpdate(update=update, modified=dt_now()).dict())
 
         await self.orgs.find_one_and_update(
             {"_id": org.id},
@@ -675,7 +674,7 @@ class OrgOps:
         if not org_data:
             return 0
         org = Organization.from_dict(org_data)
-        yymm = datetime.utcnow().strftime("%Y-%m")
+        yymm = dt_now().strftime("%Y-%m")
         try:
             return org.monthlyExecSeconds[yymm]
         except KeyError:
@@ -762,7 +761,7 @@ class OrgOps:
         """
         # pylint: disable=too-many-return-statements, too-many-locals
         key = "crawlExecSeconds" if is_exec_time else "usage"
-        yymm = datetime.utcnow().strftime("%Y-%m")
+        yymm = dt_now().strftime("%Y-%m")
         inc_query = {f"{key}.{yymm}": duration}
         if is_qa:
             qa_key = "qaCrawlExecSeconds" if is_exec_time else "qaUsage"

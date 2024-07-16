@@ -3,7 +3,7 @@
 import os
 from uuid import UUID, uuid4
 import asyncio
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Optional, Tuple, List
 from passlib import pwd
 from passlib.context import CryptContext
@@ -22,6 +22,7 @@ from fastapi import (
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from .models import User
+from .utils import dt_now
 
 
 # ============================================================================
@@ -95,7 +96,7 @@ class OA2BearerOrQuery(OAuth2PasswordBearer):
 def generate_jwt(data: dict, minutes: int) -> str:
     """generate JWT token with expiration time (in minutes)"""
     expires_delta = timedelta(minutes=minutes)
-    expire = datetime.utcnow() + expires_delta
+    expire = dt_now() + expires_delta
     payload = data.copy()
     payload["exp"] = expire
     return jwt.encode(payload, PASSWORD_SECRET, algorithm=ALGORITHM)

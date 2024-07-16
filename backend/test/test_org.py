@@ -122,10 +122,11 @@ def test_rename_org_duplicate_name(
 
 def test_create_org(admin_auth_headers):
     NEW_ORG_NAME = "New Org"
+    NEW_ORG_SLUG = "new-org"
     r = requests.post(
         f"{API_PREFIX}/orgs/create",
         headers=admin_auth_headers,
-        json={"name": NEW_ORG_NAME, "slug": "new-org"},
+        json={"name": NEW_ORG_NAME, "slug": NEW_ORG_SLUG},
     )
 
     assert r.status_code == 200
@@ -137,13 +138,12 @@ def test_create_org(admin_auth_headers):
     new_oid = data["id"]
 
     # Verify that org exists.
-    r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
+    r = requests.get(f"{API_PREFIX}/orgs/{new_oid}", headers=admin_auth_headers)
     assert r.status_code == 200
     data = r.json()
-    org_names = []
-    for org in data["items"]:
-        org_names.append(org["name"])
-    assert NEW_ORG_NAME in org_names
+    assert data["name"] == NEW_ORG_NAME
+    assert data["slug"] == NEW_ORG_SLUG
+    assert data["created"]
 
 
 def test_create_org_duplicate_name(admin_auth_headers, non_default_org_id):

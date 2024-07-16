@@ -1,7 +1,6 @@
 """ Profile Management """
 
 from typing import Optional, TYPE_CHECKING, Any, cast, Dict, List
-from datetime import datetime
 from uuid import UUID, uuid4
 import os
 
@@ -25,6 +24,7 @@ from .models import (
     PaginatedResponse,
     StorageRef,
 )
+from .utils import dt_now
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -162,7 +162,7 @@ class ProfileOps:
         """commit profile and shutdown profile browser"""
         # pylint: disable=too-many-locals
 
-        now = datetime.utcnow().replace(microsecond=0, tzinfo=None)
+        now = dt_now()
 
         if existing_profile:
             profileid = existing_profile.id
@@ -252,7 +252,7 @@ class ProfileOps:
         """Update name and description metadata only on existing profile"""
         query = {
             "name": update.name,
-            "modified": datetime.utcnow().replace(microsecond=0, tzinfo=None),
+            "modified": dt_now(),
             "modifiedBy": user.id,
             "modifiedByName": user.name if user.name else user.email,
         }
