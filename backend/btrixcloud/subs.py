@@ -96,11 +96,11 @@ class SubOps:
         subscription = Subscription(
             subId=sub_import.subId, status=sub_import.status, planId=sub_import.planId
         )
-        org = await self.org_ops.add_subscription_to_org(subscription, sub_import.oid)
+        await self.org_ops.add_subscription_to_org(subscription, sub_import.oid)
 
-        await self.add_sub_event("import", sub_import, org.id)
+        await self.add_sub_event("import", sub_import, sub_import.oid)
 
-        return {"added": True, "id": org.id}
+        return {"added": True, "id": sub_import.oid}
 
     async def update_subscription(self, update: SubscriptionUpdate) -> dict[str, bool]:
         """update subs"""

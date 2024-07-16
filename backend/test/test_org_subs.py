@@ -1,6 +1,7 @@
 import requests
 
 from .conftest import API_PREFIX
+from uuid import uuid4
 
 
 new_subs_oid = None
@@ -364,6 +365,21 @@ def test_cancel_sub_and_no_delete_org(admin_auth_headers):
     )
     assert r.status_code == 404
     assert r.json() == {"detail": "org_for_subscription_not_found"}
+
+
+def test_import_sub_invalid_org(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/import",
+        headers=admin_auth_headers,
+        json={
+            "subId": "345",
+            "planId": "basic",
+            "status": "active",
+            "oid": str(uuid4()),
+        },
+    )
+    assert r.status_code == 400
+    assert r.json() == {"detail": "invalid_org_id"}
 
 
 def test_import_sub_existing_org(admin_auth_headers, non_default_org_id):

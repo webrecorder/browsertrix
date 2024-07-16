@@ -367,18 +367,24 @@ class OrgOps:
 
         return org
 
-    async def add_subscription_to_org(self, subscription: Subscription, oid: UUID):
+    async def add_subscription_to_org(
+        self, subscription: Subscription, oid: UUID
+    ) -> None:
         """Add subscription to existing org"""
         org = await self.get_org_by_id(oid)
 
         org.subscription = subscription
+        include = {"subscription"}
+
         if subscription.status == PAUSED_PAYMENT_FAILED:
             org.readOnly = True
             org.readOnlyReason = REASON_PAUSED
+            include.add("readOnly")
+            include.add("readOnlyReason")
 
-        await self.orgs.find_one_and_update({"_id": org.id}, {"$set": org.to_dict()})
-
-        return org
+        await self.orgs.find_one_and_update(
+            {"_id": org.id}, {"$set": org.dict(include=include)}
+        )
 
     async def check_all_org_default_storages(self, storage_ops) -> None:
         """ensure all default storages references by this org actually exist
