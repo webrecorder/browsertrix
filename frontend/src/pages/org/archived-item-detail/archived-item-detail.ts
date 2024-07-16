@@ -558,6 +558,8 @@ export class ArchivedItemDetail extends TailwindElement {
   private renderMenu() {
     if (!this.crawl) return;
 
+    const authToken = this.authState!.headers.Authorization.split(" ")[1];
+
     return html`
       <sl-dropdown placement="bottom-end" distance="4" hoist>
         <sl-button slot="trigger" size="small" caret
@@ -609,6 +611,19 @@ export class ArchivedItemDetail extends TailwindElement {
             <sl-icon name="tags" slot="prefix"></sl-icon>
             ${msg("Copy Tags")}
           </sl-menu-item>
+          ${when(
+            finishedCrawlStates.includes(this.crawl.state),
+            () => html`
+              <sl-divider></sl-divider>
+              <btrix-menu-item-link
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.crawlId}/download?auth_bearer=${authToken}`}
+                download
+              >
+                <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+                ${msg("Download Archived Item")}
+              </btrix-menu-item-link>
+            `,
+          )}
           ${when(
             this.isCrawler && !isActive(this.crawl.state),
             () => html`
