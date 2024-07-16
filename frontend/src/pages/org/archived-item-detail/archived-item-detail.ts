@@ -634,7 +634,7 @@ export class ArchivedItemDetail extends TailwindElement {
                 download
               >
                 <sl-icon name="cloud-download" slot="prefix"></sl-icon>
-                ${msg("Download Archived Item")}
+                ${msg("Download Item")}
               </btrix-menu-item-link>
             `,
           )}
@@ -647,7 +647,7 @@ export class ArchivedItemDetail extends TailwindElement {
                 @click=${() => void this.deleteCrawl()}
               >
                 <sl-icon name="trash3" slot="prefix"></sl-icon>
-                ${msg("Delete Crawl")}
+                ${msg("Delete Item")}
               </sl-menu-item>
             `,
           )}
