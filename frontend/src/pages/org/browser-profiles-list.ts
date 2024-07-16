@@ -327,7 +327,7 @@ export class BrowserProfilesList extends TailwindElement {
             ></sl-format-date>
           </sl-tooltip>
         </btrix-table-cell>
-        <btrix-table-cell class="px-1">
+        <btrix-table-cell class="p-0">
           ${this.renderActions(data)}
         </btrix-table-cell>
       </btrix-table-row>
