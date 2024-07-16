@@ -9,6 +9,8 @@ import codecs
 from tempfile import TemporaryFile
 from zipfile import ZipFile, ZIP_STORED
 
+import pytest
+
 from .conftest import API_PREFIX, HOST_PREFIX
 from .test_collections import UPDATED_NAME as COLLECTION_NAME
 
@@ -244,10 +246,21 @@ def test_verify_wacz():
     assert len(pages.strip().split("\n")) == 4
 
 
-def test_download_wacz_crawls(admin_auth_headers, default_org_id, admin_crawl_id):
+@pytest.parametrize(
+    "type_path",
+    [
+        # crawls endpoint
+        ("crawls"),
+        # all-crawls endpoint
+        ("all-crawls"),
+    ],
+)
+def test_download_wacz_crawls(
+    admin_auth_headers, default_org_id, admin_crawl_id, type_path
+):
     with TemporaryFile() as fh:
         with requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/download",
+            f"{API_PREFIX}/orgs/{default_org_id}/{type_path}/{admin_crawl_id}/download",
             headers=admin_auth_headers,
             stream=True,
         ) as r:

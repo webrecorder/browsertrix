@@ -939,27 +939,6 @@ def test_update_upload_metadata_all_crawls(
     assert data["collectionIds"] == []
 
 
-def test_download_wacz_all_crawls(admin_auth_headers, default_org_id, admin_crawl_id):
-    with TemporaryFile() as fh:
-        with requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{admin_crawl_id}/download",
-            headers=admin_auth_headers,
-            stream=True,
-        ) as r:
-            assert r.status_code == 200
-            for chunk in r.iter_content():
-                fh.write(chunk)
-
-        fh.seek(0)
-        with ZipFile(fh, "r") as zip_file:
-            contents = zip_file.namelist()
-
-            assert len(contents) >= 2
-            for filename in contents:
-                assert filename.endswith(".wacz") or filename == "datapackage.json"
-                assert zip_file.getinfo(filename).compress_type == ZIP_STORED
-
-
 def test_delete_form_upload_and_crawls_from_all_crawls(
     admin_auth_headers,
     crawler_auth_headers,
