@@ -18,12 +18,15 @@ from .models import (
     UpdateCrawl,
     DeleteCrawlList,
     Organization,
-    PaginatedResponse,
+    PaginatedCrawlOutResponse,
     User,
     StorageRef,
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
     QARun,
+    UpdatedResponse,
+    DeletedResponseQuota,
+    CrawlSearchValuesResponse,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now
@@ -806,7 +809,7 @@ def init_base_crawls_api(app, user_dep, *args):
     @app.get(
         "/orgs/{oid}/all-crawls",
         tags=["all-crawls"],
-        response_model=PaginatedResponse,
+        response_model=PaginatedCrawlOutResponse,
     )
     async def list_all_base_crawls(
         org: Organization = Depends(org_viewer_dep),
@@ -854,7 +857,11 @@ def init_base_crawls_api(app, user_dep, *args):
         )
         return paginated_format(crawls, total, page, pageSize)
 
-    @app.get("/orgs/{oid}/all-crawls/search-values", tags=["all-crawls"])
+    @app.get(
+        "/orgs/{oid}/all-crawls/search-values",
+        tags=["all-crawls"],
+        response_model=CrawlSearchValuesResponse,
+    )
     async def get_all_crawls_search_values(
         org: Organization = Depends(org_viewer_dep),
         crawlType: Optional[str] = None,
@@ -891,13 +898,21 @@ def init_base_crawls_api(app, user_dep, *args):
     async def get_crawl_out(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_out(crawl_id, org)
 
-    @app.patch("/orgs/{oid}/all-crawls/{crawl_id}", tags=["all-crawls"])
+    @app.patch(
+        "/orgs/{oid}/all-crawls/{crawl_id}",
+        tags=["all-crawls"],
+        response_model=UpdatedResponse,
+    )
     async def update_crawl(
         update: UpdateCrawl, crawl_id: str, org: Organization = Depends(org_crawl_dep)
     ):
         return await ops.update_crawl(crawl_id, org, update)
 
-    @app.post("/orgs/{oid}/all-crawls/delete", tags=["all-crawls"])
+    @app.post(
+        "/orgs/{oid}/all-crawls/delete",
+        tags=["all-crawls"],
+        response_model=DeletedResponseQuota,
+    )
     async def delete_crawls_all_types(
         delete_list: DeleteCrawlList,
         user: User = Depends(user_dep),

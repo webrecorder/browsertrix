@@ -24,9 +24,12 @@ from .models import (
     UploadedCrawl,
     UpdateUpload,
     Organization,
-    PaginatedResponse,
+    PaginatedCrawlOutResponse,
     User,
     StorageRef,
+    UpdatedResponse,
+    DeletedResponseQuota,
+    AddedResponseIdQuota,
 )
 from .pagination import paginated_format, DEFAULT_PAGE_SIZE
 from .utils import dt_now
@@ -286,7 +289,11 @@ def init_uploads_api(app, user_dep, *args):
     org_viewer_dep = ops.orgs.org_viewer_dep
     org_crawl_dep = ops.orgs.org_crawl_dep
 
-    @app.put("/orgs/{oid}/uploads/formdata", tags=["uploads"])
+    @app.put(
+        "/orgs/{oid}/uploads/formdata",
+        tags=["uploads"],
+        response_model=AddedResponseIdQuota,
+    )
     async def upload_formdata(
         uploads: List[UploadFile] = File(...),
         name: str = "",
@@ -310,7 +317,11 @@ def init_uploads_api(app, user_dep, *args):
             uploads, name, description, colls_list, tags_list, org, user
         )
 
-    @app.put("/orgs/{oid}/uploads/stream", tags=["uploads"])
+    @app.put(
+        "/orgs/{oid}/uploads/stream",
+        tags=["uploads"],
+        response_model=AddedResponseIdQuota,
+    )
     async def upload_stream(
         request: Request,
         filename: str,
@@ -344,7 +355,11 @@ def init_uploads_api(app, user_dep, *args):
             replaceId,
         )
 
-    @app.get("/orgs/{oid}/uploads", tags=["uploads"], response_model=PaginatedResponse)
+    @app.get(
+        "/orgs/{oid}/uploads",
+        tags=["uploads"],
+        response_model=PaginatedCrawlOutResponse,
+    )
     async def list_uploads(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
@@ -407,13 +422,21 @@ def init_uploads_api(app, user_dep, *args):
     async def get_upload_replay(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_out(crawl_id, org, "upload")
 
-    @app.patch("/orgs/{oid}/uploads/{crawl_id}", tags=["uploads"])
+    @app.patch(
+        "/orgs/{oid}/uploads/{crawl_id}",
+        tags=["uploads"],
+        response_model=UpdatedResponse,
+    )
     async def update_uploads_api(
         update: UpdateUpload, crawl_id: str, org: Organization = Depends(org_crawl_dep)
     ):
         return await ops.update_crawl(crawl_id, org, update, "upload")
 
-    @app.post("/orgs/{oid}/uploads/delete", tags=["uploads"])
+    @app.post(
+        "/orgs/{oid}/uploads/delete",
+        tags=["uploads"],
+        response_model=DeletedResponseQuota,
+    )
     async def delete_uploads(
         delete_list: DeleteCrawlList,
         user: User = Depends(user_dep),

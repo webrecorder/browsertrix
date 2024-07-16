@@ -22,10 +22,14 @@ from .models import (
     Subscription,
     SubscriptionPortalUrlRequest,
     SubscriptionPortalUrlResponse,
+    SubscriptionCanceledResponse,
     Organization,
     InviteToOrgRequest,
+    InviteAddedResponse,
     User,
     UserRole,
+    UpdatedResponse,
+    PaginatedSubscriptionEventResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now
@@ -273,7 +277,11 @@ def init_subs_api(
 
     ops = SubOps(mdb, org_ops, user_manager)
 
-    @app.post("/subscriptions/create", tags=["subscriptions"])
+    @app.post(
+        "/subscriptions/create",
+        tags=["subscriptions"],
+        response_model=InviteAddedResponse,
+    )
     async def new_sub(
         create: SubscriptionCreate,
         request: Request,
@@ -285,6 +293,7 @@ def init_subs_api(
         "/subscriptions/update",
         tags=["subscriptions"],
         dependencies=[Depends(user_or_shared_secret_dep)],
+        response_model=UpdatedResponse,
     )
     async def update_subscription(
         update: SubscriptionUpdate,
@@ -295,6 +304,7 @@ def init_subs_api(
         "/subscriptions/cancel",
         tags=["subscriptions"],
         dependencies=[Depends(user_or_shared_secret_dep)],
+        response_model=SubscriptionCanceledResponse,
     )
     async def cancel_subscription(
         cancel: SubscriptionCancel,
@@ -307,6 +317,7 @@ def init_subs_api(
         "/subscriptions/events",
         tags=["subscriptions"],
         dependencies=[Depends(user_or_shared_secret_dep)],
+        response_model=PaginatedSubscriptionEventResponse,
     )
     async def get_sub_events(
         status: Optional[str] = None,

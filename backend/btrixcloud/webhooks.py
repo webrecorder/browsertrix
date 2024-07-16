@@ -20,7 +20,7 @@ from .models import (
     CollectionItemAddedBody,
     CollectionItemRemovedBody,
     CollectionDeletedBody,
-    PaginatedResponse,
+    PaginatedWebhookNotificationResponse,
     Organization,
 )
 from .utils import dt_now
@@ -447,7 +447,7 @@ def init_event_webhooks_api(mdb, org_ops, app):
 
     org_owner_dep = org_ops.org_owner_dep
 
-    @router.get("", response_model=PaginatedResponse)
+    @router.get("", response_model=PaginatedWebhookNotificationResponse)
     async def list_notifications(
         org: Organization = Depends(org_owner_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,

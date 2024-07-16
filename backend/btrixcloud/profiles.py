@@ -21,8 +21,15 @@ from .models import (
     ProfileUpdate,
     Organization,
     User,
-    PaginatedResponse,
+    PaginatedProfileResponse,
     StorageRef,
+    EmptyResponse,
+    SuccessResponse,
+    AddedResponseIdQuota,
+    UpdatedResponse,
+    SuccessResponseStorageQuota,
+    ProfilePingResponse,
+    ProfileBrowserGetUrlResponse,
 )
 from .utils import dt_now
 
@@ -469,7 +476,7 @@ def init_profiles_api(
         await browser_get_metadata(browserid, org)
         return browserid
 
-    @router.get("", response_model=PaginatedResponse)
+    @router.get("", response_model=PaginatedProfileResponse)
     async def list_profiles(
         org: Organization = Depends(org_crawl_dep),
         userid: Optional[UUID] = None,
@@ -488,7 +495,7 @@ def init_profiles_api(
         )
         return paginated_format(profiles, total, page, pageSize)
 
-    @router.post("")
+    @router.post("", response_model=AddedResponseIdQuota)
     async def commit_browser_to_new(
         browser_commit: ProfileCreate,
         org: Organization = Depends(org_crawl_dep),
@@ -498,7 +505,7 @@ def init_profiles_api(
 
         return await ops.commit_to_profile(browser_commit, org, user, metadata)
 
-    @router.patch("/{profileid}")
+    @router.patch("/{profileid}", response_model=UpdatedResponse)
     async def commit_browser_to_existing(
         browser_commit: ProfileUpdate,
         profileid: UUID,
@@ -533,7 +540,7 @@ def init_profiles_api(
     ):
         return await ops.get_profile_with_configs(profileid, org)
 
-    @router.delete("/{profileid}")
+    @router.delete("/{profileid}", response_model=SuccessResponseStorageQuota)
     async def delete_profile(
         profileid: UUID,
         org: Organization = Depends(org_crawl_dep),
@@ -548,17 +555,17 @@ def init_profiles_api(
     ):
         return await ops.create_new_browser(org, user, profile_launch)
 
-    @router.post("/browser/{browserid}/ping")
+    @router.post("/browser/{browserid}/ping", response_model=ProfilePingResponse)
     async def ping_profile_browser(browserid: str = Depends(browser_dep)):
         return await ops.ping_profile_browser(browserid)
 
-    @router.post("/browser/{browserid}/navigate")
+    @router.post("/browser/{browserid}/navigate", response_model=SuccessResponse)
     async def navigate_profile_browser(
         urlin: UrlIn, browserid: str = Depends(browser_dep)
     ):
         return await ops.navigate_profile_browser(browserid, urlin)
 
-    @router.get("/browser/{browserid}")
+    @router.get("/browser/{browserid}", response_model=ProfileBrowserGetUrlResponse)
     async def get_profile_browser_url(
         request: Request,
         browserid: str = Depends(browser_dep),
@@ -569,11 +576,11 @@ def init_profiles_api(
         )
 
     # pylint: disable=unused-argument
-    @router.get("/browser/{browserid}/access")
+    @router.get("/browser/{browserid}/access", response_model=EmptyResponse)
     async def access_check(browserid: str = Depends(browser_dep)):
         return {}
 
-    @router.delete("/browser/{browserid}")
+    @router.delete("/browser/{browserid}", response_model=SuccessResponse)
     async def delete_profile_browser(browserid: str = Depends(browser_dep)):
         return await ops.delete_profile_browser(browserid)
 
