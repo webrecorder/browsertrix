@@ -603,13 +603,7 @@ export class CrawlsList extends TailwindElement {
       ?showStatus=${this.itemType !== null}
     >
       <btrix-table-cell slot="actionCell" class="px-1">
-        <btrix-overflow-dropdown
-          @click=${(e: MouseEvent) => {
-            // Prevent navigation to detail view
-            e.preventDefault();
-            e.stopImmediatePropagation();
-          }}
-        >
+        <btrix-overflow-dropdown>
           <sl-menu>${this.renderMenuItems(item)}</sl-menu>
         </btrix-overflow-dropdown>
       </btrix-table-cell>
