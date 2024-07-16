@@ -119,6 +119,32 @@ export class OrgSettingsBilling extends TailwindElement {
                           ? this.renderContactSalesLink(this.salesEmail)
                           : nothing}
                     </div>
+                    ${org.subscription?.futureCancelDate
+                      ? html`
+                          <div
+                            class="mb-3 flex items-center gap-2 border-b pb-3 text-neutral-500"
+                          >
+                            <sl-icon
+                              name="info-circle"
+                              class="text-base"
+                            ></sl-icon>
+                            <span>
+                              ${msg(
+                                html`Your plan will be canceled on
+                                  <sl-format-date
+                                    lang=${getLocale()}
+                                    class="truncate"
+                                    date=${org.subscription.futureCancelDate}
+                                    month="long"
+                                    day="numeric"
+                                    year="numeric"
+                                  >
+                                  </sl-format-date>`,
+                              )}
+                            </span>
+                          </div>
+                        `
+                      : nothing}
                     ${this.renderQuotas(org.quotas)}
                   `,
                 )}
@@ -181,27 +207,9 @@ export class OrgSettingsBilling extends TailwindElement {
 
       switch (subscription.status) {
         case SubscriptionStatus.Active: {
-          if (subscription.futureCancelDate) {
-            statusLabel = html`
-              <span class="text-danger"
-                >${msg(
-                  html`Cancels
-                    <sl-format-date
-                      lang=${getLocale()}
-                      class="truncate"
-                      date=${subscription.futureCancelDate}
-                      month="long"
-                      day="numeric"
-                    >
-                    </sl-format-date>`,
-                )}</span
-              >
-            `;
-          } else {
-            statusLabel = html`
-              <span class="text-success-700">${msg("Active")}</span>
-            `;
-          }
+          statusLabel = html`
+            <span class="text-success-700">${msg("Active")}</span>
+          `;
           break;
         }
         case SubscriptionStatus.PausedPaymentFailed: {
