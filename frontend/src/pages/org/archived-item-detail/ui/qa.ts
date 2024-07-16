@@ -329,7 +329,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
               <btrix-table-header-cell>
                 ${msg("Started by")}
               </btrix-table-header-cell>
-              <btrix-table-header-cell class="px-1">
+              <btrix-table-header-cell class="px-0">
                 <span class="sr-only">${msg("Row actions")}</span>
               </btrix-table-header-cell>
             </btrix-table-head>
@@ -389,7 +389,7 @@ export class ArchivedItemDetailQA extends TailwindElement {
               : notApplicable()}
           </btrix-table-cell>
           <btrix-table-cell>${run.userName}</btrix-table-cell>
-          <btrix-table-cell class="px-1">
+          <btrix-table-cell class="p-0">
             <div class="col action">
               <btrix-overflow-dropdown
                 @sl-show=${async (e: SlShowEvent) => {

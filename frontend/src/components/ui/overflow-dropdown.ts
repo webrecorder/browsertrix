@@ -1,12 +1,14 @@
 import { localized, msg } from "@lit/localize";
 import type { SlDropdown, SlMenu } from "@shoelace-style/shoelace";
-import { css, html, LitElement } from "lit";
+import { html } from "lit";
 import {
   customElement,
   query,
   queryAssignedElements,
   state,
 } from "lit/decorators.js";
+
+import { TailwindElement } from "@/classes/TailwindElement";
 
 /**
  * Dropdown for additional actions.
@@ -23,19 +25,7 @@ import {
  */
 @localized()
 @customElement("btrix-overflow-dropdown")
-export class OverflowDropdown extends LitElement {
-  static style = [
-    css`
-      .trigger {
-        font-size: 1rem;
-      }
-
-      .trigger[disabled] {
-        visibility: hidden;
-      }
-    `,
-  ];
-
+export class OverflowDropdown extends TailwindElement {
   @state()
   private hasMenuItems?: boolean;
 
@@ -50,7 +40,7 @@ export class OverflowDropdown extends LitElement {
       <sl-dropdown ?disabled=${!this.hasMenuItems} hoist>
         <sl-icon-button
           slot="trigger"
-          class="trigger"
+          class="font-base attr-[disabled]:invisible part-[base]:p-3"
           label=${msg("Actions")}
           name="three-dots-vertical"
           ?disabled=${!this.hasMenuItems}
