@@ -246,7 +246,7 @@ def test_verify_wacz():
     assert len(pages.strip().split("\n")) == 4
 
 
-@pytest.parametrize(
+@pytest.mark.parametrize(
     "type_path",
     [
         # crawls endpoint
