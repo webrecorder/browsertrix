@@ -2207,7 +2207,12 @@ class PaginatedSubscriptionEventResponse(PaginatedResponse):
     """Response model for paginated subscription events"""
 
     items: List[
-        Union[SubscriptionCreateOut, SubscriptionUpdateOut, SubscriptionCancelOut]
+        Union[
+            SubscriptionCreateOut,
+            SubscriptionUpdateOut,
+            SubscriptionCancelOut,
+            SubscriptionImportOut,
+        ]
     ]
 
 
