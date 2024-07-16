@@ -83,7 +83,7 @@ export class TabList extends TailwindElement {
       --track-width: 4px;
     }
 
-    .container {
+    .btrix-tab-list-container {
       display: grid;
       grid-template-areas:
         "menu"
@@ -94,7 +94,7 @@ export class TabList extends TailwindElement {
     }
 
     @media only screen and (min-width: ${TWO_COL_SCREEN_MIN_CSS}) {
-      .container {
+      .btrix-tab-list-container {
         grid-template-areas:
           ". header"
           "menu main";
@@ -227,7 +227,7 @@ export class TabList extends TailwindElement {
 
   render() {
     return html`
-      <div class="container">
+      <div class="btrix-tab-list-container">
         <div class="navWrapper min-w-0">${this.renderNav()}</div>
         <div class="header"><slot name="header"></slot></div>
         <div class="content">
