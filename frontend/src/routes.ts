@@ -18,7 +18,6 @@ export const ROUTES = {
     "(/collections(/new)(/view/:collectionId(/:collectionTab)))",
     "(/browser-profiles(/profile(/browser/:browserId)(/:browserProfileId)))",
     "(/settings(/:settingsTab))",
-    "(/payment-portal-redirect)",
   ].join(""),
   users: "/users",
   usersInvite: "/users/invite",
