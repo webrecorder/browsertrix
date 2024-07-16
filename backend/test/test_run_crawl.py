@@ -6,6 +6,8 @@ import zipfile
 import re
 import csv
 import codecs
+from tempfile import TemporaryFile
+from zipfile import ZipFile, ZIP_STORED
 
 from .conftest import API_PREFIX, HOST_PREFIX
 from .test_collections import UPDATED_NAME as COLLECTION_NAME
@@ -240,6 +242,27 @@ def test_verify_wacz():
 
     # 3 other page + header line
     assert len(pages.strip().split("\n")) == 4
+
+
+def test_download_wacz_crawls(admin_auth_headers, default_org_id, admin_crawl_id):
+    with TemporaryFile() as fh:
+        with requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{admin_crawl_id}/download",
+            headers=admin_auth_headers,
+            stream=True,
+        ) as r:
+            assert r.status_code == 200
+            for chunk in r.iter_content():
+                fh.write(chunk)
+
+        fh.seek(0)
+        with ZipFile(fh, "r") as zip_file:
+            contents = zip_file.namelist()
+
+            assert len(contents) >= 2
+            for filename in contents:
+                assert filename.endswith(".wacz") or filename == "datapackage.json"
+                assert zip_file.getinfo(filename).compress_type == ZIP_STORED
 
 
 def test_update_crawl(

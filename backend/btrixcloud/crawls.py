@@ -1158,6 +1158,14 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     async def get_crawl_out(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_out(crawl_id, org, "crawl")
 
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/download", tags=["crawls"], response_model=bytes
+    )
+    async def download_crawl_as_single_wacz(
+        crawl_id: str, org: Organization = Depends(org_viewer_dep)
+    ):
+        return await ops.download_crawl_as_single_wacz(crawl_id, org)
+
     # QA APIs
     # ---------------------
     @app.get(

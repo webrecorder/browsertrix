@@ -8,6 +8,7 @@ import urllib.parse
 
 import asyncio
 from fastapi import HTTPException, Depends
+from fastapi.responses import StreamingResponse
 
 from .models import (
     CrawlFile,
@@ -792,6 +793,20 @@ class BaseCrawlOps:
             "firstSeeds": list(first_seeds),
         }
 
+    async def download_crawl_as_single_wacz(self, crawl_id: str, org: Organization):
+        """Download all WACZs in archived item as streaming nested WACZ"""
+        crawl = await self.get_crawl_out(crawl_id, org)
+
+        if not crawl.resources:
+            raise HTTPException(status_code=400, detail="no_crawl_resources")
+
+        resp = await self.storage_ops.download_streaming_wacz(org, crawl.resources)
+
+        headers = {"Content-Disposition": f'attachment; filename="{crawl_id}.wacz"'}
+        return StreamingResponse(
+            resp, headers=headers, media_type="application/wacz+zip"
+        )
+
 
 # ============================================================================
 def init_base_crawls_api(app, user_dep, *args):
@@ -890,6 +905,16 @@ def init_base_crawls_api(app, user_dep, *args):
     )
     async def get_crawl_out(crawl_id, org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_out(crawl_id, org)
+
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/download",
+        tags=["all-crawls"],
+        response_model=bytes,
+    )
+    async def download_base_crawl_as_single_wacz(
+        crawl_id: str, org: Organization = Depends(org_viewer_dep)
+    ):
+        return await ops.download_crawl_as_single_wacz(crawl_id, org)
 
     @app.patch("/orgs/{oid}/all-crawls/{crawl_id}", tags=["all-crawls"])
     async def update_crawl(
