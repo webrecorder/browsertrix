@@ -4,7 +4,7 @@ Collections API
 
 from collections import Counter
 from uuid import UUID, uuid4
-from typing import Optional, List, TYPE_CHECKING, cast
+from typing import Optional, List, TYPE_CHECKING, cast, Dict
 
 import asyncio
 import pymongo
@@ -21,9 +21,15 @@ from .models import (
     AddRemoveCrawlList,
     BaseCrawl,
     CrawlOutWithResources,
+    CrawlFileOut,
     Organization,
-    PaginatedResponse,
+    PaginatedCollOutResponse,
     SUCCESSFUL_STATES,
+    AddedResponseIdName,
+    EmptyResponse,
+    UpdatedResponse,
+    SuccessResponse,
+    CollectionSearchValuesResponse,
 )
 from .utils import dt_now
 
@@ -389,7 +395,11 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     org_viewer_dep = orgs.org_viewer_dep
     org_public = orgs.org_public
 
-    @app.post("/orgs/{oid}/collections", tags=["collections"])
+    @app.post(
+        "/orgs/{oid}/collections",
+        tags=["collections"],
+        response_model=AddedResponseIdName,
+    )
     async def add_collection(
         new_coll: CollIn, org: Organization = Depends(org_crawl_dep)
     ):
@@ -398,7 +408,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     @app.get(
         "/orgs/{oid}/collections",
         tags=["collections"],
-        response_model=PaginatedResponse,
+        response_model=PaginatedCollOutResponse,
     )
     async def list_collection_all(
         org: Organization = Depends(org_viewer_dep),
@@ -423,6 +433,7 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     @app.get(
         "/orgs/{oid}/collections/$all",
         tags=["collections"],
+        response_model=Dict[str, List[CrawlFileOut]],
     )
     async def get_collection_all(org: Organization = Depends(org_viewer_dep)):
         results = {}
@@ -440,7 +451,11 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
 
         return results
 
-    @app.get("/orgs/{oid}/collections/search-values", tags=["collections"])
+    @app.get(
+        "/orgs/{oid}/collections/search-values",
+        tags=["collections"],
+        response_model=CollectionSearchValuesResponse,
+    )
     async def get_collection_search_values(
         org: Organization = Depends(org_viewer_dep),
     ):
@@ -453,23 +468,29 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     )
     async def get_collection(
         coll_id: UUID, org: Organization = Depends(org_viewer_dep)
-    ) -> CollOut:
+    ):
         return await colls.get_collection(coll_id, org)
 
-    @app.get("/orgs/{oid}/collections/{coll_id}/replay.json", tags=["collections"])
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/replay.json",
+        tags=["collections"],
+        response_model=CollOut,
+    )
     async def get_collection_replay(
         coll_id: UUID, org: Organization = Depends(org_viewer_dep)
-    ) -> CollOut:
+    ):
         return await colls.get_collection(coll_id, org, resources=True)
 
     @app.get(
-        "/orgs/{oid}/collections/{coll_id}/public/replay.json", tags=["collections"]
+        "/orgs/{oid}/collections/{coll_id}/public/replay.json",
+        tags=["collections"],
+        response_model=CollOut,
     )
     async def get_collection_public_replay(
         response: Response,
         coll_id: UUID,
         org: Organization = Depends(org_public),
-    ) -> CollOut:
+    ):
         coll = await colls.get_collection(
             coll_id, org, resources=True, public_only=True
         )
@@ -478,7 +499,9 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
         return coll
 
     @app.options(
-        "/orgs/{oid}/collections/{coll_id}/public/replay.json", tags=["collections"]
+        "/orgs/{oid}/collections/{coll_id}/public/replay.json",
+        tags=["collections"],
+        response_model=EmptyResponse,
     )
     async def get_replay_preflight(response: Response):
         response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
@@ -486,7 +509,11 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
         response.headers["Access-Control-Allow-Headers"] = "*"
         return {}
 
-    @app.patch("/orgs/{oid}/collections/{coll_id}", tags=["collections"])
+    @app.patch(
+        "/orgs/{oid}/collections/{coll_id}",
+        tags=["collections"],
+        response_model=UpdatedResponse,
+    )
     async def update_collection(
         coll_id: UUID,
         update: UpdateColl,
@@ -523,13 +550,18 @@ def init_collections_api(app, mdb, orgs, storage_ops, event_webhook_ops):
     @app.delete(
         "/orgs/{oid}/collections/{coll_id}",
         tags=["collections"],
+        response_model=SuccessResponse,
     )
     async def delete_collection(
         coll_id: UUID, org: Organization = Depends(org_crawl_dep)
     ):
         return await colls.delete_collection(coll_id, org)
 
-    @app.get("/orgs/{oid}/collections/{coll_id}/download", tags=["collections"])
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/download",
+        tags=["collections"],
+        response_model=bytes,
+    )
     async def download_collection(
         coll_id: UUID, org: Organization = Depends(org_viewer_dep)
     ):

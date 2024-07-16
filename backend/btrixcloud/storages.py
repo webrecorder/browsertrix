@@ -44,6 +44,9 @@ from .models import (
     S3Storage,
     S3StorageIn,
     OrgStorageRefs,
+    DeletedResponse,
+    UpdatedResponse,
+    AddedResponseName,
 )
 
 from .utils import is_bool, slug_from_name
@@ -763,7 +766,7 @@ def init_storages_api(org_ops, crawl_manager):
         """get storage refs for an org"""
         return OrgStorageRefs(storage=org.storage, storageReplicas=org.storageReplicas)
 
-    @router.get("/allStorages", tags=["organizations"])
+    @router.get("/allStorages", tags=["organizations"], response_model=List[StorageRef])
     def get_available_storages(org: Organization = Depends(org_owner_dep)):
         return storage_ops.get_available_storages(org)
 
@@ -771,19 +774,23 @@ def init_storages_api(org_ops, crawl_manager):
     # todo: enable when ready to support custom storage
     return storage_ops
 
-    @router.post("/customStorage", tags=["organizations"])
+    @router.post(
+        "/customStorage", tags=["organizations"], response_model=AddedResponseName
+    )
     async def add_custom_storage(
         storage: S3StorageIn, org: Organization = Depends(org_owner_dep)
     ):
         return await storage_ops.add_custom_storage(storage, org)
 
-    @router.delete("/customStorage/{name}", tags=["organizations"])
+    @router.delete(
+        "/customStorage/{name}", tags=["organizations"], response_model=DeletedResponse
+    )
     async def remove_custom_storage(
         name: str, org: Organization = Depends(org_owner_dep)
     ):
         return await storage_ops.remove_custom_storage(name, org)
 
-    @router.post("/storage", tags=["organizations"])
+    @router.post("/storage", tags=["organizations"], response_model=UpdatedResponse)
     async def update_storage_refs(
         storage: OrgStorageRefs,
         org: Organization = Depends(org_owner_dep),

@@ -5,7 +5,6 @@ import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
-import slugify from "slugify";
 
 import { columns } from "./ui/columns";
 
@@ -20,6 +19,7 @@ import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
 import { maxLengthValidator } from "@/utils/form";
 import { AccessCode, isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
+import slugifyStrict from "@/utils/slugify";
 import appState, { AppStateService, use } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
@@ -233,7 +233,7 @@ export class OrgSettings extends TailwindElement {
                     window.location.hostname
                   }/orgs/${
                     this.slugValue
-                      ? this.slugify(this.slugValue)
+                      ? slugifyStrict(this.slugValue)
                       : this.org.slug
                   }`,
                 )}
@@ -454,12 +454,6 @@ export class OrgSettings extends TailwindElement {
     `;
   }
 
-  private slugify(value: string) {
-    return slugify(value, {
-      strict: true,
-    });
-  }
-
   private async checkFormValidity(formEl: HTMLFormElement) {
     await this.updateComplete;
     return !formEl.querySelector("[data-invalid]");
@@ -502,7 +496,7 @@ export class OrgSettings extends TailwindElement {
     };
 
     if (this.slugValue) {
-      params.slug = this.slugify(this.slugValue);
+      params.slug = slugifyStrict(this.slugValue);
     }
 
     this.isSavingOrgName = true;
@@ -634,10 +628,12 @@ export class OrgSettings extends TailwindElement {
         if (e.details === "duplicate_org_name") {
           message = msg("This org name is already taken, try another one.");
         } else if (e.details === "duplicate_org_slug") {
-          message = msg("This org URL is already taken, try another one.");
+          message = msg(
+            "This org URL identifier is already taken, try another one.",
+          );
         } else if (e.details === "invalid_slug") {
           message = msg(
-            "This org URL is invalid. Please use alphanumeric characters and dashes (-) only.",
+            "This org URL identifier is invalid. Please use alphanumeric characters and dashes (-) only.",
           );
         }
       }

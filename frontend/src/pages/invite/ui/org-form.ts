@@ -3,8 +3,7 @@ import { Task, TaskStatus } from "@lit/task";
 import type { SlInput } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { html } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import slugify from "slugify";
+import { customElement, property, query } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
@@ -12,6 +11,8 @@ import { NotifyController } from "@/controllers/notify";
 import { type APIUser } from "@/index";
 import { isApiError } from "@/utils/api";
 import type { AuthState } from "@/utils/AuthService";
+import { maxLengthValidator } from "@/utils/form";
+import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
@@ -42,8 +43,13 @@ export class OrgForm extends TailwindElement {
   @property({ type: String })
   slug = "";
 
+  @query("#orgForm")
+  private readonly form?: HTMLFormElement | null;
+
   readonly _api = new APIController(this);
   readonly _notify = new NotifyController(this);
+
+  private readonly validateOrgNameMax = maxLengthValidator(40);
 
   readonly _renameOrgTask = new Task(this, {
     autoRun: false,
@@ -67,20 +73,20 @@ export class OrgForm extends TailwindElement {
         <div class="mb-5">
           <sl-input
             name="orgName"
-            label=${msg("Org name")}
+            label=${msg("Org Name")}
             placeholder=${msg("My Organization")}
             autocomplete="off"
             value=${this.name === this.orgId ? "" : this.name}
             minlength="2"
-            maxlength="40"
             help-text=${msg("You can change this in your org settings later.")}
             required
+            @sl-input=${this.validateOrgNameMax.validate}
           ></sl-input>
         </div>
         <div class="mb-5">
           <sl-input
             name="orgSlug"
-            label=${msg("Custom URL identifier")}
+            label=${msg("Custom URL Identifier")}
             placeholder="my-organization"
             autocomplete="off"
             value=${this.slug}
@@ -90,7 +96,7 @@ export class OrgForm extends TailwindElement {
             required
             @sl-input=${(e: InputEvent) => {
               const input = e.target as SlInput;
-              input.helpText = helpText(slugify(input.value, { strict: true }));
+              input.helpText = helpText(slugifyStrict(input.value));
             }}
           >
           </sl-input>
@@ -123,7 +129,7 @@ export class OrgForm extends TailwindElement {
 
     const params = serialize(form) as FormValues;
     const orgName = params.orgName;
-    const orgSlug = slugify(params.orgSlug, { strict: true });
+    const orgSlug = slugifyStrict(params.orgSlug);
 
     void this._renameOrgTask.run([this.orgId, orgName, orgSlug]);
   }
@@ -148,20 +154,35 @@ export class OrgForm extends TailwindElement {
     } catch (e) {
       console.debug(e);
       if (isApiError(e)) {
+        let error: Error | null = null;
+        let fieldName = "";
+
         if (e.details === "duplicate_org_name") {
-          throw new Error(
-            msg("This org name is already taken, try another one."),
+          fieldName = "orgName";
+          error = new Error(
+            msg(str`The org name "${name}" is already taken, try another one.`),
           );
         } else if (e.details === "duplicate_org_slug") {
-          throw new Error(
-            msg("This org URL is already taken, try another one."),
-          );
-        } else if (e.details === "invalid_slug") {
-          throw new Error(
+          fieldName = "orgSlug";
+          error = new Error(
             msg(
-              "This org URL is invalid. Please use alphanumeric characters and dashes (-) only.",
+              str`The org URL identifier "${slug}" is already taken, try another one.`,
             ),
           );
+        } else if (e.details === "invalid_slug") {
+          fieldName = "orgSlug";
+          error = new Error(
+            msg(
+              str`The org URL identifier "${slug}" is not a valid URL. Please use alphanumeric characters and dashes (-) only`,
+            ),
+          );
+        }
+
+        if (error) {
+          if (fieldName) {
+            this.highlightErrorField(fieldName, error);
+          }
+          throw error;
         }
       }
 
@@ -172,6 +193,20 @@ export class OrgForm extends TailwindElement {
         variant: "danger",
         icon: "exclamation-octagon",
       });
+    }
+  }
+
+  private highlightErrorField(fieldName: string, error: Error) {
+    const input = this.form?.querySelector<SlInput>(`[name="${fieldName}"]`);
+
+    if (input) {
+      input.setCustomValidity(error.message);
+
+      const onOneInput = () => {
+        input.setCustomValidity("");
+        input.removeEventListener("sl-input", onOneInput);
+      };
+      input.addEventListener("sl-input", onOneInput);
     }
   }
 

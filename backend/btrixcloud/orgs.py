@@ -49,8 +49,8 @@ from .models import (
     InviteToOrgRequest,
     UserRole,
     User,
-    PaginatedResponse,
-    OrgImportExport,
+    PaginatedInvitePendingResponse,
+    PaginatedOrgOutResponse,
     CrawlConfig,
     Crawl,
     UploadedCrawl,
@@ -64,6 +64,16 @@ from .models import (
     PAUSED_PAYMENT_FAILED,
     REASON_PAUSED,
     ACTIVE,
+    DeletedResponse,
+    UpdatedResponse,
+    AddedResponse,
+    AddedResponseId,
+    OrgInviteResponse,
+    OrgAcceptInviteResponse,
+    OrgDeleteInviteResponse,
+    RemovedResponse,
+    OrgSlugsResponse,
+    OrgImportResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import (
@@ -1340,7 +1350,7 @@ def init_orgs_api(
     ops.org_owner_dep = org_owner_dep
     ops.org_public = org_public
 
-    @app.get("/orgs", tags=["organizations"], response_model=PaginatedResponse)
+    @app.get("/orgs", tags=["organizations"], response_model=PaginatedOrgOutResponse)
     async def get_orgs(
         user: User = Depends(user_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
@@ -1360,7 +1370,7 @@ def init_orgs_api(
         ]
         return paginated_format(serialized_results, total, page, pageSize)
 
-    @app.post("/orgs/create", tags=["organizations"])
+    @app.post("/orgs/create", tags=["organizations"], response_model=AddedResponseId)
     async def create_org(
         new_org: OrgCreate,
         user: User = Depends(user_dep),
@@ -1380,7 +1390,7 @@ def init_orgs_api(
         org_out.execMinutesQuotaReached = await ops.exec_mins_quota_reached(org.id)
         return org_out
 
-    @router.delete("", tags=["organizations"])
+    @router.delete("", tags=["organizations"], response_model=DeletedResponse)
     async def delete_org(
         org: Organization = Depends(org_dep), user: User = Depends(user_dep)
     ):
@@ -1390,7 +1400,7 @@ def init_orgs_api(
         await ops.delete_org_and_data(org, user_manager)
         return {"deleted": True}
 
-    @router.post("/rename", tags=["organizations"])
+    @router.post("/rename", tags=["organizations"], response_model=UpdatedResponse)
     async def rename_org(
         rename: RenameOrg,
         org: Organization = Depends(org_owner_dep),
@@ -1412,7 +1422,7 @@ def init_orgs_api(
 
         return {"updated": True}
 
-    @router.post("/quotas", tags=["organizations"])
+    @router.post("/quotas", tags=["organizations"], response_model=UpdatedResponse)
     async def update_quotas(
         quotas: OrgQuotas,
         org: Organization = Depends(org_owner_dep),
@@ -1425,7 +1435,7 @@ def init_orgs_api(
 
         return {"updated": True}
 
-    @router.post("/read-only", tags=["organizations"])
+    @router.post("/read-only", tags=["organizations"], response_model=UpdatedResponse)
     async def update_read_only(
         update: OrgReadOnlyUpdate,
         org: Organization = Depends(org_owner_dep),
@@ -1438,7 +1448,9 @@ def init_orgs_api(
 
         return {"updated": True}
 
-    @router.post("/read-only-on-cancel", tags=["organizations"])
+    @router.post(
+        "/read-only-on-cancel", tags=["organizations"], response_model=UpdatedResponse
+    )
     async def update_read_only_on_cancel(
         update: OrgReadOnlyOnCancel,
         org: Organization = Depends(org_owner_dep),
@@ -1451,7 +1463,9 @@ def init_orgs_api(
 
         return {"updated": True}
 
-    @router.post("/event-webhook-urls", tags=["organizations"])
+    @router.post(
+        "/event-webhook-urls", tags=["organizations"], response_model=UpdatedResponse
+    )
     async def update_event_webhook_urls(
         urls: OrgWebhookUrls,
         request: Request,
@@ -1465,7 +1479,7 @@ def init_orgs_api(
 
         return {"updated": True}
 
-    @router.patch("/user-role", tags=["organizations"])
+    @router.patch("/user-role", tags=["organizations"], response_model=UpdatedResponse)
     async def set_role(
         update: UpdateRole,
         org: Organization = Depends(org_owner_dep),
@@ -1484,7 +1498,7 @@ def init_orgs_api(
 
         return {"updated": True}
 
-    @router.post("/invite", tags=["invites"])
+    @router.post("/invite", tags=["invites"], response_model=OrgInviteResponse)
     async def invite_user_to_org(
         invite: InviteToOrgRequest,
         request: Request,
@@ -1503,7 +1517,11 @@ def init_orgs_api(
 
         return {"invited": "existing_user", "token": token}
 
-    @app.post("/orgs/invite-accept/{token}", tags=["invites"])
+    @app.post(
+        "/orgs/invite-accept/{token}",
+        tags=["invites"],
+        response_model=OrgAcceptInviteResponse,
+    )
     async def accept_invite(token: UUID, user: User = Depends(user_dep)):
         invite = await ops.invites.get_valid_invite(
             token, email=user.email, userid=user.id
@@ -1512,7 +1530,9 @@ def init_orgs_api(
         org_out = await org.serialize_for_user(user, user_manager)
         return {"added": True, "org": org_out}
 
-    @router.get("/invites", tags=["invites"])
+    @router.get(
+        "/invites", tags=["invites"], response_model=PaginatedInvitePendingResponse
+    )
     async def get_pending_org_invites(
         org: Organization = Depends(org_owner_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
@@ -1523,7 +1543,9 @@ def init_orgs_api(
         )
         return paginated_format(pending_invites, total, page, pageSize)
 
-    @router.post("/invites/delete", tags=["invites"])
+    @router.post(
+        "/invites/delete", tags=["invites"], response_model=OrgDeleteInviteResponse
+    )
     async def delete_invite(
         invite: RemovePendingInvite, org: Organization = Depends(org_owner_dep)
     ):
@@ -1537,7 +1559,7 @@ def init_orgs_api(
             }
         raise HTTPException(status_code=404, detail="invite_not_found")
 
-    @router.post("/remove", tags=["invites"])
+    @router.post("/remove", tags=["invites"], response_model=RemovedResponse)
     async def remove_user_from_org(
         remove: RemoveFromOrg, org: Organization = Depends(org_owner_dep)
     ) -> dict[str, bool]:
@@ -1560,7 +1582,7 @@ def init_orgs_api(
         await ops.update_users(org)
         return {"removed": True}
 
-    @router.post("/add-user", tags=["invites"])
+    @router.post("/add-user", tags=["invites"], response_model=AddedResponse)
     async def add_new_user_to_org(
         add_to_org: AddToOrgRequest,
         org: Organization = Depends(org_owner_dep),
@@ -1576,19 +1598,21 @@ def init_orgs_api(
     async def get_org_metrics(org: Organization = Depends(org_dep)):
         return await ops.get_org_metrics(org)
 
-    @app.get("/orgs/slugs", tags=["organizations"])
+    @app.get("/orgs/slugs", tags=["organizations"], response_model=OrgSlugsResponse)
     async def get_all_org_slugs(user: User = Depends(user_dep)):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
         return await ops.get_all_org_slugs()
 
-    @app.get("/orgs/slug-lookup", tags=["organizations"])
+    @app.get(
+        "/orgs/slug-lookup", tags=["organizations"], response_model=Dict[UUID, str]
+    )
     async def get_all_org_slugs_with_ids(user: User = Depends(user_dep)):
         if not user.is_superuser:
             raise HTTPException(status_code=403, detail="Not Allowed")
         return await ops.get_org_slugs_by_ids()
 
-    @router.get("/export/json", tags=["organizations"], response_model=OrgImportExport)
+    @router.get("/export/json", tags=["organizations"], response_model=bytes)
     async def export_org(
         org: Organization = Depends(org_owner_dep),
         user: User = Depends(user_dep),
@@ -1598,7 +1622,9 @@ def init_orgs_api(
 
         return await ops.export_org(org, user_manager)
 
-    @app.post("/orgs/import/json", tags=["organizations"])
+    @app.post(
+        "/orgs/import/json", tags=["organizations"], response_model=OrgImportResponse
+    )
     async def import_org(
         request: Request,
         user: User = Depends(user_dep),

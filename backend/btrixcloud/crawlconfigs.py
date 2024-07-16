@@ -29,10 +29,17 @@ from .models import (
     UpdateCrawlConfig,
     Organization,
     User,
-    PaginatedResponse,
+    PaginatedCrawlConfigOutResponse,
+    PaginatedSeedResponse,
+    PaginatedConfigRevisionResponse,
     FAILED_STATES,
     CrawlerChannel,
     CrawlerChannels,
+    StartedResponse,
+    CrawlConfigAddedResponse,
+    CrawlConfigSearchValues,
+    CrawlConfigUpdateResponse,
+    CrawlConfigDeletedResponse,
 )
 from .utils import dt_now, slug_from_name
 
@@ -790,7 +797,8 @@ class CrawlConfigOps:
 
     async def get_crawl_config_tags(self, org):
         """get distinct tags from all crawl configs for this org"""
-        return await self.crawl_configs.distinct("tags", {"oid": org.id})
+        tags = await self.crawl_configs.distinct("tags", {"oid": org.id})
+        return list(tags)
 
     async def get_crawl_config_search_values(self, org):
         """List unique names, first seeds, and descriptions from all workflows in org"""
@@ -1018,7 +1026,7 @@ def init_crawl_config_api(
     org_crawl_dep = org_ops.org_crawl_dep
     org_viewer_dep = org_ops.org_viewer_dep
 
-    @router.get("", response_model=PaginatedResponse)
+    @router.get("", response_model=PaginatedCrawlConfigOutResponse)
     async def get_crawl_configs(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
@@ -1060,11 +1068,11 @@ def init_crawl_config_api(
         )
         return paginated_format(crawl_configs, total, page, pageSize)
 
-    @router.get("/tags")
+    @router.get("/tags", response_model=List[str])
     async def get_crawl_config_tags(org: Organization = Depends(org_viewer_dep)):
         return await ops.get_crawl_config_tags(org)
 
-    @router.get("/search-values")
+    @router.get("/search-values", response_model=CrawlConfigSearchValues)
     async def get_crawl_config_search_values(
         org: Organization = Depends(org_viewer_dep),
     ):
@@ -1077,7 +1085,7 @@ def init_crawl_config_api(
     ):
         return ops.crawler_channels
 
-    @router.get("/{cid}/seeds", response_model=PaginatedResponse)
+    @router.get("/{cid}/seeds", response_model=PaginatedSeedResponse)
     async def get_crawl_config_seeds(
         cid: UUID,
         org: Organization = Depends(org_viewer_dep),
@@ -1096,6 +1104,7 @@ def init_crawl_config_api(
     @router.get(
         "/{cid}/revs",
         dependencies=[Depends(org_viewer_dep)],
+        response_model=PaginatedConfigRevisionResponse,
     )
     async def get_crawl_config_revisions(
         cid: UUID, pageSize: int = DEFAULT_PAGE_SIZE, page: int = 1
@@ -1105,7 +1114,7 @@ def init_crawl_config_api(
         )
         return paginated_format(revisions, total, page, pageSize)
 
-    @router.post("/")
+    @router.post("/", response_model=CrawlConfigAddedResponse)
     async def add_crawl_config(
         config: CrawlConfigIn,
         org: Organization = Depends(org_crawl_dep),
@@ -1125,7 +1134,11 @@ def init_crawl_config_api(
             "execMinutesQuotaReached": exec_mins_quota_reached,
         }
 
-    @router.patch("/{cid}", dependencies=[Depends(org_crawl_dep)])
+    @router.patch(
+        "/{cid}",
+        dependencies=[Depends(org_crawl_dep)],
+        response_model=CrawlConfigUpdateResponse,
+    )
     async def update_crawl_config(
         update: UpdateCrawlConfig,
         cid: UUID,
@@ -1134,7 +1147,7 @@ def init_crawl_config_api(
     ):
         return await ops.update_crawl_config(cid, org, user, update)
 
-    @router.post("/{cid}/run")
+    @router.post("/{cid}/run", response_model=StartedResponse)
     async def run_now(
         cid: UUID,
         org: Organization = Depends(org_crawl_dep),
@@ -1143,7 +1156,7 @@ def init_crawl_config_api(
         crawl_id = await ops.run_now(cid, org, user)
         return {"started": crawl_id}
 
-    @router.delete("/{cid}")
+    @router.delete("/{cid}", response_model=CrawlConfigDeletedResponse)
     async def make_inactive(cid: UUID, org: Organization = Depends(org_crawl_dep)):
         crawlconfig = await ops.get_crawl_config(cid, org.id)
 

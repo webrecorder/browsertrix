@@ -166,14 +166,15 @@
     box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-color-danger-100);
   }
 
-  [data-user-invalid]:not([disabled])::part(form-control-label):after {
-    /* Required asterisk color */
-    color: var(--sl-color-danger-500);
+  [data-user-invalid]:not([disabled])::part(form-control-label),
+  /* Required asterisk color */
+  [data-user-invalid]:not([disabled])::part(form-control-label)::after {
+    color: var(--sl-color-danger-700);
   }
 
   [data-user-invalid]:not([disabled])::part(form-control-help-text),
   [data-user-invalid]:not([disabled]) .form-help-text {
-    color: var(--sl-color-danger-500);
+    color: var(--sl-color-danger-700);
   }
 
   /* TODO tailwind sets border-width: 0, see if this can be fixed in tw */
