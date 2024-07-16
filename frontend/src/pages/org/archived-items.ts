@@ -616,10 +616,12 @@ export class CrawlsList extends TailwindElement {
     </btrix-archived-item-list-item>
   `;
 
-  private readonly renderMenuItems = (item: ArchivedItem) =>
+  private readonly renderMenuItems = (item: ArchivedItem) => {
     // HACK shoelace doesn't current have a way to override non-hover
     // color without resetting the --sl-color-neutral-700 variable
-    html`
+    const authToken = this.authState!.headers.Authorization.split(" ")[1];
+
+    return html`
       ${when(
         this.isCrawler,
         () => html`
@@ -665,6 +667,19 @@ export class CrawlsList extends TailwindElement {
         ${msg("Copy Tags")}
       </sl-menu-item>
       ${when(
+        finishedCrawlStates.includes(item.state),
+        () => html`
+          <sl-divider></sl-divider>
+          <btrix-menu-item-link
+            href=${`/api/orgs/${this.orgId}/all-crawls/${item.id}/download?auth_bearer=${authToken}`}
+            download
+          >
+            <sl-icon name="cloud-download" slot="prefix"></sl-icon>
+            ${msg("Download Item")}
+          </btrix-menu-item-link>
+        `,
+      )}
+      ${when(
         this.isCrawler && !isActive(item.state),
         () => html`
           <sl-divider></sl-divider>
@@ -678,6 +693,7 @@ export class CrawlsList extends TailwindElement {
         `,
       )}
     `;
+  };
 
   private readonly renderStatusMenuItem = (state: CrawlState) => {
     const { icon, label } = CrawlStatus.getContent(state);
