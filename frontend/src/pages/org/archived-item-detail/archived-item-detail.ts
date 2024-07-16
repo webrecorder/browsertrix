@@ -275,7 +275,21 @@ export class ArchivedItemDetail extends TailwindElement {
         ]);
         break;
       case "files":
-        sectionContent = this.renderPanel(msg("Files"), this.renderFiles());
+        sectionContent = this.renderPanel(
+          html` ${this.renderTitle(msg("Files"))}
+            <sl-tooltip content=${msg("Download all files as a single WACZ")}>
+              <sl-button
+                href=${`/api/orgs/${this.orgId}/all-crawls/${this.crawlId}/download?auth_bearer=${authToken}`}
+                download}
+                size="small"
+                variant="primary"
+              >
+                <sl-icon slot="prefix" name="cloud-download"></sl-icon>
+                ${msg("Download")}
+              </sl-button>
+            </sl-tooltip>`,
+          this.renderFiles(),
+        );
         break;
       case "logs":
         sectionContent = this.renderPanel(
