@@ -39,17 +39,27 @@ export function getHelpText(maxLength: number, currentLength: number) {
  * ```
  */
 export function maxLengthValidator(maxLength: number): MaxLengthValidator {
-  const helpText = msg(str`Maximum ${maxLength} characters`);
+  const validityHelpText = msg(str`Maximum ${maxLength} characters`);
+  let origHelpText: null | string = null;
+
   const validate = (e: CustomEvent) => {
     const el = e.target as SlTextarea | SlInput;
-    const helpText = getHelpText(maxLength, el.value.length);
+
+    if (origHelpText === null && el.helpText) {
+      origHelpText = el.helpText;
+    }
+
+    const validityText = getHelpText(maxLength, el.value.length);
+    const isInvalid = el.value.length > maxLength;
+
     el.setCustomValidity(
-      el.value.length > maxLength
-        ? msg(str`Please shorten this text to ${maxLength} or less characters.`)
+      isInvalid
+        ? msg(str`Please shorten this text to ${maxLength} or fewer characters.`)
         : "",
     );
-    el.helpText = helpText;
+
+    el.helpText = isInvalid ? validityText : origHelpText || validityHelpText;
   };
 
-  return { helpText, validate };
+  return { helpText: validityHelpText, validate };
 }
