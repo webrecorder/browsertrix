@@ -3,13 +3,13 @@ import { Task } from "@lit/task";
 import clsx from "clsx";
 import { css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 
 import { columns } from "../ui/columns";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { APIController } from "@/controllers/api";
-import { NavigateController } from "@/controllers/navigate";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { OrgData, OrgQuotas } from "@/types/org";
 import type { Auth, AuthState } from "@/utils/AuthService";
@@ -46,7 +46,6 @@ export class OrgSettingsBilling extends TailwindElement {
   salesEmail?: string;
 
   private readonly api = new APIController(this);
-  private readonly navigate = new NavigateController(this);
 
   get portalUrlLabel() {
     const subscription = this.org?.subscription;
@@ -264,18 +263,30 @@ export class OrgSettingsBilling extends TailwindElement {
   `;
 
   private renderPortalLink() {
-    return this.portalUrl.render({
-      complete: (portalUrl) => html`
-        <a
-          class=${manageLinkClasslist}
-          href=${portalUrl}
-          rel="noreferrer noopener"
-        >
-          ${this.portalUrlLabel}
-          <sl-icon name="arrow-right"></sl-icon>
-        </a>
-      `,
-    });
+    return html`
+      <a
+        class=${manageLinkClasslist}
+        href=${ifDefined(this.portalUrl.value)}
+        rel="noreferrer noopener"
+        @click=${async (e: MouseEvent) => {
+          e.preventDefault();
+
+          // Navigate to freshest portal URL
+          try {
+            await this.portalUrl.run();
+
+            if (this.portalUrl.value) {
+              window.location.href = this.portalUrl.value;
+            }
+          } catch (e) {
+            console.debug(e);
+          }
+        }}
+      >
+        ${this.portalUrlLabel}
+        <sl-icon name="arrow-right"></sl-icon>
+      </a>
+    `;
   }
 
   private renderContactSalesLink(salesEmail: string) {
