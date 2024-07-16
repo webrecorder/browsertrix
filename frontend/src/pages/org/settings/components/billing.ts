@@ -264,7 +264,7 @@ export class OrgSettingsBilling extends TailwindElement {
       </li>
       <li>
         ${msg(
-          str`${quotas.maxExecMinutesPerMonth ? humanizeSeconds(quotas.maxExecMinutesPerMonth, undefined, undefined, "long") : msg("Unlimited minutes")} of base crawling time per month`,
+          str`${quotas.maxExecMinutesPerMonth ? humanizeSeconds(quotas.maxExecMinutesPerMonth * 60, undefined, undefined, "long") : msg("Unlimited minutes")} of base crawling time per month`,
         )}
       </li>
     </ul>
