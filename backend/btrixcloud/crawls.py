@@ -39,12 +39,22 @@ from .models import (
     DeleteQARunList,
     Organization,
     User,
-    PaginatedResponse,
+    PaginatedCrawlOutResponse,
+    PaginatedSeedResponse,
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
     NON_RUNNING_STATES,
     ALL_CRAWL_STATES,
     TYPE_ALL_CRAWL_STATES,
+    UpdatedResponse,
+    SuccessResponse,
+    StartedResponse,
+    DeletedResponseQuota,
+    DeletedCountResponse,
+    EmptyResponse,
+    CrawlScaleResponse,
+    CrawlQueueResponse,
+    MatchCrawlQueueResponse,
 )
 
 
@@ -783,7 +793,7 @@ class CrawlOps(BaseCrawlOps):
 
             qa_run = QARun(
                 id=qa_run_id,
-                started=datetime.now(),
+                started=dt_now(),
                 userid=user.id,
                 userName=user.name,
                 state="starting",
@@ -1003,7 +1013,9 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     org_viewer_dep = ops.orgs.org_viewer_dep
     org_crawl_dep = ops.orgs.org_crawl_dep
 
-    @app.get("/orgs/all/crawls", tags=["crawls"])
+    @app.get(
+        "/orgs/all/crawls", tags=["crawls"], response_model=PaginatedCrawlOutResponse
+    )
     async def list_crawls_admin(
         user: User = Depends(user_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
@@ -1052,7 +1064,9 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         )
         return paginated_format(crawls, total, page, pageSize)
 
-    @app.get("/orgs/{oid}/crawls", tags=["crawls"], response_model=PaginatedResponse)
+    @app.get(
+        "/orgs/{oid}/crawls", tags=["crawls"], response_model=PaginatedCrawlOutResponse
+    )
     async def list_crawls(
         org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
@@ -1101,6 +1115,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/cancel",
         tags=["crawls"],
+        response_model=SuccessResponse,
     )
     async def crawl_cancel_immediately(
         crawl_id, org: Organization = Depends(org_crawl_dep)
@@ -1110,11 +1125,16 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/stop",
         tags=["crawls"],
+        response_model=SuccessResponse,
     )
     async def crawl_graceful_stop(crawl_id, org: Organization = Depends(org_crawl_dep)):
         return await ops.shutdown_crawl(crawl_id, org, graceful=True)
 
-    @app.post("/orgs/{oid}/crawls/delete", tags=["crawls"])
+    @app.post(
+        "/orgs/{oid}/crawls/delete",
+        tags=["crawls"],
+        response_model=DeletedResponseQuota,
+    )
     async def delete_crawls(
         delete_list: DeleteCrawlList,
         user: User = Depends(user_dep),
@@ -1122,7 +1142,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     ):
         return await ops.delete_crawls(org, delete_list, "crawl", user)
 
-    @app.get("/orgs/all/crawls/stats", tags=["crawls"])
+    @app.get("/orgs/all/crawls/stats", tags=["crawls"], response_model=bytes)
     async def get_all_orgs_crawl_stats(
         user: User = Depends(user_dep),
     ):
@@ -1132,7 +1152,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         crawl_stats = await ops.get_crawl_stats()
         return stream_dict_list_as_csv(crawl_stats, "crawling-stats.csv")
 
-    @app.get("/orgs/{oid}/crawls/stats", tags=["crawls"])
+    @app.get("/orgs/{oid}/crawls/stats", tags=["crawls"], response_model=bytes)
     async def get_org_crawl_stats(
         org: Organization = Depends(org_crawl_dep),
     ):
@@ -1212,7 +1232,11 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
             thresholds,
         )
 
-    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/start", tags=["qa"])
+    @app.post(
+        "/orgs/{oid}/crawls/{crawl_id}/qa/start",
+        tags=["qa"],
+        response_model=StartedResponse,
+    )
     async def start_crawl_qa_run(
         crawl_id: str,
         org: Organization = Depends(org_crawl_dep),
@@ -1221,21 +1245,33 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         qa_run_id = await ops.start_crawl_qa_run(crawl_id, org, user)
         return {"started": qa_run_id}
 
-    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/stop", tags=["qa"])
+    @app.post(
+        "/orgs/{oid}/crawls/{crawl_id}/qa/stop",
+        tags=["qa"],
+        response_model=SuccessResponse,
+    )
     async def stop_crawl_qa_run(
         crawl_id: str, org: Organization = Depends(org_crawl_dep)
     ):
         # pylint: disable=unused-argument
         return await ops.stop_crawl_qa_run(crawl_id, org)
 
-    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/cancel", tags=["qa"])
+    @app.post(
+        "/orgs/{oid}/crawls/{crawl_id}/qa/cancel",
+        tags=["qa"],
+        response_model=SuccessResponse,
+    )
     async def cancel_crawl_qa_run(
         crawl_id: str, org: Organization = Depends(org_crawl_dep)
     ):
         # pylint: disable=unused-argument
         return await ops.stop_crawl_qa_run(crawl_id, org, graceful=False)
 
-    @app.post("/orgs/{oid}/crawls/{crawl_id}/qa/delete", tags=["qa"])
+    @app.post(
+        "/orgs/{oid}/crawls/{crawl_id}/qa/delete",
+        tags=["qa"],
+        response_model=DeletedCountResponse,
+    )
     async def delete_crawl_qa_runs(
         crawl_id: str,
         qa_run_ids: DeleteQARunList,
@@ -1290,7 +1326,9 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
 
         return crawls[0]
 
-    @app.patch("/orgs/{oid}/crawls/{crawl_id}", tags=["crawls"])
+    @app.patch(
+        "/orgs/{oid}/crawls/{crawl_id}", tags=["crawls"], response_model=UpdatedResponse
+    )
     async def update_crawl_api(
         update: UpdateCrawl, crawl_id: str, org: Organization = Depends(org_crawl_dep)
     ):
@@ -1299,6 +1337,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/scale",
         tags=["crawls"],
+        response_model=CrawlScaleResponse,
     )
     async def scale_crawl(
         scale: CrawlScale,
@@ -1319,6 +1358,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/access",
         tags=["crawls"],
+        response_model=EmptyResponse,
     )
     async def access_check(crawl_id, org: Organization = Depends(org_crawl_dep)):
         if await ops.get_crawl_raw(crawl_id, org):
@@ -1327,6 +1367,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/queue",
         tags=["crawls"],
+        response_model=CrawlQueueResponse,
     )
     async def get_crawl_queue(
         crawl_id,
@@ -1342,6 +1383,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/queueMatchAll",
         tags=["crawls"],
+        response_model=MatchCrawlQueueResponse,
     )
     async def match_crawl_queue(
         crawl_id,
@@ -1356,6 +1398,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/exclusions",
         tags=["crawls"],
+        response_model=SuccessResponse,
     )
     async def add_exclusion(
         crawl_id,
@@ -1368,6 +1411,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     @app.delete(
         "/orgs/{oid}/crawls/{crawl_id}/exclusions",
         tags=["crawls"],
+        response_model=SuccessResponse,
     )
     async def remove_exclusion(
         crawl_id,
@@ -1380,7 +1424,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/seeds",
         tags=["crawls"],
-        response_model=PaginatedResponse,
+        response_model=PaginatedSeedResponse,
     )
     async def get_crawl_config_seeds(
         crawl_id: str,
@@ -1391,7 +1435,9 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         seeds, total = await ops.get_crawl_seeds(crawl_id, org, pageSize, page)
         return paginated_format(seeds, total, page, pageSize)
 
-    @app.get("/orgs/{oid}/crawls/{crawl_id}/logs", tags=["crawls"])
+    @app.get(
+        "/orgs/{oid}/crawls/{crawl_id}/logs", tags=["crawls"], response_model=bytes
+    )
     async def stream_crawl_logs(
         crawl_id,
         org: Organization = Depends(org_viewer_dep),
@@ -1423,8 +1469,7 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         raise HTTPException(status_code=400, detail="crawl_not_finished")
 
     @app.get(
-        "/orgs/{oid}/crawls/{crawl_id}/errors",
-        tags=["crawls"],
+        "/orgs/{oid}/crawls/{crawl_id}/errors", tags=["crawls"], response_model=bytes
     )
     async def get_crawl_errors(
         crawl_id: str,

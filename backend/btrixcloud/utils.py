@@ -10,7 +10,7 @@ import os
 import sys
 import re
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Union, List, Any
 from uuid import UUID
 
@@ -52,7 +52,7 @@ def to_k8s_date(dt_val):
 
 def dt_now():
     """get current ts"""
-    return datetime.utcnow().replace(microsecond=0, tzinfo=None)
+    return datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None)
 
 
 def ts_now():

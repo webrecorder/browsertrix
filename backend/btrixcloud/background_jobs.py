@@ -19,12 +19,14 @@ from .models import (
     BgJobType,
     CreateReplicaJob,
     DeleteReplicaJob,
-    PaginatedResponse,
+    PaginatedBackgroundJobResponse,
     AnyJob,
     StorageRef,
     User,
+    SuccessResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
+from .utils import dt_now
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -163,14 +165,14 @@ class BackgroundJobOps:
                     replication_job.previousAttempts.append(previous_attempt)
                 else:
                     replication_job.previousAttempts = [previous_attempt]
-                replication_job.started = datetime.now()
+                replication_job.started = dt_now()
                 replication_job.finished = None
                 replication_job.success = None
             else:
                 replication_job = CreateReplicaJob(
                     id=job_id,
                     oid=org.id,
-                    started=datetime.now(),
+                    started=dt_now(),
                     file_path=file.filename,
                     object_type=object_type,
                     object_id=object_id,
@@ -243,14 +245,14 @@ class BackgroundJobOps:
                     delete_replica_job.previousAttempts.append(previous_attempt)
                 else:
                     delete_replica_job.previousAttempts = [previous_attempt]
-                delete_replica_job.started = datetime.now()
+                delete_replica_job.started = dt_now()
                 delete_replica_job.finished = None
                 delete_replica_job.success = None
             else:
                 delete_replica_job = DeleteReplicaJob(
                     id=job_id,
                     oid=org.id,
-                    started=datetime.now(),
+                    started=dt_now(),
                     file_path=file.filename,
                     object_id=object_id,
                     object_type=object_type,
@@ -520,9 +522,7 @@ def init_background_jobs_api(
         """Retrieve information for background job"""
         return await ops.get_background_job(job_id, org.id)
 
-    @router.post(
-        "/{job_id}/retry",
-    )
+    @router.post("/{job_id}/retry", response_model=SuccessResponse)
     async def retry_background_job(
         job_id: str,
         org: Organization = Depends(org_crawl_dep),
@@ -530,9 +530,7 @@ def init_background_jobs_api(
         """Retry background job"""
         return await ops.retry_background_job(job_id, org)
 
-    @app.post(
-        "/orgs/all/jobs/retryFailed",
-    )
+    @app.post("/orgs/all/jobs/retryFailed", response_model=SuccessResponse)
     async def retry_all_failed_background_jobs(user: User = Depends(user_dep)):
         """Retry failed background jobs from all orgs"""
         if not user.is_superuser:
@@ -540,16 +538,14 @@ def init_background_jobs_api(
 
         return await ops.retry_all_failed_background_jobs()
 
-    @router.post(
-        "/retryFailed",
-    )
+    @router.post("/retryFailed", response_model=SuccessResponse)
     async def retry_failed_background_jobs(
         org: Organization = Depends(org_crawl_dep),
     ):
         """Retry failed background jobs"""
         return await ops.retry_failed_background_jobs(org)
 
-    @router.get("", response_model=PaginatedResponse)
+    @router.get("", response_model=PaginatedBackgroundJobResponse)
     async def list_background_jobs(
         org: Organization = Depends(org_crawl_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,

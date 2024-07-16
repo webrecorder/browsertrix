@@ -21,6 +21,7 @@ from pydantic import (
 # from fastapi_users import models as fastapi_users_models
 
 from .db import BaseMongoModel
+from .utils import dt_now
 
 # crawl scale for constraint
 MAX_CRAWL_SCALE = int(os.environ.get("MAX_CRAWL_SCALE", 3))
@@ -97,6 +98,16 @@ class AddToOrgRequest(InviteRequest):
 
 
 # ============================================================================
+class InviteAddedResponse(BaseModel):
+    """Response for API endpoints that add resource and return id and name"""
+
+    added: bool
+    id: UUID
+    invited: str
+    token: UUID
+
+
+# ============================================================================
 
 ### MAIN USER MODEL ###
 
@@ -130,7 +141,7 @@ class FailedLogin(BaseMongoModel):
     Failed login model
     """
 
-    attempted: datetime = datetime.now()
+    attempted: datetime = dt_now()
     email: str
 
     # Consecutive failed logins, reset to 0 on successful login or after
@@ -461,6 +472,56 @@ class UpdateCrawlConfig(BaseModel):
 
 
 # ============================================================================
+class CrawlConfigAddedResponse(BaseModel):
+    """Response model for adding crawlconfigs"""
+
+    added: bool
+    id: str
+    run_now_job: Optional[str]
+    storageQuotaReached: bool
+    execMinutesQuotaReached: bool
+
+
+# ============================================================================
+class CrawlConfigTags(BaseModel):
+    """Response model for crawlconfig tags"""
+
+    tags: List[str]
+
+
+# ============================================================================
+class CrawlConfigSearchValues(BaseModel):
+    """Response model for adding crawlconfigs"""
+
+    names: List[str]
+    descriptions: List[str]
+    firstSeeds: List[AnyHttpUrl]
+    workflowIds: List[UUID]
+
+
+# ============================================================================
+class CrawlConfigUpdateResponse(BaseModel):
+    """Response model for updating crawlconfigs"""
+
+    updated: bool
+    settings_changed: bool
+    metadata_changed: bool
+
+    storageQuotaReached: Optional[bool]
+    execMinutesQuotaReached: Optional[bool]
+
+    started: Optional[str]
+
+
+# ============================================================================
+class CrawlConfigDeletedResponse(BaseModel):
+    """Response model for deleting crawlconfigs"""
+
+    success: bool
+    status: str
+
+
+# ============================================================================
 
 ### CRAWLER VERSIONS ###
 
@@ -722,6 +783,45 @@ class DeleteQARunList(BaseModel):
 
 
 # ============================================================================
+class CrawlSearchValuesResponse(BaseModel):
+    """Response model for crawl search values"""
+
+    names: List[str]
+    descriptions: List[str]
+    firstSeeds: List[AnyHttpUrl]
+
+
+# ============================================================================
+class CrawlQueueUrl(BaseModel):
+    """Model for item in crawl queue"""
+
+    seedId: int
+    url: AnyHttpUrl
+    depth: int
+    extraHops: int
+    ts: int
+    pageid: Optional[str]
+
+
+# ============================================================================
+class CrawlQueueResponse(BaseModel):
+    """Response model for GET crawl queue"""
+
+    total: int
+    results: List[CrawlQueueUrl]
+    matched: List[CrawlQueueUrl]
+
+
+# ============================================================================
+class MatchCrawlQueueResponse(BaseModel):
+    """Response model for match crawl queue"""
+
+    total: int
+    matched: List[CrawlQueueUrl]
+    nextOffset: int
+
+
+# ============================================================================
 
 ### AUTOMATED CRAWLS ###
 
@@ -822,6 +922,13 @@ class CrawlCompleteIn(BaseModel):
 
 
 # ============================================================================
+class CrawlScaleResponse(BaseModel):
+    """Response model for modifying crawl scale"""
+
+    scaled: int
+
+
+# ============================================================================
 
 ### UPLOADED CRAWLS ###
 
@@ -894,6 +1001,13 @@ class AddRemoveCrawlList(BaseModel):
     """Collections to add or remove from collection"""
 
     crawlIds: List[str] = []
+
+
+# ============================================================================
+class CollectionSearchValuesResponse(BaseModel):
+    """Response model for collections search values"""
+
+    names: List[str]
 
 
 # ============================================================================
@@ -1091,6 +1205,14 @@ class Subscription(BaseModel):
 
 
 # ============================================================================
+class SubscriptionCanceledResponse(BaseModel):
+    """Response model for subscription cancel"""
+
+    deleted: bool
+    canceled: bool
+
+
+# ============================================================================
 # ORGS
 # ============================================================================
 class OrgReadOnlyOnCancel(BaseModel):
@@ -1146,6 +1268,8 @@ class OrgOut(BaseMongoModel):
     slug: str
     users: Optional[Dict[str, Any]]
 
+    created: Optional[datetime]
+
     default: bool = False
     bytesStored: int
     bytesStoredCrawls: int
@@ -1191,6 +1315,8 @@ class Organization(BaseMongoModel):
     name: str
     slug: str
     users: Dict[str, UserRole] = {}
+
+    created: Optional[datetime]
 
     default: bool = False
 
@@ -1370,6 +1496,44 @@ class OrgImportExport(BaseModel):
 
 
 # ============================================================================
+class OrgInviteResponse(BaseModel):
+    """Model for org invite response"""
+
+    invited: str
+    token: UUID
+
+
+# ============================================================================
+class OrgAcceptInviteResponse(BaseModel):
+    """Model for org invite response"""
+
+    added: bool
+    org: OrgOut
+
+
+# ============================================================================
+class OrgDeleteInviteResponse(BaseModel):
+    """Model for org invite response"""
+
+    removed: bool
+    count: int
+
+
+# ============================================================================
+class OrgSlugsResponse(BaseModel):
+    """Model for org slugs response"""
+
+    slugs: List[str]
+
+
+# ============================================================================
+class OrgImportResponse(BaseModel):
+    """Model for org import response"""
+
+    imported: bool
+
+
+# ============================================================================
 
 ### PAGINATION ###
 
@@ -1378,7 +1542,6 @@ class OrgImportExport(BaseModel):
 class PaginatedResponse(BaseModel):
     """Paginated response model"""
 
-    items: List[Any]
     total: int
     page: int
     pageSize: int
@@ -1464,6 +1627,26 @@ class ProfileUpdate(BaseModel):
     browserid: Optional[str] = ""
     name: str
     description: Optional[str] = ""
+
+
+# ============================================================================
+class ProfilePingResponse(BaseModel):
+    """Response model for pinging profile"""
+
+    success: bool
+    origins: List[AnyHttpUrl]
+
+
+# ============================================================================
+class ProfileBrowserGetUrlResponse(BaseModel):
+    """Response model for profile get URL endpoint"""
+
+    path: str
+    password: str
+    oid: UUID
+    auth_bearer: str
+    scale: float
+    url: AnyHttpUrl
 
 
 # ============================================================================
@@ -1741,7 +1924,7 @@ class PageNote(BaseModel):
 
     id: UUID
     text: str
-    created: datetime = datetime.now()
+    created: datetime = dt_now()
     userid: UUID
     userName: str
 
@@ -1819,8 +2002,217 @@ class PageOutWithSingleQA(Page):
 
 
 # ============================================================================
-class AddedResponseId(BaseModel):
-    """Response for API endpoints that return added + id"""
+class PageNoteAddedResponse(BaseModel):
+    """Model for response to adding page"""
 
     added: bool
+    data: PageNote
+
+
+# ============================================================================
+class PageNoteUpdatedResponse(BaseModel):
+    """Model for response to updating page"""
+
+    updated: bool
+    data: PageNote
+
+
+# ============================================================================
+
+### GENERIC RESPONSE MODELS ###
+
+
+# ============================================================================
+class UpdatedResponse(BaseModel):
+    """Response for update API endpoints"""
+
+    updated: bool
+
+
+# ============================================================================
+class SuccessResponse(BaseModel):
+    """Response for API endpoints that return success"""
+
+    success: bool
+
+
+# ============================================================================
+class SuccessResponseStorageQuota(SuccessResponse):
+    """Response for API endpoints that return success and storageQuotaReached"""
+
+    storageQuotaReached: bool
+
+
+# ============================================================================
+class StartedResponse(BaseModel):
+    """Response for API endpoints that start crawls"""
+
+    started: str
+
+
+# ============================================================================
+class AddedResponse(BaseModel):
+    """Response for API endpoints that return added"""
+
+    added: bool
+
+
+# ============================================================================
+class AddedResponseId(AddedResponse):
+    """Response for API endpoints that return added + id"""
+
     id: UUID
+
+
+# ============================================================================
+class AddedResponseName(AddedResponse):
+    """Response for API endpoints that add resources and return name"""
+
+    name: str
+
+
+# ============================================================================
+class AddedResponseIdQuota(AddedResponse):
+    """Response for API endpoints that return str id and storageQuotaReached"""
+
+    id: str
+    storageQuotaReached: bool
+
+
+# ============================================================================
+class AddedResponseIdName(AddedResponse):
+    """Response for API endpoints that add resource and return id and name"""
+
+    id: UUID
+    name: str
+
+
+# ============================================================================
+class DeletedResponse(BaseModel):
+    """Response for delete API endpoints"""
+
+    deleted: bool
+
+
+# ============================================================================
+class DeletedResponseQuota(DeletedResponse):
+    """Response for delete API endpoints"""
+
+    storageQuotaReached: bool
+
+
+# ============================================================================
+class DeletedCountResponse(BaseModel):
+    """Response for delete API endpoints that return count"""
+
+    deleted: int
+
+
+# ============================================================================
+class RemovedResponse(BaseModel):
+    """Response for API endpoints for removing resources"""
+
+    removed: bool
+
+
+# ============================================================================
+class EmptyResponse(BaseModel):
+    """Response for API endpoints that return nothing"""
+
+
+# ============================================================================
+
+### SPECIFIC PAGINATED RESPONSE MODELS ###
+
+
+# ============================================================================
+class PaginatedBackgroundJobResponse(PaginatedResponse):
+    """Response model for paginated background jobs"""
+
+    items: List[Union[CreateReplicaJob, DeleteReplicaJob]]
+
+
+# ============================================================================
+class PaginatedCrawlOutResponse(PaginatedResponse):
+    """Response model for paginated crawls"""
+
+    items: List[Union[CrawlOut, CrawlOutWithResources]]
+
+
+# ============================================================================
+class PaginatedCollOutResponse(PaginatedResponse):
+    """Response model for paginated collections"""
+
+    items: List[CollOut]
+
+
+# ============================================================================
+class PaginatedCrawlConfigOutResponse(PaginatedResponse):
+    """Response model for paginated crawlconfigs"""
+
+    items: List[CrawlConfigOut]
+
+
+# ============================================================================
+class PaginatedSeedResponse(PaginatedResponse):
+    """Response model for paginated seeds"""
+
+    items: List[Seed]
+
+
+# ============================================================================
+class PaginatedConfigRevisionResponse(PaginatedResponse):
+    """Response model for paginated crawlconfig revisions"""
+
+    items: List[ConfigRevision]
+
+
+# ============================================================================
+class PaginatedOrgOutResponse(PaginatedResponse):
+    """Response model for paginated orgs"""
+
+    items: List[OrgOut]
+
+
+# ============================================================================
+class PaginatedInvitePendingResponse(PaginatedResponse):
+    """Response model for paginated orgs"""
+
+    items: List[InviteOut]
+
+
+# ============================================================================
+class PaginatedPageOutResponse(PaginatedResponse):
+    """Response model for paginated pages"""
+
+    items: List[PageOut]
+
+
+# ============================================================================
+class PaginatedPageOutWithQAResponse(PaginatedResponse):
+    """Response model for paginated pages with single QA info"""
+
+    items: List[PageOutWithSingleQA]
+
+
+# ============================================================================
+class PaginatedProfileResponse(PaginatedResponse):
+    """Response model for paginated profiles"""
+
+    items: List[Profile]
+
+
+# ============================================================================
+class PaginatedSubscriptionEventResponse(PaginatedResponse):
+    """Response model for paginated subscription events"""
+
+    items: List[
+        Union[SubscriptionCreateOut, SubscriptionUpdateOut, SubscriptionCancelOut]
+    ]
+
+
+# ============================================================================
+class PaginatedWebhookNotificationResponse(PaginatedResponse):
+    """Response model for paginated webhook notifications"""
+
+    items: List[WebhookNotification]

@@ -31,8 +31,10 @@ from .models import (
     UserRole,
     InvitePending,
     InviteOut,
-    PaginatedResponse,
+    PaginatedInvitePendingResponse,
     FailedLogin,
+    UpdatedResponse,
+    SuccessResponse,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import is_bool
@@ -597,8 +599,7 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
         return await user_manager.get_user_info_with_orgs(user)
 
     @auth_router.post(
-        "/forgot-password",
-        status_code=202,
+        "/forgot-password", status_code=202, response_model=SuccessResponse
     )
     async def forgot_password(
         request: Request,
@@ -611,9 +612,7 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
         await user_manager.forgot_password(user, request)
         return {"success": True}
 
-    @auth_router.post(
-        "/reset-password",
-    )
+    @auth_router.post("/reset-password", response_model=SuccessResponse)
     async def reset_password(
         # request: Request,
         token: str = Body(...),
@@ -622,7 +621,9 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
         await user_manager.reset_password(token, password)
         return {"success": True}
 
-    @auth_router.post("/request-verify-token", status_code=202)
+    @auth_router.post(
+        "/request-verify-token", status_code=202, response_model=SuccessResponse
+    )
     async def request_verify_token(
         request: Request,
         email: EmailStr = Body(..., embed=True),
@@ -633,7 +634,7 @@ def init_auth_router(user_manager: UserManager) -> APIRouter:
 
         return {"success": True}
 
-    @auth_router.post("/verify")
+    @auth_router.post("/verify", response_model=SuccessResponse)
     async def verify(
         token: str = Body(..., embed=True),
     ):
@@ -655,7 +656,9 @@ def init_users_router(
         """/users/me with orgs user belongs to."""
         return await user_manager.get_user_info_with_orgs(user)
 
-    @users_router.put("/me/password-change", tags=["users"])
+    @users_router.put(
+        "/me/password-change", tags=["users"], response_model=UpdatedResponse
+    )
     async def update_my_password(
         user_update: UserUpdatePassword,
         user: User = Depends(current_active_user),
@@ -664,7 +667,7 @@ def init_users_router(
         await user_manager.change_password(user_update, user)
         return {"updated": True}
 
-    @users_router.patch("/me", tags=["users"])
+    @users_router.patch("/me", tags=["users"], response_model=UpdatedResponse)
     async def update_my_email_and_name(
         user_update: UserUpdateEmailName,
         user: User = Depends(current_active_user),
@@ -690,7 +693,9 @@ def init_users_router(
         return await user_manager.invites.get_invite_out(invite, user_manager, True)
 
     # pylint: disable=invalid-name
-    @users_router.get("/invites", tags=["invites"], response_model=PaginatedResponse)
+    @users_router.get(
+        "/invites", tags=["invites"], response_model=PaginatedInvitePendingResponse
+    )
     async def get_pending_invites(
         user: User = Depends(current_active_user),
         pageSize: int = DEFAULT_PAGE_SIZE,

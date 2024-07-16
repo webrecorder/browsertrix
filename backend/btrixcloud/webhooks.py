@@ -1,7 +1,6 @@
 """Webhook management"""
 
 import asyncio
-from datetime import datetime
 from typing import List, Union, Optional, TYPE_CHECKING, cast
 from uuid import UUID, uuid4
 
@@ -21,9 +20,10 @@ from .models import (
     CollectionItemAddedBody,
     CollectionItemRemovedBody,
     CollectionDeletedBody,
-    PaginatedResponse,
+    PaginatedWebhookNotificationResponse,
     Organization,
 )
+from .utils import dt_now
 
 if TYPE_CHECKING:
     from .orgs import OrgOps
@@ -173,7 +173,7 @@ class EventWebhookOps:
                         {
                             "$set": {
                                 "success": True,
-                                "lastAttempted": datetime.utcnow(),
+                                "lastAttempted": dt_now(),
                             },
                             "$inc": {"attempts": 1},
                         },
@@ -184,7 +184,10 @@ class EventWebhookOps:
             print(f"Webhook notification failed: {err}", flush=True)
             await self.webhooks.find_one_and_update(
                 {"_id": notification.id},
-                {"$set": {"lastAttempted": datetime.utcnow()}, "$inc": {"attempts": 1}},
+                {
+                    "$set": {"lastAttempted": dt_now()},
+                    "$inc": {"attempts": 1},
+                },
             )
 
     async def _create_item_finished_notification(
@@ -207,7 +210,7 @@ class EventWebhookOps:
             event=event,
             oid=org.id,
             body=body,
-            created=datetime.utcnow(),
+            created=dt_now(),
         )
 
         await self.webhooks.insert_one(notification.to_dict())
@@ -232,7 +235,7 @@ class EventWebhookOps:
             event=event,
             oid=org.id,
             body=body,
-            created=datetime.utcnow(),
+            created=dt_now(),
         )
 
         await self.webhooks.insert_one(notification.to_dict())
@@ -335,7 +338,7 @@ class EventWebhookOps:
                 orgId=str(oid),
                 scheduled=scheduled,
             ),
-            created=datetime.utcnow(),
+            created=dt_now(),
         )
 
         await self.webhooks.insert_one(notification.to_dict())
@@ -363,7 +366,7 @@ class EventWebhookOps:
             event=event,
             oid=org.id,
             body=body,
-            created=datetime.utcnow(),
+            created=dt_now(),
         )
 
         await self.webhooks.insert_one(notification.to_dict())
@@ -444,7 +447,7 @@ def init_event_webhooks_api(mdb, org_ops, app):
 
     org_owner_dep = org_ops.org_owner_dep
 
-    @router.get("", response_model=PaginatedResponse)
+    @router.get("", response_model=PaginatedWebhookNotificationResponse)
     async def list_notifications(
         org: Organization = Depends(org_owner_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
