@@ -4,6 +4,11 @@ import type { Range } from "./utils";
 // From UserRole in backend
 export type UserRole = "viewer" | "crawler" | "owner" | "superadmin";
 
+export enum OrgReadOnlyReason {
+  SubscriptionPaused = "subscriptionPaused",
+  SubscriptionCancelled = "subscriptionCancelled",
+}
+
 export const AccessCode: Record<UserRole, number> = {
   superadmin: 100,
   viewer: 10,
@@ -50,7 +55,8 @@ export type OrgData = {
     };
   };
   readOnly: boolean | null;
-  readOnlyReason: string | null;
+  readOnlyReason: OrgReadOnlyReason | string | null;
+  readOnlyOnCancel: boolean;
   subscription: null | Subscription;
 };
 

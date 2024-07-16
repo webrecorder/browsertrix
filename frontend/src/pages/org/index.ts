@@ -1,5 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
-import { type TemplateResult } from "lit";
+import { nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -23,7 +23,13 @@ import { needLogin } from "@/utils/auth";
 import type { AuthState } from "@/utils/AuthService";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import LiteElement, { html } from "@/utils/LiteElement";
-import { isAdmin, isCrawler, type OrgData } from "@/utils/orgs";
+import { getLocale } from "@/utils/localization";
+import {
+  isAdmin,
+  isCrawler,
+  OrgReadOnlyReason,
+  type OrgData,
+} from "@/utils/orgs";
 
 import "./workflow-detail";
 import "./workflows-list";
@@ -119,6 +125,9 @@ export class Org extends LiteElement {
   private orgStorageQuotaReached = false;
 
   @state()
+  private showReadOnlyAlert = false;
+
+  @state()
   private showStorageQuotaAlert = false;
 
   @state()
@@ -155,6 +164,16 @@ export class Org extends LiteElement {
     const userOrg = this.userOrg;
     if (userOrg) return isCrawler(userOrg.role);
     return false;
+  }
+
+  get hasAlert() {
+    if (!this.org) return false;
+
+    return (
+      this.showReadOnlyAlert ||
+      this.showStorageQuotaAlert ||
+      this.showExecutionMinutesQuotaAlert
+    );
   }
 
   connectedCallback() {
@@ -240,6 +259,11 @@ export class Org extends LiteElement {
     if (!this.userInfo || !this.orgId) return;
     try {
       this.org = await this.getOrg(this.orgId);
+
+      this.showReadOnlyAlert = Boolean(
+        this.org?.readOnly || this.org?.subscription?.futureCancelDate,
+      );
+
       this.checkStorageQuota();
       this.checkExecutionMinutesQuota();
     } catch {
@@ -325,7 +349,14 @@ export class Org extends LiteElement {
 
     return html`
       <div class="flex min-h-full flex-col">
-        ${this.renderStorageAlert()} ${this.renderExecutionMinutesAlert()}
+        <div
+          class="${this.hasAlert
+            ? "bg-slate-100 border-b py-5"
+            : ""} transition-all"
+        >
+          ${this.renderReadOnlyAlert()} ${this.renderStorageAlert()}
+          ${this.renderExecutionMinutesAlert()}
+        </div>
         ${this.renderOrgNavBar()}
         <main
           class="${noMaxWidth
@@ -340,58 +371,135 @@ export class Org extends LiteElement {
     `;
   }
 
+  private renderReadOnlyAlert() {
+    if (!this.org) return;
+
+    const { readOnly, readOnlyReason, readOnlyOnCancel, subscription } =
+      this.org;
+    const billingTabLink = html`<a
+      class="underline hover:no-underline"
+      href=${`${this.orgBasePath}/settings/billing`}
+      @click=${this.navLink}
+      >${msg("billing settings")}</a
+    >`;
+    let title: string | TemplateResult = "";
+    let detail: string | TemplateResult = "";
+
+    if (readOnly) {
+      title = msg("Your org is read-only");
+
+      switch (readOnlyReason) {
+        case OrgReadOnlyReason.SubscriptionPaused: {
+          detail = msg(html`
+            Your subscription has been paused due to payment failure. Please go
+            to ${billingTabLink} to update your payment method.
+          `);
+          break;
+        }
+        case OrgReadOnlyReason.SubscriptionCancelled: {
+          detail = msg(html`
+            Your subscription has been canceled. Please contact support to renew
+            your plan.
+          `);
+          break;
+        }
+        default:
+          break;
+      }
+    } else if (subscription) {
+      if (subscription.futureCancelDate) {
+        title = msg(
+          html`Your subscription will end on
+            <sl-format-date
+              lang=${getLocale()}
+              class="truncate"
+              date=${subscription.futureCancelDate}
+              month="long"
+              day="numeric"
+              year="numeric"
+            >
+            </sl-format-date>`,
+        );
+        if (readOnlyOnCancel) {
+          detail = msg(
+            html`Your org will become read-only and you will no longer be able
+            to run crawls. To keep your plan, go to ${billingTabLink}.`,
+          );
+        } else {
+          detail = msg(
+            html`Your user account, org, and all associated data will be
+            deleted. To keep your plan, go to ${billingTabLink}.`,
+          );
+        }
+      }
+    }
+
+    if (!title) return;
+
+    return html`
+      <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
+        <sl-alert
+          variant="danger"
+          closable
+          ?open=${this.showReadOnlyAlert}
+          @sl-after-hide=${() => (this.showReadOnlyAlert = false)}
+        >
+          <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+          <strong>${title}</strong><br />
+          ${readOnly
+            ? html`
+                <p class="mb-3">
+                  ${msg(
+                    "Running crawls, uploading files, browser profiles, and collection creation is disabled.",
+                  )}
+                </p>
+              `
+            : nothing}
+          <p>${detail}</p>
+        </sl-alert>
+      </div>
+    `;
+  }
+
   private renderStorageAlert() {
     return html`
-      <div
-        class="${this.showStorageQuotaAlert
-          ? "bg-slate-100 border-b py-5"
-          : ""} transition-all"
-      >
-        <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
-          <sl-alert
-            variant="warning"
-            closable
-            ?open=${this.showStorageQuotaAlert}
-            @sl-after-hide=${() => (this.showStorageQuotaAlert = false)}
-          >
-            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-            <strong>${msg("Your org has reached its storage limit")}</strong
-            ><br />
-            ${msg(
-              "To add archived items again, delete unneeded items and unused browser profiles to free up space, or contact us to upgrade your storage plan.",
-            )}
-          </sl-alert>
-        </div>
+      <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
+        <sl-alert
+          variant="warning"
+          closable
+          ?open=${this.showStorageQuotaAlert}
+          @sl-after-hide=${() => (this.showStorageQuotaAlert = false)}
+        >
+          <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+          <strong>${msg("Your org has reached its storage limit")}</strong
+          ><br />
+          ${msg(
+            "To add archived items again, delete unneeded items and unused browser profiles to free up space, or contact us to upgrade your storage plan.",
+          )}
+        </sl-alert>
       </div>
     `;
   }
 
   private renderExecutionMinutesAlert() {
     return html`
-      <div
-        class="${this.showExecutionMinutesQuotaAlert
-          ? "bg-slate-100 border-b py-5"
-          : ""} transition-all"
-      >
-        <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
-          <sl-alert
-            variant="warning"
-            closable
-            ?open=${this.showExecutionMinutesQuotaAlert}
-            @sl-after-hide=${() =>
-              (this.showExecutionMinutesQuotaAlert = false)}
-          >
-            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-            <strong
-              >${msg(
-                "Your org has reached its monthly execution minutes limit",
-              )}</strong
-            ><br />
-            ${msg(
-              "To purchase additional monthly execution minutes, contact us to upgrade your plan.",
-            )}
-          </sl-alert>
-        </div>
+      <div class="mx-auto box-border w-full max-w-screen-desktop px-3">
+        <sl-alert
+          variant="warning"
+          closable
+          ?open=${this.showExecutionMinutesQuotaAlert}
+          @sl-after-hide=${() => (this.showExecutionMinutesQuotaAlert = false)}
+        >
+          <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+          <strong
+            >${msg(
+              "Your org has reached its monthly execution minutes limit",
+            )}</strong
+          ><br />
+          ${msg(
+            "To purchase additional monthly execution minutes, contact us to upgrade your plan.",
+          )}
+        </sl-alert>
       </div>
     `;
   }
