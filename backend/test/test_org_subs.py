@@ -1,6 +1,7 @@
 import requests
 
 from .conftest import API_PREFIX
+from uuid import uuid4
 
 
 new_subs_oid = None
@@ -366,14 +367,57 @@ def test_cancel_sub_and_no_delete_org(admin_auth_headers):
     assert r.json() == {"detail": "org_for_subscription_not_found"}
 
 
-def test_subscription_events_log(admin_auth_headers):
+def test_import_sub_invalid_org(admin_auth_headers):
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/import",
+        headers=admin_auth_headers,
+        json={
+            "subId": "345",
+            "planId": "basic",
+            "status": "active",
+            "oid": str(uuid4()),
+        },
+    )
+    assert r.status_code == 400
+    assert r.json() == {"detail": "invalid_org_id"}
+
+
+def test_import_sub_existing_org(admin_auth_headers, non_default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/import",
+        headers=admin_auth_headers,
+        json={
+            "subId": "345",
+            "planId": "basic",
+            "status": "active",
+            "oid": non_default_org_id,
+        },
+    )
+    assert r.status_code == 200
+    assert r.json() == {"added": True, "id": non_default_org_id}
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}", headers=admin_auth_headers
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["subscription"] == {
+        "subId": "345",
+        "status": "active",
+        "planId": "basic",
+        "futureCancelDate": None,
+        "readOnlyOnCancel": False,
+    }
+
+
+def test_subscription_events_log(admin_auth_headers, non_default_org_id):
     r = requests.get(f"{API_PREFIX}/subscriptions/events", headers=admin_auth_headers)
     assert r.status_code == 200
     data = r.json()
     events = data["items"]
     total = data["total"]
 
-    assert total == 6
+    assert total == 7
 
     for event in events:
         assert event["timestamp"]
@@ -430,6 +474,13 @@ def test_subscription_events_log(admin_auth_headers):
         },
         {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
         {"subId": "234", "oid": new_subs_oid_2, "type": "cancel"},
+        {
+            "type": "import",
+            "subId": "345",
+            "oid": non_default_org_id,
+            "status": "active",
+            "planId": "basic",
+        },
     ]
 
 
