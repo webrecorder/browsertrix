@@ -33,6 +33,7 @@ from .models import (
     AddedResponseId,
     UpdatedResponse,
     PaginatedSubscriptionEventResponse,
+    REASON_CANCELED,
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .utils import dt_now
@@ -134,7 +135,7 @@ class SubOps:
         deleted = False
 
         await self.org_ops.update_read_only(
-            org, readOnly=True, readOnlyReason="subscriptionCanceled"
+            org, readOnly=True, readOnlyReason=REASON_CANCELED
         )
 
         if not org.subscription.readOnlyOnCancel:
