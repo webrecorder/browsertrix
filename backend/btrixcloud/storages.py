@@ -37,6 +37,7 @@ from mypy_boto3_s3.type_defs import CompletedPartTypeDef
 from types_aiobotocore_s3 import S3Client as AIOS3Client
 
 from .models import (
+    BaseFile,
     CrawlFile,
     CrawlFileOut,
     Organization,
@@ -504,7 +505,7 @@ class StorageOps:
         return presigned_url
 
     async def delete_crawl_file_object(
-        self, org: Organization, crawlfile: CrawlFile
+        self, org: Organization, crawlfile: BaseFile
     ) -> bool:
         """delete crawl file from storage."""
         return await self._delete_file(org, crawlfile.filename, crawlfile.storage)

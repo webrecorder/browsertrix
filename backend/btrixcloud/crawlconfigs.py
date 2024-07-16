@@ -539,7 +539,7 @@ class CrawlConfigOps:
 
     async def get_crawl_config_info_for_profile(
         self, profileid: UUID, org: Organization
-    ):
+    ) -> list[CrawlConfigProfileOut]:
         """Return all crawl configs that are associated with a given profileid"""
         query = {"profileid": profileid, "inactive": {"$ne": True}}
         if org:
