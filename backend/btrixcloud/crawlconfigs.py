@@ -245,7 +245,6 @@ class CrawlConfigOps:
                     exec_mins_quota_reached = True
                 print(f"Can't run crawl now: {e.detail}", flush=True)
         else:
-            # just compute quotas anyway?
             storage_quota_reached = await self.org_ops.storage_quota_reached(org.id)
             exec_mins_quota_reached = await self.org_ops.exec_mins_quota_reached(org.id)
 
