@@ -697,6 +697,17 @@ class OrgOps:
 
         return False
 
+    async def can_run_crawls(self, org: Organization) -> None:
+        """check crawl quotas and readOnly state, throw if can not run"""
+        if org.readOnly:
+            raise HTTPException(status_code=403, detail="org_set_to_read_only")
+
+        if await self.storage_quota_reached(org.id):
+            raise HTTPException(status_code=403, detail="storage_quota_reached")
+
+        if await self.exec_mins_quota_reached(org.id):
+            raise HTTPException(status_code=403, detail="exec_minutes_quota_reached")
+
     async def get_monthly_crawl_exec_seconds(self, oid: UUID) -> int:
         """Return monthlyExecSeconds for current month"""
         org_data = await self.orgs.find_one({"_id": oid})

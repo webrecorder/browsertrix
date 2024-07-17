@@ -776,7 +776,9 @@ class CrawlOps(BaseCrawlOps):
         if not crawl.cid or crawl.type != "crawl":
             raise HTTPException(status_code=400, detail="invalid_crawl_for_qa")
 
-        crawlconfig = await self.crawl_configs.prepare_for_run_crawl(crawl.cid, org)
+        await self.orgs.can_run_crawls(org)
+
+        crawlconfig = await self.crawl_configs.get_crawl_config(crawl.cid, org.id)
 
         try:
             qa_run_id = await self.crawl_manager.create_qa_crawl_job(

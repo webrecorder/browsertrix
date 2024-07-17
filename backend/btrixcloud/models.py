@@ -314,7 +314,7 @@ class CrawlConfigIn(BaseModel):
 
     jobType: Optional[JobType] = JobType.CUSTOM
 
-    profileid: Union[UUID, EmptyStr, None]
+    profileid: Optional[UUID] = None
     crawlerChannel: str = "default"
 
     autoAddCollections: Optional[List[UUID]] = []
@@ -406,6 +406,8 @@ class CrawlConfigAdditional(BaseModel):
     lastRun: Optional[datetime]
 
     isCrawlRunning: Optional[bool] = False
+
+    crawlFilenameTemplate: Optional[str] = None
 
 
 # ============================================================================
