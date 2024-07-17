@@ -8,9 +8,10 @@ import asyncio
 import sys
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
+
 from fastapi.openapi.utils import get_openapi
+from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 
 from .db import init_db, await_db_and_migrations, update_and_prepare_db
 
@@ -39,17 +40,16 @@ from .version import __version__
 
 API_PREFIX = "/api"
 
-app_root = FastAPI(
-    docs_url=API_PREFIX + "/docs",
-    redoc_url=API_PREFIX + "/redoc",
-    openapi_url=API_PREFIX + "/openapi.json",
-)
+OPENAPI_URL = API_PREFIX + "/openapi.json"
+
+app_root = FastAPI(docs_url=None, redoc_url=None, OPENAPI_URL=OPENAPI_URL)
 
 db_inited = {"inited": False}
 
 
 # ============================================================================
 def make_schema():
+    """make custom openapi schema"""
     schema = get_openapi(
         title="Browsertrix",
         description="""\
@@ -230,10 +230,6 @@ def main():
 
     # internal routes
 
-    @app.get("/openapi.json", include_in_schema=False)
-    async def openapi() -> JSONResponse:
-        return JSONResponse(app_root.openapi())
-
     # Used for startup
     # Returns 200 only when db is available + migrations are done
     @app_root.get("/healthzStartup", include_in_schema=False)
@@ -250,13 +246,30 @@ def main():
 
     app_root.include_router(app, prefix=API_PREFIX)
 
+    # API Configurations -- needed to provide custom favicon
+    @app_root.get(API_PREFIX + "/docs", include_in_schema=False)
+    def overridden_swagger():
+        return get_swagger_ui_html(
+            openapi_url=OPENAPI_URL,
+            title="Browsertrix API",
+            swagger_favicon_url="/favicon.ico",
+        )
+
+    @app_root.get(API_PREFIX + "/redoc", include_in_schema=False)
+    def overridden_redoc():
+        return get_redoc_html(
+            openapi_url=OPENAPI_URL,
+            title="Browsertrix API",
+            redoc_favicon_url="/favicon.ico",
+        )
+
     def get_api_schema():
         if not app_root.openapi_schema:
             app_root.openapi_schema = make_schema()
 
         return app_root.openapi_schema
 
-    app_root.openapi = get_api_schema
+    app_root.openapi = get_api_schema  # type: ignore
 
 
 # ============================================================================
