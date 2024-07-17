@@ -10,6 +10,7 @@ import sys
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
+from fastapi.openapi.utils import get_openapi
 
 from .db import init_db, await_db_and_migrations, update_and_prepare_db
 
@@ -34,9 +35,10 @@ from .subs import init_subs_api
 
 from .crawlmanager import CrawlManager
 from .utils import run_once_lock, register_exit_handler, is_bool
-
+from .version import __version__
 
 API_PREFIX = "/api"
+
 app_root = FastAPI(
     docs_url=API_PREFIX + "/docs",
     redoc_url=API_PREFIX + "/redoc",
@@ -44,6 +46,33 @@ app_root = FastAPI(
 )
 
 db_inited = {"inited": False}
+
+
+# ============================================================================
+def make_schema():
+    schema = get_openapi(
+        title="Browsertrix",
+        description="""\
+The Browsertrix API provides access to all aspects of the Browsertrix app.
+
+See [https://docs.browsertrix.com/](https://docs.browsertrix.com/) for more info on deploying Browsertrix\
+        """,
+        summary="Browsertrix Crawling System API",
+        version=__version__,
+        terms_of_service="http://browsertrix.com/terms",
+        contact={
+            "name": "Browsertrix",
+            "url": "https://browsertrix.com/",
+            "email": "info@webrecorder.net",
+        },
+        license_info={
+            "name": "AGPL v3",
+            "url": "https://www.gnu.org/licenses/agpl-3.0.en.html",
+        },
+        routes=app_root.routes,
+    )
+    schema["info"]["x-logo"] = {"url": "/docs-logo.svg"}
+    return schema
 
 
 # ============================================================================
@@ -220,6 +249,14 @@ def main():
         return {}
 
     app_root.include_router(app, prefix=API_PREFIX)
+
+    def get_api_schema():
+        if not app_root.openapi_schema:
+            app_root.openapi_schema = make_schema()
+
+        return app_root.openapi_schema
+
+    app_root.openapi = get_api_schema
 
 
 # ============================================================================
