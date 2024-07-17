@@ -1450,7 +1450,7 @@ class CrawlOperator(BaseOperator):
 
         started = from_k8s_date(crawl.started)
         if not started:
-            print("Missing crawl start time!")
+            print("Missing crawl start time, unable to increment crawl stats")
             return
 
         duration = int((finished - started).total_seconds())
