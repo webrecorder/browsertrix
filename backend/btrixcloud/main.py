@@ -8,6 +8,7 @@ import asyncio
 import sys
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
 
 from fastapi.openapi.utils import get_openapi
@@ -229,6 +230,9 @@ def main():
         return settings
 
     # internal routes
+    @app.get("/openapi.json", include_in_schema=False)
+    async def openapi() -> JSONResponse:
+        return JSONResponse(app_root.openapi())
 
     # Used for startup
     # Returns 200 only when db is available + migrations are done
