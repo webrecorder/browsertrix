@@ -7,6 +7,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import { NavigateController } from "@/controllers/navigate";
 import { OrgReadOnlyReason, type OrgData } from "@/types/org";
 import { formatISODateString } from "@/utils/localization";
+import appState, { use } from "@/utils/state";
 
 type Alert = {
   test: () => boolean;
@@ -22,6 +23,9 @@ type Alert = {
 export class OrgStatusBanner extends TailwindElement {
   @property({ type: Object })
   org?: OrgData;
+
+  @use()
+  appState = appState;
 
   @state()
   isAlertOpen = false;
@@ -70,7 +74,7 @@ export class OrgStatusBanner extends TailwindElement {
     const content = this.alert.content();
 
     return html`
-      <strong>${content.title}</strong>
+      <strong class="block font-semibold">${content.title}</strong>
       ${content.detail}
     `;
   }
@@ -165,7 +169,7 @@ export class OrgStatusBanner extends TailwindElement {
                       year: "numeric",
                       hour: "numeric",
                     },
-                  )}. You will no longer be able to run crawls, upload files, create browser profile, or create collections.`,
+                  )}. You will no longer be able to run crawls, upload files, create browser profiles, or create collections.`,
                 )}
               </p>
               <p>
@@ -181,6 +185,7 @@ export class OrgStatusBanner extends TailwindElement {
       {
         test: () =>
           !!readOnly && readOnlyReason === OrgReadOnlyReason.SubscriptionPaused,
+        persist: true,
         content: () => ({
           title: msg(str`Your org has been deactivated`),
           detail: msg(
@@ -192,6 +197,7 @@ export class OrgStatusBanner extends TailwindElement {
       {
         test: () =>
           !!readOnly && readOnlyReason === OrgReadOnlyReason.SubscriptionPaused,
+        persist: true,
         content: () => ({
           title: msg(str`This org has been deactivated`),
           detail: msg(
@@ -201,6 +207,7 @@ export class OrgStatusBanner extends TailwindElement {
       },
       {
         test: () => !!readOnly,
+        persist: true,
         content: () => ({
           title: msg(str`This org has been deactivated`),
           detail: msg(`Please contact Browsertrix support to renew your plan.`),
@@ -211,7 +218,7 @@ export class OrgStatusBanner extends TailwindElement {
         content: () => ({
           title: msg(str`Your org has reached its storage limit`),
           detail: msg(
-            `To add archived items again, delete unneeded items and unused browser profiles to free up space, or contact us to upgrade your storage plan.`,
+            str`To add archived items again, delete unneeded items and unused browser profiles to free up space, or contact ${this.appState.settings?.salesEmail || msg("Browsertrix host administrator")} to upgrade your storage plan.`,
           ),
         }),
       },
@@ -222,7 +229,7 @@ export class OrgStatusBanner extends TailwindElement {
             str`Your org has reached its monthly execution minutes limit`,
           ),
           detail: msg(
-            `To purchase additional monthly execution minutes, contact us to upgrade your plan.`,
+            str`Contact ${this.appState.settings?.salesEmail || msg("Browsertrix host administrator")} to purchase additional monthly execution minutes or upgrade your plan.`,
           ),
         }),
       },
