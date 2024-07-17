@@ -41,6 +41,7 @@ from .models import (
     User,
     PaginatedCrawlOutResponse,
     PaginatedSeedResponse,
+    PaginatedCrawlErrorResponse,
     RUNNING_AND_STARTING_STATES,
     SUCCESSFUL_STATES,
     NON_RUNNING_STATES,
@@ -1469,7 +1470,9 @@ def init_crawls_api(crawl_manager: CrawlManager, app, user_dep, *args):
         raise HTTPException(status_code=400, detail="crawl_not_finished")
 
     @app.get(
-        "/orgs/{oid}/crawls/{crawl_id}/errors", tags=["crawls"], response_model=bytes
+        "/orgs/{oid}/crawls/{crawl_id}/errors",
+        tags=["crawls"],
+        response_model=PaginatedCrawlErrorResponse,
     )
     async def get_crawl_errors(
         crawl_id: str,

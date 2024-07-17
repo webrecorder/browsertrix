@@ -929,6 +929,17 @@ class CrawlScaleResponse(BaseModel):
 
 
 # ============================================================================
+class CrawlError(BaseModel):
+    """Crawl error"""
+
+    timestamp: str
+    logLevel: str
+    context: str
+    message: str
+    details: Any
+
+
+# ============================================================================
 
 ### UPLOADED CRAWLS ###
 
@@ -2221,3 +2232,10 @@ class PaginatedWebhookNotificationResponse(PaginatedResponse):
     """Response model for paginated webhook notifications"""
 
     items: List[WebhookNotification]
+
+
+# ============================================================================
+class PaginatedCrawlErrorResponse(PaginatedResponse):
+    """Response model for crawl errors"""
+
+    items: List[CrawlError]
