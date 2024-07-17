@@ -475,6 +475,18 @@ class ProfileOps:
             {"$push": {"resource.replicas": {"name": ref.name, "custom": ref.custom}}},
         )
 
+    async def calculate_org_profile_file_storage(self, oid: UUID) -> int:
+        """Calculate and return total size of profile files in org"""
+        total_size = 0
+
+        cursor = self.profiles.find({"oid": oid})
+        async for profile_dict in cursor:
+            file_ = profile_dict.get("resource")
+            if file_:
+                total_size += file_.get("size", 0)
+
+        return total_size
+
 
 # ============================================================================
 # pylint: disable=redefined-builtin,invalid-name,too-many-locals,too-many-arguments

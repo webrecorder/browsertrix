@@ -797,6 +797,26 @@ class BaseCrawlOps:
             "firstSeeds": list(first_seeds),
         }
 
+    async def calculate_org_crawl_file_storage(
+        self, oid: UUID, type_: Optional[str] = None
+    ) -> int:
+        """Calculate and return total size of crawl files in org"""
+        total_size = 0
+
+        match_query: Dict[str, Union[str, UUID]] = {"oid": oid}
+        if type_:
+            match_query["type"] = type_
+
+        cursor = self.crawls.find(match_query)
+        async for crawl_dict in cursor:
+            files = crawl_dict.get("files", [])
+            crawl_size = 0
+            for file_ in files:
+                crawl_size += file_.get("size", 0)
+            total_size += crawl_size
+
+        return total_size
+
 
 # ============================================================================
 def init_base_crawls_api(app, user_dep, *args):
