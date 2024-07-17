@@ -811,7 +811,8 @@ class BaseCrawlOps:
         cursor = self.crawls.find({"oid": oid})
         async for crawl_dict in cursor:
             files = crawl_dict.get("files", [])
-            type_ = crawl_dict["type"]
+            type_ = crawl_dict.get("type")
+
             item_size = 0
             for file_ in files:
                 item_size += file_.get("size", 0)
