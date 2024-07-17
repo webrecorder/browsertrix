@@ -280,7 +280,7 @@ export class ArchivedItemDetail extends TailwindElement {
             <sl-tooltip content=${msg("Download all files as a single WACZ")}>
               <sl-button
                 href=${`/api/orgs/${this.orgId}/all-crawls/${this.crawlId}/download?auth_bearer=${authToken}`}
-                download}
+                download
                 size="small"
                 variant="primary"
               >
