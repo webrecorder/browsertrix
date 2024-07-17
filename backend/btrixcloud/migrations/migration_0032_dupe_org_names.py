@@ -5,6 +5,8 @@ Migration 0032 - Case-insensitive org name duplicates
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import slug_from_name
 
+from pymongo.errors import DuplicateKeyError
+
 
 MIGRATION_VERSION = "0032"
 
