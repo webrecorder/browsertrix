@@ -406,6 +406,7 @@ class BackgroundJobOps:
         try:
             if job.object_type == "profile":
                 profile = await self.profile_ops.get_profile(UUID(job.object_id), org)
+                assert profile.resource
                 return BaseFile(**profile.resource.dict())
 
             item_res = await self.base_crawl_ops.get_base_crawl(job.object_id, org)

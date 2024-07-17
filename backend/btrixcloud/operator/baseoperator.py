@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from kubernetes.utils import parse_quantity
 
 import yaml
@@ -44,7 +44,7 @@ class K8sOpAPI(K8sAPI):
         self.compute_crawler_resources()
         self.compute_profile_resources()
 
-    def compute_crawler_resources(self):
+    def compute_crawler_resources(self) -> None:
         """compute memory / cpu resources for crawlers"""
         p = self.shared_params
         num_workers = max(int(p["crawler_browser_instances"]), 1)
@@ -105,7 +105,7 @@ class K8sOpAPI(K8sAPI):
         p["qa_memory"] = qa_memory
         p["qa_workers"] = qa_num_workers
 
-    def compute_profile_resources(self):
+    def compute_profile_resources(self) -> None:
         """compute memory /cpu resources for a single profile browser"""
         p = self.shared_params
         # if no profile specific options provided, default to crawler base for one browser
@@ -122,7 +122,7 @@ class K8sOpAPI(K8sAPI):
         print(f"cpu = {profile_cpu}")
         print(f"memory = {profile_memory}")
 
-    async def async_init(self):
+    async def async_init(self) -> None:
         """perform any async init here"""
         self.has_pod_metrics = await self.is_pod_metrics_available()
         print("Pod Metrics Available:", self.has_pod_metrics)
@@ -172,16 +172,16 @@ class BaseOperator:
         # see: https://stackoverflow.com/a/74059981
         self.bg_tasks = set()
 
-    def init_routes(self, app):
+    def init_routes(self, app) -> None:
         """init routes for this operator"""
 
-    def run_task(self, func):
+    def run_task(self, func) -> None:
         """add bg tasks to set to avoid premature garbage collection"""
         task = asyncio.create_task(func)
         self.bg_tasks.add(task)
         task.add_done_callback(self.bg_tasks.discard)
 
-    def load_from_yaml(self, filename, params):
+    def load_from_yaml(self, filename, params) -> list[Any]:
         """load and parse k8s template from yaml file"""
         return list(
             yaml.safe_load_all(

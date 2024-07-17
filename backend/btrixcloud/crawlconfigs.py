@@ -115,7 +115,7 @@ class CrawlConfigOps:
         self.crawler_images_map = {}
         channels = []
         with open(os.environ["CRAWLER_CHANNELS_JSON"], encoding="utf-8") as fh:
-            crawler_list: list[dict] = json.loads(fh.read())
+            crawler_list = json.loads(fh.read())
             for channel_data in crawler_list:
                 channel = CrawlerChannel(**channel_data)
                 channels.append(channel)
@@ -297,8 +297,6 @@ class CrawlConfigOps:
         """Update name, scale, schedule, and/or tags for an existing crawl config"""
 
         orig_crawl_config = await self.get_crawl_config(cid, org.id)
-        if not orig_crawl_config:
-            raise HTTPException(status_code=400, detail="config_not_found")
 
         # indicates if any k8s crawl config settings changed
         changed = False
@@ -437,7 +435,7 @@ class CrawlConfigOps:
         schedule: Optional[bool] = None,
         sort_by: str = "lastRun",
         sort_direction: int = -1,
-    ):
+    ) -> tuple[list[CrawlConfigOut], int]:
         """Get all crawl configs for an organization is a member of"""
         # pylint: disable=too-many-locals,too-many-branches
         # Zero-index page for query
@@ -535,7 +533,7 @@ class CrawlConfigOps:
 
     async def get_crawl_config_info_for_profile(
         self, profileid: UUID, org: Organization
-    ):
+    ) -> list[CrawlConfigProfileOut]:
         """Return all crawl configs that are associated with a given profileid"""
         query = {"profileid": profileid, "inactive": {"$ne": True}}
         if org:
@@ -633,10 +631,6 @@ class CrawlConfigOps:
         crawlconfig = await self.get_crawl_config(
             cid, org.id, active_only=False, config_cls=CrawlConfigOut
         )
-        if not crawlconfig:
-            raise HTTPException(
-                status_code=404, detail=f"Crawl Config '{cid}' not found"
-            )
 
         if not crawlconfig.inactive:
             self._add_curr_crawl_stats(
@@ -1135,11 +1129,6 @@ def init_crawl_config_api(
     @router.delete("/{cid}", response_model=CrawlConfigDeletedResponse)
     async def make_inactive(cid: UUID, org: Organization = Depends(org_crawl_dep)):
         crawlconfig = await ops.get_crawl_config(cid, org.id)
-
-        if not crawlconfig:
-            raise HTTPException(
-                status_code=404, detail=f"Crawl Config '{cid}' not found"
-            )
 
         return await ops.do_make_inactive(crawlconfig)
 
