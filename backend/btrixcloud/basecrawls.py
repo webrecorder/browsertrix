@@ -799,23 +799,30 @@ class BaseCrawlOps:
 
     async def calculate_org_crawl_file_storage(
         self, oid: UUID, type_: Optional[str] = None
-    ) -> int:
-        """Calculate and return total size of crawl files in org"""
+    ) -> Tuple(int, int, int):
+        """Calculate and return total size of crawl files in org.
+
+        Returns tuple of (total, crawls only, uploads only)
+        """
         total_size = 0
+        crawls_size = 0
+        uploads_size = 0
 
-        match_query: Dict[str, Union[str, UUID]] = {"oid": oid}
-        if type_:
-            match_query["type"] = type_
-
-        cursor = self.crawls.find(match_query)
+        cursor = self.crawls.find({"oid": oid})
         async for crawl_dict in cursor:
             files = crawl_dict.get("files", [])
-            crawl_size = 0
+            type_ = crawl_dict["type"]
+            item_size = 0
             for file_ in files:
-                crawl_size += file_.get("size", 0)
-            total_size += crawl_size
+                item_size += file_.get("size", 0)
 
-        return total_size
+            total_size += item_size
+            if type_ == "crawl":
+                crawls_size += item_size
+            if type_ == "upload":
+                uploads_size += item_size
+
+        return total_size, crawls_size, uploads_size
 
 
 # ============================================================================

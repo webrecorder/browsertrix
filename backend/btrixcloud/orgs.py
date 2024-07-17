@@ -1317,17 +1317,16 @@ class OrgOps:
     async def recalculate_storage(self, org: Organization):
         """Recalculate org storage use"""
         try:
-            crawl_size = await self.base_crawl_ops.calculate_org_crawl_file_storage(
-                org.id, "crawl"
-            )
-            upload_size = await self.base_crawl_ops.calculate_org_crawl_file_storage(
-                org.id, "upload"
+            total_crawl_size, crawl_size, upload_size = (
+                await self.base_crawl_ops.calculate_org_crawl_file_storage(
+                    org.id,
+                )
             )
             profile_size = await self.profile_ops.calculate_org_profile_file_storage(
                 org.id
             )
 
-            org_size = crawl_size + upload_size + profile_size
+            org_size = total_crawl_size + profile_size
 
             await self.orgs.find_one_and_update(
                 {"_id": org.id},
