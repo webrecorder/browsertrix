@@ -2,6 +2,8 @@
 Migration 0032 - Case-insensitive org name duplicates
 """
 
+from uuid import UUID
+
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.utils import slug_from_name
 
@@ -17,32 +19,6 @@ class Migration(BaseMigration):
     # pylint: disable=unused-argument
     def __init__(self, mdb, **kwargs):
         super().__init__(mdb, migration_version=MIGRATION_VERSION)
-
-    async def update_org_name_and_slug(self, orgs_db, old_name, oid):
-        """Rename org"""
-        count = 1
-        suffix = f" {count}"
-
-        while True:
-            org_name = f"{old_name}{suffix}"
-            org_slug = slug_from_name(org_name)
-
-            try:
-                await orgs_db.find_one_and_update(
-                    {"_id": oid}, {"$set": {"slug": org_slug, "name": org_name}}
-                )
-                print(
-                    f"Renamed org {oid} to {org_name} with slug {org_slug}", flush=True
-                )
-                break
-            except DuplicateKeyError:
-                # pylint: disable=raise-missing-from
-                count += 1
-                suffix = f" {count}"
-            # pylint: disable=broad-exception-caught
-            except Exception as err:
-                print(f"Error renaming org {oid}: {err}", flush=True)
-                break
 
     async def migrate_up(self):
         """Perform migration up.
@@ -75,3 +51,29 @@ class Migration(BaseMigration):
 
             if rename_org:
                 await self.update_org_name_and_slug(orgs_db, name, org_dict.get("_id"))
+
+    async def update_org_name_and_slug(self, orgs_db, old_name: str, oid: UUID):
+        """Rename org"""
+        count = 1
+        suffix = f" {count}"
+
+        while True:
+            org_name = f"{old_name}{suffix}"
+            org_slug = slug_from_name(org_name)
+
+            try:
+                await orgs_db.find_one_and_update(
+                    {"_id": oid}, {"$set": {"slug": org_slug, "name": org_name}}
+                )
+                print(
+                    f"Renamed org {oid} to {org_name} with slug {org_slug}", flush=True
+                )
+                break
+            except DuplicateKeyError:
+                # pylint: disable=raise-missing-from
+                count += 1
+                suffix = f" {count}"
+            # pylint: disable=broad-exception-caught
+            except Exception as err:
+                print(f"Error renaming org {oid}: {err}", flush=True)
+                break
