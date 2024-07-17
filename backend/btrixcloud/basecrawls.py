@@ -799,7 +799,7 @@ class BaseCrawlOps:
 
     async def calculate_org_crawl_file_storage(
         self, oid: UUID, type_: Optional[str] = None
-    ) -> Tuple(int, int, int):
+    ) -> Tuple[int, int, int]:
         """Calculate and return total size of crawl files in org.
 
         Returns tuple of (total, crawls only, uploads only)
