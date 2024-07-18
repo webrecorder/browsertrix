@@ -156,8 +156,10 @@ export class OrgStatusBanner extends TailwindElement {
           return {
             title:
               daysDiff > 1
-                ? msg(str`Your org will be deactivated in ${daysDiff} days`)
-                : msg("Your org will be deactivated within one day"),
+                ? msg(
+                    str`Your org will be set to read-only mode in ${daysDiff} days`,
+                  )
+                : msg("Your org will be set to read-only mode within one day"),
             detail: html`
               <p>
                 ${msg(
@@ -187,7 +189,7 @@ export class OrgStatusBanner extends TailwindElement {
           !!readOnly && readOnlyReason === OrgReadOnlyReason.SubscriptionPaused,
         persist: true,
         content: () => ({
-          title: msg(str`Your org has been deactivated`),
+          title: msg(str`Your org has been set to read-only mode`),
           detail: msg(
             html`Your subscription has been paused due to payment failure.
             Please go to ${billingTabLink} to update your payment method.`,
@@ -196,10 +198,11 @@ export class OrgStatusBanner extends TailwindElement {
       },
       {
         test: () =>
-          !!readOnly && readOnlyReason === OrgReadOnlyReason.SubscriptionCancelled,
+          !!readOnly &&
+          readOnlyReason === OrgReadOnlyReason.SubscriptionCancelled,
         persist: true,
         content: () => ({
-          title: msg(str`This org has been deactivated`),
+          title: msg(str`This org has been set to read-only mode`),
           detail: msg(
             `Your subscription has been canceled. Please contact Browsertrix support to renew your plan.`,
           ),
@@ -209,7 +212,7 @@ export class OrgStatusBanner extends TailwindElement {
         test: () => !!readOnly,
         persist: true,
         content: () => ({
-          title: msg(str`This org has been deactivated`),
+          title: msg(str`This org has been set to read-only mode`),
           detail: msg(`Please contact Browsertrix support to renew your plan.`),
         }),
       },
