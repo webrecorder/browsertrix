@@ -60,7 +60,7 @@ export class OrgStatusBanner extends TailwindElement {
             ?open=${this.isAlertOpen}
             @sl-after-hide=${() => (this.isAlertOpen = false)}
           >
-            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+            <sl-icon slot="icon" name="exclamation-triangle-fill"></sl-icon>
             ${this.renderContent()}
           </sl-alert>
         </div>
