@@ -196,7 +196,7 @@ export class OrgStatusBanner extends TailwindElement {
       },
       {
         test: () =>
-          !!readOnly && readOnlyReason === OrgReadOnlyReason.SubscriptionPaused,
+          !!readOnly && readOnlyReason === OrgReadOnlyReason.SubscriptionCancelled,
         persist: true,
         content: () => ({
           title: msg(str`This org has been deactivated`),
