@@ -2069,6 +2069,13 @@ class StartedResponse(BaseModel):
 
 
 # ============================================================================
+class StartedResponseBool(BaseModel):
+    """Response for API endpoints that start a background job"""
+
+    started: bool
+
+
+# ============================================================================
 class AddedResponse(BaseModel):
     """Response for API endpoints that return added"""
 

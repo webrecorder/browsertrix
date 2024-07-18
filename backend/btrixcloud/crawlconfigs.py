@@ -25,7 +25,6 @@ from .models import (
     CrawlConfigOut,
     CrawlConfigProfileOut,
     CrawlOut,
-    EmptyStr,
     UpdateCrawlConfig,
     Organization,
     User,
@@ -368,11 +367,11 @@ class CrawlConfigOps:
         query["modified"] = dt_now()
 
         # if empty str, just clear the profile
-        if isinstance(update.profileid, EmptyStr) or update.profileid == "":
+        if update.profileid == "":
             query["profileid"] = None
         # else, ensure its a valid profile
         elif update.profileid:
-            await self.profiles.get_profile(update.profileid, org)
+            await self.profiles.get_profile(cast(UUID, update.profileid), org)
             query["profileid"] = update.profileid
 
         if update.config is not None:
