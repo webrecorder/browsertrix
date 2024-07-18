@@ -2452,7 +2452,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
       name: this.formState.jobName || "",
       description: this.formState.description,
       scale: this.formState.scale,
-      profileid: this.formState.browserProfile?.id || null,
+      profileid: this.formState.browserProfile?.id || "",
       runNow: this.formState.runNow,
       schedule: this.formState.scheduleType === "cron" ? this.utcSchedule : "",
       crawlTimeout: this.formState.crawlTimeoutMinutes * 60,

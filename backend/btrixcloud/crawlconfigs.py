@@ -188,9 +188,13 @@ class CrawlConfigOps:
         if not self.get_channel_crawler_image(config_in.crawlerChannel):
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
+        profile_id = None
+        if isinstance(config_in.profileid, UUID):
+            profile_id = config_in.profileid
+
         # ensure profile is valid, if provided
-        if config_in.profileid:
-            await self.profiles.get_profile(config_in.profileid, org)
+        if profile_id:
+            await self.profiles.get_profile(profile_id, org)
 
         now = dt_now()
         crawlconfig = CrawlConfig(
@@ -212,7 +216,7 @@ class CrawlConfigOps:
             maxCrawlSize=config_in.maxCrawlSize,
             scale=config_in.scale,
             autoAddCollections=config_in.autoAddCollections,
-            profileid=config_in.profileid,
+            profileid=profile_id,
             crawlerChannel=config_in.crawlerChannel,
             crawlFilenameTemplate=config_in.crawlFilenameTemplate,
         )
