@@ -1,5 +1,6 @@
 """ Operator Models """
 
+from collections import defaultdict
 from uuid import UUID
 from typing import Optional, DefaultDict, Literal, Annotated
 from pydantic import BaseModel, Field
@@ -184,7 +185,10 @@ class CrawlStatus(BaseModel):
     initRedis: bool = False
     crawlerImage: Optional[str] = None
     lastActiveTime: str = ""
-    podStatus: DefaultDict[str, Annotated[PodInfo, Field(default_factory=PodInfo)]]
+    podStatus: DefaultDict[str, Annotated[PodInfo, Field(default_factory=PodInfo)]] = (
+        defaultdict(lambda: PodInfo())  # pylint: disable=unnecessary-lambda
+    )
+
     restartTime: Optional[str] = None
     canceled: bool = False
 
