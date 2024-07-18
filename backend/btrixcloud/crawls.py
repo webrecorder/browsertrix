@@ -879,7 +879,11 @@ class CrawlOps(BaseCrawlOps):
 
     async def qa_run_finished(self, crawl_id: str):
         """clear active qa, add qa run to finished list, if successful"""
-        crawl = await self.get_crawl(crawl_id)
+        try:
+            crawl = await self.get_crawl(crawl_id)
+        # pylint: disable=bare-except
+        except:
+            return False
 
         if not crawl.qa:
             return False

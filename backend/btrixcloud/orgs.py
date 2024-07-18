@@ -305,6 +305,7 @@ class OrgOps:
             id=id_,
             name=DEFAULT_ORG,
             slug=slug_from_name(DEFAULT_ORG),
+            created=dt_now(),
             users={},
             storage=self.default_primary,
             default=True,

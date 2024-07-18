@@ -386,14 +386,14 @@ class CrawlConfigAdditional(BaseModel):
 
     totalSize: Optional[int] = 0
 
-    lastCrawlId: Optional[str]
-    lastCrawlStartTime: Optional[datetime]
-    lastStartedBy: Optional[UUID]
-    lastCrawlTime: Optional[datetime]
-    lastCrawlState: Optional[str]
-    lastCrawlSize: Optional[int]
+    lastCrawlId: Optional[str] = None
+    lastCrawlStartTime: Optional[datetime] = None
+    lastStartedBy: Optional[UUID] = None
+    lastCrawlTime: Optional[datetime] = None
+    lastCrawlState: Optional[str] = None
+    lastCrawlSize: Optional[int] = None
 
-    lastRun: Optional[datetime]
+    lastRun: Optional[datetime] = None
 
     isCrawlRunning: Optional[bool] = False
 
@@ -409,7 +409,7 @@ class CrawlConfig(CrawlConfigCore, CrawlConfigAdditional):
     config: RawCrawlConfig
     createdByName: Optional[str]
     modifiedByName: Optional[str]
-    lastStartedByName: Optional[str]
+    lastStartedByName: Optional[str] = None
 
     def get_raw_config(self):
         """serialize config for browsertrix-crawler"""

@@ -1,8 +1,7 @@
 """ Operator Models """
 
-from collections import defaultdict
 from uuid import UUID
-from typing import Optional, DefaultDict, Literal
+from typing import Optional, DefaultDict, Literal, Annotated
 from pydantic import BaseModel, Field
 from kubernetes.utils import parse_quantity
 from btrixcloud.models import StorageRef, TYPE_ALL_CRAWL_STATES
@@ -185,14 +184,8 @@ class CrawlStatus(BaseModel):
     initRedis: bool = False
     crawlerImage: Optional[str] = None
     lastActiveTime: str = ""
-    podStatus: DefaultDict[str, PodInfo] = defaultdict(
-        lambda: PodInfo()  # pylint: disable=unnecessary-lambda
-    )
-    # placeholder for pydantic 2.0 -- will require this version
-    # podStatus: Optional[
-    #    DefaultDict[str, Annotated[PodInfo, Field(default_factory=PodInfo)]]
-    # ]
-    restartTime: Optional[str]
+    podStatus: DefaultDict[str, Annotated[PodInfo, Field(default_factory=PodInfo)]]
+    restartTime: Optional[str] = None
     canceled: bool = False
 
     # updated on pod exits and at regular interval
