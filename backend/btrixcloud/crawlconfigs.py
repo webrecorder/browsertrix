@@ -187,9 +187,9 @@ class CrawlConfigOps:
         if not self.get_channel_crawler_image(config_in.crawlerChannel):
             raise HTTPException(status_code=404, detail="crawler_not_found")
 
-        profileid = (
-            config_in.profileid if isinstance(config_in.profileid, UUID) else None
-        )
+        profileid = None
+        if isinstance(config_in.profileid, UUID):
+            profileid = config_in.profileid
 
         # ensure profile is valid, if provided
         if profileid:
