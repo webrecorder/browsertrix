@@ -2,8 +2,6 @@
 Migration 0028 - Page files and errors
 """
 
-# pylint: skip-file
-
 from btrixcloud.migrations import BaseMigration
 from btrixcloud.models import Page, Crawl
 
