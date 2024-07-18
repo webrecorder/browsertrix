@@ -64,7 +64,7 @@ class Migration(BaseMigration):
         oid: UUID,
     ):
         """Rename org"""
-        count = 1
+        count = 2
         suffix = f" {count}"
 
         while True:
