@@ -50,9 +50,18 @@ class Migration(BaseMigration):
                 org_slug_set.add(slug.lower())
 
             if rename_org:
-                await self.update_org_name_and_slug(orgs_db, name, org_dict.get("_id"))
+                await self.update_org_name_and_slug(
+                    orgs_db, org_name_set, org_slug_set, name, org_dict.get("_id")
+                )
 
-    async def update_org_name_and_slug(self, orgs_db, old_name: str, oid: UUID):
+    async def update_org_name_and_slug(
+        self,
+        orgs_db,
+        org_name_set: set[str],
+        org_slug_set: set[str],
+        old_name: str,
+        oid: UUID,
+    ):
         """Rename org"""
         count = 1
         suffix = f" {count}"
@@ -60,6 +69,11 @@ class Migration(BaseMigration):
         while True:
             org_name = f"{old_name}{suffix}"
             org_slug = slug_from_name(org_name)
+
+            if org_name.lower() in org_name_set or org_slug.lower() in org_slug_set:
+                count += 1
+                suffix = f" {count}"
+                continue
 
             try:
                 await orgs_db.find_one_and_update(
